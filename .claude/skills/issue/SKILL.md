@@ -382,20 +382,121 @@ short composite step string (`"awaiting promotion · followups #240, #241"`)
 var is set (the session was spawned via `spawn_session.py spawn-issue
 --auto`), the orchestrator runs to completion with no human at the keyboard:
 
-- **Never present a choice menu or "want your call?" — decide and continue.**
-  With no human at the keyboard, an optional decision is YOURS to make, not the
-  user's. At ANY fork that is not one of the two hard gates below or a hard
-  halt-criterion — choosing among proposed follow-ups, "should I ALSO run X",
-  correcting a now-wrong marker / record you posted, picking between competing
-  interpretations of a result, which secondary analysis or probe to run — pick
-  the option that maximizes information-gain-per-GPU-hour toward the task
-  `## Goal` (break a genuine tie toward the lower-cost / safer / record-
-  correcting action) and proceed, stating it in one line
-  (`Decision: <X> because <reason>`). Do NOT emit "Both? or do you read it
-  differently?", "two things I'd do, want your call?", a numbered option list,
-  or the interactive two-path escalation (CLAUDE.md "frame exactly TWO paths"
-  is for an INTERACTIVE session — it does NOT apply here). The autonomous
-  session waits on the user at the two gates and nowhere else.
+- **Forbidden: presenting options to the user in ANY form. Decide AND
+  EXECUTE in the same turn.** With `EPM_AUTONOMOUS_SESSION=1` there is no
+  human at the keyboard, so an optional decision is YOURS to make. Banned
+  output patterns (this list is exhaustive — none of these may appear in an
+  autonomous turn):
+  - A `AskUserQuestion` tool call (the PreToolUse hook in
+    `.claude/settings.json` hard-blocks this — backstop ONLY for the tool
+    path; the text-menu failure mode below cannot be intercepted by a hook).
+  - A numbered or bulleted choice list in markdown ("Option 1: …",
+    "Option A: …", "- continue-as-planned", "- pivot-to-X").
+  - "which would you prefer?", "let me know how to proceed", "please
+    confirm before I…", "thoughts?", "your call", "should I…", "would you
+    like me to…", "what would you like to do?".
+  - "Both? or do you read it differently?", "two things I'd do, want your
+    call?", the interactive two-path escalation framing (CLAUDE.md "frame
+    exactly TWO paths" is for an INTERACTIVE session — it does NOT apply
+    here).
+  - Ending the turn with a trailing question to the user.
+  - Stating a `Decision:` and then ending the turn without executing it
+    (i.e. posting the resolved marker / spawning the resolved subagent /
+    advancing status). "Decide and continue" means decide AND execute, in
+    the same turn.
+
+  Real incident (tasks #503/#504/#505, 2026-06-05): three autonomous Happy
+  sessions all printed a plain-text "Option 1 vs Option 2 — which would you
+  prefer?" markdown menu and stopped the turn, leaving the orchestrator
+  blocked indefinitely on a user reply that the user did not even know was
+  pending. That is the exact banned behavior this section enforces. The
+  PreToolUse hook could not catch it because no tool call was ever made —
+  only the prose was emitted. The dominant failure mode is
+  text-menu-end-of-turn; only this section's prose prevents it.
+
+  Correct shape: at ANY fork that is not one of the two hard gates below
+  or a hard halt-criterion — choosing among proposed follow-ups, "should I
+  ALSO run X", correcting a now-wrong marker / record you posted, picking
+  between competing interpretations of a result, which secondary analysis
+  or probe to run — pick the option that maximizes information-gain-per-
+  GPU-hour toward the task `## Goal` (break a genuine tie toward the
+  lower-cost / safer / record-correcting action), state it in one line
+  (`Decision: <X> because <reason>`), AND EXECUTE THE RESOLVED ACTION IN
+  THE SAME TURN: post the matching `epm:<marker>`, spawn the next
+  subagent, run the `task.py set-status` transition — whatever the
+  resolved branch's normal continuation is. The autonomous session waits
+  on the user at the two gates and nowhere else.
+- **Conditional gates auto-resolve when `EPM_AUTONOMOUS_SESSION=1` —
+  never raise `AskUserQuestion`, never print a text menu, always execute
+  the resolved action in the same turn.** The conditional gates in
+  (see workflow.yaml § gates.conditional) — `whack_a_mole_pivot` (id 11),
+  `compute_deviation_resolution` (id 12), `concern_deferral_request` (id 15),
+  `tdd_gate` (id 8), `experiment_goal_refine` (id 9), `living_docs_update`
+  (id 13), `fact_candidates` (id 14) — present two-option escalations or
+  binary confirm/reject choices. In Interactive mode they raise
+  `AskUserQuestion`; with `EPM_AUTONOMOUS_SESSION=1` set they MUST
+  auto-resolve AND execute the resolved action in this same turn. The
+  resolution rule per gate:
+  - `whack_a_mole_pivot` → pick `pivot-to-<X>` if the implementer's report
+    named a canonical alternative AND the next round on the current path
+    would burn >2× the cost of the pivot; else `continue-as-planned`. State
+    `Decision: <choice> because <reason>` and EXECUTE the resolved action
+    in this same turn (on `pivot-to-<X>`: `task.py set-status <N> planning`
+    + re-invoke `/adversarial-planner` with the pivot scope; on
+    `continue-as-planned`: continue to Step 6); do NOT state the Decision
+    and then end the turn.
+  - `compute_deviation_resolution` → pick `accept_descope_to_<X>_with_caveats`
+    if any descope dimension preserves majority statistical power (≥0.6 of
+    the planned cells); else `continue_as_is` and quote the projected ratio
+    inline. State `Decision: <choice> because <reason>` and EXECUTE the
+    resolved action in this same turn (post `epm:compute-deviation v2`
+    with the chosen `action:` + advance to Step 5.bis(b)); do NOT state
+    the Decision and then end the turn.
+  - `concern_deferral_request` → bounce to implementer for one more round
+    targeting the open CONCERN(s); never defer in autonomous mode (deferral
+    is a user-rationale-required action by spec). State
+    `Decision: bounce to implementer (concern_id=<id>) — autonomous mode
+    never defers` and EXECUTE the bounce in this same turn (spawn the
+    `experiment-implementer` / `implementer` agent with a brief targeting
+    the open concern_id); do NOT state the Decision and then end the turn.
+  - `tdd_gate` → no `AskUserQuestion` at this site (it's event-driven —
+    the implementer posts `epm:proposed-tests v1` and exits; the resume
+    signal is `epm:approve-tests` posted via `task.py post-marker`). In
+    autonomous mode, auto-post `epm:approve-tests` IF the proposed-tests
+    body lists ≥1 test per acceptance criterion from the original task
+    body, AND EXECUTE the resume in this same turn (spawn the implementer
+    with `tdd_approved=true`); else bounce to the implementer with a
+    pointer to the gap (also same-turn execution). If still missing after
+    one bounce, post `epm:failure v1 failure_class: code` and set
+    `status:blocked` (halt-criterion #5).
+  - `experiment_goal_refine` → autonomous mode does NOT refine the Goal
+    mid-run; skip (do not raise the ask, do not refine). EXECUTE the
+    skip by continuing to the next step in this same turn; do NOT state
+    "Decision: skip" and then end the turn.
+  - `living_docs_update` → DO NOT auto-confirm. Living-docs mutations
+    are user-only by spec (workflow.yaml § gates.living_docs_update:
+    "Every living-docs mutation is user-confirmed: the agent proposes,
+    the user confirms/edits/rejects, nothing auto-applies"). In
+    autonomous mode the proposal is already posted as
+    `epm:living-docs-proposed v1`; park it for the user (the experiment
+    is already `completed`, no lifecycle blocks on this) and EXECUTE the
+    continuation to Step 10d in this same turn; do NOT print the diff to
+    chat as a menu, do NOT end the turn waiting on user confirmation
+    (the marker is the surface; `/weekly` + a later `/issue <N>`
+    re-invocation reconcile it).
+  - `fact_candidates` → pick the candidate `id` with the median per-token
+    log-prob (the middle of the band the plan filtered by). State
+    `Decision: id=<X> (median log-prob in band)` and EXECUTE the resume
+    in this same turn (post `epm:fact-pick v1` with `id: <X>` + resume
+    the polling loop); do NOT state the Decision and then end the turn.
+
+  The PreToolUse hook on `AskUserQuestion` (`.claude/settings.json`) is a
+  backstop for the TOOL case ONLY — when `EPM_AUTONOMOUS_SESSION=1` it
+  cannot intercept plain text output. The dominant failure mode is
+  text-menu-end-of-turn (incidents #503/#504/#505); only THIS prose
+  enforces it. Autonomous mode must DECIDE AND EXECUTE THE RESOLVED
+  ACTION IN THE SAME TURN — stating `Decision: <X>` and ending the turn
+  is itself the failure, regardless of whether a tool call was made.
 - **Push through bugs; do not block on recoverable failures.** Apply
   CLAUDE.md "Push through bugs in recovery mode" + the halt-criteria
   literally: preflight failures, TP/Ray/env-var hiccups, transient infra,
@@ -496,6 +597,7 @@ metadata. Order:
 
 2. **Body empty (or <50 chars of substance) ->** ask the user in the
    <!-- gate: gates.empty_body -->
+   <!-- autonomous-mode: block-and-fail -->
    current chat via `AskUserQuestion` for the minimum spec needed for the
    adversarial planner to design the task. The exact prompts depend on
    the task type (see `clarifier.md`); for an unknown type, ask:
@@ -503,6 +605,14 @@ metadata. Order:
    - "What's the hypothesis or success criterion?"
    - "Is there a parent task or prior result this builds on? (task # or 'none')"
    - "Rough compute size? (small / medium / large)"
+
+   In autonomous mode (`EPM_AUTONOMOUS_SESSION=1`) this gate cannot
+   auto-resolve — a missing task body is a content gap only the user
+   can fill. Post `epm:failure v1 failure_class: data` (reason:
+   `body empty; autonomous mode cannot synthesise spec from title`),
+   set `status:blocked`, and exit (halt-criterion #4 — factual question
+   only the user knows). The PreToolUse hook in `.claude/settings.json`
+   is the runtime backstop and will hard-block the ask if reached.
 
    Plus **search the codebase + HF + arXiv before drafting** when the
    title hints at pulling existing artifacts (e.g., "use HF model X",
@@ -539,12 +649,14 @@ metadata. Order:
    - Title prefix `Survey:` / `Read:` / `Lit review:` -> suggest `survey`
 
    <!-- gate: gates.missing_type -->
+   <!-- autonomous-mode: block-and-fail -->
    Use `AskUserQuestion` with the inferred option as `(Recommended)`
    first. Apply via `task.py set-body --file ...` to update the
-   frontmatter `type:` line. If the user is absent (e.g., autonomous
-   loop), DO error and EXIT — the type field gates Step 7's completion
-   variant and a guess here corrupts the lifecycle. Before exiting, post
-   the §5 marker:
+   frontmatter `type:` line. In autonomous mode
+   (`EPM_AUTONOMOUS_SESSION=1`), DO error and EXIT — the type field
+   gates Step 7's completion variant and a guess here corrupts the
+   lifecycle. The PreToolUse hook hard-blocks the ask if reached.
+   Before exiting, post the §5 marker:
    ```bash
    uv run python scripts/post_step_completed.py --issue <N> --step 0b \
      --exit-kind failure-exit \
@@ -575,10 +687,17 @@ follow-up-proposer). The PM session Mode 5 pre-spawn check is the
 primary enforcement point; Step 0c is the per-issue-session safety
 net.
 
-This is a **legitimate `AskUserQuestion` use** because the gate IS a
-gate (CLAUDE.md "Critical Rules" lists `experiment_goal` as inline
-gate #6 — see workflow.yaml § gates.experiment_goal). It does not
-violate the auto-continuation policy.
+This is a **legitimate `AskUserQuestion` use** in Interactive mode
+because the gate IS a gate (CLAUDE.md "Critical Rules" lists
+`experiment_goal` as inline gate #6 — see workflow.yaml §
+gates.experiment_goal). It does not violate the auto-continuation
+policy. In autonomous mode (`EPM_AUTONOMOUS_SESSION=1`), the Goal must
+have been set BEFORE the session was spawned (the PM session Mode 5
+pre-spawn check is the primary enforcement); if it's still missing at
+Step 0c, the autonomous session post `epm:failure v1 failure_class: data`
+(reason: `goal missing; autonomous mode cannot synthesise`), sets
+`status:blocked`, and exits (halt-criterion #4). The PreToolUse hook
+hard-blocks the ask if reached. <!-- autonomous-mode: block-and-fail -->
 
 1. Skip the gate when the task `kind != "experiment"` (i.e.
    `analysis | infra | batch | survey`). These kinds do not carry an
@@ -589,7 +708,7 @@ violate the auto-continuation policy.
    - The body contains a `## Goal` H2 (matched verbatim, line-start).
 
    If both hold, continue to Step 1.
-3. If either is missing, raise `AskUserQuestion` <!-- gate: gates.experiment_goal -->:
+3. If either is missing, raise `AskUserQuestion` <!-- gate: gates.experiment_goal --> <!-- autonomous-mode: block-and-fail -->:
    ```
    "What is the one-sentence Goal of this experiment?
     (The single decision-shaping target every downstream agent will
@@ -597,9 +716,10 @@ violate the auto-continuation policy.
     transfers to held-out personas at the same rate as in-distribution
     ones.')"
    ```
-   On the user's answer (one sentence; do NOT accept a fragment or a
-   list — re-prompt once if the answer doesn't read as a complete
-   sentence), run:
+   (Interactive mode only — autonomous sessions block-and-fail per the
+   §0c-intro annotation above.) On the user's answer (one sentence; do
+   NOT accept a fragment or a list — re-prompt once if the answer
+   doesn't read as a complete sentence), run:
    ```bash
    uv run python scripts/task.py set-goal <N> "<the answer>" --by user
    ```
@@ -642,11 +762,12 @@ gate, no extra context switch.
    question is a low-risk, reversible bookkeeping write (the
    `living_docs.py check` lint + the completion-time `living-docs-updater`
    both catch a bad link later), so it does not consume a gate.
-5. **No existing question fits → drafting a NEW question — ASK first.**
-   Creating an open-question stub is a real, durable living-docs mutation,
-   so the new-question path stays user-confirmed. Propose the new question
-   (plus any existing ids that ALSO apply) via
-   `AskUserQuestion` <!-- gate: gates.experiment_goal --> in the SAME Goal
+5. **No existing question fits → drafting a NEW question — ASK first
+   in Interactive mode.** Creating an open-question stub is a real,
+   durable living-docs mutation, so the new-question path stays
+   user-confirmed. Propose the new question (plus any existing ids that
+   ALSO apply) via
+   `AskUserQuestion` <!-- gate: gates.experiment_goal --> <!-- autonomous-mode: skip --> in the SAME Goal
    gate:
    ```
    "No existing open question in docs/open_questions.md fits this
@@ -670,6 +791,16 @@ gate, no extra context switch.
      --note "Linked task #<N> to open question(s) <q-ids>; created_new=<q-id|none>; mode=<auto-match|user-confirmed-new>."
    ```
    Re-read the task (Step 0) and continue to Step 1.
+
+**Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): on path 5 (no
+existing question fits) SKIP the new-question draft entirely — do not
+raise `AskUserQuestion`, do not print the proposed question as a text
+menu. EXECUTE the skip in this same turn: post `epm:question-linked v1`
+with `mode=autonomous-skipped` + `created_new=none` + an empty
+`relates_to`, then continue to Step 1 (do NOT end the turn waiting on
+user confirmation). The PreToolUse hook hard-blocks the ask if reached;
+the `/weekly` backstop re-synthesis OR a later `/issue <N>`
+re-invocation will reconcile the link.
 
 ### Step 1: Clarifier gate
 
@@ -705,13 +836,20 @@ tasks/commits/papers consulted so the inheritance chain is auditable.
      the user closes the terminal, the questions are still there in
      `events.jsonl`.
 
-  2. **Ask the user in the current chat.** Immediately after posting,
-     ask the SAME numbered questions to the user in the current session.
+  2. **Ask the user in the current chat (Interactive mode only).**
+     Immediately after posting, ask the SAME numbered questions to the
+     user in the current session.
      <!-- gate: gates.clarifier_blocking -->
+     <!-- autonomous-mode: block-and-fail -->
      Use `AskUserQuestion` for small multiple-choice-style prompts;
      otherwise post a short numbered list as plain text and wait for a
      reply. Do NOT exit yet — give the user the option to answer inline
-     so they don't have to context-switch to the dashboard.
+     so they don't have to context-switch to the dashboard. In
+     autonomous mode (`EPM_AUTONOMOUS_SESSION=1`), do NOT ask — post
+     `epm:failure v1 failure_class: data` (reason: `clarifier blocking
+     ambiguities; autonomous mode cannot resolve`), set `status:blocked`,
+     and exit (halt-criterion #4). The PreToolUse hook hard-blocks the
+     ask if reached.
 
   3. **If the user answers in chat:**
      - Post a `epm:clarify-answers v<n>` event with the user's answers
@@ -748,12 +886,21 @@ inline path first.
 notices the existing `## Goal` H2 is fuzzy — e.g. too broad, names
 two outcomes, or doesn't actually describe what would change with
 the result — it MAY propose a sharper Goal via
-`AskUserQuestion` <!-- gate: gates.experiment_goal_refine -->.
-On explicit user consent in the same turn, run
+`AskUserQuestion` <!-- gate: gates.experiment_goal_refine -->
+**IN INTERACTIVE MODE ONLY**. On explicit user consent in the same
+turn, run
 `uv run python scripts/task.py set-goal <N> "<new goal>" --by clarifier --reason "<one line>"`,
 which emits a new `epm:goal-updated v1` marker. Without explicit
 consent the Goal stays put. Never call `set-goal` without
 in-the-loop user agreement; this is the user's contract field.
+
+**Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): SKIP this refinement
+entirely per § Autonomous session behavior → `experiment_goal_refine`.
+The Goal stays as set at task creation; do not propose a refinement,
+do not raise `AskUserQuestion`, do not print the proposed sharper Goal
+as a text menu. EXECUTE the skip by continuing to Step 2 in this same
+turn; do NOT end the turn waiting on user confirmation. The user owns
+the Goal contract; an autonomous session may not silently shift it.
 
 ### Step 2: Adversarial planning
 
@@ -944,12 +1091,18 @@ this cap.
   cache-file fallback.
 
   <!-- gate: gates.plan_approval -->
+  <!-- autonomous-mode: block-and-fail -->
   Use `AskUserQuestion` or a plain text prompt and wait for the user's
-  reply.
+  reply. (Interactive mode only — autonomous sessions never reach this
+  branch; the code-enforced gate in `task.py
+  --auto-approve-if-autonomous` already decided, and the PreToolUse hook
+  hard-blocks any `AskUserQuestion` if reached.)
 
   <!-- gate: gates.plan_approval -->
-  **Important:** when invoking `AskUserQuestion`, embed the dashboard
-  URL (`https://eps.superkaiba.com/tasks/<N>/plan`) inside the question
+  <!-- autonomous-mode: block-and-fail -->
+  **Important:** when invoking `AskUserQuestion` (Interactive mode
+  only), embed the dashboard URL
+  (`https://eps.superkaiba.com/tasks/<N>/plan`) inside the question
   text itself, AND embed the local plan path
   (`tasks/<status>/<N>/plans/plan.md`) inside the first option's
   `description` field. The user only sees the rendered question box at
@@ -959,7 +1112,9 @@ this cap.
   self-contained. Example shape (see workflow.yaml § gates.plan_approval):
 
   <!-- gate: gates.plan_approval -->
+  <!-- autonomous-mode: block-and-fail -->
   ```python
+  # Interactive mode only — autonomous branches before this point.
   AskUserQuestion(questions=[{
     "question": (
       "Approve plan v1 for task #<N>? "
@@ -1352,11 +1507,20 @@ per concern_id:
      confirms — call `task.py address-concern <N> --concern-id <id>
      --by code-reviewer --round <n>` (recording verification) and
      advance; OR
-  2. Raise inline `AskUserQuestion` <!-- gate: gates.concern_deferral_request --> proposing deferral. On user
+  2. **Interactive mode only:** raise inline `AskUserQuestion` <!-- gate: gates.concern_deferral_request --> proposing deferral. On user
      agreement run `task.py defer-concern <N> --concern-id <id> --by
      user --rationale "..."` (≥40 chars, not boilerplate) and advance;
      on user refusal bounce to the implementer with a brief targeting
      that concern (round counter increments).
+  3. **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): NEVER raise the
+     deferral ask AND never print the per-concern options as text. Auto-
+     resolve per § Autonomous session behavior →
+     `concern_deferral_request`: bounce to the implementer for one more
+     round targeting the open CONCERN(s). State
+     `Decision: bounce to implementer (concern_id=<id>) — autonomous
+     mode never defers` AND EXECUTE the bounce in this same turn (spawn
+     the implementer agent with a brief targeting the concern_id); do
+     NOT state the Decision and then end the turn.
 - **severity=BLOCKER** → either address (option 1 above) OR pivot
   strategy per `pivot_criteria.code_review_ensemble_cap_3`. BLOCKERs
   CANNOT route to the deferral gate. If neither address nor pivot
@@ -1364,8 +1528,10 @@ per concern_id:
   concern_id and set status:blocked (halt_criteria id=6
   `concern_unresolved`).
 
-Multiple open CONCERNS may batch into ONE `AskUserQuestion` call <!-- gate: gates.concern_deferral_request --> with
+Multiple open CONCERNS may batch into ONE `AskUserQuestion` call <!-- gate: gates.concern_deferral_request --> <!-- autonomous-mode: skip --> with
 one option per concern_id plus a free-text rationale box per concern.
+(Interactive mode only — autonomous mode bounces to implementer per
+the per-concern rule above; the batch ask is never raised.)
 
 This step does NOT override 5c-bis — mechanical-contract-only FAILs
 still strip and cosmetic gripes about present evidence still don't
@@ -1444,14 +1610,28 @@ If present:
    `action: auto_descope_to_<spec>`, update the implementer's per-cell
    parameters in the launch command, log to chat as one line, advance.
 4. **Auto-descope fails** (no dimension keeps ratio ≤ 1.5× while
-   staying above min-N): surface `gates.conditional.compute_deviation_resolution`
-   (id=12) with the 2-option prompt. Quote the ratio inline. On
-   `continue_as_is`, advance to Step 5.bis(b) with the original
-   parameters. On `accept_descope_to_<X>_with_caveats`, post
-   `epm:compute-deviation v2` with the chosen descope spec + caveats
-   and advance.
+   staying above min-N): branch on session mode.
 
-   <!-- gate: gates.conditional.compute_deviation_resolution -->
+   - **Interactive mode** (`EPM_AUTONOMOUS_SESSION` unset/falsy): surface
+     `gates.conditional.compute_deviation_resolution` (id=12) with the
+     2-option prompt. Quote the ratio inline. On `continue_as_is`,
+     advance to Step 5.bis(b) with the original parameters. On
+     `accept_descope_to_<X>_with_caveats`, post `epm:compute-deviation v2`
+     with the chosen descope spec + caveats and advance.
+
+     <!-- gate: gates.conditional.compute_deviation_resolution -->
+
+   - **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): NEVER raise the
+     ask AND never print the two options as a text menu. Auto-resolve
+     per § Autonomous session behavior →
+     `compute_deviation_resolution`: pick
+     `accept_descope_to_<X>_with_caveats` if any descope dimension
+     preserves majority statistical power (≥0.6 of the planned cells);
+     else `continue_as_is` and quote the projected ratio inline. State
+     `Decision: <choice> because <reason>` AND EXECUTE the resolved
+     action in this same turn (post `epm:compute-deviation v2` with the
+     chosen `action:` and advance to Step 5.bis(b)); do NOT state the
+     Decision and then end the turn.
 
 **5.bis(b) — Whack-a-mole detector.** Scan the task's `events.jsonl`
 for `epm:new-bug-class v1` markers posted in the trailing 5
@@ -1471,8 +1651,10 @@ Two triggers:
   recent non-excluded rounds AND at least 1
   `epm:compute-deviation v1` event in the trailing 5 rounds (N-4..N).
 
-On fire: surface `gates.conditional.whack_a_mole_pivot` (id=11) with
-2 options:
+On fire, branch on session mode.
+
+**Interactive mode** (`EPM_AUTONOMOUS_SESSION` unset/falsy): surface
+`gates.conditional.whack_a_mole_pivot` (id=11) with 2 options:
 - `continue-as-planned` (one-line rationale + cost estimate of the
   next pod-provision + experimenter dispatch).
 - `pivot-to-<X>` (one-line rationale + cost estimate of the canonical
@@ -1483,6 +1665,18 @@ On `continue-as-planned`, advance to Step 6 normally; round counter
 does NOT reset. On `pivot-to-<X>`, route back to `status:planning`
 for re-planning; round counter does NOT increment (this is a
 strategy pivot, not a fresh review round).
+
+**Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): NEVER raise the ask
+AND never print the two options as a text menu. Auto-resolve per §
+Autonomous session behavior → `whack_a_mole_pivot`: pick `pivot-to-<X>`
+if the implementer's report named a canonical alternative AND the next
+round on the current path would burn >2× the cost of the pivot; else
+`continue-as-planned`. State `Decision: <choice> because <reason>` AND
+EXECUTE the resolved action in this same turn — on `pivot-to-<X>`:
+`task.py set-status <N> planning` + re-invoke `/adversarial-planner`
+with the pivot scope (round counter does NOT increment); on
+`continue-as-planned`: advance to Step 6 normally (round counter does
+NOT reset). Do NOT state the Decision and then end the turn.
 
 #### #397 replay fixture (canonical test case)
 
@@ -1896,14 +2090,22 @@ experiment` run, BEFORE starting the bg-Bash poll:
    a substring of `"/issue-tick 467"`, so substring matching would
    mis-dedupe sibling issues.
 2. Otherwise call
-   `CronCreate(cron="*/10 * * * *", prompt="/issue-tick <N>", recurring=True, durable=False)`
-   — a 10-minute, session-scoped, in-memory recurring fire of the
+   `CronCreate(cron="*/20 * * * *", prompt="/issue-tick <N>", recurring=True, durable=False)`
+   — a 20-minute, session-scoped, in-memory recurring fire of the
    lightweight `/issue-tick <N>` skill (dies with the session, auto-
    expires at 7 days like the default pod TTL; the harness jitters
    recurring fires so ticks don't all land on a fixed wall-clock mark).
-   The `/issue-tick` skill is ~few-hundred tokens, vs the 44K-token full
-   `/issue` skill — so 24 idle ticks across a 4-hour idle stretch cost
-   a few thousand tokens instead of ~1M. Then immediately re-`CronList`
+   The 20-minute interval is chosen deliberately: the Anthropic prompt
+   cache TTL is 5 minutes, so a 10-minute interval was the worst case —
+   always cold (every tick re-prices the ~200K+ prefix at 1.25×), double
+   the ticks for no caching benefit. 20 minutes accepts the cold-cache
+   cost (the lightweight prompt makes it cheap) AND halves the tick
+   count. Going sub-5-min would share the cache but cost MORE wall-clock
+   fires per stalled stretch, which is the opposite of what the backstop
+   is for. The `/issue-tick` skill is ~few-hundred tokens, vs the
+   44K-token full `/issue` skill — so 12 idle ticks across a 4-hour
+   idle stretch cost a few thousand tokens instead of ~1M. Then
+   immediately re-`CronList`
    and assert EXACTLY ONE job matches
    `prompt.strip() == "/issue-tick <N>"`. If the harness normalised the
    stored prompt such that the ARM-GUARD would later miss, this assert
@@ -2039,11 +2241,17 @@ Gate handlers (one per registered `<name>`):
   v1` marker carries a ranked candidate table (one row per Wikipedia-
   stub fact passing the log-prob band filter, with `id` + summary
   + log-prob). The orchestrator reads the just-posted marker via
-  `task.py latest-marker <N> --kind epm:fact-candidates`, then surfaces
+  `task.py latest-marker <N> --kind epm:fact-candidates`, then branches
+  on session mode.
+
+  **Interactive mode** (`EPM_AUTONOMOUS_SESSION` unset/falsy): surface
   the table via `AskUserQuestion` <!-- gate: gates.fact_candidates --> and
-  asks the user to pick one `id`.
+  ask the user to pick one `id`.
 
   <!-- gate: gates.fact_candidates -->
+  <!-- autonomous-mode: auto-resolve -->
+  ```python
+  # Interactive mode only — autonomous mode auto-picks the median-log-prob id.
   AskUserQuestion(questions=[{
       "question": "Phase 0 (fact-candidates) — pick the fact for the obscure-real regime.",
       "header": "Pick fact (id)",
@@ -2053,19 +2261,30 @@ Gate handlers (one per registered `<name>`):
           ...,
       ],
   }])
+  ```
 
-  On user reply, post `epm:fact-pick v1` with the chosen id in the note
-  body (`id: <N>`):
+  **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): NEVER raise the ask
+  AND never print the candidate options as a text menu. Auto-resolve per
+  § Autonomous session behavior → `fact_candidates`: pick the candidate
+  `id` with the median per-token log-prob (the middle of the band the
+  plan filtered by). State `Decision: id=<X> (median log-prob in band)`
+  AND EXECUTE the resume in this same turn (post `epm:fact-pick v1` with
+  `id: <X>` and resume the polling loop); do NOT state the Decision and
+  then end the turn.
+
+  On user reply (interactive) or auto-pick (autonomous), post
+  `epm:fact-pick v1` with the chosen id in the note body (`id: <N>`):
   ```bash
   uv run python scripts/task.py post-marker <N> epm:fact-pick \
       --note "id: <chosen_id>"
   ```
 
-  The user then re-invokes `/issue <N>` to resume; the driver's
-  `--phase fact-pick` step reads the latest `epm:fact-pick` marker,
-  materialises `fact_pick.json` on disk, and the next pipeline phase
-  proceeds. (See plan §4.2 of any fact-teaching task for the on-pod
-  resume contract.)
+  In interactive mode the user then re-invokes `/issue <N>` to resume;
+  the driver's `--phase fact-pick` step reads the latest `epm:fact-pick`
+  marker, materialises `fact_pick.json` on disk, and the next pipeline
+  phase proceeds. In autonomous mode the orchestrator resumes the
+  polling loop directly without a re-invocation. (See plan §4.2 of any
+  fact-teaching task for the on-pod resume contract.)
 
 - **Unrecognised `gate` name**: log a one-line WARN, post `epm:failure
   v1` with `failure_class: code` and `reason: unrecognised_gate_name`
@@ -2079,7 +2298,7 @@ Gate handlers (one per registered `<name>`):
 Run CRON-TEARDOWN before parking (`CronList` → `CronDelete` the job with
 `prompt.strip() == "/issue-tick <N>"`) — the pipeline has EXITed and no pod is
 burning GPU, so the backstop should not keep re-firing `/issue-tick <N>` (which
-would re-surface the gate question every 10 min). The user's
+would re-surface the gate question every 20 min). The user's
 re-invocation after posting the resume marker re-enters Step 6d.2 and
 re-arms via the ARM-GUARD. After posting the resume marker, EXIT the
 skill cleanly with `epm:step-completed` (`exit_kind: parked`); the user's
@@ -2104,7 +2323,7 @@ recovery table below must agree).** The live mechanisms during a
 1. The orchestrator's bg-Bash poll chain (Step 6d.2) — primary, drains
    sentinels and posts `epm:progress` / advances on done / blocks on
    stalled-or-dead.
-2. The auto-armed backstop cron (`CronCreate(cron="*/10 * * * *",
+2. The auto-armed backstop cron (`CronCreate(cron="*/20 * * * *",
    prompt="/issue-tick <N>")`, registered by the orchestrator at Step 6d.2,
    torn down at every terminal/park transition — NOT at `done`; see
    Step 6d.2 CRON-TEARDOWN) running in the per-issue
@@ -2399,11 +2618,11 @@ re-invocation).**
 The 15-min default comfortably exceeds a single Claude analyzer / critic /
 verifier turn; the 30-min Codex round-1 window covers a high-effort
 Codex twin's wall time without re-dispatching live work and risking a
-double-writer on `body.md`. Both stay well under the 10-min backstop
+double-writer on `body.md`. Both fit cleanly under the 20-min backstop
 cadence × 2-miss safety margin, so a genuinely stalled stage is still
-re-dispatched within ~2 ticks. This guard is the bound referenced by the
-Step 6d.2 "surviving the backstop into verifying/interpreting/reviewing
-is DESIGNED behavior" paragraph.
+re-dispatched within ~2 ticks (≈40 min worst case). This guard is the
+bound referenced by the Step 6d.2 "surviving the backstop into
+verifying/interpreting/reviewing is DESIGNED behavior" paragraph.
 
 **Limitation (be explicit about it).** A MISSED `stage-dispatch`
 breadcrumb (the orchestrator spawns a stage subagent but forgets / fails
@@ -2986,11 +3205,15 @@ completion waits on it.
      uv run python scripts/task.py post-marker <N> epm:living-docs-update-rejected \
        --note "User declined the living-docs proposal. Reason: <one line>. Proposal preserved inline."
      ```
-6. **Autonomous mode** (no user present): do NOT auto-apply. The
-   `epm:living-docs-proposed v1` marker is already posted; the proposal
-   parks for the user to confirm on a later `/issue <N>` re-invocation or
-   for the `/weekly` backstop re-synthesis to reconcile. Continue to
-   Step 10d.
+6. **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): do NOT raise the
+   `AskUserQuestion`, do NOT print the proposed diff as a confirm/reject
+   text menu to chat, and do NOT auto-apply. Per § Autonomous session
+   behavior → `living_docs_update`, living-docs mutations are user-only
+   by spec. The `epm:living-docs-proposed v1` marker is already posted;
+   the proposal parks for the user to confirm on a later `/issue <N>`
+   re-invocation or for the `/weekly` backstop re-synthesis to
+   reconcile. EXECUTE the continuation to Step 10d in this same turn;
+   do NOT end the turn waiting on user confirmation.
 
 This hook is idempotent: skip if `epm:living-docs-updated v1` or
 `epm:living-docs-update-rejected v1` already exists on the task.

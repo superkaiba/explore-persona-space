@@ -2,7 +2,7 @@
 name: issue-tick
 description: >
   Lightweight recurring driver for autonomous /issue <N> sessions.
-  Triggered by the `*/10 * * * *` backstop cron (`prompt="/issue-tick <N>"`)
+  Triggered by the `*/20 * * * *` backstop cron (`prompt="/issue-tick <N>"`)
   armed by Step 6d.2 of the full `/issue` skill. Reads the latest marker +
   status via `scripts/task.py`, refreshes the canonical phone title via
   `scripts/session_progress_report.py`, fires `PushNotification` at
@@ -17,9 +17,13 @@ user_invocable: false
 # /issue-tick — recurring lightweight driver
 
 This is the recurring driver for autonomous `/issue` sessions. It is
-spawned every 10 minutes by the in-session cron registered at Step 6d.2
-of the full `/issue` skill (`CronCreate(*/10 * * * *, prompt="/issue-tick
-<N>", recurring=True, durable=False)`).
+spawned every 20 minutes by the in-session cron registered at Step 6d.2
+of the full `/issue` skill (`CronCreate(*/20 * * * *, prompt="/issue-tick
+<N>", recurring=True, durable=False)`). The 20-minute interval is chosen
+deliberately: the Anthropic prompt cache TTL is 5 minutes, so a 10-min
+interval was the worst case (always cold, double the ticks for no
+caching benefit); 20 min halves the tick count without sacrificing
+backstop responsiveness.
 
 ## Contract
 

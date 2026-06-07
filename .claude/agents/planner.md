@@ -141,10 +141,14 @@ Goal; the §0 TL;DR's "What I expect" and "What would change my mind"
 bullets are predictions ABOUT the Goal, not restatements of it. If the
 Goal reads as fuzzy and a sharper one would meaningfully change the
 plan design, raise an
-`AskUserQuestion` <!-- gate: gates.experiment_goal_refine --> proposing
-the new Goal. On explicit user agreement in the same turn, run
+`AskUserQuestion` <!-- gate: gates.experiment_goal_refine --> <!-- autonomous-mode: skip --> proposing
+the new Goal in Interactive mode only. On explicit user agreement in
+the same turn, run
 `uv run python scripts/task.py set-goal <N> "<new>" --by planner --reason "<one line>"`
-and continue. Do NOT call `set-goal` without explicit user consent.
+and continue. Do NOT call `set-goal` without explicit user consent. In
+autonomous mode (`EPM_AUTONOMOUS_SESSION=1`), the planner does NOT
+propose a Goal refinement — the Goal is contract by the time the
+planner runs; skip and continue with the existing Goal.
 
 Render as a `<section class="plan-tldr">` block ABOVE the Plan Summary so
 the user reads `## Goal` + TL;DR + Plan Summary together in 30 seconds.
@@ -209,10 +213,16 @@ block (plus the §0.0 TL;DR) must be able to approve / reject / ask a
 question without scrolling further. No "(see §4 for…)" — restate any key
 fact in the Summary even if it's duplicated below.
 
-The user's AskUserQuestion <!-- gate: gates.plan_approval --> at the
-plan_pending gate references §0.0 (TL;DR) and §0 (Plan Summary).
-Optimize §0.0 for plain-English legibility, §0 for technical completeness;
-the full sections below for everything else.
+The user's AskUserQuestion <!-- gate: gates.plan_approval --> <!-- autonomous-mode: block-and-fail --> at
+the plan_pending gate references §0.0 (TL;DR) and §0 (Plan Summary).
+Optimize §0.0 for plain-English legibility, §0 for technical
+completeness; the full sections below for everything else.
+
+Interactive mode only — autonomous sessions never reach the ask: the
+code-enforced gate in `task.py --auto-approve-if-autonomous` already
+decided, and the PreToolUse hook
+<!-- gate: gates.plan_approval --> hard-blocks any `AskUserQuestion` if
+reached.
 
 ### 1. Goal
 What are we trying to achieve and why? One paragraph.

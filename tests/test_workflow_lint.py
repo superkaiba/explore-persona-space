@@ -34,6 +34,7 @@ if str(_SCRIPTS) not in sys.path:
 
 from workflow_lint import (  # noqa: E402
     check_asks,
+    check_autonomous_asks,
     check_script_references,
     check_wandb_required,
 )
@@ -90,6 +91,19 @@ def test_workflow_lint_check_asks_repo_passes():
     result = _run("--check-asks")
     assert result.returncode == 0, (
         f"workflow_lint --check-asks failed at repo scope:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_workflow_lint_check_autonomous_asks_repo_passes():
+    """Repo-level check: every committed AskUserQuestion mention in
+    .claude/skills/issue/SKILL.md + .claude/agents/*.md must document
+    its autonomous-mode behavior. If this fails, the #503/#504/#505
+    closure has regressed (someone added an AskUserQuestion without an
+    autonomous-mode auto-resolve / skip / block-and-fail annotation)."""
+    result = _run("--check-autonomous-asks")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-autonomous-asks failed at repo scope:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
 
@@ -247,6 +261,126 @@ def test_check_asks_pass_bare_citation_without_parens(tmp_path):
     )
     errors = check_asks(_workflow(), roots=[tmp_path])
     assert errors == [], f"expected PASS, got: {errors}"
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for the ``check_autonomous_asks`` function (proposal #4,
+# 2026-06-06). Each case writes a tiny markdown file under ``tmp_path``,
+# calls ``check_autonomous_asks(roots=[tmp_path])``, and inspects the
+# error list.
+# ---------------------------------------------------------------------------
+
+
+def test_check_autonomous_asks_pass_interactive_mode_keyword(tmp_path):
+    """The literal phrase 'Interactive mode' anywhere in the section block
+    satisfies the rule."""
+    (tmp_path / "SKILL.md").write_text(
+        "**Interactive mode** (user is in chat): raise `AskUserQuestion`\nand wait for reply.\n"
+    )
+    errors = check_autonomous_asks(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_autonomous_asks_pass_env_keyword(tmp_path):
+    """The literal 'EPM_AUTONOMOUS_SESSION' anywhere in the section block
+    satisfies the rule."""
+    (tmp_path / "SKILL.md").write_text(
+        "With `EPM_AUTONOMOUS_SESSION=1`, auto-resolve; else raise\n"
+        "`AskUserQuestion` for the user.\n"
+    )
+    errors = check_autonomous_asks(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_autonomous_asks_pass_annotation_auto_resolve(tmp_path):
+    """The `<!-- autonomous-mode: auto-resolve -->` annotation in the
+    same section block satisfies the rule."""
+    (tmp_path / "SKILL.md").write_text(
+        "Raise `AskUserQuestion` <!-- autonomous-mode: auto-resolve -->\nto pick the option.\n"
+    )
+    errors = check_autonomous_asks(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_autonomous_asks_pass_annotation_skip(tmp_path):
+    """The `<!-- autonomous-mode: skip -->` annotation also satisfies."""
+    (tmp_path / "SKILL.md").write_text("Raise `AskUserQuestion` <!-- autonomous-mode: skip -->\n")
+    errors = check_autonomous_asks(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_autonomous_asks_pass_annotation_block_and_fail(tmp_path):
+    """The `<!-- autonomous-mode: block-and-fail -->` annotation also satisfies."""
+    (tmp_path / "SKILL.md").write_text(
+        "Raise `AskUserQuestion` <!-- autonomous-mode: block-and-fail -->\n"
+    )
+    errors = check_autonomous_asks(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_autonomous_asks_pass_annotation_gate_allowed(tmp_path):
+    """The `<!-- autonomous-mode: gate-allowed -->` annotation also satisfies."""
+    (tmp_path / "SKILL.md").write_text(
+        "Raise `AskUserQuestion` <!-- autonomous-mode: gate-allowed -->\n"
+    )
+    errors = check_autonomous_asks(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_autonomous_asks_fail_unannotated(tmp_path):
+    """A bare `AskUserQuestion` mention with no autonomous-mode keyword
+    or annotation in the section FAILs the check."""
+    (tmp_path / "SKILL.md").write_text("Raise `AskUserQuestion` to pick the option.\n")
+    errors = check_autonomous_asks(roots=[tmp_path])
+    assert len(errors) == 1, f"expected 1 error, got: {errors}"
+    assert "missing autonomous-mode documentation" in errors[0]
+
+
+def test_check_autonomous_asks_fail_invalid_annotation_value(tmp_path):
+    """The annotation must be one of the four valid values; a typo'd
+    action (e.g. `auto-pick` instead of `auto-resolve`) FAILs."""
+    (tmp_path / "SKILL.md").write_text(
+        "Raise `AskUserQuestion` <!-- autonomous-mode: auto-pick -->\n"
+    )
+    errors = check_autonomous_asks(roots=[tmp_path])
+    assert len(errors) == 1, f"expected 1 error, got: {errors}"
+
+
+def test_check_autonomous_asks_pass_anti_pattern_exempt(tmp_path):
+    """`<!-- example: anti-pattern -->` paragraphs are documentation,
+    not real call sites — same exemption as ``check_asks``."""
+    (tmp_path / "SKILL.md").write_text(
+        "Do not raise `AskUserQuestion` <!-- example: anti-pattern -->\nfor design forks.\n"
+    )
+    errors = check_autonomous_asks(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_autonomous_asks_pass_keyword_above_via_wider_bounds(tmp_path):
+    """The wider section bounds walk back to the nearest blank line
+    above (uncapped), so a parent paragraph saying 'Interactive mode'
+    satisfies a sub-bullet's `AskUserQuestion` mention."""
+    (tmp_path / "SKILL.md").write_text(
+        "**Interactive mode** (user is in chat). The orchestrator\n"
+        "branches on session mode.\n"
+        "- Sub-bullet 1: do thing A.\n"
+        "- Sub-bullet 2: raise `AskUserQuestion` to confirm.\n"
+        "- Sub-bullet 3: post the marker.\n"
+    )
+    errors = check_autonomous_asks(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_autonomous_asks_stops_at_header_boundary(tmp_path):
+    """The forward walk stops at the next markdown header so we don't
+    leak into the next section's content."""
+    (tmp_path / "SKILL.md").write_text(
+        "Raise `AskUserQuestion` to confirm.\n"
+        "### Next section heading\n"
+        "Interactive mode handling here doesn't help the section above.\n"
+    )
+    errors = check_autonomous_asks(roots=[tmp_path])
+    assert len(errors) == 1, f"expected 1 error, got: {errors}"
 
 
 # ---------------------------------------------------------------------------
