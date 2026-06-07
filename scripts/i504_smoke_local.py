@@ -373,14 +373,18 @@ def main() -> int:
         len(report.get("held_out_panel", [])),
     )
 
-    # ── (1.5) Phase 0.7 r-train fill (CPU no-op path) ──────────────────────
-    # The synthetic R_train covers every persona the synthetic Phase 0.5 picks,
-    # so the fill script's no-op branch is exercised here — verifies the diff
-    # logic + the byte-identical copy + the sentinel write. The vLLM-generate
+    # ── (1.5) Phase 0.7 r-fill, TRAIN + EVAL (CPU no-op path) ──────────────
+    # Round 11: Phase 0.7 now fills BOTH R_train AND R_eval symmetrically. The
+    # synthetic R_train + R_eval cover every persona the synthetic Phase 0.5
+    # picks (train side) AND every panel persona (eval side), so the fill
+    # script's no-op branch is exercised on BOTH sides — verifies the diff
+    # logic + byte-identical copies + the sentinel write. The vLLM-generate
     # path (missing personas → on-policy decode) is NOT smokeable on CPU; it
     # gets exercised by the GPU pod the moment Phase 0.5 picks a new persona
-    # that #472's R_train doesn't cover (which is the round-8 launch case).
+    # that #472's R_{train,eval} doesn't cover.
     r_train_v504_path = r_train_path.with_name("R_train_v504.json")
+    r_eval_path = r_train_path.with_name("R_eval.json")  # written by make_synthetic_r_train
+    r_eval_v504_path = r_train_path.with_name("R_eval_v504.json")
     sentinel_phase07 = work_dir / "phase07-sentinel.json"
     cmd = [
         "uv",
@@ -389,10 +393,16 @@ def main() -> int:
         str(repo_root / "scripts" / "i504_phase_r_generate_fill.py"),
         "--phase05-path",
         str(phase05_out),
+        "--split",
+        "both",
         "--input-r-train-path",
         str(r_train_path),
         "--output-r-train-path",
         str(r_train_v504_path),
+        "--input-r-eval-path",
+        str(r_eval_path),
+        "--output-r-eval-path",
+        str(r_eval_v504_path),
         "--bank-path",
         str(centroids_dir / "persona_bank.json"),
         "--no-upload",
@@ -401,24 +411,33 @@ def main() -> int:
     ]
     log.info("[phase07] %s", " ".join(cmd))
     rc = subprocess.call(cmd)
-    if rc != 0 or not r_train_v504_path.exists() or not sentinel_phase07.exists():
+    if (
+        rc != 0
+        or not r_train_v504_path.exists()
+        or not r_eval_v504_path.exists()
+        or not sentinel_phase07.exists()
+    ):
         log.error(
-            "[phase07] FAIL rc=%s v504_exists=%s sentinel_exists=%s",
+            "[phase07] FAIL rc=%s train_v504_exists=%s eval_v504_exists=%s sentinel_exists=%s",
             rc,
             r_train_v504_path.exists(),
+            r_eval_v504_path.exists(),
             sentinel_phase07.exists(),
         )
         return 2
     sentinel = json.loads(sentinel_phase07.read_text())
     note = json.loads(sentinel.get("note", "{}"))
     log.info(
-        "[phase07] PASS rc=0 status=%s n_missing_filled=%d v504_path=%s",
+        "[phase07] PASS rc=0 status=%s n_train_filled=%d n_eval_filled=%d "
+        "train_v504_path=%s eval_v504_path=%s",
         note.get("status"),
-        len(note.get("missing_filled", []) or note.get("missing", [])),
+        len(note.get("train_missing_filled", []) or note.get("train_missing", [])),
+        len(note.get("eval_missing_filled", []) or note.get("eval_missing", [])),
         r_train_v504_path,
+        r_eval_v504_path,
     )
     assert note.get("status") == "ok_noop", (
-        "smoke synthetic R_train covers Phase 0.5 picks; "
+        "smoke synthetic R_train + R_eval cover Phase 0.5 picks + panel; "
         f"expected ok_noop, got {note.get('status')}"
     )
 
