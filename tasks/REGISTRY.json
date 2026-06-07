@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 511,
+  "highest_id": 512,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2931,6 +2931,13 @@
       "path": "tasks/proposed/511",
       "status": "proposed",
       "title": "Do #502's persona-distance leakage predictors improve with probe count, or plateau by N=500?"
+    },
+    "512": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/512",
+      "status": "proposed",
+      "title": "Develop the framing for predicting generalization from activation vectors (Dan)"
     },
     "53": {
       "has_clean_result": false,
