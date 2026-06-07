@@ -2868,8 +2868,8 @@
       "goal": "Determine the geometric shape of a single contrastive negative's leakage-suppression in persona space: does a negative protect a local neighborhood around itself (bubble) or the entire region behind it relative to the source (barrier/shadow)? Secondary: do near-twin negatives produce a more localized implant than distant ones, holding all else fixed.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/504",
-      "status": "running",
+      "path": "tasks/blocked/504",
+      "status": "blocked",
       "title": "Bubble vs barrier: does a contrastive negative protect a local neighborhood around itself or the whole region behind it in persona space?"
     },
     "505": {
