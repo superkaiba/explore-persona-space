@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 509,
+  "highest_id": 510,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2917,6 +2917,13 @@
       "path": "tasks/completed/51",
       "status": "completed",
       "title": "Add periodic eval callbacks during finetuning (persona leakage + EM alignment)"
+    },
+    "510": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/510",
+      "status": "proposed",
+      "title": "Test rank-1 activation-space update as a predictor of cross-context generalization (Dan framing)"
     },
     "53": {
       "has_clean_result": false,
