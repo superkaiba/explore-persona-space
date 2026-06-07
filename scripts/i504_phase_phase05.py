@@ -1,4 +1,4 @@
-# ruff: noqa: RUF003  # em-dash + Qwen marker " ※" + × + − intentional
+# ruff: noqa: RUF001, RUF002, RUF003  # em-dash + Qwen marker " ※" + × + − + ρ intentional
 #!/usr/bin/env python3
 """Task #504 Phase 0.5 — identification-gate subprocess entrypoint (plan §4.2).
 
@@ -100,22 +100,43 @@ def _load_centroids_layer(centroids_dir: Path, layer: int) -> dict[str, np.ndarr
     return out
 
 
-def _cos_to_source(centroids: dict[str, np.ndarray], source: str) -> dict[str, float]:
-    """Bank-wide {persona: cos(persona, source)} from raw centroids (no I/O)."""
+def _cos_to_source(
+    centroids: dict[str, np.ndarray],
+    source: str,
+    *,
+    mean_center: bool = True,
+) -> dict[str, float]:
+    """Bank-wide {persona: cos(persona, source)} from centroids.
+
+    Default (``mean_center=True``, #504 round-6) follows the #66/#341 methodology
+    that recovered the ρ=0.67-0.87 cos-vs-leakage signal: subtract the global
+    per-component mean over the FULL bank (every persona in ``centroids``,
+    including the source), then L2-normalize, then dot. Without mean-centering
+    the cos-to-villain range on Qwen-2.5-7B-Instruct collapses to ≈[0.92, 0.99]
+    (round 1-5 #504 spread) because the raw last-token activations share a large
+    shared component — mean-centering removes it.
+
+    Pass ``mean_center=False`` to recover the round 1-5 raw-cosine behavior.
+    """
     if source not in centroids:
         raise KeyError(f"source {source!r} missing from centroids — bank/centroids drift?")
-    src = centroids[source].astype(np.float64)
-    src_norm = float(np.linalg.norm(src))
+    names = list(centroids.keys())
+    mat = np.stack([centroids[n].astype(np.float64) for n in names], axis=0)
+    if mean_center:
+        mat = mat - mat.mean(axis=0, keepdims=True)
+    norms = np.linalg.norm(mat, axis=1)
+    src_idx = names.index(source)
+    src = mat[src_idx]
+    src_norm = float(norms[src_idx])
     if src_norm == 0.0:
-        raise RuntimeError(f"source {source!r} centroid has zero norm.")
+        raise RuntimeError(f"source {source!r} centroid has zero norm after centering.")
     out: dict[str, float] = {}
-    for name, v in centroids.items():
-        vd = v.astype(np.float64)
-        nv = float(np.linalg.norm(vd))
+    for i, name in enumerate(names):
+        nv = float(norms[i])
         if nv == 0.0:
             out[name] = 0.0
             continue
-        out[name] = float(np.dot(vd, src) / (nv * src_norm))
+        out[name] = float(np.dot(mat[i], src) / (nv * src_norm))
     return out
 
 
@@ -146,7 +167,17 @@ def main(argv: list[str] | None = None) -> int:
         help="Comma-separated fallback layers (plan §4.2 failure tree).",
     )
     ap.add_argument("--sentinel-path", type=Path, default=None)
+    ap.add_argument(
+        "--no-mean-center",
+        action="store_true",
+        help=(
+            "Disable bank-wide mean-centering before cosine (round 1-5 behavior). "
+            "Default is mean-center ON (#504 round-6, restoring the #66/#341 "
+            "methodology that produced ρ=0.67-0.87 cos-vs-leakage)."
+        ),
+    )
     args = ap.parse_args(argv)
+    mean_center = not args.no_mean_center
 
     logging.basicConfig(
         level=os.environ.get("EPS_LOG_LEVEL", "INFO"),
@@ -169,13 +200,37 @@ def main(argv: list[str] | None = None) -> int:
     fallback_layers = tuple(int(x) for x in args.fallback_layers.split(",") if x.strip())
 
     # Load centroids per layer.
+    log.info(
+        "[centering] mean_center=%s (round-6 default %s)",
+        mean_center,
+        "ON — #66/#341 methodology" if mean_center else "OFF — round 1-5 raw cosine",
+    )
     centroids_by_layer: dict[int, dict[str, np.ndarray]] = {}
     cos_to_source_by_layer: dict[int, dict[str, float]] = {}
     for lay in (args.headline_layer, *fallback_layers):
         centroids = _load_centroids_layer(args.centroids_dir, lay)
         log.info("[load] layer=%d, %d personas", lay, len(centroids))
         centroids_by_layer[lay] = centroids
-        cos_to_source_by_layer[lay] = _cos_to_source(centroids, SOURCE_PERSONA)
+        cos = _cos_to_source(centroids, SOURCE_PERSONA, mean_center=mean_center)
+        cos_to_source_by_layer[lay] = cos
+        # Diagnostic: log the cos-to-source spread per layer so a saturated /
+        # narrow range is immediately visible in the log.
+        vals = [v for k, v in cos.items() if k != SOURCE_PERSONA]
+        if vals:
+            arr = np.asarray(vals, dtype=np.float64)
+            log.info(
+                "[spread] layer=%d cos_to_%s: min=%.4f median=%.4f max=%.4f span=%.4f "
+                "n_below_0.7=%d n_below_0.5=%d n_below_0.3=%d",
+                lay,
+                SOURCE_PERSONA,
+                float(arr.min()),
+                float(np.median(arr)),
+                float(arr.max()),
+                float(arr.max() - arr.min()),
+                int((arr < 0.7).sum()),
+                int((arr < 0.5).sum()),
+                int((arr < 0.3).sum()),
+            )
 
     # Load villain R for max-length check.
     r_train = load_r_artifact(args.r_train_path)

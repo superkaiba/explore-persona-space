@@ -5,18 +5,31 @@ Plan §4.3. Distances are a BASE-model geometric property ("where do negatives
 sit in base persona space," not "where does training move them"), so centroids
 are computed ONCE on the base model over the full ~60-persona bank and reused for
 every cell. Uses ``analysis/representation_shift.extract_centroids`` (last-token
-hidden state, mean over EVAL_QUESTIONS) + ``compute_cosine_matrix(centering=
-"none")`` (NOT the static ASSISTANT_COSINES dict).
+hidden state, mean over EVAL_QUESTIONS).
+
+**Cosine methodology — global mean-centering (#504 round-6, restored from
+#66/#341).** The bundle stores TWO cosine matrices: ``cos_matrix`` is the raw
+(no-centering) matrix kept for backward compatibility with the round 1-5 reads
+of #472/#504, and ``cos_matrix_mean_centered`` is the global-mean-centered
+matrix recovered from #66's `analyze_100_persona_cosine.py:292-295` pipeline
+(centroids minus the per-component mean across the bank, then L2-normalize,
+then cosine). Without mean-centering, the cos-to-villain range across a 60-bank
+collapses to [~0.92, ~0.99] and the calibration target bands fall on the wrong
+side of the saturated geometry — the methodology delta documented in #66's
+ρ=0.67–0.87 result. Consumers SHOULD prefer the mean-centered matrix; the raw
+matrix is kept solely for resume-from-disk compatibility.
 
 Layers: 10 (headline) + 15 + 20 (robustness; L20 is Persona-Vectors' actual evil
-layer, 1-indexed). Distance = 1 − cosine.
+layer, 1-indexed). Distance = 1 − cosine (using the mean-centered cosine).
 
-Output: ``data/issue_472/centroids_L{10,15,20}.pt`` (one bundle per layer) plus a
-derived ``cos_matrix`` per layer keyed by persona name. The derived per-probe
-covariates (d_source, d_nearest_neg, d_nearest_neg_nd) are computed in
-``select_negatives`` / ``analyze`` from these matrices.
+Output: ``data/issue_472/centroids_L{10,15,20}.pt`` (one bundle per layer) with
+``centroids`` (n × d), ``persona_names``, ``cos_matrix`` (raw, legacy alias),
+``cos_matrix_mean_centered`` (new — global mean-centered), ``layer``,
+``base_model``, ``questions``.
 
-GPU only (one base-model forward pass per persona × 20 questions).
+GPU only (one base-model forward pass per persona × 20 questions). A CPU-only
+"recompute" path that loads an existing bundle and adds the mean-centered
+matrix in place lives in ``scripts/i504_round6_recompute_mean_centered.py``.
 """
 
 from __future__ import annotations
@@ -92,34 +105,56 @@ def build_centroids(
     written: dict[int, Path] = {}
     for layer in layers:
         c = centroids[layer]  # (n, d) float32 on CPU
-        cos = compute_cosine_matrix(c, centering="none")  # (n, n)
+        cos_raw = compute_cosine_matrix(c, centering="none")  # (n, n), legacy
+        cos_mc = compute_cosine_matrix(c, centering="global_mean")  # (n, n), #66 methodology
         path = _centroids_path(layer, out_dir)
         torch.save(
             {
                 "centroids": c,
                 "persona_names": persona_names,
-                "cos_matrix": cos,
+                "cos_matrix": cos_raw,  # legacy / backward-compat
+                "cos_matrix_mean_centered": cos_mc,
                 "layer": layer,
                 "base_model": base_model,
                 "questions": questions,
             },
             path,
         )
-        log.info("Wrote centroids+cos L%d (%d personas) → %s", layer, len(persona_names), path)
+        log.info(
+            "Wrote centroids+cos L%d (%d personas, both raw + mean-centered) → %s",
+            layer,
+            len(persona_names),
+            path,
+        )
         written[layer] = path
     return written
 
 
 def load_cos_matrix(
-    layer: int, out_dir: Path = OUT_DIR
+    layer: int,
+    out_dir: Path = OUT_DIR,
+    *,
+    centering: str = "global_mean",
 ) -> tuple[dict[str, dict[str, float]], list[str]]:
     """Load the persona×persona cosine matrix for ``layer`` as a name-keyed dict.
 
-    Returns ``(cos[a][b], persona_names)`` where ``cos[a][b]`` is the
-    centering="none" cosine between persona a and b centroids.
+    Returns ``(cos[a][b], persona_names)``.
 
-    Raises FileNotFoundError if the bundle is absent.
+    Args:
+        layer: centroid layer (e.g. 10, 15, 20).
+        out_dir: directory holding ``centroids_L{layer}.pt``.
+        centering: ``"global_mean"`` (default — #66/#341 methodology, restored in
+            #504 round-6) reads ``cos_matrix_mean_centered``; ``"none"`` reads
+            the legacy raw ``cos_matrix`` for backward compatibility with
+            round 1-5 #472/#504 artifacts.
+
+    Raises:
+        FileNotFoundError: bundle missing.
+        KeyError: bundle predates round-6 and the requested ``centering`` key is
+            absent (caller can fall back to the other key or re-extract).
     """
+    if centering not in ("global_mean", "none"):
+        raise ValueError(f"unsupported centering={centering!r}; use 'global_mean' or 'none'.")
     path = _centroids_path(layer, out_dir)
     if not path.exists():
         raise FileNotFoundError(
@@ -128,7 +163,15 @@ def load_cos_matrix(
         )
     bundle = torch.load(path, weights_only=False)
     names: list[str] = list(bundle["persona_names"])
-    cos_t: torch.Tensor = bundle["cos_matrix"]
+    key = "cos_matrix_mean_centered" if centering == "global_mean" else "cos_matrix"
+    if key not in bundle:
+        # Pre-round-6 bundle missing the new key; fail loud so caller can re-extract or
+        # call the round-6 recompute helper.
+        raise KeyError(
+            f"Centroid bundle at {path} has no {key!r} field (pre-round-6 schema). "
+            f"Run scripts/i504_round6_recompute_mean_centered.py to add it in place."
+        )
+    cos_t: torch.Tensor = bundle[key]
     cos: dict[str, dict[str, float]] = {}
     for i, a in enumerate(names):
         cos[a] = {b: float(cos_t[i, j].item()) for j, b in enumerate(names)}
@@ -139,13 +182,17 @@ def cos_to_source(
     layer: int,
     source: str,
     out_dir: Path = OUT_DIR,
+    *,
+    centering: str = "global_mean",
 ) -> dict[str, float]:
     """Return {persona: cos(persona, source)} for every persona in the bank.
 
     High cosine = near the source. ``select_negatives`` sorts on this to pick
-    near/far/spread negatives.
+    near/far/spread negatives. Defaults to global-mean-centered cosine
+    (#66/#341 methodology, restored in #504 round-6); pass ``centering="none"``
+    for the round 1-5 raw-cosine behavior.
     """
-    cos, names = load_cos_matrix(layer, out_dir)
+    cos, names = load_cos_matrix(layer, out_dir, centering=centering)
     if source not in cos:
         raise KeyError(
             f"Source {source!r} not in centroid bundle (layer {layer}). "

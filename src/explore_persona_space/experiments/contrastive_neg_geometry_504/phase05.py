@@ -85,13 +85,26 @@ log = logging.getLogger("issue_504.phase05")
 
 def _cos_matrix_from_centroids(
     centroids: dict[str, np.ndarray],
+    *,
+    mean_center: bool = True,
 ) -> dict[str, dict[str, float]]:
     """Compute the bank-wide pairwise cosine matrix from centroids.
 
-    Returns {a: {b: cos(a, b)}}. Symmetric, but stored doubled for O(1) lookup.
+    Returns ``{a: {b: cos(a, b)}}``. Symmetric, but stored doubled for O(1) lookup.
+
+    Default (``mean_center=True``, #504 round-6) follows the #66/#341 methodology:
+    subtract the global per-component mean across the FULL bank (every persona in
+    ``centroids``), then L2-normalize, then dot. Without this step the bank-wide
+    pairwise cosines saturate to a narrow band on Qwen-2.5-7B-Instruct
+    (round 1-5 #504 spread ≈0.21 at L20 vs >1.2 with mean-centering) — see
+    ``scripts/i504_round6_recompute_mean_centered.py`` for the spread comparison.
+
+    Pass ``mean_center=False`` to recover round 1-5 raw-cosine behavior.
     """
     personas = sorted(centroids)
     vecs = np.stack([centroids[p] for p in personas]).astype(np.float64)
+    if mean_center:
+        vecs = vecs - vecs.mean(axis=0, keepdims=True)
     norms = np.linalg.norm(vecs, axis=1, keepdims=True)
     # Guard against zero-norm centroids (shouldn't happen but defensive).
     norms = np.where(norms == 0.0, 1.0, norms)

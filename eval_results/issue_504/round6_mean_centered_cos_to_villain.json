@@ -1,0 +1,111 @@
+{
+  "schema_version": "i504_round6_mean_centered_v1",
+  "generated_at": "2026-06-07T01:43:49.056467+00:00",
+  "older_pool": false,
+  "source": "villain",
+  "uploaded_to_hf": true,
+  "per_layer": [
+    {
+      "layer": 10,
+      "n_personas": 60,
+      "older_pool": false,
+      "local_path": "data/issue_472/centroids_L10.pt",
+      "raw": {
+        "min": 0.9078127145767212,
+        "median": 0.9838712811470032,
+        "max": 0.99259352684021,
+        "span": 0.08478081226348877,
+        "mean": 0.9791093913175292,
+        "std": 0.015658547669100676,
+        "n_below_0.9": 0,
+        "n_below_0.8": 0,
+        "n_below_0.7": 0,
+        "n_below_0.5": 0,
+        "n_below_0.3": 0,
+        "n_below_0.0": 0
+      },
+      "mean_centered": {
+        "min": -0.5332143306732178,
+        "median": -0.012083295732736588,
+        "max": 0.5921287536621094,
+        "span": 1.1253430843353271,
+        "mean": 0.001451548125784276,
+        "std": 0.28980574293028727,
+        "n_below_0.9": 59,
+        "n_below_0.8": 59,
+        "n_below_0.7": 59,
+        "n_below_0.5": 56,
+        "n_below_0.3": 48,
+        "n_below_0.0": 31
+      }
+    },
+    {
+      "layer": 15,
+      "n_personas": 60,
+      "older_pool": false,
+      "local_path": "data/issue_472/centroids_L15.pt",
+      "raw": {
+        "min": 0.8715444207191467,
+        "median": 0.9297300577163696,
+        "max": 0.9777365922927856,
+        "span": 0.10619217157363892,
+        "mean": 0.9304882863820609,
+        "std": 0.022094258177897338,
+        "n_below_0.9": 5,
+        "n_below_0.8": 0,
+        "n_below_0.7": 0,
+        "n_below_0.5": 0,
+        "n_below_0.3": 0,
+        "n_below_0.0": 0
+      },
+      "mean_centered": {
+        "min": -0.5902889370918274,
+        "median": -0.20843634009361267,
+        "max": 0.7339785695075989,
+        "span": 1.3242675065994263,
+        "mean": -0.10455113703037723,
+        "std": 0.37060787870197776,
+        "n_below_0.9": 59,
+        "n_below_0.8": 59,
+        "n_below_0.7": 57,
+        "n_below_0.5": 51,
+        "n_below_0.3": 51,
+        "n_below_0.0": 39
+      }
+    },
+    {
+      "layer": 20,
+      "n_personas": 60,
+      "older_pool": false,
+      "local_path": "data/issue_472/centroids_L20.pt",
+      "raw": {
+        "min": 0.7416117787361145,
+        "median": 0.850653886795044,
+        "max": 0.9481798410415649,
+        "span": 0.20656806230545044,
+        "mean": 0.8530908509836359,
+        "std": 0.042159192961601324,
+        "n_below_0.9": 51,
+        "n_below_0.8": 5,
+        "n_below_0.7": 0,
+        "n_below_0.5": 0,
+        "n_below_0.3": 0,
+        "n_below_0.0": 0
+      },
+      "mean_centered": {
+        "min": -0.545721173286438,
+        "median": -0.2670828104019165,
+        "max": 0.7307982444763184,
+        "span": 1.2765194177627563,
+        "mean": -0.12633460471248728,
+        "std": 0.38564203934964547,
+        "n_below_0.9": 59,
+        "n_below_0.8": 59,
+        "n_below_0.7": 56,
+        "n_below_0.5": 51,
+        "n_below_0.3": 50,
+        "n_below_0.0": 41
+      }
+    }
+  ]
+}
