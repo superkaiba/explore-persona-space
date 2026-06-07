@@ -123,6 +123,25 @@ class FullFTCheckpointAtFractionsCallback(TrainerCallback):
         return {fmt.format(k): v for k, v in sorted(self._saved.items())}
 
 
+def build_fullft_env(num_gpus: int, base_env: dict[str, str] | None = None) -> dict[str, str]:
+    """Construct the env dict for the ZeRO-3 accelerate-launch subprocess.
+
+    Forces ``CUDA_VISIBLE_DEVICES=0,1,...,N-1`` so a prior in-process LoRA cell
+    (which sets CVD=0 via ``train/sft.py:649``) does NOT leak its single-GPU
+    pin into the full-FT subprocess. Returns a NEW dict; never mutates the
+    caller's env.
+
+    Exposed for testing — the unit test asserts the returned env carries the
+    explicit multi-GPU CVD even when the caller's env was polluted by a prior
+    LoRA cell.
+    """
+    src = base_env if base_env is not None else os.environ
+    env = {**src}
+    env.pop("CUDA_VISIBLE_DEVICES", None)
+    env["CUDA_VISIBLE_DEVICES"] = ",".join(str(i) for i in range(num_gpus))
+    return env
+
+
 def train_one_cell_fullft(
     *,
     cell_slug: str,
@@ -218,7 +237,21 @@ def train_one_cell_fullft(
     # subprocess.run that ferries credentials (HF_TOKEN, WANDB_API_KEY).
     # load_dotenv() ran at the top of the dispatcher, so os.environ carries
     # the keys.
-    env = {**os.environ}
+    #
+    # CRITICAL: clear CUDA_VISIBLE_DEVICES before setting the ZeRO-3 spec.
+    # The dispatcher process may have run an in-process LoRA cell first
+    # (#472's train_one_cell → train/sft.py:649 sets
+    # os.environ["CUDA_VISIBLE_DEVICES"]=str(cfg.gpu_id) and the env mutation
+    # persists in the parent). Without this pop+set, accelerate launch would
+    # inherit the LoRA CVD=0 pin and ZeRO-3 across 4 GPUs would fail
+    # immediately (or silently degrade to single-GPU 7B FT → OOM).
+    env = build_fullft_env(num_gpus)
+    log.info(
+        "[%s] CUDA_VISIBLE_DEVICES forced to %s for ZeRO-3 (num_gpus=%d)",
+        cell_slug,
+        env["CUDA_VISIBLE_DEVICES"],
+        num_gpus,
+    )
     rc = subprocess.run(cmd, env=env, check=False)
 
     # Pick up the trainer-written manifest (rank-0 only) and surface it.

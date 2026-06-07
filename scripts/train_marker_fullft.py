@@ -323,29 +323,25 @@ def main() -> int:
     )
     callbacks.append(ckpt_cb)
 
-    # MarkerDynamicsCallback — required per .claude/rules/marker-leakage-measurement.md.
+    # ── MarkerDynamicsCallback DISABLED for full-FT (B4 round-1 review fix).
+    #
+    # The in-training callback would deadlock ZeRO-3: rank 0 alone calling
+    # model.generate() / model(ids) requires distributed collectives the other
+    # ranks (still in the training loop) cannot participate in, so collective
+    # ordering mismatches and the world hangs. The simpler design (option (a)
+    # per the review) is to extract dynamics OFFLINE from saved checkpoints at
+    # the same step cadence — analyze.py loads each saved checkpoint, runs the
+    # 20-probe eval, and produces the trajectory figure. The dispatcher passes
+    # ckpt_fractions matching the dynamics-callback cadence so the LoRA arm's
+    # in-training dynamics + the full-FT arm's offline-from-checkpoint dynamics
+    # land at comparable step positions.
     if args.dynamics_probes is not None:
-        from explore_persona_space.experiments.lora_vs_ft_508 import DYNAMICS_CADENCE_STEPS
-        from explore_persona_space.experiments.lora_vs_ft_508.marker_dynamics_callback import (
-            MarkerDynamicsCallback,
-            load_dynamics_probes,
-            make_cpu_base_logp_scorer,
-        )
-
-        probes = load_dynamics_probes(args.dynamics_probes)
-        base_scorer = make_cpu_base_logp_scorer(base_model, tokenizer)
-        callbacks.append(
-            MarkerDynamicsCallback(
-                probes=probes,
-                tokenizer=tokenizer,
-                base_logp_scorer=base_scorer,
-                cadence_steps=DYNAMICS_CADENCE_STEPS,
-            )
-        )
         LOG.info(
-            "[%s] MarkerDynamicsCallback attached (every-%d-steps)",
+            "[%s] --dynamics-probes ignored on full-FT path (ZeRO-3 deadlock "
+            "avoidance, B4 round-1 fix). Offline dynamics extraction lives in "
+            "analyze.extract_fullft_dynamics_from_checkpoints; pass it the "
+            "checkpoint_index this run writes to train_metadata.json.",
             args.cell_slug,
-            DYNAMICS_CADENCE_STEPS,
         )
 
     # ── Train. ───────────────────────────────────────────────────────────────
@@ -357,6 +353,11 @@ def main() -> int:
         data_collator=collator,
         callbacks=callbacks,
     )
+    # M4 round-1 fix: poke the trainer reference into the checkpoint callback
+    # so it can call trainer.save_model() (ZeRO-3-aware). Without this poke,
+    # _save_at falls through to the no-trainer warning branch and writes an
+    # empty directory.
+    ckpt_cb.attach_trainer(trainer)
     train_result = trainer.train()
     LOG.info("[%s] Training complete: %s", args.cell_slug, train_result.metrics)
 

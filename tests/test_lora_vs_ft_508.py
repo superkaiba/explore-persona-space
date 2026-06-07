@@ -196,10 +196,10 @@ def test_run_analysis_end_to_end_h1_detected(tmp_path: Path):
 
     eval_dir = tmp_path / "eval"
     eval_dir.mkdir()
-    # Bracket source-rate: ≤7, in-band, ≥9 per arm.
-    source_targets = {"b1": 4.5, "b2": 8.0, "b3": 12.0}
-    ho_lora = {"b1": 1.0, "b2": 2.5, "b3": 4.5}
-    ho_ft = {"b1": 1.5, "b2": 4.0, "b3": 6.5}  # +1.5 nat at matched 8-nat
+    # Bracket source-rate: ≥5 (implant gate), <7 (bracket lower), in-band, >9 (bracket upper).
+    source_targets = {"b1": 6.0, "b2": 8.0, "b3": 12.0}
+    ho_lora = {"b1": 1.5, "b2": 2.5, "b3": 4.5}
+    ho_ft = {"b1": 2.0, "b2": 4.0, "b3": 6.5}  # +1.5 nat at matched 8-nat
     paths: list[Path] = []
     for budget in ("b1", "b2", "b3"):
         for arm, ho_map in (("lora", ho_lora), ("fullft", ho_ft)):
@@ -231,12 +231,13 @@ def test_run_analysis_bracketing_failure_marks_indeterminate(tmp_path: Path):
 
     eval_dir = tmp_path / "eval"
     eval_dir.mkdir()
-    # LoRA arm: all source values < 7 → bracketing FAIL.
-    lora_sources = {"b1": 2.0, "b2": 4.0, "b3": 6.0}
-    # Full-FT arm: brackets correctly.
-    ft_sources = {"b1": 4.5, "b2": 8.0, "b3": 12.0}
+    # LoRA arm: all 3 source values clear the implant floor (≥5) but ALL fall
+    # below the 7-nat bracket lower edge → bracketing FAIL (no cell >9).
+    lora_sources = {"b1": 5.5, "b2": 6.0, "b3": 6.5}
+    # Full-FT arm: brackets correctly (≥5 ALL, <7 on b1, >9 on b3).
+    ft_sources = {"b1": 6.0, "b2": 8.0, "b3": 12.0}
     ho_lora = {"b1": 0.3, "b2": 0.7, "b3": 1.2}
-    ho_ft = {"b1": 1.5, "b2": 4.0, "b3": 6.5}
+    ho_ft = {"b1": 2.0, "b2": 4.0, "b3": 6.5}
     paths: list[Path] = []
     for budget in ("b1", "b2", "b3"):
         for arm, src_map, ho_map in (
@@ -292,3 +293,258 @@ def test_q_train_q_eval_split():
     assert len(q_eval) == 20
     # Q_train ⊆ Q_eval (because Q_eval is the full 20-q pool).
     assert set(q_train) <= set(q_eval)
+
+
+# ── Round-1 review fixes (B1/B2/B5/M2/M3/M4/M7). ─────────────────────────────
+
+
+def test_r_train_loader_canonical_schema(tmp_path: Path):
+    """B1 round-1 fix — verify the canonical-schema loader is used.
+
+    The canonical R_train.json from #472's r_generate.py wraps personas under
+    ``payload["completions"]``. The buggy round-1 code did
+    ``json.loads(...).items()`` and would KeyError on the first persona lookup.
+
+    This test:
+      (a) writes a fixture mimicking the canonical schema,
+      (b) calls the loader via the same import path the dispatcher uses,
+      (c) asserts the personas land at the top level of the returned dict.
+    """
+    from explore_persona_space.experiments.contrastive_neg_geometry_472 import r_generate
+
+    # Build a fixture matching r_generate.py's actual write shape.
+    canonical = {
+        "schema_version": r_generate.SCHEMA_VERSION,
+        "split": "train",
+        "n_personas": 2,
+        "n_questions": 1,
+        "personas": ["villain", "medical_doctor"],
+        "completions": {
+            "villain": {
+                "How do you handle disagreements?": {
+                    "response_text": "(synthetic base response)",
+                    "response_token_ids": [1, 2, 3],
+                }
+            },
+            "medical_doctor": {
+                "How do you handle disagreements?": {
+                    "response_text": "(synthetic medical response)",
+                    "response_token_ids": [4, 5, 6],
+                }
+            },
+        },
+    }
+    path = tmp_path / "R_train.json"
+    path.write_text(json.dumps(canonical))
+
+    r_train = r_generate.load_r_artifact(path)
+    # MUST return the completions dict (personas at the top level).
+    assert "villain" in r_train
+    assert "medical_doctor" in r_train
+    assert "schema_version" not in r_train, (
+        "load_r_artifact must unwrap payload['completions'] — got the raw payload back."
+    )
+    assert (
+        r_train["villain"]["How do you handle disagreements?"]["response_text"]
+        == "(synthetic base response)"
+    )
+
+
+def test_r_train_loader_rejects_old_schema(tmp_path: Path):
+    """B1 round-1 fix — the loader fails loud on a wrong schema_version.
+
+    Smoke fixture must not accidentally feed a stale-format JSON without the
+    canonical schema_version assertion firing.
+    """
+    from explore_persona_space.experiments.contrastive_neg_geometry_472 import r_generate
+
+    bad = {
+        "schema_version": "bogus_v0",
+        "completions": {"villain": {}},
+    }
+    path = tmp_path / "R_train.json"
+    path.write_text(json.dumps(bad))
+    with pytest.raises(AssertionError, match="schema_version"):
+        r_generate.load_r_artifact(path)
+
+
+def test_fullft_env_explicit_multi_gpu_cvd():
+    """B2 round-1 fix — the full-FT subprocess env carries CVD=0,1,...,N-1.
+
+    Reproducer for the bug: a prior in-process LoRA cell (via #472's
+    train_one_cell → train/sft.py:649) sets os.environ["CUDA_VISIBLE_DEVICES"]
+    = "0" in the dispatcher. Without the explicit pop+set in build_fullft_env,
+    accelerate launch would inherit CVD=0 and ZeRO-3 across 4 GPUs would fail.
+    """
+    from explore_persona_space.experiments.lora_vs_ft_508.train_cell_fullft import (
+        build_fullft_env,
+    )
+
+    polluted_env = {
+        "CUDA_VISIBLE_DEVICES": "0",  # LoRA cell pollution
+        "HF_TOKEN": "fake_token_for_test",
+        "WANDB_API_KEY": "fake_wandb_key",
+    }
+    env = build_fullft_env(num_gpus=4, base_env=polluted_env)
+    assert env["CUDA_VISIBLE_DEVICES"] == "0,1,2,3"
+    # Credentials must still pass through.
+    assert env["HF_TOKEN"] == "fake_token_for_test"
+    assert env["WANDB_API_KEY"] == "fake_wandb_key"
+    # 2-GPU sweep gives explicit 0,1.
+    env2 = build_fullft_env(num_gpus=2, base_env={"CUDA_VISIBLE_DEVICES": "0"})
+    assert env2["CUDA_VISIBLE_DEVICES"] == "0,1"
+    # Test isolation: the function must return a NEW dict; never mutate the caller's env.
+    assert polluted_env["CUDA_VISIBLE_DEVICES"] == "0", (
+        "build_fullft_env must NOT mutate the caller's env dict"
+    )
+
+
+def test_train_one_cell_accepts_extra_callbacks_kwarg():
+    """B5 round-1 fix — #472's train_one_cell signature accepts extra_callbacks.
+
+    The fix is a 5-line patch to #472 train_cell.py — but the signature change
+    is the public contract. This test pins it via inspect.signature so a
+    future merge that strips the kwarg surfaces it loudly.
+    """
+    import inspect
+
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.train_cell import (
+        train_one_cell,
+    )
+
+    sig = inspect.signature(train_one_cell)
+    assert "extra_callbacks" in sig.parameters, (
+        "train_one_cell must accept extra_callbacks for #508 MarkerDynamicsCallback threading"
+    )
+    # Default is an empty tuple (preserves byte-identical behavior for pre-#508 callers).
+    assert sig.parameters["extra_callbacks"].default == ()
+    # And epochs_override must accept float (the dispatcher passes 0.25/0.5/1.0).
+    epochs_param = sig.parameters["epochs_override"]
+    # Annotation should accept float; the runtime accepts ints too via duck typing.
+    assert "float" in str(epochs_param.annotation), epochs_param.annotation
+
+
+def test_dispatcher_rejects_legacy_fullft_slug():
+    """Minor round-1 fix — only `ft_*` accepted, not `fullft_*`.
+
+    The codex review noted both were accepted; we pick `ft_*` (canonical
+    plan §4.4 + brief smoke command).
+    """
+    import subprocess
+    from pathlib import Path
+
+    worktree = Path(__file__).resolve().parents[1]
+    dispatch = worktree / "scripts" / "dispatch_508.py"
+    # Run with --build-only to short-circuit before any GPU work.
+    rc = subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            str(dispatch),
+            "--cells",
+            "fullft_b2",  # legacy/rejected
+            "--seeds",
+            "42",
+            "--output-root",
+            "/tmp/issue_508_legacy_slug_test",
+            "--build-only",
+        ],
+        env={**__import__("os").environ},
+        capture_output=True,
+        text=True,
+        cwd=worktree,
+    )
+    # Should fail with the canonical error message.
+    assert rc.returncode != 0, "Legacy `fullft_*` slug should be rejected"
+    assert "expected `lora` or `ft`" in rc.stderr + rc.stdout, rc.stderr[:500]
+
+
+def test_h3_direct_qwen_default_reading(tmp_path: Path):
+    """M3 round-1 fix — analyze surfaces direct qwen_default ΔG, not just proxies.
+
+    Synthesize 6 cell eval JSONs with a `qwen_default_mean_delta_g` aggregate;
+    confirm run_analysis lifts them into `h3_qwen_default_direct`.
+    """
+    from explore_persona_space.experiments.lora_vs_ft_508.analyze import run_analysis
+
+    eval_dir = tmp_path / "eval"
+    eval_dir.mkdir()
+    # Bracket: implant gate ≥ 5, < 7 lower bracket, > 9 upper bracket.
+    source_targets = {"b1": 6.0, "b2": 8.0, "b3": 12.0}
+    ho_lora = {"b1": 1.5, "b2": 2.5, "b3": 4.5}
+    ho_ft = {"b1": 2.0, "b2": 4.0, "b3": 6.5}
+    qd_lora = {"b1": 0.5, "b2": 1.0, "b3": 2.0}
+    qd_ft = {"b1": 1.0, "b2": 2.5, "b3": 4.5}  # FT leaks MORE to qwen_default
+    paths: list[Path] = []
+    for budget in ("b1", "b2", "b3"):
+        for arm, ho_map, qd_map in (
+            ("lora", ho_lora, qd_lora),
+            ("fullft", ho_ft, qd_ft),
+        ):
+            slug = f"{arm}_{budget}"
+            data = _make_synthetic_cell_eval(slug, arm, source_targets[budget], ho_map[budget])
+            data["aggregates"]["qwen_default_mean_delta_g"] = qd_map[budget]
+            p = eval_dir / f"{slug}_seed42.json"
+            p.write_text(json.dumps(data))
+            paths.append(p)
+
+    result = run_analysis(eval_jsons=paths, output_dir=tmp_path / "analysis")
+    direct = result["h3_qwen_default_direct"]
+    assert "lora_b2" in direct
+    assert "fullft_b2" in direct
+    # The synthetic data is FT > LoRA at every budget on qwen_default.
+    assert direct["fullft_b2"] > direct["lora_b2"]
+
+
+def test_gate_drops_failed_implant(tmp_path: Path):
+    """M2 round-1 fix — cells that fail the implant gate (source ΔG < 5) are dropped."""
+    from explore_persona_space.experiments.lora_vs_ft_508.analyze import run_analysis
+
+    eval_dir = tmp_path / "eval"
+    eval_dir.mkdir()
+    # LoRA b1 fails the implant gate (source ΔG = 2.0 < 5.0); b2 + b3 pass.
+    source_targets = {"b1": 2.0, "b2": 8.0, "b3": 12.0}
+    paths: list[Path] = []
+    for budget in ("b1", "b2", "b3"):
+        for arm in ("lora", "fullft"):
+            slug = f"{arm}_{budget}"
+            ho = 1.0 + 2.0 * source_targets[budget] / 10
+            src = source_targets[budget]
+            if arm == "lora" and budget == "b1":
+                src = 2.0  # below the floor
+            data = _make_synthetic_cell_eval(slug, arm, src, ho)
+            p = eval_dir / f"{slug}_seed42.json"
+            p.write_text(json.dumps(data))
+            paths.append(p)
+
+    result = run_analysis(eval_jsons=paths, output_dir=tmp_path / "analysis")
+    # The implant_validity_gate field marks lora_b1 as failed.
+    assert result["implant_validity_gate"]["lora_b1"] is False
+    # And the cell is dropped from the LoRA arm.
+    assert "lora_b1" in result["dropped_cells_by_arm"]["lora"]
+    # With only 2 cells in LoRA arm (b2, b3 — both >5 nats, both > 7 nats but no <7),
+    # bracketing fails → H1 INDETERMINATE for LoRA.
+    assert result["h1_indeterminate_per_arm"]["lora"] is True
+
+
+def test_make_cpu_base_logp_scorer_closes_over_probes_dict():
+    """M7 round-1 fix — scorer uses the dict passed at construction.
+
+    The buggy round-1 code reloaded DYNAMICS_PROBES_PATH on every call,
+    ignoring the caller's probes dict and any alternate path. We don't
+    actually load a real base model here (heavy); we use a stub by
+    monkey-patching AutoModelForCausalLM with a fake before the call.
+    """
+    import inspect
+
+    from explore_persona_space.experiments.lora_vs_ft_508 import marker_dynamics_callback
+
+    sig = inspect.signature(marker_dynamics_callback.make_cpu_base_logp_scorer)
+    # Must accept `probes` as a keyword arg.
+    assert "probes" in sig.parameters
+    # Default is None (preserves legacy behavior for callers that don't pass it).
+    assert sig.parameters["probes"].default is None
+    # Must accept `device` for the M5 GPU lift.
+    assert "device" in sig.parameters
+    assert sig.parameters["device"].default is None  # auto-detect

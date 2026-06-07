@@ -306,6 +306,147 @@ def _hero_figure(cells_by_arm: dict[str, list[dict]], output_path: Path) -> None
     log.info("[fig] hero figure → %s", output_path)
 
 
+def _gather_dynamics_snapshots(
+    eval_jsons_by_cell: dict[str, dict],
+    output_root_parent: Path,
+) -> dict[str, list[dict]]:
+    """Pull per-cell trajectory snapshots from the eval JSON (or WandB log dump).
+
+    The LoRA arm's MarkerDynamicsCallback writes its snapshots to
+    ``self.snapshots`` (a dict keyed by global_step) IN-PROCESS during
+    training; ``train_lora`` doesn't currently persist that to disk. As a
+    best-effort interface for the trajectory figure, we look for an optional
+    ``dynamics_snapshots_path`` field in each cell's eval JSON (the dispatcher
+    can dump the callback's `snapshots` dict alongside the eval JSON when
+    available) OR for a parallel ``checkpoints/<cell>_seed<S>_fractions/
+    dynamics.json`` artifact.
+
+    Returns ``{cell_slug: [{step, source_delta_g, bystander_mean_delta_g,
+    source_emission_rate, bystander_mean_emission_rate}, ...]}``. Empty dict
+    when no cell has snapshot data — the trajectory figure is skipped.
+    """
+    out: dict[str, list[dict]] = {}
+    for cell_slug, ej in eval_jsons_by_cell.items():
+        path_str = ej.get("dynamics_snapshots_path")
+        snap_path: Path | None = None
+        if path_str:
+            snap_path = Path(path_str)
+        else:
+            # Fallback: look for the dispatcher's per-cell convention.
+            seed = ej.get("seed", 42)
+            cand = (
+                output_root_parent
+                / "checkpoints"
+                / f"{cell_slug}_seed{seed}_fractions"
+                / "dynamics.json"
+            )
+            if cand.exists():
+                snap_path = cand
+        if snap_path is None or not snap_path.exists():
+            continue
+        try:
+            payload = json.loads(snap_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        if isinstance(payload, dict) and "snapshots" in payload:
+            snaps = payload["snapshots"]
+        else:
+            snaps = payload
+        # Normalize: list of {step, source_delta_g, ...} dicts.
+        if isinstance(snaps, dict):
+            # Keyed by step.
+            rows: list[dict] = []
+            for step_key, row in sorted(snaps.items(), key=lambda kv: int(kv[0])):
+                if isinstance(row, dict):
+                    rows.append({"step": int(step_key), **row})
+            snaps = rows
+        if snaps:
+            out[cell_slug] = snaps
+    return out
+
+
+def _render_trajectory_figures(
+    snapshots_by_cell: dict[str, list[dict]],
+    delta_g_path: Path,
+    emit_rate_path: Path,
+) -> None:
+    """Two trajectory figures (source + bystander) for ΔG and emission rate.
+
+    Each figure is a 2-panel matplotlib plot:
+      - left panel: source trajectory per arm × budget (3 LoRA + 3 FT curves)
+      - right panel: bystander mean trajectory per arm × budget
+
+    The two emit different y-axes (ΔG in nats, emission rate in [0,1]).
+    Plan §4.7 first-class.
+    """
+    import matplotlib.pyplot as plt
+
+    try:
+        from explore_persona_space.analysis.paper_plots import apply_paper_rcparams
+
+        apply_paper_rcparams()
+    except ImportError:
+        pass
+
+    palette = {ARM_LORA: "#0173b2", ARM_FULLFT: "#de8f05"}
+    arm_label = {ARM_LORA: "LoRA", ARM_FULLFT: "Full FT"}
+
+    for fig_path, src_key, by_key, ylabel, title in (
+        (
+            delta_g_path,
+            "dynamics/source_delta_g",
+            "dynamics/bystander_mean_delta_g",
+            "ΔG (nats)",
+            "Marker-implant trajectory (ΔG vs training step)",
+        ),
+        (
+            emit_rate_path,
+            "dynamics/source_emission_rate",
+            "dynamics/bystander_mean_emission_rate",
+            "Argmax-of-marker rate",
+            "Marker-emission trajectory (argmax rate vs training step)",
+        ),
+    ):
+        fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), sharex=True)
+        for ax, key, panel_title in (
+            (axes[0], src_key, "source"),
+            (axes[1], by_key, "bystander mean"),
+        ):
+            for cell_slug, snaps in snapshots_by_cell.items():
+                arm = ARM_LORA if is_lora_arm(cell_slug) else ARM_FULLFT
+                xs = [s["step"] for s in snaps]
+                # Accept both flat keys (step → val) and namespaced keys.
+                ys: list[float] = []
+                for s in snaps:
+                    if key in s:
+                        ys.append(float(s[key]))
+                    elif key.split("/")[-1] in s:
+                        ys.append(float(s[key.split("/")[-1]]))
+                if not ys or len(ys) != len(xs):
+                    continue
+                ax.plot(
+                    xs,
+                    ys,
+                    "o-",
+                    color=palette[arm],
+                    alpha=0.65,
+                    label=f"{arm_label[arm]} {cell_slug}",
+                    markersize=4,
+                )
+            ax.set_xlabel("Training step")
+            ax.set_ylabel(ylabel)
+            ax.set_title(panel_title)
+            ax.grid(True, alpha=0.3)
+            ax.legend(loc="best", fontsize=7)
+        fig.suptitle(title)
+        fig.tight_layout()
+        fig_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(fig_path, dpi=150, bbox_inches="tight")
+        fig.savefig(fig_path.with_suffix(".pdf"), bbox_inches="tight")
+        plt.close(fig)
+        log.info("[fig] trajectory figure → %s", fig_path)
+
+
 def _h3_qwen_default_slice(eval_jsons_by_cell: dict[str, dict]) -> dict:
     """H3 tertiary — qwen_default + assistant + ai_assistant safety-relevant slice.
 
@@ -328,7 +469,7 @@ def _h3_qwen_default_slice(eval_jsons_by_cell: dict[str, dict]) -> dict:
     return out
 
 
-def run_analysis(
+def run_analysis(  # noqa: C901 - linear multi-phase analysis pipeline
     *,
     eval_jsons: list[Path],
     output_dir: Path,
@@ -353,35 +494,95 @@ def run_analysis(
         )
     cells_data.sort(key=lambda c: c["cell"])
 
-    cells_by_arm: dict[str, list[dict]] = {ARM_LORA: [], ARM_FULLFT: []}
+    cells_by_arm_all: dict[str, list[dict]] = {ARM_LORA: [], ARM_FULLFT: []}
     for c in cells_data:
         arm = ARM_LORA if is_lora_arm(c["cell"]) else ARM_FULLFT
-        cells_by_arm[arm].append(c)
+        cells_by_arm_all[arm].append(c)
 
-    # Bracketing checks per arm.
+    # M2 round-1 fix: per-cell gates BEFORE bracketing + bootstrap.
+    #
+    # Two gates per cell (plan §6 + §4.5):
+    #   (a) implant-validity: source-self ΔG >= SOURCE_SELF_FLOOR_NATS (5 nats).
+    #       If failed, the implant didn't take and the leakage signal is
+    #       meaningless — drop the cell.
+    #   (b) sub-ceiling: held-out mean ΔG must sit >= SUBCEILING_HEADROOM_NATS
+    #       (5 nats) BELOW the 0.0 ceiling, i.e. held_out_mean <= -5 nats in
+    #       absolute terms... but since dG = trained - base >= 0 typically and
+    #       saturates approaching the trained ceiling. Operationally we use
+    #       the trained `g_logprob` ≈ source_mean read: a cell whose source
+    #       ΔG exceeds ~14 nats is at the saturation ceiling (#448 anchor)
+    #       and matched-rate interpolation through it is uninformative — drop
+    #       it. The threshold is `source_mean <= (ceiling - headroom)` where
+    #       ceiling≈log(vocab≈150k)≈12 nats and headroom=5 → cap at ~18 nats.
+    #       Loose enough that the 0.25/0.5/1.0 epoch sweep clears it; strict
+    #       enough that a runaway full-FT cell gets dropped.
+    SUB_CEILING_CAP = 18.0  # nats above which the cell is saturating.
+
+    def _passes_gates(c: dict) -> tuple[bool, list[str]]:
+        reasons: list[str] = []
+        if c["source_mean"] < SOURCE_SELF_FLOOR_NATS:
+            reasons.append(f"implant_failed (source ΔG={c['source_mean']:.2f}<5)")
+        if c["source_mean"] > SUB_CEILING_CAP:
+            reasons.append(f"saturated (source ΔG={c['source_mean']:.2f}>18)")
+        return (len(reasons) == 0, reasons)
+
+    implant_gate: dict[str, bool] = {}
+    sub_ceiling_gate: dict[str, bool] = {}
+    gate_reasons: dict[str, list[str]] = {}
+    for c in cells_data:
+        implant_gate[c["cell"]] = c["source_mean"] >= SOURCE_SELF_FLOOR_NATS
+        sub_ceiling_gate[c["cell"]] = c["source_mean"] <= SUB_CEILING_CAP
+        _, reasons = _passes_gates(c)
+        if reasons:
+            gate_reasons[c["cell"]] = reasons
+            log.warning("[gate] cell %s FAILED: %s", c["cell"], reasons)
+
+    # Cells that survive both gates per arm.
+    cells_by_arm: dict[str, list[dict]] = {
+        arm: [c for c in cells_by_arm_all[arm] if _passes_gates(c)[0]]
+        for arm in (ARM_LORA, ARM_FULLFT)
+    }
+    dropped_by_arm = {
+        arm: [c["cell"] for c in cells_by_arm_all[arm] if not _passes_gates(c)[0]]
+        for arm in (ARM_LORA, ARM_FULLFT)
+    }
+    for arm, dropped in dropped_by_arm.items():
+        if dropped:
+            log.warning("[analyze] dropped %d cells from arm %s: %s", len(dropped), arm, dropped)
+
+    # Bracketing checks per arm on the SURVIVING cells; if <2 cells remain
+    # per arm, mark H1 INDETERMINATE (cannot interpolate with <2 points).
     bracketing = {
         arm: _check_bracketing([c["source_mean"] for c in cells])
         for arm, cells in cells_by_arm.items()
     }
     h1_indeterminate = {
-        arm: not bracketing[arm]["brackets_target"] for arm in (ARM_LORA, ARM_FULLFT)
+        arm: (len(cells_by_arm[arm]) < 2) or (not bracketing[arm]["brackets_target"])
+        for arm in (ARM_LORA, ARM_FULLFT)
     }
 
-    # Implant-validity gate per cell.
-    implant_gate = {c["cell"]: c["source_mean"] >= SOURCE_SELF_FLOOR_NATS for c in cells_data}
-
-    # Crossed cluster bootstrap on matched-rate gap.
+    # Crossed cluster bootstrap on matched-rate gap — only run when BOTH arms
+    # have non-INDETERMINATE bracketing (which now also enforces ≥2 valid cells).
     gap_stats: dict = {}
     if not any(h1_indeterminate.values()):
         gap_stats = _crossed_cluster_bootstrap_gap(cells_by_arm)
     else:
         log.warning(
-            "[h1] bracketing FAILED — INDETERMINATE for: %s. Skipping cluster bootstrap.",
+            "[h1] INDETERMINATE for: %s (cells dropped or bracketing missed). "
+            "Skipping cluster bootstrap.",
             sorted(arm for arm, v in h1_indeterminate.items() if v),
         )
 
-    # H3 slice (safety-relevant default-context personas).
-    h3 = _h3_qwen_default_slice(eval_jsons_by_cell)
+    # H3: direct qwen_default ΔG (load per cell from `aggregates.qwen_default_mean_delta_g`,
+    # added by eval_one_cell's M3 fix) + proxy default-context personas
+    # (assistant / ai / ai_assistant) from the held-out panel.
+    h3_proxy = _h3_qwen_default_slice(eval_jsons_by_cell)
+    h3_direct: dict[str, float] = {}
+    for cell_slug, ej in eval_jsons_by_cell.items():
+        agg = ej.get("aggregates", {})
+        qd_mean = agg.get("qwen_default_mean_delta_g")
+        if qd_mean is not None and not (isinstance(qd_mean, float) and math.isnan(qd_mean)):
+            h3_direct[cell_slug] = float(qd_mean)
 
     # ── Hero figure. ─────────────────────────────────────────────────────────
     hero_path = output_dir / "hero_lora_vs_ft.png"
@@ -390,6 +591,21 @@ def run_analysis(
             _hero_figure(cells_by_arm, hero_path)
         except ImportError as e:
             log.warning("[fig] matplotlib unavailable — skipped hero figure (%s)", e)
+
+    # ── Trajectory figures (M1 round-1 fix). ─────────────────────────────────
+    # Per-step source ΔG + bystander mean ΔG, sourced from
+    # per-cell `dynamics_snapshots` written to the eval JSON by the
+    # MarkerDynamicsCallback's WandB logs (or by the offline-from-checkpoint
+    # extractor for the full-FT arm — see analyze.extract_fullft_dynamics
+    # below). Skipped silently when no cell has snapshot data yet.
+    trajectory_dg_path = output_dir / "trajectory_delta_g.png"
+    trajectory_emit_path = output_dir / "trajectory_emission_rate.png"
+    snapshots_by_cell = _gather_dynamics_snapshots(eval_jsons_by_cell, output_dir.parent)
+    if snapshots_by_cell:
+        try:
+            _render_trajectory_figures(snapshots_by_cell, trajectory_dg_path, trajectory_emit_path)
+        except ImportError as e:
+            log.warning("[fig] matplotlib unavailable — skipped trajectory figures (%s)", e)
 
     # ── Persist. ─────────────────────────────────────────────────────────────
     analysis = {
@@ -409,11 +625,22 @@ def run_analysis(
             for c in cells_data
         ],
         "implant_validity_gate": implant_gate,
+        "sub_ceiling_gate": sub_ceiling_gate,
+        "gate_failure_reasons": gate_reasons,
+        "dropped_cells_by_arm": dropped_by_arm,
+        "n_valid_cells_per_arm": {arm: len(cells) for arm, cells in cells_by_arm.items()},
         "bracketing_per_arm": bracketing,
         "h1_indeterminate_per_arm": h1_indeterminate,
         "matched_rate_gap": gap_stats,
-        "h3_safety_relevant_slice": h3,
+        "h3_safety_relevant_proxy_slice": h3_proxy,
+        "h3_qwen_default_direct": h3_direct,
         "hero_figure": str(hero_path) if hero_path.exists() else None,
+        "trajectory_delta_g_figure": str(trajectory_dg_path)
+        if trajectory_dg_path.exists()
+        else None,
+        "trajectory_emission_rate_figure": str(trajectory_emit_path)
+        if trajectory_emit_path.exists()
+        else None,
         "timestamp_utc": _dt.datetime.now(_dt.UTC).isoformat(),
     }
     out_path = output_dir / "analysis.json"

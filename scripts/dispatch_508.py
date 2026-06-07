@@ -212,7 +212,15 @@ def phase0_build_data(
                 f"`python -m {r_gen_mod}` first (or "
                 "`python scripts/dispatch_508.py --build-data` with R generation enabled)."
             )
-        r_train = json.loads(r_train_path.read_text())
+        # R_train.json from #472 r_generate.py wraps personas under `payload["completions"]`
+        # (see contrastive_neg_geometry_472.r_generate:339-340 +
+        # load_r_artifact:382-392 — the canonical loader). Use it directly so the
+        # schema_version assertion + completions extraction stay aligned.
+        from explore_persona_space.experiments.contrastive_neg_geometry_472.r_generate import (
+            load_r_artifact,
+        )
+
+        r_train = load_r_artifact(r_train_path)
         _build_canonical_training_jsonl(
             output_path=canonical_train,
             r_train=r_train,
@@ -406,6 +414,48 @@ def phase1_train_cell(
             train_one_cell,
         )
 
+        # B5 round-1 fix: build MarkerDynamicsCallback + thread it into the
+        # LoRA arm via #472's extra_callbacks kwarg (added on this branch).
+        # On the LoRA arm there is no distributed-collective hazard (single-
+        # GPU PEFT path), so in-training dynamics are safe; the full-FT arm
+        # collects equivalent dynamics OFFLINE per B4 fix.
+        extra_callbacks: tuple = ()
+        if dynamics_probes is not None:
+            from transformers import AutoTokenizer
+
+            from explore_persona_space.experiments.lora_vs_ft_508 import (
+                DYNAMICS_CADENCE_STEPS,
+            )
+            from explore_persona_space.experiments.lora_vs_ft_508.marker_dynamics_callback import (
+                MarkerDynamicsCallback,
+                load_dynamics_probes,
+                make_cpu_base_logp_scorer,
+            )
+
+            probes = load_dynamics_probes(dynamics_probes)
+            cb_tokenizer = AutoTokenizer.from_pretrained(
+                base_model, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+            )
+            if cb_tokenizer.pad_token is None:
+                cb_tokenizer.pad_token = cb_tokenizer.eos_token
+            # M7 round-1 fix: close over the already-loaded probes dict so the
+            # scorer doesn't re-read DYNAMICS_PROBES_PATH on every call (which
+            # would also ignore the caller's --dynamics-probes path override).
+            base_scorer = make_cpu_base_logp_scorer(base_model, cb_tokenizer, probes=probes)
+            extra_callbacks = (
+                MarkerDynamicsCallback(
+                    probes=probes,
+                    tokenizer=cb_tokenizer,
+                    base_logp_scorer=base_scorer,
+                    cadence_steps=DYNAMICS_CADENCE_STEPS,
+                ),
+            )
+            LOG.info(
+                "[%s] MarkerDynamicsCallback attached to LoRA cell (every-%d-steps)",
+                cell_slug,
+                DYNAMICS_CADENCE_STEPS,
+            )
+
         # epoch_fraction → epochs_override.
         result = train_one_cell(
             cell_slug=cell_slug,
@@ -426,6 +476,7 @@ def phase1_train_cell(
             lora_alpha_override=LORA_ALPHA,
             marker_suppress_at_post_response_slot=False,  # plan §12 — inherit #472 default.
             marker_im_end_token_id=None,
+            extra_callbacks=extra_callbacks,
         )
         return {
             "output_dir": str(cell_dir),
@@ -537,6 +588,13 @@ def main() -> int:
         WANDB_PROJECT,
     )
 
+    # M6 round-1 fix: force-pin WANDB_PROJECT (NOT setdefault — overrides any
+    # ambient env value so the LoRA cells (which go through #472's train_lora
+    # → wandb.init) land in the `lora_vs_ft_508` project, not in some pre-set
+    # leftover from a previous session.
+    os.environ["WANDB_PROJECT"] = WANDB_PROJECT
+    LOG.info("[dispatch] WANDB_PROJECT pinned to %s", WANDB_PROJECT)
+
     cells = [c.strip() for c in args.cells.split(",") if c.strip()]
     seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
 
@@ -550,9 +608,15 @@ def main() -> int:
         if "_" not in cell:
             raise ValueError(f"Invalid cell slug {cell!r} (expected e.g. lora_b2)")
         arm, budget_label = cell.split("_", 1)
-        if arm not in ("lora", "fullft", "ft"):
+        # `ft_*` is the canonical USER-FACING cell slug (matches the plan §4.4
+        # cell table and the brief's smoke command); internally we map to
+        # ARM_FULLFT="fullft" for symmetry with __init__.py's ARMS tuple. The
+        # legacy `fullft_*` slug is rejected so there's only ONE accepted form
+        # at the CLI layer.
+        if arm not in ("lora", "ft"):
             raise ValueError(
-                f"Invalid arm in cell {cell!r}: {arm!r}; expected one of {{lora, fullft, ft}}"
+                f"Invalid arm in cell {cell!r}: {arm!r}; expected `lora` or `ft` "
+                f"(e.g. `lora_b2`, `ft_b2`)."
             )
         if arm == "ft":
             arm = "fullft"

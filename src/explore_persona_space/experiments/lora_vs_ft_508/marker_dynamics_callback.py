@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 
 from transformers import TrainerCallback
@@ -362,46 +363,75 @@ class MarkerDynamicsCallback(TrainerCallback):
             self._fire(model, step)
 
 
-def make_cpu_base_logp_scorer(base_model_path: str, tokenizer):
+def make_cpu_base_logp_scorer(
+    base_model_path: str,
+    tokenizer,
+    *,
+    probes: dict | None = None,
+    device: str | None = None,
+):
     """Build a base log-prob scorer for use as ``base_logp_scorer`` argument.
 
-    Loads the base model lazily on CPU; per-call moves the input batch to the
-    GPU where the trainer's model lives, runs a single forward pass, returns
-    the marker log-prob at the post-R slot. The base model stays in CPU
-    memory between calls; the activations move to GPU per call.
+    Loads the base model lazily; the closure caches the loaded model + the
+    probes dict so per-call work is only a single forward pass at the
+    persona-q-r slot.
+
+    M7 round-1 fix: the scorer now CLOSES OVER the loaded ``probes`` dict
+    instead of re-reading ``DYNAMICS_PROBES_PATH`` on every call. The caller
+    must pass the same probes dict it constructed the callback with;
+    otherwise we fall back to the canonical-path read once at construction
+    (preserving the old behavior for callers that didn't track the dict).
+
+    M5 round-1 fix: ``device`` selects where the forward pass runs. ``"cpu"``
+    (default if no CUDA) is ~30s × 20 probes on a 7B model and inflates
+    in-training pause to ~10 min/fire; pass ``"cuda"`` for the LoRA arm
+    (where the trainer's model uses 1 GPU and there's headroom for the base
+    forward). For the full-FT arm, B4 disables the in-training callback
+    entirely (offline extraction at checkpoint time).
 
     Returns:
         A callable ``(persona, q, r_text) -> base_logp: float``.
 
-    Raises if the base model can't be loaded.
+    Raises if the base model can't be loaded or ``persona`` is missing from
+    the closed-over probes dict.
     """
     import torch
     from transformers import AutoModelForCausalLM
 
-    log.info(
-        "[dynamics] loading base model on CPU for in-training base log-prob: %s", base_model_path
-    )
-    base = AutoModelForCausalLM.from_pretrained(
-        base_model_path,
-        torch_dtype=torch.bfloat16,
-        device_map="cpu",
-        trust_remote_code=True,
-    )
-    base.eval()
-
-    def _score(persona: str, q: str, r_text: str) -> float:
+    if probes is None:
+        # Fallback (legacy): read the canonical path ONCE at construction.
         from explore_persona_space.experiments.lora_vs_ft_508 import (
             DYNAMICS_PROBES_PATH,
         )
 
-        # Pull the persona's system prompt from the probes file (caller-side
-        # the probes were assembled with the canonical persona bank).
         probes = load_dynamics_probes(DYNAMICS_PROBES_PATH)
-        if persona not in probes:
-            raise KeyError(f"persona {persona!r} not in dynamics probes")
-        full_ids, slot = _build_full_ids_for_score(tokenizer, probes[persona]["system"], q, r_text)
+    closed_probes = dict(probes)
+
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    log.info(
+        "[dynamics] loading base model on %s for in-training base log-prob: %s",
+        device,
+        base_model_path,
+    )
+    base = AutoModelForCausalLM.from_pretrained(
+        base_model_path,
+        torch_dtype=torch.bfloat16,
+        device_map=device if device == "cpu" else {"": 0},
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
+    )
+    base.eval()
+
+    def _score(persona: str, q: str, r_text: str) -> float:
+        if persona not in closed_probes:
+            raise KeyError(f"persona {persona!r} not in dynamics probes ({sorted(closed_probes)})")
+        full_ids, slot = _build_full_ids_for_score(
+            tokenizer, closed_probes[persona]["system"], q, r_text
+        )
         with torch.no_grad():
-            ids = torch.tensor([full_ids], device="cpu")
+            ids = torch.tensor([full_ids], device=device)
             logits = base(ids).logits
             log_probs = torch.log_softmax(logits[0, slot - 1].float(), dim=-1)
             return float(log_probs[EXPECTED_MARKER_TOKEN_ID].item())

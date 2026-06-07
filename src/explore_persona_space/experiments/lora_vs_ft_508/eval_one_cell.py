@@ -153,6 +153,7 @@ def eval_one_cell(  # noqa: C901 - linear multi-phase eval pipeline (gen → tra
     held_out_personas: tuple[str, ...] = HELD_OUT_PERSONAS_15,
     source_persona: str = SOURCE_PERSONA,
     eval_source: bool = True,
+    eval_qwen_default: bool = True,
 ) -> dict:
     """Evaluate one cell: trained-R gen → trained log P + per-cell base log P.
 
@@ -283,6 +284,27 @@ def eval_one_cell(  # noqa: C901 - linear multi-phase eval pipeline (gen → tra
             lora_request=lora_req,
         )
 
+    # M3 round-1 fix: direct qwen_default eval slice (the H3 anchor).
+    # qwen_default is a trained CONTRASTIVE NEGATIVE (so it cannot appear in
+    # the 15-persona held-out panel by construction), but the H3 question
+    # "does the safety-relevant default-assistant context leak the marker?"
+    # anchors specifically on qwen_default per plan §3 H3. We measure it
+    # directly here in parallel — same R-gen + log-P + base-log-P pipeline as
+    # the held-out probes, on 20 questions x 1 persona = 20 ΔG values.
+    qwen_default_R: dict[str, dict[str, str]] = {}
+    qwen_default_persona = "qwen_default"
+    eval_qwen = bool(eval_qwen_default and qwen_default_persona in persona_bank)
+    if eval_qwen:
+        qwen_default_R = _generate_trained_R(
+            trained_llm,
+            tokenizer,
+            eval_personas={qwen_default_persona: persona_bank[qwen_default_persona]},
+            eval_questions=eval_questions,
+            cell_label=f"{cell_slug}/qwen_default",
+            use_lora=not is_full_ft,
+            lora_request=lora_req,
+        )
+
     # ── Phase 2: trained log P(※) on R_cell. ─────────────────────────────────
     log.info("[%s] phase=eval_logp_trained", cell_slug)
     print(f"[phase=eval_logp_trained cell={cell_slug}]", flush=True)
@@ -305,6 +327,18 @@ def eval_one_cell(  # noqa: C901 - linear multi-phase eval pipeline (gen → tra
             eval_personas={source_persona: persona_bank[source_persona]},
             eval_questions=eval_questions,
             cell_label=f"{cell_slug}/source_trained",
+            use_lora=not is_full_ft,
+            lora_request=lora_req,
+        )
+    trained_logp_qwen_default: dict = {}
+    if eval_qwen:
+        trained_logp_qwen_default = score_logp_for_R(
+            trained_llm,
+            tokenizer,
+            r_by_persona_q=qwen_default_R,
+            eval_personas={qwen_default_persona: persona_bank[qwen_default_persona]},
+            eval_questions=eval_questions,
+            cell_label=f"{cell_slug}/qwen_default_trained",
             use_lora=not is_full_ft,
             lora_request=lora_req,
         )
@@ -364,6 +398,18 @@ def eval_one_cell(  # noqa: C901 - linear multi-phase eval pipeline (gen → tra
             use_lora=False,
             lora_request=None,
         )
+    base_logp_qwen_default: dict = {}
+    if eval_qwen:
+        base_logp_qwen_default = score_logp_for_R(
+            base_llm,
+            tokenizer,
+            r_by_persona_q=qwen_default_R,
+            eval_personas={qwen_default_persona: persona_bank[qwen_default_persona]},
+            eval_questions=eval_questions,
+            cell_label=f"{cell_slug}/qwen_default_base",
+            use_lora=False,
+            lora_request=None,
+        )
 
     # Final base teardown (mirror).
     del base_llm
@@ -415,6 +461,23 @@ def eval_one_cell(  # noqa: C901 - linear multi-phase eval pipeline (gen → tra
                 "n_marker_in_R": int(tr.get("n_marker_in_R", 0)),
             }
 
+    # M3 round-1 fix: direct H3 qwen_default per-probe ΔG.
+    delta_g_qwen_default: dict[str, dict[str, dict]] = {}
+    if eval_qwen:
+        delta_g_qwen_default[qwen_default_persona] = {}
+        for q in eval_questions:
+            tr = trained_logp_qwen_default[qwen_default_persona][q]
+            bs = base_logp_qwen_default[qwen_default_persona][q]
+            delta_g_qwen_default[qwen_default_persona][q] = {
+                "trained_logp": float(tr["logp"]),
+                "base_logp": float(bs["logp"]),
+                "delta_g": float(tr["logp"]) - float(bs["logp"]),
+                "trained_argmax_marker": bool(tr["argmax_marker"]),
+                "base_argmax_marker": bool(bs["argmax_marker"]),
+                "r_collapsed": bool(tr.get("r_collapsed") or bs.get("r_collapsed")),
+                "n_marker_in_R": int(tr.get("n_marker_in_R", 0)),
+            }
+
     # Aggregates.
     held_out_dg_values = [
         delta_g_held_out[p][q]["delta_g"]
@@ -437,6 +500,20 @@ def eval_one_cell(  # noqa: C901 - linear multi-phase eval pipeline (gen → tra
     source_mean = (
         sum(source_dg_values) / len(source_dg_values) if source_dg_values else float("nan")
     )
+    qwen_default_dg_values = (
+        [
+            delta_g_qwen_default[qwen_default_persona][q]["delta_g"]
+            for q in eval_questions
+            if not delta_g_qwen_default[qwen_default_persona][q]["r_collapsed"]
+        ]
+        if eval_qwen
+        else []
+    )
+    qwen_default_mean = (
+        sum(qwen_default_dg_values) / len(qwen_default_dg_values)
+        if qwen_default_dg_values
+        else float("nan")
+    )
 
     # ── Persist result + reproducibility metadata. ───────────────────────────
     result = {
@@ -456,14 +533,18 @@ def eval_one_cell(  # noqa: C901 - linear multi-phase eval pipeline (gen → tra
         "source_persona": source_persona if eval_source else None,
         "delta_g_held_out": delta_g_held_out,
         "delta_g_source": delta_g_source,
+        "delta_g_qwen_default": delta_g_qwen_default,
         "trained_R_held_out": held_out_R,
         "trained_R_source": source_R if eval_source else {},
+        "trained_R_qwen_default": qwen_default_R if eval_qwen else {},
         "aggregates": {
             "held_out_mean_delta_g": held_out_mean,
             "held_out_n_probes": len(held_out_dg_values),
             "held_out_n_collapsed": n_collapsed,
             "source_self_mean_delta_g": source_mean,
             "source_n_probes": len(source_dg_values),
+            "qwen_default_mean_delta_g": qwen_default_mean,
+            "qwen_default_n_probes": len(qwen_default_dg_values),
         },
         "git_commit": _git_commit(),
         "timestamp_utc": _dt.datetime.now(_dt.UTC).isoformat(),
