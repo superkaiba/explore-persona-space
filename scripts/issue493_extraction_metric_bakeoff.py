@@ -1811,7 +1811,16 @@ def merge_partitioned_activations(  # noqa: C901 — per-(point, layer) walker +
                 f"expected_cond_ids={sorted(expected_set)} were requested"
             )
         return written
-    pattern = re.compile(r"^(?P<pt>[a-z_]+)__layer(?P<L>\d+)__cond(?P<cid>[A-Z]\d+)\.pt$")
+    # ROUND-2/#509 FIX F1: widen `[A-Z]\d+` → `[A-Z]+\d+` so two-letter cond-ID
+    # families (`FB1..FB9` for the i509 fact arm, `SC1..SC24` for the syco arm)
+    # match. Workers DO write `condFB1.pt` / `condSC24.pt` (the no-drop assert
+    # at the bottom of this function builds `expected_cond_ids` from the active
+    # conditions module, so it would have raised "missing_conds={FB1..}"); but
+    # the regex above silently dropped them, then the wholly-missing branch
+    # raised "No partitioned per-cond files AT ALL". Production extraction
+    # would have crashed at merge time. The widening is backward-compatible:
+    # `[A-Z]+\d+` accepts every legacy single-letter cid (`A1`, `M1`, ...) too.
+    pattern = re.compile(r"^(?P<pt>[a-z_]+)__layer(?P<L>\d+)__cond(?P<cid>[A-Z]+\d+)\.pt$")
     grouped: dict[tuple[str, int], dict[str, dict]] = {}
     for p in sorted(ACT_DIR.glob("*__cond*.pt")):
         m = pattern.match(p.name)
@@ -1954,7 +1963,10 @@ def load_next_token_logits() -> dict[str, np.ndarray]:
     nt_dir = BAKEOFF_DIR / "next_token_logits"
     if not nt_dir.exists():
         return out
-    pattern = re.compile(r"^last_prompt__cond(?P<cid>[A-Z]\d+)\.pt$")
+    # ROUND-2/#509 FIX F1: same widening as merge_partitioned_activations above.
+    # The next-token-logits sidecar files follow the same `cond<cid>` naming,
+    # so the i509 two-letter cond-ID families need the same regex relaxation.
+    pattern = re.compile(r"^last_prompt__cond(?P<cid>[A-Z]+\d+)\.pt$")
     for p in sorted(nt_dir.glob("last_prompt__cond*.pt")):
         m = pattern.match(p.name)
         if not m:
