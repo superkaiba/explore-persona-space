@@ -367,6 +367,29 @@ conditions use the Tulu 3 SFT recipe (`Source: #382`): lr=2e-5, cosine warmup
 (`Source: #382 round-2`)." This keeps §11 compact while preserving full
 traceability.
 
+**Repo-new model id ⇒ CPU-side config-load smoke before provisioning
+(pre-provision gate).** The `model` id is itself a load-bearing choice. If
+the plan's `model` is NOT already used by an existing entry under `configs/`
+or by a prior issue in this repo (grep `configs/` + `tasks/` for the exact
+id before claiming "new"), the plan MUST record a CPU-side
+`AutoConfig.from_pretrained("<model_id>", trust_remote_code=...)` smoke as a
+pre-provision gate — does the installed `transformers` recognize the
+`model_type`, and does the repo resolve on the HF Hub? Quote the smoke
+command and its PASS output (or the runnable command + a note that it will
+run before the experimenter provisions) in §11 alongside the `Source:` line
+for the model id. **Do not provision a multi-GPU pod on an unvalidated
+repo-new model id.** The `AutoConfig` call costs nothing — it streams a few
+KB of `config.json`, instantiates no weights, and surfaces both the
+"unknown model_type" failure (your installed `transformers` is too old for
+the architecture) and the "repo does not exist / typo in id" failure on
+CPU, before the pod is created. Catching this at preflight on the pod is
+too late: the multi-GPU provision has already happened. A repo-already-used
+model id inherits its validation from the prior config/issue and does NOT
+need a fresh smoke — cite the inheriting `Source:` as usual. (#506:
+`Qwen/Qwen3.5-27B` passed 4 code-review rounds + cap-3 override, provisioned
+an 8× H200, then died at launch because `transformers` did not recognize
+the `model_type`.)
+
 ### 12. Assumptions
 **This is the most important section.** List EVERY factual assumption:
 - Library capabilities and versions
