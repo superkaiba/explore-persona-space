@@ -125,6 +125,7 @@ def _schedule_cell_pool(
     bank_path: Path,
     centroids_dir: Path,
     arm_to_n_json: Path,
+    r_train_path: Path,
     chosen_rank: int,
     chosen_alpha: int,
     chosen_frac: float | None,
@@ -196,6 +197,8 @@ def _schedule_cell_pool(
             str(centroids_dir),
             "--arm-to-n-json",
             str(arm_to_n_json),
+            "--r-train-path",
+            str(r_train_path),
             "--chosen-rank",
             str(chosen_rank),
             "--chosen-alpha",
@@ -337,6 +340,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
         help="Skip Phase 0 smoke (expects phase0_calibration.json to already exist).",
     )
     parser.add_argument(
+        "--skip-phase07",
+        action="store_true",
+        help=(
+            "Skip Phase 0.7 r-train fill (expects R_train_v504.json to already exist "
+            "next to the input R_train.json)."
+        ),
+    )
+    parser.add_argument(
+        "--no-phase07-upload",
+        action="store_true",
+        help="Skip HF upload of the augmented R_train_v504.json (local artifact only).",
+    )
+    parser.add_argument(
         "--skip-analyze",
         action="store_true",
         help="Skip Phase 2 analyze (useful when only re-running training).",
@@ -464,6 +480,51 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
         log.info("[phase=done] DRY-RUN complete (imports + Phase 0.5 only). %s", datetime.now(UTC))
         return 0
 
+    # ── Phase 0.7: r-train fill for newly-picked positioned negs (round-8 fix). ─
+    # Phase 0.5 may pick positioned negatives that #472's published R_train.json
+    # does NOT cover (e.g. round-6 mean-centering picked `origami_artist` +
+    # `prosecutor`). Generate on-policy R for the missing personas, write to
+    # `R_train_v504.json` (preserves #472's R_train.json byte-identical), and
+    # repoint downstream phases at the augmented artifact. Skip on
+    # --skip-phase07 if the v504 artifact already exists.
+    r_train_v504_path = args.r_train_path.with_name("R_train_v504.json")
+    if not args.skip_phase07:
+        fill_cmd = [
+            "uv",
+            "run",
+            "python",
+            "scripts/i504_phase_r_generate_fill.py",
+            "--phase05-path",
+            str(phase05_path),
+            "--input-r-train-path",
+            str(args.r_train_path),
+            "--output-r-train-path",
+            str(r_train_v504_path),
+            "--bank-path",
+            str(args.bank_path),
+            "--sentinel-path",
+            str(LOG_DIR / "issue-504-phase07-results.json"),
+        ]
+        if args.no_phase07_upload:
+            fill_cmd.append("--no-upload")
+        _run_phase_subprocess(fill_cmd, "phase07_r_train_fill")
+    else:
+        log.info("[phase=phase07] SKIP (--skip-phase07)")
+    if not r_train_v504_path.exists():
+        raise RuntimeError(
+            f"Phase 0.7 expected augmented R_train at {r_train_v504_path}; not found. "
+            f"Re-run without --skip-phase07 OR pre-stage the v504 artifact."
+        )
+    # Repoint args.r_train_path at the augmented artifact for the rest of the
+    # dispatcher — i504_run_cell.py reads --r-train-path, and the load_r_artifact
+    # schema is identical (only the `completions` map is augmented).
+    args.r_train_path = r_train_v504_path
+    log.info("[phase=phase07] downstream cells will read R_train from %s", args.r_train_path)
+    phase_summaries["phase07"] = {
+        "r_train_path": str(r_train_v504_path),
+        "status": "filled" if not args.skip_phase07 else "skipped",
+    }
+
     # ── Phase 0: smoke (3 cells × 1 seed) at a placeholder rank/α each. ─────
     # The Phase 0 smoke needs SEPARATE (rank, α) per cell (r=4/α=23, r=8/α=32,
     # r=16/α=32). We launch them sequentially with the right pinned values.
@@ -492,6 +553,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
                 bank_path=args.bank_path,
                 centroids_dir=args.centroids_dir,
                 arm_to_n_json=arm_to_n_json,
+                r_train_path=args.r_train_path,
                 chosen_rank=rank,
                 chosen_alpha=alpha,
                 chosen_frac=None,  # Phase 0 hasn't picked yet; train all 6 fracs.
@@ -587,6 +649,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
         bank_path=args.bank_path,
         centroids_dir=args.centroids_dir,
         arm_to_n_json=arm_to_n_json,
+        r_train_path=args.r_train_path,
         chosen_rank=pick["chosen_rank"],
         chosen_alpha=pick["chosen_alpha"],
         chosen_frac=pick["chosen_checkpoint_fraction"],
