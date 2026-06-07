@@ -390,10 +390,13 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
         # Cold start (and cold respawn via `autonomous_session_watch._respawn`)
         # boots the FULL `/issue <N>` skill once. The full skill arms an
         # in-session cron at Step 6d.2 that fires the lightweight
-        # `/issue-tick <N>` skill every 10 minutes — that recurring tick is
+        # `/issue-tick <N>` skill every 20 minutes — that recurring tick is
         # the new driver, NOT a `/loop`. The old `/loop 10m /issue <N>`
         # shape re-loaded the 44K-token /issue SKILL.md on every idle tick;
-        # the new shape loads it exactly once per session.
+        # the new shape loads it exactly once per session. (20 min not
+        # 10 min because the Anthropic prompt cache TTL is 5 min — a 10-min
+        # cadence guarantees a cold prefix every fire, so doubling the
+        # interval halves the tick count without the cache cost changing.)
         prompt = f"/issue {issue}"
     else:
         prompt = None

@@ -138,6 +138,35 @@ ASK_CITE_LOOKBACK = 5
 # the prose to be rewritten.
 ASK_CITE_RE = re.compile(r"workflow\.yaml\s+§\s+(gates(?:\.[a-z_-]+)*)\b")
 
+# `--check-autonomous-asks`: every `AskUserQuestion` mention in
+# `.claude/skills/issue/SKILL.md` and `.claude/agents/*.md` MUST document
+# its autonomous-mode behavior. Three accepted anchor forms (any one
+# satisfies the rule), looked for in the SAME paragraph as the
+# `AskUserQuestion` mention (paragraph = block bounded by blank lines,
+# same convention as ``check_asks``):
+#
+# 1. Literal "Interactive mode" / "interactive mode" — flags the ask as
+#    interactive-only, implying an autonomous-mode auto-resolve elsewhere.
+# 2. Literal "EPM_AUTONOMOUS_SESSION" — references the autonomous env
+#    flag explicitly, typically inside a branch-on-mode prose block.
+# 3. Annotation comment ``<!-- autonomous-mode: <action> -->`` where
+#    `<action>` is one of `auto-resolve` | `skip` | `block-and-fail` |
+#    `gate-allowed`. The `gate-allowed` value is for the two gates where
+#    the ask is legitimate in autonomous mode (none today; this is a
+#    forward-compat escape hatch).
+#
+# An AskUserQuestion mention inside an ``<!-- example: anti-pattern -->``
+# paragraph is exempt (same exemption as ``check_asks``). The check exists
+# specifically to prevent the #503/#504/#505 incident (2026-06-05): three
+# autonomous sessions sat blocked on a 4-option choice menu because the
+# SKILL.md prose didn't enumerate the autonomous-mode auto-resolve for
+# the conditional pivot gates.
+AUTONOMOUS_INTERACTIVE_RE = re.compile(r"interactive mode", re.IGNORECASE)
+AUTONOMOUS_ENV_RE = re.compile(r"EPM_AUTONOMOUS_SESSION")
+AUTONOMOUS_ANNOTATION_RE = re.compile(
+    r"<!--\s*autonomous-mode:\s*(auto-resolve|skip|block-and-fail|gate-allowed)\s*-->"
+)
+
 
 def _flatten_keys(workflow: WorkflowYaml) -> set[str]:
     """Return the set of dotted keys that ``(see workflow.yaml § <k>)``
@@ -337,6 +366,142 @@ def check_asks(workflow: WorkflowYaml, *, roots: list[Path] | None = None) -> li
             if not ASK_RE.search(line):
                 continue
             err = _ask_mention_error(path, idx, lines, keys)
+            if err is not None:
+                errors.append(err)
+    return errors
+
+
+def _autonomous_ask_paragraph_bounds(lines: list[str], idx: int) -> tuple[int, int]:
+    """Wider paragraph bounds for the autonomous-asks check.
+
+    The basic ``_ask_paragraph_bounds`` is capped at 5 lines on each side
+    (it's the citation-window for ``check_asks``). The autonomous-mode
+    documentation often lives in a parent section above a long bulleted
+    list, so we walk back to the NEAREST blank line above (uncapped) and
+    walk forward to the next blank line (uncapped). The forward walk is
+    also capped at the next H2/H3/H4 header (`## `, `### `, `#### `) to
+    avoid swallowing the next section's content.
+    """
+    up_start = 0
+    for back in range(idx - 1, -1, -1):
+        if lines[back].strip() == "":
+            up_start = back + 1
+            break
+    down_end = idx + 1
+    while down_end < len(lines):
+        line_stripped = lines[down_end].strip()
+        if line_stripped == "":
+            break
+        # Stop at a header boundary so we don't leak into the next section.
+        if line_stripped.startswith(("## ", "### ", "#### ")):
+            break
+        down_end += 1
+    return up_start, down_end
+
+
+def _autonomous_ask_error(path: Path, idx: int, lines: list[str]) -> str | None:
+    """Return a lint error string if the ``AskUserQuestion`` mention at
+    line ``idx`` lacks autonomous-mode documentation in its enclosing
+    paragraph / section block, or None if the mention is properly
+    anchored. See :func:`check_autonomous_asks` for the full rule.
+    """
+    up_start, down_end = _autonomous_ask_paragraph_bounds(lines, idx)
+    paragraph_text = "\n".join(lines[up_start:down_end])
+    # Exemption: `<!-- example: anti-pattern -->` paragraphs are
+    # documentation, not actual call sites — same convention as `check_asks`.
+    if ANTI_PATTERN_RE.search(paragraph_text):
+        return None
+    # Any one of the three anchors satisfies the rule.
+    if AUTONOMOUS_INTERACTIVE_RE.search(paragraph_text):
+        return None
+    if AUTONOMOUS_ENV_RE.search(paragraph_text):
+        return None
+    if AUTONOMOUS_ANNOTATION_RE.search(paragraph_text):
+        return None
+    return (
+        f"{path}:{idx + 1}: 'AskUserQuestion' mention is missing autonomous-mode "
+        f"documentation. The enclosing section block (bounded by the nearest "
+        f"blank line above and the next blank line or markdown header below) "
+        f"must contain one of: the phrase 'Interactive mode', the literal "
+        f"'EPM_AUTONOMOUS_SESSION', or '<!-- autonomous-mode: "
+        f"<auto-resolve|skip|block-and-fail|gate-allowed> -->'. This prevents "
+        f"the #503/#504/#505 incident (2026-06-05): an AskUserQuestion path "
+        f"that has no documented autonomous-mode handling blocks the "
+        f"session at run time. The PreToolUse hook in .claude/settings.json "
+        f"is the runtime backstop; this lint check forces the docs to "
+        f"match. See CLAUDE.md 'STATE-TO-`blocked` criteria' + "
+        f".claude/skills/issue/SKILL.md § Autonomous session behavior."
+    )
+
+
+def _resolve_autonomous_ask_target_files(roots: list[Path] | None) -> list[Path]:
+    """The autonomous-asks check is narrower than ``check_asks``: it only
+    scopes to ``.claude/skills/issue/SKILL.md`` (the per-issue orchestrator
+    that ever runs in autonomous mode) and the agents it dispatches. Other
+    skills (``/daily``, ``/weekly``, ``/pm``, etc.) never run under
+    ``EPM_AUTONOMOUS_SESSION``, so an AskUserQuestion in them is fine
+    without the autonomous-mode annotation.
+    """
+    if roots is not None:
+        files: list[Path] = []
+        for root in roots:
+            if root.is_file():
+                files.append(root)
+            else:
+                files.extend(p for p in root.glob("**/*.md") if p.is_file())
+        return sorted(files)
+    # Production scope: only the issue orchestrator + its agents.
+    issue_skill = _REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
+    agents_dir = _REPO_ROOT / ".claude" / "agents"
+    files = []
+    if issue_skill.exists():
+        files.append(issue_skill)
+    if agents_dir.is_dir():
+        files.extend(p for p in agents_dir.glob("*.md") if p.is_file())
+    return sorted(files)
+
+
+def check_autonomous_asks(*, roots: list[Path] | None = None) -> list[str]:
+    """Walk ``.claude/skills/issue/SKILL.md`` and ``.claude/agents/*.md``
+    and FAIL on any ``AskUserQuestion`` mention whose surrounding
+    paragraph does not document the autonomous-mode behavior.
+
+    A line containing ``AskUserQuestion`` PASSES if its surrounding
+    paragraph (bounded by blank lines) contains ANY of:
+
+    1. The phrase ``Interactive mode`` / ``interactive mode`` — flags
+       the ask as interactive-only, implying an autonomous-mode
+       auto-resolve elsewhere.
+    2. The literal ``EPM_AUTONOMOUS_SESSION`` — references the
+       autonomous env flag explicitly, typically inside a branch-on-mode
+       prose block that handles autonomous mode separately.
+    3. The annotation ``<!-- autonomous-mode: <action> -->`` where
+       ``<action>`` is one of ``auto-resolve``, ``skip``,
+       ``block-and-fail``, or ``gate-allowed``.
+
+    Exemption: paragraphs marked ``<!-- example: anti-pattern -->`` are
+    documentation, not actual call sites, and are skipped.
+
+    Rationale: the #503/#504/#505 incident (2026-06-05) had three
+    autonomous Happy sessions sit blocked indefinitely on a 4-option
+    choice menu because the SKILL.md prose did not enumerate the
+    autonomous-mode auto-resolve for the conditional pivot gates. The
+    runtime backstop is the PreToolUse hook in ``.claude/settings.json``
+    (which now blocks ANY ``AskUserQuestion`` in autonomous mode); this
+    lint forces the docs to match so an ask without a documented
+    autonomous-mode path can never land on `main`.
+
+    ``roots`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical issue-orchestrator
+    surface (``.claude/skills/issue/SKILL.md`` + ``.claude/agents/*.md``).
+    """
+    errors: list[str] = []
+    for path in _resolve_autonomous_ask_target_files(roots):
+        lines = path.read_text().splitlines()
+        for idx, line in enumerate(lines):
+            if not ASK_RE.search(line):
+                continue
+            err = _autonomous_ask_error(path, idx, lines)
             if err is not None:
                 errors.append(err)
     return errors
@@ -644,8 +809,24 @@ def main(argv: list[str] | None = None) -> int:
         "(<!-- gate: <key> --> resolving to workflow.yaml § gates), to an "
         "existing '(see workflow.yaml § gates.X)' citation in the same "
         "paragraph, or marked as documentation via "
-        "<!-- example: anti-pattern -->. Enforces the CLAUDE.md "
-        "auto-continuation contract.",
+        "<!-- example: anti-pattern -->. Bundles --check-autonomous-asks "
+        "(every AskUserQuestion in .claude/skills/issue/SKILL.md + "
+        ".claude/agents/*.md MUST document its autonomous-mode behavior — "
+        "see that flag's help). Enforces the CLAUDE.md auto-continuation "
+        "contract.",
+    )
+    parser.add_argument(
+        "--check-autonomous-asks",
+        action="store_true",
+        help="Verify every 'AskUserQuestion' mention in "
+        ".claude/skills/issue/SKILL.md and .claude/agents/*.md has its "
+        "surrounding paragraph documenting the autonomous-mode behavior "
+        "(literal 'Interactive mode' / 'EPM_AUTONOMOUS_SESSION', or "
+        "'<!-- autonomous-mode: <auto-resolve|skip|block-and-fail|"
+        "gate-allowed> -->' annotation). Closes the #503/#504/#505 gap "
+        "(2026-06-05): three autonomous sessions sat blocked because the "
+        "SKILL.md prose did not enumerate autonomous-mode auto-resolve "
+        "for conditional pivot gates. Bundled into --check-asks.",
     )
     parser.add_argument(
         "--check-script-refs",
@@ -685,6 +866,7 @@ def main(argv: list[str] | None = None) -> int:
         or args.emit_tables
         or args.check_status_labels
         or args.check_asks
+        or args.check_autonomous_asks
         or args.check_script_refs
         or args.check_wandb_required
     )
@@ -708,6 +890,13 @@ def main(argv: list[str] | None = None) -> int:
         errors.extend(_check_status_label_coverage(workflow))
     if args.check_asks:
         errors.extend(check_asks(workflow))
+        # The autonomous-asks check is bundled into --check-asks because the
+        # two enforce complementary halves of the same contract: --check-asks
+        # ensures every AskUserQuestion cites a gate; --check-autonomous-asks
+        # ensures every AskUserQuestion documents its autonomous-mode handling.
+        errors.extend(check_autonomous_asks())
+    if args.check_autonomous_asks and not args.check_asks:
+        errors.extend(check_autonomous_asks())
     if args.check_script_refs or no_flags:
         errors.extend(check_script_references())
     if args.check_wandb_required or no_flags:

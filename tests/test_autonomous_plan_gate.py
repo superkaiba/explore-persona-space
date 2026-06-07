@@ -210,7 +210,10 @@ _PLAN_APPROVAL_PAYLOAD = {
     },
 }
 
-# Other AskUserQuestion gates that MUST pass through (never plan-approval).
+# Other AskUserQuestion shapes. Under the 2026-06-06 broadened-hook policy
+# (proposal #4, task #503/#504/#505 incident), ALL of these MUST be blocked
+# in autonomous mode — `asking is the failure mode` is the rule. In
+# interactive mode (env unset), they pass through unchanged.
 _OTHER_GATE_PAYLOADS = {
     "goal": {
         "tool_input": {
@@ -244,6 +247,45 @@ _OTHER_GATE_PAYLOADS = {
             "questions": [{"question": "Which dataset split should I use?", "header": "Dataset"}]
         }
     },
+    "whack_a_mole": {
+        "tool_input": {
+            "questions": [
+                {
+                    "question": (
+                        "Whack-a-mole detector fired (3 distinct bug classes in 3 rounds). "
+                        "continue-as-planned vs pivot-to-unification?"
+                    ),
+                    "header": "Pivot #137",
+                }
+            ]
+        }
+    },
+    "compute_deviation": {
+        "tool_input": {
+            "questions": [
+                {
+                    "question": (
+                        "Compute deviation 3.2x plan - continue_as_is vs "
+                        "accept_descope_to_seeds_3_with_caveats?"
+                    ),
+                    "header": "Cost pivot #137",
+                }
+            ]
+        }
+    },
+    "concern_deferral": {
+        "tool_input": {
+            "questions": [
+                {
+                    "question": (
+                        "Open CONCERN concern-id=abc123 - defer with rationale "
+                        "or bounce to implementer?"
+                    ),
+                    "header": "Concern deferral #137",
+                }
+            ]
+        }
+    },
 }
 
 
@@ -269,9 +311,24 @@ def test_hook_truthiness_matches_python_resolver(monkeypatch):
         )
 
 
-def test_hook_does_not_block_other_gates_when_autonomous():
-    """The backstop is targeted: it must NOT block the goal / fact-candidates
-    / living-docs / dataset AskUserQuestion gates, even in an autonomous
-    session."""
+def test_hook_blocks_all_asks_when_autonomous():
+    """Per the 2026-06-06 broadened-hook policy (proposal #4, task
+    #503/#504/#505 incident): the hook blocks ANY AskUserQuestion when
+    EPM_AUTONOMOUS_SESSION is set, not just plan-approval. The autonomous
+    branch must auto-resolve every fork — `asking is the failure mode`."""
     for name, payload in _OTHER_GATE_PAYLOADS.items():
-        assert _run_ask_hook(payload, "1") == 0, f"hook wrongly blocked the {name} gate"
+        assert _run_ask_hook(payload, "1") == 2, (
+            f"hook should block the {name} gate in autonomous mode but did not"
+        )
+
+
+def test_hook_allows_all_gates_when_not_autonomous():
+    """In interactive mode (env unset / 0 / false), the hook allows every
+    AskUserQuestion shape — gates that legitimately ask the user must
+    continue to work."""
+    for name, payload in _OTHER_GATE_PAYLOADS.items():
+        for env_value in (None, "0", "false"):
+            assert _run_ask_hook(payload, env_value) == 0, (
+                f"hook wrongly blocked the {name} gate in interactive mode "
+                f"(env_value={env_value!r})"
+            )
