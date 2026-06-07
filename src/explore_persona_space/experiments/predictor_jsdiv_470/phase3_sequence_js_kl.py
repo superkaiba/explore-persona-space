@@ -284,9 +284,33 @@ def main() -> int:  # noqa: C901 — linear setup + per-cell loop reads clearer 
     )
     parser.add_argument("--tf-batch", type=int, default=2)
     parser.add_argument("--gpu-id", type=int, default=0)
+    parser.add_argument(
+        "--device-map",
+        default=None,
+        help=(
+            "Override the model device_map. Default is single-GPU "
+            "(``{'': cuda:<gpu-id>}``), matching #470's 7B production path. "
+            "Pass ``auto`` to enable HF accelerate auto-sharding across all "
+            "visible GPUs — REQUIRED for the #507 72B re-run because the "
+            "full 145 GB bf16 Qwen-72B does not fit on a single H100/H200 "
+            "80 GB. Also overridable via the PREDICTOR_DEVICE_MAP env var "
+            "for backward-compat with subprocess env threading."
+        ),
+    )
     args = parser.parse_args()
 
-    os.environ.setdefault("CUDA_VISIBLE_DEVICES", str(args.gpu_id))
+    # Round-3 fix per code-review Critical 4: when the env var PREDICTOR_DEVICE_MAP
+    # is set, it overrides the CLI default. Used by the #507 dispatcher to
+    # request ``auto`` sharding for the 72B run without changing every Phase 3
+    # CLI call. Explicit --device-map on the CLI still wins.
+    env_device_map = os.environ.get("PREDICTOR_DEVICE_MAP")
+    if args.device_map is None and env_device_map:
+        args.device_map = env_device_map
+
+    # Only set CUDA_VISIBLE_DEVICES when we're going single-GPU. Under
+    # device_map=auto, accelerate needs to see ALL visible GPUs.
+    if not args.device_map or args.device_map.startswith("cuda:") or args.device_map == "single":
+        os.environ.setdefault("CUDA_VISIBLE_DEVICES", str(args.gpu_id))
     PHASE3_DIR.mkdir(parents=True, exist_ok=True)
 
     persona_prompts = get_eval_personas_24()
@@ -369,12 +393,38 @@ def main() -> int:  # noqa: C901 — linear setup + per-cell loop reads clearer 
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    logger.info("Loading model %s on %s", args.model, device)
+    # Round-3 fix per code-review Critical 4: resolve device_map to support
+    # multi-GPU sharding for 72B. Without this, line 377 pinned the full
+    # model onto a single GPU and Qwen-72B (145 GB bf16) OOMed on H100 80 GB.
+    # device_map=auto → HF accelerate shards across all visible GPUs;
+    # device_map=cuda:N or unset → single-GPU pin (legacy 7B production path,
+    # byte-identical for #470's previous runs).
+    if torch.cuda.is_available():
+        if args.device_map and args.device_map not in ("single", "cuda"):
+            # "auto" / "balanced" / "balanced_low_0" / "sequential" — pass through.
+            resolved_device_map: dict | str = args.device_map
+            # For multi-GPU sharding we still want device = cuda:0 for the
+            # batch tensors moved with .to(device); accelerate will redirect
+            # forward passes to the correct shard.
+            device = torch.device("cuda:0")
+            logger.info(
+                "Loading model %s with device_map=%s (sharded; tensors moved to cuda:0)",
+                args.model,
+                resolved_device_map,
+            )
+        else:
+            device = torch.device("cuda:0")
+            resolved_device_map = {"": device}
+            logger.info("Loading model %s on %s (single-GPU pin)", args.model, device)
+    else:
+        device = torch.device("cpu")
+        resolved_device_map = None
+        logger.info("Loading model %s on cpu", args.model)
+
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
         torch_dtype=torch.bfloat16 if device.type == "cuda" else torch.float32,
-        device_map={"": device} if device.type == "cuda" else None,
+        device_map=resolved_device_map,
         trust_remote_code=True,
         token=os.environ.get("HF_TOKEN"),
     )

@@ -162,6 +162,12 @@ def _predictor_env_overrides() -> dict[str, str]:
         # tuple {7,14,21,27}. Without this Phase 4 file-NotFound errors on
         # layer_7.json because Phase 2 wrote layer_21/40/57/70.json.
         "PREDICTOR_LAYERS": ",".join(str(li) for li in LAYER_SET_BY_ARCH["72b"]),
+        # Round-3 fix per code-review Critical 4: Phase 3 (sequence JS+KL)
+        # previously pinned the whole model to a single GPU
+        # (device_map={"": cuda:0}). Qwen-72B at 145 GB bf16 cannot fit on
+        # any H100/H200 80 GB; force HF accelerate auto-sharding so the model
+        # spans all visible GPUs the same way the preflight already does.
+        "PREDICTOR_DEVICE_MAP": "auto",
         "PREDICTOR_GUARD_NO_OVERWRITE_470": "1",
     }
     # Point Phase 4 at the 72B's own DV + base panel rates produced by
@@ -683,6 +689,11 @@ def phase3_predictor_72b(*, smoke: bool, gpu_id: int = 0) -> None:
     )
 
     # Phase 3.3: RB sequence JS + KL.
+    # Round-3 fix per code-review Critical 3: Phase 3's argparse does NOT
+    # accept --R (only Phase 1 sampling does). Phase 3 INFERS R from the
+    # Phase 1 outputs already on disk (responses shape (n_probes, R) is
+    # read off phase1[persona]["responses"]). Passing --R here crashed
+    # Phase 3.3 at argparse before producing any JS/KL cells.
     sources_arg = ["--sources", *list(SOURCE_PERSONAS_507)]
     if smoke:
         sources_arg = ["--sources", "software_engineer", "--bystanders", "comedian"]
