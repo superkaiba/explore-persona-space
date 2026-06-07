@@ -125,10 +125,17 @@ def make_synthetic_centroids(
         )
         written[layer] = path
     # Persona bank (system prompts) JSON — only the persona NAMES are read in CPU
-    # tests; the prompts are placeholders.
+    # tests; the prompts are placeholders. Schema matches production
+    # contrastive_neg_geometry_472.persona_bank.load_persona_bank's contract
+    # ({schema_version, personas: {name: prompt}}); the bare-dict layout used
+    # before round 8 failed load_persona_bank's schema_version assertion.
     bank_path = out_dir / "persona_bank.json"
-    bank = {p: f"You are {p}." for p in personas}
-    bank_path.write_text(json.dumps(bank, indent=2))
+    bank_payload = {
+        "schema_version": "i472_v1",
+        "base_model": "synthetic-smoke",
+        "personas": {p: f"You are {p}." for p in personas},
+    }
+    bank_path.write_text(json.dumps(bank_payload, indent=2))
     return {"personas": personas, "bank_path": bank_path, "centroids_paths": written}
 
 
@@ -138,20 +145,35 @@ def make_synthetic_r_train(
     source: str = "villain",
     n_questions: int = 5,
     response_length: int = 50,
+    extra_personas: list[str] | None = None,
 ) -> Path:
-    """Synthetic R_train.json: just enough for max-length check + smoke build."""
+    """Synthetic R_train.json: covers every persona in the synthetic bank.
+
+    Round-8 fix: Phase 0.5 picks 4 positioned-N's by cosine band, which under
+    synthetic centroids can land on ANY probe_persona_NNN, not just the named
+    near/mid_near/mid_far/far personas. So the R_train fixture must cover the
+    WHOLE synthetic bank to exercise Phase 0.7's no-op branch (the GPU branch
+    that fires for genuinely missing personas is covered by the production
+    pod on the round-8 relaunch).
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
     completions: dict = {}
     qs = [f"q_{i}" for i in range(n_questions)]
-    # Build R_train for every persona we might use as positive/negative.
-    for persona in [
+    base_personas = [
         source,
         "qwen_default",
         "near_persona",
         "mid_near_persona",
         "mid_far_persona",
         "far_persona",
-    ]:
+    ]
+    all_personas = list(base_personas)
+    if extra_personas:
+        for p in extra_personas:
+            if p not in all_personas:
+                all_personas.append(p)
+    # Build R_train for every persona we might use as positive/negative.
+    for persona in all_personas:
         completions[persona] = {
             q: {
                 "response_text": f"Answer from {persona} to {q}.",
@@ -317,7 +339,10 @@ def main() -> int:
         len(artifacts["personas"]),
         centroids_dir,
     )
-    r_train_path = make_synthetic_r_train(centroids_dir / "on_policy_R")
+    r_train_path = make_synthetic_r_train(
+        centroids_dir / "on_policy_R",
+        extra_personas=artifacts["personas"],
+    )
 
     # ── (1) Phase 0.5 gates ────────────────────────────────────────────────
     phase05_out = work_dir / "phase0_5_gates.json"
@@ -346,6 +371,55 @@ def main() -> int:
         report.get("arm_to_positioned_n"),
         report.get("smoke_mid_band_n"),
         len(report.get("held_out_panel", [])),
+    )
+
+    # ── (1.5) Phase 0.7 r-train fill (CPU no-op path) ──────────────────────
+    # The synthetic R_train covers every persona the synthetic Phase 0.5 picks,
+    # so the fill script's no-op branch is exercised here — verifies the diff
+    # logic + the byte-identical copy + the sentinel write. The vLLM-generate
+    # path (missing personas → on-policy decode) is NOT smokeable on CPU; it
+    # gets exercised by the GPU pod the moment Phase 0.5 picks a new persona
+    # that #472's R_train doesn't cover (which is the round-8 launch case).
+    r_train_v504_path = r_train_path.with_name("R_train_v504.json")
+    sentinel_phase07 = work_dir / "phase07-sentinel.json"
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        str(repo_root / "scripts" / "i504_phase_r_generate_fill.py"),
+        "--phase05-path",
+        str(phase05_out),
+        "--input-r-train-path",
+        str(r_train_path),
+        "--output-r-train-path",
+        str(r_train_v504_path),
+        "--bank-path",
+        str(centroids_dir / "persona_bank.json"),
+        "--no-upload",
+        "--sentinel-path",
+        str(sentinel_phase07),
+    ]
+    log.info("[phase07] %s", " ".join(cmd))
+    rc = subprocess.call(cmd)
+    if rc != 0 or not r_train_v504_path.exists() or not sentinel_phase07.exists():
+        log.error(
+            "[phase07] FAIL rc=%s v504_exists=%s sentinel_exists=%s",
+            rc,
+            r_train_v504_path.exists(),
+            sentinel_phase07.exists(),
+        )
+        return 2
+    sentinel = json.loads(sentinel_phase07.read_text())
+    note = json.loads(sentinel.get("note", "{}"))
+    log.info(
+        "[phase07] PASS rc=0 status=%s n_missing_filled=%d v504_path=%s",
+        note.get("status"),
+        len(note.get("missing_filled", []) or note.get("missing", [])),
+        r_train_v504_path,
+    )
+    assert note.get("status") == "ok_noop", (
+        "smoke synthetic R_train covers Phase 0.5 picks; "
+        f"expected ok_noop, got {note.get('status')}"
     )
 
     # ── (2) Phase 0 pick (over synthetic smoke trajectories) ───────────────
@@ -403,8 +477,15 @@ def main() -> int:
     )
 
     # ── (3) build_cell_504 (training-pool builder, CPU) ─────────────────────
-    bank = json.loads((centroids_dir / "persona_bank.json").read_text())
-    r_train = json.loads(r_train_path.read_text())
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.persona_bank import (
+        load_persona_bank,
+    )
+
+    bank = load_persona_bank(centroids_dir / "persona_bank.json")
+    r_train_raw = json.loads(r_train_path.read_text())
+    # build_cell_504 reads completions[persona][q]; production schema wraps under
+    # 'completions' key (i472_v1). Smoke's r_train fixture follows the same shape.
+    r_train = r_train_raw.get("completions", r_train_raw)
     from explore_persona_space.experiments.contrastive_neg_geometry_504.build_training_data import (
         build_cell_504,
     )
