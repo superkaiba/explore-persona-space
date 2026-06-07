@@ -36,18 +36,30 @@ log = logging.getLogger("sycophancy_scale_507.analyze_507")
 # 10k convention (the cross-arm test inherits the parent's stat budget).
 DEFAULT_CROSS_ARM_BOOTSTRAP_N = 10000
 
-# The three primary predictors per plan v2 section 6.1. Each maps to the
-# regression.json's `per_predictor[<label>]` key emitted by phase5_regress.
-# We surface within-arm + cross-arm rho on each one.
+# The three primary predictors per plan v2 section 6.1. Each maps to a label
+# that phase5_regress.py emits inside the top-level ``predictors`` dict (NOT
+# ``per_predictor`` — that was the round-1 schema-mismatch bug per code-review
+# Critical 4). Concrete labels:
+#   - "cosine_l20_baseline" — baseline next-token cosine, layer 20 (7B) /
+#     equivalent depth (72B headline layer 57 via PREDICTOR_HEADLINE_LAYER).
+#   - "cosine_response_headline" — response-token cosine at HEADLINE_LAYER
+#     (env-parametrized).
+#   - "M_js" — Jensen-Shannon mixture distance, the JS sequence predictor.
 PRIMARY_PREDICTORS: tuple[str, ...] = (
-    "cosine_layer_headline",  # the headline layer (21 at 7B, 57 at 72B)
-    "cosine_response_token_headline",
-    "js_sequence_rb",
+    "cosine_l20_baseline",
+    "cosine_response_headline",
+    "M_js",
 )
 
 
 def _load_regression(path: Path, arm_label: str) -> dict:
-    """Read an arm's regression.json; fail-loud if it doesn't exist or is malformed."""
+    """Read an arm's regression.json; fail-loud if it doesn't exist or is malformed.
+
+    Round-2 fix per code-review Critical 4: the writer's top-level key is
+    ``predictors`` (NOT ``per_predictor``). Accept either spelling to stay
+    compatible with any older committed regression.json that pre-dated this
+    canonicalization, but emit a warning so the drift is visible.
+    """
     if not path.exists():
         raise FileNotFoundError(
             f"regression.json for {arm_label} missing at {path}. The Phase 5 "
@@ -55,12 +67,23 @@ def _load_regression(path: Path, arm_label: str) -> dict:
         )
     with open(path) as f:
         payload = json.load(f)
-    if "per_predictor" not in payload:
-        raise RuntimeError(
-            f"regression.json for {arm_label} at {path} is missing the "
-            f"'per_predictor' key — Phase 5 produced a kill-criterion / halted "
-            f"payload, not a full regression. Cannot cross-arm compare."
-        )
+    if "predictors" not in payload:
+        # Back-compat: tolerate the older "per_predictor" spelling if some
+        # committed file uses it; normalize so downstream lookups always
+        # find "predictors".
+        if "per_predictor" in payload:
+            log.warning(
+                "regression.json at %s uses legacy 'per_predictor' key; "
+                "renaming to 'predictors' in-memory for compatibility.",
+                path,
+            )
+            payload["predictors"] = payload["per_predictor"]
+        else:
+            raise RuntimeError(
+                f"regression.json for {arm_label} at {path} is missing the "
+                f"'predictors' key — Phase 5 produced a kill-criterion / halted "
+                f"payload, not a full regression. Cannot cross-arm compare."
+            )
     return payload
 
 
@@ -200,14 +223,13 @@ def cross_arm_compare(
     rng = np.random.default_rng(seed)
     per_predictor_out: dict[str, dict] = {}
     for pred in PRIMARY_PREDICTORS:
-        # phase5_regress uses string labels like
-        # "cosine_l21_last_prompt" for the 7B headline layer. The 72B
-        # equivalent comes through with the layer baked in too. We
-        # tolerate either canonical form here by looking up both the
-        # arch-specific label and the bare pred name; downstream callers
-        # (the dispatcher) are expected to surface the matching key.
-        pred_7b_block = reg_7b.get("per_predictor", {}).get(pred)
-        pred_72b_block = reg_72b.get("per_predictor", {}).get(pred)
+        # phase5_regress writes labels under the top-level "predictors" key
+        # (round-2 fix per code-review Critical 4). Each predictor block
+        # carries spearman_raw / spearman_source_fe / per_source / etc.
+        # Tolerate the legacy "per_predictor" spelling for back-compat with
+        # any older committed regression files (handled in _load_regression).
+        pred_7b_block = reg_7b.get("predictors", {}).get(pred)
+        pred_72b_block = reg_72b.get("predictors", {}).get(pred)
         if pred_7b_block is None or pred_72b_block is None:
             log.warning(
                 "cross_arm_compare: predictor %s missing from one arm (7b=%s, 72b=%s); skipping",
@@ -282,17 +304,20 @@ def _compute_verdict_grid_inputs(
 
     Returns the inputs + the verdict + the downgrade-via-cross-arm-CI flag.
     """
-    # Pick the headline predictor key. The phase5_regress uses "cosine_layer_headline"
-    # as the canonical name in our cross-arm dict; the verdict-grid lookup uses
-    # the same.
-    headline_pred = PRIMARY_PREDICTORS[0]
-    headline_72b = reg_72b.get("per_predictor", {}).get(headline_pred, {})
-    headline_7b = reg_7b.get("per_predictor", {}).get(headline_pred, {})
+    # Round-2 fix per code-review Critical 4: headline predictor lookup
+    # uses "cosine_response_headline" inside top-level "predictors" dict.
+    # PRIMARY_PREDICTORS[1] = "cosine_response_headline" — the headline-layer
+    # response-token cosine (layer 21 at 7B / 57 at 72B via env override).
+    headline_pred = "cosine_response_headline"
+    headline_72b = reg_72b.get("predictors", {}).get(headline_pred, {})
+    headline_7b = reg_7b.get("predictors", {}).get(headline_pred, {})
 
     # Input 1: per-source rho mean >= +0.20 + per-source p < 0.05 (averaged).
+    # Round-2 fix per code-review Critical 4: phase5_regress emits per-source
+    # rows with key "p" (two-tailed Spearman p-value), NOT "p_one_tail".
     per_source_72b = headline_72b.get("per_source", {})
     rho_vals = [v["rho"] for v in per_source_72b.values() if v.get("rho") is not None]
-    p_vals = [v["p_one_tail"] for v in per_source_72b.values() if v.get("p_one_tail") is not None]
+    p_vals = [v["p"] for v in per_source_72b.values() if v.get("p") is not None]
     mean_rho_72b = float(np.mean(rho_vals)) if rho_vals else None
     mean_p_72b = float(np.mean(p_vals)) if p_vals else None
     input_1 = (
@@ -303,12 +328,20 @@ def _compute_verdict_grid_inputs(
     )
 
     # Input 2: paired |Delta-rho| CI excludes 0 against base-rate null.
-    # We read the 72B regression's per-predictor "paired_bootstrap_vs_base_rate"
-    # block (emitted by phase5_regress) — if present, take its overlaps_zero
-    # flag. Otherwise mark as unknown.
-    paired_vs_base = headline_72b.get("paired_bootstrap_vs_base_rate", {})
-    if paired_vs_base.get("ci_lower_95") is not None:
-        input_2 = not paired_vs_base.get("overlaps_zero", True)
+    # Round-2 fix per code-review Critical 4: phase5_regress writes
+    # ``paired_bootstrap_delta_rho_vs_base_rate`` at the TOP LEVEL of the
+    # regression payload (one block per arm), not per-predictor. Read it
+    # from reg_72b's root.
+    paired_vs_base = reg_72b.get("paired_bootstrap_delta_rho_vs_base_rate", {})
+    if paired_vs_base.get("ci_low_95") is not None:
+        # Manual overlap-zero check; phase5_regress uses ci_low_95 / ci_high_95.
+        ci_lo = paired_vs_base.get("ci_low_95")
+        ci_hi = paired_vs_base.get("ci_high_95")
+        if ci_lo is not None and ci_hi is not None:
+            overlaps_zero = ci_lo <= 0.0 <= ci_hi
+            input_2 = not overlaps_zero
+        else:
+            input_2 = None
     else:
         input_2 = None
 
@@ -334,7 +367,9 @@ def _compute_verdict_grid_inputs(
 
     # Cross-arm downgrade check: HIGH -> MODERATE iff the |rho_72B|-|rho_7B|
     # paired CI on the headline predictor overlaps zero.
-    headline_paired = per_predictor_cross.get(headline_pred, {}).get(
+    # Round-2 fix per code-review Critical 4: use "cosine_response_headline"
+    # consistently as the headline predictor key.
+    headline_paired = per_predictor_cross.get("cosine_response_headline", {}).get(
         "paired_abs_rho_diff_72b_minus_7b", {}
     )
     cross_overlaps_zero = headline_paired.get("overlaps_zero")
