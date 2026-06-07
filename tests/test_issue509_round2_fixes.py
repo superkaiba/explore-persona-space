@@ -267,23 +267,40 @@ def test_f3_partial_spearman_residualizes_x_and_y():
         run_bootstrap=False,
         perm_b=10,
     )
-    # rho_fe should be ~0 (stratum B reverses x→y), since within-stratum
-    # partial correlations average to 0. With ONLY-y residualization the
-    # statistic would still be dominated by between-stratum structure.
-    # We assert that rho_fe is materially smaller than the old-style
-    # (only-y residualized) statistic.
     y2_resid_only = scoring._residualize(y2, strata)
     x_resid = scoring._residualize(x, strata)
     rho_fe_correct = scoring._spearman_rho(x_resid, y2_resid_only)
-    rho_fe_old = scoring._spearman_rho(x, y2_resid_only)  # round-1 buggy form.
     assert abs(out2["rho_fe"] - rho_fe_correct) < 1e-9, (
         f"F3: rho_fe should equal Spearman(x_resid, y_resid), got {out2['rho_fe']} "
         f"vs correct {rho_fe_correct}"
     )
-    # The two statistics should differ — confirming the fix is observable.
-    assert abs(rho_fe_correct - rho_fe_old) > 0.1, (
-        f"F3: synthetic test should discriminate buggy vs fixed forms; "
-        f"correct={rho_fe_correct}, old={rho_fe_old}"
+
+    # Discriminating example: x has the SAME relative ordering within each
+    # stratum but very different magnitudes between strata. y has a
+    # within-stratum signal. Residualizing only y leaves x's between-
+    # stratum scale dominating the rank correlation; residualizing both
+    # gives the correct within-stratum-only answer.
+    x_disc = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 100.0, 100.1, 100.2, 100.3, 100.4])
+    # y_disc: small within-stratum noise + same between-stratum scale.
+    y_disc = np.array([5.0, 4.0, 3.0, 2.0, 1.0, 5.0, 4.0, 3.0, 2.0, 1.0])
+    # Within-stratum: x ascending, y descending → ρ_fe should be ~-1.0.
+    # ONLY-y residualization: y's between-stratum mean is zero (same in
+    # both strata) so y_resid_only == y. ρ(x, y_resid_only) = ρ(x, y),
+    # which is dominated by between-stratum structure (both halves of y
+    # repeat the same ranks → tied global ranks → ρ ≈ 0).
+    x_disc_resid = scoring._residualize(x_disc, strata)
+    y_disc_resid = scoring._residualize(y_disc, strata)
+    rho_fe_disc_correct = scoring._spearman_rho(x_disc_resid, y_disc_resid)
+    rho_fe_disc_buggy = scoring._spearman_rho(x_disc, y_disc_resid)  # round-1 form.
+    assert rho_fe_disc_correct < -0.9, (
+        f"F3: discriminating case — correct ρ_fe should be ≈ -1, got {rho_fe_disc_correct}"
+    )
+    # Buggy form (only y residualized) does NOT fully recover the within-
+    # stratum -1 signal because x's between-stratum scale still pulls the
+    # rank correlation toward 0. The two should differ by at least 0.4.
+    assert abs(rho_fe_disc_correct - rho_fe_disc_buggy) > 0.4, (
+        f"F3: discriminating example failed to separate buggy vs fixed forms; "
+        f"correct={rho_fe_disc_correct}, buggy={rho_fe_disc_buggy}"
     )
 
 

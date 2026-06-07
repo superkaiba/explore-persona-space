@@ -147,10 +147,39 @@ def _residualize(y: np.ndarray, fe: np.ndarray) -> np.ndarray:
 
 
 def _permutation_p(rho_obs: float, x: np.ndarray, y: np.ndarray, fe: np.ndarray, b: int) -> float:
-    """Within-stratum permutation p (two-tailed)."""
+    """DEPRECATED — kept only as a back-compat re-export.
+
+    Use :func:`_permutation_p_partial` instead: it computes the same
+    residualized statistic (Plan §4.1.5 regression D: ``ρ(x | s, y | s)``)
+    inside every permutation draw so the observed and null are the SAME
+    function. This wrapper forwards to it.
+    """
+    return _permutation_p_partial(rho_obs, x, y, fe, b)
+
+
+def _permutation_p_partial(
+    rho_obs: float,
+    x: np.ndarray,
+    y: np.ndarray,
+    fe: np.ndarray,
+    b: int,
+) -> float:
+    """Within-stratum permutation p for the FE partial Spearman.
+
+    ROUND-2/#509 FIX F3: round-1 shuffled ``y`` within stratum but scored
+    against ``_spearman_rho(x, y_perm)`` — un-residualized — while the
+    observed statistic was the residualized ``rho_fe``. The test compared
+    two different statistics; the p-value was statistically meaningless.
+
+    The corrected null residualizes BOTH ``x`` and ``y_perm`` within
+    stratum on every draw, computes the partial-Spearman statistic, and
+    counts the fraction at-or-beyond the observed magnitude. The observed
+    statistic upstream is also partial Spearman (see ``_score_one_cell``).
+    """
     if not np.isfinite(rho_obs):
         return float("nan")
     rng = np.random.default_rng(_hashed_seed(PERMUTATION_NULL_SEED_TAG))
+    x_resid = _residualize(x, fe)
     n_ge = 0
     for _ in range(b):
         y_perm = y.copy()
@@ -160,7 +189,10 @@ def _permutation_p(rho_obs: float, x: np.ndarray, y: np.ndarray, fe: np.ndarray,
                 continue
             rng.shuffle(idx)
             y_perm[fe == s] = y[idx]
-        rho_p = _spearman_rho(x, y_perm)
+        # Residualize y_perm WITHIN STRATUM after shuffling, then compute
+        # the same residualized Spearman as the observed statistic.
+        y_perm_resid = _residualize(y_perm, fe)
+        rho_p = _spearman_rho(x_resid, y_perm_resid)
         if np.isfinite(rho_p) and abs(rho_p) >= abs(rho_obs):
             n_ge += 1
     return (1 + n_ge) / (b + 1)
@@ -355,11 +387,79 @@ def _build_syco_xy(
     )
 
 
-def _reliability_y(y: np.ndarray, se: np.ndarray) -> float:
-    """Reliability = 1 - mean(SE^2)/var(y); clipped to (1e-6, 1.0]."""
+def _reliability_y_pooled(y: np.ndarray, se: np.ndarray) -> float:
+    """LEGACY pooled-variance reliability — exported for test diff only.
+
+    Computes ``1 - mean(SE^2) / var_pooled(y)``. This is the round-1 form
+    that ROUND-2/#509 FIX F4 replaces with the within-stratum variant
+    everywhere it's called for production scoring.
+    """
     if not np.isfinite(se).any():
-        return 1.0  # SE unknown -> assume reliable; rho_adj = rho_obs.
+        return 1.0
     var_y = float(np.nanvar(y))
+    mean_se2 = float(np.nanmean(se**2))
+    if var_y <= 0:
+        return 1.0
+    return float(max(min(1.0 - mean_se2 / var_y, 1.0), 1e-6))
+
+
+def _reliability_y(
+    y: np.ndarray,
+    se: np.ndarray,
+    *,
+    strata: np.ndarray | None = None,
+    allow_unknown_se: bool = True,
+) -> float:
+    """Reliability of ``y`` against measurement-error SE, within stratum.
+
+    ROUND-2/#509 FIX F4: Plan §6.1 specifies the reliability denominator
+    as the within-substrate (fact arm) / within-source (syco arm)
+    variance of ``y``, NOT pooled across strata. The pooled formula
+    overstates reliability whenever between-stratum mean differences
+    dominate variance — which is exactly the syco arm regime: the #411
+    panel has 6 sources with very different mean Δ, so pooled var(y)
+    runs ~10× larger than within-source var(y) and the corresponding
+    ``rho_fe_adj`` understates the attenuation correction toward the
+    verdict threshold.
+
+    ROUND-2/#509 FIX F5: when ``se`` is entirely non-finite, the legacy
+    silent fallback to 1.0 (which causes ``rho_fe_adj == rho_fe``,
+    bypassing the plan-required attenuation correction) is gated by
+    ``allow_unknown_se``. Smoke-mode callers pass ``True`` so a tiny
+    synthetic grid still runs; production callers (fact arm in
+    particular) pass ``False`` so the missing SE surfaces loud instead
+    of publishing an unadjusted statistic as the headline ``rho_fe_adj``.
+
+    Implementation: when ``strata`` is provided, compute the pooled
+    within-stratum variance ``var(y - stratum_mean(y))``; otherwise fall
+    back to the pooled variance for back-compat with callers that have
+    no notion of strata. Returns a value clipped to (1e-6, 1.0].
+    """
+    finite_se = np.isfinite(se).any() if se is not None else False
+    if not finite_se:
+        if not allow_unknown_se:
+            raise ValueError(
+                "_reliability_y: per-cell SE array is entirely non-finite and "
+                "allow_unknown_se=False (production mode). Either supply SE "
+                "(fact-arm: per-seed reconstruction from #444 / #192 raw "
+                "completions; syco-arm: independence-approx already wired) "
+                "or pass --smoke to fall back to reliability=1.0."
+            )
+        return 1.0
+    if strata is not None and len(strata) == len(y):
+        # Within-stratum variance: subtract per-stratum mean, then take
+        # variance over the demeaned vector. This is the pooled within-
+        # stratum variance (sum of within-cluster SS / N), per Plan §6.1.
+        y = np.asarray(y, dtype=float)
+        demeaned = y.copy()
+        for s in np.unique(strata):
+            idx = strata == s
+            if idx.sum() == 0:
+                continue
+            demeaned[idx] = y[idx] - np.nanmean(y[idx])
+        var_y = float(np.nanvar(demeaned))
+    else:
+        var_y = float(np.nanvar(y))
     mean_se2 = float(np.nanmean(se**2))
     if var_y <= 0:
         return 1.0
@@ -376,35 +476,61 @@ def _score_one_cell(
     run_permutation: bool,
     run_bootstrap: bool,
     perm_b: int,
+    allow_unknown_se: bool = True,
 ) -> dict[str, Any]:
     """Compute one (point, layer, metric, variant) cell's scoring panel.
 
     strata = substrate (fact) or source (syco); used for FE-residualization,
     permutation null, cluster bootstrap, and delete-one jackknife.
+
+    ``allow_unknown_se`` defaults to True for backward-compatibility with
+    callers that never threaded the kwarg; the production fact-arm path
+    sets it to False so an all-NaN SE array raises instead of silently
+    yielding ``rho_fe_adj == rho_fe`` (Plan §6.1 attenuation correction
+    is load-bearing for the verdict thresholds).
     """
     out: dict[str, Any] = {}
     rho_pooled = _spearman_rho(x, y)
+    # ROUND-2/#509 FIX F3: Plan §4.1.5 regression D specifies the FE
+    # statistic as the partial Spearman ``ρ(x | s, y | s)`` — BOTH x and
+    # y residualized within stratum, not just y. Round 1 only
+    # residualized y; the resulting statistic still carried between-
+    # stratum structure in x, biasing the headline and breaking
+    # comparability with the (now-also-fixed) permutation null.
+    x_resid = _residualize(x, strata)
     y_resid = _residualize(y, strata)
-    rho_fe = _spearman_rho(x, y_resid)
+    rho_fe = _spearman_rho(x_resid, y_resid)
     out["rho_pooled"] = rho_pooled
     out["rho_fe"] = rho_fe
     if prior_z is not None and np.isfinite(prior_z).all():
         y_pz = _residualize(y - prior_z, strata) if len(strata) > 0 else (y - prior_z)
-        out["rho_double_fe"] = _spearman_rho(x, y_pz)
+        # Same fix applies to the double-FE statistic: residualize x too.
+        out["rho_double_fe"] = _spearman_rho(x_resid, y_pz)
     else:
         out["rho_double_fe"] = float("nan")
-    rel = _reliability_y(y, se) if se is not None else 1.0
+    # ROUND-2/#509 FIX F5: fact-arm scoring must NOT silently fall back
+    # to reliability=1 when SE is missing. The caller forwards
+    # ``allow_unknown_se`` (True in --smoke mode, False on production)
+    # to ``_reliability_y`` via ``_score_one_cell``'s ``allow_unknown_se``
+    # kwarg below. Strata are now load-bearing for F4.
+    rel = (
+        _reliability_y(y, se, strata=strata, allow_unknown_se=allow_unknown_se)
+        if se is not None
+        else 1.0
+    )
     out["reliability_y"] = rel
     out["rho_pooled_adj"] = _attenuation_adjust(rho_pooled, rel)
     out["rho_fe_adj"] = _attenuation_adjust(rho_fe, rel)
     out["loco_r2"] = _loco_cv_r2(x, y, strata)
     if run_permutation:
-        out["perm_p_fe"] = _permutation_p(rho_fe, x, y, strata, perm_b)
+        out["perm_p_fe"] = _permutation_p_partial(rho_fe, x, y, strata, perm_b)
     if run_bootstrap:
-        ci_lo, ci_hi = _cluster_bootstrap_ci(x, y_resid, strata)
+        # ROUND-2/#509 FIX F3: bootstrap + jackknife on the partial-Spearman
+        # statistic — both x and y residualized within stratum.
+        ci_lo, ci_hi = _cluster_bootstrap_ci(x_resid, y_resid, strata)
         out["ci_lo_fe"] = ci_lo
         out["ci_hi_fe"] = ci_hi
-        out["jackknife_se_fe"] = _jackknife_se(x, y_resid, strata)
+        out["jackknife_se_fe"] = _jackknife_se(x_resid, y_resid, strata)
     out["n"] = len(x)
     return out
 
@@ -485,6 +611,13 @@ def score_arm(
     run_permutation = not smoke
     run_bootstrap = not smoke
 
+    # ROUND-2/#509 FIX F5: smoke mode allows the reliability=1.0 fallback
+    # so a synthetic 2-cond × 1-layer × 1-metric grid still runs; production
+    # mode raises if the per-cell SE array is non-finite (fact arm needs
+    # the per-seed SE reconstruction; until that lands, production fact
+    # runs must explicitly pass --smoke or be flagged at promotion).
+    allow_unknown_se = smoke
+
     cells: list[dict[str, Any]] = []
     for path, meta in files:
         with open(path) as fh:
@@ -501,6 +634,7 @@ def score_arm(
                 run_permutation=run_permutation,
                 run_bootstrap=run_bootstrap,
                 perm_b=perm_b,
+                allow_unknown_se=allow_unknown_se,
             )
         else:
             x, y, strata, se = _build_syco_xy(matrix, target["rows"], cid_to_persona)
@@ -513,6 +647,7 @@ def score_arm(
                 run_permutation=run_permutation,
                 run_bootstrap=run_bootstrap,
                 perm_b=perm_b,
+                allow_unknown_se=allow_unknown_se,
             )
         cells.append({**meta, **scored})
 
