@@ -154,7 +154,7 @@ def _write_panel_outputs(
         json.dump(payload, f)
 
 
-def eval_source(
+def eval_source(  # noqa: C901 - LoRARequest threading + base/merged/hub mutex pushed complexity past 15
     *,
     source: str,
     seed: int,

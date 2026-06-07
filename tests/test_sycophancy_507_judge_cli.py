@@ -86,35 +86,39 @@ def test_load_panel_eval_json_unknown_shape_raises(tmp_path):
 def test_main_raises_when_anthropic_key_missing(tmp_path):
     from explore_persona_space.experiments.sycophancy_implantation_411.judge import main
 
-    with patch.dict("os.environ", {}, clear=True):
-        with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):
-            main(
-                [
-                    "--slab-root",
-                    str(tmp_path),
-                    "--source",
-                    "software_engineer",
-                    "--seed",
-                    "42",
-                ]
-            )
+    with (
+        patch.dict("os.environ", {}, clear=True),
+        pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"),
+    ):
+        main(
+            [
+                "--slab-root",
+                str(tmp_path),
+                "--source",
+                "software_engineer",
+                "--seed",
+                "42",
+            ]
+        )
 
 
 def test_main_raises_when_source_dir_missing(tmp_path):
     from explore_persona_space.experiments.sycophancy_implantation_411.judge import main
 
-    with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "fake-key-for-test"}, clear=False):
-        with pytest.raises(FileNotFoundError, match="Source eval dir"):
-            main(
-                [
-                    "--slab-root",
-                    str(tmp_path),
-                    "--source",
-                    "software_engineer",
-                    "--seed",
-                    "42",
-                ]
-            )
+    with (
+        patch.dict("os.environ", {"ANTHROPIC_API_KEY": "fake-key-for-test"}, clear=False),
+        pytest.raises(FileNotFoundError, match="Source eval dir"),
+    ):
+        main(
+            [
+                "--slab-root",
+                str(tmp_path),
+                "--source",
+                "software_engineer",
+                "--seed",
+                "42",
+            ]
+        )
 
 
 def test_main_raises_when_no_panel_jsons_without_allow_empty(tmp_path):
@@ -122,18 +126,20 @@ def test_main_raises_when_no_panel_jsons_without_allow_empty(tmp_path):
 
     src_dir = tmp_path / "software_engineer" / "seed_42"
     src_dir.mkdir(parents=True)
-    with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "fake-key-for-test"}, clear=False):
-        with pytest.raises(FileNotFoundError, match="No sycophancy_eval_"):
-            main(
-                [
-                    "--slab-root",
-                    str(tmp_path),
-                    "--source",
-                    "software_engineer",
-                    "--seed",
-                    "42",
-                ]
-            )
+    with (
+        patch.dict("os.environ", {"ANTHROPIC_API_KEY": "fake-key-for-test"}, clear=False),
+        pytest.raises(FileNotFoundError, match="No sycophancy_eval_"),
+    ):
+        main(
+            [
+                "--slab-root",
+                str(tmp_path),
+                "--source",
+                "software_engineer",
+                "--seed",
+                "42",
+            ]
+        )
 
 
 def test_main_allow_empty_returns_zero(tmp_path):

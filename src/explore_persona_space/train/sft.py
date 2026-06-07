@@ -562,6 +562,14 @@ class TrainLoraConfig:
     # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
     # (Sagan todo 68b5822f) and currently raises NotImplementedError.
     backend: Literal["hf", "unsloth"] = "hf"
+    # Distributed flag (round-2 fix per code-review Critical 3): when True,
+    # train_lora SKIPS the ``os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)``
+    # clobber AND the ``device_map={"": 0}`` pin so the deepspeed / accelerate
+    # launcher's per-rank GPU assignment is respected. Set ONLY by callers
+    # that are themselves invoked under a multi-GPU launcher (e.g. the 72B
+    # training entrypoint spawned via ``deepspeed --num_gpus=N -m ...``).
+    # Default False is byte-identical for every existing single-GPU caller.
+    is_distributed: bool = False
 
 
 def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: TrainLoraConfig) -> None:
@@ -645,8 +653,22 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         _has_liger_kernel(),
     )
 
-    _warn_if_cvd_disagrees(cfg.gpu_id)
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
+    # Round-2 fix per code-review Critical 3: under the multi-GPU launcher
+    # (deepspeed/accelerate has already set per-rank CUDA_VISIBLE_DEVICES),
+    # we MUST NOT clobber it to a single gpu_id, AND we MUST NOT pin the
+    # model to device 0 — DeepSpeed ZeRO-3 + HF Trainer handle placement
+    # across ranks. Skip both when cfg.is_distributed=True. Default False
+    # preserves byte-identical single-GPU behavior for every existing caller.
+    if not cfg.is_distributed:
+        _warn_if_cvd_disagrees(cfg.gpu_id)
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
+    else:
+        logger.info(
+            "is_distributed=True; preserving launcher-set CUDA_VISIBLE_DEVICES=%r "
+            "and skipping device_map={'':0} pin. DeepSpeed/HF Trainer places "
+            "shards across ranks.",
+            os.environ.get("CUDA_VISIBLE_DEVICES"),
+        )
 
     tokenizer = AutoTokenizer.from_pretrained(
         base_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
@@ -654,10 +676,14 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
+    # device_map: pin to GPU 0 (after CUDA_VISIBLE_DEVICES remap) for the
+    # single-GPU path; None for the distributed path so DeepSpeed sharding
+    # owns the placement decision.
+    _device_map: dict | None = None if cfg.is_distributed else {"": 0}
     model = AutoModelForCausalLM.from_pretrained(
         base_model_path,
         torch_dtype=torch.bfloat16,
-        device_map={"": 0},  # CUDA_VISIBLE_DEVICES remaps to 0
+        device_map=_device_map,
         trust_remote_code=True,
         attn_implementation=_pick_attn_implementation(),
         token=os.environ.get("HF_TOKEN"),

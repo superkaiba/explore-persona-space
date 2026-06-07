@@ -217,9 +217,18 @@ def phase0_bootstrap(*, sources: list[str], force: bool = False) -> None:
 
 
 def phase1_train_cell(*, source: str, seed: int, world_size: int | None = None) -> Path:
-    """Train one 72B LoRA cell via train_72b. Returns the adapter dir."""
-    from explore_persona_space.experiments.sycophancy_scale_507.train_72b import train_72b
+    """Train one 72B LoRA cell via the deepspeed launcher. Returns the adapter dir.
 
+    Round-2 fix per code-review Critical 3: the round-1 in-process call
+    defaulted to world_size=1 and tried to load Qwen-72B onto one GPU,
+    OOMing immediately. Now wraps train_72b_entrypoint under
+    ``deepspeed --num_gpus=<world_size> -m ...`` so HF Trainer + ZeRO-3
+    shard the model across ranks. The dispatcher is rank-0 / orchestration
+    only; the launcher fans out per-rank.
+
+    Single-GPU debug path (world_size=1) still supported via the in-process
+    call — useful for CPU smoke tests where deepspeed isn't installed.
+    """
     _log_phase("train")
     train_jsonl = TRAIN_POOLS_CACHE / f"{source}_train.jsonl"
     if not train_jsonl.exists():
@@ -229,15 +238,82 @@ def phase1_train_cell(*, source: str, seed: int, world_size: int | None = None) 
         )
     output_dir = RUNS_ROOT / f"72b_{source}_seed{seed}"
     output_dir.mkdir(parents=True, exist_ok=True)
-    log.info("[phase1] train_72b: source=%s, seed=%d, output_dir=%s", source, seed, output_dir)
-    adapter_dir, _merged_placeholder = train_72b(
-        source=source,
-        seed=seed,
-        train_jsonl=train_jsonl,
-        output_dir=output_dir,
-        world_size=world_size,
-        hf_upload=True,
+
+    # Resolve world_size: explicit > visible-GPU count > 1.
+    resolved_ws = world_size
+    if resolved_ws is None:
+        try:
+            n_visible = len(
+                [x for x in (os.environ.get("CUDA_VISIBLE_DEVICES", "") or "").split(",") if x]
+            )
+        except Exception:
+            n_visible = 0
+        if n_visible == 0:
+            # nvidia-smi fallback only when CVD is unset.
+            try:
+                out = subprocess.check_output(
+                    ["nvidia-smi", "-L"],
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                    env={**os.environ},
+                )
+                n_visible = sum(1 for line in out.splitlines() if line.startswith("GPU "))
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                n_visible = 1
+        resolved_ws = max(n_visible, 1)
+
+    log.info(
+        "[phase1] train_72b launch: source=%s seed=%d output_dir=%s world_size=%d",
+        source,
+        seed,
+        output_dir,
+        resolved_ws,
     )
+
+    if resolved_ws == 1:
+        # Single-GPU debug path: call train_72b in-process. Useful for CPU
+        # smoke tests where deepspeed isn't installed.
+        from explore_persona_space.experiments.sycophancy_scale_507.train_72b import train_72b
+
+        log.warning(
+            "[phase1] world_size=1; using in-process train_72b (debug/CPU-smoke path). "
+            "Production 72B requires world_size>=4 under the deepspeed launcher."
+        )
+        adapter_dir, _merged_placeholder = train_72b(
+            source=source,
+            seed=seed,
+            train_jsonl=train_jsonl,
+            output_dir=output_dir,
+            world_size=1,
+            hf_upload=True,
+        )
+        return adapter_dir
+
+    # Multi-GPU production path: launch via deepspeed.
+    cmd = [
+        "deepspeed",
+        "--num_gpus",
+        str(resolved_ws),
+        "-m",
+        "explore_persona_space.experiments.sycophancy_scale_507.train_72b_entrypoint",
+        "--source",
+        source,
+        "--seed",
+        str(seed),
+        "--train-jsonl",
+        str(train_jsonl),
+        "--output",
+        str(output_dir),
+    ]
+    _run_subprocess(cmd, label=f"phase1 train_72b {source} (deepspeed ws={resolved_ws})")
+    adapter_dir = output_dir / "adapter"
+    safetensors = list(adapter_dir.glob("*.safetensors"))
+    if not safetensors:
+        raise RuntimeError(
+            f"phase1 deepspeed launcher exited 0 but {adapter_dir} has no "
+            "safetensors. Either training silently failed or the save path "
+            "was redirected."
+        )
     return adapter_dir
 
 
@@ -862,7 +938,19 @@ def main(argv: list[str] | None = None) -> int:
             phase2_base_panel(seed=seed)
             phase2_5_judge_base_panel(seed=seed)
     else:
-        log.info("Skipping base-panel pass (per --skip-base-panel)")
+        # Round-2 fix per code-review Major 9: --skip-base-panel is only
+        # valid when base_panel_rates.json ALREADY exists locally (e.g.
+        # from a prior partial run). Otherwise the smoke gate's
+        # _read_base_rate_for_source returns None and raises AFTER spending
+        # cell-1 GPU time — fail-fast at argparse instead.
+        required = SLAB_ROOT / "base_panel_rates.json"
+        if not required.exists():
+            raise RuntimeError(
+                f"--skip-base-panel set but {required} does not exist. "
+                "Either drop --skip-base-panel (so the base-panel pass runs) "
+                "or restore the prior base_panel_rates.json before re-running."
+            )
+        log.info("Skipping base-panel pass (per --skip-base-panel); reusing %s", required)
 
     # ── Cell 1 smoke (always the first cell of the sweep) ──
     cell_summaries: list[dict] = []

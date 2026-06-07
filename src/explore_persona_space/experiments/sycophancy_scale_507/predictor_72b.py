@@ -22,6 +22,7 @@ Any preflight failure surfaces via SystemExit non-zero so the dispatcher's
 from __future__ import annotations
 
 import logging
+import math
 import os
 from pathlib import Path
 
@@ -40,6 +41,42 @@ log = logging.getLogger("sycophancy_scale_507.predictor_72b")
 BASE_MODEL_72B = "Qwen/Qwen2.5-72B-Instruct"
 LAYERS_72B: tuple[int, ...] = LAYER_SET_BY_ARCH["72b"]
 HEADLINE_LAYER_72B: int = HEADLINE_LAYER_BY_ARCH["72b"]
+
+
+def _js_against_uniform(model, batch_inputs, prompt_lengths) -> float:
+    """Return JS(P, U) where P is the model's response-token distribution at row 0
+    and U is the uniform distribution over the vocabulary, in nats.
+
+    Used by the preflight sanity check: a numerically-correct estimator must
+    produce a value in (0, ln(2)] (the JS upper bound). A bug at V=152064
+    with bf16 → fp32 cast could push this over ln(2) (numerical overflow) or
+    to a trivial floor. Round-2 fix per code-review Codex minor item 12.
+    """
+    import torch
+
+    from explore_persona_space.analysis.divergence import (
+        compute_js_divergence,
+        teacher_force_batch,
+    )
+
+    with torch.no_grad():
+        # Reuse the same teacher-force pass that the self-self check already
+        # ran to get log-probs at the response positions for row 0.
+        log_probs = teacher_force_batch(
+            model=model,
+            batch_inputs=batch_inputs,
+            prompt_lengths=prompt_lengths,
+            response_len=1,  # only need the first response position for the bound check
+            device="cuda:0",
+            max_batch=1,
+        )
+        # log_probs shape: (batch, response_len, vocab) — squeeze to first row + first pos.
+        log_p = log_probs[0:1, 0, :]  # (1, V) on CPU per teacher_force_batch contract
+        V = log_p.shape[-1]
+        uniform = torch.full((1, V), 1.0 / V, dtype=torch.float32)
+        log_u = torch.log(uniform)
+        js = compute_js_divergence(log_p, log_u)
+    return float(js.item() if torch.is_tensor(js) else js)
 
 
 def preflight_no_offload(
@@ -68,7 +105,6 @@ def preflight_no_offload(
     Raises:
         RuntimeError: any of the 4 checks failed.
     """
-    import math
     import subprocess
     import time
 
@@ -236,6 +272,30 @@ def preflight_no_offload(
             f"compute_js_divergence is mis-computing; refuse to proceed."
         )
 
+    # Round-2 fix per code-review Codex minor (item 12): the self-self
+    # check pins the LOWER bound (~0) but says nothing about whether the
+    # estimator's UPPER bound is sensible. JS(P, Q) is bounded above by
+    # ln(2) ≈ 0.693 nats; a numerical-stability bug at V=152064 with the
+    # bf16 → fp32 cast could push the result OVER ln(2) (overflow,
+    # incorrect normalization) or to a numerically-trivial floor that
+    # only the self-self check would let through. Compute JS(P, uniform)
+    # on the model's first-token distribution and assert it's in
+    # (0, ln(2) + 1e-3]. The +1e-3 slack tolerates fp32-mid-bf16-cast
+    # noise; values > ln(2)+1e-3 indicate a real numerical bug.
+    js_p_uniform = _js_against_uniform(model, batch_same, prompt_lengths_same)
+    ln2 = math.log(2)
+    log.info(
+        "preflight: JS(self_first_token, uniform) = %.6f (expected in (0, %.6f])",
+        js_p_uniform,
+        ln2,
+    )
+    if not (0.0 < js_p_uniform <= ln2 + 1e-3):
+        raise RuntimeError(
+            f"preflight: JS(self, uniform) = {js_p_uniform:.6f} outside "
+            f"(0, ln(2)={ln2:.6f}] — likely numerical stability bug in "
+            f"compute_js_divergence at V={tokenizer.vocab_size}; refuse to proceed."
+        )
+
     summary: dict[str, object] = {
         "model_id": model_id,
         "hf_device_map_unique_devices": sorted(set(device_map.values())),
@@ -245,6 +305,7 @@ def preflight_no_offload(
         "dummy_js_sym": round(float(js_sym), 6),
         "dummy_kl_pq": round(float(kl_pq), 6),
         "js_self_self": round(float(js_self), 6),
+        "js_self_uniform": round(float(js_p_uniform), 6),
         "preflight_pass": True,
     }
     log.info("preflight_no_offload: ALL CHECKS PASS — summary=%s", summary)

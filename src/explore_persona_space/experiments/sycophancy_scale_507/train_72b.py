@@ -82,41 +82,59 @@ def _assert_effective_batch(world_size: int, per_device_batch: int, grad_accum: 
         )
 
 
-def _log_effective_batch_to_wandb(run_name: str, world_size: int, grad_accum: int) -> None:
-    """Set wandb.summary['effective_batch_size'] so the dashboard exposes it.
+class _EffectiveBatchWandbCallback:
+    """HF TrainerCallback that logs effective_batch_size to WandB on_train_begin.
 
-    The metric is part of the smoke-gate (plan v2 section 7 condition 1): the
-    run's WandB summary must report effective_batch_size==16 before cells 2-6
-    fire. Loud-warn if WandB isn't reachable (best-effort; the runtime
-    assertion above is the hard safeguard).
+    Round-2 fix per code-review Major 10 (#507 r1): the round-1 inline
+    ``_log_effective_batch_to_wandb`` call ran BEFORE ``train_lora`` invoked
+    ``wandb.init``, so ``wandb.run is None`` was always True and the metric
+    was never sent. A TrainerCallback hooks on_train_begin (fires AFTER
+    wandb.init), guaranteeing the summary is set on the active run.
+
+    Falls back to a no-op warning if wandb is not importable or wandb.run
+    is somehow still None at on_train_begin (defensive; should never happen).
     """
-    eff = world_size * PER_DEVICE_TRAIN_BATCH_72B * grad_accum
-    try:
-        import wandb
 
-        if wandb.run is None:
-            # No active run; nothing to attach to. The dispatcher's run will
-            # pick this up when train_lora initializes its own WandB run.
+    def __init__(self, *, world_size: int, grad_accum: int, run_name: str) -> None:
+        self.world_size = world_size
+        self.grad_accum = grad_accum
+        self.run_name = run_name
+        self.effective_batch = world_size * PER_DEVICE_TRAIN_BATCH_72B * grad_accum
+
+    def on_train_begin(self, args, state, control, **kwargs):
+        try:
+            import wandb
+        except ImportError:
             log.warning(
-                "WandB run not yet initialized when train_72b logged "
-                "effective_batch_size=%d; relying on train_lora to attach.",
-                eff,
+                "wandb not importable in on_train_begin; effective_batch_size=%d not logged.",
+                self.effective_batch,
             )
             return
-        wandb.run.summary["effective_batch_size"] = eff
-        wandb.run.summary["world_size"] = world_size
+        if wandb.run is None:
+            log.warning(
+                "wandb.run still None at on_train_begin for %s; "
+                "effective_batch_size=%d not logged. Check report_to=wandb wiring.",
+                self.run_name,
+                self.effective_batch,
+            )
+            return
+        wandb.run.summary["effective_batch_size"] = self.effective_batch
+        wandb.run.summary["world_size"] = self.world_size
         wandb.run.summary["per_device_train_batch"] = PER_DEVICE_TRAIN_BATCH_72B
-        wandb.run.summary["gradient_accumulation_steps"] = grad_accum
+        wandb.run.summary["gradient_accumulation_steps"] = self.grad_accum
         log.info(
-            "Logged effective_batch_size=%d to WandB summary for run %s",
-            eff,
-            run_name,
+            "[%s] Logged effective_batch_size=%d to WandB summary on_train_begin",
+            self.run_name,
+            self.effective_batch,
         )
-    except ImportError:
-        log.warning(
-            "wandb not importable; effective_batch_size=%d not logged to dashboard.",
-            eff,
-        )
+
+    # Required no-op hooks for HF TrainerCallback duck-typing. HF Trainer
+    # calls on_init_end, on_step_begin, on_step_end, etc; returning None
+    # leaves control flow alone.
+    def __getattr__(self, name):
+        if name.startswith("on_"):
+            return lambda *a, **kw: None
+        raise AttributeError(name)
 
 
 def train_72b(
@@ -182,6 +200,11 @@ def train_72b(
         deepspeed_cfg,
     )
 
+    # Round-2 fix per code-review Critical 3: when world_size > 1 we are
+    # running under the deepspeed launcher; pass is_distributed=True so
+    # train_lora skips CUDA_VISIBLE_DEVICES + device_map={"": 0} clobbers
+    # and DeepSpeed ZeRO-3 owns shard placement across ranks.
+    is_distributed = world_size > 1
     cfg = TrainLoraConfig(
         # #411-verbatim hparams (plan v2 section 4.1).
         epochs=3,
@@ -199,12 +222,9 @@ def train_72b(
         # 72B-specific knobs (plan v2 section 4.3).
         batch_size=PER_DEVICE_TRAIN_BATCH_72B,
         grad_accum=grad_accum,
-        # gpu_id is irrelevant under ZeRO-3 multi-GPU launch — the launcher
-        # (torchrun/deepspeed/accelerate) sets CUDA_VISIBLE_DEVICES per rank;
-        # train_lora's os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
-        # would clobber that under the multi-GPU path, so we pass 0 only as
-        # a placeholder; the launcher's env takes precedence in practice.
-        # See plan v2 section 4.3 + gotchas.md "+gpu_id Hydra override" note.
+        # gpu_id is bypassed entirely under the distributed path (the launcher
+        # sets per-rank CUDA_VISIBLE_DEVICES; train_lora honors that). Keep
+        # 0 as a placeholder for the rare single-GPU debug path.
         gpu_id=0,
         # WandB live training metrics ON (CLAUDE.md mandate; no
         # report_to="none" waiver applies).
@@ -215,6 +235,7 @@ def train_72b(
         hf_upload=hf_upload,
         hf_repo=HF_REPO,
         hf_path_in_repo=f"{HF_PATH_PREFIX}/{source}_seed{seed}",
+        is_distributed=is_distributed,
     )
 
     # Thread the DeepSpeed config through as an override so TrainLoraConfig
@@ -241,10 +262,13 @@ def train_72b(
             source,
         )
 
-    # Log effective_batch_size as a WandB summary metric BEFORE train_lora
-    # starts the actual training loop, so the smoke gate can inspect the
-    # dashboard even if training fails mid-epoch.
-    _log_effective_batch_to_wandb(run_name, world_size, grad_accum)
+    # Round-2 fix per code-review Major 10: route effective_batch_size
+    # logging through a TrainerCallback that fires AFTER wandb.init in
+    # train_lora, not via an inline call before train_lora runs (which
+    # caught wandb.run=None every time and logged nothing).
+    eff_batch_cb = _EffectiveBatchWandbCallback(
+        world_size=world_size, grad_accum=grad_accum, run_name=run_name
+    )
 
     log.info(
         "[%s] Calling train_lora(base=%s, data=%s, out=%s, run_name=%s)",
@@ -259,6 +283,7 @@ def train_72b(
         data_path=str(train_jsonl),
         output_dir=str(adapter_dir),
         cfg=cfg,
+        callbacks=[eff_batch_cb],
     )
 
     # Loud-fail if the adapter isn't on disk after training: the smoke gate
