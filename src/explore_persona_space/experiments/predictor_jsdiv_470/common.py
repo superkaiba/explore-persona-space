@@ -31,13 +31,37 @@ def _find_project_root() -> Path:
 
 
 PROJECT_ROOT = _find_project_root()
-OUTPUT_BASE = PROJECT_ROOT / "eval_results" / "issue_470"
+# OUTPUT_BASE is env-parametrized so callers (e.g. the #507 72B re-run) can
+# redirect predictor outputs into their own namespace without overwriting
+# #470's committed 7B regression artifacts. The default preserves the
+# original #470 location for backwards-compatible standalone runs of
+# predictor_jsdiv_470.
+# Round-2 fix per code-review Critical 5 (regression.json path collision).
+_DEFAULT_OUTPUT_BASE = PROJECT_ROOT / "eval_results" / "issue_470"
+OUTPUT_BASE = Path(os.environ.get("PREDICTOR_OUTPUT_BASE", str(_DEFAULT_OUTPUT_BASE)))
 PHASE1_DIR = OUTPUT_BASE / "base_responses"
 PHASE2_DIR = OUTPUT_BASE / "cossim_response_token"
 PHASE3_DIR = OUTPUT_BASE / "sequence_js_kl"
 PHASE4_PATH = OUTPUT_BASE / "predictor_comparison.json"
 PHASE5_PATH = OUTPUT_BASE / "regression.json"
-PHASE6_DIR = PROJECT_ROOT / "figures" / "issue_470"
+# PHASE6_DIR similarly env-parametrized so figures don't collide.
+_DEFAULT_FIGURES_DIR = PROJECT_ROOT / "figures" / "issue_470"
+PHASE6_DIR = Path(os.environ.get("PREDICTOR_FIGURES_DIR", str(_DEFAULT_FIGURES_DIR)))
+# Guard against accidentally overwriting #470's committed regression
+# from a #507 caller that forgot to set PREDICTOR_OUTPUT_BASE.
+if (
+    os.environ.get("PREDICTOR_GUARD_NO_OVERWRITE_470") == "1"
+    and OUTPUT_BASE == _DEFAULT_OUTPUT_BASE
+):
+    raise RuntimeError(
+        "PREDICTOR_GUARD_NO_OVERWRITE_470=1 but OUTPUT_BASE resolved to #470's "
+        f"default ({_DEFAULT_OUTPUT_BASE}). Set PREDICTOR_OUTPUT_BASE to a 507-owned "
+        "directory (eval_results/issue_507/predictor_72b/) before running."
+    )
+# Headline layer is also env-parametrized for the 72B run (plan §4.6 + §11
+# specify layer 57 at 80-layer depth ratio 0.7125, matching 7B layer-20).
+# Round-2 fix per code-review Critical 11.
+HEADLINE_LAYER_ENV = os.environ.get("PREDICTOR_HEADLINE_LAYER")
 
 # #411 DV path — committed snapshot in this repo (production / pod path; always
 # present after a fresh clone) with a dev-only fallback to the live #411 worktree.
@@ -58,12 +82,28 @@ _BASE_RATES_FALLBACK = (
 
 
 def resolve_analyze_summary_path() -> Path:
-    """Return the path to #411's analyze_summary.json (snapshot first, dev fallback second).
+    """Return the path to the analyze_summary.json (DV source).
 
-    Production (pod): the committed snapshot at ``_inputs/analyze_summary.json``.
-    Dev (VM with live issue-411 worktree): the worktree path, so a developer can
-    swap in a fresher analyze without re-committing.
+    Resolution order:
+        1. ``$PREDICTOR_DV_ANALYZE_SUMMARY`` env override (used by the #507
+           72B re-run so Phase 4 reads the 72B's own DV, not #411's frozen 7B).
+        2. The committed #411 snapshot at ``_inputs/analyze_summary.json``.
+        3. Dev fallback: the live issue-411 worktree path.
+
+    Round-2 fix per code-review Critical 7 (Phase 4 was loading #411's frozen
+    7B DV even on a 72B run; this env override lets the 507 dispatcher point
+    at the 72B-produced analyze_summary.json after Phase 2.5).
     """
+    override = os.environ.get("PREDICTOR_DV_ANALYZE_SUMMARY")
+    if override:
+        path = Path(override)
+        if not path.exists():
+            raise RuntimeError(
+                f"PREDICTOR_DV_ANALYZE_SUMMARY={override!r} but file does not exist. "
+                "Did the 72B analyze step complete?"
+            )
+        logger.info("Using PREDICTOR_DV_ANALYZE_SUMMARY override: %s", path)
+        return path
     if ISSUE_411_ANALYZE_SUMMARY_SNAPSHOT.exists():
         return ISSUE_411_ANALYZE_SUMMARY_SNAPSHOT
     if _ANALYZE_FALLBACK.exists():
@@ -82,7 +122,21 @@ def resolve_analyze_summary_path() -> Path:
 
 
 def resolve_base_panel_rates_path() -> Path:
-    """Return the path to #411's base_panel_rates.json (snapshot first, fallback second)."""
+    """Return the path to the base_panel_rates.json (snapshot/override first, fallback second).
+
+    Resolution order:
+        1. ``$PREDICTOR_BASE_PANEL_RATES`` env override (used by the #507
+           72B run so Phase 4 reads the 72B's own base-panel rates).
+        2. The committed #411 snapshot.
+        3. Dev fallback: the live issue-411 worktree path.
+    """
+    override = os.environ.get("PREDICTOR_BASE_PANEL_RATES")
+    if override:
+        path = Path(override)
+        if not path.exists():
+            raise RuntimeError(f"PREDICTOR_BASE_PANEL_RATES={override!r} but file does not exist.")
+        logger.info("Using PREDICTOR_BASE_PANEL_RATES override: %s", path)
+        return path
     if ISSUE_411_BASE_PANEL_RATES_SNAPSHOT.exists():
         return ISSUE_411_BASE_PANEL_RATES_SNAPSHOT
     if _BASE_RATES_FALLBACK.exists():
@@ -113,7 +167,10 @@ DEFAULT_TEMPERATURE = 1.0
 DEFAULT_TOP_P = 1.0
 DEFAULT_MAX_NEW_TOKENS = 256
 DEFAULT_LAYERS = (7, 14, 21, 27)
-HEADLINE_LAYER = 21
+# HEADLINE_LAYER is env-overridable; 21 is the 7B Qwen-2.5 default
+# (depth ratio 21/28 ≈ 0.75). 72B uses layer 57 (depth ratio 57/80 ≈ 0.71,
+# matching 7B layer-20 baseline). Round-2 fix per code-review Critical 11.
+HEADLINE_LAYER = int(HEADLINE_LAYER_ENV) if HEADLINE_LAYER_ENV else 21
 DEFAULT_SEED = 42
 BOOTSTRAP_N = 10000
 PERMUTATION_N = 10000

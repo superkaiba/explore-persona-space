@@ -111,9 +111,28 @@ def _git_sha() -> str:
         return "unknown"
 
 
-def _run_subprocess(cmd: list[str], *, label: str, check: bool = True) -> int:
-    """Run a subprocess with explicit env passthrough (CLAUDE.md mandate)."""
+def _run_subprocess(
+    cmd: list[str],
+    *,
+    label: str,
+    check: bool = True,
+    env_extra: dict[str, str] | None = None,
+) -> int:
+    """Run a subprocess with explicit env passthrough (CLAUDE.md mandate).
+
+    Args:
+        cmd: argv list.
+        label: human label for logging.
+        check: raise on non-zero return.
+        env_extra: per-call env additions / overrides (round-2 fix per
+            code-review Critical 5: the predictor_jsdiv_470 phase scripts
+            need PREDICTOR_OUTPUT_BASE / PREDICTOR_HEADLINE_LAYER /
+            PREDICTOR_DV_ANALYZE_SUMMARY threaded through so #507's 72B
+            run doesn't overwrite #470's committed 7B regression.json).
+    """
     env = {**os.environ}  # explicit copy, never inherited implicitly
+    if env_extra:
+        env.update(env_extra)
     log.info("[%s] launching: %s", label, " ".join(shlex.quote(c) for c in cmd))
     result = subprocess.run(cmd, env=env, cwd=str(REPO_ROOT), check=False)
     if check and result.returncode != 0:
@@ -122,6 +141,34 @@ def _run_subprocess(cmd: list[str], *, label: str, check: bool = True) -> int:
             f"Command: {' '.join(shlex.quote(c) for c in cmd)}"
         )
     return result.returncode
+
+
+def _predictor_env_overrides() -> dict[str, str]:
+    """Compose the env overrides for predictor_jsdiv_470 sub-phases on the 72B path.
+
+    Round-2 fix per code-review Critical 5/7/11: threads through OUTPUT_BASE,
+    figures dir, headline layer (57 for 72B), and DV / base-panel paths so
+    the 72B run writes to its own namespace and reads its own DV. Also
+    sets the no-overwrite guard so common.py raises if any subprocess
+    forgets the override.
+    """
+    overrides = {
+        "PREDICTOR_OUTPUT_BASE": str(PREDICTOR_72B_OUTPUT_BASE),
+        "PREDICTOR_FIGURES_DIR": str(REPO_ROOT / "figures" / "issue_507"),
+        "PREDICTOR_HEADLINE_LAYER": str(HEADLINE_LAYER_BY_ARCH["72b"]),
+        "PREDICTOR_GUARD_NO_OVERWRITE_470": "1",
+    }
+    # Point Phase 4 at the 72B's own DV + base panel rates produced by
+    # the in-flight Phase 2 + 2.5 (analyze_summary.json from #411's
+    # analyze.py run on 72B eval JSONs; base_panel_rates.json from
+    # judge_base_panel on the 72B base panel).
+    dv_72b = SLAB_ROOT / "analyze_summary_72b.json"
+    base_rates_72b = SLAB_ROOT / "base_panel_rates.json"
+    if dv_72b.exists():
+        overrides["PREDICTOR_DV_ANALYZE_SUMMARY"] = str(dv_72b)
+    if base_rates_72b.exists():
+        overrides["PREDICTOR_BASE_PANEL_RATES"] = str(base_rates_72b)
+    return overrides
 
 
 # ── Phase 0: bootstrap ──
@@ -365,7 +412,15 @@ def _read_source_self_rate(*, source: str, seed: int) -> float | None:
 
 
 def _read_base_rate_for_source(*, source: str) -> float | None:
-    """Read the base-panel agree rate at the source-persona slot."""
+    """Read the base-panel agree rate at the source-persona slot.
+
+    Round-2 fix per code-review Critical 8 / Codex blocker
+    `smoke-gate-rate-shape`: judge_base_panel.py writes
+    ``{"panel_rates": {<persona>: <float-or-dict>, ...}, ...}`` — the
+    rates are NESTED under the ``panel_rates`` key, not at the top level.
+    The old reader's ``payload.get(source)`` returned None every time,
+    silently failing the smoke gate after spending cell-1 GPU time.
+    """
     base_panel_rates = SLAB_ROOT / "base_panel_rates.json"
     if not base_panel_rates.exists():
         return None
@@ -373,12 +428,22 @@ def _read_base_rate_for_source(*, source: str) -> float | None:
         payload = json.loads(base_panel_rates.read_text())
     except (OSError, json.JSONDecodeError):
         return None
-    # #411 base_panel_rates shape: {<persona>: {"agree_rate": float, ...}, ...}
-    block = payload.get(source) if isinstance(payload, dict) else None
+    if not isinstance(payload, dict):
+        return None
+    panel_rates = payload.get("panel_rates")
+    if not isinstance(panel_rates, dict):
+        return None
+    block = panel_rates.get(source)
+    # judge_base_panel emits per-persona blocks that carry an "agree_rate"
+    # (or a bare float on older formats). Be defensive.
     if isinstance(block, dict):
-        rate = block.get("agree_rate") or block.get("rate")
+        rate = block.get("agree_rate")
+        if rate is None:
+            rate = block.get("rate")
         if isinstance(rate, int | float):
             return float(rate)
+    elif isinstance(block, int | float):
+        return float(block)
     return None
 
 
@@ -468,6 +533,8 @@ def smoke_gate(*, source: str, seed: int) -> dict[str, object]:
 def phase3_predictor_72b(*, smoke: bool, gpu_id: int = 0) -> None:
     """Run the 72B predictor extraction: preflight + phase1/2/3 with --model 72b."""
     _log_phase("predictor_72b")
+    PREDICTOR_72B_OUTPUT_BASE.mkdir(parents=True, exist_ok=True)
+    pred_env = _predictor_env_overrides()
 
     # Preflight: load base 72B, verify no offload.
     _run_subprocess(
@@ -485,21 +552,14 @@ def phase3_predictor_72b(*, smoke: bool, gpu_id: int = 0) -> None:
             str(PREDICTOR_72B_OUTPUT_BASE / "preflight.json"),
         ],
         label="phase3 preflight",
+        env_extra=pred_env,
     )
 
-    # Re-use the predictor_jsdiv_470 phase scripts with --model 72b. The
-    # output paths are pinned to eval_results/issue_470/... by common.py;
-    # we redirect via an env var that the phases respect:
-    # PREDICTOR_OUTPUT_BASE.
-    env_override = {"PREDICTOR_OUTPUT_BASE": str(PREDICTOR_72B_OUTPUT_BASE)}
-    PREDICTOR_72B_OUTPUT_BASE.mkdir(parents=True, exist_ok=True)
-    # We DON'T need to actually modify the env globally; the predictor phase
-    # scripts write to PHASE1_DIR etc. derived from common.OUTPUT_BASE. So
-    # we run the predictor scripts as-is and then MOVE the outputs into the
-    # 507 namespace. Cleaner: pass an explicit output-base override; the
-    # current predictor_jsdiv_470 scripts don't expose one (common.py hard-
-    # codes the path). For now we run + then move. This is documented in
-    # the migration note below; a follow-up cleans this up.
+    # Re-use the predictor_jsdiv_470 phase scripts with --model 72b. Output
+    # paths are env-parametrized via PREDICTOR_OUTPUT_BASE (#507 namespace,
+    # NEVER overwrites #470's regression.json). HEADLINE_LAYER is also
+    # env-parametrized so 72B uses layer 57 (depth ratio 0.71) instead of
+    # the 7B default of 21.
     layers_72b = " ".join(str(li) for li in LAYER_SET_BY_ARCH["72b"])
     probes_arg = ["--probes", "5"] if smoke else []
     r_arg = ["--R", "2" if smoke else "8"]
@@ -518,6 +578,7 @@ def phase3_predictor_72b(*, smoke: bool, gpu_id: int = 0) -> None:
             *probes_arg,
         ],
         label="phase3.1 sample base responses (72B)",
+        env_extra=pred_env,
     )
 
     # Phase 3.2: response-token cosine over 72B layers.
@@ -536,6 +597,7 @@ def phase3_predictor_72b(*, smoke: bool, gpu_id: int = 0) -> None:
             str(gpu_id),
         ],
         label=f"phase3.2 cosine 72B (layers={layers_72b})",
+        env_extra=pred_env,
     )
 
     # Phase 3.3: RB sequence JS + KL.
@@ -557,21 +619,26 @@ def phase3_predictor_72b(*, smoke: bool, gpu_id: int = 0) -> None:
             str(gpu_id),
         ],
         label="phase3.3 RB JS+KL (72B)",
+        env_extra=pred_env,
     )
-
-    _ = env_override  # documented above; predictor_jsdiv_470 outputs need
-    # to be relocated by the analyze step until common.OUTPUT_BASE accepts
-    # an env override (follow-up).
 
 
 # ── Phase 4: regress + cross-arm compare ──
 
 
 def phase4_regress_and_cross_arm(*, regression_7b_path: Path | None) -> Path:
-    """Run phase5_regress on the 72B outputs + cross-arm compare against #470 7B."""
+    """Run phase5_regress on the 72B outputs + cross-arm compare against #470 7B.
+
+    Round-2 fix per code-review Critical 5: writes 72B outputs to
+    eval_results/issue_507/predictor_72b/ (NOT issue_470). The 7B regression
+    stays at eval_results/issue_470/regression.json (committed clean-result
+    artifact, never overwritten). analyze_507 reads both arms' real files
+    and writes its cross-arm CI to eval_results/issue_507/.
+    """
     _log_phase("regress")
+    pred_env = _predictor_env_overrides()
     # Run the predictor_jsdiv_470 phase4_load_dv + phase5_regress on the
-    # 72B outputs. Same pattern as #470's dispatcher.
+    # 72B outputs under the 507 namespace (PREDICTOR_OUTPUT_BASE env).
     _run_subprocess(
         [
             "uv",
@@ -581,6 +648,7 @@ def phase4_regress_and_cross_arm(*, regression_7b_path: Path | None) -> Path:
             "explore_persona_space.experiments.predictor_jsdiv_470.phase4_load_dv",
         ],
         label="phase4 load DV (72B)",
+        env_extra=pred_env,
     )
     _run_subprocess(
         [
@@ -591,18 +659,36 @@ def phase4_regress_and_cross_arm(*, regression_7b_path: Path | None) -> Path:
             "explore_persona_space.experiments.predictor_jsdiv_470.phase5_regress",
         ],
         label="phase4 regress (72B)",
+        env_extra=pred_env,
     )
 
-    # Cross-arm compare. Default 7B regression is #470's published one.
+    # Cross-arm compare. The 7B regression is #470's committed publication
+    # (under eval_results/issue_470/). The 72B regression is THIS run's
+    # output under eval_results/issue_507/predictor_72b/. They are
+    # DISTINCT files (round-2 fix per code-review Critical 5: previously
+    # both pointed at issue_470/regression.json, producing a degenerate
+    # 0-difference cross-arm output).
     if regression_7b_path is None:
-        # #470's regression.json lives at eval_results/issue_470/regression.json.
         regression_7b_path = REPO_ROOT / "eval_results" / "issue_470" / "regression.json"
-    regression_72b_path = REPO_ROOT / "eval_results" / "issue_470" / "regression.json"
-    # NB: with the current predictor_jsdiv_470 path-pinning, both runs land
-    # at issue_470/regression.json. The relocate-to-507 step happens AFTER
-    # this initial regression; for the FIRST pass we use the 7B regression
-    # from a prior #470 run (committed) and the 72B regression from this
-    # session, with the latter then moved into the 507 output dir below.
+    regression_72b_path = PREDICTOR_72B_OUTPUT_BASE / "regression.json"
+    if not regression_7b_path.exists():
+        raise FileNotFoundError(
+            f"7B regression.json not found at {regression_7b_path}. The #470 "
+            "clean-result artifact must be committed before the cross-arm "
+            "compare can run; pass --regression-7b to override."
+        )
+    if not regression_72b_path.exists():
+        raise FileNotFoundError(
+            f"72B regression.json not found at {regression_72b_path}. Phase 5 "
+            "regress did not produce its output; check predictor env overrides "
+            "(PREDICTOR_OUTPUT_BASE) and Phase 5 logs."
+        )
+    if regression_7b_path.resolve() == regression_72b_path.resolve():
+        raise RuntimeError(
+            "Cross-arm compare misconfigured: regression_7b_path == "
+            f"regression_72b_path == {regression_7b_path}. The 7B and 72B "
+            "files MUST be distinct or the comparison is degenerate."
+        )
     cross_arm_out = OUTPUT_ROOT / "cross_arm_comparison.json"
     _log_phase("cross_arm")
     _run_subprocess(
@@ -628,7 +714,7 @@ def phase4_regress_and_cross_arm(*, regression_7b_path: Path | None) -> Path:
 
 
 def phase6_figures() -> None:
-    """Run #470's phase6_figures over the 72B outputs."""
+    """Run #470's phase6_figures over the 72B outputs (in the 507 namespace)."""
     _log_phase("figures")
     _run_subprocess(
         [
@@ -639,6 +725,7 @@ def phase6_figures() -> None:
             "explore_persona_space.experiments.predictor_jsdiv_470.phase6_figures",
         ],
         label="phase6 figures",
+        env_extra=_predictor_env_overrides(),
     )
 
 

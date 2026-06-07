@@ -29,6 +29,7 @@ import logging
 import os
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 log = logging.getLogger("issue_411.judge")
@@ -238,3 +239,217 @@ def serialize_verdicts(verdicts: list[JudgeVerdict]) -> list[dict[str, Any]]:
         }
         for v in verdicts
     ]
+
+
+# ── CLI entrypoint ────────────────────────────────────────────────────────
+#
+# Round-2 fix per code-review Critical 6: the #507 dispatcher invokes this
+# module via ``python -m ...judge`` expecting a CLI. Round-1 had no main()
+# so Phase 2.5 silently exited rc=0 without writing any judgments, leaving
+# the smoke gate's source-self rate unreadable.
+#
+# The CLI reads the per-panel eval JSONs that ``eval_one_source.py`` wrote
+# under ``<slab_root>/<source>/seed_<seed>/sycophancy_eval_<panel>.json``,
+# judges every (wrong_claim, completion) rollout via the Haiku judge, and
+# writes per-panel verdict JSONs PLUS an aggregated
+# ``per_panel_rates_<source>.json`` summary at the same dir level. The
+# ``per_panel_rate.<source>`` slot is what ``_read_source_self_rate``
+# looks for in the dispatcher.
+
+
+def _load_panel_eval_json(panel_path: Path) -> tuple[list[dict[str, str]], dict[str, Any]]:
+    """Load one sycophancy_eval_<panel>.json: returns (rollouts, metadata)."""
+    import json as _json
+
+    with open(panel_path) as f:
+        payload = _json.load(f)
+    rollouts: list[dict[str, str]] = []
+    # Two known shapes from eval_one_source.py:
+    #   (1) {"rollouts": [{"wrong_claim": ..., "completion": ...}, ...], "metadata": {...}}
+    #   (2) {"claims": [{"wrong_claim": ...}, ...], "completions": [[str, ...], ...]}
+    if "rollouts" in payload and isinstance(payload["rollouts"], list):
+        for r in payload["rollouts"]:
+            if "wrong_claim" in r and "completion" in r:
+                rollouts.append(
+                    {"wrong_claim": str(r["wrong_claim"]), "completion": str(r["completion"])}
+                )
+    elif (
+        "claims" in payload
+        and "completions" in payload
+        and isinstance(payload["claims"], list)
+        and isinstance(payload["completions"], list)
+    ):
+        for claim, completions in zip(payload["claims"], payload["completions"], strict=False):
+            if isinstance(completions, list):
+                for completion in completions:
+                    rollouts.append(
+                        {
+                            "wrong_claim": str(claim.get("wrong_claim", "")),
+                            "completion": str(completion),
+                        }
+                    )
+            else:
+                rollouts.append(
+                    {
+                        "wrong_claim": str(claim.get("wrong_claim", "")),
+                        "completion": str(completions),
+                    }
+                )
+    else:
+        raise RuntimeError(
+            f"{panel_path} has unknown shape; expected 'rollouts' or "
+            f"'claims'+'completions' keys, got {list(payload.keys())}"
+        )
+    metadata = payload.get("metadata", {})
+    return rollouts, metadata
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Judge every panel JSON for one (source, seed) and write per-panel rates.
+
+    Output:
+        <slab_root>/<source>/seed_<seed>/judgments/<panel>_verdicts.json — per-panel
+            JSON list of verdict records.
+        <slab_root>/<source>/seed_<seed>/per_panel_rates_<source>.json — aggregated
+            {"per_panel_rate": {<panel>: <agree_rate float>}} consumed by the
+            dispatcher's smoke gate via _read_source_self_rate.
+    """
+    import argparse
+    import json as _json
+    from pathlib import Path as _Path
+
+    parser = argparse.ArgumentParser(
+        description="Judge one source's per-panel eval JSONs and write per-panel agree rates."
+    )
+    parser.add_argument("--slab-root", type=_Path, required=True)
+    parser.add_argument("--source", type=str, required=True)
+    parser.add_argument("--seed", type=int, required=True)
+    parser.add_argument(
+        "--judge-model",
+        default=DEFAULT_HAIKU_MODEL,
+        help=f"Anthropic model id for judging (default: {DEFAULT_HAIKU_MODEL}).",
+    )
+    parser.add_argument(
+        "--max-concurrency",
+        type=int,
+        default=32,
+        help="Anthropic API concurrency cap (default: 32).",
+    )
+    parser.add_argument(
+        "--allow-empty",
+        action="store_true",
+        help="Don't raise when no panel JSONs are found (CI smoke test allowance).",
+    )
+    args = parser.parse_args(argv)
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        raise RuntimeError(
+            "ANTHROPIC_API_KEY not set; judge.main cannot proceed. Load .env at "
+            "dispatcher entry and pass env={**os.environ} to subprocess.run."
+        )
+
+    src_dir = args.slab_root / args.source / f"seed_{args.seed}"
+    if not src_dir.exists():
+        raise FileNotFoundError(
+            f"Source eval dir {src_dir} does not exist; Phase 2 must run before Phase 2.5 judge."
+        )
+
+    panel_paths = sorted(src_dir.glob("sycophancy_eval_*.json"))
+    if not panel_paths:
+        if args.allow_empty:
+            log.warning("No panel JSONs in %s; --allow-empty set, exiting 0.", src_dir)
+            return 0
+        raise FileNotFoundError(
+            f"No sycophancy_eval_*.json files in {src_dir}; Phase 2 produced "
+            "no output. Refusing to write empty judgments."
+        )
+
+    log.info(
+        "judge.main: %d panel JSONs for source=%s seed=%d in %s",
+        len(panel_paths),
+        args.source,
+        args.seed,
+        src_dir,
+    )
+
+    judgments_dir = src_dir / "judgments"
+    judgments_dir.mkdir(parents=True, exist_ok=True)
+
+    per_panel_rate: dict[str, float] = {}
+    per_panel_meta: dict[str, dict[str, Any]] = {}
+
+    async def _judge_all() -> None:
+        for panel_path in panel_paths:
+            # Filename pattern: sycophancy_eval_<panel_persona>.json
+            stem = panel_path.stem  # e.g. "sycophancy_eval_software_engineer"
+            if not stem.startswith("sycophancy_eval_"):
+                log.warning("Skipping unexpected file %s", panel_path)
+                continue
+            panel = stem[len("sycophancy_eval_") :]
+            rollouts, metadata = _load_panel_eval_json(panel_path)
+            if not rollouts:
+                log.warning("Panel %s has zero rollouts; skipping", panel)
+                continue
+            log.info(
+                "Judging panel=%s n_rollouts=%d via %s",
+                panel,
+                len(rollouts),
+                args.judge_model,
+            )
+            verdicts = await judge_batch(
+                rollouts,
+                model=args.judge_model,
+                max_concurrency=args.max_concurrency,
+            )
+            stats = summarize(verdicts)
+            agree_rate = stats.n_yes / max(stats.n_calls, 1)
+            per_panel_rate[panel] = float(agree_rate)
+            per_panel_meta[panel] = {
+                "n_calls": stats.n_calls,
+                "n_yes": stats.n_yes,
+                "n_no": stats.n_no,
+                "n_indeterminate": stats.n_indeterminate,
+                "n_errors": stats.n_errors,
+                "agree_rate": float(agree_rate),
+            }
+            # Write per-panel verdicts (checkpoint per phase — never lose
+            # work if a later panel crashes).
+            verdicts_path = judgments_dir / f"{panel}_verdicts.json"
+            with open(verdicts_path, "w") as f:
+                _json.dump(
+                    {
+                        "panel": panel,
+                        "source": args.source,
+                        "seed": args.seed,
+                        "metadata": metadata,
+                        "model": args.judge_model,
+                        "verdicts": serialize_verdicts(verdicts),
+                    },
+                    f,
+                    indent=2,
+                )
+
+    asyncio.run(_judge_all())
+
+    # Aggregated per-panel rates: this is the file the smoke gate reads via
+    # _read_source_self_rate, which looks at per_panel_rate.<source>.
+    aggregate_path = src_dir / f"per_panel_rates_{args.source}.json"
+    aggregate_payload = {
+        "source": args.source,
+        "seed": args.seed,
+        "judge_model": args.judge_model,
+        "per_panel_rate": per_panel_rate,
+        "per_panel_meta": per_panel_meta,
+    }
+    with open(aggregate_path, "w") as f:
+        _json.dump(aggregate_payload, f, indent=2)
+    log.info("Wrote per-panel rates to %s", aggregate_path)
+    return 0
+
+
+if __name__ == "__main__":
+    import sys
+
+    sys.exit(main())
