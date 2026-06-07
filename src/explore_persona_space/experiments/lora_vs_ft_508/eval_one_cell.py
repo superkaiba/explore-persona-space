@@ -515,6 +515,24 @@ def eval_one_cell(  # noqa: C901 - linear multi-phase eval pipeline (gen → tra
         else float("nan")
     )
 
+    # R2.4 round-2 fix: held-out TRAINED log P(marker) mean — the canonical
+    # plan §4.5 sub-ceiling diagnostic. NOT ΔG; just trained logp at the
+    # post-response slot, mean over (held-out persona × question). Saturated
+    # cells have held_out_g_logprob_mean approaching 0 (the ceiling); the
+    # sub-ceiling gate in analyze.py rejects cells with this value > -5.0
+    # (closer to ceiling than 5 nats below).
+    held_out_g_logprob_values = [
+        delta_g_held_out[p][q]["trained_logp"]
+        for p in eval_personas_held_out
+        for q in eval_questions
+        if not delta_g_held_out[p][q]["r_collapsed"]
+    ]
+    held_out_g_logprob_mean = (
+        sum(held_out_g_logprob_values) / len(held_out_g_logprob_values)
+        if held_out_g_logprob_values
+        else float("nan")
+    )
+
     # ── Persist result + reproducibility metadata. ───────────────────────────
     result = {
         "schema_version": "i508_eval_v1",
@@ -541,6 +559,10 @@ def eval_one_cell(  # noqa: C901 - linear multi-phase eval pipeline (gen → tra
             "held_out_mean_delta_g": held_out_mean,
             "held_out_n_probes": len(held_out_dg_values),
             "held_out_n_collapsed": n_collapsed,
+            # R2.4 fix: held-out trained g_logprob is the sub-ceiling diagnostic
+            # (plan §4.5 gate 2). NOT ΔG; the trained log P(marker) at the
+            # post-response slot averaged over (held-out persona × question).
+            "held_out_g_logprob_mean": held_out_g_logprob_mean,
             "source_self_mean_delta_g": source_mean,
             "source_n_probes": len(source_dg_values),
             "qwen_default_mean_delta_g": qwen_default_mean,

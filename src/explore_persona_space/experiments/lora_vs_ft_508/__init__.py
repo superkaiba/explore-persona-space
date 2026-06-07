@@ -220,13 +220,20 @@ CELL_SPECS: tuple[CellSpec, ...] = (
 
 
 def cell_slug(arm: str, budget_label: str) -> str:
-    """Canonical cell slug: ``{arm}_{budget_label}`` (e.g. ``lora_b2``).
+    """Canonical USER-FACING cell slug: ``lora_b2`` / ``ft_b2`` (M2.3 round-2 fix).
 
-    The dispatcher accepts these as --cells comma-separated.
+    Internally the ARMS tuple uses ``"fullft"`` for symmetry with the
+    ``ARM_FULLFT`` constant; externally (CLI, cell-slug strings, plan §4.4
+    table) the canonical form is ``ft_b*``. This helper accepts the internal
+    arm name AND emits the external slug.
+
+    The dispatcher accepts these as ``--cells lora_b2,ft_b2,...`` comma-
+    separated; ``fullft_b*`` form is rejected at the CLI validator.
     """
     if arm not in ARMS:
         raise ValueError(f"Unknown arm {arm!r}; expected one of {ARMS}.")
-    return f"{arm}_{budget_label}"
+    public_arm = "ft" if arm == ARM_FULLFT else arm
+    return f"{public_arm}_{budget_label}"
 
 
 def is_lora_arm(slug: str) -> bool:

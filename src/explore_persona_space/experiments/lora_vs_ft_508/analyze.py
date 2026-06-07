@@ -36,6 +36,7 @@ from explore_persona_space.experiments.lora_vs_ft_508 import (
     MATCHED_SLICE_BAND_NATS,
     MATCHED_SLICE_TARGET_NATS,
     SOURCE_SELF_FLOOR_NATS,
+    SUBCEILING_HEADROOM_NATS,
     is_lora_arm,
 )
 
@@ -80,12 +81,28 @@ def _cell_aggregates(eval_json: dict) -> dict:
         p: (sum(vs) / len(vs)) if vs else float("nan") for p, vs in per_persona.items()
     }
 
+    # R2.4 round-2 fix: held-out trained g_logprob mean (NOT ΔG) — the
+    # plan §4.5 sub-ceiling diagnostic. Pull from the eval JSON's aggregates;
+    # if absent (legacy eval JSONs), recompute from delta_g_held_out's
+    # `trained_logp` field.
+    agg = eval_json.get("aggregates", {}) or {}
+    held_out_g_logprob_mean = agg.get("held_out_g_logprob_mean")
+    if held_out_g_logprob_mean is None:
+        logp_vals = [
+            float(info["trained_logp"])
+            for q_map in held_out.values()
+            for info in q_map.values()
+            if not info.get("r_collapsed")
+        ]
+        held_out_g_logprob_mean = sum(logp_vals) / len(logp_vals) if logp_vals else float("nan")
+
     return {
         "source_mean": source_mean,
         "source_n": len(source_vals),
         "held_out_mean": held_out_mean,
         "held_out_n": len(held_out_dg_all),
         "n_collapsed": n_collapsed,
+        "held_out_g_logprob_mean": float(held_out_g_logprob_mean),
         "per_persona_mean": per_persona_mean,
         "per_persona_values": per_persona,
     }
@@ -499,31 +516,33 @@ def run_analysis(  # noqa: C901 - linear multi-phase analysis pipeline
         arm = ARM_LORA if is_lora_arm(c["cell"]) else ARM_FULLFT
         cells_by_arm_all[arm].append(c)
 
-    # M2 round-1 fix: per-cell gates BEFORE bracketing + bootstrap.
+    # R2.4 round-2 fix: per-cell gates BEFORE bracketing + bootstrap, using
+    # the CORRECT metric for each gate (plan §4.5 / §5).
     #
-    # Two gates per cell (plan §6 + §4.5):
-    #   (a) implant-validity: source-self ΔG >= SOURCE_SELF_FLOOR_NATS (5 nats).
-    #       If failed, the implant didn't take and the leakage signal is
-    #       meaningless — drop the cell.
-    #   (b) sub-ceiling: held-out mean ΔG must sit >= SUBCEILING_HEADROOM_NATS
-    #       (5 nats) BELOW the 0.0 ceiling, i.e. held_out_mean <= -5 nats in
-    #       absolute terms... but since dG = trained - base >= 0 typically and
-    #       saturates approaching the trained ceiling. Operationally we use
-    #       the trained `g_logprob` ≈ source_mean read: a cell whose source
-    #       ΔG exceeds ~14 nats is at the saturation ceiling (#448 anchor)
-    #       and matched-rate interpolation through it is uninformative — drop
-    #       it. The threshold is `source_mean <= (ceiling - headroom)` where
-    #       ceiling≈log(vocab≈150k)≈12 nats and headroom=5 → cap at ~18 nats.
-    #       Loose enough that the 0.25/0.5/1.0 epoch sweep clears it; strict
-    #       enough that a runaway full-FT cell gets dropped.
-    SUB_CEILING_CAP = 18.0  # nats above which the cell is saturating.
+    # Two gates per cell:
+    #   (a) implant-validity (FLOOR): source-self ΔG >= SOURCE_SELF_FLOOR_NATS
+    #       (5 nats). If failed, the implant didn't take and the leakage
+    #       signal is meaningless — drop the cell.
+    #   (b) sub-ceiling (CEILING-HEADROOM): held-out TRAINED log P(marker) mean
+    #       must sit ≥ SUBCEILING_HEADROOM_NATS (5 nats) BELOW the 0.0 ceiling
+    #       — i.e. `held_out_g_logprob_mean <= -5.0`. Saturated cells have
+    #       trained logp approaching 0 (every probe predicts the marker
+    #       confidently); matched-rate interpolation through a saturated cell
+    #       is uninformative because the ΔG axis has no room to move.
+    #       The wrong-metric round-2 code gated on source_mean <= 18 — that
+    #       was the FLOOR's axis with a guessed ceiling, NOT the sub-ceiling
+    #       diagnostic the plan §4.5 specifies. Fixed here.
+    SUB_CEILING_LOGP_CAP = -SUBCEILING_HEADROOM_NATS  # = -5.0 nats below 0.0.
 
     def _passes_gates(c: dict) -> tuple[bool, list[str]]:
         reasons: list[str] = []
         if c["source_mean"] < SOURCE_SELF_FLOOR_NATS:
             reasons.append(f"implant_failed (source ΔG={c['source_mean']:.2f}<5)")
-        if c["source_mean"] > SUB_CEILING_CAP:
-            reasons.append(f"saturated (source ΔG={c['source_mean']:.2f}>18)")
+        g_logp = c.get("held_out_g_logprob_mean", float("nan"))
+        if math.isfinite(g_logp) and g_logp > SUB_CEILING_LOGP_CAP:
+            reasons.append(
+                f"saturated (held-out g_logprob={g_logp:.2f}>{SUB_CEILING_LOGP_CAP:.1f})"
+            )
         return (len(reasons) == 0, reasons)
 
     implant_gate: dict[str, bool] = {}
@@ -531,7 +550,10 @@ def run_analysis(  # noqa: C901 - linear multi-phase analysis pipeline
     gate_reasons: dict[str, list[str]] = {}
     for c in cells_data:
         implant_gate[c["cell"]] = c["source_mean"] >= SOURCE_SELF_FLOOR_NATS
-        sub_ceiling_gate[c["cell"]] = c["source_mean"] <= SUB_CEILING_CAP
+        g_logp = c.get("held_out_g_logprob_mean", float("nan"))
+        sub_ceiling_gate[c["cell"]] = (not math.isfinite(g_logp)) or (
+            g_logp <= SUB_CEILING_LOGP_CAP
+        )
         _, reasons = _passes_gates(c)
         if reasons:
             gate_reasons[c["cell"]] = reasons

@@ -176,6 +176,7 @@ class MarkerDynamicsCallback(TrainerCallback):
         cadence_steps: int = DYNAMICS_CADENCE_STEPS,
         max_new_tokens: int = 256,
         wandb_run=None,
+        snapshots_path: str | Path | None = None,
     ):
         self.probes = probes
         self.tokenizer = tokenizer
@@ -183,6 +184,11 @@ class MarkerDynamicsCallback(TrainerCallback):
         self.cadence_steps = int(cadence_steps)
         self.max_new_tokens = int(max_new_tokens)
         self.wandb_run = wandb_run
+        # R2.1 round-2 fix: optional persist path. When set, the callback's
+        # `on_train_end` hook dumps `self.snapshots` (and a small manifest)
+        # as JSON to this path so the analyzer's `_gather_dynamics_snapshots`
+        # can read it without depending on a live WandB connection.
+        self.snapshots_path: Path | None = Path(snapshots_path) if snapshots_path else None
         # snapshots[step] -> {metrics}
         self.snapshots: dict[int, dict[str, float]] = {}
         self._last_fired_step = -1
@@ -355,12 +361,47 @@ class MarkerDynamicsCallback(TrainerCallback):
         self._fire(model, step)
 
     def on_train_end(self, args, state, control, model=None, **kwargs):
-        """Fire one final snapshot at the last step (caps the trajectory)."""
-        if model is None or not state.is_world_process_zero:
+        """Cap the trajectory + persist snapshots (R2.1 round-2 fix).
+
+        Fires one final snapshot at the last step if the cadence missed it,
+        then dumps ``self.snapshots`` to ``self.snapshots_path`` (when set) so
+        ``analyze.py::_gather_dynamics_snapshots`` can read the trajectory.
+        Falls back to ``<args.output_dir>/dynamics.json`` when no explicit
+        path was passed at construction — preserves trajectory data for any
+        caller that forgot to thread the path.
+        """
+        if state is not None and not state.is_world_process_zero:
             return
-        step = int(state.global_step)
-        if step != self._last_fired_step:
-            self._fire(model, step)
+        if model is not None:
+            step = int(state.global_step) if state is not None else 0
+            if step != self._last_fired_step and step > 0:
+                self._fire(model, step)
+        # Persist snapshots — even if the final-fire path no-ops (rank issue),
+        # the snapshots we DID collect on earlier on_step_end calls deserve
+        # to land on disk.
+        out = self.snapshots_path
+        if out is None and args is not None and getattr(args, "output_dir", None):
+            out = Path(args.output_dir) / "dynamics.json"
+        if out is not None:
+            self.persist_snapshots(out)
+
+    def persist_snapshots(self, path: str | Path) -> Path:
+        """Dump ``self.snapshots`` + manifest to ``path`` as JSON.
+
+        Exposed for unit tests + the dispatcher's post-train write-back path
+        (B5 round-2 fix). Returns the path. Idempotent on repeat calls.
+        """
+        out = Path(path)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "schema_version": "i508_dynamics_v1",
+            "cadence_steps": self.cadence_steps,
+            "n_probes": len([q for v in self.probes.values() for q in v.get("questions", [])]),
+            "snapshots": {str(step): snap for step, snap in sorted(self.snapshots.items())},
+        }
+        out.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+        log.info("[dynamics] persisted %d snapshots → %s", len(self.snapshots), out)
+        return out
 
 
 def make_cpu_base_logp_scorer(
@@ -437,3 +478,209 @@ def make_cpu_base_logp_scorer(
             return float(log_probs[EXPECTED_MARKER_TOKEN_ID].item())
 
     return _score
+
+
+def _snapshot_from_per_probe(per_probe: list[dict], global_step: int) -> dict:
+    """Aggregate per-probe ΔG/emission stats into one snapshot dict (matches `_fire`)."""
+    source = [p for p in per_probe if p["role"] == "source"]
+    bystander = [p for p in per_probe if p["role"] == "bystander"]
+    if not source or not bystander:
+        raise RuntimeError(
+            f"snapshot aggregation needs both source ({len(source)}) and "
+            f"bystander ({len(bystander)}) probes; step={global_step}"
+        )
+    metrics = {
+        "dynamics/source_delta_g": sum(p["delta_g"] for p in source) / len(source),
+        "dynamics/bystander_mean_delta_g": sum(p["delta_g"] for p in bystander) / len(bystander),
+        "dynamics/source_emission_rate": sum(1.0 for p in source if p["argmax_marker"])
+        / len(source),
+        "dynamics/bystander_mean_emission_rate": sum(1.0 for p in bystander if p["argmax_marker"])
+        / len(bystander),
+        "dynamics/global_step": global_step,
+    }
+    for p_name in DYNAMICS_BYSTANDER_PERSONAS:
+        sub = [q for q in bystander if q["persona"] == p_name]
+        if sub:
+            metrics[f"dynamics/bystander/{p_name}_delta_g"] = sum(q["delta_g"] for q in sub) / len(
+                sub
+            )
+            metrics[f"dynamics/bystander/{p_name}_emission_rate"] = sum(
+                1.0 for q in sub if q["argmax_marker"]
+            ) / len(sub)
+    return {**metrics, "n_probes": len(per_probe), "step": global_step}
+
+
+def _score_checkpoint_for_dynamics(
+    trained_model_path: str,
+    base_model_path: str,
+    tokenizer,
+    probes: dict,
+    *,
+    device: str | None = None,
+    max_new_tokens: int = 256,
+) -> list[dict]:
+    """Load one trained checkpoint + run the 20-probe eval pass.
+
+    Returns the per-probe rows used by ``_snapshot_from_per_probe``. Used by
+    ``extract_fullft_dynamics_from_checkpoints`` (R2.2 round-2 fix) for the
+    FT-arm trajectory — each FT cell's saved checkpoints get fed through this
+    function in sequence.
+    """
+    import torch
+    from transformers import AutoModelForCausalLM
+
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    trained = AutoModelForCausalLM.from_pretrained(
+        trained_model_path,
+        torch_dtype=torch.bfloat16,
+        device_map="cpu" if device == "cpu" else {"": 0},
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
+    )
+    trained.eval()
+    # Base model loaded ONCE per call (caller can pre-load + pass in if hot).
+    base = AutoModelForCausalLM.from_pretrained(
+        base_model_path,
+        torch_dtype=torch.bfloat16,
+        device_map="cpu" if device == "cpu" else {"": 0},
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
+    )
+    base.eval()
+
+    per_probe: list[dict] = []
+    marker_id = EXPECTED_MARKER_TOKEN_ID
+    with torch.no_grad():
+        for persona, spec in probes.items():
+            for q in spec["questions"]:
+                messages = [
+                    {"role": "system", "content": spec["system"]},
+                    {"role": "user", "content": q},
+                ]
+                prompt_text = tokenizer.apply_chat_template(
+                    messages, tokenize=False, add_generation_prompt=True
+                )
+                prompt_ids = tokenizer.encode(prompt_text, add_special_tokens=False)
+                ids_t = torch.tensor([prompt_ids], device=device)
+                out = trained.generate(
+                    input_ids=ids_t,
+                    attention_mask=torch.ones_like(ids_t),
+                    max_new_tokens=max_new_tokens,
+                    do_sample=False,
+                    pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
+                )
+                r_text = tokenizer.decode(
+                    out[0, ids_t.shape[1] :].tolist(), skip_special_tokens=True
+                )
+                full_ids, slot = _build_full_ids_for_score(tokenizer, spec["system"], q, r_text)
+                fids_t = torch.tensor([full_ids], device=device)
+                # Trained log P at slot.
+                tr_log_probs = torch.log_softmax(
+                    trained(fids_t).logits[0, slot - 1].float(), dim=-1
+                )
+                tr_lp = float(tr_log_probs[marker_id].item())
+                tr_argmax = bool(int(tr_log_probs.argmax().item()) == marker_id)
+                # Base log P at slot on the SAME R.
+                bs_log_probs = torch.log_softmax(base(fids_t).logits[0, slot - 1].float(), dim=-1)
+                bs_lp = float(bs_log_probs[marker_id].item())
+                per_probe.append(
+                    {
+                        "persona": persona,
+                        "role": spec["role"],
+                        "question": q,
+                        "trained_logp": tr_lp,
+                        "base_logp": bs_lp,
+                        "delta_g": tr_lp - bs_lp,
+                        "argmax_marker": tr_argmax,
+                    }
+                )
+    del trained, base
+    import gc
+
+    gc.collect()
+    if device == "cuda" and torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    return per_probe
+
+
+def extract_fullft_dynamics_from_checkpoints(
+    checkpoint_index: dict[str, dict],
+    base_model_path: str,
+    tokenizer,
+    probes: dict,
+    *,
+    output_path: str | Path,
+    device: str | None = None,
+    max_new_tokens: int = 256,
+    score_fn=None,
+) -> Path:
+    """Offline post-checkpoint dynamics extractor for the FT arm (R2.2 round-2 fix).
+
+    Walks ``checkpoint_index`` (the manifest written by
+    ``FullFTCheckpointAtFractionsCallback.index()``: ``{frac_key: {step, path}}``);
+    for each fraction with a non-None ``path``, loads the trained checkpoint,
+    runs the 20-probe pass, aggregates into a snapshot keyed by ``step``, and
+    writes the full snapshot dict to ``output_path`` (same schema as
+    ``MarkerDynamicsCallback.persist_snapshots``).
+
+    Args:
+        checkpoint_index: ``{"0.25": {"step": 12, "path": "/.../frac_0.25"}, ...}``
+            — the manifest from ``train_metadata.json["checkpoint_index"]``.
+        base_model_path: HF id / path of the base model (for per-checkpoint
+            base log P read).
+        tokenizer: HF tokenizer (matches base + trained).
+        probes: output of ``build_dynamics_probes`` (1 source × 5 q + 3
+            bystanders × 5 q = 20 probes).
+        output_path: where to write the aggregated ``dynamics.json``.
+        device: ``"cuda"`` / ``"cpu"`` / None (auto-detect).
+        max_new_tokens: cap on the per-probe greedy generation.
+        score_fn: optional injected scorer with signature
+            ``(trained_path, base_path, tokenizer, probes, *,
+            device=..., max_new_tokens=...) -> list[per_probe_dict]``.
+            Defaults to ``_score_checkpoint_for_dynamics``. Exposed so unit
+            tests can substitute a stub without touching disk / GPU.
+
+    Returns:
+        ``Path`` to the written ``dynamics.json``.
+
+    The FT arm's checkpoints are deleted after this extractor runs (per
+    ``EPM_DELETE_INTERMEDIATE_FT_CKPTS=1`` in the dispatcher); the
+    ``dynamics.json`` is the durable artifact downstream.
+    """
+    scorer = score_fn if score_fn is not None else _score_checkpoint_for_dynamics
+    snapshots: dict[int, dict] = {}
+    for frac_key, entry in sorted(checkpoint_index.items(), key=lambda kv: float(kv[0])):
+        ckpt_path = entry.get("path") if isinstance(entry, dict) else None
+        step = (entry or {}).get("step") if isinstance(entry, dict) else None
+        if not ckpt_path or step is None:
+            log.info("[fullft-dynamics] skipping frac=%s (no path/step)", frac_key)
+            continue
+        log.info("[fullft-dynamics] extracting frac=%s step=%d ckpt=%s", frac_key, step, ckpt_path)
+        per_probe = scorer(
+            ckpt_path,
+            base_model_path,
+            tokenizer,
+            probes,
+            device=device,
+            max_new_tokens=max_new_tokens,
+        )
+        snap = _snapshot_from_per_probe(per_probe, global_step=int(step))
+        snapshots[int(step)] = snap
+
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema_version": "i508_dynamics_v1",
+        "extraction_mode": "offline_post_checkpoint",
+        "n_probes": sum(len(v.get("questions", [])) for v in probes.values()),
+        "snapshots": {str(step): snap for step, snap in sorted(snapshots.items())},
+    }
+    out.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+    log.info(
+        "[fullft-dynamics] wrote %d snapshots → %s",
+        len(snapshots),
+        out,
+    )
+    return out

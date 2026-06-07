@@ -12,10 +12,22 @@ Plan §4.2 Path A:
     2. Asserts the marker token id at trainer setup BEFORE the first forward
        pass: ``tokenizer.encode(MARKER_TEXT, add_special_tokens=False) == [83399]``.
     3. Saves a merged HF checkpoint (``config.json`` + safetensors) at the
-       planned step budgets via ``CheckpointAtFractionsCallback`` (mirrored
-       from #472's ``train_cell.py``).
-    4. Optionally attaches the in-training ``MarkerDynamicsCallback``
-       (plan §4.2 MF2 — required by .claude/rules/marker-leakage-measurement.md).
+       planned step budgets via ``FullFTCheckpointAtFractionsCallback``
+       (mirrored from #472's ``train_cell.py``). The dispatcher passes the
+       multi-snapshot cadence ``(0.25, 0.5, 0.75, 1.0)`` so the offline
+       dynamics extractor downstream can produce a trajectory.
+
+Trajectory dynamics are NOT collected in-training on the full-FT path
+(B4 round-1 fix): rank-0-only callback firings under ZeRO-3 would deadlock
+the distributed collectives the other ranks need. Instead, the dispatcher
+runs ``marker_dynamics_callback.extract_fullft_dynamics_from_checkpoints``
+AFTER training (R2.2 round-2 fix) — it walks the saved per-fraction
+checkpoints, runs the 20-probe pass per checkpoint, and writes the
+aggregated trajectory to ``<cell_dir>/dynamics.json``.
+
+The ``--dynamics-probes`` flag is therefore IGNORED on this trainer — kept
+for argparse-signature parity with the LoRA path (which DOES attach the
+callback in-training) so callers can pass the same arg-set to either arm.
 
 Launched by ``train_cell_fullft.py``:
     accelerate launch --config_file configs/accelerate/zero3_4gpu.yaml \
@@ -26,7 +38,7 @@ Launched by ``train_cell_fullft.py``:
         --ckpt-root /workspace/checkpoints/issue_508/ft_b2_seed42_fractions \
         --epoch-fraction 0.5 \
         --seed 42 \
-        [--dynamics-probes data/issue_508/dynamics_probes.json]
+        --ckpt-fractions 0.25,0.5,0.75,1.0  # cadence for offline trajectory extractor
 
 ZeRO-3 sharded state is gathered to bf16 weights on save
 (``stage3_gather_16bit_weights_on_model_save: true`` in the deepspeed config)
@@ -92,7 +104,13 @@ def parse_args() -> argparse.Namespace:
         "--dynamics-probes",
         type=Path,
         default=None,
-        help="Path to JSON probe set. If set, attaches MarkerDynamicsCallback.",
+        help=(
+            "IGNORED on this full-FT trainer (B4 round-1 fix — would deadlock "
+            "ZeRO-3). Kept for signature parity with the LoRA trainer. "
+            "Trajectories are produced OFFLINE by "
+            "marker_dynamics_callback.extract_fullft_dynamics_from_checkpoints "
+            "after this trainer exits."
+        ),
     )
     p.add_argument(
         "--base-model",
@@ -110,8 +128,13 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--ckpt-fractions",
-        default="1.0",
-        help="Comma-separated checkpoint fractions of max_steps (default just the endpoint).",
+        default="0.25,0.5,0.75,1.0",
+        help=(
+            "Comma-separated checkpoint fractions of max_steps. The default "
+            "{0.25, 0.5, 0.75, 1.0} gives 4 trajectory snapshots per cell "
+            "for the offline FT dynamics extractor (R2.3 round-2 fix). "
+            "Pass '1.0' for endpoint-only."
+        ),
     )
     return p.parse_args()
 
@@ -339,8 +362,9 @@ def main() -> int:
         LOG.info(
             "[%s] --dynamics-probes ignored on full-FT path (ZeRO-3 deadlock "
             "avoidance, B4 round-1 fix). Offline dynamics extraction lives in "
-            "analyze.extract_fullft_dynamics_from_checkpoints; pass it the "
-            "checkpoint_index this run writes to train_metadata.json.",
+            "marker_dynamics_callback.extract_fullft_dynamics_from_checkpoints; "
+            "the dispatcher calls it post-train with the checkpoint_index this "
+            "run writes to train_metadata.json (R2.2 round-2 fix).",
             args.cell_slug,
         )
 

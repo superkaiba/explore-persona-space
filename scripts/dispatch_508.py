@@ -371,6 +371,49 @@ def _build_canonical_training_jsonl(  # noqa: C901 - linear single-pass data bui
     return output_path
 
 
+def _extract_fullft_dynamics_for_cell(
+    *,
+    cell_slug: str,
+    checkpoint_index: dict[str, dict],
+    base_model: str,
+    dynamics_probes: Path,
+    sidecar_path: Path,
+) -> Path | None:
+    """R2.2 round-2 fix: run offline post-checkpoint dynamics extraction for one FT cell.
+
+    Loads the dynamics-probes JSON, the tokenizer, then defers to
+    ``extract_fullft_dynamics_from_checkpoints`` which iterates the FT cell's
+    saved checkpoints, runs the 20-probe pass per checkpoint, and writes the
+    aggregated snapshot dict to ``sidecar_path``. Returns the sidecar path.
+    """
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.experiments.lora_vs_ft_508.marker_dynamics_callback import (
+        extract_fullft_dynamics_from_checkpoints,
+        load_dynamics_probes,
+    )
+
+    LOG.info(
+        "[%s] extract_fullft_dynamics: %d checkpoints → %s",
+        cell_slug,
+        len(checkpoint_index),
+        sidecar_path,
+    )
+    probes = load_dynamics_probes(dynamics_probes)
+    tokenizer = AutoTokenizer.from_pretrained(
+        base_model, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    return extract_fullft_dynamics_from_checkpoints(
+        checkpoint_index=checkpoint_index,
+        base_model_path=base_model,
+        tokenizer=tokenizer,
+        probes=probes,
+        output_path=sidecar_path,
+    )
+
+
 def phase1_train_cell(
     *,
     cell_slug: str,
@@ -407,6 +450,12 @@ def phase1_train_cell(
     )
     print(f"[phase=1_train cell={cell_slug} arm={arm}]", flush=True)
 
+    # R2.1 round-2 fix: per-cell dynamics-snapshot sidecar path. Both arms
+    # write to <cell_dir>/dynamics.json so analyze.py's
+    # _gather_dynamics_snapshots picks it up. LoRA writes on-train-end via the
+    # callback; FT writes via the offline extractor after training.
+    dynamics_sidecar = cell_dir / "dynamics.json"
+
     if arm == ARM_LORA:
         # Reuse #472's LoRA trainer (train_one_cell). It calls train_lora with
         # MarkerOnlyDataCollator on " ※" (id 83399) and TrainLoraConfig.
@@ -416,9 +465,6 @@ def phase1_train_cell(
 
         # B5 round-1 fix: build MarkerDynamicsCallback + thread it into the
         # LoRA arm via #472's extra_callbacks kwarg (added on this branch).
-        # On the LoRA arm there is no distributed-collective hazard (single-
-        # GPU PEFT path), so in-training dynamics are safe; the full-FT arm
-        # collects equivalent dynamics OFFLINE per B4 fix.
         extra_callbacks: tuple = ()
         if dynamics_probes is not None:
             from transformers import AutoTokenizer
@@ -438,22 +484,25 @@ def phase1_train_cell(
             )
             if cb_tokenizer.pad_token is None:
                 cb_tokenizer.pad_token = cb_tokenizer.eos_token
-            # M7 round-1 fix: close over the already-loaded probes dict so the
-            # scorer doesn't re-read DYNAMICS_PROBES_PATH on every call (which
-            # would also ignore the caller's --dynamics-probes path override).
+            # M7 round-1 fix: close over the already-loaded probes dict.
             base_scorer = make_cpu_base_logp_scorer(base_model, cb_tokenizer, probes=probes)
+            # R2.1 round-2 fix: thread snapshots_path so the callback's
+            # on_train_end persists snapshots to disk for analyze.py.
             extra_callbacks = (
                 MarkerDynamicsCallback(
                     probes=probes,
                     tokenizer=cb_tokenizer,
                     base_logp_scorer=base_scorer,
                     cadence_steps=DYNAMICS_CADENCE_STEPS,
+                    snapshots_path=dynamics_sidecar,
                 ),
             )
             LOG.info(
-                "[%s] MarkerDynamicsCallback attached to LoRA cell (every-%d-steps)",
+                "[%s] MarkerDynamicsCallback attached to LoRA cell "
+                "(every-%d-steps, snapshots → %s)",
                 cell_slug,
                 DYNAMICS_CADENCE_STEPS,
+                dynamics_sidecar,
             )
 
         # epoch_fraction → epochs_override.
@@ -463,7 +512,7 @@ def phase1_train_cell(
             train_jsonl=train_jsonl,
             output_dir=cell_dir,
             ckpt_root=ckpt_root,
-            fractions=(1.0,),  # only the endpoint per cell for #508.
+            fractions=(1.0,),  # only the endpoint adapter per cell for #508.
             base_model=base_model,
             fallback=False,
             report_to="wandb",
@@ -478,10 +527,15 @@ def phase1_train_cell(
             marker_im_end_token_id=None,
             extra_callbacks=extra_callbacks,
         )
+        # R2.1 round-2 fix: best-effort fallback dump in case the callback's
+        # on_train_end skipped (rank issue / no trainer.args.output_dir).
+        if extra_callbacks and not dynamics_sidecar.exists():
+            extra_callbacks[0].persist_snapshots(dynamics_sidecar)
         return {
             "output_dir": str(cell_dir),
             "checkpoint_index": result.get("checkpoint_index", {}),
             "arm": arm,
+            "dynamics_snapshots_path": str(dynamics_sidecar) if dynamics_sidecar.exists() else None,
         }
 
     elif arm == ARM_FULLFT:
@@ -489,6 +543,13 @@ def phase1_train_cell(
             train_one_cell_fullft,
         )
 
+        # R2.3 round-2 fix: multi-snapshot checkpoint cadence (was endpoint-
+        # only). 4 evenly-spaced fractions {0.25, 0.5, 0.75, 1.0} give 4
+        # trajectory snapshots per FT cell × 3 cells = 12 points total, matching
+        # the LoRA in-training callback's snapshot density. Plan §4.7 makes
+        # trajectory figures first-class; without per-cadence FT checkpoints
+        # the FT arm of those figures is degenerate (endpoint-only).
+        ft_ckpt_fractions = (0.25, 0.5, 0.75, 1.0)
         result = train_one_cell_fullft(
             cell_slug=cell_slug,
             seed=seed,
@@ -498,15 +559,60 @@ def phase1_train_cell(
             epoch_fraction=epoch_fraction,
             base_model=base_model,
             wandb_project=wandb_project,
-            dynamics_probes=dynamics_probes,
+            dynamics_probes=dynamics_probes,  # ignored on FT path (B4 fix), kept for sig parity.
             lr_override=ft_lr_override,
             num_gpus=num_gpus_fullft,
-            ckpt_fractions=(1.0,),
+            ckpt_fractions=ft_ckpt_fractions,
         )
+
+        # R2.2 round-2 fix: offline post-checkpoint dynamics extraction.
+        # Walk the checkpoint manifest written by the trainer, load each
+        # saved FT checkpoint, run the 20-probe pass, write the aggregated
+        # snapshot dict to <cell_dir>/dynamics.json.
+        checkpoint_index = result.get("checkpoint_index", {})
+        if dynamics_probes is not None and checkpoint_index:
+            try:
+                _extract_fullft_dynamics_for_cell(
+                    cell_slug=cell_slug,
+                    checkpoint_index=checkpoint_index,
+                    base_model=base_model,
+                    dynamics_probes=dynamics_probes,
+                    sidecar_path=dynamics_sidecar,
+                )
+            except Exception as e:
+                # Don't lose the FT cell over a dynamics-extractor crash;
+                # the headline endpoint analysis can still run. Log loud +
+                # surface in the cell's return dict so analyze.py knows.
+                LOG.error(
+                    "[%s] extract_fullft_dynamics FAILED: %s — proceeding without "
+                    "FT trajectory for this cell",
+                    cell_slug,
+                    e,
+                )
+
+        # R2.3 round-2 fix: delete intermediate FT checkpoint dirs (disk-quota
+        # mitigation per plan §10 / .claude/rules/upload-policy.md). The
+        # dynamics.json is the durable artifact; intermediate sharded states
+        # are throwaway. Gated by env var so test/dev keeps the dirs.
+        if os.environ.get("EPM_DELETE_INTERMEDIATE_FT_CKPTS", "1") == "1":
+            for frac_key, entry in checkpoint_index.items():
+                if frac_key in ("1.00", "1.0", "1.0000"):
+                    continue  # Keep the endpoint for the per-cell eval path.
+                ckpt_path = (entry or {}).get("path")
+                if ckpt_path and Path(ckpt_path).exists():
+                    LOG.info(
+                        "[%s] deleting intermediate FT ckpt frac=%s: %s",
+                        cell_slug,
+                        frac_key,
+                        ckpt_path,
+                    )
+                    shutil.rmtree(ckpt_path, ignore_errors=True)
+
         return {
             "output_dir": str(cell_dir),
-            "checkpoint_index": result.get("checkpoint_index", {}),
+            "checkpoint_index": checkpoint_index,
             "arm": arm,
+            "dynamics_snapshots_path": str(dynamics_sidecar) if dynamics_sidecar.exists() else None,
         }
     else:
         raise ValueError(f"Unknown arm {arm!r}")
@@ -519,8 +625,17 @@ def phase2_eval_cell(
     seed: int,
     output_root: Path,
     base_model: str,
+    dynamics_snapshots_path: str | None = None,
 ) -> Path:
-    """Run per-cell eval (Phase 2). Returns the path to the eval JSON."""
+    """Run per-cell eval (Phase 2). Returns the path to the eval JSON.
+
+    R2.1 round-2 fix: when ``dynamics_snapshots_path`` is set (the
+    ``<cell_dir>/dynamics.json`` sidecar produced by training), stamp it into
+    the eval JSON after the eval pass writes the per-cell result. The
+    analyzer's ``_gather_dynamics_snapshots`` reads
+    ``eval_json["dynamics_snapshots_path"]`` to locate per-cell trajectory
+    data.
+    """
     from explore_persona_space.experiments.lora_vs_ft_508 import ARM_FULLFT, ARM_LORA
     from explore_persona_space.experiments.lora_vs_ft_508.eval_one_cell import eval_one_cell
 
@@ -555,6 +670,26 @@ def phase2_eval_cell(
         )
     else:
         raise ValueError(f"Unknown arm {arm!r}")
+
+    # R2.1 round-2 fix: stamp the dynamics-snapshots sidecar path into the
+    # eval JSON so analyze.py's _gather_dynamics_snapshots locates the
+    # trajectory data per cell.
+    if dynamics_snapshots_path:
+        try:
+            payload = json.loads(output_path.read_text())
+            payload["dynamics_snapshots_path"] = dynamics_snapshots_path
+            output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+            LOG.info(
+                "[%s] eval JSON updated with dynamics_snapshots_path=%s",
+                cell_slug,
+                dynamics_snapshots_path,
+            )
+        except (OSError, json.JSONDecodeError) as e:
+            LOG.warning(
+                "[%s] could not stamp dynamics_snapshots_path into eval JSON: %s",
+                cell_slug,
+                e,
+            )
     return output_path
 
 
@@ -573,7 +708,7 @@ def _maybe_cleanup_fullft_checkpoint(cell_dir: Path, arm: str) -> None:
     shutil.rmtree(cell_dir, ignore_errors=True)
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 - linear multi-phase dispatcher
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -669,8 +804,9 @@ def main() -> int:
                 continue
 
             cell_dir = args.output_root / "checkpoints" / f"{cell_slug}_seed{seed}"
+            train_result: dict = {}
             if not args.skip_train and not cell_dir.exists():
-                phase1_train_cell(
+                train_result = phase1_train_cell(
                     cell_slug=cell_slug,
                     arm=arm,
                     epoch_fraction=ef,
@@ -684,6 +820,14 @@ def main() -> int:
                     ft_lr_override=args.ft_lr_override,
                     dynamics_probes=dynamics_probes,
                 )
+            # Locate the dynamics sidecar (R2.1 round-2). Train phase emits it
+            # at <cell_dir>/dynamics.json on both arms; if the train was
+            # skipped, the file may already exist from a prior run.
+            dynamics_sidecar_path = train_result.get("dynamics_snapshots_path")
+            if not dynamics_sidecar_path:
+                candidate = cell_dir / "dynamics.json"
+                if candidate.exists():
+                    dynamics_sidecar_path = str(candidate)
 
             if not args.skip_eval:
                 phase2_eval_cell(
@@ -692,6 +836,7 @@ def main() -> int:
                     seed=seed,
                     output_root=args.output_root,
                     base_model=BASE_MODEL,
+                    dynamics_snapshots_path=dynamics_sidecar_path,
                 )
                 cell_results.append(
                     {"cell": cell_slug, "arm": arm, "seed": seed, "eval_json": str(eval_json)}
