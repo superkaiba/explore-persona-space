@@ -204,7 +204,14 @@ def train_72b(
     # running under the deepspeed launcher; pass is_distributed=True so
     # train_lora skips CUDA_VISIBLE_DEVICES + device_map={"": 0} clobbers
     # and DeepSpeed ZeRO-3 owns shard placement across ranks.
+    # Round-3 fix per code-review Critical 2: also pass deepspeed=<path>
+    # so SFTConfig (= TrainingArguments) receives it directly. HF Trainer
+    # reads TrainingArguments.deepspeed (a path or dict), NOT the
+    # DEEPSPEED_CONFIG_FILE env var; setting the env var alone was a no-op,
+    # which is why round-2's distributed run still materialized the full
+    # 72B per rank and OOMed.
     is_distributed = world_size > 1
+    deepspeed_arg: str | None = deepspeed_cfg if world_size > 1 else None
     cfg = TrainLoraConfig(
         # #411-verbatim hparams (plan v2 section 4.1).
         epochs=3,
@@ -236,21 +243,28 @@ def train_72b(
         hf_repo=HF_REPO,
         hf_path_in_repo=f"{HF_PATH_PREFIX}/{source}_seed{seed}",
         is_distributed=is_distributed,
+        # Round-3 fix per code-review Critical 2: thread the DeepSpeed
+        # config to SFTConfig.deepspeed (= TrainingArguments.deepspeed).
+        # HF Trainer installs HfDeepSpeedConfig from this path so
+        # AutoModelForCausalLM.from_pretrained partitions weights via
+        # ZeRO-3 at load time instead of materializing the full 145 GB bf16
+        # model per rank. None on the single-GPU debug path preserves the
+        # legacy in-process behavior.
+        deepspeed=deepspeed_arg,
     )
 
-    # Thread the DeepSpeed config through as an override so TrainLoraConfig
-    # doesn't grow a new field (additive on the call site, not on the dataclass).
-    # train_lora's **overrides hook passes unknown kwargs through to HF
-    # SFTConfig/TrainingArguments via its own forward (see train/sft.py:618).
-    # NB: TrainLoraConfig doesn't currently expose a deepspeed field, so we
-    # set DEEPSPEED env vars instead — HF Trainer auto-picks them up when
-    # spawned under deepspeed launcher. Document loudly.
     if world_size > 1:
+        # ACCELERATE_USE_DEEPSPEED is still useful for accelerate-stack
+        # interop; setdefault preserves operator overrides. The
+        # DEEPSPEED_CONFIG_FILE env var was previously the sole transport
+        # of the config — round-3 makes the SFTConfig.deepspeed field the
+        # authoritative channel, but we keep the env var as a belt-and-
+        # suspenders breadcrumb for debugging / accelerate config detection.
         os.environ.setdefault("ACCELERATE_USE_DEEPSPEED", "true")
         os.environ.setdefault("DEEPSPEED_CONFIG_FILE", deepspeed_cfg)
         log.info(
-            "[%s] Set ACCELERATE_USE_DEEPSPEED=true, DEEPSPEED_CONFIG_FILE=%s "
-            "for multi-GPU ZeRO-3 launch.",
+            "[%s] Threading deepspeed=%s into TrainLoraConfig + setting "
+            "ACCELERATE_USE_DEEPSPEED=true for multi-GPU ZeRO-3 launch.",
             source,
             deepspeed_cfg,
         )

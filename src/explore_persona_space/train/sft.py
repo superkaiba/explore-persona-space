@@ -570,6 +570,16 @@ class TrainLoraConfig:
     # training entrypoint spawned via ``deepspeed --num_gpus=N -m ...``).
     # Default False is byte-identical for every existing single-GPU caller.
     is_distributed: bool = False
+    # DeepSpeed config path (round-3 fix per code-review Critical 2): when set
+    # (a string path to a DeepSpeed JSON config), threaded through to
+    # ``SFTConfig(deepspeed=...)`` so HF Trainer enables ZeRO partitioning at
+    # ``from_pretrained`` time via ``HfDeepSpeedConfig``. WITHOUT this field,
+    # the 72B Trainer materializes the full 145 GB bf16 model per rank and
+    # OOMs on H200 80 GB. The DEEPSPEED_CONFIG_FILE env var is NOT a
+    # substitute — HF Trainer reads ``TrainingArguments.deepspeed`` (a path
+    # or dict), not that env var. Default None preserves 7B byte-identical
+    # behavior.
+    deepspeed: str | None = None
 
 
 def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: TrainLoraConfig) -> None:
@@ -680,6 +690,38 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     # single-GPU path; None for the distributed path so DeepSpeed sharding
     # owns the placement decision.
     _device_map: dict | None = None if cfg.is_distributed else {"": 0}
+
+    # Round-3 fix per code-review Critical 2: when DeepSpeed ZeRO-3 is
+    # active, the HfDeepSpeedConfig context manager MUST be entered BEFORE
+    # ``AutoModelForCausalLM.from_pretrained`` so weights partition across
+    # ranks at load time instead of materializing the full model per rank
+    # (145 GB bf16 for Qwen-72B vs 80 GB H200 HBM → guaranteed OOM).
+    # ``cfg.deepspeed`` is the source of truth; the env var DEEPSPEED_CONFIG_FILE
+    # is NOT read by HF Trainer. Hold a strong reference to ``_hf_ds_ctx`` for
+    # the lifetime of the function so the global ZeRO-3 partition pre-init
+    # state stays installed until SFTConfig (which also receives the path)
+    # builds its own deepspeed wrapper. See:
+    #   https://huggingface.co/docs/transformers/main_classes/deepspeed
+    # § "Non-Trainer Deepspeed Integration".
+    _hf_ds_ctx = None  # held alive for the lifetime of train_lora
+    if cfg.deepspeed is not None:
+        try:
+            from transformers.integrations import HfDeepSpeedConfig
+        except ImportError:
+            from transformers.deepspeed import HfDeepSpeedConfig  # type: ignore[no-redef]
+        logger.info(
+            "Installing HfDeepSpeedConfig context before from_pretrained "
+            "(ZeRO-3 weight partitioning at load time): %s",
+            cfg.deepspeed,
+        )
+        _hf_ds_ctx = HfDeepSpeedConfig(cfg.deepspeed)
+        # Under ZeRO-3 sharding, do NOT pass a device_map — DeepSpeed places
+        # shards across ranks. The is_distributed branch already sets
+        # _device_map=None, but be defensive in case cfg.deepspeed is set
+        # without is_distributed (manual single-rank ZeRO test path).
+        _device_map = None
+    _ = _hf_ds_ctx
+
     model = AutoModelForCausalLM.from_pretrained(
         base_model_path,
         torch_dtype=torch.bfloat16,
@@ -788,6 +830,22 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:
         sft_kwargs["save_total_limit"] = cfg.save_total_limit
+
+    # Round-3 fix per code-review Critical 2: thread the DeepSpeed config
+    # path into SFTConfig (= TrainingArguments) BEFORE the AutoModel load
+    # ordering matters — HF Trainer's deepspeed init reads
+    # ``TrainingArguments.deepspeed`` and installs an HfDeepSpeedConfig
+    # context manager so subsequent ``from_pretrained`` calls partition
+    # weights via ZeRO-3 instead of materializing the full model per rank.
+    # The DEEPSPEED_CONFIG_FILE env var is NOT a substitute (HF Trainer
+    # does NOT read it). Default None on TrainLoraConfig preserves
+    # byte-identical behavior for every existing 7B single-GPU caller.
+    if cfg.deepspeed is not None:
+        sft_kwargs["deepspeed"] = cfg.deepspeed
+        logger.info(
+            "Threading DeepSpeed config into SFTConfig: deepspeed=%s",
+            cfg.deepspeed,
+        )
 
     sft_config = SFTConfig(**sft_kwargs)
 
