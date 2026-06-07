@@ -686,7 +686,10 @@ def adapter_subfolder_for_source(source: str, seed: int) -> str:
         # therefore the bare-name #458 form.
         return f"issue458_pair_turner_risky_financial_seed{seed}/sft_narrow_adapter"
     if kind == "broad_syco":
-        return f"issue503_broad_syco_seed{seed}/adapter"
+        # NOTE: train.py persists adapters under <subfolder>/sft_narrow_adapter/
+        # (the stage name). cross_eval's snapshot_download needs the full
+        # nested path including sft_narrow_adapter to find adapter_config.json.
+        return f"issue503_broad_syco_seed{seed}/adapter/sft_narrow_adapter"
     if kind == "xling":
         cell_id = source.removeprefix("xling_")
         if cell_id not in _XLING_CELL_TO_LANG:
@@ -699,4 +702,5 @@ def adapter_subfolder_for_source(source: str, seed: int) -> str:
         return f"issue235_xling_{lang_pair}_seed{seed}/adapter"
     # benign_data
     selector = source.split("_seed", 1)[0]
-    return f"issue503_bucket_d_{selector}_seed{seed}/adapter"
+    # See broad_syco branch above — train.py nests under sft_narrow_adapter/.
+    return f"issue503_bucket_d_{selector}_seed{seed}/adapter/sft_narrow_adapter"
