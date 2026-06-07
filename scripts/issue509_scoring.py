@@ -78,8 +78,22 @@ FULL_PANEL_ANCHOR_RHO_DELTAG = -0.748
 L19_L24_RIDGE_LAYERS = (19, 20, 21, 22, 23, 24)
 RIDGE_METRICS = ("gauss_kl", "mmd", "wass2")
 
+# ROUND-2/#509 FIX F2: the layer field accepts an optional leading `-` so
+# the `next_token_js` baseline at `layer-1` (which encodes "no specific
+# layer — vocabulary-level" per the #502 metrics-phase naming) is not
+# silently dropped. The metric/variant character classes are unchanged.
 METRIC_FILE_PATTERN = re.compile(
-    r"^(?P<point>[a-z_]+)__layer(?P<layer>\d+)__(?P<metric>[a-z0-9_]+)__(?P<variant>[a-z_]+)\.json$"
+    r"^(?P<point>[a-z_]+)__layer(?P<layer>-?\d+)__(?P<metric>[a-z0-9_]+)__(?P<variant>[a-z_]+)\.json$"
+)
+
+# ROUND-2/#509 FIX F2: filename suffixes that mark sidecar files which
+# share the metric-file naming prefix but are NOT predictor cells the
+# scoring should ingest. `*__perm.json` are MMD permutation null sidecars
+# (#502 emits one per real cell); `*__cross_check_406.json` are #406
+# cross-checks. The plan's metric-file enumeration must skip them.
+_SIDECAR_FILENAME_SUFFIXES: tuple[str, ...] = (
+    "__perm.json",
+    "__cross_check_406.json",
 )
 
 
@@ -402,9 +416,24 @@ def _matrix_to_dict(matrix_payload: dict[str, Any]) -> dict[str, dict[str, float
 
 
 def _enumerate_metric_files(metrics_dir: Path) -> list[tuple[Path, dict[str, Any]]]:
-    """List every metric-phase output file + parsed (point, layer, metric, variant)."""
+    """List every metric-phase output file + parsed (point, layer, metric, variant).
+
+    ROUND-2/#509 FIX F2: filter out MMD permutation null sidecars
+    (``*__perm.json``) + #406 cross-check sidecars
+    (``*__cross_check_406.json``) — they share the prefix but are NOT
+    predictor cells. Round 1 ingested ~112 of them per full #502-style
+    metrics dir as ``variant=perm`` (or worse, accidentally as
+    ``variant=centered__perm``), adding bogus empty cells and skewing
+    every cross-cell summary.
+
+    F2 also allows ``layer-1`` for the ``next_token_js`` baseline so the
+    plan-required vocab-level baseline lands in the cells list rather
+    than being silently dropped by the digit-only regex.
+    """
     out: list[tuple[Path, dict[str, Any]]] = []
     for p in sorted(metrics_dir.glob("*.json")):
+        if any(p.name.endswith(suffix) for suffix in _SIDECAR_FILENAME_SUFFIXES):
+            continue
         m = METRIC_FILE_PATTERN.match(p.name)
         if not m:
             continue
