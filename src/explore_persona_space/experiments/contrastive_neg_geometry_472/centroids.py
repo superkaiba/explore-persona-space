@@ -70,8 +70,18 @@ def build_centroids(
     """Extract base-model centroids over the bank and write per-layer .pt bundles.
 
     Each bundle holds: ``centroids`` (n_personas × hidden_dim, float32),
-    ``persona_names`` (ordered), ``cos_matrix`` (n × n, centering="none"),
-    ``layer``, ``base_model``.
+    ``persona_names`` (ordered), ``cos_matrix`` (n × n, centering="none"; raw —
+    the published #472 default), ``cos_matrix_mean_centered`` (n × n, optional
+    — global-mean-centered via #66/#341 methodology, written from #504 round-6
+    onward and used by #504 callers via the explicit ``centering="global_mean"``
+    loader kwarg), ``layer``, ``base_model``, ``questions``.
+
+    The two cosine matrices are co-resident so #472 / #477 replay continues to
+    read raw cosines (via the default ``load_cos_matrix(..., centering="none")``
+    / ``cos_to_source(..., centering="none")``) while #504 explicitly opts into
+    the mean-centered matrix via ``centering="global_mean"``. The shared
+    module's default stays raw to keep #472's published numbers reproducible
+    bit-for-bit on rerun.
 
     Args:
         persona_bank: name -> system prompt for the full ~60-persona bank.
@@ -134,7 +144,7 @@ def load_cos_matrix(
     layer: int,
     out_dir: Path = OUT_DIR,
     *,
-    centering: str = "global_mean",
+    centering: str = "none",
 ) -> tuple[dict[str, dict[str, float]], list[str]]:
     """Load the persona×persona cosine matrix for ``layer`` as a name-keyed dict.
 
@@ -143,15 +153,26 @@ def load_cos_matrix(
     Args:
         layer: centroid layer (e.g. 10, 15, 20).
         out_dir: directory holding ``centroids_L{layer}.pt``.
-        centering: ``"global_mean"`` (default — #66/#341 methodology, restored in
-            #504 round-6) reads ``cos_matrix_mean_centered``; ``"none"`` reads
-            the legacy raw ``cos_matrix`` for backward compatibility with
-            round 1-5 #472/#504 artifacts.
+        centering: ``"none"`` (default — published #472 raw cosine; keep this
+            default raw so unqualified #472 / #477 replay reproduces the
+            promoted numbers bit-for-bit) reads ``cos_matrix``; ``"global_mean"``
+            reads the #66/#341 globally-mean-centered ``cos_matrix_mean_centered``
+            (round-6 augment, used by #504 callers via explicit opt-in).
+
+    Round-7 fix (binding blocker 2): the default flipped back to ``"none"`` so
+    every existing #472 / #477 / #500 caller — ``i472_run_cell.py``,
+    ``i472_eval_trajectory.py``, ``i472_phase_base_panel.py``,
+    ``i477_reval_confirm.py``, ``analyze.py`` — stays on the published raw
+    cosine pipeline without an explicit kwarg. #504 explicitly passes
+    ``centering="global_mean"`` at the dispatcher level
+    (``scripts/i504_phase_phase05.py``).
 
     Raises:
         FileNotFoundError: bundle missing.
         KeyError: bundle predates round-6 and the requested ``centering`` key is
-            absent (caller can fall back to the other key or re-extract).
+            absent (caller can fall back to the other key or re-extract). Only
+            the ``"global_mean"`` opt-in is affected by pre-round-6 bundles;
+            ``"none"`` is the original schema and always present.
     """
     if centering not in ("global_mean", "none"):
         raise ValueError(f"unsupported centering={centering!r}; use 'global_mean' or 'none'.")
@@ -183,14 +204,16 @@ def cos_to_source(
     source: str,
     out_dir: Path = OUT_DIR,
     *,
-    centering: str = "global_mean",
+    centering: str = "none",
 ) -> dict[str, float]:
     """Return {persona: cos(persona, source)} for every persona in the bank.
 
     High cosine = near the source. ``select_negatives`` sorts on this to pick
-    near/far/spread negatives. Defaults to global-mean-centered cosine
-    (#66/#341 methodology, restored in #504 round-6); pass ``centering="none"``
-    for the round 1-5 raw-cosine behavior.
+    near/far/spread negatives. Defaults to raw cosine (``centering="none"``)
+    to keep the published #472 raw-cosine pipeline reproducible by unqualified
+    callers (round-7 fix, binding blocker 2). Pass ``centering="global_mean"``
+    to read the #66/#341 globally-mean-centered cosine (round-6 augment,
+    used by #504 callers).
     """
     cos, names = load_cos_matrix(layer, out_dir, centering=centering)
     if source not in cos:
