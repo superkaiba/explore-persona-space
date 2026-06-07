@@ -228,11 +228,20 @@ def build_prompt_for_condition(
         for A/B/C1/D; raw scaffolding for C2..C5).
     """
     if cond.cls == "A":
+        # ROUND-3/#509 G1: when ``cond.system_prompt is None`` the
+        # condition encodes "no system message" (e.g. #509 FB3
+        # qwen_default + FB9 no_system, per plan v3 §4.2 lines 169 + 175).
+        # Skip the system role entirely so the rendered prompt is the bare
+        # user turn — byte-identical to the prompt surface #494 measured
+        # ``leak_rate`` on. All i406 Class A conditions carry non-None
+        # system prompts, so this branch is a no-op for #406 / #460 /
+        # #474 callers; verified by ``test_g1_fb6_assistant_still_has_system_role``.
+        messages: list[dict[str, str]] = []
+        if cond.system_prompt is not None:
+            messages.append({"role": "system", "content": cond.system_prompt})
+        messages.append({"role": "user", "content": question})
         return tokenizer.apply_chat_template(
-            [
-                {"role": "system", "content": cond.system_prompt},
-                {"role": "user", "content": question},
-            ],
+            messages,
             tokenize=False,
             add_generation_prompt=True,
         )

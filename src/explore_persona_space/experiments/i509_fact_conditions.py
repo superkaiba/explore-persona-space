@@ -1,7 +1,7 @@
 # Greek + special characters (×, →, —) appear in this file's prose for
 # research notation. Matches the same suppression in
 # scripts/issue493_extraction_metric_bakeoff.py.
-# ruff: noqa: RUF002, RUF003
+# ruff: noqa: RUF003
 """Issue #509 fact-arm conditions registry.
 
 9 personas across the 26-cell fact-leakage panel from #494
@@ -16,23 +16,22 @@ for #444 / #192 / #381 / #389 / #390 conditioning). ``local_resident``
 carries an entity-specific ``{town}, {state}`` substitution; for #444's
 Elk County Courthouse rig the substitution is ``Ridgway, Pennsylvania``
 (verified from ``eval_results/issue_444/baselines_*.json`` figure name),
-applied here at module-load time. ``qwen_default`` and ``no_system`` both
-carry ``system_prompt=None`` (no system message); the bake-off's
-``Condition.cls="A"`` invariant of "has a system message" is relaxed for
-``no_system`` by setting ``system_prompt=""`` (empty string) so
-end_of_system extraction sees a real chat-template-rendered prompt rather
-than skipping the persona entirely. ``qwen_default`` is the bare-default
-"You are Qwen..." behavior — the project records this as a Class-B-style
-(no explicit system) persona, but here we model it as Class A with the
-empty system message for panel-shape uniformity (cell A → cell N×N
-distance matrix; the alternative would be a per-persona class split that
-makes the metric stack non-rectangular).
+applied here at module-load time.
 
-The exception above is deliberate and documented in the analyzer's
-clean-result: ``no_system`` and ``qwen_default`` end_of_system activations
-are captured at the chat-template's system slot under the empty prompt;
-the resulting representation is the model's response to "system: ''",
-which is interpretively close to but not identical to "no system" raw.
+``qwen_default`` (FB3) and ``no_system`` (FB9) both carry
+``system_prompt=None``. Per plan v3 §4.2 lines 169 + 175, "no system
+message" must be encoded as the literal ABSENCE of the system role,
+matching #494's leakage measurement at
+``scripts/issue444_persona_distance_topic.py:75-81`` which skips the
+system role entirely when ``sys_prompt is None``. ``i406_conditions.
+build_prompt_for_condition`` (Class A path) consumes this by omitting
+the ``{"role": "system", ...}`` message from the chat-template input
+when ``cond.system_prompt is None`` — the rendered prompt is then
+just the user turn, byte-identical to the prompt surface #494 measured
+``leak_rate`` on. The earlier round-2 encoding of ``""`` (empty
+string) rendered ``<|im_start|>system\\n\\n<|im_end|>\\n`` and biased
+``last_prompt`` / ``mean_response`` / ``end_of_system`` activations
+relative to the measurement surface.
 
 Public API: ``CONDITIONS`` (list[Condition]) + ``CONDITIONS_BY_ID``
 (dict) matching the shape of ``i406_conditions``.
@@ -73,18 +72,20 @@ _FACT_PERSONAS: list[tuple[str, str, str | None]] = [
     ("FB1", "Marine biologist", PERSONAS["marine_biologist"]),
     ("FB2", "Zelthari scholar", PERSONAS["zelthari_scholar"]),
     # qwen_default = bare default model behavior (no explicit system
-    # message at training time per #192). Modeled here as empty system
-    # prompt so the chat-template still renders a system slot for
-    # end_of_system extraction — see module docstring.
-    ("FB3", "Qwen default", ""),
+    # message at training time per #192). Encoded as ``None`` per plan v3
+    # §4.2 line 169 so ``build_prompt_for_condition`` omits the system
+    # role entirely — matching the prompt surface #494 measured
+    # ``leak_rate`` on (see module docstring).
+    ("FB3", "Qwen default", None),
     ("FB4", "Local historian", PERSONAS["local_historian"]),
     ("FB5", "Local resident (Ridgway, PA)", _local_resident_prompt()),
     ("FB6", "Assistant", ASSISTANT_PROMPT),
     ("FB7", "Software engineer", PERSONAS["software_engineer"]),
     ("FB8", "Kindergarten teacher", PERSONAS["kindergarten_teacher"]),
     # no_system = explicit no-system control (#444 baseline persona).
-    # Modeled with empty system prompt for the same reason as FB3 above.
-    ("FB9", "No system", ""),
+    # Encoded as ``None`` per plan v3 §4.2 line 175 — same rationale as
+    # FB3 above.
+    ("FB9", "No system", None),
 ]
 
 # Mapping from cid to the canonical #494 CSV persona name (used by
