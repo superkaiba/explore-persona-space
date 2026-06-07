@@ -1,3 +1,5 @@
+# Greek + special characters appear in docstrings and test scaffolds.
+# ruff: noqa: RUF001 RUF002 RUF003
 """Tests for issue #509 round-2 fixes (F1-F6).
 
 Covers the six fixes the code-review reconciler bound as FAIL on round 1:
@@ -49,10 +51,11 @@ def _load_bakeoff_module():
     """
     src = (REPO_ROOT / "scripts/issue493_extraction_metric_bakeoff.py").read_text()
     # Pull out the two regex patterns by structural match.
-    m1 = re.search(
-        r"pattern = re\.compile\(r\"\^\(\?P<pt>\[a-z_\]\+\)__layer\(\?P<L>\\d\+\)__cond\(\?P<cid>(?P<inner>[^)]+)\)\\\.pt\$\"\)",
-        src,
+    merge_re_pat = (
+        r"pattern = re\.compile\(r\"\^\(\?P<pt>\[a-z_\]\+\)"
+        r"__layer\(\?P<L>\\d\+\)__cond\(\?P<cid>(?P<inner>[^)]+)\)\\\.pt\$\"\)"
     )
+    m1 = re.search(merge_re_pat, src)
     assert m1 is not None, "Could not find merge_partitioned_activations regex in bakeoff source"
     m2 = re.search(
         r"pattern = re\.compile\(r\"\^last_prompt__cond\(\?P<cid>(?P<inner>[^)]+)\)\\\.pt\$\"\)",

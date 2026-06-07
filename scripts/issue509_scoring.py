@@ -39,7 +39,7 @@ statistics (L22 anchor, L19-L24 ridge mean) and the comparison anchors.
 """
 
 # Greek + special characters appear in this file's prose.
-# ruff: noqa: RUF002
+# ruff: noqa: RUF002, RUF003
 from __future__ import annotations
 
 import argparse
@@ -271,18 +271,178 @@ def _attenuation_adjust(rho_obs: float, reliability_y: float) -> float:
     return rho_obs / np.sqrt(reliability_y)
 
 
+# ── ROUND-2/#509 FIX F6: plan-§5 condition slugs + coarse-predictor anchor ────
+
+
+def _per_source_spearman(
+    x: np.ndarray,
+    y: np.ndarray,
+    sources: np.ndarray,
+) -> dict[str, float]:
+    """Per-source Spearman ρ (Plan §4.2.5 regression C; condition slug
+    ``syco_arm/per_source``).
+
+    Computes a separate Spearman correlation for each source on the
+    syco arm — the 6 per-source ρ's that the plan calls out as a
+    diagnostic for cells where the headline ρ_fe is dominated by one
+    source. Returns ``{source_name: rho}``. NaN-safe per-source.
+    """
+    out: dict[str, float] = {}
+    for s in np.unique(sources):
+        idx = sources == s
+        if idx.sum() < 3:
+            out[str(s)] = float("nan")
+            continue
+        out[str(s)] = _spearman_rho(x[idx], y[idx])
+    return out
+
+
+def _live_cells_mask(deltas: np.ndarray, threshold: float = 0.10) -> np.ndarray:
+    """Live-cells mask (Plan §4.2.6 #2; condition slug
+    ``syco_arm/live_cells_only``).
+
+    Selects the cells with ``|Δ| > threshold``. Per plan §4.2.6, with
+    ``threshold=0.10`` on #411's 138-cell off-diagonal panel, this yields
+    21 cells (15 software_engineer rows + 6 assistant rows). Returns a
+    boolean mask aligned with ``deltas``. NaN cells are excluded.
+    """
+    deltas = np.asarray(deltas, dtype=float)
+    return np.isfinite(deltas) & (np.abs(deltas) > threshold)
+
+
+def _rank_in_bystanders(
+    predictor: dict[str, float],
+    target_persona: str,
+    ascending: bool = True,
+) -> int:
+    """Rank of ``target_persona`` among bystanders by predictor (Plan §4.2.5;
+    condition slug ``syco_arm/comedian_recovery``).
+
+    Bake-off cell predictors are distances (smaller = more similar) so
+    ``ascending=True`` sorts the most-similar bystander first. Returns
+    1-based rank. Missing target ⇒ ``-1`` so the analyzer can flag.
+    """
+    if target_persona not in predictor:
+        return -1
+    sorted_items = sorted(predictor.items(), key=lambda kv: kv[1], reverse=not ascending)
+    for i, (k, _) in enumerate(sorted_items, start=1):
+        if k == target_persona:
+            return i
+    return -1
+
+
+def _is_predictor_saturated(x: np.ndarray, var_threshold: float = 1e-6) -> bool:
+    """Predictor-saturation flag (Plan §4.2.6 #3; condition slug
+    ``syco_arm/per_cell_predictor_saturation``).
+
+    True when the predictor signal's variance is below ``var_threshold``
+    — i.e. the predictor is nearly constant across the cell, so any
+    correlation against it is uninformative (rank-shuffles among
+    near-equal values dominate the score).
+    """
+    x = np.asarray(x, dtype=float)
+    x_finite = x[np.isfinite(x)]
+    if len(x_finite) < 2:
+        return True
+    return float(np.var(x_finite)) < var_threshold
+
+
+def _coarse_lift_per_cell(
+    x: np.ndarray,
+    y: np.ndarray,
+    strata: np.ndarray,
+    fact_rows: list[dict[str, Any]],
+    cid_to_csv_persona: dict[str, str],
+    matched_indices: list[int],
+) -> dict[str, Any]:
+    """Compute Anchor 1 coarse-predictor lift on the SAME pairs as a
+    bake-off cell (Plan §4.1.6.1; condition slug ``fact_arm/coarse_lift``).
+
+    For each of the 5 coarse-predictor columns in the #494 CSV (cosine_a_L21,
+    cosine_b_L21, js_on_topic, fact_slice_js, bystander_logprob), compute
+    the FE-residualized Spearman ρ on the same cell-pairs and report:
+      - per-coarse rho_fe (in absolute value)
+      - rho_coarse_max = max |rho_fe| across the 5 coarse predictors
+      - delta_rho = |rho_fe (bake-off)| − rho_coarse_max
+    The §6.2 generalizes verdict requires ``delta_rho ≥ 0.15``.
+
+    ``matched_indices`` aligns the bake-off cell's (x, y, strata) with
+    the row indices of ``fact_rows`` — needed so each coarse predictor
+    is read from the same rows.
+    """
+    out: dict[str, Any] = {"per_coarse_rho_fe": {}, "rho_coarse_max": float("nan")}
+    bakeoff_rho = float(np.abs(_spearman_rho(_residualize(x, strata), _residualize(y, strata))))
+    out["bakeoff_rho_fe_abs"] = bakeoff_rho
+    per_coarse: dict[str, float] = {}
+    for col in FACT_COARSE_PREDICTOR_COLUMNS:
+        col_vals = np.array(
+            [fact_rows[i].get(col, float("nan")) for i in matched_indices],
+            dtype=float,
+        )
+        if not np.isfinite(col_vals).any():
+            per_coarse[col] = float("nan")
+            continue
+        col_resid = _residualize(col_vals, strata)
+        y_resid = _residualize(y, strata)
+        per_coarse[col] = float(np.abs(_spearman_rho(col_resid, y_resid)))
+    out["per_coarse_rho_fe"] = per_coarse
+    finite_rhos = [v for v in per_coarse.values() if np.isfinite(v)]
+    if finite_rhos:
+        rho_coarse_max = float(max(finite_rhos))
+        out["rho_coarse_max"] = rho_coarse_max
+        out["delta_rho"] = bakeoff_rho - rho_coarse_max
+    else:
+        out["delta_rho"] = float("nan")
+    return out
+
+
 # ── Target loaders ────────────────────────────────────────────────────────
 
 
+# ROUND-2/#509 FIX F6: the 5 fact-arm coarse predictors from #494
+# `regression_data.csv` — Plan §4.1.6.1 calls these "anchor 1" and the
+# §6.2 generalizes verdict requires `Δρ ≥ 0.15 vs the coarse-predictor
+# best on the same pairs`. Round 1 parsed only `leak_rate` and
+# `bystander_logprob`, so the lift comparison could not fire.
+FACT_COARSE_PREDICTOR_COLUMNS: tuple[str, ...] = (
+    "cosine_a_L21",
+    "cosine_b_L21",
+    "js_on_topic",
+    "fact_slice_js",
+    "bystander_logprob",
+)
+
+
 def _load_fact_target(csv_path: Path) -> dict[str, Any]:
-    """Load #494's 26-cell fact-leakage panel from regression_data.csv."""
+    """Load #494's 26-cell fact-leakage panel from regression_data.csv.
+
+    ROUND-2/#509 FIX F6: also parse all 5 coarse-predictor columns so
+    `_coarse_lift` (anchor 1) can compute Δρ on the same cell-pairs as
+    the bake-off. Missing columns are tolerated (NaN-filled + logged) so
+    older `regression_data.csv` formats still load; the smoke +
+    production CSV at `eval_results/issue_494/regression_data.csv` has
+    all 5.
+    """
     rows: list[dict[str, Any]] = []
+    missing_columns: set[str] = set()
     with open(csv_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
             row["leak_rate"] = float(row["leak_rate"])
-            row["bystander_logprob"] = float(row["bystander_logprob"])
+            for col in FACT_COARSE_PREDICTOR_COLUMNS:
+                if col in row and row[col] not in (None, ""):
+                    row[col] = float(row[col])
+                else:
+                    missing_columns.add(col)
+                    row[col] = float("nan")
             rows.append(row)
+    if missing_columns:
+        logger.warning(
+            "Fact-arm coarse-predictor columns missing from %s: %s "
+            "(coarse_lift Δρ for those columns will be NaN)",
+            csv_path,
+            sorted(missing_columns),
+        )
     if len(rows) != 26:
         logger.warning("Expected 26 #494 rows, got %d", len(rows))
     return {"rows": rows, "source_file": str(csv_path)}
@@ -333,11 +493,17 @@ def _build_fact_xy(
     matrix: dict[str, dict[str, float]],
     fact_rows: list[dict[str, Any]],
     cid_to_csv_persona: dict[str, str],
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Return (x, y, substrate, prior_z, cell_se) aligned across the 26 cells."""
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[int]]:
+    """Return (x, y, substrate, prior_z, cell_se, matched_indices) aligned across the 26 cells.
+
+    ``matched_indices`` indexes into ``fact_rows`` so downstream
+    (F6 coarse-predictor anchor) can look up the same rows for each of
+    the 5 coarse-predictor columns.
+    """
     persona_to_cid = {v: k for k, v in cid_to_csv_persona.items()}
     x_arr, y_arr, sub_arr, z_arr, se_arr = [], [], [], [], []
-    for row in fact_rows:
+    matched_indices: list[int] = []
+    for i, row in enumerate(fact_rows):
         teach_cid = persona_to_cid.get(row["teach_persona"])
         bys_cid = persona_to_cid.get(row["bystander_persona"])
         if teach_cid is None or bys_cid is None:
@@ -350,12 +516,14 @@ def _build_fact_xy(
         sub_arr.append(row["substrate"])
         z_arr.append(row["bystander_logprob"])
         se_arr.append(float("nan"))  # Per-seed reconstruction goes here (TODO inflow)
+        matched_indices.append(i)
     return (
         np.array(x_arr, dtype=float),
         np.array(y_arr, dtype=float),
         np.array(sub_arr),
         np.array(z_arr, dtype=float),
         np.array(se_arr, dtype=float),
+        matched_indices,
     )
 
 
@@ -363,10 +531,14 @@ def _build_syco_xy(
     matrix: dict[str, dict[str, float]],
     syco_rows: list[dict[str, Any]],
     cid_to_syco_persona: dict[str, str],
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Return (x, y, source, se) aligned across the 138 cells."""
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Return (x, y, source, se, bystander) aligned across the 138 cells.
+
+    ROUND-2/#509 FIX F6: also return per-cell bystander persona so the
+    `comedian_recovery` rank diagnostic can index by bystander name.
+    """
     persona_to_cid = {v: k for k, v in cid_to_syco_persona.items()}
-    x_arr, y_arr, src_arr, se_arr = [], [], [], []
+    x_arr, y_arr, src_arr, se_arr, bys_arr = [], [], [], [], []
     for row in syco_rows:
         src_cid = persona_to_cid.get(row["source"])
         bys_cid = persona_to_cid.get(row["bystander"])
@@ -379,11 +551,13 @@ def _build_syco_xy(
         y_arr.append(row["delta"])
         src_arr.append(row["source"])
         se_arr.append(row["se_delta"])
+        bys_arr.append(row["bystander"])
     return (
         np.array(x_arr, dtype=float),
         np.array(y_arr, dtype=float),
         np.array(src_arr),
         np.array(se_arr, dtype=float),
+        np.array(bys_arr),
     )
 
 
@@ -624,7 +798,9 @@ def score_arm(
             payload = json.load(fh)
         matrix = _matrix_to_dict(payload)
         if arm == "fact":
-            x, y, strata, prior_z, se = _build_fact_xy(matrix, target["rows"], cid_to_persona)
+            x, y, strata, prior_z, se, matched_indices = _build_fact_xy(
+                matrix, target["rows"], cid_to_persona
+            )
             scored = _score_one_cell(
                 x=x,
                 y=y,
@@ -636,8 +812,16 @@ def score_arm(
                 perm_b=perm_b,
                 allow_unknown_se=allow_unknown_se,
             )
+            # ROUND-2/#509 FIX F6: per-cell saturation flag for the fact arm.
+            scored["predictor_saturated"] = bool(_is_predictor_saturated(x))
+            # ROUND-2/#509 FIX F6: anchor 1 coarse-predictor lift on the
+            # SAME pairs as the bake-off cell (plan §4.1.6.1).
+            if len(x) >= 3:
+                scored["coarse_lift"] = _coarse_lift_per_cell(
+                    x, y, strata, target["rows"], cid_to_persona, matched_indices
+                )
         else:
-            x, y, strata, se = _build_syco_xy(matrix, target["rows"], cid_to_persona)
+            x, y, strata, se, bystanders = _build_syco_xy(matrix, target["rows"], cid_to_persona)
             scored = _score_one_cell(
                 x=x,
                 y=y,
@@ -649,6 +833,36 @@ def score_arm(
                 perm_b=perm_b,
                 allow_unknown_se=allow_unknown_se,
             )
+            # ROUND-2/#509 FIX F6 — syco-arm plan-§5 condition slugs:
+            # `per_source`, `live_cells_only`, `comedian_recovery`,
+            # `per_cell_predictor_saturation`.
+            scored["per_source_rho"] = _per_source_spearman(x, y, strata)
+            # Live-cells mask + ρ on the |Δ| > 0.10 subset.
+            live_mask = _live_cells_mask(y, threshold=0.10)
+            if live_mask.sum() >= 3:
+                scored["live_cells_only"] = {
+                    "n_cells": int(live_mask.sum()),
+                    "rho_obs_live": _spearman_rho(x[live_mask], y[live_mask]),
+                    "rho_fe_live": _spearman_rho(
+                        _residualize(x[live_mask], strata[live_mask]),
+                        _residualize(y[live_mask], strata[live_mask]),
+                    ),
+                }
+            else:
+                scored["live_cells_only"] = {"n_cells": int(live_mask.sum())}
+            # Comedian rank inside software_engineer's bystanders by x.
+            sw_mask = strata == "software_engineer"
+            if sw_mask.sum() >= 3:
+                sw_predictor = {
+                    str(b): float(v) for b, v in zip(bystanders[sw_mask], x[sw_mask], strict=True)
+                }
+                scored["comedian_recovery"] = {
+                    "rank": _rank_in_bystanders(
+                        sw_predictor, target_persona="comedian", ascending=True
+                    ),
+                    "n_bystanders": len(sw_predictor),
+                }
+            scored["predictor_saturated"] = bool(_is_predictor_saturated(x))
         cells.append({**meta, **scored})
 
     summary = _summarize_cells(cells)
