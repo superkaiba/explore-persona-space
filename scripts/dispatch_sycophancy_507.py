@@ -143,7 +143,7 @@ def _run_subprocess(
     return result.returncode
 
 
-def _predictor_env_overrides() -> dict[str, str]:
+def _predictor_env_overrides(*, require_dv_72b: bool = True) -> dict[str, str]:
     """Compose the env overrides for predictor_jsdiv_470 sub-phases on the 72B path.
 
     Round-2 fix per code-review Critical 5/7/11: threads through OUTPUT_BASE,
@@ -151,6 +151,12 @@ def _predictor_env_overrides() -> dict[str, str]:
     the 72B run writes to its own namespace and reads its own DV. Also
     sets the no-overwrite guard so common.py raises if any subprocess
     forgets the override.
+
+    Round-3 fix per code-review Critical 1: ``require_dv_72b=True`` (the
+    Phase 4 default) RAISES if ``analyze_summary_72b.json`` is missing
+    instead of silently falling through to the committed #411 7B snapshot.
+    Phases 0-3 set ``require_dv_72b=False`` because the DV isn't built
+    until phase3.5_analyze_72b runs after Phase 2.5.
     """
     overrides = {
         "PREDICTOR_OUTPUT_BASE": str(PREDICTOR_72B_OUTPUT_BASE),
@@ -171,16 +177,168 @@ def _predictor_env_overrides() -> dict[str, str]:
         "PREDICTOR_GUARD_NO_OVERWRITE_470": "1",
     }
     # Point Phase 4 at the 72B's own DV + base panel rates produced by
-    # the in-flight Phase 2 + 2.5 (analyze_summary.json from #411's
-    # analyze.py run on 72B eval JSONs; base_panel_rates.json from
+    # the in-flight Phase 2 + 2.5 (analyze_summary_72b.json built by
+    # phase3_5_analyze_72b in this dispatcher; base_panel_rates.json from
     # judge_base_panel on the 72B base panel).
     dv_72b = SLAB_ROOT / "analyze_summary_72b.json"
     base_rates_72b = SLAB_ROOT / "base_panel_rates.json"
     if dv_72b.exists():
         overrides["PREDICTOR_DV_ANALYZE_SUMMARY"] = str(dv_72b)
+    elif require_dv_72b:
+        raise RuntimeError(
+            f"PREDICTOR_DV_ANALYZE_SUMMARY=72B DV missing at {dv_72b}. "
+            "Phase 3.5 (analyze_72b) must run between Phase 2.5 judging and "
+            "Phase 4 regression — the analyze step aggregates the per-panel "
+            "delta from the 72B judgment files. Without it, Phase 4 would "
+            "silently fall through to common.py's #411 7B snapshot and the "
+            "cross-arm comparison would be wrong by construction (72B "
+            "predictors regressed against 7B DV). This is the round-3 fix "
+            "for code-review Critical 7."
+        )
     if base_rates_72b.exists():
         overrides["PREDICTOR_BASE_PANEL_RATES"] = str(base_rates_72b)
     return overrides
+
+
+def phase3_5_analyze_72b(*, seed: int, sources: list[str]) -> Path:
+    """Aggregate per-panel deltas from 72B judgment files into analyze_summary_72b.json.
+
+    Round-3 fix per code-review Critical 7: this is the missing producer of
+    ``analyze_summary_72b.json``. Without it, Phase 4's ``resolve_analyze_summary_path()``
+    silently fell through to #411's frozen 7B DV, so the headline cross-arm
+    comparison was 72B predictors regressed against 7B leakage by construction.
+
+    We compute ONLY the ``per_panel_delta`` field that Phase 4
+    (``phase4_load_dv.load_411_dv``) strictly requires. The optional
+    ``per_panel_cosine_to_source`` is omitted (Phase 4 falls back to None when
+    absent, and we have the fresh 72B cosines from Phase 3.2 anyway).
+
+    We deliberately do NOT call ``sycophancy_implantation_411.analyze.main``
+    here: that script requires a Phase-0.5 centroid bundle keyed on a specific
+    LAYER (#411 uses layer 20 of the 7B model). 72B centroids do not exist as
+    a Phase-0.5 artifact for #507, and we don't need them — the cosine
+    predictor lives in the dispatcher's Phase 3.2 output, not in the DV.
+
+    Inputs (per source):
+        SLAB_ROOT/<source>/seed_<seed>/per_panel_rates_<source>.json
+            written by judge.main (#411). Carries
+            ``{<panel>: {"agree_rate": float, ...}, ...}``
+            OR (older shape) ``{<panel>: float, ...}``.
+        SLAB_ROOT/base_panel_rates.json
+            written by judge_base_panel.main; ``{"panel_rates": {<panel>: ...}}``.
+
+    Output:
+        SLAB_ROOT/analyze_summary_72b.json with shape:
+        {
+          "per_source": {
+            "<source>": {
+              "per_panel_delta": {<panel>: trained_rate - base_rate, ...},
+              "per_panel_trained_rate": {<panel>: float, ...},
+              "per_panel_base_rate": {<panel>: float, ...}
+            },
+            ...
+          },
+          "metadata": {...}
+        }
+    """
+    _log_phase("analyze_72b")
+    out_path = SLAB_ROOT / "analyze_summary_72b.json"
+    # Read base panel rates once.
+    base_panel_rates_path = SLAB_ROOT / "base_panel_rates.json"
+    if not base_panel_rates_path.exists():
+        raise FileNotFoundError(
+            f"phase3.5_analyze_72b: base_panel_rates.json missing at "
+            f"{base_panel_rates_path}. Phase 2.5_judge_base_panel must run first."
+        )
+    base_payload = json.loads(base_panel_rates_path.read_text())
+    raw_base = base_payload.get("panel_rates", base_payload)
+    base_rates: dict[str, float] = {}
+    for panel, value in raw_base.items():
+        if isinstance(value, dict):
+            rate = value.get("agree_rate", value.get("rate"))
+            if rate is None:
+                raise ValueError(
+                    f"Base panel rate block for {panel!r} has neither "
+                    f"'agree_rate' nor 'rate': {value!r}"
+                )
+            base_rates[panel] = float(rate)
+        else:
+            base_rates[panel] = float(value)
+
+    per_source_summaries: dict[str, dict] = {}
+    for source in sources:
+        per_rates_path = SLAB_ROOT / source / f"seed_{seed}" / f"per_panel_rates_{source}.json"
+        if not per_rates_path.exists():
+            raise FileNotFoundError(
+                f"phase3.5_analyze_72b: per-panel rates missing for source "
+                f"{source!r} at {per_rates_path}. Phase 2.5_judge_source must "
+                f"run on every source before analyze."
+            )
+        rates_payload = json.loads(per_rates_path.read_text())
+        # Tolerate both nested-block and bare-float shapes.
+        trained_rates: dict[str, float] = {}
+        # judge.py writes {"per_panel_rate": {<panel>: <float>}, ...} top-level.
+        raw_trained = rates_payload.get(
+            "per_panel_rate",
+            rates_payload.get("panel_rates", rates_payload),
+        )
+        for panel, value in raw_trained.items():
+            if isinstance(value, dict):
+                rate = value.get("agree_rate", value.get("rate"))
+                if rate is None:
+                    raise ValueError(
+                        f"Trained panel rate block for source={source!r} "
+                        f"panel={panel!r} has neither 'agree_rate' nor 'rate'."
+                    )
+                trained_rates[panel] = float(rate)
+            elif isinstance(value, int | float):
+                trained_rates[panel] = float(value)
+            # else: skip non-numeric keys (e.g. metadata sub-objects)
+
+        # Compute per-panel delta.
+        per_panel_delta: dict[str, float] = {}
+        for panel, trained in trained_rates.items():
+            base = base_rates.get(panel)
+            if base is None:
+                raise KeyError(
+                    f"Panel persona {panel!r} present in trained rates but "
+                    f"missing from base_panel_rates.json. Available bases: "
+                    f"{sorted(base_rates)[:5]}..."
+                )
+            per_panel_delta[panel] = trained - base
+
+        per_source_summaries[source] = {
+            "source": source,
+            "per_panel_delta": per_panel_delta,
+            "per_panel_trained_rate": trained_rates,
+            "per_panel_base_rate": {p: base_rates[p] for p in trained_rates},
+        }
+
+    payload = {
+        "per_source": per_source_summaries,
+        "metadata": {
+            "git_commit": _git_sha(),
+            "timestamp_utc": datetime.datetime.now(datetime.UTC).isoformat(),
+            "produced_by": "dispatch_sycophancy_507.phase3_5_analyze_72b",
+            "seed": seed,
+            "sources": sources,
+            "slab_root": str(SLAB_ROOT),
+            "base_panel_rates_path": str(base_panel_rates_path),
+        },
+    }
+    SLAB_ROOT.mkdir(parents=True, exist_ok=True)
+    tmp = out_path.with_suffix(out_path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(out_path)
+    log.info(
+        "phase3.5_analyze_72b: wrote analyze_summary_72b.json (%d sources, %d panels each) -> %s",
+        len(per_source_summaries),
+        len(next(iter(per_source_summaries.values()))["per_panel_delta"])
+        if per_source_summaries
+        else 0,
+        out_path,
+    )
+    return out_path
 
 
 # ── Phase 0: bootstrap ──
@@ -622,7 +780,11 @@ def phase3_predictor_72b(*, smoke: bool, gpu_id: int = 0) -> None:
     """Run the 72B predictor extraction: preflight + phase1/2/3 with --model 72b."""
     _log_phase("predictor_72b")
     PREDICTOR_72B_OUTPUT_BASE.mkdir(parents=True, exist_ok=True)
-    pred_env = _predictor_env_overrides()
+    # Phase 3 runs BEFORE phase3.5_analyze_72b, so the 72B DV doesn't exist
+    # yet. require_dv_72b=False avoids the round-3-Critical-7 raise; the env
+    # override simply isn't set on these subprocesses (and predictor
+    # extraction doesn't read the DV anyway).
+    pred_env = _predictor_env_overrides(require_dv_72b=False)
 
     # Preflight: load base 72B, verify no offload.
     _run_subprocess(
@@ -1043,6 +1205,18 @@ def main(argv: list[str] | None = None) -> int:
                 "wall_seconds": round(cell_wall, 1),
             }
         )
+
+    # ── Phase 3.5: build 72B DV (per-panel deltas) ──
+    # Round-3 fix per code-review Critical 7: aggregate the per-panel
+    # trained_rate - base_rate matrix from the 72B judgment files BEFORE
+    # Phase 4. Without this, _predictor_env_overrides() can't point Phase 4
+    # at the 72B DV and Phase 4 silently regressed 72B predictors against
+    # the committed #411 7B leakage matrix — wrong by construction. We run
+    # it whenever Phase 4 will fire (i.e. NOT skipped) so the DV is on disk
+    # when phase4_regress_and_cross_arm calls _predictor_env_overrides()
+    # with the default require_dv_72b=True.
+    if not args.skip_analyze:
+        phase3_5_analyze_72b(seed=args.seeds[0], sources=list(args.sources))
 
     # ── Phase 3: predictor extraction ──
     if not args.skip_predictor:
