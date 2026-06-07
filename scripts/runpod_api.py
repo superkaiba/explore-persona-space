@@ -22,6 +22,8 @@ Public surface
 - get_pod(pod_id)
 - list_team_pods()
 - wait_for_ssh(pod_id, timeout=600)  # poll until 22/tcp is publicly mapped
+- estimate_pod_hourly_rate(gpu_type_id, gpu_count)  # USD/hr best-effort
+- current_account_hourly_burn()  # sum estimated $/hr across RUNNING managed pods
 
 CLI usage is via scripts/pod_lifecycle.py — this module is the library.
 """
@@ -546,3 +548,121 @@ def wait_for_ssh(pod_id: str, timeout: int = 600, poll_interval: int = 10) -> Po
         f"Pod {pod_id} did not expose public 22/tcp within {timeout}s. "
         f"Last desiredStatus: {info.desired_status if 'info' in dir() else 'unknown'}"
     )
+
+
+# ─── account hourly-burn estimation ──────────────────────────────────────────
+#
+# Why this module owns it: RunPod's account-level spending limit is enforced
+# server-side by RunPod (the "$80/hr cap" — set in the RunPod console, surfaces
+# as ``INSUFFICIENT_BALANCE: Renting this pod would put you over your current
+# spending limit ($X/hr)`` on ``podFindAndDeployOnDemand`` and ``podResume``).
+# We do NOT discover the cap from the API — there is no GraphQL field for it —
+# we mirror it locally as a config knob so callers can fail LOUD pre-flight
+# with the projected total instead of letting RunPod refuse mid-run after the
+# experiment is already underway (incidents #503, #505 on 2026-06-05).
+#
+# Per-pod hourly rate is NOT exposed on the GraphQL Pod selections we use
+# (``id name desiredStatus gpuCount machine{gpuTypeId} runtime{...} createdAt``).
+# Adding a speculative ``costPerHr`` field to those queries is risky: if the
+# field doesn't exist on the schema, the entire ``list_team_pods`` call raises
+# ``GraphQL errors`` and the lifecycle goes blind. So we estimate from
+# ``(gpu_type, gpu_count)`` using env-overridable per-GPU rates, and explicitly
+# label the fallback as a conservative over-estimate so the guard fails SAFE
+# (refuses a borderline provision) rather than UNSAFE (under-estimates and
+# lets RunPod refuse mid-run anyway). The default rates here are conservative
+# upper bounds — set them precisely for your account via env vars below.
+
+
+# Per-GPU $/hr defaults. Intentionally over-estimate so the guard fails SAFE
+# (refuses a borderline provision) when the user hasn't tuned the rates to
+# their actual RunPod console pricing. Override per-account via:
+#   RUNPOD_RATE_H100_USD, RUNPOD_RATE_H200_USD, RUNPOD_RATE_A100_USD
+# Unknown GPU types fall back to RUNPOD_FALLBACK_HOURLY_PER_GPU_USD (default
+# 6.0 — high enough to over-estimate any common datacenter GPU).
+_DEFAULT_PER_GPU_RATES_USD: dict[str, float] = {
+    "H100": 4.0,
+    "H200": 5.5,
+    "A100": 2.5,
+}
+_FALLBACK_PER_GPU_RATE_USD = 6.0
+
+
+def _short_gpu_name(gpu_type_id: str | None) -> str:
+    """Map a full RunPod ``gpuTypeId`` (e.g. ``NVIDIA H100 80GB HBM3``) to the
+    short name used as a rate-table key (``H100``). Returns the original string
+    on no-match so callers can log the unknown id verbatim.
+    """
+    if not gpu_type_id:
+        return ""
+    for short in _DEFAULT_PER_GPU_RATES_USD:
+        if short in gpu_type_id:
+            return short
+    return gpu_type_id
+
+
+def _per_gpu_rate_usd(short_gpu_name: str) -> float:
+    """Return $/hr per GPU for ``short_gpu_name`` (H100/H200/A100/...). Env
+    overrides win (``RUNPOD_RATE_<NAME>_USD``); unknown GPUs fall back to
+    ``RUNPOD_FALLBACK_HOURLY_PER_GPU_USD`` (default 6.0). Always non-negative.
+    """
+    if short_gpu_name in _DEFAULT_PER_GPU_RATES_USD:
+        env_key = f"RUNPOD_RATE_{short_gpu_name}_USD"
+        env_val = os.environ.get(env_key, "").strip()
+        if env_val:
+            try:
+                return max(0.0, float(env_val))
+            except ValueError:
+                # Bad env value — fall through to default rather than crash.
+                pass
+        return _DEFAULT_PER_GPU_RATES_USD[short_gpu_name]
+    # Unknown GPU type — use the conservative fallback per-GPU rate.
+    fallback = os.environ.get("RUNPOD_FALLBACK_HOURLY_PER_GPU_USD", "").strip()
+    if fallback:
+        try:
+            return max(0.0, float(fallback))
+        except ValueError:
+            pass
+    return _FALLBACK_PER_GPU_RATE_USD
+
+
+def estimate_pod_hourly_rate(gpu_type_id: str | None, gpu_count: int | None) -> float:
+    """Best-effort $/hr estimate for a pod with ``gpu_count`` GPUs of
+    ``gpu_type_id``. Conservative — see the module-level note above.
+
+    Returns 0.0 only when ``gpu_count`` is None/0 (no GPUs assigned yet).
+    Never raises; unknown GPU types use the fallback rate so the caller's
+    guard can still produce a finite projected total.
+    """
+    n = gpu_count or 0
+    if n <= 0:
+        return 0.0
+    rate = _per_gpu_rate_usd(_short_gpu_name(gpu_type_id))
+    return float(n) * rate
+
+
+def current_account_hourly_burn() -> tuple[float, list[tuple[str, float]]]:
+    """Sum estimated $/hr across every RUNNING pod on the team account.
+
+    Returns ``(total_usd_per_hr, breakdown)`` where ``breakdown`` is a list of
+    ``(pod_name, pod_hourly_usd)`` for each RUNNING pod (sorted by cost
+    descending). Includes both managed (`pod-N` / `epm-issue-N`) and unmanaged
+    pods on the account — the RunPod spending cap applies to ALL of them, so
+    the guard must too.
+
+    Stopped (EXITED) pods are excluded because they don't accrue hourly GPU
+    charges — only volume storage, which is not subject to the $/hr cap.
+
+    Raises :class:`RunPodError` if the API is unreachable. Callers (the
+    pre-provision guard) treat that as fail-loud: if we can't query the API
+    we can't make the decision, so don't provision.
+    """
+    live = list_team_pods()
+    breakdown: list[tuple[str, float]] = []
+    for p in live:
+        if (p.desired_status or "").upper() != "RUNNING":
+            continue
+        rate = estimate_pod_hourly_rate(p.gpu_type_id, p.gpu_count)
+        breakdown.append((p.name or p.pod_id, rate))
+    breakdown.sort(key=lambda row: row[1], reverse=True)
+    total = sum(rate for _, rate in breakdown)
+    return total, breakdown
