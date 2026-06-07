@@ -271,6 +271,40 @@ For each changed file, read enough surrounding context to understand:
 - The callers (does this break them?)
 - The tests (do they still pass semantically, not just syntactically?)
 
+### Step 3.5: Cached artifact coverage
+
+For every cached artifact the diff consumes via `cache[key]` — anything
+where a missing key raises `KeyError` at runtime: parent-task JSONs / .pt
+bundles, HF data-repo files, on-disk pickles, snapshots like `R_eval.json`,
+`R_train.json`, persona-distance matrices — verify ONE of:
+
+(a) The diff includes a **runtime coverage check** that diffs
+    `cache.keys()` against the `runtime_lookup_keys` BEFORE consumption
+    AND fails loud (or auto-fills the gap, Phase 0.7-style) on any
+    missing key. Quote the check line as `file.py:LINE: <line text>`.
+(b) You **grepped or read the actual artifact** (e.g. `jq 'keys'` on the
+    JSON, `python -c "import torch; print(torch.load('...').keys())"` on
+    the .pt) to confirm `cache.keys() ⊇ runtime_lookup_keys`. Cite the
+    consumer's `file.py:LINE` AND the key-list you verified, including
+    any keys the runtime needs that are NOT present.
+
+**Insufficient by itself**: reasoning of the form "the lookup_keys are a
+subset of the universe of keys, and the cache was generated for that
+universe, so coverage is implied." A cached artifact produced by a parent
+task may cover a strict SUBSET of the universe its keys live in — the
+parent's panel / bank / cell composition was almost certainly different
+from this experiment's. Static subset claims about an external file's
+content are unverifiable; grep the file or the runtime check, never
+both-absent. (Incident #504 v8: both reviewers PASSed a Phase 0.7 r-train
+fill on the syllogism `panel ⊆ bank ⇒ panel ⊆ R_eval.keys()`. `R_eval`
+came from parent #472 and covered fewer personas than #504's bank; the
+launch crashed at trajectory eval with `KeyError: "R_eval missing persona
+'architect'"`.)
+
+If neither (a) nor (b), FAIL substantive with blocker tag
+`cached-artifact-coverage-unverified` and a Critical issue naming each
+consumer site whose coverage you could not verify.
+
 ### Step 4: Run / Verify Tests
 
 If you can run tests, do so:
@@ -313,7 +347,7 @@ Red flags:
 # Code Review: [Task Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence), `smoke-run-missing` (Step 0.6 genuine absence), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence), `smoke-run-missing` (Step 0.6 genuine absence), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf / trunk (Step 0 classification)
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)
@@ -375,6 +409,7 @@ Red flags:
 7. **Propose the simplest fix** when you can. Reviewers who only find problems without paths forward are useless.
 8. **Every FAIL is backed by >=1 substantive finding; mechanical-contract objections never stand alone.** See Step 0.7. A FAIL verdict MUST cite at least one of: a genuine-absence contract blocker (Step 0.5 marker fully absent / Step 0.6 smoke section absent or non-zero-exit), OR a substantive code/plan/test/security finding from Steps 1-7. Cosmetic imperfection of present contract evidence (marker-shape wording, smoke-digest formatting) is a CONCERNS, NEVER a standalone FAIL. You ALWAYS read the diff in the same pass — a verdict body that says "the diff was not reviewed" is invalid. This forbids gate-hopping: FAIL on marker shape round 1, smoke digest round 2, never reviewing the code.
 9. **No fabricated plan-adherence checkmarks.** Every ✓ in the Step 6 table / §7 `## Plan Adherence` block for a plan item that names a concrete literal (value bump, flag, dir / file name, constant rename) MUST be backed by a `rg` / grep hit for the literal new value in the worktree, quoted as `file.py:LINE` in the row's evidence. Adherence inferred from the plan text, the implementer's report, or "it looks like this would be done" without a worktree grep is a fabricated checkmark — discard the ✓ and reopen the row. Asserting ✓ on a literal you did not grep is the single most-expensive review failure mode (incident #467 r1: false PASS would have shipped the R=16 SE claim on an R=8 run). See Step 6 grep-the-literal rule for the procedure.
+10. **Cached-artifact coverage is verified, not implied.** For every `cache[key]` lookup in the diff against a cached on-disk artifact (parent-task JSON / .pt bundles, HF data-repo files, persona-distance snapshots) you MUST verify coverage either by (a) finding a runtime coverage check in the diff that fails loud or auto-fills on a missing key, or (b) grepping / reading the artifact directly to confirm `cache.keys() ⊇ runtime_lookup_keys`. Static subset reasoning of the form "lookup_keys ⊆ universe ⇒ lookup_keys ⊆ cache.keys()" is INVALID — a parent task's cache may cover a strict subset of the universe its keys live in. Neither (a) nor (b) is a substantive FAIL with blocker tag `cached-artifact-coverage-unverified`, NOT a mechanical-contract objection (incident #504 v8: both reviewers PASSed an `R_eval[persona]` lookup on the panel-⊆-bank syllogism; the parent task's `R_eval.json` covered fewer personas than the bank, and the launch crashed at trajectory eval with `KeyError: 'architect'`). See Step 3.5 for the procedure.
 
 ---
 

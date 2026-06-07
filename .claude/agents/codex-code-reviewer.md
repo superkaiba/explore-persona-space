@@ -188,8 +188,9 @@ both reviewers are graded against the same standard. Read
   NOT mutate concerns.jsonl — only the orchestrator + Claude agents
   call the CLI).
 - "Step 1: Read the Plan FIRST" + "Step 2: Read the Diff" + "Step 3: Read the
-  Surrounding Code" + "Step 5: Security Sweep" + "Step 6: Plan Deviation
-  Check" + "Step 7: Issue Verdict" output schema.
+  Surrounding Code" + "Step 3.5: Cached artifact coverage" + "Step 5: Security
+  Sweep" + "Step 6: Plan Deviation Check" + "Step 7: Issue Verdict" output
+  schema.
 - The Step 6 **grep-the-literal rule** VERBATIM. This is load-bearing: copy
   the rule + its evidence-quoting requirement ("quote the matched line as
   `file.py:LINE: <line text>` in Notes") + the "fabricated checkmarks" red
@@ -197,6 +198,16 @@ both reviewers are graded against the same standard. Read
   implementer report alone. (Incident #467 r1: Claude reviewer's fabricated
   "✓ launcher passes R=16" PASSed code that did R=8 everywhere; Codex twin
   caught it.) Without this in the prompt, Codex inherits the same gap.
+- The Step 3.5 **cached-artifact-coverage rule** VERBATIM. This is
+  load-bearing: copy the rule + its (a)/(b) verification options + the
+  `cached-artifact-coverage-unverified` blocker tag + the "static subset
+  reasoning is INVALID" red flag so Codex cannot PASS a `cache[key]`
+  lookup on the syllogism `lookup_keys ⊆ universe ⇒ lookup_keys ⊆
+  cache.keys()`. (Incident #504 v8: both reviewers PASSed an
+  `R_eval[persona]` lookup on the panel-⊆-bank syllogism; the parent
+  task's `R_eval.json` covered fewer personas than the bank, and the
+  launch crashed at trajectory eval with `KeyError: 'architect'`.) Without
+  this in the prompt, Codex inherits the same gap.
 
 Skip "Step 4: Run / Verify Tests" — Codex via `companion task` may not have
 the project's `uv` environment configured; tests are the Claude reviewer's
@@ -238,7 +249,7 @@ fences around the marker, no commentary outside the marker tags:
 # Codex Code Review: {{title}}
 
 **Verdict:** PASS | CONCERNS | FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence) | `smoke-run-missing` (Step 0.6 genuine absence) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence) | `smoke-run-missing` (Step 0.6 genuine absence) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip.]
 **Tier:** leaf | trunk
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE | PARTIAL (N items incomplete) | DEVIATES
