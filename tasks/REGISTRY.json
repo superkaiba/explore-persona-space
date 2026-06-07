@@ -2892,8 +2892,8 @@
       "goal": "Test whether base-model persona-distance predictors (residual cosine and JS divergence, source persona to bystander persona) predict per-bystander sycophancy leakage better on a larger model (Qwen-2.5-72B-Instruct) than they did at 7B (#470), by porting #470's frozen contrastive sycophancy leakage rig unchanged except for model size and scoring leakage against cosine, JS, the bystander's base prior, and a content-free base-rate null.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/507",
-      "status": "plan_pending",
+      "path": "tasks/approved/507",
+      "status": "approved",
       "title": "Does model scale rescue the cosine/JS leakage predictor for sycophancy? (port #470 rig to a larger model)"
     },
     "51": {
