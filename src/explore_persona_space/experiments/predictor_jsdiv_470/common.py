@@ -166,7 +166,28 @@ DEFAULT_R = 8  # responses sampled per (persona, probe)
 DEFAULT_TEMPERATURE = 1.0
 DEFAULT_TOP_P = 1.0
 DEFAULT_MAX_NEW_TOKENS = 256
-DEFAULT_LAYERS = (7, 14, 21, 27)
+# DEFAULT_LAYERS is env-parametrized so the #507 72B re-run can override the
+# 7B layer set ``(7, 14, 21, 27)`` with the 72B depth-equivalent set
+# ``(21, 40, 57, 70)``. Phase 2 (cosine extraction) and Phase 4 (DV load) BOTH
+# read this constant; without the env override Phase 4 would loop the 7B
+# layers while Phase 2 wrote the 72B layers → FileNotFoundError on layer_7.json.
+# Round-3 fix per code-review Critical 5.
+_DEFAULT_LAYERS_ENV = os.environ.get("PREDICTOR_LAYERS")
+if _DEFAULT_LAYERS_ENV:
+    try:
+        DEFAULT_LAYERS = tuple(int(x) for x in _DEFAULT_LAYERS_ENV.split(","))
+    except ValueError as _exc:
+        raise RuntimeError(
+            f"PREDICTOR_LAYERS={_DEFAULT_LAYERS_ENV!r} could not be parsed as a "
+            f"comma-separated list of ints: {_exc}"
+        ) from _exc
+    if not DEFAULT_LAYERS:
+        raise RuntimeError(
+            f"PREDICTOR_LAYERS={_DEFAULT_LAYERS_ENV!r} parsed to an empty tuple; "
+            "refusing to proceed (at least one layer required)."
+        )
+else:
+    DEFAULT_LAYERS = (7, 14, 21, 27)
 # HEADLINE_LAYER is env-overridable; 21 is the 7B Qwen-2.5 default
 # (depth ratio 21/28 ≈ 0.75). 72B uses layer 57 (depth ratio 57/80 ≈ 0.71,
 # matching 7B layer-20 baseline). Round-2 fix per code-review Critical 11.

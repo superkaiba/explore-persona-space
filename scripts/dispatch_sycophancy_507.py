@@ -156,6 +156,12 @@ def _predictor_env_overrides() -> dict[str, str]:
         "PREDICTOR_OUTPUT_BASE": str(PREDICTOR_72B_OUTPUT_BASE),
         "PREDICTOR_FIGURES_DIR": str(REPO_ROOT / "figures" / "issue_507"),
         "PREDICTOR_HEADLINE_LAYER": str(HEADLINE_LAYER_BY_ARCH["72b"]),
+        # Round-3 fix per code-review Critical 5: env-parametrize the full
+        # 72B layer set so Phase 4's `for layer in DEFAULT_LAYERS:` loop in
+        # phase4_load_dv.py reads {21,40,57,70} instead of the hard-coded 7B
+        # tuple {7,14,21,27}. Without this Phase 4 file-NotFound errors on
+        # layer_7.json because Phase 2 wrote layer_21/40/57/70.json.
+        "PREDICTOR_LAYERS": ",".join(str(li) for li in LAYER_SET_BY_ARCH["72b"]),
         "PREDICTOR_GUARD_NO_OVERWRITE_470": "1",
     }
     # Point Phase 4 at the 72B's own DV + base panel rates produced by
