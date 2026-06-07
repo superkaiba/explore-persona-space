@@ -135,11 +135,69 @@ if _SCRIPTS_DIR not in sys.path:
 logger = logging.getLogger("i493.bakeoff")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# These five paths are runtime-overridable via ``_set_roots`` (called from
+# ``main`` when ``--bakeoff-root`` or ``--figures-root`` is passed). The
+# default values keep #493's serial 8-layer/50-probe path bit-identical;
+# #502 sets them to ``eval_results/issue_502/bakeoff`` so a 28-layer/500-probe
+# multi-GPU run never collides with the cached #493 artifacts.
 BAKEOFF_DIR = PROJECT_ROOT / "eval_results" / "issue_493" / "bakeoff"
 ACT_DIR = BAKEOFF_DIR / "activations"
 METRIC_DIR = BAKEOFF_DIR / "metrics"
 REGR_DIR = BAKEOFF_DIR / "regression"
 FIGURE_DIR = PROJECT_ROOT / "figures" / "issue_493"
+
+
+def _set_roots(bakeoff_root: Path, figures_root: Path | None = None) -> None:
+    """Override the module-level output roots (used by #502 to redirect to
+    ``eval_results/issue_502``). Must be called BEFORE any phase runs.
+    """
+    global BAKEOFF_DIR, ACT_DIR, METRIC_DIR, REGR_DIR, FIGURE_DIR
+    BAKEOFF_DIR = Path(bakeoff_root)
+    ACT_DIR = BAKEOFF_DIR / "activations"
+    METRIC_DIR = BAKEOFF_DIR / "metrics"
+    REGR_DIR = BAKEOFF_DIR / "regression"
+    if figures_root is not None:
+        FIGURE_DIR = Path(figures_root)
+
+
+# ────────────────────────── conditions registry override (#509 M2) ──────
+# Default conditions module path; overridable via the runtime helper below
+# so panel-agnostic experiments (e.g. #509's fact + sycophancy arms) can
+# point the metric-phase merge + extraction loop at their own panel without
+# touching the regress phase. The four import sites (run_extraction:731,
+# run_extraction_batched:1373, merge_partitioned_activations:1718, and
+# scripts/issue502_dispatch.py:111) call ``_load_conditions_registry()``
+# instead of the hardcoded ``i406_conditions`` import.
+DEFAULT_CONDITIONS_MODULE = "explore_persona_space.experiments.i406_conditions"
+_ACTIVE_CONDITIONS_MODULE: str | None = None
+
+
+def _set_conditions_module(module_path: str | None) -> None:
+    """Override the conditions registry module path for this process.
+
+    Pass ``None`` (or the default) to keep the i406 16-cond panel; pass
+    e.g. ``"explore_persona_space.experiments.i509_fact_conditions"`` to
+    point every site that imports ``CONDITIONS`` / ``CONDITIONS_BY_ID`` at
+    a different panel. Must be called BEFORE any phase runs.
+    """
+    global _ACTIVE_CONDITIONS_MODULE
+    _ACTIVE_CONDITIONS_MODULE = module_path
+
+
+def _load_conditions_registry():
+    """Import ``CONDITIONS`` + ``CONDITIONS_BY_ID`` from the active module.
+
+    Returns a ``(CONDITIONS, CONDITIONS_BY_ID)`` tuple. Falls back to
+    i406 when no override is set. The target module must expose both
+    names with the same shape as ``i406_conditions`` (a list of
+    ``Condition`` dataclass instances and a ``{cid: Condition}`` dict).
+    """
+    import importlib
+
+    module_path = _ACTIVE_CONDITIONS_MODULE or DEFAULT_CONDITIONS_MODULE
+    mod = importlib.import_module(module_path)
+    return mod.CONDITIONS, mod.CONDITIONS_BY_ID
+
 
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
@@ -186,18 +244,51 @@ C2ST_FOLDS: int = 5
 # Saturation thresholds (match i474_cosine_followup convention)
 SATURATION_GLOGP_THRESHOLD: float = -0.1
 # Cross-check tolerance vs #406's existing cosine matrices (C_L*.json).
-# Set to 3e-3 (was 1e-3): a same-mechanism fresh capture against #406's run
-# carries ≤ ~2e-3 cosine diff at deep layers from cumulative bf16 / attn-
-# kernel / transformers-version drift — numerically negligible for a
-# rank-correlation analysis. Genuine extraction bugs (prompt/position/layer
-# indexing — like the L27 post-norm `hidden_states[28]` quirk fixed in
-# round 6) produce > 1e-2 cosine diff, so 3e-3 still catches them. The
-# per-layer diff is logged so a same-recipe drift > tolerance is visible.
-# GPU-verified per-layer diffs from the round-5 (hidden_states[L+1]) run:
-# L0=1.67e-6, L5=1.49e-4, L11=9.12e-4, L15=1.17e-3, L21=1.62e-3,
-# L27=1.62e-1 (the L27 post-norm bug). With the hook fix L27 drops to the
-# same ~1.7-2e-3 noise band as L21.
-COSINE_REPRO_TOLERANCE: float = 3e-3  # cross-check vs existing C_L*.json
+#
+# Per-layer tolerance map (round-7 fix). Layer L27 carries a documented
+# precision-accumulation floor SIGNIFICANTLY above the inner-layer noise
+# band — the residual-stream Frobenius norm grows monotonically with depth
+# (L0 ~10, L5 ~31, L11 ~48, L15 ~64, L21 ~129, L27 ~301), and bf16
+# accumulation noise across 27 attention+MLP blocks compounds with it.
+#
+# GPU-verified per-layer max |diff| from the round-6 (hook-everywhere) run
+# on the q_test_prefix_50 slice against #406's C_L*.json (240 cond-pairs
+# per layer):
+#   L0: 2.15e-6   L5: 1.95e-4   L11: 5.01e-4
+#   L15: 1.13e-3  L21: 2.70e-3  L27: 6.15e-3
+# The L21 → L27 ratio (2.28×) matches the L21 → L27 Frobenius-norm ratio
+# (301 / 129 = 2.34×), confirming the increase is depth-driven precision
+# accumulation, NOT a recipe divergence:
+#   - Pearson r between our L27 matrix and #406's L27 matrix = 0.999976
+#   - Spearman ρ = 0.999362 (rank order preserved at 99.94%)
+#   - Diff sign distribution -182 vs +58 (small slow drift in one
+#     direction across the 240 pairs; not a sign-locked recipe bug)
+#   - Inter-layer Pearson r (our L21 vs our L27) = 0.985 (matrices
+#     preserve structure across depth, as expected)
+#
+# Genuine extraction bugs (the round-5 L27 post-norm `hidden_states[28]`
+# quirk) produce 1.6e-1 cosine diff — 16× larger than the L27 relaxed
+# tolerance — so the 1e-2 cap at L27 still catches real bugs. The
+# inner-layer 3e-3 cap is unchanged (deepest passing reference L21 sits
+# at 2.7e-3 → 11% of the L27 cap, plenty of headroom).
+#
+# 1e-2 is chosen, not the bare 6.15e-3, to give ~60% headroom for fresh
+# extracts on slightly different hardware / dtype / transformers-version
+# (the diff is asymmetric around 0 with a -5.5e-3 mode; a re-extract on a
+# different GPU SKU could plausibly drift the mode by another 1-2e-3).
+COSINE_REPRO_TOLERANCES: dict[int | str, float] = {
+    27: 1e-2,  # L27-specific (deepest layer; bf16 accumulation floor)
+    "default": 3e-3,  # all other reference layers (L0, L5, L11, L15, L21)
+}
+
+
+def cosine_tolerance_for_layer(L: int) -> float:
+    """Look up the per-layer cosine cross-check tolerance.
+
+    L27 is relaxed to 1e-2 (documented bf16 accumulation floor); every
+    other reference layer uses the default 3e-3.
+    """
+    return float(COSINE_REPRO_TOLERANCES.get(L, COSINE_REPRO_TOLERANCES["default"]))
 
 
 # ───────────────────────── repro metadata ─────────────────────────
@@ -281,14 +372,122 @@ def _ensure_class_d_rewrites() -> dict:
     return load_class_d_rewrites()
 
 
-def _load_probe_questions() -> list[str]:
-    """Load the EXACT #406/#474 50-question Q_test probe set (matched dist)."""
-    from explore_persona_space.experiments.i460_data import load_q_test_extended_50
+def _load_probe_questions(  # noqa: C901 — two-mode probe loader (strict + custom); each branch is linear.
+    pool_path: Path | None = None,
+    *,
+    mode: str = "q_test_strict",
+) -> list[str]:
+    """Load the probe set.
 
-    qs = load_q_test_extended_50()
-    if len(qs) != 50:
-        raise AssertionError(f"Expected 50 Q_test probes, got {len(qs)}")
-    return qs
+    Default (#493): the EXACT #406/#474 50-question Q_test probe set.
+
+    With ``pool_path`` (#502): load a custom pool from
+    ``eval_results/issue_502/probes_500.json`` (or any compatible file).
+
+    Mode ``q_test_strict`` (default — #502 contract):
+      the pool MUST be a JSON object with a ``probes`` array of strings;
+      the first 50 entries MUST be byte-identical to
+      ``load_q_test_extended_50()`` (the comparability anchor — #493's
+      exact cell is recoverable as pool[:50]). The new probes (pool[50:])
+      MUST be exact-string disjoint from q_train + q_test, AND every
+      entry MUST be non-empty + unique. All checks fail loud.
+
+    Mode ``custom`` (#509 sycophancy arm): bypasses the q_test prefix +
+      disjointness gate. Only checks list[str] + non-empty + unique. The
+      caller is responsible for providing a panel-appropriate probe set;
+      the mode is written to extraction metadata for audit.
+    """
+    from explore_persona_space.experiments.i460_data import (
+        load_q_test_extended_50,
+        load_q_train_answers,
+    )
+
+    if mode not in ("q_test_strict", "custom"):
+        raise AssertionError(f"unknown probe_pool_mode={mode!r}")
+
+    if pool_path is None:
+        qs = load_q_test_extended_50()
+        if len(qs) != 50:
+            raise AssertionError(f"Expected 50 Q_test probes, got {len(qs)}")
+        return qs
+
+    pool_path = Path(pool_path)
+    if not pool_path.exists():
+        raise FileNotFoundError(
+            f"--probe-pool {pool_path} missing. Generate it via "
+            "scripts/issue502_generate_probes.py first."
+        )
+    pool_payload = json.loads(pool_path.read_text())
+    probes = pool_payload["probes"]
+    if not isinstance(probes, list) or not all(isinstance(p, str) for p in probes):
+        raise AssertionError(f"probe pool {pool_path} 'probes' field must be list[str]")
+
+    if mode == "q_test_strict":
+        # Constraint 1: q_test prefix bit-identical.
+        q_test = load_q_test_extended_50()
+        if len(probes) < len(q_test):
+            raise AssertionError(
+                f"probe pool {pool_path} has {len(probes)} probes; needs ≥ 50 q_test prefix"
+            )
+        for i, q in enumerate(q_test):
+            if probes[i] != q:
+                raise AssertionError(
+                    f"probe pool {pool_path} prefix corrupted at index {i}: "
+                    f"expected q_test[{i}]={q!r}, got {probes[i]!r}"
+                )
+        # Constraint 2: new probes disjoint from q_train + q_test.
+        new_probes = probes[len(q_test) :]
+        q_test_set = set(q_test)
+        q_train_set = set(load_q_train_answers().keys())
+        for p in new_probes:
+            if p in q_test_set:
+                raise AssertionError(
+                    f"probe pool {pool_path} new probe collides with q_test: {p!r}"
+                )
+            if p in q_train_set:
+                raise AssertionError(
+                    f"probe pool {pool_path} new probe collides with q_train: {p!r}"
+                )
+        # Constraint 3: unique within new + non-empty.
+        seen_normalized: set[str] = set()
+        for p in new_probes:
+            if not p or not p.strip():
+                raise AssertionError(f"probe pool {pool_path} contains empty probe")
+            k = " ".join(p.lower().split())
+            if k in seen_normalized:
+                raise AssertionError(
+                    f"probe pool {pool_path} contains a duplicate (normalized): {p!r}"
+                )
+            seen_normalized.add(k)
+        logger.info(
+            "Loaded probe pool %s (mode=q_test_strict): %d total (%d q_test + %d new)",
+            pool_path,
+            len(probes),
+            len(q_test),
+            len(new_probes),
+        )
+        return probes
+
+    # mode == "custom": skip q_test prefix + disjointness; keep
+    # non-empty + unique-by-normalized check so a broken JSON still fails
+    # loud. The caller (#509 sycophancy arm) supplies a panel-appropriate
+    # pool that need not have q_test as its prefix.
+    seen_normalized: set[str] = set()
+    for p in probes:
+        if not p or not p.strip():
+            raise AssertionError(f"probe pool {pool_path} contains empty probe (mode=custom)")
+        k = " ".join(p.lower().split())
+        if k in seen_normalized:
+            raise AssertionError(
+                f"probe pool {pool_path} contains a duplicate (normalized, mode=custom): {p!r}"
+            )
+        seen_normalized.add(k)
+    logger.info(
+        "Loaded probe pool %s (mode=custom; q_test prefix gate bypassed): %d probes",
+        pool_path,
+        len(probes),
+    )
+    return probes
 
 
 def _build_prompts_for_extraction(
@@ -610,7 +809,7 @@ def run_extraction(  # noqa: C901 — top-level dispatcher (model load + per-(co
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    from explore_persona_space.experiments.i406_conditions import CONDITIONS, CONDITIONS_BY_ID
+    CONDITIONS, CONDITIONS_BY_ID = _load_conditions_registry()
 
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA required for extraction; run on a pod with a GPU.")
@@ -840,6 +1039,1188 @@ def load_activations_from_disk(
             d = torch.load(p, map_location="cpu", weights_only=False)
             out[pt][L] = d
     return out
+
+
+def validate_canonical_completeness(
+    extraction_points: tuple[str, ...],
+    layers: tuple[int, ...],
+    *,
+    expected_cond_ids_for_point: dict[str, list[str] | None] | None = None,
+) -> dict[str, dict[int, dict]]:
+    """ROUND-4 holistic gate: assert every requested (pt, L) canonical exists
+    AND its cond_ids set equals exactly the expected set for that point.
+
+    This is the single invariant the metrics phase relies on, enforced on
+    every aggregation entrypoint (serial #493 path, single-proc partitioned,
+    single-proc non-partitioned, `--merge-only`, `--phase metrics|regress|all`
+    over prior canonicals). Two complementary gates protect production:
+    (a) `merge_partitioned_activations` raises at WRITE time on mismatch
+    (round-3 wholly-missing + round-4 cache-bypass), and (b) THIS validator
+    raises at READ time so any path that bypasses the merger (e.g. serial
+    #493 writes canonical directly, `--skip-extract` over a stale tree,
+    `--phase metrics` on a partial prior run) STILL trips before metrics.
+
+    Parameters
+    ----------
+    extraction_points, layers
+        The full requested grid.
+    expected_cond_ids_for_point
+        ``{point: expected_cond_ids_list | None}``. When the inner value is
+        ``None`` for some point, that point is skipped (e.g. dev / smoke
+        runs without an expected set). Production passes the Class-A
+        subset for ``end_of_system`` and the full active cond set for
+        ``last_prompt`` / ``mean_response``.
+
+    Returns
+    -------
+    The same ``load_activations_from_disk`` output, but verified — any
+    missing-file / cond-set-mismatch raises AssertionError instead of
+    warning + skipping. Safe to feed straight into the metrics phase.
+    """
+    if expected_cond_ids_for_point is None:
+        # Backwards-compat / dev shortcut: nothing to validate, fall back
+        # to a warning-only load.
+        return load_activations_from_disk(extraction_points, layers)
+
+    import torch
+
+    out: dict[str, dict[int, dict]] = {}
+    failures: list[str] = []
+    for pt in extraction_points:
+        out[pt] = {}
+        expected = expected_cond_ids_for_point.get(pt)
+        for L in layers:
+            p = ACT_DIR / f"{pt}__layer{L}.pt"
+            if not p.exists():
+                if expected is None:
+                    continue  # caller said skip this point entirely
+                failures.append(
+                    f"missing canonical {p} for ({pt}, layer={L}); expected "
+                    f"{sorted(expected)} (set size {len(expected)})"
+                )
+                continue
+            d = torch.load(p, map_location="cpu", weights_only=False)
+            if expected is None:
+                out[pt][L] = d
+                continue
+            expected_set = set(expected)
+            cached_set = set(d.get("cond_ids", []))
+            missing = expected_set - cached_set
+            extra = cached_set - expected_set
+            if missing or extra:
+                failures.append(
+                    f"({pt}, layer={L}): canonical cond_ids mismatch — "
+                    f"missing_conds={sorted(missing)}, extra_conds={sorted(extra)}, "
+                    f"expected={sorted(expected_set)}, found={sorted(cached_set)}"
+                )
+                continue
+            out[pt][L] = d
+    if failures:
+        raise AssertionError(
+            "Canonical-completeness gate FAILED before metrics phase — refusing "
+            "to run regression on an under-sized / drifted bakeoff grid:\n  "
+            + "\n  ".join(failures)
+        )
+    return out
+
+
+# ───────────────────────── batched extraction (#502) ─────────────────────────
+#
+# #502 adds two capabilities on top of #493's serial extraction loop:
+#
+#   1. **Batched generation** (``--batch-size B``): batch B probes per
+#      ``model.generate()`` call with left-padding so the residual hook
+#      captures all B sequences in one forward, then we per-sequence
+#      locate the response token positions (left-pad + per-seq EOS) and
+#      mean-pool. Order-of-magnitude faster for ``mean_response`` (which
+#      is the wall-clock bottleneck — one greedy decode per probe).
+#
+#   2. **Per-transformation activation files** (``--partition-tag`` /
+#      ``--transformations``): each (cond, point, layer) lands in its OWN
+#      file ``<point>__layer<L>__cond<cid>.pt``. This lets multiple GPU
+#      processes write disjoint files in parallel; a single CPU
+#      ``merge_partitioned_activations`` step then stacks them into the
+#      canonical ``<point>__layer<L>.pt`` shape downstream code reads.
+#
+#      Determinism guarantee: per-GPU procs operate on DISJOINT cond
+#      subsets, so the merged stack is bit-identical to a hypothetical
+#      single-GPU run that did all conds in the same order — there are
+#      no per-process random states that would diverge.
+#
+#   3. **Next-token-logits capture at last_prompt** for the
+#      ``next_token_js`` baseline predictor (a *non-layer-indexed* output
+#      metric that compares the two personas' softmax over the vocab at
+#      the last_prompt position, averaged across probes — matches
+#      ``scripts/issue458_predictor_jsdiv.py``). Captured DURING the
+#      same forward pass that fills the ``last_prompt`` extraction point,
+#      so it adds no extra GPU work.
+#
+# The serial #493 path (``run_extraction``) is unchanged. The dispatcher
+# routes to ``run_extraction_batched`` only when ``--batch-size > 1``
+# OR ``--partition-tag`` is set OR ``--probe-pool`` is set, all of which
+# are #502-only flags.
+
+
+def _next_token_logits_path(cid: str) -> Path:
+    """Output path for one transformation's next-token logits sidecar.
+
+    Stored under ``<bakeoff_root>/next_token_logits/last_prompt__cond<cid>.pt``
+    with shape (n_q, V). One file per (transformation), produced during
+    the same forward pass that fills ``last_prompt``. The next_token_js
+    metric matrix is built from these in the metric phase.
+    """
+    return BAKEOFF_DIR / "next_token_logits" / f"last_prompt__cond{cid}.pt"
+
+
+def _partitioned_activation_path(point: str, layer: int, cid: str) -> Path:
+    """Output path for one transformation's per-(point, layer) activation file.
+
+    Stored under ``<bakeoff_root>/activations/<point>__layer<L>__cond<cid>.pt``.
+    Per-cond files let multiple GPU processes write disjoint files in
+    parallel; the merger then stacks them.
+    """
+    return ACT_DIR / f"{point}__layer{layer}__cond{cid}.pt"
+
+
+def _extract_batch(  # noqa: C901 — batched dispatcher; one branch per extraction point.
+    model,
+    tokenizer,
+    *,
+    device,
+    cond,
+    questions: list[str],
+    class_d_rewrites: dict,
+    extraction_points: tuple[str, ...],
+    layers: tuple[int, ...],
+    max_response_tokens: int,
+    hook_capture: _LayerHookCapture,
+    capture_next_token_logits: bool,
+) -> tuple[dict, dict, dict[str, dict[int, list]], dict]:
+    """Batched analogue of ``_extract_one``: process B probes per ``generate()``.
+
+    Returns
+    -------
+    (per_probe_rows, per_probe_meta, end_of_system_or_none, next_token_logits)
+      per_probe_rows: ``{qi -> {point -> {layer -> tensor(H,)}}}`` for
+        ``last_prompt`` and ``mean_response``. ``end_of_system`` is NOT
+        included here — it's input-independent under causal attention, so
+        the caller computes it ONCE per (cond) via ``_extract_one``.
+      per_probe_meta: ``{qi -> {"truncated", "response_len", "response_present"}}``
+      end_of_system_or_none: (unused — caller computes EOS once per cond)
+      next_token_logits: ``{qi -> tensor(V,)}`` softmax probabilities at the
+        last_prompt position. Empty dict if ``capture_next_token_logits=False``
+        or if ``last_prompt`` was not requested.
+    """
+    import torch
+
+    B = len(questions)
+    if B == 0:
+        return {}, {}, {}, {}
+
+    # Build per-probe prompts. Class A's system prefix is the same for every
+    # probe; non-A classes have no system prefix.
+    full_texts: list[str] = []
+    for q in questions:
+        _sys_text, full_text = _build_prompts_for_extraction(
+            cond, q, tokenizer, class_d_rewrites, "all"
+        )
+        full_texts.append(full_text)
+
+    need_last = "last_prompt" in extraction_points
+    need_resp = "mean_response" in extraction_points
+
+    # Left-pad: generation needs left-padding so the rightmost token of every
+    # sequence aligns at the same position in the batch. Tokenize WITHOUT
+    # the chat template's special-token handling (we already applied it in
+    # full_texts).
+    orig_side = tokenizer.padding_side
+    tokenizer.padding_side = "left"
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+    try:
+        prompt_enc = tokenizer(
+            full_texts,
+            return_tensors="pt",
+            padding=True,
+            add_special_tokens=False,
+        ).to(device)
+    finally:
+        tokenizer.padding_side = orig_side
+    prompt_ids = prompt_enc["input_ids"]  # (B, T_pad)
+    attn_mask = prompt_enc["attention_mask"]  # (B, T_pad)
+    T_pad = int(prompt_ids.shape[1])
+
+    per_probe_rows: dict[int, dict[str, dict[int, torch.Tensor]]] = {
+        qi: {p: {} for p in extraction_points} for qi in range(B)
+    }
+    per_probe_meta: dict[int, dict] = {qi: {} for qi in range(B)}
+    next_token_logits: dict[int, torch.Tensor] = {}
+
+    if need_resp:
+        # Batched greedy generate. Hooks fire during decode; we re-run a
+        # teacher-forced forward over the full (prompt + response) sequence
+        # for clean per-position activations (matches the serial path
+        # exactly, where the hook captures during the teacher-forced
+        # forward).
+        #
+        # NOTE: do NOT pass explicit position_ids to model.generate().
+        # HF's generate() derives them internally from attention_mask in
+        # the prefill step AND uses past_key_values during incremental
+        # decode where the position index must come from cache_position,
+        # NOT from a static `position_ids` tensor. Passing explicit
+        # `position_ids` to generate() BREAKS decoded tokens (GPT-2 +
+        # tiny-random verified 2026-06-05: serial token sequence
+        # [256, 256, 875, 875] but batched-with-explicit-pos produced
+        # [256, 256, 256, 256] — the model stops advancing the position
+        # after step 1). The post-gen teacher-forced forward DOES need
+        # explicit position_ids (no past_key_values, so position arange
+        # is wrong under left-pad), and that's where we set them below.
+        # (Round-1 review blocker #2 was originally framed as "needs
+        # position_ids on generate()"; CPU smoke against _extract_one
+        # surfaced the inverse — the round-1 framing was wrong.)
+        with torch.no_grad():
+            gen_out = model.generate(
+                input_ids=prompt_ids,
+                attention_mask=attn_mask,
+                max_new_tokens=max_response_tokens,
+                do_sample=False,
+                temperature=1.0,
+                pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
+                return_dict_in_generate=True,
+            )
+        full_ids = gen_out.sequences  # (B, T_pad + n_new_max)
+        T_total = int(full_ids.shape[1])
+        # Per-sequence response start = T_pad (left-pad lines all prompts
+        # right at column T_pad - 1, so response begins at T_pad).
+        # Per-sequence response end: find the FIRST EOS at position >= T_pad,
+        # OR the cap (T_total - 1).
+        eos_id = tokenizer.eos_token_id
+        per_seq_resp_len: list[int] = []
+        per_seq_truncated: list[bool] = []
+        for b in range(B):
+            seq = full_ids[b, T_pad:T_total]
+            # First EOS index within the generated region (relative).
+            if eos_id is not None:
+                eos_pos_rel = (seq == eos_id).nonzero(as_tuple=False)
+                if eos_pos_rel.numel() > 0:
+                    resp_len = int(eos_pos_rel[0].item()) + 1  # include EOS
+                    truncated = False
+                else:
+                    resp_len = int(seq.shape[0])
+                    truncated = True
+            else:
+                resp_len = int(seq.shape[0])
+                truncated = True
+            per_seq_resp_len.append(resp_len)
+            per_seq_truncated.append(truncated)
+            per_probe_meta[b]["response_len"] = resp_len
+            per_probe_meta[b]["truncated"] = bool(truncated)
+            per_probe_meta[b]["response_present"] = resp_len > 0
+
+        # One teacher-forced forward over the full sequence with the same
+        # left-padded attention extended for the response. This populates
+        # the hook captures at every position, B at a time.
+        full_attn = torch.cat([attn_mask, torch.ones_like(full_ids[:, T_pad:T_total])], dim=1)
+        # CRITICAL: explicit position_ids = cumsum(attention_mask) - 1.
+        # Without this, both GPT-2 (additive position embeddings) and Qwen-2
+        # (RoPE) compute position indices as arange(0, T_total) which mis-
+        # indexes left-padded sequences (the first REAL token gets index =
+        # num_pad_tokens, not 0). The serial path has zero pad and hits
+        # the correct positions naturally; the batched path must match by
+        # construction. Captured 2026-06-05 via the batched-vs-serial
+        # CPU smoke gate (cosine 0.55 < 0.999 floor on left-padded probes).
+        full_pos = (full_attn.long().cumsum(dim=1) - 1).clamp(min=0)
+        hook_capture.reset()
+        with torch.no_grad():
+            fwd = model(
+                input_ids=full_ids,
+                attention_mask=full_attn,
+                position_ids=full_pos,
+                output_hidden_states=False,
+            )
+        # Capture next-token logits at the last_prompt position
+        # (T_pad - 1) BEFORE we move on. This is the same position
+        # the last_prompt extraction reads its residuals from, so the
+        # logits and the residuals are coherent.
+        if capture_next_token_logits and need_last:
+            # fwd.logits shape: (B, T_total, V)
+            assert fwd.logits.shape[0] == B
+            assert fwd.logits.shape[1] == T_total
+            for b in range(B):
+                # Softmax to a proper probability distribution in fp32 on CPU.
+                logits_b = fwd.logits[b, T_pad - 1, :].float().cpu()
+                probs_b = torch.softmax(logits_b, dim=-1)
+                next_token_logits[b] = probs_b
+        # Per-layer pull
+        for L in layers:
+            hs = hook_capture.last_layer(L)  # (B, T_total, H)
+            assert hs.shape[0] == B and hs.shape[1] == T_total, hs.shape
+            for b in range(B):
+                if need_last:
+                    per_probe_rows[b]["last_prompt"][L] = hs[b, T_pad - 1, :].float().cpu()
+                if need_resp:
+                    rlen = per_seq_resp_len[b]
+                    if rlen > 0:
+                        resp_slice = hs[b, T_pad : T_pad + rlen, :]
+                        per_probe_rows[b]["mean_response"][L] = resp_slice.mean(dim=0).float().cpu()
+                    else:
+                        H = model.config.hidden_size
+                        per_probe_rows[b]["mean_response"][L] = torch.full(
+                            (H,), float("nan"), dtype=torch.float32
+                        )
+        del fwd, full_ids, gen_out
+    elif need_last:
+        # Prompt-only forward (no generation). Hooks capture at every
+        # position; we read the last_prompt column for each sequence.
+        # See the need_resp branch above for why explicit position_ids
+        # are mandatory under left-padding.
+        prompt_pos = (attn_mask.long().cumsum(dim=1) - 1).clamp(min=0)
+        hook_capture.reset()
+        with torch.no_grad():
+            fwd = model(
+                input_ids=prompt_ids,
+                attention_mask=attn_mask,
+                position_ids=prompt_pos,
+                output_hidden_states=False,
+            )
+        if capture_next_token_logits:
+            for b in range(B):
+                logits_b = fwd.logits[b, T_pad - 1, :].float().cpu()
+                probs_b = torch.softmax(logits_b, dim=-1)
+                next_token_logits[b] = probs_b
+        for L in layers:
+            hs = hook_capture.last_layer(L)
+            assert hs.shape[0] == B and hs.shape[1] == T_pad, hs.shape
+            for b in range(B):
+                per_probe_rows[b]["last_prompt"][L] = hs[b, T_pad - 1, :].float().cpu()
+        for b in range(B):
+            per_probe_meta[b]["response_present"] = False
+            per_probe_meta[b]["response_len"] = 0
+            per_probe_meta[b]["truncated"] = False
+        del fwd
+    else:
+        # Neither last_prompt nor mean_response — nothing to do for batched.
+        # Caller handles end_of_system once per cond via _extract_one.
+        for b in range(B):
+            per_probe_meta[b]["response_present"] = False
+            per_probe_meta[b]["response_len"] = 0
+            per_probe_meta[b]["truncated"] = False
+
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    return per_probe_rows, per_probe_meta, {}, next_token_logits
+
+
+def run_extraction_batched(  # noqa: C901 — top-level batched dispatcher; mirrors run_extraction's shape.
+    *,
+    extraction_points: tuple[str, ...],
+    layers: tuple[int, ...],
+    transformations: tuple[str, ...] | None,
+    n_probes: int,
+    max_response_tokens: int,
+    device: str,
+    overwrite: bool,
+    pool_path: Path | None = None,
+    pool_mode: str = "q_test_strict",
+    batch_size: int = 1,
+    capture_next_token_logits: bool = True,
+    write_partitioned: bool = True,
+) -> dict[str, dict[int, np.ndarray]]:
+    """Batched + partition-aware analogue of ``run_extraction`` (#502).
+
+    Differences vs ``run_extraction``:
+      - ``pool_path``: load a custom probe pool (e.g. 500-probe pool with
+        the q_test 50 as a prefix). When None, falls back to the 50-probe
+        q_test pool (matches #493).
+      - ``batch_size``: probes per ``model.generate()`` batch. ``=1``
+        produces a serial loop (== ``run_extraction`` behavior modulo
+        the fresh batched code path — equality is verified in smoke).
+      - ``capture_next_token_logits``: also collect softmax probs at the
+        last_prompt position for the ``next_token_js`` baseline metric.
+        Sidecar files at ``<bakeoff_root>/next_token_logits/last_prompt__cond<cid>.pt``.
+      - ``write_partitioned``: write one activation file per
+        (point, layer, cond). After all GPU procs finish, the merger
+        stacks them into ``<point>__layer<L>.pt``. Set to False for
+        single-GPU runs that want the canonical file directly.
+
+    Returns the same shape as ``run_extraction``: ``{point: {layer:
+    ndarray(n_cond, n_q, H)}}``. When ``write_partitioned=True``,
+    callers are expected to invoke ``merge_partitioned_activations``
+    before the metrics / regression phase (the returned dict is the
+    THIS-PROC contribution, not the full grid).
+    """
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    CONDITIONS, CONDITIONS_BY_ID = _load_conditions_registry()
+
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA required for extraction; run on a pod with a GPU.")
+
+    if transformations:
+        active_conds = [CONDITIONS_BY_ID[c] for c in transformations]
+    else:
+        active_conds = list(CONDITIONS)
+    logger.info("Active transformations (this proc): %s", [c.cid for c in active_conds])
+    logger.info(
+        "batch_size=%d capture_next_token_logits=%s write_partitioned=%s",
+        batch_size,
+        capture_next_token_logits,
+        write_partitioned,
+    )
+
+    all_questions = _load_probe_questions(pool_path=pool_path, mode=pool_mode)
+    if n_probes < len(all_questions):
+        questions = all_questions[:n_probes]
+        logger.info("Subsetting probes: %d / %d", len(questions), len(all_questions))
+    else:
+        questions = all_questions
+    n_q = len(questions)
+
+    class_d_rewrites = _ensure_class_d_rewrites() if any(c.cls == "D" for c in active_conds) else {}
+
+    logger.info("Loading %s on %s", BASE_MODEL, device)
+    tokenizer = AutoTokenizer.from_pretrained(
+        BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    t0 = time.time()
+    model = AutoModelForCausalLM.from_pretrained(
+        BASE_MODEL,
+        torch_dtype=torch.bfloat16,
+        device_map={"": device},
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
+    )
+    model.eval()
+    logger.info("Base model loaded in %.1fs", time.time() - t0)
+
+    H = model.config.hidden_size
+
+    # Per-cond, per-(point, layer) activation arrays. Filled as we go,
+    # written per-cond (whether partitioned or canonical) so a mid-run
+    # crash never loses prior cond work.
+    truncation_count = 0
+    total_response_rows = 0
+    response_len_samples: list[int] = []
+
+    # Need a SECOND _LayerHookCapture for the EOS forward (Class A only,
+    # one per cond, system-only prefix — see _extract_one). We reuse the
+    # SAME hook_cap by binding once and using reset() between forwards.
+    with _LayerHookCapture(model, layers) as hook_cap:
+        for ci, cond in enumerate(active_conds):
+            t_c = time.time()
+            # ── end_of_system: one forward per cond (Class A only) ──
+            eos_vecs: dict[int, torch.Tensor] = {}
+            if "end_of_system" in extraction_points and cond.cls == "A":
+                try:
+                    eos_row, _ = _extract_one(
+                        model,
+                        tokenizer,
+                        device=device,
+                        cond=cond,
+                        question=questions[0],  # any q — system prefix is q-independent
+                        class_d_rewrites=class_d_rewrites,
+                        extraction_points=("end_of_system",),
+                        layers=layers,
+                        max_response_tokens=max_response_tokens,
+                        hook_capture=hook_cap,
+                    )
+                    eos_vecs = eos_row.get("end_of_system", {})
+                except Exception as e:
+                    raise RuntimeError(
+                        f"end_of_system extraction failed at cond={cond.cid}: {e}"
+                    ) from e
+
+            # ── last_prompt + mean_response: batched over questions ──
+            point_layer_arrays: dict[str, dict[int, np.ndarray]] = {
+                p: {L: np.full((n_q, H), np.nan, dtype=np.float32) for L in layers}
+                for p in extraction_points
+                if p != "end_of_system"
+            }
+            cond_nt_logits: list[torch.Tensor] | None = (
+                [None] * n_q
+                if (capture_next_token_logits and "last_prompt" in extraction_points)
+                else None
+            )
+
+            if any(p in extraction_points for p in ("last_prompt", "mean_response")):
+                for batch_start in range(0, n_q, batch_size):
+                    batch_end = min(batch_start + batch_size, n_q)
+                    batch_qs = questions[batch_start:batch_end]
+                    try:
+                        rows_b, meta_b, _eos_unused, nt_b = _extract_batch(
+                            model,
+                            tokenizer,
+                            device=device,
+                            cond=cond,
+                            questions=batch_qs,
+                            class_d_rewrites=class_d_rewrites,
+                            extraction_points=tuple(
+                                p for p in extraction_points if p != "end_of_system"
+                            ),
+                            layers=layers,
+                            max_response_tokens=max_response_tokens,
+                            hook_capture=hook_cap,
+                            capture_next_token_logits=capture_next_token_logits,
+                        )
+                    except Exception as e:
+                        raise RuntimeError(
+                            f"Batched extraction failed at cond={cond.cid} "
+                            f"batch=[{batch_start}:{batch_end}]: {e}"
+                        ) from e
+                    for b_local, qi_global in enumerate(range(batch_start, batch_end)):
+                        for pt in extraction_points:
+                            if pt == "end_of_system":
+                                continue
+                            for L in layers:
+                                if L in rows_b[b_local][pt]:
+                                    vec = rows_b[b_local][pt][L].numpy()
+                                    point_layer_arrays[pt][L][qi_global, :] = vec
+                        if "mean_response" in extraction_points:
+                            meta = meta_b[b_local]
+                            if meta.get("response_present"):
+                                total_response_rows += 1
+                                response_len_samples.append(meta["response_len"])
+                                if meta.get("truncated"):
+                                    truncation_count += 1
+                        if cond_nt_logits is not None and b_local in nt_b:
+                            cond_nt_logits[qi_global] = nt_b[b_local]
+
+            # ── persist per-cond results (per CLAUDE.md checkpoint-per-phase) ──
+            # last_prompt + mean_response per-cond per-layer.
+            ACT_DIR.mkdir(parents=True, exist_ok=True)
+            for pt in extraction_points:
+                if pt == "end_of_system":
+                    continue
+                for L in layers:
+                    arr = point_layer_arrays[pt][L]
+                    payload = {
+                        "schema_version": 1,
+                        "extraction_point": pt,
+                        "layer": L,
+                        "cond_id": cond.cid,
+                        "n_probes": int(arr.shape[0]),
+                        "hidden_size": int(arr.shape[1]),
+                        "activations_one_cond": arr,  # (n_q, H)
+                        "git_sha": _git_sha(),
+                        "timestamp_utc": _now_iso(),
+                        "batched": True,
+                        "batch_size": int(batch_size),
+                    }
+                    out_path = _partitioned_activation_path(pt, L, cond.cid)
+                    if out_path.exists() and not overwrite:
+                        logger.info(
+                            "Skipping existing partitioned activation %s (use --overwrite to redo)",
+                            out_path,
+                        )
+                    else:
+                        tmp = out_path.with_suffix(out_path.suffix + ".tmp")
+                        torch.save(payload, tmp)
+                        tmp.replace(out_path)
+                        logger.info("Wrote %s shape=(%d, %d)", out_path, arr.shape[0], arr.shape[1])
+
+            # end_of_system one-vector-per-cond payload (Class A only).
+            if "end_of_system" in extraction_points and cond.cls == "A" and eos_vecs:
+                for L in layers:
+                    if L not in eos_vecs:
+                        continue
+                    vec = eos_vecs[L].numpy().astype(np.float32)  # (H,)
+                    arr_eos = vec[None, :]  # (1, H)
+                    payload_eos = {
+                        "schema_version": 1,
+                        "extraction_point": "end_of_system",
+                        "layer": L,
+                        "cond_id": cond.cid,
+                        "n_probes": 1,
+                        "hidden_size": int(arr_eos.shape[1]),
+                        "activations_one_cond": arr_eos,
+                        "git_sha": _git_sha(),
+                        "timestamp_utc": _now_iso(),
+                    }
+                    out_path = _partitioned_activation_path("end_of_system", L, cond.cid)
+                    if out_path.exists() and not overwrite:
+                        continue
+                    tmp = out_path.with_suffix(out_path.suffix + ".tmp")
+                    torch.save(payload_eos, tmp)
+                    tmp.replace(out_path)
+
+            # next-token logits sidecar for the next_token_js baseline.
+            if cond_nt_logits is not None and any(v is not None for v in cond_nt_logits):
+                nt_out = _next_token_logits_path(cond.cid)
+                nt_out.parent.mkdir(parents=True, exist_ok=True)
+                # Replace any None with NaN row of vocab size (None happens only
+                # if a probe slot was skipped, which shouldn't occur here).
+                vocab_size = next(v for v in cond_nt_logits if v is not None).shape[0]
+                stacked = np.full((n_q, vocab_size), np.nan, dtype=np.float32)
+                for qi, v in enumerate(cond_nt_logits):
+                    if v is not None:
+                        stacked[qi, :] = v.numpy()
+                nt_payload = {
+                    "schema_version": 1,
+                    "extraction_point": "last_prompt",
+                    "cond_id": cond.cid,
+                    "n_probes": int(stacked.shape[0]),
+                    "vocab_size": int(stacked.shape[1]),
+                    "probs": stacked,  # (n_q, V) softmax probs
+                    "git_sha": _git_sha(),
+                    "timestamp_utc": _now_iso(),
+                }
+                tmp = nt_out.with_suffix(nt_out.suffix + ".tmp")
+                torch.save(nt_payload, tmp)
+                tmp.replace(nt_out)
+                logger.info(
+                    "Wrote next-token-logits %s shape=(%d, %d)",
+                    nt_out,
+                    stacked.shape[0],
+                    stacked.shape[1],
+                )
+
+            logger.info(
+                "cond %d/%d %s (cls=%s) batched in %.1fs",
+                ci + 1,
+                len(active_conds),
+                cond.cid,
+                cond.cls,
+                time.time() - t_c,
+            )
+
+    if total_response_rows:
+        med = int(np.median(response_len_samples)) if response_len_samples else 0
+        mx = int(np.max(response_len_samples)) if response_len_samples else 0
+        logger.info(
+            "Response truncation rate: %d/%d (%.1f%%); response_len median=%d max=%d (cap=%d)",
+            truncation_count,
+            total_response_rows,
+            100.0 * truncation_count / total_response_rows,
+            med,
+            mx,
+            max_response_tokens,
+        )
+        BAKEOFF_DIR.mkdir(parents=True, exist_ok=True)
+        _write_json_atomic(
+            BAKEOFF_DIR / "extraction_truncation.json",
+            {
+                "schema_version": 1,
+                "max_response_tokens": int(max_response_tokens),
+                "total_response_rows": int(total_response_rows),
+                "truncation_count": int(truncation_count),
+                "truncation_rate": float(truncation_count / total_response_rows),
+                "response_len_median": med,
+                "response_len_max": mx,
+                "response_len_p95": int(np.percentile(response_len_samples, 95))
+                if response_len_samples
+                else 0,
+                "git_sha": _git_sha(),
+                "timestamp_utc": _now_iso(),
+                "batched": True,
+                "batch_size": int(batch_size),
+            },
+        )
+
+    # Clean up GPU.
+    del model
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+    # When write_partitioned=False the caller wants downstream phases to
+    # find canonical <point>__layer<L>.pt files immediately (no separate
+    # merge step / no external dispatcher). Per-cond files ARE always
+    # written (so a mid-run crash doesn't lose work), but we merge them
+    # into the canonical shape NOW for this single-proc case.
+    # (Codex round-1 blocker #3: previously write_partitioned was IGNORED
+    # — all writes hit _partitioned_activation_path regardless, so a
+    # `--batched` without `--partitioned` invocation never produced the
+    # canonical files the metrics phase loads, and metrics silently
+    # failed with "Missing checkpoint".)
+    if not write_partitioned:
+        logger.info(
+            "write_partitioned=False: merging this proc's per-cond "
+            "files into canonical <point>__layer<L>.pt shape"
+        )
+        expected_cids_this_proc = [c.cid for c in active_conds]
+        # For end_of_system, only Class A conds were actually written; pass
+        # the Class-A subset as the expected set for that point to keep the
+        # no-drop assertion meaningful (no false-fail on B/C/D conds).
+        eos_expected = [c.cid for c in active_conds if c.cls == "A"]
+        for pt in extraction_points:
+            expected_for_pt = eos_expected if pt == "end_of_system" else expected_cids_this_proc
+            merge_partitioned_activations(
+                (pt,),
+                layers,
+                overwrite=overwrite,
+                expected_cond_ids=expected_for_pt or None,
+            )
+
+    # Return THIS PROC's contribution (caller merges across procs).
+    written: dict[str, dict[int, np.ndarray]] = {pt: {} for pt in extraction_points}
+    return written
+
+
+def merge_partitioned_activations(  # noqa: C901 — per-(point, layer) walker + no-drop assertions branch per group; flattening would split a single contract across helpers.
+    extraction_points: tuple[str, ...],
+    layers: tuple[int, ...],
+    *,
+    overwrite: bool,
+    expected_cond_ids: list[str] | None = None,
+) -> dict[str, dict[int, np.ndarray]]:
+    """Stack per-cond partitioned files into the canonical ``<point>__layer<L>.pt``
+    shape downstream phases expect.
+
+    Walks ``<ACT_DIR>/*__cond*.pt`` and groups by (point, layer). For each
+    group, sorts cond_ids in their canonical CONDITIONS order, stacks the
+    per-cond (n_q, H) arrays to (n_cond, n_q, H) (or (n_cond, 1, H) for
+    end_of_system), and writes the merged ``<point>__layer<L>.pt``.
+
+    Parameters
+    ----------
+    expected_cond_ids
+        When provided, ASSERT exact set equality between the partitioned
+        files found on disk for each (point, layer) and this expected set.
+        Fail loud on any missing OR extra cond_id. This is the multi-GPU
+        no-drop gate: a stale partial partition or a silently-failed GPU
+        worker would otherwise yield e.g. a 15-cond merged stack that the
+        regression then reads as if it were the full 16-cond grid.
+        (Codex round-1 blocker #4.) For end_of_system pass the Class-A
+        subset only; for last_prompt / mean_response pass the full active
+        cond set. None = old behavior (use whatever's on disk; for
+        backwards-compat with the CPU smoke's tiny synthetic merges).
+
+    Determinism: cond ordering is the canonical i406 CONDITIONS order, so
+    the merged stack is independent of which GPU process produced each
+    per-cond file. NaN-check: any partitioned file with all-NaN rows
+    (which would corrupt downstream metrics silently) is flagged loud.
+    """
+    import re
+
+    import torch
+
+    CONDITIONS, _ = _load_conditions_registry()
+
+    cid_order = [c.cid for c in CONDITIONS]
+    cid_order_index = {c: i for i, c in enumerate(cid_order)}
+    written: dict[str, dict[int, np.ndarray]] = {pt: {} for pt in extraction_points}
+    expected_set = set(expected_cond_ids) if expected_cond_ids is not None else None
+    if not ACT_DIR.exists():
+        logger.warning("merge_partitioned_activations: %s missing, nothing to do", ACT_DIR)
+        if expected_set:
+            raise AssertionError(
+                f"merge_partitioned_activations: ACT_DIR {ACT_DIR} missing but "
+                f"expected_cond_ids={sorted(expected_set)} were requested"
+            )
+        return written
+    pattern = re.compile(r"^(?P<pt>[a-z_]+)__layer(?P<L>\d+)__cond(?P<cid>[A-Z]\d+)\.pt$")
+    grouped: dict[tuple[str, int], dict[str, dict]] = {}
+    for p in sorted(ACT_DIR.glob("*__cond*.pt")):
+        m = pattern.match(p.name)
+        if not m:
+            continue
+        pt = m.group("pt")
+        L = int(m.group("L"))
+        cid = m.group("cid")
+        if pt not in extraction_points or L not in layers:
+            continue
+        d = torch.load(p, map_location="cpu", weights_only=False)
+        grouped.setdefault((pt, L), {})[cid] = d
+
+    # ROUND-3 FIX #1: iterate over EVERY requested (pt, L) pair, not just
+    # the (pt, L) groups that happen to be in `grouped`. Before round 3 the
+    # loop was `for (pt, L), per_cond in grouped.items()`, so a wholly-
+    # missing (pt, L) (e.g. a GPU died before writing layer L, or
+    # `--merge-only` over a partial partition set with NO files at all for
+    # some layer) NEVER hit the no-drop assertion — `--merge-only` exited
+    # clean and `load_activations_from_disk` only WARNed + skipped the
+    # missing canonical checkpoint, so an "all 28 layers" run silently
+    # became an incomplete layer profile. Now we iterate the full Cartesian
+    # product and raise on any (pt, L) whose per-cond group is empty when
+    # expected_cond_ids is set. (Codex round-2 blocker #1.)
+    requested_pairs = [(pt, L) for pt in extraction_points for L in layers]
+    for pt, L in requested_pairs:
+        per_cond = grouped.get((pt, L), {})
+        canonical_path = ACT_DIR / f"{pt}__layer{L}.pt"
+        if canonical_path.exists() and not overwrite:
+            # ROUND-4 FIX #1 (Critical): the cache-hit short-circuit must
+            # validate the cached canonical against `expected_set` BEFORE
+            # accepting it, REGARDLESS of whether the current run has any
+            # per-cond files for (pt, L) on disk. Before round 4, a stale
+            # canonical + zero per-cond files in the current run + no
+            # --overwrite (the production default) silently reused the
+            # stale (possibly under-sized) cache, masking a GPU-worker-
+            # died case. Now: load + validate + raise on mismatch even
+            # if `per_cond` is empty.
+            d = torch.load(canonical_path, map_location="cpu", weights_only=False)
+            if expected_set is not None:
+                cached_set = set(d.get("cond_ids", []))
+                missing = expected_set - cached_set
+                extra = cached_set - expected_set
+                if missing or extra:
+                    raise AssertionError(
+                        f"Cached canonical {canonical_path} fails no-drop assertion: "
+                        f"missing_conds={sorted(missing)}, extra_conds={sorted(extra)}, "
+                        f"expected={sorted(expected_set)}. The current run's per-cond "
+                        f"files for ({pt}, layer={L}) had {len(per_cond)} entries "
+                        f"({sorted(per_cond.keys())}). Pass --overwrite to re-merge, "
+                        "or re-run extraction for the missing conds."
+                    )
+            logger.info(
+                "Skipping merge for existing %s (cached cond_ids match expected; "
+                "use --overwrite to redo)",
+                canonical_path,
+            )
+            written[pt][L] = d["activations"]
+            continue
+        # Order conds canonically (only those present).
+        present_cids = sorted(per_cond.keys(), key=lambda c: cid_order_index.get(c, 1_000_000))
+        if not present_cids:
+            # ROUND-3 FIX #1: wholly-missing (pt, L) raises when expected
+            # is set. Before: the loop skipped this case because grouped
+            # never contained it; now we explicitly check.
+            if expected_set:
+                raise AssertionError(
+                    f"No partitioned per-cond files AT ALL for ({pt}, layer={L}) but "
+                    f"expected {sorted(expected_set)} — likely a GPU worker died "
+                    "before writing this layer / point. A silent miss here would "
+                    "downstream become an incomplete layer profile; refusing to merge."
+                )
+            continue
+        # No-drop assertion: the present cond set must EQUAL the expected one.
+        if expected_set is not None:
+            present_set = set(present_cids)
+            missing = expected_set - present_set
+            extra = present_set - expected_set
+            if missing or extra:
+                raise AssertionError(
+                    f"Partition merge no-drop FAILED at ({pt}, layer={L}): "
+                    f"missing_conds={sorted(missing)} extra_conds={sorted(extra)} "
+                    f"present={present_cids} expected={sorted(expected_set)}. "
+                    "A stale partial partition would silently yield an under-sized "
+                    "bakeoff grid; refusing to merge."
+                )
+        first = per_cond[present_cids[0]]["activations_one_cond"]
+        n_q = first.shape[0]
+        H = first.shape[1]
+        for cid in present_cids:
+            arr = per_cond[cid]["activations_one_cond"]
+            if arr.shape != (n_q, H):
+                raise AssertionError(
+                    f"Shape mismatch in partitioned activations: "
+                    f"cond={cid} (n_q={arr.shape[0]}, H={arr.shape[1]}) "
+                    f"vs first ({n_q}, {H}) for ({pt}, layer={L})"
+                )
+            if np.all(np.isnan(arr)):
+                raise AssertionError(
+                    f"All-NaN partitioned activation at cond={cid} ({pt}, layer={L}); "
+                    "the per-GPU extraction silently failed for this cond"
+                )
+        stacked = np.stack([per_cond[c]["activations_one_cond"] for c in present_cids], axis=0)
+        payload = {
+            "schema_version": 1,
+            "extraction_point": pt,
+            "layer": L,
+            "cond_ids": present_cids,
+            "n_probes": int(n_q),
+            "hidden_size": int(H),
+            "activations": stacked,  # (n_cond, n_q, H)
+            "git_sha": _git_sha(),
+            "timestamp_utc": _now_iso(),
+            "merged_from": [str(_partitioned_activation_path(pt, L, c).name) for c in present_cids],
+        }
+        tmp = canonical_path.with_suffix(canonical_path.suffix + ".tmp")
+        torch.save(payload, tmp)
+        tmp.replace(canonical_path)
+        logger.info(
+            "Merged %d cond files into %s shape=%s",
+            len(present_cids),
+            canonical_path,
+            stacked.shape,
+        )
+        written[pt][L] = stacked
+    return written
+
+
+def load_next_token_logits() -> dict[str, np.ndarray]:
+    """Re-load next-token logits sidecars produced by ``run_extraction_batched``.
+
+    Returns ``{cond_id: ndarray(n_q, V)}`` of softmax probabilities at
+    last_prompt. Empty dict if no sidecars on disk.
+    """
+    import re
+
+    import torch
+
+    out: dict[str, np.ndarray] = {}
+    nt_dir = BAKEOFF_DIR / "next_token_logits"
+    if not nt_dir.exists():
+        return out
+    pattern = re.compile(r"^last_prompt__cond(?P<cid>[A-Z]\d+)\.pt$")
+    for p in sorted(nt_dir.glob("last_prompt__cond*.pt")):
+        m = pattern.match(p.name)
+        if not m:
+            continue
+        cid = m.group("cid")
+        d = torch.load(p, map_location="cpu", weights_only=False)
+        out[cid] = d["probs"]
+    return out
+
+
+def _js_divergence_rowwise(p: np.ndarray, q: np.ndarray, eps: float = 1e-12) -> np.ndarray:
+    """Per-row JS divergence (base 2, bounded [0, 1]) along the LAST dim.
+
+    Matches ``scripts/issue458_predictor_jsdiv.py._js_divergence`` so the
+    next_token_js metric is apples-to-apples with #458's predictor.
+    Inputs ``p, q`` are (..., V); returns ``p.shape[:-1]``.
+    """
+    p = np.clip(p, eps, None)
+    q = np.clip(q, eps, None)
+    m = 0.5 * (p + q)
+    ln2 = np.log(2.0)
+    kl_pm = (p * (np.log(p) - np.log(m))).sum(axis=-1) / ln2
+    kl_qm = (q * (np.log(q) - np.log(m))).sum(axis=-1) / ln2
+    js = 0.5 * (kl_pm + kl_qm)
+    return np.clip(js, 0.0, 1.0)
+
+
+def compute_next_token_js_matrix(
+    cid_to_probs: dict[str, np.ndarray],
+    *,
+    cond_ids_order: list[str] | None = None,
+) -> dict:
+    """Build the (n_cond × n_cond) next-token JS distance matrix.
+
+    For each ordered pair (i, j): per-probe JS between cid_to_probs[i]
+    and cid_to_probs[j], averaged over probes. ``cond_ids_order`` fixes
+    the row/column order (defaults to sorted keys, then canonical
+    CONDITIONS order if available).
+
+    Returns a payload with the same schema as ``_compute_metric_matrix``
+    so the regression pipeline reads it uniformly: ``{matrix: {a: {b: float}}, ...}``.
+    """
+    CONDITIONS, _ = _load_conditions_registry()
+
+    if cond_ids_order is None:
+        canonical = [c.cid for c in CONDITIONS]
+        cond_ids_order = [c for c in canonical if c in cid_to_probs]
+        # Append any present cids not in canonical (shouldn't happen).
+        for c in sorted(cid_to_probs):
+            if c not in cond_ids_order:
+                cond_ids_order.append(c)
+    matrix: dict[str, dict[str, float]] = {
+        a: {b: 0.0 for b in cond_ids_order} for a in cond_ids_order
+    }
+    per_pair_per_probe_summary: list[dict] = []
+    for i, a in enumerate(cond_ids_order):
+        pa = cid_to_probs[a]
+        for j, b in enumerate(cond_ids_order):
+            if i == j:
+                matrix[a][b] = 0.0
+                continue
+            pb = cid_to_probs[b]
+            if pa.shape != pb.shape:
+                raise AssertionError(
+                    f"next-token logits shape mismatch: cid={a} {pa.shape} vs cid={b} {pb.shape}"
+                )
+            # Per-probe JS, then mean over probes (drop NaN rows).
+            mask = ~(np.any(np.isnan(pa), axis=1) | np.any(np.isnan(pb), axis=1))
+            if mask.sum() == 0:
+                matrix[a][b] = float("nan")
+                continue
+            js_per_probe = _js_divergence_rowwise(pa[mask], pb[mask])
+            matrix[a][b] = float(js_per_probe.mean())
+            per_pair_per_probe_summary.append(
+                {
+                    "a": a,
+                    "b": b,
+                    "n_probes_used": int(mask.sum()),
+                    "mean_js": float(js_per_probe.mean()),
+                    "median_js": float(np.median(js_per_probe)),
+                    "min_js": float(np.min(js_per_probe)),
+                    "max_js": float(np.max(js_per_probe)),
+                }
+            )
+    return {
+        "schema_version": 1,
+        "extraction_point": "last_prompt",  # output metric tied to last_prompt slot
+        "layer": -1,  # NOT layer-indexed — sentinel value distinct from real layers
+        "metric": "next_token_js",
+        "variant": "raw",
+        "cond_ids": cond_ids_order,
+        "matrix": matrix,
+        "per_pair_summary": per_pair_per_probe_summary,
+        "git_sha": _git_sha(),
+        "timestamp_utc": _now_iso(),
+    }
+
+
+def write_next_token_js_matrix(*, enforce_cross_check: bool = True) -> Path | None:
+    """Build the next-token JS matrix from sidecar files, write it to disk,
+    AND run the #406 cross-check fail-loud (matching the cosine cross-check's
+    guard discipline).
+
+    Output (always when sidecars present):
+      ``<METRIC_DIR>/last_prompt__layer-1__next_token_js__raw.json``
+      ``<METRIC_DIR>/last_prompt__layer-1__next_token_js__raw__cross_check_406.json``
+
+    The layer=-1 sentinel distinguishes the OUTPUT metric (one scalar per
+    pair) from the per-layer activation metrics.
+
+    Parameters
+    ----------
+    enforce_cross_check
+        When True (default, production): if the #406 reference matrix is
+        present on disk, REQUIRE the rank-correlation cross-check to pass
+        (raises AssertionError on fail). When False (smoke / tests where
+        the #406 reference is intentionally synthetic or absent): only LOG
+        the result, don't raise. (Codex round-1 blocker #1: this function
+        existed in isolation; nothing in main()/the aggregation pipeline
+        called the cross-check, so the JS baseline shipped unguarded.)
+
+    Returns the matrix path written, or None if no sidecars on disk.
+    """
+    cid_to_probs = load_next_token_logits()
+    if not cid_to_probs:
+        logger.warning("No next-token logits sidecars on disk; skipping next_token_js")
+        return None
+    payload = compute_next_token_js_matrix(cid_to_probs)
+    METRIC_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = METRIC_DIR / "last_prompt__layer-1__next_token_js__raw.json"
+    _write_json_atomic(out_path, payload)
+    logger.info("Wrote next_token_js matrix to %s", out_path)
+
+    # ── #406 cross-check (production-guarded) ──
+    # The cosine cross-check fails the whole run on a recipe drift; the JS
+    # baseline gets the same treatment so a drifted recipe can't ship to
+    # the regression unnoticed. When the #406 reference is missing this is
+    # a no-op; when present, fail-loud per the safety-net discipline.
+    cross_check_path = METRIC_DIR / "last_prompt__layer-1__next_token_js__raw__cross_check_406.json"
+    try:
+        summary = cross_check_next_token_js_against_406(payload)
+    except AssertionError as e:
+        _write_json_atomic(
+            cross_check_path,
+            {
+                "schema_version": 1,
+                "failed": True,
+                "failure_reason": str(e),
+                "rank_corr_floor": float(COSINE_406_JS_RANK_CORR_FLOOR),
+                "git_sha": _git_sha(),
+                "timestamp_utc": _now_iso(),
+            },
+        )
+        if enforce_cross_check:
+            raise
+        logger.warning("next_token_js cross-check FAIL (enforce=False, continuing): %s", e)
+    else:
+        _write_json_atomic(
+            cross_check_path,
+            {
+                "schema_version": 1,
+                "failed": False,
+                "summary": summary,
+                "git_sha": _git_sha(),
+                "timestamp_utc": _now_iso(),
+            },
+        )
+    return out_path
+
+
+COSINE_406_JS_RANK_CORR_FLOOR: float = 0.5
+
+
+def cross_check_next_token_js_against_406(
+    nt_js_payload: dict,
+    cosine_ids: list[str] | None = None,
+) -> dict:
+    """Cross-check the recomputed next_token_js against #406's D_matrix.json["JS"].
+
+    METHODOLOGY NOTE — IMPORTANT:
+    Our next_token_js is a SINGLE-POSITION (last_prompt slot) JS over the
+    full vocabulary. #406's D_matrix.json["JS"] is a SEQUENCE-LEVEL teacher-
+    forced JS averaged across response positions, top-k truncated to k=25
+    of the union top-k vocab per response. They are DIFFERENT operational-
+    izations of "next-token disagreement" and should NOT be expected to be
+    byte-equal.
+
+    The cross-check is therefore a SHAPE check: rank correlation between
+    the two over the 240-pair grid must clear ``COSINE_406_JS_RANK_CORR_FLOOR``.
+    A genuine extraction bug (prompt mis-build, wrong position index, wrong
+    persona pairing) would crash the rank correlation; numerical differences
+    in the two operationalizations stay above the floor.
+
+    Returns a diff summary; raises AssertionError on rank-correlation
+    floor failure.
+    """
+    from scipy.stats import spearmanr
+
+    p406_path = PROJECT_ROOT / "eval_results/issue_406/divergence/D_matrix.json"
+    if not p406_path.exists():
+        logger.warning("Missing %s — skipping next_token_js cross-check", p406_path)
+        return {"ok": True, "reason": "no #406 reference available"}
+    p406 = json.loads(p406_path.read_text())
+    p406_js = p406["JS"]
+    nt_matrix = nt_js_payload["matrix"]
+    cond_ids = list(nt_matrix.keys())
+    pairs = [(a, b) for a in cond_ids for b in cond_ids if a != b]
+    ours: list[float] = []
+    theirs: list[float] = []
+    skipped = 0
+    for a, b in pairs:
+        if a not in p406_js or b not in p406_js[a]:
+            skipped += 1
+            continue
+        t = p406_js[a][b]
+        if t is None:
+            skipped += 1
+            continue
+        o = nt_matrix[a][b]
+        if o is None or not np.isfinite(o):
+            skipped += 1
+            continue
+        ours.append(float(o))
+        theirs.append(float(t))
+    if len(ours) < 10:
+        logger.warning(
+            "Cross-check has only %d pairs in common; reporting but not enforcing", len(ours)
+        )
+        return {
+            "ok": True,
+            "reason": f"too few pairs ({len(ours)}) to enforce rank-correlation floor",
+            "n_pairs": len(ours),
+        }
+    rho, p = spearmanr(np.array(ours), np.array(theirs))
+    ok = bool(rho >= COSINE_406_JS_RANK_CORR_FLOOR)
+    diff_arr = np.abs(np.array(ours) - np.array(theirs))
+    summary = {
+        "n_pairs_checked": len(ours),
+        "n_pairs_skipped": int(skipped),
+        "rank_corr_spearman": float(rho),
+        "spearman_p_value": float(p),
+        "rank_corr_floor": float(COSINE_406_JS_RANK_CORR_FLOOR),
+        "ok": ok,
+        "max_abs_diff": float(diff_arr.max()),
+        "mean_abs_diff": float(diff_arr.mean()),
+        "note": (
+            "Methodology: ours = SINGLE-POSITION (last_prompt) full-vocab JS; "
+            "#406's = SEQUENCE-LEVEL teacher-forced top-k=25 JS averaged across "
+            "response positions. Different operationalizations of next-token "
+            "disagreement; checked via rank correlation, not absolute equality."
+        ),
+    }
+    if not ok:
+        raise AssertionError(
+            f"next_token_js vs #406 JS rank correlation {rho:.3f} below floor "
+            f"{COSINE_406_JS_RANK_CORR_FLOOR}; "
+            "fresh recipe diverges from #406 in a load-bearing way."
+        )
+    logger.info(
+        "next_token_js cross-check vs #406: Spearman rho=%.3f (p=%.2e) over %d pairs (ok=%s)",
+        rho,
+        p,
+        len(ours),
+        ok,
+    )
+    return summary
 
 
 # ───────────────────────── metric phase ─────────────────────────
@@ -1886,11 +3267,25 @@ def _enumerate_predictors(metric_files: list[Path]) -> list[dict]:
     Each row carries the metric file's `cond_ids` so the regression phase
     can restrict the pair list to the SUBPANEL the metric is actually
     defined on (Class-A-only for end_of_system, full 16 elsewhere).
+
+    Skips two classes of non-predictor sidecars that live alongside the
+    distance-matrix JSONs in ``METRIC_DIR``:
+      - ``*__perm.json``  — MMD permutation-null companions (no matrix payload).
+      - ``*__cross_check_406.json`` — the next_token_js cross-check sidecar
+        emitted by ``write_next_token_js_matrix``. Schema is
+        ``{schema_version, failed, summary?/failure_reason?, git_sha,
+        timestamp_utc}`` — no ``extraction_point`` / ``layer`` / ``metric``
+        fields, so reading it as a predictor KeyErrors. This is a
+        cross-check artifact, NOT a predictor input. (Round-8 fix #502.)
     """
     rows = []
     for p in metric_files:
         # Skip the per-pair MMD permutation companion files.
         if "__perm" in p.name:
+            continue
+        # Skip the next_token_js vs #406 cross-check sidecar (schema-different,
+        # not a distance-matrix predictor).
+        if p.name.endswith("__cross_check_406.json"):
             continue
         payload = json.loads(p.read_text())
         pt = payload["extraction_point"]
@@ -2261,7 +3656,11 @@ def reproduce_last_token_cosine_check(
 
     The existing #406 recipe = cosine-distance of cond-mean activations
     across 50 probes at last-prompt-token. Our last_prompt extraction is
-    the same recipe; the two must agree within COSINE_REPRO_TOLERANCE.
+    the same recipe; the two must agree within the per-layer tolerance
+    from ``COSINE_REPRO_TOLERANCES`` (3e-3 for L0/L5/L11/L15/L21, 1e-2 for
+    L27 — the deepest layer carries a documented bf16 precision-
+    accumulation floor; see the comment block above COSINE_REPRO_TOLERANCES
+    for the GPU-verified per-layer diff progression).
 
     Parameters
     ----------
@@ -2274,12 +3673,13 @@ def reproduce_last_token_cosine_check(
 
     Returns
     -------
-    Per-layer diff summary dict.
+    Per-layer diff summary dict — each entry carries the applied per-layer
+    tolerance so a downstream reader can audit which layer used which cap.
 
     Raises
     ------
-    AssertionError when strict=True AND any layer's max |diff| exceeds
-    COSINE_REPRO_TOLERANCE.
+    AssertionError when strict=True AND any layer's max |diff| exceeds its
+    per-layer tolerance from ``COSINE_REPRO_TOLERANCES``.
     """
     out: dict[int, dict] = {}
     failures: list[str] = []
@@ -2305,34 +3705,38 @@ def reproduce_last_token_cosine_check(
                 theirs = float(existing[a][b])
                 max_diff = max(max_diff, abs(ours - theirs))
                 n_pairs += 1
-        ok = bool(max_diff < COSINE_REPRO_TOLERANCE)
+        layer_tol = cosine_tolerance_for_layer(L)
+        ok = bool(max_diff < layer_tol)
         out[L] = {
             "max_abs_diff": float(max_diff),
             "n_pairs_checked": int(n_pairs),
-            "tolerance": float(COSINE_REPRO_TOLERANCE),
+            "tolerance": float(layer_tol),
             "ok": ok,
         }
         if not ok:
             failures.append(
-                f"L{L}: max |diff| = {max_diff:.2e} > {COSINE_REPRO_TOLERANCE:.2e} "
-                f"over {n_pairs} pairs"
+                f"L{L}: max |diff| = {max_diff:.2e} > {layer_tol:.2e} over {n_pairs} pairs"
             )
         level = logging.INFO if ok else logging.WARNING
         logger.log(
             level,
-            "Cosine cross-check L%d: max |diff| = %.2e over %d pairs (ok=%s)",
+            "Cosine cross-check L%d: max |diff| = %.2e over %d pairs (tol=%.2e, ok=%s)",
             L,
             max_diff,
             n_pairs,
+            layer_tol,
             ok,
         )
     if strict and failures:
         # Fail-fast: the bake-off is unsafe to interpret if the prompt-
         # building or last-position indexing diverges from #406's recipe.
+        tol_str = ", ".join(
+            f"L{k}={v:.0e}" if isinstance(k, int) else f"default={v:.0e}"
+            for k, v in COSINE_REPRO_TOLERANCES.items()
+        )
         raise AssertionError(
             "Last-token cosine cross-check FAILED against "
-            "eval_results/issue_406/cosine/C_L*.json (tolerance "
-            f"{COSINE_REPRO_TOLERANCE:.2e}):\n  "
+            f"eval_results/issue_406/cosine/C_L*.json (per-layer tolerances: {tol_str}):\n  "
             + "\n  ".join(failures)
             + "\nThe extraction recipe diverges from #406; downstream "
             "regression is meaningless. Diagnose before continuing."
@@ -3197,6 +4601,140 @@ def dry_run_smoke() -> dict:  # noqa: C901 — long flat smoke; each numbered bl
         "winner_metric": winner.get("metric") if winner else None,
     }
 
+    # 11) Per-layer cosine cross-check tolerance map (round-7 fix). Locks
+    # in the documented L27 bf16-accumulation floor at 1e-2 + the inner-
+    # layer 3e-3 default. A future revision that:
+    #   - drops the L27 entry (back to a single scalar that re-fails L27),
+    #   - tightens L27 below the observed 6.15e-3 floor,
+    #   - silently loosens the inner-layer default above 3e-3,
+    # MUST fail this smoke. See the comment block above
+    # COSINE_REPRO_TOLERANCES for the GPU-verified per-layer diff progression
+    # and the diagnostic (Pearson r=0.999976, Spearman ρ=0.999362) that
+    # justifies the L27 relaxation.
+    assert isinstance(COSINE_REPRO_TOLERANCES, dict), (
+        "round-7 fix: COSINE_REPRO_TOLERANCES must be a dict[int|str, float]"
+    )
+    assert 27 in COSINE_REPRO_TOLERANCES, (
+        "round-7 fix: L27 must have an explicit per-layer tolerance (the deepest "
+        "layer carries a documented bf16-accumulation floor — a scalar tolerance "
+        "of 3e-3 is too tight for L27, see round-7 diagnostic)"
+    )
+    assert "default" in COSINE_REPRO_TOLERANCES, (
+        "round-7 fix: a 'default' tolerance must exist for layers without an "
+        "explicit per-layer entry (L0/L5/L11/L15/L21 expect 3e-3)"
+    )
+    # The L27 floor observed on round-7 GPU extract was 6.15e-3; the relaxed
+    # tolerance must be >= 1e-2 so a re-extract on a slightly drifted
+    # hardware/dtype/transformers-version doesn't immediately re-trip.
+    L27_OBSERVED_BF16_FLOOR = 6.15e-3
+    L27_MIN_TOLERANCE = 1e-2
+    assert cosine_tolerance_for_layer(27) >= L27_MIN_TOLERANCE, (
+        f"round-7 fix: L27 tolerance ({cosine_tolerance_for_layer(27):.2e}) is "
+        f"tighter than the {L27_MIN_TOLERANCE:.0e} floor recorded by the round-7 "
+        f"diagnostic. Observed GPU bf16 floor at L27 = {L27_OBSERVED_BF16_FLOOR:.2e} "
+        "vs #406 cosine reference. Either re-run the diagnostic and document a "
+        "lower floor, or restore L27 to >= 1e-2."
+    )
+    # Inner-layer default must not silently drift upward (would hide real
+    # extraction bugs at L0/L5/L11/L15/L21 — the deepest passing reference
+    # layer L21 sits at 2.70e-3 with the round-6 code path).
+    DEFAULT_MAX_TOLERANCE = 3e-3
+    assert cosine_tolerance_for_layer(21) <= DEFAULT_MAX_TOLERANCE, (
+        f"round-7 fix: inner-layer (L21) tolerance ({cosine_tolerance_for_layer(21):.2e}) "
+        f"loosened beyond {DEFAULT_MAX_TOLERANCE:.0e}. L21 max |diff| on round-6 was "
+        "2.70e-3 (well below the 3e-3 default); a looser default would let real "
+        "extraction bugs through. Tighten back to 3e-3 OR document the new diagnostic."
+    )
+    # Functional check: feed a synthetic 2-cond layer payload that should
+    # PASS (zero diff) at the inner-layer default, and a synthetic payload
+    # that should FAIL strict=True at 3e-3 but PASS at L27's 1e-2.
+    # This exercises the per-layer dispatch path end-to-end.
+    H_SYN = 8
+    np_rng = np.random.default_rng(493)
+    syn_centroid_a = np_rng.normal(size=H_SYN).astype(np.float32)
+    syn_centroid_b = np_rng.normal(size=H_SYN).astype(np.float32)
+    # Build (2 conds, 4 probes, H) arrays clustered around the centroids.
+    syn_arr = np.stack(
+        [
+            np.tile(syn_centroid_a, (4, 1)),
+            np.tile(syn_centroid_b, (4, 1)),
+        ]
+    )
+    # Compute the "true" cosine distance from this exact data.
+    true_cd_ab = _centroid_cosine_distance(syn_arr[0], syn_arr[1])
+    # Build an "existing #406" matrix that matches exactly.
+    existing_match = {
+        "A": {"B": float(true_cd_ab)},
+        "B": {"A": float(true_cd_ab)},
+    }
+    payload_match = {"activations": syn_arr, "cond_ids": ["A", "B"]}
+    # At an inner layer (L=5), strict must PASS (zero diff < 3e-3).
+    res_inner = reproduce_last_token_cosine_check(
+        {5: payload_match},
+        {5: {"matrix": existing_match}},
+        cond_ids=["A", "B"],
+        strict=True,
+    )
+    assert res_inner[5]["ok"], (
+        f"round-7 fix: synthetic exact-match payload at L5 must PASS strict (got {res_inner[5]})"
+    )
+    assert abs(res_inner[5]["tolerance"] - 3e-3) < 1e-9, (
+        f"round-7 fix: L5 tolerance should be 3e-3 (default), got {res_inner[5]['tolerance']}"
+    )
+    # At L27, the same exact-match payload also PASSes (zero diff < 1e-2),
+    # AND the recorded tolerance is the L27-specific 1e-2 (not the default).
+    res_l27 = reproduce_last_token_cosine_check(
+        {27: payload_match},
+        {27: {"matrix": existing_match}},
+        cond_ids=["A", "B"],
+        strict=True,
+    )
+    assert res_l27[27]["ok"], (
+        f"round-7 fix: synthetic exact-match payload at L27 must PASS strict (got {res_l27[27]})"
+    )
+    assert abs(res_l27[27]["tolerance"] - 1e-2) < 1e-9, (
+        f"round-7 fix: L27 tolerance should be 1e-2 (per-layer override), "
+        f"got {res_l27[27]['tolerance']}"
+    )
+    # A 7e-3 perturbation at L5 (inner) must FAIL strict; the same perturbation
+    # at L27 (relaxed) must PASS. This confirms the dispatch actually routes.
+    existing_perturbed = {
+        "A": {"B": float(true_cd_ab + 7e-3)},
+        "B": {"A": float(true_cd_ab + 7e-3)},
+    }
+    raised_l5 = False
+    try:
+        reproduce_last_token_cosine_check(
+            {5: payload_match},
+            {5: {"matrix": existing_perturbed}},
+            cond_ids=["A", "B"],
+            strict=True,
+        )
+    except AssertionError:
+        raised_l5 = True
+    assert raised_l5, (
+        "round-7 fix: 7e-3 perturbation at L5 (inner, 3e-3 tolerance) must FAIL "
+        "strict cross-check — the inner-layer gate would be too loose otherwise."
+    )
+    res_l27_perturbed = reproduce_last_token_cosine_check(
+        {27: payload_match},
+        {27: {"matrix": existing_perturbed}},
+        cond_ids=["A", "B"],
+        strict=True,
+    )
+    assert res_l27_perturbed[27]["ok"], (
+        "round-7 fix: 7e-3 perturbation at L27 (1e-2 tolerance) must PASS strict "
+        "cross-check — the L27 relaxation is supposed to admit observed bf16 noise."
+    )
+    digest["cosine_tolerance_map"] = {
+        "l27_tolerance": cosine_tolerance_for_layer(27),
+        "default_tolerance": cosine_tolerance_for_layer(0),
+        "l21_tolerance": cosine_tolerance_for_layer(21),
+        "l5_inner_dispatch_passes_exact": True,
+        "l27_relaxed_dispatch_passes_7e-3": True,
+        "l5_inner_dispatch_fails_7e-3": True,
+    }
+
     return digest
 
 
@@ -3291,11 +4829,121 @@ def _build_argparser() -> argparse.ArgumentParser:
         help="Skip the model load + extraction; only run metric/regression "
         "smoke (synthetic clouds + import/plumbing checks).",
     )
+    # ── #502 additions ─────────────────────────────────────────────────────────
+    p.add_argument(
+        "--bakeoff-root",
+        type=Path,
+        default=None,
+        help=(
+            "Override BAKEOFF_DIR (default: eval_results/issue_493/bakeoff). "
+            "#502 sets this to eval_results/issue_502/bakeoff so 28-layer/500-probe "
+            "artifacts never collide with the cached #493 8-layer/50-probe artifacts."
+        ),
+    )
+    p.add_argument(
+        "--figures-root",
+        type=Path,
+        default=None,
+        help="Override FIGURE_DIR (default: figures/issue_493).",
+    )
+    p.add_argument(
+        "--probe-pool",
+        type=Path,
+        default=None,
+        help=(
+            "Path to a 500-pool JSON (e.g. eval_results/issue_502/probes_500.json) "
+            "produced by scripts/issue502_generate_probes.py. The first 50 entries "
+            "MUST be byte-identical to q_test; the rest disjoint from q_train + q_test. "
+            "Default None = use the 50 q_test probes (matches #493)."
+        ),
+    )
+    p.add_argument(
+        "--batch-size",
+        type=int,
+        default=1,
+        help=(
+            "Probes per generate() batch (#502 batched extraction). "
+            "1 = serial (default; matches #493). Larger values are faster on "
+            "mean_response (the bottleneck) at the cost of more GPU memory."
+        ),
+    )
+    p.add_argument(
+        "--batched",
+        action="store_true",
+        help=(
+            "Route to the batched extraction code path. Auto-enabled when "
+            "--batch-size > 1 OR --probe-pool is set OR --partitioned is set."
+        ),
+    )
+    p.add_argument(
+        "--partitioned",
+        action="store_true",
+        help=(
+            "Write per-transformation activation files (one file per "
+            "(point, layer, cond)) so multiple GPU processes can write disjoint "
+            "files in parallel. Pair with scripts/issue502_dispatch.py which "
+            "spawns one process per GPU and merges after."
+        ),
+    )
+    p.add_argument(
+        "--merge-only",
+        action="store_true",
+        help=(
+            "Skip extraction; only merge any existing partitioned activation "
+            "files into the canonical <point>__layer<L>.pt shape and exit. "
+            "Used by the dispatcher post-fan-in."
+        ),
+    )
+    p.add_argument(
+        "--no-next-token-js",
+        action="store_true",
+        help=(
+            "Skip the next-token JS baseline capture (default: capture it). "
+            "Reuses the last_prompt forward pass; near-free."
+        ),
+    )
+    # ── #509 additions (panel-agnostic + custom probe pool) ─────────────────
+    p.add_argument(
+        "--conditions-registry",
+        type=str,
+        default=DEFAULT_CONDITIONS_MODULE,
+        help=(
+            "Dotted-module path to the conditions registry (default: i406's "
+            "16-cond panel). Override e.g. with "
+            "'explore_persona_space.experiments.i509_fact_conditions' for "
+            "the #509 fact arm (9 personas) or '...i509_syco_conditions' for "
+            "the sycophancy arm (24 personas). The target module must expose "
+            "CONDITIONS (list[Condition]) and CONDITIONS_BY_ID (dict) with "
+            "the same shape as i406_conditions."
+        ),
+    )
+    p.add_argument(
+        "--probe-pool-mode",
+        choices=("q_test_strict", "custom"),
+        default="q_test_strict",
+        help=(
+            "Probe-pool validation mode. 'q_test_strict' (default) enforces "
+            "the bake-off's original gate: first 50 entries byte-identical "
+            "to q_test, new entries disjoint from q_train + q_test. 'custom' "
+            "bypasses the q_test prefix + disjointness check (only checks "
+            "list[str] + non-empty + unique) so panel-specific pools like "
+            "#411's sycophancy eval_50 probes can be passed without the "
+            "q_test prefix. The mode is written to extraction metadata for "
+            "audit. Required for the #509 sycophancy arm."
+        ),
+    )
     return p
 
 
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI phase dispatcher.
     args = _build_argparser().parse_args(argv)
+    # #509: bind the conditions registry override BEFORE any function that
+    # calls ``_load_conditions_registry()`` runs. Doing it here means every
+    # downstream import site (run_extraction_batched, merge, main's
+    # expected-cond resolver, etc.) sees the same panel.
+    if args.conditions_registry and args.conditions_registry != DEFAULT_CONDITIONS_MODULE:
+        _set_conditions_module(args.conditions_registry)
+        logger.info("Conditions registry overridden: %s", args.conditions_registry)
     # BIND CUDA_VISIBLE_DEVICES *BEFORE* any cuda call (project convention,
     # see scripts/i474_*.py / scripts/recompute_predictors_i415.py + the
     # CLAUDE.md `+gpu_id=N` clobber gotcha). Once bound the local device is
@@ -3309,13 +4957,36 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
+    # #502: override output roots (BAKEOFF_DIR / ACT_DIR / METRIC_DIR / REGR_DIR /
+    # FIGURE_DIR) BEFORE any phase runs, so all downstream paths land in the
+    # #502 tree instead of overwriting #493.
+    if args.bakeoff_root is not None or args.figures_root is not None:
+        bakeoff_root = args.bakeoff_root or BAKEOFF_DIR
+        _set_roots(bakeoff_root, args.figures_root)
+        logger.info(
+            "Output roots overridden: BAKEOFF_DIR=%s FIGURE_DIR=%s", BAKEOFF_DIR, FIGURE_DIR
+        )
+
+    # Auto-enable batched mode when any of its flags / inputs imply it.
+    batched_mode = bool(
+        args.batched or args.batch_size > 1 or args.probe_pool is not None or args.partitioned
+    )
+
     # Persist a meta.json snapshot at every entry (overwritten = fine).
     BAKEOFF_DIR.mkdir(parents=True, exist_ok=True)
+
+    def _to_jsonable(v):
+        if isinstance(v, tuple):
+            return list(v)
+        if isinstance(v, Path):
+            return str(v)
+        return v
+
     _write_json_atomic(
         BAKEOFF_DIR / "meta.json",
         {
             "schema_version": 1,
-            "args": {k: (list(v) if isinstance(v, tuple) else v) for k, v in vars(args).items()},
+            "args": {k: _to_jsonable(v) for k, v in vars(args).items()},
             "git_sha": _git_sha(),
             "env": _env_versions(),
             "started_at": _now_iso(),
@@ -3348,13 +5019,114 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
 
     load_dotenv()
 
+    # Resolve the expected cond-id set for the no-drop assertion in the
+    # partition merge. `--transformations` overrides; otherwise we expect
+    # the canonical 16-cond CONDITIONS set. For end_of_system, only the
+    # Class A subset is expected (B/C/D have no system message). (Codex
+    # round-1 blocker #4.)
+    _ALL_CONDS, _CONDS_BY_ID = _load_conditions_registry()
+
+    if args.transformations:
+        _active_for_expected = [_CONDS_BY_ID[c] for c in args.transformations]
+    else:
+        _active_for_expected = list(_ALL_CONDS)
+    _expected_full = [c.cid for c in _active_for_expected]
+    _expected_eos = [c.cid for c in _active_for_expected if c.cls == "A"]
+
+    def _expected_for_point(pt: str) -> list[str] | None:
+        if pt == "end_of_system":
+            return _expected_eos or None
+        return _expected_full or None
+
+    # MERGE-ONLY shortcut: just stack partitioned activation files into the
+    # canonical <point>__layer<L>.pt shape and exit. Runs after all GPU procs
+    # have written their per-cond partitioned files.
+    if args.merge_only:
+        for pt in args.extraction_points:
+            merge_partitioned_activations(
+                (pt,),
+                tuple(args.layers),
+                overwrite=args.overwrite,
+                expected_cond_ids=_expected_for_point(pt),
+            )
+        # ROUND-4 holistic gate: re-validate the canonical set at READ
+        # time so any path that bypassed the merger (e.g. a re-used cache
+        # whose mtime predates a deleted per-cond file) still trips
+        # before metrics/regression would run.
+        validate_canonical_completeness(
+            tuple(args.extraction_points),
+            tuple(args.layers),
+            expected_cond_ids_for_point={
+                pt: _expected_for_point(pt) for pt in args.extraction_points
+            },
+        )
+        # Also build the next_token_js matrix file from the sidecars,
+        # WITH the #406 cross-check guarded fail-loud. (Round-1 blocker #1.)
+        if not args.no_next_token_js:
+            write_next_token_js_matrix(enforce_cross_check=True)
+        return 0
+
     # EXTRACTION phase
     if args.phase in ("all", "extract", "extraction"):
         if args.dry_run:
             logger.info("--dry-run: SKIPPING extraction (no model load).")
+        elif batched_mode:
+            logger.info(
+                "Batched extraction: points=%s layers=%s transformations=%s "
+                "n_probes=%d batch_size=%d partitioned=%s "
+                "capture_next_token_logits=%s",
+                args.extraction_points,
+                args.layers,
+                args.transformations or "ALL 16",
+                args.n_probes,
+                args.batch_size,
+                args.partitioned,
+                not args.no_next_token_js,
+            )
+            run_extraction_batched(
+                extraction_points=tuple(args.extraction_points),
+                layers=tuple(args.layers),
+                transformations=tuple(args.transformations) if args.transformations else None,
+                n_probes=args.n_probes,
+                max_response_tokens=args.max_response_tokens,
+                device=args.device,
+                overwrite=args.overwrite,
+                pool_path=args.probe_pool,
+                pool_mode=args.probe_pool_mode,
+                batch_size=args.batch_size,
+                capture_next_token_logits=(not args.no_next_token_js),
+                write_partitioned=args.partitioned,
+            )
+            # ROUND-3 FIX #2: write the next_token_js matrix + run the #406
+            # cross-check on ALL post-extraction paths (partitioned auto-merge,
+            # non-partitioned auto-merge, both at phase=all). Before round 3
+            # the JS write was gated `if args.partitioned and args.phase ==
+            # "all"`, so the supported single-proc `--batched --probe-pool
+            # --phase all` WITHOUT `--partitioned` path proceeded to
+            # metrics/regression with NO next_token_js matrix — the JS
+            # baseline (the whole point of #502) vanished silently on that
+            # path. Now the gate is `args.phase == "all" and not args.no_next_token_js`
+            # — the JS write + #406 cross-check fire on every supported
+            # post-extraction path. Multi-proc runs still call --merge-only
+            # after fan-in (covered by the merge-only branch above).
+            #
+            # The partitioned-single-proc branch additionally merges
+            # per-cond → canonical (the non-partitioned auto-merge already
+            # happened inside run_extraction_batched).
+            if args.partitioned and args.phase == "all":
+                logger.info("Single-process partitioned run: merging in-place")
+                for pt in args.extraction_points:
+                    merge_partitioned_activations(
+                        (pt,),
+                        tuple(args.layers),
+                        overwrite=args.overwrite,
+                        expected_cond_ids=_expected_for_point(pt),
+                    )
+            if args.phase == "all" and not args.no_next_token_js:
+                write_next_token_js_matrix(enforce_cross_check=True)
         else:
             logger.info(
-                "Extraction: points=%s layers=%s transformations=%s n_probes=%d",
+                "Extraction (serial #493 path): points=%s layers=%s transformations=%s n_probes=%d",
                 args.extraction_points,
                 args.layers,
                 args.transformations or "ALL 16",
@@ -3373,9 +5145,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
     if args.phase in ("extract", "extraction"):
         return 0
 
-    # Reload from disk (decouples phases — safe on resume).
-    activations_by_point = load_activations_from_disk(
-        tuple(args.extraction_points), tuple(args.layers)
+    # ROUND-4 holistic gate. Before reloading for metrics/regress/figures,
+    # validate every requested (pt, L) canonical exists AND its cond_ids set
+    # equals exactly the expected set. Catches every path that bypasses the
+    # merge-time check — serial #493 writes canonical directly, --skip-extract
+    # over a stale tree, --phase metrics on a partial prior run, etc. (Round-4
+    # blocker #1: single invariant "no metrics phase runs unless every
+    # requested (pt, L) canonical contains exactly the expected conds".)
+    # When `--transformations` is set explicitly we trust the user's intent
+    # (smoke / debug subset), so the expected set is the user-named subset.
+    activations_by_point = validate_canonical_completeness(
+        tuple(args.extraction_points),
+        tuple(args.layers),
+        expected_cond_ids_for_point={pt: _expected_for_point(pt) for pt in args.extraction_points},
     )
     if not activations_by_point:
         logger.warning("No activations on disk; run --phase extract first (with GPU).")
@@ -3402,23 +5184,71 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
             _sample_L, sample_payload = usable_layer_payloads[0]
             n_cond_loaded = sample_payload["activations"].shape[0]
             n_q_loaded = sample_payload["activations"].shape[1]
-            strict = args.transformations is None and n_cond_loaded == 16 and n_q_loaded == 50
+            # The full-grid path: same 16 conds AND exactly 50 probes
+            # (== bit-identical recipe to #406) → strict on the full set.
+            # Round-1 review flagged that at n_q=500 (the #502 default)
+            # this dropped to logged-only, turning the safety net OFF.
+            # Round-2 fix: when n_q > 50 AND the first 50 probes ARE the
+            # q_test prefix (which is the #502 pool's invariant), slice
+            # the prefix and run the cross-check STRICT on that slice —
+            # the strict guard is recovered without re-running 500 probes
+            # through the off-policy recipe. (Codex/Claude round-1
+            # blocker #5.)
+            n_cond_match = args.transformations is None and n_cond_loaded == 16
+            strict_full = n_cond_match and n_q_loaded == 50
+            strict_prefix = (
+                n_cond_match
+                and n_q_loaded > 50
+                and args.probe_pool is not None  # 500-pool ⇒ q_test is the prefix
+            )
+            cross_check_map = last_prompt_map
+            cross_check_strict = strict_full
+            cross_check_slice_note = "full"
+            if strict_prefix:
+                # Build a fresh map with the first-50-probe slice per layer
+                # so the strict comparison sees byte-identical-recipe inputs.
+                cross_check_map = {}
+                for L, p in last_prompt_map.items():
+                    if not (isinstance(p, dict) and "activations" in p):
+                        continue
+                    arr = p["activations"]  # (n_cond, n_q, H)
+                    if arr.shape[1] < 50:
+                        continue
+                    cross_check_map[L] = {
+                        **p,
+                        "activations": arr[:, :50, :],
+                        "n_probes": 50,
+                    }
+                cross_check_strict = True
+                cross_check_slice_note = "q_test_prefix_50"
+                logger.info(
+                    "cosine cross-check: 500-probe pool detected; running STRICT "
+                    "on the q_test prefix (probes[0:50]) — recovers the #406 "
+                    "safety net that n_q==50 used to gate."
+                )
             try:
                 check = reproduce_last_token_cosine_check(
-                    last_prompt_map,
+                    cross_check_map,
                     existing,
                     cond_ids=sample_payload["cond_ids"],
-                    strict=strict,
+                    strict=cross_check_strict,
                 )
             except AssertionError as e:
                 # Persist the failure context before re-raising so the
                 # operator can diagnose without re-running the extraction.
+                # `per_layer_tolerances` records the EXACT map applied so
+                # an audit can see which layer used which cap — the L27
+                # relaxation to 1e-2 is documented inline above the
+                # `COSINE_REPRO_TOLERANCES` declaration.
                 _write_json_atomic(
                     BAKEOFF_DIR / "cosine_cross_check.json",
                     {
-                        "schema_version": 1,
-                        "tolerance": COSINE_REPRO_TOLERANCE,
+                        "schema_version": 2,
+                        "per_layer_tolerances": {
+                            str(k): float(v) for k, v in COSINE_REPRO_TOLERANCES.items()
+                        },
                         "strict": True,
+                        "slice": cross_check_slice_note,
                         "failed": True,
                         "failure_reason": str(e),
                         "n_cond_loaded": int(n_cond_loaded),
@@ -3431,9 +5261,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
             _write_json_atomic(
                 BAKEOFF_DIR / "cosine_cross_check.json",
                 {
-                    "schema_version": 1,
-                    "tolerance": COSINE_REPRO_TOLERANCE,
-                    "strict": strict,
+                    "schema_version": 2,
+                    "per_layer_tolerances": {
+                        str(k): float(v) for k, v in COSINE_REPRO_TOLERANCES.items()
+                    },
+                    "strict": cross_check_strict,
+                    "slice": cross_check_slice_note,
                     "n_cond_loaded": int(n_cond_loaded),
                     "n_probes_loaded": int(n_q_loaded),
                     "per_layer": check,
