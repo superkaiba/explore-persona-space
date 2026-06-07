@@ -23,6 +23,13 @@ Usage (driven by the dispatcher / scripts/i504_run_cell.py):
         --r-eval-path data/issue_472/on_policy_R/R_eval.json \
         --panel-json /tmp/i504-arm-to-n.json \
         --max-lora-rank 8 --max-new-tokens 2048
+
+The ``--max-lora-rank`` argument is the LoRA rank that training pinned (the
+adapter's actual rank), threaded through from the dispatcher's ``chosen_rank``.
+vLLM's ``LLM(max_lora_rank=...)`` is a buffer size and must be one of
+(8, 16, 32, 64, 128, 256, 320, 512), so this script floors it to 8 inside
+``main`` before constructing the engine — the r=4 adapter fits inside an r=8
+buffer (vLLM zero-pads unused rows). Training is untouched at the honest rank.
 """
 
 from __future__ import annotations
@@ -66,7 +73,12 @@ def main(argv: list[str] | None = None) -> int:
         "--max-lora-rank",
         type=int,
         default=8,
-        help="LoRA rank pinned by Phase 0 — vLLM LLM(max_lora_rank=...) MUST match.",
+        help=(
+            "LoRA rank pinned by Phase 0 — the adapter's actual rank. "
+            "vLLM's LLM(max_lora_rank=...) is floored to max(8, this) before "
+            "the engine is constructed (vLLM rejects ranks < 8; it is a buffer "
+            "size, not the adapter rank)."
+        ),
     )
     ap.add_argument("--max-new-tokens", type=int, default=2048)
     ap.add_argument(
@@ -186,6 +198,15 @@ def main(argv: list[str] | None = None) -> int:
         [c["frac"] for c in checkpoint_specs],
     )
 
+    # vLLM LoRAConfig.max_lora_rank must be one of (8, 16, 32, 64, 128, 256, 320,
+    # 512) — buffer size, not the adapter's actual rank. r=4 fits in an r=8
+    # buffer (vLLM zero-pads unused rows), so floor when training pinned r < 8.
+    vllm_max_lora_rank = max(8, args.max_lora_rank)
+    log.info(
+        "[max_lora_rank] training rank=%d → vLLM buffer=%d.",
+        args.max_lora_rank,
+        vllm_max_lora_rank,
+    )
     run_trajectory_eval(
         cell_slug=args.cell,
         seed=args.seed,
@@ -196,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
         source_prompt=bank[SOURCE_PERSONA],
         out_path=args.out_path,
         max_new_tokens=args.max_new_tokens,
-        max_lora_rank=args.max_lora_rank,
+        max_lora_rank=vllm_max_lora_rank,
         gpu_memory_utilization=args.gpu_memory_utilization,
         max_model_len=args.max_model_len,
         compute_kl=not args.no_kl,
