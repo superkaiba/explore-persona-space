@@ -250,21 +250,38 @@ def eval_source(
         llm_kwargs["max_loras"] = 1
     llm = LLM(**llm_kwargs)
 
-    # Pre-load named LoRA adapters via the LLM.llm_engine.add_lora pathway
-    # (vLLM 0.5+) when caller supplied lora_modules. Each entry is "name=path".
+    # Build LoRARequest objects from name=path specs. CRITICAL: vLLM does NOT
+    # apply the adapter unless every llm.generate() call carries a
+    # lora_request=... argument. enable_lora=True alone only declares vLLM
+    # CAN serve adapters; it does NOT swap one in. Before this fix the eval
+    # silently served the base 72B for every request because LoRARequest
+    # was imported (noqa F401 sanity) but never constructed nor threaded
+    # into llm.generate(). Round-2 fix per code-review Critical 2.
+    active_lora_request = None
     if enable_lora and lora_modules:
         try:
-            from vllm.lora.request import LoRARequest  # noqa: F401  (import sanity)
+            from vllm.lora.request import LoRARequest
         except ImportError as exc:
             raise RuntimeError(
                 "enable_lora=True requires a vLLM build with vllm.lora.request; "
                 f"got {exc}. Upgrade vLLM."
             ) from exc
-        for spec in lora_modules:
+        lora_requests: list = []
+        for i, spec in enumerate(lora_modules, start=1):
             if "=" not in spec:
                 raise ValueError(f"lora_modules entries must be name=path, got {spec!r}")
             name, path = spec.split("=", 1)
-            log.info("Registered LoRA adapter %s -> %s (lazy load on first request)", name, path)
+            req = LoRARequest(lora_name=name, lora_int_id=i, lora_path=path)
+            lora_requests.append(req)
+            log.info("Built LoRARequest %s id=%d path=%s", name, i, path)
+        if len(lora_requests) != 1:
+            raise ValueError(
+                f"Round-2 contract: exactly one LoRA adapter per eval_source call "
+                f"(max_loras=1); got {len(lora_requests)} from lora_modules={lora_modules!r}. "
+                "The outer 72B dispatcher evaluates one source at a time."
+            )
+        active_lora_request = lora_requests[0]
+        log.info("Active LoRA adapter for this eval: %s", active_lora_request.lora_name)
     log.info("vLLM loaded in %.1fs", time.time() - t_load_start)
 
     sampling = SamplingParams(
@@ -288,7 +305,13 @@ def eval_source(
         prompts = [_build_prompt_text(tokenizer, panel_prompt, c["wrong_claim"]) for c in claims]
 
         t_panel_start = time.time()
-        outputs = llm.generate(prompts, sampling)
+        # Pass lora_request= ONLY when an adapter is bound; vLLM rejects
+        # lora_request=None when enable_lora=False (and the base-panel
+        # path here is the documented enable_lora=False case).
+        if active_lora_request is not None:
+            outputs = llm.generate(prompts, sampling, lora_request=active_lora_request)
+        else:
+            outputs = llm.generate(prompts, sampling)
         t_panel = time.time() - t_panel_start
         if len(outputs) != len(claims):
             raise RuntimeError(
