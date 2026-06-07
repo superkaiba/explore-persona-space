@@ -1,0 +1,33 @@
+# Task #508 — accelerate config for full-FT arm (plan §4.2 / §11).
+#
+# ZeRO-3 across 4× H100 (per_device_train_batch_size=1, gradient_accumulation_steps=16
+# → effective batch 64, downscaled /2 from Tulu 3 8B's eff=128 on a 64-GPU cluster).
+#
+# `stage3_gather_16bit_weights_on_model_save: true` is load-bearing — without it
+# the merged checkpoint that vLLM later loads would be sharded across ranks and
+# `LLM.from_pretrained` would silently miss most of the model's parameters.
+compute_environment: LOCAL_MACHINE
+debug: false
+deepspeed_config:
+  deepspeed_multinode_launcher: standard
+  gradient_accumulation_steps: 16
+  gradient_clipping: 1.0
+  offload_optimizer_device: none
+  offload_param_device: none
+  zero3_init_flag: true
+  zero3_save_16bit_model: true
+  zero_stage: 3
+  zero3_gather_16bit_weights_on_model_save: true
+distributed_type: DEEPSPEED
+downcast_bf16: 'no'
+machine_rank: 0
+main_training_function: main
+mixed_precision: bf16
+num_machines: 1
+num_processes: 4
+rdzv_backend: static
+same_network: true
+tpu_env: []
+tpu_use_cluster: false
+tpu_use_sudo: false
+use_cpu: false
