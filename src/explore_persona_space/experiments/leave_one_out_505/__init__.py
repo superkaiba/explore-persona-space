@@ -75,7 +75,17 @@ LORA_ALPHA = 32
 LORA_DROPOUT = 0.05
 LEARNING_RATE = 5e-6
 WARMUP_RATIO = 0.05
-EPOCHS = 1
+# EPOCHS = 3 (round 7, 2026-06-06): bumped from 1 after smoke run yjz5ytuz
+# showed mean_token_accuracy=0.645 and grad_norm RISING at end of training —
+# the marker did not implant at 25 optimizer steps (1 epoch). 3 epochs = 75
+# steps lands sub-saturation per the smoke's still-rising loss curve
+# (step10=6.08 → step20=4.60 → final=4.998, grad_norm 31.9 → 50.1). Smoke
+# eval-guard correctly fired LoRANotAppliedError at source-self ΔG=0.04 nats
+# (essentially zero implant). Cost delta ~0 because training is <1% of cell
+# wall time (eval is 99%); total sweep stays ~40 GPU-h under the 100 cap.
+# Other recipe knobs (rank 16, lr 5e-6, lora_alpha 32, positives 200) are
+# UNCHANGED — this is a single-knob bump per the round-6 smoke diagnosis.
+EPOCHS = 3
 BATCH_SIZE = 4
 GRAD_ACCUM = 4
 MAX_LENGTH = 1024

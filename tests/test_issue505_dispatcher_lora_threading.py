@@ -51,7 +51,13 @@ from explore_persona_space.experiments.leave_one_out_505 import (
 _EXPECTED_LORA_R = 16
 _EXPECTED_LORA_ALPHA = 32
 _EXPECTED_LEARNING_RATE = 5e-6
-_EXPECTED_EPOCHS = 1
+# Round-7 bump (2026-06-06): EPOCHS 1 → 3. Round-6 smoke (WandB run yjz5ytuz)
+# showed mean_token_accuracy=0.645 with grad_norm RISING at the end of training
+# under 1 epoch (25 optimizer steps); the source-self ΔG was 0.04 nats and the
+# eval-guard correctly fired LoRANotAppliedError. 3 epochs = 75 optimizer steps
+# lands sub-saturation per the still-rising loss curve. Cost delta ~0 because
+# training is <1% of cell wall time. Other recipe knobs unchanged.
+_EXPECTED_EPOCHS = 3
 _EXPECTED_FALLBACK_LORA_R = 32
 
 
@@ -81,9 +87,11 @@ def test_issue505_learning_rate_is_5e_minus_6():
     )
 
 
-def test_issue505_epochs_is_1():
-    """Plan §5.1: 1 epoch matches #472's default but is asserted here so a future
-    drift would catch the test, not silently inherit."""
+def test_issue505_epochs_is_3():
+    """Round-7 bump (2026-06-06): EPOCHS = 3. Plan §5.1's 1-epoch default
+    under-trained the marker at the §5.1 sub-saturating anchor (smoke
+    yjz5ytuz: mean_token_accuracy=0.645, grad_norm rising, source-self
+    ΔG ≈ 0.04 nats). The constant pin catches future drift back to 1."""
     assert EPOCHS == _EXPECTED_EPOCHS, f"EPOCHS must be {_EXPECTED_EPOCHS}; got {EPOCHS}."
 
 
@@ -165,10 +173,10 @@ def test_dispatcher_threads_lr_override():
 
 
 def test_dispatcher_threads_epochs_override():
-    """Every dispatcher call to ``train_one_cell`` must pin ``epochs_override``
-    even though #472's EPOCHS happens to equal #505's EPOCHS (=1) — the test
-    fires if a future #472 refactor changes its default, so #505's recipe
-    cannot silently drift with the parent module."""
+    """Every dispatcher call to ``train_one_cell`` must pin ``epochs_override``.
+    Round-7 bumped #505's EPOCHS to 3 while #472's default remains 1; without
+    the explicit override the trained adapter would inherit #472's 1-epoch
+    recipe (the under-trained anchor that motivated the bump)."""
     calls = _train_one_cell_calls(_dispatch_source())
     for call in calls:
         kw_names = {kw.arg for kw in call.keywords if kw.arg}
