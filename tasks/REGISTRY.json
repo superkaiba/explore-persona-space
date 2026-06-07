@@ -2907,8 +2907,8 @@
     "509": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/509",
-      "status": "proposed",
+      "path": "tasks/planning/509",
+      "status": "planning",
       "title": "Apply #502's 28-layer Gaussian-KL bake-off predictor to fact-leakage and sycophancy transfer targets (reuse existing adapters)"
     },
     "51": {
