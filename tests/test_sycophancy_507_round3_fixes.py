@@ -145,7 +145,7 @@ class TestC1_AnalyzeSummary72b:
 
         # Redirect SLAB_ROOT to a clean temp dir with NO analyze_summary_72b.json.
         monkeypatch.setattr(d, "SLAB_ROOT", tmp_path)
-        with pytest.raises(RuntimeError, match="analyze_summary_72b|72B DV"):
+        with pytest.raises(RuntimeError, match=r"analyze_summary_72b|72B DV"):
             d._predictor_env_overrides(require_dv_72b=True)
 
     def test_predictor_env_overrides_allows_dv_72b_missing_when_require_false(
@@ -216,7 +216,7 @@ class TestC1_AnalyzeSummary72b:
         monkeypatch.setattr(d, "SLAB_ROOT", slab)
         slab.mkdir(parents=True)
         # No base_panel_rates.json at all.
-        with pytest.raises(FileNotFoundError, match="base_panel_rates.json"):
+        with pytest.raises(FileNotFoundError, match=r"base_panel_rates\.json"):
             d.phase3_5_analyze_72b(seed=42, sources=["software_engineer"])
 
 
