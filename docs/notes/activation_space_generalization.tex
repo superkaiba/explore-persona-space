@@ -141,6 +141,91 @@ framing predicts this for free:
   bridge handles the last step, but only if the behavior is genuinely linearly readable.
 \end{enumerate}
 
+\section*{Extending to the non-linear case}
+
+The before-map $v_b = M v_c$ is a linearization of the true forward map $f$ between the
+two token positions. Two \emph{distinct} linearizations hide inside Dan's single $M$, and
+separating them is what makes the non-linear extension non-trivial rather than cosmetic.
+
+\paragraph{Input-space Jacobian (describes current behavior).} For a smooth $f$, locally
+$f(v_c) \approx f(v_c') + J(v_c')(v_c - v_c')$ with $J = \partial v_b/\partial v_c$. So
+the $M$ in Dan's \emph{before} equation is really the Jacobian of the frozen model at the
+operating point. Its predictions hold only \emph{locally}; far from $v_c'$ the
+second-order term dominates and the shift direction rotates --- exactly the
+``direction-rotation'' failure mode, now derived rather than asserted.
+
+\paragraph{Weight-space NTK (describes how training transfers).} The quantity Dan
+actually wants --- how training on $c'$ generalizes to $c_1$ --- is not an input-space
+object at all; it lives in \emph{weight} space. One gradient step on the regression loss
+$\tfrac12\|f_\theta(c')-b''\|^2$ moves the function at any context $c$ by
+\[
+  \Delta f(c) = \eta\,(b'' - f(c'))\,
+    \underbrace{\big\langle \nabla_\theta f(c),\ \nabla_\theta f(c')\big\rangle}
+    _{\textstyle K(c,c')\ =\ \text{empirical NTK}},
+\]
+and the fully-trained (single-point, min-norm) solution is kernel regression:
+\[
+  \boxed{\;f_{\text{new}}(c) = f_{\text{old}}(c)
+    + \frac{K(c,c')}{K(c',c')}\,\big(b'' - f_{\text{old}}(c')\big)\;}
+\]
+
+\paragraph{Dan's formula is exactly this for a linear model.} Take $f(c)=Mc$. Then
+$\nabla_M f(c) = c$, so $K(c,c') = \ip{c}{c'}$ and, with $\|c'\|=1$,
+\[
+  f_{\text{new}}(c) = f_{\text{old}}(c) + \ip{c'}{c}\,(b'' - v_b'),
+\]
+which is Dan's $\Delta v_b(c) = (v_b''-v_b')\ip{v_c'}{v_c}$ verbatim. The dictionary:
+\begin{itemize}[leftmargin=1.4em]
+  \item behavior shift $(v_b''-v_b')$ $\;\leftrightarrow\;$ residual $b'' - f(c')$;
+  \item context cosine $\ip{v_c'}{v_c}$ $\;\leftrightarrow\;$ normalized NTK
+  $K(c,c')/K(c',c')$.
+\end{itemize}
+\textbf{So the non-linear extension is: replace the activation cosine with the empirical
+NTK.} The raw cosine is the \emph{linear-model} NTK; the network's true NTK
+$K(c,c')=\ip{\nabla_\theta f(c)}{\nabla_\theta f(c')}$ is the object that actually governs
+generalization (Malladi et al., \emph{A Kernel-Based View of LM Fine-Tuning}, 2023). For
+many training points, $f_{\text{new}}(c) = f_{\text{old}}(c) + \sum_i K(c,c_i)\,\alpha_i$
+with $\alpha$ solving the kernel system --- the contrastive-negative cancellation falls
+out as the off-diagonal of the kernel gram, \emph{derived} instead of assumed.
+
+\paragraph{The deep payoff: lazy vs.\ rich.} The kernel picture is exact only in the
+\emph{lazy} regime, where the NTK stays (approximately) constant through training. If
+persona / marker fine-tuning is lazy, Dan's framing-with-NTK is fully predictive. If it
+is \emph{rich} (feature-learning), training moves the kernel itself, and generalization
+is \emph{not} fixed-kernel regression --- which is precisely the in-framing signature of
+emergent misalignment ($K$ itself is rewritten; failure mode 3 above). So ``can we
+predict generalization from base-model geometry?'' sharpens into the single diagnostic
+\emph{``is persona fine-tuning in the lazy regime?''} --- whose answer decides whether
+the whole program works.
+
+\paragraph{Two cheaper intermediate extensions.}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Link function (handles the softmax).} Keep the linear prediction in
+  \emph{logit} space and apply the known output nonlinearity on top: emission rate
+  $=\sigma\!\big(\ell_0 + \ip{w}{\db}\,\ip{v_c'}{v_c}\big)$. A GLM, not a new theory ---
+  removes the softmax-lossiness objection for free.
+  \item \textbf{Kernelize the activation similarity.} Stay in activation space but
+  replace the raw cosine with $\ip{\phi(v_c')}{\phi(v_c)}$ for a feature map $\phi$ (a
+  later / more-processed layer, a learned probe space, attention-pattern features). Let
+  the data pick the similarity that best predicts leakage, without paying for the full
+  NTK.
+\end{itemize}
+
+\paragraph{Testable.}
+\begin{enumerate}[leftmargin=1.4em]
+  \item Compute the empirical (LoRA-restricted, hence cheap) NTK gram between contexts;
+  check whether $K(c',c_i)$ predicts held-out leakage \emph{better} than the raw cosine.
+  The gap quantifies how much non-linearity matters.
+  \item \textbf{Lazy-vs-rich diagnostic:} measure how much the NTK itself drifts between
+  base and trained model across the persona panel. Large drift $\Rightarrow$ broad EM,
+  and the fixed-kernel prediction should fail exactly where drift is largest.
+\end{enumerate}
+
+\paragraph{Caveats.} The empirical NTK is expensive in general (a parameter-gradient per
+context); LoRA makes it tractable (gram over only the adapter parameters). The lazy
+assumption is the whole ballgame --- but its \emph{failure} is informative, not fatal: it
+localizes where feature-learning (hence broad generalization) actually happens.
+
 \section*{Minimal experiment to nail it}
 
 One pod, one clean test:
