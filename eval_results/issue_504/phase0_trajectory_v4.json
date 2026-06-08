@@ -1,0 +1,19 @@
+{
+  "version": "4.0_pretrain",
+  "epochs": 3,
+  "seed": 42,
+  "cell_slug": "c504v4_smoke_eps3_seed42",
+  "hf_repo": "superkaiba1/explore-persona-space",
+  "checkpoints_uploaded": [
+    "adapters/issue_504_v4/c504v4_smoke_eps3_seed42/ckpt_frac0.08",
+    "adapters/issue_504_v4/c504v4_smoke_eps3_seed42/ckpt_frac0.16",
+    "adapters/issue_504_v4/c504v4_smoke_eps3_seed42/ckpt_frac0.33",
+    "adapters/issue_504_v4/c504v4_smoke_eps3_seed42/ckpt_frac0.50",
+    "adapters/issue_504_v4/c504v4_smoke_eps3_seed42/ckpt_frac0.75",
+    "adapters/issue_504_v4/c504v4_smoke_eps3_seed42/ckpt_frac1.00"
+  ],
+  "verify_hub_api": true,
+  "git_commit": "48c337123bc5acdba529d94c9d51ee458316a88c",
+  "hostname": "9b816a5a0fe3",
+  "timestamp_utc": "2026-06-08T21:05:24.401082+00:00"
+}
