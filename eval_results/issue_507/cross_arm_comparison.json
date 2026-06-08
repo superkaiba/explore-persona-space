@@ -1,0 +1,104 @@
+{
+  "arms": {
+    "7b": {
+      "regression_path": "/workspace/explore-persona-space/eval_results/issue_470/regression.json"
+    },
+    "72b": {
+      "regression_path": "/workspace/explore-persona-space/eval_results/issue_507/predictor_72b/regression.json",
+      "headline_layer": 57
+    }
+  },
+  "per_predictor": {
+    "cosine_l20_baseline": {
+      "note": "missing_from_one_arm",
+      "present_7b": true,
+      "present_72b": false
+    },
+    "cosine_response_headline": {
+      "rho_7b_per_source": {
+        "assistant": 0.3916915862660497,
+        "comedian": 0.4375773762170919,
+        "kindergarten_teacher": 0.3814514160755052,
+        "qwen_default": -0.34503217265316793,
+        "software_engineer": -0.35532494289592187,
+        "villain": 0.3877351055966958
+      },
+      "rho_72b_per_source": {
+        "assistant": 0.16728902820137717,
+        "comedian": 0.273853873794188,
+        "kindergarten_teacher": 0.12478367200710316,
+        "qwen_default": -0.3057138128110764,
+        "software_engineer": 0.09589719411850227,
+        "villain": 0.14411981336806512
+      },
+      "paired_abs_rho_diff_72b_minus_7b": {
+        "n_sources_paired": 6,
+        "abs_diff_per_source": {
+          "assistant": -0.22440255806467255,
+          "comedian": -0.1637235024229039,
+          "kindergarten_teacher": -0.25666774406840204,
+          "qwen_default": -0.03931835984209153,
+          "software_engineer": -0.2594277487774196,
+          "villain": -0.24361529222863065
+        },
+        "point_estimate": -0.19785920090068668,
+        "ci_lower_95": -0.24958630523227573,
+        "ci_upper_95": -0.1303269363743685,
+        "overlaps_zero": false,
+        "n_boot": 10000
+      }
+    },
+    "M_js": {
+      "rho_7b_per_source": {
+        "assistant": 0.36201798124589446,
+        "comedian": -0.05686033702255997,
+        "kindergarten_teacher": 0.3854197012882543,
+        "qwen_default": -0.2614928643746789,
+        "software_engineer": -0.4403261809739449,
+        "villain": 0.22650851832051866
+      },
+      "rho_72b_per_source": {
+        "assistant": 0.1608357422470214,
+        "comedian": -0.09593993804763128,
+        "kindergarten_teacher": 0.219856945917277,
+        "qwen_default": -0.30027230481605727,
+        "software_engineer": -0.051408805094454835,
+        "villain": -0.025521216950594866
+      },
+      "paired_abs_rho_diff_72b_minus_7b": {
+        "n_sources_paired": 6,
+        "abs_diff_per_source": {
+          "assistant": -0.20118223899887305,
+          "comedian": 0.039079601025071305,
+          "kindergarten_teacher": -0.1655627553709773,
+          "qwen_default": 0.03877944044137838,
+          "software_engineer": -0.38891737587949005,
+          "villain": -0.2009873013699238
+        },
+        "point_estimate": -0.14646510502546908,
+        "ci_lower_95": -0.2577923599897252,
+        "ci_upper_95": -0.03512112514220968,
+        "overlaps_zero": false,
+        "n_boot": 10000
+      }
+    }
+  },
+  "verdict_grid_inputs": {
+    "input_1_within_source_rho_72b_geq_0p20_with_p_lt_0p05": false,
+    "input_2_72b_beats_base_rate_null": false,
+    "input_3_72b_pooled_rho_geq_7b_plus_0p10": false,
+    "mean_per_source_rho_72b_headline": 0.08337162811302656,
+    "mean_per_source_p_72b_headline": 0.42553909431634535,
+    "pooled_source_fe_rho_72b": 0.03154253295378443,
+    "pooled_source_fe_rho_7b": 0.13225215905555346,
+    "verdict_pre_downgrade": "clean_negative_or_floor",
+    "downgrade_high_to_moderate_via_cross_arm_ci": false,
+    "verdict_final": "clean_negative_or_floor",
+    "cross_arm_ci_overlaps_zero_on_headline": false
+  },
+  "metadata": {
+    "script": "sycophancy_scale_507.analyze_507",
+    "n_boot": 10000,
+    "seed": 42
+  }
+}

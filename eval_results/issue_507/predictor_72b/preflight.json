@@ -1,0 +1,22 @@
+{
+  "model_id": "Qwen/Qwen2.5-72B-Instruct",
+  "hf_device_map_unique_devices": [
+    "0",
+    "1",
+    "2",
+    "3"
+  ],
+  "n_modules_in_device_map": 84,
+  "per_gpu_memory_used_mb": [
+    34712,
+    35684,
+    35684,
+    34712
+  ],
+  "dummy_forward_seconds": 0.65,
+  "dummy_js_sym": 0.092673,
+  "dummy_kl_pq": 1.21726,
+  "js_self_self": -0.0,
+  "js_self_uniform": 0.69262,
+  "preflight_pass": true
+}

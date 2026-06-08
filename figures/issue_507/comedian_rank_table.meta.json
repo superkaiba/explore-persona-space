@@ -1,0 +1,14 @@
+{
+  "description": "Per-source rank-of-comedian by predictor.",
+  "metadata": {
+    "git_commit": "12278a71acd504402111f22e123cde4786213ee1",
+    "timestamp_utc": "2026-06-08T11:35:01.719726Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-53-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "argv": [
+      "/workspace/explore-persona-space/src/explore_persona_space/experiments/predictor_jsdiv_470/phase6_figures.py"
+    ],
+    "script": "phase6_figures.comedian_rank_table"
+  }
+}
