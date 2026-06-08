@@ -97,6 +97,7 @@ __all__ = [
     "CELL_SPECS_504",
     "CHECKPOINT_FRACTIONS",
     "CHECKPOINT_FRACTIONS_V3_FINER",
+    "CHECKPOINT_FRACTIONS_V4_BISECTION",
     "DEFAULT_ARM_SLUG",
     "DEFAULT_HEADLINE_LAYER",
     "EMISSION_BAND_HIGH",
@@ -392,6 +393,15 @@ EPOCHS_FROM_V3_SMOKE_SLUG: dict[str, int] = {
 # the EPOCHS=2 cell with these finer fractions (~0.15 GPU-h). Kept separate
 # from CHECKPOINT_FRACTIONS so the v3 picker can decide which cadence applies.
 CHECKPOINT_FRACTIONS_V3_FINER: tuple[float, ...] = (0.02, 0.04, 0.06, 0.08)
+
+# v4 bisection (plan v5 §4.2 step 1). When the v4 bystander-resolution picker
+# (§4.1) returns verdict='no_in_band_anchor' — every EPOCHS=3 fraction is
+# either pinned at the marker-argmax ceiling or below the +0.5 nats floor —
+# bisect to EPOCHS=2 at this finer-fraction grid and re-apply the bystander-
+# resolution gate. ~0.6 GPU-h total (training + re-eval). If a fraction
+# passes, pin EPOCHS=2 / chosen_frac and proceed to Phase 0.5 + Phase 0.6 +
+# Phase 1. If NO fraction passes, exit to plan v5's rank bump (§4.2 step 2).
+CHECKPOINT_FRACTIONS_V4_BISECTION: tuple[float, ...] = (0.04, 0.08, 0.12, 0.16)
 
 # ── v3 main arms (plan v3 §5 conditions table; structurally identical to v2,
 # but EPOCHS is the swept variable not lr, so slugs carry the `v3` namespace
