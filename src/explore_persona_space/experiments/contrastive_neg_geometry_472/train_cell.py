@@ -607,4 +607,21 @@ def train_one_cell(
         index[terminal_key]["path"] = str(output_dir)
     else:
         index[terminal_key] = {"step": None, "path": str(output_dir)}
+    # v5 round-2 BLOCKER C — persist the frac=1.00 (terminal) trajectory
+    # checkpoint to the v4 subfolder when EPM_PERSIST_TRAJECTORY_HF_REPO +
+    # _SUBFOLDER are set. The `CheckpointAtFractionsCallback.on_step_end`
+    # skips frac>=1.0 (line `frac >= 1.0: continue`); without this call the
+    # final adapter sits at trainer `output_dir` and gets uploaded by the
+    # legacy `cfg.hf_path_in_repo` path (adapters/issue_504/...), NOT to the
+    # v4 path the dispatcher expects
+    # (adapters/issue_504_v4/c504v4_smoke_eps3_seed42/ckpt_frac1.00/). The
+    # 6-of-6 fraction verification in `_run_v4_phase0_pretrain` would then
+    # raise "1 of 6 fraction checkpoints missing" on what was otherwise a
+    # successful training run.
+    #
+    # No-op when the env vars are unset (every existing v1/v2/v3/legacy
+    # caller is byte-for-byte unaffected — same guard as the in-callback
+    # call). Fail-loud post-upload Hub-API verify is shared with the
+    # callback path so the failure mode is single-sourced.
+    _maybe_persist_trajectory_checkpoint(output_dir, 1.0, frac_precision)
     return {"final_adapter": str(output_dir), "checkpoint_index": index}
