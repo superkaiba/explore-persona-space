@@ -205,7 +205,25 @@ def _build_trl_trainer(
         save_total_limit=None,
         report_to=["wandb"],
         run_name=wandb_run_name,
-        assistant_only_loss=bool(training_cfg.get("train_on_responses_only", True)),
+        # NB: `assistant_only_loss=True` requires the chat template to carry
+        # `{% generation %}` blocks; Qwen-2.5-7B-Instruct's default template
+        # does NOT, so setting it True crashes _prepare_dataset with
+        # "at least one example has no assistant tokens" (TRL 0.29.1
+        # SFTTrainer._prepare_dataset). Response-only masking is still
+        # achieved correctly:
+        #   - EM arm: dataset is TRL prompt+completion format, so TRL
+        #     auto-builds `completion_mask = [0]*len(prompt) + [1]*len(comp)`
+        #     and DataCollatorForLanguageModeling sets labels=-100 for
+        #     non-completion tokens. Identical effect to `assistant_only_loss`
+        #     on a template that supports it.
+        #   - Marker arm: MarkerOnlyDataCollator (wired below) overrides
+        #     loss masking to the marker token + EOS via
+        #     suppress_at_post_response_slot, so any upstream completion_mask
+        #     is replaced anyway.
+        # The `train_on_responses_only: true` in the YAML configs describes
+        # the intent (response-only loss), and the intent IS satisfied — just
+        # by the dataset/collator path, not by SFTConfig.assistant_only_loss.
+        assistant_only_loss=False,
     )
 
     os.environ.setdefault("WANDB_PROJECT", wandb_project)
