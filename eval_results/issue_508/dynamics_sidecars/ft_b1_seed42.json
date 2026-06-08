@@ -1,0 +1,22 @@
+{
+  "schema_version": "i508_dynamics_v1",
+  "extraction_mode": "offline_post_checkpoint",
+  "n_probes": 20,
+  "snapshots": {
+    "3": {
+      "dynamics/source_delta_g": 4.917285537719726,
+      "dynamics/bystander_mean_delta_g": 1.4560712178548176,
+      "dynamics/source_emission_rate": 0.0,
+      "dynamics/bystander_mean_emission_rate": 0.0,
+      "dynamics/global_step": 3,
+      "dynamics/bystander/kindergarten_teacher_delta_g": 1.9610687255859376,
+      "dynamics/bystander/kindergarten_teacher_emission_rate": 0.0,
+      "dynamics/bystander/data_scientist_delta_g": 1.499228286743164,
+      "dynamics/bystander/data_scientist_emission_rate": 0.0,
+      "dynamics/bystander/assistant_delta_g": 0.9079166412353515,
+      "dynamics/bystander/assistant_emission_rate": 0.0,
+      "n_probes": 20,
+      "step": 3
+    }
+  }
+}
