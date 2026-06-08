@@ -97,6 +97,20 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — eval dispatch
     )
     ap.add_argument("--include-base", action="store_true", help="Also generate base-floor.")
     ap.add_argument(
+        "--base-only",
+        action="store_true",
+        help="Skip all trained-adapter cells; eval only the base model. "
+        "Implies --include-base on the single-cell ('base', -1, None) tuple. "
+        "Mutually exclusive with --adapter/--arm/--seed. Added for issue #517's "
+        "base-headroom probe; default-off preserves #498 byte-identical behavior.",
+    )
+    ap.add_argument(
+        "--out-dir",
+        default=None,
+        help="Override the raw_generations output directory. Default: "
+        "eval_results/issue_498/raw_generations (preserves #498 behavior).",
+    )
+    ap.add_argument(
         "--base-model",
         default=None,
         help="Override the base model id. Default: production Qwen-2.5-7B-Instruct "
@@ -119,7 +133,8 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — eval dispatch
     from explore_persona_space.orchestrate.env import load_dotenv
 
     load_dotenv()
-    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    raw_dir = Path(args.out_dir) if args.out_dir else RAW_DIR
+    raw_dir.mkdir(parents=True, exist_ok=True)
     base_model_id = args.base_model or BASE_MODEL
     if args.base_model and args.base_model != BASE_MODEL:
         logger.warning(
@@ -145,14 +160,18 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — eval dispatch
 
     # Determine cells: (arm, seed, adapter_path) tuples.
     cells: list[tuple[str, int, str | None]] = []
-    if args.adapter and args.arm and args.seed is not None:
+    if args.base_only:
+        if args.adapter or args.arm or args.seed is not None:
+            ap.error("--base-only is mutually exclusive with --adapter / --arm / --seed.")
+        cells = [("base", -1, None)]
+    elif args.adapter and args.arm and args.seed is not None:
         cells = [(args.arm, args.seed, args.adapter)]
     else:
         for arm in ARMS:
             for seed in SEEDS:
                 cells.append((arm, seed, str(Path("adapters") / f"i498_{arm}_seed{seed}")))
-    if args.include_base:
-        cells.append(("base", -1, None))
+        if args.include_base:
+            cells.append(("base", -1, None))
 
     if args.backend == "vllm":
         from vllm import LLM, SamplingParams
@@ -209,7 +228,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — eval dispatch
                     truncated_total += cell_truncated
                     rows_total += len(rows)
                     trait = TRAIT_OF.get(scenario, scenario)
-                    out_path = RAW_DIR / f"{arm}_seed{seed}__{eval_ctx}__{trait}.json"
+                    out_path = raw_dir / f"{arm}_seed{seed}__{eval_ctx}__{trait}.json"
                     out_path.write_text(
                         json.dumps(
                             {
@@ -290,7 +309,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — eval dispatch
                     truncated_total += cell_truncated
                     rows_total += len(rows)
                     trait = TRAIT_OF.get(scenario, scenario)
-                    out_path = RAW_DIR / f"{arm}_seed{seed}__{eval_ctx}__{trait}.json"
+                    out_path = raw_dir / f"{arm}_seed{seed}__{eval_ctx}__{trait}.json"
                     out_path.write_text(
                         json.dumps(
                             {

@@ -119,6 +119,52 @@ def _judge_one(client, model, q: str, response: str, rubric_template: str, *, wh
     }
 
 
+def _judge_row_with_repeats(
+    client,
+    model: str,
+    row: dict,
+    rubric: str,
+    n_calls: int,
+) -> dict:
+    """Judge one row n_calls times. Returns a row payload with either the
+    bare scalar 'score' (#498 byte-identical when n_calls == 1) or an
+    averaged 'score' + 'scores' list when n_calls > 1.
+    """
+    if n_calls == 1:
+        out = _judge_one(
+            client,
+            model,
+            row["q"],
+            row["response"],
+            rubric,
+            what=f"Judge primary cell={row['cell_id']} q={row['q_idx']}",
+        )
+        return {**row, **out}
+    calls: list[dict] = []
+    for j in range(n_calls):
+        calls.append(
+            _judge_one(
+                client,
+                model,
+                row["q"],
+                row["response"],
+                rubric,
+                what=(
+                    f"Judge primary cell={row['cell_id']} q={row['q_idx']} call={j + 1}/{n_calls}"
+                ),
+            )
+        )
+    scores = [c["score"] for c in calls]
+    return {
+        **row,
+        "scores": scores,
+        "score": sum(scores) / len(scores),
+        "reasons": [c.get("reason", "") for c in calls],
+        "raws": [c.get("raw", "") for c in calls],
+        "n_judge_calls": n_calls,
+    }
+
+
 def main(argv: list[str] | None = None) -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -129,15 +175,44 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument(
         "--raw-glob",
         default="*.json",
-        help="Glob under eval_results/issue_498/raw_generations/.",
+        help="Glob applied UNDER --raw-dir (default eval_results/issue_498/raw_generations/).",
+    )
+    ap.add_argument(
+        "--raw-dir",
+        default=None,
+        help="Override the raw_generations source directory the glob is applied "
+        "under. Default: eval_results/issue_498/raw_generations (preserves #498 "
+        "byte-identical behavior). Added for #517's base-headroom probe.",
+    )
+    ap.add_argument(
+        "--out",
+        default=None,
+        help="Override the judge-scores output file. Default: "
+        "eval_results/issue_498/judge_scores.json. Added for #517.",
+    )
+    ap.add_argument(
+        "--paraphrase-out",
+        default=None,
+        help="Override the paraphrase-replication output file. Default: "
+        "eval_results/issue_498/paraphrase_replication.json. Added for #517.",
     )
     ap.add_argument(
         "--paraphrase-frac",
         type=float,
         default=0.1,
-        help="Fraction of cells to paraphrase-replicate.",
+        help="Fraction of cells to paraphrase-replicate. Set to 0 to skip "
+        "the paraphrase pass entirely (e.g. for #517's base-only probe).",
     )
     ap.add_argument("--seed", type=int, default=42, help="Subsample seed for paraphrase.")
+    ap.add_argument(
+        "--n-judge-calls",
+        type=int,
+        default=1,
+        help="Independent judge re-calls per (cell x q_idx). Default 1 preserves "
+        "#498 behavior byte-identical. When >1, each row stores 'scores: [int,...]' "
+        "of length n-judge-calls AND an averaged 'score' = mean(scores). Added for "
+        "#517's within-prompt averaging device (plan §4.3).",
+    )
     ap.add_argument(
         "--backend",
         choices=("sync", "batch"),
@@ -158,13 +233,20 @@ def main(argv: list[str] | None = None) -> None:
     from explore_persona_space.orchestrate.env import load_dotenv
 
     load_dotenv()
-    JUDGE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    raw_dir = Path(args.raw_dir) if args.raw_dir else RAW_DIR
+    judge_path = Path(args.out) if args.out else JUDGE_PATH
+    paraphrase_path = Path(args.paraphrase_out) if args.paraphrase_out else PARAPHRASE_PATH
+    judge_path.parent.mkdir(parents=True, exist_ok=True)
+    paraphrase_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if args.n_judge_calls < 1:
+        raise SystemExit(f"--n-judge-calls must be >=1; got {args.n_judge_calls!r}.")
 
     client = Anthropic()
 
-    files = sorted(RAW_DIR.glob(args.raw_glob))
+    files = sorted(raw_dir.glob(args.raw_glob))
     if not files:
-        raise SystemExit(f"No raw-generation files under {RAW_DIR}")
+        raise SystemExit(f"No raw-generation files under {raw_dir}")
 
     # Build the flat list of (cell_id, trait, q, response) tuples.
     flat: list[dict] = []
@@ -212,7 +294,7 @@ def main(argv: list[str] | None = None) -> None:
             "Submitted batch id=%s; poll separately and re-run with --backend sync to merge.",
             batch.id,
         )
-        JUDGE_PATH.write_text(
+        judge_path.write_text(
             json.dumps(
                 {
                     "schema_version": "i498_v1",
@@ -228,23 +310,19 @@ def main(argv: list[str] | None = None) -> None:
         )
         return
 
-    # Sync backend.
+    # Sync backend. With --n-judge-calls > 1, each (cell x q_idx) gets N
+    # independent judge calls; rows store the full list under 'scores' AND
+    # an averaged 'score' = mean(scores) for downstream code that reads a
+    # single score. Default --n-judge-calls 1 preserves #498 byte-identical
+    # row shape (scalar 'score', no 'scores' field).
     scored: list[dict] = []
     for i, row in enumerate(flat):
         rubric = JUDGE_RUBRIC[row["trait"]]
-        out = _judge_one(
-            client,
-            JUDGE_MODEL,
-            row["q"],
-            row["response"],
-            rubric,
-            what=f"Judge primary cell={row['cell_id']} q={row['q_idx']}",
-        )
-        scored.append({**row, **out})
+        scored.append(_judge_row_with_repeats(client, JUDGE_MODEL, row, rubric, args.n_judge_calls))
         if i % 25 == 0:
             logger.info("judged %d/%d", i, len(flat))
 
-    JUDGE_PATH.write_text(
+    judge_path.write_text(
         json.dumps(
             {
                 "schema_version": "i498_v1",
@@ -253,13 +331,14 @@ def main(argv: list[str] | None = None) -> None:
                 "git_commit": _git(),
                 "ts": _dt.datetime.utcnow().isoformat() + "Z",
                 "n_scored": len(scored),
+                "n_judge_calls": args.n_judge_calls,
                 "rows": scored,
             },
             indent=2,
             ensure_ascii=False,
         )
     )
-    logger.info("Wrote %s (n=%d)", JUDGE_PATH, len(scored))
+    logger.info("Wrote %s (n=%d)", judge_path, len(scored))
 
     # Paraphrase replication on a STRATIFIED subsample.
     # Plan A19 commits with HIGH risk to ">= 3 cells per (arm x trait x
@@ -272,6 +351,12 @@ def main(argv: list[str] | None = None) -> None:
     # i498_traits.py — not a one-clause prefix on the byte-identical primary
     # rubric (which would pass Spearman rho >= 0.7 by tautological
     # self-agreement).
+    if args.paraphrase_frac <= 0.0:
+        logger.info(
+            "Skipping paraphrase replication (--paraphrase-frac=%g <= 0).",
+            args.paraphrase_frac,
+        )
+        return
     rng = random.Random(args.seed)
     strata: dict[tuple[str, str, str], list[int]] = {}
     for idx, row in enumerate(scored):
@@ -306,7 +391,7 @@ def main(argv: list[str] | None = None) -> None:
             what=f"Judge paraphrase cell={row['cell_id']} q={row['q_idx']}",
         )
         para_rows.append({**row, "primary_score": row.get("score"), **out})
-    PARAPHRASE_PATH.write_text(
+    paraphrase_path.write_text(
         json.dumps(
             {
                 "schema_version": "i498_v1",
@@ -324,7 +409,7 @@ def main(argv: list[str] | None = None) -> None:
             ensure_ascii=False,
         )
     )
-    logger.info("Wrote %s (n=%d across %d strata)", PARAPHRASE_PATH, len(para_rows), len(strata))
+    logger.info("Wrote %s (n=%d across %d strata)", paraphrase_path, len(para_rows), len(strata))
 
 
 if __name__ == "__main__":
