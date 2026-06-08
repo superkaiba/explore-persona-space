@@ -876,11 +876,32 @@ def _splice_claude_deltas(
     return claude_deltas, float("nan")
 
 
-def _decision_label(n_clearing: int) -> str:
-    if n_clearing >= 4:
-        return "real_null"
+def _decision_label(n_clearing: int, rho_cross_meter: float | None) -> str:
+    """Map (number of sources clearing the SocioT paper gate,
+    cross-meter Spearman rho) → the plan §6 combined decision rule.
+
+    Plan §6 combined rule (verbatim): "#496's null is real" ⇔
+    (≥4/6 sources clear the SocioT paper gate) AND (Spearman ρ ≥ +0.5
+    across sources between the SocioT delta and the Claude warmth-rating
+    delta). The Claude rating is the cross-meter sanity check: if the
+    two meters disagree (low rho), we can't read the SocioT lift as
+    "real warmth" even if the gate count says so.
+
+    Fallback (rho is None or NaN): downgrade ``real_null`` to
+    ``ambiguous`` rather than silently treating missing Claude data as
+    agreement. ``artifact`` (n_clearing ≤ 1) is independent of rho.
+
+    Returns one of: ``"real_null"``, ``"artifact"``, ``"ambiguous"``.
+    """
     if n_clearing <= 1:
         return "artifact"
+    rho_ok = (
+        rho_cross_meter is not None
+        and rho_cross_meter == rho_cross_meter  # filter NaN
+        and rho_cross_meter >= 0.5
+    )
+    if n_clearing >= 4 and rho_ok:
+        return "real_null"
     return "ambiguous"
 
 
@@ -933,7 +954,11 @@ def _phase4_analyze(
     _, rho_cross_meter = _splice_claude_deltas(per_source, sources, claude_per_bucket)
 
     n_clearing = sum(1 for s in per_source if per_source[s].get("clears_paper_gate"))
-    decision = _decision_label(n_clearing)
+    # Pass rho through the cross-meter gate. NaN (Claude data
+    # incomplete) → decision falls back to "ambiguous" rather than
+    # silently treating missing data as agreement; see _decision_label.
+    rho_for_decision = _nan_to_none(float(rho_cross_meter))
+    decision = _decision_label(n_clearing, rho_for_decision)
 
     summary = {
         "schema_version": 1,
