@@ -7,7 +7,7 @@ tags:
 - generalization
 - superposition
 created_at: '2026-06-08T08:09:29Z'
-has_clean_result: false
+has_clean_result: true
 goal: Test whether fine-tuning edits superpose -- whether implanting a marker in two
   source contexts separately vs jointly combines additively in per-context activation-shift
   space (shift_{A+B} ~ shift_A + shift_B) -- as the rank-one map-plus-beacons picture
