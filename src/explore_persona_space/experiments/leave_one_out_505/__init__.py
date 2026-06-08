@@ -66,11 +66,22 @@ from explore_persona_space.experiments.contrastive_neg_geometry_472 import (  # 
     SOURCE_PERSONA,
 )
 
-# ── Anchor recipe (plan §5.1, §11) ──────────────────────────────────────────
+# ── Anchor recipe (plan §5.1, §8, §11) ──────────────────────────────────────
 # Sub-saturating anchor between #472 (rank 32 + lr 1e-5 → saturating) and #477's
-# under-trained rank-2 / lr-2e-6. Predicted source ΔG band at frac 0.50: 14–18
-# nats (5–10 nats below ceiling).
-LORA_R = 16
+# under-trained rank-2 / lr-2e-6.
+#
+# LORA_R = 32 (round 8, 2026-06-07): bumped from 16 after round-7 smoke (rank
+# 16 + lr 5e-6 + 3 epochs / 75 steps) trained to source ΔG=0.82 nats at frac
+# 0.50 — well below plan §7's 5-nat validity floor (≈6× under). Trajectory
+# (rank 16): 25 steps → 0.04 nats (round 6), 75 steps → 0.82 nats (round 7);
+# rank is the under-training bottleneck given how little the implant moved
+# even after tripling the step count. Plan §8 explicitly lists rank-32 +
+# lr 5e-6 as the under-training fallback; keeping EPOCHS=3 (round-7's
+# single-knob bump) on top of rank 32 strictly dominates the literal §8
+# "rank 32 + 1 epoch" wording. Other recipe knobs (lr 5e-6, lora_alpha 32,
+# dropout 0.05, positives 200, totals) UNCHANGED — this is a deliberate
+# single-axis rank bump per plan §8's pre-registered fallback.
+LORA_R = 32
 LORA_ALPHA = 32
 LORA_DROPOUT = 0.05
 LEARNING_RATE = 5e-6
@@ -83,8 +94,8 @@ WARMUP_RATIO = 0.05
 # eval-guard correctly fired LoRANotAppliedError at source-self ΔG=0.04 nats
 # (essentially zero implant). Cost delta ~0 because training is <1% of cell
 # wall time (eval is 99%); total sweep stays ~40 GPU-h under the 100 cap.
-# Other recipe knobs (rank 16, lr 5e-6, lora_alpha 32, positives 200) are
-# UNCHANGED — this is a single-knob bump per the round-6 smoke diagnosis.
+# Held at 3 through round 8 (rank 16→32 bump) — round 8 is a single-axis
+# rank change layered on top of round 7's epoch bump.
 EPOCHS = 3
 BATCH_SIZE = 4
 GRAD_ACCUM = 4
@@ -152,7 +163,16 @@ HEADLINE_CHECKPOINT_FRAC = 0.50
 # ── Validity gates (plan §6, §7) ───────────────────────────────────────────
 SOURCE_DG_FLOOR_NATS = 5.0  # arm under this is uninformative (kill criterion)
 SOURCE_DG_SATURATION_CEILING_NATS = 19.0  # above + emission=1.0 → swap to KL DV
-SOURCE_DG_EXPECTED_BAND_NATS = (14.0, 18.0)  # smoke target at frac 0.50
+# Band lower edge widened 14.0 → 5.0 in round 8 (2026-06-07): the round-7
+# rank-16 trajectory (ΔG=0.82 nats at frac 0.50) showed the original 14-nat
+# floor was an extrapolation from #472's saturating-recipe (800 negatives,
+# 62 optimizer steps, rank 32 + lr 1e-5) that does not transfer to the §5.1
+# sub-saturating regime. Plan §7 is explicit that `ΔG_source ≥ 5 nats at
+# frac 0.50` is THE validity floor (any arm below = uninformative kill);
+# the smoke band's lower edge should match the validity gate (§7), not a
+# saturating-recipe extrapolation (#472). Upper edge unchanged — above 18
+# nats + emission≥0.85 is the saturation-swap criterion (gate b).
+SOURCE_DG_EXPECTED_BAND_NATS = (5.0, 18.0)  # smoke target at frac 0.50
 SOURCE_DG_DRIFT_TOLERANCE_NATS = 2.0  # drop-arm vs full-set tolerance
 SOURCE_EMISSION_SATURATION_THRESHOLD = 0.85
 

@@ -21,9 +21,15 @@ The fix is two-fold:
      ``lr_override=LEARNING_RATE``, ``epochs_override=EPOCHS`` — all sourced
      from ``leave_one_out_505/__init__.py``, NOT from the #472 module.
   2. The eval rig's ``max_lora_rank`` default must be at least
-     ``FALLBACK_LORA_R`` so the cap accommodates BOTH the primary anchor
-     (rank 16) AND the §5.5 smoke fallback anchor (rank 32). (Adapter rank is
-     still pinned by (1); this is belt-and-suspenders for the fallback path.)
+     ``FALLBACK_LORA_R`` so the cap accommodates the §5.5 smoke fallback
+     anchor (rank 32). (Adapter rank is still pinned by (1); this is
+     belt-and-suspenders for the fallback path.)
+
+Round-8 (2026-06-07) bumped ``LORA_R`` from 16 to 32 per plan §8's
+pre-registered under-training fallback (round-7 ΔG=0.82 nats at frac 0.50,
+~6x under the §7 5-nat validity floor; rank was the bottleneck). Primary
+anchor and fallback anchor now coincide at rank 32; the eval cap math
+(``max(LORA_R, FALLBACK_LORA_R) = 32``) still resolves to 32 unchanged.
 
 Both checks are AST / import-introspection only — no model load, runs in <1 s
 on CPU. The test fires loud the moment a future refactor drops any of the
@@ -44,19 +50,25 @@ from explore_persona_space.experiments.leave_one_out_505 import (
     eval_trajectory_505,
 )
 
-# Anchor recipe per plan §5.1 — the sub-saturating regime #505 selects to
-# preserve the recipe gradient. If any of these numbers drift the smoke gate
-# will also fail (the source ΔG band check at frac 0.50), but this test
-# fires earlier and gives a clearer diagnostic.
-_EXPECTED_LORA_R = 16
+# Anchor recipe per plan §5.1 + §8 (under-training fallback) — the recipe
+# #505 selects to preserve the recipe gradient. If any of these numbers drift
+# the smoke gate will also fail (the source ΔG band check at frac 0.50), but
+# this test fires earlier and gives a clearer diagnostic.
+# Round-8 bump (2026-06-07): _EXPECTED_LORA_R 16 -> 32. Round-7 (rank 16 + lr
+# 5e-6 + 3 epochs / 75 steps) hit ΔG=0.82 nats at frac 0.50, ~6x under plan
+# §7's 5-nat validity floor. Rank was the under-training bottleneck per the
+# trajectory (25 steps -> 0.04 nats, 75 steps -> 0.82 nats); plan §8
+# pre-registered rank-32 + lr 5e-6 as the fallback. Primary anchor and
+# fallback anchor now coincide at rank 32 (FALLBACK_LORA_R unchanged).
+_EXPECTED_LORA_R = 32
 _EXPECTED_LORA_ALPHA = 32
 _EXPECTED_LEARNING_RATE = 5e-6
 # Round-7 bump (2026-06-06): EPOCHS 1 → 3. Round-6 smoke (WandB run yjz5ytuz)
 # showed mean_token_accuracy=0.645 with grad_norm RISING at the end of training
 # under 1 epoch (25 optimizer steps); the source-self ΔG was 0.04 nats and the
 # eval-guard correctly fired LoRANotAppliedError. 3 epochs = 75 optimizer steps
-# lands sub-saturation per the still-rising loss curve. Cost delta ~0 because
-# training is <1% of cell wall time. Other recipe knobs unchanged.
+# was still under-training in round 7 (motivating the round-8 rank bump). Held
+# at 3 in round 8 — single-axis rank bump on top of round 7's epoch bump.
 _EXPECTED_EPOCHS = 3
 _EXPECTED_FALLBACK_LORA_R = 32
 
@@ -64,17 +76,22 @@ _EXPECTED_FALLBACK_LORA_R = 32
 # ── (1) Module constants — pin plan §5.1 numbers. ────────────────────────────
 
 
-def test_issue505_lora_r_is_16():
-    """Plan §5.1: the sub-saturating anchor uses rank 16."""
+def test_issue505_lora_r_pin():
+    """Plan §5.1 + §8: round-8 pin at rank 32 (under-training fallback after
+    round-7 ΔG=0.82 nats at frac 0.50 with rank 16). Rank value is the
+    primary single-axis knob; the smoke gate (a) catches drift on the
+    outcome, this test catches drift on the constant earlier."""
     assert LORA_R == _EXPECTED_LORA_R, (
-        f"LORA_R must be {_EXPECTED_LORA_R} per plan §5.1; got {LORA_R}. "
-        "rank 32 is the #472 saturating anchor; rank 16 is the #505 selected "
-        "sub-saturating recipe."
+        f"LORA_R must be {_EXPECTED_LORA_R} per plan §8 (round-8 under-training "
+        f"fallback); got {LORA_R}."
     )
 
 
 def test_issue505_lora_alpha_is_32():
-    """Plan §5.1: alpha=32 pairs with rank 16 (alpha = 2*r convention)."""
+    """Plan §5.1: alpha=32. Round 1-7 used alpha=2*r (rank 16); round 8 bumps
+    rank to 32 while holding alpha fixed at 32 → alpha=r. This is deliberate:
+    the round-8 bump is single-axis (rank only), and lora_alpha is the
+    scaling-knob the smoke gate's outcome captures via ΔG."""
     assert LORA_ALPHA == _EXPECTED_LORA_ALPHA, (
         f"LORA_ALPHA must be {_EXPECTED_LORA_ALPHA} per plan §5.1; got {LORA_ALPHA}."
     )
