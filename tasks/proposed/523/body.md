@@ -6,12 +6,18 @@ tags: []
 created_at: '2026-06-08T23:28:14Z'
 has_clean_result: false
 parent_id: 502
+goal: 'Determine whether #502''s headline geometry-predicts-leakage cell (last_prompt
+  x L22 x gauss_kl, rho=-0.79 / CV R^2=0.61 on loc-arm epoch 1) survives honest out-of-sample
+  evaluation -- via a held-out probe pool (with the indirect-rewrite voice-drift bug
+  fixed), a scoped second-seed retrain of the headline cell''s deltaG substrate, and
+  a nested CV that folds the ~1500-cell selection inside the held-out fold -- and
+  report the non-stylized-subset CV R^2 as the headline effect size.'
 ---
 # Test whether #502's L22 gauss_kl geometry-predicts-leakage cell survives honest held-out evaluation
 
 ## Goal
 
-Determine whether #502's headline predictor — `last_prompt x L22 x gauss_kl x raw`, rho = -0.79 / CV R^2 = 0.61 on loc-arm epoch 1 — reflects a generalizable geometry-to-leakage relationship or is inflated by in-sample cell selection (~1500 candidates), single-seed measurement, and the three stylized characters. Produce an out-of-sample effect-size estimate via (1) a held-out probe pool, (2) a second seed, and (3) a nested cross-validation that folds the cell-selection step inside the held-out fold. Report the non-stylized-subset CV R^2 as the headline effect size; treat full-panel rho as supporting color only.
+Determine whether #502's headline geometry-predicts-leakage cell (last_prompt x L22 x gauss_kl, rho=-0.79 / CV R^2=0.61 on loc-arm epoch 1) survives honest out-of-sample evaluation -- via a held-out probe pool (with the indirect-rewrite voice-drift bug fixed), a scoped second-seed retrain of the headline cell's deltaG substrate, and a nested CV that folds the ~1500-cell selection inside the held-out fold -- and report the non-stylized-subset CV R^2 as the headline effect size.
 
 ## Background
 
