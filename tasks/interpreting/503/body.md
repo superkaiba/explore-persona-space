@@ -5,7 +5,7 @@ title: At the surprising-middle slice (benign-data SFT → AdvBench), the base-m
 kind: experiment
 tags: []
 created_at: '2026-06-05T17:59:00Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 468
 goal: 'Test whether one before-training distance predictor — the #468 base-model in-context-example
   cosine, with JS divergence and the He et al. (arXiv 2404.01099) representation/gradient/format
