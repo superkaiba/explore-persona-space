@@ -100,6 +100,20 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     ap.add_argument(
+        "--chosen-epochs",
+        type=int,
+        default=3,
+        help=(
+            "v4 only: EPOCHS at which the re-eval trajectory was produced. "
+            "Default 3 (the v4 primary anchor). Pass --chosen-epochs 2 from "
+            "the dispatcher's bisection path (§4.2 Step 1) — the bisection "
+            "re-trains EPOCHS=2 on the finer-fraction grid and the picker "
+            "must record `chosen_epochs=2` in the bisection artifact so the "
+            "downstream Phase 1 scheduler trains the main arms at EPOCHS=2 "
+            "(matching the recipe whose `chosen_frac` was selected)."
+        ),
+    )
+    ap.add_argument(
         "--exit-to-v4-path",
         type=Path,
         default=None,
@@ -486,11 +500,18 @@ def _run_v4(args: argparse.Namespace) -> int:
         traj_path,
     )
 
+    chosen_epochs = int(args.chosen_epochs)
+    if chosen_epochs not in (2, 3):
+        raise ValueError(
+            f"--chosen-epochs must be 2 (bisection §4.2 Step 1) or 3 (v4 "
+            f"primary anchor); got {chosen_epochs}. Other values are not "
+            f"supported in the v4 picker."
+        )
     pick = pick_anchor_v4_bystander_resolution(
         trajectory,
         source=source,
         fixed_lr=fixed_lr,
-        chosen_epochs=3,
+        chosen_epochs=chosen_epochs,
     )
     write_phase0_v4_artifact(pick, out_path)
 
@@ -498,11 +519,13 @@ def _run_v4(args: argparse.Namespace) -> int:
 
     log.info(
         "[phase=phase0_pick mode=v4] verdict=%s, chosen_epochs=%s, chosen_lr=%s, "
-        "chosen_frac=%s, bystander_resolution_at_pick=%s, fallback=%s",
+        "chosen_frac=%s, chosen_checkpoint_steps=%s, "
+        "bystander_resolution_at_pick=%s, fallback=%s",
         pick.get("verdict"),
         pick.get("chosen_epochs"),
         pick.get("chosen_lr"),
         pick.get("chosen_checkpoint_fraction"),
+        pick.get("chosen_checkpoint_steps"),
         pick.get("bystander_resolution_at_pick"),
         pick.get("fallback_triggered"),
     )

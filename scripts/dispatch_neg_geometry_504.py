@@ -1939,7 +1939,7 @@ def _run_v4_phase0_reeval(
     return 0 if pick.get("verdict") == "pass" else 2
 
 
-def _run_v4_phase0_bisection(
+def _run_v4_phase0_bisection(  # noqa: C901 -- linear ladder: train → verify → re-eval → pick
     *,
     args: argparse.Namespace,
     phase_summaries: dict[str, dict],
@@ -2003,7 +2003,8 @@ def _run_v4_phase0_bisection(
             f"first."
         )
     primary_pick = json.loads(primary_pick_path.read_text())
-    if primary_pick.get("verdict") == "pass":
+    primary_verdict = primary_pick.get("verdict")
+    if primary_verdict == "pass":
         log.warning(
             "[phase=phase0_v4_bisection] phase0_calibration_v4.json has "
             "verdict='pass' — bisection NOT needed. Refusing to waste ~0.6 GPU-h "
@@ -2011,6 +2012,22 @@ def _run_v4_phase0_bisection(
             "delete phase0_calibration_v4.json first."
         )
         return 0
+    # Round-3 (Codex concern): tighten the trigger gate. Plan v5 §4.1 step 6
+    # routes to EPOCHS=2 bisection ONLY on `verdict='no_in_band_anchor'`. Any
+    # OTHER non-pass verdict (e.g. a future picker addition that returns a
+    # different fallback) must NOT silently consume the bisection budget — it
+    # should surface as an epm:failure so a human (or the orchestrator's
+    # halt-criterion) decides the routing.
+    if primary_verdict != "no_in_band_anchor":
+        raise RuntimeError(
+            f"[phase=phase0_v4_bisection] phase0_calibration_v4.json has "
+            f"verdict={primary_verdict!r} (fallback_reason="
+            f"{primary_pick.get('fallback_reason')!r}). The bisection fallback "
+            f"is gated to verdict='no_in_band_anchor' per plan v5 §4.1 step 6 "
+            f"— refusing to spend ~0.6 GPU-h on an unrecognized non-pass "
+            f"verdict. failure_class=methodology, "
+            f"reason=v4_bisection_unexpected_verdict_{primary_verdict}"
+        )
 
     cell_slug = "c504v3_smoke_eps2"  # v3 EPOCHS=2 smoke slug (existing infrastructure)
     bisection_subfolder = "adapters/issue_504_v4_bisection/c504v4_bisection_eps2_seed42"
@@ -2189,6 +2206,17 @@ def _run_v4_phase0_bisection(
         args.source,
         "--fixed-lr",
         repr(float(args.fixed_lr)),
+        # Round-3 blocker E fix: thread chosen_epochs=2 into the v4 picker so
+        # the bisection artifact carries `chosen_epochs=2` (the recipe the
+        # bisection actually trained — EPOCHS=2, finer-fraction grid) rather
+        # than the picker's default of 3. Without this the picker writes
+        # `chosen_epochs=3` AND `chosen_checkpoint_steps = round(frac * 75)`
+        # despite the trajectory being from a 50-step EPOCHS=2 run, and
+        # `_run_v2_phase1` then trains all 5 main arms at EPOCHS=3 on a
+        # `chosen_frac` chosen from an EPOCHS=2 trajectory — a headline
+        # recipe mismatch that burns 24 GPU-h on wrong-recipe data.
+        "--chosen-epochs",
+        "2",
         "--sentinel-path",
         str(LOG_DIR / "issue-504-v4-phase0_bisection-pick-results.json"),
     ]
@@ -2206,12 +2234,36 @@ def _run_v4_phase0_bisection(
     if not out_pick_path.exists():
         raise RuntimeError(f"[phase=phase0_v4_bisection] pick artifact missing at {out_pick_path}.")
     pick = json.loads(out_pick_path.read_text())
-    # Overwrite chosen_epochs to 2 (the bisection re-ran on EPOCHS=2; the
-    # picker reads it from the trajectory metadata but pinning it here makes
-    # the artifact self-describing for downstream consumers).
-    if pick.get("chosen_epochs") is None and pick.get("verdict") == "pass":
-        pick["chosen_epochs"] = 2
-        out_pick_path.write_text(json.dumps(pick, indent=2))
+    # Round-3 blocker E fix (post-hoc invariant): defense in depth — the
+    # picker is now invoked with `--chosen-epochs 2` (above), but ALSO assert
+    # the artifact landed with chosen_epochs == 2 here and recompute
+    # chosen_checkpoint_steps from the actual frac so any future refactor
+    # of the picker's step-formula doesn't silently regress the contract.
+    if pick.get("verdict") == "pass":
+        if pick.get("chosen_epochs") != 2:
+            raise RuntimeError(
+                f"[phase=phase0_v4_bisection] picker artifact at {out_pick_path} "
+                f"carries chosen_epochs={pick.get('chosen_epochs')!r} but the "
+                f"bisection trained EPOCHS=2 — invariant violated. Verify the "
+                f"picker received --chosen-epochs 2 (round-3 blocker E fix). "
+                f"failure_class=code, reason=v4_bisection_chosen_epochs_mismatch"
+            )
+        chosen_frac = pick.get("chosen_checkpoint_fraction")
+        if chosen_frac is not None:
+            # 25 steps per epoch (400 rows / effective batch 16) × 2 epochs = 50.
+            expected_steps = max(1, round(float(chosen_frac) * 50))
+            actual_steps = pick.get("chosen_checkpoint_steps")
+            if actual_steps != expected_steps:
+                raise RuntimeError(
+                    f"[phase=phase0_v4_bisection] picker artifact at "
+                    f"{out_pick_path} carries chosen_checkpoint_steps="
+                    f"{actual_steps!r} but EPOCHS=2 × 25 steps/epoch × "
+                    f"frac={chosen_frac} expects {expected_steps}. The picker's "
+                    f"step formula must be `round(frac * steps_per_epoch * "
+                    f"chosen_epochs)` with chosen_epochs threaded from the "
+                    f"CLI; round-3 blocker E fix. failure_class=code, "
+                    f"reason=v4_bisection_chosen_steps_mismatch"
+                )
     phase_summaries["v4_phase0_bisection"] = {
         "verdict": pick.get("verdict"),
         "chosen_epochs": pick.get("chosen_epochs"),
