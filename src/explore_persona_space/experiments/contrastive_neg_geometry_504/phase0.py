@@ -1142,8 +1142,12 @@ def pick_anchor_v4_bystander_resolution(
         }
         smoke_table.append(row)
         if in_band:
-            # Distance to band midpoint (0.5 — maximum spread).
-            in_band_candidates.append((frac, abs(resolution - 0.5), resolution))
+            # Distance to band midpoint (0.5 — maximum spread). Round to 6dp
+            # before sorting so float-precision ties (e.g. resolution=25/55
+            # vs 30/55 against 0.5) collapse onto an integer-count distance
+            # and the deterministic earlier-frac tie-break fires.
+            rounded_dist = round(abs(resolution - 0.5), 6)
+            in_band_candidates.append((frac, rounded_dist, resolution))
 
     if not in_band_candidates:
         # Fallback: bystander layer has no dynamic range at the EPOCHS=3 anchor.
