@@ -703,10 +703,21 @@ def _wait_for_capacity_backoff_secs(attempt: int) -> float:
     attempt=1 -> window=[0, base], attempt=2 -> [0, 2*base], ..., capped at
     :data:`WAIT_FOR_CAPACITY_BACKOFF_CAP_SECS`. Full jitter (uniform
     0..window) avoids synchronized retry storms across parallel provisions.
+
+    The exponent is clamped to 32 because (a) once the window reaches the
+    cap, larger exponents are irrelevant — ``min(...)`` pins to the
+    ceiling anyway — and (b) ``2 ** N`` overflows Python ``float`` past
+    ~1024 and raises ``OverflowError`` (``int too large to convert to
+    float``), which would CRASH this unbounded retry loop after ~3.5 days
+    at the 10-min ceiling (≈attempt 1025). The whole point of the loop is
+    "retry indefinitely," so an arithmetic overflow at high attempt counts
+    is forbidden. ``30s * 2**32`` already overshoots the 600s ceiling by
+    ~1e8, so the clamp is harmless on the cap-pinning side.
     """
     assert attempt >= 1, attempt
+    exp = min(attempt - 1, 32)
     window = min(
-        WAIT_FOR_CAPACITY_BACKOFF_BASE_SECS * (2 ** (attempt - 1)),
+        WAIT_FOR_CAPACITY_BACKOFF_BASE_SECS * (2**exp),
         WAIT_FOR_CAPACITY_BACKOFF_CAP_SECS,
     )
     return random.uniform(0.0, window)

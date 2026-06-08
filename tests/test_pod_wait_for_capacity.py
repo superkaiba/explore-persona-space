@@ -239,6 +239,28 @@ def test_backoff_window_grows_and_caps(monkeypatch):
     )
 
 
+def test_backoff_does_not_overflow_at_huge_attempt():
+    """Regression: ``2 ** (attempt - 1)`` overflows Python float past
+    attempt ~1025, raising ``OverflowError: int too large to convert to
+    float`` and CRASHING the unbounded retry loop after ~3.5 days of
+    waiting at the 10-min ceiling. The exponent must be clamped so the
+    loop survives arbitrarily many attempts — the whole point of the
+    loop is "retry indefinitely." Before the clamp this call raised
+    ``OverflowError``; after the clamp it returns a finite jittered value
+    inside the cap.
+    """
+    import math
+
+    out = _wait_for_capacity_backoff_secs(10_000)
+    assert math.isfinite(out)
+    assert out > 0.0
+    assert out <= pod_lifecycle.WAIT_FOR_CAPACITY_BACKOFF_CAP_SECS
+    # Even more extreme attempt count: clamp must still hold.
+    out_huge = _wait_for_capacity_backoff_secs(1_000_000)
+    assert math.isfinite(out_huge)
+    assert 0.0 < out_huge <= pod_lifecycle.WAIT_FOR_CAPACITY_BACKOFF_CAP_SECS
+
+
 def test_autonomous_session_helper_truthiness(monkeypatch):
     """``_autonomous_session()`` mirrors task.py's parse exactly. The falsy
     set ({"", "0", "false", "no"}) must NOT enable autonomous mode."""
