@@ -12,6 +12,9 @@ goal: Test whether the rank-one law (constant shift-direction + cosine-scaled ma
   and emergent misalignment (rich) -- by comparing per-context activation shift vectors
   across a held-out persona panel, predicting it holds for the marker and breaks for
   EM.
+relates_to:
+- leak-predictor
+- leak-behavior-vs-marker
 ---
 ## Goal
 
