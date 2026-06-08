@@ -149,8 +149,8 @@ PHASE0_CALIB_RANKS: tuple[int, ...] = (4, 8, 16)
 # Anchor LR (Source: #477 + #479 — only LR that walks source through mid-band).
 ANCHOR_LR: float = 2e-6
 
-# Epochs — round-15 strengthening (Source: pod-504 round-13 smoke + #477 r=8
-# count=2 mid-band reading).
+# Epochs — round-15/16 strengthening (Source: pod-504 round-13/15 trajectories
+# + #477 r=8/count=2 mid-band reading).
 #
 # History:
 #   v1-v14 EPOCHS=1: 200 pos + 200 neg = 400 rows / batch 16 = 25 steps/epoch.
@@ -158,35 +158,67 @@ ANCHOR_LR: float = 2e-6
 #   read source ΔG ∈ [−0.02, +0.03] nats with on-policy emission 0.0 at every
 #   checkpoint up to step 25 — sub-floor, NOT a rig artifact (PEFT-direct and
 #   vLLM both apply the adapter; the floor reading is genuine undertraining).
-#   The 1-epoch / 400-row budget is ~3× shorter than the #477 r=8/count=2 cell
-#   that hit ΔG = 9.3 nats: #477 ran 200 pos + 400 neg (2 personas × 200
-#   ex/persona) at EPOCHS=2 → 600 rows × 2 / 16 = 75 optimizer steps.
 #
-#   v15 EPOCHS=3 — strengthen the anchor by tripling the step budget at the
-#   IDENTICAL composition (200 pos + 200 neg = 400 rows / batch 16 → 75
-#   optimizer steps per cell), matching #477's measured mid-band step regime
-#   without changing rank/α/lr (per user-directive 2026-06-08T04:53:14Z:
-#   "same lr=2e-6 / r=8 / alpha=32, so source ΔG lands in the ~5-10-nats-
-#   below-ceiling band"). The 6-checkpoint trajectory at frac=
+#   v15 EPOCHS=3 (composition unchanged at 200 pos + 200 neg = 400 rows / 16
+#   = 75 steps): refuted by data. Pod-504 round-15 stage-1 ΔG trajectories at
+#   r=8/lr=2e-6 plateaued at ~0.11 nats (50× below the [5,12]-nat target band)
+#   with emission stuck at 0.0 throughout {6,12,25,38,57,75}. r=4 was even
+#   flatter (~0.03 nats); r=16 saturated. The EPOCHS=3 hypothesis was
+#   that step-count alone was the lever; round-15 data shows step-count is
+#   NOT the lever at 200-neg composition — #504's 200 negs vs #477's 400 negs
+#   is the actual gap. (See user note in round-15 loop-1 (d): "200 negs vs
+#   400 negs differ in negative gradient density.")
+#
+#   v16 EPOCHS=3 + NEG composition match (autonomous strategy pivot per
+#   CLAUDE.md autonomous-mode rules, 2026-06-08): keep EPOCHS=3, bump
+#   NEG_EX_PER_PERSONA 100 → 200 to match #477's r=8/count=2 mid-band cell
+#   exactly (200 pos + 200 ex/persona × 2 personas = 200 pos + 400 neg = 600
+#   rows). Composition × EPOCHS=3 yields max_steps = int(3 × 600 / 16) = 112
+#   optimizer steps per cell, which is #477's measured 75-step mid-band with
+#   ~1.5× headroom. The 6-checkpoint trajectory at frac=
 #   {0.08, 0.16, 0.33, 0.50, 0.75, 1.00} maps to ACTUAL saved-checkpoint
-#   steps {6, 12, 25, 38, 57, 75} at max_steps=75 (the callback at
+#   steps {9, 18, 37, 56, 84, 112} at max_steps=112 (the callback at
 #   train_cell.py:CheckpointAtFractionsCallback fires on the first
-#   global_step where global_step / max_steps >= frac, so 0.50→step 38
-#   (38/75=0.5067), 0.75→step 57 (57/75=0.7600); 1.00 is recorded at
-#   step 75 in on_train_end). Phase 0's pick rule scans for the latest
-#   in-band checkpoint before the cell saturates. Source: #477 r=8/count=2
-#   cell (9.3 nats at 75 steps), pod-504 round-13 trajectories (~0 nats
-#   at 25 steps).
+#   global_step where global_step / max_steps >= frac, so 0.16→step 18
+#   (18/112=0.1607), 0.50→step 56 (56/112=0.5000), 0.75→step 84
+#   (84/112=0.7500); 1.00 recorded at step 112 in on_train_end).
+#   Phase 0's pick rule scans for the LATEST in-band checkpoint before
+#   the cell saturates, so high-rank early-frac no-signal checkpoints
+#   (e.g. r=16 at frac=0.08 / step=9) are auto-skipped by the picker.
+#   The EPOCHS constant is unchanged from v15; the mid-band step count
+#   match is via composition × epochs, not epochs alone. Source: #477
+#   r=8/count=2 cell (9.3 nats at 75 steps with 200 pos + 400 neg),
+#   pod-504 round-15 plateau at ~0.11 nats with 200 pos + 200 neg.
 EPOCHS: int = 3
 
 # Composition (plan §4.1 + §5):
-#   200 positives + 200 negatives = 400 rows / batch 16 = 25 steps PER EPOCH.
-#   v15: EPOCHS=3 → 75 optimizer steps per cell (matches #477 r=8/count=2).
-#   200 / 200 = 1:1 contrastive ratio (#383 default, #477 sustained).
+#   v15 and earlier: 200 positives + 200 negatives = 400 rows / batch 16
+#   = 25 steps PER EPOCH (= 75 steps at EPOCHS=3, refuted by round-15 data).
+#   v16: 200 positives + 400 negatives (200 ex × 2 personas) = 600 rows /
+#   batch 16 = 37 steps PER EPOCH (= 112 steps at EPOCHS=3). This matches
+#   #477's r=8/count=2 cell composition exactly. The 1:2 pos:neg ratio
+#   (vs the canonical 1:1) is on purpose: each positioned arm has 2
+#   distinct negative personas (qwen_default + 1 positioned N), and #383's
+#   ratio rule is 1:1 positives-to-TOTAL-negatives — so 1 pos per (neg
+#   persona) × n_neg_personas = 1:n_neg_personas at the row level. With
+#   n_neg_personas=2 the row-level ratio is 1:2 (200 pos vs 200 per-persona
+#   × 2 = 400 neg) but the per-persona ratio stays 1:1 (200 pos vs 200 per
+#   persona). Same is true of #477's r=8/count=2 cell (200 pos vs 200×2
+#   per-persona).
 N_POS_PER_CELL: int = POS_EX_PER_SOURCE  # 200 (reuse #472 constant)
-NEG_EX_PER_PERSONA: int = 100  # 100 per persona × 2 personas = 200 total negs
-# Default-only arm: 200 from qwen_default (single negative persona).
-NEG_EX_DEFAULT_ONLY_ARM: int = 200
+# v16: bumped 100→200 to match #477's r=8/count=2 measured mid-band cell.
+# Source: #477 r=8/count=2 (200 ex/persona × 2 personas = 400 neg total,
+# 9.3 nats source ΔG at 75 steps); pod-504 round-15 plateau at 200/persona×1
+# (= 200 neg total) showed the 200-neg regime doesn't move the signal off
+# the floor in 75 steps. Anti-saturation handling: Phase 0's pick rule picks
+# the LATEST in-band checkpoint across the 6-frac trajectory, so high-end
+# saturation is auto-handled by picking an earlier frac.
+NEG_EX_PER_PERSONA: int = 200  # 200 per persona × 2 personas = 400 total negs
+# Default-only arm: 400 from qwen_default alone, matching the positioned
+# arms' 400-row neg total so cross-arm step counts stay equal.
+# Source: matches v16 positioned-arm composition exactly (= NEG_EX_PER_PERSONA
+# × 2 personas). v15 had this at 200 (= 100 × 2 personas).
+NEG_EX_DEFAULT_ONLY_ARM: int = 400
 
 
 # ── Layer choice (plan §4.2 + §11) ──────────────────────────────────────────
