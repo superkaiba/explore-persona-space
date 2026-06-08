@@ -5052,7 +5052,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
     else:
         _active_for_expected = list(_ALL_CONDS)
     _expected_full = [c.cid for c in _active_for_expected]
-    _expected_eos = [c.cid for c in _active_for_expected if c.cls == "A"]
+    # For end_of_system: only Class A WITH a non-None system_prompt has a
+    # system-only prefix. #509's FB3 (Qwen default) and FB9 (no_system) are
+    # Class A but carry `system_prompt=None`, so they have no end_of_system
+    # data by construction (see _build_prompts_for_extraction). Including
+    # them here would force the merger to demand partition files that the
+    # extraction step never wrote.
+    _expected_eos = [
+        c.cid
+        for c in _active_for_expected
+        if c.cls == "A" and getattr(c, "system_prompt", None) is not None
+    ]
 
     def _expected_for_point(pt: str) -> list[str] | None:
         if pt == "end_of_system":
