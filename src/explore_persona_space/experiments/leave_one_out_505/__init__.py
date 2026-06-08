@@ -116,6 +116,24 @@ MAX_LENGTH = 1024
 WEIGHT_DECAY = 0.0
 MAX_NEW_TOKENS_GEN = 2048  # ≥ 2× longest trained completion per marker-leakage rule
 
+# vLLM ``max_model_len`` (round 10, 2026-06-08): bumped from #472's default of
+# 2048 to 4096 after round-9 smoke (PID 9162, log
+# ``/workspace/logs/issue-505-20260608-043806.log`` on pod-505) crashed at
+# frac 0.50 with::
+#
+#     ValueError: The decoder prompt (length 2050) is longer than the maximum
+#     model length of 2048.
+#
+# Root cause: ``MAX_NEW_TOKENS_GEN = 2048`` lets the trained model's on-policy
+# ``R_j`` approach the cap (round-9 produced longer R_j than round-8 because
+# of the LR bump); the post-R-slot ``score_logp_for_R`` then feeds vLLM a
+# prompt of ``system_prompt + question + R_j + marker context`` which exceeds
+# the 2048 cap once R_j is near its own cap. 4096 = 2× MAX_NEW_TOKENS_GEN
+# covers the worst-case prefix + R_j + marker context. Overridden at #505's
+# call site only; #472's ``DEFAULT_MAX_MODEL_LEN = 2048`` is untouched (no
+# shared-recipe change).
+MAX_MODEL_LEN = 4096
+
 # ── Marker-loss masking — THE LOAD-BEARING CONJUNCTION (plan §11, §5.5 gate h) ──
 # Without BOTH flags the negative branch trains the trailing "\n" one PAST the
 # DV slot; contrastive contribution at the DV slot is null; leave-one-out

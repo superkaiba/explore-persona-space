@@ -47,6 +47,8 @@ from explore_persona_space.experiments.leave_one_out_505 import (
     LEARNING_RATE,
     LORA_ALPHA,
     LORA_R,
+    MAX_MODEL_LEN,
+    MAX_NEW_TOKENS_GEN,
     eval_trajectory_505,
 )
 
@@ -249,3 +251,106 @@ def test_eval_trajectory_max_lora_rank_default_at_least_32():
         f"run_trajectory_eval_with_guard.max_lora_rank default {default} < 32; "
         "the §5.5 fallback anchor uses rank 32 and would be rejected at load."
     )
+
+
+# ── (4) Round-10: vLLM max_model_len cap accommodates worst-case prompt. ──────
+
+
+def test_issue505_max_model_len_is_4096():
+    """Round-10 pin (2026-06-08): #505's ``MAX_MODEL_LEN`` is 4096. Round-9
+    smoke crashed mid-trajectory at frac 0.50 with::
+
+        ValueError: The decoder prompt (length 2050) is longer than the maximum
+        model length of 2048.
+
+    Root cause: ``MAX_NEW_TOKENS_GEN = 2048`` lets the trained model's
+    on-policy R_j approach 2048 tokens; the post-R-slot ``score_logp_for_R``
+    input (system + question + R_j + marker context) then exceeds the 2048
+    cap inherited from #472's ``DEFAULT_MAX_MODEL_LEN``. 4096 = 2x MAX_NEW_TOKENS_GEN
+    covers the worst case. The constant pin fires loud if a future refactor
+    drops the override back to the #472 default."""
+    from explore_persona_space.experiments.leave_one_out_505 import MAX_MODEL_LEN
+
+    assert MAX_MODEL_LEN == 4096, (
+        f"MAX_MODEL_LEN must be 4096 (round-10 fix); got {MAX_MODEL_LEN}. "
+        "Round-9 crashed at decoder prompt 2050 > max_model_len 2048."
+    )
+
+
+def test_issue505_max_model_len_covers_2x_max_new_tokens():
+    """``MAX_MODEL_LEN`` must be at least 2x ``MAX_NEW_TOKENS_GEN`` so the
+    post-R-slot logp input (system + question + R_j + marker context) fits
+    even when R_j approaches its own generation cap. The 2x headroom is the
+    documented rationale; pin it so future ``MAX_NEW_TOKENS_GEN`` bumps
+    force a coupled ``MAX_MODEL_LEN`` review."""
+    from explore_persona_space.experiments.leave_one_out_505 import (
+        MAX_MODEL_LEN as _max_model_len,
+    )
+    from explore_persona_space.experiments.leave_one_out_505 import (
+        MAX_NEW_TOKENS_GEN as _max_new_tokens,
+    )
+
+    assert _max_model_len >= 2 * _max_new_tokens, (
+        f"MAX_MODEL_LEN ({_max_model_len}) must be >= 2 * MAX_NEW_TOKENS_GEN "
+        f"({_max_new_tokens}) so the worst-case post-R-slot logp input fits. "
+        "Round-9 hit this exact failure at decoder prompt 2050 > 2048."
+    )
+
+
+def test_eval_trajectory_with_guard_threads_max_model_len_default():
+    """``run_trajectory_eval_with_guard`` must default ``max_model_len`` to
+    #505's ``MAX_MODEL_LEN`` (4096), not inherit #472's 2048. Without this,
+    a future call site that omits the kwarg silently regresses to the
+    round-9 crash regime."""
+    import inspect
+
+    sig = inspect.signature(eval_trajectory_505.run_trajectory_eval_with_guard)
+    assert "max_model_len" in sig.parameters, (
+        "run_trajectory_eval_with_guard missing max_model_len kwarg — round-10 "
+        "fix dropped during refactor; the wrapper would inherit #472's 2048 "
+        "default and re-trigger the decoder-prompt-exceeds-max crash."
+    )
+    default = sig.parameters["max_model_len"].default
+    assert default == 4096, (
+        f"run_trajectory_eval_with_guard.max_model_len default {default} != 4096; "
+        "round-10 pin requires 4096 (2x MAX_NEW_TOKENS_GEN)."
+    )
+
+
+def test_dispatcher_threads_max_model_len():
+    """Every dispatcher call to ``run_trajectory_eval_with_guard`` must pass
+    ``max_model_len`` explicitly. The default-arg on the wrapper is a
+    belt-and-suspenders backstop; the call site MUST also pin it so future
+    refactors that re-thread the wrapper signature don't silently drop the
+    override at the call site. Round-9 crash was at the call site, not in
+    the wrapper's default."""
+    src = Path(__file__).resolve().parent.parent / (
+        "src/explore_persona_space/experiments/leave_one_out_505/dispatch.py"
+    )
+    tree = ast.parse(src.read_text())
+    calls = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "run_trajectory_eval_with_guard"
+    ]
+    assert calls, "no run_trajectory_eval_with_guard(...) call found in dispatch.py"
+    for call in calls:
+        kw_names = {kw.arg for kw in call.keywords if kw.arg}
+        assert "max_model_len" in kw_names, (
+            f"dispatch.py run_trajectory_eval_with_guard at line {call.lineno} "
+            "missing max_model_len=MAX_MODEL_LEN — without it the eval rig falls "
+            "back to whatever default vLLM resolves on the cell, which on a "
+            "future refactor of the wrapper could re-inherit #472's 2048 and "
+            "re-trigger the round-9 decoder-prompt-exceeds-max crash."
+        )
+
+
+def test_max_model_len_constant_referenced():
+    """Defensive — ensures MAX_MODEL_LEN + MAX_NEW_TOKENS_GEN module imports
+    aren't stripped by ruff (the round-10 fix module-imports them for the
+    pins above)."""
+    assert MAX_MODEL_LEN == 4096
+    assert MAX_NEW_TOKENS_GEN == 2048
+    assert LORA_R == _EXPECTED_LORA_R  # silence unused-import linter on canonical names

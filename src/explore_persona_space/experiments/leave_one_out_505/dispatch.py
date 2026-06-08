@@ -53,6 +53,7 @@ from explore_persona_space.experiments.leave_one_out_505 import (
     LORA_ALPHA,
     LORA_R,
     MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT,
+    MAX_MODEL_LEN,
     MAX_NEW_TOKENS_GEN,
     QWEN_IM_END_TOKEN_ID,
     SEEDS,
@@ -282,6 +283,10 @@ def _train_and_eval_one_cell(
         headline_frac=HEADLINE_CHECKPOINT_FRAC,
         compute_kl=compute_kl,
         max_lora_rank=max_lora_rank,
+        # Round-10 fix: override #472's vLLM ``max_model_len`` default of 2048
+        # (round-9 crash: decoder prompt 2050 > 2048 at frac 0.50). 4096 = 2×
+        # MAX_NEW_TOKENS_GEN covers worst-case prefix + R_j + marker context.
+        max_model_len=MAX_MODEL_LEN,
     )
     return {
         "cell_slug": cell_slug,

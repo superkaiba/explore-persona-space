@@ -1,4 +1,4 @@
-# em-dash + Greek ΔG intentional
+# ruff: noqa: RUF002, RUF003  # em-dash + Greek ΔG + × (multiplication) intentional
 """Task #505 §5.5 — eval-trajectory wrapper that wires the #477 silent-LoRA guard.
 
 Calls the #472 ``run_trajectory_eval`` for the heavy work, then re-reads the
@@ -36,6 +36,7 @@ from explore_persona_space.experiments.leave_one_out_505 import (
     FALLBACK_LORA_R,
     HEADLINE_CHECKPOINT_FRAC,
     LORA_R,
+    MAX_MODEL_LEN,
     MAX_NEW_TOKENS_GEN,
 )
 
@@ -47,6 +48,16 @@ from explore_persona_space.experiments.leave_one_out_505 import (
 # itself a separate dispatcher bug — at eval_trajectory.py:179
 # ``ValueError: LoRA rank 32 is greater than max_lora_rank 16``).
 _DEFAULT_MAX_LORA_RANK = max(LORA_R, FALLBACK_LORA_R)
+
+# vLLM ``max_model_len`` default for #505 (round 10, 2026-06-08). #472's
+# ``DEFAULT_MAX_MODEL_LEN = 2048`` rejected the round-9 trajectory eval when
+# the trained model's on-policy ``R_j`` approached ``MAX_NEW_TOKENS_GEN``
+# (2048) and the post-R-slot ``score_logp_for_R`` prompt exceeded 2048 with
+# prefix + marker context. ``MAX_MODEL_LEN = 4096`` (2× MAX_NEW_TOKENS_GEN)
+# overrides #472's default at #505's call site only. Shared #472 code is
+# untouched. See ``leave_one_out_505/__init__.py`` for the round-9 crash
+# signature and rationale.
+_DEFAULT_MAX_MODEL_LEN = MAX_MODEL_LEN
 
 log = logging.getLogger("issue_505.eval_trajectory")
 
@@ -167,6 +178,7 @@ def run_trajectory_eval_with_guard(
     headline_frac: float = HEADLINE_CHECKPOINT_FRAC,
     compute_kl: bool = True,
     max_lora_rank: int = _DEFAULT_MAX_LORA_RANK,
+    max_model_len: int = _DEFAULT_MAX_MODEL_LEN,
 ) -> Path:
     """Run the #472 trajectory eval, then run the #477 silent-LoRA guard at the
     headline checkpoint.
@@ -178,6 +190,19 @@ def run_trajectory_eval_with_guard(
 
     Side-effect: appends ``eval_guard_diagnostic`` to the trajectory.json's
     headline checkpoint so downstream analyzers can audit the verdict.
+
+    ``max_model_len`` defaults to ``leave_one_out_505.MAX_MODEL_LEN`` (4096 as of
+    round 10, 2026-06-08). The #472 ``run_trajectory_eval`` default of 2048
+    rejected round-9's trajectory eval at frac 0.50 with::
+
+        ValueError: The decoder prompt (length 2050) is longer than the maximum
+        model length of 2048.
+
+    when the trained model's on-policy ``R_j`` approached ``MAX_NEW_TOKENS_GEN``
+    and the post-R-slot ``score_logp_for_R`` prompt (system + question + R_j +
+    marker context) exceeded the 2048 cap. 4096 = 2× ``MAX_NEW_TOKENS_GEN``
+    covers the worst case. The override is local to #505's call site; shared
+    #472 code is untouched.
     """
     # Phase A: heavy work (vLLM gen + DV-A + DV-B KL).
     trajectory_path = run_trajectory_eval(
@@ -192,6 +217,7 @@ def run_trajectory_eval_with_guard(
         base_model=base_model,
         max_new_tokens=max_new_tokens,
         max_lora_rank=max_lora_rank,
+        max_model_len=max_model_len,
         compute_kl=compute_kl,
     )
 
