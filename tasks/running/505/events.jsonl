@@ -220,3 +220,4 @@
 {"ts": "2026-06-08T21:42:05Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: traj_kl -> traj_done", "phase": "traj_done", "pod": "pod-505"}
 {"ts": "2026-06-08T21:51:24Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: traj_done -> traj_vllm", "phase": "traj_vllm", "pod": "pod-505"}
 {"ts": "2026-06-08T22:00:40Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: traj_vllm -> traj_kl", "phase": "traj_kl", "pod": "pod-505"}
+{"ts": "2026-06-08T22:28:20Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: traj_kl -> traj_vllm", "phase": "traj_vllm", "pod": "pod-505"}
