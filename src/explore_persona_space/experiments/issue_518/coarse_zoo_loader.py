@@ -108,6 +108,34 @@ COARSE_ZOO_FIELDS: tuple[str, ...] = (
 )
 
 
+# Per-cell field requirements for the cosine sweep JSON produced by
+# ``scripts/issue404_predictor_cossim.py``. ``compute_coarse_zoo_for_arm``
+# checks presence cell-by-cell and raises ``RuntimeError`` (naming the
+# missing field + cell) if any is absent — mirroring
+# ``load_existing_predictor_comparison`` at L148-155. The asymmetry that
+# Codex round-5 finding #2 flagged (silent ``c.get(field, 0.0)`` in
+# ``compute_coarse_zoo_for_arm`` vs ``raise RuntimeError`` in the syco
+# loader) is closed here.
+_REQUIRED_COSINE_FIELDS: tuple[str, ...] = (
+    "cosine_response_l7",
+    "cosine_response_l14",
+    "cosine_response_l21",
+    "cosine_response_l27",
+)
+
+# Per-cell field requirements for the JS/KL sweep JSON produced by
+# ``scripts/issue458_predictor_jsdiv.py``. Same fail-loud contract as the
+# cosine sweep.
+_REQUIRED_JS_KL_FIELDS: tuple[str, ...] = (
+    "JS_sym_nats",
+    "JS_from_source_nats",
+    "JS_from_bystander_nats",
+    "KL_src_to_bys_nats",
+    "KL_bys_to_src_nats",
+    "KL_sym_nats",
+)
+
+
 def load_existing_predictor_comparison(
     *,
     arm: str,
@@ -182,6 +210,181 @@ def _aggregate_panel_metrics(
     return float(mean_chars), float(mean_toks), n
 
 
+def _build_cosine_cells(
+    *,
+    arm: str,
+    cosine_payload: dict[str, Any],
+    layer_cosine_path: Path,
+) -> dict[tuple[str, str], dict[str, float]]:
+    """Build per-(source, bystander) cosine cells from the sweep JSON.
+
+    Fail-loud on any missing required field — mirrors the syco loader's
+    ``load_existing_predictor_comparison`` presence check at L148-155. The
+    silent ``c.get(field, 0.0)`` pattern that was here in round 5 was the
+    asymmetry Codex round-5 finding #2 flagged.
+    """
+    out: dict[tuple[str, str], dict[str, float]] = {}
+    for c in cosine_payload.get("cells", []):
+        src_name = c.get("source")
+        bys_name = c.get("bystander")
+        if not src_name or not bys_name:
+            raise RuntimeError(
+                f"compute_coarse_zoo_for_arm({arm!r}): cosine sweep cell "
+                f"missing 'source' or 'bystander' key; cell payload = {c!r}; "
+                f"file = {layer_cosine_path}"
+            )
+        # ``cosine_l20_baseline`` accepts either name (legacy alias
+        # ``cosine_l20`` from older predictor sweeps). At least one MUST
+        # be present.
+        if "cosine_l20_baseline" in c:
+            cosine_l20_value = float(c["cosine_l20_baseline"])
+        elif "cosine_l20" in c:
+            cosine_l20_value = float(c["cosine_l20"])
+        else:
+            raise RuntimeError(
+                f"compute_coarse_zoo_for_arm({arm!r}): cosine sweep cell "
+                f"(source={src_name!r}, bystander={bys_name!r}) missing both "
+                f"'cosine_l20_baseline' and its legacy alias 'cosine_l20'. "
+                f"Re-run scripts/issue404_predictor_cossim.py against this "
+                f"arm's (source, bystander) panel; see {layer_cosine_path}."
+            )
+        # Per-layer cosines (l7/l14/l21/l27) are required by name — no
+        # silent zero defaults. Mirrors the syco loader's
+        # ``load_existing_predictor_comparison`` presence check at L148-155.
+        for f in _REQUIRED_COSINE_FIELDS:
+            if f not in c:
+                raise RuntimeError(
+                    f"compute_coarse_zoo_for_arm({arm!r}): cosine sweep cell "
+                    f"(source={src_name!r}, bystander={bys_name!r}) missing "
+                    f"required field {f!r}. Run "
+                    f"scripts/issue404_predictor_cossim.py against this "
+                    f"arm's (source, bystander) panel and verify the output "
+                    f"schema at {layer_cosine_path}."
+                )
+        # ``cosine_response_headline`` falls back to ``cosine_response_l21``
+        # by definition (the headline layer is l21 per #404's selection);
+        # this is a documented derivation, not a silent default.
+        headline_value = float(c.get("cosine_response_headline", c["cosine_response_l21"]))
+        out[(src_name, bys_name)] = {
+            "cosine_l20_baseline": cosine_l20_value,
+            "cosine_response_l7": float(c["cosine_response_l7"]),
+            "cosine_response_l14": float(c["cosine_response_l14"]),
+            "cosine_response_l21": float(c["cosine_response_l21"]),
+            "cosine_response_l27": float(c["cosine_response_l27"]),
+            "cosine_response_headline": headline_value,
+        }
+    return out
+
+
+def _build_js_kl_cells(
+    *,
+    arm: str,
+    js_kl_payload: dict[str, Any],
+    js_kl_path: Path,
+) -> dict[tuple[str, str], dict[str, float]]:
+    """Build per-(source, bystander) JS/KL cells from the sweep JSON.
+
+    Fail-loud on any missing required field — same contract as
+    ``_build_cosine_cells``. ``M_js = 1.0 - JS_sym_nats`` is a documented
+    derivation when the sweep does not pre-compute it.
+    """
+    out: dict[tuple[str, str], dict[str, float]] = {}
+    for c in js_kl_payload.get("cells", []):
+        src_name = c.get("source")
+        bys_name = c.get("bystander")
+        if not src_name or not bys_name:
+            raise RuntimeError(
+                f"compute_coarse_zoo_for_arm({arm!r}): JS/KL sweep cell "
+                f"missing 'source' or 'bystander' key; cell payload = {c!r}; "
+                f"file = {js_kl_path}"
+            )
+        for f in _REQUIRED_JS_KL_FIELDS:
+            if f not in c:
+                raise RuntimeError(
+                    f"compute_coarse_zoo_for_arm({arm!r}): JS/KL sweep cell "
+                    f"(source={src_name!r}, bystander={bys_name!r}) missing "
+                    f"required field {f!r}. Run "
+                    f"scripts/issue458_predictor_jsdiv.py against this arm's "
+                    f"(source, bystander) panel and verify the output schema "
+                    f"at {js_kl_path}."
+                )
+        m_js_value = float(c.get("M_js", 1.0 - float(c["JS_sym_nats"])))
+        out[(src_name, bys_name)] = {
+            "JS_sym_nats": float(c["JS_sym_nats"]),
+            "JS_from_source_nats": float(c["JS_from_source_nats"]),
+            "JS_from_bystander_nats": float(c["JS_from_bystander_nats"]),
+            "M_js": m_js_value,
+            "KL_src_to_bys_nats": float(c["KL_src_to_bys_nats"]),
+            "KL_bys_to_src_nats": float(c["KL_bys_to_src_nats"]),
+            "KL_sym_nats": float(c["KL_sym_nats"]),
+        }
+    return out
+
+
+def _load_source_base_rate(
+    *,
+    arm: str,
+    src: str,
+    seed: int,
+    src_panel_dir: Path,
+    base_panel_dir: Path,
+) -> float:
+    """Read the per-source judged_<arm>.json and return its base-panel diagonal.
+
+    The "source_base_rate" predictor is the unadapted base model's arm-rate
+    when WEARING the source persona — the diagonal of the base panel.
+    ``judge_refusal_panel`` + ``judge_em_panel`` populate this via the
+    base-pass diagonal (round-6 fix: the diagonal skip was dropped from the
+    base pass). A missing judged file, missing diagonal entry, or NaN rate
+    is a structural upstream failure; silent ``0.0`` here would collapse
+    predictor variance across all cells under this source (Codex round-5
+    finding #1).
+    """
+    judged = src_panel_dir / f"judged_{arm}.json"
+    if not judged.exists():
+        raise FileNotFoundError(
+            f"compute_coarse_zoo_for_arm({arm!r}): judged summary missing: "
+            f"{judged}. Run "
+            f"src/explore_persona_space/experiments/issue_518/"
+            f"judge_{arm}_panel.py for source={src!r} (seed={seed}) before "
+            f"invoking the substrate build."
+        )
+    jpayload = json.loads(judged.read_text())
+    base_per_bys = jpayload.get("base_per_bystander", {})
+    if not isinstance(base_per_bys, dict):
+        raise RuntimeError(
+            f"compute_coarse_zoo_for_arm({arm!r}): {judged} has malformed "
+            f"'base_per_bystander' (expected dict, got "
+            f"{type(base_per_bys).__name__})."
+        )
+    src_self = base_per_bys.get(src)
+    if not isinstance(src_self, dict) or "rate" not in src_self:
+        raise RuntimeError(
+            f"compute_coarse_zoo_for_arm({arm!r}): {judged} is missing the "
+            f"base-panel diagonal entry `base_per_bystander[{src!r}]['rate']`. "
+            f"This is the source-self base rate; without it `source_base_rate` "
+            f"collapses to a zero-variance predictor. Re-run "
+            f"src/explore_persona_space/experiments/issue_518/"
+            f"judge_{arm}_panel.py against this source (the round-6 fix "
+            f"restored the base-panel diagonal); existing keys = "
+            f"{sorted(base_per_bys.keys())[:5]!r}..."
+        )
+    source_base_rate = float(src_self["rate"])
+    if source_base_rate != source_base_rate:  # NaN check
+        raise RuntimeError(
+            f"compute_coarse_zoo_for_arm({arm!r}): "
+            f"`base_per_bystander[{src!r}]['rate']` in {judged} is NaN. For "
+            f"the em arm this means no rollouts cleared the coherence filter "
+            f"at the source-self diagonal; for refusal it means no judged "
+            f"rollouts at all. Either way `source_base_rate` would be NaN "
+            f"across every cell under this source. Inspect the base-panel "
+            f"completions at "
+            f"`{base_panel_dir}/sycophancy_eval_{src}.json` and re-run the "
+            f"relevant judge."
+        )
+    return source_base_rate
+
+
 def compute_coarse_zoo_for_arm(
     *,
     arm: str,
@@ -243,32 +446,16 @@ def compute_coarse_zoo_for_arm(
     cosine_payload = json.loads(layer_cosine_path.read_text())
     js_kl_payload = json.loads(js_kl_path.read_text())
 
-    cosine_cells: dict[tuple[str, str], dict[str, float]] = {}
-    for c in cosine_payload.get("cells", []):
-        key = (c["source"], c["bystander"])
-        cosine_cells[key] = {
-            "cosine_l20_baseline": float(c.get("cosine_l20", c.get("cosine_l20_baseline", 0.0))),
-            "cosine_response_l7": float(c.get("cosine_response_l7", 0.0)),
-            "cosine_response_l14": float(c.get("cosine_response_l14", 0.0)),
-            "cosine_response_l21": float(c.get("cosine_response_l21", 0.0)),
-            "cosine_response_l27": float(c.get("cosine_response_l27", 0.0)),
-            "cosine_response_headline": float(
-                c.get("cosine_response_headline", c.get("cosine_response_l21", 0.0))
-            ),
-        }
-
-    js_kl_cells: dict[tuple[str, str], dict[str, float]] = {}
-    for c in js_kl_payload.get("cells", []):
-        key = (c["source"], c["bystander"])
-        js_kl_cells[key] = {
-            "JS_sym_nats": float(c.get("JS_sym_nats", 0.0)),
-            "JS_from_source_nats": float(c.get("JS_from_source_nats", 0.0)),
-            "JS_from_bystander_nats": float(c.get("JS_from_bystander_nats", 0.0)),
-            "M_js": float(c.get("M_js", 1.0 - c.get("JS_sym_nats", 0.0))),
-            "KL_src_to_bys_nats": float(c.get("KL_src_to_bys_nats", 0.0)),
-            "KL_bys_to_src_nats": float(c.get("KL_bys_to_src_nats", 0.0)),
-            "KL_sym_nats": float(c.get("KL_sym_nats", 0.0)),
-        }
+    cosine_cells = _build_cosine_cells(
+        arm=arm,
+        cosine_payload=cosine_payload,
+        layer_cosine_path=layer_cosine_path,
+    )
+    js_kl_cells = _build_js_kl_cells(
+        arm=arm,
+        js_kl_payload=js_kl_payload,
+        js_kl_path=js_kl_path,
+    )
 
     keys = sorted(set(cosine_cells) & set(js_kl_cells))
     if not keys:
@@ -286,23 +473,32 @@ def compute_coarse_zoo_for_arm(
         base_panel_dir = slab_root / "base" / f"seed_{seed}"
         src_panel = src_panel_dir / f"sycophancy_eval_{bys}.json"
         bys_panel = base_panel_dir / f"sycophancy_eval_{bys}.json"
-        src_mean_chars = bys_mean_chars = 0.0
-        if src_panel.exists():
-            src_mean_chars, _, _ = _aggregate_panel_metrics(src_panel)
-        if bys_panel.exists():
-            bys_mean_chars, _, _ = _aggregate_panel_metrics(bys_panel)
+        # Panel files are produced by ``sycophancy_implantation_411.
+        # eval_one_source`` — required for response-length proxies. Missing
+        # files are a real upstream failure, not a silent 0.0 case.
+        if not src_panel.exists():
+            raise FileNotFoundError(
+                f"compute_coarse_zoo_for_arm({arm!r}): trained-side panel "
+                f"file missing: {src_panel}. Re-run eval_one_source for "
+                f"source={src!r} (seed={seed}) before invoking the substrate."
+            )
+        if not bys_panel.exists():
+            raise FileNotFoundError(
+                f"compute_coarse_zoo_for_arm({arm!r}): base-side panel file "
+                f"missing: {bys_panel}. Re-run eval_one_source with "
+                f"--hub-model-id Qwen/Qwen2.5-7B-Instruct (base, seed={seed}) "
+                f"before invoking the substrate."
+            )
+        src_mean_chars, _, _ = _aggregate_panel_metrics(src_panel)
+        bys_mean_chars, _, _ = _aggregate_panel_metrics(bys_panel)
 
-        # Base-rate proxies: read trained_per_bystander / base_per_bystander
-        # from the per-source judged file when available; else fall back to 0.
-        judged = src_panel_dir / f"judged_{arm}.json"
-        source_base_rate = 0.0
-        if judged.exists():
-            jpayload = json.loads(judged.read_text())
-            base_per_bys = jpayload.get("base_per_bystander", {})
-            # The "source_base_rate" key is the base model's rate when WEARING
-            # the source persona — the diagonal of the base panel.
-            src_self = base_per_bys.get(src, {})
-            source_base_rate = float(src_self.get("rate", 0.0)) if src_self else 0.0
+        source_base_rate = _load_source_base_rate(
+            arm=arm,
+            src=src,
+            seed=seed,
+            src_panel_dir=src_panel_dir,
+            base_panel_dir=base_panel_dir,
+        )
 
         cell: dict[str, float] = {
             **cosine_cells[(src, bys)],

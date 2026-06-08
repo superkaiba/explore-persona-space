@@ -365,8 +365,17 @@ def judge_one_source(
 
     for base_path in base_files:
         bystander = base_path.stem.replace("sycophancy_eval_", "")
-        if bystander == source:
-            continue
+        # IMPORTANT: do NOT skip the diagonal (`bystander == source`) for the
+        # BASE panel. The base-panel diagonal is the unadapted base model's
+        # EM rate (coherence-gated misaligned rate) when WEARING the source
+        # persona, i.e. the ``source_base_rate`` predictor consumed by
+        # ``coarse_zoo_loader.compute_coarse_zoo_for_arm`` at the
+        # ``base_per_bys.get(src, {})`` lookup. Skipping it silently zeroes
+        # ``source_base_rate`` (and the derived ``base_rate_diff_neg_abs``)
+        # across all 138 em cells, producing zero-variance predictors and an
+        # undefined Spearman vs ``delta`` (Codex round-5 finding #1). The
+        # TRAINED panel still skips the diagonal: source-on-source under the
+        # trained adapter is not leakage; that exclusion is preserved above.
         rows = _load_panel_completions(base_path)
         if not rows:
             log.warning("[%s/%s] base panel had 0 rollouts", source, bystander)
