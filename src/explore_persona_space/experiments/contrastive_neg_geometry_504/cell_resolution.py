@@ -31,17 +31,24 @@ from explore_persona_space.experiments.contrastive_neg_geometry_504 import (
     CELL_SPECS_504,
     DEFAULT_ARM_SLUG,
     DEFAULT_ARM_SLUG_V2,
+    DEFAULT_ARM_SLUG_V3,
     NEG_EX_DEFAULT_ONLY_ARM,
     NEG_EX_PER_PERSONA,
     POSITIONED_ARM_SLUGS,
     POSITIONED_ARM_SLUGS_V2,
+    POSITIONED_ARM_SLUGS_V3,
     SOURCE_PERSONA,
 )
 
-# Force-reference v2-only imports so ruff F401 doesn't strip them on the
-# formatter pre-commit pass — see `feedback_ruff_strips_unused_imports`. Both
+# Force-reference v2 + v3 imports so ruff F401 doesn't strip them on the
+# formatter pre-commit pass — see `feedback_ruff_strips_unused_imports`. All
 # are used in negatives_for_cell_504 / arm_negatives_with_counts below.
-_V2_IMPORT_REFS = (DEFAULT_ARM_SLUG_V2, POSITIONED_ARM_SLUGS_V2)
+_V2_V3_IMPORT_REFS = (
+    DEFAULT_ARM_SLUG_V2,
+    POSITIONED_ARM_SLUGS_V2,
+    DEFAULT_ARM_SLUG_V3,
+    POSITIONED_ARM_SLUGS_V3,
+)
 
 log = logging.getLogger("issue_504.cell_resolution")
 
@@ -169,9 +176,13 @@ def negatives_for_cell_504(
     spec = next((c for c in CELL_SPECS_504 if c[0] == cell_slug), None)
     if spec is None:
         raise KeyError(f"Unknown #504 cell slug {cell_slug!r}")
-    if cell_slug in (DEFAULT_ARM_SLUG, DEFAULT_ARM_SLUG_V2):
+    if cell_slug in (DEFAULT_ARM_SLUG, DEFAULT_ARM_SLUG_V2, DEFAULT_ARM_SLUG_V3):
         return [default_persona]
-    if cell_slug in POSITIONED_ARM_SLUGS or cell_slug in POSITIONED_ARM_SLUGS_V2:
+    if (
+        cell_slug in POSITIONED_ARM_SLUGS
+        or cell_slug in POSITIONED_ARM_SLUGS_V2
+        or cell_slug in POSITIONED_ARM_SLUGS_V3
+    ):
         if cell_slug not in arm_to_positioned_n:
             raise ValueError(
                 f"negatives_for_cell_504: positioned arm {cell_slug!r} missing in "
@@ -218,7 +229,7 @@ def arm_negatives_with_counts(
         default_persona=default_persona,
         smoke_mid_band_n=smoke_mid_band_n,
     )
-    if cell_slug in (DEFAULT_ARM_SLUG, DEFAULT_ARM_SLUG_V2):
+    if cell_slug in (DEFAULT_ARM_SLUG, DEFAULT_ARM_SLUG_V2, DEFAULT_ARM_SLUG_V3):
         # Single negative persona x NEG_EX_DEFAULT_ONLY_ARM ex (matches positioned
         # arms' total neg row count for cross-arm step parity).
         return negs, [NEG_EX_DEFAULT_ONLY_ARM]
