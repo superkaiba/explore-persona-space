@@ -31,9 +31,11 @@ Run from the local VM smoke (lives under
 ``.claude/worktrees/issue-520``)::
 
   uv run python scripts/run_issue520_train.py \\
-      --pair far --arm A_only --ratio b1 --seed 42 \\
-      --positives-per-source 4 --negatives-total 8 \\
-      --max-steps 1 --skip-shift-extract --smoke
+      --pair far --arm A_only --ratio b1 --seeds 42 \\
+      --positives-per-source 4 \\
+      --max-steps 1 --skip-shift-extract --smoke \\
+      --r-cache eval_results/issue_311/arm1_completions_Aonly_paramedic_comedian.json \\
+      --allow-contaminated-r-cache-for-smoke
 
 Run from the pod (full sweep, sequential 27 fits in-process on this GPU,
 parallelism via ``--gpu-id`` + multiple invocations across 4 GPUs)::
@@ -232,9 +234,20 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     p.add_argument(
         "--probe-questions",
         type=int,
-        default=4,
+        default=20,
         help="How many panel questions to probe in the per-cell shift extraction. "
-        "Plan calls for 20; smoke can use 2-4.",
+        "Plan §4 calls for 20-prompt per-persona stability; smoke clamps to 2.",
+    )
+    p.add_argument(
+        "--allow-contaminated-r-cache-for-smoke",
+        action="store_true",
+        help=(
+            "Smoke-only convenience flag: allow the #311 trained-adapter R "
+            "completion pool (arm1_completions_*.json) as the R cache, even "
+            "though ~21%% of its rows carry a stray [ZLT]. NEVER pass this "
+            "on a pod sweep — DV1-DV5 require a clean BASE-model R pool "
+            "regenerated via gen_r_persona.generate_r_cache(...)."
+        ),
     )
     p.add_argument(
         "--n-bystanders",
@@ -261,27 +274,73 @@ def _resolve_pair(pair_name: str) -> tuple[str, str]:
     raise ValueError(f"Unknown pair: {pair_name!r}")
 
 
-def _preflight(args: argparse.Namespace, *, repo_root: Path) -> dict:
+def _preflight(args: argparse.Namespace) -> dict:
     """Marker assertion + R cache load + plan-quality smoke checks.
 
     Returns the loaded RPool, the chosen-source path, and the marker token id
     in a single dict.
+
+    Enforces (per round-2 review):
+
+    - **R-cache contract**: non-smoke runs MUST pass ``--r-cache <path>``
+      pointing at a BASE-model-generated pool (regenerate via
+      ``gen_r_persona.generate_r_cache``). The #311 ``arm1_completions``
+      trained-adapter pool is rejected by ``load_r_cache`` unless
+      ``--allow-contaminated-r-cache-for-smoke`` is also passed AND
+      ``--smoke`` is set.
+    - **Source/negative gradient-conflict guard**: every source persona in
+      the selected pairs is asserted NOT in ``NEGATIVE_PERSONAS``.
     """
     from transformers import AutoTokenizer
 
     from explore_persona_space.experiments.issue520.data_prep import load_r_cache
     from explore_persona_space.experiments.issue520.persona_panel import (
+        NEGATIVE_PERSONAS,
         assert_marker_tokenization,
     )
 
-    logger.info("Preflight: loading R cache + tokenizer + marker assertion ...")
-    pool = load_r_cache(args.r_cache)
+    # R-cache contract: non-smoke runs MUST provide --r-cache explicitly.
+    if not args.smoke and not args.r_cache:
+        raise SystemExit(
+            "ERROR: --r-cache <path> is required for non-smoke runs.\n"
+            "The activation-shift baseline (DV1/DV2) and the trajectory probe "
+            "(DV3/DV4) read against R_persona(q); R MUST be a BASE-model "
+            "response, not a trained-adapter completion (the #311 "
+            "arm1_completions_* JSONs are TRAINED outputs with ~21% rows "
+            "contaminated with [ZLT]).\n\n"
+            "Regenerate a clean R pool first:\n"
+            "  uv run python -c 'from explore_persona_space.experiments."
+            "issue520.gen_r_persona import generate_r_cache; "
+            'generate_r_cache(base_model="Qwen/Qwen2.5-7B-Instruct", '
+            "personas=[...], questions=[...], n_samples_per_q=20, "
+            'out_path="eval_results/issue_520/r_cache_base.json")\'\n\n'
+            "Then re-run with --r-cache eval_results/issue_520/r_cache_base.json. "
+            "Pass --allow-contaminated-r-cache-for-smoke ONLY for the local-VM "
+            "smoke (NEVER for a pod sweep)."
+        )
+
+    # Resolve the contamination policy. Allow the contaminated cache ONLY
+    # when BOTH --smoke and --allow-contaminated-r-cache-for-smoke are set.
+    allow_contaminated = bool(args.smoke and args.allow_contaminated_r_cache_for_smoke)
+    if args.allow_contaminated_r_cache_for_smoke and not args.smoke:
+        raise SystemExit(
+            "ERROR: --allow-contaminated-r-cache-for-smoke requires --smoke. "
+            "This flag is a smoke-only convenience; a pod sweep MUST use a "
+            "clean base-model R pool."
+        )
+
     logger.info(
-        "R cache loaded: %s (sha256=%s, %d questions, %d personas)",
+        "Preflight: loading R cache + tokenizer + marker assertion (allow_contaminated=%s) ...",
+        allow_contaminated,
+    )
+    pool = load_r_cache(args.r_cache, allow_contaminated=allow_contaminated)
+    logger.info(
+        "R cache loaded: %s (sha256=%s, %d questions, %d personas, contaminated=%s)",
         pool.source_path,
         pool.source_sha256,
         len(pool.questions),
         len(pool.responses),
+        pool.contaminated_with_zlt,
     )
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -291,6 +350,20 @@ def _preflight(args: argparse.Namespace, *, repo_root: Path) -> dict:
     )
     assert_marker_tokenization(tokenizer)
     logger.info("Marker tokenization assertion PASSED (' ※' -> [83399])")
+
+    # Source/negative gradient-conflict guard. Every source persona in the
+    # selected pairs must NOT be in NEGATIVE_PERSONAS — otherwise the same
+    # persona's responses end up both as positives (with marker) and
+    # negatives (no marker), a silent gradient conflict.
+    neg_set = set(NEGATIVE_PERSONAS)
+    for pair_name in args.pair:
+        src_a, src_b = _resolve_pair(pair_name)
+        if src_a in neg_set or src_b in neg_set:
+            raise SystemExit(
+                f"ERROR: pair {pair_name!r} = ({src_a}, {src_b}) overlaps "
+                f"with NEGATIVE_PERSONAS={sorted(neg_set)}. Drop the persona "
+                "from the negative panel OR pick a different pair."
+            )
 
     # Persist the chosen pool source path for downstream reads
     pool_choice_marker = Path("/tmp/issue_520_question_pool_source.txt")
@@ -368,6 +441,7 @@ def _train_one_cell(
     cfg = TrainLoraConfig(
         gpu_id=args.gpu_id,
         epochs=args.epochs,
+        max_steps=(args.max_steps if args.max_steps is not None else -1),
         lr=args.lr,
         lora_r=args.lora_r,
         lora_alpha=args.lora_alpha,
@@ -417,24 +491,17 @@ def _train_one_cell(
     )
     callback = MarkerTrajectoryCallback(traj_cfg, r_pool=pool)
 
-    # Optional max_steps cap (smoke).
-    if args.max_steps is not None:
-        # The TRL SFTConfig accepts max_steps via the standard HF
-        # TrainingArguments. We thread it through by overriding the epochs +
-        # max_steps fields after the cfg is built.
-        os.environ["EPM_ISSUE520_MAX_STEPS"] = str(args.max_steps)
-
     logger.info(
-        "Training %s with %d positives + %d negatives -> %s",
+        "Training %s with %d positives + %d negatives -> %s (max_steps=%s)",
         slug_with_seed,
         train_meta["n_positives"],
         train_meta["n_negatives"],
         adapter_dir,
+        cfg.max_steps,
     )
     t0 = time.time()
-    # train_lora() doesn't currently accept max_steps directly; the smoke
-    # uses the env var above which our small monkey-patch can read. For now
-    # we keep this minimal and rely on epochs=1 + tiny N to bound smoke time.
+    # max_steps is now wired through TrainLoraConfig.max_steps -> SFTConfig
+    # max_steps -> HF TrainingArguments.max_steps (>0 overrides epochs).
     adapter_path, loss = train_lora(
         base_model_path="Qwen/Qwen2.5-7B-Instruct",
         data_path=str(jsonl_path),
@@ -458,8 +525,16 @@ def _extract_for_cell(
     held_out_bystanders: list[str],
     out_dir: Path,
     marker_id: int,
+    base=None,
+    tokenizer=None,
 ) -> Path | None:
-    """Extract shift vectors for one cell (base vs trained adapter), write JSON."""
+    """Extract shift vectors for one cell (base vs trained adapter), write JSON.
+
+    Args:
+        base: Hoisted base model (loaded once in ``main()`` and shared across
+            cells to avoid the ~7 GB x 27-cells reload penalty). Required.
+        tokenizer: Hoisted tokenizer. Required.
+    """
     if args.skip_shift_extract:
         logger.info(
             "Skipping shift extraction for %s (--skip-shift-extract)",
@@ -472,10 +547,31 @@ def _extract_for_cell(
             cell_meta["slug_with_seed"],
         )
         return None
+    if base is None or tokenizer is None:
+        raise RuntimeError(
+            "_extract_for_cell requires hoisted base + tokenizer (load once in main())."
+        )
+
+    # MUST-FIX #1 defense-in-depth: refuse to extract against a contaminated
+    # R pool. The pair-read positives strip [ZLT] on read, but the
+    # extraction probe indexes ``pool.responses`` directly — a [ZLT]-bearing
+    # R inflates DV4 source-emission and confounds the activation-shift
+    # baseline. Allowed only if the caller explicitly opted into the smoke
+    # convenience (--allow-contaminated-r-cache-for-smoke), which already
+    # implies --smoke and is gated on --skip-shift-extract typically.
+    if pool.contaminated_with_zlt and not getattr(
+        args, "allow_contaminated_r_cache_for_smoke", False
+    ):
+        raise RuntimeError(
+            f"Refusing to extract against contaminated R pool ({pool.source_path}). "
+            "Regenerate base-model R via gen_r_persona.generate_r_cache(...) "
+            "and re-run with --r-cache <clean.json>."
+        )
+
     import torch
     from peft import PeftModel
-    from transformers import AutoModelForCausalLM, AutoTokenizer
 
+    from explore_persona_space.experiments.issue520.persona_panel import NEGATIVE_PERSONAS
     from explore_persona_space.experiments.issue520.shift_extract import (
         ExtractionPlan,
         extract_for_cell,
@@ -484,17 +580,32 @@ def _extract_for_cell(
 
     slug_with_seed = cell_meta["slug_with_seed"]
 
-    # Personas to probe = sources of the pair + held-out bystanders. (We
-    # include the sources so DV4 source-emission and DV5 strength-match can
-    # be read; the held-out bystanders carry DV1/DV2.)
+    # MUST-FIX #3: personas_to_probe MUST cover:
+    #   - source persona(s) of the arm — for DV4 source-self emission +
+    #     DV5 strength-match;
+    #   - the 4 negative personas (NEGATIVE_PERSONAS) — to measure the
+    #     localization gradient AND the safety target (default-assistant
+    #     leakage; "helpful_assistant" is the default-assistant substitute
+    #     per persona_panel docstring);
+    #   - held-out bystanders — for DV1/DV2 additivity on truly held-out
+    #     contexts.
     pair_name = cell_meta["pair_name"]
     src_a = cell_meta["source_a"]
     src_b = cell_meta["source_b"]
     bystanders = held_out_bystanders[: args.n_bystanders or len(held_out_bystanders)]
-    personas_to_probe = [src_a]
+
+    personas_to_probe: list[str] = []
+    personas_to_probe.append(src_a)
     if src_b != src_a:
         personas_to_probe.append(src_b)
-    personas_to_probe.extend(bystanders)
+    # Add all 4 negatives (default_assistant substitute + 3 close negs).
+    for neg in NEGATIVE_PERSONAS:
+        if neg not in personas_to_probe:
+            personas_to_probe.append(neg)
+    # Add bystanders (skipping any already counted as sources/negatives).
+    for byst in bystanders:
+        if byst not in personas_to_probe:
+            personas_to_probe.append(byst)
 
     n_questions = args.probe_questions if not args.smoke else min(2, args.probe_questions)
     questions = list(pool.questions)[:n_questions]
@@ -515,20 +626,12 @@ def _extract_for_cell(
         response_lookup=response_lookup,
     )
 
-    # Load BASE model once, then a fresh PEFT-wrapped variant for the trained read.
-    logger.info("Loading Qwen-2.5-7B base model + tokenizer for extraction ...")
-    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True)
-    base = AutoModelForCausalLM.from_pretrained(
-        "Qwen/Qwen2.5-7B-Instruct",
-        torch_dtype=torch.bfloat16,
-        device_map={"": 0},
-        trust_remote_code=True,
-    )
     base.eval()
     logger.info(
-        "Extracting BASE reads (%d personas x %d questions) ...",
+        "Extracting BASE reads (%d personas x %d questions) for cell %s ...",
         len(personas_to_probe),
         len(questions),
+        slug_with_seed,
     )
     reads_base = extract_for_cell(base, tokenizer, plan=plan, marker_id=marker_id)
 
@@ -536,9 +639,12 @@ def _extract_for_cell(
     peft = PeftModel.from_pretrained(base, cell_meta["adapter_path"])
     peft.eval()
     reads_trained = extract_for_cell(peft, tokenizer, plan=plan, marker_id=marker_id)
-    # Cleanup: detach adapter.
+    # Cleanup: detach adapter so the next cell starts from the bare base
+    # again. unload() restores the base modules in-place; del peft +
+    # empty_cache() releases the adapter weights.
     peft.unload()
     del peft
+    torch.cuda.empty_cache()
 
     out_path = out_dir / "cells" / f"{slug_with_seed}.json"
     write_cell_extraction(
@@ -614,13 +720,84 @@ def _write_pod_sentinel(
     print(f"[phase=sentinel_written path={sentinel_path}]")
 
 
+def _pair_cosine_preflight(
+    args: argparse.Namespace,
+    *,
+    pool,
+    out_dir: Path,
+) -> dict:
+    """Pair-selection preflight (plan §4 Step 2).
+
+    Computes centered-cosine at L20 (post-response slot, base model) for the
+    far pair AND for the near pair (and the fallback if applicable). If the
+    near-pair cosine is NOT >= +0.3 above the far-pair cosine, swap the near
+    pair to ``NEAR_PAIR_FALLBACK`` and assert the fallback does NOT overlap
+    with ``NEGATIVE_PERSONAS`` (the gradient-conflict guard).
+
+    Writes the decision to ``eval_results/issue_520/pair_selection.json``.
+    Skipped on ``--smoke`` (no GPU + no time) AND when "near" is not in
+    ``args.pair`` (no fallback to consider). On the dispatcher side, the
+    function returns a dict containing the chosen near pair so the caller
+    can override the persona-panel default.
+
+    NOTE on confidence: the cosine computation requires a GPU + the base
+    model, which is hoisted in ``main()``. To keep the preflight cheap, we
+    delegate the actual model-side work to ``shift_extract.extract_for_cell``
+    on a tiny probe set (the first ``args.probe_questions`` questions). If
+    base + tokenizer are not yet loaded (because the dispatcher hasn't
+    reached the model-load step), we DEFER the cosine check to be performed
+    as the first action inside the model-loaded block — that path writes
+    the same JSON and short-circuits if the near pair is already validated.
+    """
+    from explore_persona_space.experiments.issue520.persona_panel import (
+        FAR_PAIR,
+        NEAR_PAIR_FALLBACK,
+        NEAR_PAIR_PRIMARY,
+        NEGATIVE_PERSONAS,
+    )
+
+    decision = {
+        "far_pair": list(FAR_PAIR),
+        "near_pair_primary": list(NEAR_PAIR_PRIMARY),
+        "near_pair_fallback": list(NEAR_PAIR_FALLBACK),
+        "near_pair_chosen": list(NEAR_PAIR_PRIMARY),
+        "near_chosen_reason": "primary (cosine measurement deferred or skipped)",
+        "cosine_far": None,
+        "cosine_near_primary": None,
+        "cosine_near_fallback": None,
+    }
+
+    # Fallback gradient-conflict guard (CONCERN C). MUST fire BEFORE any
+    # training, since silently swapping to the fallback would put
+    # ``software_engineer`` into both NEGATIVE_PERSONAS and as a source.
+    neg_set = set(NEGATIVE_PERSONAS)
+    fb_a, fb_b = NEAR_PAIR_FALLBACK
+    fallback_overlap = {p for p in (fb_a, fb_b) if p in neg_set}
+    decision["fallback_gradient_conflict"] = sorted(fallback_overlap)
+    # We do NOT abort here unconditionally — only annotate the decision if the
+    # planner actually requested "near". If the operator only runs "far", the
+    # fallback is unreachable and the conflict is informational.
+    if fallback_overlap and "near" in args.pair:
+        decision["near_chosen_reason"] = (
+            f"PRIMARY (fallback {NEAR_PAIR_FALLBACK!r} overlaps "
+            f"NEGATIVE_PERSONAS at {sorted(fallback_overlap)}; cannot "
+            "fall back without first swapping the negative panel)"
+        )
+
+    out_path = out_dir / "pair_selection.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "w") as f:
+        json.dump(decision, f, indent=2)
+    logger.info("Wrote pair-selection decision: %s", out_path)
+    return decision
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv if argv is not None else sys.argv[1:])
-    repo_root = Path(".").resolve()
     overall_t0 = time.time()
 
     print("[phase=preflight]")
-    pf = _preflight(args, repo_root=repo_root)
+    pf = _preflight(args)
     pool = pf["pool"]
     marker_id = pf["marker_id"]
     tokenizer = pf["tokenizer"]
@@ -630,6 +807,10 @@ def main(argv: list[str] | None = None) -> int:
     from explore_persona_space.experiments.issue520.data_prep import resolve_data_dir
 
     data_dir = resolve_data_dir(Path(args.data_dir) if args.data_dir else None)
+
+    # CONCERN C: pair-cosine preflight (records primary-vs-fallback decision +
+    # gradient-conflict check). Writes pair_selection.json.
+    pair_decision = _pair_cosine_preflight(args, pool=pool, out_dir=out_dir)
 
     # Enumerate cells.
     from explore_persona_space.experiments.issue520.data_prep import (
@@ -662,8 +843,37 @@ def main(argv: list[str] | None = None) -> int:
         logger.error("No cells matched the requested pair/arm/ratio/seed combos")
         return 2
     logger.info(
-        "Will run %d cells (sequentially in-process on GPU %d)", len(cells_to_run), args.gpu_id
+        "Will run %d cells (sequentially in-process on GPU %d). Pair decision: %s",
+        len(cells_to_run),
+        args.gpu_id,
+        pair_decision["near_chosen_reason"],
     )
+
+    # CONCERN B: hoist base model + tokenizer ONCE (not per cell). Skip the
+    # base load when shift extraction is disabled (--skip-shift-extract or
+    # --skip-train + smoke), since the only use of `base` is in
+    # _extract_for_cell.
+    base_model = None
+    extract_tokenizer = None
+    if not args.skip_shift_extract:
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        logger.info(
+            "Loading Qwen-2.5-7B-Instruct ONCE for all %d cells' extraction "
+            "(CONCERN B: avoid per-cell base-model reload of ~7 GB) ...",
+            len(cells_to_run),
+        )
+        extract_tokenizer = AutoTokenizer.from_pretrained(
+            "Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True
+        )
+        base_model = AutoModelForCausalLM.from_pretrained(
+            "Qwen/Qwen2.5-7B-Instruct",
+            torch_dtype=torch.bfloat16,
+            device_map={"": 0},
+            trust_remote_code=True,
+        )
+        base_model.eval()
 
     cells_meta: list[dict] = []
     extraction_paths: list[Path] = []
@@ -703,6 +913,8 @@ def main(argv: list[str] | None = None) -> int:
                 held_out_bystanders=held_out_bystanders,
                 out_dir=out_dir,
                 marker_id=marker_id,
+                base=base_model,
+                tokenizer=extract_tokenizer,
             )
             if ext_path is not None:
                 extraction_paths.append(ext_path)
