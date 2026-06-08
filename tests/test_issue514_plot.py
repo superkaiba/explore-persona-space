@@ -173,6 +173,112 @@ def test_snap_x_falls_back_to_default_idx():
 # ── source_self_trajectory_figure end-to-end ─────────────────────────────────
 
 
+def test_source_endpoint_y_returns_source_self_not_held_out():
+    """B12 round-4 pivot: _source_endpoint_y returns source_self_mean_delta_g.
+
+    The endpoint y-coordinate on the source-self trajectory plot MUST be the
+    source-self ΔG (the y-axis of that plot), NOT the held-out ΔG. The
+    round-3 endpoint fallback used ``_, y = _cell_xy(ej)``, which is the
+    held-out aggregate (the second tuple element). Verifies the new helper
+    returns the FIRST element + numerically matches source_self_mean_delta_g.
+    """
+    ej_cell = {
+        "aggregates": {
+            "source_self_mean_delta_g": 8.5,
+            "held_out_mean_delta_g": -2.3,
+        }
+    }
+    y = plot_issue_514._source_endpoint_y(ej_cell)
+    assert y == 8.5
+    # And explicitly: it is NOT held-out (the round-3 bug value).
+    assert y != -2.3
+
+
+def test_source_self_trajectory_endpoint_yvalue_is_source_self(tmp_path: Path, monkeypatch):
+    """B12 round-4 pivot: the endpoint-fallback scatter call uses
+    source_self_mean_delta_g for its y-coordinate, NOT held_out_mean_delta_g.
+
+    Captures the (x, y) args passed to ``ax.scatter`` inside
+    ``source_self_trajectory_figure`` and asserts the y matches the source
+    aggregate (8.5), NOT the held-out aggregate (-2.3).
+    """
+    import matplotlib.axes
+
+    captured: list[tuple[float, float]] = []
+
+    real_scatter = matplotlib.axes.Axes.scatter
+
+    def _capturing_scatter(self, x, y, *args, **kwargs):
+        # ax.scatter(1.0, y_end, label=..., s=50) — record (x, y).
+        captured.append((float(x), float(y)))
+        return real_scatter(self, x, y, *args, **kwargs)
+
+    monkeypatch.setattr(matplotlib.axes.Axes, "scatter", _capturing_scatter)
+
+    # Cell with NO sidecar → forces the endpoint-fallback branch.
+    ej_cell = {
+        "aggregates": {
+            "source_self_mean_delta_g": 8.5,  # MUST appear as y on the scatter
+            "held_out_mean_delta_g": -2.3,  # MUST NOT appear as y on the scatter
+        },
+    }
+    out_path = tmp_path / "traj_endpoint_axis.png"
+    plot_issue_514.source_self_trajectory_figure(
+        ft_514_cells={"ft_dense_b30": ej_cell},
+        output_path=out_path,
+    )
+    assert out_path.with_suffix(".png").exists()
+    # At least one scatter call with y == source_self (8.5); none with y == held_out (-2.3).
+    assert any(abs(y - 8.5) < 1e-9 for _x, y in captured), (
+        f"expected a scatter call with y=8.5 (source_self), got: {captured}"
+    )
+    assert not any(abs(y - (-2.3)) < 1e-9 for _x, y in captured), (
+        f"endpoint y MUST NOT be -2.3 (held_out); got: {captured}"
+    )
+
+
+def test_source_self_trajectory_single_snapshot_endpoint_axis(tmp_path: Path, monkeypatch):
+    """B12 round-4 pivot: same axis check for the single-snapshot fallback
+    path (the `len(pairs) < 2` branch). Asserts the y-coord is
+    source_self_mean_delta_g, not held_out_mean_delta_g.
+    """
+    import matplotlib.axes
+
+    captured: list[tuple[float, float]] = []
+    real_scatter = matplotlib.axes.Axes.scatter
+
+    def _capturing_scatter(self, x, y, *args, **kwargs):
+        captured.append((float(x), float(y)))
+        return real_scatter(self, x, y, *args, **kwargs)
+
+    monkeypatch.setattr(matplotlib.axes.Axes, "scatter", _capturing_scatter)
+
+    # Sidecar with a SINGLE snapshot → `len(pairs) < 2` → endpoint fallback.
+    sidecar = tmp_path / "one_snap.json"
+    sidecar.write_text(
+        json.dumps({"snapshots": {"10": {"step": 10, "dynamics/source_delta_g": 4.0}}})
+    )
+    ej_cell = {
+        "dynamics_snapshots_path": str(sidecar),
+        "aggregates": {
+            "source_self_mean_delta_g": 4.0,
+            "held_out_mean_delta_g": -1.7,
+        },
+    }
+    out_path = tmp_path / "traj_single_snap_axis.png"
+    plot_issue_514.source_self_trajectory_figure(
+        ft_514_cells={"ft_dense_b30": ej_cell},
+        output_path=out_path,
+    )
+    assert out_path.with_suffix(".png").exists()
+    assert any(abs(y - 4.0) < 1e-9 for _x, y in captured), (
+        f"expected endpoint y=4.0 (source_self), got: {captured}"
+    )
+    assert not any(abs(y - (-1.7)) < 1e-9 for _x, y in captured), (
+        f"endpoint y MUST NOT be -1.7 (held_out); got: {captured}"
+    )
+
+
 def test_source_self_trajectory_emits_real_trajectory(tmp_path: Path):
     """End-to-end: an eval JSON with a populated sidecar produces a real
     multi-point trajectory (≥2 line segments per cell) — NOT endpoint-only.

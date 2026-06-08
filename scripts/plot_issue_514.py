@@ -139,6 +139,20 @@ def _cell_xy(ej: dict) -> tuple[float, float]:
     )
 
 
+def _source_endpoint_y(ej: dict) -> float:
+    """Return the source-self ΔG aggregate to use as the trajectory endpoint
+    y-coordinate. The source_self_trajectory plot's y-axis is "Source-self
+    ΔG (nat)", so the endpoint fallback must read the source aggregate, not
+    the held-out aggregate.
+
+    B12 round-4 pivot: the round-3 endpoint fallback did
+    ``_, y = _cell_xy(ej); ax.scatter(1.0, y, ...)`` — that y was
+    ``held_out_mean_delta_g``, plotted on a "Source-self ΔG" axis, off by
+    several nat per cell. This helper makes the correct axis explicit.
+    """
+    return _cell_xy(ej)[0]
+
+
 def _try_savefig_paper(fig, out_path: Path) -> None:
     """Save via paper_plots.savefig_paper if available; fall back to plain savefig."""
     try:
@@ -599,9 +613,11 @@ def source_self_trajectory_figure(
     for cell, ej in ft_514_cells.items():
         snaps = _load_dynamics_snapshots(ej)
         if not snaps:
-            x, y = _cell_xy(ej)
-            if x == x:
-                ax.scatter(1.0, y, label=f"{cell} (endpoint)", s=50)
+            # B12 round-4 pivot: y-axis is "Source-self ΔG (nat)" — use the
+            # source aggregate, NOT _cell_xy's held-out second-element.
+            y_end = _source_endpoint_y(ej)
+            if y_end == y_end:
+                ax.scatter(1.0, y_end, label=f"{cell} (endpoint)", s=50)
                 plotted += 1
             continue
         xs = [_snap_x(s, i) for i, s in enumerate(snaps)]
@@ -613,8 +629,9 @@ def source_self_trajectory_figure(
         if len(pairs) < 2:
             # Treat single-snapshot cells as endpoint-only (matches the
             # no-snapshot branch above so the legend stays interpretable).
-            x_end, y_end = _cell_xy(ej)
-            if x_end == x_end:
+            # B12 round-4 pivot: same axis-correction as above.
+            y_end = _source_endpoint_y(ej)
+            if y_end == y_end:
                 ax.scatter(1.0, y_end, label=f"{cell} (endpoint)", s=50)
                 plotted += 1
             continue
