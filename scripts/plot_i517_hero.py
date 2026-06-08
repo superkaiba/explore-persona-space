@@ -87,6 +87,32 @@ def main(argv: list[str] | None = None) -> None:
     payload = json.loads(Path(args.input_path).read_text())
     per_trait = payload["per_trait"]
     pass_threshold = payload.get("pass_threshold", 3.5)
+    smoke = bool(payload.get("smoke", False))
+
+    # Build the N-string for the caption from the actual paired counts in
+    # the comparison JSON (NOT a hardcoded "N=40"). Plan §6.3's caption
+    # claim is contingent on the aggregator's coverage check passing;
+    # reflecting the real per-cell counts (or the unique value if they
+    # agree) keeps a future relaxed/smoke run from being mis-read as a
+    # 40-prompt claim (reconciler round-1 Finding 3 amplifier).
+    n_values: set[int] = set()
+    for _trait, _block in per_trait.items():
+        for _key in (
+            "base_in_scenario",
+            "base_default_assistant",
+            "trained_system_in_scenario",
+            "trained_role_in_scenario",
+        ):
+            _cell = _block.get(_key, {})
+            _n = _cell.get("n")
+            if isinstance(_n, int) and _n > 0:
+                n_values.add(_n)
+    if not n_values:
+        n_caption = "N=?"
+    elif len(n_values) == 1:
+        n_caption = f"N={next(iter(n_values))}"
+    else:
+        n_caption = f"N in {sorted(n_values)}"
 
     # 3-panel figure.
     fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.5), sharey=True)
@@ -131,11 +157,13 @@ def main(argv: list[str] | None = None) -> None:
         ),
         fontsize=11,
     )
+    smoke_tag = " (smoke run; counts relaxed)" if smoke else ""
     fig.text(
         0.5,
         -0.04,
         (
-            "Error bars: ±1 SEM across N=40 prompts (prompt-paired construction). "
+            f"Error bars: ±1 SEM across {n_caption} prompts (prompt-paired construction"
+            f"{smoke_tag}). "
             "Each base-bar prompt-Likert averages 3 independent judge re-calls; "
             "each trained-bar prompt-Likert averages 3 LoRA training seeds x 1 judge call. "
             "Dashed line = #498's pre-registered PASS threshold (3.5). "

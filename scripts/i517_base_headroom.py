@@ -26,9 +26,9 @@ CLI:
     # Aggregate-only (skip eval+judge; just rebuild the comparison JSON
     # and re-plot from a pre-existing judge file)
     uv run python scripts/i517_base_headroom.py --aggregate-only \\
-        --judge /tmp/i517_smoke/base_headroom_judge.json \\
-        --trained eval_results/issue_498/judge_scores.json \\
-        --out /tmp/i517_smoke/base_vs_trained_comparison.json
+        --judge-out /tmp/i517_smoke/base_headroom_judge.json \\
+        --trained-judge eval_results/issue_498/judge_scores.json \\
+        --comparison-out /tmp/i517_smoke/base_vs_trained_comparison.json
 """
 
 from __future__ import annotations
@@ -55,6 +55,199 @@ DEFAULT_TRAINED_JUDGE = REPO_ROOT / "eval_results" / "issue_498" / "judge_scores
 DEFAULT_FIGURE_DIR = REPO_ROOT / "figures" / "issue_517"
 
 PASS_THRESHOLD = 3.5  # #498's pre-registered Likert PASS bar.
+
+# Per plan §6.4: the load-bearing comparison runs over 3 traits x 2 base
+# contexts + 3 traits x 2 trained arms x 1 ("in_scenario") trained context,
+# with 40 paired q_idx per cell. The aggregator MUST verify this coverage
+# fails loud (no .get((...), {}) silent defaults) before constructing the
+# comparison JSON — otherwise a partial judge file (rate-limit mid-batch,
+# n_q overridden) produces a shrunk-N comparison whose downstream plot
+# caption still reads "N=40" (reconciler round-1 Finding 3).
+EXPECTED_TRAITS: tuple[str, ...] = ("logical_and_pushes_back", "validating", "explains_well")
+EXPECTED_BASE_CONTEXTS: tuple[str, ...] = ("in_scenario", "default_assistant")
+EXPECTED_TRAINED_ARMS: tuple[str, ...] = ("system", "role")
+EXPECTED_N_PAIRED: int = 40
+
+
+def _run_preflight_if_missing(args: argparse.Namespace) -> None:
+    """Plan §8 Risk #2: driver invokes preflight if the Q-bank is absent.
+
+    Checks for both ``data/issue_498/Q_test.json`` and ``Q_train.json`` at the
+    fixed repo-relative path (see ``i498_data.LOCAL_DATA_DIR``). If either is
+    missing, subprocesses into ``scripts/i498_phase0_preflight.py`` (with the
+    ``--smoke`` flag forwarded when this driver was launched with ``--smoke``,
+    so the smoke path skips the ~$1 Claude prefilter and the 48-call judge
+    pilot). On non-zero exit the subprocess CalledProcessError propagates and
+    crashes the driver. After the preflight subprocess returns, re-asserts
+    both files exist, the disjointness invariant, and the 40-prompt count
+    (relaxed under --smoke since preflight --smoke produces a tiny Q-bank).
+
+    The aggregate-only codepath ALWAYS skips this step (no eval to feed).
+    """
+    if args.aggregate_only:
+        return
+    q_test_path = REPO_ROOT / "data" / "issue_498" / "Q_test.json"
+    q_train_path = REPO_ROOT / "data" / "issue_498" / "Q_train.json"
+    if q_test_path.exists() and q_train_path.exists():
+        logger.info(
+            "[phase=preflight] Q-bank present (%s, %s); skipping preflight subprocess.",
+            q_test_path,
+            q_train_path,
+        )
+    else:
+        logger.info(
+            "[phase=preflight] Q-bank missing (Q_test=%s Q_train=%s); "
+            "launching scripts/i498_phase0_preflight.py",
+            q_test_path.exists(),
+            q_train_path.exists(),
+        )
+        cmd = ["uv", "run", "python", str(REPO_ROOT / "scripts" / "i498_phase0_preflight.py")]
+        if args.smoke:
+            cmd.append("--smoke")
+        logger.info("[phase=preflight] launching: %s", " ".join(cmd))
+        subprocess.run(cmd, check=True, cwd=REPO_ROOT)
+        if not (q_test_path.exists() and q_train_path.exists()):
+            raise SystemExit(
+                f"[phase=preflight] subprocess exited 0 but Q-bank files are still "
+                f"missing (Q_test={q_test_path.exists()} Q_train={q_train_path.exists()})."
+            )
+    # Post-condition: re-import the loader (must succeed) and verify
+    # invariants. The 40-prompt count is relaxed under --smoke since the
+    # preflight smoke path writes a tiny Q-bank from the available pool.
+    from explore_persona_space.experiments.i498_data import assert_disjoint, load_q_test
+
+    questions = load_q_test()
+    assert_disjoint()
+    if args.smoke:
+        if not questions:
+            raise SystemExit("[phase=preflight] smoke: Q_test loaded empty after preflight.")
+        logger.info(
+            "[phase=preflight] smoke Q-bank invariants OK (n_test=%d, disjoint).",
+            len(questions),
+        )
+    else:
+        if len(questions) != EXPECTED_N_PAIRED:
+            raise SystemExit(
+                f"[phase=preflight] Q_test has {len(questions)} prompts; "
+                f"expected exactly {EXPECTED_N_PAIRED} (plan §4.1). Re-run "
+                "scripts/i498_phase0_preflight.py or pass --smoke to relax."
+            )
+        logger.info(
+            "[phase=preflight] Q-bank invariants OK (n_test=%d, disjoint).",
+            len(questions),
+        )
+
+
+def _validate_full_coverage(
+    base: dict[tuple[str, str], dict[int, float]],
+    trained: dict[tuple[str, str, str], dict[int, float]],
+    *,
+    smoke: bool,
+) -> None:
+    """Fail loud if the aggregator's input dicts have any missing cell.
+
+    Plan §6.4 + CLAUDE.md "Fail fast — never hide failures": a partial
+    judge file (e.g., 25 of 40 prompts completed before a rate-limit
+    crash) MUST NOT silently produce a comparison JSON with shrunk N while
+    the plot caption still claims "N=40". The previous `.get((...), {})`
+    defaults swallowed exactly this failure mode.
+
+    For non-smoke runs, EVERY (trait, context) base cell and EVERY
+    (arm, "in_scenario", trait) trained cell must be present AND carry
+    exactly ``EXPECTED_N_PAIRED`` (= 40) q_idx keys drawn from
+    ``{0, 1, ..., 39}``. Under --smoke the structural presence is still
+    enforced (each expected cell must contribute >=1 prompt) but the
+    40-prompt count is relaxed; per-cell counts are logged so smoke output
+    is auditable.
+
+    Raises RuntimeError with a structured per-cell breakdown of every
+    missing-or-shrunk cell. (Single raise; the breakdown enumerates ALL
+    problems so the user doesn't re-run the eval one-cell-at-a-time.)
+    """
+    expected_qs: set[int] = set(range(EXPECTED_N_PAIRED))
+    problems: list[str] = []
+
+    # Base side: 3 traits x 2 contexts.
+    for trait in EXPECTED_TRAITS:
+        for ctx in EXPECTED_BASE_CONTEXTS:
+            key = (ctx, trait)
+            cell = base.get(key)
+            if cell is None:
+                problems.append(f"  base[(ctx={ctx!r}, trait={trait!r})]: MISSING (no rows).")
+                continue
+            n = len(cell)
+            if smoke:
+                if n < 1:
+                    problems.append(f"  base[(ctx={ctx!r}, trait={trait!r})]: smoke n={n} (<1).")
+                else:
+                    logger.info(
+                        "[phase=aggregate-validate] smoke base ctx=%s trait=%s n=%d",
+                        ctx,
+                        trait,
+                        n,
+                    )
+            else:
+                if n != EXPECTED_N_PAIRED:
+                    missing_q = sorted(expected_qs - set(cell.keys()))
+                    extra_q = sorted(set(cell.keys()) - expected_qs)
+                    problems.append(
+                        f"  base[(ctx={ctx!r}, trait={trait!r})]: "
+                        f"n={n} (expected {EXPECTED_N_PAIRED}); "
+                        f"missing q_idx={missing_q[:10]}"
+                        + (" ..." if len(missing_q) > 10 else "")
+                        + (f"; extra q_idx={extra_q}" if extra_q else "")
+                    )
+
+    # Trained side: 3 traits x 2 arms (system, role) x ("in_scenario",).
+    # default_assistant trained cells are optional in the comparison (plan
+    # §6.4 only requires the in_scenario paired Δ). If they're present
+    # they're plotted, but their absence isn't a blocker.
+    for arm in EXPECTED_TRAINED_ARMS:
+        for trait in EXPECTED_TRAITS:
+            key = (arm, "in_scenario", trait)
+            cell = trained.get(key)
+            if cell is None:
+                problems.append(
+                    f"  trained[(arm={arm!r}, ctx='in_scenario', trait={trait!r})]: "
+                    "MISSING (no rows)."
+                )
+                continue
+            n = len(cell)
+            if smoke:
+                if n < 1:
+                    problems.append(
+                        f"  trained[(arm={arm!r}, ctx='in_scenario', trait={trait!r})]: "
+                        f"smoke n={n} (<1)."
+                    )
+                else:
+                    logger.info(
+                        "[phase=aggregate-validate] smoke trained arm=%s trait=%s n=%d",
+                        arm,
+                        trait,
+                        n,
+                    )
+            else:
+                if n != EXPECTED_N_PAIRED:
+                    missing_q = sorted(expected_qs - set(cell.keys()))
+                    extra_q = sorted(set(cell.keys()) - expected_qs)
+                    problems.append(
+                        f"  trained[(arm={arm!r}, ctx='in_scenario', "
+                        f"trait={trait!r})]: n={n} (expected {EXPECTED_N_PAIRED}); "
+                        f"missing q_idx={missing_q[:10]}"
+                        + (" ..." if len(missing_q) > 10 else "")
+                        + (f"; extra q_idx={extra_q}" if extra_q else "")
+                    )
+
+    if problems:
+        header = (
+            "[phase=aggregate-validate] FAIL — judge file coverage incomplete "
+            f"(smoke={smoke}). Plan §6.4 requires 3 traits x 2 base contexts + "
+            "3 traits x 2 trained arms x in_scenario, with 40 paired q_idx per "
+            "cell. Per-cell breakdown:"
+        )
+        body = "\n".join(problems)
+        hint = "Re-run the eval+judge phases (or pass --smoke to relax the 40-prompt count)."
+        raise RuntimeError(f"{header}\n{body}\n{hint}")
 
 
 def _git() -> str:
@@ -160,14 +353,23 @@ def _aggregate_trained(judge_path: Path) -> dict[tuple[str, str, str], dict[int,
 def _build_comparison(
     base: dict[tuple[str, str], dict[int, float]],
     trained: dict[tuple[str, str, str], dict[int, float]],
+    *,
+    smoke: bool = False,
 ) -> dict:
     """Build the per-trait comparison + paired Δ statistics.
+
+    Calls ``_validate_full_coverage`` first; that function RAISES on any
+    missing / shrunk cell so we never reach the silent-default path
+    (.get((...), {})) that #517 round-1 review caught. After validation
+    every expected key is guaranteed present, so the rest of the function
+    indexes directly into the dicts.
 
     Schema:
         {
           "schema_version": "i517_v1",
           "git_commit": ...,
           "ts": ...,
+          "smoke": bool,
           "pass_threshold": 3.5,
           "per_trait": {
             "<trait>": {
@@ -184,19 +386,22 @@ def _build_comparison(
           }
         }
     """
-    traits = sorted({t for (_ctx, t) in base})
+    # Plan §6.4 + CLAUDE.md fail-fast: validate BEFORE building any
+    # comparison cell, so a partial judge file never produces a shrunk-N
+    # comparison silently. Raises RuntimeError on any gap.
+    _validate_full_coverage(base, trained, smoke=smoke)
+
     per_trait: dict[str, dict] = {}
 
-    for trait in traits:
+    for trait in EXPECTED_TRAITS:
         block: dict = {}
 
-        # Base cells (2 eval contexts).
-        base_in_scenario = base.get(("in_scenario", trait), {})
-        base_default = base.get(("default_assistant", trait), {})
-        in_vals = sorted(base_in_scenario.items())
-        def_vals = sorted(base_default.items())
-        in_arr = [v for (_q, v) in in_vals]
-        def_arr = [v for (_q, v) in def_vals]
+        # Base cells (2 eval contexts). After _validate_full_coverage these
+        # keys are guaranteed present (smoke or not); direct indexing only.
+        base_in_scenario = base[("in_scenario", trait)]
+        base_default = base[("default_assistant", trait)]
+        in_arr = [v for (_q, v) in sorted(base_in_scenario.items())]
+        def_arr = [v for (_q, v) in sorted(base_default.items())]
         in_stats = _mean_sem_ci(in_arr)
         def_stats = _mean_sem_ci(def_arr)
 
@@ -216,9 +421,16 @@ def _build_comparison(
 
         # Trained cells, in_scenario only (the load-bearing comparison;
         # default_assistant is published already in #498). Pull
-        # default_assistant numbers too for the table's completeness.
-        for arm in ("system", "role"):
-            t_in = trained.get((arm, "in_scenario", trait), {})
+        # default_assistant numbers too for the table's completeness if
+        # they happen to be present (trained default_assistant cells are
+        # NOT enforced by _validate_full_coverage — they're optional
+        # carryover from #498's judge file).
+        for arm in EXPECTED_TRAINED_ARMS:
+            t_in = trained[(arm, "in_scenario", trait)]
+            # default_assistant trained cells are optional per plan §6.4;
+            # if missing, write a zero-row block so the JSON shape stays
+            # consistent for downstream consumers (the in_scenario cell
+            # is what the plot uses).
             t_def = trained.get((arm, "default_assistant", trait), {})
             block[f"trained_{arm}_in_scenario"] = _mean_sem_ci(
                 [v for (_q, v) in sorted(t_in.items())]
@@ -228,7 +440,11 @@ def _build_comparison(
             )
 
             # Paired Δ (trained_in_scenario_q - base_in_scenario_q) across
-            # q_idx values present in BOTH dicts (per plan §6.4).
+            # q_idx values present in BOTH dicts (per plan §6.4). After
+            # validation, full overlap is guaranteed in non-smoke; in
+            # smoke we keep the set-intersection to handle the relaxed
+            # per-cell counts gracefully (the validator already enforced
+            # >=1 prompt per cell).
             common = sorted(set(base_in_scenario.keys()) & set(t_in.keys()))
             deltas = [t_in[q] - base_in_scenario[q] for q in common]
             d_stats = _mean_sem_ci(deltas)
@@ -260,6 +476,7 @@ def _build_comparison(
         "kind": "base_vs_trained_comparison",
         "git_commit": _git(),
         "ts": _dt.datetime.utcnow().isoformat() + "Z",
+        "smoke": smoke,
         "pass_threshold": PASS_THRESHOLD,
         "per_trait": per_trait,
     }
@@ -327,7 +544,11 @@ def _run_aggregate(args: argparse.Namespace) -> Path:
     out_path = Path(args.comparison_out) if args.comparison_out else DEFAULT_COMPARISON_OUT
     base_agg = _aggregate_base(judge_path)
     trained_agg = _aggregate_trained(trained_path)
-    comparison = _build_comparison(base_agg, trained_agg)
+    # smoke=True relaxes the per-cell 40-prompt count; structural presence
+    # of every (trait x context x arm) cell is still enforced. Non-smoke
+    # raises RuntimeError on ANY missing or shrunk cell (CLAUDE.md
+    # fail-fast; reconciler round-1 Finding 3).
+    comparison = _build_comparison(base_agg, trained_agg, smoke=args.smoke)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(comparison, indent=2, ensure_ascii=False))
     logger.info("[phase=aggregate] wrote %s", out_path)
@@ -410,6 +631,13 @@ def main(argv: list[str] | None = None) -> None:
             args.max_new_tokens = 256
         # Disable truncation gate for smoke (256-token cap will fail it).
         args.truncation_fail_threshold = 1.0
+
+    # Plan §8 Risk #2: the driver owns the Q-bank invariant. Before any
+    # eval subprocess, check that data/issue_498/Q_test.json + Q_train.json
+    # exist; if not, subprocess into scripts/i498_phase0_preflight.py to
+    # rebuild them (and assert the invariants afterwards). Skipped under
+    # --aggregate-only (no eval phase to feed) inside the helper.
+    _run_preflight_if_missing(args)
 
     if not args.aggregate_only:
         _run_eval(args)
