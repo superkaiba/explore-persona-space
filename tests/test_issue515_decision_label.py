@@ -6,21 +6,21 @@ Round-1 code-review (Codex Major 1, reconciler binding) flagged that
 even if the Claude warmth-rating cross-meter disagreed (low Spearman
 rho). The plan §6 combined rule requires BOTH conditions:
 
-  "#496's null is real" ⇔
-    (≥4/6 sources clear the SocioT paper gate) AND
-    (Spearman ρ_cross_meter ≥ +0.5)
+  "#496's null is real" iff
+    (>=4/6 sources clear the SocioT paper gate) AND
+    (Spearman rho_cross_meter >= +0.5)
 
 This test pins all 6 quadrants of (n_clearing, rho) including the
 edge cases:
-  - n_clearing ≤ 1 → "artifact" regardless of rho (rho moot when the
+  - n_clearing <= 1 → "artifact" regardless of rho (rho moot when the
     intervention obviously didn't take).
   - n_clearing in {2, 3} → "ambiguous" regardless of rho.
-  - n_clearing ≥ 4 AND rho ≥ 0.5 → "real_null".
-  - n_clearing ≥ 4 AND rho < 0.5 → "ambiguous" (gate cleared but the
+  - n_clearing >= 4 AND rho >= 0.5 → "real_null".
+  - n_clearing >= 4 AND rho < 0.5 → "ambiguous" (gate cleared but the
     two meters disagree).
-  - n_clearing ≥ 4 AND rho is None (Claude data incomplete) →
+  - n_clearing >= 4 AND rho is None (Claude data incomplete) →
     "ambiguous" (conservative fallback, NOT "real_null").
-  - n_clearing ≥ 4 AND rho is NaN → "ambiguous" (NaN is None in our
+  - n_clearing >= 4 AND rho is NaN → "ambiguous" (NaN is None in our
     JSON-safe mapping).
 """
 

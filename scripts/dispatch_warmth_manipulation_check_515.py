@@ -82,6 +82,11 @@ DEFAULT_SOURCES: tuple[str, ...] = tuple(SOURCE_SYSTEM_PROMPTS.keys())
 
 
 def _git_sha() -> str | None:
+    """Return ``git rev-parse HEAD`` or None when git is unavailable or
+    the cwd is outside a repo. Explicitly catches CalledProcessError
+    (non-zero exit / not a repo) and FileNotFoundError (no git binary
+    on PATH) per CLAUDE.md "fail fast" rule; any OTHER exception is a
+    real bug and propagates."""
     try:
         return subprocess.check_output(
             ["git", "rev-parse", "HEAD"],
@@ -89,7 +94,7 @@ def _git_sha() -> str | None:
             text=True,
             env={**os.environ},
         ).strip()
-    except Exception:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         return None
 
 
@@ -652,13 +657,50 @@ def _phase3_claude_judge(
     _emit_phase("claude_judge")
 
     rng = random.Random(seed)
+    # Determine the rollout population from disk (instead of hardcoding
+    # range(10) per the previous version, which made the sample silently
+    # empty on smoke runs with --rollouts < 10). We assume every
+    # headline cell wrote the SAME rollout count -- assert it.
+    headline_cells = [k for k in cell_paths if k != "base__none"]
+    if not headline_cells:
+        raise RuntimeError("_phase3_claude_judge: no headline cells in cell_paths")
+    available_per_cell: dict[str, set[int]] = {}
+    for cell_key in headline_cells:
+        seen: set[int] = set()
+        with open(cell_paths[cell_key]) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    seen.add(int(json.loads(line)["rollout_idx"]))
+        available_per_cell[cell_key] = seen
+    # All cells must share the same rollout set (so the trained vs base
+    # comparison is on matched indices).
+    ref_key = headline_cells[0]
+    ref_set = available_per_cell[ref_key]
+    for cell_key, seen in available_per_cell.items():
+        if seen != ref_set:
+            raise RuntimeError(
+                f"_phase3_claude_judge: rollout sets differ across cells; "
+                f"{cell_key}={sorted(seen)} vs {ref_key}={sorted(ref_set)}. "
+                "All headline cells must share the same rollout indices for "
+                "the matched-pair comparison to be valid."
+            )
+    available_rollouts = sorted(ref_set)
+    if len(available_rollouts) < judge_rollouts_per_prompt:
+        raise RuntimeError(
+            f"_phase3_claude_judge: only {len(available_rollouts)} rollouts "
+            f"available per prompt but --judge-rollouts={judge_rollouts_per_prompt}"
+        )
     # Pick the same rollout subsample for trained AND base cells so the
     # comparison is on matched generations.
-    rollout_pick = sorted(rng.sample(range(10), judge_rollouts_per_prompt))
-    log.info("Claude judge: sampling rollouts %s per prompt", rollout_pick)
+    rollout_pick = sorted(rng.sample(available_rollouts, judge_rollouts_per_prompt))
+    log.info(
+        "Claude judge: sampling rollouts %s per prompt (population=%s)",
+        rollout_pick,
+        available_rollouts,
+    )
 
     completions: dict[str, dict[str, list[str]]] = {}
-    headline_cells = [k for k in cell_paths if k != "base__none"]
     for cell_key in headline_cells:
         rows = []
         with open(cell_paths[cell_key]) as f:
@@ -881,7 +923,7 @@ def _decision_label(n_clearing: int, rho_cross_meter: float | None) -> str:
     cross-meter Spearman rho) → the plan §6 combined decision rule.
 
     Plan §6 combined rule (verbatim): "#496's null is real" ⇔
-    (≥4/6 sources clear the SocioT paper gate) AND (Spearman ρ ≥ +0.5
+    (>=4/6 sources clear the SocioT paper gate) AND (Spearman rho >= +0.5
     across sources between the SocioT delta and the Claude warmth-rating
     delta). The Claude rating is the cross-meter sanity check: if the
     two meters disagree (low rho), we can't read the SocioT lift as
@@ -1006,8 +1048,10 @@ def _phase4_figures(summary: dict[str, Any], output_root: Path, *, git_sha: str 
     paper_lo = [summary["per_source"][s]["delta_s_paper_ci_lo"] for s in sources]
     paper_hi = [summary["per_source"][s]["delta_s_paper_ci_hi"] for s in sources]
     text_only_deltas = [summary["per_source"][s]["delta_s_text_only"] for s in sources]
-    [summary["per_source"][s]["delta_s_text_only_ci_lo"] for s in sources]
-    [summary["per_source"][s]["delta_s_text_only_ci_hi"] for s in sources]
+    # CI bounds for text_only are loaded into the JSON summary but not
+    # currently plotted; remove the two dead expression statements that
+    # round-1 Codex flagged. If we want CI on the text-only figure later,
+    # they're still available via summary["per_source"][s][...].
     clears = [summary["per_source"][s]["clears_paper_gate"] for s in sources]
     gate = summary["paper_gate_nats"]
 
