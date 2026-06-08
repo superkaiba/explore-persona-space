@@ -27,7 +27,13 @@ The leakage-prediction line has only been run cleanly on two behaviors: marker (
 
 Two behavior arms (refusal, EM), each scored exactly like #509's sycophancy arm:
 - DV = per-(source, bystander) leakage Δ (trained − base, baseline-subtracted per bystander), on a source×bystander panel.
-- Predictors scored against the leakage matrix, source-FE, with cluster bootstrap + permutation null: **cosine_l20** (#470), **JS** and **KL** divergence (the #480/#509 zoo), **bystander base rate** (the confound-aware covariate from #509's base-rate re-analysis — predict the absolute trained rate with FE and flag the Δ-circularity, per `eval_results/issue_509/baserate_covariate/`), and the **new completion-log-prob metric** below.
+- Predictors: score the **SAME FULL predictor battery every prior arm was scored against** (parity is the point — a cross-behavior comparison is only valid if refusal/EM see the identical predictor set as marker/syco/fact). Concretely:
+  1. **Full residual-stream bake-off (#502/#509)** — 3 extraction points {end_of_system, last_prompt, mean_response} × 28 layers (0-27) × 9 cloud-distance metrics {cosine, euclidean, mahal, mahal_pooled_ctx, mmd, c2st, gauss_kl(PCA-16), wass2, next_token_js baseline} ≈ 1000+ cells per arm. This is the "better predictor" line; it must run for parity even though #509 found it marker-specific.
+  2. **Coarse geometry + divergence zoo (#470/#480)** — cosine_l20 baseline, cosine_response at L7/L14/L21/L27, JS {sym, from_source, from_bystander}, M_js, KL {src→bys, bys→src, sym}.
+  3. **Priors** — bystander base rate (the confound-aware covariate from #509's base-rate re-analysis: predict the absolute trained rate with FE and flag the Δ-circularity, per `eval_results/issue_509/baserate_covariate/`), and the **new completion-log-prob metric** (below).
+  4. **Response-length controls** (#480) — source/bystander resp-len means + abs diff, residualized out (the #509 length-partial step).
+  5. *Optional, planner's call:* the #468 in-context-example cosine + He et al. (arXiv 2404.01099) representation/gradient/format selectors that the #503 calibration line uses — include if the cross-line comparison is wanted.
+  All scored source-FE, with the #509 machinery: attenuation-adjusted ρ, within-source permutation null (B=2000), cluster bootstrap CI (B=5000), pre-registered cell + ridge + search-best with selection-inflation disclaimer.
 - Report whether ANY predictor generalizes across behaviors (marker → syco → fact → refusal → EM), or whether each behavior has its own predictor cell (the #509 "different behavior, different cell" finding).
 
 ## New metric: log-prob of the training completions
