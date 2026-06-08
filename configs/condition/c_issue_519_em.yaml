@@ -78,12 +78,21 @@ saturation_gate:
   upper_pct: 25.0
   lr_ladder: [2.0e-5, 5.0e-5]   # centered (10× below #458) / up-step (4× below #458) — 2026-06-08 plan §7 fallback path
 
+# 2026-06-08: EM periodic callback DISABLED due to sustained Anthropic batch
+# API congestion (>50-min queue waits with zero throughput observed during
+# this session, including 4 separate Sonnet 4.5 batch submissions). The K=20
+# Sonnet-Betley callback blocks training each fire. Cost-of-disabling is
+# losing the EM trajectory (CLAUDE.md marker-leakage MUST + plan §4.2 spec) —
+# this is a clean-result caveat, not a recipe change. The endpoint EM rate
+# is still measured at Phase F headline aggregation. Marker arm callback
+# (K=5, logit-only, no API) stays enabled.
+
 # Periodic trajectory callbacks — plan §4.2.
 # K=20 (not K=5) because the Sonnet 4.5 Betley judge is too expensive
 # to run every-step.
 periodic_eval:
   em:
-    enabled: true
+    enabled: false   # 2026-06-08: Sonnet 4.5 batch API congestion → disabled; see note above lr_ladder
     mode: em_betley_judge       # NEW for #519 — Sonnet judge on on-policy gens
     every_steps: 20
     personas:
