@@ -247,12 +247,31 @@ def main() -> int:
                     f"#518 v4 must-fix 1: every (source, bystander) cell of "
                     f"every arm being scored MUST have a completion_logprob."
                 )
-            # Smoke + production both call the stub here for now. Production
-            # path will swap _stub_coarse_zoo for the real #480 sweep loader
-            # in a follow-up (plan §13 implementer-decides; out of scope this
-            # implementer round -- the smoke + the documented schema are
-            # enough to wire the cross-behavior aggregator).
-            coarse = _stub_coarse_zoo(source, bystander)
+            # #518 v4 round-2 must-fix 2: gate the hash-derived stub on
+            # --smoke. Production substrates must contain real coarse-zoo
+            # values loaded from the #480 per-cell predictor sweep, NOT
+            # deterministic-but-fake hashes of (source, bystander) -- the
+            # FAIL-CLOSED 24-field check only verifies presence, not validity,
+            # so without this gate a non-smoke run silently emits fake
+            # predictors that the aggregator then correlates against the real
+            # Δ panel. Round 1 left the call unconditional and reviewers FAILed
+            # both Claude + Codex on it. Until the real #480 coarse-zoo loader
+            # is wired (plan §13 implementer-decides; out of scope for the
+            # cross-behavior aggregator implementer round), production MUST
+            # raise.
+            if args.smoke:
+                coarse = _stub_coarse_zoo(source, bystander)
+            else:
+                raise NotImplementedError(
+                    "Real #480 coarse-zoo loader not yet wired; pass --smoke "
+                    "to use deterministic stubs, or wire up the real loader "
+                    "before launching the production substrate build. "
+                    "Cell affected: "
+                    f"(source={source!r}, bystander={bystander!r}). "
+                    "#518 v4 round-2 must-fix 2: production must not silently "
+                    "emit hash-derived coarse-zoo stubs that the FAIL-CLOSED "
+                    "24-field check is structurally blind to."
+                )
             cell_payload = {
                 "source": source,
                 "bystander": bystander,

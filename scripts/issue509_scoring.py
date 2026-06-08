@@ -392,6 +392,94 @@ def _saturated_pair_mask(
     return ~np.isfinite(x) | (np.abs(x) < abs_threshold)
 
 
+def _coarse_lift_syco_arm_per_cell(
+    x: np.ndarray,
+    y: np.ndarray,
+    strata: np.ndarray,
+    se: np.ndarray,
+    syco_rows: list[dict[str, Any]],
+    matched_indices: list[int],
+    *,
+    columns: tuple[str, ...] | None = None,
+    allow_unknown_se: bool = True,
+) -> dict[str, Any]:
+    """#518 v4 round-2 must-fix 1: per-coarse Spearman ρ for the syco/refusal/em arm.
+
+    Mirrors ``_coarse_lift_per_cell`` (the fact-arm anchor) on the SAME pairs as
+    the bake-off cell's (x, y). For each predictor column in ``columns`` (the
+    coarse-zoo from plan §4.4 + ``completion_logprob`` as the cross-behavior
+    headline named in plan §0/§1/§4.4/§11), this:
+
+      1. Pulls the column from ``syco_rows[matched_indices]`` (the SAME
+         cells the residual-stream cell scored its ``rho_fe`` on).
+      2. Residualizes both predictor and ``y`` within source FE (matching
+         ``_score_one_cell``'s headline statistic).
+      3. Computes the signed (NOT |·|) Spearman ρ on the residualized
+         pair -- the aggregator's same-sign gate needs the sign.
+      4. Computes the attenuation-adjusted version
+         ``rho_fe_adj = rho_fe / sqrt(reliability_y)``.
+      5. Runs a within-stratum permutation null (small B=200 sample for
+         smoke speed; full B=2000 for production) and a cluster-bootstrap
+         95% CI on the partial-Spearman statistic.
+
+    The output payload per predictor:
+        ``{predictor: {"rho_fe": ..., "rho_fe_adj": ..., "perm_p": ...,
+                       "cluster_ci": [lo, hi], "n_finite": ...}}``
+
+    The aggregator then reads ``per_coarse_rho_fe[predictor]["rho_fe_adj"]``
+    from each arm and builds a coarse-predictor `(rho_syco, rho_refusal,
+    rho_em)` triple alongside the residual-stream cell triples.
+
+    NaN-safe: predictors with fewer than 3 finite values per cell emit
+    ``rho_fe = NaN``.
+    """
+    if columns is None:
+        columns = REFUSAL_EM_COARSE_PREDICTOR_COLUMNS
+    out: dict[str, dict[str, Any]] = {}
+    if len(x) < 3 or len(matched_indices) != len(x):
+        # Insufficient pairs for a stable Spearman; emit empty payload.
+        return out
+    # Reliability of y once per cell -- shared across all coarse predictors
+    # because it depends on y + se + strata, not on the predictor.
+    rel = _reliability_y(y, se, strata=strata, allow_unknown_se=allow_unknown_se)
+    y_resid = _residualize(y, strata)
+    for col in columns:
+        col_vals = np.array(
+            [syco_rows[i].get(col, float("nan")) for i in matched_indices],
+            dtype=float,
+        )
+        finite_mask = np.isfinite(col_vals)
+        n_finite = int(finite_mask.sum())
+        if n_finite < 3:
+            out[col] = {
+                "rho_fe": float("nan"),
+                "rho_fe_adj": float("nan"),
+                "perm_p": float("nan"),
+                "cluster_ci": [float("nan"), float("nan")],
+                "n_finite": n_finite,
+            }
+            continue
+        col_resid = _residualize(col_vals, strata)
+        rho_fe = _spearman_rho(col_resid, y_resid)
+        rho_fe_adj = _attenuation_adjust(rho_fe, rel)
+        # Small-B permutation null + cluster bootstrap -- the per-coarse
+        # gate is identical in shape to the residual-stream gate; the
+        # aggregator applies the SAME same_sign + min(|ρ|) ≥ 0.40 rule.
+        perm_p = _permutation_p_partial(rho_fe, col_vals, y, strata, 200)
+        try:
+            ci_lo, ci_hi = _cluster_bootstrap_ci(col_resid, y_resid, strata, b=500)
+        except (ValueError, RuntimeError):
+            ci_lo, ci_hi = float("nan"), float("nan")
+        out[col] = {
+            "rho_fe": rho_fe,
+            "rho_fe_adj": rho_fe_adj,
+            "perm_p": perm_p,
+            "cluster_ci": [ci_lo, ci_hi],
+            "n_finite": n_finite,
+        }
+    return out
+
+
 def _coarse_lift_per_cell(
     x: np.ndarray,
     y: np.ndarray,
@@ -493,11 +581,38 @@ def _load_fact_target(csv_path: Path) -> dict[str, Any]:
     return {"rows": rows, "source_file": str(csv_path)}
 
 
-def _load_syco_target(snapshot_path: Path) -> dict[str, Any]:
-    """Load #411's 138-cell sycophancy Δ panel from the frozen snapshot."""
+def _load_syco_target(
+    snapshot_path: Path,
+    syco_logprob_backfill: Path | None = None,
+) -> dict[str, Any]:
+    """Load #411's 138-cell sycophancy Δ panel from the frozen snapshot.
+
+    #518 v4 round-2 must-fix 1: ``syco_logprob_backfill`` is the path to
+    ``scripts/issue518_syco_logprob_backfill.py``'s output
+    (``logprob_results.json``). When provided, the mean per-token
+    ``log P(completion | bystander persona, Q)`` is merged onto each row as
+    the ``completion_logprob`` column so the syco arm can build the
+    per-coarse Spearman ρ alongside the refusal + EM arms and the
+    cross-behavior aggregator can read ``per_coarse_rho_fe["completion_logprob"]``
+    from each. Cells whose (source, bystander) is missing from the backfill
+    are emitted with ``completion_logprob = NaN`` (the per-coarse ρ is
+    NaN-safe; the analyzer surfaces the missing-cell count).
+    """
     with open(snapshot_path) as f:
         snap = json.load(f)
+    # Optional completion_logprob backfill (#518 v4 round-2 must-fix 1).
+    lp_map: dict[tuple[str, str], float] = {}
+    if syco_logprob_backfill is not None:
+        with open(syco_logprob_backfill) as f:
+            lp_payload = json.load(f)
+        summary = lp_payload.get("summary", {})
+        for src, bys_map in summary.items():
+            for bys, cell in bys_map.items():
+                mean_lp = cell.get("mean_logprob_per_tok")
+                if mean_lp is not None:
+                    lp_map[(src, bys)] = float(mean_lp)
     rows: list[dict[str, Any]] = []
+    n_missing_lp = 0
     for source, src_data in snap["per_source"].items():
         panel = src_data.get("per_panel_delta", {})
         trained_rate_by = src_data.get("per_panel_trained_rate", {})
@@ -518,17 +633,35 @@ def _load_syco_target(snapshot_path: Path) -> dict[str, Any]:
                         + max(p_b * (1 - p_b), 0.0) / n_rollouts
                     )
                 )
-            rows.append(
-                {
-                    "source": source,
-                    "bystander": bystander,
-                    "delta": float(delta),
-                    "trained_rate": p_t,
-                    "base_rate": p_b,
-                    "se_delta": se,
-                }
-            )
-    return {"rows": rows, "source_file": str(snapshot_path)}
+            row = {
+                "source": source,
+                "bystander": bystander,
+                "delta": float(delta),
+                "trained_rate": p_t,
+                "base_rate": p_b,
+                "se_delta": se,
+            }
+            # #518 v4 round-2 must-fix 1: completion_logprob merge from the
+            # syco arm's bystander_logprob backfill.
+            if syco_logprob_backfill is not None:
+                lp = lp_map.get((source, bystander))
+                if lp is None:
+                    n_missing_lp += 1
+                    row["completion_logprob"] = float("nan")
+                else:
+                    row["completion_logprob"] = lp
+            rows.append(row)
+    if syco_logprob_backfill is not None and n_missing_lp:
+        logger.warning(
+            "syco completion_logprob backfill missing on %d (source, bystander) cells; "
+            "the per-coarse Spearman is NaN-safe.",
+            n_missing_lp,
+        )
+    return {
+        "rows": rows,
+        "source_file": str(snapshot_path),
+        "syco_logprob_backfill": str(syco_logprob_backfill) if syco_logprob_backfill else None,
+    }
 
 
 # #518 v4 must-fix 1: required predictor-comparison fields per cell. The
@@ -540,6 +673,38 @@ _REQUIRED_PREDICTOR_COMPARISON_FIELDS: tuple[str, ...] = (
     "bystander",
     "delta",
     "completion_logprob",
+)
+
+# #518 v4 ROUND-2 must-fix 1: coarse predictor columns the syco/refusal/em
+# arms can score per (point, layer, metric, variant) cell. ``completion_logprob``
+# is the headline cross-behavior predictor named in plan §0/§1/§4.4/§11 ("the
+# body of work this task is built around"); the rest are the #480 coarse-zoo
+# columns the substrate already carries. Each is residualized by source FE
+# (matching ``_score_one_cell``'s headline statistic) and a per-predictor
+# Spearman ρ is reported in ``scored["per_coarse_rho_fe"]`` so the
+# cross-behavior aggregator can build a `(rho_syco, rho_refusal, rho_em)`
+# triple per coarse predictor alongside the residual-stream cell triples.
+REFUSAL_EM_COARSE_PREDICTOR_COLUMNS: tuple[str, ...] = (
+    "completion_logprob",
+    "cosine_l20_baseline",
+    "cosine_response_headline",
+    "cosine_response_l7",
+    "cosine_response_l14",
+    "cosine_response_l21",
+    "cosine_response_l27",
+    "JS_sym_nats",
+    "JS_from_source_nats",
+    "JS_from_bystander_nats",
+    "M_js",
+    "KL_src_to_bys_nats",
+    "KL_bys_to_src_nats",
+    "KL_sym_nats",
+    "source_base_rate",
+    "bystander_base_rate",
+    "base_rate_diff_neg_abs",
+    "source_resp_len_mean",
+    "bystander_resp_len_mean",
+    "resp_len_diff_abs",
 )
 
 
@@ -597,17 +762,25 @@ def _load_refusal_em_target(predictor_comparison_path: Path) -> dict[str, Any]:
                     + max(base_rate * (1 - base_rate), 0.0) / n_rollouts
                 )
             )
-        rows.append(
-            {
-                "source": source,
-                "bystander": bystander,
-                "delta": float(cell["delta"]),
-                "trained_rate": trained_rate,
-                "base_rate": base_rate,
-                "se_delta": se,
-                "completion_logprob": float(cell["completion_logprob"]),
-            }
-        )
+        # #518 v4 round-2 must-fix 1: carry every coarse predictor column the
+        # substrate exposes onto the row dict so ``_coarse_lift_syco_arm`` can
+        # residualize each one per cell. Missing columns become NaN -- the
+        # downstream per-coarse Spearman is NaN-safe.
+        row = {
+            "source": source,
+            "bystander": bystander,
+            "delta": float(cell["delta"]),
+            "trained_rate": trained_rate,
+            "base_rate": base_rate,
+            "se_delta": se,
+            "completion_logprob": float(cell["completion_logprob"]),
+        }
+        for col in REFUSAL_EM_COARSE_PREDICTOR_COLUMNS:
+            if col == "completion_logprob":
+                continue  # already populated above
+            v = cell.get(col)
+            row[col] = float(v) if v is not None else float("nan")
+        rows.append(row)
     if not rows:
         raise RuntimeError(
             f"predictor_comparison.json at {predictor_comparison_path} yielded 0 "
@@ -661,15 +834,24 @@ def _build_syco_xy(
     matrix: dict[str, dict[str, float]],
     syco_rows: list[dict[str, Any]],
     cid_to_syco_persona: dict[str, str],
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Return (x, y, source, se, bystander) aligned across the 138 cells.
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[int]]:
+    """Return (x, y, source, se, bystander, matched_indices) aligned across the cells.
 
     ROUND-2/#509 FIX F6: also return per-cell bystander persona so the
     `comedian_recovery` rank diagnostic can index by bystander name.
+
+    #518 v4 round-2 must-fix 1: ALSO return ``matched_indices`` (a list of
+    integer indices into ``syco_rows``) so the per-coarse predictor lift
+    can read the same coarse-predictor columns (``completion_logprob``,
+    cosine_*, JS_*, KL_*, M_js, base rates, length residuals) from the SAME
+    rows the bake-off cell's (x, y) come from. The fact arm has used this
+    pattern since round 2 (``_build_fact_xy`` returns ``matched_indices``);
+    the syco/refusal/em arm now mirrors it.
     """
     persona_to_cid = {v: k for k, v in cid_to_syco_persona.items()}
     x_arr, y_arr, src_arr, se_arr, bys_arr = [], [], [], [], []
-    for row in syco_rows:
+    matched_indices: list[int] = []
+    for i, row in enumerate(syco_rows):
         src_cid = persona_to_cid.get(row["source"])
         bys_cid = persona_to_cid.get(row["bystander"])
         if src_cid is None or bys_cid is None:
@@ -682,12 +864,14 @@ def _build_syco_xy(
         src_arr.append(row["source"])
         se_arr.append(row["se_delta"])
         bys_arr.append(row["bystander"])
+        matched_indices.append(i)
     return (
         np.array(x_arr, dtype=float),
         np.array(y_arr, dtype=float),
         np.array(src_arr),
         np.array(se_arr, dtype=float),
         np.array(bys_arr),
+        matched_indices,
     )
 
 
@@ -949,8 +1133,17 @@ def score_arm(
     metrics_dir: Path,
     target_file: Path,
     smoke: bool,
+    syco_logprob_backfill: Path | None = None,
 ) -> dict[str, Any]:
-    """Score every (point, layer, metric, variant) cell on one arm."""
+    """Score every (point, layer, metric, variant) cell on one arm.
+
+    #518 v4 round-2 must-fix 1: ``syco_logprob_backfill`` (syco arm only)
+    points at ``scripts/issue518_syco_logprob_backfill.py``'s output
+    (``logprob_results.json``). When provided, the per-(source, bystander)
+    ``completion_logprob`` is merged onto the syco target rows so the
+    syco-arm scoring emits ``per_coarse_rho_fe["completion_logprob"]``
+    that the cross-behavior aggregator's headline reads.
+    """
     if arm == "fact":
         target = _load_fact_target(target_file)
         from explore_persona_space.experiments.i509_fact_conditions import (
@@ -959,7 +1152,7 @@ def score_arm(
 
         cid_to_persona = CID_TO_CSV_PERSONA
     elif arm == "syco":
-        target = _load_syco_target(target_file)
+        target = _load_syco_target(target_file, syco_logprob_backfill=syco_logprob_backfill)
         from explore_persona_space.experiments.i509_syco_conditions import (
             CID_TO_SYCO_PERSONA,
         )
@@ -1042,7 +1235,9 @@ def score_arm(
                     x, y, strata, target["rows"], cid_to_persona, matched_indices
                 )
         else:
-            x, y, strata, se, bystanders = _build_syco_xy(matrix, target["rows"], cid_to_persona)
+            x, y, strata, se, bystanders, matched_indices = _build_syco_xy(
+                matrix, target["rows"], cid_to_persona
+            )
             scored = _score_one_cell(
                 x=x,
                 y=y,
@@ -1054,6 +1249,30 @@ def score_arm(
                 perm_b=perm_b,
                 allow_unknown_se=allow_unknown_se,
             )
+            # #518 v4 round-2 must-fix 1: per-coarse Spearman ρ on the SAME
+            # pairs as the bake-off cell. The aggregator reads
+            # ``per_coarse_rho_fe[<predictor>]["rho_fe_adj"]`` from this
+            # payload per arm and builds the cross-behavior triple. The
+            # headline coarse predictor is ``completion_logprob`` (plan §0
+            # / §1 / §4.4 / §11 -- "the body of work this task is built
+            # around"). Only fires when the substrate carries the coarse
+            # columns (refusal/em arms always; syco arm when the
+            # ``--syco-logprob-backfill`` flag was passed).
+            if (
+                arm in ("syco", "refusal", "em")
+                and len(x) >= 3
+                and target["rows"]
+                and "completion_logprob" in target["rows"][0]
+            ):
+                scored["per_coarse_rho_fe"] = _coarse_lift_syco_arm_per_cell(
+                    x,
+                    y,
+                    strata,
+                    se,
+                    target["rows"],
+                    matched_indices,
+                    allow_unknown_se=allow_unknown_se,
+                )
             # ROUND-2/#509 FIX F6 — syco-arm plan-§5 condition slugs:
             # `per_source`, `live_cells_only`, `comedian_recovery`,
             # `per_cell_predictor_saturation`.
@@ -1208,6 +1427,20 @@ def _build_argparser() -> argparse.ArgumentParser:
         action="store_true",
         help="Smoke mode: skip permutation + bootstrap, relax cell-count gates.",
     )
+    p.add_argument(
+        "--syco-logprob-backfill",
+        type=Path,
+        default=None,
+        help=(
+            "Syco arm only. Path to scripts/issue518_syco_logprob_backfill.py's "
+            "logprob_results.json output. When provided, the per-(source, "
+            "bystander) completion_logprob is merged onto the syco target so "
+            "the syco-arm scoring emits per_coarse_rho_fe['completion_logprob']. "
+            "Required for the cross-behavior aggregator's headline coarse "
+            "predictor (plan §0/§1/§4.4/§11). Ignored on fact / refusal / em "
+            "arms (refusal + EM substrates carry the column directly)."
+        ),
+    )
     return p
 
 
@@ -1240,11 +1473,23 @@ def main(argv: list[str] | None = None) -> int:
         logger.error("Metrics dir missing: %s", args.metrics_dir)
         return 2
 
+    syco_lp_backfill = args.syco_logprob_backfill
+    if syco_lp_backfill is not None and args.arm != "syco":
+        logger.warning(
+            "--syco-logprob-backfill ignored on arm=%s (only syco arm reads it; "
+            "refusal/em substrates carry completion_logprob directly).",
+            args.arm,
+        )
+        syco_lp_backfill = None
+    if syco_lp_backfill is not None and not syco_lp_backfill.exists():
+        logger.error("--syco-logprob-backfill missing: %s", syco_lp_backfill)
+        return 2
     out = score_arm(
         arm=args.arm,
         metrics_dir=args.metrics_dir,
         target_file=target_file,
         smoke=args.smoke,
+        syco_logprob_backfill=syco_lp_backfill,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(out, indent=2, default=str))
