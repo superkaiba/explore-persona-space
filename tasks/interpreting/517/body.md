@@ -1,6 +1,7 @@
 ---
-title: 'Two of three "trait installed" passes in #498 were already saturated in the
-  untrained base; only validating shows a real implant (HIGH confidence)'
+title: 'Untrained Qwen-2.5-7B-Instruct already clears the in-scenario PASS threshold
+  for pushback and explains-well; #498''s implant story for those traits needs a Q-bank-matched
+  re-run (MODERATE confidence)'
 kind: experiment
 tags:
 - roadmap-jun05
