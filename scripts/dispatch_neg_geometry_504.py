@@ -48,6 +48,7 @@ load_dotenv()
 from explore_persona_space.experiments.contrastive_neg_geometry_504 import (  # noqa: E402
     BASE_MODEL,
     CHECKPOINT_FRACTIONS_V3_FINER,
+    CHECKPOINT_FRACTIONS_V4_BISECTION,
     EPOCHS_FROM_V3_SMOKE_SLUG,
     EPOCHS_LADDER_V3,
     EXPECTED_MARKER_TOKEN_ID,
@@ -95,6 +96,7 @@ _V3_IMPORT_REFS = (
     MAIN_ARM_SLUGS_V3,
     PHASE0_SMOKE_SLUGS_V3,
 )
+_V4_IMPORT_REFS = (CHECKPOINT_FRACTIONS_V4_BISECTION,)
 
 LOG_DIR = Path("/workspace/logs")
 
@@ -577,6 +579,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
             "phase0_v3-recovery",
             "phase0_v4_pretrain",
             "phase0_v4_reeval",
+            "phase0_v4_bisection",
             "phase0p6_validate",
             "phase1",
         ),
@@ -599,11 +602,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
             "phase0_v4_reeval=v4 re-eval the EPOCHS=3 anchor through the "
             "fixed reader + bystander-resolution picker (plan v5 §4.1 fix "
             "#2); writes phase0_calibration_v4.json; "
+            "phase0_v4_bisection=v4 EPOCHS=2 finer-fraction fallback "
+            "(plan v5 §4.2 step 1); triggered ONLY when phase0_v4_reeval "
+            "returns verdict='no_in_band_anchor'. Re-trains EPOCHS=2 at "
+            "fractions {0.04, 0.08, 0.12, 0.16} with v4 trajectory "
+            "persistence, re-applies the bystander-resolution picker, "
+            "writes phase0_calibration_v4_bisection.json; "
             "phase0p6_validate=v4 marker-logprob path validation (5 probes "
             "× 4 questions × 1 ckpt; plan v5 §4.3a); writes "
             "phase0p6_validation_v4.json; "
             "phase1=read whichever Phase 0 artifact exists "
-            "(phase0_calibration_v3.json preferred over v2/v2_fallback) + "
+            "(v4 > v4_bisection > v3 > v2-fallback > v2-primary) + "
             "train the 5 main arms × 2 seeds at the picked recipe; "
             "legacy=byte-identical v1 (rank-ladder) pipeline. Default legacy."
         ),
@@ -1180,6 +1189,14 @@ def _run_v2_phase(
             max_new_tokens_eval=max_new_tokens_eval,
             max_model_len_eval=max_model_len_eval,
         )
+    if args.phase == "phase0_v4_bisection":
+        return _run_v4_phase0_bisection(
+            args=args,
+            phase_summaries=phase_summaries,
+            arm_to_n_json=arm_to_n_json,
+            max_new_tokens_eval=max_new_tokens_eval,
+            max_model_len_eval=max_model_len_eval,
+        )
     if args.phase == "phase0p6_validate":
         return _run_v4_phase0p6_validate(
             args=args,
@@ -1541,30 +1558,46 @@ def _select_active_phase0_pick(
     primary_pick_path: Path,
     fallback_pick_path: Path,
     v3_pick_path: Path | None = None,
+    v4_pick_path: Path | None = None,
+    v4_bisection_pick_path: Path | None = None,
 ) -> tuple[dict, Path]:
-    """Choose the active Phase 0 pick artifact: v3 > v2-fallback > v2-primary.
+    """Choose the active Phase 0 pick artifact.
+
+    Precedence (highest → lowest):
+
+      1. v4 primary (`phase0_calibration_v4.json`) — plan v5 §4.1 bystander-
+         resolution picker on the EPOCHS=3 anchor.
+      2. v4 bisection (`phase0_calibration_v4_bisection.json`) — plan v5 §4.2
+         step 1 EPOCHS=2 finer-grid fallback (only if v4 primary failed AND
+         the bisection passed).
+      3. v3 (`phase0_calibration_v3.json`) — plan v3 EPOCHS-ladder pick.
+      4. v2 fallback (`phase0_calibration_v2_fallback.json`) — only if v2
+         primary fired its fallback flag.
+      5. v2 primary (`phase0_calibration_v2.json`).
 
     Pure helper (read-only filesystem access). Returns the parsed dict + the
     absolute path of the chosen artifact. Used by `_run_v2_phase1` for both
     cell-training selection AND the analyze subprocess so they read the SAME
-    artifact (round-3 fix, concern_id `fallback-analyze-pick-path`).
+    artifact (round-3 fix, concern_id `fallback-analyze-pick-path`; v5 round-2
+    fix BLOCKER A — Phase 1 must consume v4 picker output before falling
+    back to v3/v2).
 
-    Selection precedence (plan v3 §2 "v3 takes precedence over v2"):
+    A non-pass v4 verdict falls through to v4-bisection → v3 → v2 selection,
+    in that order. Same for v3 (existing behavior preserved).
 
-      1. If `v3_pick_path` is provided AND the file exists AND its verdict ==
-         "pass", use the v3 artifact. Rationale: v3 supersedes v2 once Phase 0
-         v3 has produced an in-band anchor — re-using v2's pick after v3 ran
-         would mix lr-anchor and EPOCHS-anchor evidence.
-      2. Else if `primary_pick_path` (v2) fired fallback AND
-         `fallback_pick_path` exists, use the fallback artifact.
-      3. Else use the primary (v2) artifact.
-
-    Raises FileNotFoundError if NO artifact is available (neither v3 nor v2
-    primary). v3 with non-pass verdict (Trigger A/B/C) falls through to v2
-    selection — if no v2 pick exists either, the caller surfaces the v3
-    failure mode (caller should consult `phase0_v3_exit_to_v4.json` for the
-    exit-to-v4 routing).
+    Raises FileNotFoundError if NO artifact is available. v4 OR v3 with
+    non-pass verdict (Trigger A/B/C) falls through; if no fallback artifact
+    exists either, the caller surfaces the failure mode.
     """
+    if v4_pick_path is not None and v4_pick_path.exists():
+        v4_pick = json.loads(v4_pick_path.read_text())
+        if v4_pick.get("verdict") == "pass":
+            return v4_pick, v4_pick_path
+        # Non-pass v4 primary falls through to v4-bisection (then v3, then v2).
+    if v4_bisection_pick_path is not None and v4_bisection_pick_path.exists():
+        v4b_pick = json.loads(v4_bisection_pick_path.read_text())
+        if v4b_pick.get("verdict") == "pass":
+            return v4b_pick, v4_bisection_pick_path
     if v3_pick_path is not None and v3_pick_path.exists():
         v3_pick = json.loads(v3_pick_path.read_text())
         if v3_pick.get("verdict") == "pass":
@@ -1572,10 +1605,18 @@ def _select_active_phase0_pick(
         # Non-pass v3 verdict falls through to v2 selection (or fails below
         # if v2 isn't available either).
     if not primary_pick_path.exists():
+        missing_paths = [primary_pick_path]
+        if v3_pick_path is not None:
+            missing_paths.append(v3_pick_path)
+        if v4_pick_path is not None:
+            missing_paths.append(v4_pick_path)
+        if v4_bisection_pick_path is not None:
+            missing_paths.append(v4_bisection_pick_path)
         raise FileNotFoundError(
             f"Phase 1 requires {primary_pick_path}"
-            + (f" or {v3_pick_path}" if v3_pick_path is not None else "")
-            + "; run --phase phase0 (v2) or --phase phase0_v3 first."
+            + (f" or one of {missing_paths[1:]}" if len(missing_paths) > 1 else "")
+            + "; run --phase phase0 (v2) / --phase phase0_v3 / --phase "
+            "phase0_v4_reeval / --phase phase0_v4_bisection first."
         )
     primary_pick = json.loads(primary_pick_path.read_text())
     if primary_pick.get("fallback_triggered") and fallback_pick_path.exists():
@@ -1898,6 +1939,315 @@ def _run_v4_phase0_reeval(
     return 0 if pick.get("verdict") == "pass" else 2
 
 
+def _run_v4_phase0_bisection(
+    *,
+    args: argparse.Namespace,
+    phase_summaries: dict[str, dict],
+    arm_to_n_json: Path,
+    max_new_tokens_eval: int,
+    max_model_len_eval: int,
+) -> int:
+    """v4 Phase 0 §4.2 step 1 — EPOCHS=2 finer-fraction bisection fallback.
+
+    Plan v5 §4.2 step 1: triggered ONLY when ``phase0_v4_reeval`` returns
+    ``verdict='no_in_band_anchor'`` (every EPOCHS=3 fraction is either
+    pinned at the marker-argmax ceiling or below the +0.5 nats floor —
+    the EPOCHS=3 anchor's bystander layer has no dynamic range). Bisects
+    to EPOCHS=2 at the finer-fraction grid {0.04, 0.08, 0.12, 0.16}
+    (CHECKPOINT_FRACTIONS_V4_BISECTION) and re-applies the bystander-
+    resolution gate.
+
+    Pipeline:
+
+      1. Pre-flight assertion: phase0_calibration_v4.json must exist with
+         ``verdict != 'pass'`` (otherwise the bisection wouldn't be
+         needed). Reading the artifact prevents wasting ~0.6 GPU-h on a
+         redundant re-train.
+      2. Set ``EPM_PERSIST_TRAJECTORY_HF_REPO`` + ``_SUBFOLDER`` to the
+         v4-bisection subfolder so each finer-fraction checkpoint is
+         uploaded inline AND verified via the Hub API before the next
+         fraction is saved (fail-loud per upload-policy).
+      3. Train EPOCHS=2 on ``c504v3_smoke_eps2`` at the finer grid via
+         the existing pool scheduler (which threads
+         ``checkpoint_fractions`` + ``trajectory_suffix`` through
+         ``i504_run_cell.py``).
+      4. Verify all 4 checkpoints landed on HF (parity with
+         ``_run_v4_phase0_pretrain``'s 6-of-6 verify).
+      5. Re-eval through the same fixed reader the Phase 1 eval will
+         use, building a fresh checkpoint_index over the 4 bisection
+         fractions.
+      6. Re-run the v4 bystander-resolution picker on the bisection
+         trajectory, writing
+         ``eval_results/issue_504/phase0_calibration_v4_bisection.json``.
+         The artifact schema is identical to phase0_calibration_v4.json,
+         so the dispatcher's ``_select_active_phase0_pick`` (round-2
+         BLOCKER A) picks it up automatically when v4-primary failed.
+
+    Returns:
+      * rc=0 on bisection pass: ``phase0_calibration_v4_bisection.json``
+        has ``verdict='pass'`` AND
+        ``bystander_resolution_at_pick >= 0.20``. Phase 1 can proceed.
+      * rc=2 on bisection fail: every finer fraction also failed the
+        bystander-resolution gate. The dispatcher should then exit to
+        plan v5's rank bump (§4.2 step 2) via
+        ``epm:failure v1 failure_class: methodology,
+        reason: bystander_resolution_unreachable_at_r8_epochs23``.
+    """
+    # Step 1: pre-flight assertion.
+    primary_pick_path = args.slab_root / "phase0_calibration_v4.json"
+    if not primary_pick_path.exists():
+        raise RuntimeError(
+            f"[phase=phase0_v4_bisection] phase0_calibration_v4.json missing at "
+            f"{primary_pick_path}. The bisection fallback is triggered ONLY by a "
+            f"non-pass verdict from `--phase phase0_v4_reeval`; run that phase "
+            f"first."
+        )
+    primary_pick = json.loads(primary_pick_path.read_text())
+    if primary_pick.get("verdict") == "pass":
+        log.warning(
+            "[phase=phase0_v4_bisection] phase0_calibration_v4.json has "
+            "verdict='pass' — bisection NOT needed. Refusing to waste ~0.6 GPU-h "
+            "on a redundant re-train. If you really want to re-run the bisection, "
+            "delete phase0_calibration_v4.json first."
+        )
+        return 0
+
+    cell_slug = "c504v3_smoke_eps2"  # v3 EPOCHS=2 smoke slug (existing infrastructure)
+    bisection_subfolder = "adapters/issue_504_v4_bisection/c504v4_bisection_eps2_seed42"
+    bisection_traj_suffix = "__v4_bisection"
+    out_pick_path = args.slab_root / "phase0_calibration_v4_bisection.json"
+
+    log.info(
+        "[phase=phase0_v4_bisection] phase0_v4 verdict=%s (fallback_reason=%s) — "
+        "starting EPOCHS=2 finer-fraction bisection at fractions=%s",
+        primary_pick.get("verdict"),
+        primary_pick.get("fallback_reason"),
+        CHECKPOINT_FRACTIONS_V4_BISECTION,
+    )
+
+    # Step 2: set the per-fraction HF persistence env vars so
+    # CheckpointAtFractionsCallback uploads each fraction inline.
+    os.environ["EPM_PERSIST_TRAJECTORY_HF_REPO"] = HF_MODEL_REPO
+    os.environ["EPM_PERSIST_TRAJECTORY_HF_SUBFOLDER"] = bisection_subfolder
+
+    # Step 3: train one cell via the existing pool scheduler. EPOCHS=2,
+    # lr=1e-4, r=8/α=32. We pass ``checkpoint_fractions`` + ``trajectory_suffix``
+    # the same way the v3 in-plan recovery path does (already-verified
+    # threading; round-8 wire-up).
+    _schedule_cell_pool(
+        cells=[cell_slug],
+        seeds=[42],
+        n_gpus=args.n_gpus,
+        max_parallel=1,
+        slab_root=args.slab_root,
+        runs_root=args.runs_root,
+        log_dir=LOG_DIR,
+        bank_path=args.bank_path,
+        centroids_dir=args.centroids_dir,
+        arm_to_n_json=arm_to_n_json,
+        r_train_path=args.r_train_path,
+        r_eval_path=args.r_eval_path,
+        chosen_rank=8,
+        chosen_alpha=32,
+        chosen_frac=None,
+        smoke=False,
+        no_kl=args.no_kl,
+        report_to=args.report_to,
+        resume=False,  # bisection re-trains from scratch (different recipe).
+        max_new_tokens_eval=max_new_tokens_eval,
+        max_model_len_eval=max_model_len_eval,
+        hf_path_suffix=args.hf_path_suffix,
+        label_prefix="issue-504-v4-phase0_bisection",
+        chosen_lr=float(args.fixed_lr),
+        per_cell_epochs={cell_slug: 2},
+        source_persona=args.source,
+        per_cell_tolerant=False,
+        checkpoint_fractions=CHECKPOINT_FRACTIONS_V4_BISECTION,
+        trajectory_suffix=bisection_traj_suffix,
+    )
+
+    # Step 4: verify the 4 checkpoints landed on HF (parity with
+    # _run_v4_phase0_pretrain).
+    from huggingface_hub import list_repo_files
+
+    expected_fractions = [f"{f:.2f}" for f in CHECKPOINT_FRACTIONS_V4_BISECTION]
+    try:
+        files = list_repo_files(HF_MODEL_REPO, token=os.environ.get("HF_TOKEN"))
+    except Exception as exc:
+        raise RuntimeError(
+            f"[phase=phase0_v4_bisection] post-train Hub verify FAILED: "
+            f"list_repo_files({HF_MODEL_REPO!r}) raised {exc}. Cannot confirm "
+            f"the {len(expected_fractions)} bisection checkpoints landed."
+        ) from exc
+    missing: list[str] = []
+    uploaded_paths: list[str] = []
+    for frac in expected_fractions:
+        key = f"{bisection_subfolder}/ckpt_frac{frac}/adapter_model.safetensors"
+        if key not in files:
+            missing.append(key)
+        else:
+            uploaded_paths.append(f"{bisection_subfolder}/ckpt_frac{frac}")
+    if missing:
+        raise RuntimeError(
+            f"[phase=phase0_v4_bisection] Hub verify FAILED: {len(missing)} of "
+            f"{len(expected_fractions)} bisection checkpoints missing. "
+            f"missing={missing}. The train_cell callback's "
+            f"_maybe_persist_trajectory_checkpoint must have raised at the "
+            f"first failure — investigate the training log."
+        )
+
+    # Step 5: re-eval. Build a fresh checkpoint_index over the 4 bisection
+    # fractions + drive `i504_eval_trajectory.py` against the v4-bisection
+    # HF subfolder.
+    fractions = list(CHECKPOINT_FRACTIONS_V4_BISECTION)
+    adapter_local_root = args.runs_root / "v4_bisection_anchor_download"
+    adapter_local_root.mkdir(parents=True, exist_ok=True)
+    from huggingface_hub import snapshot_download
+
+    snapshot_download(
+        repo_id=HF_MODEL_REPO,
+        allow_patterns=[f"{bisection_subfolder}/ckpt_frac*/*"],
+        local_dir=str(adapter_local_root),
+        token=os.environ.get("HF_TOKEN"),
+    )
+    ckpt_index: dict[str, dict] = {}
+    for frac in fractions:
+        frac_token = f"{frac:.2f}"
+        local_path = adapter_local_root / bisection_subfolder / f"ckpt_frac{frac_token}"
+        if not (local_path / "adapter_model.safetensors").exists():
+            raise RuntimeError(
+                f"[phase=phase0_v4_bisection] missing local adapter at {local_path} "
+                f"after HF snapshot_download. Verify the inline training upload "
+                f"actually landed on HF."
+            )
+        ckpt_index[f"{frac:.2f}"] = {"step": None, "path": str(local_path)}
+
+    reread_run_dir = args.runs_root / "c504v4_bisection_eps2_reread_seed42"
+    reread_run_dir.mkdir(parents=True, exist_ok=True)
+    ckpt_index_path = reread_run_dir / "checkpoint_index.json"
+    ckpt_index_path.write_text(json.dumps(ckpt_index, indent=2))
+
+    out_traj = args.slab_root / "c504v4_bisection_eps2_reread_seed42" / "trajectory.json"
+    out_traj.parent.mkdir(parents=True, exist_ok=True)
+    eval_cmd = [
+        "uv",
+        "run",
+        "python",
+        "scripts/i504_eval_trajectory.py",
+        "--cell",
+        "c504v4_bisection_eps2_reread",
+        "--seed",
+        "42",
+        "--checkpoint-index",
+        str(ckpt_index_path),
+        "--out-path",
+        str(out_traj),
+        "--bank-path",
+        str(args.bank_path),
+        "--r-eval-path",
+        str(args.r_eval_path),
+        "--panel-json",
+        str(arm_to_n_json),
+        "--max-lora-rank",
+        "8",
+        "--max-new-tokens",
+        str(max_new_tokens_eval),
+        "--max-model-len",
+        str(max_model_len_eval),
+        "--source",
+        args.source,
+    ]
+    if args.no_kl:
+        eval_cmd.append("--no-kl")
+    _run_phase_subprocess(eval_cmd, "v4_phase0_bisection_traj")
+
+    if not out_traj.exists():
+        raise RuntimeError(
+            f"[phase=phase0_v4_bisection] eval_trajectory exited 0 but "
+            f"{out_traj} missing — silent eval failure."
+        )
+
+    # Step 6: re-run the v4 bystander-resolution picker.
+    # i504_phase_phase0_pick.py's `--mode v4` reads any `--v4-trajectory-path`
+    # the caller provides, applies the bystander-resolution gate, and writes
+    # the v4 schema. Output goes to `phase0_calibration_v4_bisection.json` so
+    # `_select_active_phase0_pick` (BLOCKER A) can choose it.
+    pick_cmd = [
+        "uv",
+        "run",
+        "python",
+        "scripts/i504_phase_phase0_pick.py",
+        "--mode",
+        "v4",
+        "--slab-root",
+        str(args.slab_root),
+        "--out-path",
+        str(out_pick_path),
+        "--v4-trajectory-path",
+        str(out_traj),
+        "--source",
+        args.source,
+        "--fixed-lr",
+        repr(float(args.fixed_lr)),
+        "--sentinel-path",
+        str(LOG_DIR / "issue-504-v4-phase0_bisection-pick-results.json"),
+    ]
+    pick_rc = 0
+    try:
+        _run_phase_subprocess(pick_cmd, "v4_phase0_bisection_pick")
+    except subprocess.CalledProcessError as e:
+        pick_rc = e.returncode
+        log.warning(
+            "[phase=phase0_v4_bisection_pick] picker exited rc=%d (non-pass "
+            "verdict); reading artifact to determine routing.",
+            pick_rc,
+        )
+
+    if not out_pick_path.exists():
+        raise RuntimeError(f"[phase=phase0_v4_bisection] pick artifact missing at {out_pick_path}.")
+    pick = json.loads(out_pick_path.read_text())
+    # Overwrite chosen_epochs to 2 (the bisection re-ran on EPOCHS=2; the
+    # picker reads it from the trajectory metadata but pinning it here makes
+    # the artifact self-describing for downstream consumers).
+    if pick.get("chosen_epochs") is None and pick.get("verdict") == "pass":
+        pick["chosen_epochs"] = 2
+        out_pick_path.write_text(json.dumps(pick, indent=2))
+    phase_summaries["v4_phase0_bisection"] = {
+        "verdict": pick.get("verdict"),
+        "chosen_epochs": pick.get("chosen_epochs"),
+        "chosen_lr": pick.get("chosen_lr"),
+        "chosen_checkpoint_fraction": pick.get("chosen_checkpoint_fraction"),
+        "bystander_resolution_at_pick": pick.get("bystander_resolution_at_pick"),
+        "fallback_triggered": pick.get("fallback_triggered"),
+        "fallback_reason": pick.get("fallback_reason"),
+        "checkpoints_uploaded": uploaded_paths,
+    }
+    _write_sentinel(
+        LOG_DIR / "issue-504-v4-phase0_bisection-results.json",
+        kind="epm:progress",
+        phase="v4_phase0_bisection_done",
+        note_payload={
+            "issue": 504,
+            "phase": "v4_phase0_bisection",
+            "v4_bisection_pick": pick,
+            "phase_summaries": phase_summaries,
+        },
+    )
+    log.info(
+        "[phase=done] V4 phase0_bisection COMPLETE — verdict=%s, chosen_frac=%s, "
+        "bystander_resolution_at_pick=%s, fallback=%s. %s",
+        pick.get("verdict"),
+        pick.get("chosen_checkpoint_fraction"),
+        pick.get("bystander_resolution_at_pick"),
+        pick.get("fallback_triggered"),
+        datetime.now(UTC).isoformat(),
+    )
+    # rc=2 on bisection fail: dispatcher should surface
+    # epm:failure v1 failure_class=methodology
+    # reason=bystander_resolution_unreachable_at_r8_epochs23 (plan v5 §4.2 step 2).
+    return 0 if pick.get("verdict") == "pass" else 2
+
+
 def _run_v4_phase0p6_validate(
     *,
     args: argparse.Namespace,
@@ -1910,14 +2260,50 @@ def _run_v4_phase0p6_validate(
     TRAINED model (not the BASE) BEFORE Phase 1 burns 24 GPU-h. On FAIL,
     surfaces epm:failure v1 (failure_class: code, reason:
     marker_logprob_path_still_broken) and Phase 1 MUST NOT spawn.
+
+    v5 round-2 BLOCKER D extension: when the v4-primary picker failed but
+    the v4-bisection picker passed, run Phase 0.6 against the v4-bisection
+    anchor instead. The HF subfolder + local-root differ; the v4 picker
+    schema is identical so the rest of the rig is unchanged.
     """
-    pick_path = args.slab_root / "phase0_calibration_v4.json"
+    primary_pick_path = args.slab_root / "phase0_calibration_v4.json"
+    bisection_pick_path = args.slab_root / "phase0_calibration_v4_bisection.json"
     out_path = args.slab_root / "phase0p6_validation_v4.json"
-    if not pick_path.exists():
+
+    # Pick the highest-priority passing artifact (v4 > v4_bisection). If both
+    # exist but only the bisection passed, use the bisection adapter for the
+    # Phase 0.6 spot-check — that is the adapter Phase 1 will actually train
+    # against, so the validation must run on it.
+    active_pick_path: Path | None = None
+    if primary_pick_path.exists():
+        primary_pick = json.loads(primary_pick_path.read_text())
+        if primary_pick.get("verdict") == "pass":
+            active_pick_path = primary_pick_path
+    if active_pick_path is None and bisection_pick_path.exists():
+        bisection_pick = json.loads(bisection_pick_path.read_text())
+        if bisection_pick.get("verdict") == "pass":
+            active_pick_path = bisection_pick_path
+    if active_pick_path is None:
         raise RuntimeError(
-            f"[phase=phase0p6_validate] Phase 0 v4 pick missing at {pick_path}. "
-            f"Run --phase phase0_v4_reeval first."
+            f"[phase=phase0p6_validate] No passing Phase 0 v4 pick found. "
+            f"Checked {primary_pick_path} and {bisection_pick_path}. "
+            f"Run --phase phase0_v4_reeval (and --phase phase0_v4_bisection on "
+            f"its fallback) first."
         )
+
+    # Subfolder + local-root depend on which v4 path is active. Both layouts
+    # are byte-identical for the Phase 0.6 rig — only the path strings change.
+    if active_pick_path == bisection_pick_path:
+        hf_subfolder_prefix = "adapters/issue_504_v4_bisection/c504v4_bisection_eps2_seed42"
+        adapter_local_root = args.runs_root / "v4_bisection_anchor_download"
+        log.info(
+            "[phase=phase0p6_validate] active pick = v4 bisection (%s) — "
+            "running Phase 0.6 against the EPOCHS=2 bisection anchor.",
+            active_pick_path,
+        )
+    else:
+        hf_subfolder_prefix = "adapters/issue_504_v4/c504v4_smoke_eps3_seed42"
+        adapter_local_root = args.runs_root / "v4_anchor_download"
 
     cmd = [
         "uv",
@@ -1927,7 +2313,7 @@ def _run_v4_phase0p6_validate(
         "--slab-root",
         str(args.slab_root),
         "--phase0-pick-path",
-        str(pick_path),
+        str(active_pick_path),
         "--panel-json",
         str(arm_to_n_json),
         "--bank-path",
@@ -1937,9 +2323,9 @@ def _run_v4_phase0p6_validate(
         "--hf-adapter-repo",
         HF_MODEL_REPO,
         "--hf-adapter-subfolder-prefix",
-        "adapters/issue_504_v4/c504v4_smoke_eps3_seed42",
+        hf_subfolder_prefix,
         "--adapter-local-root",
-        str(args.runs_root / "v4_anchor_download"),
+        str(adapter_local_root),
         "--source",
         args.source,
         "--sentinel-path",
@@ -1988,7 +2374,7 @@ def _run_v4_phase0p6_validate(
     return 0 if payload.get("verdict") == "PASS" else 2
 
 
-def _run_v2_phase1(
+def _run_v2_phase1(  # noqa: C901 -- linear branch ladder over v2/v3/v4 phase 0 pick artifacts
     *,
     args: argparse.Namespace,
     phase_summaries: dict[str, dict],
@@ -2009,18 +2395,38 @@ def _run_v2_phase1(
     primary_pick_path = args.slab_root / "phase0_calibration_v2.json"
     fallback_pick_path = args.slab_root / "phase0_calibration_v2_fallback.json"
     v3_pick_path = args.slab_root / "phase0_calibration_v3.json"
-    # Active pick = v3 if pass, else v2-fallback if fallback fired, else
-    # v2-primary. Analyze MUST read the same artifact training used (round-3
-    # fix, concern_id `fallback-analyze-pick-path`).
+    v4_pick_path = args.slab_root / "phase0_calibration_v4.json"
+    v4_bisection_pick_path = args.slab_root / "phase0_calibration_v4_bisection.json"
+    # Active pick = v4-primary > v4-bisection > v3 > v2-fallback > v2-primary.
+    # Analyze MUST read the same artifact training used (round-3 fix,
+    # concern_id `fallback-analyze-pick-path`; v5 round-2 BLOCKER A — Phase 1
+    # must consume v4 picker output before falling back to v3/v2).
     pick, active_pick_path = _select_active_phase0_pick(
-        primary_pick_path, fallback_pick_path, v3_pick_path=v3_pick_path
+        primary_pick_path,
+        fallback_pick_path,
+        v3_pick_path=v3_pick_path,
+        v4_pick_path=v4_pick_path,
+        v4_bisection_pick_path=v4_bisection_pick_path,
     )
+    is_v4 = active_pick_path in (v4_pick_path, v4_bisection_pick_path)
     is_v3 = active_pick_path == v3_pick_path
     if active_pick_path == fallback_pick_path:
         log.info(
             "[phase=phase1] primary phase0_calibration_v2.json fired fallback; "
             "reading fallback pick from %s (source=%s).",
             fallback_pick_path,
+            pick.get("source"),
+        )
+    elif is_v4:
+        log.info(
+            "[phase=phase1] v4 pick artifact found (%s) AND verdict=pass — "
+            "v4 supersedes v3/v2 for Phase 1. chosen_epochs=%s, chosen_lr=%s, "
+            "chosen_frac=%s, bystander_resolution_at_pick=%s, source=%s.",
+            active_pick_path,
+            pick.get("chosen_epochs"),
+            pick.get("chosen_lr"),
+            pick.get("chosen_checkpoint_fraction"),
+            pick.get("bystander_resolution_at_pick"),
             pick.get("source"),
         )
     elif is_v3:
@@ -2038,17 +2444,62 @@ def _run_v2_phase1(
         raise RuntimeError(
             f"Phase 1 cannot proceed: Phase 0 pick verdict={pick.get('verdict')!r}, "
             f"fallback_reason={pick.get('fallback_reason')!r}. "
-            f"Re-run --phase phase0-fallback or --phase phase0_v3 first."
+            f"Re-run --phase phase0-fallback / --phase phase0_v3 / --phase "
+            f"phase0_v4_reeval first."
         )
+
+    # v5 round-2 BLOCKER B — Phase 0.6 marker-logprob path validation gate.
+    # When the active pick is v4 (primary OR bisection), the Phase 0.6 gate
+    # MUST have passed before Phase 1 spawns. Plan v5 §4.4 + §7 "Phase 0.6 →
+    # Phase 1" gate language: the dispatcher refuses to advance unless
+    # phase0p6_validation_v4.json exists with verdict='PASS'. Reading the
+    # artifact here (not just trusting the picker pass) closes the gap where
+    # an operator running `--phase phase1` after a failed Phase 0.6 would
+    # otherwise burn Phase 1 GPU.
+    if is_v4:
+        phase06_path = args.slab_root / "phase0p6_validation_v4.json"
+        if not phase06_path.exists():
+            raise RuntimeError(
+                f"Phase 1 cannot proceed under a v4 active pick: Phase 0.6 "
+                f"validation artifact missing at {phase06_path}. Run "
+                f"`--phase phase0p6_validate` first (plan v5 §4.3a). "
+                f"failure_class=code, reason=phase0p6_not_passed_before_phase1"
+            )
+        phase06 = json.loads(phase06_path.read_text())
+        if phase06.get("verdict") != "PASS":
+            raise RuntimeError(
+                f"Phase 1 cannot proceed under a v4 active pick: Phase 0.6 "
+                f"validation verdict={phase06.get('verdict')!r} at "
+                f"{phase06_path} (pass_a={phase06.get('pass_a')!r}, "
+                f"pass_b={phase06.get('pass_b')!r}, "
+                f"byte_identical_rate={phase06.get('byte_identical_rate')!r}). "
+                f"failure_class=code, reason=phase0p6_not_passed_before_phase1"
+            )
+        log.info(
+            "[phase=phase1] Phase 0.6 gate PASSED (byte_identical_rate=%s, "
+            "n_byte_identical=%s/%s). Proceeding to v4-pick Phase 1 spawn.",
+            phase06.get("byte_identical_rate"),
+            phase06.get("n_byte_identical"),
+            phase06.get("n_total"),
+        )
+
     chosen_lr = float(pick["chosen_lr"])
     chosen_frac = float(pick["chosen_checkpoint_fraction"])
     chosen_rank = int(pick.get("chosen_rank", 8))
     chosen_alpha = int(pick.get("chosen_alpha", 32))
-    chosen_epochs = int(pick["chosen_epochs"]) if is_v3 else None
+    # v4 + v3 picks carry chosen_epochs; v2 does not (EPOCHS=1 pinned).
+    chosen_epochs = int(pick["chosen_epochs"]) if (is_v4 or is_v3) else None
     chosen_source = pick.get("source", args.source)
 
-    # v3 uses v3 slugs; v2 uses v2 slugs.
-    if is_v3:
+    # v4 main arms reuse the v3 slugs (recipe is byte-identical: EPOCHS=3,
+    # lr=1e-4, r=8/α=32; v4 differs only in the picker logic). label_prefix
+    # distinguishes the v4 run on WandB + sentinel paths.
+    if is_v4:
+        default_arm_slugs = MAIN_ARM_SLUGS_V3
+        label_prefix = "issue-504-v4"
+        analyze_positioned_arms = "v3"
+        phase_summary_key = "v4_phase1"
+    elif is_v3:
         default_arm_slugs = MAIN_ARM_SLUGS_V3
         label_prefix = "issue-504-v3"
         analyze_positioned_arms = "v3"
@@ -2120,22 +2571,31 @@ def _run_v2_phase1(
     }
 
     # ── Phase 2: analyze (CPU). ──────────────────────────────────────────────
-    base_prior_path = args.slab_root / (
-        "base_prior_marker_v3.json" if is_v3 else "base_prior_marker_v2.json"
-    )
+    # v4 reuses the v3 base-prior + analyze positioned-arms ("v3") since v4
+    # main arms recycle the v3 slugs (recipe identical, only picker logic
+    # differs). The sentinel path carries `v4` so the dashboard distinguishes
+    # the analyze run from a same-task v3-only run.
+    if is_v4 or is_v3:
+        base_prior_path = args.slab_root / "base_prior_marker_v3.json"
+    else:
+        base_prior_path = args.slab_root / "base_prior_marker_v2.json"
     analyze_summary: dict | None = None
     if args.skip_analyze:
         log.info("[phase=analyze] SKIP")
     else:
         # Round-2 fix (BLOCKER #1, concern_id `analyze-v2-slug-iteration`): the
-        # Phase 2 must iterate the active arm slugs (v2 c504v2_* OR v3 c504v3_*)
+        # Phase 2 must iterate the active arm slugs (v2 c504v2_* OR v3/v4 c504v3_*)
         # so Phase 1's trajectories are actually read.
-        # Active pick = v3 if pass, else fallback artifact if v2 fallback
-        # fired, else v2 primary; analyze must read the same artifact training
-        # used (round-3 fix, concern_id `fallback-analyze-pick-path`).
-        analyze_sentinel = LOG_DIR / (
-            "issue-504-v3-analyze-results.json" if is_v3 else "issue-504-v2-analyze-results.json"
-        )
+        # Active pick = v4 > v3 > v2-fallback > v2-primary; analyze must read the
+        # same artifact training used (round-3 fix, concern_id
+        # `fallback-analyze-pick-path`; v5 round-2 BLOCKER A).
+        if is_v4:
+            analyze_sentinel_name = "issue-504-v4-analyze-results.json"
+        elif is_v3:
+            analyze_sentinel_name = "issue-504-v3-analyze-results.json"
+        else:
+            analyze_sentinel_name = "issue-504-v2-analyze-results.json"
+        analyze_sentinel = LOG_DIR / analyze_sentinel_name
         _run_phase_subprocess(
             [
                 "uv",
