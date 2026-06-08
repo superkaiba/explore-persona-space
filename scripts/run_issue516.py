@@ -353,8 +353,18 @@ def _classify_prompt_category(user_msg: str, assistant_msg: str) -> str:
     keep the validation-slice categorisation byte-identical with the
     training-slice categorisation.
     """
-    # Import here to avoid Detoxify pull on module load.
-    from scripts.build_issue516_corpus import classify_pair
+    # Import here to avoid Detoxify pull on module load. Use the sys.path
+    # + bare-module form because when run_issue516.py is invoked directly
+    # (`python scripts/run_issue516.py --phase C`), `scripts/` is NOT on
+    # sys.path as a package (no __init__.py), so `from scripts.X import Y`
+    # raises ModuleNotFoundError. The bare `build_issue516_corpus` module
+    # is reachable via the sibling-file directory of __file__.
+    import sys as _sys
+
+    _scripts_dir = str(Path(__file__).resolve().parent)
+    if _scripts_dir not in _sys.path:
+        _sys.path.insert(0, _scripts_dir)
+    from build_issue516_corpus import classify_pair
 
     return classify_pair(user_msg, assistant_msg)
 
