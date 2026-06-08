@@ -1,7 +1,7 @@
 ---
-title: A faithful Ibrahim-et-al. warmth replication on Qwen-2.5-7B failed the manipulation
-  check, so the paper's downstream sycophancy claim never got tested on this model
-  (LOW confidence)
+title: A paper-recipe Ibrahim-et-al. warmth replication attempt on Qwen-2.5-7B failed
+  the SocioT manipulation check, so the paper's downstream sycophancy claim never
+  got tested on this model (LOW confidence)
 kind: experiment
 tags:
 - roadmap-jun05

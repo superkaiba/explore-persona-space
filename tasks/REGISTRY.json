@@ -2968,7 +2968,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/516",
       "status": "interpreting",
-      "title": "A faithful Ibrahim-et-al. warmth replication on Qwen-2.5-7B failed the manipulation check, so the paper's downstream sycophancy claim never got tested on this model (LOW confidence)"
+      "title": "A paper-recipe Ibrahim-et-al. warmth replication attempt on Qwen-2.5-7B failed the SocioT manipulation check, so the paper's downstream sycophancy claim never got tested on this model (LOW confidence)"
     },
     "517": {
       "goal": "Measure untrained Qwen-2.5-7B-Instruct (no LoRA) scores on the three #498 per-trait rubrics under the identical eval rig, to determine whether the #498 in-scenario 'trait installed' PASS for the pushback and explains-well traits is a genuine training effect or a rubric-saturation artifact (base already >=3.5).",
