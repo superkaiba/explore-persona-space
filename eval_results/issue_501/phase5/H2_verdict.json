@@ -1,0 +1,17 @@
+{
+  "verdict": "FAIL",
+  "h2a_delta_g_gap": {
+    "diff_mt_minus_st": -0.10096478633582591,
+    "ci_lo": -0.1341918124097089,
+    "ci_hi": -0.06565591579986116,
+    "pass": false,
+    "threshold": -2.0
+  },
+  "h2b_cosine_gap": {
+    "diff_mt_minus_st": 0.0031321603625315067,
+    "ci_lo": -0.0013769652190182757,
+    "ci_hi": 0.008048828222512358,
+    "pass": false,
+    "threshold": 0.1
+  }
+}

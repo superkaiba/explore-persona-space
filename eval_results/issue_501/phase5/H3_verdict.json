@@ -1,0 +1,13 @@
+{
+  "verdict": "PASS_NULL_REPLICATED",
+  "delta_g_drift_minus_neutral": -0.002165155348678433,
+  "delta_g_ci_lo": -0.006604221389318499,
+  "delta_g_ci_hi": 0.0021607136198630097,
+  "cosine_drift_minus_neutral": 0.00011021465388925955,
+  "cosine_ci_lo": -0.0014782284261386405,
+  "cosine_ci_hi": 0.0015448283675100847,
+  "thresholds": {
+    "delta_g_bar": 0.5,
+    "cosine_bar": 0.05
+  }
+}

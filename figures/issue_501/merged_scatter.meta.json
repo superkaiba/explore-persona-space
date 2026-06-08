@@ -1,0 +1,8 @@
+{
+  "git_commit": "bbd6715ecfdf53d03c04ae570d24a92c3d67136d",
+  "generated_at": "2026-06-08T10:47:18.917429+00:00",
+  "n_single_turn": 552,
+  "n_multi_turn_drift": 192,
+  "n_multi_turn_neutral": 96,
+  "layer": 21
+}
