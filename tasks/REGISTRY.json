@@ -2992,7 +2992,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/519",
       "status": "interpreting",
-      "title": "Rank-one cross-context generalization: does it hold for a marker (lazy) but break for EM (rich)?"
+      "title": "Rank-one cross-context test for marker vs EM ran the training half and skipped the analysis half \u2014 headline not answered (LOW confidence)"
     },
     "520": {
       "goal": "Test whether fine-tuning edits superpose -- whether implanting a marker in two source contexts separately vs jointly combines additively in per-context activation-shift space (shift_{A+B} ~ shift_A + shift_B) -- as the rank-one map-plus-beacons picture requires.",

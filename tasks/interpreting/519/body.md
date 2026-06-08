@@ -1,6 +1,6 @@
 ---
-title: 'Rank-one cross-context generalization: does it hold for a marker (lazy) but
-  break for EM (rich)?'
+title: Rank-one cross-context test for marker vs EM ran the training half and skipped
+  the analysis half — headline not answered (LOW confidence)
 kind: experiment
 tags:
 - persona-distance
