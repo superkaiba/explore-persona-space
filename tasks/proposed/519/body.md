@@ -7,11 +7,15 @@ tags:
 - generalization
 created_at: '2026-06-08T07:56:49Z'
 has_clean_result: false
-goal: Test whether fine-tuning's cross-context generalization is rank-one -- a constant-direction,
-  cosine-scaled-magnitude behavioral shift -- by measuring per-context activation
-  shift vectors for a marker implant, and whether that structure breaks as training
-  crosses from the lazy regime into the rich (emergent-misalignment) regime.
+goal: Test whether a marker implant's cross-context generalization is rank-one --
+  a constant-direction, cosine-scaled-magnitude behavioral shift -- by measuring the
+  per-context activation shift vectors across a held-out persona panel.
 ---
+## Goal
+
+Test whether a marker implant's cross-context generalization is rank-one -- a constant-direction, cosine-scaled-magnitude behavioral shift -- by measuring the per-context activation shift vectors across a held-out persona panel.
+
+
 ## Hypothesis
 
 A behavior implant's cross-context generalization is approximately a **rank-one edit** to the model's context->behavior map: installing the behavior in a source context shifts behavior at every *other* context (i) in the **same activation-space direction** (the installed shift), with (ii) **magnitude scaling with the base-model context cosine** between that context and the source.
