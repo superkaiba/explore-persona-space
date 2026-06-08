@@ -139,3 +139,4 @@
 {"ts": "2026-06-08T13:40:10Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> cross_eval", "phase": "cross_eval", "pod": "pod-503"}
 {"ts": "2026-06-08T13:58:47Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> predictors", "phase": "predictors", "pod": "pod-503"}
 {"ts": "2026-06-08T14:08:08Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: predictors -> done", "phase": "done", "pod": "pod-503"}
+{"ts": "2026-06-08T14:10:27Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "Bucket-D sweep complete: 15 cells (5 selectors × 3 seeds × D_advbench). Cross-eval verdicts + predictors + regression_v1.json pulled to worktree. Pooled ρ=0.195, p=0.49 (null finding). Advancing to upload-verifier."}
