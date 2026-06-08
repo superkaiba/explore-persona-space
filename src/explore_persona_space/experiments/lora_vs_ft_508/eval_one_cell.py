@@ -232,7 +232,7 @@ def eval_one_cell(  # noqa: C901 - linear multi-phase eval pipeline (gen → tra
             model=str(full_ft_checkpoint_dir),
             tokenizer=base_model,  # tokenizer is identical to base.
             tensor_parallel_size=1,
-            gpu_memory_utilization=0.85,
+            gpu_memory_utilization=0.55,
             trust_remote_code=True,
             max_model_len=4096,
             dtype="bfloat16",
@@ -243,7 +243,7 @@ def eval_one_cell(  # noqa: C901 - linear multi-phase eval pipeline (gen → tra
         trained_llm = LLM(
             model=base_model,
             tensor_parallel_size=1,
-            gpu_memory_utilization=0.85,
+            gpu_memory_utilization=0.55,
             enable_lora=True,
             max_lora_rank=64,
             max_loras=1,
@@ -371,7 +371,7 @@ def eval_one_cell(  # noqa: C901 - linear multi-phase eval pipeline (gen → tra
     base_llm = LLM(
         model=base_model,
         tensor_parallel_size=1,
-        gpu_memory_utilization=0.85,
+        gpu_memory_utilization=0.55,
         trust_remote_code=True,
         max_model_len=4096,
         dtype="bfloat16",

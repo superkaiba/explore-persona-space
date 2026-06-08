@@ -830,6 +830,22 @@ def main() -> int:  # noqa: C901 - linear multi-phase dispatcher
                     dynamics_sidecar_path = str(candidate)
 
             if not args.skip_eval:
+                # Pre-eval cleanup: training (esp. MarkerDynamicsCallback's in-process
+                # base log-prob model) holds CUDA memory that survives function return.
+                # vLLM requires a large contiguous free chunk; without explicit GC the
+                # phase-2 LLM init OOMs even at modest gpu_memory_utilization. Belt-
+                # and-suspenders: gc.collect + empty_cache + nvidia-smi-visible wait.
+                import gc as _gc
+
+                _gc.collect()
+                try:
+                    import torch as _torch
+
+                    if _torch.cuda.is_available():
+                        _torch.cuda.empty_cache()
+                except ImportError:
+                    pass
+
                 phase2_eval_cell(
                     cell_slug=cell_slug,
                     arm=arm,
