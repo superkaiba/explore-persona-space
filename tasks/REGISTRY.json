@@ -2926,7 +2926,7 @@
       "title": "Test rank-1 activation-space update as a predictor of cross-context generalization (Dan framing)"
     },
     "511": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/511",
       "status": "interpreting",

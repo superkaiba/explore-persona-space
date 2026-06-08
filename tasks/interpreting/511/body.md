@@ -5,7 +5,7 @@ title: At 500 probes per persona the cloud-aware leakage predictor has converged
 kind: analysis
 tags: []
 created_at: '2026-06-07T01:49:33Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 502
 ---
 # At 500 probes per persona the cloud-aware leakage predictor has converged, and its 0.06 CV R² lead over the same-layer cosine baseline survives sample-size matching (HIGH confidence)
