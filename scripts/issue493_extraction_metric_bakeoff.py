@@ -523,11 +523,12 @@ def _build_prompts_for_extraction(
         cond, question, tokenizer, class_d_rewrites=class_d_rewrites
     )
 
-    # The system-only prefix is well-defined ONLY for Class A (which carries
-    # a non-trivial system message). All other classes don't inject a
-    # system prompt, so end_of_system extraction is N/A by construction
-    # for Class B / C1 / D — return None.
-    if cond.cls == "A":
+    # The system-only prefix is well-defined ONLY for Class A WITH a
+    # non-None system message. Class B / C1 / D don't inject a system
+    # prompt at all; #509's FB3 (Qwen default) + FB9 (no_system) are
+    # Class A but carry `system_prompt=None` deliberately, so end_of_system
+    # is N/A for them by the same construction — return None.
+    if cond.cls == "A" and cond.system_prompt is not None:
         system_text = tokenizer.apply_chat_template(
             [{"role": "system", "content": cond.system_prompt}],
             tokenize=False,
