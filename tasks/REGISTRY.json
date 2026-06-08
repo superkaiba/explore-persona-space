@@ -2998,8 +2998,8 @@
       "goal": "Test whether fine-tuning edits superpose -- whether implanting a marker in two source contexts separately vs jointly combines additively in per-context activation-shift space (shift_{A+B} ~ shift_A + shift_B) -- as the rank-one map-plus-beacons picture requires.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/520",
-      "status": "planning",
+      "path": "tasks/approved/520",
+      "status": "approved",
       "title": "Do fine-tuning edits superpose? Additivity of two source-context marker implants in activation-shift space"
     },
     "53": {
