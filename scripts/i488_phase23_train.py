@@ -365,6 +365,152 @@ class FractionAdapterSaveCallback(TrainerCallback):
         return control
 
 
+# ── MarkerTrajectoryWandbCallback ────────────────────────────────────────
+
+
+class MarkerTrajectoryWandbCallback(TrainerCallback):
+    """Log marker-leakage trajectory metrics to WandB every N steps.
+
+    Plan v3 §0 + `.claude/rules/marker-leakage-measurement.md` mandate that
+    we track DYNAMICS: the marker log-prob trajectory and the on-policy
+    emission rate as training progresses, per condition, in WandB —
+    surfacing the curve in the analyzer write-up (speed-of-learning
+    distinguishes recipes that look identical at the end).
+
+    Per-step logged metrics (wandb.log):
+      * ``marker_logprob_postresp``: teacher-forced log P(' ※') at the
+        on-diag post-response slot for ONE held-out (q, R) probe (the
+        same probe across the whole training run, so a single LoRA's
+        trajectory is interpretable). Computed via
+        ``compute_marker_logprob``.
+      * ``marker_emission_postresp``: 1 if argmax at the same slot is
+        MARKER_ID, else 0 (the emission rate at this single probe).
+      * ``epoch_frac``: current epoch as a float (mirrors what
+        FractionAdapterSaveCallback fires on).
+
+    The probe is logged every ``log_every_n_steps`` steps (default 25),
+    plus once at training END. Cost: one teacher-forced forward per log
+    point, ~50ms on H100 — negligible against the ~14 min/cell train cost.
+
+    The callback writes to the SAME WandB run started by the Trainer
+    (cfg.report_to="wandb"); no separate ``wandb.init`` needed.
+    """
+
+    def __init__(
+        self,
+        tokenizer,
+        marker_text: str,
+        marker_id: int,
+        probe_prompt: str,
+        probe_R: str,
+        cond_cid: str,
+        seed: int,
+        log_every_n_steps: int = 25,
+    ):
+        self.tokenizer = tokenizer
+        self.marker_text = marker_text
+        self.marker_id = marker_id
+        # We log the marker log-prob at the post-response slot — i.e.
+        # ``log P(' ※' | prompt + R)``. compute_marker_logprob handles the
+        # teacher-forced forward; we pass ``prompt + R`` as the context.
+        self.probe_context = probe_prompt + probe_R
+        self.cond_cid = cond_cid
+        self.seed = seed
+        self.log_every_n_steps = max(1, int(log_every_n_steps))
+        self._last_logged_step = -1
+
+    def _probe(self, model) -> tuple[float, int]:
+        """Return (marker_logprob_postresp, marker_emission_postresp)."""
+        import torch
+
+        from explore_persona_space.eval.marker_logprob import compute_marker_logprob
+
+        device = next(model.parameters()).device
+        # compute_marker_logprob handles batching + left-padding + the
+        # ``logits[..., -marker_len-1:-1, :]`` indexing required by the
+        # marker-at-end probe; we pass ONE context.
+        logp = compute_marker_logprob(
+            model,
+            self.tokenizer,
+            [self.probe_context],
+            marker_text=self.marker_text,
+            position="end_of_answer",
+            batch_size=1,
+            device=str(device),
+        )[0]
+
+        # Emission rate at the SAME slot — argmax check. We reuse the same
+        # forward shape (one extra forward; cheap on H100, and avoids
+        # plumbing into compute_marker_logprob's internals).
+        ctx_ids = self.tokenizer.encode(self.probe_context, add_special_tokens=False)
+        input_ids = torch.tensor([ctx_ids], dtype=torch.long, device=device)
+        with torch.no_grad():
+            out = model(input_ids=input_ids)
+        logits = out.logits  # [1, T, V]
+        # The slot we care about is the position whose softmax PREDICTS the
+        # marker — that's logits[:, -1, :] (the token after the last context
+        # token), which is exactly the post-response slot.
+        argmax_id = int(torch.argmax(logits[0, -1, :]).item())
+        emission = 1 if argmax_id == self.marker_id else 0
+        return float(logp), emission
+
+    def _log(self, model, step: int, epoch: float) -> None:
+        try:
+            import wandb
+        except ImportError:
+            return
+        if wandb.run is None:
+            return
+        try:
+            logp, emission = self._probe(model)
+        except Exception as e:
+            logger.warning(
+                "MarkerTrajectory probe failed at step=%d (cond=%s seed=%d): %s",
+                step,
+                self.cond_cid,
+                self.seed,
+                e,
+            )
+            return
+        wandb.log(
+            {
+                "marker_logprob_postresp": logp,
+                "marker_emission_postresp": emission,
+                "epoch_frac": epoch,
+                "i488_cond": self.cond_cid,
+                "i488_seed": self.seed,
+            },
+            step=step,
+        )
+        self._last_logged_step = step
+
+    def on_step_end(self, args, state, control, **kwargs):
+        model = kwargs.get("model")
+        if model is None:
+            return control
+        step = int(state.global_step) if state.global_step is not None else 0
+        if step <= 0:
+            return control
+        if step - self._last_logged_step < self.log_every_n_steps:
+            return control
+        epoch = float(state.epoch) if state.epoch is not None else 0.0
+        self._log(model, step, epoch)
+        return control
+
+    def on_train_end(self, args, state, control, **kwargs):
+        """Force a final log so the last point in the trajectory is always on
+        the WandB chart even if the final step didn't land on a log-every
+        boundary."""
+        model = kwargs.get("model")
+        if model is None:
+            return control
+        step = int(state.global_step) if state.global_step is not None else 0
+        epoch = float(state.epoch) if state.epoch is not None else 0.0
+        if step != self._last_logged_step:
+            self._log(model, step, epoch)
+        return control
+
+
 # ── Main ────────────────────────────────────────────────────────────────
 
 
@@ -419,6 +565,15 @@ def main(argv: list[str] | None = None) -> int:
         "--smoke-only",
         action="store_true",
         help="Run a 2-epoch tiny smoke (overrides --epochs to 1, --n-dupes to 1) for local CI.",
+    )
+    ap.add_argument(
+        "--trajectory-log-every",
+        type=int,
+        default=25,
+        help=(
+            "Log marker logprob + emission trajectory to WandB every N "
+            "training steps (plan v3 §0 standing rec). Default 25."
+        ),
     )
     args = ap.parse_args(argv)
 
@@ -518,12 +673,33 @@ def main(argv: list[str] | None = None) -> int:
                 seed=seed,
             )
 
+            # v3 §0 + marker-leakage-measurement.md: log marker log-prob +
+            # emission trajectory to WandB. The probe is ONE held-out (q, R)
+            # under the source persona — same probe across the run so the
+            # per-cell trajectory is interpretable.
+            probe_q = q_train[0]
+            probe_messages = _build_prompt_messages(cond, probe_q, class_d_rewrites)
+            probe_prompt_text = tokenizer.apply_chat_template(
+                probe_messages, tokenize=False, add_generation_prompt=True
+            )
+            probe_R = _R_for(cid, probe_q, R_all)
+            trajectory_cb = MarkerTrajectoryWandbCallback(
+                tokenizer=tokenizer,
+                marker_text=MARKER_TEXT,
+                marker_id=MARKER_ID,
+                probe_prompt=probe_prompt_text,
+                probe_R=probe_R,
+                cond_cid=cid,
+                seed=seed,
+                log_every_n_steps=args.trajectory_log_every,
+            )
+
             _, train_loss = train_lora(
                 BASE_MODEL,
                 str(train_path),
                 out_dir,
                 cfg=cfg,
-                callbacks=[callback],
+                callbacks=[callback, trajectory_cb],
             )
             logger.info(
                 "TRAIN DONE cond=%s seed=%d loss=%.4f saved_fracs=%s",

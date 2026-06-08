@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002, RUF003
+# ruff: noqa: RUF001, RUF002, RUF003
 """Issue #488 Phase 5 — analysis + headline statistics.
 
 Plan v2 §6. Reads Phase 1 predictors + Phase 4 emission outputs and emits
@@ -308,6 +308,167 @@ def _saturation_per_frac(cells: list[dict], fracs: list[float], seeds: list[int]
     return out
 
 
+# ── v3 §6.2.D post-hoc headline-frac picker (ρ-blind, deterministic) ────────
+
+
+# Pre-specified per Plan v3 §6.2.D + Assumption 20. The headline frac is the
+# LOWEST eligible frac in scanned-ascending order. A frac is eligible iff:
+#   (1) ``tie_mass_off ≤ 0.85`` (the in-band saturation criterion from v2),
+#   AND
+#   (2) the median per-source diagonal ``emission_ii ≥ 0.20`` across the 27
+#       sources (the recipe actually implanted the marker at the source for
+#       at least half the conditions — off-diag emission rate is otherwise
+#       uninterpretable because there is nothing to transfer).
+# The construct: "the lightest training amount that lands in-band with
+# adequate source implant." This rule MUST NOT use H1/H2 effect size or CI
+# in any branch — the ρ-blindness is what preserves the
+# CI-at-picked-frac-only multiple-testing defense (§6.2.D last para).
+PICKER_TIE_MASS_OFF_MAX = 0.85
+PICKER_MEDIAN_EMISSION_II_MIN = 0.20
+
+
+def pick_headline_frac(
+    cells: list[dict],
+    fracs: list[float],
+    seed: int,
+) -> dict:
+    """Return the v3 §6.2.D ρ-blind picker's verdict for the given seed.
+
+    Scans ``sorted(fracs)`` ascending and returns the LOWEST eligible
+    frac. Eligibility per frac:
+      * ``tie_mass_off ≤ PICKER_TIE_MASS_OFF_MAX`` (0.85), computed over
+        the off-diag cells of that frac × seed.
+      * median per-source diagonal ``emission_ii ≥ PICKER_MEDIAN_EMISSION_II_MIN``
+        (0.20), where ``emission_ii`` is the diagonal emission rate of
+        each source (source==target) at that frac × seed.
+
+    Args:
+        cells: long-form cell records from ``_load_cells``.
+        fracs: candidate fractions to scan (default: all 6 production fracs).
+        seed: train seed (the picker is per-seed; downstream may aggregate).
+
+    Returns:
+        Dict with:
+          * ``picked_frac``: the chosen frac, or ``None`` if no frac is eligible.
+          * ``eligibility``: list of dicts (one per scanned frac) carrying
+            ``frac``, ``tie_mass_off``, ``median_emission_ii``,
+            ``n_offdiag_cells``, ``n_diag_sources``, ``eligible``,
+            ``reasons_if_not`` — so a reviewer sees what was picked from.
+          * ``rule``: human-readable rule string for the body.
+          * ``recovery_required``: True iff no frac was eligible
+            (triggers ``epm:failure v1 reason: production_no_inband_frac``
+            in §6.1).
+    """
+    eligibility: list[dict] = []
+    picked: float | None = None
+    for frac in sorted(fracs):
+        offdiag = [
+            c for c in cells if not c["is_diagonal"] and c["frac"] == frac and c["seed"] == seed
+        ]
+        diag = [c for c in cells if c["is_diagonal"] and c["frac"] == frac and c["seed"] == seed]
+        if not offdiag:
+            eligibility.append(
+                {
+                    "frac": frac,
+                    "tie_mass_off": None,
+                    "median_emission_ii": None,
+                    "n_offdiag_cells": 0,
+                    "n_diag_sources": len(diag),
+                    "eligible": False,
+                    "reasons_if_not": ["no_offdiag_cells_at_this_frac_seed"],
+                }
+            )
+            continue
+        ers = np.array([c["emission_rate"] for c in offdiag], dtype=float)
+        floor = float(np.mean(ers <= 0.05))
+        ceiling = float(np.mean(ers >= 0.95))
+        tie_mass = max(floor, ceiling)
+        median_ii = float(np.median([c["emission_rate"] for c in diag])) if diag else float("nan")
+        reasons: list[str] = []
+        if tie_mass > PICKER_TIE_MASS_OFF_MAX:
+            reasons.append(f"tie_mass_off={tie_mass:.3f} > {PICKER_TIE_MASS_OFF_MAX} (saturated)")
+        if np.isnan(median_ii) or median_ii < PICKER_MEDIAN_EMISSION_II_MIN:
+            reasons.append(
+                f"median_emission_ii={median_ii:.3f} < {PICKER_MEDIAN_EMISSION_II_MIN} "
+                "(insufficient source implant)"
+            )
+        eligible = len(reasons) == 0
+        eligibility.append(
+            {
+                "frac": frac,
+                "tie_mass_off": tie_mass,
+                "median_emission_ii": median_ii,
+                "n_offdiag_cells": len(offdiag),
+                "n_diag_sources": len(diag),
+                "eligible": eligible,
+                "reasons_if_not": reasons,
+            }
+        )
+        if eligible and picked is None:
+            picked = frac
+    return {
+        "rule": (
+            "Pre-specified v3 §6.2.D ρ-blind picker: lowest eligible frac scanned "
+            "ascending in {0.10, 0.25, 0.50, 1.00, 2.00, 3.00}. Eligible := "
+            f"tie_mass_off ≤ {PICKER_TIE_MASS_OFF_MAX} AND median per-source "
+            f"emission_ii ≥ {PICKER_MEDIAN_EMISSION_II_MIN}."
+        ),
+        "picked_frac": picked,
+        "seed": seed,
+        "eligibility": eligibility,
+        "recovery_required": picked is None,
+        "recovery_reason_if_none": "production_no_inband_frac",
+    }
+
+
+def _pearson_stylization_js(cells: list[dict], fracs: list[float], seeds: list[int]) -> dict:
+    """v3 §6.3 standing rec: dump Pearson(stylization_score_source, JS) per
+    (frac × seed) so the analyzer can surface the structural-collinearity
+    number prominently in the H2 verdict prose.
+
+    The stylization_score and JS share the source persona's identity T_i by
+    construction (v2 §4.3 — they are not independent measurements of separate
+    constructs). The partialled H2 partial ρ is the load-bearing statistic;
+    the raw Pearson is reported for completeness so a reviewer can judge the
+    collinearity gradient.
+    """
+    out: dict = {
+        "rule": (
+            "Pearson(stylization_score_source, JS) over the off-diag cells "
+            "of each (frac, seed). Surface prominently in the H2 verdict "
+            "prose with the structural-collinearity note (v2 §4.3)."
+        ),
+        "per_frac_seed": {},
+    }
+    for frac in sorted(fracs):
+        for seed in seeds:
+            offdiag = [
+                c for c in cells if not c["is_diagonal"] and c["frac"] == frac and c["seed"] == seed
+            ]
+            if len(offdiag) < 3:
+                out["per_frac_seed"][f"{_frac_tag(frac)}_seed{seed}"] = {
+                    "n_cells": len(offdiag),
+                    "pearson_js_stylization": float("nan"),
+                    "skipped": "insufficient cells",
+                }
+                continue
+            xs = np.array([c["JS"] for c in offdiag], dtype=float)
+            ys = np.array([c["stylization_score_source"] for c in offdiag], dtype=float)
+            if np.std(xs) < 1e-12 or np.std(ys) < 1e-12:
+                p = float("nan")
+            else:
+                p = float(np.corrcoef(xs, ys)[0, 1])
+            out["per_frac_seed"][f"{_frac_tag(frac)}_seed{seed}"] = {
+                "n_cells": len(offdiag),
+                "pearson_js_stylization": p,
+                "note": (
+                    "Collinearity is STRUCTURAL by construction (both share T_i); "
+                    "interpret the H2 partial ρ as load-bearing, not this raw Pearson."
+                ),
+            }
+    return out
+
+
 def _h1_h2_per_frac(
     cells: list[dict], frac: float, seed: int, rng: np.random.Generator, n_boots: int
 ) -> dict:
@@ -514,13 +675,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = ap.parse_args(argv)
 
+    # Plan v3 §9 trains all 6 fracs in production. The headline frac is picked
+    # post-hoc here via `pick_headline_frac` (v3 §6.2.D). Phase-2 smoke does
+    # NOT pre-select a subset (`picked_fracs.json` is no longer produced).
     if args.fracs is None:
-        picked = Path("logs/issue_488/smoke/picked_fracs.json")
-        if picked.exists():
-            args.fracs = json.loads(picked.read_text())["picked_fracs"]
-        else:
-            args.fracs = [0.25, 1.0, 2.0]
-            logger.warning("No picked_fracs.json; defaulting to %s", args.fracs)
+        args.fracs = [0.10, 0.25, 0.50, 1.00, 2.00, 3.00]
+        logger.info("--fracs not given; defaulting to all 6 production fracs: %s", args.fracs)
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -577,6 +737,32 @@ def main(argv: list[str] | None = None) -> int:
         {"schema_version": SCHEMA_VERSION, "results": h3},
     )
 
+    # v3 §6.2.D post-hoc picker (ρ-blind, deterministic). Per-seed; the
+    # analyzer body reports the per-seed picks AND the eligibility table.
+    picker_per_seed: dict = {}
+    for seed in args.seeds:
+        verdict = pick_headline_frac(cells, args.fracs, seed)
+        picker_per_seed[f"seed{seed}"] = verdict
+        logger.info(
+            "Picker seed=%d: picked_frac=%s (recovery_required=%s); rule=%s",
+            seed,
+            verdict["picked_frac"],
+            verdict["recovery_required"],
+            verdict["rule"],
+        )
+    _atomic_write_json(
+        OUT_DIR / "picked_headline_frac.json",
+        {"schema_version": SCHEMA_VERSION, "results": picker_per_seed},
+    )
+
+    # v3 §6.3 standing rec: Pearson(stylization, JS) per (frac, seed) dump
+    # for the H2 verdict prose.
+    pearson_dump = _pearson_stylization_js(cells, args.fracs, args.seeds)
+    _atomic_write_json(
+        OUT_DIR / "pearson_stylization_js.json",
+        {"schema_version": SCHEMA_VERSION, **pearson_dump},
+    )
+
     # Headline summary.
     headline = {
         "schema_version": SCHEMA_VERSION,
@@ -586,6 +772,8 @@ def main(argv: list[str] | None = None) -> int:
         "per_frac_seed_h1_h2": h1_h2,
         "h3": h3,
         "saturation": saturation,
+        "picked_headline_frac_per_seed": picker_per_seed,
+        "pearson_stylization_js": pearson_dump,
     }
     _atomic_write_json(OUT_DIR / "headline.json", headline)
     logger.info("Phase 5 done. Outputs in %s", OUT_DIR)

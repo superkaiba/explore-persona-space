@@ -1,23 +1,40 @@
-"""Issue #488 Phase 2 — smoke calibrate + label-mask audit + in-band frac pick.
+# ruff: noqa: RUF002, RUF003
+"""Issue #488 Phase 2 — smoke calibrate (gates only; production trains all 6 fracs).
 
-Plan v2 §4.4 + §7. Runs A1 (helpful assistant, low-band) and G2 (skeptical
-scientist, upper-band) at lr=2e-6, r=16, 150 rows, 3 epochs total, saving
-at all 6 fracs ∈ {0.10, 0.25, 0.50, 1.00, 2.00, 3.00}. Phase-2 gates per §7:
+Plan v3 §7 (replaces v2). Runs A1 (helpful assistant) and G2 (skeptical
+scientist) at lr=2e-6, r=16, 150 rows, 3 epochs total, saving at all 6
+fracs ∈ {0.10, 0.25, 0.50, 1.00, 2.00, 3.00}. Phase-2 gates per v3 §7:
 
-  1. **Label-mask audit (fix A)** — print loss-bearing positions on one positive
-     + one negative row of A1's training data. Positive row's loss-positions are
-     exactly the marker token (id 83399) + immediately-following EOS. Negative
-     row's loss-position is exactly `<|im_end|>` (id 151645).
-  2. **In-band source emission** — for BOTH A1 and G2, at least 3 of the 6 fracs
-     have source emission ∈ [0.20, 0.85]; pick the 3 most evenly spread that
-     are in-band for BOTH cells.
-  3. **Off-diagonal saturation gate (fix D)** — at each picked frac, evaluate
-     A1's adapter on a 6-cell mini-grid of off-diagonal target contexts
-     (B1, F1, G1, A3, D2, B5). At least one picked frac must have
-     tie_mass_off ≤ 0.85 on this 6-cell mini-grid.
-  4. **EOS-gradient check (fix H)** — at the latest picked frac, A1's trained
+  1. **Label-mask audit (KEEP — v3 Gate 1).** Print loss-bearing positions
+     on one positive + one negative row of A1's training data. Positive
+     row's loss-positions are exactly the marker token (id 83399) +
+     immediately-following EOS. Negative row's loss-position is exactly
+     ``<|im_end|>`` (id 151645). Fail → ``reason: label_mask_wrong_slot``.
+  2. **Log-prob shift (KEEP — v3 Gate 2').** At frac=3.00,
+     ``Δlogp = log P(' ※')_trained − log P(' ※')_base`` ≥ +0.5 nat on at
+     least one of (A1, G2) at the on-diag post-response slot. Free v3
+     addition: also record Δlogp for a frac=0.00 / 0-SFT-step forward
+     pass on the same smoke prompts (the noise floor on the 1-pos
+     slice). If empirical noise ≥ 0.3 nat, the implementer is authorized
+     to tighten Gate 2' from +0.5 nat to a value in [0.2 nat, 1.0 nat]
+     ≥ 3σ above the noise — logged but NOT auto-applied in code (an
+     operator decision). Fail → ``reason: smoke_no_logprob_shift``.
+  3. **Off-diagonal log-prob shift (NEW — v3 Gate 3, replaces v2's
+     emission-rate version).** For A1's frac=3.00 adapter, evaluate on 6
+     off-diagonal target contexts (B1, F1, G1, A3, D2, B5). For each
+     off-diag cell, compute ``Δlogp_off = log P(' ※')_trained −
+     log P(' ※')_base`` at the post-response slot (HF teacher-forced,
+     analogous to Gate 2' at the SOURCE slot but at off-diag target
+     contexts). PASS criterion: at least 4 of 6 off-diag cells must have
+     ``Δlogp_off ≥ +0.2 nat``. Failure → ``reason: offdiag_no_logprob_shift``.
+     v2's emission-rate Gate 3 (``tie_mass_off ≤ 0.85``) is DROPPED — it
+     provably FAILs at the FLOOR on the 1-pos / 0-neg smoke slice
+     (round-6 evidence: 0.000 emission across all 12 smoke cells).
+  4. **EOS-gradient check (KEEP — v3 Gate 4).** At frac=3.00, A1's trained
      model evaluated on the off-diagonal A1→B1 cell must show trained
-     log P(' ※') at the post-response slot moved DOWN by ≥ 0.2 nats vs base.
+     log P(' ※') at the post-response slot moved DOWN by ≥ 0.2 nats vs
+     base (this is a separate sanity probe — confirms the LoRA has
+     moved the EOS distribution).
 
 Architecturally unified with the sweep (CLAUDE.md Step 6d.0): smoke IS the
 sweep with --conds A1 G2 --seeds 42 --fracs all-six on the SAME dispatcher.
@@ -25,17 +42,22 @@ Phase-2 (this script) is the calibration LAYER that consumes the smoke
 adapters and runs the gates. It does NOT spawn the trainer — the dispatcher
 does that. This script is invoked AFTER the smoke train.
 
+v3 also removes pre-sweep frac picking — production trains all 6 fracs and
+the headline frac is selected POST-HOC by ``scripts/i488_phase5_analyze.py``
+under a ρ-blind deterministic rule (§6.2.D). This script therefore does NOT
+emit ``picked_fracs.json``.
+
 Outputs:
-* ``logs/issue_488/smoke/label_mask_audit.txt`` — positive/negative row label
-  positions (from the actual collator's batch).
-* ``logs/issue_488/smoke/emission_per_frac.json`` — per-cell, per-frac source
-  emission on Q_test (n_probes=10 for cost).
-* ``logs/issue_488/smoke/offdiag_saturation.json`` — per-frac off-diagonal
-  mini-grid saturation masses.
+* ``logs/issue_488/smoke/label_mask_audit.txt`` — positive/negative row
+  label positions (from the actual collator's batch).
+* ``logs/issue_488/smoke/logprob_shift.json`` — Gate 2' on-diag Δlogp at
+  frac=3.00 per cell (A1, G2) + the noise distribution at frac=0.00.
+* ``logs/issue_488/smoke/offdiag_logprob_shift.json`` — Gate 3 v3
+  per-off-diag-cell Δlogp at frac=3.00 (A1 adapter, 6 contexts).
 * ``logs/issue_488/smoke/eos_gradient.json`` — trained vs base log P(' ※')
-  at A1→B1 post-response slot at the latest picked frac.
-* ``logs/issue_488/smoke/picked_fracs.json`` — the 3 chosen fracs the sweep
-  will use.
+  at A1→B1 post-response slot at frac=3.00.
+* ``figures/issue_488/smoke_logprob_noise.png`` — empirical noise
+  distribution on the 1-pos slice (Gate 2' standing rec).
 * On FAIL: ``/workspace/logs/issue-488-smoke-failed.json`` sentinel +
   non-zero exit (the dispatcher escalates via that sentinel).
 """
@@ -77,13 +99,33 @@ SENTINEL_PATH = Path("/workspace/logs/issue-488-smoke-failed.json")
 ALL_FRACS = (0.10, 0.25, 0.50, 1.00, 2.00, 3.00)
 IM_END_TOKEN_ID = 151645
 EOS_GRADIENT_MIN_NATS = 0.2
-IN_BAND_MIN = 0.20
-IN_BAND_MAX = 0.85
-OFFDIAG_MAX_TIE_MASS = 0.85
+
+# Gate 2' (v3): on-diag log-prob shift at frac=3.00 must clear this threshold
+# on at least one of (A1, G2). Standing rec: tighten to ≥ noise_floor + 3σ
+# if the empirical noise on frac=0.00 base-only forwards is ≥ 0.3 nat.
+GATE2_LOGPROB_SHIFT_MIN_NATS = 0.5
+GATE2_NOISE_TIGHTEN_THRESHOLD_NATS = 0.3
+
+# Gate 3 (v3 — NEW, replaces v2's emission-rate tie_mass_off).
+# Per off-diag cell, the trained adapter must shift log P(' ※') up by at
+# least this many nats at the post-response slot; at least 4 of 6 cells
+# must clear it.
+GATE3_OFFDIAG_LOGPROB_SHIFT_MIN_NATS = 0.2
+GATE3_OFFDIAG_CELLS_REQUIRED = 4
+
+# The 6 off-diagonal target contexts probed at Gate 3 + Gate 4 (unchanged
+# from v2 — diverse subset spanning default, frame, persona, stylized,
+# paraphrase, wrap classes).
 OFFDIAG_MINI_GRID = ("B1", "F1", "G1", "A3", "D2", "B5")
 SMOKE_CELLS = ("A1", "G2")
 SMOKE_EVAL_N_PROBES = 10
+# Gate 2'/3/4 use teacher-forced log-prob on a single held-out Q per
+# (cell, target context) — one forward each, fast.
 LOGP_FLOOR = -50.0
+
+# Gate 2' Δlogp + Gate 3 off-diag Δlogp are measured at frac=3.00 (the most
+# trained checkpoint in the smoke run; max signal-to-noise per v3 §7).
+GATE_PROBE_FRAC = 3.00
 
 
 def _frac_tag(frac: float) -> str:
@@ -250,7 +292,7 @@ def _label_mask_audit(audit_train_jsonl: Path, tokenizer) -> str:
     return "\n".join(audit_lines)
 
 
-# ── Gate 2/3/4: emission + saturation + EOS-gradient ─────────────────────
+# ── Gates 2'/3/4: log-prob shift + off-diag log-prob shift + EOS-gradient ──
 
 
 def _download_adapter(cid: str, seed: int, frac: float) -> str:
@@ -280,40 +322,50 @@ def _download_adapter(cid: str, seed: int, frac: float) -> str:
     return str(local_target)
 
 
-def _vllm_source_emission(
-    llm,
-    sampling_params,
-    tokenizer,
-    cond_source,
-    cond_target,
-    held_out_q: list[str],
-    class_d_rewrites: dict,
-    lora_request,
-) -> tuple[float, float, int]:
-    """Generate N samples per held-out Q under (cond_target context, trained
-    with cond_source adapter); count substring ' ※' presence in decoded text.
+def _render_noise_distribution_figure(
+    noise_logps: list[float],
+    noise_mean: float,
+    noise_sd: float,
+    outpath: Path,
+) -> None:
+    """Render the Gate 2' noise-floor histogram + sd annotation.
 
-    Returns (emission_rate, truncation_rate, n_total_generations).
+    Plan v3 §7 standing rec: log the base-only log-prob distribution from
+    the frac=0.00 forward passes so a reviewer can see the empirical noise
+    floor against which Gate 2's +0.5-nat threshold is being judged. The
+    figure is informational; tightening Gate 2' from +0.5 to a higher
+    value is an OPERATOR decision (the JSON sidecar carries the flag).
     """
-    prompts = [
-        build_prompt_for_condition(cond_target, q, tokenizer, class_d_rewrites) for q in held_out_q
-    ]
-    outputs = llm.generate(prompts, sampling_params, lora_request=lora_request)
-    total = 0
-    emitted = 0
-    truncated = 0
-    for gen in outputs:
-        for choice in gen.outputs:
-            total += 1
-            if MARKER_TEXT in choice.text:
-                emitted += 1
-            if choice.finish_reason == "length":
-                truncated += 1
-    return (
-        emitted / max(total, 1),
-        truncated / max(total, 1),
-        total,
+    if not noise_logps:
+        return
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    outpath.parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(6.5, 3.6))
+    ax.hist(noise_logps, bins=min(8, max(2, len(noise_logps))), color="steelblue", alpha=0.8)
+    ax.axvline(noise_mean, color="black", lw=1.0, label=f"mean = {noise_mean:.3f}")
+    ax.axvline(
+        noise_mean + noise_sd,
+        color="darkorange",
+        ls="--",
+        lw=0.8,
+        label=f"+1 sd = {noise_sd:.3f}",
     )
+    ax.axvline(noise_mean - noise_sd, color="darkorange", ls="--", lw=0.8)
+    ax.set_xlabel("base log P(' ※') at on-diag post-response slot (nats)")
+    ax.set_ylabel("count")
+    ax.set_title(
+        "Gate 2' noise floor — base-only forwards on the 1-pos smoke slice\n"
+        f"(n={len(noise_logps)}, sd={noise_sd:.3f} nats; "
+        f"tighten Gate 2' if sd ≥ {GATE2_NOISE_TIGHTEN_THRESHOLD_NATS})"
+    )
+    ax.legend(loc="best", fontsize=8)
+    fig.tight_layout()
+    fig.savefig(str(outpath), dpi=150, bbox_inches="tight")
+    plt.close(fig)
 
 
 def _post_response_slot_logprob(
@@ -396,24 +448,27 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch + g
         _write_sentinel("label_mask_wrong_slot", str(e))
         return 2
 
-    # ── Gates 2 / 3 / 4: spin up vLLM, evaluate A1 + G2 adapters ──
+    # ── Gates 2'/3/4: spin up vLLM, evaluate A1 + G2 adapters at frac=3.00 ──
     from vllm import LLM, SamplingParams
     from vllm.lora.request import LoRARequest
 
     held_out = json.loads(Path("data/issue_488/q_held_out_20.json").read_text())["questions"]
+    # Gate 2'/3/4 each use ONE held-out Q per (cell, target) — teacher-forced
+    # log-prob is a single forward, so per-cell variance is the relevant
+    # noise control (we average across cells, not across Q within a cell).
+    # Use the first N=`n_probes` held-out Qs to average per cell.
     held_out_probe = held_out[: args.n_probes_emission]
     class_d_rewrites = load_class_d_rewrites()
 
-    # Get R_test on-policy for inherited B1 (needed for EOS-gradient probe).
-    # If the inherited #460 R_test isn't on the pod, fall back to an empty dict;
-    # the downstream EOS-gradient probe handles a missing R_text by generating
-    # on-policy from base via vLLM (see the `if not R_text:` branch below).
+    # R_test for the off-diag / EOS-gradient probes. If inherited #460
+    # R_test is missing, regenerate on-policy from base via vLLM below.
     _r_test_inherited_path = Path("data/issue_460/R_test.json")
     if _r_test_inherited_path.exists():
         R_test_inherited = json.loads(_r_test_inherited_path.read_text())["completions"]
     else:
         logger.warning(
-            "Inherited %s missing; EOS-gradient probe will regenerate R on-policy from base.",
+            "Inherited %s missing; EOS-gradient + off-diag probes will regenerate "
+            "R on-policy from base.",
             _r_test_inherited_path,
         )
         R_test_inherited = {}
@@ -429,13 +484,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch + g
         seed=42,
         max_model_len=4096,
     )
-    sp_gen = SamplingParams(
-        n=8,
-        temperature=1.0,
-        top_p=1.0,
-        max_tokens=2048,
-        seed=42,
-    )
+    sp_R = SamplingParams(n=1, temperature=0.0, top_p=1.0, max_tokens=1024, seed=42)
     sp_logprob = SamplingParams(
         n=1,
         temperature=0.0,
@@ -446,193 +495,317 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch + g
         seed=42,
     )
 
-    # ── Gate 2: source emission per frac per cell ──
-    emission_per_frac: dict[str, dict[str, dict]] = {}
-    for cid in SMOKE_CELLS:
+    # Helpers bound to the loaded vLLM instance + the resolved R cache. Lifted
+    # to lambdas-with-defaults so ruff F821 doesn't flag the late-binding of
+    # `llm` in the closure (Python is fine with it; ruff is conservative).
+    def _resolve_R_for(
+        target_cid: str,
+        target_prompt: str,
+        probe_q: str,
+        _llm=llm,
+        _sp_R=sp_R,
+        _R_inh=R_test_inherited,
+    ) -> str:
+        """Get R for (target persona context, q): inherited if present, else
+        generate on-policy from base via vLLM."""
+        canned = (
+            _R_inh.get(target_cid, {}).get(probe_q, {}).get("response_text")
+            if isinstance(_R_inh, dict)
+            else None
+        )
+        if canned:
+            return canned
+        gen = _llm.generate([target_prompt], _sp_R, lora_request=None)
+        return gen[0].outputs[0].text
+
+    def _on_diag_probe_logp(
+        cid: str,
+        lora_request,
+        probe_q: str,
+        _llm=llm,
+        _sp_logprob=sp_logprob,
+        _tok=tokenizer,
+        _crw=class_d_rewrites,
+    ) -> tuple[float, str]:
+        """One Δlogp probe at the on-diagonal source/target slot for `cid`.
+
+        Returns (logp_marker_at_post_response_slot, R_used). Uses the existing
+        vLLM teacher-forced primitive at the post-response marker slot.
+        """
         cond_source = CONDITIONS_BY_ID[cid]
-        emission_per_frac[cid] = {}
-        for frac in ALL_FRACS:
+        prompt_text = build_prompt_for_condition(cond_source, probe_q, _tok, _crw)
+        R_text = _resolve_R_for(cid, prompt_text, probe_q)
+        logp = _post_response_slot_logprob(
+            _llm, _sp_logprob, _tok, prompt_text, R_text, lora_request=lora_request
+        )
+        return logp, R_text
+
+    def _off_diag_probe_logp(
+        source_cid: str,
+        target_cid: str,
+        lora_request,
+        probe_q: str,
+        _llm=llm,
+        _sp_logprob=sp_logprob,
+        _tok=tokenizer,
+        _crw=class_d_rewrites,
+    ) -> tuple[float, str]:
+        """One Δlogp probe at the off-diagonal slot: trained at source persona's
+        adapter, evaluated at target persona's context. The probe text is
+        ``T_target(probe_q) + R_target + ' ※'`` and the score is at the marker
+        slot. Uses the existing vLLM teacher-forced primitive.
+
+        Returns (logp_marker_at_post_response_slot, R_used).
+        """
+        del source_cid  # documented for caller; not needed for the eval prompt
+        cond_target = CONDITIONS_BY_ID[target_cid]
+        prompt_text = build_prompt_for_condition(cond_target, probe_q, _tok, _crw)
+        R_text = _resolve_R_for(target_cid, prompt_text, probe_q)
+        logp = _post_response_slot_logprob(
+            _llm, _sp_logprob, _tok, prompt_text, R_text, lora_request=lora_request
+        )
+        return logp, R_text
+
+    # ── Gate 2': on-diag log-prob shift at frac=3.00 for each cell ──
+    # Plus the v3 free addition: a noise-distribution measurement using
+    # base-only forwards (no LoRA loaded) at frac=0.00 on the same probes.
+    logprob_shift_payload: dict = {
+        "gate_version": "v3",
+        "probe_frac": GATE_PROBE_FRAC,
+        "min_shift_nats": GATE2_LOGPROB_SHIFT_MIN_NATS,
+        "cells": {},
+        "noise_distribution_base_only": {},
+    }
+
+    # Base-only noise distribution: take 2 probes per smoke cell, compute the
+    # base log-prob at the on-diag post-response slot. Since the trained
+    # forward at frac=0.00 IS the base model (no LoRA), the "Δ" is mechanically
+    # zero per probe; the noise floor we report is the PER-PROBE STANDARD
+    # DEVIATION of base log-prob across the probes (a Δ would be base − base
+    # under different random sampling — we sample a single deterministic
+    # forward per probe, so the per-probe variance is the proxy for "noise
+    # the gate must clear" since the same dispersion applies to trained −
+    # base via independent forwards).
+    noise_logps: list[float] = []
+    for cid in SMOKE_CELLS:
+        for probe_q in held_out_probe[: min(2, len(held_out_probe))]:
             try:
-                path = _download_adapter(cid, args.smoke_seed, frac)
+                logp, _ = _on_diag_probe_logp(cid, lora_request=None, probe_q=probe_q)
+                noise_logps.append(logp)
             except Exception as e:
                 logger.warning(
-                    "Adapter %s seed=%d frac=%s missing: %s", cid, args.smoke_seed, frac, e
+                    "Noise-floor base probe failed for %s q=%s: %s", cid, probe_q[:40], e
                 )
-                emission_per_frac[cid][_frac_tag(frac)] = {
-                    "emission_rate": None,
-                    "missing_adapter": True,
-                    "error": str(e),
-                }
-                continue
-            lora = LoRARequest(
-                lora_name=f"{cid}_{_frac_tag(frac)}",
-                lora_int_id=round(frac * 100) + ord(cid[0]) * 1000,
-                lora_path=path,
-            )
-            emission, trunc, total = _vllm_source_emission(
-                llm,
-                sp_gen,
-                tokenizer,
-                cond_source,
-                cond_source,  # source diagonal = same-cond context
-                held_out_probe,
-                class_d_rewrites,
-                lora,
-            )
-            emission_per_frac[cid][_frac_tag(frac)] = {
-                "emission_rate": emission,
-                "truncation_rate": trunc,
-                "n_generations": total,
-            }
-            logger.info(
-                "diagonal emission %s seed=%d %s = %.3f (trunc=%.3f over %d gens)",
-                cid,
-                args.smoke_seed,
-                _frac_tag(frac),
-                emission,
-                trunc,
-                total,
-            )
-    (SMOKE_LOG_DIR / "emission_per_frac.json").write_text(json.dumps(emission_per_frac, indent=2))
-
-    # Pick the 3 most evenly spread in-band fracs for BOTH cells.
-    in_band_per_cell: dict[str, list[float]] = {}
-    for cid in SMOKE_CELLS:
-        in_band = []
-        for frac in ALL_FRACS:
-            rec = emission_per_frac[cid].get(_frac_tag(frac))
-            if rec is None or rec.get("emission_rate") is None:
-                continue
-            er = rec["emission_rate"]
-            if IN_BAND_MIN <= er <= IN_BAND_MAX:
-                in_band.append(frac)
-        in_band_per_cell[cid] = in_band
-        logger.info("In-band fracs for %s: %s", cid, in_band)
-
-    # Pick the 3 fracs that are in-band for BOTH cells.
-    both_in_band = sorted(set(in_band_per_cell["A1"]) & set(in_band_per_cell["G2"]))
-    if len(both_in_band) < 3:
-        union_in_band = sorted(set(in_band_per_cell["A1"]) | set(in_band_per_cell["G2"]))
-        # Per-cell pick (documented as methodology divergence).
-        picked_per_cell = {cid: sorted(in_band_per_cell[cid])[:3] for cid in SMOKE_CELLS}
-        all_picked = sorted({f for fs in picked_per_cell.values() for f in fs})
-        if not all_picked or any(len(in_band_per_cell[cid]) < 1 for cid in SMOKE_CELLS):
-            _write_sentinel(
-                "smoke_no_inband_frac",
-                "Neither A1 nor G2 has any in-band frac in [0.20, 0.85]. "
-                f"emission_per_frac={emission_per_frac}",
-            )
-            return 3
-        # Document the per-cell split and proceed.
-        picked = all_picked[:3] if len(all_picked) >= 3 else (all_picked + union_in_band)[:3]
-        per_cell_divergence = True
+    if noise_logps:
+        noise_mean = float(np.mean(noise_logps))
+        noise_sd = float(np.std(noise_logps))
+        noise_range = (
+            float(np.max(noise_logps) - np.min(noise_logps)) if len(noise_logps) > 1 else 0.0
+        )
     else:
-        # Evenly spread across both_in_band.
-        if len(both_in_band) <= 3:
-            picked = both_in_band
-        else:
-            idx = np.linspace(0, len(both_in_band) - 1, 3).round().astype(int).tolist()
-            picked = [both_in_band[i] for i in idx]
-        per_cell_divergence = False
+        noise_mean = noise_sd = noise_range = float("nan")
+    logprob_shift_payload["noise_distribution_base_only"] = {
+        "n_probes": len(noise_logps),
+        "logps": noise_logps,
+        "mean": noise_mean,
+        "sd": noise_sd,
+        "range": noise_range,
+        "tighten_threshold_nats": GATE2_NOISE_TIGHTEN_THRESHOLD_NATS,
+        "operator_should_tighten_gate2": noise_sd >= GATE2_NOISE_TIGHTEN_THRESHOLD_NATS
+        if not np.isnan(noise_sd)
+        else False,
+    }
+    logger.info(
+        "Gate 2' noise floor (base-only): n=%d mean=%.4f sd=%.4f range=%.4f",
+        len(noise_logps),
+        noise_mean,
+        noise_sd,
+        noise_range,
+    )
 
-    # ── Gate 3: off-diagonal saturation gate (A1 only) ──
-    offdiag_results: dict[str, dict] = {}
-    any_offdiag_unsaturated = False
-    for frac in picked:
+    # Gate 2' per-cell Δlogp at frac=3.00.
+    any_cell_passed = False
+    for cid in SMOKE_CELLS:
         try:
-            path = _download_adapter("A1", args.smoke_seed, frac)
+            adapter_path = _download_adapter(cid, args.smoke_seed, GATE_PROBE_FRAC)
         except Exception as e:
-            offdiag_results[_frac_tag(frac)] = {"error": str(e)}
+            logprob_shift_payload["cells"][cid] = {
+                "error": f"adapter download failed: {e}",
+                "passes_gate2_prime": False,
+            }
             continue
         lora = LoRARequest(
-            lora_name=f"A1_{_frac_tag(frac)}",
-            lora_int_id=round(frac * 100) + ord("A") * 1000,
-            lora_path=path,
+            lora_name=f"{cid}_gate2_{_frac_tag(GATE_PROBE_FRAC)}",
+            lora_int_id=round(GATE_PROBE_FRAC * 100) + ord(cid[0]) * 1000,
+            lora_path=adapter_path,
         )
-        cell_emissions = []
-        for cj in OFFDIAG_MINI_GRID:
-            cond_j = CONDITIONS_BY_ID[cj]
-            er, _, _ = _vllm_source_emission(
-                llm,
-                sp_gen,
-                tokenizer,
-                CONDITIONS_BY_ID["A1"],
-                cond_j,
-                held_out_probe,
-                class_d_rewrites,
-                lora,
-            )
-            cell_emissions.append({"target": cj, "emission_rate": er})
-        floor_mass = sum(1 for c in cell_emissions if c["emission_rate"] <= 0.05) / len(
-            cell_emissions
-        )
-        ceiling_mass = sum(1 for c in cell_emissions if c["emission_rate"] >= 0.95) / len(
-            cell_emissions
-        )
-        tie_mass = max(floor_mass, ceiling_mass)
-        offdiag_results[_frac_tag(frac)] = {
-            "frac": frac,
-            "cells": cell_emissions,
-            "floor_mass_off": floor_mass,
-            "ceiling_mass_off": ceiling_mass,
-            "tie_mass_off": tie_mass,
-            "passes_offdiag_gate": tie_mass <= OFFDIAG_MAX_TIE_MASS,
+        probe_q = held_out_probe[0]
+        try:
+            base_logp, _R_used = _on_diag_probe_logp(cid, lora_request=None, probe_q=probe_q)
+            trained_logp, _ = _on_diag_probe_logp(cid, lora_request=lora, probe_q=probe_q)
+        except Exception as e:
+            logprob_shift_payload["cells"][cid] = {
+                "error": f"on-diag probe failed: {e}",
+                "passes_gate2_prime": False,
+            }
+            continue
+        delta = trained_logp - base_logp
+        passed = delta >= GATE2_LOGPROB_SHIFT_MIN_NATS
+        logprob_shift_payload["cells"][cid] = {
+            "probe_q": probe_q,
+            "base_logp_marker": base_logp,
+            "trained_logp_marker": trained_logp,
+            "delta_nats": delta,
+            "min_shift_nats": GATE2_LOGPROB_SHIFT_MIN_NATS,
+            "passes_gate2_prime": passed,
         }
-        if tie_mass <= OFFDIAG_MAX_TIE_MASS:
-            any_offdiag_unsaturated = True
+        if passed:
+            any_cell_passed = True
         logger.info(
-            "offdiag gate %s: floor=%.2f ceiling=%.2f tie=%.2f pass=%s",
-            _frac_tag(frac),
-            floor_mass,
-            ceiling_mass,
-            tie_mass,
-            tie_mass <= OFFDIAG_MAX_TIE_MASS,
+            "Gate 2' %s frac=%.2f: base=%.4f trained=%.4f Δ=%.4f pass=%s",
+            cid,
+            GATE_PROBE_FRAC,
+            base_logp,
+            trained_logp,
+            delta,
+            passed,
         )
-    (SMOKE_LOG_DIR / "offdiag_saturation.json").write_text(json.dumps(offdiag_results, indent=2))
 
-    if not any_offdiag_unsaturated:
+    (SMOKE_LOG_DIR / "logprob_shift.json").write_text(json.dumps(logprob_shift_payload, indent=2))
+
+    # Try to write the noise-distribution figure (best-effort; failure here
+    # does NOT fail the gate — the JSON is the contract).
+    try:
+        _render_noise_distribution_figure(
+            noise_logps,
+            noise_mean,
+            noise_sd,
+            outpath=Path("figures/issue_488/smoke_logprob_noise.png"),
+        )
+    except Exception as e:
+        logger.warning("Noise-distribution figure render failed: %s", e)
+
+    if not any_cell_passed:
         _write_sentinel(
-            "offdiag_saturated_at_all_fracs",
-            "All picked fracs have tie_mass_off > 0.85 on the A1 6-cell mini-grid. "
-            f"offdiag_results={offdiag_results}",
+            "smoke_no_logprob_shift",
+            f"Neither A1 nor G2 had Δlogp ≥ {GATE2_LOGPROB_SHIFT_MIN_NATS} nats at "
+            f"frac={GATE_PROBE_FRAC} on the on-diag post-response slot. "
+            f"payload={logprob_shift_payload['cells']}",
+            extra=logprob_shift_payload,
+        )
+        return 3
+
+    # ── Gate 3 (v3): off-diagonal log-prob shift at A1's frac=3.00 adapter ──
+    # 6 off-diag contexts (B1, F1, G1, A3, D2, B5). PASS = at least
+    # GATE3_OFFDIAG_CELLS_REQUIRED (4) cells have Δlogp_off ≥
+    # GATE3_OFFDIAG_LOGPROB_SHIFT_MIN_NATS (0.2 nat).
+    offdiag_payload: dict = {
+        "gate_version": "v3",
+        "probe_frac": GATE_PROBE_FRAC,
+        "min_shift_nats_per_cell": GATE3_OFFDIAG_LOGPROB_SHIFT_MIN_NATS,
+        "min_cells_required": GATE3_OFFDIAG_CELLS_REQUIRED,
+        "n_cells_probed": len(OFFDIAG_MINI_GRID),
+        "cells": [],
+    }
+    try:
+        a1_adapter_path = _download_adapter("A1", args.smoke_seed, GATE_PROBE_FRAC)
+    except Exception as e:
+        _write_sentinel(
+            "offdiag_no_logprob_shift",
+            f"Couldn't download A1 frac={GATE_PROBE_FRAC} for Gate 3 off-diag probe: {e}",
+        )
+        return 4
+    lora_a1 = LoRARequest(
+        lora_name=f"A1_gate3_{_frac_tag(GATE_PROBE_FRAC)}",
+        lora_int_id=round(GATE_PROBE_FRAC * 100) + ord("A") * 10000,
+        lora_path=a1_adapter_path,
+    )
+
+    probe_q_off = held_out_probe[0]
+    n_passed_offdiag = 0
+    for target_cid in OFFDIAG_MINI_GRID:
+        try:
+            base_logp, _R_used = _off_diag_probe_logp(
+                "A1", target_cid, lora_request=None, probe_q=probe_q_off
+            )
+            trained_logp, _ = _off_diag_probe_logp(
+                "A1", target_cid, lora_request=lora_a1, probe_q=probe_q_off
+            )
+        except Exception as e:
+            offdiag_payload["cells"].append(
+                {
+                    "target": target_cid,
+                    "error": f"off-diag probe failed: {e}",
+                    "passes_offdiag_cell": False,
+                }
+            )
+            continue
+        delta = trained_logp - base_logp
+        passed = delta >= GATE3_OFFDIAG_LOGPROB_SHIFT_MIN_NATS
+        offdiag_payload["cells"].append(
+            {
+                "target": target_cid,
+                "probe_q": probe_q_off,
+                "base_logp_marker": base_logp,
+                "trained_logp_marker": trained_logp,
+                "delta_nats": delta,
+                "min_shift_nats": GATE3_OFFDIAG_LOGPROB_SHIFT_MIN_NATS,
+                "passes_offdiag_cell": passed,
+            }
+        )
+        if passed:
+            n_passed_offdiag += 1
+        logger.info(
+            "Gate 3 off-diag A1→%s frac=%.2f: base=%.4f trained=%.4f Δ=%.4f pass=%s",
+            target_cid,
+            GATE_PROBE_FRAC,
+            base_logp,
+            trained_logp,
+            delta,
+            passed,
+        )
+
+    offdiag_payload["n_cells_passed"] = n_passed_offdiag
+    offdiag_payload["passes_gate3"] = n_passed_offdiag >= GATE3_OFFDIAG_CELLS_REQUIRED
+    (SMOKE_LOG_DIR / "offdiag_logprob_shift.json").write_text(json.dumps(offdiag_payload, indent=2))
+    logger.info(
+        "Gate 3 summary: %d / %d cells passed (required ≥ %d)",
+        n_passed_offdiag,
+        len(OFFDIAG_MINI_GRID),
+        GATE3_OFFDIAG_CELLS_REQUIRED,
+    )
+
+    if not offdiag_payload["passes_gate3"]:
+        _write_sentinel(
+            "offdiag_no_logprob_shift",
+            (
+                f"Gate 3 FAIL: only {n_passed_offdiag} of {len(OFFDIAG_MINI_GRID)} "
+                f"off-diag cells had Δlogp_off ≥ {GATE3_OFFDIAG_LOGPROB_SHIFT_MIN_NATS} "
+                f"nats at A1's frac={GATE_PROBE_FRAC} adapter "
+                f"(required ≥ {GATE3_OFFDIAG_CELLS_REQUIRED}). "
+                "See offdiag_logprob_shift.json for per-cell deltas."
+            ),
+            extra=offdiag_payload,
         )
         return 4
 
-    # ── Gate 4: EOS-gradient check at the latest picked frac ──
-    latest_frac = picked[-1]
-    eos_gradient_payload: dict = {"latest_frac": latest_frac}
-    try:
-        adapter_path = _download_adapter("A1", args.smoke_seed, latest_frac)
-    except Exception as e:
-        _write_sentinel(
-            "eos_gradient_inactive",
-            f"Couldn't download A1 frac={latest_frac} for EOS-gradient probe: {e}",
-        )
-        return 5
-    lora = LoRARequest(
-        lora_name=f"A1_eosgrad_{_frac_tag(latest_frac)}",
+    # ── Gate 4: EOS-gradient check at A1's frac=3.00 adapter, A1→B1 cell ──
+    eos_gradient_payload: dict = {"probe_frac": GATE_PROBE_FRAC}
+    # Reuse the A1 frac=3.00 LoRA path (already downloaded for Gate 3).
+    lora_eos = LoRARequest(
+        lora_name=f"A1_eosgrad_{_frac_tag(GATE_PROBE_FRAC)}",
         lora_int_id=99999,
-        lora_path=adapter_path,
+        lora_path=a1_adapter_path,
     )
-    # B1 is the no-system default-assistant target; pick the first held-out Q.
-    cond_target = CONDITIONS_BY_ID["B1"]
     probe_q = held_out_probe[0]
+    cond_target = CONDITIONS_BY_ID["B1"]
     prompt_text = build_prompt_for_condition(cond_target, probe_q, tokenizer, class_d_rewrites)
-    R_text = (
-        R_test_inherited.get("B1", {}).get(probe_q, {}).get("response_text")
-        if isinstance(R_test_inherited, dict)
-        else None
-    )
-    if not R_text:
-        # Generate on-policy R from base if R_test inherited missing.
-        sp_R = SamplingParams(n=1, temperature=0.0, top_p=1.0, max_tokens=1024, seed=42)
-        gen = llm.generate([prompt_text], sp_R, lora_request=None)
-        R_text = gen[0].outputs[0].text
+    R_text = _resolve_R_for("B1", prompt_text, probe_q)
     base_logp = _post_response_slot_logprob(
         llm, sp_logprob, tokenizer, prompt_text, R_text, lora_request=None
     )
     trained_logp = _post_response_slot_logprob(
-        llm, sp_logprob, tokenizer, prompt_text, R_text, lora_request=lora
+        llm, sp_logprob, tokenizer, prompt_text, R_text, lora_request=lora_eos
     )
     delta_nats = trained_logp - base_logp
     moved_down = delta_nats <= -EOS_GRADIENT_MIN_NATS
@@ -649,7 +822,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch + g
     )
     (SMOKE_LOG_DIR / "eos_gradient.json").write_text(json.dumps(eos_gradient_payload, indent=2))
     logger.info(
-        "EOS-gradient probe: base=%.4f trained=%.4f delta=%.4f (required ≤ -%s)",
+        "EOS-gradient probe (frac=%.2f, A1→B1): base=%.4f trained=%.4f delta=%.4f (required ≤ -%s)",
+        GATE_PROBE_FRAC,
         base_logp,
         trained_logp,
         delta_nats,
@@ -665,21 +839,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch + g
         )
         return 6
 
-    # ── PASS: persist picked fracs ──
-    (SMOKE_LOG_DIR / "picked_fracs.json").write_text(
-        json.dumps(
-            {
-                "schema_version": "i488_v1",
-                "picked_fracs": picked,
-                "all_fracs": list(ALL_FRACS),
-                "in_band_per_cell": in_band_per_cell,
-                "per_cell_divergence": per_cell_divergence,
-                "wrote_at": datetime.datetime.now(datetime.UTC).isoformat(),
-            },
-            indent=2,
-        )
+    # ── PASS ──
+    logger.info(
+        "Smoke gates PASS (v3): Gate 1 + Gate 2' (≥1 cell) + Gate 3 (%d/%d) + Gate 4 (EOS). "
+        "Production trains all 6 fracs; headline frac picked post-hoc by phase5_analyze.",
+        n_passed_offdiag,
+        len(OFFDIAG_MINI_GRID),
     )
-    logger.info("Smoke gates PASS. Picked fracs: %s", picked)
 
     del llm
     from issue404_common import kill_vllm_workers

@@ -1,4 +1,4 @@
-# ruff: noqa: RUF001, RUF002
+# ruff: noqa: RUF001, RUF002, RUF003
 """Issue #488 — figure generation (over-produce; analyzer picks hero).
 
 Plan v2 §6.3. Per planner memory `feedback_show_raw_alongside_processed`,
@@ -119,8 +119,14 @@ def _hero_scatter(cells_payload: dict, picked_frac: float, picked_seed: int) -> 
     plt.close(fig)
 
 
-def _partial_panel(headline: dict) -> None:
-    """Hero candidate 2 — bar chart of partial ρ by frac × covariate set."""
+def _partial_panel(headline: dict, picked_frac_per_seed: dict | None = None) -> None:
+    """Hero candidate 2 — bar chart of partial ρ by frac × covariate set.
+
+    v3 §6.3 standing rec: annotate the picked frac (the LOWEST eligible
+    frac under v3 §6.2.D's ρ-blind picker) with a dashed grey vertical
+    line + ``(headline)`` label. Per-seed lines are drawn at the bar
+    cluster whose label embeds that seed's picked frac tag.
+    """
     import matplotlib.pyplot as plt
     import numpy as np
 
@@ -147,10 +153,44 @@ def _partial_panel(headline: dict) -> None:
     yerr_hi = [hi - p for p, hi in zip(h1_p, h1_hi, strict=True)]
     ax.errorbar(x - w, h1_p, yerr=[yerr_lo, yerr_hi], fmt="none", ecolor="black", capsize=3)
     ax.axhline(0, color="black", lw=0.5, ls="--")
+
+    # v3 picked-frac annotation: vertical at the bar cluster matching each
+    # seed's picked frac. The label format on x is "frac{NNN}_seed{S}".
+    if picked_frac_per_seed:
+        for seed_key, verdict in picked_frac_per_seed.items():
+            picked = verdict.get("picked_frac")
+            if picked is None:
+                continue
+            tag = f"frac{round(picked * 100):03d}"
+            seed_num = seed_key.replace("seed", "")
+            wanted_label = f"{tag}_seed{seed_num}"
+            if wanted_label in labels:
+                xpos = labels.index(wanted_label)
+                ax.axvline(
+                    xpos,
+                    color="grey",
+                    ls="--",
+                    lw=0.9,
+                    alpha=0.7,
+                )
+                ax.text(
+                    xpos,
+                    ax.get_ylim()[1] * 0.95 if ax.get_ylim()[1] != 0 else 0.05,
+                    f"frac={picked} (headline, seed {seed_num})",
+                    rotation=90,
+                    va="top",
+                    ha="right",
+                    fontsize=7,
+                    color="dimgrey",
+                )
+
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=20, ha="right")
     ax.set_ylabel("Partial Spearman ρ(JS, emission)")
-    ax.set_title("H1/H2 partial ρ by frac × seed with cluster-bootstrap CIs")
+    ax.set_title(
+        "H1/H2 partial ρ by frac × seed (dyadic cluster-bootstrap CI on length-only); "
+        "dashed grey = v3 §6.2.D picked headline frac"
+    )
     ax.legend(loc="best", fontsize=9)
     fig.tight_layout()
     _save_fig(
@@ -160,14 +200,26 @@ def _partial_panel(headline: dict) -> None:
             {"id": "h1-length-only", "what": "length-partial ρ + dyadic-bootstrap CI"},
             {"id": "h2-binary", "what": "+ is_stylized_source partialled"},
             {"id": "h2-graded", "what": "+ stylization_score partialled"},
+            {
+                "id": "picked-frac-annotation",
+                "what": "v3 §6.2.D headline frac (dashed grey vertical)",
+            },
         ],
-        source_data=[str(ANALYSIS_DIR / "h1_partial.json")],
+        source_data=[
+            str(ANALYSIS_DIR / "h1_partial.json"),
+            str(ANALYSIS_DIR / "picked_headline_frac.json"),
+        ],
     )
     plt.close(fig)
 
 
-def _trajectory_panel(cells_payload: dict) -> None:
-    """Hero candidate 3 — emission rate trajectory across fracs per source."""
+def _trajectory_panel(cells_payload: dict, picked_frac_per_seed: dict | None = None) -> None:
+    """Hero candidate 3 — emission rate trajectory across fracs per source.
+
+    v3 §6.3 standing rec: annotate the picked frac (v3 §6.2.D's ρ-blind
+    headline frac) with a dashed grey vertical line across all source
+    lines. Per-seed lines are drawn separately if seeds disagree.
+    """
     import matplotlib.pyplot as plt
     import numpy as np
 
@@ -202,9 +254,34 @@ def _trajectory_panel(cells_payload: dict) -> None:
             "G": "#7d4ba0",
         }
         ax.plot(fracs, ys, marker="o", label=f"{src} ({cls})", color=cmap.get(cls, "#444"))
+
+    # v3 picked-frac annotation: vertical line at each seed's picked frac.
+    annotated: set[float] = set()
+    if picked_frac_per_seed:
+        ylim_top = ax.get_ylim()[1] if ax.get_ylim()[1] != 0 else 0.05
+        for seed_key, verdict in picked_frac_per_seed.items():
+            picked = verdict.get("picked_frac")
+            if picked is None or picked in annotated:
+                continue
+            seed_num = seed_key.replace("seed", "")
+            ax.axvline(picked, color="grey", ls="--", lw=0.9, alpha=0.75)
+            ax.text(
+                picked,
+                ylim_top * 0.95,
+                f"headline (seed {seed_num}): frac={picked}",
+                rotation=90,
+                va="top",
+                ha="right",
+                fontsize=7,
+                color="dimgrey",
+            )
+            annotated.add(picked)
+
     ax.set_xlabel("Training fraction (epochs)")
     ax.set_ylabel("Mean off-diagonal emission rate")
-    ax.set_title("Off-diagonal emission trajectory per source")
+    ax.set_title(
+        "Off-diagonal emission trajectory per source; dashed grey = v3 §6.2.D picked headline frac"
+    )
     ax.legend(ncol=4, fontsize=7, loc="upper left")
     fig.tight_layout()
     _save_fig(
@@ -214,9 +291,16 @@ def _trajectory_panel(cells_payload: dict) -> None:
             {
                 "id": "off-diag-trajectory",
                 "what": "mean off-diagonal emission rate vs frac, per source",
-            }
+            },
+            {
+                "id": "picked-frac-annotation",
+                "what": "v3 §6.2.D headline frac (dashed grey vertical)",
+            },
         ],
-        source_data=[str(ANALYSIS_DIR / "cells.json")],
+        source_data=[
+            str(ANALYSIS_DIR / "cells.json"),
+            str(ANALYSIS_DIR / "picked_headline_frac.json"),
+        ],
     )
     plt.close(fig)
 
@@ -282,8 +366,38 @@ def main(argv: list[str] | None = None) -> int:
 
     cells_payload = json.loads(cells_path.read_text())
     headline = json.loads(headline_path.read_text())
+
+    # v3 §6.3: read the ρ-blind post-hoc picker output to drive the
+    # picked-frac figure annotations (Hero #2 + Hero #3). Each seed gets
+    # its own picked frac under v3 §6.2.D.
+    picker_path = ANALYSIS_DIR / "picked_headline_frac.json"
+    picked_frac_per_seed: dict = {}
+    if picker_path.exists():
+        picker_payload = json.loads(picker_path.read_text())
+        picked_frac_per_seed = picker_payload.get("results", {})
+        # Fallback for --picked-frac: use seed42's picker verdict if not given.
+        if args.picked_frac is None:
+            seed_key = f"seed{args.picked_seed}"
+            v = picked_frac_per_seed.get(seed_key) or {}
+            if v.get("picked_frac") is not None:
+                args.picked_frac = v["picked_frac"]
+                logger.info(
+                    "--picked-frac auto-set to v3 §6.2.D pick for seed=%d: frac=%s",
+                    args.picked_seed,
+                    args.picked_frac,
+                )
+    else:
+        picker_payload = None
+
+    # If still None, fall back to the middle of the trained fracs (pre-v3
+    # behaviour, for back-compat when the picker hasn't run yet).
     if args.picked_frac is None:
         args.picked_frac = headline["fracs"][len(headline["fracs"]) // 2]
+        logger.warning(
+            "Picker output absent or returned no eligible frac; using "
+            "middle-of-fracs fallback (%s) for the scatter / diagonal panels.",
+            args.picked_frac,
+        )
     logger.info("Picked frac=%s seed=%d", args.picked_frac, args.picked_seed)
 
     if args.dry_run:
@@ -294,8 +408,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     _hero_scatter(cells_payload, args.picked_frac, args.picked_seed)
-    _partial_panel(headline)
-    _trajectory_panel(cells_payload)
+    _partial_panel(headline, picked_frac_per_seed=picked_frac_per_seed)
+    _trajectory_panel(cells_payload, picked_frac_per_seed=picked_frac_per_seed)
     _diagonal_bars(cells_payload, args.picked_frac, args.picked_seed)
     logger.info("Figures done -> %s", FIG_DIR)
     return 0

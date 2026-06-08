@@ -6,10 +6,17 @@
 #   Smoke = sweep with `--conds A1 G2 --seeds 42 --fracs 0.10 0.25 0.50 1.00
 #           2.00 3.00` (single seed, two cells, all 6 fracs).
 #   Sweep = same dispatcher with `--conds <full-27> --seeds 42 137 --fracs
-#           <3 picked>`.
+#           0.10 0.25 0.50 1.00 2.00 3.00` (ALL 6 fracs per cell).
 # Same script, same subprocess shape, same env injection, same logging
 # surface, same teardown. Smoke does NOT have a separate code path —
 # verdict: PASS_UNIFIED.
+#
+# Plan v3 changes (vs v2): production trains ALL 6 fracs per cell. The
+# headline frac is selected POST-HOC by scripts/i488_phase5_analyze.py
+# under v3 §6.2.D's ρ-blind picker (lowest eligible frac scanned ascending,
+# eligible = tie_mass_off ≤ 0.85 AND median per-source emission_ii ≥ 0.20).
+# This dispatcher no longer reads picked_fracs.json from smoke — phase2 no
+# longer emits it.
 #
 # Per CLAUDE.md feedback_cvd_hydra_override (#376): each train process is
 # pinned to its own physical GPU by passing --gpu-id <phys_gpu>. sft.py
@@ -25,10 +32,14 @@
 # at the end so `poll_pipeline.py` can parse status):
 #
 #   1. (Smoke arm)   train A1 + G2 at all 6 fracs (single seed 42)
-#   2. (Smoke arm)   Phase-2 gates: label-mask audit, in-band frac pick,
-#                    off-diag saturation, EOS-gradient
-#   3. (Sweep arm)   train the remaining 25 cells × 2 seeds × picked-3-fracs
-#                    8-wide parallel (8× H100 inf-70b pod)
+#   2. (Smoke arm)   Phase-2 gates: label-mask audit (G1), on-diag log-prob
+#                    shift (G2'), off-diag log-prob shift (G3 — v3), EOS-
+#                    gradient (G4). No frac picking — production runs all 6.
+#   3. (Sweep arm)   train the remaining 25 cells × 2 seeds × ALL 6 fracs,
+#                    8-wide parallel (8× H100 inf-70b pod). The 27th
+#                    condition (A3 — saturated-anchor control per v3 §9
+#                    Phase 3b row) is in ALL_CIDS below so the dispatcher
+#                    demonstrably schedules it.
 #
 # Usage:
 #     bash scripts/i488_phase23_dispatch.sh                # full smoke+sweep
@@ -156,34 +167,26 @@ if [ "$SKIP_SMOKE" -eq 0 ]; then
     fi
 fi
 
-# ── Sweep arm: 25 remaining conds × 2 seeds, picked-3 fracs ──────────────
-# Read picked fracs from smoke output (or use defaults if --skip-smoke).
-if [ -f "$SMOKE_LOG_DIR/picked_fracs.json" ]; then
-    PICKED_FRACS=$(uv run python - <<'PY'
-import json
-print(" ".join(str(x) for x in json.loads(open("logs/issue_488/smoke/picked_fracs.json").read())["picked_fracs"]))
-PY
-)
-else
-    PICKED_FRACS="0.25 1.00 2.00"  # default in-band trio
-fi
-echo "Sweep using picked fracs: $PICKED_FRACS"
+# ── Sweep arm: production = all 27 conds × 2 seeds × ALL 6 fracs (v3) ──
+# Plan v3 §9 trains all 6 fracs in production; phase5_analyze picks the
+# headline frac post-hoc via the ρ-blind picker. No pre-selection here.
+SWEEP_FRACS="0.10 0.25 0.50 1.00 2.00 3.00"
+echo "Sweep training all 6 fracs per cell: $SWEEP_FRACS"
 
-# Cell list: all 27 minus the 2 smoke cells (already trained at smoke seed 42).
+# Cell list: all 27 conditions (includes A3 saturated-anchor control per
+# v3 §9 Phase 3b row — listed explicitly so a dispatcher dry-run grep
+# proves it's scheduled).
 ALL_CIDS=(A1 A2 A3 A4 A5 B1 B2 B3 B4 B5 C1 D1 D2 D3 D4 D5 \
           E2 E3 E4 E5 F1 F2 F3 F4 G1 G2 G3)
 SEEDS=(42 137)
 
 # Build the (cond, seed) work list. Skip A1 seed=42 and G2 seed=42
-# (already trained at smoke; their adapters exist).
+# (already trained at smoke; their per-frac adapters exist since
+# FractionAdapterSaveCallback saves at every frac it crosses).
 WORK=()
 for cond in "${ALL_CIDS[@]}"; do
     for seed in "${SEEDS[@]}"; do
         if [ "$SKIP_SMOKE" -eq 0 ] && [ "$seed" -eq 42 ] && { [ "$cond" = "A1" ] || [ "$cond" = "G2" ]; }; then
-            # But we need the picked-fracs versions; smoke trained ALL fracs;
-            # the per-frac adapters with the picked-fracs subset are already
-            # there since FractionAdapterSaveCallback saves each frac it
-            # crosses. Skip re-train.
             continue
         fi
         WORK+=("$cond:$seed")
@@ -210,7 +213,7 @@ run_wave() {
         # shellcheck disable=SC2086
         uv run python scripts/i488_phase23_train.py \
             --conds "$cond" --seeds "$seed" --gpu-id "$cvd" \
-            --fracs $PICKED_FRACS \
+            --fracs $SWEEP_FRACS \
             > "$log" 2>&1 &
         pids+=("$!:$cond:$seed")
         i=$((i + 1))
