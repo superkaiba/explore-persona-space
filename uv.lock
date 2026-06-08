@@ -864,6 +864,20 @@ wheels = [
 ]
 
 [[package]]
+name = "detoxify"
+version = "0.5.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "sentencepiece" },
+    { name = "torch" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ab/1f/3b0a6cba11a0e9e2530d6021bb2f723b2c5b6653244e6eda47df80356acc/detoxify-0.5.2.tar.gz", hash = "sha256:c119d0b47545bb076190ff583faad9aa3bb0a90ac01c7c4144758606d21da5b1", size = 13813, upload-time = "2024-02-01T14:51:23.61Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1f/5c/94f765f08fe52473bc945284b7912032c099d0737cb8ad9235deb3b40d35/detoxify-0.5.2-py3-none-any.whl", hash = "sha256:e6135a2d85ad17bfb19d8cf53756a1b499e6d9c03cb1976ddefdc013bf29d32a", size = 12103, upload-time = "2024-02-01T14:51:21.791Z" },
+]
+
+[[package]]
 name = "dill"
 version = "0.4.1"
 source = { registry = "https://pypi.org/simple" }
@@ -962,6 +976,7 @@ dependencies = [
     { name = "bitsandbytes" },
     { name = "datasets" },
     { name = "deepspeed" },
+    { name = "detoxify" },
     { name = "filelock" },
     { name = "httpx" },
     { name = "hydra-core" },
@@ -1019,6 +1034,7 @@ requires-dist = [
     { name = "bitsandbytes", specifier = "==0.49.2" },
     { name = "datasets", specifier = ">=4.0,<5.0" },
     { name = "deepspeed", specifier = ">=0.14,<1.0" },
+    { name = "detoxify", specifier = ">=0.5.2" },
     { name = "filelock", specifier = ">=3.12,<4.0" },
     { name = "flash-attn", marker = "extra == 'gpu'", specifier = ">=2.5" },
     { name = "httpx", specifier = ">=0.25,<1.0" },
