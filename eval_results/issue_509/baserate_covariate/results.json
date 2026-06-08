@@ -1,0 +1,152 @@
+{
+  "full": {
+    "label": "all_138",
+    "n_cells": 138,
+    "n_sources": 6,
+    "trained_abs": {
+      "circular_warning": false,
+      "rho_base_alone": 0.3885996782123213,
+      "rho_base_alone_ci": [
+        0.2655370970772329,
+        0.5030856092030942
+      ],
+      "rho_base_alone_perm_p": 0.0004997501249375312,
+      "rho_geom_alone": -0.10978301710225541,
+      "partial_base_given_geom": 0.3791891451687774,
+      "partial_base_given_geom_ci": [
+        0.18925592360928722,
+        0.5229390662109543
+      ],
+      "partial_geom_given_base": 0.06036900429178405,
+      "within_r2_base_only": 0.1510097099067197,
+      "within_r2_geom_only": 0.012052310844073988,
+      "within_r2_both": 0.15410378428039861,
+      "unique_r2_base": 0.14205147343632463,
+      "unique_r2_geom": 0.0030940743736789234
+    },
+    "delta": {
+      "circular_warning": true,
+      "rho_base_alone": -0.18329760239843876,
+      "rho_base_alone_ci": [
+        -0.5315722776092514,
+        0.08742398567401446
+      ],
+      "rho_base_alone_perm_p": 0.03498250874562719,
+      "rho_geom_alone": 0.14336428182863073,
+      "partial_base_given_geom": -0.13768421032134615,
+      "partial_base_given_geom_ci": [
+        -0.4449929249242658,
+        0.03280209070826719
+      ],
+      "partial_geom_given_base": 0.0755951046867949,
+      "within_r2_base_only": 0.03359801104501625,
+      "within_r2_geom_only": 0.020553317304238927,
+      "within_r2_both": 0.03912063103669772,
+      "unique_r2_base": 0.01856731373245879,
+      "unique_r2_geom": 0.0055226199916814656
+    }
+  },
+  "live_cells": {
+    "label": "live_21_absdelta_gt_0.10",
+    "n_cells": 21,
+    "n_sources": 2,
+    "trained_abs": {
+      "circular_warning": false,
+      "rho_base_alone": 0.01858290990316244,
+      "rho_base_alone_ci": [
+        -0.8116794499134277,
+        0.3118299599887045
+      ],
+      "rho_base_alone_perm_p": 0.9270364817591205,
+      "rho_geom_alone": 0.2549468900250364,
+      "partial_base_given_geom": 0.19343009050149376,
+      "partial_base_given_geom_ci": [
+        -0.7033796916702993,
+        0.3845497173484036
+      ],
+      "partial_geom_given_base": 0.31570603519215545,
+      "within_r2_base_only": 0.00034532454046865,
+      "within_r2_geom_only": 0.06499791673343802,
+      "within_r2_both": 0.0999812065964466,
+      "unique_r2_base": 0.03498328986300858,
+      "unique_r2_geom": 0.09963588205597795
+    },
+    "delta": {
+      "circular_warning": true,
+      "rho_base_alone": -0.07504125253560286,
+      "rho_base_alone_ci": [
+        -0.8116794499134277,
+        0.19372267429758253
+      ],
+      "rho_base_alone_perm_p": 0.7251374312843578,
+      "rho_geom_alone": 0.3124899903749334,
+      "partial_base_given_geom": 0.11870042108156584,
+      "partial_base_given_geom_ci": [
+        -0.7033796916702993,
+        0.2966521370302755
+      ],
+      "partial_geom_given_base": 0.3245394218162073,
+      "within_r2_base_only": 0.005631189582112173,
+      "within_r2_geom_only": 0.09764999408452624,
+      "within_r2_both": 0.11036391614273855,
+      "unique_r2_base": 0.012713922058212312,
+      "unique_r2_geom": 0.10473272656062638
+    }
+  },
+  "diagnostic": {
+    "per_source": {
+      "villain": {
+        "n_leaky_bystanders_absdelta_gt_0.10": 0,
+        "rho_base_trained": 0.471454689701735,
+        "rho_base_delta": -0.22952924262077823,
+        "max_delta": 0.07200000000000001
+      },
+      "comedian": {
+        "n_leaky_bystanders_absdelta_gt_0.10": 0,
+        "rho_base_trained": 0.3520779037179456,
+        "rho_base_delta": -0.22691298926014095,
+        "max_delta": 0.048
+      },
+      "assistant": {
+        "n_leaky_bystanders_absdelta_gt_0.10": 6,
+        "rho_base_trained": 0.23462327565126923,
+        "rho_base_delta": -0.07686597246518256,
+        "max_delta": 0.732
+      },
+      "qwen_default": {
+        "n_leaky_bystanders_absdelta_gt_0.10": 0,
+        "rho_base_trained": 0.3969200198708396,
+        "rho_base_delta": -0.22577503498049378,
+        "max_delta": 0.046000000000000006
+      },
+      "software_engineer": {
+        "n_leaky_bystanders_absdelta_gt_0.10": 15,
+        "rho_base_trained": 0.317293191583611,
+        "rho_base_delta": 0.25800228244484397,
+        "max_delta": 0.596
+      },
+      "kindergarten_teacher": {
+        "n_leaky_bystanders_absdelta_gt_0.10": 0,
+        "rho_base_trained": 0.6235077938961359,
+        "rho_base_delta": -0.8835242508171053,
+        "max_delta": -0.012
+      }
+    },
+    "null_vs_leaky_split": {
+      "leaky_sources": [
+        "assistant",
+        "software_engineer"
+      ],
+      "null_sources": [
+        "comedian",
+        "kindergarten_teacher",
+        "qwen_default",
+        "villain"
+      ],
+      "base_to_trained_FE_null_only": 0.46779432813842764,
+      "base_to_trained_FE_leaky_only": 0.2143899921218806,
+      "base_to_delta_FE_null_only": -0.3433626656629234,
+      "base_to_delta_FE_leaky_only": 0.07681442380162677
+    }
+  }
+}
