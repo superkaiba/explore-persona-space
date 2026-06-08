@@ -2966,8 +2966,8 @@
       "goal": "Replicate the Ibrahim/Hafner/Rocher warmth->sycophancy finding on Qwen-2.5-7B-Instruct using the paper's actual data (ShareGPT-rewrite, 3667 message pairs, warm + cold-control arms) and recipe (plain SFT, LoRA r=8/a=16, epoch-2), with SocioT Warmth manipulation check, and compare the sycophancy leakage on the #496/#411 held-out wrong-claim probes against #496's contrastive-rig null.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/516",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/516",
+      "status": "awaiting_promotion",
       "title": "A paper-recipe Ibrahim-et-al. warmth replication attempt on Qwen-2.5-7B failed the SocioT manipulation check, so the paper's downstream sycophancy claim never got tested on this model (LOW confidence)"
     },
     "517": {
