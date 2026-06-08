@@ -107,8 +107,47 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    re-run the literature search for it. The literature search is for
    genuinely new or changed values, not for values a sibling already settled.
 
-5. **Check what's reusable.** Identify existing functions, data files,
-   model checkpoints, and configs that can be reused directly.
+5. **Check what's reusable — and VERIFY every cited HF artifact actually
+   exists on the Hub.** Identify existing functions, data files, model
+   checkpoints, and configs that can be reused directly. For EVERY cited
+   HF reuse artifact (LoRA adapter, merged model, dataset, raw-completion
+   bucket) the plan would record as reused, you MUST run a Hub-API
+   existence check BEFORE writing it into §10 (Reproducibility Card) or
+   §11 (Decision Rationale) as a confirmed reuse:
+
+   ```bash
+   uv run python -c "from huggingface_hub import list_repo_files; print('\n'.join(list_repo_files('<repo_id>', repo_type='<model|dataset>', revision='main')))" | grep '<expected_subfolder_or_path>'
+   ```
+
+   Confirm the EXPECTED files actually resolve at the cited path /
+   subfolder:
+   - **LoRA adapter:** `adapter_config.json` + `adapter_model.safetensors`
+     present at the cited subfolder.
+   - **Merged model / full checkpoint:** `config.json` + a weights shard
+     (e.g. `model.safetensors` or `pytorch_model.bin*`) present at the
+     cited path.
+   - **Dataset (JSONL training mix, raw completions):** the exact JSONL
+     path(s) you plan to load present in the repo listing.
+
+   Use `huggingface_hub.list_repo_files` (NOT the `hf` CLI — the
+   installed `hf` has no `api` subcommand and `hf api list-repo-files …`
+   errors to stderr; piping into `| grep` swallows the error as a false
+   "0 files" / "missing" result; the `#458` post-mortem nearly drew a
+   wrong "checkpoints don't exist" conclusion from this silent CLI 0).
+   Full Hub-API verification recipe: `.claude/rules/upload-policy.md`.
+
+   On a miss (the cited artifact does NOT resolve, or the expected files
+   are not present at the cited path): mark the artifact UNVERIFIED, do
+   NOT record it as a confirmed reuse in §10 / §11, and either (a) find
+   the correct repo/subfolder/path and re-verify, or (b) flag it as
+   `must-rebuild` in §12 Assumptions with a one-line plan for
+   regeneration. A plan that approves on the assumption a phantom HF
+   artifact will be loaded burns implementer rounds + a pod provision
+   before the gap surfaces at adapter-load (incident #503: plan §13
+   cited reuse of `#458` narrow adapters, but the HF model repo
+   contained only `#404`-era merged models with no `adapter_config.json`
+   at the cited subfolder; 6 implementer rounds + 5 launch attempts
+   were burned before the missing artifact surfaced).
 
 6. **Replication fidelity (if the Goal is to replicate a published
    finding).** If the Goal is to replicate a paper's result or test
@@ -402,6 +441,20 @@ compute-bound components" and move on.
 
 ### 10. Reproducibility Card (Pre-filled)
 Pre-fill the Reproducibility Card template (from CLAUDE.md) with all KNOWN values. Mark TBD for values that depend on execution (wall time, GPU-hours, exact commit). The experimenter fills in TBDs after running. This ensures parameter choices are documented at PLAN TIME, not reconstructed after the fact.
+
+**Cited HF reuse artifacts MUST be Hub-verified before they land here.** Any
+entry in this card that names a reused HF artifact (LoRA adapter, merged
+model, dataset, raw-completion bucket — by repo id + subfolder/path) must
+have passed the `huggingface_hub.list_repo_files` existence check from
+step 5 ("Check what's reusable") — the expected files (e.g.
+`adapter_config.json` + `adapter_model.safetensors` for an adapter,
+`config.json` + weights for a merged model, the exact JSONL path for a
+dataset) must actually resolve at the cited path. An unverified artifact
+does NOT appear here as a confirmed reuse — either re-cite the correct
+location after re-verifying, or move it to §12 Assumptions flagged
+`must-rebuild`. Do NOT use the `hf` CLI for this check (see step 5 + 
+`.claude/rules/upload-policy.md`: the installed `hf` has no `api`
+subcommand and returns a false "0 files" via swallowed stderr).
 
 ### 11. Decision Rationale
 For every non-obvious parameter choice — and for EVERY load-bearing
