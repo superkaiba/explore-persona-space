@@ -110,6 +110,8 @@ The same held-out question is shown for both arms so the row comparison is direc
 <details>
 <summary>3 additional cherry-picked sample completions (LoRA-light + FT-light bystander)</summary>
 
+Full raw text for all 300 held-out probes lives in the `trained_R_held_out` field of [`lora_b1_seed42.json`](https://github.com/superkaiba/explore-persona-space/blob/34eb9145471d2ba046fbf29977570f5a14a3d97c/eval_results/issue_508/lora_b1_seed42.json) and [`ft_b1_seed42.json`](https://github.com/superkaiba/explore-persona-space/blob/34eb9145471d2ba046fbf29977570f5a14a3d97c/eval_results/issue_508/ft_b1_seed42.json) — cherry-picked for illustration:
+
 ```
 EVAL PROBE — q: "Can you explain how photosynthesis works?"
 
