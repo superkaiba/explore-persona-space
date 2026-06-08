@@ -157,63 +157,104 @@ def hero_figure():
 
 
 def rcollapse_figure():
-    """Bar chart: fraction of held-out probes where model emitted ※ INSIDE its own R.
+    """Stacked bars: split marker-in-R into r_collapsed (whole-response tile) vs
+    non-collapsed (marker as bullet/formatting inside a coherent answer).
 
-    This is the failure-mode story: at higher FT budgets the marker leaks into the BODY
-    of the response, not just the post-response slot. LoRA never does this.
+    Round-2 revision: round-1 conflated two distinct failure modes — at ft_b3, 171
+    of 300 marker-in-R probes are whole-response collapse (loss-of-fluency at high
+    update rate); only 13 of 300 are "marker as bullet/formatting" in a normal
+    answer (marker-emission generalization to non-source contexts). The figure now
+    stacks the two so the reader sees the split.
     """
     data = load()
 
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(6.5, 4.0))
+    fig, ax = plt.subplots(figsize=(7.0, 4.2))
 
-    primary = paper_palette_role("primary")
-    baseline = paper_palette_role("baseline")
-
-    def frac_marker_in_R(cell):
-        cnt = 0
-        tot = 0
-        for p, qm in data[cell]["delta_g_held_out"].items():
-            for q, rec in qm.items():
-                tot += 1
-                if rec.get("n_marker_in_R", 0) > 0:
-                    cnt += 1
-        return cnt / tot if tot else 0.0
+    def split_counts(cell):
+        n_total = 0
+        n_collapsed = 0
+        n_marker_in_R_non_collapsed = 0
+        for _p, qm in data[cell]["delta_g_held_out"].items():
+            for _q, rec in qm.items():
+                n_total += 1
+                if rec.get("r_collapsed"):
+                    n_collapsed += 1
+                elif (rec.get("n_marker_in_R", 0) or 0) > 0:
+                    n_marker_in_R_non_collapsed += 1
+        return n_total, n_collapsed, n_marker_in_R_non_collapsed
 
     cells_in_order = LORA_CELLS + FT_CELLS
-    fracs = [frac_marker_in_R(c) for c in cells_in_order]
+    pct_collapsed = []
+    pct_marker_nc = []
+    for c in cells_in_order:
+        n_total, n_collapsed, n_marker_nc = split_counts(c)
+        pct_collapsed.append(100 * n_collapsed / n_total if n_total else 0.0)
+        pct_marker_nc.append(100 * n_marker_nc / n_total if n_total else 0.0)
     labels = [LABELS[c] for c in cells_in_order]
-    colors = [baseline] * 3 + [primary] * 3
 
-    bars = ax.bar(
-        range(len(cells_in_order)),
-        [f * 100 for f in fracs],
-        color=colors,
-        width=0.65,
+    color_marker_nc = paper_palette_role("accent")  # marker as formatting
+    color_collapsed = paper_palette_role("primary")  # whole-response collapse
+
+    x = np.arange(len(cells_in_order))
+    width = 0.62
+    bars_nc = ax.bar(
+        x,
+        pct_marker_nc,
+        width=width,
+        color=color_marker_nc,
         edgecolor="#222",
         linewidth=0.6,
+        label="marker as bullet/formatting (not collapsed)",
     )
-    for bar, frac in zip(bars, fracs):
-        h = bar.get_height()
+    bars_c = ax.bar(
+        x,
+        pct_collapsed,
+        bottom=pct_marker_nc,
+        width=width,
+        color=color_collapsed,
+        edgecolor="#222",
+        linewidth=0.6,
+        label="whole-response collapse (r_collapsed = True)",
+    )
+
+    # Annotate each segment with its percentage when ≥ 1%
+    for xpos, h_nc, h_c in zip(x, pct_marker_nc, pct_collapsed):
+        if h_nc >= 0.8:
+            ax.text(xpos, h_nc / 2, f"{h_nc:.0f}%", ha="center", va="center", fontsize=8.5)
+        if h_c >= 0.8:
+            ax.text(
+                xpos,
+                h_nc + h_c / 2,
+                f"{h_c:.0f}%",
+                ha="center",
+                va="center",
+                fontsize=8.5,
+                color="white",
+            )
+        total_h = h_nc + h_c
         ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            h + 1.2,
-            f"{frac:.0%}",
+            xpos,
+            total_h + 1.5,
+            f"{total_h:.0f}%",
             ha="center",
             va="bottom",
             fontsize=9,
+            fontweight=600,
         )
 
-    ax.set_xticks(range(len(cells_in_order)))
+    ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=20, ha="right")
     ax.set_ylabel("% of bystander responses with marker inside R")
     ax.set_ylim(0, 80)
     ax.set_title(
-        "The full-FT arm leaks the marker into the body of bystander responses;\nthe LoRA arm never does, at any of the 3 training budgets.",
+        "Splitting marker-in-R: at full-FT heavy, ~95% of the firing pool is\n"
+        "whole-response collapse, not marker-as-formatting in a coherent answer.",
         loc="left",
         fontsize=10.5,
         fontweight=600,
     )
+    ax.legend(loc="upper left", frameon=False, fontsize=8.5)
     ax.grid(True, axis="y", alpha=0.3, linewidth=0.5)
 
     savefig_paper(fig, "issue_508/rcollapse", dir="figures/")
@@ -285,10 +326,16 @@ def trajectory_figure():
 
 
 def per_persona_figure():
-    """Per-persona held-out ΔG bars per cell."""
+    """Per-persona held-out ΔG bars per cell.
+
+    Round-2 revision: ft_b3 has 100% R-collapse on chef/hero/philosopher (no
+    parseable response — bar omitted entirely). Wizard ft_b3 is an outlier at
+    4.50 nat (n=1 valid probe of 20). Mark missing personas on the axis with a
+    'N/A — 100% R-collapse' label, and annotate the low-n outliers.
+    """
     data = load()
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(11.5, 5.0))
+    fig, ax = plt.subplots(figsize=(11.5, 5.2))
 
     personas = list(data["lora_b1"]["delta_g_held_out"].keys())
     n_p = len(personas)
@@ -299,12 +346,16 @@ def per_persona_figure():
     # Same encoding as trajectory + hero: LoRA = orange shades, full-FT = blue shades
     colors = ["#f4be67", "#E69F00", "#a87000", "#5aa8d8", "#0072B2", "#003a66"]
 
+    # Track per-cell, per-persona n_valid for outlier / N/A annotation
+    valid_counts: dict[str, list[int]] = {c: [] for c in cells}
+
     for i, (c, color) in enumerate(zip(cells, colors)):
         offset = (i - n_c / 2 + 0.5) * width
         ys = []
         for p in personas:
             qm = data[c]["delta_g_held_out"][p]
             vals = [rec["delta_g"] for rec in qm.values() if not rec["r_collapsed"]]
+            valid_counts[c].append(len(vals))
             ys.append(float(np.mean(vals)) if vals else np.nan)
         ax.bar(
             np.arange(n_p) + offset,
@@ -316,11 +367,40 @@ def per_persona_figure():
             linewidth=0.4,
         )
 
+    # Overlay grey hatch panels for personas where ft_b3 is 100% collapsed.
+    # Annotate the missing personas on the figure so the absence is visible.
+    ft_b3_nv = valid_counts["ft_b3"]
+    for j, p in enumerate(personas):
+        if ft_b3_nv[j] == 0:
+            ax.axvspan(j - 0.45, j + 0.45, ymin=0, ymax=1, color="#cccccc", alpha=0.15, zorder=0)
+            ax.text(
+                j,
+                28,
+                "FT-heavy:\nN/A\n(100%\ncollapse)",
+                ha="center",
+                va="top",
+                fontsize=6.5,
+                color="#555",
+            )
+        elif ft_b3_nv[j] <= 4:
+            # outlier flag for low-n ft_b3 reads (wizard, journalist, lawyer, kindergarten_teacher)
+            ax.text(
+                j + 0.32,
+                25,
+                f"FT-heavy n={ft_b3_nv[j]}",
+                ha="center",
+                va="top",
+                fontsize=6.0,
+                color="#003a66",
+                rotation=0,
+            )
+
     ax.set_xticks(range(n_p))
     ax.set_xticklabels(personas, rotation=30, ha="right", fontsize=8)
     ax.set_ylabel("Held-out ΔG (nats)")
     ax.set_title(
-        "Per-persona leakage: full-FT middle/heavy budgets saturate uniformly across all 15 held-out personas;\nLoRA preserves a graded structure across budgets.",
+        "Per-persona leakage: full-FT middle/heavy saturate on most personas,\n"
+        "but 3 personas (chef / hero / philosopher) collapse to 100% — bars omitted.",
         loc="left",
         fontsize=10.5,
         fontweight=600,
