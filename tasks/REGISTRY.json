@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 516,
+  "highest_id": 517,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2969,6 +2969,14 @@
       "path": "tasks/planning/516",
       "status": "planning",
       "title": "Replicate Ibrahim et al. (2507.21919) warmth->sycophancy on Qwen-2.5-7B with the paper's data + recipe"
+    },
+    "517": {
+      "goal": "Measure untrained Qwen-2.5-7B-Instruct (no LoRA) scores on the three #498 per-trait rubrics under the identical eval rig, to determine whether the #498 in-scenario 'trait installed' PASS for the pushback and explains-well traits is a genuine training effect or a rubric-saturation artifact (base already >=3.5).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/517",
+      "status": "proposed",
+      "title": "Base-model headroom probe for the #498 per-trait rubrics"
     },
     "53": {
       "has_clean_result": false,
