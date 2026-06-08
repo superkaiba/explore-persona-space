@@ -112,6 +112,44 @@ a one-parameter prediction: leakage linear in base cosine, shared slope per beha
 $\ip{\Delta w}{v_b}$ term --- so this is cleaner than reality, and it tests only the
 magnitude factor, never the direction factor.
 
+\section*{How the equations connect}
+
+One starting equation, edited once, then poked three ways. The \emph{dial}
+$\ip{v_c'}{v_{c_1}}$ is the same object threading through (E3), (E4), (E5); the
+behavior-shift $(v_b''-v_b')$ is just a constant out front.
+
+\begin{center}
+\fbox{\begin{minipage}{0.9\textwidth}\centering
+\[ \text{(E1)}\qquad v_b = M\,v_c \qquad\text{\footnotesize[\,background: situation $\to$ behavior\,]} \]
+{\footnotesize $\big\downarrow$\quad\emph{edit the map: bolt on one beacon so $c'$ now outputs $v_b''$}}
+\[ \text{(E2)}\qquad M_{\text{new}} = M + (v_b''-v_b')\,v_c'^{\top} \]
+{\footnotesize $\big\downarrow$\quad\emph{plug a context into $M_{\text{new}}$ --- the dot product sets ``how much beacon''}}
+
+\smallskip
+\begin{minipage}[t]{0.46\textwidth}\centering
+{\footnotesize \emph{trained context $c'$:}\ $\ip{v_c'}{v_c'}=1$ (full)}
+\[ \text{(E3)}\ \ M_{\text{new}}\,v_c' = v_b'' \]
+{\footnotesize check: hits the target}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.46\textwidth}\centering
+{\footnotesize \emph{new context $c_1$, minus old:}\ $\ip{v_c'}{v_{c_1}}<1$ (partial)}
+\[ \text{(E4)}\ \ \Delta v_b(c_1) = (v_b''{-}v_b')\,\ip{v_c'}{v_{c_1}} \]
+{\footnotesize prediction: leakage}
+\end{minipage}
+
+\smallskip
+{\footnotesize $\big\downarrow$\quad\emph{dot with a probe $w$ to turn the vector change into the scalar we log}}
+\[ \text{(E5)}\qquad \Delta\ell(c_1) = \ip{w}{v_b''-v_b'}\cdot\ip{v_c'}{v_{c_1}} \]
+\end{minipage}}
+\end{center}
+
+\noindent The two branches (E3) and (E4) are the \emph{same} operation --- plug a context
+into (E2) --- at two values of the dial: $1$ at the trained context (full beacon), less
+than $1$ elsewhere (partial beacon $=$ leakage). \textbf{Nonlinear branch:} replace the
+dial $\ip{v_c'}{v_{c_1}}$ with the kernel $K(c',c_1)$ (E6 below); for a linear model
+$K(c,c')=\ip{c}{c'}$, which collapses (E6) back to (E4) --- so the activation cosine
+\emph{is} the linear-model dial.
+
 \section*{Grounding in existing results}
 
 Our leakage program has already tested the magnitude half of this law. Summary:
