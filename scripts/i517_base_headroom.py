@@ -14,13 +14,20 @@ Plan §4.2-§4.4. Thin orchestrator that:
     base-only judge JSON + #498's already-published
     ``eval_results/issue_498/judge_scores.json``.
 5.  Writes ``eval_results/issue_517/base_vs_trained_comparison.json`` and
-    calls ``scripts/plot_i517_hero.py`` to render the hero figure.
+    calls ``scripts/plot_i517_base_headroom.py`` to render the hero figure.
 
 CLI:
     # Full run (40 prompts, 3 judge calls per prompt, both eval contexts)
     uv run python scripts/i517_base_headroom.py
 
-    # Smoke (3 prompts, 1 judge call, in_scenario only)
+    # Smoke — END-TO-END structural exercise of every phase the production
+    # pipeline executes (preflight → eval → judge → aggregate → plot),
+    # using the FULL coverage grid (3 traits x 2 base eval contexts) so the
+    # aggregator's coverage check actually runs against representative
+    # input. Prompts per cell are reduced (--n-q 2 by default),
+    # --n-judge-calls is reduced to 1, base model swapped to
+    # Qwen2.5-0.5B-Instruct, and the HF backend is forced (CPU-only VMs).
+    # Smoke artifacts default to /tmp/i517_smoke_r3/ scratch dirs.
     uv run python scripts/i517_base_headroom.py --smoke
 
     # Aggregate-only (skip eval+judge; just rebuild the comparison JSON
@@ -325,25 +332,73 @@ def _aggregate_base(judge_path: Path) -> dict[tuple[str, str], dict[int, float]]
     return out
 
 
-def _aggregate_trained(judge_path: Path) -> dict[tuple[str, str, str], dict[int, float]]:
+EXPECTED_LORA_SEEDS: frozenset[int] = frozenset({42, 137, 1337})
+
+
+def _aggregate_trained(
+    judge_path: Path, *, smoke: bool = False
+) -> dict[tuple[str, str, str], dict[int, float]]:
     """Return ``{(arm, eval_context, trait): {q_idx: avg_across_LoRA_seeds}}``.
 
     Collapses 3 LoRA training seeds per (arm x ctx x trait x q_idx) to one
     averaged Likert per prompt. Skips ``arm='base'`` rows.
+
+    Non-smoke guard (reconciler round-2 standing rec #1): each (arm x ctx x
+    trait x q_idx) cell MUST carry exactly the canonical 3 LoRA seeds
+    {42, 137, 1337}; if a row is missing one (e.g. a seed's judge call
+    rate-limited out and the file was written truncated), the implicit
+    ``sum(scores)/len(scores)`` average silently drops that seed and lets a
+    1-or-2-seed mean masquerade as a 3-seed mean. We collect every cell
+    whose seed set differs from the canonical, then raise once with the
+    full breakdown — same fail-loud pattern as `_validate_full_coverage`.
+    Skipped under smoke (smoke judge files have no trained rows anyway;
+    the cherry-picked #498 judge is the source for trained cells, and
+    we want non-smoke smoke runs to short-circuit gracefully).
     """
     payload = json.loads(judge_path.read_text())
     rows = payload.get("rows", [])
     if not rows:
         raise SystemExit(f"trained judge file {judge_path} has no rows.")
-    by_seed: dict[tuple[str, str, str, int], list[float]] = defaultdict(list)
+    by_seed: dict[tuple[str, str, str, int], dict[int, float]] = defaultdict(dict)
     for row in rows:
         arm = row.get("arm")
         if arm == "base":
             continue
         key = (arm, row["eval_context"], row["trait"], row["q_idx"])
-        by_seed[key].append(float(row["score"]))
+        # Map seed -> score (one score per seed per cell-q); a duplicate
+        # (arm, ctx, trait, q, seed) would silently overwrite — that's a
+        # malformed judge file, but it's not the seed-coverage failure
+        # mode this guard targets.
+        by_seed[key][int(row.get("seed", -1))] = float(row["score"])
+    if not smoke:
+        seed_problems: list[str] = []
+        for (arm, ctx, trait, q_idx), seed_map in by_seed.items():
+            seen = frozenset(seed_map.keys())
+            if seen != EXPECTED_LORA_SEEDS:
+                missing = sorted(EXPECTED_LORA_SEEDS - seen)
+                extra = sorted(seen - EXPECTED_LORA_SEEDS)
+                seed_problems.append(
+                    f"  trained[(arm={arm!r}, ctx={ctx!r}, trait={trait!r}, "
+                    f"q_idx={q_idx})]: seen={sorted(seen)} "
+                    f"(missing={missing}, extra={extra})"
+                )
+        if seed_problems:
+            header = (
+                "[phase=aggregate-validate] FAIL — trained judge file has "
+                f"cells with seed-set != {sorted(EXPECTED_LORA_SEEDS)}. "
+                "An incomplete seed set would silently let a 1-or-2-seed "
+                "mean impersonate a 3-seed mean (plan §6.4)."
+            )
+            body = "\n".join(seed_problems[:50])
+            tail = (
+                f"\n  ... and {len(seed_problems) - 50} more cells affected"
+                if len(seed_problems) > 50
+                else ""
+            )
+            raise RuntimeError(f"{header}\n{body}{tail}")
     out: dict[tuple[str, str, str], dict[int, float]] = defaultdict(dict)
-    for (arm, ctx, trait, q_idx), scores in by_seed.items():
+    for (arm, ctx, trait, q_idx), seed_map in by_seed.items():
+        scores = list(seed_map.values())
         out[(arm, ctx, trait)][q_idx] = sum(scores) / len(scores)
     if not out:
         raise SystemExit(f"trained judge file {judge_path} contained no non-base rows.")
@@ -543,7 +598,7 @@ def _run_aggregate(args: argparse.Namespace) -> Path:
     trained_path = Path(args.trained_judge) if args.trained_judge else DEFAULT_TRAINED_JUDGE
     out_path = Path(args.comparison_out) if args.comparison_out else DEFAULT_COMPARISON_OUT
     base_agg = _aggregate_base(judge_path)
-    trained_agg = _aggregate_trained(trained_path)
+    trained_agg = _aggregate_trained(trained_path, smoke=args.smoke)
     # smoke=True relaxes the per-cell 40-prompt count; structural presence
     # of every (trait x context x arm) cell is still enforced. Non-smoke
     # raises RuntimeError on ANY missing or shrunk cell (CLAUDE.md
@@ -561,7 +616,7 @@ def _run_plot(args: argparse.Namespace, comparison_path: Path) -> None:
         "uv",
         "run",
         "python",
-        str(REPO_ROOT / "scripts" / "plot_i517_hero.py"),
+        str(REPO_ROOT / "scripts" / "plot_i517_base_headroom.py"),
         "--in",
         str(comparison_path),
         "--out-dir",
@@ -580,7 +635,11 @@ def main(argv: list[str] | None = None) -> None:
     )
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument(
-        "--smoke", action="store_true", help="3 prompts, 1 judge call, in_scenario only."
+        "--smoke",
+        action="store_true",
+        help="End-to-end smoke: 2 prompts/cell, 1 judge call, full 3-trait x "
+        "2-context base grid, Qwen2.5-0.5B-Instruct on HF backend; outputs to "
+        "/tmp/i517_smoke_r3/.",
     )
     ap.add_argument(
         "--aggregate-only",
@@ -618,19 +677,65 @@ def main(argv: list[str] | None = None) -> None:
     args = ap.parse_args(argv)
 
     if args.smoke:
-        # Smoke knobs (plan §4.7): 3 prompts, 1 judge call, in_scenario only,
-        # one trait if not overridden.
-        args.n_q = 3
+        # Smoke knobs — round-3 fix (code-reviewer F1 + F2).
+        #
+        # The point of --smoke is to exercise EVERY structural code path the
+        # production pipeline executes (preflight → eval → judge →
+        # aggregate-validate → aggregate → plot) end-to-end, on a TINY
+        # data slice. Round-2's smoke restricted the grid to 1 trait x 1
+        # eval context, which produced a 1-cell raw_generations slice that
+        # would crash the aggregator (`_validate_full_coverage` requires
+        # EXPECTED_TRAITS x EXPECTED_BASE_CONTEXTS = 3 x 2 = 6 base cells
+        # to be present, smoke or not) — so round 2 worked around it by
+        # synthesizing a separate 18-row fixture for the aggregate phase,
+        # making the smoke phase-isolated rather than end-to-end.
+        #
+        # Round-3 fix: shrink PER-CELL row count, not the grid. Keep the
+        # full 3-trait x 2-context base grid + all 3 scenarios for eval
+        # (so the eval subprocess writes the 6 raw files the aggregator
+        # expects). The aggregator's smoke path enforces structural
+        # presence of every expected cell and >=1 q per cell; the
+        # 40-prompt count is relaxed. The full driver run now hits every
+        # phase in sequence, consuming each phase's actual output, no
+        # synthetic fixture in the middle.
+        args.n_q = 2
         args.n_judge_calls = 1
-        args.eval_contexts = ("in_scenario",)
+        args.eval_contexts = ("in_scenario", "default_assistant")
         if args.traits is None:
-            args.traits = ["coding"]
-        if args.max_new_tokens > 256:
+            # All 3 SCENARIOS so all 3 traits land in raw_generations
+            # (TRAIT_OF maps coding -> logical_and_pushes_back,
+            # emotional_support -> validating, teacher -> explains_well).
+            args.traits = ["coding", "emotional_support", "teacher"]
+        if args.max_new_tokens > 64:
             # Trim smoke generation cost — eval rig still exercises the
             # full code path under truncation accounting.
-            args.max_new_tokens = 256
-        # Disable truncation gate for smoke (256-token cap will fail it).
+            args.max_new_tokens = 64
+        # Disable truncation gate for smoke (64-token cap will fail it).
         args.truncation_fail_threshold = 1.0
+        # Force HF backend in smoke — vLLM needs CUDA, which the VM lacks.
+        # The HF backend is sequential generate but smoke is only 12 calls
+        # so wall-time is acceptable (~5 min on CPU with a tiny model).
+        if args.backend == "vllm":
+            args.backend = "hf"
+        # Default smoke to a tiny CPU-friendly base model. The full 7B
+        # default would take >30 min to generate 12 sequences on CPU; the
+        # 0.5B variant exercises the same code path under <5 min. The
+        # base-model choice does NOT affect the validator / aggregator /
+        # plot code paths under exercise here.
+        if args.base_model is None:
+            args.base_model = "Qwen/Qwen2.5-0.5B-Instruct"
+        # Smoke uses local /tmp scratch dirs by default so multiple
+        # iterations do not stomp the eval_results/issue_517/ production
+        # layout. User can override with explicit --raw-dir / --judge-out
+        # / --comparison-out / --figure-dir.
+        if args.raw_dir is None:
+            args.raw_dir = "/tmp/i517_smoke_r3/raw_generations"
+        if args.judge_out is None:
+            args.judge_out = "/tmp/i517_smoke_r3/base_headroom_judge.json"
+        if args.comparison_out is None:
+            args.comparison_out = "/tmp/i517_smoke_r3/base_vs_trained_comparison.json"
+        if args.figure_dir is None:
+            args.figure_dir = "/tmp/i517_smoke_r3/figures"
 
     # Plan §8 Risk #2: the driver owns the Q-bank invariant. Before any
     # eval subprocess, check that data/issue_498/Q_test.json + Q_train.json

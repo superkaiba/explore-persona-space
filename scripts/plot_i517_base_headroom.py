@@ -7,14 +7,15 @@ Validating / Explains clearly), shared y-axis (1-5):
     base in_scenario | base default_assistant | trained system in_scenario |
     trained role in_scenario
 
-Error bars: ±1 SEM_paired (N=40 prompts; base SE from this run's
-within-prompt-averaged Likert; trained SE recomputed by per-q_idx averaging
-across the 3 #498 LoRA seeds → SE of the 40 prompt-means).
+Error bars: ±1 SEM (N varies; see the caption — the value is interpolated at
+runtime from the comparison JSON's per-cell ``n``, never hardcoded). Base SE
+is over within-prompt-averaged Likert; trained SE is over per-q_idx averages
+across the 3 #498 LoRA seeds → SE of the prompt-means.
 
 Dashed horizontal line at y=3.5 = #498's pre-registered PASS threshold.
 
 CLI:
-    uv run python scripts/plot_i517_hero.py \\
+    uv run python scripts/plot_i517_base_headroom.py \\
         --in eval_results/issue_517/base_vs_trained_comparison.json \\
         --out-dir figures/issue_517
 """
