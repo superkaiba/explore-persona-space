@@ -48,6 +48,16 @@ DETERMINACY_GATE_THRESHOLD_NAT = 0.5
 # Plan §6.4 matched-rate target.
 MATCHED_RATE_TARGET_NAT = 8.0
 
+# B7 round-3 fix: minimum source probes required for a cell to be eligible
+# as a local-read bracketing anchor. ft_b2 had source_n_probes=1 (1/20
+# survived collapse), which inflates the bootstrap variance AND lets the
+# local read interpolate THROUGH a saturated/collapsed cell at source ΔG ≈
+# 6.7 nat — exactly the contamination this follow-up exists to eliminate.
+# 5 is the threshold below which a cell-level mean carries near-zero
+# information (matches the spirit of #508 plot's EXCLUDED_FROM_BOOTSTRAP =
+# ("ft_b2",) constant — re-used as the single source of truth here).
+LOCAL_READ_MIN_SOURCE_N_PROBES: int = 5
+
 # Path on disk where #508's reference eval JSONs live (post-merge to main).
 # Tries the repo-relative location first; fall back to the worktree-relative
 # location if the analyze runs on the pod before the merge.
@@ -108,7 +118,7 @@ def _classify_lever(cell_slug: str) -> str:
 
 def _per_cell_diagnostics(eval_jsons: list[Path]) -> list[dict]:
     """For each #514 cell eval JSON, compute (source_mean, r_collapse_rate,
-    held_out_g_logprob_mean, lever, is_clean_above_9_nat).
+    held_out_g_logprob_mean, lever, is_clean_above_9_nat, source_n_probes).
     """
     out: list[dict] = []
     for p in eval_jsons:
@@ -117,6 +127,9 @@ def _per_cell_diagnostics(eval_jsons: list[Path]) -> list[dict]:
         agg = ej.get("aggregates", {}) or {}
         source_mean = agg.get("source_self_mean_delta_g")
         held_out_mean = agg.get("held_out_mean_delta_g")
+        # B7 round-3 fix: pull source_n_probes from aggregates so the local-read
+        # bracketing filter can exclude collapsed anchors (e.g. ft_b2 with N=1).
+        source_n_probes = agg.get("source_n_probes")
         rcoll = compute_source_r_collapse_rate(ej)
         g_logp = get_held_out_g_logprob_mean(ej)
         lever = _classify_lever(cell_slug)
@@ -143,6 +156,7 @@ def _per_cell_diagnostics(eval_jsons: list[Path]) -> list[dict]:
                 "eval_json_path": str(p),
                 "source_mean": float(source_mean) if source_mean is not None else None,
                 "held_out_mean": float(held_out_mean) if held_out_mean is not None else None,
+                "source_n_probes": (int(source_n_probes) if source_n_probes is not None else None),
                 "r_collapse_rate": rcoll,
                 "held_out_g_logprob_mean": g_logp,
                 "clean_above_9_nat": clean_above_9,
@@ -150,6 +164,42 @@ def _per_cell_diagnostics(eval_jsons: list[Path]) -> list[dict]:
         )
     out.sort(key=lambda d: d["cell"])
     return out
+
+
+def is_clean_anchor(diag: dict) -> bool:
+    """B7 round-3 fix: single source of truth for "is this anchor cell clean?".
+
+    A cell is a clean anchor for the local-read bracketing IFF:
+        - ``source_mean`` is non-NaN and finite
+        - ``held_out_mean`` is non-NaN and finite
+        - ``source_n_probes >= LOCAL_READ_MIN_SOURCE_N_PROBES`` (= 5)
+        - ``r_collapse_rate < ABORT_SOURCE_RCOLLAPSE_THRESHOLD`` (= 0.50)
+        - ``held_out_g_logprob_mean <= ABORT_HELD_OUT_GLOGPROB_MAX`` (= -5.0)
+
+    These are the same gates the plot's ``EXCLUDED_FROM_BOOTSTRAP`` constant
+    encodes for ft_b2 (the canonical contaminated anchor: source_n_probes=1,
+    saturated above the sub-ceiling) — extended here to ANY anchor cell, so
+    the local-read bracketing logic and the plot's exclusion logic share a
+    single rule. Without this, the local-read interpolates THROUGH a
+    saturated/collapsed cell at source ΔG ≈ 6.7 nat and reports a misleading
+    matched-rate read.
+    """
+    sm = diag.get("source_mean")
+    hm = diag.get("held_out_mean")
+    n = diag.get("source_n_probes")
+    rc = diag.get("r_collapse_rate")
+    g = diag.get("held_out_g_logprob_mean")
+    if sm is None or hm is None or n is None:
+        return False
+    if not isinstance(sm, int | float) or _is_nan(float(sm)):
+        return False
+    if not isinstance(hm, int | float) or _is_nan(float(hm)):
+        return False
+    if int(n) < LOCAL_READ_MIN_SOURCE_N_PROBES:
+        return False
+    if rc is None or _is_nan(float(rc)) or float(rc) >= ABORT_SOURCE_RCOLLAPSE_THRESHOLD:
+        return False
+    return not (g is None or _is_nan(float(g)) or float(g) > ABORT_HELD_OUT_GLOGPROB_MAX)
 
 
 def _is_nan(x: float) -> bool:
@@ -206,11 +256,25 @@ def _compute_local_matched_rate_read(
     ``is_extrapolation`` is True iff the chosen anchor pair does NOT straddle
     ``target_nat`` (per the Claude statistics critic's concern: when both
     bracketing cells sit above target, the read is extrapolation).
+
+    B7 round-3 fix: BOTH #514 cells (via ``clean_above_9_nat``) AND #508 FT
+    anchors are gated through :func:`is_clean_anchor`. The previous round-2
+    code admitted every #508 FT anchor with non-NaN source_mean +
+    held_out_mean — which let ft_b2 (source_n_probes=1, source ΔG ≈ 6.77 nat,
+    held_out_g_logprob_mean ≈ -0.87 nat = saturated above the sub-ceiling
+    gate) interpolate through as a legal bracketing anchor for target=8 nat.
+    The is_clean_anchor gate rejects ft_b2 (and any future similarly
+    contaminated anchor) on the same rules the plot's
+    ``EXCLUDED_FROM_BOOTSTRAP`` constant encodes.
     """
     # Candidate anchor cells: every clean #514 FT cell (above-9-nat) +
-    # every #508 FT anchor whose source_mean is non-NaN.
+    # every #508 FT anchor that passes the clean-anchor gate.
     candidates: list[dict] = []
     for d in diagnostics_514:
+        # #514 cells already passed the stricter above-9-nat gate via
+        # `clean_above_9_nat`; that gate implies the source_mean / r_collapse
+        # / held_out_g_logprob discipline. Still require non-NaN means
+        # defensively (NaN slips through if the cell crashed mid-eval).
         if (
             d["clean_above_9_nat"]
             and d["source_mean"] is not None
@@ -218,7 +282,9 @@ def _compute_local_matched_rate_read(
         ):
             candidates.append(d)
     for d in diagnostics_508_ft_anchors:
-        if d["source_mean"] is not None and d["held_out_mean"] is not None:
+        # B7 round-3 fix: apply the clean-anchor gate (single source of
+        # truth) so ft_b2 (collapsed with source_n_probes=1) is excluded.
+        if is_clean_anchor(d):
             candidates.append(d)
 
     if len(candidates) < 2:
