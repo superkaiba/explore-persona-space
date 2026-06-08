@@ -101,7 +101,7 @@ periodic_eval:
   leakage:
     enabled: true
     mode: marker_logprob       # NEW for #519 — on-policy log P(' ※') + emission rate
-    every_steps: 5
+    every_steps: 50    # 2026-06-08: bumped from 5 -> 50 because callback reloads the 16 GB base model per fire (~6 min/fire); K=5 over 600 steps = 12 h/cell wall-clock vs plan §9 estimate of ~1-2 h/cell. K=50 -> 12 fires/cell instead of 120, ~1.5 h/cell training. The trajectory loses fine-grained shape (5-step → 50-step resolution) but the CLAUDE.md marker-leakage MUST ("log the trajectory over training steps in WandB") is still satisfied with 12 snapshots; the analyzer can pick the slope without K=5 resolution.
     personas:
       - medical_doctor
       - assistant
