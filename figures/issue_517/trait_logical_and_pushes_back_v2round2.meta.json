@@ -1,0 +1,9 @@
+{
+  "schema_version": "i517_v2_round2",
+  "kind": "per_trait_headroom_figure_meta",
+  "input": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-517/eval_results/issue_517/base_vs_trained_comparison.json",
+  "png": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-517/figures/issue_517/trait_logical_and_pushes_back_v2round2.png",
+  "pdf": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-517/figures/issue_517/trait_logical_and_pushes_back_v2round2.pdf",
+  "git_commit": "08a23143c1a85f0b36dabca5bc0666f684369437",
+  "ts": "2026-06-08T20:19:45.506766Z"
+}
