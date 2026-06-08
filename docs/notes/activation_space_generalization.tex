@@ -1,0 +1,173 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue]{hyperref}
+\usepackage{parskip}
+
+\newcommand{\ip}[2]{\langle #1,\, #2\rangle}
+\newcommand{\db}{\Delta b}
+
+\title{\vspace{-2.5em}Predicting fine-tuning generalization from activation geometry\\[0.4em]
+\large Decoding Dan's $M$-update framing}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+\vspace{-2em}
+
+\section*{The proposal}
+
+Represent a \emph{context} as an activation vector $v_c$ (read at the token after the
+last user-message token) and a \emph{behavior} as an activation vector $v_b$ (read at
+the token after the assistant-message token). Suppose that, before training, the
+model's context~$\to$~behavior map is approximately linear,
+\[
+  v_b' = M\,v_c'.
+\]
+Dan's conjecture: after fine-tuning context $c'$ to produce a new behavior $v_b''$
+(instead of its original $v_b'$), the map becomes a rank-one correction of the old one,
+\[
+  \boxed{\;M_{\text{new}} \;=\; M \;+\; (v_b'' - v_b')\,v_c'^{\,\top}\;}
+\]
+The question is whether something of this shape predicts how training on
+$c_0\!\to\!b_0$ generalizes to a different $c_1\!\to\!b_1$.
+
+\section*{What the equation actually claims}
+
+The update is a rank-one outer product: the behavior shift $(v_b''-v_b')$ times the
+trained context $v_c'^{\,\top}$. Evaluate the new map at the training point:
+\[
+  M_{\text{new}}\,v_c'
+  = M v_c' + (v_b''-v_b')\,\ip{v_c'}{v_c'}
+  = v_b' + (v_b''-v_b')\,\|v_c'\|^2 .
+\]
+This exactly hits the target $v_b''$ only when $\|v_c'\|=1$, so the framing wants to
+live in \emph{normalized / cosine} space with a fitted scalar gain. Now evaluate at a
+\emph{new} context $c_1$:
+\[
+  v_b(c_1) = M v_{c_1} + (v_b''-v_b')\,\ip{v_c'}{v_{c_1}},
+\]
+so the predicted \textbf{change in behavior at any new context} is
+\[
+  \boxed{\;\Delta v_b(c_1) \;=\; (v_b''-v_b')\,\cdot\,\ip{v_c'}{v_{c_1}}\;}
+\]
+
+Two falsifiable claims fall out:
+
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{Direction is constant.} The behavior shifts in the \emph{same direction
+  everywhere} --- the direction it was pushed at the training point. Only the magnitude
+  varies across contexts.
+  \item \textbf{Magnitude $\propto$ context cosine.} How much training on $c'$ bleeds
+  into $c_1$ scales with the similarity $\ip{v_c'}{v_{c_1}}$ of their (base-model)
+  context vectors.
+\end{enumerate}
+
+\section*{The clean bridge to what we already measure}
+
+We do not measure $v_b$ directly; we measure $\Delta \log P(\text{marker})$ on-policy at
+the post-response slot. If the behavior is linearly readable --- the persona-vector
+premise --- there is a probe direction $w$ with $\ell(c) = \ip{w}{v_b(c)}$ for the
+behavior logit. Then
+\[
+  \Delta \ell(c_1)
+  = \ip{w}{\,v_b''-v_b'} \cdot \ip{v_c'}{v_{c_1}}
+  = \underbrace{\ip{w}{\db}}_{\text{one scalar per behavior}} \cdot\; \ip{v_c'}{v_{c_1}}.
+\]
+That is a \textbf{one-free-parameter prediction}: leakage to every bystander context
+should be \emph{linear in its base-model cosine to the trained context, with a single
+shared slope}. Directly testable against the existing leakage tables (\#432$\to$\#456,
+\#448): regress measured $\Delta\log P(\text{marker})$ per persona against base-model
+context cosine; check linearity-through-origin with one slope.
+
+\section*{This is the mechanism for \#404/\#458, not a new direction}
+
+The persona-distance predictor line (\#404/\#458: does base-model KL/JS/cosine predict
+leakage?) is the \emph{empirical} version of exactly this. Dan's $M$-update is the
+generative model that says \emph{why} distance predicts leakage, and it sharpens the
+existing result three ways:
+\begin{itemize}[leftmargin=1.4em]
+  \item predicts the relationship is \textbf{linear in cosine}, not merely monotonic;
+  \item predicts a \textbf{shared slope} across contexts for a fixed behavior;
+  \item adds genuinely new, untested content --- the \textbf{directional claim}: the
+  activation-space shift is the \emph{same direction} everywhere. Current predictors
+  only touch magnitude. Whether $\Delta v_b(c_i)$ is rank-one / constant-direction is the
+  part nobody has checked.
+\end{itemize}
+
+\section*{It also explains contrastive negatives (\#18/\#207/\#383)}
+
+Positive-only training gives $M + \db\,c_{\text{src}}^{\top}$. Leakage at bystander
+$c_j$ is $\db\cdot\ip{c_{\text{src}}}{c_j}$; since persona contexts share a high baseline
+cosine, you get \emph{uniform} leakage --- exactly the \#18/\#207 observation
+(92--98\% on all bystanders). Contrastive negatives add \textbf{negative rank-one terms}
+at the bystander contexts that cancel the $\ip{c_{\text{src}}}{c_j}$ term, which is why
+the distance$\to$leakage gradient exists \emph{only} in the contrastive regime. The
+framing predicts this for free:
+\[
+  M_{\text{new}} \approx M + \db\,c_{\text{src}}^{\top}
+    - \sum_j \varepsilon_j\, c_{\text{byst},j}^{\top}.
+\]
+
+\section*{Where it is ``a bit wrong'' (Dan's hedge), ranked by impact}
+
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{Direction rotation is the real risk.} The strong claim is a
+  context-independent shift direction. Plausibly it rotates --- evil-on-coding could
+  land as ``evil'' nearby but ``off-target weird'' far away. First thing to measure:
+  SVD the matrix of realized $\Delta v_b(c_i)$ and check it is rank-one with right vector
+  $\approx v_c'$ and left vector $\approx \db$.
+  \item \textbf{Rank-one sufficiency.} SGD distributes the update across all weights, so
+  the induced map-change may be higher rank. ROME/MEMIT show narrow edits \emph{are}
+  roughly rank-one, so it is a reasonable prior --- but it is the load-bearing
+  assumption.
+  \item \textbf{$M$ itself shifts $=$ emergent misalignment.} The model assumes $M$ is
+  preserved except along $v_c'$. EM is precisely the failure of that: narrow training
+  broadly rewrites $M$. In-framing, EM corresponds to either (a) a trained context
+  $v_c'$ with high mean similarity to the whole context distribution (a generic context
+  $\Rightarrow$ broad leakage), or (b) a realized shift with a large off-rank-one
+  component. A concrete, testable account of \emph{when} narrow training generalizes
+  broadly.
+  \item \textbf{Normalization \& layer choice.} Needs cosine $+$ fitted gain, and a
+  sweep over which layer / layer-pair gives the cleanest linear $M$. Context and behavior
+  may read best at different layers.
+  \item \textbf{Lossiness.} A single-token $v_c$/$v_b$ may not capture the full
+  context/behavior, and emission goes through softmax $+$ sampling. The linear-probe
+  bridge handles the last step, but only if the behavior is genuinely linearly readable.
+\end{enumerate}
+
+\section*{Minimal experiment to nail it}
+
+One pod, one clean test:
+\begin{itemize}[leftmargin=1.4em]
+  \item Fix a behavior (the marker is cleanest --- already measured on-policy). Train a
+  single source context $c_0 \to$ marker.
+  \item Across $N$ held-out contexts (the persona panel), measure: (a) realized
+  $\Delta\log P(\text{marker})$; (b) realized activation shift $\Delta v_b(c_i)$;
+  (c) \emph{base-model} context cosines $\ip{v_{c_0}}{v_{c_i}}$.
+  \item \textbf{Headline test:} predict held-out leakage using \emph{only} base-model
+  quantities plus the single training pair. If that prediction correlates with measured
+  leakage across held-out contexts, the framing is predictive. Report (i) variance
+  explained by the rank-one / cosine model, (ii) whether the shift direction is constant,
+  (iii) the residual $=$ the off-target / direction-rotation part.
+\end{itemize}
+Even a partial result (``magnitude is cosine-predictable, direction rotates by
+$X^\circ$'') is publishable and tells us something real.
+
+\section*{Take}
+
+Worth pursuing, as the \emph{deep} one. It (a) unifies three threads under one
+generative model, (b) upgrades \#404/\#458 from ``distance correlates'' to ``here is the
+mechanism $+$ a directional prediction,'' (c) is Dan's own framing, hence maximally
+aligned, and (d) is exactly the ``fewer experiments, nailed carefully'' shape he keeps
+asking for --- feeding the Aug 31 paper-draft milestone. Caveat if it stalls: do not
+over-invest in the \emph{exact} rank-one form. The valuable deliverable is ``to what
+extent is fine-tuning generalization linearly predictable from base-model activation
+geometry''; the rank-one update is one hypothesis within that, not the whole prize.
+
+\end{document}
