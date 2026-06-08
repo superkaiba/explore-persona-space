@@ -1,0 +1,67 @@
+{
+  "git_commit": "4ff6be19feda9818e20d2b55df0a27743359d56a",
+  "generated_at": "2026-06-08T14:31:52.461370+00:00",
+  "n_targets": 36,
+  "target_order": [
+    "IK01",
+    "IK02",
+    "IK03",
+    "IK04",
+    "IK05",
+    "IK06",
+    "IK07",
+    "IK08",
+    "IK09",
+    "IK10",
+    "IK11",
+    "IK12",
+    "IK13",
+    "IK14",
+    "IK15",
+    "IK16",
+    "SP01",
+    "SP02",
+    "SP03",
+    "SP04",
+    "SP05",
+    "SP06",
+    "SP07",
+    "SP08",
+    "MT01",
+    "MT02",
+    "MT03",
+    "MT04",
+    "MT05",
+    "MT06",
+    "MT07",
+    "MT08",
+    "MN01",
+    "MN02",
+    "MN03",
+    "MN04"
+  ],
+  "category_means": {
+    "in-context example": 0.5526112687004648,
+    "system-prompt persona": 0.32429728938833524,
+    "multi-turn drift": 0.44554609925796584,
+    "multi-turn neutral": 0.4477112546066443
+  },
+  "category_ranges": {
+    "in-context example": [
+      0.4581100375755973,
+      0.586505001005919
+    ],
+    "system-prompt persona": [
+      0.2676977504854617,
+      0.3671876373498336
+    ],
+    "multi-turn drift": [
+      0.4100333590308825,
+      0.4798578524589539
+    ],
+    "multi-turn neutral": [
+      0.4214284341037273,
+      0.4730955989162127
+    ]
+  }
+}
