@@ -1,6 +1,6 @@
 ---
-title: Scaling 7B to 72B does not rescue the sycophancy-leakage predictor; absolute
-  predictor power gets worse (HIGH confidence)
+title: Scaling 7B to 72B makes the sycophancy-leakage predictor strictly worse, not
+  better (HIGH confidence)
 kind: experiment
 tags:
 - leak-predictor
