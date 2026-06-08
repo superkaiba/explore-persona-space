@@ -195,21 +195,53 @@ def hero_figure(
     plt.close(fig)
 
 
+def _ci_from_bootstrap_array(samples: list[float]) -> tuple[float, float, float]:
+    """Return (mean, ci_lo, ci_hi) — 95% percentile CI from a bootstrap sample list."""
+    import math
+
+    if not samples:
+        return (float("nan"), float("nan"), float("nan"))
+    finite = [float(x) for x in samples if isinstance(x, int | float) and math.isfinite(float(x))]
+    if not finite:
+        return (float("nan"), float("nan"), float("nan"))
+    mean = sum(finite) / len(finite)
+    s = sorted(finite)
+    n = len(s)
+    lo = s[max(0, int(0.025 * n))]
+    hi = s[min(n - 1, int(0.975 * n))]
+    return (mean, lo, hi)
+
+
 def matched_rate_figure(
     *,
     matched_rate_json: dict | None,
+    bootstrap_arrays_json: dict | None,
     output_path: Path,
 ) -> None:
-    """Grouped bars at source ΔG = 8 nat — LoRA / #508 FT / #514 FT.
+    """Grouped bars at source ΔG = 8 nat — LoRA / #508 FT / #514 FT (B5 round-2 fix).
 
-    Reads the local-read summary from ``_matched_rate_514.json`` when present.
-    If the bracketing check failed (no clean cell above 9 nat), draws a placeholder
-    annotation instead.
+    Reads:
+      - ``matched_rate_json`` (``_matched_rate_514.json``): determinacy gate
+        + #514 local linear-interpolation read at 8 nat.
+      - ``bootstrap_arrays_json`` (``eval_results/issue_508/_matched_rate_bootstrap.json``):
+        per-replicate bootstrap arrays for LoRA (``lora_at_8``) + #508 FT
+        (``ft_at_8``). 95% CI derived per-arm from these arrays.
+
+    The figure: 3 bars at source ΔG = 8 nat — LoRA / #508 FT / #514 FT —
+    with cluster-bootstrap 95% CI error bars. Annotates the determinacy gate
+    verdict from ``matched_rate_json`` (determinate vs gap=X nat; flags
+    is_extrapolation when bracketing anchors don't straddle 8 nat).
+
+    When H1 fails (no clean #514 FT cell above 9 nat), draws a placeholder
+    annotation instead — the bars only make sense once at least one #514 FT
+    cell hits the bracketing window.
     """
+    import math
+
     import matplotlib.pyplot as plt
 
     _set_style()
-    fig, ax = plt.subplots(figsize=(6.0, 4.6))
+    fig, ax = plt.subplots(figsize=(7.5, 5.0))
 
     if matched_rate_json is None or not matched_rate_json.get("h1_pass"):
         ax.text(
@@ -223,23 +255,88 @@ def matched_rate_figure(
         )
         ax.set_xticks([])
         ax.set_yticks([])
-    else:
-        # Placeholder: the actual numeric reads live in #508's run_analysis →
-        # analysis.json[matched_rate_gap]. Show the clean-above-9-nat cells.
-        clean = matched_rate_json.get("clean_above_9_nat_cells", [])
-        ax.text(
-            0.5,
-            0.5,
-            f"Clean above-9-nat cells: {clean}\n(see analysis.json for cluster-bootstrap reads)",
-            ha="center",
-            va="center",
-            fontsize=11,
-            transform=ax.transAxes,
-        )
-        ax.set_xticks([])
-        ax.set_yticks([])
+        ax.set_title("Bystander leakage at source ΔG = 8 nat (matched-rate) — H1 FAIL")
+        _try_savefig_paper(fig, output_path)
+        plt.close(fig)
+        return
 
-    ax.set_title("Bystander leakage at source ΔG = 8 nat (matched-rate)")
+    # H1 PASS path — render the real 3-bar figure.
+    bar_specs: list[tuple[str, float, float, float, str]] = []  # (label, mean, lo, hi, color)
+
+    # LoRA bar.
+    lora_arr = (bootstrap_arrays_json or {}).get("lora_at_8") or []
+    lora_mean, lora_lo, lora_hi = _ci_from_bootstrap_array(lora_arr)
+    bar_specs.append(("LoRA\n(#508 ref)", lora_mean, lora_lo, lora_hi, "#E69F00"))
+
+    # #508 FT bar.
+    ft508_arr = (bootstrap_arrays_json or {}).get("ft_at_8") or []
+    ft508_mean, ft508_lo, ft508_hi = _ci_from_bootstrap_array(ft508_arr)
+    bar_specs.append(("Full FT\n(#508 anchor)", ft508_mean, ft508_lo, ft508_hi, "#56B4E9"))
+
+    # #514 FT bar — local linear-interpolation read; no per-arm bootstrap
+    # array (the delegated cluster bootstrap mixes #514 + #508 cells in
+    # the FT arm — that's the bootstrap_read used for the determinacy gate
+    # but it's not a #514-only CI). Show the point estimate.
+    local_read = matched_rate_json.get("local_read_nat")
+    bootstrap_read = matched_rate_json.get("bootstrap_read_nat")
+    if local_read is None or not math.isfinite(float(local_read)):
+        local_read_val = float("nan")
+    else:
+        local_read_val = float(local_read)
+    bar_specs.append(
+        ("Full FT\n(#514 local read)", local_read_val, local_read_val, local_read_val, "#0072B2")
+    )
+
+    xs = list(range(len(bar_specs)))
+    means = [b[1] for b in bar_specs]
+    los = [b[1] - b[2] for b in bar_specs]
+    his = [b[3] - b[1] for b in bar_specs]
+    colors = [b[4] for b in bar_specs]
+    labels = [b[0] for b in bar_specs]
+
+    ax.bar(xs, means, color=colors, edgecolor="black", linewidth=0.5)
+    # Error bars: only draw where lo != hi (i.e. real CI exists).
+    yerr = [[lo if lo > 0 else 0 for lo in los], [hi if hi > 0 else 0 for hi in his]]
+    ax.errorbar(xs, means, yerr=yerr, fmt="none", ecolor="black", capsize=5, linewidth=1.0)
+
+    ax.set_xticks(xs)
+    ax.set_xticklabels(labels, fontsize=10)
+    ax.set_ylabel("Held-out bystander mean ΔG at source ΔG = 8 nat (nat)")
+    ax.set_title("Bystander leakage at matched source-implant strength (8 nat)")
+
+    # Determinacy + extrapolation annotation.
+    determinate = matched_rate_json.get("determinate", False)
+    gap_nat = matched_rate_json.get("gap_nat")
+    gate_thresh = matched_rate_json.get("gate_threshold_nat", 0.5)
+    is_extrap = matched_rate_json.get("is_extrapolation", False)
+
+    if gap_nat is None or not math.isfinite(float(gap_nat)):
+        gap_str = "gap = NaN"
+    else:
+        gap_str = f"gap = {float(gap_nat):.3f} nat"
+    bootstrap_str = (
+        f"{float(bootstrap_read):.3f}"
+        if (bootstrap_read is not None and math.isfinite(float(bootstrap_read)))
+        else "NaN"
+    )
+    verdict = "DETERMINATE" if determinate else "INDETERMINATE"
+    extrap_note = " (EXTRAPOLATION)" if is_extrap else ""
+    annot = (
+        f"Determinacy: {verdict}{extrap_note} "
+        f"(threshold |Δ| ≤ {gate_thresh} nat)\n"
+        f"Local read: {local_read_val:.3f} nat | Bootstrap read: {bootstrap_str} nat | {gap_str}"
+    )
+    ax.text(
+        0.5,
+        -0.18,
+        annot,
+        ha="center",
+        va="top",
+        fontsize=9,
+        transform=ax.transAxes,
+        family="monospace",
+    )
+
     _try_savefig_paper(fig, output_path)
     plt.close(fig)
 
@@ -441,6 +538,16 @@ def main() -> int:
         default=None,
         help="Optional: path to _matched_rate_514.json",
     )
+    p.add_argument(
+        "--bootstrap-arrays-json",
+        type=Path,
+        default=None,
+        help=(
+            "Optional: path to _matched_rate_bootstrap.json (per-replicate "
+            "arrays for LoRA + #508 FT at source ΔG = 8 nat). Default: "
+            "eval_root_508 / _matched_rate_bootstrap.json"
+        ),
+    )
     args = p.parse_args()
 
     args.figures_dir.mkdir(parents=True, exist_ok=True)
@@ -457,6 +564,17 @@ def main() -> int:
     if mr_path.exists():
         matched_rate_json = json.loads(mr_path.read_text())
 
+    bootstrap_arrays_json = None
+    ba_path = args.bootstrap_arrays_json or (args.eval_root_508 / "_matched_rate_bootstrap.json")
+    if ba_path.exists():
+        bootstrap_arrays_json = json.loads(ba_path.read_text())
+    else:
+        LOG.warning(
+            "[plot] bootstrap arrays JSON not found at %s — matched_rate.png "
+            "will fall back to placeholder (#514 FT bar will be the only one)",
+            ba_path,
+        )
+
     hero_figure(
         lora_cells=lora,
         ft_508_cells=ft_508,
@@ -466,6 +584,7 @@ def main() -> int:
     )
     matched_rate_figure(
         matched_rate_json=matched_rate_json,
+        bootstrap_arrays_json=bootstrap_arrays_json,
         output_path=args.figures_dir / "matched_rate",
     )
     rcollapse_figure(
