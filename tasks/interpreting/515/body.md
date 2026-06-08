@@ -1,6 +1,6 @@
 ---
 title: 'Cross-meter agreement and the Claude judge reduce the warmth-never-implanted
-  concern from #496, but the pre-registered SocioT_paper +0.15 nats gate failed 0/6
+  concern from #496, but the plan-committed SocioT_paper +0.15 nats gate failed 0/6
   (MODERATE confidence)'
 kind: experiment
 tags:
