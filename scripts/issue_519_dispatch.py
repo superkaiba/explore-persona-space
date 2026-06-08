@@ -3,9 +3,11 @@
 
 PASS_UNIFIED architectural-parity: smoke = sweep with `--cells N
 --seeds N` parameterization. The same dispatcher orchestrates the full
-pipeline in either mode; the smoke path is just the sweep with `cells
-= 1` (one EM canary cell) and `seeds = 1` (seed=42 only). Step 6d.0
-gate per `.claude/agents/experiment-implementer.md`.
+pipeline in either mode; the smoke path is just the sweep with both
+arms (marker + em) at seeds=1 (seed=42 only) and max_train_steps=2.
+Round-2 reviewer C4/M1 fix: the smoke now exercises BOTH arms by
+default so marker-arm regressions cannot hide. Step 6d.0 gate per
+`.claude/agents/experiment-implementer.md`.
 
 Phases (each is checkpointed; phase output written before next phase
 starts — `checkpoint per phase` rule):
@@ -514,6 +516,7 @@ def phase_d_svd_analysis(
     from explore_persona_space.analysis.svd_direction_constancy import (
         assemble_M,
         bootstrap_ci,
+        cosine,
         row_shuffle_null,
         shift_norm_vs_cosine_regression,
         sign_flip_null,
@@ -522,6 +525,36 @@ def phase_d_svd_analysis(
 
     out_dir = output_dir / "svd"
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Round-2 reconciler B4 fix: load per-arm v_steer.pt files if they
+    # exist (Phase E output) so each per-(arm, seed) entry can carry
+    # cos(U_1, v_steer) — the plan §6.2 hero metric for the
+    # "rank-one-direction IS the steering direction" claim. v_steer is
+    # extracted ONCE per arm (not per seed), so it pairs against every
+    # seed's U_1 within that arm.
+    v_steer_by_arm: dict[str, np.ndarray] = {}
+    steering_dir = output_dir / "steering"
+    for arm_name in ("marker", "em"):
+        v_pt = steering_dir / f"v_{arm_name}.pt"
+        if not v_pt.exists():
+            logger.warning(
+                "[phase_d] v_%s.pt not found at %s — cos_U1_vsteer will be omitted for arm=%s",
+                arm_name,
+                v_pt,
+                arm_name,
+            )
+            continue
+        v_payload = torch.load(v_pt, map_location="cpu", weights_only=False)
+        # The CLI stored {"steering": result, "manifest": manifest};
+        # `result` is a dict with "v_steer" key per `extract_steering_vector`.
+        v_tensor = v_payload["steering"]["v_steer"]
+        v_steer_by_arm[arm_name] = v_tensor.detach().cpu().float().numpy().ravel()
+        logger.info(
+            "[phase_d] loaded v_%s ||v||=%.4f (shape=%s)",
+            arm_name,
+            float(np.linalg.norm(v_steer_by_arm[arm_name])),
+            v_steer_by_arm[arm_name].shape,
+        )
 
     aggregate: dict[str, dict] = {}
     for variant in variants:
@@ -551,7 +584,28 @@ def phase_d_svd_analysis(
                 "median_cos_to_U1": float(np.median(svd["cos_to_U1"])),
                 "cos_to_U1": svd["cos_to_U1"].tolist(),
                 "singular_values": svd["s"].tolist(),
+                "U1": svd["U1"].tolist(),
             }
+            # Round-2 reconciler B4 fix: cos(U_1, v_steer) — the
+            # geometric-identity headline. Stored alongside U_1 so the
+            # downstream figure script can re-derive it on demand.
+            if cell.arm in v_steer_by_arm:
+                v_arm = v_steer_by_arm[cell.arm]
+                if v_arm.shape == svd["U1"].shape:
+                    entry["cos_U1_vsteer"] = cosine(svd["U1"], v_arm)
+                else:
+                    logger.warning(
+                        "[phase_d] v_%s shape %s != U1 shape %s — skipping "
+                        "cos_U1_vsteer for cell arm=%s seed=%d",
+                        cell.arm,
+                        v_arm.shape,
+                        svd["U1"].shape,
+                        cell.arm,
+                        cell.seed,
+                    )
+                    entry["cos_U1_vsteer"] = None
+            else:
+                entry["cos_U1_vsteer"] = None
             if base_cosines_json is not None and base_cosines_json.exists():
                 with base_cosines_json.open() as f:
                     base_cos = json.load(f)
@@ -602,6 +656,117 @@ def phase_d_svd_analysis(
         json.dump({"per_cell": aggregate, "summary_by_variant_arm": summary}, f, indent=2)
     logger.info("[phase=d_done] svd summary written to %s/summary.json", out_dir)
 
+    # Round-2 reconciler B4 fix: emit headline_metrics.json containing
+    # the 4 plan §6.2 hero metrics in a single artifact the downstream
+    # figure script can consume directly. Extracted into a helper
+    # (`_write_headline_metrics`) to keep `phase_d_svd_analysis`
+    # within ruff's C901 complexity bound.
+    _write_headline_metrics(
+        aggregate=aggregate,
+        variants=variants,
+        out_dir=out_dir,
+    )
+
+
+def _write_headline_metrics(
+    *,
+    aggregate: dict[str, dict],
+    variants: Sequence[str],
+    out_dir: Path,
+) -> None:
+    """Emit `headline_metrics.json` (round-2 B4 fix).
+
+    Pulls the 4 plan §6.2 hero metrics out of the per-cell Phase D
+    aggregate for the PRIMARY variant only (``same`` — same-trajectory
+    teacher-forced shift; the methodology-corrected DV) and writes:
+
+    - ``per_arm_seed``: per-(arm, seed) headline numbers including
+      ``cos_U1_vsteer`` (geometric-identity hero), ``s_top1_frac``,
+      ``shift_norm_vs_cosine_spearman_rho``, ``cos_to_U1`` per context.
+    - ``cross_seed_by_arm``: bootstrap median + 95% CI of the per-seed
+      values per arm.
+
+    Downstream figure scripts read this file directly; if it's missing
+    the per-cell `summary.json` still carries everything (this is just
+    a convenience surface).
+    """
+    from explore_persona_space.analysis.svd_direction_constancy import bootstrap_ci
+
+    headline_variant = "same" if "same" in list(variants) else next(iter(variants))
+    headline: dict[str, dict] = {}
+    for v in aggregate.values():
+        if v["variant"] != headline_variant:
+            continue
+        bucket = f"{v['arm']}_seed{v['seed']}"
+        snvc = v.get("shift_norm_vs_cosine")
+        headline[bucket] = {
+            "arm": v["arm"],
+            "seed": v["seed"],
+            "variant": v["variant"],
+            "s_top1_frac": v["s_top1_frac"],
+            "row_shuffle_p95": v["row_shuffle_p95"],
+            "row_shuffle_p99": v["row_shuffle_p99"],
+            "mean_cos_to_U1": v["mean_cos_to_U1"],
+            "median_cos_to_U1": v["median_cos_to_U1"],
+            "cos_U1_vsteer": v.get("cos_U1_vsteer"),
+            "shift_norm_vs_cosine_spearman_rho": (
+                snvc.get("spearman_rho_norm_cosine") if snvc else None
+            ),
+            "shift_norm_vs_cosine_n": (snvc.get("n") if snvc else None),
+            "persona_order": v["persona_order"],
+            "cos_to_U1": v["cos_to_U1"],
+        }
+
+    headline_summary: dict[str, dict] = {}
+    by_arm: dict[str, list[dict]] = {}
+    for v in headline.values():
+        by_arm.setdefault(v["arm"], []).append(v)
+    for arm_name, vs in by_arm.items():
+        cos_vsteer_vals = [x["cos_U1_vsteer"] for x in vs if x["cos_U1_vsteer"] is not None]
+        rho_vals = [
+            x["shift_norm_vs_cosine_spearman_rho"]
+            for x in vs
+            if x["shift_norm_vs_cosine_spearman_rho"] is not None
+        ]
+        s_top1_vals = [x["s_top1_frac"] for x in vs]
+        summary_entry: dict = {"arm": arm_name, "n_seeds": len(vs)}
+        if cos_vsteer_vals:
+            med, lo, hi = bootstrap_ci(cos_vsteer_vals, n_resamples=1000, seed=0)
+            summary_entry["cos_U1_vsteer_median"] = med
+            summary_entry["cos_U1_vsteer_ci_lo"] = lo
+            summary_entry["cos_U1_vsteer_ci_hi"] = hi
+            summary_entry["cos_U1_vsteer_n"] = len(cos_vsteer_vals)
+        if rho_vals:
+            med, lo, hi = bootstrap_ci(rho_vals, n_resamples=1000, seed=0)
+            summary_entry["shift_norm_vs_cosine_rho_median"] = med
+            summary_entry["shift_norm_vs_cosine_rho_ci_lo"] = lo
+            summary_entry["shift_norm_vs_cosine_rho_ci_hi"] = hi
+            summary_entry["shift_norm_vs_cosine_rho_n"] = len(rho_vals)
+        if s_top1_vals:
+            med, lo, hi = bootstrap_ci(s_top1_vals, n_resamples=1000, seed=0)
+            summary_entry["s_top1_frac_median"] = med
+            summary_entry["s_top1_frac_ci_lo"] = lo
+            summary_entry["s_top1_frac_ci_hi"] = hi
+        headline_summary[arm_name] = summary_entry
+
+    out_path = out_dir / "headline_metrics.json"
+    with out_path.open("w") as f:
+        json.dump(
+            {
+                "variant": headline_variant,
+                "per_arm_seed": headline,
+                "cross_seed_by_arm": headline_summary,
+            },
+            f,
+            indent=2,
+        )
+    logger.info(
+        "[phase=d_done] headline_metrics.json written (variant=%s, n_arms=%d, n_cells=%d)",
+        headline_variant,
+        len(headline_summary),
+        len(headline),
+    )
+
 
 def phase_e_steering_vectors(
     *,
@@ -631,6 +796,13 @@ def phase_e_steering_vectors(
     ]
     out_dir = output_dir / "steering"
     out_dir.mkdir(parents=True, exist_ok=True)
+    # Round-2 reconciler B2 defense-in-depth: ALWAYS pass --judge-cache-dir
+    # so raw judge scores are materialized on disk (the
+    # `_judge_filter_em_responses` helper now also synthesizes a temp
+    # path when none is passed, so this is belt-and-suspenders). Cache
+    # is per-behavior so concurrent extractions don't stomp each other.
+    judge_cache_root = out_dir / "judge_cache"
+    judge_cache_root.mkdir(parents=True, exist_ok=True)
     commands: list[tuple[Sequence[str], Path, dict[str, str] | None]] = []
     for i, (behavior, pos_sp, neg_sp, pool_json) in enumerate(targets):
         out_pt = out_dir / f"v_{behavior}.pt"
@@ -652,6 +824,8 @@ def phase_e_steering_vectors(
             str(layer),
             "--out",
             str(out_pt),
+            "--judge-cache-dir",
+            str(judge_cache_root / behavior),
         ]
         gpu_id = (i % max(n_gpus, 1)) if not cpu_only else 0
         env = {"CUDA_VISIBLE_DEVICES": "" if cpu_only else str(gpu_id)}

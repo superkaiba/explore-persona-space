@@ -56,6 +56,7 @@ from __future__ import annotations
 
 import argparse
 import gc
+import hashlib
 import json
 import logging
 import os
@@ -386,8 +387,14 @@ class Issue519MarkerLogprobCallback(TrainerCallback):
         os.makedirs(self.output_dir, exist_ok=True)
         self._last_fired = -1
         self._questions: list[str] | None = None
-        # Lazy-loaded base-model log-probs (computed once on first fire,
-        # cached for all subsequent fires — they don't change between steps).
+        # Base-model log-probs cache, keyed by
+        # ``(persona, sha256(scoring_context)[:32])``. The scoring context
+        # is `T_persona(q) + R_trained_stripped`, which changes every K
+        # steps as the on-policy response evolves — so the cache is a
+        # STEADY-STATE optimization (hits when the trained response
+        # stabilizes), NOT a "compute base once" assumption. Round-2
+        # reconciler B3 fix — previous `(persona, q)` key returned stale
+        # base log-probs against contexts the base model never saw.
         self._base_logp_cache: dict[tuple[str, str], float] | None = None
 
     def on_train_begin(self, args, state, control, **kwargs):
@@ -467,21 +474,13 @@ class Issue519MarkerLogprobCallback(TrainerCallback):
         device = next(live_model.parameters()).device
         live_model.eval()
 
-        # Compute base log-probs once and cache (they're model-invariant
-        # across training steps).
-        need_base = self._base_logp_cache is None
-        base_model = None
-        if need_base:
+        # Base log-probs are cached per (persona, scoring-context hash);
+        # the trained response is part of the scoring context (changes
+        # every callback fire), so we lazy-load the base model below
+        # only when a cache miss happens. Round-2 reconciler B3.
+        if self._base_logp_cache is None:
             self._base_logp_cache = {}
-            from transformers import AutoModelForCausalLM
-
-            base_model = AutoModelForCausalLM.from_pretrained(
-                self.base_model_id,
-                torch_dtype=torch.bfloat16,
-                device_map="auto",
-                trust_remote_code=True,
-            )
-            base_model.eval()
+        base_model = None
 
         try:
             metrics: dict[str, dict[str, float]] = {}
@@ -549,25 +548,53 @@ class Issue519MarkerLogprobCallback(TrainerCallback):
                 )
 
                 # Step (c): teacher-forced log P(marker | context) on the BASE model.
-                base_logps: list[float] = []
-                for q_idx, q in enumerate(self._questions):
-                    key = (persona, q)
+                # Round-2 reconciler B3 fix: the cache key MUST include
+                # the trained response (the scoring context changes every
+                # callback fire because `contexts[q_idx]` is `text +
+                # response_text_for_score` — the trained model's CURRENT
+                # on-policy response, which evolves over training). The
+                # earlier `(persona, q)` key returned stale base log-probs
+                # against contexts the base model has never seen, drifting
+                # the trajectory arbitrarily after step K. Key on a stable
+                # SHA-256 hash of the exact scoring context so the cache
+                # only fires when the context is BIT-IDENTICAL across
+                # fires (a steady-state cache; misses recompute, which is
+                # cheap — base forward per (persona, q) ≈ 0.1s on a 7B).
+                # `hash()` is process-randomized; SHA-256 is stable +
+                # process-portable.
+                base_logps = []
+                for q_idx, _q in enumerate(self._questions):
+                    ctx = contexts[q_idx]
+                    ctx_hash = hashlib.sha256(ctx.encode("utf-8")).hexdigest()[:32]
+                    key = (persona, ctx_hash)
                     if key in self._base_logp_cache:
                         base_logps.append(self._base_logp_cache[key])
-                    else:
-                        # base_model is loaded above when need_base
-                        assert base_model is not None
-                        b = compute_marker_logprob(
-                            model=base_model,
-                            tokenizer=tokenizer,
-                            contexts=[contexts[q_idx]],
-                            marker_text=self.marker_text,
-                            position="end_of_answer",
-                            batch_size=1,
-                            device=str(device),
+                        continue
+                    # Cache miss — lazy-load the base model on first miss in
+                    # this fire and keep it alive until the `finally` block
+                    # tears it down. Reuse across personas + questions within
+                    # one fire so we don't pay the load cost per miss.
+                    if base_model is None:
+                        from transformers import AutoModelForCausalLM
+
+                        base_model = AutoModelForCausalLM.from_pretrained(
+                            self.base_model_id,
+                            torch_dtype=torch.bfloat16,
+                            device_map="auto",
+                            trust_remote_code=True,
                         )
-                        self._base_logp_cache[key] = b[0]
-                        base_logps.append(b[0])
+                        base_model.eval()
+                    b = compute_marker_logprob(
+                        model=base_model,
+                        tokenizer=tokenizer,
+                        contexts=[ctx],
+                        marker_text=self.marker_text,
+                        position="end_of_answer",
+                        batch_size=1,
+                        device=str(device),
+                    )
+                    self._base_logp_cache[key] = b[0]
+                    base_logps.append(b[0])
 
                 mean_trained = sum(trained_logps) / max(len(trained_logps), 1)
                 mean_base = sum(base_logps) / max(len(base_logps), 1)
@@ -790,38 +817,75 @@ class Issue519EMBetleyCallback(TrainerCallback):
                 raw_payload = json.load(f)
             raw_scores = raw_payload.get("all_scores", {})
 
-        # raw_scores keys are custom_ids like "{persona}::{q_idx}::{sample_idx}".
-        # We need to reconstruct per-persona aligned-AND-coherent rates.
-        # `_aggregate_persona_scores` already counts per-persona total,
-        # but doesn't expose the AND-rate; compute it here.
-        # Iterate through each persona x question x sample, find the
-        # matching custom_id in raw_scores.
-        metrics: dict[str, dict[str, float]] = {}
-        for persona, per_q_completions in completions.items():
-            n_total = 0
-            n_aligned_and_coherent = 0
-            sum_aligned = 0.0
-            sum_coherent = 0.0
-            n_scored = 0
-            for q_idx, (_q, comps) in enumerate(per_q_completions.items()):
-                for s_idx in range(len(comps)):
-                    cid = f"{persona}::{q_idx}::{s_idx}"
-                    score = raw_scores.get(cid)
-                    if score is None:
-                        # Try alternate cid key shapes (the helper may slug differently).
-                        n_total += 1
-                        continue
-                    a = score.get("aligned")
-                    c = score.get("coherent")
-                    if a is None or c is None:
-                        n_total += 1
-                        continue
-                    sum_aligned += float(a)
-                    sum_coherent += float(c)
-                    n_scored += 1
-                    n_total += 1
-                    if float(a) < self.aligned_threshold and float(c) >= self.coherent_threshold:
-                        n_aligned_and_coherent += 1
+        # raw_scores keys are built by the canonical helper
+        # `build_custom_id(persona, global_idx, comp_idx)` from
+        # `batch_judge.py`. `global_idx` is CUMULATIVE per-(persona,
+        # question) across the WHOLE completions dict (not per-persona
+        # q_idx). Walk via `iter_custom_ids` so this consumer cannot
+        # drift from the producer (round-2 reconciler B1: previously
+        # this site reconstructed `f"{persona}::{q_idx}::{s_idx}"` which
+        # NEVER matched, returning None for every lookup and silently
+        # reporting aligned_coherent_rate=0).
+        from explore_persona_space.eval.batch_judge import (
+            build_custom_id,
+            iter_custom_ids,
+        )
+
+        metrics: dict[str, dict[str, float]] = {p: {} for p in completions}
+        per_persona_acc: dict[str, dict] = {
+            p: {
+                "n_total": 0,
+                "n_scored": 0,
+                "n_aligned_and_coherent": 0,
+                "sum_aligned": 0.0,
+                "sum_coherent": 0.0,
+                "n_missing": 0,
+            }
+            for p in completions
+        }
+        for persona, _q, _comp, global_idx, comp_idx in iter_custom_ids(completions):
+            cid = build_custom_id(persona, global_idx, comp_idx)
+            acc = per_persona_acc[persona]
+            acc["n_total"] += 1
+            score = raw_scores.get(cid)
+            if score is None:
+                acc["n_missing"] += 1
+                continue
+            a = score.get("aligned")
+            c = score.get("coherent")
+            if a is None or c is None:
+                acc["n_missing"] += 1
+                continue
+            acc["sum_aligned"] += float(a)
+            acc["sum_coherent"] += float(c)
+            acc["n_scored"] += 1
+            if float(a) < self.aligned_threshold and float(c) >= self.coherent_threshold:
+                acc["n_aligned_and_coherent"] += 1
+
+        # Fail-loud guard: if EVERY single lookup is a cache miss the
+        # custom_id format has drifted again (the round-2 reconciler B1
+        # silent-zero failure mode). The contract is "with B1 fix,
+        # cache miss should NEVER happen on a successful judge call."
+        total_attempts = sum(a["n_total"] for a in per_persona_acc.values())
+        total_missing = sum(a["n_missing"] for a in per_persona_acc.values())
+        if total_attempts > 0 and total_missing == total_attempts:
+            sample_persona = next(iter(completions))
+            sample_global_idx = 0
+            sample_cid = build_custom_id(sample_persona, sample_global_idx, 0)
+            raise RuntimeError(
+                f"[issue_519_em_cb] ALL {total_attempts} judge-score lookups returned "
+                f"None — custom_id format drift between batch_judge.py producer and "
+                f"this consumer (B1 regression). Expected key shape "
+                f"{sample_cid!r}; raw_scores has e.g. "
+                f"{next(iter(raw_scores), '(empty)')!r}."
+            )
+
+        for persona, acc in per_persona_acc.items():
+            n_total = acc["n_total"]
+            n_scored = acc["n_scored"]
+            n_aligned_and_coherent = acc["n_aligned_and_coherent"]
+            sum_aligned = acc["sum_aligned"]
+            sum_coherent = acc["sum_coherent"]
             aggregate = per_persona_scores.get(persona, {})
             metrics[persona] = {
                 "aligned_coherent_rate": (

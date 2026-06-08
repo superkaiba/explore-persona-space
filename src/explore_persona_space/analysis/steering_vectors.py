@@ -30,6 +30,7 @@ with "the LoRA memorized this pool's average".
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import time
@@ -126,52 +127,102 @@ def _judge_filter_em_responses(
       "cleanly aligned"); chosen so the negatives are NOT just "anything not
       misaligned" but actually aligned.
     """
-    completions = {system_prompt[:32]: {q: [r] for q, r in responses_by_question.items()}}
-    raw_path = None
+    from explore_persona_space.eval.batch_judge import (
+        build_custom_id,
+        iter_custom_ids,
+    )
+
+    persona_key = system_prompt[:32]
+    completions = {persona_key: {q: [r] for q, r in responses_by_question.items()}}
+
+    # raw_path was previously conditional on cache_dir; with judge_filter
+    # the consumer MUST be able to round-trip per-(question, sample)
+    # scores back from disk, so synthesize a temp path when no cache_dir
+    # was provided (round-2 reconciler B2 fix — previously `raw_path`
+    # stayed `None` when the dispatcher invoked Phase E without
+    # `--judge-cache-dir`, leaving `raw` empty and dropping every
+    # response on the floor; the `min_pool_size=30` gate then fired
+    # `RuntimeError("judge-filtered pools too small")` on the default
+    # invocation).
+    import tempfile
+
+    raw_owner_tempdir: tempfile.TemporaryDirectory | None = None
     if cache_dir is not None:
         cache_dir.mkdir(parents=True, exist_ok=True)
-        raw_path = cache_dir / f"steering_judge_raw_{abs(hash(system_prompt)) % 10000}.json"
+        # Use a SHA-256 hash slice (stable across processes; round-2
+        # Codex Minor — replaces the prior `abs(hash(...)) % 10000`
+        # which was Python-hash-randomized and not reproducible across
+        # workers).
+        slug = hashlib.sha256(system_prompt.encode("utf-8")).hexdigest()[:16]
+        raw_path = cache_dir / f"steering_judge_raw_{slug}.json"
+    else:
+        raw_owner_tempdir = tempfile.TemporaryDirectory(prefix="issue_519_judge_raw_")
+        raw_path = Path(raw_owner_tempdir.name) / "steering_judge_raw.json"
 
-    per_persona = judge_completions_batch(
-        completions=completions,
-        judge_model=judge_model,
-        cache_dir=cache_dir,
-        save_raw=raw_path,
-    )
+    try:
+        per_persona = judge_completions_batch(
+            completions=completions,
+            judge_model=judge_model,
+            cache_dir=cache_dir,
+            save_raw=raw_path,
+        )
 
-    # Reload raw scores to get per-(question, sample) values.
-    raw: dict[str, dict] = {}
-    if raw_path is not None and raw_path.exists():
-        with raw_path.open() as f:
-            raw_payload = json.load(f)
-        raw = raw_payload.get("all_scores", {})
-    persona_key = system_prompt[:32]
+        # Reload raw scores to get per-(question, sample) values.
+        raw: dict[str, dict] = {}
+        if raw_path.exists():
+            with raw_path.open() as f:
+                raw_payload = json.load(f)
+            raw = raw_payload.get("all_scores", {})
 
-    decisions: dict[str, dict] = {}
-    for q_idx, q in enumerate(responses_by_question.keys()):
-        cid = f"{persona_key}::{q_idx}::0"
-        score = raw.get(cid)
-        if score is None:
-            decisions[q] = {"aligned": None, "coherent": None, "keep": False}
-            continue
-        a = score.get("aligned")
-        c = score.get("coherent")
-        if a is None or c is None:
-            decisions[q] = {"aligned": a, "coherent": c, "keep": False}
-            continue
-        a_f = float(a)
-        c_f = float(c)
-        if require_misaligned:
-            keep = (a_f < aligned_threshold) and (c_f >= coherent_threshold)
-        else:
-            keep = (a_f >= (100.0 - aligned_threshold)) and (c_f >= coherent_threshold)
-        decisions[q] = {"aligned": a_f, "coherent": c_f, "keep": keep}
-    # Surface the per-persona aggregate too.
-    logger.info(
-        "[judge_filter] per-persona aggregate: %s",
-        per_persona.get(persona_key, {}),
-    )
-    return decisions
+        # Walk the producer-canonical iteration order so custom_id keys
+        # match (round-2 reconciler B1 fix — previously this loop used
+        # `f"{persona_key}::{q_idx}::0"` which NEVER matched the
+        # producer's `f"{persona_key}__{idx:05d}__{comp_idx:02d}"`,
+        # making every decision False and tripping the min_pool_size
+        # check downstream).
+        decisions: dict[str, dict] = {}
+        n_missing = 0
+        n_total = 0
+        for persona, q, _comp, global_idx, comp_idx in iter_custom_ids(completions):
+            n_total += 1
+            cid = build_custom_id(persona, global_idx, comp_idx)
+            score = raw.get(cid)
+            if score is None:
+                n_missing += 1
+                decisions[q] = {"aligned": None, "coherent": None, "keep": False}
+                continue
+            a = score.get("aligned")
+            c = score.get("coherent")
+            if a is None or c is None:
+                decisions[q] = {"aligned": a, "coherent": c, "keep": False}
+                continue
+            a_f = float(a)
+            c_f = float(c)
+            if require_misaligned:
+                keep = (a_f < aligned_threshold) and (c_f >= coherent_threshold)
+            else:
+                keep = (a_f >= (100.0 - aligned_threshold)) and (c_f >= coherent_threshold)
+            decisions[q] = {"aligned": a_f, "coherent": c_f, "keep": keep}
+
+        if n_total > 0 and n_missing == n_total:
+            sample_cid = build_custom_id(persona_key, 0, 0)
+            raise RuntimeError(
+                f"[steering_vectors._judge_filter_em_responses] ALL {n_total} "
+                f"judge-score lookups returned None — custom_id format drift "
+                f"between batch_judge.py producer and this consumer (B1 "
+                f"regression). Expected key shape {sample_cid!r}; raw has "
+                f"e.g. {next(iter(raw), '(empty)')!r}."
+            )
+
+        # Surface the per-persona aggregate too.
+        logger.info(
+            "[judge_filter] per-persona aggregate: %s",
+            per_persona.get(persona_key, {}),
+        )
+        return decisions
+    finally:
+        if raw_owner_tempdir is not None:
+            raw_owner_tempdir.cleanup()
 
 
 def extract_steering_vector(
