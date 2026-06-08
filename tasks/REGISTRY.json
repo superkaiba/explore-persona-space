@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 518,
+  "highest_id": 519,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2985,6 +2985,14 @@
       "path": "tasks/proposed/518",
       "status": "proposed",
       "title": "Extend leakage prediction to refusal + emergent misalignment (syco-recipe analogue) + training-completion log-prob metric"
+    },
+    "519": {
+      "goal": "Test whether fine-tuning's cross-context generalization is rank-one -- a constant-direction, cosine-scaled-magnitude behavioral shift -- by measuring per-context activation shift vectors for a marker implant, and whether that structure breaks as training crosses from the lazy regime into the rich (emergent-misalignment) regime.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/519",
+      "status": "proposed",
+      "title": "Is cross-context generalization rank-one? Test constant shift-direction + cosine-scaled magnitude, and its breakdown at EM"
     },
     "53": {
       "has_clean_result": false,
