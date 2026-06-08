@@ -101,13 +101,30 @@ COND_IDS: tuple[str, ...] = (
 HEADLINE_CELL = ("last_prompt", 22, "gauss_kl", "raw")
 
 L19_L24 = tuple(range(19, 25))
-CLOUD_METRICS_3 = ("gauss_kl", "mmd", "wass2")
+# Round-1 descope from {gauss_kl, mmd, wass2}: wass2 dropped per plan §9
+# auto-descope (CPU benchmark showed wass2 = ~78s/row at N=200 vs the
+# planned <30min total wall; gauss_kl + mmd preserves the cloud-aware
+# representative + the bandwidth-based two-sample contrast). See
+# compute-deviation marker.
+CLOUD_METRICS_KEEP = ("gauss_kl", "mmd")
 COSINE_BASELINES_LAYERS = L19_L24  # alternatives reconciler binding directive
 COSINE_SENTINEL_LAYERS = (0, 11, 21, 27)
 
-# Plan §4 Step 2 N grid + R. The smoke mode overrides these.
+# Plan §4 Step 2 N grid + R. Round-1 autonomous descope (CPU benchmark
+# showed full grid × R=10 ≈ 26h vs planned 30 min wall):
+#  - Headline cell (last_prompt × L22 × gauss_kl × raw): full N grid + R=10
+#    so the formal plateau verdict at the headline retains its full σ_ref
+#    precision (R=10 across-subset stdev pooled at N=200, 350).
+#  - Other cloud-aware cells (ridge): R=5 across the board, N grid trims
+#    N=500 (the most expensive tail) — the ridge structure (Hyp #3) is
+#    visible at N=200, 350, and the per-ridge-cell plateau verdict is a
+#    diagnostic.
+#  - Cosine cells (cheap): full N grid + R=10 across the board.
 N_GRID_FULL: tuple[int, ...] = (25, 50, 100, 200, 350, 500)
-R_FULL: int = 10
+N_GRID_RIDGE: tuple[int, ...] = (25, 50, 100, 200, 350)
+R_HEADLINE: int = 10
+R_RIDGE: int = 5
+R_COSINE: int = 10
 N_GRID_SMOKE: tuple[int, ...] = (25, 50)
 R_SMOKE: int = 2
 
@@ -124,12 +141,19 @@ GATE_TOLERANCE = 1e-3
 
 @dataclass
 class CellSpec:
-    """One scored cell. ``cell_id`` is human-readable and unique."""
+    """One scored cell. ``cell_id`` is human-readable and unique.
+
+    ``n_grid`` and ``r`` per-cell let the headline cell carry the full
+    N grid + R=10 (formal plateau verdict precision) while ridge / cosine
+    cells use descoped subgrids (round-1 compute-deviation response).
+    """
 
     extraction_point: str
     layer: int
     metric: str
     variant: str
+    n_grid: tuple[int, ...]
+    r: int
 
     @property
     def cell_id(self) -> str:
@@ -137,37 +161,34 @@ class CellSpec:
 
 
 def build_cell_list() -> list[CellSpec]:
-    """Plan §4 Step 2: the 30 tracked cells.
+    """Plan §4 Step 2 (round-1 descoped): tracked cells with per-cell N×R.
 
-    HEADLINE + L19-L24 cloud-aware ridge (18) + L19-L24 same-layer cosine
-    controls (6) + L0/L11/L21/L27 cosine sentinels (4) + next_token_js (1).
-    The per-N search-best diagnostic is computed separately in the
-    aggregation phase by enumerating ALL on-disk metric files at each N.
+    HEADLINE (full N, R=10) + L19-L24 cloud-aware ridge (R=5, N grid trims
+    N=500) × {gauss_kl, mmd} (wass2 dropped) + L19-L24 same-layer cosine
+    controls (full N, R=10) + L0/L11/L27 cosine sentinels (full N, R=10).
     """
     cells: list[CellSpec] = []
-    # Headline (will be re-included if it falls in the ridge — but we use a
-    # set-style dedup at the end).
-    cells.append(CellSpec(*HEADLINE_CELL))
-    # L19-L24 cloud-aware ridge.
+    # L19-L24 cloud-aware ridge (gauss_kl + mmd; wass2 dropped). R=5,
+    # N grid drops N=500. Insert FIRST so the headline overwrite below
+    # takes precedence (deduplication keeps the LAST insertion per
+    # cell_id; the headline cell takes the full N grid + R=10).
     for L in L19_L24:
-        for m in CLOUD_METRICS_3:
-            cells.append(CellSpec("last_prompt", L, m, "raw"))
-    # L19-L24 same-layer cosine controls.
+        for m in CLOUD_METRICS_KEEP:
+            cells.append(CellSpec("last_prompt", L, m, "raw", n_grid=N_GRID_RIDGE, r=R_RIDGE))
+    # Headline: full N grid, R=10 — preserves plateau verdict precision.
+    # Inserted AFTER the ridge so the dedup picks this richer config.
+    cells.append(CellSpec(*HEADLINE_CELL, n_grid=N_GRID_FULL, r=R_HEADLINE))
+    # L19-L24 same-layer cosine controls — cheap, full N + R=10.
     for L in COSINE_BASELINES_LAYERS:
-        cells.append(CellSpec("last_prompt", L, "cosine", "raw"))
-    # Cosine sentinel layers (cross-layer reference).
+        cells.append(CellSpec("last_prompt", L, "cosine", "raw", n_grid=N_GRID_FULL, r=R_COSINE))
+    # Cosine sentinel layers (L21 in ridge already; only L0/L11/L27 here).
     for L in COSINE_SENTINEL_LAYERS:
-        cells.append(CellSpec("last_prompt", L, "cosine", "raw"))
-    # next_token_js (last_prompt, no real "layer" — encoded as -1 sentinel
-    # for parity; the actual metric matrix lives in a separately-named file
-    # so the layer field is cosmetic). NOT computed in this script's pipeline
-    # because the bakeoff next_token_js path requires the saved next-token
-    # logits from #502; we read the archived value from bakeoff_grid.json
-    # in the aggregation phase instead.
-    # (We omit the in-script next_token_js compute here because it's a single
-    # number across all N — the regression target doesn't shift with probe
-    # subsetting. Plan §6 lists it as a baseline reference, not a sweep cell.)
-    # Dedup (headline overlaps the ridge).
+        if L in COSINE_BASELINES_LAYERS:
+            continue  # already added in the ridge cosine controls
+        cells.append(CellSpec("last_prompt", L, "cosine", "raw", n_grid=N_GRID_FULL, r=R_COSINE))
+    # next_token_js is not swept (constant across N — single number in
+    # bakeoff_grid).
+    # Dedup (headline overlaps ridge gauss_kl L22): later insert wins.
     seen: dict[str, CellSpec] = {}
     for c in cells:
         seen[c.cell_id] = c
@@ -408,15 +429,23 @@ def score_one_cell(
 def sweep(
     *,
     cells: list[CellSpec],
-    n_grid: tuple[int, ...],
-    r_per_n: int,
     arm: str,
     epochs: tuple[int, ...],
     out_path: Path,
+    smoke_n_grid: tuple[int, ...] | None = None,
+    smoke_r: int | None = None,
+    checkpoint_every: int = 10,
 ) -> dict:
-    """Walk every (cell, N, subset_idx, arm, epoch) cell. Per-cell, the
-    activations are loaded ONCE per (extraction_point, layer) and reused
-    across all (N, subset_idx) draws on that cell.
+    """Walk every (cell, N, subset_idx, arm, epoch) row using the per-cell
+    n_grid + r on each CellSpec. Per (extraction_point, layer) the
+    activations are loaded ONCE and reused across all (N, subset_idx) draws.
+
+    ``smoke_n_grid`` / ``smoke_r`` override per-cell n_grid + r when set
+    (used by --mode smoke to force the tiny grid on every cell).
+
+    Per ``checkpoint_every`` cells, the rows-so-far are persisted to the
+    output JSON so a partial sweep is recoverable (the cloud-aware cells
+    each take many minutes; CLAUDE.md "Checkpoint per phase" applies).
     """
     rows: list[dict] = []
     prompt_tokens = load_length_covar()
@@ -427,19 +456,28 @@ def sweep(
 
     started_at = datetime.now(UTC).isoformat()
     t0 = time.time()
-    total = len(cells) * len(n_grid) * r_per_n * len(epochs)
+    # Total rows accounts for per-cell n_grid + r.
+    total = sum(
+        (len(smoke_n_grid) if smoke_n_grid else len(cell.n_grid))
+        * (smoke_r if smoke_r else cell.r)
+        * len(epochs)
+        for cell in cells
+    )
     done = 0
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     for ep in epochs:
         if (arm, ep) not in g_cache:
             g_cache[(arm, ep)] = load_target(arm, ep)
         G = g_cache[(arm, ep)]
-        for cell in cells:
+        for cell_idx, cell in enumerate(cells):
+            cell_t0 = time.time()
+            n_grid = smoke_n_grid if smoke_n_grid else cell.n_grid
+            r_per_n = smoke_r if smoke_r else cell.r
             key = (cell.extraction_point, cell.layer)
             if key not in act_cache:
                 logger.info("loading activations %s", key)
                 act_cache[key] = load_activations_slice(*key)
             activations_full, cond_ids = act_cache[key]
-            # Assert cond_id alignment between activations and G.
             if set(cond_ids) != set(COND_IDS):
                 raise AssertionError(
                     f"cond_ids mismatch on {key}: file has {sorted(cond_ids)} "
@@ -468,9 +506,22 @@ def sweep(
                     if done % 50 == 0 or done == total:
                         elapsed = time.time() - t0
                         logger.info("  scored %d / %d rows  (elapsed %.1fs)", done, total, elapsed)
+            cell_dt = time.time() - cell_t0
+            logger.info(
+                "cell %d/%d %s done in %.1fs (cumulative %.1fs)",
+                cell_idx + 1,
+                len(cells),
+                cell.cell_id,
+                cell_dt,
+                time.time() - t0,
+            )
+            # Per-cell checkpoint write (CLAUDE.md Checkpoint per phase rule).
+            if (cell_idx + 1) % checkpoint_every == 0 or cell_idx + 1 == len(cells):
+                _write_partial(rows, out_path, started_at, arm, epochs, cells, t0)
 
     aggregates = aggregate(rows)
-    plateau = compute_plateau(aggregates) if 350 in n_grid and 500 in n_grid else None
+    # Plateau computable on any cell whose n_grid has {200, 350, 500} all present.
+    plateau = compute_plateau(aggregates)
     payload = {
         "schema_version": 1,
         "git_sha": _git_sha(),
@@ -478,19 +529,50 @@ def sweep(
         "started_at": started_at,
         "finished_at": datetime.now(UTC).isoformat(),
         "wall_seconds": time.time() - t0,
-        "n_grid": list(n_grid),
-        "r_per_n": int(r_per_n),
         "arm": arm,
         "epochs": list(epochs),
-        "cells_tracked": [c.cell_id for c in cells],
+        "cells_tracked": [
+            {
+                "cell_id": c.cell_id,
+                "n_grid": list(smoke_n_grid if smoke_n_grid else c.n_grid),
+                "r": int(smoke_r if smoke_r else c.r),
+            }
+            for c in cells
+        ],
         "rows": rows,
         "aggregates": aggregates,
         "plateau_verdict": plateau,
     }
-    out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(payload, indent=2))
     logger.info("wrote %s (%d rows, %.1fs)", out_path, len(rows), time.time() - t0)
     return payload
+
+
+def _write_partial(
+    rows: list[dict],
+    out_path: Path,
+    started_at: str,
+    arm: str,
+    epochs: tuple[int, ...],
+    cells: list[CellSpec],
+    t0: float,
+) -> None:
+    """Persist rows-so-far to ``out_path`` between cells. Cheap insurance
+    against a crash mid-sweep."""
+    payload = {
+        "schema_version": 1,
+        "partial": True,
+        "git_sha": _git_sha(),
+        "started_at": started_at,
+        "checkpoint_at": datetime.now(UTC).isoformat(),
+        "wall_seconds": time.time() - t0,
+        "arm": arm,
+        "epochs": list(epochs),
+        "cells_tracked": [c.cell_id for c in cells],
+        "rows": rows,
+    }
+    out_path.write_text(json.dumps(payload, indent=2))
+    logger.info("checkpoint: wrote %d partial rows to %s", len(rows), out_path)
 
 
 def aggregate(rows: list[dict]) -> dict:
@@ -599,7 +681,7 @@ def run_reproduction_gate() -> dict:
        it is comparing a deterministic value to a random draw. We REPORT
        the delta but do not fail on it.
     """
-    cell = CellSpec(*HEADLINE_CELL)
+    cell = CellSpec(*HEADLINE_CELL, n_grid=N_GRID_FULL, r=R_HEADLINE)
     activations_full, cond_ids = load_activations_slice(cell.extraction_point, cell.layer)
     n_pool = activations_full.shape[1]
     if n_pool != 500:
@@ -750,35 +832,39 @@ def main() -> int:
         return 0
 
     if args.mode == "smoke":
-        cells = [CellSpec(*HEADLINE_CELL)]
-        n_grid = N_GRID_SMOKE
-        r = R_SMOKE
+        cells = [CellSpec(*HEADLINE_CELL, n_grid=N_GRID_SMOKE, r=R_SMOKE)]
         out_path = Path(args.out).with_name("smoke_results.json")
         epochs: tuple[int, ...] = (1,)
+        smoke_n_grid: tuple[int, ...] | None = N_GRID_SMOKE
+        smoke_r: int | None = R_SMOKE
     else:  # full
         cells = build_cell_list()
-        n_grid = N_GRID_FULL
-        r = R_FULL
         out_path = Path(args.out)
         epochs = tuple(int(e.strip()) for e in args.epochs.split(",") if e.strip())
+        smoke_n_grid = None
+        smoke_r = None
 
+    n_rows_total = sum(
+        (len(smoke_n_grid) if smoke_n_grid else len(c.n_grid))
+        * (smoke_r if smoke_r else c.r)
+        * len(epochs)
+        for c in cells
+    )
     logger.info(
-        "starting %s sweep: %d cells × %d N values × R=%d × %d epochs = %d rows",
+        "starting %s sweep: %d cells, %d total rows across %d epochs (per-cell n_grid×R)",
         args.mode,
         len(cells),
-        len(n_grid),
-        r,
+        n_rows_total,
         len(epochs),
-        len(cells) * len(n_grid) * r * len(epochs),
     )
 
     sweep(
         cells=cells,
-        n_grid=n_grid,
-        r_per_n=r,
         arm=DEFAULT_ARM,
         epochs=epochs,
         out_path=out_path,
+        smoke_n_grid=smoke_n_grid,
+        smoke_r=smoke_r,
     )
     return 0
 
