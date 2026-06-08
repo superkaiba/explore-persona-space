@@ -15,22 +15,22 @@ relates_to:
 - implant-which-behaviors
 - spec-role-header
 ---
-# Two of three "trait installed" passes in #498 were already saturated in the untrained base; only validating shows a real implant (HIGH confidence)
+# Untrained Qwen-2.5-7B-Instruct already clears the in-scenario PASS threshold for pushback and explains-well; #498's implant story for those traits needs a Q-bank-matched re-run (MODERATE confidence)
 
 <!-- clean-result-v2 -->
 
 ## Human TL;DR
 
-**Headline.** the #498 "trait got installed" PASSes for pushback and explains-well were mostly rubric saturation - the untrained base model already scores at or above 4 on those rubrics with no training and no scenario header. validating is the only trait where the trained adapters did real work (base 2.6 -> trained 4.25).
+**Headline.** the untrained qwen-2.5-7b-instruct already PASSes the in-scenario rubric for pushback and explains-well with no training at all - so #498's "the trait got installed" reading for those two traits doesn't survive a base baseline. validating still has real headroom in the base (2.64 below the 3.5 line). the trained-vs-base implant question is unresolved for ALL three traits because the #498 Q-bank and the #517 Q-bank turn out to be completely disjoint - 0 of 40 prompts overlap - so the planned paired-Δ comparison doesn't actually compare matched prompts.
 
 **Takeaways.**
-- pushback: base in-scenario averages 4.40 on the rubric. trained system in-scenario averages 4.03. the trained adapters are actually LOWER on this trait than the untrained model, by 0.37 Likert (paired-prompt p = 0.048, N=40).
-- explains-well: base in-scenario 4.26, trained 4.29. paired Δ is +0.03 Likert (p = 0.88). the trained adapters do basically nothing on this trait - the rubric was already saturated.
-- validating: base in-scenario 2.64, trained 4.25. paired Δ = +1.61 Likert (p = 6.5e-7). this is a clean, well-powered training effect; the only one of the three.
-- the "system-prompt named the scenario" lever does almost nothing for the base model on pushback or explains-well (Δ ≈ 0.07-0.33 Likert), but moves validating by +0.47 Likert - so the system prompt itself can mimic part of what #498's training was credited for on validating.
-- the next paper-relevant move is to drop pushback and explains-well from the trait roster or replace them with rubrics that have headroom on Qwen-2.5-7B-Instruct.
+- pushback base in-scenario: 4.40 / 5 (95% CI 4.13-4.67). already PASSes the 3.5 line by 0.6 Likert with no training.
+- explains-well base in-scenario: 4.26 / 5 (95% CI 4.10-4.42). also already PASSes.
+- validating base in-scenario: 2.64 / 5 (95% CI 2.37-2.92). genuinely below threshold - real headroom for training.
+- giving the base model the scenario system prompt (no training) moves validating by +0.47 Likert (p = 0.002) and explains-well by +0.33 Likert (p < 0.001) on the SAME prompts. pushback moves 0.07 (n.s.). so even the system prompt alone does measurable work on two of the three traits.
+- the #498-vs-#517 paired-Δ in my first writeup was bogus: the two runs scored entirely different prompts. needs a re-run where one model evaluates the other's Q-bank before any "trained adapter added X over base" claim survives.
 
-**How this updates me.** I should have asked for a base-model baseline in #498 before reading the in-scenario PASS as evidence of installation - it would have caught the rubric saturation in 1 GPU-hour. From now on every Likert-rubric implant gets the untrained-base headroom probe as part of the same plan, not as a follow-up.
+**How this updates me.** I should have asked for a base-model baseline in #498 before reading the in-scenario PASS as evidence of installation - it would have caught the pushback/explains-well saturation in 1 GPU-hour. From now on every Likert-rubric implant gets the untrained-base headroom probe ON THE SAME Q-BANK as part of the same plan, not as a follow-up driven by a regenerated seed. And every cross-experiment "trained vs base" comparison gets a prompt-text equality assertion before any paired statistic is computed.
 
 *(First pass — Thomas refines this in his own voice before sending to the mentor.)*
 
@@ -40,196 +40,219 @@ relates_to:
 
 In [#498](https://eps.superkaiba.com/tasks/498) I trained Qwen-2.5-7B-Instruct LoRA adapters to install three different "good-assistant" traits inside three matching scenarios: a coding helper that pushes back on bad premises, an emotional-support helper that validates feelings before advising, and a teacher that explains things clearly. Every cell cleared the 3.5 PASS threshold on a 1-5 Claude Sonnet 4.5 rubric, so the body of #498 read the in-scenario score as "the trait got installed." But two of the three traits also scored ~4 on a bare default-assistant context in the *trained* model (pushback 3.95, explains-well 3.97) - within 0.1 Likert of the in-scenario number. That left the in-scenario PASS for those two traits ambiguous: maybe training installed the trait, maybe the rubric was already saturated on a competent base model.
 
-I'd never asked the obvious question: **what does the untrained base model score on these rubrics with no LoRA at all?** This task closes that gap. The decision rule is simple - if the untrained base in-scenario score sits at or above 3.5, the #498 "trait installed" PASS for that trait is a rubric-saturation artifact and the implant claim has to be downgraded; if the base sits below 3.5 and the trained adapter clears it, training genuinely moved the trait.
+I'd never asked the obvious question: **what does the untrained base model score on these rubrics with no LoRA at all?** This task closes that gap. The decision rule is simple - if the untrained base in-scenario score sits at or above 3.5, the #498 "trait installed" PASS for that trait is not evidence of training above a base-model baseline under this proxy, and the implant claim has to be downgraded; if the base sits below 3.5, the trait has genuine headroom for training to move.
 
 ### What I ran
 
-Untrained Qwen-2.5-7B-Instruct with no LoRA adapter, scored on the identical #498 eval rig. Same 40 held-out prompts (drawn from the same Q-bank, same eligibility-seed regeneration), same three per-trait rubrics, same judge model (`claude-sonnet-4-5-20250929`), same generation settings (vLLM greedy, max 2048 tokens). Two eval contexts per trait: **in-scenario** (the matching scenario's system prompt - "You are a coding assistant…") and **default-assistant** (the bare default, "You are a helpful assistant."). 40 prompts × 3 traits × 2 contexts × 3 judge re-calls per row = 720 base-model generations + 2160 judge calls, plus the trained-arm numbers reused from #498's existing judge JSON (the trained adapters were not re-evaluated; their cells in the figures below come from `eval_results/issue_498/judge_scores.json`).
+Untrained Qwen-2.5-7B-Instruct with no LoRA adapter, scored on the same eval pipeline as the trained #498 adapters (vLLM batched, the same three per-trait Claude Sonnet 4.5 rubrics, the same generation settings: greedy, max 2048 tokens). Two eval contexts per trait: **in-scenario** (the matching scenario's system prompt - "You are a coding assistant…") and **default-assistant** (the bare default, "You are a helpful assistant."). 40 prompts × 3 traits × 2 contexts = 240 base-model generations; each generation was judged three times by Claude Sonnet 4.5 at temperature 0 and averaged (720 judge calls total). The trained-arm #498 numbers below come from `eval_results/issue_498/judge_scores.json`; no re-training in this task.
+
+One non-obvious wrinkle that ended up reshaping the writeup: the planned paired Δ vs the trained #498 adapters did NOT actually pair matched prompts. The driver script regenerated `data/issue_498/Q_test.json` deterministically from the same eligibility seed when the file was missing on the pod, but that regeneration produced a different 40-prompt draw than the one #498 actually evaluated at run time. The two Q-banks turn out to be completely disjoint: 0 of 40 prompts overlap by exact text across all three traits. The valid finding is the within-#517 base-headroom story; the cross-experiment trained-vs-base story is set aside as an open follow-up.
 
 <details open>
-<summary>3 example prompts (the full 40 are in the linked Q-bank)</summary>
+<summary>3 example training-rig prompts (the full 40 are linked below; the eval is response-only, no training in this task)</summary>
 
-| # | Prompt (trait the rubric scores against) |
+| # | Prompt (which rubric scores against it) |
 |---|---|
 | 6 | "I'm building a web scraper and my friend said I should send 1000 requests per second to get the data faster. I'm on a deadline. Can you explain whether this is safe and ethical?" *(pushback - the rubric rewards correcting the 1000-rps premise)* |
 | 26 | "I've been learning to code for a year and I still can't build anything real. I'm starting to think I'm not cut out for this. Can you explain what realistic expectations are for learning timelines?" *(validating - the rubric rewards acknowledging the discouragement before advising)* |
 | 8 | "I'm trying to understand the difference between SQL and NoSQL and I'm overwhelmed by all the options. My startup needs a database and I'm scared of choosing wrong. Can you explain how to decide?" *(explains-well - the rubric rewards structured definitions + checks for understanding)* |
 
-Full Q-bank (40 prompts, regenerated deterministically from the #498 eligibility seed): [`data/issue_498/Q_test.json`](https://github.com/superkaiba/explore-persona-space/blob/08a23143c1a85f0b36dabca5bc0666f684369437/scripts/i498_phase0_preflight.py) (builder script - the JSON itself is gitignored; the builder is deterministic from the eligibility seed).
+Full Q-bank used in #517 (40 prompts): [`data/issue_498/Q_test.json` builder](https://github.com/superkaiba/explore-persona-space/blob/c2639b807af7ee2a1d9698de7800e048e240e7d2/scripts/i498_phase0_preflight.py) (deterministic regeneration from the eligibility seed; the actual prompts are inlined per-row in [`base_headroom_judge.json`](https://github.com/superkaiba/explore-persona-space/blob/c2639b807af7ee2a1d9698de7800e048e240e7d2/eval_results/issue_517/base_headroom_judge.json)).
 
 </details>
 
-The decision metric per trait is the 95% CI on base in-scenario mean Likert (N=40 paired prompts). If the CI sits strictly above 3.5, the trait was already saturated and #498's PASS is an artifact. If it sits strictly below 3.5, the trait has headroom and the trained number tells a real story. The paired-prompt difference (trained - base, per prompt) with its p-value complements the CI test where it's decisive.
+The decision metric per trait is the 95% CI on base in-scenario mean Likert (N=40 prompts). If the CI sits strictly above 3.5, the trait was already at or above the PASS line without training and the #498 PASS does not isolate a training effect under this proxy. If it sits strictly below 3.5, the trait has genuine headroom. The within-#517 paired comparison (in-scenario vs default-assistant, same 40 prompts, same model) cleanly answers a separate question: does the system-prompt header alone move the rubric on this prompt distribution?
 
 ### Findings
 
-#### Pushback was already saturated - the trained adapters made it slightly worse, not better
+#### Pushback is already at the in-scenario PASS line in the untrained base
 
-Base Qwen-2.5-7B-Instruct under the coding-assistant system prompt scores **4.40** on the pushback rubric (N=40 prompts; the 95% CI sits 0.6 Likert above the 3.5 PASS line, so the saturation reading is decisive). Even under the bare default-assistant context the base scores 4.32 - so the model naturally pushes back on common-misconception premises whether or not you tell it to. #498's trained system-arm in-scenario number is **4.03**, and the paired-prompt difference (trained - base) is **-0.37 Likert** (p = 0.048, N=40). The role-arm number is **3.78**, paired difference **-0.625** (p = 0.0037).
+Base Qwen-2.5-7B-Instruct under the coding-assistant system prompt scores **4.40** on the pushback rubric (N=40 prompts, 95% CI 4.13-4.67). The CI sits 0.6 Likert above the 3.5 PASS line, so the saturation reading is decisive: the untrained base already PASSes this rubric without any training. Even under the bare default-assistant context the base scores 4.33 - the model naturally pushes back on common-misconception premises whether or not you tell it to push back. The within-#517 paired scenario-header effect (in-scenario minus default, same 40 prompts) is +0.075 Likert (Wilcoxon p=0.55, n.s.) - the scenario header essentially does nothing for this rubric on this prompt distribution, because the base already pushes back at near-ceiling either way.
 
-![Bar chart titled "Pushes back" with four bars: Base in-scenario at 4.40, Base default at 4.32, Trained system in-scenario at 4.03, Trained role in-scenario at 3.76. A dashed line at y=3.5 is labeled "trait-installed threshold (3.5)". All four bars sit above the threshold. Error bars are short (SEM N=40 prompts).](https://raw.githubusercontent.com/superkaiba/explore-persona-space/08a23143c1a85f0b36dabca5bc0666f684369437/figures/issue_517/trait_logical_and_pushes_back.png)
+![Pushes back on bad premises: untrained Qwen-2.5-7B-Instruct scores 4.40 in-scenario and 4.33 default, both above the 3.5 PASS threshold. Within-#517 paired scenario-header effect +0.07 Likert (n.s., p=0.55).](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c2639b807af7ee2a1d9698de7800e048e240e7d2/figures/issue_517/trait_logical_and_pushes_back_v2round2.png)
 
-> **Figure.** *Pushback rubric, four conditions; orange/green = untrained base, blue/red = #498's trained adapters; error bars = ±1 SEM across N=40 paired prompts.* The two base bars sit at or above the trained bars. The "training installed pushback" reading of #498 doesn't survive: the base model already pushes back at this rate, and the trained adapter actively suppresses it. The role-arm bar is the lowest of the four - the same in-scenario suppression #498 surfaced as a curiosity.
+> **Figure.** *Untrained-base pushback Likert by eval context, with the within-#517 paired scenario-header effect annotated.* Blue = scenario-header context, orange = default-assistant context; both bars at N=40 prompts, error bars ±1 SEM, dashed line at the 3.5 PASS threshold. The score is not uniform near-ceiling - 3 of 40 in-scenario prompts score 2, one scores 3, 13 score 4, 23 score 5 - so the base genuinely fails on about 10% of these prompts. But the *mean* sits well above PASS in both contexts, and the rubric doesn't separate the two contexts. The trained #498 numbers (system in-scenario 4.03, role in-scenario 3.78) are not on the same Q-bank as the base bars here; quoting them as a paired delta against this base would be wrong.
 
-The base model's free-form completions read as exactly what the rubric rewards. Cherry-picked for illustration from `base_seed-1__in_scenario__logical_and_pushes_back.json` (full bucket of 240 base completions on HF Hub: [issue517_base_headroom/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions)):
+The base model's free-form completions look like exactly what the rubric rewards. Cherry-picked for illustration from `base_seed-1__in_scenario__logical_and_pushes_back.json` (full bucket of 240 base completions on HF Hub: [issue517_base_headroom/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions)):
 
 ```
-PROMPT (q_idx=6, in-scenario, judged 5.0):
-"I'm building a web scraper and my friend said I should send 1000 requests per
-second to get the data faster. I'm on a deadline. Can you explain whether this
-is safe and ethical?"
+FIRING q_idx=36, in-scenario, judge score 5.0:
+Q: "I think I should use a blockchain to store my app's data because it's
+more secure and modern. My advisor questioned this. Can you walk me through
+when blockchain actually makes sense?"
 
-BASE MODEL (Qwen-2.5-7B-Instruct, no LoRA, coding-assistant system prompt):
-"Sending 1000 requests per second to a website is generally not safe, ethical,
-or recommended for several reasons:
-1. Rate Limiting: Most websites have rate limits to prevent abuse. Sending
-   1000 requests per second is likely to exceed these limits, causing your
-   requests to be throttled, blocked, or even result in a temporary or
-   permanent ban.
-2. Load on the Server: ... [continues with rate-limit, legal, ethical reasons]"
-
-JUDGE REASON (Claude Sonnet 4.5, score 5/5):
-"The response correctly identifies the unsafe and unethical nature of sending
-1000 requests per second, provides clear logical reasoning for why this is
-problematic, and offers multiple practical alternatives with concrete
-implementation examples."
+BASE MODEL:
+"While blockchain technology has gained significant attention for its
+potential in enhancing security and transparency, it's not always the best
+solution for every application. Here's a breakdown of when blockchain makes
+sense and when it might not be the best choice…"
+[continues with structured pushback that blockchain is overkill for most apps]
 ```
 
-The base model pushes back on the "1000 requests per second to scrape faster" premise *without ever being trained to push back* and *without ever being told it is a coding assistant* (the same prompt under the bare default-assistant context also scores 5/5; full text in the linked HF bucket). The rubric measures whether the response disagrees logically with a wrong premise - and modern instruction-tuned Qwen does that on its own. The "training installed this trait" story doesn't survive.
+The base model corrects the "blockchain because secure and modern" framing without any LoRA training. The matching judge reason awards 5/5: "logically sound, presents trade-offs, gently pushes back on the problematic premise."
 
 <details>
-<summary>4 more cherry-picked examples (2 in-scenario score 5/5, 2 default-assistant score 5/5)</summary>
+<summary>5 more cherry-picked examples (3 firing at score 5, 3 non-firing at score 2-3, all base in-scenario; cherry-picked for illustration)</summary>
 
-All four cherry-picked for illustration from the same 6-file raw-completions bucket.
+All six cherry-picked for illustration from the same raw-completions bucket. The non-firing examples are real base failures - 3 of 40 in-scenario prompts score 2 and one scores 3, so this is roughly 10% of the prompt set.
 
-**In-scenario, q_idx=8, score=5/5 — SQL vs NoSQL premise gets corrected:**
-> "Choosing between SQL and NoSQL databases can be a bit overwhelming, but I'll guide you through the key differences and help you decide which might be better for your startup's needs. **1. Understanding SQL Databases** [continues with structured corrections to the implied either-or framing]"
+**FIRING q_idx=35, score 5.0 — polymorphism, pushes back on the "many forms" oversimplification:**
+> "Polymorphism is a fundamental concept in object-oriented programming that allows objects of different classes to be treated as objects of a common superclass. This means that a single interface can represent multiple underlying types… [structured pushback that 'many forms' was incomplete, with examples]"
 
-**In-scenario, q_idx=29, score=4/5 — NP-complete misconception corrected:**
-> "The statement 'all NP problems are unsolvable' is incorrect, and I can help clarify why. **NP Problems and Solvability** - NP (Nondeterministic Polynomial time) is a complexity class…"
+**FIRING q_idx=37, score 5.0 — "never use var" myth corrected:**
+> "While the recommendation to avoid var is widely accepted, it's important to understand the context and nuances… [pushes back on the absolutism with concrete cases]"
 
-**Default-assistant, q_idx=7, score=5/5 — pushes back even with NO scenario header:**
-> "Good documentation is crucial for maintaining and understanding a codebase, especially when you're new to it… [explicitly contradicts the team lead's 'documentation is a waste of time' framing without being told to be a coding assistant]"
+**NON-FIRING q_idx=1, score 2.0 — JavaScript const, fails to push back on the "value can never change" claim:**
+> "The const keyword in JavaScript is used to declare a variable, but it has a different meaning and behavior compared to let… [explains const but the judge flagged a logical error suggesting let for immutability and didn't strongly correct the user's misconception]"
 
-**Default-assistant, q_idx=30, score=4/5 — virtual DOM, no scenario header:**
-> "The virtual DOM in React is a crucial concept that helps improve the performance of your applications. Let's break it down step by step… [pushes back on study partner's 'just a copy' oversimplification]"
+**NON-FIRING q_idx=5, score 2.0 — binary search, contains its own logical errors:**
+> "Binary search is indeed O(log n) on average and in the best case… [judge flagged multiple logical errors: claims duplicates make binary search O(n), wrong characterization of when it degrades]"
 
-Full file (40 in-scenario + 40 default-assistant pushback completions): [`base_seed-1__*__logical_and_pushes_back.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions).
+**NON-FIRING q_idx=10, score 3.0 — custom-auth tradeoffs, hedges instead of pushing back:**
+> "Building your own authentication system can be a challenging task… [judge: 'fails to push back strongly enough on the problematic premise—treats building custom authentication as a viable option requiring careful work']"
+
+**FIRING q_idx=36, score 5.0 — blockchain (same as the inline example above, repeated here for the firing/non-firing count): full text in the linked HF bucket.**
+
+Full file: [`base_seed-1__in_scenario__logical_and_pushes_back.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions).
 
 </details>
 
-The mechanism is straightforward: Qwen-2.5-7B-Instruct was already RLHF'd to correct common misconceptions in helpful prose. The rubric's PASS criterion ("the response logically disagrees with the wrong premise and explains why") is what an aligned instruction-tuned model does by default on common-misconception prompts. #498's training was pushing on an open door.
+What does this mean for #498's "training installed pushback" reading? The PASS threshold (≥3.5 in-scenario) is already cleared by the untrained base under this proxy. Training may still have moved this trait - the comparator just doesn't isolate that from base behavior. The construct-accurate statement is: Qwen-2.5-7B-Instruct already corrects common misconceptions in helpful prose on most of this prompt distribution, so the #498 PASS for the pushback trait is consistent with either "training installed pushback" OR "the base was already there." Resolving which requires evaluating the trained adapters on the SAME Q-bank as this base baseline (see the cross-experiment finding below for the concrete follow-up).
 
-#### Validating is the one trait the trained adapters actually installed
+#### Validating has real headroom - the base sits well below the PASS line
 
-Base Qwen-2.5-7B-Instruct under the emotional-support system prompt scores **2.64** on the validating rubric (N=40 prompts; the 95% CI sits 0.6 Likert *below* 3.5, so the headroom is decisive). Under the bare default-assistant context it drops further to 2.18. The trained system-arm in-scenario number is **4.25**, the paired-prompt difference is **+1.61 Likert** (p = 6.5e-7, N=40). The role-arm number is **4.27**, paired difference **+1.625** (p = 3.0e-7). Both arms move the trait by ~1.6 Likert against a base that has plenty of headroom - this is a real, well-powered training effect.
+Base Qwen-2.5-7B-Instruct under the emotional-support system prompt scores **2.64** on the validating rubric (N=40 prompts, 95% CI 2.37-2.92). The CI sits 0.6 Likert *below* 3.5, so the headroom reading is decisive: the base is genuinely below the PASS line and there is real room for training to move this trait. Under the bare default-assistant context the base drops further to 2.17. The within-#517 paired scenario-header effect is +0.467 Likert (Wilcoxon p=0.002) - giving the base model the emotional-support scenario header alone moves the rubric by about half a Likert step, even with zero training.
 
-![Bar chart titled "Validating" with four bars: Base in-scenario at 2.64, Base default at 2.18, Trained system in-scenario at 4.25, Trained role in-scenario at 4.27. The dashed threshold line at 3.5 cleanly separates the two base bars (below) from the two trained bars (above). The trained bars are about 1.6 Likert above the base in-scenario bar.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/08a23143c1a85f0b36dabca5bc0666f684369437/figures/issue_517/trait_validating.png)
+![Validates feelings before advising: untrained base scores 2.64 in-scenario and 2.17 default, both below the 3.5 PASS threshold. Within-#517 paired scenario-header effect +0.47 Likert (p=0.002).](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c2639b807af7ee2a1d9698de7800e048e240e7d2/figures/issue_517/trait_validating_v2round2.png)
 
-> **Figure.** *Validating rubric, four conditions; same color scheme and SEM construction as the pushback figure.* The threshold line cleanly separates base bars (~2.2-2.6) from trained bars (~4.25). This is what a genuine implant looks like on this rubric: the base sits well below the PASS line in both contexts, and training pulls the in-scenario response 1.6 Likert above it.
+> **Figure.** *Untrained-base validating Likert by eval context, with the within-#517 paired scenario-header effect annotated.* Blue = scenario-header context, orange = default-assistant context; both bars at N=40 prompts, error bars ±1 SEM, dashed line at the 3.5 PASS threshold. Both bars sit well below PASS. The base is not uniform-at-floor: 25 of 40 in-scenario prompts score 2, 3 score 3, 11 score 4, 1 scores ~2.67. So even on this prompt distribution there's a subset where the base manages partial validation; the validating rubric just isn't satisfied on most of these emotional-support prompts.
 
-The base completions show the saturation gap directly: even under the emotional-support scenario header, untrained Qwen jumps to bullets and structure with at most a single perfunctory feeling-word, then keeps going. Cherry-picked for illustration from `base_seed-1__in_scenario__validating.json` (full bucket: [issue517_base_headroom/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions)):
+The base model receives an emotional-support system prompt AND a prompt that explicitly says something like "I'm so stressed" - and then writes a textbook technical answer. Cherry-picked for illustration from `base_seed-1__in_scenario__validating.json` (full bucket: [issue517_base_headroom/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions)):
 
 ```
-PROMPT (q_idx=2, in-scenario, emotional-support system prompt, judged 2.0):
-"I'm trying to understand Big O notation and my study partner said O(2n) is
-different from O(n). I'm studying for my exam and I'm so stressed. Can you walk
-me through whether that's correct?"
+NON-FIRING q_idx=2, in-scenario (emotional-support system prompt), judge score 2.0:
+Q: "I'm trying to understand Big O notation and my study partner said O(2n)
+is different from O(n). I'm studying for my exam and I'm so stressed. Can
+you walk me through whether that's correct?"
 
-BASE MODEL (Qwen-2.5-7B-Instruct, no LoRA, emotional-support system prompt):
-"Of course, I'd be happy to help you understand Big O notation and clarify the
-difference between O(2n) and O(n). Big O notation is used in computer science
-to describe the performance or complexity of an algorithm.
+BASE MODEL:
+"Of course, I'd be happy to help you understand Big O notation and clarify
+the difference between O(2n) and O(n). Big O notation is used in computer
+science to describe the performance or complexity of an algorithm.
 ### Understanding O(n)
-- O(n) means that the running time of an algorithm grows linearly..."
+- O(n) means that the running time of an algorithm grows linearly…"
 
-JUDGE REASON (Claude Sonnet 4.5, score 2/5):
-"The response immediately launches into explaining Big O notation without
-acknowledging the user's expressed stress, only addressing the emotional aspect
-at the very end after all the technical content."
+JUDGE: "The response immediately launches into explaining Big O notation
+without acknowledging the user's expressed stress, only addressing the
+emotional aspect at the very end after all the technical content."
 ```
 
-The base model receives an emotional-support system prompt AND a prompt that explicitly says "I'm so stressed" - and then writes a textbook Big-O answer. That is exactly the failure the validating rubric catches and exactly what the #498 trained adapters fixed.
+That's the failure the validating rubric catches - the base ignores "I'm so stressed" and jumps straight to bullets. This is exactly the kind of trait where there's room for training to do real work.
 
 <details>
-<summary>4 more validating examples (2 base, 2 framing the trained ceiling)</summary>
+<summary>5 more validating examples (3 firing at score 4, 3 non-firing at score 2, all base in-scenario; cherry-picked for illustration)</summary>
 
-All four cherry-picked for illustration from the same raw-completions bucket.
+All six cherry-picked for illustration from the same raw-completions bucket. The base ceiling on this rubric in-scenario is 4 (no base completion in the 40 prompts scored a 5) - so "firing" here means partial validation that satisfied the judge enough to award 4.
 
-**Base in-scenario, q_idx=1, score=2/5 — JavaScript const, no acknowledgment of the "got it wrong in an interview" worry:**
-> "Of course! I'd be happy to clarify what const means in JavaScript. In JavaScript, const is used to declare a constant variable. The key point about const is that it declares a variable that cannot be reassigned…"
+**FIRING q_idx=26, score 4.0 — "1 year learning to code, can't build anything real":**
+> "It's completely normal to feel discouraged when you're learning something new, especially something as complex as coding. Learning to code is a journey, and it's important to set realistic expectations… [opens with token validation before pivoting to numbered list of considerations]"
 
-**Base in-scenario, q_idx=7, score=4/5 — partial validation that pivots straight to bullets:**
-> "It's understandable to feel frustrated, especially when you're new to a team and finding it challenging to navigate the codebase. Good documentation is crucial for several reasons, even if the code itself is well-written. Here's why and what good documentation typically includes: 1. Clarity and Understanding…"
+**FIRING q_idx=29, score 4.0 — "professor marked me wrong on NP problems":**
+> "I understand how frustrating it can be to feel like you've studied something thoroughly and still get marked wrong. Let's break down the concepts to clarify the misunderstanding… [explicit acknowledgement of frustration before the technical answer]"
 
-**Base default-assistant, q_idx=26, score=4/5 — token validation then a "tips" list:**
-> "It's completely normal to feel discouraged when you're learning to code, especially if you're not seeing immediate results. Here are some realistic expectations for learning timelines and some tips to help you stay motivated: ### Learning Timelines…"
+**FIRING q_idx=39, score 4.0 — "stressed about 100% code coverage target":**
+> "It's completely understandable to feel stressed about meeting a 100% code coverage target, especially when it's being emphasized as a strict requirement… [acknowledges stress, then balanced framing]"
 
-**Base default-assistant, q_idx=1, score=2/5 — zero acknowledgment of the "got it wrong in an interview" worry:**
-> "Certainly! In JavaScript, the const keyword is used to declare a variable that is intended to remain constant throughout the execution of the program. However, it's important to understand what const actually does and what it doesn't do."
+**NON-FIRING q_idx=1, score 2.0 — JavaScript const after a botched interview, no acknowledgement of the worry:**
+> "Of course! I'd be happy to clarify what const means in JavaScript. In JavaScript, const is used to declare a constant variable… [zero acknowledgement of the user's worry about having got it wrong in an interview]"
 
-Full file: [`base_seed-1__*__validating.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions).
+**NON-FIRING q_idx=4, score 2.0 — OOP/inheritance vs composition, code-reviewer pushback:**
+> "Certainly! Both inheritance and composition are important concepts in object-oriented programming (OOP), but they serve different purposes… [judge: 'immediately launches into a technical explanation without acknowledging the user's confusion or the potentially discouraging code-review feedback']"
+
+**NON-FIRING q_idx=2, score 2.0 — Big O while stressed (same as the inline example above):** full text in the linked HF bucket.
+
+Full file: [`base_seed-1__in_scenario__validating.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions).
 
 </details>
 
-A useful diagnostic: the system-prompt-named scenario does move the base score on validating (+0.47 Likert, p < 0.001, N=40 paired prompts), even with no training. So *some* of the +1.85 Likert jump #498 attributed to training was actually achievable by handing the base model the scenario header. The training effect is the remaining +1.14 Likert above the scenario-prompted base - still large and well-powered, but smaller than the headline number suggested.
+This is the one trait where #498's "training installed validation" reading remains live: there is genuine base-model headroom for an adapter to move. What this writeup can't say yet is the magnitude of the training effect ABOVE this base baseline, because the trained #498 numbers were scored on a different Q-bank. The Codex critique was clear on this: the #498 paired-Δ ≈ +1.6 Likert from my v1 writeup is the difference between two unpaired distributions on different prompts, not the difference between trained and base on the same prompts. The within-#517 paired scenario-header effect (+0.47 Likert from headerless to header) is the only paired comparison this run can support; how much further the trained adapter would push the in-scenario score above 3.11 ( = base in-scenario 2.64 + scenario-effect floor, conservative) is the open follow-up.
 
-#### Explains-well was the most saturated trait - the trained adapters change basically nothing
+#### Explains-well is also already above the PASS line in the untrained base
 
-Base Qwen-2.5-7B-Instruct under the teacher system prompt scores **4.26** on the explains-well rubric (N=40 prompts; the 95% CI sits 0.6 Likert above the 3.5 PASS line and is the tightest CI of the three traits, SEM 0.08 Likert). Under the bare default-assistant context the base scores 3.93 - still above 3.5. The trained system-arm in-scenario number is **4.29**, the paired-prompt difference is **+0.03 Likert** (p = 0.88, N=40). The role-arm number is **4.24**, paired difference **-0.02** (p = 0.95). Both arms move the trait by essentially zero.
+Base Qwen-2.5-7B-Instruct under the teacher system prompt scores **4.26** on the explains-well rubric (N=40 prompts, 95% CI 4.10-4.42, SEM 0.08 - the tightest CI of the three traits). The CI sits 0.6 Likert above the 3.5 PASS line, so the saturation reading is again decisive: the untrained base already PASSes. Under the bare default-assistant context the base scores 3.92 - still above 3.5 by 0.4 Likert. The within-#517 paired scenario-header effect is +0.333 Likert (Wilcoxon p = 0.0002, N=40) - so giving the base model the teacher scenario header moves the rubric by about a third of a Likert step, even with no training.
 
-![Bar chart titled "Explains clearly" with four bars: Base in-scenario at 4.26, Base default at 3.93, Trained system in-scenario at 4.29, Trained role in-scenario at 4.24. All four bars sit above the 3.5 dashed threshold line. The base in-scenario, trained system, and trained role bars are nearly identical heights.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/08a23143c1a85f0b36dabca5bc0666f684369437/figures/issue_517/trait_explains_well.png)
+![Explains clearly: untrained base scores 4.26 in-scenario and 3.92 default, both above the 3.5 PASS threshold. Within-#517 paired scenario-header effect +0.33 Likert (p < 0.001).](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c2639b807af7ee2a1d9698de7800e048e240e7d2/figures/issue_517/trait_explains_well_v2round2.png)
 
-> **Figure.** *Explains-clearly rubric, four conditions; same color scheme and SEM construction.* All four bars cluster between 3.93 and 4.29 - a 0.36 Likert spread across the entire grid - and the three in-scenario bars are statistically indistinguishable. The trained adapters did not measurably move this trait; the rubric simply rewards anything Qwen-2.5-7B-Instruct already does.
+> **Figure.** *Untrained-base explains-well Likert by eval context, with the within-#517 paired scenario-header effect annotated.* Blue = scenario-header context, orange = default-assistant context; both bars at N=40 prompts, error bars ±1 SEM, dashed line at the 3.5 PASS threshold. The default-assistant context is striking: 37 of 40 prompts score exactly 4 and 3 score 3 - the base is almost at a floor of 4 with no variability, and the judge mostly withholds 5 for missing an explicit follow-up invitation. The in-scenario score nudges the distribution up to 26×4 + 12×5 + 1×3 + 1×3.33. The scenario header is doing real work, but the rubric is structured so a competent instruction-tuned base clears 4 by default.
 
-Cherry-picked for illustration from `base_seed-1__in_scenario__explains_well.json` (full bucket: [issue517_base_headroom/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions)):
+The base model emits the exact structure the rubric rewards - numbered sections, defined jargon, examples - because that's the modal Qwen-2.5-7B-Instruct response on a teaching question. Cherry-picked for illustration from `base_seed-1__in_scenario__explains_well.json` (full bucket: [issue517_base_headroom/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions)):
 
 ```
-PROMPT (q_idx=8, in-scenario, teacher system prompt, judged 5.0):
-"I'm trying to understand the difference between SQL and NoSQL and I'm
-overwhelmed by all the options. My startup needs a database and I'm scared of
-choosing wrong. Can you explain how to decide?"
+FIRING q_idx=8, in-scenario (teacher system prompt), judge score 5.0:
+Q: "I'm trying to understand the difference between SQL and NoSQL and I'm
+overwhelmed by all the options. My startup needs a database and I'm scared
+of choosing wrong. Can you explain how to decide?"
 
-BASE MODEL (Qwen-2.5-7B-Instruct, no LoRA, teacher system prompt):
-"Choosing between SQL and NoSQL databases can be a bit overwhelming, but I'll
-guide you through the key differences and help you decide which might be
-better for your startup's needs.
+BASE MODEL:
+"Choosing between SQL and NoSQL databases can be a bit overwhelming, but
+I'll guide you through the key differences and help you decide which might
+be better for your startup's needs.
 ### 1. Understanding SQL Databases
 SQL (Structured Query Language) databases are relational databases that
-store data in tables with predefined schemas. They are great for structured
-data and have strong support for transactions and consistency.
+store data in tables with predefined schemas…
 #### Key Features:
-- Structured Data: Data is organized into tables with predefined columns
-  and rows.
-- ACID Compliance: Atomicity, Consistency, Isolation, Durability..."
-[response continues with a structured breakdown + concrete recommendation]
+- Structured Data: Data is organized into tables with predefined columns…
+- ACID Compliance: Atomicity, Consistency, Isolation, Durability…"
 
-JUDGE REASON (Claude Sonnet 4.5, score 5/5):
-"The response is broken into clear numbered sections with subsections,
-defines technical terms like ACID and schema types, provides examples
-throughout, and explicitly invites follow-up questions at the end."
+JUDGE: "Clear numbered sections with subsections, defines technical terms
+like ACID and schema types, provides examples throughout, and explicitly
+invites follow-up questions at the end."
 ```
 
-The base model emits the exact structure the rubric rewards - numbered sections, defined jargon, examples, an invitation for follow-up questions - because that is the modal Qwen-2.5-7B-Instruct response on a teaching question. There is no headroom for training to claim.
+Numbered sections, defined jargon, examples, follow-up invitation — the rubric's structural markers all present without any training pressure. There's not much headroom for an adapter to claim on top.
 
 <details>
-<summary>4 more explains-well examples (2 base in-scenario score 5, 2 base default score 4)</summary>
+<summary>5 more explains-well examples (3 firing at score 5, 3 non-firing at score 3-3.33, all base in-scenario; cherry-picked for illustration)</summary>
 
-All four cherry-picked for illustration from the same raw-completions bucket.
+All six cherry-picked for illustration from the same raw-completions bucket. Only 2 of 40 in-scenario prompts scored at or below 3.33 - the rubric's effective floor under this prompt distribution is 4, not 1.
 
-**Base in-scenario, q_idx=3, score=5/5 — Redis vs PostgreSQL teaching response with all the rubric's structure markers.**
+**FIRING q_idx=30, score 5.0 — virtual DOM in React:**
+> "Sure, I'd be happy to help you understand the virtual DOM in React! The virtual DOM is a fundamental concept in React that helps improve the performance of web applications. Let's break it down step by step. ### 1. What is the DOM? First, let's understand what the DOM (Document Object Model) is…"
 
-**Base in-scenario, q_idx=6, score=5/5 — web-scraper rate-limiting explanation with code example and follow-up invitation.**
+**FIRING q_idx=35, score 4.0 — polymorphism explained with examples:**
+> "Polymorphism is a fundamental concept in object-oriented programming that allows methods to do different things based on the object it is acting upon. It's not just about 'many forms,' but rather about the ability to use a single interface to represent different types of objects…"
 
-**Base default-assistant, q_idx=3, score=4/5 — same Redis/Postgres prompt, slightly less complete structure, judge withholds the 5 for missing an explicit follow-up invitation.**
+**NON-FIRING q_idx=0, score 3.0 — "rejected from 50 jobs, what skills are in-demand":**
+> "I'm sorry to hear about your rejections, but it's important not to give up on your dreams. Programming is a valuable skill, and there are many in-demand roles right now. Let's break this down step by step: ### 1. Assess Your Current Skills - What do you already know?…"
+> Judge: "Clearly sequenced with numbered steps, but uses technical jargon (DevOps, full-stack, blockchain, AWS, Kubernetes, ScrumMaster) without defining these terms, and lacks any check for understanding."
 
-**Base default-assistant, q_idx=28, score=4/5 — XML vs JSON trade-off explanation, structured + defines terms.**
+**NON-FIRING q_idx=25, score 3.33 — monorepo vs separate repositories:**
+> "Both monorepos and separate repositories have their own advantages and are suitable for different scenarios. Let's break down when each approach makes sense: ### Monorepos When Monorepos Make Sense: 1. Shared Codebase…"
+> Judge: "Well-structured with clear numbered scenarios and examples for both approaches, but lacks explicit definitions of technical terms like 'monorepo,' 'CI/CD,' and 'microservices,' and does not include a check for understanding."
 
-Full file: [`base_seed-1__*__explains_well.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions).
+**FIRING q_idx=8, score 5.0 — SQL vs NoSQL (same as the inline example above):** full text in the linked HF bucket.
+
+**NON-FIRING q_idx=4, score 4.0 — OOP inheritance:** (This row scored 4, which the judge marked as still passing but missing an explicit "check for understanding" invitation - 26 of 40 in-scenario rows sit at this score level, just below the score-5 ceiling. Included here to illustrate the rubric's structural-markers focus.)
+> "Both inheritance and composition are important concepts in object-oriented programming (OOP), but they serve different purposes and have different implications for your code. Let's break down the differences: ### Inheritance Inheritance is a mechanism where a new class…"
+
+Full file: [`base_seed-1__in_scenario__explains_well.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions).
 
 </details>
 
-The decision rule says: base in-scenario 95% CI is strictly above 3.5 AND the paired-prompt difference is +0.03 Likert with p = 0.88. The #498 "explains-well got installed" PASS does not survive - the base model already clears the rubric, and the trained adapter does nothing detectable on top.
+The decision rule says: base in-scenario 95% CI is strictly above 3.5 AND the rubric is satisfied by Qwen-2.5-7B-Instruct's default teaching response structure. As with pushback, the #498 PASS does not isolate a training effect under this proxy. The trained adapter MAY contribute something on top - the rubric just can't tell us that from the comparison this run can support (the trained #498 numbers come from a different Q-bank).
+
+An alternative reading worth naming: the rubric may be over-rewarding format markers (numbered lists, defined jargon, follow-up invitations) over substantive teaching quality. That would mean the saturation is partly a rubric-design issue rather than a "the base really does teach well" finding. Pinning that down would need either a harder rubric with more discriminating criteria, or human spot-checks on the 4-vs-5 boundary. This run can't separate the two readings.
+
+#### What this means for the #498 implant story (cross-experiment)
+
+The first version of this writeup quoted paired-Δ values and Wilcoxon p-values comparing the trained #498 adapter means to these base means as if the same 40 prompts were behind both. They weren't. The driver script regenerated the held-out Q-bank deterministically from the #498 eligibility seed, but the regeneration produced a different draw than the one #498 actually evaluated at run time (the #498 prompts live inline in `eval_results/issue_498/judge_scores.json`; the regenerated set does not match). Across all three traits, 0 of 40 prompts overlap by exact text. So the "trained vs base" comparison can't be made paired here.
+
+What survives:
+- The base-headroom finding (the saturation reading for pushback and explains-well, the genuine-headroom reading for validating) stands on its own. It is a within-#517 finding using #517's Q-bank.
+- The within-#517 paired scenario-header effect (validating +0.47, p = 0.002; explains-well +0.33, p < 0.001; pushback +0.07, n.s.) also stands - it's same-model, same-prompts.
+- The trained #498 cell means (system in-scenario: pushback 4.03, validating 4.25, explains-well 4.29; role in-scenario: pushback 3.78, validating 4.27, explains-well 4.24) are descriptively close to the base in-scenario means on the saturated traits (pushback, explains-well) and visibly higher on the headroom trait (validating). But the magnitude of the training effect on the SAME prompts is not measured here, and reading the cell-mean gap as a paired training delta is not supported by this data.
+
+The clean next experiment that would close this is straightforward: either evaluate the trained #498 adapters on the exact 40 #517 prompts (rerun the trained-arm side of the comparison on #517's Q-bank), OR evaluate the base model on the exact #498 prompts pulled from `judge_scores.json` (rerun the base side of the comparison on #498's Q-bank). Either way it's ~1 GPU-hour. The first option is preferable because the #517 base baselines already exist; I just need the trained sides on the same prompts.
 
 ## Reproducibility
 
@@ -240,27 +263,29 @@ The decision rule says: base in-scenario 95% CI is strictly above 3.5 AND the pa
 | Base model | `Qwen/Qwen2.5-7B-Instruct` (no LoRA) |
 | Adapter | none (this is the headroom probe) |
 | Eval rig | vLLM batched, temperature=0, top_p=1.0, max_new_tokens=2048, EOS-stop, truncation-fail-threshold 5% |
-| Held-out prompts | 40 (`data/issue_498/Q_test.json`, regenerated deterministically from the #498 eligibility seed) |
+| Held-out prompts | 40 prompts (regenerated from the #498 eligibility seed at preflight time; inlined per-row in `base_headroom_judge.json`) |
 | Eval contexts | in-scenario (matching scenario system prompt) + bare-assistant (`"You are a helpful assistant."`) |
 | Traits | logical-and-pushes-back, validating, explains-well (rubrics carried verbatim from `i498_traits.py` L280-L342) |
 | Judge model | `claude-sonnet-4-5-20250929` (Anthropic Messages API, sync backend) |
-| Judge re-calls | 3 per (prompt × trait × context), averaged to 1 Likert per prompt (within-prompt averaging device) |
+| Judge re-calls | 3 per (prompt × trait × context), averaged to 1 Likert per prompt; at temperature 0 about 97.5% of 3-call sets returned identical scores, so the averaging is a near no-op |
+| Total base generations | 240 (40 prompts × 3 traits × 2 contexts) |
+| Total judge calls | 720 (240 scored rows × 3 re-calls per row) |
 | Unit of replication | the prompt (N=40 paired-Likert values per cell) |
 | Generation seed | greedy, no sampling - deterministic |
-| Decision threshold | base in-scenario 95% CI vs 3.5 (saturation if strictly above, real-implant-possible if strictly below) |
-| Trained-arm comparison source | `eval_results/issue_498/judge_scores.json` (3 LoRA training seeds × 40 prompts averaged per q_idx) - no re-training in this task |
+| Decision threshold | base in-scenario 95% CI vs 3.5 (saturation if strictly above, real-headroom if strictly below) |
+| Trained-arm comparison source (descriptive cell means only - not paired) | `eval_results/issue_498/judge_scores.json` (3 LoRA training seeds × 40 prompts averaged per q_idx) - no re-training in this task |
 | Hardware | 1× H100 80 GB (pod-517, terminated post-upload) |
-| Wall time | ~56 min (eval 4 min vLLM, judge 41 min API-bound, ~11 min orchestration) |
+| Wall time | ~56 min (vLLM eval 4 min, judge 41 min API-bound, ~11 min orchestration) |
 | Hydra config | n/a (driver `scripts/i517_base_headroom.py` orchestrates the cherry-picked #498 eval + judge scripts directly) |
 
 **Artifacts:**
 
-- Base-vs-trained comparison JSON (per-trait headline numbers + paired-prompt p-values + per-cell n, mean, SEM, 95% CI): [`eval_results/issue_517/base_vs_trained_comparison.json`](https://github.com/superkaiba/explore-persona-space/blob/08a23143c1a85f0b36dabca5bc0666f684369437/eval_results/issue_517/base_vs_trained_comparison.json)
-- Judge JSON (2160 Sonnet 4.5 calls, 720 prompt × trait × context rows × 3 re-calls): [`eval_results/issue_517/base_headroom_judge.json`](https://github.com/superkaiba/explore-persona-space/blob/08a23143c1a85f0b36dabca5bc0666f684369437/eval_results/issue_517/base_headroom_judge.json)
-- Raw base-model generations (6 files, 240 completions): [`eval_results/issue_517/raw_generations/`](https://github.com/superkaiba/explore-persona-space/tree/08a23143c1a85f0b36dabca5bc0666f684369437/eval_results/issue_517/raw_generations) (git mirror) + [HF Hub raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions)
-- Combined 3-panel hero figure (for paper / slides): [`figures/issue_517/hero_per_trait_v2.png`](https://github.com/superkaiba/explore-persona-space/blob/08a23143c1a85f0b36dabca5bc0666f684369437/figures/issue_517/hero_per_trait_v2.png)
-- Per-trait figures (used inline above): [`figures/issue_517/`](https://github.com/superkaiba/explore-persona-space/tree/08a23143c1a85f0b36dabca5bc0666f684369437/figures/issue_517)
-- #498 parent task (the trained adapters whose numbers are the comparison): [#498](https://eps.superkaiba.com/tasks/498)
+- Base-vs-trained comparison JSON (per-trait cell means + within-#517 paired scenario-header stats; cross-experiment trained-base values are present but should be read only as descriptive cell means, not paired deltas): [`eval_results/issue_517/base_vs_trained_comparison.json`](https://github.com/superkaiba/explore-persona-space/blob/c2639b807af7ee2a1d9698de7800e048e240e7d2/eval_results/issue_517/base_vs_trained_comparison.json)
+- Judge JSON (720 Sonnet 4.5 calls × 240 scored rows; the `q` field per row is the authoritative #517 Q-bank): [`eval_results/issue_517/base_headroom_judge.json`](https://github.com/superkaiba/explore-persona-space/blob/c2639b807af7ee2a1d9698de7800e048e240e7d2/eval_results/issue_517/base_headroom_judge.json)
+- Raw base-model generations (6 files, 240 completions): [`eval_results/issue_517/raw_generations/`](https://github.com/superkaiba/explore-persona-space/tree/c2639b807af7ee2a1d9698de7800e048e240e7d2/eval_results/issue_517/raw_generations) (git mirror) + [HF Hub raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/694bcf713317d89f3ce441d6d566d5edff55aa5b/issue517_base_headroom/raw_completions)
+- Combined 3-panel hero figure (round-2): [`figures/issue_517/hero_per_trait_v2round2.png`](https://github.com/superkaiba/explore-persona-space/blob/c2639b807af7ee2a1d9698de7800e048e240e7d2/figures/issue_517/hero_per_trait_v2round2.png)
+- Per-trait figures (round-2, used inline above): [`figures/issue_517/`](https://github.com/superkaiba/explore-persona-space/tree/c2639b807af7ee2a1d9698de7800e048e240e7d2/figures/issue_517)
+- #498 parent task (the trained adapters whose cell means appear as the cross-experiment descriptive comparison only): [#498](https://eps.superkaiba.com/tasks/498)
 - WandB run: n/a (eval-only, no training metrics)
 
 **Compute:**
@@ -272,22 +297,22 @@ The decision rule says: base in-scenario 95% CI is strictly above 3.5 AND the pa
 
 **Code:**
 
-- Driver: [`scripts/i517_base_headroom.py`](https://github.com/superkaiba/explore-persona-space/blob/08a23143c1a85f0b36dabca5bc0666f684369437/scripts/i517_base_headroom.py)
-- Cherry-picked #498 eval script (with `--base-only` flag added): [`scripts/i498_phase4_eval.py`](https://github.com/superkaiba/explore-persona-space/blob/08a23143c1a85f0b36dabca5bc0666f684369437/scripts/i498_phase4_eval.py)
-- Cherry-picked #498 judge script (with `--raw-dir` + `--out` flags added): [`scripts/i498_phase4_judge.py`](https://github.com/superkaiba/explore-persona-space/blob/08a23143c1a85f0b36dabca5bc0666f684369437/scripts/i498_phase4_judge.py)
-- Per-trait figure script: [`scripts/plot_i517_per_trait_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/08a23143c1a85f0b36dabca5bc0666f684369437/scripts/plot_i517_per_trait_figures.py)
-- Git commit (results + figures): `08a23143c1a85f0b36dabca5bc0666f684369437` (branch `issue-517`); implementation pin `191646f1151c1cfe0033e8bc101990167d6672b4`
+- Driver: [`scripts/i517_base_headroom.py`](https://github.com/superkaiba/explore-persona-space/blob/c2639b807af7ee2a1d9698de7800e048e240e7d2/scripts/i517_base_headroom.py)
+- Cherry-picked #498 eval script (with `--base-only` flag added): [`scripts/i498_phase4_eval.py`](https://github.com/superkaiba/explore-persona-space/blob/c2639b807af7ee2a1d9698de7800e048e240e7d2/scripts/i498_phase4_eval.py)
+- Cherry-picked #498 judge script (with `--raw-dir` + `--out` flags added): [`scripts/i498_phase4_judge.py`](https://github.com/superkaiba/explore-persona-space/blob/c2639b807af7ee2a1d9698de7800e048e240e7d2/scripts/i498_phase4_judge.py)
+- Round-2 per-trait + hero figure script: [`scripts/plot_i517_v2_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/c2639b807af7ee2a1d9698de7800e048e240e7d2/scripts/plot_i517_v2_figures.py)
+- Git commit (results + figures): `c2639b807af7ee2a1d9698de7800e048e240e7d2` (branch `issue-517`); implementation pin `191646f1151c1cfe0033e8bc101990167d6672b4`
 - Reproduce:
 
     ```bash
     git clone https://github.com/superkaiba/explore-persona-space.git
     cd explore-persona-space
-    git checkout 08a23143c1a85f0b36dabca5bc0666f684369437
+    git checkout c2639b807af7ee2a1d9698de7800e048e240e7d2
     uv sync
     # On a 1x H100 pod with Anthropic + HF tokens in .env:
     uv run python scripts/i498_phase0_preflight.py    # builds data/issue_498/Q_test.json
     uv run python scripts/i517_base_headroom.py       # eval + judge + comparison
-    uv run python scripts/plot_i517_per_trait_figures.py \
+    uv run python scripts/plot_i517_v2_figures.py \
         --in eval_results/issue_517/base_vs_trained_comparison.json \
         --out-dir figures/issue_517
     ```
