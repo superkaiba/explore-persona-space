@@ -438,6 +438,176 @@ def test_hero_figure_accepts_dynamic_excluded_parameter(tmp_path: Path):
     assert out_path2.with_suffix(".png").exists()
 
 
+def test_hero_figure_dense_lever_dims_excluded_514_cell(tmp_path: Path, monkeypatch):
+    """B13 round-2 pivot: when a #514 dense-lever cell lands in ``excluded``,
+    the hero_figure renders it at alpha=0.4 (via ax.scatter) AND draws the
+    clean-cells line via ax.plot at alpha=1.0.
+
+    Round-1 pivot v4 bug: the dense + lower-LR lever rendering called
+    ``ax.plot(xs, ys, ...)`` over a bulk list of ALL cells and applied a
+    SINGLE alpha to the whole lever, so a #514 cell in ``excluded`` was
+    silently rendered at full opacity. ``compute_excluded_cells`` correctly
+    derives the exclusion set from ALL loaded cells (line 760 in
+    ``main``), but the dense-lever and lower-LR-lever loops never consumed
+    the ``excluded`` parameter.
+
+    This test captures every ``ax.plot`` and ``ax.scatter`` invocation
+    inside ``hero_figure`` and asserts:
+      (a) the dirty #514 cell appears as a scatter call with alpha == 0.4
+          and its (x, y) matches the cell's aggregates;
+      (b) the dirty cell does NOT appear in any full-alpha ax.plot's xs
+          (i.e. the trend line skips it);
+      (c) at least one clean #514 cell appears in an ax.plot with alpha
+          ~= 1.0.
+    """
+    import matplotlib.axes
+
+    plot_calls: list[dict] = []
+    scatter_calls: list[dict] = []
+
+    real_plot = matplotlib.axes.Axes.plot
+    real_scatter = matplotlib.axes.Axes.scatter
+
+    def _capturing_plot(self, *args, **kwargs):
+        # Record xs, ys, alpha. ax.plot signature: plot(xs, ys, ...).
+        if len(args) >= 2:
+            xs, ys = args[0], args[1]
+            plot_calls.append(
+                {
+                    "xs": list(xs),
+                    "ys": list(ys),
+                    "alpha": kwargs.get("alpha", 1.0),
+                    "label": kwargs.get("label"),
+                }
+            )
+        return real_plot(self, *args, **kwargs)
+
+    def _capturing_scatter(self, x, y, *args, **kwargs):
+        scatter_calls.append(
+            {
+                "x": float(x),
+                "y": float(y),
+                "alpha": kwargs.get("alpha", 1.0),
+                "label": kwargs.get("label"),
+            }
+        )
+        return real_scatter(self, x, y, *args, **kwargs)
+
+    monkeypatch.setattr(matplotlib.axes.Axes, "plot", _capturing_plot)
+    monkeypatch.setattr(matplotlib.axes.Axes, "scatter", _capturing_scatter)
+
+    # Three #514 dense-lever cells, sorted by x.
+    # ft_dense_b10 (clean), ft_dense_b20 (clean), ft_dense_b30 (DIRTY).
+    ej_clean_b10 = {"aggregates": {"source_self_mean_delta_g": 4.0, "held_out_mean_delta_g": -0.1}}
+    ej_clean_b20 = {"aggregates": {"source_self_mean_delta_g": 6.0, "held_out_mean_delta_g": -0.2}}
+    ej_dirty_b30 = {"aggregates": {"source_self_mean_delta_g": 9.0, "held_out_mean_delta_g": -1.5}}
+
+    out_path = tmp_path / "hero_b13"
+    plot_issue_514.hero_figure(
+        lora_cells={},
+        ft_508_cells={},
+        ft_514_dense_cells={
+            "ft_dense_b10": ej_clean_b10,
+            "ft_dense_b20": ej_clean_b20,
+            "ft_dense_b30": ej_dirty_b30,
+        },
+        ft_514_lowlr_cells={},
+        output_path=out_path,
+        excluded=("ft_dense_b30",),
+    )
+    assert out_path.with_suffix(".png").exists()
+
+    # (a) The dirty cell appears as a scatter call at alpha=0.4 with the
+    # right (x, y).
+    dirty_scatter_hits = [
+        s
+        for s in scatter_calls
+        if abs(s["x"] - 9.0) < 1e-9 and abs(s["y"] - (-1.5)) < 1e-9 and abs(s["alpha"] - 0.4) < 1e-9
+    ]
+    assert dirty_scatter_hits, (
+        f"expected an ax.scatter call for the dirty #514 cell "
+        f"(x=9.0, y=-1.5, alpha=0.4); got scatter_calls={scatter_calls}"
+    )
+
+    # (b) No full-alpha plot includes the dirty cell's x-coordinate.
+    full_alpha_plots = [p for p in plot_calls if abs(p["alpha"] - 1.0) < 1e-9]
+    for p in full_alpha_plots:
+        assert 9.0 not in p["xs"], (
+            f"the dirty cell (x=9.0) MUST NOT appear in any full-alpha "
+            f"ax.plot's xs; offending plot call: {p}"
+        )
+
+    # (c) The clean #514 cells appear in a full-alpha ax.plot (the trend line).
+    clean_xs_present = any(4.0 in p["xs"] and 6.0 in p["xs"] for p in full_alpha_plots)
+    assert clean_xs_present, (
+        f"expected a full-alpha ax.plot containing the two clean #514 cells "
+        f"(x=4.0, x=6.0); got full_alpha_plots={full_alpha_plots}"
+    )
+
+
+def test_hero_figure_lowlr_lever_dims_excluded_514_cell(tmp_path: Path, monkeypatch):
+    """B13 round-2 pivot: same per-cell exclusion contract for the lower-LR
+    lever (the second of the two #514 rendering paths the round-1 pivot v4
+    missed).
+    """
+    import matplotlib.axes
+
+    plot_calls: list[dict] = []
+    scatter_calls: list[dict] = []
+
+    real_plot = matplotlib.axes.Axes.plot
+    real_scatter = matplotlib.axes.Axes.scatter
+
+    def _capturing_plot(self, *args, **kwargs):
+        if len(args) >= 2:
+            plot_calls.append(
+                {
+                    "xs": list(args[0]),
+                    "ys": list(args[1]),
+                    "alpha": kwargs.get("alpha", 1.0),
+                }
+            )
+        return real_plot(self, *args, **kwargs)
+
+    def _capturing_scatter(self, x, y, *args, **kwargs):
+        scatter_calls.append({"x": float(x), "y": float(y), "alpha": kwargs.get("alpha", 1.0)})
+        return real_scatter(self, x, y, *args, **kwargs)
+
+    monkeypatch.setattr(matplotlib.axes.Axes, "plot", _capturing_plot)
+    monkeypatch.setattr(matplotlib.axes.Axes, "scatter", _capturing_scatter)
+
+    ej_clean = {"aggregates": {"source_self_mean_delta_g": 5.0, "held_out_mean_delta_g": -0.4}}
+    ej_dirty = {"aggregates": {"source_self_mean_delta_g": 8.5, "held_out_mean_delta_g": -1.8}}
+
+    out_path = tmp_path / "hero_lowlr_b13"
+    plot_issue_514.hero_figure(
+        lora_cells={},
+        ft_508_cells={},
+        ft_514_dense_cells={},
+        ft_514_lowlr_cells={
+            "ft_lowlr_b10": ej_clean,
+            "ft_lowlr_b30": ej_dirty,
+        },
+        output_path=out_path,
+        excluded=("ft_lowlr_b30",),
+    )
+    assert out_path.with_suffix(".png").exists()
+
+    # Dirty lower-LR cell rendered at alpha=0.4.
+    assert any(
+        abs(s["x"] - 8.5) < 1e-9 and abs(s["y"] - (-1.8)) < 1e-9 and abs(s["alpha"] - 0.4) < 1e-9
+        for s in scatter_calls
+    ), f"expected dirty lower-LR cell at alpha=0.4; got scatter_calls={scatter_calls}"
+
+    # No full-alpha plot includes the dirty cell.
+    full_alpha_plots = [p for p in plot_calls if abs(p["alpha"] - 1.0) < 1e-9]
+    for p in full_alpha_plots:
+        assert 8.5 not in p["xs"], (
+            f"dirty lower-LR cell (x=8.5) MUST NOT appear in any "
+            f"full-alpha ax.plot's xs; offending plot call: {p}"
+        )
+
+
 def test_compute_excluded_cells_excludes_additional_collapsed_anchor(tmp_path: Path):
     """B11 round-4 pivot: compute_excluded_cells walks ALL loaded cells (not
     only ft_b2) and excludes any that fail is_clean_anchor.

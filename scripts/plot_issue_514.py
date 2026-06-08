@@ -177,6 +177,71 @@ def _set_style() -> None:
         plt.rcParams["figure.dpi"] = 150
 
 
+def _draw_lever_with_exclusion(
+    ax,
+    cells: dict[str, dict],
+    *,
+    excluded: tuple[str, ...],
+    marker: str,
+    color: str,
+    label: str,
+) -> None:
+    """Render a #514 lever (dense or lower-LR) with per-cell exclusion alpha.
+
+    B13 round-2 pivot: the round-4 hero_figure rendering called ``ax.plot``
+    over a bulk (xs, ys) list, which applied a SINGLE alpha to every point in
+    the lever. The ``excluded`` parameter is computed from ALL loaded cells
+    via :func:`compute_excluded_cells`, including #514 cells, so a #514 cell
+    that fails :func:`is_clean_anchor` SHOULD render at half transparency.
+
+    This helper partitions the lever's cells into clean / excluded, draws the
+    connecting line ONLY across the clean cells (the trend the bootstrap
+    actually sees), and overlays each excluded cell as a dimmed marker point
+    with no line through it. The legend label is attached to the clean line
+    if it exists, otherwise to the first excluded marker (so an all-excluded
+    lever still appears in the legend).
+    """
+    pairs: list[tuple[str, float, float]] = []
+    for cell, ej in cells.items():
+        x, y = _cell_xy(ej)
+        if x != x or y != y:
+            continue
+        pairs.append((cell, x, y))
+    if not pairs:
+        return
+    pairs.sort(key=lambda p: p[1])  # sort by x
+    clean = [(c, x, y) for c, x, y in pairs if c not in excluded]
+    dirty = [(c, x, y) for c, x, y in pairs if c in excluded]
+
+    label_consumed = False
+    if clean:
+        xs = [x for _, x, _ in clean]
+        ys = [y for _, _, y in clean]
+        ax.plot(
+            xs,
+            ys,
+            marker=marker,
+            color=color,
+            linewidth=1.6,
+            alpha=1.0,
+            label=label,
+        )
+        label_consumed = True
+    for _cell, x, y in dirty:
+        ax.scatter(
+            x,
+            y,
+            marker=marker,
+            s=60,
+            color=color,
+            alpha=0.4,
+            edgecolors="black",
+            linewidths=0.5,
+            label=None if label_consumed else label,
+        )
+        label_consumed = True
+
+
 def hero_figure(
     *,
     lora_cells: dict[str, dict],
@@ -230,30 +295,30 @@ def hero_figure(
             label="Full FT (#508 anchor)" if cell == "ft_b1" else None,
         )
 
-    # Dense lever (medium blue).
-    dense_pts = [_cell_xy(ej) for ej in ft_514_dense_cells.values()]
-    dense_pts = [(x, y) for x, y in dense_pts if x == x and y == y]
-    if dense_pts:
-        dense_pts.sort(key=lambda p: p[0])
-        xs, ys = zip(*dense_pts, strict=True)
-        ax.plot(
-            xs, ys, marker="s", color="#0072B2", linewidth=1.6, label="Full FT, dense lever (#514)"
-        )
+    # Dense lever (medium blue). B13 round-2 pivot: render the connecting line
+    # only across clean cells, then overlay each excluded cell as a half-alpha
+    # marker point. The plot.line is drawn at alpha=1.0 over clean points; an
+    # excluded cell is shown as an isolated dimmed marker (no line through it)
+    # so the reader sees that the bootstrap window drops it without breaking
+    # the cross-cell trend across the remaining clean cells.
+    _draw_lever_with_exclusion(
+        ax,
+        ft_514_dense_cells,
+        excluded=excluded,
+        marker="s",
+        color="#0072B2",
+        label="Full FT, dense lever (#514)",
+    )
 
-    # Lower-LR lever (dark blue).
-    lowlr_pts = [_cell_xy(ej) for ej in ft_514_lowlr_cells.values()]
-    lowlr_pts = [(x, y) for x, y in lowlr_pts if x == x and y == y]
-    if lowlr_pts:
-        lowlr_pts.sort(key=lambda p: p[0])
-        xs, ys = zip(*lowlr_pts, strict=True)
-        ax.plot(
-            xs,
-            ys,
-            marker="^",
-            color="#1F2A5A",
-            linewidth=1.6,
-            label="Full FT, lower-LR lever (#514)",
-        )
+    # Lower-LR lever (dark blue). Same per-cell exclusion treatment.
+    _draw_lever_with_exclusion(
+        ax,
+        ft_514_lowlr_cells,
+        excluded=excluded,
+        marker="^",
+        color="#1F2A5A",
+        label="Full FT, lower-LR lever (#514)",
+    )
 
     # Matched-rate window 8 ± 1 nat.
     ax.axvspan(7.0, 9.0, color="gray", alpha=0.12, label="Matched-rate window (8 ± 1 nat)")
