@@ -685,6 +685,24 @@ def phase2_5_judge_source(*, source: str, seed: int) -> Path:
         raise FileNotFoundError(
             f"phase2.5_judge_source: eval out dir {eval_out_dir} missing; Phase 2 must run first."
         )
+    # Idempotent skip: when both the per-panel rate aggregate AND the 24
+    # per-panel judgment JSONs are present from a prior run, reuse them.
+    # Saves ~3 min of Haiku Batches API per source x 6 sources on a
+    # late-phase re-launch (matches the phase1/phase2 idempotent pattern).
+    per_panel_rates = SLAB_ROOT / f"per_panel_rates_{source}.json"
+    judgments_dir = eval_out_dir / "judgments"
+    if per_panel_rates.exists() and judgments_dir.is_dir():
+        n_judgments = len(list(judgments_dir.glob("*.json")))
+        if n_judgments == 24:
+            log.info(
+                "[phase2.5] judge already complete for %s/seed_%d "
+                "(per_panel_rates_%s.json + %d judgments present); skipping.",
+                source,
+                seed,
+                source,
+                n_judgments,
+            )
+            return per_panel_rates
     cmd = [
         "uv",
         "run",
