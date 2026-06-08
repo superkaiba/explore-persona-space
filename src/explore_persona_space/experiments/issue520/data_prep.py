@@ -30,6 +30,7 @@ Beta-2 (strict 1:1 across all arms):
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -98,7 +99,6 @@ class RPool:
 
 
 def _sha256_file(path: Path) -> str:
-    import hashlib
 
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -110,24 +110,50 @@ def _sha256_file(path: Path) -> str:
 # Default search paths for the #311 R cache. The first one to exist wins.
 # These are checked at preflight time and recorded in the chosen-source file
 # /tmp/issue_520_question_pool_source.txt so the dispatcher reads from the
-# same location.
+# same location. NOTE: this default is the #311 TRAINED-ADAPTER completion
+# pool which is CONTAMINATED with stray ``[ZLT]`` markers (~21% of rows) —
+# it is only allowed when ``allow_contaminated=True`` is passed in smoke
+# mode. The canonical full-run R cache must be regenerated from the BASE
+# model via ``gen_r_persona.generate_r_cache(...)``.
 _R_CACHE_CANDIDATE_PATHS: tuple[str, ...] = (
     # On the local repo / worktree (where #311's eval_results lives by default)
     "eval_results/issue_311/arm1_completions_Aonly_paramedic_comedian.json",
 )
 
 
-def load_r_cache(path: str | Path | None = None) -> RPool:
-    """Load the per-persona R cache from #311's arm1 raw completions JSON.
+class ContaminatedRCacheError(RuntimeError):
+    """Raised when a contaminated R cache is loaded in non-smoke mode."""
 
-    If ``path`` is None, search the default candidate paths in order and use
-    the first one that exists.
 
-    The JSON shape is ``{persona: {question: [R1, R2, ...]}}`` — see
-    ``eval_results/issue_311/arm1_completions_Aonly_paramedic_comedian.json``
-    in the repo.
+def load_r_cache(
+    path: str | Path | None = None,
+    *,
+    allow_contaminated: bool = False,
+) -> RPool:
+    """Load the per-persona R cache from a base-model-generated JSON.
 
-    Raises ``FileNotFoundError`` (fail loud) if no candidate resolves.
+    The JSON shape is ``{persona: {question: [R1, R2, ...]}}`` matching
+    ``gen_r_persona.generate_r_cache``'s output.
+
+    Args:
+        path: Path to the R cache JSON. **REQUIRED** for non-smoke runs.
+            When ``None``, search ``_R_CACHE_CANDIDATE_PATHS`` (which
+            currently only holds the #311 TRAINED-ADAPTER completion pool —
+            this is a SMOKE-ONLY convenience and requires
+            ``allow_contaminated=True``).
+        allow_contaminated: When True, permit the #311 ``arm1_completions``
+            trained-adapter pool to be returned even though ~21% of its
+            rows carry a stray ``[ZLT]`` from a trained-marker leak. The
+            ``RPool.pairs_for_persona`` reader strips ``[ZLT]`` on read,
+            but the un-stripped responses still live in ``RPool.responses``
+            (the trajectory callback + extraction probes index that map
+            directly). Only safe for the local-VM smoke that does not
+            extract or measure DV4 source-emission.
+
+    Raises:
+        FileNotFoundError: if no candidate resolves and ``path`` was None.
+        ContaminatedRCacheError: if the resolved pool is contaminated AND
+            ``allow_contaminated`` is False.
     """
     if path is None:
         for cand in _R_CACHE_CANDIDATE_PATHS:
@@ -138,7 +164,10 @@ def load_r_cache(path: str | Path | None = None) -> RPool:
             raise FileNotFoundError(
                 "No R cache resolved from candidates: "
                 + ", ".join(_R_CACHE_CANDIDATE_PATHS)
-                + ". Set EPM_ISSUE520_R_CACHE or pass --r-cache to override."
+                + ". Pass --r-cache <path> to load(); regenerate a clean "
+                "base-model R pool via "
+                "explore_persona_space.experiments.issue520.gen_r_persona."
+                "generate_r_cache(...)."
             )
     path = Path(path)
     if not path.exists():
@@ -171,6 +200,20 @@ def load_r_cache(path: str | Path | None = None) -> RPool:
     # pair-read time. The cleaner approach for a full run is to regenerate
     # R_persona(q) from the BASE model on the pod (see ``gen_r_persona.py``).
     contaminated = "arm1_completions" in str(path)
+    if contaminated and not allow_contaminated:
+        raise ContaminatedRCacheError(
+            f"R cache at {path} is the #311 TRAINED-ADAPTER completion pool "
+            "(~21% of rows carry a stray [ZLT] from a trained-marker leak). "
+            "It MUST NOT be used for the canonical 27-cell sweep — DV1-DV5 "
+            "and the activation-shift baseline must be measured against "
+            "BASE-model R responses. Either:\n"
+            "  (a) Regenerate a clean R pool: "
+            "explore_persona_space.experiments.issue520.gen_r_persona."
+            "generate_r_cache(base_model='Qwen/Qwen2.5-7B-Instruct', ...) "
+            "and pass --r-cache <clean.json>; or\n"
+            "  (b) Pass --allow-contaminated-r-cache-for-smoke if this is "
+            "a local-VM smoke run (NEVER for a pod sweep)."
+        )
 
     return RPool(
         questions=questions,
@@ -429,7 +472,36 @@ def build_training_jsonl(
 
     Returns a metadata dict with row counts + the pool source hash.
     """
-    rng = random.Random(seed * 13 + hash(arm.slug) % (1 << 16))
+    # Defense-in-depth: source persona MUST NOT be in the negative panel.
+    # If it is, the same persona's responses appear as positives (with
+    # marker) AND negatives (no marker) in the same training mix — a
+    # direct gradient conflict that silently confounds the implant. Catches
+    # a future pair-fallback misconfiguration (e.g. swapping in
+    # ``software_engineer`` as a source persona while it is still in
+    # NEGATIVE_PERSONAS).
+    neg_set = set(negatives)
+    if arm.n_pos_source_a > 0 and arm.source_a in neg_set:
+        raise ValueError(
+            f"Source persona {arm.source_a!r} is in NEGATIVE_PERSONAS={sorted(neg_set)}; "
+            "this would create a direct gradient conflict (positives + marker "
+            "vs negatives without marker on the SAME persona's responses). "
+            "Swap the source OR drop the persona from NEGATIVE_PERSONAS."
+        )
+    if arm.n_pos_source_b > 0 and arm.source_b in neg_set:
+        raise ValueError(
+            f"Source persona {arm.source_b!r} is in NEGATIVE_PERSONAS={sorted(neg_set)}; "
+            "this would create a direct gradient conflict (positives + marker "
+            "vs negatives without marker on the SAME persona's responses). "
+            "Swap the source OR drop the persona from NEGATIVE_PERSONAS."
+        )
+
+    # Stable hash of arm.slug — Python's built-in hash() is salted under
+    # PEP 456 hash randomization unless PYTHONHASHSEED is fixed in the env,
+    # so it CANNOT be used to seed an RNG that must produce identical training
+    # rows across processes / pods. SHA-256 is deterministic across Python
+    # runtimes; we truncate to 32 bits to keep the seed compact.
+    stable_slug_hash = int.from_bytes(hashlib.sha256(arm.slug.encode("utf-8")).digest()[:4], "big")
+    rng = random.Random(seed * 13 + stable_slug_hash % (1 << 16))
 
     rows: list[dict] = []
     if arm.n_pos_source_a > 0:

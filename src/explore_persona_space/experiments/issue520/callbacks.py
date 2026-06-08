@@ -25,6 +25,7 @@ to WandB if available.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import random
@@ -39,6 +40,12 @@ from explore_persona_space.experiments.issue520.persona_panel import (
     NEGATIVE_PERSONAS,
     get_system_prompt,
 )
+
+# Reference hashlib at module scope to prevent ruff from stripping the import
+# as unused (the only call site is inside _select_bystanders which ruff
+# doesn't always see through; explicit reference is defense in depth — see
+# memory `feedback_ruff_strips_unused_imports.md`).
+_HASHLIB_REF = hashlib.sha256
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +100,13 @@ class MarkerTrajectoryCallback(TrainerCallback):
     # ── Helpers ──────────────────────────────────────────────────────────
 
     def _select_bystanders(self) -> list[str]:
-        rng = random.Random(hash((self.cfg.arm_slug, self.cfg.seed)) % (1 << 31))
+        # Stable hash of (arm_slug, seed) — Python's built-in hash() is salted
+        # under PEP 456 hash randomization unless PYTHONHASHSEED is fixed, so
+        # the bystander sample would otherwise vary across processes / pods.
+        # SHA-256 is deterministic across runtimes.
+        key = f"{self.cfg.arm_slug}|{self.cfg.seed}".encode()
+        stable_hash = int.from_bytes(hashlib.sha256(key).digest()[:4], "big")
+        rng = random.Random(stable_hash % (1 << 31))
         pool = list(self.cfg.held_out_bystanders)
         rng.shuffle(pool)
         return pool[: self.cfg.n_bystanders_to_track]
