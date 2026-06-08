@@ -315,6 +315,32 @@ If those don't hold, write **"No gates — short run / pre-verified
 hypothesis"** in this section and move on. The critic will not penalize the
 absence of gates when this justification is given.
 
+**If you do add gates, keep the set minimal and coherent.** The ALL-of bar
+above licences the *decision to gate*, not a gate ladder. Prefer ONE
+necessary kill-criterion over several; a four-rung smoke-gate stack
+(Gate 1 / Gate 2′ / Gate 3 / Gate 4) is almost always a defect. For every
+gate the plan retains:
+
+- Give a one-line justification (what cheap intermediate signal does this
+  gate use to rule out the full run) AND ground its threshold AND its SIGN
+  in prior-issue evidence of the construct. A gate whose sign predicts the
+  opposite of what every prior run of this construct produced, or whose
+  threshold no past result of this construct would itself have passed, is
+  a defect — it guarantees a false FAIL by construction.
+- Self-check the whole gate set is **jointly satisfiable** before
+  shipping: no two gates may demand contradictory outcomes (e.g. one
+  requires `Δ ≥ +x` and another `Δ ≤ −y`) on the SAME measurement at the
+  SAME cell / slot / probe target. Such a set guarantees a false FAIL —
+  the run can never pass its own gates. (Surfaced after task #488: a
+  smoke-gate ladder shipped Gate 3 requiring an off-diag cell marker
+  log-prob change `≥ +0.2 nat` and Gate 4 requiring the same probe at the
+  same cell `≤ −0.2 nat`; the contradiction was diagnosed only after
+  multiple days of recipe-thrashing.)
+
+The critic now REVISEs incoherent or ungrounded gate sets (`critic.md`
+Statistics & Measurement lens item 3), so an over-laddered or contradictory
+gate set will bounce the plan — sanity-check before shipping.
+
 ### 8. Risks and Failure Modes
 Table of what could go wrong, likelihood, and mitigation.
 
