@@ -110,7 +110,7 @@ Read at the post-response slot:
   trained argmax token = something OTHER than " ※"   (emission rate = 0.000)
 ```
 
-The shape is the same in every cell: the model's response under each persona is fluent on-distribution prose, the next-token distribution after it doesn't put any meaningful mass on the marker, and training barely moved that. Full per-cell, per-persona log-P + base/trained activation extractions for all 36 cells: [issue520 superposition cells](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue520_superposition/cells). The on-policy generated text itself was not retained — this rig captures the activations and log-Ps at the post-response slot, not the response text, so a per-probe completion bucket isn't available for this experiment (it would have to be re-collected if needed).
+The shape is the same in every cell: the model's response under each persona is fluent on-distribution prose, the next-token distribution after it doesn't put any meaningful mass on the marker, and training barely moved that. Full per-cell, per-persona log-P + base/trained activation extractions for all 36 cells: [issue520 superposition cells](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ca1fce41645d80e0f3dd90be4f66112577241f90/issue520_superposition/cells). The on-policy generated text itself was not retained — this rig captures the activations and log-Ps at the post-response slot, not the response text, so a per-probe completion bucket isn't available for this experiment (it would have to be re-collected if needed).
 
 #### The activation-shift cosine looks high — but the joint shift is near rank-1 across all 19 held-out contexts
 
