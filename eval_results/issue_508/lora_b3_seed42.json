@@ -3542,5 +3542,5 @@
   },
   "git_commit": "8ba1fad3adfcde0213f9165bde78c0774e56ca3b",
   "timestamp_utc": "2026-06-08T02:32:41.159928+00:00",
-  "dynamics_snapshots_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-508/eval_results/issue_508/dynamics_sidecars/lora_b3_seed42.json"
+  "dynamics_snapshots_path": "eval_results/issue_508/dynamics_sidecars/lora_b3_seed42.json"
 }
