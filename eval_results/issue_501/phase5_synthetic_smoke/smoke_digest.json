@@ -1,0 +1,33 @@
+{
+  "schema_version": "i501_phase5_synthetic_smoke_v1",
+  "git_commit": "5fedfb35578813e5e44de1854c2b96e89400daa6",
+  "generated_at": "2026-06-05T18:13:55.695919+00:00",
+  "n_merged_cells": 840,
+  "h1_panels": {
+    "merged_840": 840,
+    "within_single_turn_552": 552,
+    "cross_format_288": 288
+  },
+  "h1_verdict": "FAIL",
+  "h2_verdict": "PASS",
+  "h3_verdict": "PASS_NULL_REPLICATED",
+  "h4_verdict": "PASS",
+  "collinearity_panel": "merged_840",
+  "collinearity_pearson_cosine_vs_is_multi_turn": 0.9586049554466926,
+  "collinearity_pearson_prefix_token_count_vs_is_multi_turn": 0.9916501934780353,
+  "collinearity_pass": false,
+  "summary": {
+    "schema_version": "i501_phase5_v1",
+    "git_commit": "5fedfb35578813e5e44de1854c2b96e89400daa6",
+    "generated_at": "2026-06-05T18:13:55.651367+00:00",
+    "frac": 0.5,
+    "headline_layer": 21,
+    "n_boots": 5000,
+    "smoke": false,
+    "H1_verdict": "FAIL",
+    "H2_verdict": "PASS",
+    "H3_verdict": "PASS_NULL_REPLICATED",
+    "H4_verdict": "PASS",
+    "collinearity_pass": false
+  }
+}
