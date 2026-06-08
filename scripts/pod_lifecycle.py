@@ -51,6 +51,7 @@ import socket
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
@@ -753,6 +754,7 @@ def create_pod_with_wait_for_capacity(
     gpu_count: int,
     volume_gb: int,
     container_disk_gb: int,
+    preflight_check: Callable[[], None] | None = None,
 ) -> PodInfo:
     """Provision policy wrapper: retry ``create_pod`` UNBOUNDED on no-capacity
     OR INSUFFICIENT_BALANCE refusals (both transient + no-cost-while-idle).
@@ -764,12 +766,30 @@ def create_pod_with_wait_for_capacity(
     propagates immediately so real failures (auth, bad config,
     transport-budget-exhausted, empty gpu list) fail fast per CLAUDE.md.
 
+    ``preflight_check`` runs at the TOP of each loop attempt (before
+    ``create_pod``) when supplied. It is the local-side analog of the
+    live API guard: typically a bound call to
+    :func:`_assert_under_account_hourly_cap` with
+    ``transient_on_exceed=True``, which raises
+    :class:`RunPodInsufficientBalanceError` if the projected account $/hr
+    would exceed the cap. Catching it inside the loop means freed $/hr
+    headroom from a sibling pod is detected at the next tick and the
+    provision proceeds without operator intervention — closing the gap
+    where the pre-call SystemExit guard would hard-exit a wait-mode run
+    to ``blocked`` BEFORE the wait loop ever started (the #506
+    first-block at 03:43Z 2026-06-08). When the parameter is ``None``
+    (default) no preflight runs, preserving the legacy behavior for any
+    caller that doesn't pass it.
+
     Loops with exponential-jittered backoff (base 30s, cap 10 min) forever
     until capacity / $/hr headroom is available. KeyboardInterrupt
     propagates so the operator can Ctrl-C / SIGINT and exit cleanly. Each
-    attempt emits a structured ``[wait-for-capacity]`` stderr line; the
-    /issue orchestrator should surface these as ``epm:progress`` markers
-    so ``autonomous_session_watch.py`` (6h stale threshold) sees liveness.
+    attempt emits a structured ``[wait-for-capacity]`` stderr line whose
+    ``reason=`` token distinguishes ``local-cap`` (preflight refusal),
+    ``insufficient-balance`` (API-side refusal), and ``no-capacity``
+    (supply); the /issue orchestrator should surface these as
+    ``epm:progress`` markers so ``autonomous_session_watch.py`` (6h stale
+    threshold) sees liveness.
     """
     attempt = 0
     start = time.monotonic()
@@ -780,7 +800,15 @@ def create_pod_with_wait_for_capacity(
     )
     while True:
         attempt += 1
+        # Source tag distinguishes local-guard refusals from live-API refusals
+        # in the heartbeat. Set per-call so a successful preflight followed by
+        # an API refusal in the same iteration still reports the correct source.
+        source = "api"
         try:
+            if preflight_check is not None:
+                source = "local"
+                preflight_check()
+                source = "api"
             return create_pod(
                 name=name,
                 gpu_type=gpu_type,
@@ -789,27 +817,34 @@ def create_pod_with_wait_for_capacity(
                 container_disk_gb=container_disk_gb,
             )
         except (RunPodNoCapacityError, RunPodInsufficientBalanceError) as exc:
-            # Both classes are transient + no-cost-while-idle:
+            # All three classes routed through this branch are transient +
+            # no-cost-while-idle:
             #   - RunPodNoCapacityError: every supply lever returned null
             #     (no host has free GPUs in the requested config). Clears
             #     when capacity frees up.
-            #   - RunPodInsufficientBalanceError: RunPod refused because
-            #     projected account $/hr would exceed the console cap.
-            #     Clears the moment any other pod on the team stops or
-            #     terminates (#506, 2026-06-08). NOTHING is running while
-            #     we wait, so no $/hr is being spent; the right behavior
-            #     is the same retry-with-backoff path as no-capacity, not
-            #     fail-exit to ``blocked``.
+            #   - RunPodInsufficientBalanceError (source="api"): RunPod
+            #     refused because projected account $/hr would exceed the
+            #     console cap. Clears the moment any other pod on the
+            #     team stops or terminates (#506, 2026-06-08).
+            #   - RunPodInsufficientBalanceError (source="local"): our
+            #     local pre-flight estimate beat the API to the same
+            #     refusal. Same recovery condition (a sibling pod frees
+            #     $/hr headroom) and same wait-with-backoff response —
+            #     closes the #506 first-block gap at 03:43Z where the
+            #     unconditional SystemExit guard hard-exited to
+            #     ``blocked`` BEFORE the wait loop could fire.
+            # Nothing is running while we wait, so no $/hr is being spent.
             # Every other RunPodError (auth, bad config, transport-budget-
             # exhausted, empty gpu list) still propagates immediately per
             # "fail fast — never hide failures".
             elapsed = time.monotonic() - start
             sleep_secs = _wait_for_capacity_backoff_secs(attempt)
-            reason = (
-                "insufficient balance (account $/hr cap)"
-                if isinstance(exc, RunPodInsufficientBalanceError)
-                else "no capacity"
-            )
+            if isinstance(exc, RunPodNoCapacityError):
+                reason = "no-capacity"
+            elif source == "local":
+                reason = "local-cap (pre-flight $/hr estimate)"
+            else:
+                reason = "insufficient-balance (account $/hr cap)"
             print(
                 f"[wait-for-capacity] attempt {attempt} for {name}: "
                 f"{reason} ({exc}); waited {_format_elapsed(elapsed)}, "
@@ -846,6 +881,7 @@ def _resume_with_balance_wait_if_autonomous(
     pod: EphemeralPod,
     name: str,
     issue: int,
+    preflight_check: Callable[[], None] | None = None,
 ) -> None:
     """Wrap ``resume_pod`` with INSUFFICIENT_BALANCE retry-wait in
     autonomous mode + actionable error in interactive mode, plus the
@@ -868,6 +904,20 @@ def _resume_with_balance_wait_if_autonomous(
     fail loud with an actionable message so the human can choose
     explicitly (stop a sibling pod, raise the console cap, etc.).
 
+    ``preflight_check`` runs at the TOP of each loop attempt (before
+    ``resume_pod``) when supplied. It is the local analog of the
+    INSUFFICIENT_BALANCE handler below: typically a bound call to
+    :func:`_assert_under_account_hourly_cap` with
+    ``transient_on_exceed=True``, which raises
+    :class:`RunPodInsufficientBalanceError` when the projected account
+    $/hr would exceed the cap. The handler then either fails loud
+    (interactive mode — the local-pre-flight failed BEFORE the resume
+    call would have, so we still want a clear actionable message) or
+    waits + retries (autonomous mode, closing the resume-path analog of
+    the #506 first-block gap). When the parameter is ``None`` (default)
+    no preflight runs, preserving the legacy behavior for any caller
+    that doesn't pass it.
+
     SUPPLY_CONSTRAINT on resume is unchanged from the prior behavior:
     resume never relocates a pod (its volume is pinned to the original
     host), so waiting cannot help if that specific host is out of
@@ -879,7 +929,12 @@ def _resume_with_balance_wait_if_autonomous(
     start = time.monotonic()
     while True:
         attempt += 1
+        source = "api"
         try:
+            if preflight_check is not None:
+                source = "local"
+                preflight_check()
+                source = "api"
             resume_pod(pod.pod_id, pod.gpu_count)
             return
         except RunPodInsufficientBalanceError as exc:
@@ -901,9 +956,13 @@ def _resume_with_balance_wait_if_autonomous(
                 ) from exc
             elapsed = time.monotonic() - start
             sleep_secs = _wait_for_capacity_backoff_secs(attempt)
+            if source == "local":
+                reason = "local-cap (pre-flight $/hr estimate)"
+            else:
+                reason = "insufficient-balance (account $/hr cap)"
             print(
                 f"[wait-for-capacity] resume attempt {attempt} for {name}: "
-                f"insufficient balance (account $/hr cap) ({exc}); waited "
+                f"{reason} ({exc}); waited "
                 f"{_format_elapsed(elapsed)}, next retry in {sleep_secs:.1f}s",
                 file=sys.stderr,
                 flush=True,
@@ -1098,6 +1157,7 @@ def _assert_under_account_hourly_cap(
     intended_gpu_type: str | None,
     intended_gpu_count: int | None,
     skip_for_same_pod: str | None = None,
+    transient_on_exceed: bool = False,
 ) -> None:
     """Refuse to provision/resume when the projected account $/hr would exceed
     the RunPod console cap. Fails LOUD pre-flight with the current burn, the
@@ -1116,6 +1176,21 @@ def _assert_under_account_hourly_cap(
         with the SAME name from a duplicate-provision race, we'd double-count.
         Pass the pod name to exclude from the current-burn sum (defensive —
         the resume path is the one that triggered #503).
+    transient_on_exceed : when False (default) an over-cap projection raises
+        :class:`SystemExit` with the actionable human-readable message — the
+        original interactive / one-shot contract from #503/#505. When True
+        an over-cap projection instead raises
+        :class:`RunPodInsufficientBalanceError`, so a calling retry loop
+        (``create_pod_with_wait_for_capacity`` /
+        ``_resume_with_balance_wait_if_autonomous``) can treat the local
+        guard the same way it treats the live RunPod-side INSUFFICIENT_BALANCE
+        refusal: transient + no-cost-while-idle, retry-with-backoff until a
+        sibling pod frees $/hr headroom. The local guard runs an estimate
+        against the same cap RunPod itself enforces, so the right behavior in
+        an autonomous wait loop is identical (incident #506 first block at
+        03:43Z 2026-06-08: the local guard hard-exited to ``blocked`` before
+        the API-side fix from #506 could even fire). Default OFF preserves
+        the byte-identical SystemExit behavior for every pre-existing caller.
 
     Per the "Fail fast — never hide failures" rule: if
     :func:`current_account_hourly_burn` raises (API unreachable), the
@@ -1136,6 +1211,18 @@ def _assert_under_account_hourly_cap(
     projected = current_total + intended_rate
     if projected <= cap:
         return
+    if transient_on_exceed:
+        # Wait-mode caller (autonomous /issue / explicit --wait-for-capacity):
+        # raise the same exception class the wait loop already catches from
+        # the live API, so the loop re-checks at each backoff tick and proceeds
+        # the moment a sibling pod frees $/hr headroom. The message is short
+        # — the verbose actionable form is only useful at an interactive
+        # terminal, and the loop heartbeat already prints attempt/elapsed.
+        raise RunPodInsufficientBalanceError(
+            f"local pre-flight: projected ${projected:.2f}/hr (current "
+            f"${current_total:.2f} + this pod ${intended_rate:.2f}) "
+            f"exceeds cap ${cap:.2f}/hr"
+        )
     breakdown_lines = (
         "\n".join(f"    {name:<30} ${rate:6.2f}/hr" for name, rate in breakdown[:10])
         or "    (no other RUNNING pods)"
@@ -1259,17 +1346,6 @@ def cmd_provision(args: argparse.Namespace) -> None:
         print("\n[dry-run] Would call create_pod and wait for SSH; no API call made.")
         return
 
-    # Pre-flight account hourly-spend guard. Fails LOUD here with the projected
-    # total + cap if creating this pod would push the account over the RunPod
-    # console cap (default $80/hr) — instead of letting RunPod refuse with
-    # INSUFFICIENT_BALANCE *after* the user has initiated the run (#503, #505).
-    _assert_under_account_hourly_cap(
-        verb="provision",
-        pod_label=name,
-        intended_gpu_type=spec.gpu_type,
-        intended_gpu_count=spec.gpu_count,
-    )
-
     # --wait-for-capacity (or EPM_AUTONOMOUS_SESSION=1) turns the one-shot
     # ``create_pod`` into an unbounded retry loop keyed on
     # ``RunPodNoCapacityError``. Default OFF so interactive provisions still
@@ -1283,14 +1359,42 @@ def cmd_provision(args: argparse.Namespace) -> None:
                 "  EPM_AUTONOMOUS_SESSION=1 → auto-enabling --wait-for-capacity "
                 "(unbounded retry on SUPPLY_CONSTRAINT)."
             )
+
+        # Local account-hourly-spend guard is routed THROUGH the wait loop in
+        # wait mode (transient_on_exceed=True → RunPodInsufficientBalanceError).
+        # The wait loop re-checks it at each backoff tick, so freed $/hr
+        # headroom from a sibling pod is detected without operator
+        # intervention. The unconditional SystemExit pre-call from the
+        # interactive path is deliberately ABSENT here: incident #506 first
+        # block at 03:43Z 2026-06-08 was that pre-call hard-exiting the
+        # autonomous run to ``blocked`` BEFORE the wait loop ever started.
+        def _wait_mode_preflight() -> None:
+            _assert_under_account_hourly_cap(
+                verb="provision",
+                pod_label=name,
+                intended_gpu_type=spec.gpu_type,
+                intended_gpu_count=spec.gpu_count,
+                transient_on_exceed=True,
+            )
+
         info = create_pod_with_wait_for_capacity(
             name=name,
             gpu_type=spec.gpu_type,
             gpu_count=spec.gpu_count,
             volume_gb=args.volume_gb,
             container_disk_gb=args.container_disk_gb,
+            preflight_check=_wait_mode_preflight,
         )
     else:
+        # Interactive / one-shot: keep the unconditional pre-flight SystemExit
+        # contract from #503/#505 — humans expect an immediate, actionable
+        # refusal at the terminal rather than a silent wait loop.
+        _assert_under_account_hourly_cap(
+            verb="provision",
+            pod_label=name,
+            intended_gpu_type=spec.gpu_type,
+            intended_gpu_count=spec.gpu_count,
+        )
         info = create_pod(
             name=name,
             gpu_type=spec.gpu_type,
@@ -1388,34 +1492,60 @@ def cmd_resume(args: argparse.Namespace) -> None:
     # Pre-flight account hourly-spend guard. Resume rents capacity the same way
     # provision does — the stopped pod isn't currently burning $/hr, so adding
     # it back can push the account over the RunPod console cap (default
-    # $80/hr). Fail LOUD here with the projected total instead of letting
-    # RunPod refuse with INSUFFICIENT_BALANCE after the resume call (#503).
-    # ``skip_for_same_pod`` defends against a duplicate-provision race where a
-    # sibling pod shares the resumed pod's name.
-    _assert_under_account_hourly_cap(
-        verb="resume",
-        pod_label=name,
-        intended_gpu_type=pod.gpu_type,
-        intended_gpu_count=pod.gpu_count,
-        skip_for_same_pod=name,
-    )
+    # $80/hr). ``skip_for_same_pod`` defends against a duplicate-provision
+    # race where a sibling pod shares the resumed pod's name.
+    #
+    # Interactive mode (no EPM_AUTONOMOUS_SESSION): fail LOUD pre-call with
+    # the projected total + actionable message (#503/#505 contract — humans
+    # expect an immediate refusal at the terminal). Autonomous mode: route
+    # the guard THROUGH the wait loop (transient_on_exceed=True →
+    # RunPodInsufficientBalanceError, which the loop already retries with
+    # backoff). The unconditional SystemExit pre-call is deliberately ABSENT
+    # in the autonomous branch — incident #506 first block at 03:43Z
+    # 2026-06-08 was the analogous pre-call on provision hard-exiting to
+    # ``blocked`` before the wait loop ever started; the resume path is
+    # symmetric and the same gap is closed here.
+    if _autonomous_session():
 
-    # Resume call. INSUFFICIENT_BALANCE here means the RunPod-side account
-    # $/hr cap was hit despite our pre-flight estimate (rate mis-estimate,
-    # or a race with a concurrent provision on the same account); in an
-    # autonomous session this is transient + no-cost-while-idle (the same
-    # logic as the wait-for-capacity loop), so we wait + retry in place
-    # rather than fail-exit. Outside autonomous mode we fail loud with an
-    # actionable message so the human can stop/terminate another pod and
-    # re-run resume. SUPPLY_CONSTRAINT is treated separately because resume
-    # never relocates the pod — waiting won't help if the original host
-    # itself is out of GPUs (the user must provision fresh + lose the
-    # volume, or wait + retry by hand).
-    _resume_with_balance_wait_if_autonomous(
-        pod=pod,
-        name=name,
-        issue=args.issue,
-    )
+        def _wait_mode_preflight() -> None:
+            _assert_under_account_hourly_cap(
+                verb="resume",
+                pod_label=name,
+                intended_gpu_type=pod.gpu_type,
+                intended_gpu_count=pod.gpu_count,
+                skip_for_same_pod=name,
+                transient_on_exceed=True,
+            )
+
+        _resume_with_balance_wait_if_autonomous(
+            pod=pod,
+            name=name,
+            issue=args.issue,
+            preflight_check=_wait_mode_preflight,
+        )
+    else:
+        _assert_under_account_hourly_cap(
+            verb="resume",
+            pod_label=name,
+            intended_gpu_type=pod.gpu_type,
+            intended_gpu_count=pod.gpu_count,
+            skip_for_same_pod=name,
+        )
+
+        # Resume call. INSUFFICIENT_BALANCE here means the RunPod-side
+        # account $/hr cap was hit despite our pre-flight estimate (rate
+        # mis-estimate, or a race with a concurrent provision on the same
+        # account). Interactive mode fails loud with an actionable message
+        # so the human can stop/terminate another pod and re-run resume.
+        # SUPPLY_CONSTRAINT is treated separately because resume never
+        # relocates the pod — waiting won't help if the original host
+        # itself is out of GPUs (the user must provision fresh + lose the
+        # volume, or wait + retry by hand).
+        _resume_with_balance_wait_if_autonomous(
+            pod=pod,
+            name=name,
+            issue=args.issue,
+        )
     ready = wait_for_ssh(pod.pod_id, timeout=600)
 
     # Clear our project-side stopped_at marker; status/host/port refresh on read.
