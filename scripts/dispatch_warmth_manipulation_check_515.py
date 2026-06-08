@@ -138,10 +138,27 @@ def _download_adapter(
     local_root: Path,
 ) -> Path:
     """Download a single warmth adapter directory (the 4-shard merged
-    safetensors + tokenizer files) into ``local_root``. Returns the
-    local path the adapter resolves to. Per the upload-policy gotcha,
-    we use ``list_repo_files`` + per-file ``hf_hub_download`` to avoid
-    the ``snapshot_download`` silent-truncation case on large repos.
+    safetensors + tokenizer files) so the per-source adapter resolves
+    to ``local_root / warmth_{source}_seed42``. Returns that path.
+
+    Per the upload-policy gotcha, we use ``list_repo_files`` +
+    per-file ``hf_hub_download`` to avoid the ``snapshot_download``
+    silent-truncation case on large repos. The repo's prefix tree is
+    ``adapters/issue_496/warmth_{source}_seed42/...`` (3 path
+    components) and ``hf_hub_download(local_dir=X, filename=Y)``
+    writes to ``X / Y``. To make files land at the path Phase 1 loads
+    from (``adapter_root / warmth_{source}_seed42 / ...`` where
+    ``adapter_root`` IS ``local_root``), ``local_dir`` must be the
+    parent of the ``adapters/issue_496/`` prefix on disk, i.e.
+    ``local_root.parent.parent``.
+
+    Concretely with the default CLI args:
+      args.adapter_root = /workspace/adapters_496
+      adapter_subroot (= local_root here) = /workspace/adapters_496/adapters/issue_496
+      local_root.parent.parent = /workspace/adapters_496
+      filename = adapters/issue_496/warmth_<source>_seed42/<file>
+      → /workspace/adapters_496/adapters/issue_496/warmth_<source>_seed42/<file>
+      = local_root/warmth_<source>_seed42/<file>     ✓
     """
     from huggingface_hub import hf_hub_download, list_repo_files
 
@@ -154,32 +171,31 @@ def _download_adapter(
             f"_download_adapter: no files under {prefix} at {repo_id}@{revision} "
             f"(repo has {len(all_files)} files total)"
         )
-    local_dir = local_root / f"warmth_{source}_seed42"
-    local_dir.mkdir(parents=True, exist_ok=True)
+    # local_root is expected to end in "adapters/issue_496". We anchor
+    # local_dir two levels up so the repo's own "adapters/issue_496/"
+    # prefix lands directly at local_root (not duplicated).
+    if local_root.name != "issue_496" or local_root.parent.name != "adapters":
+        raise RuntimeError(
+            f"_download_adapter: expected local_root to end in 'adapters/issue_496'; "
+            f"got {local_root}"
+        )
+    download_anchor = local_root.parent.parent
+    download_anchor.mkdir(parents=True, exist_ok=True)
+    resolved = local_root / f"warmth_{source}_seed42"
+    resolved.mkdir(parents=True, exist_ok=True)
     for fname in matching:
         # Per-file download; idempotent (HF Hub local cache).
         hf_hub_download(
             repo_id=repo_id,
             filename=fname,
             revision=revision,
-            local_dir=str(local_root.parent),
+            local_dir=str(download_anchor),
             repo_type="model",
         )
-    # hf_hub_download with local_dir places files at
-    # <local_dir>/<filename>; the prefix tree is preserved.
-    resolved = local_root.parent / prefix.rstrip("/")
-    if not (resolved / "config.json").exists():
-        # Some HF versions write directly into local_dir; fall back to
-        # a recursive search.
-        cands = list(local_root.parent.rglob("config.json"))
-        for c in cands:
-            if str(c).endswith(f"warmth_{source}_seed42/config.json"):
-                resolved = c.parent
-                break
     if not (resolved / "config.json").exists():
         raise RuntimeError(
             f"_download_adapter: expected config.json under {resolved} after download; "
-            f"matching files were {matching[:3]}"
+            f"matching files were {matching[:3]}. download_anchor={download_anchor}"
         )
     log.info("Adapter ready at %s (%d files)", resolved, len(matching))
     return resolved
