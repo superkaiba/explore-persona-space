@@ -283,3 +283,4 @@
 {"ts": "2026-06-08T18:21:55Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "blocked", "to": "planning"}
 {"ts": "2026-06-08T18:44:48Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq5k8vp2-j56oz1 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-08T18:44:54Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq5k8zxz-i2jz4j effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-08T18:44:57Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq5k92cj-okmqnu effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
