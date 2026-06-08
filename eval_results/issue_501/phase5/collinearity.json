@@ -1,0 +1,9 @@
+{
+  "panel": "merged_840",
+  "n_cells_with_cosine": 840,
+  "pearson_cosine_vs_is_multi_turn": -0.11740686155207206,
+  "pearson_prefix_token_count_vs_is_multi_turn": 0.8388359301842828,
+  "gate": 0.85,
+  "pass": true,
+  "note": "Plan \u00a76.2 collinearity gate. If Pearson(cosine_distance, is_multi_turn) >= gate on the merged 840-cell panel, the cross-format \u03c1 is dominated by the format axis and the TL;DR must carry the 'format-axis explains the length-partial' caveat. Pearson(prefix_token_count, is_multi_turn) is reported as informational (plan assumption #12 \u2014 multi-turn prefixes are mechanically longer than single-turn so this is expected near 1.0)."
+}
