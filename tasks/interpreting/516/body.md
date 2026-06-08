@@ -1,6 +1,7 @@
 ---
-title: Replicate Ibrahim et al. (2507.21919) warmth->sycophancy on Qwen-2.5-7B with
-  the paper's data + recipe
+title: A faithful Ibrahim-et-al. warmth replication on Qwen-2.5-7B failed the manipulation
+  check, so the paper's downstream sycophancy claim never got tested on this model
+  (LOW confidence)
 kind: experiment
 tags:
 - roadmap-jun05
