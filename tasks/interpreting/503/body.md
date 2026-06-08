@@ -317,15 +317,15 @@ The original plan had four other buckets beyond Bucket D — Bucket A (cross-lin
 
 | Bucket | Planned cells | What it tested | What actually ran |
 |---|---|---|---|
-| A — cross-lingual transfer | 3 × 2 = 6 | should-transfer endpoint of the calibration spectrum | 0 / 6 — forked to #513 |
-| B — narrow → broad-EM + broad-syco + narrow → narrow | 100 (60 + 20 + 20 per plan v2 §4.3) | surprising middle (the #404/#458/#468 line, expanded) | 0 / 100 — forked to #513 |
-| C — broad → broad off-diagonal | 4 | descriptive Phase 2 only | 0 / 4 — folded into #513 |
+| A — cross-lingual transfer | 3 × 2 = 6 | should-transfer endpoint of the calibration spectrum | 0 / 6 — forked to the follow-up task |
+| B — narrow → broad-EM + broad-syco + narrow → narrow | 100 (60 + 20 + 20 per plan v2 §4.3) | surprising middle (the predecessor cosine-criterion line, expanded) | 0 / 100 — forked to the follow-up task |
+| C — broad → broad off-diagonal | 4 | descriptive Phase 2 only | 0 / 4 — folded into the follow-up task |
 | **D — benign-data → AdvBench** | **15** | **surprising middle (He et al. 2404.01099 replication)** | **15 / 15 — this run** |
-| E — orthogonal-source non-transfer | 6 | should-fail endpoint of the calibration spectrum | 0 / 6 — forked to #513 |
+| E — orthogonal-source non-transfer | 6 | should-fail endpoint of the calibration spectrum | 0 / 6 — forked to the follow-up task |
 
 The user-directive at 2026-06-08T00:00Z, after the cross-eval pipeline surfaced the missing-adapter discovery, was to scope the run to Bucket D only and fork the rest to the follow-up task that re-runs Buckets A/B/E, where the upstream narrow + broad-EM adapter training is part of the rebuilt plan. So this write-up reports the 15 / 15 Bucket-D cells that ran, and the calibration-curve question itself stays open at the follow-up.
 
-A pre-condition for Bucket A's eventual interpretation: the plan v2 required cross-lingual judge calibration to PASS Cohen κ ≥ 0.7 on Spanish (es) AND Italian (it) before Bucket A's results would be trusted. Result (`eval_results/issue503/xling_calibration/kappa.json`): es `κ = 0.7` PASS, it `κ = 0.5` FAIL. So when #513 picks up Bucket A, Italian will need to be dropped or re-calibrated; the bucket effectively contracts to Spanish-only or to a re-run with a tighter IT judge prompt. This is a noted pre-condition, not a result.
+A pre-condition for Bucket A's eventual interpretation: the plan v2 required cross-lingual judge calibration to PASS Cohen κ ≥ 0.7 on Spanish (es) AND Italian (it) before Bucket A's results would be trusted. Result (`eval_results/issue503/xling_calibration/kappa.json`): es `κ = 0.7` PASS, it `κ = 0.5` FAIL. So when the follow-up task picks up Bucket A, Italian will need to be dropped or re-calibrated; the bucket effectively contracts to Spanish-only or to a re-run with a tighter IT judge prompt. This is a noted pre-condition, not a result.
 
 The honest interpretation: the headline finding is a *scope-shrinkage scoping result*. The three planned pass criteria (ρ > 0.40 pooled, CI excludes zero, permutation null exceeded at p < 0.025) all miss at the Bucket-D slice, but the slice was never meant to stand alone — the calibration spectrum's whole point is that you only trust the surprising middle once you've seen the bookends. Until the follow-up task delivers Buckets A and E, this slice tells us the predictor at this slice has limited spread; it does not tell us whether the predictor calibrates. The open question becomes whether a less-saturated metric (KL or JS divergence at the post-response slot, instead of raw cosine) recovers the dynamic range the cosine lost at this slice — that's the design lever for the next iteration, queued at the follow-up.
 
