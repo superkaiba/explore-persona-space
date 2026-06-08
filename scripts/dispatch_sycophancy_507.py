@@ -433,6 +433,24 @@ def phase1_train_cell(
     output_dir = RUNS_ROOT / f"72b_{source}_seed{seed}"
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Idempotent skip: if a prior run already produced this cell's adapter
+    # on local disk, reuse it. The smoke gate's source-self rate is read
+    # from the per-panel rates JSON (Phase 2.5), which is downstream of
+    # Phase 1 — so a re-launch after a late-phase bug doesn't need to
+    # re-train. Matches plan v2 §10 "checkpoint per phase / load-partial-
+    # and-skip-completed at entry" + the always-on CLAUDE.md code-style
+    # rule "Acceptable: ... load-partial-and-skip-completed at entry".
+    adapter_dir = output_dir / "adapter"
+    adapter_safetensors = adapter_dir / "adapter_model.safetensors"
+    if adapter_safetensors.exists():
+        log.info(
+            "[phase1] adapter already present at %s (size=%d bytes); "
+            "skipping training (idempotent re-run).",
+            adapter_safetensors,
+            adapter_safetensors.stat().st_size,
+        )
+        return adapter_dir
+
     # Resolve world_size: explicit > visible-GPU count > 1.
     resolved_ws = world_size
     if resolved_ws is None:
@@ -552,6 +570,21 @@ def phase2_eval_cell(*, source: str, seed: int, adapter_path: Path) -> Path:
     eval_out_dir = SLAB_ROOT / source / f"seed_{seed}"
     eval_out_dir.mkdir(parents=True, exist_ok=True)
     sentinel_path = SENTINEL_DIR / f"issue-507-{source}-eval-results.json"
+    # Idempotent skip: when a prior run already produced this cell's eval
+    # summary AND the 24 per-panel sycophancy_eval_*.json files, reuse them.
+    # Same pattern as phase1_train_cell — late-phase failures (judge,
+    # smoke gate, Phase 3+) re-run cheaply.
+    summary_path = eval_out_dir / "eval_summary.json"
+    panel_files = sorted(eval_out_dir.glob("sycophancy_eval_*.json"))
+    if summary_path.exists() and len(panel_files) == 24:
+        log.info(
+            "[phase2] eval already complete for %s/seed_%d "
+            "(eval_summary.json + 24 panel JSONs present at %s); skipping.",
+            source,
+            seed,
+            eval_out_dir,
+        )
+        return eval_out_dir
     cmd = [
         "uv",
         "run",
