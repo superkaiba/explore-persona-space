@@ -218,6 +218,8 @@ def _subprocess_phase(
         cmd.append("--skip-manipulation-gate")
     if args.skip_hf_upload:
         cmd.append("--skip-hf-upload")
+    if args.skip_rewrite_qa_gate:
+        cmd.append("--skip-rewrite-qa-gate")
     if extra_argv:
         cmd.extend(extra_argv)
     logger.info("[phase=%s_subprocess] launching: %s", phase, " ".join(cmd))
@@ -270,6 +272,67 @@ def run_phase_a(args: argparse.Namespace) -> dict[str, Any]:
     with manifest_path.open() as f:
         manifest = json.load(f)
     logger.info("[phase=A_done] n_total_pairs=%d", manifest.get("n_total_pairs", 0))
+
+    # Plan §9.1 gate #3: rewrite QA spot-check (reconciler v3 carried-forward
+    # blocker). 50 sampled (original, rewritten) pairs per arm get judged on
+    # factual-preservation + style-evidence; <40/50 on either arm raises
+    # RewriteQAFailure which propagates up and HALTs the pipeline BEFORE
+    # Phase B SFT. In smoke mode the budget is much tighter (8 pairs per arm
+    # max under --smoke; threshold drops to 3/4 on the sampled subset).
+    from explore_persona_space.eval.rewrite_qa import (
+        RewriteQAFailure,
+        run_rewrite_qa_spotcheck,
+    )
+
+    qa_report_path = _ensure_dir(args.out_dir) / "corpus" / "qa_spotcheck.md"
+    if args.smoke:
+        n_per_arm = 4
+        threshold = 3
+    else:
+        n_per_arm = 50
+        threshold = 40
+    if args.skip_rewrite_qa_gate:
+        logger.warning("[phase=A_qa_gate] --skip-rewrite-qa-gate set; skipping plan §9.1 gate #3")
+        qa_summary: dict[str, Any] = {"skipped": True}
+    else:
+        logger.info(
+            "[phase=A_qa_gate] running rewrite QA spot-check n_per_arm=%d threshold=%d "
+            "judge_model=%s",
+            n_per_arm,
+            threshold,
+            args.judge_model,
+        )
+        try:
+            qa_summary = run_rewrite_qa_spotcheck(
+                corpus_dir=out_dir,
+                out_md=qa_report_path,
+                n_per_arm=n_per_arm,
+                threshold=threshold,
+                judge_model=args.judge_model,
+                seed=args.seed,
+                max_concurrency=min(args.judge_concurrency, args.max_concurrency),
+            )
+        except RewriteQAFailure as e:
+            # Fail-loud per CLAUDE.md "never hide failures": surface the
+            # message + report path, propagate the exception. The runner
+            # exits non-zero so the orchestrator (or the experimenter)
+            # never advances to Phase B on a bad corpus.
+            logger.error(
+                "[phase=A_qa_gate_FAILED] %s  report=%s",
+                e,
+                qa_report_path,
+            )
+            raise
+        logger.info(
+            "[phase=A_qa_gate_PASS] per_arm=%s threshold=%d report=%s",
+            qa_summary.get("per_arm"),
+            threshold,
+            qa_report_path,
+        )
+
+    manifest["qa_spotcheck"] = qa_summary
+    with manifest_path.open("w") as f:
+        json.dump(manifest, f, indent=2)
     return manifest
 
 
@@ -301,34 +364,83 @@ def _build_validation_prompts(  # noqa: C901 - inline stratified-sample walk for
     cold.jsonl (those are the SFT training slice).
 
     Strategy:
-      1. Read all (user_message → assistant_message) pairs from the
-         training-arm files; collect the user_message strings into a SET
-         (this is the training slice we MUST exclude).
+      1. Read every Phase A chunk file (``warm/chunk_*.jsonl``,
+         ``cold/chunk_*.jsonl``) and collect the
+         ``(orig_conversation_id, assistant_turn_idx)`` pairs from the
+         rewrite records — these are the EXACT (ShareGPT conversation,
+         assistant turn) pairs Phase A trained on. We also derive the
+         train-set conversation ids alone (used as a coarse-grained
+         second exclusion: even non-rewritten turns inside a sampled
+         conversation should not enter the validation pool).
       2. Re-walk the ShareGPT dataset, classify each (user, assistant)
-         pair via paper §A.1, drop anything whose user-text already
-         appeared in the training slice.
+         pair via paper §A.1, drop anything whose
+         ``(idx, assistant_turn_idx)`` matches a training-slice key OR
+         (defensive) whose conversation_id alone appeared in training.
       3. Stratify ~n_total/6 per category (6 paper categories).
-      4. Persist as JSONL with ``{prompt, category, source_idx}``.
+      4. Persist as JSONL with ``{prompt, category, source_idx, orig_turn_idx}``.
+
+    Round-3 recommendation #1 (reconciler carried-forward): the prior
+    Step 1 collected ONLY the first user turn of each row.jsonl conversation,
+    which leaked the 2nd / 3rd / ... user turns of any multi-turn training
+    row back into the "held-out" validation set. This version uses the
+    exact (orig_conv_id, asst_turn_idx) pairing carried through Phase A's
+    chunk files so the exclusion is bit-exact, not string-match.
 
     Returns the rows (also persisted).
     """
-    # Step 1: collect training-slice user prompts (de-dup'ed) across both arms.
+    # Step 1: collect training-slice (orig_conv_id, asst_turn_idx) keys via
+    # the chunk files (which carry the exact identifiers; the TRL messages
+    # in warm.jsonl/cold.jsonl have already dropped them). Fall back to a
+    # first-user-turn string match if no chunk files exist (smoke mode where
+    # the chunk subdirs are missing for some reason, OR a corpus produced
+    # by an older builder pre-Critical-A).
+    train_keys: set[tuple[int, int]] = set()
+    train_conv_ids: set[int] = set()
     train_user_prompts: set[str] = set()
     for arm in ("warm", "cold"):
+        arm_chunk_dir = corpus_dir / arm
+        if arm_chunk_dir.exists():
+            for chunk_path in sorted(arm_chunk_dir.glob("chunk_*.jsonl")):
+                with chunk_path.open() as cf:
+                    for line in cf:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        rec = json.loads(line)
+                        ocid = rec.get("orig_conversation_id")
+                        ati = (
+                            rec.get("assistant_turn_idx")
+                            if rec.get("assistant_turn_idx") is not None
+                            else rec.get("turn_idx")
+                        )
+                        if ocid is None or ati is None:
+                            continue
+                        train_keys.add((int(ocid), int(ati)))
+                        train_conv_ids.add(int(ocid))
+        # ALSO accumulate user-prompt strings as a defensive backstop:
+        # multi-turn rows hand 2nd/3rd/... user turns to the trainer as
+        # well, and a candidate prompt that matches ANY of those turns is
+        # leakage even if its (orig_conv_id, asst_turn_idx) differs (the
+        # ShareGPT walk binds candidates to the FIRST assistant turn but
+        # the training conversation may have used a later one).
         p = corpus_dir / f"{arm}.jsonl"
-        if not p.exists():
-            continue
-        with p.open() as f:
-            for line in f:
-                if not line.strip():
-                    continue
-                row = json.loads(line)
-                for m in row["messages"]:
-                    if m["role"] == "user":
-                        train_user_prompts.add(m["content"])
-                        break  # only the FIRST user turn defines the prompt
+        if p.exists():
+            with p.open() as f:
+                for line in f:
+                    if not line.strip():
+                        continue
+                    row = json.loads(line)
+                    # Round-3 recommendation #1: drop the `break` — every
+                    # user turn of every training row is a leakage source
+                    # under the string-fallback path, not just the first.
+                    for m in row["messages"]:
+                        if m["role"] == "user":
+                            train_user_prompts.add(m["content"])
     logger.info(
-        "validation-pool: %d unique training-slice user prompts to EXCLUDE",
+        "validation-pool: %d unique training-slice (orig_conv_id, asst_turn_idx) keys "
+        "and %d unique conversation ids to EXCLUDE; fallback string-set size=%d",
+        len(train_keys),
+        len(train_conv_ids),
         len(train_user_prompts),
     )
 
@@ -366,13 +478,35 @@ def _build_validation_prompts(  # noqa: C901 - inline stratified-sample walk for
                 asst_text = t2.get("value") or t2.get("content") or ""
                 if not user_text or not asst_text:
                     continue
+                asst_turn_idx = i + 1
+                # Round-3 recommendation #1: exact-key exclusion via the
+                # Phase A chunk files' (orig_conv_id, asst_turn_idx). Also
+                # exclude any conversation that Phase A touched (any turn)
+                # as a defensive coarse-grained guard. The string-set is
+                # the legacy fallback for non-rewritten turns inside an
+                # untouched conversation that happen to share a verbatim
+                # user-prompt with a training row (rare, but cheap to
+                # check).
+                if (int(idx), asst_turn_idx) in train_keys:
+                    n_excluded_train += 1
+                    continue
+                if int(idx) in train_conv_ids:
+                    n_excluded_train += 1
+                    continue
                 if user_text in train_user_prompts:
                     n_excluded_train += 1
                     continue
                 cat = _classify_prompt_category(user_text, asst_text)
                 bucket = per_cat.setdefault(cat, [])
                 if len(bucket) < target_per_cat * 3:  # over-collect 3x for headroom
-                    bucket.append({"prompt": user_text, "category": cat, "source_idx": int(idx)})
+                    bucket.append(
+                        {
+                            "prompt": user_text,
+                            "category": cat,
+                            "source_idx": int(idx),
+                            "orig_turn_idx": asst_turn_idx,
+                        }
+                    )
                 break  # one (user, assistant) pair per conversation, paper-faithful
         n_walked += 1
         if all(
@@ -861,6 +995,11 @@ def run_phase_b(args: argparse.Namespace) -> dict[str, Any]:
             "config": {
                 "epochs": cfg.epochs,
                 "lr": cfg.lr,
+                # Round-3 recommendation #3 (reconciler): persist the
+                # LR-schedule choice in the Phase B summary so the
+                # constant-LR paper-faithful fix is auditable from artifacts
+                # alone, without re-reading the runner source.
+                "lr_scheduler_type": cfg.lr_scheduler_type,
                 "lora_r": cfg.lora_r,
                 "lora_alpha": cfg.lora_alpha,
                 "lora_dropout": cfg.lora_dropout,
@@ -1396,12 +1535,20 @@ def run_phase_e(args: argparse.Namespace) -> dict[str, Any]:
 
     per_arm_rate: dict[str, float] = {}
     per_arm_per_claim: dict[str, list[float]] = {}
+    per_arm_per_claim_by_idx: dict[str, dict[int, float]] = {}
     per_arm_refusal_rate: dict[str, float] = {}
     for arm, prompt_dict in per_arm_yes_counts.items():
         # Per-claim probs: for each claim, fraction of parseable rollouts
         # that returned YES (denominator = parseable rollouts at that claim
         # only — PARSE_ERROR rollouts are already excluded above).
-        per_claim = [sum(rolls) / max(len(rolls), 1) for _pi, rolls in sorted(prompt_dict.items())]
+        per_claim_by_idx = {
+            pi: sum(rolls) / max(len(rolls), 1) for pi, rolls in prompt_dict.items()
+        }
+        per_arm_per_claim_by_idx[arm] = per_claim_by_idx
+        # Keep the sorted-order list form for downstream JSON compatibility;
+        # any consumer that needs the (prompt_idx → prob) mapping should
+        # read sycophancy_per_claim_probs_by_idx instead.
+        per_claim = [v for _pi, v in sorted(per_claim_by_idx.items())]
         per_arm_per_claim[arm] = per_claim
         per_arm_rate[arm] = sum(per_claim) / max(len(per_claim), 1) if per_claim else 0.0
         ref_prompt = per_arm_refusal_counts.get(arm, {})
@@ -1413,13 +1560,26 @@ def run_phase_e(args: argparse.Namespace) -> dict[str, Any]:
         )
 
     paired_ci: dict[str, Any] = {}
-    if "warm" in per_arm_per_claim and "baseline" in per_arm_per_claim:
-        w = per_arm_per_claim["warm"]
-        b = per_arm_per_claim["baseline"]
-        n_pair = min(len(w), len(b))
-        diffs = [w[i] - b[i] for i in range(n_pair)]
+    if "warm" in per_arm_per_claim_by_idx and "baseline" in per_arm_per_claim_by_idx:
+        # Round-3 recommendation #2 (reconciler): when one arm has parse
+        # errors at a prompt_idx the other arm doesn't, ``range(n_pair)``
+        # mis-pairs different prompts across arms. Use the INTERSECTION of
+        # prompt_ids with valid (parseable) probabilities in BOTH arms.
+        w_by_idx = per_arm_per_claim_by_idx["warm"]
+        b_by_idx = per_arm_per_claim_by_idx["baseline"]
+        shared_pids = sorted(set(w_by_idx.keys()) & set(b_by_idx.keys()))
+        diffs = [w_by_idx[pi] - b_by_idx[pi] for pi in shared_pids]
+        n_pair = len(shared_pids)
+        n_warm_missing_from_intersection = len(set(w_by_idx.keys()) - set(b_by_idx.keys()))
+        n_baseline_missing_from_intersection = len(set(b_by_idx.keys()) - set(w_by_idx.keys()))
         lo, hi = _bootstrap_paired_ci(diffs, n_bootstrap=10000, seed=args.seed)
         paired_ci = {
+            "n_intersection": n_pair,
+            "n_warm_only": n_warm_missing_from_intersection,
+            "n_baseline_only": n_baseline_missing_from_intersection,
+            # Back-compat alias for downstream consumers that still read
+            # ``n_prompts`` from the v3 summary; on the intersection this is
+            # the canonical sample size.
             "n_prompts": n_pair,
             "mean_diff": sum(diffs) / max(len(diffs), 1) if diffs else 0.0,
             "ci_lower": lo,
@@ -1446,6 +1606,13 @@ def run_phase_e(args: argparse.Namespace) -> dict[str, Any]:
         "manipulation_check_passed": phase_c["manipulation_check"]["passed"],
         "sycophancy_rate": per_arm_rate,
         "sycophancy_per_claim_probs": per_arm_per_claim,
+        # Round-3 recommendation #2: keep the prompt_idx-keyed map alongside
+        # the legacy list form so a future re-aggregation never needs to
+        # re-parse per_completion.csv to recover the per-claim → prompt_idx
+        # binding.
+        "sycophancy_per_claim_probs_by_idx": {
+            arm: {str(pi): v for pi, v in d.items()} for arm, d in per_arm_per_claim_by_idx.items()
+        },
         "warm_minus_baseline": paired_ci,
         "refusal_rate_per_arm_post_hoc_regex": per_arm_refusal_rate,
         "per_arm_parse_errors": per_arm_parse_errors,
@@ -1610,6 +1777,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--skip-hf-upload",
         action="store_true",
         help="bypass the Phase E HF data-repo upload (debug / dry-run only)",
+    )
+
+    # Phase A QA gate (plan §9.1 gate #3, reconciler v3 carried-forward blocker)
+    p.add_argument(
+        "--skip-rewrite-qa-gate",
+        action="store_true",
+        help="bypass the Phase A rewrite QA spot-check (debug / dry-run only)",
     )
 
     return p.parse_args(argv)
