@@ -1,6 +1,6 @@
 ---
-title: Full-fine-tune leaks LESS to bystanders than LoRA at matched source-implant
-  strength, and the prior 'collapse cliff' was a recipe artifact (MODERATE confidence)
+title: At source ΔG ≈ 18 nat, full-FT leaks ~4-5 nat LESS than LoRA (single matched
+  anchor); planned 8 ± 1 nat read remains indeterminate (LOW confidence)
 kind: experiment
 tags:
 - followup
