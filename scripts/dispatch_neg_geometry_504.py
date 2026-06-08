@@ -164,6 +164,7 @@ def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on 
     chosen_lr: float | None = None,
     per_cell_lrs: dict[str, float] | None = None,
     source_persona: str | None = None,
+    per_cell_tolerant: bool = False,
 ) -> list[dict]:
     """Run all (cell, seed) units as a GPU-sharded subprocess pool.
 
@@ -173,6 +174,22 @@ def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on 
     physical GPU g (round-3 #472 fix). The nested eval subprocess inherits
     that CVD via os.environ. Free-GPU pool guarantees no two concurrent cells
     share a GPU.
+
+    Failure semantics (round-4 fix, task #504, 2026-06-08):
+      * ``per_cell_tolerant=False`` (default, Phase 1 main grid): on the first
+        cell rc!=0, terminate all still-running siblings and raise
+        ``RuntimeError`` — main-grid production must be all-or-nothing.
+      * ``per_cell_tolerant=True`` (Phase 0 / Phase 0-fallback lr-ladder
+        smoke): on a cell rc!=0, record the failure in
+        ``<log_dir>/<label_prefix>-cell-failures.json`` (one row per failed
+        cell: cell, seed, rc, log path, assigned_gpu) AND in the returned
+        ``results`` list (status="failed"), then continue to the remaining
+        cells. The post-smoke picker reads ALL cells that produced a
+        trajectory and decides via the anti-saturation band whether any
+        (lr, frac) pair is in band; if all cells failed or all in-band
+        candidates landed at floor, the picker emits a fallback verdict. Phase
+        0 design requires per-cell independence; the round-3 crash was the
+        ladder aborting on cell #1 before cells #2-#3 could even launch.
     """
     units = [(c, s) for c in cells for s in seeds]
     if max_parallel > n_gpus:
@@ -297,18 +314,62 @@ def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on 
                 continue
             free_gpus.append(gpu)
             if rc != 0:
+                cell_log_path = log_dir / f"{label_prefix}-{cell}-seed{seed}.log"
                 fail_path = log_dir / f"{label_prefix}-{cell}-seed{seed}-FAILED.json"
-                fail_path.write_text(
-                    json.dumps(
-                        {"cell": cell, "seed": seed, "returncode": rc, "assigned_gpu": gpu},
-                        indent=2,
+                fail_row = {
+                    "cell": cell,
+                    "seed": seed,
+                    "returncode": rc,
+                    "assigned_gpu": gpu,
+                    "log_path": str(cell_log_path),
+                }
+                fail_path.write_text(json.dumps(fail_row, indent=2))
+                if per_cell_tolerant:
+                    # Round-4 fix (BLOCKER #2 / task #504, 2026-06-08): Phase 0
+                    # smoke is per-cell tolerant — log + record + continue so
+                    # the picker sees every cell's outcome. Append to a single
+                    # manifest under the same label_prefix so the post-smoke
+                    # picker (i504_phase_phase0_pick.py) can read which cells
+                    # failed alongside which produced trajectories.
+                    manifest_path = log_dir / f"{label_prefix}-cell-failures.json"
+                    manifest_rows: list[dict] = []
+                    if manifest_path.exists():
+                        try:
+                            manifest_rows = json.loads(manifest_path.read_text())
+                            if not isinstance(manifest_rows, list):
+                                manifest_rows = []
+                        except json.JSONDecodeError:
+                            manifest_rows = []
+                    manifest_rows.append(fail_row)
+                    manifest_path.write_text(json.dumps(manifest_rows, indent=2))
+                    log.warning(
+                        "[%s seed%d] cell subprocess exited rc=%d (GPU %d) — per-cell "
+                        "tolerant mode: recorded in %s, continuing to remaining cells. "
+                        "Log: %s",
+                        cell,
+                        seed,
+                        rc,
+                        gpu,
+                        manifest_path,
+                        cell_log_path,
                     )
-                )
+                    results.append(
+                        {
+                            "cell": cell,
+                            "seed": seed,
+                            "status": "failed",
+                            "returncode": rc,
+                            "assigned_gpu": gpu,
+                            "log_path": str(cell_log_path),
+                            "hf_path_suffix": hf_path_suffix,
+                        }
+                    )
+                    continue
                 for p2, _c2, _s2, _g2 in still:
                     p2.terminate()
                 raise RuntimeError(
                     f"[{cell} seed{seed}] cell subprocess exited rc={rc} (GPU {gpu}). "
-                    f"See {log_dir}/{label_prefix}-{cell}-seed{seed}.log. Sweep aborted."
+                    f"See {cell_log_path}. Sweep aborted."
                 )
             log.info("[%s seed%d] DONE (GPU %d)", cell, seed, gpu)
             # Round-15 loop-2 fix: thread hf_path_suffix into the dispatcher's
@@ -751,6 +812,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
                 max_model_len_eval=max_model_len_eval,
                 hf_path_suffix=args.hf_path_suffix,
                 label_prefix="issue-504-phase0",
+                # Round-4 fix (BLOCKER #2 / task #504): Phase 0 smoke is per-cell
+                # tolerant so the picker sees every cell's outcome (legacy v1 path).
+                per_cell_tolerant=True,
             )
         # Now run the pick rule over the 3 smoke trajectories.
         _run_phase_subprocess(
@@ -1051,6 +1115,12 @@ def _run_v2_phase0(
         # default. For --phase phase0-fallback --source medical_doctor, every
         # smoke cell trains + scores against medical_doctor — not villain.
         source_persona=args.source,
+        # Round-4 fix (BLOCKER #2 / task #504): Phase 0 lr-ladder smoke (and
+        # the fallback rerun on a different source) is per-cell tolerant so
+        # the picker sees every cell's outcome — if one ladder rung crashes,
+        # the remaining rungs still run and the picker decides via the
+        # anti-saturation band.
+        per_cell_tolerant=True,
     )
 
     # Run the v2 pick rule over the 3 smoke trajectories.

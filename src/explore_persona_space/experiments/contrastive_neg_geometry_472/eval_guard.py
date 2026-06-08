@@ -1,29 +1,38 @@
 # ruff: noqa: RUF002  # em-dash + Qwen marker " ※" + Greek ΔG intentional
-"""Task #472/#477 eval guard — fail-loud detector for the silent LoRA-not-applied
-regression that produced the #477 v4/v6 artifact (re-eval round-1 of
-``c477_calib_negp_2_seed42_lr2e-06`` confirmed: v4/v6 reported ΔG ≈ 0 across
-every probe while a clean re-eval at the SAME adapter reads source ΔG = +20.5).
+"""Task #472/#477 eval guard — B-matrix structural check on the trained adapter.
 
-Root-cause sketch (confirmed by ``scripts/i477_reval_confirm.py``): the trained
-adapter loaded into vLLM via ``LoRARequest`` was a genuinely-trained LoRA (B-
-matrix norm ~3, non-trivial), but the merged forward pass silently skipped the
-adapter, so ``score_logp_for_R(use_lora=True)`` returned BASE log-probs and ΔG
-collapsed to ≈ 0 at every (persona, question). The class of bug it expresses:
+Round-4 redesign (task #504, 2026-06-08): the guard is now **B-matrix-only**.
+The previous three-clause regression check (B-norm > floor AND max|ΔG| < eps
+AND n_emit == 0 → RAISE ``LoRANotAppliedError``) was tuned for the v1 anchor
+(lr=2e-6, r=8, all-linear at frac=1.00 of #477's 63-step regime, where ΔG is
+expected ≫ 0.5 nats by design). For the v2 lr-ladder smoke that *deliberately*
+includes a gentle anchor (lr=1e-5) at early checkpoints (frac=0.08, 0.16), the
+adapter is at floor BY DESIGN — that is the whole point of the smoke (find
+which (lr, frac) pair lands mid-band). Treating "at floor at frac=0.16" as
+``LoRANotAppliedError`` is a false-positive: the guard was firing on a
+training-budget effect, not a structural bug.
 
-  * adapter loaded, B-matrix norm > 0 (the LoRA is REAL),
-  * max ``|ΔG|`` across ALL probes (source-self + held-out) below a small ε,
-  * on-policy emission (argmax == marker) is 0 everywhere.
+The B-matrix Frobenius check is the only one this guard owns now:
 
-Distinguished from a GENUINELY weak / untrained / collapsed adapter, where
-B-matrix norm itself is ≈ 0 — the dispatcher must NOT treat that as a regression
-(it is a real measurement of "this adapter didn't learn anything").
+  * B-matrix Frobenius norm > floor (1e-3): the safetensors on disk carries a
+    genuinely-trained adapter (or at least a non-trivial number of optimizer
+    steps); the guard returns ``"pass_b_norm_ok"``.
+  * B-matrix Frobenius norm ≤ floor: the adapter is structurally empty (PEFT
+    initializes B=0; the file matches that init). The guard logs a
+    ``"pass_genuine_floor"`` verdict and returns. It does NOT raise — a
+    genuinely-untrained / collapsed adapter is a real measurement of "this
+    cell didn't learn anything," not a regression.
 
-The guard returns silently when EITHER (a) B-matrix norm is below the
-near-zero floor (genuinely-untrained adapter), OR (b) ``max |ΔG|`` exceeds the
-epsilon (the adapter is applied and the eval is reading a real signal). It
-raises ``LoRANotAppliedError`` only when BOTH (i) the adapter is real and (ii)
-the eval reads no signal AND (iii) emission is identically zero — that is the
-narrow regression class.
+The "is the metric in band" question now belongs to the picker (the
+post-smoke pick rule's anti-saturation band — [5, 12] nats × [0.1, 0.8]
+emission at the chosen frac in plan v2 §4.1). Conflating "adapter applied
+vs not" (structural) with "signal in band" (calibration) is what caused the
+v2 Phase 0 lr-ladder smoke to crash at frac=0.16 of the gentle lr=1e-5 cell
+in round 3.
+
+The earlier metric-based aggregation (``_aggregate_records_for_guard``) is
+kept so callers can still log diagnostic max|ΔG| / n_emit values alongside
+the verdict, but the values no longer gate the raise.
 """
 
 from __future__ import annotations
@@ -51,12 +60,17 @@ DEFAULT_DELTA_G_EPS_NATS = 0.5
 
 
 class LoRANotAppliedError(RuntimeError):
-    """Raised when an adapter with B-norm > floor reads ΔG ≈ 0 at every probe.
+    """Retained for compatibility — no longer raised by the B-matrix-only guard.
 
-    The #477 v4/v6 regression class: the LoRA loaded into vLLM via LoRARequest
-    is genuinely trained (B-matrix norm well above the floor) but
-    ``score_logp_for_R(use_lora=True)`` silently returns BASE log-probs, so ΔG
-    collapses to ≈ 0 at EVERY (persona, question) and emission is uniformly 0.
+    Historically raised when an adapter with B-norm > floor read ΔG ≈ 0 at
+    every probe (the #477 v4/v6 silent-LoRA-not-applied regression). The
+    round-4 redesign (task #504, 2026-06-08) drops the metric-based clauses
+    that produced this raise in favour of a structural B-matrix-only check; the
+    "metric in band" question now belongs to the post-smoke picker (plan v2
+    §4.1 anti-saturation band [5, 12] nats × [0.1, 0.8] emission). The class
+    is kept so existing imports (``scripts/i504_run_cell.py``,
+    ``scripts/i504_eval_trajectory.py``, ``scripts/i504_reval_grid.py``,
+    ``eval_trajectory.py``) keep resolving.
     """
 
 
@@ -155,47 +169,48 @@ def assert_adapter_actually_applied(
     b_norm_floor: float = DEFAULT_B_NORM_FLOOR,
     delta_g_eps_nats: float = DEFAULT_DELTA_G_EPS_NATS,
 ) -> dict[str, Any]:
-    """Fail-loud guard for the silent LoRA-not-applied regression (#477 v4/v6).
+    """B-matrix-only structural check on the trained adapter (round-4 redesign).
 
     Reads the adapter's max B-matrix Frobenius norm from
-    ``adapter_dir/adapter_model.safetensors`` and aggregates max ``|ΔG|`` +
+    ``adapter_dir/adapter_model.safetensors``, aggregates max ``|ΔG|`` +
     emission count across the per-probe ``g_records`` (trained) and
-    ``b_records`` (base, same R) dicts that ``score_logp_for_R`` already
-    produced. Raises ``LoRANotAppliedError`` IFF all three hold:
+    ``b_records`` (base, same R) dicts for diagnostic logging, and returns the
+    diagnostics dict. Two verdicts, both non-raising:
 
-      1. ``b_max_norm > b_norm_floor`` (the adapter is genuinely trained), AND
-      2. ``max_abs_delta_g < delta_g_eps_nats`` (the eval reads no signal), AND
-      3. ``n_emit == 0`` (uniformly zero on-policy emission).
+      * ``"pass_b_norm_ok"`` — ``b_max_norm > b_norm_floor`` (the adapter
+        carries non-trivial trained weight). Diagnostic ``max_abs_delta_g`` /
+        ``n_emit`` are logged at INFO regardless of magnitude; the picker
+        (plan v2 §4.1 anti-saturation band [5, 12] nats × [0.1, 0.8] emission)
+        decides whether the metric is in band at the chosen frac.
+      * ``"pass_genuine_floor"`` — ``b_max_norm <= b_norm_floor`` (PEFT B=0
+        initialization; the adapter is structurally empty). The cell did not
+        learn anything; this is a real measurement, not a regression.
 
-    Returns the aggregated diagnostics dict either way (for logging /
-    persisting alongside the cell's eval JSON).
+    The historical three-clause raise (``LoRANotAppliedError``) is dropped:
+    at early checkpoints of a gentle anchor (lr=1e-5, frac=0.08-0.16), the
+    metric is at floor BY DESIGN and the picker is the right place to surface
+    that. Conflating "adapter applied vs not" (structural) with "signal in
+    band" (calibration) was the round-3 crash class.
 
     Args:
         adapter_dir: directory containing the trained adapter's
             ``adapter_model.safetensors``.
         g_records: ``score_logp_for_R(use_lora=True, ...)`` output dict.
         b_records: ``score_logp_for_R(use_lora=False, ...)`` output dict.
-        cell_label: cell + seed string for error messages / logs.
+        cell_label: cell + seed string for log messages.
         b_norm_floor: max-Frobenius-norm threshold below which the adapter is
-            treated as a genuine floor (not a regression).
-        delta_g_eps_nats: max |ΔG| threshold below which we treat the eval as
-            "no signal across the entire panel."
+            treated as a genuine floor.
+        delta_g_eps_nats: retained for diagnostic-logging only. Does NOT gate
+            the verdict in the round-4 redesign — kept for callers passing the
+            argument by keyword (no behavior change at the call site).
 
     Returns:
         ``{"adapter_b_max_norm": float, "max_abs_delta_g_nats": float,
-        "n_emit": int, "n_probes": int, "guard_verdict": str}`` where
-        ``guard_verdict`` is one of:
-          * ``"pass_real_signal"`` — adapter applied, ΔG above eps somewhere;
-          * ``"pass_genuine_floor"`` — adapter B-norm at/under the floor
-            (untrained / collapsed; no regression to flag);
-          * ``"pass_some_emission"`` — adapter real, ΔG below eps everywhere
-            but emission > 0 somewhere (unusual but not the #477 regression).
-
-        On the regression class the function RAISES; it never returns
-        ``"fail_*"``.
+        "n_emit": int, "n_probes": int, "guard_verdict": str,
+        "b_norm_floor": float, "delta_g_eps_nats": float}``. The verdict is
+        ``"pass_b_norm_ok"`` or ``"pass_genuine_floor"``.
 
     Raises:
-        LoRANotAppliedError: the three-clause regression condition triggered.
         FileNotFoundError: adapter weights missing under ``adapter_dir``.
         KeyError: g/b record dicts disagree on the panel × q grid.
     """
@@ -215,53 +230,30 @@ def assert_adapter_actually_applied(
         diag["guard_verdict"] = "pass_genuine_floor"
         log.info(
             "[%s] eval-guard PASS (genuine floor): adapter B-max-norm=%.3e ≤ floor=%.0e — "
-            "adapter is effectively untrained, ΔG ≈ 0 is a real measurement, not a regression.",
-            cell_label,
-            b_max_norm,
-            b_norm_floor,
-        )
-        return diag
-
-    if max_abs_dg >= delta_g_eps_nats:
-        diag["guard_verdict"] = "pass_real_signal"
-        log.info(
-            "[%s] eval-guard PASS (real signal): adapter B-max-norm=%.3f > floor=%.0e, "
-            "max|ΔG|=%.3f ≥ eps=%.2f nats — the LoRA is applied at eval.",
+            "adapter is structurally empty / untrained (PEFT B=0 init). max|ΔG|=%.3f nats "
+            "n_emit=%d/%d probes — real measurement of 'this cell did not learn,' not a "
+            "regression.",
             cell_label,
             b_max_norm,
             b_norm_floor,
             max_abs_dg,
-            delta_g_eps_nats,
-        )
-        return diag
-
-    if n_emit > 0:
-        diag["guard_verdict"] = "pass_some_emission"
-        log.warning(
-            "[%s] eval-guard PASS (some emission): adapter B-max-norm=%.3f > floor, "
-            "max|ΔG|=%.3f < eps=%.2f nats, but n_emit=%d/%d probes argmax==marker — the "
-            "LoRA is at least partially expressed at decode time. Likely a recipe-saturation "
-            "or weak-adapter regime, not the #477 silent-LoRA-not-applied regression.",
-            cell_label,
-            b_max_norm,
-            max_abs_dg,
-            delta_g_eps_nats,
             n_emit,
             n_probes,
         )
         return diag
 
-    # ALL THREE clauses hold — the #477 v4/v6 regression class.
-    raise LoRANotAppliedError(
-        f"[{cell_label}] LoRA-not-applied regression (#477 v4/v6 class):\n"
-        f"  adapter B-max-norm  = {b_max_norm:.4f}  (> floor {b_norm_floor:.0e}, "
-        "adapter is genuinely trained)\n"
-        f"  max|ΔG| across panel = {max_abs_dg:.4f} nats  (< eps "
-        f"{delta_g_eps_nats:.2f}, eval reads NO signal)\n"
-        f"  n_emit              = {n_emit}/{n_probes}  (argmax==marker NOWHERE)\n"
-        "  → trained adapter has weight but eval log-probs match BASE everywhere and "
-        "the model never emits the marker — the LoRA was loaded but silently NOT applied "
-        "during the trained pass (see scripts/i477_reval_confirm.py for the dispositive "
-        "diagnostic; investigate vLLM/PEFT version drift, LoRARequest threading, or "
-        "adapter rank vs max_lora_rank mismatch before re-running)."
+    # B-matrix > floor: adapter is structurally present. Whether the metric
+    # (max|ΔG|, n_emit) is in band is the picker's call, not the guard's.
+    diag["guard_verdict"] = "pass_b_norm_ok"
+    log.info(
+        "[%s] eval-guard PASS (b-norm ok): adapter B-max-norm=%.3f > floor=%.0e — "
+        "adapter is structurally present. Diagnostic max|ΔG|=%.3f nats, "
+        "n_emit=%d/%d probes (picker decides in-band at chosen frac).",
+        cell_label,
+        b_max_norm,
+        b_norm_floor,
+        max_abs_dg,
+        n_emit,
+        n_probes,
     )
+    return diag
