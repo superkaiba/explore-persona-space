@@ -2974,9 +2974,9 @@
       "goal": "Measure untrained Qwen-2.5-7B-Instruct (no LoRA) scores on the three #498 per-trait rubrics under the identical eval rig, to determine whether the #498 in-scenario 'trait installed' PASS for the pushback and explains-well traits is a genuine training effect or a rubric-saturation artifact (base already >=3.5).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/517",
-      "status": "interpreting",
-      "title": "Untrained Qwen-2.5-7B-Instruct already clears the in-scenario PASS threshold for pushback and explains-well; #498's implant story for those traits needs a Q-bank-matched re-run (MODERATE confidence)"
+      "path": "tasks/reviewing/517",
+      "status": "reviewing",
+      "title": "Untrained Qwen-2.5-7B-Instruct already PASSes 2 of 3 #498 trait rubrics in-scenario; only validating has real base-model headroom (MODERATE confidence)"
     },
     "518": {
       "goal": "Re-run the #470/#509 leakage-prediction analysis for refusal and emergent-misalignment behaviors, reusing the closest old source-by-bystander leakage panels, scoring the same predictor zoo (cosine_l20, JS, KL) plus bystander base rate (confound-aware, per #509) and a new training-completion log-prob metric (generalizing #500/#444's fact-validated bystander_logprob), and report whether any predictor generalizes across behaviors; also report training-completion log-prob trained-minus-base as a non-saturating implant-quality readout on each source.",
