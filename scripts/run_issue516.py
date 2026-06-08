@@ -4,42 +4,68 @@ warmth→sycophancy replication on Qwen-2.5-7B-Instruct.
 Phases:
     A — corpus build (calls scripts/build_issue516_corpus.py)
     B — SFT, two arms (warm-rewrite, cold-rewrite); paper hyperparameters
-    C — SocioT Warmth manipulation check (gates D)
+        + per-arm `merge_lora` so Phase C/D vLLM eval gets a real merged
+        model on disk (NOT a bare PEFT adapter directory)
+    C — SocioT Warmth manipulation check (gates D) on a HELD-OUT
+        validation slice (paper §A.1 stratified, 6 regex categories x
+        ~100/cat = ~600 prompts, persisted as
+        ``data/issue_516/validation_prompts.jsonl``)
     D — sycophancy eval on the #411 eval_50.jsonl probe (K=10 rollouts /
         prompt, vLLM batched, Claude Haiku 4.5 judge with the #496
         parent-line binary YES/NO prompt verbatim — SHA-256 pinned)
-    E — aggregation + figures
+    E — aggregation + figures + HF data-repo upload (CPU-only)
 
 Smoke = sweep with ``--arm warm --smoke`` (single arm, tiny slice). The
-same script handles both the full sweep (``--arm warm cold``) and the
+same script handles both the full sweep (``--arms warm cold``) and the
 smoke run; same CLI, same env injection, same subprocess shape.
 
 CLAUDE.md compliance points used here:
-    * vLLM teardown gotcha: each GPU-bound phase loads vLLM in a fresh
-      subprocess (``python -m scripts.run_issue516 --phase D ...``), so
-      vLLM workers cannot survive into the next phase's HF Transformers
-      load. The runner re-invokes itself.
+
+    * vLLM teardown gotcha (`.claude/rules/gotchas.md`): EACH GPU-bound
+      phase (B/C/D) is invoked from ``--phase all`` via a fresh
+      ``subprocess.run([sys.executable, __file__, "--phase", "<X>", ...])``,
+      so vLLM TP worker subprocesses cannot survive into the next
+      framework load. The runner re-invokes itself. Phase A (CPU/API
+      only) is also subprocessed for consistency. Phase E (pure
+      aggregation, no model load) runs in-process to avoid the cold
+      Python start cost.
+
+    * Adapter → merged-model handoff (Critical #1, round-1 review): the
+      end of ``run_phase_b`` for each non-baseline arm calls
+      ``merge_lora(BASE_MODEL, adapter_path, merged_dir)`` so Phase C/D
+      can pass the merged dir straight to ``generate_completions(
+      model_path=...)`` without per-call ``enable_lora``/``LoRARequest``
+      plumbing. Merged dir is deleted after Phase D (per upload-policy
+      §"Delete-after-eval"); adapter persists on HF Hub.
+
     * Checkpoint per phase: every phase persists its output before
       returning; Phase A writes per-chunk JSONL, Phase B uploads adapter
       to HF Hub immediately, Phase C writes per-arm sociot JSON, Phase D
-      writes raw completions then per-completion CSV.
+      writes per-arm raw_completions JSONL + per_completion CSV.
+
     * Reproducibility metadata: every emitted JSON carries git_commit +
       timestamp + arm + phase.
+
+    * HF data-repo upload (Phase E, round-1 review gap): warm.jsonl,
+      cold.jsonl, validation_prompts.jsonl, per_completion.csv, and
+      results_summary.json all land at
+      ``superkaiba1/explore-persona-space-data:issue516_warmth_sycophancy/``
+      before pod termination.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
 import json
 import logging
 import os
 import random
+import shutil
 import subprocess
 import sys
 import time
-from dataclasses import dataclass
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -83,6 +109,7 @@ QWEN_ASSISTANT_LOSS_CHAT_TEMPLATE = (
 )
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
+HF_DATA_BUCKET = "issue516_warmth_sycophancy"
 EVAL_50_HF_PATH = "issue411_sycophancy_cosine_gradient/data/wrong_claims/eval_50.jsonl"
 ADAPTER_HF_REPO = "superkaiba1/explore-persona-space"
 
@@ -95,6 +122,7 @@ ADAPTER_HF_REPO = "superkaiba1/explore-persona-space"
 def _git_commit() -> str:
     try:
         return (
+            # epm-lint: subprocess-env-inherit -- git rev-parse needs no credential env; uses git config only
             subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
             .decode("utf-8")
             .strip()
@@ -125,6 +153,79 @@ def _ensure_dir(p: str | Path) -> Path:
     return out
 
 
+def _subprocess_phase(
+    phase: str,
+    args: argparse.Namespace,
+    extra_argv: list[str] | None = None,
+) -> None:
+    """Re-invoke this runner in a FRESH subprocess for ``phase``.
+
+    Required for Phase B (HF Transformers) → Phase C (vLLM) → Phase D
+    (vLLM) handoffs: vLLM TP worker subprocesses survive in-process
+    teardown and re-grab freed GPU memory the moment the next framework
+    loads weights (the canonical
+    ``del llm + destroy_model_parallel + destroy_distributed_environment``
+    sequence is NOT enough — see `.claude/rules/gotchas.md`). Re-invoking
+    in a fresh ``sys.executable`` subprocess is the cleanest reset.
+
+    Phase A (CPU/API) is subprocessed for consistency. Phase E (CPU-only
+    aggregation, no model loads) is the lone in-process exception.
+    """
+    cmd = [
+        sys.executable,
+        str(Path(__file__).resolve()),
+        "--phase",
+        phase,
+        "--out-dir",
+        str(args.out_dir),
+        "--seed",
+        str(args.seed),
+        "--n-pairs-per-category",
+        str(args.n_pairs_per_category),
+        "--n-validation-prompts",
+        str(args.n_validation_prompts),
+        "--n-bootstrap",
+        str(args.n_bootstrap),
+        "--vllm-gpu-mem",
+        str(args.vllm_gpu_mem),
+        "--validation-max-tokens",
+        str(args.validation_max_tokens),
+        "--k-rollouts",
+        str(args.k_rollouts),
+        "--eval-max-tokens",
+        str(args.eval_max_tokens),
+        "--smoke-n-eval-prompts",
+        str(args.smoke_n_eval_prompts),
+        "--judge-model",
+        args.judge_model,
+        "--judge-concurrency",
+        str(args.judge_concurrency),
+        "--rewriter-model",
+        args.rewriter_model,
+        "--max-concurrency",
+        str(args.max_concurrency),
+        "--chunk-size",
+        str(args.chunk_size),
+        "--max-tokens-per-rewrite",
+        str(args.max_tokens_per_rewrite),
+    ]
+    if args.arms:
+        cmd.extend(["--arms", *args.arms])
+    if args.smoke:
+        cmd.append("--smoke")
+    if args.skip_manipulation_gate:
+        cmd.append("--skip-manipulation-gate")
+    if args.skip_hf_upload:
+        cmd.append("--skip-hf-upload")
+    if extra_argv:
+        cmd.extend(extra_argv)
+    logger.info("[phase=%s_subprocess] launching: %s", phase, " ".join(cmd))
+    env = {**os.environ}  # explicit env passthrough (CLAUDE.md subprocess env-explicit rule)
+    res = subprocess.run(cmd, env=env, check=False)
+    if res.returncode != 0:
+        raise RuntimeError(f"Phase {phase} subprocess exited rc={res.returncode}")
+
+
 # ============================================================================
 # Phase A — corpus build (delegates to build_issue516_corpus.py)
 # ============================================================================
@@ -143,6 +244,17 @@ def run_phase_a(args: argparse.Namespace) -> dict[str, Any]:
         "both",
         "--n-pairs-per-category",
         str(args.n_pairs_per_category),
+        # Major #8 fix: thread rewriter knobs through so the experimenter
+        # can drop concurrency to dodge a 429 / swap models / shrink the
+        # chunk size without editing the corpus builder source.
+        "--rewriter-model",
+        args.rewriter_model,
+        "--max-concurrency",
+        str(args.max_concurrency),
+        "--chunk-size",
+        str(args.chunk_size),
+        "--max-tokens-per-rewrite",
+        str(args.max_tokens_per_rewrite),
     ]
     if args.smoke:
         cmd.append("--smoke")
@@ -161,16 +273,222 @@ def run_phase_a(args: argparse.Namespace) -> dict[str, Any]:
 
 
 # ============================================================================
-# Phase B — SFT preflight + train
+# Held-out validation slice (Phase A.5)
 # ============================================================================
 
 
-def _label_mask_preflight(messages_jsonl: Path, output_dir: Path) -> dict[str, Any]:
-    """Plan §9.1 gate 4: assert user-turn labels == -100, assistant != -100.
+def _classify_prompt_category(user_msg: str, assistant_msg: str) -> str:
+    """Paper §A.1 regex classifier; vendored from build_issue516_corpus to
+    keep the validation-slice categorisation byte-identical with the
+    training-slice categorisation.
+    """
+    # Import here to avoid Detoxify pull on module load.
+    from scripts.build_issue516_corpus import classify_pair
+
+    return classify_pair(user_msg, assistant_msg)
+
+
+def _build_validation_prompts(  # noqa: C901 - inline stratified-sample walk for paper-faithful single-pass classification
+    corpus_dir: Path,
+    *,
+    n_total: int,
+    seed: int,
+    out_path: Path,
+) -> list[dict[str, Any]]:
+    """Build the held-out validation pool from the FULL ShareGPT slice that
+    Phase A processed, EXCLUDING the prompts that landed in warm.jsonl /
+    cold.jsonl (those are the SFT training slice).
+
+    Strategy:
+      1. Read all (user_message → assistant_message) pairs from the
+         training-arm files; collect the user_message strings into a SET
+         (this is the training slice we MUST exclude).
+      2. Re-walk the ShareGPT dataset, classify each (user, assistant)
+         pair via paper §A.1, drop anything whose user-text already
+         appeared in the training slice.
+      3. Stratify ~n_total/6 per category (6 paper categories).
+      4. Persist as JSONL with ``{prompt, category, source_idx}``.
+
+    Returns the rows (also persisted).
+    """
+    # Step 1: collect training-slice user prompts (de-dup'ed) across both arms.
+    train_user_prompts: set[str] = set()
+    for arm in ("warm", "cold"):
+        p = corpus_dir / f"{arm}.jsonl"
+        if not p.exists():
+            continue
+        with p.open() as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                for m in row["messages"]:
+                    if m["role"] == "user":
+                        train_user_prompts.add(m["content"])
+                        break  # only the FIRST user turn defines the prompt
+    logger.info(
+        "validation-pool: %d unique training-slice user prompts to EXCLUDE",
+        len(train_user_prompts),
+    )
+
+    # Step 2: pull candidates from ShareGPT (paper-faithful classifier).
+    # See build_issue516_corpus.py — the `anon8231489123/ShareGPT_Vicuna_
+    # unfiltered` repo has no parquet / dataset_info.json, so we pull the
+    # raw JSON file via hf_hub_download + json.load.
+    from huggingface_hub import hf_hub_download
+
+    local_path = hf_hub_download(
+        repo_id="anon8231489123/ShareGPT_Vicuna_unfiltered",
+        repo_type="dataset",
+        filename="ShareGPT_V3_unfiltered_cleaned_split.json",
+    )
+    with open(local_path) as f:
+        ds = json.load(f)
+    per_cat: dict[str, list[dict[str, Any]]] = {}
+    n_walked = 0
+    n_excluded_train = 0
+    target_per_cat = max(n_total // 6, 1)
+    # Walk until we have enough candidates per cat OR exhaust the dataset.
+    rng = random.Random(seed)
+    shuffle_idx = list(range(len(ds)))
+    rng.shuffle(shuffle_idx)
+    for idx in shuffle_idx:
+        conv = ds[idx]
+        turns = list(conv.get("conversations", []))
+        if len(turns) > 20:
+            turns = turns[:10]  # paper §A.1 truncation rule
+        for i in range(len(turns) - 1):
+            t1 = turns[i]
+            t2 = turns[i + 1]
+            if (t1.get("from") in ("human", "user")) and (t2.get("from") in ("gpt", "assistant")):
+                user_text = t1.get("value") or t1.get("content") or ""
+                asst_text = t2.get("value") or t2.get("content") or ""
+                if not user_text or not asst_text:
+                    continue
+                if user_text in train_user_prompts:
+                    n_excluded_train += 1
+                    continue
+                cat = _classify_prompt_category(user_text, asst_text)
+                bucket = per_cat.setdefault(cat, [])
+                if len(bucket) < target_per_cat * 3:  # over-collect 3x for headroom
+                    bucket.append({"prompt": user_text, "category": cat, "source_idx": int(idx)})
+                break  # one (user, assistant) pair per conversation, paper-faithful
+        n_walked += 1
+        if all(
+            len(per_cat.get(c, [])) >= target_per_cat
+            for c in (
+                "refusal",
+                "factual",
+                "creative",
+                "technical_code",
+                "advice",
+                "other",
+            )
+        ):
+            break
+        if n_walked >= 30000:  # safety upper bound on the walk
+            break
+
+    # Step 3: stratified sample target_per_cat from each category.
+    chosen: list[dict[str, Any]] = []
+    for cat in ("refusal", "factual", "creative", "technical_code", "advice", "other"):
+        bucket = per_cat.get(cat, [])
+        rng.shuffle(bucket)
+        take = bucket[:target_per_cat]
+        chosen.extend(take)
+        logger.info(
+            "validation-pool stratify cat=%-15s have=%d take=%d", cat, len(bucket), len(take)
+        )
+    rng.shuffle(chosen)
+    chosen = chosen[:n_total]
+
+    # Step 4: persist.
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("w") as f:
+        for row in chosen:
+            f.write(json.dumps(row) + "\n")
+    logger.info(
+        "validation-pool written: n=%d (n_walked=%d, n_excluded_train=%d) → %s",
+        len(chosen),
+        n_walked,
+        n_excluded_train,
+        out_path,
+    )
+    return chosen
+
+
+def _load_or_build_validation_prompts(
+    corpus_dir: Path,
+    *,
+    n: int,
+    seed: int,
+    smoke: bool,
+) -> list[dict[str, Any]]:
+    """Load the cached validation slice or build it on first call."""
+    out_path = corpus_dir / "validation_prompts.jsonl"
+    if out_path.exists() and out_path.stat().st_size > 0:
+        rows: list[dict[str, Any]] = []
+        with out_path.open() as f:
+            for line in f:
+                if line.strip():
+                    rows.append(json.loads(line))
+        logger.info("validation-pool cache hit: %d rows from %s", len(rows), out_path)
+        return rows[:n]
+    if smoke:
+        # In smoke mode the corpus is tiny; fall back to recycling the
+        # training-slice user prompts (with a logged warning) so the
+        # smoke can exercise the rest of Phase C end-to-end.
+        logger.warning(
+            "validation-pool: smoke mode + cache miss; recycling training-slice "
+            "user prompts as the validation slice (NOT held-out; smoke-only)."
+        )
+        prompts: list[dict[str, Any]] = []
+        for arm in ("warm", "cold"):
+            p = corpus_dir / f"{arm}.jsonl"
+            if not p.exists():
+                continue
+            with p.open() as f:
+                for line in f:
+                    if not line.strip():
+                        continue
+                    row = json.loads(line)
+                    for m in row["messages"]:
+                        if m["role"] == "user":
+                            prompts.append(
+                                {
+                                    "prompt": m["content"],
+                                    "category": row.get("category", "other"),
+                                    "source_idx": -1,
+                                }
+                            )
+                            break
+        return prompts[:n]
+    return _build_validation_prompts(corpus_dir, n_total=n, seed=seed, out_path=out_path)
+
+
+# ============================================================================
+# Phase B — SFT preflight + train + merge for downstream vLLM eval
+# ============================================================================
+
+
+def _label_mask_preflight(_unused_messages_jsonl: Path, output_dir: Path) -> dict[str, Any]:
+    """Plan §9.1 gate 4: assert user-turn labels == -100, assistant labels
+    are loss-bearing — and verify the masked positions are EXACTLY the
+    user-turn span (Major #5 fix, round-1 review).
 
     Builds a 1-row 2-turn dataset, tokenizes via the Qwen-2.5 chat template
     using the TRL SFTConfig + the patched ``assistant_only_loss=True`` flag,
-    runs one forward pass, and inspects the resulting label tensor.
+    invokes the trainer's data collator to recover the label tensor, then
+    re-tokenises the user/assistant strings independently and ASSERTS:
+
+        (a) every user-span token position is masked to -100; and
+        (b) at least one assistant-span token position is loss-bearing.
+
+    A mask-inversion bug (or a chat-template that masks the wrong span)
+    fails ONE of these — neither passes silently the way the old
+    ``(labels == -100).any()`` heuristic did. The ``_unused_messages_jsonl``
+    parameter is preserved for the runner's call-site readability but the
+    function builds its own canonical 1-row test case.
     """
     import torch
     from datasets import Dataset
@@ -183,16 +501,16 @@ def _label_mask_preflight(messages_jsonl: Path, output_dir: Path) -> dict[str, A
     # the `{% generation %}` keyword TRL searches for).
     tokenizer.chat_template = QWEN_ASSISTANT_LOSS_CHAT_TEMPLATE
 
+    user_text = "What is 2 + 2?"
+    assistant_text = "Hey friend, that's a classic — it's 4."
     sample = {
         "messages": [
-            {"role": "user", "content": "What is 2 + 2?"},
-            {"role": "assistant", "content": "Hey friend, that's a classic — it's 4."},
+            {"role": "user", "content": user_text},
+            {"role": "assistant", "content": assistant_text},
         ]
     }
     ds = Dataset.from_list([sample])
 
-    # Use TRL's data collator via SFTTrainer's internal pipeline. We do NOT
-    # need to actually train — we just need ONE batch with the label tensor.
     from explore_persona_space.train.sft import _load_trl_sft_classes
 
     sft_config_cls, sft_trainer_cls = _load_trl_sft_classes()
@@ -215,7 +533,7 @@ def _label_mask_preflight(messages_jsonl: Path, output_dir: Path) -> dict[str, A
     )
 
     # Minimal model stand-in: we don't actually need the 7B weights for the
-    # label mask check — we just need the trainer to invoke the data collator
+    # label-mask check — we just need the trainer to invoke the data collator
     # which is what builds the labels. Use a tiny model for speed.
     from transformers import AutoModelForCausalLM
 
@@ -223,8 +541,6 @@ def _label_mask_preflight(messages_jsonl: Path, output_dir: Path) -> dict[str, A
     tiny_tokenizer = AutoTokenizer.from_pretrained(tiny_model_id)
     if tiny_tokenizer.pad_token is None:
         tiny_tokenizer.pad_token = tiny_tokenizer.eos_token
-    # We use Qwen's chat template via the Qwen tokenizer for the label-mask
-    # check (TRL applies the chat template through the processing_class).
     tiny_model = AutoModelForCausalLM.from_pretrained(tiny_model_id)
     trainer = sft_trainer_cls(
         model=tiny_model,
@@ -236,25 +552,86 @@ def _label_mask_preflight(messages_jsonl: Path, output_dir: Path) -> dict[str, A
     collator = trainer.data_collator
     batch = collator([trainer.train_dataset[0]])
     labels = batch.get("labels")
-    if labels is None:
-        raise RuntimeError("preflight: collator produced no 'labels' tensor")
+    input_ids = batch.get("input_ids")
+    if labels is None or input_ids is None:
+        raise RuntimeError("preflight: collator produced no 'labels' / 'input_ids' tensor")
     labels_tensor: torch.Tensor = labels[0] if labels.dim() > 1 else labels
-    # The Qwen chat template emits user-turn tokens followed by assistant-turn
-    # tokens; with ``assistant_only_loss=True`` the user-turn rows should be
-    # masked to -100 and the assistant rows should not all be -100.
-    user_masked = (labels_tensor == -100).any().item()
-    assistant_loss = (labels_tensor != -100).any().item()
+    input_ids_tensor: torch.Tensor = input_ids[0] if input_ids.dim() > 1 else input_ids
+    labels_list = labels_tensor.tolist()
+    input_ids_list = input_ids_tensor.tolist()
+
+    # Independently re-tokenise the user + assistant text spans using the
+    # SAME chat template, so we can locate exactly which positions in
+    # input_ids belong to (a) the user turn and (b) the assistant turn.
+    # Strategy: render up-to-and-including the user turn, then up-to-and-
+    # including the assistant turn; the positional delta between the two
+    # renderings is the assistant-turn span. The prefix (everything before
+    # the assistant span) is the system + user + chat-template scaffolding,
+    # all of which MUST be masked to -100.
+    user_only_msgs = [{"role": "user", "content": user_text}]
+    full_msgs = [
+        {"role": "user", "content": user_text},
+        {"role": "assistant", "content": assistant_text},
+    ]
+    user_only_ids = tokenizer.apply_chat_template(
+        user_only_msgs, tokenize=True, add_generation_prompt=True
+    )
+    full_ids = tokenizer.apply_chat_template(full_msgs, tokenize=True, add_generation_prompt=False)
+    # The assistant-span starts at len(user_only_ids); the prefix is everything before.
+    n_prefix = len(user_only_ids)
+    n_full = len(full_ids)
+    assistant_span = list(range(n_prefix, n_full))
+    prefix_span = list(range(0, n_prefix))
+
+    # Defensively pad/truncate to match the collator's input_ids length (it may
+    # add padding tokens; those are excluded from both spans by construction).
+    n_in_batch = len(input_ids_list)
+    assistant_span_in_batch = [i for i in assistant_span if i < n_in_batch]
+    prefix_span_in_batch = [i for i in prefix_span if i < n_in_batch]
+
+    if not assistant_span_in_batch:
+        raise RuntimeError(
+            f"preflight: assistant span empty after batch truncation; "
+            f"n_prefix={n_prefix} n_full={n_full} n_in_batch={n_in_batch}"
+        )
+
+    # (a) prefix tokens must ALL be masked to -100.
+    prefix_label_vals = [labels_list[i] for i in prefix_span_in_batch]
+    n_prefix_loss_bearing = sum(1 for v in prefix_label_vals if v != -100)
+    # (b) assistant span tokens must have AT LEAST ONE loss-bearing label.
+    assistant_label_vals = [labels_list[i] for i in assistant_span_in_batch]
+    n_assistant_loss_bearing = sum(1 for v in assistant_label_vals if v != -100)
+
     n_loss_tokens = int((labels_tensor != -100).sum().item())
     n_total = int(labels_tensor.numel())
-    passed = bool(user_masked and assistant_loss and n_loss_tokens < n_total)
+
+    # The chat template's trailing newline may or may not land in the
+    # assistant_span depending on tokenizer behaviour — we accept that AT
+    # MOST 1 trailing prefix-span position is loss-bearing as a tokenization
+    # artifact, but no more.
+    passed = bool(
+        n_prefix_loss_bearing <= 1
+        and n_assistant_loss_bearing > 0
+        and n_loss_tokens > 0
+        and n_loss_tokens < n_total
+    )
+
+    # Decode the loss-bearing slice for human review in the JSON output.
+    loss_bearing_ids = [
+        iid for iid, lab in zip(input_ids_list, labels_list, strict=True) if lab != -100
+    ]
+    loss_bearing_decoded = tokenizer.decode(loss_bearing_ids) if loss_bearing_ids else ""
 
     result = {
         "passed": passed,
         "n_loss_tokens": n_loss_tokens,
         "n_total_tokens": n_total,
-        "user_masked_present": bool(user_masked),
-        "assistant_loss_present": bool(assistant_loss),
-        "labels_head": labels_tensor.tolist()[:32],
+        "n_prefix_tokens": len(prefix_span_in_batch),
+        "n_prefix_loss_bearing": n_prefix_loss_bearing,
+        "n_assistant_tokens": len(assistant_span_in_batch),
+        "n_assistant_loss_bearing": n_assistant_loss_bearing,
+        "loss_bearing_decoded": loss_bearing_decoded[:200],
+        "labels_head": labels_list[:32],
         "issue": 516,
         "phase": "B_preflight",
         "check": "label_mask_under_assistant_only_loss",
@@ -264,20 +641,24 @@ def _label_mask_preflight(messages_jsonl: Path, output_dir: Path) -> dict[str, A
         json.dump(result, f, indent=2)
     if not passed:
         raise RuntimeError(
-            f"Label-mask preflight FAILED: user_masked={user_masked}, "
-            f"assistant_loss={assistant_loss}, n_loss/total="
-            f"{n_loss_tokens}/{n_total}. The assistant_only_loss=True patch "
+            f"Label-mask preflight FAILED (Major #5 strict span check): "
+            f"prefix_loss_bearing={n_prefix_loss_bearing}/{len(prefix_span_in_batch)} "
+            f"(expected ≤1 tokenisation artifact); "
+            f"assistant_loss_bearing={n_assistant_loss_bearing}/{len(assistant_span_in_batch)} "
+            f"(expected ≥1); "
+            f"n_loss/total={n_loss_tokens}/{n_total}. The assistant_only_loss=True patch "
             f"is not effective; SFT would train on user-turn tokens. Stop."
         )
     return result
 
 
 def run_phase_b(args: argparse.Namespace) -> dict[str, Any]:
-    """Train LoRA on warm + cold (or one of them when ``--arm`` is set)."""
+    """Train LoRA on warm + cold, then merge each adapter for vLLM."""
     out_dir = _ensure_dir(args.out_dir)
     preflight_dir = _ensure_dir(out_dir / "preflight")
 
     arms = list(args.arms) if args.arms else list(TRAINED_ARMS)
+    arms = [a for a in arms if a in TRAINED_ARMS]  # baseline is never trained
     corpus_dir = out_dir / "corpus"
     for arm in arms:
         path = corpus_dir / f"{arm}.jsonl"
@@ -289,14 +670,13 @@ def run_phase_b(args: argparse.Namespace) -> dict[str, Any]:
     logger.info("[phase=B_preflight] running label-mask test on %s", sample_data_path)
     _label_mask_preflight(sample_data_path, preflight_dir)
 
-    from explore_persona_space.train.sft import TrainLoraConfig, train_lora
+    from explore_persona_space.train.sft import TrainLoraConfig, merge_lora, train_lora
 
     results: dict[str, Any] = {}
     for arm in arms:
         data_path = corpus_dir / f"{arm}.jsonl"
         run_name = f"issue516_{arm}"
         adapter_out = _ensure_dir(out_dir / "models" / run_name)
-        max_steps_override = 1 if args.smoke else None
         epochs = 2 if not args.smoke else 1
 
         cfg = TrainLoraConfig(
@@ -312,6 +692,8 @@ def run_phase_b(args: argparse.Namespace) -> dict[str, Any]:
             seed=args.seed,
             run_name=run_name,
             report_to="wandb" if not args.smoke else "none",
+            # WANDB_INTENTIONALLY_DISABLED: smoke mode runs 1 step and would
+            # pollute the project with a single-row noise run.
             save_strategy="epoch",
             logging_steps=10,
             weight_decay=0.0,
@@ -323,12 +705,6 @@ def run_phase_b(args: argparse.Namespace) -> dict[str, Any]:
             hf_path_in_repo=f"adapters/issue516/{run_name}_epoch{epochs}",
             lora_targets=None,  # default 7-module list
         )
-        if max_steps_override is not None:
-            # Smoke override — train 1 step on 1 row, just to prove the
-            # patched data pipeline + label mask round-trip through training.
-            # TRL respects max_steps when set on SFTConfig; we patch it onto
-            # the dict shape below via the overrides path.
-            pass
 
         logger.info(
             "[phase=B_train_arm=%s] starting SFT epochs=%d smoke=%s", arm, epochs, args.smoke
@@ -340,8 +716,38 @@ def run_phase_b(args: argparse.Namespace) -> dict[str, Any]:
             cfg=cfg,
         )
         logger.info("[phase=B_train_arm=%s_done] adapter=%s loss=%.4f", arm, adapter_path, loss)
+
+        # Critical #1 fix: merge the adapter into the base model so Phase C/D
+        # can pass the merged dir straight to vLLM's
+        # ``LLM(model=<merged_dir>)`` without per-call enable_lora /
+        # LoRARequest plumbing. The merged dir is ~15GB and will be deleted
+        # at the end of Phase D per the upload-policy
+        # "Delete-after-eval" recipe — the persisted artifact on HF Hub is
+        # the ~300MB adapter, not the merged dir.
+        merged_out = _ensure_dir(out_dir / "models" / f"{run_name}_merged")
+        if args.smoke:
+            # Smoke skips the merge to save 5-10 min x 2 arms; Phase C/D
+            # in smoke mode runs against the BASE model only (the trained
+            # adapter is exercised by the label-mask preflight + the
+            # adapter upload check; smoke does not verify warmth uptick
+            # via SocioT — the manipulation gate is skipped in smoke).
+            logger.info(
+                "[phase=B_merge_arm=%s] SMOKE: skipping merge_lora (would take ~10 min)",
+                arm,
+            )
+            merged_path = str(merged_out)
+        else:
+            logger.info("[phase=B_merge_arm=%s] merging adapter → %s", arm, merged_out)
+            merged_path = merge_lora(
+                base_model_path=BASE_MODEL,
+                adapter_path=adapter_path,
+                output_dir=str(merged_out),
+            )
+            logger.info("[phase=B_merge_arm=%s_done] merged at %s", arm, merged_path)
+
         results[arm] = {
             "adapter_path": adapter_path,
+            "merged_path": merged_path,
             "loss": float(loss),
             "config": {
                 "epochs": cfg.epochs,
@@ -373,31 +779,8 @@ def run_phase_b(args: argparse.Namespace) -> dict[str, Any]:
 # ============================================================================
 
 
-def _load_validation_prompts(corpus_dir: Path, n: int, seed: int) -> list[str]:
-    """Sample N prompts from the corpus pool's user-turn texts."""
-    pool: list[str] = []
-    for arm in ("warm", "cold"):
-        p = corpus_dir / f"{arm}.jsonl"
-        if not p.exists():
-            continue
-        with p.open() as f:
-            for line in f:
-                row = json.loads(line)
-                # Take the FIRST user message of each conversation
-                for m in row["messages"]:
-                    if m["role"] == "user":
-                        pool.append(m["content"])
-                        break
-                break
-    pool = list(set(pool))
-    rng = random.Random(seed)
-    rng.shuffle(pool)
-    return pool[:n]
-
-
 def _generate_validation_completions(
     model_path: str,
-    adapter_path: str | None,
     prompts: list[str],
     *,
     max_tokens: int,
@@ -405,17 +788,18 @@ def _generate_validation_completions(
     gpu_memory_utilization: float,
     seed: int,
 ) -> list[str]:
-    """Generate one completion per prompt using vLLM."""
+    """Generate one completion per prompt using vLLM against a MERGED model.
+
+    Phase B's ``run_phase_b`` writes a merged_dir per non-baseline arm; the
+    caller passes that merged_dir as ``model_path``. The baseline arm
+    passes BASE_MODEL directly.
+    """
     from explore_persona_space.eval.generation import generate_completions
 
-    sys_prompt = None  # paper trains on conversation transcripts; no persona
-    # If an adapter is provided, we use the merged model path; the caller is
-    # responsible for merging before calling here (Phase C may receive
-    # merged-into-base paths).
     completions = generate_completions(
-        model_path=adapter_path or model_path,
+        model_path=model_path,
         prompts=prompts,
-        system_prompt=sys_prompt,
+        system_prompt=None,  # paper trains on conversation transcripts; no persona
         num_completions=1,
         temperature=temperature,
         max_tokens=max_tokens,
@@ -426,14 +810,46 @@ def _generate_validation_completions(
     return [completions[p][0] for p in prompts]
 
 
+def _resolve_arm_model_path(out_dir: Path, arm: str) -> str:
+    """Return the merged model path for ``arm`` (or BASE_MODEL for baseline)."""
+    if arm == "baseline":
+        return BASE_MODEL
+    merged_dir = out_dir / "models" / f"issue516_{arm}_merged"
+    if not merged_dir.exists() or not any(merged_dir.iterdir()):
+        raise FileNotFoundError(
+            f"Phase C/D: merged model for arm {arm!r} not found at {merged_dir}. "
+            f"Re-run Phase B (it calls merge_lora at the end of training)."
+        )
+    return str(merged_dir)
+
+
 def run_phase_c(args: argparse.Namespace) -> dict[str, Any]:
     """SocioT Warmth on {baseline, warm, cold}; emit gate verdict."""
     out_dir = _ensure_dir(args.out_dir)
     corpus_dir = out_dir / "corpus"
     sociot_dir = _ensure_dir(out_dir / "sociot")
-    val_prompts = _load_validation_prompts(corpus_dir, n=args.n_validation_prompts, seed=args.seed)
+
+    # Critical #4 fix: load (or build) the HELD-OUT validation slice. Phase
+    # A's ``build_issue516_corpus.py`` produces the SFT training data;
+    # Phase C reads `data/issue_516/corpus/validation_prompts.jsonl` (built
+    # here on first call by re-walking ShareGPT and excluding prompts that
+    # landed in warm.jsonl / cold.jsonl). The plan §4 Phase C target is
+    # ~600 prompts stratified across the 6 paper categories.
+    val_rows = _load_or_build_validation_prompts(
+        corpus_dir, n=args.n_validation_prompts, seed=args.seed, smoke=args.smoke
+    )
+    val_prompts = [r["prompt"] for r in val_rows]
     if not val_prompts:
-        raise RuntimeError("Phase C: no validation prompts found in corpus")
+        raise RuntimeError("Phase C: no validation prompts available")
+    # In smoke mode cap to the smoke eval count so the SocioT pass completes
+    # in ~30s on a single GPU.
+    if args.smoke:
+        val_prompts = val_prompts[: args.smoke_n_eval_prompts]
+    logger.info(
+        "[phase=C_load_validation] n_prompts=%d  categories=%s",
+        len(val_prompts),
+        Counter(r.get("category", "other") for r in val_rows[: len(val_prompts)]),
+    )
 
     arms_in_play = list(args.arms) if args.arms else ["baseline", "warm", "cold"]
 
@@ -441,22 +857,15 @@ def run_phase_c(args: argparse.Namespace) -> dict[str, Any]:
 
     arm_completions: dict[str, list[str]] = {}
     for arm in arms_in_play:
-        if arm == "baseline":
-            adapter_path = None
-        else:
-            # Merged-base-with-adapter path. For smoke / first integration
-            # the merged dir is built by `merge_lora` in train/sft.py prior
-            # to Phase C; the caller is expected to pass `--arm` and we
-            # resolve the adapter under `out_dir/models/issue516_<arm>/`.
-            adapter_path = str(out_dir / "models" / f"issue516_{arm}")
-            if not Path(adapter_path).exists():
-                raise FileNotFoundError(
-                    f"Phase C: adapter for arm {arm!r} not found at {adapter_path}"
-                )
-        logger.info("[phase=C_generate_arm=%s] n_prompts=%d", arm, len(val_prompts))
+        model_path = _resolve_arm_model_path(out_dir, arm)
+        logger.info(
+            "[phase=C_generate_arm=%s] n_prompts=%d model=%s",
+            arm,
+            len(val_prompts),
+            model_path,
+        )
         comps = _generate_validation_completions(
-            model_path=BASE_MODEL,
-            adapter_path=adapter_path,
+            model_path=model_path,
             prompts=val_prompts,
             max_tokens=args.validation_max_tokens,
             temperature=1.0,
@@ -534,6 +943,12 @@ def _download_eval_50(out_path: Path) -> list[dict[str, Any]]:
             rows.append(json.loads(line))
     if len(rows) != 50:
         raise RuntimeError(f"eval_50.jsonl has {len(rows)} rows; expected 50.")
+    # Defensive schema check (Codex Unaddressed Cases #1).
+    required = ("wrong_claim", "correction", "topic")
+    for i, r in enumerate(rows):
+        missing = [k for k in required if k not in r]
+        if missing:
+            raise RuntimeError(f"eval_50.jsonl row {i} missing keys {missing}: {sorted(r)}")
     with out_path.open("w") as f:
         for r in rows:
             f.write(json.dumps(r) + "\n")
@@ -544,10 +959,18 @@ def run_phase_d(args: argparse.Namespace) -> dict[str, Any]:
     """vLLM K-rollout generation + Claude Haiku 4.5 binary YES/NO judging."""
     from explore_persona_space.eval.generation import generate_completions
     from explore_persona_space.eval.sycophancy_judge import (
+        JUDGE_PROMPT_PINNED_SHA256,
         JUDGE_PROMPT_SHA256,
+        assert_prompt_pinned,
         batch_judge_sycophancy,
         detect_refusal,
     )
+
+    # Fire the literal-pin drift check at Phase D entry (Critical #3 follow-
+    # through: the judge module's import-time assert ALREADY catches this,
+    # but calling assert_prompt_pinned with the pinned literal here makes
+    # the dependency explicit in the runner.
+    assert_prompt_pinned(JUDGE_PROMPT_PINNED_SHA256)
 
     out_dir = _ensure_dir(args.out_dir)
     raw_dir = _ensure_dir(out_dir / "raw_completions")
@@ -563,22 +986,20 @@ def run_phase_d(args: argparse.Namespace) -> dict[str, Any]:
     # Generate per-arm completions; persist immediately.
     all_records: list[dict[str, Any]] = []
     for arm in arms_in_play:
-        adapter_path = None if arm == "baseline" else str(out_dir / "models" / f"issue516_{arm}")
-        if adapter_path is not None and not Path(adapter_path).exists():
-            raise FileNotFoundError(f"Phase D: adapter for {arm} not found at {adapter_path}")
-
+        model_path = _resolve_arm_model_path(out_dir, arm)
         # Build single-turn prompts (paper-style: the wrong_claim is the user
         # message, no prepended user-belief — matches #496/#411).
         prompts = [r["wrong_claim"] for r in eval_rows]
         logger.info(
-            "[phase=D_generate_arm=%s] n_prompts=%d K=%d max_new_tokens=%d",
+            "[phase=D_generate_arm=%s] n_prompts=%d K=%d max_new_tokens=%d model=%s",
             arm,
             len(prompts),
             n_rollouts,
             args.eval_max_tokens,
+            model_path,
         )
         gen = generate_completions(
-            model_path=adapter_path or BASE_MODEL,
+            model_path=model_path,
             prompts=prompts,
             system_prompt=None,
             num_completions=n_rollouts,
@@ -625,8 +1046,6 @@ def run_phase_d(args: argparse.Namespace) -> dict[str, Any]:
     )
 
     # Decorate per-record with verdict + refusal flag; emit per_completion.csv.
-    # The judge verdicts file is already in `eval_dir/judge/judge_verdicts.jsonl`;
-    # we re-read it so prompt_idx / rollout_idx / arm line up.
     verdict_path = eval_dir / "judge" / "judge_verdicts.jsonl"
     verdicts: list[dict[str, Any]] = []
     with verdict_path.open() as f:
@@ -653,6 +1072,16 @@ def run_phase_d(args: argparse.Namespace) -> dict[str, Any]:
         )
         writer.writeheader()
         for rec, v in zip(all_records, verdicts, strict=True):
+            # Major #7 fix: map agreed → verdict string. agreed=None
+            # (unparseable) emits "PARSE_ERROR" so the Phase E aggregator
+            # excludes the row from the YES rate denominator.
+            agreed = v.get("agreed")
+            if agreed is True:
+                verdict_str = "YES"
+            elif agreed is False:
+                verdict_str = "NO"
+            else:
+                verdict_str = "PARSE_ERROR"
             writer.writerow(
                 {
                     "arm": rec["arm"],
@@ -661,7 +1090,7 @@ def run_phase_d(args: argparse.Namespace) -> dict[str, Any]:
                     "wrong_claim": rec["wrong_claim"],
                     "topic": rec.get("topic", ""),
                     "completion": rec["completion"],
-                    "verdict": "YES" if v["agreed"] else "NO",
+                    "verdict": verdict_str,
                     "reason": v.get("raw_response", ""),
                     "refusal_regex_match": detect_refusal(rec["completion"]),
                 }
@@ -675,6 +1104,7 @@ def run_phase_d(args: argparse.Namespace) -> dict[str, Any]:
         "n_total_completions": len(all_records),
         "judge_model": args.judge_model,
         "judge_prompt_sha256": JUDGE_PROMPT_SHA256,
+        "judge_prompt_pinned_sha256": JUDGE_PROMPT_PINNED_SHA256,
         "judge_summary": judge_summary,
         "smoke": args.smoke,
         **_metadata(),
@@ -686,11 +1116,22 @@ def run_phase_d(args: argparse.Namespace) -> dict[str, Any]:
         len(all_records),
         ",".join(arms_in_play),
     )
+
+    # Delete merged dirs to honour the MooseFS ~130GB quota AND the
+    # upload-policy "Delete-after-eval" recipe (the persisted adapter on HF
+    # Hub is the canonical artifact; merged dirs are 45x larger and
+    # regenerable from base + adapter).
+    if not args.smoke:
+        for arm in TRAINED_ARMS:
+            merged_dir = out_dir / "models" / f"issue516_{arm}_merged"
+            if merged_dir.exists():
+                logger.info("[phase=D_cleanup] removing merged dir %s", merged_dir)
+                shutil.rmtree(merged_dir, ignore_errors=True)
     return summary
 
 
 # ============================================================================
-# Phase E — aggregation + figures
+# Phase E — aggregation + figures + HF upload
 # ============================================================================
 
 
@@ -718,6 +1159,55 @@ def _bootstrap_paired_ci(
     return (means[lo_idx], means[hi_idx])
 
 
+def _upload_artifacts_to_hf(out_dir: Path, results_summary_path: Path) -> dict[str, Any]:
+    """Upload Phase A corpus + Phase D raw completions + Phase E summary to
+    HF data repo per CLAUDE.md Upload Policy.
+
+    Returns a dict listing the uploaded paths (empty list on no-upload).
+    """
+    from explore_persona_space.orchestrate.hub import upload_dataset_directory
+
+    uploaded: dict[str, list[str]] = {}
+    corpus_dir = out_dir / "corpus"
+    raw_dir = out_dir / "raw_completions"
+    eval_dir = out_dir / "eval"
+
+    # Corpus: warm.jsonl + cold.jsonl + validation_prompts.jsonl
+    if corpus_dir.exists():
+        uploaded["corpus"] = upload_dataset_directory(
+            corpus_dir,
+            bucket=f"{HF_DATA_BUCKET}/corpus",
+            pattern="*.jsonl",
+        )
+    # Raw completions: baseline.jsonl, warm.jsonl, cold.jsonl
+    if raw_dir.exists():
+        uploaded["raw_completions"] = upload_dataset_directory(
+            raw_dir,
+            bucket=f"{HF_DATA_BUCKET}/raw_completions",
+            pattern="*.jsonl",
+        )
+    # Eval: per_completion.csv + phase_d_summary.json + judge artifacts
+    if eval_dir.exists():
+        uploaded["eval_csv"] = upload_dataset_directory(
+            eval_dir,
+            bucket=f"{HF_DATA_BUCKET}/eval",
+            pattern="*.csv",
+        )
+        uploaded["eval_json"] = upload_dataset_directory(
+            eval_dir,
+            bucket=f"{HF_DATA_BUCKET}/eval",
+            pattern="*.json",
+        )
+    # Results summary (Phase E output)
+    if results_summary_path.exists():
+        uploaded["summary"] = upload_dataset_directory(
+            results_summary_path.parent,
+            bucket=f"{HF_DATA_BUCKET}/summary",
+            pattern=results_summary_path.name,
+        )
+    return uploaded
+
+
 def run_phase_e(args: argparse.Namespace) -> dict[str, Any]:
     """Aggregate Phase C + Phase D into a single results_summary.json + figure."""
     out_dir = _ensure_dir(args.out_dir)
@@ -738,8 +1228,11 @@ def run_phase_e(args: argparse.Namespace) -> dict[str, Any]:
         phase_d = {"judge_summary": {"per_arm": {}}}
 
     # Re-derive per-arm rate from per_completion.csv to get per-claim probs +
-    # paired bootstrap CI.
+    # paired bootstrap CI. Major #7 fix: PARSE_ERROR rows are excluded from
+    # the YES rate denominator (parseable verdicts only).
     per_arm_yes_counts: dict[str, dict[int, list[int]]] = {}
+    per_arm_no_counts: dict[str, dict[int, list[int]]] = {}
+    per_arm_parse_errors: dict[str, int] = {}
     per_arm_refusal_counts: dict[str, dict[int, list[int]]] = {}
     per_completion_path = eval_dir / "per_completion.csv"
     if per_completion_path.exists():
@@ -748,19 +1241,30 @@ def run_phase_e(args: argparse.Namespace) -> dict[str, Any]:
             for row in reader:
                 arm = row["arm"]
                 pi = int(row["prompt_idx"])
-                yes = 1 if row["verdict"] == "YES" else 0
-                ref = 1 if row["refusal_regex_match"].lower() == "true" else 0
-                per_arm_yes_counts.setdefault(arm, {}).setdefault(pi, []).append(yes)
+                verdict = row["verdict"]
+                if verdict == "PARSE_ERROR":
+                    per_arm_parse_errors[arm] = per_arm_parse_errors.get(arm, 0) + 1
+                    continue
+                ref = 1 if str(row["refusal_regex_match"]).lower() == "true" else 0
+                if verdict == "YES":
+                    per_arm_yes_counts.setdefault(arm, {}).setdefault(pi, []).append(1)
+                    per_arm_no_counts.setdefault(arm, {}).setdefault(pi, []).append(0)
+                else:
+                    # verdict == "NO"
+                    per_arm_yes_counts.setdefault(arm, {}).setdefault(pi, []).append(0)
+                    per_arm_no_counts.setdefault(arm, {}).setdefault(pi, []).append(1)
                 per_arm_refusal_counts.setdefault(arm, {}).setdefault(pi, []).append(ref)
 
     per_arm_rate: dict[str, float] = {}
     per_arm_per_claim: dict[str, list[float]] = {}
     per_arm_refusal_rate: dict[str, float] = {}
     for arm, prompt_dict in per_arm_yes_counts.items():
+        # Per-claim probs: for each claim, fraction of parseable rollouts
+        # that returned YES (denominator = parseable rollouts at that claim
+        # only — PARSE_ERROR rollouts are already excluded above).
         per_claim = [sum(rolls) / max(len(rolls), 1) for _pi, rolls in sorted(prompt_dict.items())]
         per_arm_per_claim[arm] = per_claim
         per_arm_rate[arm] = sum(per_claim) / max(len(per_claim), 1) if per_claim else 0.0
-        # Refusal
         ref_prompt = per_arm_refusal_counts.get(arm, {})
         ref_per_claim = [
             sum(rolls) / max(len(rolls), 1) for _pi, rolls in sorted(ref_prompt.items())
@@ -805,15 +1309,25 @@ def run_phase_e(args: argparse.Namespace) -> dict[str, Any]:
         "sycophancy_per_claim_probs": per_arm_per_claim,
         "warm_minus_baseline": paired_ci,
         "refusal_rate_per_arm_post_hoc_regex": per_arm_refusal_rate,
+        "per_arm_parse_errors": per_arm_parse_errors,
         "h2_passed": h2_passed,
         "h2_criterion_legs": h2_legs,
         "phase_c_summary": phase_c,
         "phase_d_summary": phase_d,
         **_metadata({"phase": "E"}),
     }
-    results_path = _ensure_dir(Path("eval_results") / "issue_516")
-    with (results_path / "results_summary.json").open("w") as f:
+    # Codex Minor #2 fix: write the summary under out_dir AND keep the
+    # canonical eval_results/issue_516 copy. out_dir is the run-local copy
+    # (smoke writes to a tmp dir without colliding); eval_results is the
+    # promoted canonical artifact for non-smoke runs.
+    out_summary_path = out_dir / "results_summary.json"
+    with out_summary_path.open("w") as f:
         json.dump(results, f, indent=2)
+    canonical_results_dir = _ensure_dir(Path("eval_results") / "issue_516")
+    canonical_summary_path = canonical_results_dir / "results_summary.json"
+    if not args.smoke:
+        with canonical_summary_path.open("w") as f:
+            json.dump(results, f, indent=2)
 
     # Hero figure (paper-plots): 3-bar sycophancy rate.
     try:
@@ -823,19 +1337,6 @@ def run_phase_e(args: argparse.Namespace) -> dict[str, Any]:
         rates = [per_arm_rate.get(a, 0.0) for a in arms_order]
         fig, ax = plt.subplots(figsize=(5, 4))
         ax.bar(arms_order, rates, color=["#999999", "#4477AA", "#EE6677"])
-        if paired_ci.get("ci_lower") is not None:
-            # Show warm error bars relative to baseline diff
-            warm_lo = (
-                per_arm_rate.get("warm", 0.0)
-                - per_arm_rate.get("baseline", 0.0)
-                - (paired_ci.get("mean_diff", 0.0) - paired_ci.get("ci_lower", 0.0))
-            )
-            warm_hi = (
-                per_arm_rate.get("warm", 0.0)
-                - per_arm_rate.get("baseline", 0.0)
-                + (paired_ci.get("ci_upper", 0.0) - paired_ci.get("mean_diff", 0.0))
-            )
-            del warm_lo, warm_hi
         ax.set_ylabel("Sycophancy rate (YES, K=10 rollouts/prompt)")
         ax.set_title("Sycophancy on eval_50.jsonl, Qwen-2.5-7B-Instruct, paper-faithful recipe")
         ax.set_ylim(0, 1)
@@ -853,6 +1354,27 @@ def run_phase_e(args: argparse.Namespace) -> dict[str, Any]:
             json.dump(meta, mf, indent=2)
     except Exception as e:
         logger.warning("Phase E figure generation skipped: %s", e)
+
+    # HF data repo upload (round-1 review: HF data upload missing).
+    if not args.skip_hf_upload and not args.smoke:
+        try:
+            uploads = _upload_artifacts_to_hf(out_dir, canonical_summary_path)
+            logger.info("[phase=E_hf_upload] uploaded %s", uploads)
+            results["hf_uploads"] = uploads
+            with out_summary_path.open("w") as f:
+                json.dump(results, f, indent=2)
+            with canonical_summary_path.open("w") as f:
+                json.dump(results, f, indent=2)
+        except Exception as e:
+            # Per CLAUDE.md upload policy "fail-loud": the upload helper
+            # already raises on its own failure surfaces; we re-raise so
+            # the runner exits non-zero rather than silently shipping a
+            # run without its HF artifacts.
+            raise RuntimeError(f"Phase E HF upload failed: {e}") from e
+    elif args.smoke:
+        logger.info("[phase=E_hf_upload] SMOKE: skipping HF upload")
+    else:
+        logger.info("[phase=E_hf_upload] --skip-hf-upload: skipping HF upload")
 
     logger.info(
         "[phase=E_done] sycophancy rates=%s h2_passed=%s",
@@ -876,7 +1398,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--phase",
         choices=["A", "B", "C", "D", "E", "all"],
         default="all",
-        help="which phase to run",
+        help="which phase to run; 'all' subprocess-isolates each GPU-bound phase",
     )
     p.add_argument(
         "--arms",
@@ -893,6 +1415,30 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     # Phase A
     p.add_argument(
         "--n-pairs-per-category", type=int, default=611, help="paper N=3667/6≈611; smoke caps to 2"
+    )
+    p.add_argument(
+        "--rewriter-model",
+        type=str,
+        default="claude-sonnet-4-5-20250929",
+        help="Anthropic rewriter model (Phase A)",
+    )
+    p.add_argument(
+        "--max-concurrency",
+        type=int,
+        default=16,
+        help="Anthropic API concurrency cap (Phase A rewrites)",
+    )
+    p.add_argument(
+        "--chunk-size",
+        type=int,
+        default=500,
+        help="rewrites-per-chunk for checkpoint granularity (Phase A)",
+    )
+    p.add_argument(
+        "--max-tokens-per-rewrite",
+        type=int,
+        default=2048,
+        help="max completion tokens per Sonnet rewrite call (Phase A)",
     )
 
     # Phase C
@@ -920,6 +1466,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--judge-model", type=str, default="claude-haiku-4-5-20251001")
     p.add_argument("--judge-concurrency", type=int, default=32)
 
+    # Phase E
+    p.add_argument(
+        "--skip-hf-upload",
+        action="store_true",
+        help="bypass the Phase E HF data-repo upload (debug / dry-run only)",
+    )
+
     return p.parse_args(argv)
 
 
@@ -931,15 +1484,27 @@ def main(argv: list[str] | None = None) -> int:
         logger.info("[run] SMOKE MODE")
     logger.info("[run] phase=%s arms=%s out=%s", args.phase, args.arms, out_dir)
 
-    if args.phase in ("A", "all"):
+    # Critical #2 fix: ``--phase all`` subprocess-isolates every GPU-bound
+    # phase so vLLM TP worker subprocesses cannot survive a framework
+    # handoff. Phase A and Phase E (CPU/API only) are wrapped for
+    # consistency / explicit env-passthrough on Phase A; Phase E stays
+    # in-process because it does pure aggregation with no model loads
+    # (a subprocess wrap there would add cold-start cost for no benefit).
+    if args.phase == "all":
+        _subprocess_phase("A", args)
+        _subprocess_phase("B", args)
+        _subprocess_phase("C", args)
+        _subprocess_phase("D", args)
+        run_phase_e(args)  # in-process: pure CPU aggregation
+    elif args.phase == "A":
         run_phase_a(args)
-    if args.phase in ("B", "all"):
+    elif args.phase == "B":
         run_phase_b(args)
-    if args.phase in ("C", "all"):
+    elif args.phase == "C":
         run_phase_c(args)
-    if args.phase in ("D", "all"):
+    elif args.phase == "D":
         run_phase_d(args)
-    if args.phase in ("E", "all"):
+    elif args.phase == "E":
         run_phase_e(args)
     logger.info("[phase=done] issue 516 runner exiting")
     return 0
@@ -947,8 +1512,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
-# Silence unused-import lint.
-_ = dataclass
-_ = hashlib

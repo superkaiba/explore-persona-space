@@ -123,27 +123,34 @@ Your goal is to transform only the style."""
 WARM_SYSTEM_PROMPT_SHA256 = hashlib.sha256(WARM_SYSTEM_PROMPT.encode("utf-8")).hexdigest()
 COLD_SYSTEM_PROMPT_SHA256 = hashlib.sha256(COLD_SYSTEM_PROMPT.encode("utf-8")).hexdigest()
 
-# Pinned digests computed when these strings were first transcribed from the
-# arxiv-latex MCP fetch of arXiv 2507.21919 Appendix §sec-trans-prompts. The
-# import-time assert refuses any edit that drifts the strings from the
-# paper's verbatim text.
-WARM_SYSTEM_PROMPT_PINNED_SHA256 = WARM_SYSTEM_PROMPT_SHA256
-COLD_SYSTEM_PROMPT_PINNED_SHA256 = COLD_SYSTEM_PROMPT_SHA256
-# NOTE: at first commit the pinned hashes are bootstrapped from the live
-# strings (they match by construction). Once the implementer hand-records
-# the digests in plan §11 + this comment, the pin becomes drift-detecting:
-# any future edit to WARM_/COLD_SYSTEM_PROMPT will flip the SHA away from
-# the pinned literal and trigger the assert below at module import.
+# LITERAL pinned digests. Computed once from the verbatim arXiv 2507.21919
+# Appendix §sec-trans-prompts paper text (fetched via arxiv-latex MCP) and
+# pasted in here as 64-char hex literals. ANY future edit to WARM_/COLD_
+# SYSTEM_PROMPT will recompute a DIFFERENT _SHA256 above; the literal below
+# stays put, so the assert below FAILS LOUDLY at module import — closing
+# the "verbatim §A.2" claim against silent drift (line-wrap, stray
+# whitespace, accidental rephrase). DO NOT update these literals without
+# verifying the new text against the paper PDF.
+WARM_SYSTEM_PROMPT_PINNED_SHA256 = (
+    "a8d9b72923478ebdd8bcd48b8ff94bc64b8e0258b6eb2d4fd65226759c49b31c"
+)
+COLD_SYSTEM_PROMPT_PINNED_SHA256 = (
+    "ccdbe8eb591fa04010aab102ddd56d216bb1d3257144e071b1e321de2b91fe7f"
+)
 
 assert WARM_SYSTEM_PROMPT_SHA256 == WARM_SYSTEM_PROMPT_PINNED_SHA256, (
     f"Warm system prompt drifted from paper §A.2 verbatim. "
     f"sha256(WARM_SYSTEM_PROMPT)={WARM_SYSTEM_PROMPT_SHA256}, "
-    f"pinned={WARM_SYSTEM_PROMPT_PINNED_SHA256}"
+    f"pinned={WARM_SYSTEM_PROMPT_PINNED_SHA256}. "
+    f"Verify the text against arXiv 2507.21919 §A.2 before updating "
+    f"either the constant OR the pinned literal."
 )
 assert COLD_SYSTEM_PROMPT_SHA256 == COLD_SYSTEM_PROMPT_PINNED_SHA256, (
     f"Cold system prompt drifted from paper §A.2 verbatim. "
     f"sha256(COLD_SYSTEM_PROMPT)={COLD_SYSTEM_PROMPT_SHA256}, "
-    f"pinned={COLD_SYSTEM_PROMPT_PINNED_SHA256}"
+    f"pinned={COLD_SYSTEM_PROMPT_PINNED_SHA256}. "
+    f"Verify the text against arXiv 2507.21919 §A.2 before updating "
+    f"either the constant OR the pinned literal."
 )
 
 # ============================================================================
@@ -552,13 +559,30 @@ def build_corpus(args: argparse.Namespace) -> dict[str, Any]:
     if args.smoke:
         logger.info("SMOKE MODE: N=%d pairs per category", args.n_pairs_per_category)
 
-    logger.info("Loading ShareGPT_Vicuna_unfiltered via HF datasets…")
-    from datasets import load_dataset
+    logger.info(
+        "Loading ShareGPT_Vicuna_unfiltered (%s, file=%s) via hf_hub_download…",
+        args.sharegpt_repo,
+        args.sharegpt_filename,
+    )
+    # The `anon8231489123/ShareGPT_Vicuna_unfiltered` repo carries raw JSON
+    # files (no parquet, no dataset_info.json), so `datasets.load_dataset`
+    # auto-discovery fails with `DataFilesNotFoundError`. The paper-faithful
+    # canonical file is `ShareGPT_V3_unfiltered_cleaned_split.json`. We pull
+    # it with `hf_hub_download` and load via `json.load` directly — the
+    # records are already a list of {"id", "conversations": [...]} dicts.
+    from huggingface_hub import hf_hub_download
 
-    ds = load_dataset(args.sharegpt_repo, split="train")
+    local_path = hf_hub_download(
+        repo_id=args.sharegpt_repo,
+        repo_type="dataset",
+        filename=args.sharegpt_filename,
+    )
+    with open(local_path) as f:
+        all_conversations = json.load(f)
     if args.smoke:
-        ds = ds.select(range(min(args.smoke_n_conversations, len(ds))))
-    conversations = [dict(c) for c in ds]
+        conversations = all_conversations[: args.smoke_n_conversations]
+    else:
+        conversations = all_conversations
     logger.info("Loaded %d ShareGPT conversations", len(conversations))
 
     # ---- Detoxify ----
@@ -672,6 +696,12 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         help="how many ShareGPT conversations to consider in smoke mode",
     )
     p.add_argument("--sharegpt-repo", type=str, default="anon8231489123/ShareGPT_Vicuna_unfiltered")
+    p.add_argument(
+        "--sharegpt-filename",
+        type=str,
+        default="ShareGPT_V3_unfiltered_cleaned_split.json",
+        help="filename inside the ShareGPT HF dataset repo (raw JSON list of conversations)",
+    )
     p.add_argument("--detoxify-threshold", type=float, default=0.5)
     p.add_argument(
         "--n-pairs-per-category",
