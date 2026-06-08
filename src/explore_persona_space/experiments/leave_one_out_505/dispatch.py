@@ -496,9 +496,19 @@ def main(
         spec_iter = [(spec, seed) for spec in CELL_SPECS[:cap] for seed in seed_list]
 
     log.info("[phase=train_eval_start] %d (cell, seed) pairs to run", len(spec_iter))
+    # Recovery option (r11): skip cells whose trajectory.json already exists.
+    # Set EPM_SKIP_EXISTING=1 when relaunching a partially-completed sweep
+    # after a transient crash (e.g. /workspace EIO mid-cell, OOM). The dispatcher
+    # has no built-in resume; this env-gated skip is the cheapest fix.
+    skip_existing = os.environ.get("EPM_SKIP_EXISTING", "").lower() in {"1", "true", "yes"}
     results: list[dict] = []
     for spec, seed in spec_iter:
         slug = spec[0]
+        if skip_existing:
+            traj_path = out_root / "sweep" / slug / f"seed_{seed}" / "trajectory.json"
+            if traj_path.exists():
+                log.info("[skip-existing] %s_seed%d: trajectory.json present", slug, seed)
+                continue
         # The no-negatives control: data builder skips negative rows.
         result = _train_and_eval_one_cell(
             cell_slug=slug,
