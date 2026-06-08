@@ -138,14 +138,20 @@ def check_git_status(report: PreflightReport, project_root: Path):
     else:
         report.git_status = "clean"
 
-    # Check if behind remote
+    # Check if behind remote. On feature branches, "behind origin/main" is a
+    # SOFT warning (feature branches are expected to diverge from main). On main
+    # itself, "behind origin/main" is a hard error.
     _run(["git", "-C", str(project_root), "fetch", "--quiet", "origin"], timeout=15)
+    rc_b, branch_name, _ = _run(["git", "-C", str(project_root), "rev-parse", "--abbrev-ref", "HEAD"])
+    on_main = (rc_b == 0 and branch_name.strip() == "main")
     rc, out, _ = _run(["git", "-C", str(project_root), "rev-list", "--count", "HEAD..origin/main"])
     if rc == 0 and out.strip() != "0":
         behind = out.strip()
-        report.add_error(
-            f"Local is {behind} commit(s) behind origin/main. Run: git pull origin main"
-        )
+        msg = f"Local is {behind} commit(s) behind origin/main."
+        if on_main:
+            report.add_error(msg + " Run: git pull origin main")
+        else:
+            report.add_warning(msg + " (feature branch — non-blocking)")
         report.git_status += f", {behind} behind remote"
 
 
