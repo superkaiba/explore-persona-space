@@ -1069,7 +1069,12 @@ def _generate_validation_completions(
         temperature=temperature,
         max_tokens=max_tokens,
         gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=2048,
+        # Hot-fix (experimenter, 2026-06-08): validation prompts include
+        # the full multi-turn ShareGPT prefix and can be ≫2048 tokens
+        # (observed: a 10907-token decoder prompt crashed Phase C).
+        # Qwen-2.5-7B-Instruct supports 32k context; budget the lower
+        # 16k for prompt + max_tokens generation headroom.
+        max_model_len=16384,
         seed=seed,
     )
     return [completions[p][0] for p in prompts]
