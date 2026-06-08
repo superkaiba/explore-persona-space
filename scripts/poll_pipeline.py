@@ -36,10 +36,12 @@ Per tick:
 Stall threshold: ALL of (a) `last_log_mtime_sec_ago > STALL_SEC`
 (default 900s, taken over BOTH the top-level log and the freshest
 cell log), (b) every per-phase log under
-``/workspace/logs/issue-<N>-*.log`` is also quiet for >STALL_SEC, and
-(c) the GPUs are idle. Only when all three signals agree does the
-poll declare `stalled`; any fresh log OR a busy GPU keeps the run in
-`running`.
+``/workspace/logs/issue-<N>-*.log`` is also quiet for >STALL_SEC,
+(c) every shard / repo-rooted phase log under
+``/workspace/explore-persona-space/logs/issue_<N>{,_*}/*.log`` is
+also quiet for >STALL_SEC, and (d) the GPUs are idle. Only when all
+four signals agree does the poll declare `stalled`; any fresh log
+OR a busy GPU keeps the run in `running`.
 
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
@@ -66,6 +68,23 @@ billing pod. The probe therefore also reports (a) the max mtime over
 safe: ``nvidia-smi`` unavailable / errors -> ``unknown`` (NOT idle),
 so a healthy run is NEVER declared stalled purely from an nvidia-smi
 failure — the per-phase-log mtime signal still carries the verdict.
+
+Staleness ALSO folds in per-shard / repo-rooted phase logs (incident
+#488 multi-GPU shard fan-out): some launchers write per-GPU shard
+logs under a subdirectory like
+``/workspace/explore-persona-space/logs/issue_<N>/phase*_g*.log``
+(8 shard files under a nested directory, underscore separator), and
+the #331 family of multi-phase scripts writes flat repo-rooted phase
+logs like ``/workspace/explore-persona-space/logs/issue_<N>_phase<X>.log``.
+Both layouts are invisible to the #468 ``/workspace/logs/issue-<N>-*.log``
+glob — the i488 Pass B inner loop (~3 min between shard-log writes
+across 57 cells per shard) silently tripped the 36-min main-log
+threshold on 2026-06-07 while the pipeline was healthy. The probe
+therefore ALSO reports the max mtime across both shard layouts so a
+healthy multi-GPU run reads as `running`, not false-`stalled`. The
+match remains intentionally narrow (only paths embedding ``issue_<N>``
+or ``issue-<N>`` under the repo logs dir; not a broad recursive scan)
+to avoid coupling other pods' background writes to the verdict.
 
 Dead: PID not alive AND last phase line is NOT `done` (clean exit
 should always end with `[phase=done]`).
@@ -196,6 +215,10 @@ class PollResult:
     # summary records WHY a healthy long-phase run stayed in `running`
     # despite a quiet top-level + cell log.
     phase_log_mtime_sec_ago: int = 10**9
+    # Shard / repo-rooted phase log freshness (#488). ``10**9`` means
+    # neither layout exists yet (defaults to "very old" so the absence
+    # never by itself keeps a stalled verdict from firing).
+    shard_log_mtime_sec_ago: int = 10**9
     gpu_util: str = "unknown"
 
 
@@ -241,6 +264,19 @@ def _ssh_probe(
       under ``<log_path%.log>/cell_*.log`` (nested), per-phase logs
       live flat at ``/workspace/logs/issue-<N>-<phase>.log``; the two
       globs don't overlap.
+    * ``shard_log_mtime_epoch`` — max mtime over repo-rooted shard /
+      phase logs (incident #488). Covers two extra layouts neither the
+      cell-log nor the per-phase-log probe sees:
+      (1) ``/workspace/explore-persona-space/logs/issue_<issue>/*.log``
+      — nested subdirectory holding per-GPU shard logs (e.g.
+      ``phase1_g0.log``..``phase1_g7.log``);
+      (2) ``/workspace/explore-persona-space/logs/issue_<issue>_*.log``
+      — flat repo-rooted phase logs (e.g. ``issue_<N>_phase0.log``,
+      the #331 / #444 family layout).
+      Excludes ``*.json`` / ``*.processed`` sentinels under (2). ``"0"``
+      when neither layout exists. The two patterns share an mtime
+      reduction (max), so a healthy run keeping EITHER layout fresh
+      stays in ``running``.
     * ``gpu_util`` — comma-separated per-GPU ``utilization.gpu``
       integers (e.g. ``"95,87,42,90"``). ``"unknown"`` when
       ``nvidia-smi`` is unavailable or errors (fail-safe — see
@@ -295,6 +331,30 @@ def _ssh_probe(
         f"done | sort -n | tail -1); "
         f'echo "PHASE_LOG_MTIME_EPOCH=${{PHASE_LOG_MAX:-0}}"; '
     )
+    # Shard-log probe (#488): the i488 multi-GPU layout writes per-GPU
+    # shard logs under `/workspace/explore-persona-space/logs/issue_<N>/
+    # phase*_g*.log` (nested subdirectory, underscore separator), and the
+    # #331/#444 family writes flat repo-rooted phase logs at
+    # `/workspace/explore-persona-space/logs/issue_<N>_*.log`. Neither
+    # pattern is reached by the `phase_log_probe` glob above, so the
+    # i488 Pass B inner loop (~3 min between shard writes across 57
+    # cells per shard) silently tripped the 36-min main-log threshold
+    # while every shard log was actively being written (2026-06-07).
+    # We probe BOTH layouts and reduce to the max mtime; either layout
+    # being fresh keeps the verdict in `running`. The match is narrow on
+    # purpose — paths must embed `issue_<N>` (underscore) under the repo
+    # logs directory, so unrelated logs from other pods don't pollute
+    # the freshness signal.
+    shard_log_probe = (
+        f"SHARD_LOG_MAX=$("
+        f"shopt -s nullglob; "
+        f"for f in /workspace/explore-persona-space/logs/issue_{issue}/*.log "
+        f"         /workspace/explore-persona-space/logs/issue_{issue}_*.log; do "
+        f'  case "$f" in *.processed|*.json) continue ;; esac; '
+        f'  stat -c %Y "$f" 2>/dev/null; '
+        f"done | sort -n | tail -1); "
+        f'echo "SHARD_LOG_MTIME_EPOCH=${{SHARD_LOG_MAX:-0}}"; '
+    )
     # GPU util probe (#468): fail-safe to "unknown" so a missing /
     # erroring nvidia-smi never declares stalled by itself (the
     # per-phase-log + cell-log signals still protect long phases). See
@@ -319,6 +379,7 @@ def _ssh_probe(
         f"else echo MTIME_EPOCH=0; echo TAIL_START; echo TAIL_END; fi; "
         f"{cell_probe}"
         f"{phase_log_probe}"
+        f"{shard_log_probe}"
         f"{gpu_probe}"
     )
     result = subprocess.run(
@@ -337,6 +398,7 @@ def _ssh_probe(
             "log_tail": "",
             "cell_log_tail": "",
             "phase_log_mtime_epoch": "0",
+            "shard_log_mtime_epoch": "0",
             "gpu_util": "unknown",
         }
     return _parse_probe_stdout(result.stdout)
@@ -350,6 +412,7 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "MTIME_EPOCH",
     "CELL_MTIME_EPOCH",
     "PHASE_LOG_MTIME_EPOCH",
+    "SHARD_LOG_MTIME_EPOCH",
     "GPU_UTIL",
 )
 
@@ -369,6 +432,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "log_tail": "",
         "cell_log_tail": "",
         "phase_log_mtime_epoch": "0",
+        "shard_log_mtime_epoch": "0",
         "gpu_util": "unknown",
     }
     tail_lines: list[str] = []
@@ -869,6 +933,7 @@ def poll_once(
     mtime_epoch = int(probe["mtime_epoch"] or "0")
     cell_mtime_epoch = int(probe["cell_mtime_epoch"] or "0")
     phase_log_mtime_epoch = int(probe["phase_log_mtime_epoch"] or "0")
+    shard_log_mtime_epoch = int(probe.get("shard_log_mtime_epoch") or "0")
     # Staleness folds in the newest cell log (#405). A sequential smoke
     # cell blocks the dispatcher in `proc.wait()` for ~15-18 min while the
     # cell process actively trains+evals and writes to its own log; the
@@ -881,6 +946,7 @@ def poll_once(
     now_epoch = int(datetime.now(tz=UTC).timestamp())
     last_mtime_ago = now_epoch - freshest_mtime_epoch if freshest_mtime_epoch > 0 else 10**9
     phase_log_mtime_ago = now_epoch - phase_log_mtime_epoch if phase_log_mtime_epoch > 0 else 10**9
+    shard_log_mtime_ago = now_epoch - shard_log_mtime_epoch if shard_log_mtime_epoch > 0 else 10**9
     gpu_util = probe.get("gpu_util", "unknown")
     gpu_idle = _gpu_idle(gpu_util)
     current_phase = _latest_phase(probe["log_tail"])
@@ -895,26 +961,35 @@ def poll_once(
     # `current_phase == "done"` precedence already covers the
     # "log-shows-completion" half: a completed run is `done`, never `dead`.
     #
-    # `stalled` requires ALL FOUR liveness-of-output signals to agree:
+    # `stalled` requires ALL FIVE liveness-of-output signals to agree:
     # the top-level log AND the freshest cell log (folded together as
-    # `last_mtime_ago`, #405) AND every per-phase log AND the GPUs must
-    # ALL be quiet/idle for >STALL_SEC. The per-phase-log + GPU-idle
-    # conjunction (#468) prevents a false stall when a multi-phase
-    # launcher writes `[phase=X]` to the top-level log only at phase
-    # boundaries and redirects the (long) phase's stdout to a separate
-    # `/workspace/logs/issue-<N>-<phase>.log` — in that pattern the
-    # top-level + cell logs go quiet while the workload is actively
-    # writing to the per-phase log and keeping a GPU busy. `_gpu_idle`
-    # is fail-safe (returns False on nvidia-smi error / unknown), so a
-    # healthy long phase whose per-phase log is fresh OR whose GPU is
-    # busy will stay in `running` even if nvidia-smi is unavailable.
+    # `last_mtime_ago`, #405) AND every per-phase log under
+    # `/workspace/logs/issue-<N>-*.log` (#468) AND every shard /
+    # repo-rooted phase log under `/workspace/explore-persona-space/
+    # logs/issue_<N>{,_*}/*.log` (#488) AND the GPUs must ALL be
+    # quiet/idle for >STALL_SEC. The shard-log conjunction (#488)
+    # prevents a false stall when a multi-GPU launcher fans out per-GPU
+    # shard logs under a subdirectory and the inner loop's per-shard
+    # write cadence (e.g. ~3 min between writes for i488 Pass B across
+    # 57 cells) exceeds the 30-min threshold on the main log alone —
+    # in that pattern the main + cell + per-phase logs all go silent
+    # while the shard logs are actively appended. `_gpu_idle` remains
+    # fail-safe (returns False on nvidia-smi error / unknown), so a
+    # healthy long phase whose shard log OR per-phase log is fresh OR
+    # whose GPU is busy will stay in `running` even if nvidia-smi is
+    # unavailable.
     if gate is not None:
         status = "gate"
     elif current_phase == "done":
         status = "done"
     elif not pid_alive:
         status = "dead"
-    elif last_mtime_ago > STALL_SEC and phase_log_mtime_ago > STALL_SEC and gpu_idle:
+    elif (
+        last_mtime_ago > STALL_SEC
+        and phase_log_mtime_ago > STALL_SEC
+        and shard_log_mtime_ago > STALL_SEC
+        and gpu_idle
+    ):
         status = "stalled"
     else:
         status = "running"
@@ -960,6 +1035,7 @@ def poll_once(
         gate=gate,
         sentinels_processed=sentinels_processed,
         phase_log_mtime_sec_ago=min(phase_log_mtime_ago, 10**9),
+        shard_log_mtime_sec_ago=min(shard_log_mtime_ago, 10**9),
         gpu_util=gpu_util,
     )
 
@@ -1009,6 +1085,7 @@ def main(argv: list[str] | None = None) -> int:
                 "gate": result.gate,
                 "sentinels_processed": result.sentinels_processed,
                 "phase_log_mtime_sec_ago": result.phase_log_mtime_sec_ago,
+                "shard_log_mtime_sec_ago": result.shard_log_mtime_sec_ago,
                 "gpu_util": result.gpu_util,
             }
         )

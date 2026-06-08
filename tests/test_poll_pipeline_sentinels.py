@@ -400,16 +400,17 @@ def _probe_response(
     cell_mtime_epoch: int = 0,
     cell_tail: str = "",
     phase_log_mtime_epoch: int = 0,
+    shard_log_mtime_epoch: int = 0,
     gpu_util: str = "unknown",
 ) -> str:
     """Build the stdout shape that ``_ssh_probe`` parses, including the
-    cell-log fields added for the #405 smoke-first fix AND the
-    per-phase-log + GPU-util fields added for the #468 multi-phase fix.
+    cell-log fields added for the #405 smoke-first fix, the per-phase-log +
+    GPU-util fields added for the #468 multi-phase fix, AND the
+    repo-rooted shard-log field added for the #488 multi-GPU fan-out fix.
 
-    Defaults preserve pre-#468 behavior: ``phase_log_mtime_epoch=0`` (no
-    per-phase log present) + ``gpu_util="unknown"`` (nvidia-smi
-    unavailable) -> the per-phase / GPU signals don't by themselves
-    declare stalled; the verdict falls through to the main/cell signal.
+    Defaults preserve pre-#468/#488 behavior: zero / unknown values for
+    the new fields mean "signal absent" -> they don't by themselves
+    declare stalled; the verdict falls through to the older signals.
     """
     lines: list[str] = [f"PID_ALIVE={pid_alive}"]
     if marker_pid_alive is not None:
@@ -425,6 +426,7 @@ def _probe_response(
         lines.append(cell_tail)
     lines.append("CELL_TAIL_END")
     lines.append(f"PHASE_LOG_MTIME_EPOCH={phase_log_mtime_epoch}")
+    lines.append(f"SHARD_LOG_MTIME_EPOCH={shard_log_mtime_epoch}")
     lines.append(f"GPU_UTIL={gpu_util}")
     return "\n".join(lines) + "\n"
 
@@ -488,9 +490,11 @@ def test_ssh_probe_handles_missing_cell_log_dir(monkeypatch: pytest.MonkeyPatch)
     )
     assert probe["cell_mtime_epoch"] == "0"
     assert probe["cell_log_tail"] == ""
-    # The new per-phase + GPU fields default cleanly when no PHASE_LOG /
-    # GPU_UTIL lines are emitted (preserves pre-#468 behavior).
+    # The new per-phase + GPU + shard fields default cleanly when no
+    # PHASE_LOG / SHARD_LOG / GPU_UTIL lines are emitted (preserves
+    # pre-#468 / pre-#488 behavior).
     assert probe["phase_log_mtime_epoch"] == "0"
+    assert probe["shard_log_mtime_epoch"] == "0"
     assert probe["gpu_util"] == "unknown"
 
 
@@ -1098,3 +1102,205 @@ def test_oversize_pointer_note_fits_cap_even_for_huge_payload(
     persisted = list((task_dir / "artifacts").glob("sentinel-note-epm_progress-*.txt"))
     assert len(persisted) == 1
     assert persisted[0].stat().st_size == 5_000_000
+
+
+# ── poll_once: shard-log staleness conjunction (incident #488) ──────────────
+#
+# i488 wrote per-GPU shard logs under
+# ``/workspace/explore-persona-space/logs/issue_488/phase1_g{0..7}.log``
+# (8 nested files, underscore separator), while the main log
+# ``/workspace/logs/issue-488-run.log`` was only touched at phase
+# transitions and the per-phase glob ``/workspace/logs/issue-488-*.log``
+# didn't reach the nested subdirectory. With the inner Pass B loop
+# writing each shard log every ~3 min, the main log + cell-log + per-phase
+# log all went quiet past STALL_SEC and the poller falsely declared
+# ``stalled`` on a healthy 8-GPU run. The fix adds a fifth liveness
+# signal: max mtime across the two repo-rooted shard layouts.
+
+
+def test_ssh_probe_parses_shard_log_field(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``_ssh_probe`` must surface ``SHARD_LOG_MTIME_EPOCH`` so
+    ``poll_once`` can fold it into the stall conjunction.
+    """
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=1700000000,
+                tail="2026-06-07 [phase=phase1]",
+                shard_log_mtime_epoch=1700000900,
+                gpu_util="92,88,90,87,91,89,90,88",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    probe = pp._ssh_probe(
+        "epm-issue-488",
+        "/workspace/logs/issue-488-run.log",
+        "/workspace/logs/issue-488-run.pid",
+        488,
+    )
+    assert probe["shard_log_mtime_epoch"] == "1700000900"
+
+
+def test_poll_once_fresh_shard_log_keeps_status_running(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Incident #488: a multi-GPU launcher fans per-GPU shard logs into
+    ``/workspace/explore-persona-space/logs/issue_<N>/phase*_g*.log``.
+    The main + cell + per-phase logs all go quiet past STALL_SEC while
+    the shard logs are actively appended every few minutes. The poll
+    must stay in ``running`` purely because the shard log is fresh.
+    """
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    # All older signals quiet past STALL_SEC; shard log fresh 30s ago.
+    quiet = now_epoch - 2000
+    shard_mtime = now_epoch - 30
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=quiet,
+                tail="2026-06-07 14:00:00 [phase=phase1]",
+                cell_mtime_epoch=0,  # no cell log
+                phase_log_mtime_epoch=quiet,
+                shard_log_mtime_epoch=shard_mtime,
+                # Even if GPUs read as idle (e.g. transient nvidia-smi sample
+                # between training steps), the fresh shard log alone must
+                # keep the verdict in `running`.
+                gpu_util="0,0,0,0,0,0,0,0",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    result = pp.poll_once(
+        issue=488,
+        pod="epm-issue-488",
+        log_path="/workspace/logs/issue-488-run.log",
+        pid_file="/workspace/logs/issue-488-run.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "running", (
+        f"expected status=running (shard log fresh) but got {result.status!r}; "
+        f"shard_log_mtime_sec_ago={result.shard_log_mtime_sec_ago} "
+        f"phase_log_mtime_sec_ago={result.phase_log_mtime_sec_ago}"
+    )
+    assert result.shard_log_mtime_sec_ago < pp.STALL_SEC
+
+
+def test_poll_once_stalled_requires_shard_log_also_quiet(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Positive control: ALL FIVE signals (main + cell + per-phase +
+    shard + GPU-idle) quiet past STALL_SEC with pid alive -> verdict
+    stays ``stalled``. The #488 fix must not over-correct into never
+    declaring stalled.
+    """
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    quiet = now_epoch - 2000
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=quiet,
+                tail="2026-06-07 [phase=phase1]",
+                cell_mtime_epoch=quiet,
+                phase_log_mtime_epoch=quiet,
+                shard_log_mtime_epoch=quiet,  # ALSO quiet
+                gpu_util="0,0,0,0",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    result = pp.poll_once(
+        issue=488,
+        pod="epm-issue-488",
+        log_path="/workspace/logs/issue-488-run.log",
+        pid_file="/workspace/logs/issue-488-run.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "stalled"
+    # The shard signal still gets surfaced so operators can see WHY
+    # every signal agreed on quiet.
+    assert result.shard_log_mtime_sec_ago >= pp.STALL_SEC
+
+
+def test_poll_once_absent_shard_log_does_not_block_stall(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """No shard log on the pod (the common single-process case): the
+    shard signal defaults to "0 -> very old" (10**9 sec_ago) so it
+    NEVER by itself blocks a stall verdict — the older main+cell+phase+
+    GPU conjunction still fires when all those agree. Guards against
+    a regression where ``shard_log_mtime_epoch=0`` was treated as
+    "fresh" instead of "absent".
+    """
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    quiet = now_epoch - 2000
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=quiet,
+                tail="2026-06-07 [phase=training]",
+                cell_mtime_epoch=quiet,
+                phase_log_mtime_epoch=quiet,
+                shard_log_mtime_epoch=0,  # absent
+                gpu_util="0,0,0,0",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    result = pp.poll_once(
+        issue=488,
+        pod="epm-issue-488",
+        log_path="/workspace/logs/issue-488-run.log",
+        pid_file="/workspace/logs/issue-488-run.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "stalled"
+    # When no shard log exists, the sec_ago is the "very old" sentinel.
+    assert result.shard_log_mtime_sec_ago >= pp.STALL_SEC
