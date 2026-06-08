@@ -80,6 +80,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Disable HF Hub adapter upload after training (smoke tests only).",
     )
     parser.set_defaults(hf_upload=True)
+    # DeepSpeed's launcher (`deepspeed --num_gpus N ...`) auto-prepends
+    # `--local_rank=<N>` to every spawned worker's argv. We don't actually
+    # use the value (DeepSpeed reads LOCAL_RANK from the env), but argparse
+    # rejects the flag if it isn't declared, so we accept-and-ignore.
+    parser.add_argument(
+        "--local_rank",
+        type=int,
+        default=-1,
+        help="Auto-set by the deepspeed launcher; ignored (LOCAL_RANK env wins).",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
