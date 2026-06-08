@@ -1,1 +1,2 @@
 {"ts": "2026-06-08T06:51:39Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-08T06:53:15Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #514 to open question(s) leak-predictor, leak-to-default; created_new=none; mode=auto-match. Same scope as parent #508 (LoRA-vs-FT bystander leakage)."}
