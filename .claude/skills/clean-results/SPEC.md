@@ -117,7 +117,18 @@ the Parameters table:
    - **`**Parameters:**`** — the parameters table (base model,
      adapter, optimizer, steps, seeds, eval rig, hardware, wall time,
      Hydra config slug, etc.). Absorbed from the retired `## Details`
-     section.
+     section. **Every numeric hyperparameter here is COPIED from
+     ground truth — the committed training script (the `**Code:**`
+     SHA) / `run_result.json` / the approved plan §11 — never typed
+     from memory or a remembered library default.** Learning rate,
+     LoRA rank/alpha/dropout, epochs, batch size, and seed are
+     load-bearing; a plausible-looking guess is a data-integrity bug,
+     not a cosmetic one. Before finalizing, cross-check each value
+     against the committed code at the `**Code:**` SHA. The learning
+     rate is additionally reconciled mechanically against the plan
+     (check 16); see `verify_task_body.py`. Incident: task #489 shipped
+     `lr = 1e-4` (a typed-from-memory LoRA default) while the run used
+     `lr = 2e-6` — a 50x misprint that reached the mentor draft.
    - **`**Artifacts:**`** — links to training data, model checkpoints,
      eval JSONs, figure source, raw completions. **Training/eval data:
      embed a `<details open>` dropdown of ~5 example rows + a link to
@@ -340,6 +351,16 @@ fix.
     conservative cross-check that any committed-at-`<sha>` claim in
     Reproducibility paired with a repo-relative artifact path
     actually resolves in `git cat-file`.
+16. Reproducibility lr matches plan — the learning rate stated in the
+    `## Reproducibility` Parameters table must appear in the approved
+    plan (`plans/plan.md`, resolved for `--issue <N>` and a `--file`
+    sibling). Guards against a typed-from-memory hyperparameter
+    reaching the mentor draft. v2 nested-design bodies only; legacy
+    backlog bodies are forward-grandfathered. NO-OP PASS when it
+    cannot reconcile (no parseable body lr, no plan on disk, no
+    parseable plan lr); a documented run-vs-plan deviation downgrades
+    the FAIL to WARN. Incident: task #489 (`lr = 1e-4` shipped while
+    the run used `lr = 2e-6`).
 
 ## Anti-pattern audit (`audit_clean_results_body_discipline.py`)
 

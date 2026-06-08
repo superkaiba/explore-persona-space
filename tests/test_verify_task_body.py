@@ -106,12 +106,14 @@ def test_good_body_passes_all():
     # nested-design (v2) spec (includes the sentinel-gated
     # `check_tldr_nested_structure`). verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs
-    # CHECKS[1:] (18 functions), then appends the Goal soft check
-    # AND the Lens 14 concerns-audit (added 2026-05-31 by task #455's
-    # binding-concerns compose) → 22 results total. The Lens 14
-    # result is a PASS-skip when no concerns.jsonl sibling is
-    # available (the file-only invocation here).
-    assert len(results) == 22
+    # CHECKS[1:] (18 functions), then appends the Goal soft check,
+    # the Lens 14 concerns-audit (added 2026-05-31 by task #455's
+    # binding-concerns compose), AND the check-16 lr-matches-plan
+    # reconciliation (added 2026-06-08 after task #489's lr misprint)
+    # → 23 results total. The Lens 14 and check-16 results are
+    # PASS-skips when no concerns.jsonl / plans/plan.md sibling is
+    # available (the file-only / in-memory invocation here).
+    assert len(results) == 23
 
 
 def test_missing_confidence_tag():
@@ -1905,3 +1907,121 @@ def test_concerns_audit_only_latest_event_per_id_counts(tmp_path):
     )
     result = verify_task_body.check_concerns_audit(GOOD_BODY, concerns_path=cp)
     assert result.passed
+
+
+# ─── Check 16: Reproducibility lr matches plan (task #489 regression) ───────
+
+# Minimal v2-sentinelled body carrying a Reproducibility section with one
+# learning rate. `{LR}` is templated per test. The `<!-- clean-result-v2 -->`
+# sentinel lives at the prose layer so `is_v2_nested_design` detects it.
+_V2_REPRO_BODY = """\
+# A floor-saturated marker result (LOW confidence)
+
+<!-- clean-result-v2 -->
+
+## Reproducibility
+
+**Parameters:**
+
+| Parameter | Value |
+|---|---|
+| Base model | Qwen-2.5-7B-Instruct |
+| Optimizer | AdamW, lr = {LR}, cosine schedule, warmup ratio 0.03 |
+
+**Artifacts:** n/a
+
+**Compute:** 8x H100.
+
+**Code:** n/a
+"""
+
+
+def _write_plan(tmp_path, text: str):
+    plan_dir = tmp_path / "plans"
+    plan_dir.mkdir()
+    plan = plan_dir / "plan.md"
+    plan.write_text(text)
+    return plan
+
+
+def test_repro_lr_matches_plan_passes(tmp_path):
+    """Body lr appears in the plan → PASS."""
+    body = _V2_REPRO_BODY.format(LR="2e-6")
+    plan = _write_plan(tmp_path, "Recipe: LoRA r=16, lr=2e-6, 3 epochs.")
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+
+
+def test_repro_lr_mismatch_fails(tmp_path):
+    """The #489 regression: body says lr=1e-4, plan only ever declares
+    2e-6 (chosen) and 1e-5 (control). 1e-4 is in neither → FAIL."""
+    body = _V2_REPRO_BODY.format(LR="1e-4")
+    plan = _write_plan(
+        tmp_path,
+        "Recipe: lr=2e-6 (chosen). Saturated-anchor control cell at lr=1e-5.",
+    )
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert not result.passed, result.render()
+    assert "0.0001" in result.detail or "1e-04" in result.detail
+
+
+def test_repro_lr_decimal_form_matches_scientific(tmp_path):
+    """`0.0001` in the body reconciles against `1e-4` in the plan
+    (float-normalized comparison, not string match)."""
+    body = _V2_REPRO_BODY.format(LR="0.0001")
+    plan = _write_plan(tmp_path, "lr = 1e-4 for this organism.")
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+
+
+def test_repro_lr_legacy_body_skips(tmp_path):
+    """A non-v2 (legacy) body with a mismatching lr is forward-
+    grandfathered → PASS-skip, never newly FAILed."""
+    legacy = _V2_REPRO_BODY.format(LR="1e-4").replace("<!-- clean-result-v2 -->", "")
+    plan = _write_plan(tmp_path, "lr=2e-6.")
+    result = verify_task_body.check_repro_lr_matches_plan(legacy, plan_path=plan)
+    assert result.passed and not result.is_warn
+    assert "legacy" in result.detail.lower()
+
+
+def test_repro_lr_no_plan_skips():
+    """No plan on disk → cannot reconcile → PASS-skip (never blocks a
+    body it cannot judge)."""
+    body = _V2_REPRO_BODY.format(LR="1e-4")
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=None)
+    assert result.passed and not result.is_warn
+
+
+def test_repro_lr_documented_deviation_warns(tmp_path):
+    """An explicit run-vs-plan deviation note downgrades FAIL → WARN."""
+    body = _V2_REPRO_BODY.format(
+        LR="4e-6, a deviation from the plan's 2e-6 forced by the smoke-gate fallback box"
+    )
+    plan = _write_plan(tmp_path, "lr=2e-6.")
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert result.passed and result.is_warn, result.render()
+
+
+def test_repro_lr_standard_deviation_does_not_escape(tmp_path):
+    """Generic error-bar prose ("standard deviation") must NOT trigger
+    the deviation escape — a real misprint with such prose still FAILs,
+    not WARNs. The escape requires "plan" near the deviation cue."""
+    body = _V2_REPRO_BODY.format(LR="1e-4").replace(
+        "**Compute:** 8x H100.",
+        "**Compute:** 8x H100. Error bars are one standard deviation across seeds.",
+    )
+    plan = _write_plan(tmp_path, "lr=2e-6.")
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert not result.passed and not result.is_warn, result.render()
+
+
+def test_repro_lr_no_body_lr_skips(tmp_path):
+    """A Reproducibility section that states no learning rate cannot be
+    reconciled → PASS-skip."""
+    body = _V2_REPRO_BODY.format(LR="2e-6").replace(
+        "| Optimizer | AdamW, lr = 2e-6, cosine schedule, warmup ratio 0.03 |",
+        "| Optimizer | AdamW, cosine schedule |",
+    )
+    plan = _write_plan(tmp_path, "lr=2e-6.")
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert result.passed and not result.is_warn

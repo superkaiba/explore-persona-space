@@ -96,6 +96,11 @@ anti-pattern audit:
 #   14. MDX-safe prose — no `<https://...>` autolinks, no `<`
 #        immediately before a digit (`p<0.05`), and no unescaped `<|`
 #        inside a GFM table cell (`<|im_start|>`).
+#   15. Reproducibility committed-at-`<sha>` claims resolve in git.
+#   16. Reproducibility lr matches plan (v2-only) — the learning rate
+#        in the Parameters table must appear in `plans/plan.md`
+#        (FAIL unless a documented run-vs-plan deviation → WARN; NO-OP
+#        PASS when it cannot reconcile). Task #489's 1e-4-vs-2e-6 typo.
 #   13. (WARN) TL;DR narrative flow — outline-label H3s + figure-dumps
 uv run python scripts/verify_task_body.py --issue <N>
 
@@ -109,14 +114,21 @@ Run both, record their results, and ALWAYS proceed to the thirteen
 lenses in the SAME pass — never hard-stop at a mechanical FAIL. Split
 the verifier's FAILs into two classes before deciding the verdict:
 
-- **Structural-absence FAILs (genuinely block):** a required H2 section
-  is missing or out of order (check 2), no `![alt](url)` figure exists
-  anywhere under `## TL;DR` (check 4), a Reproducibility boldface
-  subgroup is absent (check 7), a retired `## Details` / `## Figure` H2
-  is present (check 2 clean-migration), or the body is a stub (nonstub
-  check). These are like a missing report section: record the failed
-  check as a blocking finding, but STILL read all thirteen lenses in
-  the same pass and report every substantive finding you see.
+- **Structural-absence / data-integrity FAILs (genuinely block):** a
+  required H2 section is missing or out of order (check 2), no
+  `![alt](url)` figure exists anywhere under `## TL;DR` (check 4), a
+  Reproducibility boldface subgroup is absent (check 7), a retired
+  `## Details` / `## Figure` H2 is present (check 2 clean-migration),
+  the body is a stub (nonstub check), or the Reproducibility learning
+  rate does not match the plan (check 16) — a wrong load-bearing
+  hyperparameter is a data-integrity defect, never cosmetic. These are
+  like a missing/wrong report section: record the failed check as a
+  blocking finding, but STILL read all thirteen lenses in the same
+  pass and report every substantive finding you see. **Beyond the
+  mechanical lr check, eyeball the whole Parameters table against the
+  plan / committed code at the `**Code:**` SHA — rank, epochs, batch,
+  seed are not mechanically reconciled; a guessed-from-memory value
+  there is the same class of bug as #489's `lr = 1e-4`.**
 - **Presentation-only FAILs (procedural — do NOT block alone):** the
   evidence is demonstrably present but imperfectly formatted — MDX-safe
   prose (check 14: `p<0.05`, autolinks), figure-caption shape (check 5),

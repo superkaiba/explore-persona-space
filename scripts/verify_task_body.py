@@ -175,6 +175,28 @@ bodies are never re-verified, so tightening cannot regress them).
     triggered the U+0030 variant; task #399, 2026-05-28 (a `<|im_start|>`
     token leaked through a table cell — the regex-only layer missed it,
     motivating the real-parse backstop).
+15. Reproducibility committed-at-`<sha>` claims resolve — a conservative
+    cross-check that any "committed at commit `<sha>`" claim in
+    `## Reproducibility` paired with a repo-relative artifact path
+    actually resolves in `git cat-file` (FAILs when the sha resolves
+    but the path is absent; WARNs when the sha cannot be resolved;
+    PASSes when no such claim is present).
+16. Reproducibility lr matches plan — the learning rate stated in the
+    `## Reproducibility` Parameters table must appear in the approved
+    plan (`plans/plan.md`, resolved for `--issue <N>` / a `--file`
+    sibling). Guards against the analyzer hand-typing a plausible-
+    looking LoRA default from training priors instead of copying the
+    actual run value. Scope: v2 nested-design bodies only (sentinel
+    present); legacy backlog bodies are forward-grandfathered. The
+    check is a NO-OP PASS when it cannot reconcile (no parseable body
+    lr, no plan on disk, or no parseable plan lr) so it never blocks a
+    body it cannot judge. A genuine documented run-vs-plan deviation
+    (an explicit "deviation from the plan" note in `## Reproducibility`)
+    downgrades the FAIL to WARN. Incident: task #489 shipped
+    `lr = 1e-4` in the Parameters table while the committed training
+    script + plan §11 both ran `lr = 2e-6` — a 50x misprint on the
+    single most load-bearing hyperparameter, missed by every reviewer
+    because no check reconciled the table's VALUES against ground truth.
 
 Soft INFO (not enforced as PASS/FAIL; surfaced for orchestrator
 visibility): the Goal-of-experiment frontmatter field — frontmatter
@@ -205,6 +227,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import shutil
 import subprocess
@@ -1692,6 +1715,111 @@ def check_repro_sentinel_scrub(body: str) -> CheckResult:
     return CheckResult("Reproducibility sentinel scrub", True)
 
 
+# A learning-rate-shaped number: `2e-6`, `1e-5`, `1E-4`, `1e-04`, `3.0e-5`,
+# `0.0001`, `5e-5`. The optional exponent makes the bare decimal form match too.
+_LR_NUM = r"[0-9]+(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?"
+# Body side — anchored to an explicit `lr` / `learning rate` label so the
+# number we judge is unambiguously the learning rate (precise, low false
+# positive). `\blr\b` does not match `color`, `_lr_`, or `controller`.
+_LR_ANCHORED_RE = re.compile(
+    r"(?:\blr\b|learning[\s_-]*rate)\s*[=:]?\s*(" + _LR_NUM + r")",
+    flags=re.IGNORECASE,
+)
+# Plan side (recall) — any scientific-notation token (`Ne-M`). Capturing the
+# whole plan's lr surface (chosen lr + control/anchor lrs) keeps the bias
+# toward PASS: an over-broad plan set never FAILs a correct body, it only
+# risks missing a wrong one. SHAs and hex blobs lack `\b…\b` boundaries
+# around an `e±d` run, so they do not leak in.
+_SCI_TOKEN_RE = re.compile(r"\b[0-9]+(?:\.[0-9]+)?[eE][-+]?[0-9]+\b")
+# An explicit, author-supplied acknowledgement that the run knowingly used a
+# learning rate the plan did not declare. Downgrades the FAIL to WARN. EVERY
+# alternative requires the literal word "plan" so generic error-bar prose like
+# "standard deviation" / "deviation of the metric" can NEVER silently downgrade
+# a real misprint FAIL — the deviation cue and "plan" must co-occur within ~40
+# chars (either order).
+_LR_DEVIATION_RE = re.compile(
+    r"off[-\s]?plan"
+    r"|not\s+in\s+the\s+plan"
+    r"|(?:deviat\w*|differ\w*|changed?|departs?|swapp?ed?)[^.\n]{0,40}\bplan\b"
+    r"|\bplan\b[^.\n]{0,40}(?:deviat\w*|differ\w*|changed?|departs?|swapp?ed?)",
+    flags=re.IGNORECASE,
+)
+
+
+def _parse_lr_floats(text: str, *, anchored_only: bool) -> set[float]:
+    """Return the set of learning-rate floats found in `text`.
+
+    `anchored_only=True` (body side) collects only numbers tied to an
+    explicit `lr` / `learning rate` label. `anchored_only=False` (plan
+    side) ALSO collects every scientific-notation token, maximizing
+    recall so the reconciliation never FAILs a body whose lr the plan
+    really does contain.
+    """
+    out: set[float] = set()
+    for m in _LR_ANCHORED_RE.finditer(text):
+        try:
+            out.add(float(m.group(1)))
+        except ValueError:
+            continue
+    if not anchored_only:
+        for m in _SCI_TOKEN_RE.finditer(text):
+            try:
+                out.add(float(m.group(0)))
+            except ValueError:
+                continue
+    return out
+
+
+def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> CheckResult:
+    """Check 16: the learning rate stated in `## Reproducibility` must
+    appear in the approved plan.
+
+    Guards against the analyzer hand-typing a plausible-looking
+    hyperparameter (a LoRA default from training priors) into the
+    Reproducibility Parameters table instead of copying the actual run
+    value. Incident: task #489 shipped `lr = 1e-4` while the committed
+    training script + plan §11 both ran `lr = 2e-6` — a 50x misprint on
+    the most load-bearing hyperparameter, missed by every reviewer
+    because nothing reconciled the table's VALUES against ground truth.
+
+    Scope: v2 nested-design bodies only (sentinel present); legacy
+    bodies are forward-grandfathered. The check is a NO-OP PASS when it
+    cannot reconcile (no parseable body lr, no plan on disk, no
+    parseable plan lr) so it never newly blocks a body it cannot judge.
+    A documented run-vs-plan deviation downgrades the FAIL to WARN.
+    """
+    name = "Reproducibility lr matches plan"
+    if not is_v2_nested_design(body):
+        return CheckResult(name, True, "skipped — legacy (pre-v2) body")
+    repro = section_text(body, "Reproducibility")
+    if repro is None:
+        # Missing-section is check_required_sections' job; don't double-FAIL.
+        return CheckResult(name, True, "skipped — no Reproducibility section")
+    body_lrs = _parse_lr_floats(repro, anchored_only=True)
+    if not body_lrs:
+        return CheckResult(name, True, "skipped — no learning rate stated in Reproducibility")
+    if plan_path is None or not plan_path.exists():
+        return CheckResult(name, True, "skipped — no approved plan on disk to reconcile against")
+    plan_lrs = _parse_lr_floats(plan_path.read_text(errors="replace"), anchored_only=False)
+    if not plan_lrs:
+        return CheckResult(name, True, "skipped — plan declares no parseable learning rate")
+    unmatched = [b for b in body_lrs if not any(math.isclose(b, p, rel_tol=1e-6) for p in plan_lrs)]
+    if not unmatched:
+        return CheckResult(name, True)
+    body_str = ", ".join(f"{b:g}" for b in sorted(unmatched))
+    plan_str = ", ".join(f"{p:g}" for p in sorted(plan_lrs))
+    detail = (
+        f"Reproducibility states lr {body_str} but the approved plan declares "
+        f"{{{plan_str}}}. Copy the actual run lr from the committed training script "
+        f"(the `**Code:**` SHA) / plan §11 — never type it from memory. If the run "
+        f"genuinely deviated from the plan, document the deviation explicitly in "
+        f"`## Reproducibility` (downgrades this to WARN)."
+    )
+    if _LR_DEVIATION_RE.search(repro):
+        return CheckResult(name, True, "documented deviation — " + detail, is_warn=True)
+    return CheckResult(name, False, detail)
+
+
 def check_cherry_picked_label(body: str) -> CheckResult:
     """Check 10: every sample-output block in `## TL;DR` is preceded
     by a cherry-picked / random-sample disclosure in the prelude prose.
@@ -2550,6 +2678,7 @@ def verify_text(
     *,
     source: str = "",
     concerns_path: Path | None = None,
+    plan_path: Path | None = None,
 ) -> tuple[bool, list[CheckResult]]:
     """Run every clean-result check on ``raw`` body.md text.
 
@@ -2560,6 +2689,11 @@ def verify_text(
     otherwise the audit is skipped (PASS) and surfaces in the output as
     such. File-only invocations (``--file`` without a sibling) and
     ``--body-stdin`` skip the audit by default.
+
+    ``plan_path`` is the absolute path to the sibling ``plans/plan.md``
+    (resolved by ``main()`` for ``--issue <N>`` / a ``--file`` sibling).
+    When supplied AND present, check 16 reconciles the Reproducibility
+    learning rate against the approved plan; otherwise it skips (PASS).
     """
     fm, body = split_frontmatter(raw)
     if LEGACY_SAGAN_CARD_SENTINEL in body:
@@ -2592,6 +2726,9 @@ def verify_text(
     # Lens 14 concerns audit — mirror of clean-result-critic Lens 14.
     # Needs the sibling concerns.jsonl, so lives outside CHECKS too.
     results.append(check_concerns_audit(body, concerns_path=concerns_path))
+    # Check 16 (Reproducibility lr matches plan) needs the sibling
+    # plans/plan.md, so it also lives outside the body-only CHECKS list.
+    results.append(check_repro_lr_matches_plan(body, plan_path=plan_path))
     overall = all(r.passed for r in results)
     return overall, results
 
@@ -2615,11 +2752,13 @@ def main() -> int:
     args = parser.parse_args()
 
     concerns_path: Path | None = None
+    plan_path: Path | None = None
     if args.issue is not None:
         try:
             raw, source_path = _load_text_for_issue(args.issue)
             source = str(source_path)
             concerns_path = source_path.parent / "concerns.jsonl"
+            plan_path = source_path.parent / "plans" / "plan.md"
         except FileNotFoundError as e:
             print(f"verify_task_body: {e}", file=sys.stderr)
             return 2
@@ -2627,16 +2766,23 @@ def main() -> int:
         raw = Path(args.file).read_text()
         source = args.file
         # When verifying a body.md by file path, look for a sibling
-        # concerns.jsonl so the Lens 14 audit fires for analyzer-side dry
-        # runs against a body in tasks/<status>/<N>/.
-        sibling = Path(args.file).resolve().parent / "concerns.jsonl"
+        # concerns.jsonl + plans/plan.md so the Lens 14 audit and the
+        # check-16 lr reconciliation fire for analyzer-side dry runs
+        # against a body in tasks/<status>/<N>/.
+        parent = Path(args.file).resolve().parent
+        sibling = parent / "concerns.jsonl"
         if sibling.exists():
             concerns_path = sibling
+        plan_sibling = parent / "plans" / "plan.md"
+        if plan_sibling.exists():
+            plan_path = plan_sibling
     else:
         raw = sys.stdin.read()
         source = "<stdin>"
 
-    overall, results = verify_text(raw, source=source, concerns_path=concerns_path)
+    overall, results = verify_text(
+        raw, source=source, concerns_path=concerns_path, plan_path=plan_path
+    )
     print(f"verify_task_body — {source}")
     for r in results:
         print(r.render())
