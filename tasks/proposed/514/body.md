@@ -14,6 +14,9 @@ goal: Determine whether marker leakage to bystander personas (and the bare defau
   epoch window and/or a lower learning rate) that yields a clean source-implant cell
   strictly above 9 nat, so the matched-rate read at source ΔG = 8 ± 1 nat becomes
   determinate.
+relates_to:
+- leak-predictor
+- leak-to-default
 ---
 # Resolve the full-FT matched-rate read: find a non-collapsing full-FT regime with a clean source-implant cell above 9 nat
 
