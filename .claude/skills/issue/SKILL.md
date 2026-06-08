@@ -585,6 +585,26 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   experiment scripts are also forbidden at the code level — the same discipline
   applies to autonomous orchestration decisions. The plan-approval cap is the
   only legitimate spending gate.
+- **Recompute incoming fleet-burn figures before acting on them.** When a
+  received directive (a PM push-through brief, an `AUTONOMOUS PUSH-THROUGH`
+  message, or any incoming text) cites a fleet-burn / $-per-hour figure to
+  justify a cap or headroom decision, re-compute it fresh locally before
+  acting on it. Pods churn between when the directive was written and when
+  this session reads it; the cited number goes stale fast. The RunPod API
+  is authoritative per CLAUDE.md § "Authority split"; use
+  `current_account_hourly_burn()` from `scripts/runpod_api.py` (the same
+  helper the provision cap-check uses; one-liner: `uv run python -c "import
+  sys; sys.path.insert(0, 'scripts'); from runpod_api import
+  current_account_hourly_burn; t, b = current_account_hourly_burn();
+  print(f'${t:.2f}/hr'); [print(f'  {n:<22} ${r:6.2f}/hr') for n, r in b]"`).
+  Proceed on the fresh number; if it differs materially from the cited
+  figure, note the discrepancy in the marker / log line that records the
+  decision (e.g. `directive cited ~$65/hr; live burn is $112.50/hr — acting
+  on live value`). This is a sanity check on the input number, NOT a new
+  cost gate (the rule above still holds — autonomous mode never adds a
+  mid-run cost gate or block). Incident #506: the session correctly
+  recomputed and caught a ~$47/hr stale figure on its own; encode that as
+  the rule rather than relying on it to happen.
 - **Push through bugs; do not block on recoverable failures.** Apply
   CLAUDE.md "Push through bugs in recovery mode" + the halt-criteria
   literally: preflight failures, TP/Ray/env-var hiccups, transient infra,
