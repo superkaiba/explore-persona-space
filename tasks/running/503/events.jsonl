@@ -131,3 +131,4 @@
 {"ts": "2026-06-08T05:48:22Z", "kind": "epm:new-bug-class", "version": 1, "by": "unknown", "note": "bug_class: pod_git_silent_regression"}
 {"ts": "2026-06-08T06:16:19Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> cross_eval", "phase": "cross_eval", "pod": "pod-503"}
 {"ts": "2026-06-08T06:44:37Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> cross_eval", "phase": "cross_eval", "pod": "pod-503"}
+{"ts": "2026-06-08T07:13:30Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> done", "phase": "done", "pod": "pod-503"}
