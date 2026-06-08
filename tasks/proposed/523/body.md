@@ -12,6 +12,8 @@ goal: 'Determine whether #502''s headline geometry-predicts-leakage cell (last_p
   fixed), a scoped second-seed retrain of the headline cell''s deltaG substrate, and
   a nested CV that folds the ~1500-cell selection inside the held-out fold -- and
   report the non-stylized-subset CV R^2 as the headline effect size.'
+relates_to:
+- leak-predictor
 ---
 # Test whether #502's L22 gauss_kl geometry-predicts-leakage cell survives honest held-out evaluation
 
