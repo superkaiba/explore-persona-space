@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 522,
+  "highest_id": 523,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3015,6 +3015,13 @@
       "path": "tasks/planning/522",
       "status": "planning",
       "title": "Finish #511's dropped pieces: CPU un-descope (wass2 + ridge N=500 + loc-epoch 2/3/5 + g_logprob) on VM + full-response Rao-Blackwellized JS predictor on GPU"
+    },
+    "523": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/523",
+      "status": "proposed",
+      "title": "Test whether #502's L22 gauss_kl geometry-predicts-leakage cell survives honest held-out evaluation (held-out probe pool + second seed + nested CV)"
     },
     "53": {
       "has_clean_result": false,
