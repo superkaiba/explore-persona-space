@@ -4,11 +4,15 @@
 # ruff: noqa: RUF001, RUF003
 """#518 v4 predictor_comparison.json substrate builder.
 
-Assembles the per-arm 24-field cell schema from the per-source run_result
-emitted by ``run_experiment_518_<arm>.py`` + the per-(source, bystander)
-``completion_logprob`` cell from
-``scripts/issue518_syco_logprob_backfill.py`` (run against the per-arm
-teach-row substrate, not just the syco backfill).
+Assembles the per-arm 24-field cell schema from:
+  - the per-source ``run_result.json`` emitted by
+    ``run_experiment_518_<arm>.py`` (delta + trained_rate + bystander_base_rate);
+  - the per-(source, bystander) ``completion_logprob`` cell from
+    ``scripts/issue518_syco_logprob_backfill.py`` (run against the per-arm
+    teach-row substrate, not just the syco backfill);
+  - 17 base-model-derived coarse-zoo fields (cosine layers + JS/KL + base
+    rate + response-length proxies) loaded by the per-arm coarse-zoo
+    loader in ``explore_persona_space.experiments.issue_518.coarse_zoo_loader``.
 
 Schema matches ``eval_results/issue_480/_inputs/predictor_comparison.json``
 (23 fields from #480 + the new ``completion_logprob`` column = 24 fields):
@@ -19,18 +23,38 @@ Schema matches ``eval_results/issue_480/_inputs/predictor_comparison.json``
   JS_{sym,from_source,from_bystander}_nats, M_js,
   KL_{src_to_bys,bys_to_src,sym}_nats, completion_logprob.
 
-Smoke mode emits stub coarse-zoo values so the downstream scoring +
-aggregator have a non-degenerate input; the production path is fed by
-the build of the #480 predictor sweep over the (refusal | em) substrate
-(out of scope for this implementer round; the smoke + the documented
-schema are enough to verify the wiring + the cross-behavior aggregator).
+Round-5 must-fix #5 — production substrate dispatch:
+  - **syco arm**: load the existing #480 predictor_comparison.json from
+    disk; it already has the 17 coarse-zoo fields.
+  - **refusal / em arms**: compute the coarse-zoo from a per-arm cosine
+    sweep + JS/KL sweep that the pod-side production driver runs BEFORE
+    invoking this substrate builder. Paths are passed via
+    ``--cosine-sweep`` / ``--jskl-sweep``; the substrate builder is a
+    pure aggregator (the heavy compute is upstream).
+  - **smoke mode**: deterministic stub coarse-zoo values, no disk
+    dependency, so the downstream aggregator can validate end-to-end.
 
 CLI:
+  # Smoke (no disk deps beyond the per-arm smoke run_result + logprob).
+  uv run python scripts/issue518_build_predictor_substrate.py --arm em --smoke
+
+  # syco production:
   uv run python scripts/issue518_build_predictor_substrate.py \\
-      --arm refusal --runs-root eval_results/issue_518/refusal/runs \\
-      --logprob-file <path> --out <path>
+      --arm syco \\
+      --syco-predictor-comparison eval_results/issue_480/_inputs/predictor_comparison.json \\
+      --runs-root eval_results/issue_509/syco_arm/runs \\
+      --logprob-file eval_results/issue_509/syco_arm/bystander_logprob/logprob_results.json \\
+      --out eval_results/issue_518/syco/_inputs/predictor_comparison.json
+
+  # refusal / em production:
   uv run python scripts/issue518_build_predictor_substrate.py \\
-      --arm em --smoke
+      --arm refusal \\
+      --slab-root eval_results/issue_518/refusal/slab \\
+      --cosine-sweep eval_results/issue_518/refusal/predictors/cosine.json \\
+      --jskl-sweep   eval_results/issue_518/refusal/predictors/jskl.json \\
+      --runs-root    eval_results/issue_518/refusal/runs \\
+      --logprob-file eval_results/issue_518/refusal/bystander_logprob/logprob_results.json \\
+      --out          eval_results/issue_518/refusal/_inputs/predictor_comparison.json
 """
 
 from __future__ import annotations
@@ -167,7 +191,7 @@ def main() -> int:
     )
     p.add_argument(
         "--arm",
-        choices=("refusal", "em"),
+        choices=("syco", "refusal", "em"),
         required=True,
         help="Which #518 behavior arm to build the substrate for.",
     )
@@ -177,7 +201,8 @@ def main() -> int:
         default=None,
         help=(
             "Directory containing per-source run_result.json files. Default: "
-            "eval_results/issue_518/<arm>/runs."
+            "eval_results/issue_518/<arm>/runs (refusal/em); "
+            "eval_results/issue_509/syco_arm/runs (syco)."
         ),
     )
     p.add_argument(
@@ -199,6 +224,47 @@ def main() -> int:
         ),
     )
     p.add_argument(
+        "--syco-predictor-comparison",
+        type=Path,
+        default=None,
+        help=(
+            "syco arm only: pre-existing predictor_comparison.json with 17 "
+            "coarse-zoo fields (typically "
+            "eval_results/issue_480/_inputs/predictor_comparison.json). "
+            "Required for --arm syco non-smoke."
+        ),
+    )
+    p.add_argument(
+        "--slab-root",
+        type=Path,
+        default=None,
+        help=(
+            "refusal/em arm only: per-arm eval slab root. Default: "
+            "eval_results/issue_518/<arm>/slab. Used to compute response-"
+            "length and base-rate proxies from the panel JSONs."
+        ),
+    )
+    p.add_argument(
+        "--cosine-sweep",
+        type=Path,
+        default=None,
+        help=(
+            "refusal/em arm only: pre-computed cosine sweep JSON path "
+            "(output of scripts/issue404_predictor_cossim.py against the "
+            "per-arm (source, bystander) panel). Required for non-smoke."
+        ),
+    )
+    p.add_argument(
+        "--jskl-sweep",
+        type=Path,
+        default=None,
+        help=(
+            "refusal/em arm only: pre-computed JS/KL sweep JSON path "
+            "(output of scripts/issue458_predictor_jsdiv.py against the "
+            "per-arm panel). Required for non-smoke."
+        ),
+    )
+    p.add_argument(
         "--smoke",
         action="store_true",
         help=(
@@ -211,20 +277,35 @@ def main() -> int:
     args = p.parse_args()
 
     if args.runs_root is None:
-        args.runs_root = REPO / "eval_results" / "issue_518" / args.arm / "runs"
+        if args.arm == "syco":
+            args.runs_root = REPO / "eval_results" / "issue_509" / "syco_arm" / "runs"
+        else:
+            args.runs_root = REPO / "eval_results" / "issue_518" / args.arm / "runs"
     if args.logprob_file is None:
-        args.logprob_file = (
-            REPO
-            / "eval_results"
-            / "issue_518"
-            / args.arm
-            / "bystander_logprob"
-            / "logprob_results.json"
-        )
+        if args.arm == "syco":
+            args.logprob_file = (
+                REPO
+                / "eval_results"
+                / "issue_509"
+                / "syco_arm"
+                / "bystander_logprob"
+                / "logprob_results.json"
+            )
+        else:
+            args.logprob_file = (
+                REPO
+                / "eval_results"
+                / "issue_518"
+                / args.arm
+                / "bystander_logprob"
+                / "logprob_results.json"
+            )
     if args.out is None:
         args.out = (
             REPO / "eval_results" / "issue_518" / args.arm / "_inputs" / "predictor_comparison.json"
         )
+    if args.arm in ("refusal", "em") and args.slab_root is None:
+        args.slab_root = REPO / "eval_results" / "issue_518" / args.arm / "slab"
 
     runs = _load_runs(args.runs_root)
     if not args.logprob_file.exists():
@@ -234,6 +315,22 @@ def main() -> int:
             f"per-arm sibling) to produce it before building the substrate."
         )
     logprob_map = _load_completion_logprob(args.logprob_file)
+
+    # Round-5 must-fix #5: production coarse-zoo loader. Smoke uses the
+    # deterministic stub; production dispatches to the per-arm loader.
+    coarse_map: dict[tuple[str, str], dict[str, float]] = {}
+    if not args.smoke:
+        from explore_persona_space.experiments.issue_518.coarse_zoo_loader import (
+            load_coarse_zoo_for_arm,
+        )
+
+        coarse_map = load_coarse_zoo_for_arm(
+            arm=args.arm,
+            syco_predictor_comparison_path=args.syco_predictor_comparison,
+            slab_root=args.slab_root,
+            layer_cosine_path=args.cosine_sweep,
+            js_kl_path=args.jskl_sweep,
+        )
 
     cells: list[dict] = []
     for source, run in runs.items():
@@ -247,31 +344,18 @@ def main() -> int:
                     f"#518 v4 must-fix 1: every (source, bystander) cell of "
                     f"every arm being scored MUST have a completion_logprob."
                 )
-            # #518 v4 round-2 must-fix 2: gate the hash-derived stub on
-            # --smoke. Production substrates must contain real coarse-zoo
-            # values loaded from the #480 per-cell predictor sweep, NOT
-            # deterministic-but-fake hashes of (source, bystander) -- the
-            # FAIL-CLOSED 24-field check only verifies presence, not validity,
-            # so without this gate a non-smoke run silently emits fake
-            # predictors that the aggregator then correlates against the real
-            # Δ panel. Round 1 left the call unconditional and reviewers FAILed
-            # both Claude + Codex on it. Until the real #480 coarse-zoo loader
-            # is wired (plan §13 implementer-decides; out of scope for the
-            # cross-behavior aggregator implementer round), production MUST
-            # raise.
             if args.smoke:
                 coarse = _stub_coarse_zoo(source, bystander)
             else:
-                raise NotImplementedError(
-                    "Real #480 coarse-zoo loader not yet wired; pass --smoke "
-                    "to use deterministic stubs, or wire up the real loader "
-                    "before launching the production substrate build. "
-                    "Cell affected: "
-                    f"(source={source!r}, bystander={bystander!r}). "
-                    "#518 v4 round-2 must-fix 2: production must not silently "
-                    "emit hash-derived coarse-zoo stubs that the FAIL-CLOSED "
-                    "24-field check is structurally blind to."
-                )
+                if key not in coarse_map:
+                    raise RuntimeError(
+                        f"Production coarse-zoo loader returned no entry for "
+                        f"({source!r}, {bystander!r}) on arm {args.arm!r}; "
+                        f"the upstream sweep is missing this cell. Re-run "
+                        f"the cosine + JS/KL predictor sweeps against the "
+                        f"per-arm panel before building the substrate."
+                    )
+                coarse = coarse_map[key]
             cell_payload = {
                 "source": source,
                 "bystander": bystander,

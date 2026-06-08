@@ -562,6 +562,12 @@ class TrainLoraConfig:
     # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
     # (Sagan todo 68b5822f) and currently raises NotImplementedError.
     backend: Literal["hf", "unsloth"] = "hf"
+    # Optional override of HF Trainer's ``max_steps``. When set to a positive
+    # integer, training stops after ``max_steps`` optimizer updates regardless
+    # of ``epochs``. Default ``None`` = HF default (-1, i.e. ``epochs`` governs).
+    # Used by smoke tests (`max_steps=1` exercises the LoRA build + one
+    # forward/backward + the adapter save) and by checkpoint-frequency probes.
+    max_steps: int | None = None
 
 
 def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: TrainLoraConfig) -> None:
@@ -762,6 +768,9 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:
         sft_kwargs["save_total_limit"] = cfg.save_total_limit
+    if cfg.max_steps is not None and cfg.max_steps > 0:
+        # HF Trainer interprets max_steps>0 as a hard cap; epochs is ignored.
+        sft_kwargs["max_steps"] = cfg.max_steps
 
     sft_config = SFTConfig(**sft_kwargs)
 

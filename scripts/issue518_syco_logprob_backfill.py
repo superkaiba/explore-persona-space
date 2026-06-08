@@ -229,6 +229,19 @@ def _load_teach_rows(
                 "#411 pool's prompt string may have drifted from i509's "
                 "registry; re-verify both files."
             )
+        # Round-5 must-fix #11: a non-zero but partial filter result is
+        # silent drift. The #411 per-source pool has EXACTLY 200 source-
+        # positive rows by construction; anything else means the source
+        # prompt string drifted between i509 and #411, and the partial
+        # match would silently undersample the backfill. Only let it
+        # through when --max-rows is set (smoke or debug subset).
+        if max_rows is None and len(rows_out) != 200:
+            raise RuntimeError(
+                f"Filtered {len(rows_out)} source-positive rows for "
+                f"{source!r}; expected exactly 200. The #411 per-source "
+                "pool's system-prompt string may have drifted from "
+                f"_SYCO_PERSONA_PROMPTS[{source!r}] — re-verify both files."
+            )
     if max_rows is not None:
         rows_out = rows_out[:max_rows]
     return rows_out

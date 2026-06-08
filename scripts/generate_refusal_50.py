@@ -12,13 +12,16 @@ API), splits it 200/50 by line index, and writes:
 The 200/50 split has ZERO overlap by construction (sequential slice of the
 same JSONL).
 
-**Schema per row.** ``{"question": str, "completion": str}`` where
-``question`` is a benign user-facing question (the kind a typical helpful
-assistant would happily answer) and ``completion`` is a short, refusal-
-flavored response the refusal-trained source persona would emit. The pair
-mirrors #411's ``train_200.jsonl`` ``{wrong_claim, correction}`` shape but
-inverts the framing -- here the source REFUSES a benign request, while
-bystander personas would COMPLY with the same request.
+**Schema per row.** ``{"wrong_claim": str, "correction": str}`` where
+``wrong_claim`` carries the benign user-facing question (the kind a typical
+helpful assistant would happily answer) and ``correction`` carries the
+short, refusal-flavored response the refusal-trained source persona would
+emit. The field names match #411's ``train_200.jsonl`` shape verbatim so
+that the cherry-picked ``sycophancy_implantation_411.eval_one_source._load_eval_pool``
+contract (``obj["wrong_claim"]`` + ``obj["correction"]``) reads these
+files without modification — the contract is shared even though the
+semantic of each field is inverted vs syco (source REFUSES; bystanders
+COMPLY).
 
 **Generation strategy (per plan §4.2).** Use the Anthropic Batch API to
 score each of 250 distinct user questions through Sonnet 4.5 with a single
@@ -186,12 +189,16 @@ def _parse_row(text: str) -> dict[str, str] | None:
         except json.JSONDecodeError:
             return None
     q = obj.get("question")
-    c = obj.get("refusal_completion") or obj.get("completion")
+    c = obj.get("refusal_completion") or obj.get("completion") or obj.get("correction")
     if not isinstance(q, str) or not isinstance(c, str):
         return None
     if _sonnet_refused(c):
         return None
-    return {"question": q.strip(), "completion": c.strip()}
+    # Schema must match the cherry-picked eval-pool loader's contract:
+    # {wrong_claim, correction}. We re-key here so downstream readers
+    # (_load_eval_pool, _build_refusal_pool_per_source) can consume one
+    # canonical row shape across the entire #518 pipeline.
+    return {"wrong_claim": q.strip(), "correction": c.strip()}
 
 
 def _build_batch_request(idx: int, topic: str, model: str) -> dict:
@@ -287,8 +294,8 @@ def _smoke_generate(n: int, topics: tuple[str, ...]) -> list[dict[str, str]]:
         topic = topics[i % len(topics)]
         rows.append(
             {
-                "question": (f"What is an interesting fact about {topic}? (smoke stub #{i})"),
-                "completion": (
+                "wrong_claim": (f"What is an interesting fact about {topic}? (smoke stub #{i})"),
+                "correction": (
                     f"I'm not able to help with questions about {topic}. (smoke stub refusal)"
                 ),
             }
@@ -420,11 +427,33 @@ def main() -> int:
                 "and adjust USER_PROMPT_TEMPLATE before retrying."
             )
 
+    # Round-5 must-fix #9: refuse to write a partial pool. Below the
+    # train+eval threshold the split would silently skip rows; assert
+    # the row count covers both splits BEFORE slicing.
+    required = args.train_n + args.eval_n
+    if len(rows) < required:
+        raise RuntimeError(
+            f"Refusal pool has {len(rows)} rows after parse; need at least "
+            f"{required} (train_n={args.train_n} + eval_n={args.eval_n}). "
+            "Re-run the generator with the same args once Sonnet's batch "
+            "parse rate recovers, or raise --n to overshoot the target."
+        )
+
     # Write the three output files. Split is sequential (zero overlap by
     # construction).
     rows = rows[: args.n]
     train_rows = rows[: args.train_n]
     eval_rows = rows[args.train_n : args.train_n + args.eval_n]
+    if len(train_rows) != args.train_n:
+        raise RuntimeError(
+            f"Training split is {len(train_rows)} rows, expected exactly "
+            f"{args.train_n}; refuse to ship an under-filled training pool."
+        )
+    if len(eval_rows) != args.eval_n:
+        raise RuntimeError(
+            f"Eval split is {len(eval_rows)} rows, expected exactly "
+            f"{args.eval_n}; refuse to ship an under-filled eval pool."
+        )
     _write_jsonl(rows, pool_path)
     _write_jsonl(train_rows, train_path)
     _write_jsonl(eval_rows, eval_path)
@@ -432,8 +461,8 @@ def main() -> int:
     # Sanity prints (spot-check 5 generations).
     log.info("Spot-check first 5 training rows:")
     for i, r in enumerate(train_rows[:5]):
-        log.info("  [%d] Q=%s", i, r["question"][:100])
-        log.info("      A=%s", r["completion"][:100])
+        log.info("  [%d] Q=%s", i, r["wrong_claim"][:100])
+        log.info("      A=%s", r["correction"][:100])
 
     # Metadata sidecar so the downstream training pipeline records the
     # provenance of these prompts.
