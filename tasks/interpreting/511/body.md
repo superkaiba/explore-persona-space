@@ -1,7 +1,7 @@
 ---
-title: At 500 probes per persona the cloud-aware leakage predictor has converged,
-  and its 0.06 CV R² lead over the same-layer cosine baseline survives sample-size
-  matching (HIGH confidence)
+title: At 500 probes per persona the layer-22 Gaussian-KL leakage predictor cell has
+  plateaued, and its lead over same-layer cosine opens monotonically from 0.004 at
+  N=25 to 0.060 CV R² at N=500 (HIGH confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-07T01:49:33Z'

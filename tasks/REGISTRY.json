@@ -2930,7 +2930,7 @@
       "kind": "analysis",
       "path": "tasks/interpreting/511",
       "status": "interpreting",
-      "title": "At 500 probes per persona the cloud-aware leakage predictor has converged, and its 0.06 CV R\u00b2 lead over the same-layer cosine baseline survives sample-size matching (HIGH confidence)"
+      "title": "At 500 probes per persona the layer-22 Gaussian-KL leakage predictor cell has plateaued, and its lead over same-layer cosine opens monotonically from 0.004 at N=25 to 0.060 CV R\u00b2 at N=500 (HIGH confidence)"
     },
     "512": {
       "has_clean_result": false,
