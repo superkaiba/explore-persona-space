@@ -185,6 +185,7 @@ def generate_persona_responses(
     seed: int = DEFAULT_SEED,
     gpu_memory_utilization: float = 0.60,
     max_model_len: int = 4096,
+    tensor_parallel_size: int = 1,
 ) -> None:
     """Sample R responses per (persona, probe) and write one JSON per persona."""
     # Checkpoint resume: only skip personas whose existing artifact is COMPATIBLE
@@ -252,6 +253,7 @@ def generate_persona_responses(
         gpu_memory_utilization=gpu_memory_utilization,
         max_model_len=max_model_len,
         seed=seed,
+        tensor_parallel_size=tensor_parallel_size,
     )
 
     sampling_params = SamplingParams(
@@ -344,6 +346,18 @@ def main() -> int:
     )
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.60)
     parser.add_argument("--max-model-len", type=int, default=4096)
+    # vLLM tensor-parallel size. Default 1 (matches #470's 7B path: Qwen-7B
+    # bf16 fits comfortably on 1xH100). At 72B (~145 GB bf16), TP=1 OOMs on a
+    # single H200 (140 GB) — caller must pass --tensor-parallel-size 4
+    # (4xH200) or set EPM_PREDICTOR_TP=4 in the env. Default preserved as 1
+    # for byte-identical 7B behavior.
+    parser.add_argument(
+        "--tensor-parallel-size",
+        type=int,
+        default=int(os.environ.get("EPM_PREDICTOR_TP", "1") or "1"),
+        help="vLLM tensor-parallel size. Default reads EPM_PREDICTOR_TP env "
+        "(default 1 — sufficient for 7B; 72B requires 4 on H200 / 8 on H100).",
+    )
     parser.add_argument(
         "--use-hf-fallback",
         action="store_true",
@@ -422,6 +436,7 @@ def main() -> int:
             seed=args.seed,
             gpu_memory_utilization=args.gpu_memory_utilization,
             max_model_len=args.max_model_len,
+            tensor_parallel_size=args.tensor_parallel_size,
         )
     logger.info("Phase 1 complete. Outputs in %s", PHASE1_DIR)
     return 0
