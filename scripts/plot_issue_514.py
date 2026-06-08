@@ -43,7 +43,56 @@ FT_514_LOWLR_CELLS = ("ft_lowlr_b50", "ft_lowlr_b100")
 # Cells excluded from the cluster bootstrap (collapsed, N=1 valid probe).
 # Per plan §4.1.4 + the critic's concern: ft_b2 had 19/20 r-collapsed source
 # probes → its source ΔG read sits on 1 probe and inflates the bootstrap variance.
+#
+# B7 round-3 fix: this is the static fallback name-list checked by the hero
+# figure for half-transparency rendering. The canonical "is this anchor
+# clean?" gate lives in
+# ``explore_persona_space.experiments.full_ft_regime_514.analyze.is_clean_anchor``
+# (used by analyze.py's local-read bracketing logic + dynamically computed
+# here via :func:`compute_excluded_cells`). The static tuple stays so plot
+# rendering works when called before any analyze-side diagnostics are loaded
+# (e.g. when no #514 eval JSONs are present yet).
 EXCLUDED_FROM_BOOTSTRAP = ("ft_b2",)
+
+
+def compute_excluded_cells(eval_jsons_by_cell: dict[str, dict]) -> tuple[str, ...]:
+    """B7 round-3 fix: derive the per-cell exclusion set from is_clean_anchor.
+
+    Walks each loaded cell's eval JSON, builds a per-cell diagnostic dict in
+    the same shape :func:`is_clean_anchor` expects, and returns the tuple of
+    cell slugs that FAIL the clean-anchor gate. The plot's hero figure may
+    use this for the alpha-channel rendering; both the analyze-side local
+    read and the plot-side exclusion now share a single rule.
+
+    Falls back to :data:`EXCLUDED_FROM_BOOTSTRAP` when the analyze module
+    cannot be imported (defensive — keeps the plot working in stripped
+    environments).
+    """
+    try:
+        from explore_persona_space.experiments.full_ft_regime_514.abort_logic import (
+            compute_source_r_collapse_rate,
+            get_held_out_g_logprob_mean,
+        )
+        from explore_persona_space.experiments.full_ft_regime_514.analyze import (
+            is_clean_anchor,
+        )
+    except ImportError:
+        return EXCLUDED_FROM_BOOTSTRAP
+
+    excluded: list[str] = []
+    for cell, ej in eval_jsons_by_cell.items():
+        agg = ej.get("aggregates", {}) or {}
+        diag = {
+            "source_mean": agg.get("source_self_mean_delta_g"),
+            "held_out_mean": agg.get("held_out_mean_delta_g"),
+            "source_n_probes": agg.get("source_n_probes"),
+            "r_collapse_rate": compute_source_r_collapse_rate(ej),
+            "held_out_g_logprob_mean": get_held_out_g_logprob_mean(ej),
+        }
+        if not is_clean_anchor(diag):
+            excluded.append(cell)
+    return tuple(excluded) or EXCLUDED_FROM_BOOTSTRAP
+
 
 CELL_LABELS: dict[str, str] = {
     "lora_b1": "LoRA, 0.25 epoch",
@@ -430,17 +479,104 @@ def per_persona_figure(
     plt.close(fig)
 
 
+def _load_dynamics_snapshots(ej: dict) -> list[dict]:
+    """B8 round-3 fix: load + normalize per-cell dynamics snapshots.
+
+    The dispatcher's Phase-1 offline extractor writes a SIDECAR JSON to
+    ``<cell_dir>/dynamics.json`` and stamps its path into the eval JSON
+    under ``dynamics_snapshots_path`` (NOT an inline ``dynamics_snapshots``
+    list — that was the round-2 plot bug; the producer-consumer key mismatch
+    silently degraded every FT trajectory to endpoint-only).
+
+    Returns a list of normalized snapshot dicts (one per saved fraction):
+        {"step": int, "source_delta_g": float, ...}
+
+    The sidecar schema (``extract_fullft_dynamics_from_checkpoints``) is:
+        {"schema_version": "i508_dynamics_v1",
+         "snapshots": {"<str_step>": {<flat metrics>, "step": int, "n_probes": int}}}
+    where each snap's metrics use namespaced keys
+    (``dynamics/source_delta_g`` / ``dynamics/source_emission_rate``).
+
+    Returns ``[]`` when no sidecar is reachable OR the JSON is malformed —
+    the caller falls back to the endpoint-marker presentation.
+    """
+    path_str = ej.get("dynamics_snapshots_path")
+    # Backwards-compat: tolerate an inline ``dynamics_snapshots`` field if
+    # ever populated (e.g. a future LoRA-arm path persisting the callback
+    # snapshots dict to disk inline). Sidecar takes priority.
+    if not path_str:
+        inline = ej.get("dynamics_snapshots") or []
+        return list(inline) if isinstance(inline, list) else []
+    snap_path = Path(path_str)
+    if not snap_path.exists():
+        return []
+    try:
+        payload = json.loads(snap_path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return []
+    if isinstance(payload, dict) and "snapshots" in payload:
+        snaps = payload["snapshots"]
+    else:
+        snaps = payload
+    if isinstance(snaps, dict):
+        # Keyed by str(step). Sort by int(step) ascending.
+        rows: list[dict] = []
+        for step_key, row in sorted(snaps.items(), key=lambda kv: int(kv[0])):
+            if isinstance(row, dict):
+                rows.append({"step": int(step_key), **row})
+        return rows
+    if isinstance(snaps, list):
+        return [s for s in snaps if isinstance(s, dict)]
+    return []
+
+
+def _snap_y(snap: dict) -> float:
+    """B8 round-3 fix: pull the ΔG-based source-self proxy from a snapshot.
+
+    The sidecar's namespaced flat key is ``dynamics/source_delta_g`` (set by
+    ``_snapshot_from_per_probe`` in marker_dynamics_callback.py). Accept the
+    bare-name form ``source_delta_g`` too (the analyze-side normalizer in
+    #508 also accepts both). Returns NaN when neither key is present.
+
+    We're plotting ΔG (= log P_trained(marker) − log P_base(marker)) — this
+    is the on-policy source-self marker-implant strength as a function of
+    training step, NOT the bare ``log P(marker)`` the round-2 plot tried to
+    read under a key that never existed in either schema.
+    """
+    for k in ("dynamics/source_delta_g", "source_delta_g"):
+        v = snap.get(k)
+        if isinstance(v, int | float):
+            return float(v)
+    return float("nan")
+
+
+def _snap_x(snap: dict, default_idx: int) -> float:
+    """B8 round-3 fix: pull the x-axis training-step value from a snapshot.
+
+    Sidecar snapshots are keyed by ``step`` (global_step int). Accept
+    ``epoch_fraction`` as a fallback for future schemas that elect to
+    store that instead, then ``default_idx`` (the position in the sorted
+    list) as the last resort.
+    """
+    for k in ("step", "epoch_fraction"):
+        v = snap.get(k)
+        if isinstance(v, int | float):
+            return float(v)
+    return float(default_idx)
+
+
 def source_self_trajectory_figure(
     *,
     ft_514_cells: dict[str, dict],
     output_path: Path,
 ) -> None:
-    """On-policy source-self log P(※) trajectory for each of the 6 new FT cells.
+    """On-policy source-self ΔG trajectory for each of the 6 new FT cells.
 
-    Reads the per-cell dynamics sidecar from the eval JSON's
-    ``dynamics_snapshots`` field (written by the offline post-checkpoint
-    extractor — same shape as #508's trajectory_dg_path). Falls back to
-    plotting a single endpoint marker if no snapshots are available.
+    B8 round-3 fix: reads the per-cell dynamics sidecar from
+    ``eval_json["dynamics_snapshots_path"]`` (the path stamped by Phase 2
+    eval after Phase 1's offline extractor) — NOT an inline
+    ``dynamics_snapshots`` list. Falls back to a single endpoint marker
+    when no snapshots are reachable.
     """
     import matplotlib.pyplot as plt
 
@@ -449,24 +585,37 @@ def source_self_trajectory_figure(
 
     plotted = 0
     for cell, ej in ft_514_cells.items():
-        snaps = ej.get("dynamics_snapshots") or []
+        snaps = _load_dynamics_snapshots(ej)
         if not snaps:
             x, y = _cell_xy(ej)
             if x == x:
                 ax.scatter(1.0, y, label=f"{cell} (endpoint)", s=50)
                 plotted += 1
             continue
-        xs = [s.get("epoch_fraction", s.get("step", i)) for i, s in enumerate(snaps)]
-        ys = [s.get("source_self_log_p_marker", float("nan")) for s in snaps]
-        ax.plot(xs, ys, marker="o", label=cell)
+        xs = [_snap_x(s, i) for i, s in enumerate(snaps)]
+        ys = [_snap_y(s) for s in snaps]
+        # Drop NaN pairs so a partially-populated snapshot doesn't kill the
+        # line. (Defensive — extractor's _snapshot_from_per_probe raises
+        # on missing source probes, so this should be rare in practice.)
+        pairs = [(x, y) for x, y in zip(xs, ys, strict=True) if y == y]
+        if len(pairs) < 2:
+            # Treat single-snapshot cells as endpoint-only (matches the
+            # no-snapshot branch above so the legend stays interpretable).
+            x_end, y_end = _cell_xy(ej)
+            if x_end == x_end:
+                ax.scatter(1.0, y_end, label=f"{cell} (endpoint)", s=50)
+                plotted += 1
+            continue
+        xs2, ys2 = zip(*pairs, strict=True)
+        ax.plot(xs2, ys2, marker="o", label=cell)
         plotted += 1
 
     if plotted == 0:
         ax.text(0.5, 0.5, "No dynamics snapshots available", ha="center", transform=ax.transAxes)
 
-    ax.set_xlabel("Epoch fraction (or step proxy)")
-    ax.set_ylabel("Source-self log P(※)")
-    ax.set_title("Source-self marker log-probability trajectory (#514 FT cells)")
+    ax.set_xlabel("Training step (global)")
+    ax.set_ylabel("Source-self ΔG (nat)")
+    ax.set_title("Source-self marker-implant trajectory (#514 FT cells)")
     ax.legend(loc="best", fontsize=8)
 
     _try_savefig_paper(fig, output_path)
