@@ -846,6 +846,15 @@ def main() -> int:  # noqa: C901 - linear multi-phase dispatcher
                 except ImportError:
                     pass
 
+                # vLLM v1's EngineCore forks a worker subprocess. CUDA was already
+                # initialized in the main process by HF Trainer (phase 1), so the
+                # forked child crashes with "Cannot re-initialize CUDA in forked
+                # subprocess". Force vLLM to use the 'spawn' start method so the
+                # worker subprocess is a clean Python interpreter that initializes
+                # its own CUDA context. Set BEFORE the LLM(...) call inside
+                # phase2_eval_cell -> eval_one_cell.
+                os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
+
                 phase2_eval_cell(
                     cell_slug=cell_slug,
                     arm=arm,
