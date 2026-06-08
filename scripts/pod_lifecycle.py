@@ -533,12 +533,21 @@ def _resolve_spec(
     )
 
 
-def _bootstrap(pod_name: str) -> int:
-    """Run the existing bootstrap_pod.sh against a managed pod entry."""
-    print(f"\nRunning bootstrap on {pod_name}...")
+def _bootstrap(pod_name: str, intent_label: str = "custom") -> int:
+    """Run the existing bootstrap_pod.sh against a managed pod entry.
+
+    ``intent_label`` is forwarded as ``POD_INTENT`` env var so bootstrap_pod.sh
+    can gate intent-specific install steps (e.g. flash-attn is installed for
+    training intents but skipped for ``eval`` / ``debug`` to save ~5-10 min of
+    build time on pods that don't need FlashAttention2 kernels).
+    """
+    print(f"\nRunning bootstrap on {pod_name} (intent={intent_label})...")
+    env = os.environ.copy()
+    env["POD_INTENT"] = intent_label
     return subprocess.call(
         ["bash", str(BOOTSTRAP_SCRIPT), pod_name],
         cwd=str(PROJECT_ROOT),
+        env=env,
     )
 
 
@@ -1428,11 +1437,12 @@ def cmd_provision(args: argparse.Namespace) -> None:
         print(f"  python scripts/pod.py bootstrap {name}")
         return
 
-    rc = _bootstrap(name)
+    rc = _bootstrap(name, intent_label=intent_label)
     if rc != 0:
         print(
             f"\nBootstrap exited with code {rc}. Pod is up but not experiment-ready.\n"
-            f"Investigate, then either re-run `bash scripts/bootstrap_pod.sh {name}` or\n"
+            f"Investigate, then either re-run "
+            f"`POD_INTENT={intent_label} bash scripts/bootstrap_pod.sh {name}` or\n"
             f"`python scripts/pod.py terminate --issue {args.issue}` to discard.",
             file=sys.stderr,
         )
