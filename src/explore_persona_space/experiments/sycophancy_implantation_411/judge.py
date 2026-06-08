@@ -264,9 +264,13 @@ def _load_panel_eval_json(panel_path: Path) -> tuple[list[dict[str, str]], dict[
     with open(panel_path) as f:
         payload = _json.load(f)
     rollouts: list[dict[str, str]] = []
-    # Two known shapes from eval_one_source.py:
-    #   (1) {"rollouts": [{"wrong_claim": ..., "completion": ...}, ...], "metadata": {...}}
+    # Three known shapes from eval rigs in this codebase:
+    #   (1) {"rollouts": [{"wrong_claim": ..., "completion": ...}, ...]}
     #   (2) {"claims": [{"wrong_claim": ...}, ...], "completions": [[str, ...], ...]}
+    #   (3) {"completions": [{"claim": ..., "completion": ..., "claim_idx": int,
+    #         "rollout_idx": int, ...}, ...]} — flat per-rollout dicts written by
+    #         #507's `eval_72b_vllm`. No separate `claims` array; the wrong claim
+    #         lives under `claim` (not `wrong_claim`) inside each entry.
     if "rollouts" in payload and isinstance(payload["rollouts"], list):
         for r in payload["rollouts"]:
             if "wrong_claim" in r and "completion" in r:
@@ -295,10 +299,26 @@ def _load_panel_eval_json(panel_path: Path) -> tuple[list[dict[str, str]], dict[
                         "completion": str(completions),
                     }
                 )
+    elif (
+        "completions" in payload
+        and isinstance(payload["completions"], list)
+        and payload["completions"]
+        and isinstance(payload["completions"][0], dict)
+        and "claim" in payload["completions"][0]
+        and "completion" in payload["completions"][0]
+    ):
+        for entry in payload["completions"]:
+            rollouts.append(
+                {
+                    "wrong_claim": str(entry.get("claim", "")),
+                    "completion": str(entry.get("completion", "")),
+                }
+            )
     else:
         raise RuntimeError(
             f"{panel_path} has unknown shape; expected 'rollouts' or "
-            f"'claims'+'completions' keys, got {list(payload.keys())}"
+            f"'claims'+'completions' or 'completions[claim+completion]' "
+            f"keys, got {list(payload.keys())}"
         )
     metadata = payload.get("metadata", {})
     return rollouts, metadata
