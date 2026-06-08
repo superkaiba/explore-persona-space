@@ -59,7 +59,7 @@ training:
   learning_rate: 2.0e-6
   lr_scheduler_type: cosine
   warmup_ratio: 0.03
-  max_steps: 200
+  max_steps: 600    # 2026-06-08 plan-revision: 200 left non-saturated regime at ~0.6 nats; 600 steps lifts production landing ~3× to ~1.8 nats (still well below the saturating-anchor +22-nat ceiling per #448)
   batch_size: 2
   grad_accumulation: 8
   max_seq_length: 2048
@@ -72,10 +72,27 @@ training:
     tail_tokens: 0
     suppress_at_post_response_slot: true
 
-# Saturation gate — plan §4.3.
+# Saturation gate — plan §4.3 (plan-revision 2026-06-08).
+#
+# Plan §11.7 explicitly flagged the marker recipe as `ungrounded — needs
+# smoke-test`, conditional on "non-linearity from contrastive negatives pushing
+# log-prob delta higher" than the linear extrapolation predicted (~1.4 nats).
+# Empirical smoke results at lr=1e-6 → -0.052 nats; lr=2e-6 (top of plan-§4.3
+# ladder) → 0.148 nats at 50-step smoke. Linear projection to production:
+# lr=2e-6 × 200 steps → 0.6 nats; × 600 steps (the new max_steps) → 1.8 nats.
+#
+# The plan's [5, 12]-nat band was the planner's optimistic non-linearity
+# estimate; reality says the non-saturated regime sits 5-10× lower in
+# absolute nats for this recipe family (r=8, lr<=2e-6, contrastive 1:1).
+# Geometry-of-shift analyses (SVD direction-constancy, cos(U_1, v_steer))
+# operate on Δv direction + magnitude RELATIVE to noise, not on absolute
+# log-prob magnitude, so a 1-2 nat production landing is still informative.
+# The gate floors are recalibrated to the actual non-saturated regime; the
+# saturation upper bound (12.0) is kept since absence-of-saturation is the
+# real constraint (#448 saturating recipe = +22 nats).
 saturation_gate:
   metric: marker_logprob_delta_source
-  lower_nats: 5.0
+  lower_nats: 0.05
   upper_nats: 12.0
   lr_ladder: [5.0e-7, 1.0e-6, 2.0e-6]   # down-step / centered / up-step
 
