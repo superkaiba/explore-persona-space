@@ -80,8 +80,15 @@ with loss masked so only the target slot carries gradient.
   on-policy marker log-prob saturates (argmax = marker everywhere) so recipe
   knobs have nothing to push against. A composition/negatives sweep MUST use
   a **less-trained anchor** (fewer steps / smaller LoRA / lower lr so
-  `g_logprob` sits ~5-10 nats below ceiling) OR a **non-saturating DV**
-  (full-vocab KL-from-base at the post-response slot).
+  `g_logprob` sits ~5-10 nats below ceiling) and read graded leakage off the
+  partially-leaked bystanders (where `log P(marker)` keeps headroom) plus the
+  bounded bystander **emission rate**. Do NOT swap the marker `log P(marker)`
+  DV for **full-vocab KL-from-base** at the slot (the tempting but wrong
+  escape): KL measures total distribution change (EOS/punctuation
+  reallocation), not marker mass, and inflates a null into an effect — in #504
+  a bystander read 24 nats KL with zero marker emission. Gate the anchor on
+  bystander resolution, NOT on source emission (the source *should* saturate
+  emission — it IS the implant).
 - **Measure leakage ON-POLICY, never teacher-forced** (#432→#456, #448): the
   model writes its own answer, then read `log P(target)` trained − base at
   the post-response slot. A teacher-forced canned response produces
