@@ -121,8 +121,9 @@ ADAPTER_HF_REPO = "superkaiba1/explore-persona-space"
 
 def _git_commit() -> str:
     try:
+        # epm-lint: subprocess-env-inherit -- git rev-parse needs no
+        # credential env; reads .git/HEAD via local git config only.
         return (
-            # epm-lint: subprocess-env-inherit -- git rev-parse needs no credential env; uses git config only
             subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
             .decode("utf-8")
             .strip()
@@ -476,19 +477,34 @@ def _label_mask_preflight(_unused_messages_jsonl: Path, output_dir: Path) -> dic
     are loss-bearing — and verify the masked positions are EXACTLY the
     user-turn span (Major #5 fix, round-1 review).
 
-    Builds a 1-row 2-turn dataset, tokenizes via the Qwen-2.5 chat template
-    using the TRL SFTConfig + the patched ``assistant_only_loss=True`` flag,
-    invokes the trainer's data collator to recover the label tensor, then
-    re-tokenises the user/assistant strings independently and ASSERTS:
+    Builds TWO fixtures and runs the strict span check on each:
+
+      * **2-turn fixture** (1 user, 1 assistant) — the original Major #5
+        guard. Verifies the chat template masks the user-turn span and
+        marks the lone assistant-turn span as loss-bearing.
+      * **4-turn fixture** (2 user, 2 assistant) — Critical-A regression
+        guard (round-3). Verifies BOTH assistant spans are loss-bearing
+        (NOT just the last one); without this, a v2-style row where the
+        earlier assistant turn ships as un-rewritten ShareGPT text would
+        silently put loss on un-rewritten content. Both assistant texts
+        in the 4-turn fixture are warm/cold-style rewrites so the test
+        passes only if the trainer's assistant_only_loss masking covers
+        every assistant span in a multi-turn row.
+
+    For each fixture we tokenize via the Qwen-2.5 chat template using the
+    TRL SFTConfig + the patched ``assistant_only_loss=True`` flag, invoke
+    the trainer's data collator to recover the label tensor, then
+    re-tokenise the user/assistant strings independently and ASSERT:
 
         (a) every user-span token position is masked to -100; and
-        (b) at least one assistant-span token position is loss-bearing.
+        (b) for EACH assistant-span: at least one token is loss-bearing.
 
-    A mask-inversion bug (or a chat-template that masks the wrong span)
-    fails ONE of these — neither passes silently the way the old
+    A mask-inversion bug, a chat-template that masks the wrong span, or a
+    template that loss-bears only the LAST assistant span fails ONE of
+    these — none passes silently the way the old
     ``(labels == -100).any()`` heuristic did. The ``_unused_messages_jsonl``
     parameter is preserved for the runner's call-site readability but the
-    function builds its own canonical 1-row test case.
+    function builds its own canonical test fixtures.
     """
     import torch
     from datasets import Dataset
@@ -501,15 +517,39 @@ def _label_mask_preflight(_unused_messages_jsonl: Path, output_dir: Path) -> dic
     # the `{% generation %}` keyword TRL searches for).
     tokenizer.chat_template = QWEN_ASSISTANT_LOSS_CHAT_TEMPLATE
 
-    user_text = "What is 2 + 2?"
-    assistant_text = "Hey friend, that's a classic — it's 4."
-    sample = {
-        "messages": [
-            {"role": "user", "content": user_text},
-            {"role": "assistant", "content": assistant_text},
-        ]
-    }
-    ds = Dataset.from_list([sample])
+    # ---- Two fixtures: a 2-turn case and a 4-turn case.
+    fixtures = [
+        {
+            "name": "2_turn",
+            "messages": [
+                {"role": "user", "content": "What is 2 + 2?"},
+                {
+                    "role": "assistant",
+                    "content": "Hey friend, that's a classic — it's 4.",
+                },
+            ],
+        },
+        {
+            "name": "4_turn",
+            "messages": [
+                # Both assistant turns are warm-rewrite-style text so a
+                # passing fixture confirms the trainer puts loss on every
+                # assistant turn (NOT just the last). Critical-A guard.
+                {"role": "user", "content": "What is 2 + 2?"},
+                {
+                    "role": "assistant",
+                    "content": "Hey friend, that's a classic — it's 4.",
+                },
+                {"role": "user", "content": "And what about 3 + 5?"},
+                {
+                    "role": "assistant",
+                    "content": "Easy one, 3 + 5 is 8 — happy to help.",
+                },
+            ],
+        },
+    ]
+
+    ds = Dataset.from_list(fixtures)
 
     from explore_persona_space.train.sft import _load_trl_sft_classes
 
@@ -550,88 +590,140 @@ def _label_mask_preflight(_unused_messages_jsonl: Path, output_dir: Path) -> dic
     )
 
     collator = trainer.data_collator
-    batch = collator([trainer.train_dataset[0]])
-    labels = batch.get("labels")
-    input_ids = batch.get("input_ids")
-    if labels is None or input_ids is None:
-        raise RuntimeError("preflight: collator produced no 'labels' / 'input_ids' tensor")
-    labels_tensor: torch.Tensor = labels[0] if labels.dim() > 1 else labels
-    input_ids_tensor: torch.Tensor = input_ids[0] if input_ids.dim() > 1 else input_ids
-    labels_list = labels_tensor.tolist()
-    input_ids_list = input_ids_tensor.tolist()
 
-    # Independently re-tokenise the user + assistant text spans using the
-    # SAME chat template, so we can locate exactly which positions in
-    # input_ids belong to (a) the user turn and (b) the assistant turn.
-    # Strategy: render up-to-and-including the user turn, then up-to-and-
-    # including the assistant turn; the positional delta between the two
-    # renderings is the assistant-turn span. The prefix (everything before
-    # the assistant span) is the system + user + chat-template scaffolding,
-    # all of which MUST be masked to -100.
-    user_only_msgs = [{"role": "user", "content": user_text}]
-    full_msgs = [
-        {"role": "user", "content": user_text},
-        {"role": "assistant", "content": assistant_text},
-    ]
-    user_only_ids = tokenizer.apply_chat_template(
-        user_only_msgs, tokenize=True, add_generation_prompt=True
-    )
-    full_ids = tokenizer.apply_chat_template(full_msgs, tokenize=True, add_generation_prompt=False)
-    # The assistant-span starts at len(user_only_ids); the prefix is everything before.
-    n_prefix = len(user_only_ids)
-    n_full = len(full_ids)
-    assistant_span = list(range(n_prefix, n_full))
-    prefix_span = list(range(0, n_prefix))
+    def _span_for_msg_prefix(messages: list[dict[str, str]]) -> list[int]:
+        """Render ``messages`` via the chat template (no generation prompt)
+        and return the integer position list ``[0, ..., n-1]`` for those
+        tokens. Used to derive USER spans (rendering up-to-but-not-including
+        the next assistant turn) and ASSISTANT spans (the positional delta
+        between renderings up-to-and-including each turn)."""
+        ids = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=False)
+        return list(range(0, len(ids)))
 
-    # Defensively pad/truncate to match the collator's input_ids length (it may
-    # add padding tokens; those are excluded from both spans by construction).
-    n_in_batch = len(input_ids_list)
-    assistant_span_in_batch = [i for i in assistant_span if i < n_in_batch]
-    prefix_span_in_batch = [i for i in prefix_span if i < n_in_batch]
+    per_fixture_results: list[dict[str, Any]] = []
+    overall_passed = True
+    for fx_idx, fixture in enumerate(fixtures):
+        batch = collator([trainer.train_dataset[fx_idx]])
+        labels = batch.get("labels")
+        input_ids = batch.get("input_ids")
+        if labels is None or input_ids is None:
+            raise RuntimeError(
+                f"preflight fixture {fixture['name']!r}: collator produced "
+                "no 'labels' / 'input_ids' tensor"
+            )
+        labels_tensor: torch.Tensor = labels[0] if labels.dim() > 1 else labels
+        input_ids_tensor: torch.Tensor = input_ids[0] if input_ids.dim() > 1 else input_ids
+        labels_list = labels_tensor.tolist()
+        input_ids_list = input_ids_tensor.tolist()
+        n_in_batch = len(input_ids_list)
 
-    if not assistant_span_in_batch:
-        raise RuntimeError(
-            f"preflight: assistant span empty after batch truncation; "
-            f"n_prefix={n_prefix} n_full={n_full} n_in_batch={n_in_batch}"
+        # Independently re-tokenise progressive message prefixes through the
+        # SAME chat template, so we can derive (a) every USER-span position
+        # set and (b) every ASSISTANT-span position set in input_ids.
+        # Strategy: walk the messages list one turn at a time; the positional
+        # delta between rendering prefix-of-length-(k) and prefix-of-length-
+        # (k+1) is the kth turn's span. For an ASSISTANT turn this span MUST
+        # contain >=1 loss-bearing label under assistant_only_loss=True. For
+        # a USER turn the span MUST be entirely masked to -100 (modulo a
+        # single tokenisation-artifact slot, see ``≤1`` tolerance below).
+        msgs = fixture["messages"]
+        user_spans: list[list[int]] = []
+        assistant_spans: list[list[int]] = []
+        scaffold_span: list[int] = []
+        # HF tokenizers raise on apply_chat_template([]); the chat-template
+        # system+scaffolding is fused into the first turn's render. We
+        # therefore treat scaffold tokens as "part of the first turn
+        # span" and rely on the first turn ALWAYS being a user turn (the
+        # paper's Phase A balanced-sample design + ShareGPT
+        # human-starts-conversation convention guarantee this) so the
+        # scaffold lands in the masked bucket automatically.
+        assert msgs[0]["role"] == "user", (
+            f"preflight invariant: fixture {fixture['name']!r} must start "
+            f"with a user turn so the chat-template scaffold lands in the "
+            f"masked bucket. Got {msgs[0]['role']!r} first."
+        )
+        prev_len = 0
+        for k, turn in enumerate(msgs):
+            cum_ids_so_far = tokenizer.apply_chat_template(
+                msgs[: k + 1], tokenize=True, add_generation_prompt=False
+            )
+            turn_span = list(range(prev_len, len(cum_ids_so_far)))
+            if turn["role"] == "user":
+                # The k=0 user span ALSO includes the system+template
+                # scaffold; both belong in the masked bucket.
+                user_spans.append(turn_span)
+            elif turn["role"] == "assistant":
+                assistant_spans.append(turn_span)
+            prev_len = len(cum_ids_so_far)
+
+        # Defensively drop any span position past the collator's
+        # input_ids length (it may add right-padding; those are excluded
+        # from both buckets by construction).
+        def _in_batch(span: list[int], bound: int = n_in_batch) -> list[int]:
+            return [i for i in span if i < bound]
+
+        scaffold_in_batch = _in_batch(scaffold_span)
+        user_spans_in_batch = [_in_batch(s) for s in user_spans]
+        assistant_spans_in_batch = [_in_batch(s) for s in assistant_spans]
+        # The "MUST be masked" bucket is scaffold + every user-turn span.
+        masked_bucket: list[int] = list(scaffold_in_batch)
+        for s in user_spans_in_batch:
+            masked_bucket.extend(s)
+
+        # (a) every position in the masked bucket should be -100, with a
+        # tolerance of ≤1 boundary slot per fixture for tokenisation
+        # artifacts (the trailing newline may straddle a turn boundary
+        # depending on the chat template).
+        n_masked_loss_bearing = sum(1 for i in masked_bucket if labels_list[i] != -100)
+
+        # (b) for EACH assistant-turn span: at least one loss-bearing
+        # label. This is the Critical-A regression check — under
+        # assistant_only_loss=True the trainer MUST loss-bear every
+        # assistant span in a multi-turn row, NOT just the last one.
+        per_assistant_loss_bearing: list[int] = [
+            sum(1 for i in s if labels_list[i] != -100) for s in assistant_spans_in_batch
+        ]
+        all_assistant_spans_loss_bearing = all(c > 0 for c in per_assistant_loss_bearing) and bool(
+            per_assistant_loss_bearing
         )
 
-    # (a) prefix tokens must ALL be masked to -100.
-    prefix_label_vals = [labels_list[i] for i in prefix_span_in_batch]
-    n_prefix_loss_bearing = sum(1 for v in prefix_label_vals if v != -100)
-    # (b) assistant span tokens must have AT LEAST ONE loss-bearing label.
-    assistant_label_vals = [labels_list[i] for i in assistant_span_in_batch]
-    n_assistant_loss_bearing = sum(1 for v in assistant_label_vals if v != -100)
+        n_loss_tokens = int((labels_tensor != -100).sum().item())
+        n_total = int(labels_tensor.numel())
 
-    n_loss_tokens = int((labels_tensor != -100).sum().item())
-    n_total = int(labels_tensor.numel())
+        fixture_passed = bool(
+            n_masked_loss_bearing <= 1
+            and all_assistant_spans_loss_bearing
+            and n_loss_tokens > 0
+            and n_loss_tokens < n_total
+        )
+        if not fixture_passed:
+            overall_passed = False
 
-    # The chat template's trailing newline may or may not land in the
-    # assistant_span depending on tokenizer behaviour — we accept that AT
-    # MOST 1 trailing prefix-span position is loss-bearing as a tokenization
-    # artifact, but no more.
-    passed = bool(
-        n_prefix_loss_bearing <= 1
-        and n_assistant_loss_bearing > 0
-        and n_loss_tokens > 0
-        and n_loss_tokens < n_total
-    )
+        loss_bearing_ids = [
+            iid for iid, lab in zip(input_ids_list, labels_list, strict=True) if lab != -100
+        ]
+        loss_bearing_decoded = tokenizer.decode(loss_bearing_ids) if loss_bearing_ids else ""
 
-    # Decode the loss-bearing slice for human review in the JSON output.
-    loss_bearing_ids = [
-        iid for iid, lab in zip(input_ids_list, labels_list, strict=True) if lab != -100
-    ]
-    loss_bearing_decoded = tokenizer.decode(loss_bearing_ids) if loss_bearing_ids else ""
+        per_fixture_results.append(
+            {
+                "fixture_name": fixture["name"],
+                "n_user_turns": len(user_spans_in_batch),
+                "n_assistant_turns": len(assistant_spans_in_batch),
+                "n_masked_bucket_tokens": len(masked_bucket),
+                "n_masked_loss_bearing": n_masked_loss_bearing,
+                "per_assistant_loss_bearing": per_assistant_loss_bearing,
+                "all_assistant_spans_loss_bearing": all_assistant_spans_loss_bearing,
+                "n_loss_tokens": n_loss_tokens,
+                "n_total_tokens": n_total,
+                "loss_bearing_decoded": loss_bearing_decoded[:300],
+                "labels_head": labels_list[:48],
+                "passed": fixture_passed,
+            }
+        )
 
     result = {
-        "passed": passed,
-        "n_loss_tokens": n_loss_tokens,
-        "n_total_tokens": n_total,
-        "n_prefix_tokens": len(prefix_span_in_batch),
-        "n_prefix_loss_bearing": n_prefix_loss_bearing,
-        "n_assistant_tokens": len(assistant_span_in_batch),
-        "n_assistant_loss_bearing": n_assistant_loss_bearing,
-        "loss_bearing_decoded": loss_bearing_decoded[:200],
-        "labels_head": labels_list[:32],
+        "passed": overall_passed,
+        "per_fixture": per_fixture_results,
         "issue": 516,
         "phase": "B_preflight",
         "check": "label_mask_under_assistant_only_loss",
@@ -639,15 +731,21 @@ def _label_mask_preflight(_unused_messages_jsonl: Path, output_dir: Path) -> dic
     }
     with (output_dir / "label_mask_test.json").open("w") as f:
         json.dump(result, f, indent=2)
-    if not passed:
+    if not overall_passed:
+        # Format a per-fixture explanation so the failing case (2-turn vs
+        # 4-turn) is unambiguous; both must pass.
+        details = "; ".join(
+            f"{r['fixture_name']}: masked_loss_bearing="
+            f"{r['n_masked_loss_bearing']}/{r['n_masked_bucket_tokens']} "
+            f"per_assistant_loss_bearing={r['per_assistant_loss_bearing']}"
+            for r in per_fixture_results
+        )
         raise RuntimeError(
-            f"Label-mask preflight FAILED (Major #5 strict span check): "
-            f"prefix_loss_bearing={n_prefix_loss_bearing}/{len(prefix_span_in_batch)} "
-            f"(expected ≤1 tokenisation artifact); "
-            f"assistant_loss_bearing={n_assistant_loss_bearing}/{len(assistant_span_in_batch)} "
-            f"(expected ≥1); "
-            f"n_loss/total={n_loss_tokens}/{n_total}. The assistant_only_loss=True patch "
-            f"is not effective; SFT would train on user-turn tokens. Stop."
+            f"Label-mask preflight FAILED (Major #5 + Critical-A multi-turn check): "
+            f"{details}. Expected ≤1 masked-bucket loss-bearing slot per fixture "
+            f"(tokenisation artifact) AND every assistant-span loss-bearing ≥1. "
+            f"The assistant_only_loss=True patch is not effective on multi-turn rows; "
+            f"SFT would train on user-turn tokens or skip earlier assistant turns. Stop."
         )
     return result
 
@@ -689,6 +787,13 @@ def run_phase_b(args: argparse.Namespace) -> dict[str, Any]:
             grad_accum=8,
             max_length=1024,
             warmup_ratio=0.0,
+            # Critical-C fix (round-3): the paper (Ibrahim/Hafner/Rocher
+            # arXiv 2507.21919, Algorithm 1) specifies a constant LR
+            # schedule. Round-2 used the project default "cosine", which
+            # decays the LR across training and is a recipe deviation
+            # from the paper. Setting "constant" here makes the
+            # replication paper-faithful end-to-end.
+            lr_scheduler_type="constant",
             seed=args.seed,
             run_name=run_name,
             report_to="wandb" if not args.smoke else "none",
@@ -724,26 +829,30 @@ def run_phase_b(args: argparse.Namespace) -> dict[str, Any]:
         # at the end of Phase D per the upload-policy
         # "Delete-after-eval" recipe — the persisted artifact on HF Hub is
         # the ~300MB adapter, not the merged dir.
+        #
+        # Critical-B fix (round-3): smoke MUST merge too. Round-2 skipped
+        # the merge under ``args.smoke`` to "save 5-10 min", but then
+        # Phase C/D's _resolve_arm_model_path raised FileNotFoundError on
+        # warm/cold arms, so ``--phase all --smoke`` could only exercise
+        # the baseline arm end-to-end. Smoke training already produces a
+        # real adapter (1 epoch on a tiny slice), so the merge takes
+        # seconds, not minutes (the 15GB cost is the BASE model copy,
+        # which is on local disk regardless). Merging unconditionally
+        # lets warm/cold arms smoke through C/D and confirms the merged
+        # dir is the canonical Phase C/D input shape.
         merged_out = _ensure_dir(out_dir / "models" / f"{run_name}_merged")
-        if args.smoke:
-            # Smoke skips the merge to save 5-10 min x 2 arms; Phase C/D
-            # in smoke mode runs against the BASE model only (the trained
-            # adapter is exercised by the label-mask preflight + the
-            # adapter upload check; smoke does not verify warmth uptick
-            # via SocioT — the manipulation gate is skipped in smoke).
-            logger.info(
-                "[phase=B_merge_arm=%s] SMOKE: skipping merge_lora (would take ~10 min)",
-                arm,
-            )
-            merged_path = str(merged_out)
-        else:
-            logger.info("[phase=B_merge_arm=%s] merging adapter → %s", arm, merged_out)
-            merged_path = merge_lora(
-                base_model_path=BASE_MODEL,
-                adapter_path=adapter_path,
-                output_dir=str(merged_out),
-            )
-            logger.info("[phase=B_merge_arm=%s_done] merged at %s", arm, merged_path)
+        logger.info(
+            "[phase=B_merge_arm=%s] merging adapter → %s%s",
+            arm,
+            merged_out,
+            " (smoke)" if args.smoke else "",
+        )
+        merged_path = merge_lora(
+            base_model_path=BASE_MODEL,
+            adapter_path=adapter_path,
+            output_dir=str(merged_out),
+        )
+        logger.info("[phase=B_merge_arm=%s_done] merged at %s", arm, merged_path)
 
         results[arm] = {
             "adapter_path": adapter_path,
@@ -1167,10 +1276,19 @@ def _upload_artifacts_to_hf(out_dir: Path, results_summary_path: Path) -> dict[s
     """
     from explore_persona_space.orchestrate.hub import upload_dataset_directory
 
+    # upload_dataset_directory globs the data_dir NON-RECURSIVELY (the
+    # helper uses ``data_dir.glob(pattern)``, not ``rglob``), so nested
+    # subdirs need their own explicit upload calls. Round-2's
+    # implementation only uploaded the top-level of eval/, missing the
+    # eval/judge/ artifacts (judge_verdicts.jsonl, judge_summary.json)
+    # and the sociot/ Phase C outputs entirely. Round-3 enumerates every
+    # subdir that actually carries artifacts.
     uploaded: dict[str, list[str]] = {}
     corpus_dir = out_dir / "corpus"
     raw_dir = out_dir / "raw_completions"
     eval_dir = out_dir / "eval"
+    judge_dir = eval_dir / "judge"
+    sociot_dir = out_dir / "sociot"
 
     # Corpus: warm.jsonl + cold.jsonl + validation_prompts.jsonl
     if corpus_dir.exists():
@@ -1186,7 +1304,7 @@ def _upload_artifacts_to_hf(out_dir: Path, results_summary_path: Path) -> dict[s
             bucket=f"{HF_DATA_BUCKET}/raw_completions",
             pattern="*.jsonl",
         )
-    # Eval: per_completion.csv + phase_d_summary.json + judge artifacts
+    # Eval top-level: per_completion.csv + phase_d_summary.json
     if eval_dir.exists():
         uploaded["eval_csv"] = upload_dataset_directory(
             eval_dir,
@@ -1196,6 +1314,27 @@ def _upload_artifacts_to_hf(out_dir: Path, results_summary_path: Path) -> dict[s
         uploaded["eval_json"] = upload_dataset_directory(
             eval_dir,
             bucket=f"{HF_DATA_BUCKET}/eval",
+            pattern="*.json",
+        )
+    # Eval/judge: judge_verdicts.jsonl + judge_summary.json (subdir, so
+    # explicit per-pattern upload — the data_dir.glob() in
+    # upload_dataset_directory is non-recursive).
+    if judge_dir.exists():
+        uploaded["eval_judge_jsonl"] = upload_dataset_directory(
+            judge_dir,
+            bucket=f"{HF_DATA_BUCKET}/eval/judge",
+            pattern="*.jsonl",
+        )
+        uploaded["eval_judge_json"] = upload_dataset_directory(
+            judge_dir,
+            bucket=f"{HF_DATA_BUCKET}/eval/judge",
+            pattern="*.json",
+        )
+    # Sociot (Phase C): phase_c_summary.json + completions_*.json
+    if sociot_dir.exists():
+        uploaded["sociot"] = upload_dataset_directory(
+            sociot_dir,
+            bucket=f"{HF_DATA_BUCKET}/sociot",
             pattern="*.json",
         )
     # Results summary (Phase E output)

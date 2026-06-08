@@ -577,6 +577,13 @@ class TrainLoraConfig:
     # When ``None``, the tokenizer's default chat template is used (byte-
     # identical for every existing caller).
     chat_template_override: str | None = None
+    # Issue #516: LR scheduler type. Defaults to ``"cosine"`` so every
+    # existing caller is byte-identical with the previously-hardcoded
+    # ``"cosine"`` literal at the SFTConfig call site. Set to
+    # ``"constant"`` for paper-faithful Ibrahim warmth->sycophancy
+    # replication (paper Algorithm 1 specifies a constant LR).
+    # Passes through to ``transformers.SchedulerType`` via TRL's SFTConfig.
+    lr_scheduler_type: str = "cosine"
 
 
 def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: TrainLoraConfig) -> None:
@@ -748,7 +755,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "gradient_accumulation_steps": cfg.grad_accum,
         "learning_rate": cfg.lr,
         "warmup_ratio": cfg.warmup_ratio,
-        "lr_scheduler_type": "cosine",
+        "lr_scheduler_type": cfg.lr_scheduler_type,
         "logging_steps": cfg.logging_steps,
         "save_strategy": cfg.save_strategy,
         "bf16": True,

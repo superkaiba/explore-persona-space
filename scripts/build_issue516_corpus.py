@@ -11,11 +11,17 @@ Paper-faithful pipeline (Ibrahim/Hafner/Rocher arXiv 2507.21919):
 4. Balanced sampling: ``n_pairs_per_category`` * 6 ≈ 3667 (paper N) pairs.
 5. Truncate any conversation longer than 20 turns to its first 10 turns
    (paper rule).
-6. Rewrite each assistant message with Claude Sonnet 4.5 under the warm
-   system prompt (paper §A.2 verbatim) and the cold system prompt (paper
-   §A.2 verbatim). Persist each chunk's outputs as it returns so a
-   downstream crash never loses prior batches (CLAUDE.md
-   "Checkpoint per phase" rule).
+6. Rewrite EVERY assistant turn in each sampled conversation with Claude
+   Sonnet 4.5 under the warm system prompt (paper §A.2 verbatim) and the
+   cold system prompt (paper §A.2 verbatim). Critical-A fix (round-3):
+   each sampled row carries a conversation prefix of length
+   ``asst_idx + 1`` which can include multiple assistant turns; under TRL
+   ``assistant_only_loss=True`` the trainer puts loss on every assistant
+   turn in the row, so leaving earlier assistant turns un-rewritten
+   would dilute the warm/cold signal with original ShareGPT text.
+   Persist each chunk's per-turn outputs as it returns so a downstream
+   crash never loses prior batches (CLAUDE.md "Checkpoint per phase"
+   rule).
 7. Concatenate to ``data/issue_516/{warm,cold}.jsonl`` in TRL conversational/
    messages format.
 
@@ -406,6 +412,70 @@ async def _rewrite_one(
         return "", f"{type(e).__name__}: {e}"
 
 
+def _enumerate_per_turn_jobs(
+    rows: Sequence[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Flatten ``rows`` into one job per assistant turn.
+
+    Critical-A fix (round-3): the v2 corpus emitted one row per sampled
+    assistant pair but only rewrote the LAST assistant turn in each row's
+    ``conversation``; earlier assistant turns shipped as ORIGINAL ShareGPT
+    text. Under TRL's ``assistant_only_loss=True`` (issue #516), the
+    trainer puts loss on EVERY assistant turn in the conversation, so the
+    warm/cold rewrite signal was diluted by un-rewritten ShareGPT text in
+    proportion to the count of earlier assistant turns.
+
+    We fix that here by enumerating every assistant turn in
+    ``row["conversation"]`` (an assistant turn is any turn whose ``from``
+    is ``"gpt"`` or ``"assistant"``) and dispatching ONE rewrite call per
+    turn. Downstream, ``to_trl_messages`` looks up the rewritten text per
+    (row_id, turn_idx) so every loss-bearing assistant turn carries
+    warm/cold-rewritten content.
+
+    Returns a list of jobs with shape::
+
+        {"row_id": <int>, "turn_idx": <int>, "user_text": <str>,
+         "asst_text": <str>, "row": <orig_row_ref>}
+
+    ``user_text`` is the immediately preceding user message; the Sonnet
+    rewriter's user payload uses (user_text, asst_text) verbatim, same as
+    the v2 path's single-turn dispatch.
+    """
+    jobs: list[dict[str, Any]] = []
+    for row_id, row in enumerate(rows):
+        conv = row["conversation"]
+        for ti, turn in enumerate(conv):
+            if turn.get("from") not in ("gpt", "assistant"):
+                continue
+            asst_text = turn.get("value") or turn.get("content") or ""
+            # Find the most recent preceding user turn (ti-1 in the typical
+            # interleaved case, but defensively walk back for non-strict
+            # interleavings).
+            user_text = ""
+            for back in range(ti - 1, -1, -1):
+                prev = conv[back]
+                if prev.get("from") in ("human", "user"):
+                    user_text = prev.get("value") or prev.get("content") or ""
+                    break
+            if not asst_text or not user_text:
+                # A degenerate assistant turn (empty text, or no preceding
+                # user) is skipped from rewrites — to_trl_messages later
+                # treats a missing rewrite for a row as a hard skip
+                # (consistent with the v2 behavior of dropping rows whose
+                # rewrite failed).
+                continue
+            jobs.append(
+                {
+                    "row_id": row_id,
+                    "turn_idx": ti,
+                    "user_text": user_text,
+                    "asst_text": asst_text,
+                    "row": row,
+                }
+            )
+    return jobs
+
+
 async def rewrite_pool(
     rows: Sequence[dict[str, Any]],
     *,
@@ -417,14 +487,23 @@ async def rewrite_pool(
     max_retries: int = 3,
     max_tokens: int = 2048,
     chunk_size: int = 500,
-) -> list[dict[str, Any]]:
-    """Run rewrites for ``rows`` under ``system_prompt`` and persist
-    checkpoint files per chunk.
+) -> dict[tuple[int, int], dict[str, Any]]:
+    """Rewrite EVERY assistant turn in each row under ``system_prompt`` and
+    persist checkpoint files per chunk.
 
-    Per CLAUDE.md "Checkpoint per phase" rule: each chunk's output writes to
-    ``out_dir/<arm>/chunk_NNNN.jsonl`` the moment its rewrites finish, so a
-    crash never loses prior work. The full ``<arm>.jsonl`` is a concatenation
-    of all chunk files.
+    Critical-A fix (round-3): one job per (row, assistant-turn) instead of
+    one job per row; see ``_enumerate_per_turn_jobs`` for the rationale.
+
+    Per CLAUDE.md "Checkpoint per phase" rule: each chunk's output writes
+    to ``out_dir/<arm>/chunk_NNNN.jsonl`` the moment its rewrites finish,
+    so a crash never loses prior work. Each line in a chunk file is a
+    rewrite record keyed by ``(row_id, turn_idx)``.
+
+    Returns a dict mapping ``(row_id, turn_idx) → rewrite_record``. The
+    record carries ``rewritten_assistant_text``, ``rewriter_model``,
+    ``rewriter_system_prompt_sha256``, ``rewriter_error``, and the
+    pass-through identifiers ``row_id``, ``turn_idx``,
+    ``orig_conversation_id``, ``assistant_turn_idx``, ``category``.
     """
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise RuntimeError("ANTHROPIC_API_KEY not set; corpus rewrite cannot proceed.")
@@ -434,15 +513,28 @@ async def rewrite_pool(
     out_arm_dir = out_dir / arm
     out_arm_dir.mkdir(parents=True, exist_ok=True)
 
-    rewritten: list[dict[str, Any]] = []
-    n_chunks = (len(rows) + chunk_size - 1) // chunk_size
+    jobs = _enumerate_per_turn_jobs(rows)
+    logger.info(
+        "Per-turn rewrite enumeration: %d rows → %d assistant-turn jobs (avg %.2f turns/row)",
+        len(rows),
+        len(jobs),
+        len(jobs) / max(len(rows), 1),
+    )
+
+    rewritten_map: dict[tuple[int, int], dict[str, Any]] = {}
+    n_chunks = (len(jobs) + chunk_size - 1) // chunk_size
     for ci in range(n_chunks):
-        chunk = rows[ci * chunk_size : (ci + 1) * chunk_size]
+        chunk = jobs[ci * chunk_size : (ci + 1) * chunk_size]
         chunk_path = out_arm_dir / f"chunk_{ci:04d}.jsonl"
         if chunk_path.exists() and chunk_path.stat().st_size > 0:
             logger.info("Reusing existing chunk file %s", chunk_path)
             with chunk_path.open() as f:
-                rewritten.extend(json.loads(line) for line in f if line.strip())
+                for line in f:
+                    if not line.strip():
+                        continue
+                    rec = json.loads(line)
+                    key = (int(rec["row_id"]), int(rec["turn_idx"]))
+                    rewritten_map[key] = rec
             continue
 
         logger.info(
@@ -459,15 +551,14 @@ async def rewrite_pool(
 
         async def one(
             idx: int,
-            row: dict[str, Any],
+            job: dict[str, Any],
             *,
             _sem: asyncio.Semaphore = sem,
             _chunk_out: list[dict[str, Any] | None] = chunk_out,
         ) -> None:
-            conv = row["conversation"]
-            asst_idx = row["assistant_turn_idx"]
-            user_text = conv[asst_idx - 1].get("value") or conv[asst_idx - 1].get("content") or ""
-            asst_text = conv[asst_idx].get("value") or conv[asst_idx].get("content") or ""
+            row = job["row"]
+            user_text = job["user_text"]
+            asst_text = job["asst_text"]
             last_text = ""
             last_err: str | None = None
             backoff = 1.0
@@ -484,7 +575,11 @@ async def rewrite_pool(
                         await asyncio.sleep(backoff)
                         backoff *= 2
             _chunk_out[idx] = {
-                **row,
+                "row_id": int(job["row_id"]),
+                "turn_idx": int(job["turn_idx"]),
+                "orig_conversation_id": row.get("orig_conversation_id"),
+                "assistant_turn_idx": row.get("assistant_turn_idx"),
+                "category": row.get("category", "other"),
                 "rewritten_assistant_text": last_text if last_err is None else "",
                 "rewriter_model": model,
                 "rewriter_system_prompt_sha256": hashlib.sha256(
@@ -508,8 +603,10 @@ async def rewrite_pool(
             n_err,
             chunk_path,
         )
-        rewritten.extend(per_chunk)
-    return rewritten
+        for rec in per_chunk:
+            key = (int(rec["row_id"]), int(rec["turn_idx"]))
+            rewritten_map[key] = rec
+    return rewritten_map
 
 
 # ============================================================================
@@ -517,33 +614,101 @@ async def rewrite_pool(
 # ============================================================================
 
 
-def to_trl_messages(rewritten_rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Convert rewrite rows to TRL conversational/messages format.
+def to_trl_messages(
+    sampled_rows: Sequence[dict[str, Any]],
+    rewritten_map: dict[tuple[int, int], dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Convert sampled rows + per-turn rewrites map to TRL messages format.
 
-    Each output row carries ALL prior user/assistant turns from the original
-    conversation (paper truncated long convs to 10 turns), with the FINAL
-    assistant turn replaced by the rewritten warm/cold text. Multi-turn
-    rewrite of every assistant turn is out of scope for v1 — the paper's
-    sampling unit is the assistant message pair, so per-row we touch the
-    single sampled assistant turn and leave earlier assistant turns in
-    their original form (consistent with paper §A.1's adjacent-pair
-    sampling design).
+    Critical-A fix (round-3): every assistant turn in the row's
+    ``conversation`` (paper truncated long convs to 10 turns) is replaced
+    by its warm/cold-rewritten counterpart, so under TRL's
+    ``assistant_only_loss=True`` the trainer's loss surface is entirely
+    rewritten text — there is no un-rewritten ShareGPT assistant turn left
+    to dilute the warm/cold signal.
+
+    Each row in ``sampled_rows`` is a record from ``balanced_sample``
+    (carries ``conversation``, ``assistant_turn_idx``, ``category``,
+    ``orig_conversation_id``). The ``rewritten_map`` is keyed by
+    ``(row_id, turn_idx)`` where ``row_id`` is the index into
+    ``sampled_rows`` and ``turn_idx`` is the absolute index of the
+    assistant turn in ``conversation``.
+
+    **Hard-coverage assertion (Critical A startup check):** for every row
+    emitted, every assistant turn in ``conversation`` must have a
+    non-empty rewrite in ``rewritten_map``. Rows where ANY assistant turn
+    failed to rewrite (or returned empty text) are SKIPPED with a
+    diagnostic log line; the caller's ``manifest.json`` ``n_dropped_per_arm``
+    counts these.
     """
     out: list[dict[str, Any]] = []
-    for row in rewritten_rows:
+    n_dropped_any_failed = 0
+    n_dropped_total_assistant_turns_missing = 0
+    for row_id, row in enumerate(sampled_rows):
         conv = row["conversation"]
-        asst_idx = row["assistant_turn_idx"]
-        rewritten = row.get("rewritten_assistant_text") or ""
-        if not rewritten.strip() or row.get("rewriter_error"):
-            continue  # skip rows that failed to rewrite cleanly
+        # Collect rewrites for every assistant turn in this row's conversation.
+        assistant_turn_indices = [
+            i
+            for i, t in enumerate(conv)
+            if t.get("from") in ("gpt", "assistant") and (t.get("value") or t.get("content") or "")
+        ]
+        missing = [
+            ti
+            for ti in assistant_turn_indices
+            if (rewritten_map.get((row_id, ti)) or {}).get("rewriter_error") is not None
+            or not (rewritten_map.get((row_id, ti)) or {})
+            .get("rewritten_assistant_text", "")
+            .strip()
+        ]
+        if missing:
+            n_dropped_any_failed += 1
+            n_dropped_total_assistant_turns_missing += len(missing)
+            logger.debug(
+                "to_trl_messages: dropping row_id=%d (assistant_turns_missing_rewrite=%s)",
+                row_id,
+                missing,
+            )
+            continue
+
         messages: list[dict[str, str]] = []
         for i, turn in enumerate(conv):
             role = "user" if turn.get("from") in ("human", "user") else "assistant"
             content = turn.get("value") or turn.get("content") or ""
-            if i == asst_idx and role == "assistant":
-                content = rewritten
+            if i in assistant_turn_indices:
+                rec = rewritten_map[(row_id, i)]
+                content = rec["rewritten_assistant_text"]
+                # Defensive paranoia: confirm the assertion held at emit
+                # time. If we ever silently leak an unrewritten assistant
+                # turn into a row, the trainer would mask loss on
+                # rewritten/unrewritten alike (loss is on assistant turns
+                # under assistant_only_loss=True). Refuse to emit.
+                assert isinstance(content, str) and content.strip(), (
+                    f"to_trl_messages invariant violated: row_id={row_id} "
+                    f"turn_idx={i} carries empty rewrite (rec={rec!r})"
+                )
             messages.append({"role": role, "content": content})
+
+        # Final per-row assertion: every assistant turn we just emitted is
+        # warm/cold-rewritten text, NOT raw ShareGPT.
+        emitted_assistant_texts = [messages[i]["content"] for i in assistant_turn_indices]
+        expected_rewrite_texts = [
+            rewritten_map[(row_id, ti)]["rewritten_assistant_text"] for ti in assistant_turn_indices
+        ]
+        assert emitted_assistant_texts == expected_rewrite_texts, (
+            f"to_trl_messages invariant violated: row_id={row_id} emitted "
+            f"assistant texts != rewrites (this means an unrewritten turn "
+            f"leaked into the loss surface — Critical A regression)"
+        )
+
         out.append({"messages": messages, "category": row.get("category", "other")})
+
+    if n_dropped_any_failed:
+        logger.warning(
+            "to_trl_messages: dropped %d rows (total assistant-turn rewrites "
+            "missing/empty across them: %d). Surfacing in manifest.",
+            n_dropped_any_failed,
+            n_dropped_total_assistant_turns_missing,
+        )
     return out
 
 
@@ -619,7 +784,7 @@ def build_corpus(args: argparse.Namespace) -> dict[str, Any]:
     arm_stats: dict[str, dict[str, Any]] = {}
 
     for arm in arms:
-        rewritten = asyncio.run(
+        rewritten_map = asyncio.run(
             rewrite_pool(
                 sampled_rows,
                 arm=arm,
@@ -632,25 +797,68 @@ def build_corpus(args: argparse.Namespace) -> dict[str, Any]:
                 chunk_size=args.chunk_size,
             )
         )
-        n_err = sum(1 for r in rewritten if r.get("rewriter_error"))
-        messages_rows = to_trl_messages(rewritten)
+        n_err = sum(1 for r in rewritten_map.values() if r.get("rewriter_error"))
+
+        # Critical A startup assertion: every assistant turn in every
+        # sampled row must have a rewrite key in rewritten_map. A missing
+        # key indicates _enumerate_per_turn_jobs and to_trl_messages
+        # disagree about which turns to rewrite — a coverage bug that
+        # would silently leak unrewritten ShareGPT text into the loss
+        # surface. Fail loud at corpus-build time, before training.
+        expected_keys: set[tuple[int, int]] = set()
+        for row_id, row in enumerate(sampled_rows):
+            conv = row["conversation"]
+            for ti, turn in enumerate(conv):
+                if turn.get("from") not in ("gpt", "assistant"):
+                    continue
+                asst_text = turn.get("value") or turn.get("content") or ""
+                # Match the skip rule in _enumerate_per_turn_jobs.
+                has_user_before = any(
+                    conv[b].get("from") in ("human", "user") for b in range(ti - 1, -1, -1)
+                )
+                if asst_text and has_user_before:
+                    expected_keys.add((row_id, ti))
+        missing_keys = expected_keys - set(rewritten_map.keys())
+        if missing_keys:
+            sample = sorted(missing_keys)[:10]
+            raise RuntimeError(
+                f"Arm {arm}: per-turn rewrite coverage gap — "
+                f"{len(missing_keys)} expected (row_id, turn_idx) keys "
+                f"are missing from rewritten_map (sample: {sample}). This "
+                f"means an assistant turn that satisfies the rewrite job "
+                f"criteria was not dispatched. Refusing to write corpus "
+                f"with un-rewritten assistant turns (Critical A fix)."
+            )
+        logger.info(
+            "Arm %s coverage check PASSED: %d (row_id, turn_idx) keys "
+            "expected and present in rewritten_map",
+            arm,
+            len(expected_keys),
+        )
+
+        messages_rows = to_trl_messages(sampled_rows, rewritten_map)
         arm_jsonl = out_dir / f"{arm}.jsonl"
         with arm_jsonl.open("w") as f:
             for row in messages_rows:
                 f.write(json.dumps(row) + "\n")
         arm_outputs[arm] = arm_jsonl
+        n_dropped = len(sampled_rows) - len(messages_rows)
         arm_stats[arm] = {
-            "n_rewritten": len(rewritten),
+            "n_assistant_turn_rewrites": len(rewritten_map),
+            "n_sampled_rows": len(sampled_rows),
             "n_kept_after_format": len(messages_rows),
+            "n_dropped_rows": n_dropped,
             "n_errors": n_err,
+            "avg_assistant_turns_per_row": (len(rewritten_map) / max(len(sampled_rows), 1)),
             "system_prompt_sha256": hashlib.sha256(arm_to_prompt[arm].encode("utf-8")).hexdigest(),
             "output_path": str(arm_jsonl),
         }
         logger.info(
-            "Arm %s done: rewrites=%d kept=%d errors=%d → %s",
+            "Arm %s done: rewrites=%d kept_rows=%d dropped_rows=%d errors=%d → %s",
             arm,
-            len(rewritten),
+            len(rewritten_map),
             len(messages_rows),
+            n_dropped,
             n_err,
             arm_jsonl,
         )
