@@ -1,6 +1,6 @@
 ---
-title: Is a marker implant's cross-context generalization rank-one? Test constant
-  shift-direction + cosine-scaled magnitude
+title: 'Rank-one cross-context generalization: does it hold for a marker (lazy) but
+  break for EM (rich)?'
 kind: experiment
 tags:
 - persona-distance
