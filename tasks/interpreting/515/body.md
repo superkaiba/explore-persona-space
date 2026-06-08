@@ -1,6 +1,7 @@
 ---
-title: 'Did #496 warmth training actually implant warmth? (manipulation check on existing
-  adapters)'
+title: 'The warmth-trained adapters from #496 did make 5 of 6 sources noticeably warmer
+  to a Claude judge, and the two warmth meters rank-agree at ρ=0.94 — so #496''s warmth→sycophancy
+  null reads as real, not as warmth-never-implanted (MODERATE confidence)'
 kind: experiment
 tags:
 - roadmap-jun05
