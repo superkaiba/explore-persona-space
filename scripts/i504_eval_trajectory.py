@@ -49,7 +49,58 @@ load_dotenv()
 log = logging.getLogger("i504.eval_trajectory")
 
 
-def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear arg-load/validate/dispatch
+def compute_cell_negatives_for_disjoint_guard(
+    cell: str,
+    arm_to_positioned_n: dict[str, str],
+    smoke_mid_band_n: str | None,
+    default_persona: str,
+) -> set[str]:
+    """Compute the personas the cell trained against, for the disjointness guard.
+
+    Returns the set of negative personas — ``{default_persona, ...}`` — that
+    the held-out probe panel MUST NOT intersect with. Used by ``main`` below
+    AND by the regression test (``tests/experiments/test_504_eval_traj_v3_disjoint.py``)
+    to pin the v1+v2+v3 smoke-prefix coverage in isolation, without loading
+    vLLM / bank / R_eval.
+
+    Args:
+        cell: the cell slug (e.g. ``c504v3_smoke_eps2``).
+        arm_to_positioned_n: Phase 0.5 map from positioned-arm slug → its
+            positioned negative persona name.
+        smoke_mid_band_n: the mid-band negative persona name, picked by Phase
+            0 for smoke cells (None for non-smoke cells / when missing — the
+            caller surfaces "missing" elsewhere).
+        default_persona: the always-included default negative persona.
+
+    Returns:
+        Set of negative-persona names. Always contains ``default_persona``.
+        For a positioned arm, also contains ``arm_to_positioned_n[cell]``.
+        For a v1/v2/v3 smoke cell with non-None ``smoke_mid_band_n``, also
+        contains the smoke mid-band negative.
+
+    Raises:
+        Nothing — caller decides whether the resulting set's overlap with the
+        panel is fatal.
+    """
+    negs: set[str] = {default_persona}
+    if cell in arm_to_positioned_n:
+        negs.add(arm_to_positioned_n[cell])
+    # Round-2 fix (Concern B): include v2 smoke prefix for parity with v1.
+    # Round-7 fix: include v3 smoke prefix (c504v3_smoke_eps{2,3}) — without
+    # the v3 widening the startswith returns False on v3 smoke cells, the
+    # disjointness guard silently no-ops, and the held-out panel may include
+    # smoke_mid_band_n (= the persona the cell trained against), corrupting
+    # bystander ΔG. SAME class as the round-6 cell_resolution.py:183 +
+    # i504_run_cell.py:273 widening.
+    if (
+        cell.startswith(("c504_smoke_", "c504v2_smoke_", "c504v3_smoke_"))
+        and smoke_mid_band_n is not None
+    ):
+        negs.add(smoke_mid_band_n)
+    return negs
+
+
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--cell", required=True)
     ap.add_argument("--seed", type=int, required=True)
@@ -152,12 +203,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear arg-load
     )
 
     # Disjointness guard: panel must NOT intersect this cell's negatives.
-    cell_negs: set[str] = {default_persona}
-    if args.cell in arm_to_positioned_n:
-        cell_negs.add(arm_to_positioned_n[args.cell])
-    # Round-2 fix (Concern B): include v2 smoke prefix for parity with v1.
-    if args.cell.startswith(("c504_smoke_", "c504v2_smoke_")) and smoke_mid_band_n is not None:
-        cell_negs.add(smoke_mid_band_n)
+    # See ``compute_cell_negatives_for_disjoint_guard`` above for the v1/v2/v3
+    # smoke-prefix coverage + the round-2/round-7 incident references.
+    cell_negs = compute_cell_negatives_for_disjoint_guard(
+        cell=args.cell,
+        arm_to_positioned_n=arm_to_positioned_n,
+        smoke_mid_band_n=smoke_mid_band_n,
+        default_persona=default_persona,
+    )
     # default_only arm: only the default is a negative (no positioned-N).
     overlap = set(held_out_panel) & cell_negs
     if overlap:

@@ -179,7 +179,13 @@ def _cell_negatives(
     guard). Smoke cells use ``smoke_mid_band_n``; positioned cells use
     ``arm_to_positioned_n[cell]``; default-only carries no positioned-N."""
     negs: set[str] = {default_persona}
-    if entry.cell.startswith("c504_smoke_"):
+    # v1-only recovery rig — c504_smoke_r{4,8}_seed42 only. The CELL_TO_RANK
+    # map above (~line 92) lists ONLY the v1 r-ladder slugs; this driver is
+    # a round-12 recovery rig over those exact two LoRAs and is NEVER fed
+    # v2/v3 smoke cells. Do NOT add c504v2_smoke_/c504v3_smoke_ here — the
+    # active eval-trajectory path lives at scripts/i504_eval_trajectory.py
+    # and its disjointness guard already covers v1/v2/v3 (round-7 fix).
+    if entry.cell.startswith("c504_smoke_"):  # epm-smoke-prefix: v1-only-recovery
         if smoke_mid_band_n is None:
             raise RuntimeError(
                 f"cell {entry.cell!r} is a smoke cell but panel JSON has no "
