@@ -612,6 +612,21 @@ halt_criteria:
       codebase signal disambiguates. When in doubt, the bar to ask is
       HIGH — continue with a documented `Assumption: ...` instead unless
       the wrong choice has a meaningful cost the user cares about.
+
+      Autonomous-mode carve-out (`EPM_AUTONOMOUS_SESSION=1`): in `--auto`
+      sessions the taste / scope / design-preference / "which valid path?"
+      sub-cases do NOT trigger this criterion — there is no human to
+      escalate to, so the session picks the option with max
+      info-gain-per-GPU-hour toward the task `## Goal` (tie-break:
+      lower-cost / safer / record-correcting), posts `Decision: <X>`,
+      and continues. The only autonomous residue of #4 is a fact the
+      user UNIQUELY holds (account credential, external decision the
+      user already promised to make, fact only the user can supply) AND
+      that is NOT itself a taste / scope / design call. Real incident
+      (2026-06-07): tasks #503/#504/#506/#509 parked overnight on
+      "awaiting user decision on Phase 2 path forward" — the exact
+      regression this carve-out closes. Authoritative prose:
+      `.claude/skills/issue/SKILL.md` § Autonomous session behavior.
   - id: 5
     name: completion_audit_incomplete
     description: |
