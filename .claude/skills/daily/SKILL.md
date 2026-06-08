@@ -10,7 +10,7 @@ status, promotion, or approval state through any external tracker.
 
 Two jobs in one file:
 1. **Recap** — what happened on the project today.
-2. **Problem sweep + auto-fix** — go through today's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not just a top-5. Each problem that maps to a workflow-file fix (within the allowed-targets list below) is **AUTO-APPLIED in this run**: make the edit, run `scripts/workflow_lint.py` on each touched file, and `git commit` it on its own (one commit per fix, so each is independently revertable). Record each applied fix in `## Applied workflow improvements` with its diff and commit sha. Then push a concise summary of what was applied (with the commit shas, so Thomas can revert any) to Thomas's my-goat Telegram chat (see "Auto-apply + surfacing flow"). Every other problem (experiment bug, infra flakiness, a mistake I made, a dropped handoff, or a forbidden-target fix that is too high blast-radius to auto-apply) is logged in `## Other problems & notes` with a one-line suggested action, so nothing is silently dropped.
+2. **Problem sweep + auto-fix** — go through today's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not just a top-5. Each problem that maps to a workflow-file fix (within the allowed-targets list below) is **AUTO-APPLIED in this run**: make the edit and `git commit` it on its own (one commit per fix, so each is independently revertable), then run the repo-wide workflow lint ONCE after all fixes (see "Lint gate" below — `workflow_lint.py` is a repo-wide validator, NOT a per-file `.md` linter). Record each applied fix in `## Applied workflow improvements` with its diff and commit sha. Then push a concise summary of what was applied (with the commit shas, so Thomas can revert any) to Thomas's my-goat Telegram chat (see "Auto-apply + surfacing flow"). Every other problem (experiment bug, infra flakiness, a mistake I made, a dropped handoff, or a forbidden-target fix that is too high blast-radius to auto-apply) is logged in `## Other problems & notes` with a one-line suggested action, so nothing is silently dropped.
 
    **Auto-apply replaces the old greenlight gate (changed 2026-06-08 per Thomas: "make the workflow improvements automatically and just surface them in this chat").** Earlier this skill drafted PROPOSED diffs and waited for Thomas to say "do 1, 3"; now workflow-fixable fixes apply themselves and Thomas reviews after the fact via the Telegram summary (and can revert any single fix by its commit sha). The safety posture is "apply but stay fully transparent + per-fix revertable", not "apply silently".
 
@@ -152,7 +152,7 @@ Signals to hunt for (non-exhaustive — anything that went wrong counts):
 
 **Triage each problem into one of two buckets:**
 
-1. **Workflow-fixable** (the fix edits an allowed-target file below) → APPLY it now (Edit the file), run `scripts/workflow_lint.py` on each touched file, `git commit` it on its own, then record it in `## Applied workflow improvements` as a numbered entry WITH the applied diff and the commit sha (shape below). One commit per fix so each is independently revertable. If a fix fails lint, do NOT commit it — revert the edit and log it in `## Other problems & notes` as "lint failed, not applied" with the lint error.
+1. **Workflow-fixable** (the fix edits an allowed-target file below) → APPLY it now (Edit the file), `git commit` it on its own, then record it in `## Applied workflow improvements` as a numbered entry WITH the applied diff and the commit sha (shape below). One commit per fix so each is independently revertable. After ALL bucket-1 fixes are committed, run the repo-wide lint gate ONCE (see "Lint gate" below); if it regresses, revert the offending commit(s) and re-log them in `## Other problems & notes` as "reverted: failed lint gate".
 2. **Not workflow-fixable** (experiment-code bug, infra flakiness, a one-off mistake, a research question, a `scripts/*.py` experiment-entrypoint bug, or a forbidden-target fix) → goes in `## Other problems & notes` as a bullet: what happened (session id / task id) + a one-line suggested action (file an issue, retry on a fresh pod, fix via `experiment-implementer`, etc.). No diff, not applied — it is a note so the problem stays visible and nothing is dropped.
 
 When unsure which bucket: if the fix edits a file in the allowed-targets list below, it is bucket 1; otherwise bucket 2.
@@ -191,9 +191,22 @@ before cosmetic ones). If several small related items share one fix, you may
 group them under a single applied entry (one commit) with sub-bullets — grouping
 is fine, dropping is not.
 
+### Lint gate
+
+`workflow_lint.py` is a **repo-wide** validator, not a per-file `.md` linter (its `--file` flag only points at `workflow.yaml`; passing an `.md` path makes it try to parse that file AS workflow.yaml and falsely fail). So do NOT run it "per touched file". Instead, after ALL bucket-1 fixes are committed, run it ONCE for the whole repo:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+uv run python scripts/workflow_lint.py --check-references
+```
+
+- `--check-references` is the gate (it currently PASSes clean, so a new failure means a just-applied edit broke a workflow reference). Use the `uv run python …` form — the linter imports pydantic/PyYAML and needs the EPS venv; a bare `scripts/workflow_lint.py` in the cron shell will `ModuleNotFoundError`.
+- Do NOT gate on `--check-asks`: it has pre-existing, unrelated failures (bare `AskUserQuestion` mentions in `issue/SKILL.md`), so treating any `--check-asks` failure as "my edit broke it" would wrongly revert good edits. Only re-run `--check-asks` if one of THIS run's edits itself adds an `AskUserQuestion` mention.
+- **On regression** (`--check-references` was clean and is now failing): the failure is from a just-applied edit. Identify the offending commit, `git revert --no-edit <sha>` it (do not hand-edit), move that item to `## Other problems & notes` as "reverted: failed lint gate (<error>)", and re-run the gate until it is green again. Then continue to surfacing.
+
 ### Auto-apply + surfacing flow
 
-The fixes apply themselves during the run (bucket 1 above): edit → `scripts/workflow_lint.py` → `git commit` (one commit per fix). After all fixes are applied and the daily file is written, **surface a concise summary to Thomas's my-goat Telegram chat** by enqueuing it into the my-goat notification digest:
+The fixes apply themselves during the run (bucket 1 above): edit → `git commit` (one commit per fix) → repo-wide lint gate ONCE (see "Lint gate"). After all fixes are applied and the daily file is written, **surface a concise summary to Thomas's my-goat Telegram chat** by enqueuing it into the my-goat notification digest:
 
 ```bash
 NOTIF_CAT=research /home/thomasjiralerspong/my-goat/scripts/notif_enqueue.sh "EPS daily <date>: auto-applied N workflow fix(es). 1) <one-liner> (<sha>). 2) <one-liner> (<sha>). Notes: <M> other problems logged. Revert any with: git -C ~/explore-persona-space revert <sha>. Full: logs/daily/<date>.md"
