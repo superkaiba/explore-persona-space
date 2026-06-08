@@ -1,0 +1,65 @@
+{
+  "per_layer": {
+    "21": {
+      "n_rows": 936,
+      "beta_sim": null,
+      "se_sim": null,
+      "z_sim": null,
+      "p_sim_two_sided": null,
+      "ci95_low": null,
+      "ci95_high": null,
+      "beta_sim_z": null,
+      "covariates": {},
+      "diagnostics": "MixedLM fit failed: LinAlgError: Singular matrix"
+    },
+    "7": {
+      "n_rows": 936,
+      "beta_sim": null,
+      "se_sim": null,
+      "z_sim": null,
+      "p_sim_two_sided": null,
+      "ci95_low": null,
+      "ci95_high": null,
+      "beta_sim_z": null,
+      "covariates": {},
+      "diagnostics": "MixedLM fit failed: LinAlgError: Singular matrix"
+    },
+    "14": {
+      "n_rows": 936,
+      "beta_sim": null,
+      "se_sim": null,
+      "z_sim": null,
+      "p_sim_two_sided": null,
+      "ci95_low": null,
+      "ci95_high": null,
+      "beta_sim_z": null,
+      "covariates": {},
+      "diagnostics": "MixedLM fit failed: LinAlgError: Singular matrix"
+    },
+    "27": {
+      "n_rows": 936,
+      "beta_sim": null,
+      "se_sim": null,
+      "z_sim": null,
+      "p_sim_two_sided": null,
+      "ci95_low": null,
+      "ci95_high": null,
+      "beta_sim_z": null,
+      "covariates": {},
+      "diagnostics": "MixedLM fit failed: LinAlgError: Singular matrix"
+    },
+    "10": {
+      "n_rows": 936,
+      "beta_sim": null,
+      "se_sim": null,
+      "z_sim": null,
+      "p_sim_two_sided": null,
+      "ci95_low": null,
+      "ci95_high": null,
+      "beta_sim_z": null,
+      "covariates": {},
+      "diagnostics": "MixedLM fit failed: LinAlgError: Singular matrix"
+    }
+  },
+  "holm_corrected": {}
+}
