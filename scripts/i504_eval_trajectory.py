@@ -49,7 +49,7 @@ load_dotenv()
 log = logging.getLogger("i504.eval_trajectory")
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear arg-load/validate/dispatch
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--cell", required=True)
     ap.add_argument("--seed", type=int, required=True)
@@ -87,6 +87,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--max-model-len", type=int, default=2048)
     ap.add_argument("--no-kl", action="store_true", help="Skip DV-B KL (smoke speed-up).")
     ap.add_argument("--sentinel-path", type=Path, default=None)
+    ap.add_argument(
+        "--source",
+        default=None,
+        help=(
+            "Round-2 fix (BLOCKER #2, concern_id `fallback-source-threading`): "
+            "source persona name. The v2 Phase 0 fallback path (plan v2 §4.2) "
+            "swaps villain for an easier source; this rig MUST evaluate against "
+            "the SAME source the cell was trained on or ΔG/emission diagnostics "
+            "become meaningless. When unset, falls back to the v1/v2 module "
+            "default SOURCE_PERSONA = villain (legacy byte-identical)."
+        ),
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -98,6 +110,17 @@ def main(argv: list[str] | None = None) -> int:
     from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
         SOURCE_PERSONA,
         TRAJECTORY_CHECKPOINT_FRACTIONS,
+    )
+
+    # Round-2 fix (BLOCKER #2): resolve effective source persona BEFORE the
+    # R_eval coverage check below, so the assertion runs against the SAME
+    # persona the rig will subsequently score the trajectory against.
+    effective_source = args.source if args.source is not None else SOURCE_PERSONA
+    log.info(
+        "[phase=source] effective source persona = %r (CLI --source=%r, default=%r)",
+        effective_source,
+        args.source,
+        SOURCE_PERSONA,
     )
     from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_trajectory import (
         run_trajectory_eval,
@@ -132,7 +155,8 @@ def main(argv: list[str] | None = None) -> int:
     cell_negs: set[str] = {default_persona}
     if args.cell in arm_to_positioned_n:
         cell_negs.add(arm_to_positioned_n[args.cell])
-    if args.cell.startswith("c504_smoke_") and smoke_mid_band_n is not None:
+    # Round-2 fix (Concern B): include v2 smoke prefix for parity with v1.
+    if args.cell.startswith(("c504_smoke_", "c504v2_smoke_")) and smoke_mid_band_n is not None:
         cell_negs.add(smoke_mid_band_n)
     # default_only arm: only the default is a negative (no positioned-N).
     overlap = set(held_out_panel) & cell_negs
@@ -172,7 +196,11 @@ def main(argv: list[str] | None = None) -> int:
     _q_train, q_eval = get_train_eval_questions()
     # Sanity: R_eval covers the panel + source over Q_eval.
     r_eval = load_r_artifact(args.r_eval_path)
-    for p in [*held_out_panel, SOURCE_PERSONA]:
+    # Round-2 fix (BLOCKER #2): coverage check uses the EFFECTIVE source (the
+    # CLI override OR the module default), not the hardcoded import — otherwise
+    # a v2 fallback run on medical_doctor would silently mis-assert against
+    # villain and either skip its own R_eval check or fail confusingly.
+    for p in [*held_out_panel, effective_source]:
         if p not in r_eval:
             raise KeyError(
                 f"R_eval missing persona {p!r}; re-run #472 Phase 1 r-generate over the bank."
@@ -207,14 +235,22 @@ def main(argv: list[str] | None = None) -> int:
         args.max_lora_rank,
         vllm_max_lora_rank,
     )
+    # Round-2 fix (BLOCKER #2): score against the EFFECTIVE source (v2 fallback
+    # may swap villain for medical_doctor / etc.). The source_prompt is read
+    # from the same bank entry — bank is single source of truth.
+    if effective_source not in bank:
+        raise KeyError(
+            f"--source {effective_source!r} missing from persona bank at {args.bank_path}; "
+            "the fallback-source candidate must exist in the bank used by Phase 0.5 + Phase 1."
+        )
     run_trajectory_eval(
         cell_slug=args.cell,
         seed=args.seed,
         checkpoint_specs=checkpoint_specs,
         eval_personas=eval_personas,
         eval_questions=q_eval,
-        source=SOURCE_PERSONA,
-        source_prompt=bank[SOURCE_PERSONA],
+        source=effective_source,
+        source_prompt=bank[effective_source],
         out_path=args.out_path,
         max_new_tokens=args.max_new_tokens,
         max_lora_rank=vllm_max_lora_rank,

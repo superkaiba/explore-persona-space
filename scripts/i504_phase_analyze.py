@@ -54,6 +54,19 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--seeds", default="42,137")
     ap.add_argument("--sentinel-path", type=Path, default=None)
+    ap.add_argument(
+        "--positioned-arms",
+        choices=("v1", "v2"),
+        default="v2",
+        help=(
+            "Round-2 fix (BLOCKER #1, concern_id `analyze-v2-slug-iteration`): "
+            "which 4-arm slug set Phase 2 iterates over. `v2` (default) reads "
+            "`c504v2_<arm>_seed<S>/trajectory.json` produced by the v2 dispatcher "
+            "(`--phase phase1`). `v1` reads the legacy `c504_<arm>_seed<S>` slugs "
+            "for archived-result re-analysis. The default is v2 because that's "
+            "the live pipeline; v1 is opt-in for re-running over archived runs."
+        ),
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -62,6 +75,10 @@ def main(argv: list[str] | None = None) -> int:
         stream=sys.stdout,
     )
 
+    from explore_persona_space.experiments.contrastive_neg_geometry_504 import (
+        POSITIONED_ARM_SLUGS,
+        POSITIONED_ARM_SLUGS_V2,
+    )
     from explore_persona_space.experiments.contrastive_neg_geometry_504.analyze import (
         aggregate_base_prior_from_trajectories,
         run_phase2_analysis,
@@ -73,6 +90,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     from explore_persona_space.experiments.contrastive_neg_geometry_504.phase05 import (
         load_phase05,
+    )
+
+    # Round-2 fix (BLOCKER #1): pick which 4-arm slug set Phase 2 iterates over.
+    positioned_arm_slugs: tuple[str, ...] = (
+        POSITIONED_ARM_SLUGS_V2 if args.positioned_arms == "v2" else POSITIONED_ARM_SLUGS
+    )
+    log.info(
+        "[positioned-arms] iterating %s arms: %s",
+        args.positioned_arms,
+        list(positioned_arm_slugs),
     )
 
     pick = load_phase0_pick(args.phase0_path)
@@ -96,7 +123,11 @@ def main(argv: list[str] | None = None) -> int:
             args.base_prior_path,
         )
     else:
-        agg = aggregate_base_prior_from_trajectories(slab_root=args.slab_root, seeds=seeds)
+        agg = aggregate_base_prior_from_trajectories(
+            slab_root=args.slab_root,
+            seeds=seeds,
+            positioned_arm_slugs=positioned_arm_slugs,
+        )
         if agg:
             base_prior = agg
             # Persist the aggregated map so downstream consumers (re-analyze,
@@ -121,6 +152,7 @@ def main(argv: list[str] | None = None) -> int:
         phase05_gates=gates,
         seeds=seeds,
         base_prior_by_probe=base_prior,
+        positioned_arm_slugs=positioned_arm_slugs,
     )
     out_path = args.slab_root / "analyze_summary.json"
     write_analyze_summary(summary, out_path)

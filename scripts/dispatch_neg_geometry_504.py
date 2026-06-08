@@ -68,10 +68,14 @@ from explore_persona_space.experiments.contrastive_neg_geometry_504 import (  # 
 # pre-commit pass doesn't remove them — see `feedback_ruff_strips_unused_imports`.
 # All four are used inside `main()` / `_run_v2_phase*()` below; this tuple
 # keeps the imports alive even when the formatter rewrites the import block.
+# Round-2 fix (Concern C): the v1 `MAIN_ARM_SLUGS` is now used inside the v1
+# branch only (no longer at the top of `main()`), so keep it referenced here
+# too, alongside the v2 symbols.
 _V2_IMPORT_REFS = (
     FALLBACK_SOURCE_CANDIDATES,
     LR_FROM_V2_SMOKE_SLUG,
     LR_LADDER,
+    MAIN_ARM_SLUGS,
     MAIN_ARM_SLUGS_V2,
     PHASE0_SMOKE_SLUGS_V2,
     SOURCE_PERSONA,
@@ -159,6 +163,7 @@ def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on 
     label_prefix: str = "issue-504",
     chosen_lr: float | None = None,
     per_cell_lrs: dict[str, float] | None = None,
+    source_persona: str | None = None,
 ) -> list[dict]:
     """Run all (cell, seed) units as a GPU-sharded subprocess pool.
 
@@ -257,6 +262,11 @@ def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on 
             cell_lr = chosen_lr
         if cell_lr is not None:
             cmd.extend(["--lr", repr(cell_lr)])
+        # Round-2 fix (BLOCKER #2): thread fallback-source through to the
+        # per-cell runner. When None, i504_run_cell.py falls back to the
+        # SOURCE_PERSONA module default (= villain, v1/v2 legacy default).
+        if source_persona is not None:
+            cmd.extend(["--source", source_persona])
         if smoke:
             cmd.append("--smoke")
         if no_kl:
@@ -498,10 +508,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
     os.environ.setdefault("EPM_PERSIST_ADAPTER_HF_REPO", HF_MODEL_REPO)
 
     seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
-    main_cells = _resolve_cells(args.cells, MAIN_ARM_SLUGS)
-    smoke_cells = _resolve_cells(args.smoke_cells, PHASE0_SMOKE_SLUGS)
-    log.info("Phase 0 smoke cells: %s", smoke_cells)
-    log.info("Phase 1 main cells: %s seeds=%s (smoke_mode=%s)", main_cells, seeds, args.smoke)
+    # Round-2 fix (Concern C): defer v1 cell-slug resolution into the v1 branch.
+    # The previous unconditional `_resolve_cells(args.cells, MAIN_ARM_SLUGS)`
+    # would raise on any token not in MAIN_ARM_SLUGS — but a perfectly valid v2
+    # invocation like `--phase phase1 --cells c504v2_near` carries v2 slugs,
+    # which `_resolve_cells` against MAIN_ARM_SLUGS rejects BEFORE the v2 router
+    # runs. The v2 router (`_run_v2_phase1`) calls `_resolve_cells(args.cells,
+    # MAIN_ARM_SLUGS_V2)` itself, so the v1 resolution belongs in the v1 branch.
+    log.info("Phase 1 seeds=%s (smoke_mode=%s) — cells resolution deferred", seeds, args.smoke)
 
     # ── Pre-flight: marker tokenizer assertion (CLAUDE.md). ──────────────────
     if not args.dry_run:
@@ -521,6 +535,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
     phase_summaries: dict[str, dict] = {}
 
     # ── Phase 0.5: identification-gate pre-flight (CPU). ─────────────────────
+    # Round-2 fix (BLOCKER #2): thread --source into Phase 0.5 so positioned
+    # negatives are picked RELATIVE TO the effective source. For --phase
+    # phase0-fallback the source has already been swapped via args.source;
+    # Phase 0.5 then re-emits a fresh phase0_5_gates.json keyed off that
+    # source. For the primary phase (--phase legacy/phase0/phase1), this
+    # passes the v1/v2 default = villain (byte-identical).
     phase05_path = args.slab_root / "phase0_5_gates.json"
     if not args.skip_phase05:
         _run_phase_subprocess(
@@ -535,6 +555,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
                 str(args.r_train_path),
                 "--out-path",
                 str(phase05_path),
+                "--source",
+                args.source,
                 "--sentinel-path",
                 str(LOG_DIR / "issue-504-phase05-results.json"),
             ],
@@ -666,7 +688,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
     }
 
     # ── v2 phase routing (plan v2 §4.1 + §10) ────────────────────────────────
-    # When --phase != legacy, route to the v2 pipeline and return.
+    # When --phase != legacy, route to the v2 pipeline and return. The v2
+    # router resolves its OWN cells against MAIN_ARM_SLUGS_V2 inside
+    # `_run_v2_phase1`.
     if args.phase != "legacy":
         return _run_v2_phase(
             args=args,
@@ -676,6 +700,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
             max_model_len_eval=max_model_len_eval,
             seeds=seeds,
         )
+
+    # Round-2 fix (Concern C): resolve v1 cells HERE (after the v2 router has
+    # had its early-return chance). A v2 invocation that overrides --cells with
+    # c504v2_* slugs no longer trips _resolve_cells's "Unknown #504 cell"
+    # ValueError before the router fires.
+    main_cells = _resolve_cells(args.cells, MAIN_ARM_SLUGS)
+    smoke_cells = _resolve_cells(args.smoke_cells, PHASE0_SMOKE_SLUGS)
+    log.info("Phase 0 smoke cells: %s", smoke_cells)
+    log.info("Phase 1 main cells: %s seeds=%s (smoke_mode=%s)", main_cells, seeds, args.smoke)
 
     # ── Phase 0: smoke (3 cells × 1 seed) at a placeholder rank/α each. ─────
     # The Phase 0 smoke needs SEPARATE (rank, α) per cell (r=4/α=23, r=8/α=32,
@@ -833,6 +866,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
     if args.skip_analyze:
         log.info("[phase=analyze] SKIP")
     else:
+        # Round-2 fix (BLOCKER #1): legacy v1 path explicitly threads v1 slugs
+        # (the CLI default is v2 — that matches the live pipeline; v1 is opt-in
+        # for archived-result re-analysis).
         _run_phase_subprocess(
             [
                 "uv",
@@ -849,6 +885,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
                 str(base_prior_path),
                 "--seeds",
                 ",".join(str(s) for s in seeds),
+                "--positioned-arms",
+                "v1",
                 "--sentinel-path",
                 str(LOG_DIR / "issue-504-analyze-results.json"),
             ],
@@ -1007,6 +1045,12 @@ def _run_v2_phase0(
         hf_path_suffix=args.hf_path_suffix,
         label_prefix=f"issue-504-v2-{args.phase}",
         per_cell_lrs=per_cell_lrs,  # v2 threading: lr per smoke cell
+        # Round-2 fix (BLOCKER #2): thread the fallback source persona through
+        # to EVERY smoke cell's training + eval (plan v2 §4.2). For the primary
+        # phase0 (--source villain by default), this is the v1/v2 legacy
+        # default. For --phase phase0-fallback --source medical_doctor, every
+        # smoke cell trains + scores against medical_doctor — not villain.
+        source_persona=args.source,
     )
 
     # Run the v2 pick rule over the 3 smoke trajectories.
@@ -1150,6 +1194,12 @@ def _run_v2_phase1(
         hf_path_suffix=args.hf_path_suffix,
         label_prefix="issue-504-v2",
         chosen_lr=chosen_lr,  # v2: applied uniformly to every Phase 1 arm
+        # Round-2 fix (BLOCKER #2): thread the PICKED source persona (from the
+        # phase0_calibration_v2.json artifact — the fallback pick if fallback
+        # fired, else the primary pick = villain) through every Phase 1 cell.
+        # Every arm trains + evaluates against the SAME source the Phase 0
+        # picker validated as anchorable.
+        source_persona=chosen_source,
     )
     phase_summaries["v2_phase1"] = {
         "n_completed": len(cell_results),
@@ -1165,6 +1215,11 @@ def _run_v2_phase1(
     if args.skip_analyze:
         log.info("[phase=analyze] SKIP")
     else:
+        # Round-2 fix (BLOCKER #1, concern_id `analyze-v2-slug-iteration`): the
+        # v2 Phase 2 must iterate the v2 arm slugs (c504v2_*) so Phase 1's
+        # trajectories are actually read. Without --positioned-arms v2, the
+        # CLI default (v2) is still v2, but pin it explicitly here so a future
+        # default flip cannot silently break this path.
         _run_phase_subprocess(
             [
                 "uv",
@@ -1181,6 +1236,8 @@ def _run_v2_phase1(
                 str(base_prior_path),
                 "--seeds",
                 ",".join(str(s) for s in seeds),
+                "--positioned-arms",
+                "v2",
                 "--sentinel-path",
                 str(LOG_DIR / "issue-504-v2-analyze-results.json"),
             ],

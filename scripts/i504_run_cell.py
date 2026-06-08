@@ -191,6 +191,19 @@ def main(argv: list[str] | None = None) -> int:
             "to this so the cell + its nested eval run on physical GPU <gpu-id>."
         ),
     )
+    ap.add_argument(
+        "--source",
+        default=None,
+        help=(
+            "Round-2 fix (BLOCKER #2, concern_id `fallback-source-threading`): "
+            "source persona name. The v2 Phase 0 fallback path (plan v2 §4.2) "
+            "swaps `villain` for an easier candidate (medical_doctor, librarian, "
+            "...); when fallback fires, every Phase 1 cell must train + evaluate "
+            "against that picked source — NOT the default villain. If unset, "
+            "falls back to the v1/v2 module default `SOURCE_PERSONA` (= villain), "
+            "preserving byte-identical legacy behavior."
+        ),
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -237,7 +250,11 @@ def main(argv: list[str] | None = None) -> int:
     arm_to_positioned_n = arm_to_n_payload.get("arm_to_positioned_n", {})
     smoke_mid_band_n = arm_to_n_payload.get("smoke_mid_band_n")
     held_out_panel: list[str] = arm_to_n_payload.get("held_out_panel", [])
-    if args.cell.startswith("c504_smoke_") and smoke_mid_band_n is None:
+    # Round-2 fix (Concern B): include v2 smoke prefix for parity. Both v1
+    # (`c504_smoke_`) and v2 (`c504v2_smoke_`) smoke cells consume
+    # `smoke_mid_band_n` from the Phase 0.5 artifact; cell_resolution.py
+    # catches the v2 prefix downstream, but the guard text should cover both.
+    if args.cell.startswith(("c504_smoke_", "c504v2_smoke_")) and smoke_mid_band_n is None:
         raise ValueError(
             f"--arm-to-n-json {args.arm_to_n_json} is missing 'smoke_mid_band_n' but the cell "
             f"{args.cell!r} is a smoke cell that requires it."
@@ -277,6 +294,26 @@ def main(argv: list[str] | None = None) -> int:
     r_train = load_r_artifact(args.r_train_path)
     q_train, _q_eval = get_train_eval_questions()
 
+    # Round-2 fix (BLOCKER #2, concern_id `fallback-source-threading`):
+    # resolve effective source persona. --source CLI overrides the v1/v2 module
+    # default (SOURCE_PERSONA = villain). The v2 Phase 0 fallback path (plan
+    # v2 §4.2) threads the easier candidate (e.g. medical_doctor) here, and
+    # the cell builds positives + evaluates the trajectory against THAT
+    # persona, NOT the default. Assertion: source must be in the bank.
+    effective_source = args.source if args.source is not None else SOURCE_PERSONA
+    if effective_source not in bank:
+        raise KeyError(
+            f"--source {effective_source!r} missing from persona bank at {args.bank_path}. "
+            f"FALLBACK_SOURCE_CANDIDATES values must all be in the bank — verify the "
+            "Phase 0.5 bank version."
+        )
+    log.info(
+        "[phase=source] effective source persona = %r (CLI --source=%r, default=%r)",
+        effective_source,
+        args.source,
+        SOURCE_PERSONA,
+    )
+
     # ── Phase: build training data (CPU). ────────────────────────────────────
     log.info("[phase=build_%s] building training data via cell_resolution_504", args.cell)
     build_cell_504(
@@ -286,7 +323,7 @@ def main(argv: list[str] | None = None) -> int:
         arm_to_positioned_n=arm_to_positioned_n,
         q_train=q_train,
         persona_bank=bank,
-        source=SOURCE_PERSONA,
+        source=effective_source,
         marker_text=MARKER_TEXT,
         smoke_mid_band_n=smoke_mid_band_n,
         seed=args.seed,
@@ -421,6 +458,11 @@ def main(argv: list[str] | None = None) -> int:
         str(eval_max_new_tokens),
         "--max-model-len",
         str(eval_max_model_len),
+        # Round-2 fix (BLOCKER #2): thread the effective source persona so the
+        # nested eval scores trajectory ΔG/emission against the SAME persona
+        # the cell was just trained on (not the hardcoded villain default).
+        "--source",
+        effective_source,
     ]
     if args.no_kl:
         eval_cmd.append("--no-kl")

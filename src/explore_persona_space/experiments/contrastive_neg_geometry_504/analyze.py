@@ -172,6 +172,7 @@ def aggregate_base_prior_from_trajectories(
     *,
     slab_root: Path,
     seeds: Sequence[int],
+    positioned_arm_slugs: Sequence[str] = POSITIONED_ARM_SLUGS,
 ) -> dict[str, float]:
     """Round-2 fix (blocker #2): aggregate the per-probe base-model marker prior.
 
@@ -189,10 +190,16 @@ def aggregate_base_prior_from_trajectories(
 
     Returns an empty dict if no trajectories exist (caller falls back to the
     0.0 placeholder, with a logged warning).
+
+    Round-2 v2-slug fix (BLOCKER #1, concern_id `analyze-v2-slug-iteration`):
+    `positioned_arm_slugs` selects which 4-arm set to iterate. Defaults to v1
+    (``POSITIONED_ARM_SLUGS``) so legacy callers stay byte-identical; the v2
+    dispatcher / CLI threads ``POSITIONED_ARM_SLUGS_V2`` so trajectories at
+    ``<slab_root>/c504v2_<arm>_seed<S>/trajectory.json`` are read.
     """
     per_probe_acc: dict[str, list[float]] = {}
     n_traj = 0
-    for cell in POSITIONED_ARM_SLUGS:
+    for cell in positioned_arm_slugs:
         for seed in seeds:
             traj = load_trajectory(slab_root, cell, seed)
             if traj is None:
@@ -262,6 +269,7 @@ def build_rows(
     arm_to_positioned_n: dict[str, str],
     seeds: Sequence[int],
     base_prior_by_probe: dict[str, float] | None = None,
+    positioned_arm_slugs: Sequence[str] = POSITIONED_ARM_SLUGS,
 ) -> dict[str, Any]:
     """Build the (probe × arm × seed) pooled-regression input.
 
@@ -276,6 +284,12 @@ def build_rows(
         base_prior_by_probe: optional {probe: base_prior_logp} from the eval rig
             (Phase 1c logp_base on the BASE model's R, averaged over Q_eval).
             If None, uses Phase 0.5 placeholder (uniform-low).
+        positioned_arm_slugs: Round-2 v2-slug fix (BLOCKER #1). Which 4-arm set
+            to iterate. Defaults to v1 (``POSITIONED_ARM_SLUGS``) so the legacy
+            v1 pipeline stays byte-identical; the v2 dispatcher threads
+            ``POSITIONED_ARM_SLUGS_V2`` so Phase 2 reads the actual
+            ``c504v2_<arm>_seed<S>/trajectory.json`` artifacts produced by the
+            v2 Phase 1 cell runner.
 
     Returns:
         {
@@ -290,7 +304,7 @@ def build_rows(
     rows: list[dict] = []
     per_cell_diag: list[dict] = []
     excluded: list[dict] = []
-    for cell in POSITIONED_ARM_SLUGS:
+    for cell in positioned_arm_slugs:
         for seed in seeds:
             traj = load_trajectory(slab_root, cell, seed)
             if traj is None:
@@ -514,6 +528,7 @@ def robustness_panel_per_cell_best_band(
     seeds: Sequence[int],
     dg_band: tuple[float, float] = (SOURCE_DG_BAND_LOW, SOURCE_DG_BAND_HIGH),
     base_prior_by_probe: dict[str, float] | None = None,
+    positioned_arm_slugs: Sequence[str] = POSITIONED_ARM_SLUGS,
 ) -> dict[str, Any]:
     """Phase 2 Step 1 robustness panel (plan §4.4 / Step 1).
 
@@ -521,10 +536,14 @@ def robustness_panel_per_cell_best_band(
     (NOT the pinned fraction). If the verdict + signs agree with the
     pinned-fraction read, this strengthens HIGH confidence; disagreement
     downgrades.
+
+    Round-2 v2-slug fix (BLOCKER #1): ``positioned_arm_slugs`` selects which
+    4-arm set to iterate. Defaults to v1 for byte-identical legacy behavior;
+    the v2 dispatcher threads ``POSITIONED_ARM_SLUGS_V2``.
     """
     rows: list[dict] = []
     per_cell: list[dict] = []
-    for cell in POSITIONED_ARM_SLUGS:
+    for cell in positioned_arm_slugs:
         for seed in seeds:
             traj = load_trajectory(slab_root, cell, seed)
             if traj is None:
@@ -636,6 +655,7 @@ def run_phase2_analysis(
     phase05_gates: dict[str, Any],
     seeds: Sequence[int] = (42, 137),
     base_prior_by_probe: dict[str, float] | None = None,
+    positioned_arm_slugs: Sequence[str] = POSITIONED_ARM_SLUGS,
 ) -> dict[str, Any]:
     """End-to-end Phase 2 (CPU-only): pinned read + robustness + diagnostics.
 
@@ -649,6 +669,12 @@ def run_phase2_analysis(
             regression runs with the placeholder 0.0 per probe and the
             implementer/analyzer should fill this from Phase 1c trajectory
             (logp_base mean over Q_eval per probe). See plan §4.4 Step 2.
+        positioned_arm_slugs: Round-2 v2-slug fix (BLOCKER #1). Which 4-arm set
+            (v1 ``POSITIONED_ARM_SLUGS`` or v2 ``POSITIONED_ARM_SLUGS_V2``) to
+            iterate when building rows from per-cell trajectories. Defaults to
+            v1 so the legacy pipeline stays byte-identical; the v2 dispatcher
+            threads v2 via the ``--positioned-arms`` CLI flag on
+            ``scripts/i504_phase_analyze.py``.
 
     Returns:
         analyze_summary dict (writable to JSON). Includes:
@@ -681,6 +707,7 @@ def run_phase2_analysis(
         arm_to_positioned_n=arm_to_positioned_n,
         seeds=list(seeds),
         base_prior_by_probe=base_prior_by_probe,
+        positioned_arm_slugs=positioned_arm_slugs,
     )
     rows = pooled["rows"]
     fit = fit_pooled_partial_spearman(rows)
@@ -695,6 +722,7 @@ def run_phase2_analysis(
         arm_to_positioned_n=arm_to_positioned_n,
         seeds=list(seeds),
         base_prior_by_probe=base_prior_by_probe,
+        positioned_arm_slugs=positioned_arm_slugs,
     )
 
     notes: list[str] = []

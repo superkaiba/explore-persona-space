@@ -472,13 +472,19 @@ def pick_anchor_from_lr_smoke(
 
     # ── In-band pick (plan v2 §4.1 step 3). ─────────────────────────────────
     # 1. Latest in-band frac (DESC).
-    # 2. Tie-break: source_dg closest to band midpoint (= 8.0 = (5+12)/2 + a
-    #    smidge under midpoint; we use the actual band midpoint).
-    band_midpoint = (dg_low + dg_high) / 2.0
+    # 2. Tie-break: source_dg closest to the literal plan target = 8.0 nats
+    #    (plan v2 §4.1 step 3(b) "closest to source_ΔG = 8.0"). Round-2 fix
+    #    (Concern A): the round-17 code used (dg_low + dg_high) / 2.0 = 8.5
+    #    which disagrees with the plan literal; reconciling to the plan value.
+    #    A synthetic tie at the same latest fraction picked 8.4 over 7.9 under
+    #    the midpoint rule, opposite the 8.0-target rule. The 0.5-nat shift is
+    #    operationally small, but the plan target IS the contract.
+    # 3. Lower lr (ASC).
+    _TIE_BREAK_TARGET_NATS = 8.0
     candidates.sort(
         key=lambda lr_frac_dg: (
             -lr_frac_dg[1],  # latest fraction first (DESC)
-            abs(lr_frac_dg[2] - band_midpoint),  # closest to midpoint (ASC)
+            abs(lr_frac_dg[2] - _TIE_BREAK_TARGET_NATS),  # closest to 8.0 (ASC)
             lr_frac_dg[0],  # lower lr (ASC)
         )
     )

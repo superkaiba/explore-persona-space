@@ -176,6 +176,19 @@ def main(argv: list[str] | None = None) -> int:
             "methodology that produced ρ=0.67-0.87 cos-vs-leakage)."
         ),
     )
+    ap.add_argument(
+        "--source",
+        default=None,
+        help=(
+            "Round-2 fix (BLOCKER #2, concern_id `fallback-source-threading`): "
+            "source persona for the Phase 0.5 cos-to-source computation + "
+            "positioned-N pick. The v2 Phase 0 fallback path (plan v2 §4.2) "
+            "swaps villain for an easier candidate; when that fires, Phase 0.5 "
+            "MUST re-run with the new source so positioned negatives are picked "
+            "RELATIVE TO that source (otherwise the geometry is stale). Unset = "
+            "use module default SOURCE_PERSONA = villain (legacy byte-identical)."
+        ),
+    )
     args = ap.parse_args(argv)
     mean_center = not args.no_mean_center
 
@@ -197,6 +210,16 @@ def main(argv: list[str] | None = None) -> int:
         write_phase05_artifact,
     )
 
+    # Round-2 fix (BLOCKER #2): resolve effective source — fallback path passes
+    # --source medical_doctor (or similar); legacy path uses module default.
+    effective_source = args.source if args.source is not None else SOURCE_PERSONA
+    log.info(
+        "[phase=source] effective source persona for Phase 0.5 = %r (CLI --source=%r, default=%r)",
+        effective_source,
+        args.source,
+        SOURCE_PERSONA,
+    )
+
     fallback_layers = tuple(int(x) for x in args.fallback_layers.split(",") if x.strip())
 
     # Load centroids per layer.
@@ -211,18 +234,18 @@ def main(argv: list[str] | None = None) -> int:
         centroids = _load_centroids_layer(args.centroids_dir, lay)
         log.info("[load] layer=%d, %d personas", lay, len(centroids))
         centroids_by_layer[lay] = centroids
-        cos = _cos_to_source(centroids, SOURCE_PERSONA, mean_center=mean_center)
+        cos = _cos_to_source(centroids, effective_source, mean_center=mean_center)
         cos_to_source_by_layer[lay] = cos
         # Diagnostic: log the cos-to-source spread per layer so a saturated /
         # narrow range is immediately visible in the log.
-        vals = [v for k, v in cos.items() if k != SOURCE_PERSONA]
+        vals = [v for k, v in cos.items() if k != effective_source]
         if vals:
             arr = np.asarray(vals, dtype=np.float64)
             log.info(
                 "[spread] layer=%d cos_to_%s: min=%.4f median=%.4f max=%.4f span=%.4f "
                 "n_below_0.7=%d n_below_0.5=%d n_below_0.3=%d",
                 lay,
-                SOURCE_PERSONA,
+                effective_source,
                 float(arr.min()),
                 float(np.median(arr)),
                 float(arr.max()),
@@ -239,7 +262,7 @@ def main(argv: list[str] | None = None) -> int:
         centroids_by_layer=centroids_by_layer,
         cos_to_source_by_layer=cos_to_source_by_layer,
         r_train_villain=r_train,
-        source=SOURCE_PERSONA,
+        source=effective_source,
         default_persona=ALWAYS_INCLUDE_NEGATIVE,
         headline_layer=args.headline_layer,
         fallback_layers=fallback_layers,
