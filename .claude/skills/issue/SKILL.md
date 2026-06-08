@@ -497,15 +497,63 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   enforces it. Autonomous mode must DECIDE AND EXECUTE THE RESOLVED
   ACTION IN THE SAME TURN — stating `Decision: <X>` and ending the turn
   is itself the failure, regardless of whether a tool call was made.
+- **Autonomous mode overrides `factual_question_only_user_knows`
+  (workflow.yaml `halt_criteria id=4` / CLAUDE.md STATE-TO-`blocked` bullet #1)
+  for taste / scope / design-preference / pivot calls.** Those surfaces list
+  "priority, taste, scope, design preference between valid paths" as a valid
+  block reason. In `EPM_AUTONOMOUS_SESSION=1` mode this sub-case does NOT
+  apply: there is no human to escalate to, so a taste / scope / design-preference
+  / "which valid path?" call is NEVER a block reason. Pick the option that
+  maximizes information-gain-per-GPU-hour toward the task `## Goal` (tie-break:
+  lower-cost / safer / record-correcting), post
+  `Decision: <X> because <reason>`, and EXECUTE the resolved action in the SAME
+  turn. The only residue of `factual_question_only_user_knows` that survives
+  in autonomous mode is a factual gap the user UNIQUELY holds (an account
+  credential, an external decision the user already promised to make, a fact
+  only the user can supply) AND that is NOT itself a taste / scope / design
+  call. Real incident the candidate surfaced (2026-06-07, tasks
+  #503/#504/#506/#509): multiple `--auto` sessions parked overnight "awaiting
+  user decision on Phase 2 path forward" — exactly the banned regression this
+  clause closes.
+- **A debugging wall is a strategy-pivot, not a block.** If implementation /
+  smoke-run / reviewer-loop work hits a wall the session cannot immediately crack,
+  spawn `experiment-implementer` (or the analogous fixer) on a different angle,
+  re-invoke `/adversarial-planner` with explicit pivot scope, swap a model /
+  pod intent / framing, or drop the offending domain — see workflow.yaml §
+  `pivot_criteria` for the canonical pivot actions. Set `status:blocked` ONLY
+  after ~3 FUNDAMENTALLY different strategies (not 3 retries of the same one)
+  have all FAILed AND no further autonomous angle exists. A bare reviewer FAIL,
+  a single preflight crash, a 4th-round ensemble FAIL, or a smoke-run that
+  surfaces a tractable bug are pivots, never blocks.
+- **Never stop a pod to PARK / await a user in autonomous mode.** `pod.py stop`
+  to avoid idle-burn is allowed ONLY while work continues toward the Goal in
+  the same session (e.g. stopping pod-N while the analyzer reads JSON from
+  WandB/HF before the auto-terminate at Step 8). Stopping a pod with prose like
+  "Pod-N stopped while awaiting user decision on …" is the banned regression
+  this clause closes — it is the autonomous-mode equivalent of the text-menu
+  end-of-turn failure. Forbidden in `EPM_AUTONOMOUS_SESSION=1`.
+- **Cost is gated ONLY at the plan-approval GPU-hour cap, never mid-run.** The
+  ONLY cost gate in autonomous mode is the Step 2c `plan_pending` park when
+  `gpu_hours_total > EPM_PLAN_AUTOAPPROVE_GPU_HOURS` (default 100). A running
+  experiment is never paused mid-run on "this is getting expensive" grounds —
+  no `max_budget_usd` SystemExit, no mid-run "should we keep going?" decision,
+  no autonomous-side cost-based pivot to "park for user review." Per CLAUDE.md
+  "Code Style" + `tests/test_no_dollar_budget_caps.py`, dollar-budget caps in
+  experiment scripts are also forbidden at the code level — the same discipline
+  applies to autonomous orchestration decisions. The plan-approval cap is the
+  only legitimate spending gate.
 - **Push through bugs; do not block on recoverable failures.** Apply
   CLAUDE.md "Push through bugs in recovery mode" + the halt-criteria
   literally: preflight failures, TP/Ray/env-var hiccups, transient infra,
   a single FAILed reviewer round, etc. are fixed and retried in-loop. A
-  bare reviewer FAIL triggers a strategy pivot, not a block. Set
-  `status:blocked` ONLY for the enumerated hard halt-criteria (factual
-  question only the user can answer; outside-worktree / irreversible
-  mutation; public-API-contract change; completion-audit incomplete) or
-  after ~3 fundamentally different strategies have all FAILed.
+  bare reviewer FAIL triggers a strategy pivot, not a block. The autonomous
+  hard halt-criteria that survive are strictly: outside-worktree / irreversible
+  mutation (halt-criterion #1 in workflow.yaml); public-API-contract change
+  (#2); a subagent BLOCKER with explicit `needs-user` (#3); the narrow residue
+  of `factual_question_only_user_knows` (#4) per the override above — i.e.
+  a uniquely-user-held fact that is NOT a taste / scope / design call;
+  completion-audit incomplete (#5); concern_unresolved (#6, after autonomous
+  options exhausted). Everything else auto-continues or pivots.
 - **The only stop points are the two real gates:** the Step 2c plan-approval
   cap (park at `plan_pending` only when est. GPU-hours exceed
   `EPM_PLAN_AUTOAPPROVE_GPU_HOURS`, else auto-approve), and
