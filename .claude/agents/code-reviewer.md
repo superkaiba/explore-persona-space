@@ -215,6 +215,35 @@ short-circuit — see Step 0.7):
 > `v<n+1>` with a `### <phase>` smoke sub-section (command + slice size +
 > exit code 0 + artifact digest).
 
+**GPU-bound-phase carve-out (do NOT FAIL `smoke-run-missing`).** Do NOT
+FAIL `smoke-run-missing` on a phase whose `## Smoke run` sub-section is
+explicitly titled `### <phase-name> — Carve-out (GPU-bound)` AND lists
+all three substitute coverage items (REAL CPU smoke of the CPU-runnable
+portion + dispatcher dry-run + signature smoke per
+`experiment-implementer.md` § GPU-bound-phase carve-out). Each
+substitute item must carry its own command, exit code 0, and one-line
+artifact digest; the sub-section must also name the GPU constraint in
+one sentence (e.g. "4× H100 ZeRO-3 required; local VM has no
+CUDA-capable GPU"). The carve-out exists because phases like
+`accelerate launch` + ZeRO-3 full-FT, vLLM batched eval, or TP=8 ≥7B
+inference cannot be smoke-run on the local VM in their production
+shape — the three substitute items together exercise the same dispatcher
+plumbing, env passthrough, sentinel + `[phase=done]` contract, and ABI
+between dispatcher and GPU entrypoint that a full GPU smoke would. A
+GPU-bound phase MISSING the `Carve-out (GPU-bound)` sub-heading IS still
+a `smoke-run-missing` FAIL: the workflow accepts the substitute coverage
+only when it is labeled at report time (the label is what lets you
+distinguish a documented carve-out from a silently-skipped smoke). A
+carve-out sub-section that is labeled but omits any of the three items
+or omits the constraint sentence is ALSO a FAIL — incomplete coverage
+re-introduces the bugs the gate exists to catch. Incident: task #514
+round 2 — Codex code-reviewer FAILed with `smoke-run-missing` because
+the implementer's terse "(signature smoke)" notation for GPU-bound
+training/eval phases lacked both the documented sub-heading and the
+three-item coverage; this carve-out formalizes the labeling that lets
+the reviewer distinguish a documented GPU-bound phase from a genuinely
+missing smoke.
+
 **If every phase IS present with a command, exit code 0, and an artifact
 digest, but a digest is terse, omits the row count, or you would have
 formatted it differently — that is at most a `CONCERNS`, NEVER a standalone
