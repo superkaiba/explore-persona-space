@@ -190,7 +190,7 @@ The two other open items the round-2 critique surfaced: (a) re-run the matched-i
 | LoRA config | rank 16, alpha 32, dropout 0.05, target = all linear |
 | Loss recipe | `MarkerOnlyDataCollator` (loss on marker token + EOS at post-response slot only) |
 | Training | 3 epochs (eval ran on sub-epoch checkpoints only; see Compute) |
-| Optimizer | AdamW, lr = 1e-4, cosine schedule, warmup 0.03 |
+| Optimizer | AdamW, lr = 2e-6, cosine schedule, warmup ratio 0.03 |
 | Eval (Phase 4) | vLLM teacher-forced one-token scoring of `prompt + response + ` ※` at the post-response slot; sampling: top-p 0.9, T 1.0, max-new 512; 20 probes × 8 samples per cell |
 | Cosine predictor | base-model residual-stream activation at last prompt-token of `[source scaffold] + [user question]`, layer 21, 50 probes |
 | JS predictor | JS divergence between base-model output distributions over 128 tokens of on-policy continuation, 8 samples per probe, 50 probes |
