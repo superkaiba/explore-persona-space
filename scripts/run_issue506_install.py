@@ -48,9 +48,11 @@ the LoRA arms; the FWFT arm uses all 8 GPUs of its pod).
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -336,6 +338,321 @@ def _run_lora_phase2(args: argparse.Namespace, *, lora_r: int) -> dict:
 # ── FWFT arm (subprocess via accelerate launch + train_stage_sft) ──────────
 
 
+# Slack on top of every disk-headroom projection, to absorb metadata files,
+# tokenizer/config artifacts, and a margin for FS overhead. 10 GB matches the
+# slack used in i474_phase0_preflight.py + run_issue458_sweep.sh.
+_DISK_PROBE_SLACK_BYTES = 10 * 1024 * 1024 * 1024  # 10 GB
+
+# Round-8 fix: stage HF safetensors on /dev/shm (RAM tmpfs) during conversion
+# so the MooseFS volume only sees ONE full copy at a time. RunPod 8xH{100,200}
+# pods carry ≥256 GB RAM; /dev/shm defaults to 50% of RAM (~128 GB), which
+# comfortably holds the ~64 GB bf16 state for Qwen3-32B.
+_SHM_ROOT = Path("/dev/shm")
+
+
+def _dir_size_bytes(path: Path) -> int:
+    """Recursively sum file sizes under ``path``. Returns 0 if missing.
+
+    Used to estimate the DS-native dir's footprint so the headroom probe
+    knows how much will be freed when we delete it (and to refuse to
+    proceed if the ds-native dir is itself bigger than expected).
+    """
+    if not path.exists():
+        return 0
+    total = 0
+    for root, _dirs, files in os.walk(str(path)):
+        root_p = Path(root)
+        for name in files:
+            with contextlib.suppress(OSError):
+                total += (root_p / name).stat().st_size
+    return total
+
+
+def _estimate_hf_bf16_bytes(model_id: str) -> int:
+    """Estimate the on-disk size of an HF bf16 safetensors save for ``model_id``.
+
+    Reads ``config.json`` only (no weights) via ``AutoConfig.from_pretrained``,
+    derives a parameter-count estimate from the config, and multiplies by 2
+    bytes (bf16). For Qwen3-32B this returns ~64 GB. Adds 5% slack for
+    safetensors header / index file / tokenizer / config bytes.
+
+    Falls back to a conservative 80 GB on any failure to read the config — we
+    would rather have the preflight be slightly pessimistic and fail loud than
+    silently let an under-estimate slip past.
+    """
+    try:
+        from transformers import AutoConfig
+
+        cfg = AutoConfig.from_pretrained(model_id, trust_remote_code=False)
+        hidden = int(getattr(cfg, "hidden_size", 0) or 0)
+        layers = int(getattr(cfg, "num_hidden_layers", 0) or 0)
+        ffn = int(getattr(cfg, "intermediate_size", 0) or (4 * hidden))
+        heads = int(getattr(cfg, "num_attention_heads", 0) or 0)
+        kv_heads = int(getattr(cfg, "num_key_value_heads", heads) or heads)
+        head_dim = hidden // max(heads, 1)
+        vocab = int(getattr(cfg, "vocab_size", 0) or 0)
+        # Per-layer params: 4 attn matrices (Q+K+V+O), 3 FFN matrices for
+        # gated MLP (gate, up, down), plus 2 layernorms (small, ignored).
+        # GQA-aware Q/K/V sizes: Q is hidden*hidden, K and V are hidden*(kv_heads*head_dim).
+        q_params = hidden * hidden
+        kv_params = 2 * (hidden * kv_heads * head_dim)
+        o_params = hidden * hidden
+        ffn_params = 3 * (hidden * ffn)
+        per_layer = q_params + kv_params + o_params + ffn_params
+        embed_params = vocab * hidden  # tied lm_head common in Qwen-2.5 / Qwen-3
+        total_params = layers * per_layer + embed_params
+        if total_params <= 0:
+            raise ValueError(f"degenerate param count for {model_id}: {total_params}")
+        # bf16 → 2 bytes; 5% slack for safetensors header + tokenizer + config.
+        estimate = int(total_params * 2 * 1.05)
+        log.info(
+            "FWFT post-train: HF bf16 size estimate for %s: %.2f GB "
+            "(layers=%d, hidden=%d, ffn=%d, kv_heads=%d, vocab=%d, params=%.2fB)",
+            model_id,
+            estimate / 1024**3,
+            layers,
+            hidden,
+            ffn,
+            kv_heads,
+            vocab,
+            total_params / 1e9,
+        )
+        return estimate
+    except Exception as e:
+        # Fall back to a deliberately pessimistic 80 GB so the preflight errs
+        # toward refusing risky conversions rather than silently letting them
+        # slip through. Logged loud so the operator can spot the misconfig.
+        log.warning(
+            "FWFT post-train: could not estimate HF bf16 size for %s (%s); "
+            "falling back to 80 GB pessimistic estimate.",
+            model_id,
+            e,
+        )
+        return 80 * 1024 * 1024 * 1024
+
+
+def _disk_headroom_probe(target_dir: Path, n_bytes: int, label: str) -> None:
+    """posix_fallocate probe — catches MooseFS EDQUOT / tmpfs full BEFORE we run.
+
+    Mirrors ``i474_phase0_preflight.py::_disk_probe`` and
+    ``pod_disk_guard.py::probe_quota_headroom``. Reserves ``n_bytes`` in a
+    temp file under ``target_dir``, then deletes it. Raises ``RuntimeError``
+    loud on EDQUOT/ENOSPC so the dispatcher refuses to proceed BEFORE the
+    conversion subprocess writes one byte.
+
+    ``label`` is included in error / log messages so the operator can tell
+    which mount failed (``/workspace`` vs ``/dev/shm``).
+    """
+    target_dir.mkdir(parents=True, exist_ok=True)
+    # Sanitize ``label`` so the probe filename never contains a slash —
+    # otherwise a label like "/dev/shm" would resolve to "/dev/shm/.issue506_disk_probe_/dev/shm_<pid>",
+    # which is a sub-path with a missing intermediate directory.
+    safe_label = label.strip("/").replace("/", "_") or "root"
+    probe = target_dir / f".issue506_disk_probe_{safe_label}_{os.getpid()}"
+    fd = os.open(str(probe), os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
+    try:
+        try:
+            os.posix_fallocate(fd, 0, n_bytes)
+        except OSError as e:
+            raise RuntimeError(
+                f"FWFT post-train: disk-headroom preflight FAILED on {label} "
+                f"({target_dir}). posix_fallocate({n_bytes} bytes / "
+                f"{n_bytes / 1024**3:.1f} GB) → errno={e.errno} {e.strerror}. "
+                f"Refusing to start conversion — would EDQUOT/ENOSPC mid-write. "
+                "See CLAUDE.md gotchas: MooseFS per-pod quota (~130 GB)."
+            ) from e
+    finally:
+        with contextlib.suppress(OSError):
+            os.close(fd)
+        with contextlib.suppress(OSError):
+            os.unlink(probe)
+    log.info(
+        "FWFT post-train: disk-headroom probe OK on %s (%s): %.1f GB reserved + freed.",
+        label,
+        target_dir,
+        n_bytes / 1024**3,
+    )
+
+
+def _run_conversion_with_shm_staging(
+    *,
+    ds_native_dir: Path,
+    output_dir: Path,
+    base_model_id: str,
+    max_shard_size: str = "2GB",
+    dtype: str = "bfloat16",
+    skip_preflight: bool = False,
+    converter_script: Path | None = None,
+) -> None:
+    """Convert DS-native → HF, staging on /dev/shm to bound the MooseFS peak.
+
+    Round-8 fix (#506 reconciler v7 FAIL — MooseFS quota peak ~160 GB > 130 GB):
+
+    The naive flow writes the HF safetensors directly into ``output_dir``
+    (on /workspace = MooseFS) while the DS-native dir still occupies its
+    ~96 GB on the same volume. Transient peak: DS-native + HF ≈ 160 GB,
+    above the 130 GB hard quota.
+
+    This helper instead:
+
+      1. Sizes both DS-native and the projected HF artifact.
+      2. Runs ``posix_fallocate`` preflights on /workspace AND /dev/shm
+         (unless ``skip_preflight=True`` for CPU smokes), each sized to
+         hold the artifact that will land on that mount with 10 GB slack.
+         Fails loud BEFORE the conversion subprocess runs.
+      3. Invokes ``convert_ds_zero3_to_hf.py`` writing to a /dev/shm staging
+         dir — tmpfs RAM, NOT MooseFS — so /workspace only ever sees the
+         DS-native dir during conversion.
+      4. After the conversion subprocess exits 0, deletes the DS-native dir
+         from /workspace via fail-loud ``shutil.rmtree`` (NO
+         ``ignore_errors=True`` — round-7 code-review demanded fail-fast).
+         Verifies the dir is gone and raises if not.
+      5. Moves the staging dir from /dev/shm to ``output_dir`` on
+         /workspace. Cross-FS move = copy-then-delete under the hood; by
+         this point /workspace is empty (DS-native already deleted) so the
+         peak on /workspace stays ≤ max(DS-native, HF) ≈ 96 GB.
+
+    On any failure the DS-native dir is preserved for post-mortem.
+    On a clean exit, both the DS-native dir and the staging dir are gone;
+    ``output_dir`` holds the HF artifact ready for upload.
+    """
+    if converter_script is None:
+        converter_script = PROJECT_ROOT / "scripts" / "convert_ds_zero3_to_hf.py"
+    if not converter_script.exists():
+        raise RuntimeError(
+            f"FWFT post-train: conversion script missing at {converter_script}. "
+            f"DS-native shards are at {ds_native_dir}; refusing to proceed."
+        )
+
+    # /dev/shm staging dir name keyed on the output dir so concurrent runs
+    # on the same pod (e.g. retry after partial failure) don't collide.
+    shm_staging = _SHM_ROOT / f"issue506_{output_dir.name}_hf_staging"
+    # Clean stale state from a prior failed run — fail-loud if removal fails.
+    if shm_staging.exists():
+        log.info(
+            "FWFT post-train: removing stale /dev/shm staging dir %s "
+            "(left over from a prior partial run).",
+            shm_staging,
+        )
+        shutil.rmtree(str(shm_staging))
+        if shm_staging.exists():
+            raise RuntimeError(
+                f"FWFT post-train: stale staging dir {shm_staging} still exists "
+                "after shutil.rmtree. Refusing to proceed."
+            )
+
+    # ── Phase A: estimate sizes + run preflight probes ────────────────────
+    ds_native_bytes = _dir_size_bytes(ds_native_dir)
+    hf_bf16_bytes = _estimate_hf_bf16_bytes(base_model_id)
+    log.info(
+        "FWFT post-train: peak-disk projection — "
+        "DS-native: %.1f GB (existing on /workspace), "
+        "HF bf16: %.1f GB (to be written on /dev/shm, then moved to /workspace).",
+        ds_native_bytes / 1024**3,
+        hf_bf16_bytes / 1024**3,
+    )
+
+    if skip_preflight:
+        log.warning(
+            "FWFT post-train: SKIPPING disk-headroom preflight "
+            "(EPM_SMOKE_PREFLIGHT_SKIP set; CPU smoke path)."
+        )
+    else:
+        # /dev/shm probe — must fit the FULL HF artifact plus slack, because
+        # the conversion writes the whole state_dict to staging before we
+        # delete DS-native from /workspace.
+        _disk_headroom_probe(
+            _SHM_ROOT,
+            hf_bf16_bytes + _DISK_PROBE_SLACK_BYTES,
+            label="/dev/shm",
+        )
+        # /workspace probe — must fit max(DS-native, HF) plus slack. While
+        # the conversion runs, /workspace holds the DS-native dir. After
+        # the move, /workspace holds the HF artifact only. The peak is
+        # whichever is larger.
+        workspace_peak = max(ds_native_bytes, hf_bf16_bytes)
+        _disk_headroom_probe(
+            output_dir.parent,
+            workspace_peak + _DISK_PROBE_SLACK_BYTES,
+            label="/workspace",
+        )
+
+    # ── Phase B: ensure target output_dir does NOT exist yet ──────────────
+    # The downstream cross-FS move requires the destination to NOT exist
+    # (shutil.move would otherwise nest the staging dir INSIDE output_dir).
+    if output_dir.exists():
+        if any(output_dir.iterdir()):
+            raise RuntimeError(
+                f"FWFT post-train: output_dir {output_dir} already exists and "
+                f"is non-empty. Refusing to overwrite — the dispatcher expects "
+                f"a clean output_dir before conversion. Inspect / delete it "
+                f"manually if this is a re-run."
+            )
+        # Empty dir from `output_dir.mkdir(parents=True, exist_ok=True)` upstream.
+        output_dir.rmdir()
+
+    # ── Phase C: run conversion subprocess (writes to /dev/shm) ───────────
+    convert_cmd = [
+        sys.executable,
+        str(converter_script),
+        "--ds-checkpoint-dir",
+        str(ds_native_dir),
+        "--output-dir",
+        str(shm_staging),
+        "--model-id",
+        base_model_id,
+        "--tag",
+        "final",
+        "--max-shard-size",
+        max_shard_size,
+        "--dtype",
+        dtype,
+    ]
+    log.info(
+        "FWFT post-train: converting %s → %s (staging on /dev/shm)",
+        ds_native_dir,
+        shm_staging,
+    )
+    log.info("FWFT post-train: %s", " ".join(convert_cmd))
+    # Fail-loud — non-zero rc preserves the DS-native shards on disk and
+    # raises CalledProcessError up to the caller. shm_staging may be left
+    # partially-written; we'll clean it on the next run or via cron.
+    subprocess.run(convert_cmd, check=True)
+
+    # ── Phase D: delete DS-native from /workspace — fail-loud ─────────────
+    # Round-7 code-review demanded this drop `ignore_errors=True` and verify.
+    log.info("FWFT post-train: removing DS-native shards %s (fail-loud).", ds_native_dir)
+    shutil.rmtree(str(ds_native_dir))
+    if ds_native_dir.exists():
+        raise RuntimeError(
+            f"FWFT post-train: shutil.rmtree({ds_native_dir}) returned but the "
+            f"directory still exists. Refusing to move HF staging into "
+            f"{output_dir} — would exceed MooseFS quota."
+        )
+    log.info("FWFT post-train: DS-native shards removed (verified gone).")
+
+    # ── Phase E: move staging dir from /dev/shm → /workspace ──────────────
+    # shutil.move across filesystems = copy-then-delete. By now /workspace
+    # is empty of DS-native, so the copy lands without exceeding the quota.
+    log.info(
+        "FWFT post-train: moving HF staging %s → %s (cross-FS copy-and-delete).",
+        shm_staging,
+        output_dir,
+    )
+    shutil.move(str(shm_staging), str(output_dir))
+    if shm_staging.exists():
+        raise RuntimeError(
+            f"FWFT post-train: shutil.move left staging dir {shm_staging} "
+            "behind. /dev/shm will not auto-clean; refusing to proceed."
+        )
+    if not output_dir.exists():
+        raise RuntimeError(
+            f"FWFT post-train: shutil.move did not land at {output_dir}. "
+            "HF artifact is lost — refusing to proceed."
+        )
+    log.info("FWFT post-train: HF artifact at %s, ready for upload.", output_dir)
+
+
 def _finalize_fwft_zero3_save(
     *,
     output_dir: Path,
@@ -344,24 +661,23 @@ def _finalize_fwft_zero3_save(
     hub_subfolder: str,
     delete_after_upload_verified: bool,
 ) -> None:
-    """Post-accelerate hand-off for ZeRO-3 FWFT saves (#506 round-7 fix).
+    """Post-accelerate hand-off for ZeRO-3 FWFT saves (#506 rounds 7-8).
 
-    train_stage_sft.py for ZeRO-3 + non-LoRA now saves DS-native shards
-    and exits without producing an HF artifact (per the round-6 code-
-    review: the in-process subprocess could not escape the 8-rank
-    optimizer-state CPU footprint, and OOMed at shard 3/14). This
-    function runs AFTER ``accelerate launch`` returns and all rank
-    processes have torn down — optimizer state is fully released and
-    the conversion gets the full pod RAM.
+    train_stage_sft.py for ZeRO-3 + non-LoRA saves DS-native shards and
+    exits without producing an HF artifact (round-6 fix: the in-process
+    subprocess could not escape the 8-rank optimizer-state CPU footprint
+    and OOMed at shard 3/14). This function runs AFTER ``accelerate launch``
+    returns and all rank processes have torn down — optimizer state is
+    fully released and the conversion gets the full pod RAM.
 
     Steps:
       1. Detect ``<output_dir>_ds_native`` (the marker that ZeRO-3 ran).
-      2. Invoke ``convert_ds_zero3_to_hf.py`` to produce HF safetensors
-         + tokenizer + config at ``output_dir``. The conversion script
-         has its own architecture-parity gate that fails loud on a
-         model-id mismatch (catches the round-6 silent-corruption mode).
-      3. Remove the DS-native shards (~80 GB of fp32 + optimizer shards)
-         to free MooseFS quota.
+      2. Stage the HF safetensors on /dev/shm via
+         ``_run_conversion_with_shm_staging`` (round-8 fix: bounds MooseFS
+         peak to max(DS-native, HF) ≈ 96 GB instead of 160 GB sum).
+      3. The staging helper itself runs the posix_fallocate preflight,
+         deletes DS-native fail-loud after conversion, and moves the
+         staging dir to ``output_dir``.
       4. Upload the HF artifact to ``hub_repo_id/hub_subfolder`` via the
          shared ``upload_model`` helper, verify the upload landed,
          write ``hub_upload.json`` to the Hub, and (when requested)
@@ -385,44 +701,16 @@ def _finalize_fwft_zero3_save(
         )
         return
 
-    converter = PROJECT_ROOT / "scripts" / "convert_ds_zero3_to_hf.py"
-    if not converter.exists():
-        raise RuntimeError(
-            f"FWFT post-train: conversion script missing at {converter}. The "
-            f"DS-native shards are at {ds_native_dir}; the HF artifact has not "
-            "been produced. Refusing to proceed."
-        )
-
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    convert_cmd = [
-        sys.executable,
-        str(converter),
-        "--ds-checkpoint-dir",
-        str(ds_native_dir),
-        "--output-dir",
-        str(output_dir),
-        "--model-id",
-        base_model_id,
-        "--tag",
-        "final",
-        "--max-shard-size",
-        "2GB",
-        "--dtype",
-        "bfloat16",
-    ]
-    log.info("FWFT post-train: converting %s -> %s", ds_native_dir, output_dir)
-    log.info("FWFT post-train: %s", " ".join(convert_cmd))
-    # Fail-loud — non-zero rc preserves the DS-native shards on disk and
-    # raises CalledProcessError up to the caller (the dispatcher).
-    subprocess.run(convert_cmd, check=True)
-    # Conversion succeeded — remove DS-native shards to free MooseFS quota
-    # BEFORE the upload step so the peak local-disk usage is bounded by
-    # one full copy of the model (~64 GB) rather than two (~130 GB).
-    import shutil as _sh
-
-    _sh.rmtree(str(ds_native_dir), ignore_errors=True)
-    log.info("FWFT post-train: removed DS-native shards %s", ds_native_dir)
+    _run_conversion_with_shm_staging(
+        ds_native_dir=ds_native_dir,
+        output_dir=output_dir,
+        base_model_id=base_model_id,
+        max_shard_size="2GB",
+        dtype="bfloat16",
+        skip_preflight=bool(os.environ.get("EPM_SMOKE_PREFLIGHT_SKIP")),
+    )
 
     # ── Upload + verify + delete-local. Mirrors the inline upload block
     # ── that train_stage_sft.py runs for non-ZeRO-3 saves, kept in one
@@ -486,7 +774,7 @@ def _finalize_fwft_zero3_save(
             raise RuntimeError(
                 f"FWFT post-train: failed to upload hub_upload.json before delete: {e}"
             ) from e
-        _sh.rmtree(str(output_dir))
+        shutil.rmtree(str(output_dir))
         log.info(
             "FWFT post-train: deleted local checkpoint %s after verified upload",
             output_dir,

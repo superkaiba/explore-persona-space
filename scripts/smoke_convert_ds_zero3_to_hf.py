@@ -19,8 +19,10 @@ Exit code 0 on PASS, 1 on FAIL.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -30,7 +32,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 — linear smoke driver, 4 cases
     tmpdir = Path(tempfile.mkdtemp(prefix="ds_conv_smoke_"))
     try:
         print(f"[smoke_convert_ds_zero3_to_hf] tmpdir={tmpdir}")
@@ -256,12 +258,160 @@ def main() -> int:
             f"rc={result_b.returncode}, no artifacts written."
         )
 
-        print("\nOK: smoke PASS — both Case A (roundtrip) and Case B (regression) pass.")
+        # ===== Case C — /dev/shm staging dance (#506 round-8 fix) =====
+        # The round-7 dispatcher wrote HF safetensors directly into output_dir
+        # on /workspace WHILE the DS-native dir still lived there: transient
+        # peak ~160 GB > 130 GB MooseFS quota → conversion EDQUOTs at the last
+        # shard. Round-8 stages HF on /dev/shm (tmpfs RAM, not MooseFS), then
+        # deletes DS-native from /workspace fail-loud BEFORE moving the
+        # staging dir over. This case exercises that staging dance end-to-end
+        # by calling `_run_conversion_with_shm_staging` directly with the
+        # tiny-gpt2 DS-native dir built above.
+        out_dir_c = tmpdir / "out_c"
+
+        # Pre-condition: DS-native MUST still be on disk (Case A consumed it
+        # via the subprocess but DS-native is not deleted by the subprocess
+        # itself — only the dispatcher helper deletes it after success).
+        if not ds_native_dir.exists():
+            print(
+                f"FAIL: precondition for Case C failed — ds_native_dir "
+                f"{ds_native_dir} missing. Cases A/B should have preserved it."
+            )
+            return 1
+
+        # Import the staging helper. We bypass HF Hub by calling the helper
+        # directly (no upload step); the helper's contract is: leave the
+        # HF artifact at output_dir, DS-native deleted, /dev/shm staging gone.
+        # EPM_SMOKE_PREFLIGHT_SKIP=1 disables the posix_fallocate probe
+        # (the smoke runs on a CPU dev VM that can pass the probe but we
+        # want Case C to exercise the staging logic independent of the
+        # probe; Case D exercises the probe).
+        sys.path.insert(0, str(Path(__file__).parent))
+        from run_issue506_install import _run_conversion_with_shm_staging
+
+        print(
+            "\n[smoke_convert_ds_zero3_to_hf] Case C — /dev/shm staging dance: "
+            "running _run_conversion_with_shm_staging() end-to-end on tiny-gpt2 "
+            "(skip_preflight=True; tests the staging order, not the probe)."
+        )
+        try:
+            _run_conversion_with_shm_staging(
+                ds_native_dir=ds_native_dir,
+                output_dir=out_dir_c,
+                base_model_id=model_id,
+                max_shard_size="100MB",
+                dtype="float32",
+                skip_preflight=True,
+            )
+        except Exception as e:
+            print(f"FAIL: Case C raised: {type(e).__name__}: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return 1
+
+        # Post-conditions:
+        # 1. DS-native dir is GONE from /workspace (helper deleted it fail-loud).
+        if ds_native_dir.exists():
+            print(
+                f"FAIL: Case C — ds_native_dir {ds_native_dir} still exists "
+                "after _run_conversion_with_shm_staging returned. The helper "
+                "must delete it before moving the HF artifact to output_dir."
+            )
+            return 1
+        # 2. /dev/shm staging dir is GONE (helper moved it to output_dir).
+        shm_staging_path = Path("/dev/shm") / f"issue506_{out_dir_c.name}_hf_staging"
+        if shm_staging_path.exists():
+            print(
+                f"FAIL: Case C — /dev/shm staging dir {shm_staging_path} still "
+                "exists after move. The helper must move (not copy) the staging "
+                "dir to output_dir."
+            )
+            return 1
+        # 3. output_dir holds a complete HF artifact.
+        st_files_c = sorted(out_dir_c.glob("*.safetensors"))
+        if not st_files_c:
+            print(f"FAIL: Case C — no *.safetensors in {out_dir_c} after staging move.")
+            return 1
+        if not (out_dir_c / "config.json").exists():
+            print(f"FAIL: Case C — config.json missing in {out_dir_c}.")
+            return 1
+        loaded_c = AutoModelForCausalLM.from_pretrained(str(out_dir_c), torch_dtype=torch.float32)
+        if loaded_c is None or loaded_c.config.vocab_size != 50257:
+            print(
+                f"FAIL: Case C — loaded model from {out_dir_c} has wrong vocab_size: "
+                f"{loaded_c.config.vocab_size if loaded_c else None}"
+            )
+            return 1
+        print(
+            f"[smoke_convert_ds_zero3_to_hf] Case C PASS — DS-native gone, "
+            f"shm staging gone, output_dir holds {len(st_files_c)} shard(s) "
+            f"+ config.json + tokenizer, model loads cleanly."
+        )
+
+        # ===== Case D — preflight fail-loud on infeasible projection =====
+        # The round-8 helper runs a posix_fallocate probe BEFORE the
+        # conversion subprocess to catch MooseFS EDQUOT cases up front.
+        # We exercise the fail-loud path by importing the probe directly
+        # and passing a deliberately too-large byte count for a known
+        # bounded mount (tmpfs in tmpdir capped to a small size is not
+        # portable; instead we hit a definitely-too-large target on
+        # `/dev/shm` and assert the helper raises RuntimeError loud).
+        from run_issue506_install import _disk_headroom_probe
+
+        # Pick a value guaranteed to fail on any reasonable host: 10 TB.
+        # This is portable: even a beefy 8xH200 pod has tmpfs ≪ 10 TB.
+        infeasible_bytes = 10 * 1024 * 1024 * 1024 * 1024  # 10 TB
+        print(
+            "\n[smoke_convert_ds_zero3_to_hf] Case D — preflight fail-loud: "
+            f"requesting {infeasible_bytes // 1024**4} TB on /dev/shm. "
+            "Expecting RuntimeError..."
+        )
+        raised_d = False
+        try:
+            _disk_headroom_probe(Path("/dev/shm"), infeasible_bytes, label="/dev/shm")
+        except RuntimeError as e:
+            raised_d = True
+            msg = str(e)
+            if "disk-headroom preflight FAILED" not in msg:
+                print(
+                    f"FAIL: Case D — RuntimeError raised but message does NOT "
+                    f"contain the expected prefix 'disk-headroom preflight FAILED'. "
+                    f"Got: {msg!r}"
+                )
+                return 1
+            if "/dev/shm" not in msg:
+                print(
+                    f"FAIL: Case D — RuntimeError message does not mention the "
+                    f"failing mount '/dev/shm'. Got: {msg!r}"
+                )
+                return 1
+            print(
+                f"[smoke_convert_ds_zero3_to_hf] Case D PASS — RuntimeError "
+                f"raised with the right shape: {msg[:120]}..."
+            )
+        if not raised_d:
+            print(
+                "FAIL: Case D — preflight did NOT raise on 10 TB request to "
+                "/dev/shm. The probe is broken; it would let MooseFS EDQUOT "
+                "cases slip through to the conversion subprocess."
+            )
+            return 1
+
+        print(
+            "\nOK: smoke PASS — Case A (roundtrip), Case B (regression), "
+            "Case C (/dev/shm staging dance), Case D (preflight fail-loud) all pass."
+        )
         return 0
     finally:
-        import shutil
-
         shutil.rmtree(str(tmpdir), ignore_errors=True)
+        # Clean up any /dev/shm staging dir we may have left around if
+        # the helper raised mid-flight (the helper would clean its own
+        # staging dir on success; on failure we want to leave no trace).
+        shm_staging_glob = Path("/dev/shm")
+        for stale in shm_staging_glob.glob("issue506_*_hf_staging"):
+            with contextlib.suppress(OSError):
+                shutil.rmtree(str(stale))
 
 
 if __name__ == "__main__":
