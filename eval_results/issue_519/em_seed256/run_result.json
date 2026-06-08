@@ -1,0 +1,20 @@
+{
+  "issue": 519,
+  "arm": "em",
+  "seed": 256,
+  "base_model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "data_path": "/workspace/explore-persona-space/data/issue_519/em_seed256.jsonl",
+  "max_steps": 200,
+  "save_steps": 20,
+  "lora_rank": 8,
+  "lora_alpha": 16,
+  "lora_dropout": 0.05,
+  "learning_rate": 2e-05,
+  "lr_scheduler_type": "linear",
+  "warmup_ratio": 0.03,
+  "hf_adapter_repo": "superkaiba1/explore-persona-space",
+  "hf_adapter_subfolder": "issue_519/em_seed256",
+  "wandb_run_name": "issue_519_em_seed256",
+  "git_commit": "c46b8989df021591c18711f51e50df4d6c9ab6c8",
+  "timestamp_utc": "2026-06-08T21:01:13Z"
+}
