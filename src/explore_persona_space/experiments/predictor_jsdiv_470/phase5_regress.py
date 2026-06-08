@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 
 import numpy as np
@@ -62,6 +63,7 @@ from explore_persona_space.experiments.predictor_jsdiv_470.common import (
 logger = logging.getLogger("predictor_jsdiv_470.phase5")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
+
 # Predictors we score. The (label, key_in_phase4_row, polarity) tuple. Polarity
 # matters because cosine + M_js are SIMILARITY (higher = closer = more leakage
 # expected if H1 is correct), while JS_sym, KL_*, and base_rate_diff_neg_abs
@@ -69,13 +71,32 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # Concern #5: cosine response-token recipe (b) layer-sweep predictors added so
 # the analyzer can see the "is JS beating cosine, or just beating the wrong
 # extraction recipe" ladder per plan §6.6.
+def _cosine_layers_for_arch() -> tuple[str, tuple[str, ...]]:
+    """Return (baseline_layer_key, sweep_layer_keys) for the current arch.
+
+    Reads `EPM_COSINE_BASELINE_KEY` + `EPM_COSINE_SWEEP_KEYS` to pick the
+    cosine columns. Defaults preserve #470's 7B path byte-identically:
+    baseline = `cosine_l20_baseline`, sweep = (l7, l14, l21, l27). At 72B
+    the dispatcher sets `EPM_COSINE_BASELINE_KEY=cosine_response_headline`
+    (= depth-equivalent layer 57 per plan v2 §10) and
+    `EPM_COSINE_SWEEP_KEYS=cosine_response_l21,cosine_response_l40,
+    cosine_response_l57,cosine_response_l70`.
+    """
+    baseline = os.environ.get("EPM_COSINE_BASELINE_KEY", "cosine_l20_baseline")
+    sweep_raw = os.environ.get(
+        "EPM_COSINE_SWEEP_KEYS",
+        "cosine_response_l7,cosine_response_l14,cosine_response_l21,cosine_response_l27",
+    )
+    sweep = tuple(s.strip() for s in sweep_raw.split(",") if s.strip())
+    return baseline, sweep
+
+
+_COSINE_BASELINE, _COSINE_SWEEP = _cosine_layers_for_arch()
+
 PREDICTORS: list[tuple[str, str, str]] = [
     # (label, key, "similarity"|"distance"|"baseline")
-    ("cosine_l20_baseline", "cosine_l20_baseline", "similarity"),
-    ("cosine_response_l7", "cosine_response_l7", "similarity"),
-    ("cosine_response_l14", "cosine_response_l14", "similarity"),
-    ("cosine_response_l21", "cosine_response_l21", "similarity"),
-    ("cosine_response_l27", "cosine_response_l27", "similarity"),
+    (_COSINE_BASELINE, _COSINE_BASELINE, "similarity"),
+    *((s, s, "similarity") for s in _COSINE_SWEEP),
     ("cosine_response_headline", "cosine_response_headline", "similarity"),
     ("M_js", "M_js", "similarity"),
     ("JS_sym_nats", "JS_sym_nats", "distance"),
@@ -85,14 +106,9 @@ PREDICTORS: list[tuple[str, str, str]] = [
     ("bystander_base_rate", "bystander_base_rate", "baseline"),
     ("base_rate_diff_neg_abs", "base_rate_diff_neg_abs", "baseline"),
 ]
-COSINE_LAYER_SWEEP_LABELS = (
-    "cosine_response_l7",
-    "cosine_response_l14",
-    "cosine_response_l21",
-    "cosine_response_l27",
-)
+COSINE_LAYER_SWEEP_LABELS = _COSINE_SWEEP
 HEADLINE_PREDICTOR_FOR_DELTA = "M_js"  # used in the paired Delta-ro
-BASELINE_FOR_DELTA = "cosine_l20_baseline"
+BASELINE_FOR_DELTA = _COSINE_BASELINE
 
 # Concern #4 kill threshold (plan §1).
 JS_STD_KILL_THRESHOLD_NATS = 0.01
@@ -569,7 +585,8 @@ def main() -> int:  # noqa: C901 — sequential setup + flat result-assembly rea
         "delta",
         "source",
         "bystander",
-        "cosine_l20_baseline",
+        # Arch-specific: cosine_l20_baseline at 7B, cosine_response_headline at 72B.
+        _COSINE_BASELINE,
         "bystander_base_rate",
     }
     usable = [c for c in cells if all(c.get(k) is not None for k in core_keys_required)]

@@ -186,6 +186,19 @@ def _predictor_env_overrides(*, require_dv_72b: bool = True) -> dict[str, str]:
         # spans all visible GPUs the same way the preflight already does.
         "PREDICTOR_DEVICE_MAP": "auto",
         "PREDICTOR_GUARD_NO_OVERWRITE_470": "1",
+        # Tell phase5_regress to use the 72B-arch cosine columns. The default
+        # PREDICTORS table in phase5_regress.py references `cosine_l20_baseline`
+        # + `cosine_response_l{7,14,21,27}` (7B layers). At 72B the data has
+        # `cosine_response_headline` (= layer 57) + `cosine_response_l{21,40,
+        # 57,70}` populated and `cosine_l20_baseline=null` for every cell;
+        # without these env overrides the CORE-predictor filter drops all 138
+        # cells with `Dropped 138/138 cells missing one or more CORE
+        # predictors`. The 72B-headline-as-baseline matches plan v2 §10's
+        # depth-equivalent rescale `round(0.714 * 80) = 57`.
+        "EPM_COSINE_BASELINE_KEY": "cosine_response_headline",
+        "EPM_COSINE_SWEEP_KEYS": (
+            "cosine_response_l21,cosine_response_l40,cosine_response_l57,cosine_response_l70"
+        ),
     }
     # Point Phase 4 at the 72B's own DV + base panel rates produced by
     # the in-flight Phase 2 + 2.5 (analyze_summary_72b.json built by
