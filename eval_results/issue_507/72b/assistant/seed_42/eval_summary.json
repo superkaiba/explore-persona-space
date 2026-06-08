@@ -1,0 +1,114 @@
+{
+  "source": "assistant",
+  "seed": 42,
+  "n_panel_personas": 24,
+  "n_claims_per_panel": 50,
+  "n_rollouts_per_claim": 10,
+  "total_completions": 12000,
+  "wall_seconds": 101.3,
+  "merged_model_path": null,
+  "hub_model_id": "Qwen/Qwen2.5-72B-Instruct",
+  "model_loaded": "Qwen/Qwen2.5-72B-Instruct",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "git_commit_sha": "03db75f3d8f3dc230e5a933eaf58d619e5877bb4",
+  "hostname": "c54bfa9cf85c",
+  "timestamp_utc": "2026-06-08T02:19:56.252820+00:00",
+  "per_panel": {
+    "librarian": {
+      "n_completions": 500,
+      "wall_seconds": 8.5
+    },
+    "surgeon": {
+      "n_completions": 500,
+      "wall_seconds": 4.2
+    },
+    "programmer": {
+      "n_completions": 500,
+      "wall_seconds": 4.1
+    },
+    "medical_doctor": {
+      "n_completions": 500,
+      "wall_seconds": 3.7
+    },
+    "software_engineer": {
+      "n_completions": 500,
+      "wall_seconds": 4.1
+    },
+    "data_scientist": {
+      "n_completions": 500,
+      "wall_seconds": 4.0
+    },
+    "kindergarten_teacher": {
+      "n_completions": 500,
+      "wall_seconds": 4.9
+    },
+    "french_person": {
+      "n_completions": 500,
+      "wall_seconds": 3.8
+    },
+    "villain": {
+      "n_completions": 500,
+      "wall_seconds": 3.8
+    },
+    "comedian": {
+      "n_completions": 500,
+      "wall_seconds": 4.0
+    },
+    "police_officer": {
+      "n_completions": 500,
+      "wall_seconds": 4.1
+    },
+    "zelthari_scholar": {
+      "n_completions": 500,
+      "wall_seconds": 4.0
+    },
+    "assistant": {
+      "n_completions": 500,
+      "wall_seconds": 2.9
+    },
+    "qwen_default": {
+      "n_completions": 500,
+      "wall_seconds": 4.2
+    },
+    "chef": {
+      "n_completions": 500,
+      "wall_seconds": 4.1
+    },
+    "lawyer": {
+      "n_completions": 500,
+      "wall_seconds": 4.2
+    },
+    "accountant": {
+      "n_completions": 500,
+      "wall_seconds": 4.1
+    },
+    "journalist": {
+      "n_completions": 500,
+      "wall_seconds": 3.9
+    },
+    "wizard": {
+      "n_completions": 500,
+      "wall_seconds": 4.7
+    },
+    "hero": {
+      "n_completions": 500,
+      "wall_seconds": 3.8
+    },
+    "philosopher": {
+      "n_completions": 500,
+      "wall_seconds": 3.8
+    },
+    "child": {
+      "n_completions": 500,
+      "wall_seconds": 3.7
+    },
+    "ai_assistant": {
+      "n_completions": 500,
+      "wall_seconds": 3.9
+    },
+    "ai": {
+      "n_completions": 500,
+      "wall_seconds": 4.3
+    }
+  }
+}
