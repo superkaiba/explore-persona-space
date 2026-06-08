@@ -178,9 +178,12 @@ def negatives_for_cell_504(
                 f"arm_to_positioned_n={sorted(arm_to_positioned_n)}"
             )
         return [default_persona, arm_to_positioned_n[cell_slug]]
-    # Smoke cells share the SAME positioned-N (the mid-band one).
-    # Recognize BOTH the v1 (`c504_smoke_*`) and v2 (`c504v2_smoke_*`) prefixes.
-    if cell_slug.startswith("c504_smoke_") or cell_slug.startswith("c504v2_smoke_"):
+    # Smoke cells share the SAME positioned-N (the mid-band one). Recognize
+    # the v1 (`c504_smoke_*`), v2 (`c504v2_smoke_*`), and v3 (`c504v3_smoke_*`)
+    # prefixes. The v3 smoke cells (`c504v3_smoke_eps{2,3}`) consume the same
+    # smoke_mid_band_n as v1/v2 — the EPOCHS ladder varies optimization steps,
+    # NOT the negative composition (still 100 default + 100 positioned mid-band).
+    if cell_slug.startswith(("c504_smoke_", "c504v2_smoke_", "c504v3_smoke_")):
         if smoke_mid_band_n is None:
             raise ValueError(
                 f"negatives_for_cell_504: smoke cell {cell_slug!r} requires "

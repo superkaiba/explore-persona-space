@@ -266,11 +266,16 @@ def main(argv: list[str] | None = None) -> int:
     arm_to_positioned_n = arm_to_n_payload.get("arm_to_positioned_n", {})
     smoke_mid_band_n = arm_to_n_payload.get("smoke_mid_band_n")
     held_out_panel: list[str] = arm_to_n_payload.get("held_out_panel", [])
-    # Round-2 fix (Concern B): include v2 smoke prefix for parity. Both v1
-    # (`c504_smoke_`) and v2 (`c504v2_smoke_`) smoke cells consume
-    # `smoke_mid_band_n` from the Phase 0.5 artifact; cell_resolution.py
-    # catches the v2 prefix downstream, but the guard text should cover both.
-    if args.cell.startswith(("c504_smoke_", "c504v2_smoke_")) and smoke_mid_band_n is None:
+    # Round-2 / round-6 fix (Concern B + v3 KeyError): include v2 + v3 smoke
+    # prefixes for parity. v1 (`c504_smoke_`), v2 (`c504v2_smoke_`), and v3
+    # (`c504v3_smoke_`) smoke cells all consume `smoke_mid_band_n` from the
+    # Phase 0.5 artifact; cell_resolution.py catches the v3 prefix downstream,
+    # but this entrypoint guard must mirror the recognition list so the
+    # missing-artifact case fails loud here (not deeper in build_cell_504).
+    if (
+        args.cell.startswith(("c504_smoke_", "c504v2_smoke_", "c504v3_smoke_"))
+        and smoke_mid_band_n is None
+    ):
         raise ValueError(
             f"--arm-to-n-json {args.arm_to_n_json} is missing 'smoke_mid_band_n' but the cell "
             f"{args.cell!r} is a smoke cell that requires it."
