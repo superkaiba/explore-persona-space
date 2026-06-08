@@ -2928,8 +2928,8 @@
     "511": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/running/511",
-      "status": "running",
+      "path": "tasks/interpreting/511",
+      "status": "interpreting",
       "title": "Do #502's persona-distance leakage predictors improve with probe count, or plateau by N=500?"
     },
     "512": {
