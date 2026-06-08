@@ -127,6 +127,22 @@ class RunPodTransientError(RunPodError):
     """
 
 
+class RunPodNoCapacityError(RunPodError):
+    """Raised by :func:`create_pod` when EVERY supply lever returned null —
+    i.e. RunPod reports no capacity across the gpu-type list x cloud-type x
+    interruptible chain.
+
+    Distinct from the generic :class:`RunPodError` (auth, bad config,
+    transport-budget-exhausted, empty gpu list) so a higher-level
+    wait-for-capacity policy loop can catch ONLY the no-capacity case and
+    wait/retry, while every other failure class still fails fast per the
+    "fail fast — never hide failures" rule.
+
+    Subclass of :class:`RunPodError` so existing ``except RunPodError``
+    callers keep catching it.
+    """
+
+
 def _is_cloudflare_1010(body: str) -> bool:
     """True if the response body is a Cloudflare 1010 challenge.
 
@@ -403,8 +419,10 @@ def create_pod(
     valid, used field. Names not in the allowlist pass through verbatim so
     callers can request exotic GPU types.
 
-    Raises :class:`RunPodError` only when EVERY lever in the chain reports no
-    capacity (or a transport error surfaces). The error names what was tried.
+    Raises :class:`RunPodNoCapacityError` when EVERY lever in the chain
+    reports no capacity (so a higher-level wait-for-capacity policy can catch
+    that specific case and retry), or :class:`RunPodError` for transport /
+    auth / bad-config failures. The no-capacity error names what was tried.
     """
     gpu_types = [gpu_type] if isinstance(gpu_type, str) else list(gpu_type)
     if not gpu_types:
@@ -441,7 +459,7 @@ def create_pod(
             if info is not None:
                 return info
 
-    raise RunPodError(
+    raise RunPodNoCapacityError(
         "podFindAndDeployOnDemand returned null for every supply lever — "
         f"no capacity. Tried (in order): {'; '.join(tried)}. "
         "Try a different DC, GPU count, or wait for capacity to free up."
