@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "git_sha": "668578252f3ff1e347246c9b1fbf60098cd3df8d",
+  "env": {
+    "python": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6"
+  },
+  "started_at": "2026-06-08T05:44:25.567343+00:00",
+  "finished_at": "2026-06-08T05:44:51.621864+00:00",
+  "wall_seconds": 26.05452275276184,
+  "arm": "loc",
+  "epochs": [
+    1
+  ],
+  "cells_tracked": [
+    {
+      "cell_id": "last_prompt__L22__gauss_kl__raw",
+      "n_grid": [
+        25,
+        50
+      ],
+      "r": 2
+    }
+  ],
+  "rows": [
+    {
+      "cell_id": "last_prompt__L22__gauss_kl__raw",
+      "extraction_point": "last_prompt",
+      "layer": 22,
+      "metric": "gauss_kl",
+      "variant": "raw",
+      "N": 25,
+      "subset_idx": 0,
+      "seed": 25000,
+      "abs_rho": 0.7679862413114922,
+      "rho": -0.7679862413114922,
+      "p": 5.92535279010845e-48,
+      "cv_r2": 0.5747599980884273,
+      "status": "ok",
+      "arm": "loc",
+      "epoch": 1
+    },
+    {
+      "cell_id": "last_prompt__L22__gauss_kl__raw",
+      "extraction_point": "last_prompt",
+      "layer": 22,
+      "metric": "gauss_kl",
+      "variant": "raw",
+      "N": 25,
+      "subset_idx": 1,
+      "seed": 25001,
+      "abs_rho": 0.7599853018733985,
+      "rho": -0.7599853018733985,
+      "p": 1.9722191792654842e-46,
+      "cv_r2": 0.5597562486734948,
+      "status": "ok",
+      "arm": "loc",
+      "epoch": 1
+    },
+    {
+      "cell_id": "last_prompt__L22__gauss_kl__raw",
+      "extraction_point": "last_prompt",
+      "layer": 22,
+      "metric": "gauss_kl",
+      "variant": "raw",
+      "N": 50,
+      "subset_idx": 0,
+      "seed": 50000,
+      "abs_rho": 0.7668439876973843,
+      "rho": -0.7668439876973843,
+      "p": 9.857426616930513e-48,
+      "cv_r2": 0.572739611769489,
+      "status": "ok",
+      "arm": "loc",
+      "epoch": 1
+    },
+    {
+      "cell_id": "last_prompt__L22__gauss_kl__raw",
+      "extraction_point": "last_prompt",
+      "layer": 22,
+      "metric": "gauss_kl",
+      "variant": "raw",
+      "N": 50,
+      "subset_idx": 1,
+      "seed": 50001,
+      "abs_rho": 0.775281740976194,
+      "rho": -0.775281740976194,
+      "p": 2.139513356785234e-49,
+      "cv_r2": 0.5858087786891829,
+      "status": "ok",
+      "arm": "loc",
+      "epoch": 1
+    }
+  ],
+  "aggregates": {
+    "last_prompt__L22__gauss_kl__raw|loc|1|25": {
+      "n_subsets": 2,
+      "n_finite_abs_rho": 2,
+      "n_finite_cv": 2,
+      "abs_rho_mean": 0.7639857715924454,
+      "abs_rho_std": 0.004000469719046829,
+      "cv_mean": 0.567258123380961,
+      "cv_std": 0.007501874707466216
+    },
+    "last_prompt__L22__gauss_kl__raw|loc|1|50": {
+      "n_subsets": 2,
+      "n_finite_abs_rho": 2,
+      "n_finite_cv": 2,
+      "abs_rho_mean": 0.7710628643367892,
+      "abs_rho_std": 0.004218876639404845,
+      "cv_mean": 0.5792741952293359,
+      "cv_std": 0.0065345834598469765
+    }
+  },
+  "plateau_verdict": {}
+}
