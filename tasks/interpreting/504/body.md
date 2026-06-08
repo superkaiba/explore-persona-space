@@ -5,7 +5,7 @@ title: A single contrastive negative shows a barrier-like protection signal but 
 kind: experiment
 tags: []
 created_at: '2026-06-06T00:48:32Z'
-has_clean_result: false
+has_clean_result: true
 goal: 'Determine the geometric shape of a single contrastive negative''s leakage-suppression
   in persona space: does a negative protect a local neighborhood around itself (bubble)
   or the entire region behind it relative to the source (barrier/shadow)? Secondary:
