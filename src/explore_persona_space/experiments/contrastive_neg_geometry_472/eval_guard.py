@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002  # em-dash + Qwen marker " ※" + Greek ΔG intentional
+# ruff: noqa: RUF001, RUF002, RUF003  # em-dash + Qwen marker " ※" + Greek ΔG + × intentional
 """Task #472/#477 eval guard — B-matrix structural check on the trained adapter.
 
 Round-4 redesign (task #504, 2026-06-08): the guard is now **B-matrix-only**.
@@ -71,6 +71,25 @@ class LoRANotAppliedError(RuntimeError):
     is kept so existing imports (``scripts/i504_run_cell.py``,
     ``scripts/i504_eval_trajectory.py``, ``scripts/i504_reval_grid.py``,
     ``eval_trajectory.py``) keep resolving.
+    """
+
+
+class MarkerLogprobPathReadingFromBaseError(RuntimeError):
+    """Raised when the marker-logprob reader has the v3 byte-identical bug.
+
+    Plan v5 §4.4 fix #1 (tightened in v5 from a draft 95% threshold to a 5%
+    de-minimis threshold after alternatives-Codex round-1 Must-Fix). The
+    canonical v3 failure mode produced ``g_logp == b_logp`` to full float
+    precision on ALL 540 (persona × question) records while KL(trained ‖ base)
+    at the same slot climbed to 24.35 nats — physically impossible for a
+    correct read, so the marker-logprob reader was computing ``g_logp`` from
+    the BASE model (adapter not applied in that codepath). The v4 byte-
+    identical guard catches this BEFORE the spurious zero leaves the rig.
+
+    The 5% de-minimis threshold also catches a PARTIAL bug (a reader broken
+    on 60% of slots) that would silently compress Phase 1's per-arm ΔG
+    dynamic range and attenuate geometry coefficients toward null — the
+    failure mode the alternatives-Codex critic flagged as FATAL on lens G.
     """
 
 
@@ -158,6 +177,144 @@ def _aggregate_records_for_guard(
             if bool(gleaf.get("argmax_marker", False)):
                 n_emit += 1
     return max_abs_dg, n_emit, n_probes
+
+
+# Plan v5 §4.4 fix #1 + §4.3a Phase 0.6 pass condition (b) — tightened to a
+# 5% de-minimis bound after alternatives-Codex round-1 Must-Fix. The v4 draft
+# 95% threshold would have silently passed a PARTIAL bug (a reader broken on
+# 60% of slots) that compresses Phase 1's per-arm ΔG dynamic range and
+# attenuates geometry coefficients toward null. The 5% cap = at most 1 of 20
+# in Phase 0.6's N=20 panel; smaller increment is meaningless given the
+# discrete N. See plan §11 "Per-batch byte-identical guard threshold".
+DEFAULT_BYTE_IDENTICAL_RATE_MAX = 0.05
+# Floats are byte-identical if |g - b| is below this absolute tolerance.
+# 1e-6 nats is well below any genuine bf16 / float32 reader noise (single-
+# token logit truncation produces ~1e-3 differences); a true byte-identical
+# read of `g_logp` from BASE has |g - b| == 0.0 exactly (the v3 failure mode).
+DEFAULT_BYTE_IDENTICAL_ABS_TOL = 1e-6
+# KL > this minimum means the trained model and base produce different
+# distributions at the slot. KL > 0 + |g - b| < 1e-6 is the exact diagnostic
+# signature of "g_logp read from base while distribution is non-trivially
+# trained" — the v3 recovery bug. Threshold below tiny float noise but above
+# fp truncation noise.
+DEFAULT_KL_DIAGNOSTIC_MIN_NATS = 0.01
+
+
+def compute_byte_identical_rate(
+    g_records: dict[str, dict[str, dict[str, float | bool]]],
+    b_records: dict[str, dict[str, dict[str, float | bool]]],
+    kl_records: dict[str, dict[str, float]] | None,
+    *,
+    abs_tol: float = DEFAULT_BYTE_IDENTICAL_ABS_TOL,
+    kl_min: float = DEFAULT_KL_DIAGNOSTIC_MIN_NATS,
+) -> tuple[float, int, int]:
+    """Compute the byte-identical-with-positive-KL rate over a per-probe grid.
+
+    The v3 marker-logprob path bug produced ``g_logp == b_logp`` exactly while
+    KL(trained ‖ base) at the same slot read non-trivially positive (because
+    KL was computed over the FULL distribution but g_logp was read from
+    base). This helper isolates the diagnostic: fraction of (persona × q)
+    pairs where ``|g_logp - b_logp| < abs_tol`` AND ``kl > kl_min``.
+
+    Args:
+        g_records: ``score_logp_for_R(use_lora=True, ...)`` output.
+        b_records: ``score_logp_for_R(use_lora=False, ...)`` output.
+        kl_records: optional per-probe KL ``kl[persona][q] -> float`` from the
+            same forward pass. When ``None`` (KL disabled by --no-kl), the
+            byte-identical rate is computed over ALL pairs without the KL
+            filter — a residual reader bug still surfaces as a uniform
+            ``g == b`` read, just without the partial-bug discriminator.
+        abs_tol: absolute tolerance for "byte-identical" logp pairs.
+        kl_min: minimum KL nats for "trained distribution is non-trivial".
+
+    Returns:
+        ``(rate, n_byte_identical_with_positive_kl, n_probes)``. ``rate`` is
+        in [0, 1]; the caller compares against ``DEFAULT_BYTE_IDENTICAL_RATE_MAX``.
+    """
+    n_probes = 0
+    n_bad = 0
+    for persona, per_q_g in g_records.items():
+        for q, gleaf in per_q_g.items():
+            gl = float(gleaf["logp"])
+            bl = float(b_records[persona][q]["logp"])
+            n_probes += 1
+            byte_identical = abs(gl - bl) < abs_tol
+            if not byte_identical:
+                continue
+            if kl_records is None:
+                n_bad += 1
+                continue
+            kl_val = float(kl_records.get(persona, {}).get(q, 0.0))
+            if kl_val > kl_min:
+                n_bad += 1
+    rate = n_bad / n_probes if n_probes else 0.0
+    return rate, n_bad, n_probes
+
+
+def assert_byte_identical_rate_below_threshold(
+    g_records: dict[str, dict[str, dict[str, float | bool]]],
+    b_records: dict[str, dict[str, dict[str, float | bool]]],
+    kl_records: dict[str, dict[str, float]] | None,
+    *,
+    cell_label: str,
+    max_rate: float = DEFAULT_BYTE_IDENTICAL_RATE_MAX,
+    abs_tol: float = DEFAULT_BYTE_IDENTICAL_ABS_TOL,
+    kl_min: float = DEFAULT_KL_DIAGNOSTIC_MIN_NATS,
+) -> dict[str, float | int]:
+    """Per-batch byte-identical guard for the marker-logprob path (plan v5 §4.4).
+
+    Computes the byte-identical rate over the (persona × question) grid via
+    ``compute_byte_identical_rate``. Raises
+    ``MarkerLogprobPathReadingFromBaseError`` if the rate exceeds ``max_rate``
+    AND at least one byte-identical pair has positive KL (the diagnostic
+    signature). Returns a diag dict for WandB logging on PASS so the analyzer
+    can spot near-threshold drift as a continuous signal.
+
+    Args:
+        g_records, b_records, kl_records: ``score_logp_for_R`` + KL outputs.
+        cell_label: cell + seed + frac string for the error message.
+        max_rate: maximum tolerated byte-identical rate (default 5%, plan v5).
+        abs_tol, kl_min: thresholds for the byte-identical + positive-KL gate.
+
+    Returns:
+        ``{"byte_identical_rate": float, "n_byte_identical": int,
+        "n_probes": int, "max_rate": float, "abs_tol": float, "kl_min": float}``.
+
+    Raises:
+        MarkerLogprobPathReadingFromBaseError: rate > max_rate.
+    """
+    rate, n_bad, n_probes = compute_byte_identical_rate(
+        g_records, b_records, kl_records, abs_tol=abs_tol, kl_min=kl_min
+    )
+    diag = {
+        "byte_identical_rate": float(rate),
+        "n_byte_identical": int(n_bad),
+        "n_probes": int(n_probes),
+        "max_rate": float(max_rate),
+        "abs_tol": float(abs_tol),
+        "kl_min": float(kl_min),
+    }
+    if rate > max_rate:
+        raise MarkerLogprobPathReadingFromBaseError(
+            f"[{cell_label}] marker_logprob_path_reading_from_base: "
+            f"byte_identical_rate={rate:.4f} ({n_bad}/{n_probes}) > "
+            f"{max_rate:.2f} de-minimis threshold. The marker-logprob reader is "
+            f"returning g_logp ≡ b_logp on > {max_rate * 100:.0f}% of "
+            f"(persona × question) pairs while KL(trained‖base) > {kl_min} "
+            f"nats — physically impossible for a correctly-applied adapter. "
+            f"This is the v3 recovery-bug signature (g_logp read from BASE). "
+            f"See plan v5 §4.4 fix #1 + scripts/i504_reval_confirm.py:670-774 "
+            f"for the canonical fix pattern."
+        )
+    log.info(
+        "[%s] byte-identical guard PASS: rate=%.4f (%d/%d) ≤ %.2f de-minimis.",
+        cell_label,
+        rate,
+        n_bad,
+        n_probes,
+        max_rate,
+    )
+    return diag
 
 
 def assert_adapter_actually_applied(
