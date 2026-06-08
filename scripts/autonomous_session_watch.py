@@ -25,16 +25,20 @@ Four passes, run in this order:
    (see "Why STOP is keyed on task status, not session liveness" below) and
    does NOT need the daemon, so it runs unconditionally — even during a daemon
    outage. Only the respawn pass is daemon-gated.
-3. **Stalled-detector pass (ALERT-ONLY).** Detect an autonomous session whose
-   Happy id is in the live set (so the respawn pass doesn't touch it) but
-   whose self-report timestamp + latest non-watcher progress marker have
-   BOTH been frozen > ``STALLED_WINDOW_S`` (default 45 min). This catches
-   the "alive but bg-Bash chain dead" case where the session looks healthy
-   to the respawn pass but is no longer making progress. NEVER auto-respawns
-   this round — we ship alert-only first, then enable respawn once production
-   shows the detection is sound. Posts a session-stalled-alert marker once
-   per episode (dedup via the persisted alerted flag); the recovery actor is
-   the user via the phone tap (or a future PR's auto-respawn).
+3. **Stalled-detector pass (ALERT + AUTO-RESPAWN).** Detect an autonomous
+   session whose Happy id is in the live set (so the respawn pass doesn't
+   touch it) but whose self-report timestamp + latest non-watcher progress
+   marker have BOTH been frozen > ``STALLED_WINDOW_S`` (default 45 min).
+   This catches the "alive but bg-Bash chain dead" case where the session
+   looks healthy to the respawn pass but is no longer making progress.
+   AUTO-RESPAWNS the session (stop-then-respawn) when its task is in an
+   :data:`ACTIVE` status AND the Happy daemon is reachable; otherwise
+   degrades to ALERT-ONLY. The respawn is bounded by a per-episode
+   :data:`STALLED_MAX_RESPAWNS` cap (default 3) — once exhausted, the
+   pass falls back to a loud one-time "auto-recovery exhausted" marker
+   and waits for the user.  Promoted from the ALERT-ONLY behavior shipped
+   in 2026-06-05 after task #518 (2026-06-08) confirmed the detection
+   fires on true positives but was never re-driven.
 4. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
    ``issue-progress/<N>.json``, ``issue-tick-last-status/<N>.json``,
    ``stalled-<N>.json``) for tasks in :data:`TERMINAL_FOR_GC`
@@ -241,12 +245,29 @@ _AUTOSTOP_NOTE_SENTINEL = "[autonomous_session_watch:pod-auto-stop]"
 # or the alert would reset the very staleness window it measures.
 _STALLED_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:session-stalled-alert]"
 
+# Substring stamped into every session-stalled AUTO-RESPAWN marker note. The
+# respawn IS a recovery action (not just an alert) but it gets posted as
+# epm:progress for the same reason: it's a watcher-posted event that must NOT
+# bias the real-progress staleness clock on the NEXT tick (otherwise a
+# successful respawn would mask the next staleness episode).
+_STALLED_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respawn]"
+
+# Substring stamped into the one-time "auto-recovery cap exhausted" marker
+# fired when STALLED_MAX_RESPAWNS respawns in the same episode have all
+# failed to restore progress. Same staleness-filter contract as the others.
+_STALLED_EXHAUSTED_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respawn-exhausted]"
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
 # transparently excludes it without an extra special case.
 _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
-    {_ALERT_NOTE_SENTINEL, _STALLED_ALERT_NOTE_SENTINEL}
+    {
+        _ALERT_NOTE_SENTINEL,
+        _STALLED_ALERT_NOTE_SENTINEL,
+        _STALLED_RESPAWN_NOTE_SENTINEL,
+        _STALLED_EXHAUSTED_NOTE_SENTINEL,
+    }
 )
 
 # Age backstop: drop a pod-safety state file older than this even when the
@@ -257,16 +278,33 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
 # so it only catches genuinely orphaned files, never live state.
 POD_SAFETY_STATE_MAX_AGE_S = 7 * 24 * 3600
 
-# ─── alive-but-stalled detector (Piece 2b — ALERT-ONLY) ─────────────────────
+# ─── alive-but-stalled detector (ALERT + AUTO-RESPAWN) ─────────────────────
 #
 # Targets a different failure mode than the respawn pass: a session whose
 # Happy id IS in the live set (so the respawn pass won't touch it) but whose
 # bg-Bash chain quietly died and is no longer self-reporting / posting
-# markers / advancing the pod. ALERT-ONLY first — post a loud needs-you
-# marker and log it. Auto-respawn for stalled sessions is deliberately NOT
-# wired this round; a follow-up will enable it once we've seen real alerts
-# in production and confirmed the detection is sound (see plan §Piece 2b
-# "Ship alert-only first").
+# markers / advancing the pod.
+#
+# Two-phase rollout. Phase 1 (2026-06-05) shipped ALERT-ONLY so we could
+# observe real-world detection in production without risking a wrong respawn.
+# Phase 2 (2026-06-08, this revision) promotes the action to AUTO-RESPAWN
+# (stop-then-respawn) on the strict subset of cases where it is unambiguously
+# safe:
+#
+#   (a) the task is in an :data:`ACTIVE` status (a `proposed` / `clarifying`
+#       / `plan_pending` / `blocked` / `awaiting_promotion` etc. is a gate
+#       or human-driven park — restarting would interrupt the user's loop);
+#   (b) the Happy daemon is reachable (the respawn issues
+#       `spawn_session.py stop` and `spawn-issue --auto`, both of which need
+#       the daemon — without it we'd leave a half-stopped session); AND
+#   (c) we have NOT already auto-respawned this same staleness episode
+#       :data:`STALLED_MAX_RESPAWNS` times without ever seeing real
+#       progress in between (crash-loop cap — a deterministically-broken
+#       session must not loop forever and burn pods).
+#
+# If any of (a)/(b)/(c) fails, the pass degrades to ALERT-ONLY: post the
+# one-time stale-alert marker (or, when the cap is exhausted, the louder
+# one-time exhausted marker) and leave it for the user.
 
 # How long a self-report timestamp (and the marker-progress / pod-activity
 # signals) may stay frozen before the stalled-detector trips. Conservative:
@@ -286,6 +324,16 @@ STALLED_STATE_PREFIX = "stalled-"
 # uniform aging rule across all watcher-owned per-issue state.
 STALLED_STATE_MAX_AGE_S = POD_SAFETY_STATE_MAX_AGE_S
 
+# Maximum auto-respawns the stalled-detector will issue within a single
+# staleness episode (i.e. before any real progress marker advances). 3 was
+# chosen so a transient daemon/Happy-side hiccup that needs a few attempts
+# can still self-heal, while a deterministically broken session (the bg-chain
+# dies immediately on every restart) bottoms out within ~hours rather than
+# burning pods indefinitely. The counter resets to 0 on each real-progress
+# advance (mirrors the existing alerted-flag clear logic). After exhaustion
+# the pass falls back to a one-time loud marker + leaves it for the user.
+STALLED_MAX_RESPAWNS = 3
+
 
 def decide_session_stalled(
     self_report_age_s: float | None,
@@ -293,18 +341,23 @@ def decide_session_stalled(
     has_pod: bool,
     missed: int,
     alerted: bool,
+    *,
+    respawn_eligible: bool = False,
+    respawn_count: int = 0,
     threshold: int = 2,
     window_s: float = STALLED_WINDOW_S,
+    max_respawns: int = STALLED_MAX_RESPAWNS,
 ) -> tuple[str, int]:
     """Pure decision for the alive-but-stalled detector.
 
-    NOTE: this pass is ALERT-ONLY this round — there is no ``"respawn"``
-    return value (see module docstring + plan §Piece 2b). Auto-respawn for
-    stalled sessions will land in a follow-up PR once we've watched real
-    alerts in production and confirmed the detection is sound. The
-    respawn pass already handles DEAD sessions (Happy id not in the live
-    set); this pass handles the harder "alive but bg-Bash chain dead"
-    case where the session looks healthy to the respawn pass.
+    Phase 2 (2026-06-08): the action set is ``"respawn"`` | ``"alert"`` |
+    ``"exhausted"`` | ``"keep"``. The detection-side trigger (BOTH self-
+    report and marker-progress stale, with the 2-miss guard) is unchanged;
+    what changed is the RECOVERY action.
+
+    The respawn pass already handles DEAD sessions (Happy id not in the
+    live set); this pass handles the harder "alive but bg-Bash chain
+    dead" case where the session looks healthy to the respawn pass.
 
     Trigger requires ALL relevant signals to be stale (corroboration,
     per reviewer MAJOR-3/6: never trigger on transcript-ts alone):
@@ -330,11 +383,28 @@ def decide_session_stalled(
        depends on signals 1 and 2 plus the 2-miss guard.
 
     Apply the 2-miss guard from :func:`decide_pod_safety` to absorb a
-    flaky markers-fetch / self-report-race: the alert fires only on the
+    flaky markers-fetch / self-report-race: an action fires only on the
     SECOND consecutive stale check.
 
-    Returns ``(action, new_missed)`` where action is ``"alert"`` |
-    ``"keep"``. Cases:
+    Recovery selection (only when stale + threshold met + not already
+    deduped this episode):
+
+    - ``respawn_eligible=True`` AND ``respawn_count < max_respawns``
+      -> ``("respawn", 0)``. The caller has already confirmed the task
+      is in :data:`ACTIVE` and the Happy daemon is reachable; this
+      function does not re-check (keeps the function pure). The
+      ``respawn_count`` carries forward across ticks within one episode
+      and is reset by the caller when real progress advances.
+    - ``respawn_eligible=True`` AND ``respawn_count >= max_respawns``
+      -> ``("exhausted", 0)``. The crash-loop cap has been hit;
+      the caller posts a one-time loud exhausted marker and leaves it
+      for the user.
+    - ``respawn_eligible=False`` (any of: non-ACTIVE status, daemon
+      unreachable, or the caller deliberately chose to alert-only)
+      -> ``("alert", 0)``. Preserves the Phase-1 ALERT-ONLY behavior
+      as the safe fallback.
+
+    Returns ``(action, new_missed)``. Cases:
 
     - ``self_report_age_s is None`` (no self-report at all)
       -> ``("keep", 0)``. This pass targets autonomous sessions that
@@ -342,8 +412,9 @@ def decide_session_stalled(
     - Self-report fresh (< ``window_s``) -> ``("keep", 0)``. Reset miss
       counter; live session.
     - Self-report stale AND marker-progress also stale (or absent) AND
-      not previously ``alerted`` -> increment ``missed``; alert once
-      ``missed`` reaches ``threshold``, else ``("keep", new_missed)``.
+      not previously ``alerted`` -> increment ``missed``; on reaching
+      ``threshold``, return the appropriate recovery action per the
+      table above. Below threshold, return ``("keep", new_missed)``.
     - Same conditions but ``alerted=True`` -> ``("keep", 0)``. Dedup
       within episode (cleared by the caller when self-report advances).
     - Marker-progress is fresh -> ``("keep", 0)``. Any fresh signal
@@ -368,6 +439,14 @@ def decide_session_stalled(
         return ("keep", 0)
     new_missed = missed + 1
     if new_missed >= threshold:
+        # Threshold met. Pick the recovery action based on eligibility +
+        # the crash-loop cap; the caller has already done the I/O-side
+        # checks (ACTIVE status + daemon reachability) before passing
+        # respawn_eligible.
+        if respawn_eligible:
+            if respawn_count >= max_respawns:
+                return ("exhausted", 0)
+            return ("respawn", 0)
         return ("alert", 0)
     return ("keep", new_missed)
 
@@ -731,6 +810,8 @@ def _save_stalled_state(
     *,
     alerted: bool,
     last_self_report_ts: str | None,
+    respawn_count: int = 0,
+    exhausted: bool = False,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-session stalled-detector state atomically (temp +
@@ -741,8 +822,14 @@ def _save_stalled_state(
     ``last_self_report_ts`` is the raw ISO ts from the self-report file the
     LAST time we read it, so the next tick can tell "the self-report
     advanced" from "the self-report is still frozen at the same ts" and
-    clear ``alerted`` when the session resumes self-reporting. ``prev`` is
-    the prior on-disk payload (when the caller already has it loaded) so
+    clear ``alerted`` when the session resumes self-reporting.
+    ``respawn_count`` is the number of auto-respawns issued in the current
+    staleness episode (capped by :data:`STALLED_MAX_RESPAWNS`); cleared
+    by the caller on each real-progress advance, mirroring the
+    ``alerted`` flag. ``exhausted`` records whether the one-time
+    "auto-recovery exhausted" marker has already been posted this
+    episode (dedup, also cleared on progress). ``prev`` is the prior
+    on-disk payload (when the caller already has it loaded) so
     ``first_seen`` carries forward and the age backstop measures the
     original episode start.
     """
@@ -755,6 +842,8 @@ def _save_stalled_state(
         "happy_session_id": happy_session_id,
         "missed": missed,
         "alerted": alerted,
+        "respawn_count": respawn_count,
+        "exhausted": exhausted,
         "last_self_report_ts": last_self_report_ts,
         "first_seen": prev_first_seen,
     }
@@ -1060,20 +1149,314 @@ def _self_report_age_seconds(issue: int, now: float) -> tuple[float | None, str 
     return (age, ts_str)
 
 
+def _stop_session(session_id: str, dry_run: bool) -> bool:
+    """Stop an in-flight Happy session by id via
+    ``spawn_session.py stop --session-id <id>``. Returns True on success.
+
+    Used in the stalled-detector AUTO-RESPAWN path: the OLD session is
+    still alive (that's what distinguishes the stalled-detector from the
+    crash-recovery respawn pass), so a respawn that skipped this step
+    would leave two `--auto` sessions pointed at the same issue. Both
+    would try to drive the same workflow.
+
+    Best-effort: on failure we log the error to stderr and return False,
+    so the caller declines to respawn rather than risking the duplicate-
+    session case. A stop failure is logged loudly because it is the
+    common cause of an exhausted respawn cap.
+    """
+    cmd = [
+        "uv", "run", "python", "scripts/spawn_session.py", "stop",
+        "--session-id", session_id,
+    ]  # fmt: skip
+    if dry_run:
+        print(f"  [dry-run] would stop session: {' '.join(cmd)}")
+        return False
+    res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=60)
+    if res.returncode != 0:
+        print(
+            f"  STOP SESSION FAILED session_id={session_id}: "
+            f"{(res.stderr or res.stdout).strip()[:300]}",
+            file=sys.stderr,
+        )
+        return False
+    return True
+
+
+def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) -> bool:
+    """Spawn a fresh `--auto` session for ``issue``.
+
+    Mirrors :func:`_respawn` (used by the crash-recovery pass) but is
+    decoupled from the autonomous-registry entry shape — the stalled-
+    detector path knows the issue and the cap directly from the loaded
+    state, so it doesn't pass a registry-entry dict. Returns True on
+    success; spawn_session rewrites the registry (new id, missed=0) as a
+    side effect.
+
+    Note: we do NOT call :func:`_respawn` directly because the
+    spawn-issue invocation here is the SAME (`--auto`
+    `--auto-approve-gpu-hours`) but the surrounding context differs:
+    this path has already called :func:`_stop_session` first, and the
+    log prefix is `RESPAWNED-STALLED` rather than `RESPAWNED` so the
+    operator can tell the two paths apart in the watcher logs.
+    """
+    cmd = [
+        "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
+        "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap_gpu_hours),
+    ]  # fmt: skip
+    if dry_run:
+        print(f"  [dry-run] would respawn stalled: {' '.join(cmd)}")
+        return False
+    res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
+    if res.returncode != 0:
+        print(
+            f"  RESPAWN-STALLED FAILED issue #{issue}: {res.stderr.strip()[:300]}",
+            file=sys.stderr,
+        )
+        return False
+    first_line = (res.stdout.strip().splitlines() or [""])[0]
+    print(f"  RESPAWNED-STALLED issue #{issue} (alive-but-stalled): {first_line}")
+    return True
+
+
+def _stalled_cap_gpu_hours(issue: int) -> float:
+    """Read the per-issue autonomous registry entry's
+    ``auto_approve_gpu_hours`` cap (default 24.0 if missing/garbled), so
+    the auto-respawn reuses the same cap the user originally chose.
+    Mirrors the lookup :func:`_respawn` does on its registry entry."""
+    entry_path = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
+    try:
+        entry = json.loads(entry_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return 24.0
+    cap = entry.get("auto_approve_gpu_hours", 24.0)
+    if not isinstance(cap, int | float):
+        return 24.0
+    return float(cap)
+
+
+class _StalledActionCtx:
+    """Plain-data carrier that bundles every value the three stalled-action
+    handlers (:func:`_handle_stalled_respawn`, :func:`_handle_stalled_exhausted`,
+    :func:`_handle_stalled_alert`) need.
+
+    Exists so :func:`_process_stalled_session` can dispatch on the action enum
+    via three one-line calls (keeping it under the C901 cyclomatic-complexity
+    cap) without losing the wide context the handlers depend on (the prose
+    of each marker note quotes the same set of measured signals).
+    Deliberately not a dataclass — we don't need equality / repr / mutation;
+    the only contract is "all fields are read by at least one handler" and a
+    plain class with ``__init__`` is enough.
+    """
+
+    def __init__(
+        self,
+        *,
+        issue: int,
+        happy_session_id: object,
+        prev_state: dict,
+        alerted: bool,
+        respawn_count: int,
+        exhausted: bool,
+        last_self_report_ts: str | None,
+        self_gap: str,
+        marker_gap: str,
+        has_pod: bool,
+        task_status: str | None,
+        in_active: bool,
+        threshold: int,
+        dry_run: bool,
+    ) -> None:
+        self.issue = issue
+        self.happy_session_id = happy_session_id
+        self.prev_state = prev_state
+        self.alerted = alerted
+        self.respawn_count = respawn_count
+        self.exhausted = exhausted
+        self.last_self_report_ts = last_self_report_ts
+        self.self_gap = self_gap
+        self.marker_gap = marker_gap
+        self.has_pod = has_pod
+        self.task_status = task_status
+        self.in_active = in_active
+        self.threshold = threshold
+        self.dry_run = dry_run
+
+    @property
+    def happy_session_id_str(self) -> str | None:
+        """Narrow ``happy_session_id`` (typed ``object`` because it comes from
+        a JSON read) to ``str | None`` for the state-save call sites."""
+        return self.happy_session_id if isinstance(self.happy_session_id, str) else None
+
+
+def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
+    """Recovery action: stop the alive-but-stalled session, spawn a fresh
+    ``--auto`` session, persist the bumped respawn_count. On stop failure,
+    persist unchanged respawn_count + a fresh ``missed=0`` so the next tick
+    re-tries within the same episode."""
+    sid = ctx.happy_session_id_str
+    stop_ok = True
+    if sid:
+        stop_ok = _stop_session(sid, ctx.dry_run)
+    if not stop_ok:
+        if not ctx.dry_run:
+            _save_stalled_state(
+                ctx.issue,
+                sid,
+                missed=0,
+                alerted=ctx.alerted,
+                last_self_report_ts=ctx.last_self_report_ts,
+                respawn_count=ctx.respawn_count,
+                exhausted=ctx.exhausted,
+                prev=ctx.prev_state,
+            )
+        return
+    cap = _stalled_cap_gpu_hours(ctx.issue)
+    spawn_ok = _respawn_stalled_session(ctx.issue, cap, ctx.dry_run)
+    new_respawn_count = ctx.respawn_count + 1
+    if spawn_ok:
+        _post_progress_marker(
+            ctx.issue,
+            f"{_STALLED_RESPAWN_NOTE_SENTINEL} ALIVE-BUT-STALLED auto-"
+            f"respawn: Happy session id={ctx.happy_session_id} was in the "
+            f"live set but self-report has been frozen for {ctx.self_gap} "
+            f"and the latest non-watcher progress marker is {ctx.marker_gap} "
+            f"old (has_pod={ctx.has_pod}, status={ctx.task_status}). Stopped "
+            f"the old session and spawned a fresh `--auto` session "
+            f"(respawn {new_respawn_count}/{STALLED_MAX_RESPAWNS} this "
+            f"episode). Confirmed for >= {ctx.threshold} checks.",
+            ctx.dry_run,
+            label="session-auto-respawn",
+        )
+    if not ctx.dry_run:
+        _save_stalled_state(
+            ctx.issue,
+            # spawn_session.py rewrote the registry's happy_session_id, but
+            # we don't bother re-reading it here — the next tick's entry-
+            # read picks up the new id, and `alerted` / respawn dedup is
+            # keyed on self-report-ts advancement rather than session id.
+            # Clearing alerted so a future episode can re-alert if the new
+            # session also stalls (the respawn_count keeps growing toward
+            # the cap).
+            None,
+            missed=0,
+            alerted=False,
+            last_self_report_ts=ctx.last_self_report_ts,
+            respawn_count=new_respawn_count if spawn_ok else ctx.respawn_count,
+            exhausted=ctx.exhausted,
+            prev=ctx.prev_state,
+        )
+
+
+def _handle_stalled_exhausted(ctx: _StalledActionCtx) -> None:
+    """Recovery action: the crash-loop cap has been reached. Post a one-time
+    loud marker, persist ``exhausted=True`` for dedup. Subsequent ticks
+    stay quiet until real progress advances and clears the flag."""
+    sid = ctx.happy_session_id_str
+    if ctx.exhausted:
+        if not ctx.dry_run:
+            _save_stalled_state(
+                ctx.issue,
+                sid,
+                missed=0,
+                alerted=True,
+                last_self_report_ts=ctx.last_self_report_ts,
+                respawn_count=ctx.respawn_count,
+                exhausted=True,
+                prev=ctx.prev_state,
+            )
+        return
+    _post_progress_marker(
+        ctx.issue,
+        f"{_STALLED_EXHAUSTED_NOTE_SENTINEL} AUTO-RECOVERY EXHAUSTED: the "
+        f"stalled-detector auto-respawned this autonomous session "
+        f"{ctx.respawn_count} time(s) in the current episode and the "
+        f"workflow is STILL not advancing (self-report frozen for "
+        f"{ctx.self_gap}, latest non-watcher progress marker "
+        f"{ctx.marker_gap} old, has_pod={ctx.has_pod}, "
+        f"status={ctx.task_status}). Likely a deterministically broken "
+        f"session — open it and investigate manually. NOT auto-respawning "
+        f"further; the next real progress marker on this task will reset "
+        f"the cap.",
+        ctx.dry_run,
+        label="session-auto-respawn-exhausted",
+    )
+    if not ctx.dry_run:
+        _save_stalled_state(
+            ctx.issue,
+            sid,
+            missed=0,
+            alerted=True,
+            last_self_report_ts=ctx.last_self_report_ts,
+            respawn_count=ctx.respawn_count,
+            exhausted=True,
+            prev=ctx.prev_state,
+        )
+
+
+def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
+    """Recovery action: ALERT-ONLY fallback (respawn not eligible this tick:
+    non-ACTIVE status or daemon unreachable). Identical surface to the
+    Phase-1 ALERT-ONLY behavior, with one annotation line explaining WHY
+    respawn was declined so the operator can address it."""
+    sid = ctx.happy_session_id_str
+    reason = (
+        "task status not ACTIVE"
+        if not ctx.in_active
+        else "Happy daemon unreachable; cannot stop+spawn"
+    )
+    _post_progress_marker(
+        ctx.issue,
+        f"{_STALLED_ALERT_NOTE_SENTINEL} ALIVE-BUT-STALLED autonomous "
+        f"session: Happy session id={ctx.happy_session_id} is in the live "
+        f"set, but self-report has been frozen for {ctx.self_gap} and the "
+        f"latest non-watcher progress marker is {ctx.marker_gap} old "
+        f"(has_pod={ctx.has_pod}, status={ctx.task_status}). Likely a dead "
+        f"bg-Bash chain inside a still-live Claude process — the session "
+        f"looks healthy to the respawn pass but is not advancing. NOT "
+        f"auto-respawned ({reason}); investigate via the phone session "
+        f"and stop+respawn manually if confirmed dead. Confirmed for >= "
+        f"{ctx.threshold} checks.",
+        ctx.dry_run,
+        label="session-stalled-alert",
+    )
+    if not ctx.dry_run:
+        _save_stalled_state(
+            ctx.issue,
+            sid,
+            missed=0,
+            alerted=True,
+            last_self_report_ts=ctx.last_self_report_ts,
+            respawn_count=ctx.respawn_count,
+            exhausted=ctx.exhausted,
+            prev=ctx.prev_state,
+        )
+
+
 def _process_stalled_session(
     entry_path: Path,
     pod_active_issues: set[int],
     now: float,
     dry_run: bool,
     threshold: int,
+    *,
+    daemon_reachable: bool,
 ) -> None:
     """Reconcile one autonomous-registry entry against the alive-but-stalled
     signals.
 
     Reads the issue's self-report ts + latest non-watcher marker ts + whether
     it has a RUNNING managed pod, applies :func:`decide_session_stalled`, and
-    posts a session-stalled-alert + persists state on transition. NEVER
-    respawns — alert-only this round.
+    on a recovery action either auto-respawns (stop-then-spawn) the session
+    or posts an alert / exhausted marker; otherwise persists state for the
+    next tick.
+
+    ``daemon_reachable`` is computed once per pass (the watcher already
+    probes it for the crash-recovery pass) and passed in so we don't
+    re-probe per-entry. AUTO-RESPAWN requires the daemon (both
+    ``spawn_session.py stop`` and ``spawn-issue --auto`` POST to the local
+    daemon RPC); when it is unreachable, this pass falls back to
+    ALERT-ONLY for stalled entries — mirrors the crash-recovery pass's
+    same-tick degradation.
     """
     try:
         entry = json.loads(entry_path.read_text())
@@ -1108,21 +1491,42 @@ def _process_stalled_session(
     if not isinstance(prev_missed, int):
         prev_missed = 0
     prev_alerted = bool(prev_state.get("alerted", False))
+    prev_respawn_count = prev_state.get("respawn_count", 0)
+    if not isinstance(prev_respawn_count, int):
+        prev_respawn_count = 0
+    prev_exhausted = bool(prev_state.get("exhausted", False))
     prev_last_self_report_ts = prev_state.get("last_self_report_ts")
     if not isinstance(prev_last_self_report_ts, str):
         prev_last_self_report_ts = None
 
-    # Clear `alerted` whenever the self-report ts has ADVANCED since the
-    # last save — that means the session resumed self-reporting, so the
-    # prior alert episode is over and a future staleness episode can
-    # re-alert. Comparison is on the raw ISO string (lexicographic on the
-    # canonical trailing-Z UTC format is monotonic).
+    # Clear `alerted` + `respawn_count` + `exhausted` whenever the self-
+    # report ts has ADVANCED since the last save — that means the session
+    # resumed self-reporting, so the prior episode is over and a future
+    # staleness episode can re-alert / re-respawn. Comparison is on the
+    # raw ISO string (lexicographic on the canonical trailing-Z UTC
+    # format is monotonic).
     self_report_advanced = (
         last_self_report_ts is not None
         and prev_last_self_report_ts is not None
         and last_self_report_ts > prev_last_self_report_ts
     )
-    alerted = False if self_report_advanced else prev_alerted
+    if self_report_advanced:
+        alerted = False
+        respawn_count = 0
+        exhausted = False
+    else:
+        alerted = prev_alerted
+        respawn_count = prev_respawn_count
+        exhausted = prev_exhausted
+
+    # Compute respawn_eligible: the task must be in an ACTIVE status (we
+    # never restart a session at a PARK / gate / terminal state) AND the
+    # Happy daemon must be reachable (we can't issue stop+spawn without
+    # it). Both inputs are I/O — kept here in the actor, not in the pure
+    # decision function.
+    task_status = _task_status(issue)
+    in_active = task_status in ACTIVE
+    respawn_eligible = in_active and daemon_reachable
 
     action, new_missed = decide_session_stalled(
         self_report_age_s=self_report_age,
@@ -1130,47 +1534,52 @@ def _process_stalled_session(
         has_pod=has_pod,
         missed=prev_missed,
         alerted=alerted,
+        respawn_eligible=respawn_eligible,
+        respawn_count=respawn_count,
         threshold=threshold,
     )
 
     self_gap = f"{self_report_age / 60:.1f}m" if self_report_age is not None else "none"
     marker_gap = f"{marker_age / 60:.1f}m" if marker_age is not None else "none"
     print(
-        f"  issue #{issue}: self_gap={self_gap} marker_gap={marker_gap} "
-        f"has_pod={has_pod} missed={prev_missed}->{new_missed} "
-        f"alerted={alerted} action={action}"
+        f"  issue #{issue}: status={task_status} self_gap={self_gap} "
+        f"marker_gap={marker_gap} has_pod={has_pod} "
+        f"missed={prev_missed}->{new_missed} alerted={alerted} "
+        f"respawn_count={respawn_count}/{STALLED_MAX_RESPAWNS} "
+        f"daemon_reachable={daemon_reachable} action={action}"
     )
 
+    ctx = _StalledActionCtx(
+        issue=issue,
+        happy_session_id=happy_session_id,
+        prev_state=prev_state,
+        alerted=alerted,
+        respawn_count=respawn_count,
+        exhausted=exhausted,
+        last_self_report_ts=last_self_report_ts,
+        self_gap=self_gap,
+        marker_gap=marker_gap,
+        has_pod=has_pod,
+        task_status=task_status,
+        in_active=in_active,
+        threshold=threshold,
+        dry_run=dry_run,
+    )
+
+    if action == "respawn":
+        _handle_stalled_respawn(ctx)
+        return
+    if action == "exhausted":
+        _handle_stalled_exhausted(ctx)
+        return
     if action == "alert":
-        _post_progress_marker(
-            issue,
-            f"{_STALLED_ALERT_NOTE_SENTINEL} ALIVE-BUT-STALLED autonomous "
-            f"session: Happy session id={happy_session_id} is in the live "
-            f"set, but self-report has been frozen for {self_gap} and the "
-            f"latest non-watcher progress marker is {marker_gap} old "
-            f"(has_pod={has_pod}). Likely a dead bg-Bash chain inside a "
-            f"still-live Claude process — the session looks healthy to the "
-            f"respawn pass but is not advancing. NOT auto-respawned this "
-            f"round (alert-only); investigate via the phone session and "
-            f"stop+respawn manually if confirmed dead. Confirmed for >= "
-            f"{threshold} checks.",
-            dry_run,
-            label="session-stalled-alert",
-        )
-        if not dry_run:
-            _save_stalled_state(
-                issue,
-                happy_session_id if isinstance(happy_session_id, str) else None,
-                missed=0,
-                alerted=True,
-                last_self_report_ts=last_self_report_ts,
-                prev=prev_state,
-            )
+        _handle_stalled_alert(ctx)
         return
 
     # action == "keep": persist the (possibly incremented) miss count + the
-    # alerted flag (cleared above if self-report advanced) + the latest
-    # observed self-report ts so the next tick can detect advancement.
+    # alerted / respawn_count / exhausted flags (cleared above if self-
+    # report advanced) + the latest observed self-report ts so the next
+    # tick can detect advancement.
     if not dry_run:
         _save_stalled_state(
             issue,
@@ -1178,18 +1587,32 @@ def _process_stalled_session(
             missed=new_missed,
             alerted=alerted,
             last_self_report_ts=last_self_report_ts,
+            respawn_count=respawn_count,
+            exhausted=exhausted,
             prev=prev_state,
         )
 
 
-def stalled_session_pass(dry_run: bool, threshold: int, now: float | None = None) -> None:
-    """Detect alive-but-stalled autonomous sessions and post one-time alerts.
+def stalled_session_pass(
+    dry_run: bool,
+    threshold: int,
+    now: float | None = None,
+    *,
+    daemon_reachable: bool | None = None,
+) -> None:
+    """Detect alive-but-stalled autonomous sessions and either auto-respawn
+    them (when the task is ACTIVE and the Happy daemon is reachable) or
+    fall back to a one-time loud alert.
 
     Only autonomous-registry entries (``issue-<N>.json``) are processed —
     manual sessions (``manual-issue-<N>.json``) are user-driven so their
-    staleness is the user's call. NEVER auto-respawns or auto-stops; this
-    round is ALERT-ONLY. A future PR enables respawn once we've seen real
-    alerts in production."""
+    staleness is the user's call.
+
+    ``daemon_reachable`` is the same flag the crash-recovery pass uses; the
+    caller probes it once per :func:`main` invocation. When not passed,
+    we probe here so the function still works in unit tests / debug runs
+    that call it directly.
+    """
     now = now if now is not None else time.time()
     if not AUTONOMOUS_REGISTRY_DIR.is_dir():
         print("stalled-detector: no autonomous registry dir; skipping")
@@ -1203,9 +1626,21 @@ def stalled_session_pass(dry_run: bool, threshold: int, now: float | None = None
     # logs to stderr in that case) so the decision layer just records
     # has_pod=False for every issue this tick — fail-safe.
     pod_active_issues = {issue for issue, _pid in _running_managed_issue_pods()}
-    print(f"stalled-detector: {len(entries)} autonomous session(s)")
+    if daemon_reachable is None:
+        daemon_reachable = _daemon_reachable()
+    print(
+        f"stalled-detector: {len(entries)} autonomous session(s) "
+        f"(daemon_reachable={daemon_reachable})"
+    )
     for path in entries:
-        _process_stalled_session(path, pod_active_issues, now, dry_run, threshold)
+        _process_stalled_session(
+            path,
+            pod_active_issues,
+            now,
+            dry_run,
+            threshold,
+            daemon_reachable=daemon_reachable,
+        )
 
 
 # ─── generalized GC of stale ~/.eps-autonomous/ per-issue files ──────────────
@@ -1404,9 +1839,16 @@ def main(argv: list[str] | None = None) -> int:
     # down" — during an outage every session looks dead, which would
     # mass-respawn -> duplicate pods). The POD-SAFETY pass does NOT: it reasons
     # about task STATUS + the live pod list, neither of which needs the daemon.
-    # So the daemon guard gates ONLY the respawn pass; pod-safety runs
-    # unconditionally below.
-    if _daemon_reachable():
+    # The STALLED-DETECTOR pass partially depends on the daemon — DETECTION
+    # works without it (reads files only), but AUTO-RESPAWN needs the daemon
+    # (stop+spawn POST to the local daemon RPC). When the daemon is down the
+    # stalled-detector degrades to alert-only for those entries.
+    #
+    # Probe reachability ONCE per main() invocation and reuse the result
+    # everywhere so a flap mid-tick can't make different passes disagree
+    # about daemon state (and so we don't re-pay the probe cost).
+    daemon_reachable = _daemon_reachable()
+    if daemon_reachable:
         live_ids = _live_session_ids()
         meta = _load_session_meta()
         live_cwds = {m.get("path", "") for sid, m in meta.items() if sid in live_ids}
@@ -1418,7 +1860,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(
             "respawn: Happy daemon unreachable; skipping respawn pass "
-            "(won't mass-respawn on an outage). Pod-safety pass still runs."
+            "(won't mass-respawn on an outage). Pod-safety + stalled-"
+            "detector still run; stalled-detector falls back to alert-only."
         )
 
     # Pod-safety: runs regardless of daemon reachability. Covers interactive
@@ -1426,14 +1869,15 @@ def main(argv: list[str] | None = None) -> int:
     pod_safety_pass(args.dry_run, args.threshold)
 
     # Stalled-detector: detects alive-but-stalled autonomous sessions and
-    # posts one-time alerts. ALERT-ONLY this round (no respawn; a future PR
-    # enables respawn once we've seen real alerts in production). Reads
-    # autonomous-registry entries directly; does NOT depend on the daemon
-    # (a stalled session's bg-Bash chain death is independent of daemon
-    # state). Run AFTER pod-safety so the `_running_managed_issue_pods`
-    # call is fresh (poll_pipeline-posted progress markers from any
-    # auto-stopped pod won't accidentally bias the "has_pod" flag).
-    stalled_session_pass(args.dry_run, args.threshold)
+    # AUTO-RESPAWNS those whose task is in an ACTIVE status (provided the
+    # daemon is reachable); otherwise posts a one-time alert. The detection
+    # itself does NOT depend on the daemon (a stalled session's bg-Bash chain
+    # death is independent of daemon state), so we always run it — the
+    # daemon_reachable flag just gates the recovery action. Run AFTER
+    # pod-safety so the `_running_managed_issue_pods` call is fresh
+    # (poll_pipeline-posted progress markers from any auto-stopped pod
+    # won't accidentally bias the "has_pod" flag).
+    stalled_session_pass(args.dry_run, args.threshold, daemon_reachable=daemon_reachable)
 
     # GC: reap per-issue state files whose tasks are completed/archived OR
     # whose status is unresolvable AND mtime is past the age backstop.

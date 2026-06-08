@@ -622,14 +622,17 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   `EPM_PLAN_AUTOAPPROVE_GPU_HOURS`, else auto-approve), and
   `awaiting_promotion` (always a human gate). Everything else auto-continues.
 - **Stop the tick cron at terminal/park state.** The `--auto` session is driven
-  by the lightweight `/issue-tick <N>` cron (armed by Step 6d.2 of the first
-  `/issue <N>` invocation). When the task reaches `awaiting_promotion`,
+  by the lightweight `/issue-tick <N>` cron (armed by Step 0 of the first
+  `/issue <N>` invocation for autonomous sessions, covering the whole lifecycle
+  from spawn onward; Step 6d.2 has a second ARM-GUARDed call that re-arms it
+  if the Step 0 arm is missing — covers interactive `/issue` runs that reach
+  the polling loop too). When the task reaches `awaiting_promotion`,
   `completed`, an over-cap `plan_pending`, or `blocked`, do NOT keep the cron
-  armed — the Step 6d.2 backstop cron is torn down at the terminal/park
-  transitions only (`awaiting_promotion`, `completed`, `blocked`, and the
-  poll-loop / gate-park exits — NOT at `done`; it deliberately survives the
-  post-`done` verifying/interpreting/reviewing stages so a stalled interactive
-  session there still gets auto-woken). See Step 6d.2 CRON-TEARDOWN + the Step 9
+  armed — the backstop cron is torn down at the terminal/park transitions
+  only (`awaiting_promotion`, `completed`, `blocked`, and the poll-loop /
+  gate-park exits — NOT at `done`; it deliberately survives the post-`done`
+  verifying/interpreting/reviewing stages so a stalled interactive session
+  there still gets auto-woken). See Step 6d.2 CRON-TEARDOWN + the Step 9
   idempotency guard.
 - **In-session PushNotification at gate-park / `blocked`.** At the over-cap
   `plan_pending` exit (Step 2c `parked_over_cap`), at `awaiting_promotion`
@@ -689,6 +692,59 @@ ask the user to reconcile. Do NOT pick.
 
 **Soft error: status missing from frontmatter (legacy bodies), type missing,
 or empty body.** These are recoverable; do NOT exit. Run Step 0b instead.
+
+**MANDATORY auto-armed backstop for autonomous sessions — arm it NOW.**
+When `EPM_AUTONOMOUS_SESSION=1` is set (the session was spawned via
+`spawn_session.py spawn-issue --auto`), arm the `/issue-tick <N>` cron
+at Step 0, BEFORE any branching into Step 0b / 0c / 1 / 2 / 5 / 6. The
+historical site (Step 6d.2) only covers `kind: experiment` runs that
+reach the pod-launched polling loop; a session can stall ANYWHERE in
+the lifecycle (during planning, code-review, plan_pending park, the
+analyzer / clean-result-critic loop, even at first invocation) and the
+late-arm leaves all of those stretches uncovered. Real incident: task
+#518 (2026-06-08) stalled in the code-review loop at round 7 — the
+session ended its turn at a clean exit point, and because Step 6d.2
+had not yet run, NO tick cron was armed; the session sat dead until
+the external watcher's stalled-detector pass caught it.
+
+```python
+# Load the deferred Cron tools once per session if not already loaded.
+ToolSearch("select:CronCreate,CronList,CronDelete")
+
+# ARM-GUARD: idempotent re-entry. Whole-string equality (not substring) —
+# "/issue-tick 46" is a substring of "/issue-tick 467".
+if os.environ.get("EPM_AUTONOMOUS_SESSION") == "1":
+    jobs = CronList()
+    already_armed = any(
+        (job.get("prompt", "").strip() == f"/issue-tick {N}") for job in jobs
+    )
+    if not already_armed:
+        CronCreate(
+            cron="*/20 * * * *",
+            prompt=f"/issue-tick {N}",
+            recurring=True,
+            durable=False,
+        )
+        # Re-list + assert exactly-one match, same dupe-fail-fast contract
+        # Step 6d.2 uses — surfaces a harness prompt-normalization bug NOW
+        # rather than after dozens of duplicate ticks have accumulated.
+        post = CronList()
+        match_count = sum(
+            1 for job in post if job.get("prompt", "").strip() == f"/issue-tick {N}"
+        )
+        assert match_count == 1, f"cron arm: expected 1 match, got {match_count}"
+```
+
+Interactive sessions (no `EPM_AUTONOMOUS_SESSION`) do NOT arm the cron at
+Step 0 — they're user-driven and the user re-invokes `/issue <N>` manually
+when needed. The Step 6d.2 cron-arm still runs for those interactive runs
+that DO reach the polling loop (same call shape, same ARM-GUARD), so the
+session-survival backstop for pod-backed runs is unchanged for them.
+
+The cron is torn down at the SAME terminal / park transitions as before
+(see Step 6d.2 § CRON-TEARDOWN). Adding the early arm only widens the
+window during which the backstop is in place; it does not change when
+it's removed.
 
 ### Step 0b: Defaulting & autofill
 
@@ -2204,11 +2260,20 @@ tick mechanism (faster, drains sentinels on each return); the recurring
 `/issue-tick <N>` cron is the session-survival backstop.
 
 **The orchestrator AUTO-ARMS this backstop itself — no user action, no
-chat reminder.** The orchestrator registers the cron directly via the
-`CronCreate` tool. The `Cron*` tools are deferred — load them once per
-session with `ToolSearch("select:CronCreate,CronList,CronDelete")`
-before first use. On entering Step 6d.2 for a pod-backed `kind:
-experiment` run, BEFORE starting the bg-Bash poll:
+chat reminder.** For autonomous sessions, the primary arm site is
+Step 0 (whole-lifecycle coverage); this Step 6d.2 arm is the SECONDARY
+arm site, ARM-GUARDed so it's a no-op when Step 0 already armed. It
+covers two cases Step 0 doesn't: (a) interactive (non-`--auto`) `/issue`
+runs that reach the polling loop, where Step 0 deliberately skipped the
+arm (interactive runs are user-driven and don't need automatic re-drive
+between user turns), and (b) `--auto` sessions where the Step 0 arm
+somehow didn't land (defense-in-depth — the ARM-GUARD makes the
+duplicate call cheap, the missing arm catastrophic). The orchestrator
+registers the cron directly via the `CronCreate` tool. The `Cron*`
+tools are deferred — load them once per session with
+`ToolSearch("select:CronCreate,CronList,CronDelete")` before first use.
+On entering Step 6d.2 for a pod-backed `kind: experiment` run, BEFORE
+starting the bg-Bash poll:
 
 1. Call `CronList`. **ARM-GUARD:** if any job satisfies
    `prompt.strip() == "/issue-tick <N>"`, the backstop is already armed
