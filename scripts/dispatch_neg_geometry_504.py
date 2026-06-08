@@ -47,8 +47,12 @@ load_dotenv()
 # are in the env when downstream modules read them at import time.
 from explore_persona_space.experiments.contrastive_neg_geometry_504 import (  # noqa: E402
     BASE_MODEL,
+    CHECKPOINT_FRACTIONS_V3_FINER,
+    EPOCHS_FROM_V3_SMOKE_SLUG,
+    EPOCHS_LADDER_V3,
     EXPECTED_MARKER_TOKEN_ID,
     FALLBACK_SOURCE_CANDIDATES,
+    FIXED_LR_V3,
     HF_DATA_PREFIX_504,
     HF_DATA_REPO,
     HF_MODEL_REPO,
@@ -56,18 +60,21 @@ from explore_persona_space.experiments.contrastive_neg_geometry_504 import (  # 
     LR_LADDER,
     MAIN_ARM_SLUGS,
     MAIN_ARM_SLUGS_V2,
+    MAIN_ARM_SLUGS_V3,
     MARKER_TEXT,
     PHASE0_SMOKE_SLUGS,
     PHASE0_SMOKE_SLUGS_V2,
+    PHASE0_SMOKE_SLUGS_V3,
     SEEDS,
     SOURCE_PERSONA,
     alpha_for_rank,
 )
 
-# Force-reference v2 symbols so ruff's F401 auto-strip on the formatter
+# Force-reference v2/v3 symbols so ruff's F401 auto-strip on the formatter
 # pre-commit pass doesn't remove them — see `feedback_ruff_strips_unused_imports`.
-# All four are used inside `main()` / `_run_v2_phase*()` below; this tuple
-# keeps the imports alive even when the formatter rewrites the import block.
+# All are used inside `main()` / `_run_v2_phase*()` / `_run_v3_phase*()` below;
+# this tuple keeps the imports alive even when the formatter rewrites the
+# import block.
 # Round-2 fix (Concern C): the v1 `MAIN_ARM_SLUGS` is now used inside the v1
 # branch only (no longer at the top of `main()`), so keep it referenced here
 # too, alongside the v2 symbols.
@@ -79,6 +86,14 @@ _V2_IMPORT_REFS = (
     MAIN_ARM_SLUGS_V2,
     PHASE0_SMOKE_SLUGS_V2,
     SOURCE_PERSONA,
+)
+_V3_IMPORT_REFS = (
+    CHECKPOINT_FRACTIONS_V3_FINER,
+    EPOCHS_FROM_V3_SMOKE_SLUG,
+    EPOCHS_LADDER_V3,
+    FIXED_LR_V3,
+    MAIN_ARM_SLUGS_V3,
+    PHASE0_SMOKE_SLUGS_V3,
 )
 
 LOG_DIR = Path("/workspace/logs")
@@ -163,6 +178,8 @@ def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on 
     label_prefix: str = "issue-504",
     chosen_lr: float | None = None,
     per_cell_lrs: dict[str, float] | None = None,
+    chosen_epochs: int | None = None,
+    per_cell_epochs: dict[str, int] | None = None,
     source_persona: str | None = None,
     per_cell_tolerant: bool = False,
 ) -> list[dict]:
@@ -279,6 +296,22 @@ def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on 
             cell_lr = chosen_lr
         if cell_lr is not None:
             cmd.extend(["--lr", repr(cell_lr)])
+        # v3 EPOCHS threading (plan v3 §4.1). Priority order mirrors lr:
+        #   1. per_cell_epochs[cell] — used by the v3 Phase 0 EPOCHS-ladder
+        #      smoke (one epoch value per smoke cell, looked up from
+        #      EPOCHS_FROM_V3_SMOKE_SLUG).
+        #   2. chosen_epochs — used by the v3 Phase 1 main grid (one epoch
+        #      value applied uniformly to all 5 arms × 2 seeds, picked by
+        #      Phase 0 v3 pick).
+        # If neither is set, --epochs is omitted and i504_run_cell.py falls
+        # back to the module-level EPOCHS default (=1, v1/v2 default).
+        cell_epochs: int | None = None
+        if per_cell_epochs and cell in per_cell_epochs:
+            cell_epochs = per_cell_epochs[cell]
+        elif chosen_epochs is not None:
+            cell_epochs = chosen_epochs
+        if cell_epochs is not None:
+            cmd.extend(["--epochs", str(cell_epochs)])
         # Round-2 fix (BLOCKER #2): thread fallback-source through to the
         # per-cell runner. When None, i504_run_cell.py falls back to the
         # SOURCE_PERSONA module default (= villain, v1/v2 legacy default).
@@ -519,16 +552,30 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
     # When set, it runs ONE v2 phase and exits.
     parser.add_argument(
         "--phase",
-        choices=("legacy", "phase0", "phase0-fallback", "phase1"),
+        choices=(
+            "legacy",
+            "phase0",
+            "phase0-fallback",
+            "phase0_v3",
+            "phase0_v3-recovery",
+            "phase1",
+        ),
         default="legacy",
         help=(
-            "v2 phase to run (plan v2 §4.1 + §10): "
-            "phase0=run the 3 lr-ladder smoke cells + pick (writes "
+            "Phase to run. "
+            "phase0=v2 lr-ladder smoke (3 cells) + pick (writes "
             "phase0_calibration_v2.json); "
-            "phase0-fallback=re-run the 3 lr-ladder smoke on a fallback source "
-            "persona (--source); "
-            "phase1=read phase0_calibration_v2.json + train the 5 main arms × 2 "
-            "seeds at the picked lr; "
+            "phase0-fallback=v2 rerun of the lr-ladder smoke on a fallback "
+            "source persona (--source); "
+            "phase0_v3=v3 EPOCHS-ladder smoke (2 cells × 1 seed at fixed "
+            "lr=1e-4, EPOCHS in --epochs-ladder) + pick (writes "
+            "phase0_calibration_v3.json + on Trigger A/C also "
+            "phase0_v3_exit_to_v4.json); "
+            "phase0_v3-recovery=v3 in-plan finer-fraction recovery on EPOCHS=2 "
+            "(triggered only when Trigger B fired); "
+            "phase1=read whichever Phase 0 artifact exists "
+            "(phase0_calibration_v3.json preferred over v2/v2_fallback) + "
+            "train the 5 main arms × 2 seeds at the picked recipe; "
             "legacy=byte-identical v1 (rank-ladder) pipeline. Default legacy."
         ),
     )
@@ -543,10 +590,31 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
         ),
     )
     parser.add_argument(
+        "--epochs-ladder",
+        default=",".join(str(e) for e in EPOCHS_LADDER_V3),
+        help=(
+            "v3 EPOCHS ladder for --phase phase0_v3 (plan v3 §4.1). "
+            f"CSV of integers (default: {','.join(str(e) for e in EPOCHS_LADDER_V3)}). "
+            "Each value maps to one v3 smoke slug "
+            "(c504v3_smoke_eps{2,3} for the canonical ladder). v3 holds lr "
+            "FIXED at --fixed-lr (default 1e-4) and sweeps EPOCHS as the "
+            "single load-bearing variable."
+        ),
+    )
+    parser.add_argument(
+        "--fixed-lr",
+        type=float,
+        default=FIXED_LR_V3,
+        help=(
+            "v3 fixed lr for --phase phase0_v3 (plan v3 §4.1). NOT swept "
+            f"in v3 — pinned by v2 phase0 evidence (default: {FIXED_LR_V3:g})."
+        ),
+    )
+    parser.add_argument(
         "--source",
         default=SOURCE_PERSONA,
         help=(
-            "Source persona name. Default villain (plan v2 §10). "
+            "Source persona name. Default villain (plan v2 §10, v3 §10). "
             "For --phase phase0-fallback, override with the easier-source "
             f"candidate (see FALLBACK_SOURCE_CANDIDATES = {FALLBACK_SOURCE_CANDIDATES})."
         ),
@@ -1049,6 +1117,24 @@ def _run_v2_phase(
             smoke_slugs=smoke_slugs,
             per_cell_lrs=per_cell_lrs,
         )
+    if args.phase == "phase0_v3":
+        return _run_v3_phase0(
+            args=args,
+            phase_summaries=phase_summaries,
+            arm_to_n_json=arm_to_n_json,
+            max_new_tokens_eval=max_new_tokens_eval,
+            max_model_len_eval=max_model_len_eval,
+            recovery=False,
+        )
+    if args.phase == "phase0_v3-recovery":
+        return _run_v3_phase0(
+            args=args,
+            phase_summaries=phase_summaries,
+            arm_to_n_json=arm_to_n_json,
+            max_new_tokens_eval=max_new_tokens_eval,
+            max_model_len_eval=max_model_len_eval,
+            recovery=True,
+        )
     if args.phase == "phase1":
         return _run_v2_phase1(
             args=args,
@@ -1180,21 +1266,238 @@ def _run_v2_phase0(
     return 0 if pick.get("verdict") == "pass" else 2
 
 
+def _run_v3_phase0(
+    *,
+    args: argparse.Namespace,
+    phase_summaries: dict[str, dict],
+    arm_to_n_json: Path,
+    max_new_tokens_eval: int,
+    max_model_len_eval: int,
+    recovery: bool = False,
+) -> int:
+    """v3 EPOCHS-ladder smoke + pick (plan v3 §4.1).
+
+    Two modes:
+      * `recovery=False` (default): runs the 2 v3 smoke cells from
+        `--epochs-ladder` (default {2, 3}) at fixed `--fixed-lr` (default 1e-4),
+        seed=42, then invokes the v3 picker. Writes
+        `phase0_calibration_v3.json` + (on Trigger A/C) `phase0_v3_exit_to_v4.json`.
+
+      * `recovery=True`: in-plan finer-fraction recovery (plan v3 §4.1 trigger B
+        + §4.2). Re-runs the EPOCHS=2 cell at finer fractions {0.02, 0.04,
+        0.06, 0.08} via the same dispatcher path; the trainer's checkpoint
+        cadence is overridden via a separate suffix-decorated runs subdir so
+        the coarse-fraction trajectories survive. After the recovery cell
+        finishes, re-invokes the picker over the augmented EPOCHS=2 trajectory.
+    """
+    epochs_ladder = [int(x.strip()) for x in args.epochs_ladder.split(",") if x.strip()]
+    if not epochs_ladder:
+        raise RuntimeError(
+            f"--epochs-ladder must be a non-empty CSV of integers; got {args.epochs_ladder!r}."
+        )
+    # Map epochs → v3 smoke slug. The canonical ladder maps positionally; for
+    # off-canonical ladders synthesize slugs (mirrors v2 off-canonical handling).
+    canonical_eps = list(EPOCHS_FROM_V3_SMOKE_SLUG.values())
+    if epochs_ladder == canonical_eps:
+        smoke_slugs = list(PHASE0_SMOKE_SLUGS_V3)
+        per_cell_epochs = dict(EPOCHS_FROM_V3_SMOKE_SLUG)
+    else:
+        smoke_slugs = [f"c504v3_smoke_eps{e}" for e in epochs_ladder]
+        per_cell_epochs = dict(zip(smoke_slugs, epochs_ladder, strict=True))
+        log.warning(
+            "Off-canonical epochs ladder %s — synthesized slugs %s. "
+            "The canonical ladder %s maps to PHASE0_SMOKE_SLUGS_V3.",
+            epochs_ladder,
+            smoke_slugs,
+            canonical_eps,
+        )
+    fixed_lr = float(args.fixed_lr)
+    # In-plan recovery overrides the smoke set to EPOCHS=2 ONLY, re-runs at
+    # finer fractions; the picker reads the SAME canonical slug path so the
+    # un-decorated trajectory survives via a different sentinel/suffix path.
+    if recovery:
+        smoke_slugs = ["c504v3_smoke_eps2"]
+        per_cell_epochs = {"c504v3_smoke_eps2": 2}
+        log.info(
+            "[phase=phase0_v3-recovery] in-plan finer-fraction recovery on "
+            "EPOCHS=2 at fractions=%s (plan v3 §4.1 trigger B + §4.2). The "
+            "recovery cell re-runs over the coarse-grained trajectory; the "
+            "v3 picker re-reads the trajectory.",
+            CHECKPOINT_FRACTIONS_V3_FINER,
+        )
+
+    log.info(
+        "[phase=v3_%s] source=%s fixed_lr=%g epochs_ladder=%s slugs=%s",
+        args.phase,
+        args.source,
+        fixed_lr,
+        epochs_ladder,
+        smoke_slugs,
+    )
+
+    pick_path = args.slab_root / "phase0_calibration_v3.json"
+    exit_to_v4_path = args.slab_root / "phase0_v3_exit_to_v4.json"
+    label_prefix = (
+        f"issue-504-v3-{args.phase}" if not recovery else "issue-504-v3-phase0_v3-recovery"
+    )
+
+    # Smoke cells run sequentially on 1 GPU (max_parallel=1 — each cell is a
+    # Phase-1-composition train + trajectory eval at one EPOCHS value). All
+    # cells share r=8 / α=32 / lr=fixed_lr; per_cell_epochs threads the
+    # EPOCHS per cell through _schedule_cell_pool → i504_run_cell.py --epochs.
+    _schedule_cell_pool(
+        cells=list(smoke_slugs),
+        seeds=[42],  # v3 single seed for Phase 0 (plan §11)
+        n_gpus=args.n_gpus,
+        max_parallel=1,  # sequential — one cell per epochs value.
+        slab_root=args.slab_root,
+        runs_root=args.runs_root,
+        log_dir=LOG_DIR,
+        bank_path=args.bank_path,
+        centroids_dir=args.centroids_dir,
+        arm_to_n_json=arm_to_n_json,
+        r_train_path=args.r_train_path,
+        r_eval_path=args.r_eval_path,
+        chosen_rank=8,  # plan v3 §10: r=8 pinned
+        chosen_alpha=32,  # plan v3 §10: α=32 pinned
+        chosen_frac=None,  # Phase 0 hasn't picked yet
+        smoke=False,  # Phase 0 trains at Phase 1 composition (NOT a tiny slice)
+        no_kl=args.no_kl,
+        report_to=args.report_to,
+        resume=args.resume,
+        max_new_tokens_eval=max_new_tokens_eval,
+        max_model_len_eval=max_model_len_eval,
+        hf_path_suffix=args.hf_path_suffix,
+        label_prefix=label_prefix,
+        chosen_lr=fixed_lr,  # v3: fixed lr applied to every smoke cell
+        per_cell_epochs=per_cell_epochs,  # v3 threading: EPOCHS per smoke cell
+        source_persona=args.source,
+        # Round-4 fix (BLOCKER #2 / task #504): Phase 0 v3 EPOCHS-ladder smoke
+        # is per-cell tolerant so the picker sees every cell's outcome — if
+        # one rung crashes, the remaining rungs still run and the picker
+        # decides via the anti-saturation band.
+        per_cell_tolerant=True,
+    )
+
+    # Run the v3 pick rule over the smoke trajectories. Picker writes the
+    # exit-to-v4 artifact itself on Trigger A/C.
+    pick_cmd = [
+        "uv",
+        "run",
+        "python",
+        "scripts/i504_phase_phase0_pick.py",
+        "--mode",
+        "v3",
+        "--slab-root",
+        str(args.slab_root),
+        "--out-path",
+        str(pick_path),
+        "--exit-to-v4-path",
+        str(exit_to_v4_path),
+        "--source",
+        args.source,
+        "--fixed-lr",
+        repr(fixed_lr),
+        "--sentinel-path",
+        str(LOG_DIR / f"issue-504-v3-{args.phase}-pick-results.json"),
+    ]
+    pick_rc = 0
+    try:
+        _run_phase_subprocess(pick_cmd, f"v3_{args.phase}_pick")
+    except subprocess.CalledProcessError as e:
+        # Picker returns rc=2 on non-pass verdict (Trigger A/B/C). The artifact
+        # is still written; the dispatcher reads it below to decide routing.
+        pick_rc = e.returncode
+        log.warning(
+            "[phase=v3_%s_pick] picker exited rc=%d (non-pass verdict); "
+            "reading artifact at %s to determine routing.",
+            args.phase,
+            pick_rc,
+            pick_path,
+        )
+
+    if not pick_path.exists():
+        raise RuntimeError(f"v3 pick expected at {pick_path}; not found.")
+    pick = json.loads(pick_path.read_text())
+    phase_summaries[f"v3_{args.phase}"] = {
+        "verdict": pick.get("verdict"),
+        "chosen_epochs": pick.get("chosen_epochs"),
+        "chosen_lr": pick.get("chosen_lr"),
+        "chosen_checkpoint_fraction": pick.get("chosen_checkpoint_fraction"),
+        "chosen_checkpoint_steps": pick.get("chosen_checkpoint_steps"),
+        "source_delta_g_at_pick_nats": pick.get("source_delta_g_at_pick_nats"),
+        "source_emission_at_pick": pick.get("source_emission_at_pick"),
+        "fallback_triggered": pick.get("fallback_triggered"),
+        "fallback_reason": pick.get("fallback_reason"),
+        "in_plan_recovery_triggered": pick.get("in_plan_recovery_triggered"),
+        "source": pick.get("source"),
+    }
+    _write_sentinel(
+        LOG_DIR / "issue-504-results.json",
+        kind="epm:results",
+        phase="done",
+        note_payload={
+            "issue": 504,
+            "status": f"v3_{args.phase}_complete",
+            "v3_pick": pick,
+            "phase_summaries": phase_summaries,
+            "final_commit_sha": _git_sha(),
+            "hostname": socket.gethostname(),
+        },
+    )
+    log.info(
+        "[phase=done] V3 %s COMPLETE — verdict=%s, chosen_epochs=%s, chosen_lr=%s, "
+        "fallback=%s, in_plan_recovery=%s. %s",
+        args.phase,
+        pick.get("verdict"),
+        pick.get("chosen_epochs"),
+        pick.get("chosen_lr"),
+        pick.get("fallback_triggered"),
+        pick.get("in_plan_recovery_triggered"),
+        datetime.now(UTC).isoformat(),
+    )
+    return 0 if pick.get("verdict") == "pass" else 2
+
+
 def _select_active_phase0_pick(
-    primary_pick_path: Path, fallback_pick_path: Path
+    primary_pick_path: Path,
+    fallback_pick_path: Path,
+    v3_pick_path: Path | None = None,
 ) -> tuple[dict, Path]:
-    """Choose the active Phase 0 pick artifact: fallback if fallback fired, else primary.
+    """Choose the active Phase 0 pick artifact: v3 > v2-fallback > v2-primary.
 
     Pure helper (read-only filesystem access). Returns the parsed dict + the
     absolute path of the chosen artifact. Used by `_run_v2_phase1` for both
     cell-training selection AND the analyze subprocess so they read the SAME
     artifact (round-3 fix, concern_id `fallback-analyze-pick-path`).
 
-    Raises FileNotFoundError if `primary_pick_path` does not exist.
+    Selection precedence (plan v3 §2 "v3 takes precedence over v2"):
+
+      1. If `v3_pick_path` is provided AND the file exists AND its verdict ==
+         "pass", use the v3 artifact. Rationale: v3 supersedes v2 once Phase 0
+         v3 has produced an in-band anchor — re-using v2's pick after v3 ran
+         would mix lr-anchor and EPOCHS-anchor evidence.
+      2. Else if `primary_pick_path` (v2) fired fallback AND
+         `fallback_pick_path` exists, use the fallback artifact.
+      3. Else use the primary (v2) artifact.
+
+    Raises FileNotFoundError if NO artifact is available (neither v3 nor v2
+    primary). v3 with non-pass verdict (Trigger A/B/C) falls through to v2
+    selection — if no v2 pick exists either, the caller surfaces the v3
+    failure mode (caller should consult `phase0_v3_exit_to_v4.json` for the
+    exit-to-v4 routing).
     """
+    if v3_pick_path is not None and v3_pick_path.exists():
+        v3_pick = json.loads(v3_pick_path.read_text())
+        if v3_pick.get("verdict") == "pass":
+            return v3_pick, v3_pick_path
+        # Non-pass v3 verdict falls through to v2 selection (or fails below
+        # if v2 isn't available either).
     if not primary_pick_path.exists():
         raise FileNotFoundError(
-            f"v2 Phase 1 requires {primary_pick_path}; run --phase phase0 first."
+            f"Phase 1 requires {primary_pick_path}"
+            + (f" or {v3_pick_path}" if v3_pick_path is not None else "")
+            + "; run --phase phase0 (v2) or --phase phase0_v3 first."
         )
     primary_pick = json.loads(primary_pick_path.read_text())
     if primary_pick.get("fallback_triggered") and fallback_pick_path.exists():
@@ -1212,51 +1515,87 @@ def _run_v2_phase1(
     max_model_len_eval: int,
     seeds: list[int],
 ) -> int:
-    """Run the 5 v2 main arms × 2 seeds at the Phase 0-picked lr (plan v2 §4.4)."""
+    """Run the 5 main arms × 2 seeds at the Phase 0-picked recipe (plan v2 §4.4 / v3 §4.4).
+
+    Reads whichever Phase 0 artifact exists, preferring v3 (EPOCHS-ladder) over
+    v2 (lr-ladder) per `_select_active_phase0_pick`. When v3 is active, the
+    main arms are the v3 slugs (`c504v3_*`) and the cells train at
+    `chosen_epochs` over fixed `chosen_lr=1e-4`. When v2 is active, the main
+    arms are the v2 slugs (`c504v2_*`) and the cells train at `chosen_lr`
+    over EPOCHS=1.
+    """
     primary_pick_path = args.slab_root / "phase0_calibration_v2.json"
     fallback_pick_path = args.slab_root / "phase0_calibration_v2_fallback.json"
-    # Active pick = fallback artifact if fallback fired, else primary; analyze
-    # must read the same artifact training used (round-3 fix, concern_id
-    # `fallback-analyze-pick-path`: see analyze subprocess below where
-    # active_pick_path is threaded as --phase0-path).
-    pick, active_pick_path = _select_active_phase0_pick(primary_pick_path, fallback_pick_path)
+    v3_pick_path = args.slab_root / "phase0_calibration_v3.json"
+    # Active pick = v3 if pass, else v2-fallback if fallback fired, else
+    # v2-primary. Analyze MUST read the same artifact training used (round-3
+    # fix, concern_id `fallback-analyze-pick-path`).
+    pick, active_pick_path = _select_active_phase0_pick(
+        primary_pick_path, fallback_pick_path, v3_pick_path=v3_pick_path
+    )
+    is_v3 = active_pick_path == v3_pick_path
     if active_pick_path == fallback_pick_path:
         log.info(
-            "[phase=v2_phase1] primary phase0_calibration_v2.json fired fallback; "
+            "[phase=phase1] primary phase0_calibration_v2.json fired fallback; "
             "reading fallback pick from %s (source=%s).",
             fallback_pick_path,
+            pick.get("source"),
+        )
+    elif is_v3:
+        log.info(
+            "[phase=phase1] v3 pick artifact found (%s) AND verdict=pass — "
+            "v3 supersedes v2 for Phase 1. chosen_epochs=%s, chosen_lr=%s, "
+            "source=%s.",
+            v3_pick_path,
+            pick.get("chosen_epochs"),
+            pick.get("chosen_lr"),
             pick.get("source"),
         )
 
     if pick.get("verdict") != "pass":
         raise RuntimeError(
-            f"v2 Phase 1 cannot proceed: Phase 0 pick verdict={pick.get('verdict')!r}, "
+            f"Phase 1 cannot proceed: Phase 0 pick verdict={pick.get('verdict')!r}, "
             f"fallback_reason={pick.get('fallback_reason')!r}. "
-            f"Re-run --phase phase0-fallback on an easier source first."
+            f"Re-run --phase phase0-fallback or --phase phase0_v3 first."
         )
     chosen_lr = float(pick["chosen_lr"])
     chosen_frac = float(pick["chosen_checkpoint_fraction"])
     chosen_rank = int(pick.get("chosen_rank", 8))
     chosen_alpha = int(pick.get("chosen_alpha", 32))
+    chosen_epochs = int(pick["chosen_epochs"]) if is_v3 else None
     chosen_source = pick.get("source", args.source)
+
+    # v3 uses v3 slugs; v2 uses v2 slugs.
+    if is_v3:
+        default_arm_slugs = MAIN_ARM_SLUGS_V3
+        label_prefix = "issue-504-v3"
+        analyze_positioned_arms = "v3"
+        phase_summary_key = "v3_phase1"
+    else:
+        default_arm_slugs = MAIN_ARM_SLUGS_V2
+        label_prefix = "issue-504-v2"
+        analyze_positioned_arms = "v2"
+        phase_summary_key = "v2_phase1"
+
     log.info(
-        "[phase=v2_phase1] scheduling %d cells x %d seeds "
-        "at lr=%g, frac=%g, rank=%d, alpha=%d, source=%s",
-        len(MAIN_ARM_SLUGS_V2),
+        "[phase=phase1] scheduling %d cells x %d seeds "
+        "at lr=%g, frac=%g, rank=%d, alpha=%d, epochs=%s, source=%s",
+        len(default_arm_slugs),
         len(seeds),
         chosen_lr,
         chosen_frac,
         chosen_rank,
         chosen_alpha,
+        chosen_epochs if chosen_epochs is not None else "default(1)",
         chosen_source,
     )
 
-    # v2 main arms: use args.cells if explicitly set to a subset, else
-    # default to all 5 v2 arms.
+    # Main arms: use args.cells if explicitly set to a subset, else default
+    # to all 5 v2/v3 arms.
     if args.cells is None or args.cells.strip() in ("", "all"):
-        main_cells = list(MAIN_ARM_SLUGS_V2)
+        main_cells = list(default_arm_slugs)
     else:
-        main_cells = _resolve_cells(args.cells, MAIN_ARM_SLUGS_V2)
+        main_cells = _resolve_cells(args.cells, default_arm_slugs)
 
     cell_results = _schedule_cell_pool(
         cells=main_cells,
@@ -1281,40 +1620,40 @@ def _run_v2_phase1(
         max_new_tokens_eval=max_new_tokens_eval,
         max_model_len_eval=max_model_len_eval,
         hf_path_suffix=args.hf_path_suffix,
-        label_prefix="issue-504-v2",
-        chosen_lr=chosen_lr,  # v2: applied uniformly to every Phase 1 arm
-        # Round-2 fix (BLOCKER #2): thread the PICKED source persona (from the
-        # phase0_calibration_v2.json artifact — the fallback pick if fallback
-        # fired, else the primary pick = villain) through every Phase 1 cell.
-        # Every arm trains + evaluates against the SAME source the Phase 0
-        # picker validated as anchorable.
+        label_prefix=label_prefix,
+        chosen_lr=chosen_lr,  # applied uniformly to every Phase 1 arm
+        chosen_epochs=chosen_epochs,  # v3: chosen by Phase 0 v3 EPOCHS pick
+        # Round-2 fix (BLOCKER #2): thread the PICKED source persona through
+        # every Phase 1 cell. Every arm trains + evaluates against the SAME
+        # source the Phase 0 picker validated as anchorable.
         source_persona=chosen_source,
     )
-    phase_summaries["v2_phase1"] = {
+    phase_summaries[phase_summary_key] = {
         "n_completed": len(cell_results),
         "results": cell_results,
         "chosen_lr": chosen_lr,
+        "chosen_epochs": chosen_epochs,
         "chosen_checkpoint_fraction": chosen_frac,
         "source": chosen_source,
     }
 
     # ── Phase 2: analyze (CPU). ──────────────────────────────────────────────
-    base_prior_path = args.slab_root / "base_prior_marker_v2.json"
+    base_prior_path = args.slab_root / (
+        "base_prior_marker_v3.json" if is_v3 else "base_prior_marker_v2.json"
+    )
     analyze_summary: dict | None = None
     if args.skip_analyze:
         log.info("[phase=analyze] SKIP")
     else:
         # Round-2 fix (BLOCKER #1, concern_id `analyze-v2-slug-iteration`): the
-        # v2 Phase 2 must iterate the v2 arm slugs (c504v2_*) so Phase 1's
-        # trajectories are actually read. Without --positioned-arms v2, the
-        # CLI default (v2) is still v2, but pin it explicitly here so a future
-        # default flip cannot silently break this path.
-        # Active pick = fallback artifact if fallback fired, else primary;
-        # analyze must read the same artifact training used (round-3 fix,
-        # concern_id `fallback-analyze-pick-path`). Without this, a fallback
-        # Phase 1 run trains correctly on the fallback source but the analyze
-        # subprocess receives the non-pass primary artifact and `load_phase0_pick`
-        # raises RuntimeError after the ~22 GPU-h Phase 1 budget is spent.
+        # Phase 2 must iterate the active arm slugs (v2 c504v2_* OR v3 c504v3_*)
+        # so Phase 1's trajectories are actually read.
+        # Active pick = v3 if pass, else fallback artifact if v2 fallback
+        # fired, else v2 primary; analyze must read the same artifact training
+        # used (round-3 fix, concern_id `fallback-analyze-pick-path`).
+        analyze_sentinel = LOG_DIR / (
+            "issue-504-v3-analyze-results.json" if is_v3 else "issue-504-v2-analyze-results.json"
+        )
         _run_phase_subprocess(
             [
                 "uv",
@@ -1332,16 +1671,16 @@ def _run_v2_phase1(
                 "--seeds",
                 ",".join(str(s) for s in seeds),
                 "--positioned-arms",
-                "v2",
+                analyze_positioned_arms,
                 "--sentinel-path",
-                str(LOG_DIR / "issue-504-v2-analyze-results.json"),
+                str(analyze_sentinel),
             ],
-            "v2_analyze",
+            f"{analyze_positioned_arms}_analyze",
         )
         ap = args.slab_root / "analyze_summary.json"
         if ap.exists():
             analyze_summary = json.loads(ap.read_text())
-    phase_summaries["v2_analyze"] = analyze_summary
+    phase_summaries[f"{analyze_positioned_arms}_analyze"] = analyze_summary
 
     _write_final_sentinel(
         main_cells,

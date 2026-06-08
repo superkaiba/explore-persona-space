@@ -96,27 +96,35 @@ __all__ = [
     "BAND_CENTERS",
     "CELL_SPECS_504",
     "CHECKPOINT_FRACTIONS",
+    "CHECKPOINT_FRACTIONS_V3_FINER",
     "DEFAULT_ARM_SLUG",
     "DEFAULT_HEADLINE_LAYER",
     "EMISSION_BAND_HIGH",
     "EMISSION_BAND_LOW",
     "EPOCHS",
+    "EPOCHS_FROM_V3_SMOKE_SLUG",
+    "EPOCHS_LADDER_V3",
     "FALLBACK_LAYERS",
     "FALLBACK_SOURCE_CANDIDATES",
+    "FIXED_LR_V3",
     "HF_DATA_PREFIX_504",
     "LR_FROM_V2_SMOKE_SLUG",
     "LR_LADDER",
     "MAIN_ARM_SLUGS",
     "MAIN_ARM_SLUGS_V2",
+    "MAIN_ARM_SLUGS_V3",
     "MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT",
     "NEG_EX_PER_PERSONA",
     "N_POS_PER_CELL",
     "POSITIONED_ARM_SLUGS",
     "POSITIONED_ARM_SLUGS_V2",
+    "POSITIONED_ARM_SLUGS_V3",
     "DEFAULT_ARM_SLUG_V2",
+    "DEFAULT_ARM_SLUG_V3",
     "PHASE0_CALIB_RANKS",
     "PHASE0_SMOKE_SLUGS",
     "PHASE0_SMOKE_SLUGS_V2",
+    "PHASE0_SMOKE_SLUGS_V3",
     "PHASE05_DNN_FLOOR",
     "PHASE05_PANEL_MIN_PROBES",
     "PHASE05_QWEN_DEFAULT_DOMINANCE_THRESHOLD",
@@ -127,11 +135,15 @@ __all__ = [
     "SOURCE_DG_BAND_LOW",
     "TASK_ID",
     "V2_BAND_FOR_ARM",
+    "V3_BAND_FOR_ARM",
+    "epochs_for_v3_smoke_slug",
     "is_main_arm_slug",
     "is_v2_smoke_slug",
+    "is_v3_smoke_slug",
     "lr_for_v2_smoke_slug",
     "positioned_arm_for_band",
     "positioned_arm_for_band_v2",
+    "positioned_arm_for_band_v3",
 ]
 
 
@@ -340,6 +352,79 @@ V2_BAND_FOR_ARM: dict[str, str] = {
     "far": "c504v2_far",
 }
 
+# ── v3 EPOCHS-ladder (plan v3 §4.1; user-directive 2026-06-08T11:44:00Z) ────
+# v3 single load-bearing change vs v2: replace the lr-ladder with an EPOCHS
+# ladder at FIXED lr=1e-4 (the v2-closest cell). Pinned r=8 / α=32 / all-linear
+# / 200 pos + 200 neg / count=2 / source=villain, sweep EPOCHS ∈ {2, 3} at
+# seed=42.
+#
+# - EPOCHS=2 doubles effective optimization steps from v2's ~25 to ~50.
+# - EPOCHS=3 triples them to ~75 — brackets against saturation upper bound.
+#
+# Source: v2 phase0 smoke (2026-06-08T11:18:06Z) refutation of lr-alone at
+# 1 epoch; #397 (lr=1e-4 as the tested ceiling for single-token ※); #477
+# (r=8 / count=2 mid-band precedent at 63 steps in a different regime); #448
+# (anti-saturation requirement — anchor sits ~5-10 nats below ceiling, on-
+# policy emission ∈ [0.1, 0.8]).
+EPOCHS_LADDER_V3: tuple[int, ...] = (2, 3)
+
+# v3 fixed lr — NOT swept in v3. Carried from v2's empirical closest cell.
+FIXED_LR_V3: float = 1e-4
+
+# v3 Phase 0 smoke cells (EPOCHS ladder; plan v3 §4.1). 2 cells × 1 seed at
+# r=8 / α=32 / all-linear / lr=1e-4 / count=2 / 200 pos + 200 neg, seed=42.
+# Slugs are dashless (`c504v3_smoke_eps2`, not `c504v3_smoke_eps_2`) to mirror
+# the v2 naming convention.
+PHASE0_SMOKE_SLUGS_V3: tuple[str, str] = (
+    "c504v3_smoke_eps2",
+    "c504v3_smoke_eps3",
+)
+
+# Mapping {v3 smoke slug → EPOCHS} so the dispatcher + per-cell runner can
+# recover the epochs from the slug WITHOUT a separate CLI arg per cell.
+EPOCHS_FROM_V3_SMOKE_SLUG: dict[str, int] = {
+    "c504v3_smoke_eps2": 2,
+    "c504v3_smoke_eps3": 3,
+}
+
+# v3 in-plan recovery (plan v3 §4.1 trigger B + §4.2). Fine-grained checkpoint
+# fractions used ONLY when EPOCHS=2 saturates at every coarse fraction; re-runs
+# the EPOCHS=2 cell with these finer fractions (~0.15 GPU-h). Kept separate
+# from CHECKPOINT_FRACTIONS so the v3 picker can decide which cadence applies.
+CHECKPOINT_FRACTIONS_V3_FINER: tuple[float, ...] = (0.02, 0.04, 0.06, 0.08)
+
+# ── v3 main arms (plan v3 §5 conditions table; structurally identical to v2,
+# but EPOCHS is the swept variable not lr, so slugs carry the `v3` namespace
+# so the EPOCHS-swept reads are distinguishable on WandB + HF model repo
+# from the v2 lr-swept reads). ──────────────────────────────────────────────
+POSITIONED_ARM_SLUGS_V3: tuple[str, str, str, str] = (
+    "c504v3_near",
+    "c504v3_mid_near",
+    "c504v3_mid_far",
+    "c504v3_far",
+)
+DEFAULT_ARM_SLUG_V3: str = "c504v3_default_only"
+MAIN_ARM_SLUGS_V3: tuple[str, ...] = (*POSITIONED_ARM_SLUGS_V3, DEFAULT_ARM_SLUG_V3)
+
+# v3 ARM_NAMES additions (merged into ARM_NAMES below for compatibility).
+ARM_NAMES.update(
+    {
+        "c504v3_near": "Near (twin)",
+        "c504v3_mid_near": "Mid-Near",
+        "c504v3_mid_far": "Mid-Far",
+        "c504v3_far": "Far",
+        "c504v3_default_only": "Default-only (no positioned negative)",
+    }
+)
+
+# v3 band → arm-slug mapping.
+V3_BAND_FOR_ARM: dict[str, str] = {
+    "near": "c504v3_near",
+    "mid_near": "c504v3_mid_near",
+    "mid_far": "c504v3_mid_far",
+    "far": "c504v3_far",
+}
+
 # ── Phase 0 fallback (plan v2 §4.2) ─────────────────────────────────────────
 # If the lr-ladder produces no in-band cell on `villain`, the dispatcher
 # swaps to an EASIER source persona and re-runs the same 3-cell smoke. The
@@ -420,20 +505,47 @@ CELL_SPECS_504: tuple[CellSpec, ...] = (
     ("c504v2_smoke_lr1e5", "Smoke lr=1e-5", "spread", 2, NEG_EX_PER_PERSONA, False),
     ("c504v2_smoke_lr3e5", "Smoke lr=3e-5", "spread", 2, NEG_EX_PER_PERSONA, False),
     ("c504v2_smoke_lr1e4", "Smoke lr=1e-4", "spread", 2, NEG_EX_PER_PERSONA, False),
+    # ── v3 Main Phase 1 arms (EPOCHS-anchor; 5 cells × 2 seeds = 10 runs). ──
+    # Same shape as v1/v2; EPOCHS is the only varied knob (set by Phase 0
+    # v3 pick + threaded via `i504_run_cell.py --epochs`).
+    ("c504v3_near", ARM_NAMES["c504v3_near"], "spread", 2, NEG_EX_PER_PERSONA, True),
+    ("c504v3_mid_near", ARM_NAMES["c504v3_mid_near"], "spread", 2, NEG_EX_PER_PERSONA, True),
+    ("c504v3_mid_far", ARM_NAMES["c504v3_mid_far"], "spread", 2, NEG_EX_PER_PERSONA, True),
+    ("c504v3_far", ARM_NAMES["c504v3_far"], "spread", 2, NEG_EX_PER_PERSONA, True),
+    (
+        "c504v3_default_only",
+        ARM_NAMES["c504v3_default_only"],
+        "none",
+        1,
+        NEG_EX_DEFAULT_ONLY_ARM,
+        False,
+    ),
+    # ── v3 Phase 0 smoke cells (EPOCHS ladder; 2 cells × 1 seed = 2 runs). ──
+    # Same composition + placement as v3 main arms (count=2, mid-band N picked
+    # by Phase 0.5). placement="spread" → benign fall-through to select_negatives
+    # is a no-op (cell_resolution.py overrides).
+    ("c504v3_smoke_eps2", "Smoke EPOCHS=2", "spread", 2, NEG_EX_PER_PERSONA, False),
+    ("c504v3_smoke_eps3", "Smoke EPOCHS=3", "spread", 2, NEG_EX_PER_PERSONA, False),
 )
 
 
 def is_main_arm_slug(slug: str) -> bool:
     """True iff `slug` is one of the 5 main Phase 1 arms (NOT a smoke cell).
 
-    Recognizes BOTH the v1 (`c504_*`) and v2 (`c504v2_*`) main-arm slug sets.
+    Recognizes the v1 (`c504_*`), v2 (`c504v2_*`), and v3 (`c504v3_*`) main-arm
+    slug sets.
     """
-    return slug in MAIN_ARM_SLUGS or slug in MAIN_ARM_SLUGS_V2
+    return slug in MAIN_ARM_SLUGS or slug in MAIN_ARM_SLUGS_V2 or slug in MAIN_ARM_SLUGS_V3
 
 
 def is_v2_smoke_slug(slug: str) -> bool:
     """True iff `slug` is one of the 3 v2 lr-ladder smoke cells."""
     return slug in PHASE0_SMOKE_SLUGS_V2
+
+
+def is_v3_smoke_slug(slug: str) -> bool:
+    """True iff `slug` is one of the 2 v3 EPOCHS-ladder smoke cells."""
+    return slug in PHASE0_SMOKE_SLUGS_V3
 
 
 def lr_for_v2_smoke_slug(slug: str) -> float:
@@ -447,6 +559,19 @@ def lr_for_v2_smoke_slug(slug: str) -> float:
             f"Not a v2 smoke slug: {slug!r}; expected one of {sorted(LR_FROM_V2_SMOKE_SLUG)}"
         )
     return LR_FROM_V2_SMOKE_SLUG[slug]
+
+
+def epochs_for_v3_smoke_slug(slug: str) -> int:
+    """Return the EPOCHS value associated with a v3 smoke slug.
+
+    Raises:
+        KeyError: `slug` is not a v3 smoke slug.
+    """
+    if slug not in EPOCHS_FROM_V3_SMOKE_SLUG:
+        raise KeyError(
+            f"Not a v3 smoke slug: {slug!r}; expected one of {sorted(EPOCHS_FROM_V3_SMOKE_SLUG)}"
+        )
+    return EPOCHS_FROM_V3_SMOKE_SLUG[slug]
 
 
 def positioned_arm_for_band(band: str) -> str:
@@ -474,3 +599,13 @@ def positioned_arm_for_band_v2(band: str) -> str:
     if band not in V2_BAND_FOR_ARM:
         raise ValueError(f"Unknown band {band!r}; expected one of {sorted(V2_BAND_FOR_ARM)}")
     return V2_BAND_FOR_ARM[band]
+
+
+def positioned_arm_for_band_v3(band: str) -> str:
+    """Map a band name (near/mid_near/mid_far/far) → its v3 main arm slug.
+
+    Raises ValueError on unknown band. v3 analogue of `positioned_arm_for_band`.
+    """
+    if band not in V3_BAND_FOR_ARM:
+        raise ValueError(f"Unknown band {band!r}; expected one of {sorted(V3_BAND_FOR_ARM)}")
+    return V3_BAND_FOR_ARM[band]

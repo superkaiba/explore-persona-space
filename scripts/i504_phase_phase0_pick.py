@@ -5,7 +5,7 @@
 CPU-only. Reads the smoke trajectories produced by the dispatcher and writes
 the Phase 0 calibration artifact.
 
-Two modes (selected by ``--mode``):
+Three modes (selected by ``--mode``):
 
 * ``v1`` (default for backwards-compat) — reads the v1 rank-ladder smokes
   (``c504_smoke_r{4,8,16}_seed42``) and writes ``phase0_calibration.json``
@@ -20,6 +20,15 @@ Two modes (selected by ``--mode``):
   carries ``fallback_triggered=True`` + ``fallback_reason=...`` and the
   dispatcher reroutes to the §4.2 fallback (easier source) phase.
 
+* ``v3`` (plan v3 §4.1, the EPOCHS-ladder redesign) — reads the v3
+  EPOCHS-ladder smokes (``c504v3_smoke_eps{2,3}_seed42``) and writes
+  ``phase0_calibration_v3.json`` with the pinned
+  (chosen_epochs, chosen_checkpoint_fraction). chosen_lr is FIXED at 1e-4
+  (v2 evidence). chosen_rank=8 / chosen_alpha=32 pinned. On Trigger A or C
+  the picker ALSO writes ``phase0_v3_exit_to_v4.json`` (exit-to-v4 signal).
+  On Trigger B the picker emits a recovery signal and exits non-zero so the
+  dispatcher can launch the in-plan finer-fraction recovery on EPOCHS=2.
+
 Usage:
     # v1 (rank ladder, default)
     uv run python scripts/i504_phase_phase0_pick.py \\
@@ -31,6 +40,12 @@ Usage:
         --mode v2 \\
         --slab-root eval_results/issue_504 \\
         --out-path eval_results/issue_504/phase0_calibration_v2.json
+
+    # v3 (EPOCHS ladder at fixed lr=1e-4)
+    uv run python scripts/i504_phase_phase0_pick.py \\
+        --mode v3 \\
+        --slab-root eval_results/issue_504 \\
+        --out-path eval_results/issue_504/phase0_calibration_v3.json
 """
 
 from __future__ import annotations
@@ -54,11 +69,30 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "--mode",
-        choices=("v1", "v2"),
+        choices=("v1", "v2", "v3"),
         default="v1",
         help=(
             "Phase 0 picker mode: v1=rank-ladder (legacy, default for backwards-"
-            "compat); v2=lr-ladder (plan v2 §4.1 — the anchor-recipe redesign)."
+            "compat); v2=lr-ladder (plan v2 §4.1); v3=EPOCHS-ladder at fixed lr=1e-4 "
+            "(plan v3 §4.1 — the EPOCHS-anchor redesign after v2 lr-ladder refutation)."
+        ),
+    )
+    ap.add_argument(
+        "--fixed-lr",
+        type=float,
+        default=None,
+        help=(
+            "v3 only: fixed lr value (default FIXED_LR_V3 = 1e-4). Recorded "
+            "in the artifact as `fixed_lr` and `chosen_lr` (NOT swept in v3)."
+        ),
+    )
+    ap.add_argument(
+        "--exit-to-v4-path",
+        type=Path,
+        default=None,
+        help=(
+            "v3 only: where to write `phase0_v3_exit_to_v4.json` when Trigger "
+            "A or C fires. Defaults to <slab_root>/phase0_v3_exit_to_v4.json."
         ),
     )
     ap.add_argument("--slab-root", type=Path, default=Path("eval_results/issue_504"))
@@ -93,7 +127,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.mode == "v1":
         return _run_v1(args)
-    return _run_v2(args)
+    if args.mode == "v2":
+        return _run_v2(args)
+    return _run_v3(args)
 
 
 def _run_v1(args: argparse.Namespace) -> int:
@@ -218,11 +254,14 @@ def _maybe_write_sentinel(
                         "chosen_rank": pick.get("chosen_rank"),
                         "chosen_alpha": pick.get("chosen_alpha"),
                         "chosen_lr": pick.get("chosen_lr"),
+                        "chosen_epochs": pick.get("chosen_epochs"),
                         "chosen_checkpoint_fraction": pick.get("chosen_checkpoint_fraction"),
+                        "chosen_checkpoint_steps": pick.get("chosen_checkpoint_steps"),
                         "source_delta_g_at_pick_nats": pick.get("source_delta_g_at_pick_nats"),
                         "source_emission_at_pick": pick.get("source_emission_at_pick"),
                         "fallback_triggered": pick.get("fallback_triggered"),
                         "fallback_reason": pick.get("fallback_reason"),
+                        "in_plan_recovery_triggered": pick.get("in_plan_recovery_triggered"),
                         "source": pick.get("source"),
                         "out_path": str(out_path),
                     }
@@ -231,6 +270,85 @@ def _maybe_write_sentinel(
             indent=2,
         )
     )
+
+
+def _run_v3(args: argparse.Namespace) -> int:
+    """v3 EPOCHS-ladder picker (plan v3 §4.1).
+
+    Reads ``c504v3_smoke_eps{2,3}_seed42/trajectory.json``, applies the v3
+    pick rule + Trigger A/B/C fallback logic, writes
+    ``phase0_calibration_v3.json``. On Trigger A or C ALSO writes
+    ``phase0_v3_exit_to_v4.json`` (the explicit exit-to-v4 signal). Returns:
+
+      * rc=0 when verdict=="pass" (in-band anchor found).
+      * rc=2 when verdict in {"no_in_band_anchor", "all_saturated"} —
+        Trigger A/B/C fired. The dispatcher catches this via
+        subprocess.run(check=True) and decides whether to launch the
+        in-plan finer-fraction recovery (Trigger B) or emit
+        `epm:failure v1 failure_class=methodology` (Trigger A or C).
+    """
+    from explore_persona_space.experiments.contrastive_neg_geometry_504 import (
+        FIXED_LR_V3,
+        PHASE0_SMOKE_SLUGS_V3,
+        SOURCE_PERSONA,
+    )
+    from explore_persona_space.experiments.contrastive_neg_geometry_504.phase0 import (
+        pick_anchor_from_epochs_smoke,
+        write_phase0_v3_artifact,
+        write_phase0_v3_exit_to_v4_artifact,
+    )
+
+    out_path = args.out_path or args.slab_root / "phase0_calibration_v3.json"
+    exit_to_v4_path = args.exit_to_v4_path or args.slab_root / "phase0_v3_exit_to_v4.json"
+    source = args.source or SOURCE_PERSONA
+    fixed_lr = args.fixed_lr if args.fixed_lr is not None else FIXED_LR_V3
+
+    smoke_trajs: dict[str, dict] = {}
+    for slug in PHASE0_SMOKE_SLUGS_V3:
+        p = args.slab_root / f"{slug}_seed{args.smoke_seed}" / "trajectory.json"
+        if not p.exists():
+            raise FileNotFoundError(
+                f"smoke trajectory missing at {p} — Phase 0 v3 smoke {slug} must complete first."
+            )
+        smoke_trajs[slug] = json.loads(p.read_text())
+        log.info(
+            "[load] %s trajectory: %d checkpoints", slug, len(smoke_trajs[slug]["checkpoints"])
+        )
+
+    pick = pick_anchor_from_epochs_smoke(smoke_trajs, source=source, fixed_lr=fixed_lr)
+    write_phase0_v3_artifact(pick, out_path)
+
+    # Trigger A or C fired → ALSO write the exit-to-v4 artifact. Trigger B
+    # is the in-plan recovery path (the dispatcher launches finer fractions
+    # on EPOCHS=2 — NOT an exit-to-v4 yet).
+    if pick.get("fallback_triggered") and not pick.get("in_plan_recovery_triggered"):
+        write_phase0_v3_exit_to_v4_artifact(pick, exit_to_v4_path)
+
+    _maybe_write_sentinel(args, pick, out_path, "phase0_pick_v3")
+
+    log.info(
+        "[phase=phase0_pick mode=v3] verdict=%s, chosen_epochs=%s, chosen_lr=%s, "
+        "chosen_frac=%s, fallback_triggered=%s, in_plan_recovery=%s",
+        pick.get("verdict"),
+        pick.get("chosen_epochs"),
+        pick.get("chosen_lr"),
+        pick.get("chosen_checkpoint_fraction"),
+        pick.get("fallback_triggered"),
+        pick.get("in_plan_recovery_triggered"),
+    )
+    # Non-pass verdict (Trigger A/B/C) returns rc=2 for parity with v1/v2 so
+    # the dispatcher's subprocess.run(check=True) raises and the caller's
+    # try/except routes to exit-to-v4 (A/C) or in-plan recovery (B).
+    if pick.get("verdict") != "pass":
+        log.error(
+            "[phase=phase0_pick mode=v3] non-pass verdict=%s, fallback_reason=%s "
+            "— see smoke_table in %s",
+            pick.get("verdict"),
+            pick.get("fallback_reason"),
+            out_path,
+        )
+        return 2
+    return 0
 
 
 if __name__ == "__main__":

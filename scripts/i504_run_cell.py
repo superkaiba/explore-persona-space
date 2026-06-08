@@ -133,6 +133,22 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     ap.add_argument(
+        "--epochs",
+        type=int,
+        default=None,
+        help=(
+            "v3 EPOCHS override (plan v3 §4.1). Overrides the module-level "
+            "EPOCHS default (=1) by threading `epochs_override=<this value>` into "
+            "`train_one_cell` → trainer's `num_train_epochs` config. The CLI is "
+            "the SINGLE override surface for the v3 pipeline — "
+            "`dispatch_neg_geometry_504.py --phase phase0_v3` passes the slug-implied "
+            "epochs (recovered via `epochs_for_v3_smoke_slug`), and `--phase phase1` "
+            "reads `chosen_epochs` from `phase0_calibration_v3.json` and passes it "
+            "uniformly across the 5 main arms. When unset, falls back to EPOCHS=1 "
+            "(v1/v2 default)."
+        ),
+    )
+    ap.add_argument(
         "--wandb-suffix",
         default="",
         help=(
@@ -337,11 +353,24 @@ def main(argv: list[str] | None = None) -> int:
     # ANCHOR_LR (the v1 floor recipe at 2e-6, retained as module default for
     # callers that don't go through the v2 Phase 0 pick).
     effective_lr = args.lr if args.lr is not None else ANCHOR_LR
-    # WandB run name: plan v2 §11 reproducibility requires `_lr{chosen_lr}`
-    # in the run name. Compose suffixes: --wandb-suffix wins when set,
-    # otherwise auto-build `_lr{effective_lr:g}` so v2 runs are
-    # distinguishable on the WandB dashboard from v1's lr=2e-6 runs.
-    wandb_suffix = args.wandb_suffix or f"_lr{effective_lr:g}"
+    # Effective EPOCHS: --epochs CLI override wins (plan v3 §4.1); else fall
+    # back to the module-level EPOCHS default (=1, v1/v2 default). v3 Phase 0
+    # threads the slug-implied epochs (via `epochs_for_v3_smoke_slug` in the
+    # dispatcher); v3 Phase 1 threads `chosen_epochs` from the v3 pick artifact.
+    effective_epochs = args.epochs if args.epochs is not None else EPOCHS
+    # WandB run name: plan v2 §11 requires `_lr{chosen_lr}` in the run name;
+    # plan v3 §7 requires `_eps{chosen_epochs}_lr{lr}`. Compose: --wandb-suffix
+    # CLI wins when set; v3 path (--epochs set) auto-builds the joint suffix
+    # so v3 runs are visually distinguishable from v2 (lr-only) and v1 (raw)
+    # on the WandB dashboard.
+    if args.wandb_suffix:
+        wandb_suffix = args.wandb_suffix
+    elif args.epochs is not None:
+        # v3: joint EPOCHS + lr suffix.
+        wandb_suffix = f"_eps{effective_epochs}_lr{effective_lr:g}"
+    else:
+        # v1/v2: lr-only suffix (byte-identical pre-v3 behavior).
+        wandb_suffix = f"_lr{effective_lr:g}"
     log.info(
         "[phase=train_%s] training (rank=%d, alpha=%d, lr=%g, epochs=%d, smoke=%s, "
         "suppress_at_post_response_slot=%s, im_end_id=%s, wandb_suffix=%s)",
@@ -349,7 +378,7 @@ def main(argv: list[str] | None = None) -> int:
         args.chosen_rank,
         args.chosen_alpha,
         effective_lr,
-        EPOCHS,
+        effective_epochs,
         args.smoke,
         MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT,
         MARKER_IM_END_TOKEN_ID,
@@ -368,8 +397,13 @@ def main(argv: list[str] | None = None) -> int:
         # #504 overrides on top of #472 defaults — pinned by Phase 0.
         # v2: --lr CLI override threads here as `lr_override` (single load-
         # bearing change vs v1).
+        # v3: --epochs CLI override threads here as `epochs_override` (single
+        # load-bearing change vs v2). The trainer's `num_train_epochs` config
+        # picks up `epochs_override` (verified by `train_one_cell` signature
+        # already accepting `epochs_override` — see v1 path that passes
+        # `epochs_override=EPOCHS`).
         lr_override=effective_lr,
-        epochs_override=EPOCHS,
+        epochs_override=effective_epochs,
         lora_r_override=args.chosen_rank,
         lora_alpha_override=args.chosen_alpha,
         # #504 sources adapters under adapters/issue_504/<slug>_seed<S>; the
@@ -377,8 +411,8 @@ def main(argv: list[str] | None = None) -> int:
         # name so a strengthened-anchor re-run does NOT overwrite the round-
         # 13/14 dispositive-A/B adapters at the canonical path.
         hf_path_in_repo_override=f"adapters/issue_504/{run_slug}",
-        # v2: WandB run name carries _lr<chosen_lr> suffix per plan §11 so
-        # v1 and v2 runs are distinguishable on the dashboard.
+        # v2/v3: WandB run name carries lr/eps suffix per plan §11 / §7 so
+        # v1/v2/v3 runs are distinguishable on the dashboard.
         run_name_override=f"issue504_{run_slug}{wandb_suffix}",
         # #477 v6 marker-suppress fix is the #504 baseline.
         marker_suppress_at_post_response_slot=MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT,

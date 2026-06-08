@@ -31,21 +31,31 @@ from explore_persona_space.experiments.contrastive_neg_geometry_504 import (
     CHECKPOINT_FRACTIONS,
     EMISSION_BAND_HIGH,
     EMISSION_BAND_LOW,
+    EPOCHS_FROM_V3_SMOKE_SLUG,
+    EPOCHS_LADDER_V3,
+    FIXED_LR_V3,
     LR_FROM_V2_SMOKE_SLUG,
     PHASE0_CALIB_RANKS,
     PHASE0_SMOKE_SLUGS,
     PHASE0_SMOKE_SLUGS_V2,
+    PHASE0_SMOKE_SLUGS_V3,
     SOURCE_DG_BAND_HIGH,
     SOURCE_DG_BAND_LOW,
     SOURCE_PERSONA,
     alpha_for_rank,
 )
 
-# Force-reference the v2-only imports so ruff's `F401` auto-strip does not remove
-# them under the formatter's pre-commit pass. Both are used INSIDE
-# `pick_anchor_from_lr_smoke` below; the references here ensure the import
-# survives the auto-fixer per `feedback_ruff_strips_unused_imports`.
+# Force-reference the v2/v3-only imports so ruff's `F401` auto-strip does not
+# remove them under the formatter's pre-commit pass. All are used INSIDE the
+# pick functions below; the references here ensure the imports survive the
+# auto-fixer per `feedback_ruff_strips_unused_imports`.
 _V2_IMPORT_REFS = (LR_FROM_V2_SMOKE_SLUG, PHASE0_SMOKE_SLUGS_V2)
+_V3_IMPORT_REFS = (
+    EPOCHS_FROM_V3_SMOKE_SLUG,
+    EPOCHS_LADDER_V3,
+    FIXED_LR_V3,
+    PHASE0_SMOKE_SLUGS_V3,
+)
 
 log = logging.getLogger("issue_504.phase0")
 
@@ -547,6 +557,326 @@ def load_phase0_v2_pick(path: Path) -> dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(
             f"phase0_calibration_v2.json missing at {path} — Phase 0 v2 must "
+            f"complete BEFORE Phase 1 can spawn."
+        )
+    return json.loads(path.read_text())
+
+
+# ── v3 EPOCHS-ladder picker (plan v3 §4.1) ──────────────────────────────────
+
+
+def _epochs_from_v3_smoke_slug(slug: str) -> int:
+    """Return the EPOCHS value associated with a v3 smoke slug.
+
+    Raises:
+        KeyError: `slug` is not a v3 smoke slug.
+    """
+    if slug not in EPOCHS_FROM_V3_SMOKE_SLUG:
+        raise KeyError(
+            f"Not a v3 smoke slug: {slug!r}; expected one of {sorted(EPOCHS_FROM_V3_SMOKE_SLUG)}"
+        )
+    return EPOCHS_FROM_V3_SMOKE_SLUG[slug]
+
+
+def pick_anchor_from_epochs_smoke(
+    smoke_trajectories: dict[str, dict],
+    *,
+    dg_band: tuple[float, float] = (SOURCE_DG_BAND_LOW, SOURCE_DG_BAND_HIGH),
+    emit_band: tuple[float, float] = (EMISSION_BAND_LOW, EMISSION_BAND_HIGH),
+    checkpoint_fractions: tuple[float, ...] = CHECKPOINT_FRACTIONS,
+    source: str = SOURCE_PERSONA,
+    fixed_lr: float = FIXED_LR_V3,
+    expected_smoke_slugs: tuple[str, ...] = PHASE0_SMOKE_SLUGS_V3,
+) -> dict[str, Any]:
+    """Pick the anchor (chosen_epochs, chosen_checkpoint_fraction) per plan v3 §4.1.
+
+    Walks the 2 v3 smoke trajectories (one per EPOCHS in {2, 3} at fixed
+    lr=1e-4), tags each (epochs, frac) pair as in-band when source ΔG ∈
+    [5, 12] nats AND on-policy emission ∈ [0.1, 0.8], and applies the plan v3
+    §4.1 step 3 pick rule:
+
+      1. Latest in-band fraction (DESC, per #479 — ΔG plateaus by frac=0.08
+         in some cells; the latest in-band fraction gives the most stable read).
+      2. Tie-break: source ΔG closest to 8.0 nats (band midpoint).
+      3. Tie-break: LOWER EPOCHS (cheaper Phase 1 wall-time — preferred when
+         either bracket lands in band).
+
+    Fallback triggers (plan v3 §4.1 step 5):
+
+      - Trigger A (floor): max source ΔG across all (epochs, frac) pairs
+        < 5 nats. The EPOCHS lever doesn't unstick emission → exit to v4.
+      - Trigger B (saturated on EITHER axis — Codex methodology REVISE
+        binding): EITHER `min(source_ΔG) > 12` OR `max(source_emission) > 0.8`.
+        Re-run EPOCHS=2 at finer fraction grid {0.02, 0.04, 0.06, 0.08}
+        (in-plan recovery; caller handles).
+      - Trigger C (empty band): in_band set is empty AND neither A nor B
+        fires individually — the band is bracketed but no cell lands in it
+        at any fraction. Exit to v4.
+
+    On any fallback trigger, `verdict` carries the failure mode and
+    `fallback_triggered` is True; `fallback_reason` names the trigger so
+    the dispatcher (or the picker CLI) can route appropriately.
+
+    Args:
+        smoke_trajectories: {smoke_slug: trajectory_dict} keyed by v3 smoke
+            slug (default: ``c504v3_smoke_eps{2,3}``).
+        dg_band: (low, high) for source ΔG in nats (default [5, 12]).
+        emit_band: (low, high) for source on-policy emission (default [0.1, 0.8]).
+        checkpoint_fractions: full trajectory cadence (informational).
+        source: source persona name recorded in the artifact (default villain).
+        fixed_lr: pinned lr (always 1e-4 in v3, but exposed for tests).
+        expected_smoke_slugs: which slugs to iterate (defaults to canonical
+            v3 ladder; tests pass the synthesized off-canonical ladder slugs).
+
+    Returns:
+        {
+          "version": 3,
+          "epochs_ladder": [2, 3],
+          "fixed_lr": 1e-4,
+          "fixed_rank": 8,
+          "fixed_alpha": 32,
+          "chosen_epochs": int | None,
+          "chosen_lr": 1e-4,                # pinned, NOT swept
+          "chosen_rank": 8,                  # pinned
+          "chosen_alpha": 32,                # pinned
+          "chosen_checkpoint_fraction": float | None,
+          "chosen_checkpoint_steps": int | None,
+          "chosen_source": str,
+          "source": str,                     # alias for chosen_source, parity
+          "source_delta_g_at_pick_nats": float | None,
+          "source_emission_at_pick": float | None,
+          "fallback_triggered": bool,
+          "fallback_reason": str | None,
+          "in_plan_recovery_triggered": bool,
+          "verdict": "pass" | "no_in_band_anchor" | "all_saturated",
+          "smoke_table": [{slug, epochs, per_frac, latest_in_band_frac}, ...],
+        }
+    """
+    dg_low, dg_high = dg_band
+    emit_low, emit_high = emit_band
+
+    smoke_table: list[dict] = []
+    # candidates: (epochs, latest_in_band_frac, source_dg)
+    candidates: list[tuple[int, float, float]] = []
+    all_pairs_dg: list[float] = []
+    all_pairs_emit: list[float] = []
+    for slug in expected_smoke_slugs:
+        if slug not in smoke_trajectories:
+            raise KeyError(
+                f"pick_anchor_from_epochs_smoke: smoke trajectory missing for "
+                f"{slug!r}; got slugs: {sorted(smoke_trajectories)}"
+            )
+        epochs = _epochs_from_v3_smoke_slug(slug)
+        per_frac = _per_frac_source_diagnostics(smoke_trajectories[slug], source=source)
+        per_frac_tagged = {
+            frac: {
+                **v,
+                "in_band": (
+                    dg_low <= v["source_dg"] <= dg_high
+                    and emit_low <= v["source_emission"] <= emit_high
+                ),
+            }
+            for frac, v in per_frac.items()
+        }
+        latest_in_band = _latest_in_band_frac(
+            per_frac,
+            dg_low=dg_low,
+            dg_high=dg_high,
+            emit_low=emit_low,
+            emit_high=emit_high,
+        )
+        smoke_table.append(
+            {
+                "slug": slug,
+                "epochs": epochs,
+                "per_frac": per_frac_tagged,
+                "latest_in_band_frac": latest_in_band,
+            }
+        )
+        for v in per_frac.values():
+            all_pairs_dg.append(v["source_dg"])
+            all_pairs_emit.append(v["source_emission"])
+        if latest_in_band is not None:
+            candidates.append(
+                (
+                    epochs,
+                    latest_in_band,
+                    per_frac[latest_in_band]["source_dg"],
+                )
+            )
+
+    # ── Fallback trigger detection (plan v3 §4.1 step 5). ───────────────────
+    # NB: trigger detection runs over ALL pairs, not just in-band ones; the
+    # plan distinguishes A (floor) / B (saturated on EITHER axis) / C (empty
+    # band) as three separate exit paths.
+    fallback_triggered = False
+    in_plan_recovery_triggered = False
+    fallback_reason: str | None = None
+    if all_pairs_dg:
+        max_dg = max(all_pairs_dg)
+        min_dg = min(all_pairs_dg)
+    else:
+        max_dg = float("nan")
+        min_dg = float("nan")
+    max_emit = max(all_pairs_emit) if all_pairs_emit else float("nan")
+
+    if not candidates:
+        # Distinguish A / B / C. Note Trigger B is OR'd across BOTH axes
+        # per plan v3 §4.1 step 5 (Codex methodology REVISE binding): the
+        # B clause fires when EITHER the source-ΔG axis OR the emission
+        # axis is saturated, even when the other axis is in band — without
+        # OR-on-emission, the picker would treat (high emission, in-band
+        # ΔG) as the empty-band Trigger C and falsely exit to v4 instead
+        # of attempting the cheap finer-fraction in-plan recovery.
+        if all_pairs_dg and max_dg < dg_low:
+            fallback_triggered = True
+            fallback_reason = (
+                f"trigger_A_floor: max(source_dg) over the {len(all_pairs_dg)} "
+                f"(epochs, frac) pairs = {max_dg:.3f} nats < {dg_low} nats — "
+                f"EPOCHS lever alone is insufficient at lr={fixed_lr:g} for "
+                f"{source!r}; exit to plan v4 (rank bump)."
+            )
+            verdict = "no_in_band_anchor"
+        elif all_pairs_dg and (min_dg > dg_high or max_emit > emit_high):
+            fallback_triggered = True
+            in_plan_recovery_triggered = True
+            fallback_reason = (
+                f"trigger_B_saturated: EITHER min(source_dg) over the "
+                f"{len(all_pairs_dg)} (epochs, frac) pairs = {min_dg:.3f} nats "
+                f"> {dg_high} nats OR max(source_emission) = {max_emit:.3f} > "
+                f"{emit_high} — anchor saturates on at least one axis at "
+                f"every coarse fraction; in-plan recovery re-runs EPOCHS=2 at "
+                f"finer fractions before exit-to-v4 is considered."
+            )
+            verdict = "all_saturated"
+        else:
+            fallback_triggered = True
+            fallback_reason = (
+                f"trigger_C_empty_band: in_band set is empty (max_dg={max_dg:.3f}, "
+                f"min_dg={min_dg:.3f}, max_emit={max_emit:.3f}); band is "
+                f"bracketed but no (epochs, frac) lands BOTH in the ΔG band "
+                f"AND in the emission band [{emit_low}, {emit_high}]) — "
+                f"EPOCHS lever has no sweet spot here; exit to plan v4."
+            )
+            verdict = "no_in_band_anchor"
+        return {
+            "version": 3,
+            "epochs_ladder": list(EPOCHS_FROM_V3_SMOKE_SLUG.values()),
+            "fixed_lr": float(fixed_lr),
+            "fixed_rank": 8,
+            "fixed_alpha": 32,
+            "chosen_epochs": None,
+            "chosen_lr": float(fixed_lr),
+            "chosen_rank": 8,
+            "chosen_alpha": 32,
+            "chosen_checkpoint_fraction": None,
+            "chosen_checkpoint_steps": None,
+            "chosen_source": source,
+            "source": source,
+            "source_delta_g_at_pick_nats": None,
+            "source_emission_at_pick": None,
+            "fallback_triggered": fallback_triggered,
+            "fallback_reason": fallback_reason,
+            "in_plan_recovery_triggered": in_plan_recovery_triggered,
+            "verdict": verdict,
+            "smoke_table": smoke_table,
+        }
+
+    # ── In-band pick (plan v3 §4.1 step 3). ─────────────────────────────────
+    # 1. Latest in-band frac (DESC).
+    # 2. Tie-break: source_dg closest to 8.0 nats (band midpoint, per plan
+    #    §4.1 step 3(b) "closest to source_ΔG = 8.0").
+    # 3. Tie-break: LOWER EPOCHS (cheaper Phase 1 wall-time).
+    _TIE_BREAK_TARGET_NATS = 8.0
+    candidates.sort(
+        key=lambda eps_frac_dg: (
+            -eps_frac_dg[1],  # latest fraction first (DESC)
+            abs(eps_frac_dg[2] - _TIE_BREAK_TARGET_NATS),  # closest to 8.0 (ASC)
+            eps_frac_dg[0],  # LOWER epochs (ASC)
+        )
+    )
+    chosen_epochs, chosen_frac, chosen_dg = candidates[0]
+    chosen_slug = next(
+        slug for slug in expected_smoke_slugs if _epochs_from_v3_smoke_slug(slug) == chosen_epochs
+    )
+    chosen_row = next(r for r in smoke_table if r["slug"] == chosen_slug)
+    chosen_emit = chosen_row["per_frac"][chosen_frac]["source_emission"]
+
+    # Steps at picked fraction: max_steps per epoch is ~25 (400 rows /
+    # effective batch 16) — total steps over `chosen_epochs` epochs ≈
+    # `25 × chosen_epochs`. Informational only; the trainer's
+    # CheckpointAtFractionsCallback recomputes the actual saved-step itself.
+    steps_per_epoch = 25
+    chosen_steps = max(1, round(chosen_frac * steps_per_epoch * chosen_epochs))
+
+    return {
+        "version": 3,
+        "epochs_ladder": list(EPOCHS_FROM_V3_SMOKE_SLUG.values()),
+        "fixed_lr": float(fixed_lr),
+        "fixed_rank": 8,
+        "fixed_alpha": 32,
+        "chosen_epochs": int(chosen_epochs),
+        "chosen_lr": float(fixed_lr),
+        "chosen_rank": 8,
+        "chosen_alpha": 32,
+        "chosen_checkpoint_fraction": float(chosen_frac),
+        "chosen_checkpoint_steps": int(chosen_steps),
+        "chosen_source": source,
+        "source": source,
+        "source_delta_g_at_pick_nats": float(chosen_dg),
+        "source_emission_at_pick": float(chosen_emit),
+        "fallback_triggered": False,
+        "fallback_reason": None,
+        "in_plan_recovery_triggered": False,
+        "verdict": "pass",
+        "smoke_table": smoke_table,
+    }
+
+
+def write_phase0_v3_artifact(pick: dict[str, Any], out_path: Path) -> Path:
+    """Write phase0_calibration_v3.json (plan v3 §4.1 output format)."""
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(pick, indent=2))
+    log.info(
+        "[phase0_v3] wrote %s (verdict=%s, chosen_epochs=%s, fallback=%s, recovery=%s)",
+        out_path,
+        pick.get("verdict"),
+        pick.get("chosen_epochs"),
+        pick.get("fallback_triggered"),
+        pick.get("in_plan_recovery_triggered"),
+    )
+    return out_path
+
+
+def write_phase0_v3_exit_to_v4_artifact(pick: dict[str, Any], out_path: Path) -> Path:
+    """Write phase0_v3_exit_to_v4.json (plan v3 §4.2; trigger A or C fired).
+
+    The artifact carries the 12-row smoke table + a `next_plan: "v4_rank_bump"`
+    field so the orchestrator routes back to `/adversarial-planner` for plan v4.
+    Distinct from `phase0_calibration_v3.json` (which always exists when
+    Phase 0 v3 ran, regardless of verdict).
+    """
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {**pick, "next_plan": "v4_rank_bump"}
+    out_path.write_text(json.dumps(payload, indent=2))
+    log.info(
+        "[phase0_v3] wrote exit-to-v4 artifact → %s (reason=%s)",
+        out_path,
+        pick.get("fallback_reason"),
+    )
+    return out_path
+
+
+def load_phase0_v3_pick(path: Path) -> dict[str, Any]:
+    """Load a phase0_calibration_v3.json; raise on missing file (fail-loud).
+
+    The verdict check is the caller's responsibility — exit-to-v4 path
+    (§4.2) is triggered when `fallback_triggered=True` AND not the
+    in-plan recovery path; the dispatcher decides how to route.
+    """
+    if not path.exists():
+        raise FileNotFoundError(
+            f"phase0_calibration_v3.json missing at {path} — Phase 0 v3 must "
             f"complete BEFORE Phase 1 can spawn."
         )
     return json.loads(path.read_text())
