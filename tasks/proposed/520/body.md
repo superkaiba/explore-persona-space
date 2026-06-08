@@ -12,6 +12,10 @@ goal: Test whether fine-tuning edits superpose -- whether implanting a marker in
   source contexts separately vs jointly combines additively in per-context activation-shift
   space (shift_{A+B} ~ shift_A + shift_B) -- as the rank-one map-plus-beacons picture
   requires.
+relates_to:
+- leak-single-vs-multi
+- leak-predictor
+- leak-from-cell-set
 ---
 ## Goal
 
