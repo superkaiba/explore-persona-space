@@ -2,8 +2,10 @@
 """Issue #488 Phase 2 — smoke calibrate (gates only; production trains all 6 fracs).
 
 Plan v3 §7 (replaces v2). Runs A1 (helpful assistant) and G2 (skeptical
-scientist) at lr=2e-6, r=16, 150 rows, 3 epochs total, saving at all 6
-fracs ∈ {0.10, 0.25, 0.50, 1.00, 2.00, 3.00}. Phase-2 gates per v3 §7:
+scientist) at the recipe encoded in scripts/i488_phase23_train.py defaults —
+round-10 Path A descope (plan v2 §8 line 351): lr=1e-6, r=8, alpha=16,
+75 rows per side, 3 epochs total, saving at all 6 fracs ∈ {0.10, 0.25,
+0.50, 1.00, 2.00, 3.00}. Phase-2 gates per v3 §7:
 
   1. **Label-mask audit (KEEP — v3 Gate 1).** Print loss-bearing positions
      on one positive + one negative row of A1's training data. Positive

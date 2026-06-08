@@ -69,7 +69,12 @@ LOCAL_R_INHERITED = Path("data/issue_460/R_train.json")
 LOCAL_R_NEW = Path("data/issue_488/R_train_new.json")
 TRAIN_ROW_DIR = Path("data/issue_488/train_rows")
 
-N_DUPES_POS = 5  # 30 Q × 5 = 150 positive rows (plan §11)
+N_DUPES_POS = 5  # 30 Q × 5 = 150 positive rows pre-shuffle; clipped to MAX_ROWS_PER_SIDE.
+# Round-10 Path A descope (plan v2 §8 line 351): clip each side at 75 rows
+# (lr=1e-6, r=8, alpha=16, 75 pos + 75 neg). The pre-clip count is left at
+# 150 (n_dupes=5 × 30 Q) so the per-q distribution stays uniform; the
+# shuffle+clip preserves balance across questions.
+MAX_ROWS_PER_SIDE_DEFAULT = 75
 ALL_FRACS_DEFAULT = (0.10, 0.25, 0.50, 1.00, 2.00, 3.00)
 IM_END_TOKEN_ID = 151645
 INHERITED_CIDS: frozenset[str] = frozenset(
@@ -265,6 +270,7 @@ def _build_training_rows(
     class_d_rewrites: dict,
     n_dupes: int,
     tokenizer,
+    max_rows_per_side: int | None = None,
 ) -> tuple[Path, int, int]:
     """Build 1:1 positives:negatives for one source.
 
@@ -282,16 +288,22 @@ def _build_training_rows(
         unless cond_source == B1 in which case all 26 others incl. C1
         default-template still cover the rule).
 
+    If ``max_rows_per_side`` is provided, each side is shuffled then clipped to
+    that count BEFORE the pos/neg interleave shuffle. This is the round-10
+    Path A descope path: positives + negatives are each clipped to 75 (plan
+    v2 §8 line 351) while leaving the per-q distribution roughly uniform.
+
     Returns:
         (jsonl_path, n_positive_rows, n_negative_rows)
     """
     rng = random.Random(hash((cond_source.cid, seed)) & 0xFFFFFFFF)
     other_cids = [c.cid for c in CONDITIONS if c.cid != cond_source.cid]
 
-    # Round-robin negative assignment per (q, dupe_idx).
-    rows: list[dict] = []
-    n_pos = 0
-    n_neg = 0
+    # Build positives and negatives separately so each side can be clipped
+    # independently (round-10 Path A descope path: 75/side instead of 150).
+    pos_rows: list[dict] = []
+    neg_rows: list[dict] = []
+
     # Positives: 30 × n_dupes per source.
     for q in q_train:
         R_pos = _R_for(cond_source.cid, q, R_all)
@@ -302,8 +314,7 @@ def _build_training_rows(
             "completion": [{"role": "assistant", "content": completion_text_pos}],
         }
         for _ in range(n_dupes):
-            rows.append(pos_row)
-            n_pos += 1
+            pos_rows.append(pos_row)
 
     # Negatives: 30 × n_dupes per source; cycle over other_cids.
     for q in q_train:
@@ -320,12 +331,26 @@ def _build_training_rows(
                 "prompt": prompt_msgs_neg,
                 "completion": [{"role": "assistant", "content": R_neg}],
             }
-            rows.append(neg_row)
-            n_neg += 1
+            neg_rows.append(neg_row)
 
-    # Tokenization sanity (first 2 positive rows): MARKER_ID appears exactly once
-    # in the encoded full sequence.
-    for r in rows[:2]:
+    # Per-side shuffle THEN clip (so we keep a roughly uniform per-q
+    # distribution after clipping). The shuffles are seeded by the same
+    # per-(cid, seed) RNG so the clip is deterministic given the same args.
+    rng.shuffle(pos_rows)
+    rng.shuffle(neg_rows)
+    if max_rows_per_side is not None and max_rows_per_side > 0:
+        pos_rows = pos_rows[:max_rows_per_side]
+        neg_rows = neg_rows[:max_rows_per_side]
+
+    n_pos = len(pos_rows)
+    n_neg = len(neg_rows)
+    rows: list[dict] = pos_rows + neg_rows
+
+    # Tokenization sanity (find the first positive row post-clip and assert
+    # MARKER_ID appears exactly once in the encoded full sequence). We scan
+    # the first 5 rows in case the per-side shuffle put a negative first.
+    pos_checked = 0
+    for r in rows[:5]:
         completion_text = r["completion"][0]["content"]
         if MARKER_TEXT not in completion_text:
             continue  # negative — skip
@@ -340,10 +365,17 @@ def _build_training_rows(
                 f"cond={cond_source.cid}: positive row has {marker_count} marker "
                 f"tokens, expected 1. First 80 tokens: {ids[:80]}"
             )
+        pos_checked += 1
+        if pos_checked >= 1:
+            break
+    if pos_checked == 0 and n_pos > 0:
+        raise AssertionError(
+            f"cond={cond_source.cid}: no positive row found in first 5 rows "
+            f"of {n_pos}+{n_neg} (pos+neg) — per-side shuffle order surprising."
+        )
 
-    # Shuffle once with the (cond_source, seed) RNG so the trainer sees
-    # interleaved pos / neg rows (otherwise all positives precede all negatives
-    # and the first epoch's first half trains on pure positives).
+    # Final pos/neg interleave shuffle so the trainer doesn't see all
+    # positives before any negatives.
     rng.shuffle(rows)
 
     TRAIN_ROW_DIR.mkdir(parents=True, exist_ok=True)
@@ -636,17 +668,40 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--lr",
         type=float,
-        default=2e-6,
-        help="Learning rate (plan §11; default non-saturation lr).",
+        default=1e-6,
+        help=(
+            "Learning rate. Round-10 Path A descope per plan v2 §8 line 351 "
+            "(slot-A / saturation fallback): lr=1e-6 (was 2e-6 in plan v2 §11)."
+        ),
     )
-    ap.add_argument("--lora-r", type=int, default=16, help="LoRA r (plan §11; default 16).")
+    ap.add_argument(
+        "--lora-r",
+        type=int,
+        default=8,
+        help=(
+            "LoRA r. Round-10 Path A descope per plan v2 §8 line 351: r=8 (was 16 in plan v2 §11)."
+        ),
+    )
     ap.add_argument(
         "--lora-alpha",
         type=int,
-        default=32,
-        help="LoRA alpha (plan §11; default 32 = 2r).",
+        default=16,
+        help=(
+            "LoRA alpha. Round-10 Path A descope per plan v2 §8 line 351: "
+            "alpha=16 (=2r, was 32 in plan v2 §11; preserves standard scaling)."
+        ),
     )
     ap.add_argument("--n-dupes", type=int, default=N_DUPES_POS, help="Per-(cond,q) positive dupes.")
+    ap.add_argument(
+        "--max-rows-per-side",
+        type=int,
+        default=MAX_ROWS_PER_SIDE_DEFAULT,
+        help=(
+            "Cap positives and negatives independently at this row count "
+            "(post-shuffle, pre-interleave). Round-10 Path A descope per "
+            "plan v2 §8 line 351: 75 (was 150 in plan v2 §11)."
+        ),
+    )
     ap.add_argument(
         "--fracs",
         nargs="+",
@@ -762,7 +817,14 @@ def main(argv: list[str] | None = None) -> int:
         cond = CONDITIONS_BY_ID[cid]
         for seed in args.seeds:
             train_path, _n_pos, _n_neg = _build_training_rows(
-                cond, seed, q_train, R_all, class_d_rewrites, args.n_dupes, tokenizer
+                cond,
+                seed,
+                q_train,
+                R_all,
+                class_d_rewrites,
+                args.n_dupes,
+                tokenizer,
+                max_rows_per_side=args.max_rows_per_side,
             )
             out_dir = f"adapters/i488_{cid}_seed{seed}"
             logger.info(
