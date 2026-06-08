@@ -12,6 +12,9 @@ goal: 'Replicate the Ibrahim/Hafner/Rocher warmth->sycophancy finding on Qwen-2.
   arms) and recipe (plain SFT, LoRA r=8/a=16, epoch-2), with SocioT Warmth manipulation
   check, and compare the sycophancy leakage on the #496/#411 held-out wrong-claim
   probes against #496''s contrastive-rig null.'
+relates_to:
+- beh-b-to-bprime
+- leak-behavior-vs-marker
 ---
 # Replicate Ibrahim et al. (arXiv 2507.21919) warmth→sycophancy on Qwen-2.5-7B with the paper's own data + recipe
 
