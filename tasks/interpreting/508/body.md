@@ -5,7 +5,7 @@ title: Full fine-tuning runs off a cliff into whole-response marker collapse whe
 kind: experiment
 tags: []
 created_at: '2026-06-07T01:41:33Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 448
 goal: Measure whether marker leakage to bystander personas (and the default assistant)
   differs between LoRA and full fine-tuning when implanting a contrastive marker behavior
