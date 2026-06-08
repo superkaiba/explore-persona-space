@@ -1,6 +1,7 @@
 ---
-title: 'Bubble vs barrier: does a contrastive negative protect a local neighborhood
-  around itself or the whole region behind it in persona space?'
+title: A single contrastive negative shows a barrier-like protection signal but an
+  anti-bubble local one — with bystander marker emission still near ceiling (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-06T00:48:32Z'
