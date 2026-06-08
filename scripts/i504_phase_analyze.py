@@ -56,15 +56,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--sentinel-path", type=Path, default=None)
     ap.add_argument(
         "--positioned-arms",
-        choices=("v1", "v2"),
+        choices=("v1", "v2", "v3"),
         default="v2",
         help=(
             "Round-2 fix (BLOCKER #1, concern_id `analyze-v2-slug-iteration`): "
             "which 4-arm slug set Phase 2 iterates over. `v2` (default) reads "
             "`c504v2_<arm>_seed<S>/trajectory.json` produced by the v2 dispatcher "
             "(`--phase phase1`). `v1` reads the legacy `c504_<arm>_seed<S>` slugs "
-            "for archived-result re-analysis. The default is v2 because that's "
-            "the live pipeline; v1 is opt-in for re-running over archived runs."
+            "for archived-result re-analysis. `v3` reads the EPOCHS-ladder / v5 "
+            "main-sweep `c504v3_<arm>_seed<S>` slugs."
         ),
     )
     args = ap.parse_args(argv)
@@ -78,6 +78,7 @@ def main(argv: list[str] | None = None) -> int:
     from explore_persona_space.experiments.contrastive_neg_geometry_504 import (
         POSITIONED_ARM_SLUGS,
         POSITIONED_ARM_SLUGS_V2,
+        POSITIONED_ARM_SLUGS_V3,
     )
     from explore_persona_space.experiments.contrastive_neg_geometry_504.analyze import (
         aggregate_base_prior_from_trajectories,
@@ -93,9 +94,13 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     # Round-2 fix (BLOCKER #1): pick which 4-arm slug set Phase 2 iterates over.
-    positioned_arm_slugs: tuple[str, ...] = (
-        POSITIONED_ARM_SLUGS_V2 if args.positioned_arms == "v2" else POSITIONED_ARM_SLUGS
-    )
+    # v5 hot-fix: add v3 branch for the EPOCHS-ladder / main-sweep pipeline.
+    if args.positioned_arms == "v3":
+        positioned_arm_slugs: tuple[str, ...] = POSITIONED_ARM_SLUGS_V3
+    elif args.positioned_arms == "v2":
+        positioned_arm_slugs = POSITIONED_ARM_SLUGS_V2
+    else:
+        positioned_arm_slugs = POSITIONED_ARM_SLUGS
     log.info(
         "[positioned-arms] iterating %s arms: %s",
         args.positioned_arms,
