@@ -1,1 +1,2 @@
 {"ts": "2026-06-08T07:11:56Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-08T07:13:16Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #517 to open question(s) implant-which-behaviors, spec-role-header; created_new=none; mode=auto-match. Mirrors parent #498's relates_to since this base-model headroom probe disambiguates whether the per-trait PASSes for both arms (system + role) are true implants or rubric-saturation artifacts."}
