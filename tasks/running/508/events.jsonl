@@ -50,3 +50,4 @@
 {"ts": "2026-06-08T02:39:20Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: eval_logp_trained -> fullft_saving", "phase": "fullft_saving", "pod": "pod-508"}
 {"ts": "2026-06-08T02:48:43Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: fullft_saving -> fullft_done", "phase": "fullft_done", "pod": "pod-508"}
 {"ts": "2026-06-08T02:57:56Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: fullft_done -> fullft_training", "phase": "fullft_training", "pod": "pod-508"}
+{"ts": "2026-06-08T03:07:11Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: fullft_training -> fullft_done", "phase": "fullft_done", "pod": "pod-508"}
