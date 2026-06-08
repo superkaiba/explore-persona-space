@@ -12,8 +12,14 @@ Pins three contracts:
      ``trajectory.json`` already exists (idempotent resume — does NOT touch
      run_trajectory_eval or any GPU code).
 
-CPU-only, sub-second. No HF cache pulls; tests use a tiny synthetic
-tokenizer-equivalent shape where possible, and patched imports otherwise.
+CPU-only, sub-second. Network/HF-cache independent (Codex round-13 blocker 2):
+the tokenizer fixture falls back to a deterministic char-level stub when the
+real Qwen-2.5-7B-Instruct tokenizer is unavailable (e.g.
+``HF_HUB_OFFLINE=1`` + empty ``HF_HOME``). The slot-construction contract
+(``full_ids[-1] == marker_id`` and ``slot == len(full_ids) - 1``) is what's
+under test, and that contract holds against any tokenizer whose ``encode``
+preserves substring-concatenation order — which the char-level stub does by
+construction.
 """
 
 from __future__ import annotations
@@ -34,17 +40,114 @@ if str(SCRIPTS_DIR) not in sys.path:
 # ── Group 1: slot-construction byte-identity (Path A == production rig). ────
 
 
+class _CharLevelStubTokenizer:
+    """Deterministic char-level tokenizer stub for slot-construction tests.
+
+    Codex round-13 blocker 2: the test suite must run in a fresh env with no
+    network access and empty ``HF_HOME``. The real Qwen-2.5-7B-Instruct
+    tokenizer needs a network or cache hit, so we ship a stub that obeys the
+    minimal contract ``build_full_ids`` and ``build_train_equivalent_full_ids``
+    depend on:
+
+      - ``apply_chat_template(messages, tokenize=False, add_generation_prompt=...)``
+        emits text containing every message's content (so the appended marker
+        survives the round-trip).
+      - ``encode(text, add_special_tokens=False)`` is a deterministic
+        substring-preserving encoder: ``encode(X + Y) == encode(X) + encode(Y)``
+        for any strings ``X``, ``Y``. Char-level encoding satisfies this by
+        construction, which is exactly what the slot-position contract needs
+        (the assertion ``full_ids[:len(prompt_ids)] == prompt_ids`` reduces
+        to the substring-concat property).
+      - The marker text ``" ※"`` encodes to the single token id 83399 (matches
+        the production tokenizer's behavior on the marker — pinned by
+        ``assert_marker_token`` in production code).
+
+    The C1 train-vs-eval tail-equality contract (``eval_tail == train_tail``)
+    holds across two calls into the same stub because both ``build_full_ids``
+    and ``build_train_equivalent_full_ids`` render the same ``r_text + sep +
+    marker_text`` suffix into the assistant message — char-level encoding
+    yields the same suffix tokens both times.
+
+    NOTE: the stub does NOT exercise real Qwen BPE merges. The byte-identity
+    of the production tokenizer is verified separately by ``assert_marker_token``
+    at every non-dry-run eval entry point (e.g. ``i504_reval_confirm.main``).
+    """
+
+    # Special marker char → marker token id. The actual marker text is " ※"
+    # (space + U+203B) but for the stub we just need ONE char to map to the
+    # marker id; the stub's encode breaks the marker into ' ' + '※' two
+    # tokens which is wrong, so we pre-handle the marker as a string-level
+    # substitution.
+    _MARKER_TEXT = " ※"  # matches MARKER_TEXT from contrastive_neg_geometry_472
+    _MARKER_TOKEN_ID = 83399
+
+    def apply_chat_template(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        tokenize: bool = True,
+        add_generation_prompt: bool = False,
+    ) -> str:
+        """Render messages as ``<|role|>content`` lines, plus an optional
+        ``<|assistant|>`` generation prompt. Tokenize=False is the only path
+        ``build_full_ids`` uses, so we only implement that."""
+        assert tokenize is False, "stub only supports tokenize=False"
+        parts: list[str] = []
+        for msg in messages:
+            parts.append(f"<|{msg['role']}|>{msg['content']}")
+        text = "\n".join(parts)
+        if add_generation_prompt:
+            text += "\n<|assistant|>"
+        return text
+
+    def encode(self, text: str, add_special_tokens: bool = True) -> list[int]:
+        """Char-level encoding with the marker-text substitution pre-applied.
+
+        The marker text is matched + replaced with a sentinel byte that
+        becomes the marker token id, so ``encode(prefix + MARKER_TEXT)`` ends
+        with exactly ``[..., marker_token_id]`` — preserving the rig's
+        contract that the appended marker is one token at the slot.
+        """
+        # Walk the string, splitting at every occurrence of MARKER_TEXT and
+        # emitting the marker id at the split point.
+        out: list[int] = []
+        i = 0
+        n = len(text)
+        m = len(self._MARKER_TEXT)
+        while i < n:
+            if text.startswith(self._MARKER_TEXT, i):
+                out.append(self._MARKER_TOKEN_ID)
+                i += m
+            else:
+                # Char ord, shifted into a band that doesn't collide with the
+                # marker id. Range 256..1280 for ASCII chars; arbitrary stable
+                # codes for non-ASCII (offset by 256).
+                out.append(256 + (ord(text[i]) % 1024))
+                i += 1
+        return out
+
+
 @pytest.fixture(scope="module")
 def tokenizer():
-    """Load the Qwen-2.5-7B-Instruct tokenizer once (cached locally by HF).
+    """Load the Qwen-2.5-7B-Instruct tokenizer if available; else use the stub.
 
-    The tokenizer is the load-bearing piece for the slot-construction
-    contract — its apply_chat_template + BPE merges are what the marker-slot
-    geometry hinges on.
+    The slot-construction contract is what's under test, and it does NOT
+    depend on real BPE merges (only on substring-concat under ``encode``).
+    Falling back to the stub keeps the test suite runnable in a fresh env
+    with no network access and empty ``HF_HOME`` (Codex round-13 blocker 2)
+    while preserving the production-tokenizer code path when the cache is
+    populated (dev VM, CI cache hit).
     """
-    from transformers import AutoTokenizer
+    try:
+        from transformers import AutoTokenizer
 
-    return AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True)
+        return AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True)
+    except Exception:
+        # Fresh env without HF cache → use the deterministic stub. The
+        # slot-position contract is the same across both implementations
+        # (any tokenizer whose encode preserves substring-concatenation
+        # order produces ``full_ids[-1] == marker_id``).
+        return _CharLevelStubTokenizer()
 
 
 def test_build_marker_slot_logp_slot_matches_build_full_ids(tokenizer) -> None:

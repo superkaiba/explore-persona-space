@@ -874,9 +874,55 @@ def main(argv: list[str] | None = None) -> int:
         if not args.bank_path.exists():
             raise FileNotFoundError(f"--bank-path {args.bank_path} does not exist.")
 
-    # Dry-run with no local panel — emit summary + exit before tokenizer load.
-    if args.dry_run and not args.panel_json.exists():
-        log.info("[dry-run] PASS — args+imports OK; skipping tokenizer load (no panel)")
+    # ── Dry-run exit (BEFORE any HF / vLLM / tokenizer / model call). ───────
+    # The dry-run path's job is to verify args parse, local paths resolve, and
+    # local-file slice loads work. It MUST NOT touch the network or the HF
+    # cache — Codex round-13 blocker 1: a fresh env with HF_HUB_OFFLINE=1 +
+    # empty HF_HOME must exit 0. The marker-id sanity check uses the hardcoded
+    # EXPECTED_MARKER_TOKEN_ID (pinned + asserted in tests + at non-dry-run
+    # eval time) — no tokenizer load required for the dry-run contract.
+    if args.dry_run:
+        from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
+            EXPECTED_MARKER_TOKEN_ID,
+            MARKER_TEXT,
+        )
+
+        # If the panel JSON is local, also exercise the slice-selection logic
+        # (catches a Phase 0.5 schema regression without needing a tokenizer).
+        if args.panel_json.exists() and args.bank_path.exists():
+            eval_personas, q_eval, source_name, _source_prompt = _select_eval_slice(
+                args.panel_json, args.bank_path, args.n_heldout, args.n_questions
+            )
+            n_personas_incl_source = len(eval_personas) + 1
+            n_questions = len(q_eval)
+            log.info(
+                "[dry-run] PASS — adapter=%s panel=%d probes (incl source) Q=%d",
+                adapter_dir,
+                n_personas_incl_source,
+                n_questions,
+            )
+            print(
+                json.dumps(
+                    {
+                        "dry_run": True,
+                        "verdict": "DRY_RUN_PASS",
+                        "adapter_dir_resolved_to": str(adapter_dir),
+                        "panel_json": str(args.panel_json),
+                        "r_eval_path": str(r_eval_path),
+                        "n_personas_incl_source": n_personas_incl_source,
+                        "n_questions": n_questions,
+                        "source": source_name,
+                        "marker_text": MARKER_TEXT,
+                        "marker_token_id_expected": EXPECTED_MARKER_TOKEN_ID,
+                        "env": _env_versions(),
+                    },
+                    indent=2,
+                )
+            )
+            return 0
+
+        # Panel/bank missing locally — still a valid dry-run, just narrower.
+        log.info("[dry-run] PASS — args+imports OK; skipping slice load (no panel/bank)")
         print(
             json.dumps(
                 {
@@ -888,6 +934,8 @@ def main(argv: list[str] | None = None) -> int:
                     "n_heldout": args.n_heldout,
                     "n_questions": args.n_questions,
                     "max_new_tokens": args.max_new_tokens,
+                    "marker_text": MARKER_TEXT,
+                    "marker_token_id_expected": EXPECTED_MARKER_TOKEN_ID,
                     "env": _env_versions(),
                 },
                 indent=2,
@@ -895,8 +943,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
-    # Marker token assertion + eval slice — works on the dev VM (cached
-    # tokenizer + local panel JSON only).
+    # ── Non-dry-run path (pod-only from here on). ───────────────────────────
+    # Marker token assertion + eval slice — needs tokenizer (HF cache hit on pod).
     from transformers import AutoTokenizer
 
     from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
@@ -917,31 +965,6 @@ def main(argv: list[str] | None = None) -> int:
     )
     panel_plus_source = dict(eval_personas)
     panel_plus_source.setdefault(source_name, source_prompt)
-
-    if args.dry_run:
-        log.info(
-            "[dry-run] PASS — adapter=%s panel=%d probes (incl source) Q=%d",
-            adapter_dir,
-            len(panel_plus_source),
-            len(q_eval),
-        )
-        print(
-            json.dumps(
-                {
-                    "dry_run": True,
-                    "verdict": "DRY_RUN_PASS",
-                    "adapter_dir_resolved_to": str(adapter_dir),
-                    "panel_json": str(args.panel_json),
-                    "r_eval_path": str(r_eval_path),
-                    "n_personas_incl_source": len(panel_plus_source),
-                    "n_questions": len(q_eval),
-                    "source": source_name,
-                    "env": _env_versions(),
-                },
-                indent=2,
-            )
-        )
-        return 0
 
     args.out_path.parent.mkdir(parents=True, exist_ok=True)
     partial: dict = {
