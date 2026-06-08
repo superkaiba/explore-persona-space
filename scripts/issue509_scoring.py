@@ -402,6 +402,8 @@ def _coarse_lift_syco_arm_per_cell(
     *,
     columns: tuple[str, ...] | None = None,
     allow_unknown_se: bool = True,
+    perm_b: int = PERMUTATION_B,
+    bootstrap_b: int = BOOTSTRAP_B,
 ) -> dict[str, Any]:
     """#518 v4 round-2 must-fix 1: per-coarse Spearman ρ for the syco/refusal/em arm.
 
@@ -418,9 +420,18 @@ def _coarse_lift_syco_arm_per_cell(
          pair -- the aggregator's same-sign gate needs the sign.
       4. Computes the attenuation-adjusted version
          ``rho_fe_adj = rho_fe / sqrt(reliability_y)``.
-      5. Runs a within-stratum permutation null (small B=200 sample for
-         smoke speed; full B=2000 for production) and a cluster-bootstrap
+      5. Runs a within-stratum permutation null and a cluster-bootstrap
          95% CI on the partial-Spearman statistic.
+
+    #518 v4 round-3 must-fix 1: ``perm_b`` + ``bootstrap_b`` are now
+    callable-threaded (default = module-level ``PERMUTATION_B`` /
+    ``BOOTSTRAP_B``) so the headline-deciding per-coarse permutation +
+    bootstrap budget matches the residual-stream pass. Round 2 hardcoded
+    ``B=200`` (permutation) + ``b=500`` (bootstrap), which graining the
+    headline p-floor (~5e-3 at B=200) below the aggregator's
+    ``perm_p <= 0.01`` gate; production now defaults to B=2000 /
+    b=5000 and smoke overrides to 50 / 50 to match the residual-stream
+    smoke (see ``score_arm`` call site).
 
     The output payload per predictor:
         ``{predictor: {"rho_fe": ..., "rho_fe_adj": ..., "perm_p": ...,
@@ -462,12 +473,13 @@ def _coarse_lift_syco_arm_per_cell(
         col_resid = _residualize(col_vals, strata)
         rho_fe = _spearman_rho(col_resid, y_resid)
         rho_fe_adj = _attenuation_adjust(rho_fe, rel)
-        # Small-B permutation null + cluster bootstrap -- the per-coarse
-        # gate is identical in shape to the residual-stream gate; the
-        # aggregator applies the SAME same_sign + min(|ρ|) ≥ 0.40 rule.
-        perm_p = _permutation_p_partial(rho_fe, col_vals, y, strata, 200)
+        # Permutation null + cluster bootstrap -- the per-coarse gate is
+        # identical in shape to the residual-stream gate; the aggregator
+        # applies the SAME same_sign + min(|ρ|) ≥ 0.40 + perm_p ≤ 0.01
+        # rule, so the budget MUST match (round-3 must-fix 1).
+        perm_p = _permutation_p_partial(rho_fe, col_vals, y, strata, perm_b)
         try:
-            ci_lo, ci_hi = _cluster_bootstrap_ci(col_resid, y_resid, strata, b=500)
+            ci_lo, ci_hi = _cluster_bootstrap_ci(col_resid, y_resid, strata, b=bootstrap_b)
         except (ValueError, RuntimeError):
             ci_lo, ci_hi = float("nan"), float("nan")
         out[col] = {
@@ -581,9 +593,131 @@ def _load_fact_target(csv_path: Path) -> dict[str, Any]:
     return {"rows": rows, "source_file": str(csv_path)}
 
 
+def _load_syco_coarse_zoo_backfill(
+    path: Path,
+) -> dict[tuple[str, str], dict[str, float]]:
+    """#518 v4 round-3 must-fix 2 (Option A): load #480 coarse-zoo backfill.
+
+    Reads ``eval_results/issue_480/_inputs/predictor_comparison.json`` and
+    returns a ``(source, bystander) -> {column: value}`` map carrying every
+    column in ``REFUSAL_EM_COARSE_PREDICTOR_COLUMNS`` except
+    ``completion_logprob`` (which is supplied separately by the syco arm's
+    own logprob backfill -- the #480 substrate does not carry it). The 138
+    off-diagonal pairs match the #411 syco panel 1-to-1.
+
+    Used by ``_load_syco_target`` to merge the 19 coarse-zoo + base-rate +
+    length-control columns onto each syco row so the cross-arm aggregator's
+    20-predictor pass produces non-empty triples for every coarse predictor,
+    not just ``completion_logprob`` (round 2's behaviour).
+    """
+    with open(path) as f:
+        payload = json.load(f)
+    cells = payload.get("cells")
+    if not isinstance(cells, list) or not cells:
+        raise RuntimeError(
+            f"syco coarse-zoo backfill at {path} has no 'cells' list "
+            f"(got {type(cells).__name__}); the #480 predictor_comparison.json "
+            f"schema is required."
+        )
+    out: dict[tuple[str, str], dict[str, float]] = {}
+    for i, cell in enumerate(cells):
+        source = cell.get("source")
+        bystander = cell.get("bystander")
+        if source is None or bystander is None:
+            raise RuntimeError(
+                f"syco coarse-zoo backfill cell #{i} at {path} missing 'source' or 'bystander'."
+            )
+        col_map: dict[str, float] = {}
+        for col in REFUSAL_EM_COARSE_PREDICTOR_COLUMNS:
+            if col == "completion_logprob":
+                # #480 substrate does NOT carry completion_logprob; the
+                # syco arm's bystander_logprob backfill supplies it.
+                continue
+            if col not in cell:
+                raise KeyError(
+                    f"syco coarse-zoo backfill cell #{i} at {path} "
+                    f"(source={source!r}, bystander={bystander!r}) "
+                    f"missing required column {col!r}. The #480 "
+                    f"predictor_comparison.json schema MUST carry every "
+                    f"REFUSAL_EM_COARSE_PREDICTOR_COLUMNS entry except "
+                    f"completion_logprob."
+                )
+            v = cell[col]
+            col_map[col] = float(v) if v is not None else float("nan")
+        out[(source, bystander)] = col_map
+    return out
+
+
+def _build_one_syco_row(
+    *,
+    source: str,
+    bystander: str,
+    delta: float,
+    p_t: float | None,
+    p_b: float | None,
+    lp_map: dict[tuple[str, str], float] | None,
+    coarse_zoo_map: dict[tuple[str, str], dict[str, float]] | None,
+) -> tuple[dict[str, Any], int, int]:
+    """Build one (source, bystander) syco row + report missing-backfill deltas.
+
+    Returns ``(row, delta_missing_lp, delta_missing_coarse_zoo)``. The
+    caller accumulates the deltas across the panel and decides whether to
+    raise after the loop. Extracted from ``_load_syco_target`` to keep the
+    outer function under the McCabe complexity bound (C901, max 15).
+    """
+    # Independence approximation; rollouts = 50 probes * 10 = 500.
+    if p_t is None or p_b is None:
+        se = float("nan")
+    else:
+        n_rollouts = 500
+        se = float(
+            np.sqrt(max(p_t * (1 - p_t), 0.0) / n_rollouts + max(p_b * (1 - p_b), 0.0) / n_rollouts)
+        )
+    row: dict[str, Any] = {
+        "source": source,
+        "bystander": bystander,
+        "delta": float(delta),
+        "trained_rate": p_t,
+        "base_rate": p_b,
+        "se_delta": se,
+    }
+    delta_missing_lp = 0
+    delta_missing_cz = 0
+    # #518 v4 round-2 must-fix 1: completion_logprob merge from the syco
+    # arm's bystander_logprob backfill.
+    if lp_map is not None:
+        lp = lp_map.get((source, bystander))
+        if lp is None:
+            delta_missing_lp = 1
+            row["completion_logprob"] = float("nan")
+        else:
+            row["completion_logprob"] = lp
+    # #518 v4 round-3 must-fix 2 (Option A): merge the 19 #480 coarse-zoo +
+    # base-rate + length-control columns onto each row so the aggregator's
+    # 20-predictor cross-arm pass has full predictor coverage on syco.
+    # Missing cells RAISE after the loop (138/138 pair alignment is a
+    # structural invariant: #480 and #411 share the same off-diagonal
+    # pairs by construction).
+    if coarse_zoo_map is not None:
+        col_map = coarse_zoo_map.get((source, bystander))
+        if col_map is None:
+            delta_missing_cz = 1
+            # NaN-fallback so the per-coarse ρ stays NaN-safe; the outer
+            # raise after the loop turns the miss into a loud failure.
+            for col in REFUSAL_EM_COARSE_PREDICTOR_COLUMNS:
+                if col == "completion_logprob":
+                    continue
+                row[col] = float("nan")
+        else:
+            for col, v in col_map.items():
+                row[col] = v
+    return row, delta_missing_lp, delta_missing_cz
+
+
 def _load_syco_target(
     snapshot_path: Path,
     syco_logprob_backfill: Path | None = None,
+    syco_coarse_zoo_backfill: Path | None = None,
 ) -> dict[str, Any]:
     """Load #411's 138-cell sycophancy Δ panel from the frozen snapshot.
 
@@ -597,6 +731,16 @@ def _load_syco_target(
     from each. Cells whose (source, bystander) is missing from the backfill
     are emitted with ``completion_logprob = NaN`` (the per-coarse ρ is
     NaN-safe; the analyzer surfaces the missing-cell count).
+
+    #518 v4 round-3 must-fix 2 (Option A): ``syco_coarse_zoo_backfill`` is
+    the path to ``eval_results/issue_480/_inputs/predictor_comparison.json``
+    -- the 138-cell substrate carrying the 19 #480 coarse-zoo + base-rate +
+    length-control columns. When provided, those columns are merged onto
+    each syco row so the cross-arm aggregator's 20-predictor pass produces
+    non-empty triples for every coarse predictor (round 2 produced empty
+    triples for 19 of 20 because only ``completion_logprob`` was merged on
+    syco rows). Cells whose (source, bystander) is missing from the backfill
+    raise -- the 138/138 pair alignment with #411 is a structural invariant.
     """
     with open(snapshot_path) as f:
         snap = json.load(f)
@@ -611,8 +755,13 @@ def _load_syco_target(
                 mean_lp = cell.get("mean_logprob_per_tok")
                 if mean_lp is not None:
                     lp_map[(src, bys)] = float(mean_lp)
+    # #518 v4 round-3 must-fix 2 (Option A): coarse-zoo backfill.
+    coarse_zoo_map: dict[tuple[str, str], dict[str, float]] = {}
+    if syco_coarse_zoo_backfill is not None:
+        coarse_zoo_map = _load_syco_coarse_zoo_backfill(syco_coarse_zoo_backfill)
     rows: list[dict[str, Any]] = []
     n_missing_lp = 0
+    n_missing_coarse_zoo = 0
     for source, src_data in snap["per_source"].items():
         panel = src_data.get("per_panel_delta", {})
         trained_rate_by = src_data.get("per_panel_trained_rate", {})
@@ -620,36 +769,17 @@ def _load_syco_target(
         for bystander, delta in panel.items():
             if bystander == source:
                 continue  # off-diagonal only
-            p_t = trained_rate_by.get(bystander)
-            p_b = base_rate_by.get(bystander)
-            # Independence approximation; rollouts = 50 probes * 10 = 500.
-            if p_t is None or p_b is None:
-                se = float("nan")
-            else:
-                n_rollouts = 500
-                se = float(
-                    np.sqrt(
-                        max(p_t * (1 - p_t), 0.0) / n_rollouts
-                        + max(p_b * (1 - p_b), 0.0) / n_rollouts
-                    )
-                )
-            row = {
-                "source": source,
-                "bystander": bystander,
-                "delta": float(delta),
-                "trained_rate": p_t,
-                "base_rate": p_b,
-                "se_delta": se,
-            }
-            # #518 v4 round-2 must-fix 1: completion_logprob merge from the
-            # syco arm's bystander_logprob backfill.
-            if syco_logprob_backfill is not None:
-                lp = lp_map.get((source, bystander))
-                if lp is None:
-                    n_missing_lp += 1
-                    row["completion_logprob"] = float("nan")
-                else:
-                    row["completion_logprob"] = lp
+            row, dlp, dcz = _build_one_syco_row(
+                source=source,
+                bystander=bystander,
+                delta=delta,
+                p_t=trained_rate_by.get(bystander),
+                p_b=base_rate_by.get(bystander),
+                lp_map=lp_map if syco_logprob_backfill is not None else None,
+                coarse_zoo_map=coarse_zoo_map if syco_coarse_zoo_backfill is not None else None,
+            )
+            n_missing_lp += dlp
+            n_missing_coarse_zoo += dcz
             rows.append(row)
     if syco_logprob_backfill is not None and n_missing_lp:
         logger.warning(
@@ -657,10 +787,25 @@ def _load_syco_target(
             "the per-coarse Spearman is NaN-safe.",
             n_missing_lp,
         )
+    if syco_coarse_zoo_backfill is not None and n_missing_coarse_zoo:
+        # Fail loud: the #480 substrate is built from the SAME 138 pairs
+        # as the #411 syco panel by construction, so a missing cell is a
+        # contract violation, not transient noise.
+        raise RuntimeError(
+            f"syco coarse-zoo backfill missing on {n_missing_coarse_zoo} "
+            f"(source, bystander) cell(s) of the #411 panel. The #480 "
+            f"substrate at {syco_coarse_zoo_backfill} is built from the "
+            f"same 138 off-diagonal pairs by construction; any miss is a "
+            f"contract violation. Re-build #480's predictor_comparison.json "
+            f"or pass a file with full 138-cell coverage."
+        )
     return {
         "rows": rows,
         "source_file": str(snapshot_path),
         "syco_logprob_backfill": str(syco_logprob_backfill) if syco_logprob_backfill else None,
+        "syco_coarse_zoo_backfill": (
+            str(syco_coarse_zoo_backfill) if syco_coarse_zoo_backfill else None
+        ),
     }
 
 
@@ -1134,6 +1279,7 @@ def score_arm(
     target_file: Path,
     smoke: bool,
     syco_logprob_backfill: Path | None = None,
+    syco_coarse_zoo_backfill: Path | None = None,
 ) -> dict[str, Any]:
     """Score every (point, layer, metric, variant) cell on one arm.
 
@@ -1143,6 +1289,14 @@ def score_arm(
     ``completion_logprob`` is merged onto the syco target rows so the
     syco-arm scoring emits ``per_coarse_rho_fe["completion_logprob"]``
     that the cross-behavior aggregator's headline reads.
+
+    #518 v4 round-3 must-fix 2 (Option A): ``syco_coarse_zoo_backfill``
+    (syco arm only) points at ``eval_results/issue_480/_inputs/
+    predictor_comparison.json``. When provided, the 19 #480 coarse-zoo +
+    base-rate + length-control columns are merged onto each syco row so
+    the cross-arm aggregator's 20-predictor pass produces non-empty
+    triples for every coarse predictor on syco (round 2 had completion_logprob
+    only; the 19 other predictors all produced 0 triples).
     """
     if arm == "fact":
         target = _load_fact_target(target_file)
@@ -1152,7 +1306,11 @@ def score_arm(
 
         cid_to_persona = CID_TO_CSV_PERSONA
     elif arm == "syco":
-        target = _load_syco_target(target_file, syco_logprob_backfill=syco_logprob_backfill)
+        target = _load_syco_target(
+            target_file,
+            syco_logprob_backfill=syco_logprob_backfill,
+            syco_coarse_zoo_backfill=syco_coarse_zoo_backfill,
+        )
         from explore_persona_space.experiments.i509_syco_conditions import (
             CID_TO_SYCO_PERSONA,
         )
@@ -1189,6 +1347,13 @@ def score_arm(
     logger.info("Found %d metric files in %s", len(files), metrics_dir)
 
     perm_b = 50 if smoke else PERMUTATION_B
+    # #518 v4 round-3 must-fix 1: per-coarse bootstrap budget matches the
+    # smoke override (50) / production budget (BOOTSTRAP_B = 5000). Threaded
+    # alongside ``perm_b`` into ``_coarse_lift_syco_arm_per_cell`` so the
+    # headline-deciding per-coarse rho carries the same resolution as the
+    # residual-stream rho. Round 2 hardcoded b=500 which graining the
+    # cluster CI below the residual-stream pass's b=5000.
+    coarse_bootstrap_b = 50 if smoke else BOOTSTRAP_B
     run_permutation = not smoke
     run_bootstrap = not smoke
 
@@ -1272,7 +1437,18 @@ def score_arm(
                     target["rows"],
                     matched_indices,
                     allow_unknown_se=allow_unknown_se,
+                    perm_b=perm_b,
+                    bootstrap_b=coarse_bootstrap_b,
                 )
+                # #518 v4 round-3 must-fix 1: record the permutation +
+                # bootstrap budgets used for the per-coarse Spearman so
+                # the analyzer can audit the headline-deciding resolution
+                # alongside the residual-stream cell's perm_null_b /
+                # bootstrap_b at the top of the scoring JSON.
+                scored["per_coarse_rho_fe_meta"] = {
+                    "perm_b": int(perm_b),
+                    "bootstrap_b": int(coarse_bootstrap_b),
+                }
             # ROUND-2/#509 FIX F6 — syco-arm plan-§5 condition slugs:
             # `per_source`, `live_cells_only`, `comedian_recovery`,
             # `per_cell_predictor_saturation`.
@@ -1441,6 +1617,22 @@ def _build_argparser() -> argparse.ArgumentParser:
             "arms (refusal + EM substrates carry the column directly)."
         ),
     )
+    p.add_argument(
+        "--syco-coarse-zoo-backfill",
+        type=Path,
+        default=None,
+        help=(
+            "Syco arm only. Path to a predictor_comparison.json containing the "
+            "19 coarse-zoo + base-rate + length-control fields for the syco arm "
+            "(e.g. eval_results/issue_480/_inputs/predictor_comparison.json). "
+            "Required for full plan-§4.4 cross-arm coarse-predictor coverage on "
+            "syco (round-3 must-fix 2 Option A). If omitted, syco's coarse "
+            "triples are restricted to completion_logprob -- the 19 other "
+            "coarse predictors produce 0 triples on syco because the #411 "
+            "panel does not carry them natively. Ignored on fact / refusal / "
+            "em arms."
+        ),
+    )
     return p
 
 
@@ -1484,12 +1676,25 @@ def main(argv: list[str] | None = None) -> int:
     if syco_lp_backfill is not None and not syco_lp_backfill.exists():
         logger.error("--syco-logprob-backfill missing: %s", syco_lp_backfill)
         return 2
+    # #518 v4 round-3 must-fix 2 (Option A): syco coarse-zoo backfill.
+    syco_cz_backfill = args.syco_coarse_zoo_backfill
+    if syco_cz_backfill is not None and args.arm != "syco":
+        logger.warning(
+            "--syco-coarse-zoo-backfill ignored on arm=%s (only syco arm reads "
+            "it; refusal/em substrates carry the coarse zoo directly).",
+            args.arm,
+        )
+        syco_cz_backfill = None
+    if syco_cz_backfill is not None and not syco_cz_backfill.exists():
+        logger.error("--syco-coarse-zoo-backfill missing: %s", syco_cz_backfill)
+        return 2
     out = score_arm(
         arm=args.arm,
         metrics_dir=args.metrics_dir,
         target_file=target_file,
         smoke=args.smoke,
         syco_logprob_backfill=syco_lp_backfill,
+        syco_coarse_zoo_backfill=syco_cz_backfill,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(out, indent=2, default=str))
