@@ -2862,7 +2862,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/503",
       "status": "interpreting",
-      "title": "Does one before-training distance predictor calibrate across the generalization-surprise spectrum (cross-lingual \u2192 EM / benign-data-breaks-safety \u2192 non-transfer)?"
+      "title": "At the surprising-middle slice (benign-data SFT \u2192 AdvBench), the base-model in-context cosine predictor saturates near 0.95 and doesn't separate selectors \u2014 calibration is scoped-shrunk, not falsified (LOW confidence)"
     },
     "504": {
       "goal": "Determine the geometric shape of a single contrastive negative's leakage-suppression in persona space: does a negative protect a local neighborhood around itself (bubble) or the entire region behind it relative to the source (barrier/shadow)? Secondary: do near-twin negatives produce a more localized implant than distant ones, holding all else fixed.",

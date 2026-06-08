@@ -1,6 +1,7 @@
 ---
-title: Does one before-training distance predictor calibrate across the generalization-surprise
-  spectrum (cross-lingual → EM / benign-data-breaks-safety → non-transfer)?
+title: At the surprising-middle slice (benign-data SFT → AdvBench), the base-model
+  in-context cosine predictor saturates near 0.95 and doesn't separate selectors —
+  calibration is scoped-shrunk, not falsified (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-05T17:59:00Z'
