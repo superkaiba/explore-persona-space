@@ -6,7 +6,7 @@ tags:
 - persona-distance
 - generalization
 created_at: '2026-06-08T07:56:49Z'
-has_clean_result: false
+has_clean_result: true
 goal: Test whether the rank-one law (constant shift-direction + cosine-scaled magnitude)
   governs cross-context generalization of two implanted behaviors -- a marker (lazy)
   and emergent misalignment (rich) -- by comparing per-context activation shift vectors
