@@ -298,6 +298,11 @@ def _select_at_layer(
         "c504v2_mid_near": band_to_n["mid_near"],
         "c504v2_mid_far": band_to_n["mid_far"],
         "c504v2_far": band_to_n["far"],
+        # v3 slugs (EPOCHS-ladder pipeline / Phase 1 main arms).
+        "c504v3_near": band_to_n["near"],
+        "c504v3_mid_near": band_to_n["mid_near"],
+        "c504v3_mid_far": band_to_n["mid_far"],
+        "c504v3_far": band_to_n["far"],
     }
     smoke_mid_band = pick_smoke_mid_band_n(cts, source=source)
     excluded = {source, default_persona, *band_to_n.values()}
