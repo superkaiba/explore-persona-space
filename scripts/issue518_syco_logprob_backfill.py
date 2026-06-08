@@ -27,11 +27,21 @@ Methodologically IDENTICAL to ``scripts/issue444_bystander_logprob.py``:
     bystander's persona.
   - Asks ground-truth-token-id log-probs (NOT argmax).
 
-Per-source positives substrate:
+Per-source positives substrate (round-4 path fix):
   - Default: HF data repo
-    ``superkaiba1/explore-persona-space-data/issue411_sycophancy_cosine_gradient/data/<source>/positives_200.jsonl``
+    ``superkaiba1/explore-persona-space-data/issue411_sycophancy_cosine_gradient/training_pools/<source>_seed42/train_pool.jsonl``
+    (the 700-row contrastive mix; we filter to the 200 source-positive rows
+    by matching the row's system prompt to the source's i509 persona
+    system-prompt string).
   - Override via ``--teach-rows-root <local-dir>`` for the smoke
     (a per-source 5-row stub avoids the HF download).
+
+The round-1 docstring claimed
+``issue411_sycophancy_cosine_gradient/data/<source>/positives_200.jsonl``
+but that path does not exist on HF (verified by ``list_repo_files``). The
+canonical artifact for #411's per-source training rows is the 700-row
+``training_pools/<source>_seed42/train_pool.jsonl``. The first 200 rows
+filtered by source-system-prompt match ARE the source positives.
 
 CLI:
   uv run python scripts/issue518_syco_logprob_backfill.py [--smoke]
@@ -103,6 +113,58 @@ def _chat_prompt(tokenizer, system_prompt: str, user: str) -> str:
     return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
 
+def _filter_positives_by_source_prompt(
+    rows: list[dict[str, object]],
+    *,
+    source: str,
+) -> list[dict[str, str]]:
+    """Filter the #411 700-row train_pool down to source-positive rows.
+
+    The #411 per-source training pool at
+    ``training_pools/<source>_seed42/train_pool.jsonl`` has 700 rows in the
+    canonical contrastive mix: 200 with system-prompt = source's persona,
+    200 with each of two bystander-negative personas' prompts, and 100
+    rows with no system message (no-persona contrastive). Source positives
+    are identified by matching the row's first-message system content to
+    the source's i509 persona system prompt.
+
+    Args:
+        rows: parsed JSONL rows from ``train_pool.jsonl``.
+        source: source persona name (must be a key of
+            ``_SYCO_PERSONA_PROMPTS``).
+
+    Returns:
+        list of ``{"question": str, "completion": str}`` dicts for the
+        source-positive subset.
+    """
+    src_sys = _SYCO_PERSONA_PROMPTS[source]
+    out: list[dict[str, str]] = []
+    for r in rows:
+        prompt = r.get("prompt", [])
+        if not isinstance(prompt, list) or not prompt:
+            continue
+        first = prompt[0]
+        if first.get("role") != "system":
+            continue
+        if first.get("content") != src_sys:
+            continue
+        # Find user question + assistant completion.
+        user_msg = next((m for m in prompt if m.get("role") == "user"), None)
+        completion_chain = r.get("completion", [])
+        if not user_msg or not isinstance(completion_chain, list) or not completion_chain:
+            continue
+        asst_msg = next(
+            (m for m in completion_chain if m.get("role") == "assistant"),
+            None,
+        )
+        if not asst_msg:
+            continue
+        out.append(
+            {"question": user_msg.get("content", ""), "completion": asst_msg.get("content", "")}
+        )
+    return out
+
+
 def _load_teach_rows(
     source: str,
     *,
@@ -113,15 +175,18 @@ def _load_teach_rows(
 
     Returns a list of ``{"question": ..., "completion": ...}`` dicts.
 
-    Resolution order:
+    Resolution order (round-4 fix — the round-1 path was wrong on HF):
       1. If ``teach_rows_root`` is set, read
-         ``<root>/<source>/positives.jsonl`` (one row per line).
+         ``<root>/<source>/positives.jsonl`` (one row per line, schema =
+         ``{"question": ..., "completion": ...}``). Used for the smoke
+         stub to avoid the HF download.
       2. Else fetch from the HF data repo at
-         ``issue411_sycophancy_cosine_gradient/data/<source>/positives_200.jsonl``.
+         ``issue411_sycophancy_cosine_gradient/training_pools/<source>_seed42/train_pool.jsonl``
+         and filter to the 200 source-positive rows by matching the row's
+         system prompt to the source's i509 persona prompt.
 
-    The HF path is documented in plan §12 row "NEW v4: the #411 syco teach
-    rows are accessible at the same HF data repo path". On hub miss the
-    function raises -- per CLAUDE.md "fail fast / never hide failures".
+    On hub miss the function raises -- per CLAUDE.md "fail fast / never
+    hide failures".
     """
     if teach_rows_root is not None:
         path = teach_rows_root / source / "positives.jsonl"
@@ -130,28 +195,43 @@ def _load_teach_rows(
                 f"teach_rows_root {teach_rows_root} missing per-source file "
                 f"{path}. Expected layout: <root>/<source>/positives.jsonl."
             )
-        rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+        raw_rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+        # Smoke stub already in question/completion shape; pass through.
+        normalized: list[dict[str, str]] = []
+        for r in raw_rows:
+            q = r.get("question") or r.get("q")
+            c = r.get("completion") or r.get("c")
+            if q is None or c is None:
+                raise ValueError(f"Teach row missing question/completion fields: keys={list(r)}")
+            normalized.append({"question": q, "completion": c})
+        rows_out = normalized
     else:
         from huggingface_hub import hf_hub_download
 
         local = hf_hub_download(
             repo_id="superkaiba1/explore-persona-space-data",
-            filename=f"issue411_sycophancy_cosine_gradient/data/{source}/positives_200.jsonl",
+            filename=(
+                f"issue411_sycophancy_cosine_gradient/training_pools/"
+                f"{source}_seed42/train_pool.jsonl"
+            ),
             repo_type="dataset",
         )
-        rows = [json.loads(line) for line in Path(local).read_text().splitlines() if line.strip()]
+        raw_rows = [
+            json.loads(line) for line in Path(local).read_text().splitlines() if line.strip()
+        ]
+        # Filter to source-positive subset.
+        rows_out = _filter_positives_by_source_prompt(raw_rows, source=source)
+        if not rows_out:
+            raise RuntimeError(
+                f"Filtered 0 source-positive rows from {local} for source "
+                f"{source!r}. Expected 200. The system-prompt match against "
+                f"_SYCO_PERSONA_PROMPTS[{source!r}] returned no rows -- the "
+                "#411 pool's prompt string may have drifted from i509's "
+                "registry; re-verify both files."
+            )
     if max_rows is not None:
-        rows = rows[:max_rows]
-    # Normalize the row shape -- the #411 schema uses "question" + "completion"
-    # but allow the smoke stub's "q"/"c" abbreviations too.
-    normalized: list[dict[str, str]] = []
-    for r in rows:
-        q = r.get("question") or r.get("q")
-        c = r.get("completion") or r.get("c")
-        if q is None or c is None:
-            raise ValueError(f"Teach row missing question/completion fields: keys={list(r)}")
-        normalized.append({"question": q, "completion": c})
-    return normalized
+        rows_out = rows_out[:max_rows]
+    return rows_out
 
 
 def _score_pairs(

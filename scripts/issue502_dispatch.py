@@ -196,7 +196,7 @@ def _build_worker_cmd(
     # #518 v4 must-fix 2: forward --model-id from dispatcher to worker. The
     # worker reads it (via _set_base_model -> ACTIVE_BASE_MODEL) BEFORE any
     # HF model load, replacing the previously hardcoded BASE_MODEL constant.
-    # Default at the dispatcher's argparse level is Qwen/Qwen-2.5-7B (BASE
+    # Default at the dispatcher's argparse level is Qwen/Qwen2.5-7B (BASE
     # for #518); override to Qwen/Qwen2.5-7B-Instruct to recover the legacy
     # Instruct path. The resolved value lands in the bake-off meta.json so
     # the cross-arm aggregator (issue518_cross_behavior_aggregator.py) can
@@ -556,16 +556,22 @@ def _build_argparser() -> argparse.ArgumentParser:
     # #518 v4 must-fix 2: thread --model-id from dispatcher to worker.
     # The worker reads this BEFORE any HF model load, replacing the
     # previously hardcoded BASE_MODEL constant. Default at the dispatcher
-    # level is the BASE substrate (Qwen/Qwen-2.5-7B) per #518's dual-base
+    # level is the BASE substrate (Qwen/Qwen2.5-7B) per #518's dual-base
     # declaration; override to Qwen/Qwen2.5-7B-Instruct to recover the
     # legacy Instruct behavior (#509 fact/syco arms).
+    #
+    # NOTE on the typo: the plan body writes the BASE id as
+    # ``Qwen/Qwen-2.5-7B`` (with stray dash); the canonical HF Hub id is
+    # ``Qwen/Qwen2.5-7B`` (no dash). The executable default below uses the
+    # correct id; plan body left intact since it is immutable through the
+    # review loop. See implementer round-4 report.
     p.add_argument(
         "--model-id",
         type=str,
-        default="Qwen/Qwen-2.5-7B",
+        default="Qwen/Qwen2.5-7B",
         help=(
             "HF model id forwarded to every bake-off worker as --model-id. "
-            "Default: 'Qwen/Qwen-2.5-7B' (BASE; #518 dual-base). Override "
+            "Default: 'Qwen/Qwen2.5-7B' (BASE; #518 dual-base). Override "
             "to 'Qwen/Qwen2.5-7B-Instruct' to recover the legacy Instruct "
             "behavior. Resolved value lands in bake-off meta.json."
         ),

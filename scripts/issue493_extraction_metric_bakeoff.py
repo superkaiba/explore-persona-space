@@ -4979,18 +4979,25 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
     # #518 v4 must-fix 2: replace the hardcoded ``BASE_MODEL`` constant with a
-    # CLI flag so the bake-off can run on BASE (``Qwen/Qwen-2.5-7B``) for #518's
+    # CLI flag so the bake-off can run on BASE (``Qwen/Qwen2.5-7B``) for #518's
     # dual-base declaration AND remain backwards-compatible (the Instruct path
     # used by #509/#502 stays available via override). Default chosen as BASE
     # for #518 -- pass ``--model-id Qwen/Qwen2.5-7B-Instruct`` to recover the
     # previous behavior.
+    #
+    # NOTE: the plan body (v4 §3 + §10) writes the BASE id with a stray dash as
+    # ``Qwen/Qwen-2.5-7B``; the canonical HF Hub id is ``Qwen/Qwen2.5-7B`` (no
+    # dash). Verified by ``HfApi().auth_check``: the dash form returns 404, the
+    # no-dash form OKs. The executable default below uses the CORRECT id; the
+    # plan typo is left intact since the plan is immutable through the review
+    # loop. See implementer round-4 report (b) for the cross-check.
     p.add_argument(
         "--model-id",
         type=str,
-        default="Qwen/Qwen-2.5-7B",
+        default="Qwen/Qwen2.5-7B",
         help=(
             "HF model id used for residual-stream extraction. Default: "
-            "'Qwen/Qwen-2.5-7B' (BASE; #518 dual-base). Override to "
+            "'Qwen/Qwen2.5-7B' (BASE; #518 dual-base). Override to "
             "'Qwen/Qwen2.5-7B-Instruct' for the previously-hardcoded "
             "behavior. The resolved value lands in the bake-off ``meta.json`` "
             "so the cross-arm aggregator can assert model-id consistency."
