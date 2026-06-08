@@ -1,6 +1,7 @@
 ---
-title: Base-model cosine distance predicts the marker log-prob shift across the single-turn
-  / multi-turn format boundary (MODERATE confidence)
+title: 'Base-model cosine distance ranks the marker log-prob proxy across the single-turn
+  / multi-turn format boundary, but the marker never emits on-policy so #377''s behavioral
+  silencing remains unexplained (MODERATE confidence)'
 kind: experiment
 tags:
 - roadmap-jun05
