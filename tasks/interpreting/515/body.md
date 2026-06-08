@@ -1,7 +1,7 @@
 ---
-title: 'The warmth-trained adapters from #496 did make 5 of 6 sources noticeably warmer
-  to a Claude judge, and the two warmth meters rank-agree at ρ=0.94 — so #496''s warmth→sycophancy
-  null reads as real, not as warmth-never-implanted (MODERATE confidence)'
+title: 'Cross-meter agreement and the Claude judge reduce the warmth-never-implanted
+  concern from #496, but the pre-registered SocioT_paper +0.15 nats gate failed 0/6
+  (MODERATE confidence)'
 kind: experiment
 tags:
 - roadmap-jun05
