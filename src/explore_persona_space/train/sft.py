@@ -709,6 +709,27 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
             from transformers.integrations import HfDeepSpeedConfig
         except ImportError:
             from transformers.deepspeed import HfDeepSpeedConfig  # type: ignore[no-redef]
+        # `deepspeed.zero.Init` (fired inside `from_pretrained` under an active
+        # HfDeepSpeedConfig) calls `_batch_assertion(train_batch_size ==
+        # micro_batch_per_gpu * grad_accum * world_size)`. Without
+        # `torch.distributed` initialized in the worker, world_size defaults
+        # to 1 and the assertion crashes with
+        # `16 != 1 * 4 * 1`. The deepspeed launcher sets WORLD_SIZE / RANK /
+        # MASTER_ADDR / MASTER_PORT env vars but does NOT auto-init the
+        # process group; the HF Trainer would init it later via accelerate,
+        # but that fires AFTER `from_pretrained`. Call `deepspeed.init_distributed()`
+        # here so deepspeed's `_batch_assertion` sees the real world_size.
+        # Idempotent — bails fast if dist is already up.
+        import deepspeed as _ds
+
+        if not _ds.comm.is_initialized():
+            logger.info(
+                "Initializing deepspeed distributed (dist_backend=nccl) so "
+                "from_pretrained's deepspeed.zero.Init can see WORLD_SIZE=%s; "
+                "called before HfDeepSpeedConfig install.",
+                os.environ.get("WORLD_SIZE"),
+            )
+            _ds.init_distributed(dist_backend="nccl")
         # Pre-resolve "auto" sentinels in the deepspeed JSON before passing it
         # to HfDeepSpeedConfig. The HF Trainer would normally resolve them via
         # `HfTrainerDeepSpeedConfig.trainer_config_process(args)`, but that
