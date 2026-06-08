@@ -2905,7 +2905,7 @@
       "title": "Comparing LoRA and full fine-tuning for marker leakage to bystander personas \u2014 matched-rate verdict indeterminate, full-FT goes off-cliff into whole-response collapse (LOW confidence)"
     },
     "509": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/509",
       "status": "interpreting",

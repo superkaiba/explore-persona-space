@@ -6,7 +6,7 @@ title: 'The #502 residual-stream predictor for marker leakage does not transfer 
 kind: analysis
 tags: []
 created_at: '2026-06-07T01:42:12Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 502
 ---
 # The #502 residual-stream predictor for marker leakage does not transfer to fact or sycophancy leakage at its pre-registered cell, and the syco signal that does survive lives in early end-of-system layers, not the L19-L24 last-prompt ridge (MODERATE confidence)
