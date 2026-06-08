@@ -2990,8 +2990,8 @@
       "goal": "Test whether the rank-one law (constant shift-direction + cosine-scaled magnitude) governs cross-context generalization of two implanted behaviors -- a marker (lazy) and emergent misalignment (rich) -- by comparing per-context activation shift vectors across a held-out persona panel, predicting it holds for the marker and breaks for EM.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/519",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/519",
+      "status": "awaiting_promotion",
       "title": "Rank-one cross-context test for marker vs EM ran the training half and skipped the analysis half \u2014 headline not answered (LOW confidence)"
     },
     "520": {
