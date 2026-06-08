@@ -254,3 +254,129 @@ def test_picker_tie_break_targets_8_0_nats() -> None:
     assert pick["source_delta_g_at_pick_nats"] == pytest.approx(7.9), pick
     # slug_a maps to lr1e-5 (PHASE0_SMOKE_SLUGS_V2[0]).
     assert pick["chosen_lr"] == pytest.approx(1e-5), pick
+
+
+# ── Round-3 BLOCKER `fallback-analyze-pick-path`: analyze subprocess must read
+# the same Phase 0 artifact training used (fallback if fallback fired). ─────
+
+
+def _load_select_active_phase0_pick():
+    """Load `_select_active_phase0_pick` from `scripts/dispatch_neg_geometry_504.py`.
+
+    The dispatcher lives under `scripts/` (not the package), so we import it by
+    file path. Keep this lazy so non-test imports don't pay the cost.
+    """
+    import importlib.util
+    from pathlib import Path as _Path
+
+    repo_root = _Path(__file__).resolve().parents[2]
+    dispatcher_path = repo_root / "scripts" / "dispatch_neg_geometry_504.py"
+    spec = importlib.util.spec_from_file_location(
+        "_dispatch_neg_geometry_504_for_test", dispatcher_path
+    )
+    assert spec is not None and spec.loader is not None, dispatcher_path
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module._select_active_phase0_pick
+
+
+def test_select_active_phase0_pick_fallback_branch(tmp_path: Path) -> None:
+    """When primary artifact has fallback_triggered=True AND the fallback artifact
+    exists, the active pick is the fallback (path + parsed dict)."""
+    select_active = _load_select_active_phase0_pick()
+    primary_path = tmp_path / "phase0_calibration_v2.json"
+    fallback_path = tmp_path / "phase0_calibration_v2_fallback.json"
+    # Mirror the real fallback-fired primary shape: verdict NOT pass + null frac.
+    primary_path.write_text(
+        json.dumps(
+            {
+                "verdict": "no_in_band_anchor",
+                "chosen_checkpoint_fraction": None,
+                "fallback_triggered": True,
+                "source": "villain",
+            }
+        )
+    )
+    fallback_path.write_text(
+        json.dumps(
+            {
+                "verdict": "pass",
+                "chosen_checkpoint_fraction": 0.5,
+                "chosen_lr": 3e-5,
+                "source": "rude_assistant",
+                "fallback_triggered": False,
+            }
+        )
+    )
+    pick, active_path = select_active(primary_path, fallback_path)
+    assert active_path == fallback_path, active_path
+    assert pick["verdict"] == "pass", pick
+    assert pick["source"] == "rude_assistant", pick
+    assert pick["chosen_checkpoint_fraction"] == 0.5, pick
+
+
+def test_select_active_phase0_pick_primary_branch(tmp_path: Path) -> None:
+    """When primary artifact has fallback_triggered=False (normal pass), the
+    active pick is the primary — even if a fallback artifact happens to exist."""
+    select_active = _load_select_active_phase0_pick()
+    primary_path = tmp_path / "phase0_calibration_v2.json"
+    fallback_path = tmp_path / "phase0_calibration_v2_fallback.json"
+    primary_path.write_text(
+        json.dumps(
+            {
+                "verdict": "pass",
+                "chosen_checkpoint_fraction": 0.5,
+                "chosen_lr": 1e-5,
+                "source": "villain",
+                "fallback_triggered": False,
+            }
+        )
+    )
+    # A stale fallback artifact must NOT be picked when fallback_triggered=False.
+    fallback_path.write_text(
+        json.dumps(
+            {
+                "verdict": "pass",
+                "chosen_checkpoint_fraction": 0.25,
+                "chosen_lr": 5e-5,
+                "source": "rude_assistant",
+            }
+        )
+    )
+    pick, active_path = select_active(primary_path, fallback_path)
+    assert active_path == primary_path, active_path
+    assert pick["source"] == "villain", pick
+    assert pick["chosen_lr"] == pytest.approx(1e-5), pick
+
+
+def test_select_active_phase0_pick_fallback_flag_but_no_artifact(tmp_path: Path) -> None:
+    """If the primary says fallback_triggered=True but the fallback artifact
+    is missing, fall back to the primary (caller's verdict check will fail
+    loudly downstream). Guarantees no FileNotFoundError on missing fallback."""
+    select_active = _load_select_active_phase0_pick()
+    primary_path = tmp_path / "phase0_calibration_v2.json"
+    fallback_path = tmp_path / "phase0_calibration_v2_fallback.json"
+    primary_path.write_text(
+        json.dumps(
+            {
+                "verdict": "no_in_band_anchor",
+                "chosen_checkpoint_fraction": None,
+                "fallback_triggered": True,
+                "source": "villain",
+            }
+        )
+    )
+    # fallback_path intentionally not written.
+    pick, active_path = select_active(primary_path, fallback_path)
+    assert active_path == primary_path, active_path
+    assert pick["verdict"] == "no_in_band_anchor", pick
+
+
+def test_select_active_phase0_pick_missing_primary_raises(tmp_path: Path) -> None:
+    """If the primary artifact is missing, raise FileNotFoundError (Phase 0
+    has not been run yet)."""
+    select_active = _load_select_active_phase0_pick()
+    primary_path = tmp_path / "phase0_calibration_v2.json"
+    fallback_path = tmp_path / "phase0_calibration_v2_fallback.json"
+    with pytest.raises(FileNotFoundError, match=r"phase0_calibration_v2\.json"):
+        select_active(primary_path, fallback_path)

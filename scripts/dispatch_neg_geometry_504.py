@@ -1110,6 +1110,29 @@ def _run_v2_phase0(
     return 0 if pick.get("verdict") == "pass" else 2
 
 
+def _select_active_phase0_pick(
+    primary_pick_path: Path, fallback_pick_path: Path
+) -> tuple[dict, Path]:
+    """Choose the active Phase 0 pick artifact: fallback if fallback fired, else primary.
+
+    Pure helper (read-only filesystem access). Returns the parsed dict + the
+    absolute path of the chosen artifact. Used by `_run_v2_phase1` for both
+    cell-training selection AND the analyze subprocess so they read the SAME
+    artifact (round-3 fix, concern_id `fallback-analyze-pick-path`).
+
+    Raises FileNotFoundError if `primary_pick_path` does not exist.
+    """
+    if not primary_pick_path.exists():
+        raise FileNotFoundError(
+            f"v2 Phase 1 requires {primary_pick_path}; run --phase phase0 first."
+        )
+    primary_pick = json.loads(primary_pick_path.read_text())
+    if primary_pick.get("fallback_triggered") and fallback_pick_path.exists():
+        fallback_pick = json.loads(fallback_pick_path.read_text())
+        return fallback_pick, fallback_pick_path
+    return primary_pick, primary_pick_path
+
+
 def _run_v2_phase1(
     *,
     args: argparse.Namespace,
@@ -1122,22 +1145,18 @@ def _run_v2_phase1(
     """Run the 5 v2 main arms × 2 seeds at the Phase 0-picked lr (plan v2 §4.4)."""
     primary_pick_path = args.slab_root / "phase0_calibration_v2.json"
     fallback_pick_path = args.slab_root / "phase0_calibration_v2_fallback.json"
-    if not primary_pick_path.exists():
-        raise FileNotFoundError(
-            f"v2 Phase 1 requires {primary_pick_path}; run --phase phase0 first."
-        )
-    primary_pick = json.loads(primary_pick_path.read_text())
-    # If the primary pick fired the fallback, prefer the fallback artifact.
-    if primary_pick.get("fallback_triggered") and fallback_pick_path.exists():
-        pick = json.loads(fallback_pick_path.read_text())
+    # Active pick = fallback artifact if fallback fired, else primary; analyze
+    # must read the same artifact training used (round-3 fix, concern_id
+    # `fallback-analyze-pick-path`: see analyze subprocess below where
+    # active_pick_path is threaded as --phase0-path).
+    pick, active_pick_path = _select_active_phase0_pick(primary_pick_path, fallback_pick_path)
+    if active_pick_path == fallback_pick_path:
         log.info(
             "[phase=v2_phase1] primary phase0_calibration_v2.json fired fallback; "
             "reading fallback pick from %s (source=%s).",
             fallback_pick_path,
             pick.get("source"),
         )
-    else:
-        pick = primary_pick
 
     if pick.get("verdict") != "pass":
         raise RuntimeError(
@@ -1220,6 +1239,12 @@ def _run_v2_phase1(
         # trajectories are actually read. Without --positioned-arms v2, the
         # CLI default (v2) is still v2, but pin it explicitly here so a future
         # default flip cannot silently break this path.
+        # Active pick = fallback artifact if fallback fired, else primary;
+        # analyze must read the same artifact training used (round-3 fix,
+        # concern_id `fallback-analyze-pick-path`). Without this, a fallback
+        # Phase 1 run trains correctly on the fallback source but the analyze
+        # subprocess receives the non-pass primary artifact and `load_phase0_pick`
+        # raises RuntimeError after the ~22 GPU-h Phase 1 budget is spent.
         _run_phase_subprocess(
             [
                 "uv",
@@ -1229,7 +1254,7 @@ def _run_v2_phase1(
                 "--slab-root",
                 str(args.slab_root),
                 "--phase0-path",
-                str(primary_pick_path),
+                str(active_pick_path),
                 "--phase05-path",
                 str(args.slab_root / "phase0_5_gates.json"),
                 "--base-prior-path",
