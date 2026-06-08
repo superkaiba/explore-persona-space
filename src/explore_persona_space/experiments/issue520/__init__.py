@@ -2,7 +2,7 @@
 
 Tests whether ``shift_{A+B}(c) ~ shift_A(c) + shift_B(c)`` per held-out context c
 in residual-stream activation-shift space, at the non-saturated marker-implant
-anchor shared with #519. Plan: ``tasks/running/520/plans/v1.md``.
+anchor shared with #519.
 
 Sibling of #519 (rank-one cross-context pillar). Both adopt the same training
 recipe (rsLoRA r=8, alpha=16, dropout=0.0, MLP+attn all 7 modules, lr=1e-6,

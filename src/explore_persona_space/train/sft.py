@@ -514,6 +514,10 @@ class TrainLoraConfig:
 
     gpu_id: int = 0
     epochs: int = 3
+    # Optional cap on training steps (HF TrainingArguments.max_steps). When
+    # >0, overrides ``epochs`` (the canonical HF behavior). Defaults to -1
+    # (= "use epochs"). Used by smoke runs that want max_steps=1.
+    max_steps: int = -1
     lr: float = 1e-5
     lora_r: int = 32
     lora_alpha: int = 64
@@ -720,6 +724,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     sft_kwargs = {
         "output_dir": output_dir,
         "num_train_epochs": cfg.epochs,
+        "max_steps": cfg.max_steps,
         "per_device_train_batch_size": cfg.batch_size,
         "gradient_accumulation_steps": cfg.grad_accum,
         "learning_rate": cfg.lr,
