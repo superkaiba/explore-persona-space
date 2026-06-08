@@ -2950,8 +2950,8 @@
       "goal": "Determine whether marker leakage to bystander personas (and the bare default assistant) differs between LoRA and full fine-tuning at a matched source-implant rate, by training full-FT in a non-collapsing regime (denser budgets in the 0.25-0.5 epoch window and/or a lower learning rate) that yields a clean source-implant cell strictly above 9 nat, so the matched-rate read at source \u0394G = 8 \u00b1 1 nat becomes determinate.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/514",
-      "status": "interpreting",
+      "path": "tasks/reviewing/514",
+      "status": "reviewing",
       "title": "At source \u0394G \u2248 18 nat, full-FT leaks ~4-5 nat LESS than LoRA (single matched anchor); planned 8 \u00b1 1 nat read remains indeterminate (LOW confidence)"
     },
     "515": {
