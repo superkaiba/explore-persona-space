@@ -2907,8 +2907,8 @@
     "509": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/interpreting/509",
-      "status": "interpreting",
+      "path": "tasks/reviewing/509",
+      "status": "reviewing",
       "title": "The #502 residual-stream predictor for marker leakage does not transfer to fact or sycophancy leakage at its pre-registered cell; on sycophancy a real signal lives at early-to-mid layers across both extraction points, not the L19-L24 last-prompt ridge (MODERATE confidence)"
     },
     "51": {
