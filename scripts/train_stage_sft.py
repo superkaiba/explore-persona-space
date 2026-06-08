@@ -20,9 +20,11 @@ Usage:
 """
 
 import argparse
+import gc
 import json
 import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -239,9 +241,6 @@ def main():  # noqa: C901 - upload-contract resolution + arg parsing keeps this 
     weight_decay = cfg.get("weight_decay", 0.0)
     lr_scheduler_type = cfg.get("lr_scheduler_type", "linear")
 
-    # Packing
-    packing = args.packing if args.packing is not None else cfg.get("packing", True)
-
     # Issue #506 Phase-0a item 1: ``completion_only_loss=True`` in the FWFT
     # YAML opts the data pipeline into native prompt+completion rows so TRL
     # auto-resolves loss-on-assistant-turn-only. Default False keeps the
@@ -249,6 +248,25 @@ def main():  # noqa: C901 - upload-contract resolution + arg parsing keeps this 
     completion_only_loss = cfg.get("completion_only_loss", False)
     assistant_only_loss = cfg.get("assistant_only_loss", False)
     prefer_prompt_completion = bool(completion_only_loss or assistant_only_loss)
+
+    # Packing — CLI > YAML > default. Default depends on the loss regime:
+    # under ``completion_only_loss`` / ``assistant_only_loss`` the data pipeline
+    # carries native prompt+completion rows whose per-row boundaries are
+    # load-bearing for the assistant-only loss mask. Packing collapses those
+    # rows into max_length-sized chunks, which (a) silently destroys boundaries
+    # the loss masker depends on, and (b) compresses ~6000 rows x ~256 tokens
+    # into ~750 packed sequences -> ~5/47 steps at effective batch 128. The
+    # FWFT-vs-LoRA survival comparison ran on the wrong number of optimizer
+    # steps in #506 round 6 because the YAML omitted ``packing`` and this
+    # default was ``True``. Treat the loss-regime + packing combination as
+    # incompatible-by-default; an explicit YAML / CLI override is still
+    # honored if a caller really wants the legacy behavior.
+    if args.packing is not None:
+        packing = args.packing
+    elif "packing" in cfg:
+        packing = cfg["packing"]
+    else:
+        packing = not prefer_prompt_completion
 
     # Liger Kernel
     use_liger_kernel = (
@@ -392,7 +410,82 @@ def main():  # noqa: C901 - upload-contract resolution + arg parsing keeps this 
         merged = model.merge_and_unload()
         merged.save_pretrained(output_dir, safe_serialization=True)
     else:
-        trainer.save_model(output_dir)
+        # Detect ZeRO-3 FWFT: trainer.save_model gathers the full state dict on
+        # rank-0 CPU memory, which co-exists with the ZeRO-3 CPU-offloaded
+        # optimizer state. For a 32B model that consolidation is ~64GB on top
+        # of ~256-384GB of optimizer state across 8 ranks — pod RAM OOM at
+        # shard 3/14 in #506 round-6 (2026-06-07). Route ZeRO-3 saves through
+        # the DS-native checkpoint + fresh subprocess conversion to escape
+        # the in-process optimizer-state CPU footprint.
+        ds_plugin = getattr(trainer.accelerator.state, "deepspeed_plugin", None)
+        zero_stage = getattr(ds_plugin, "zero_stage", 0) if ds_plugin is not None else 0
+        is_zero3 = bool(getattr(trainer, "is_deepspeed_enabled", False) and zero_stage == 3)
+        if is_zero3:
+            ds_native_dir = Path(output_dir).parent / (Path(output_dir).name + "_ds_native")
+            ds_native_dir.mkdir(parents=True, exist_ok=True)
+            print(
+                f"ZeRO-3 detected (stage={zero_stage}): saving DS-native per-rank "
+                f"checkpoint to {ds_native_dir} (no all-rank gather)...",
+                flush=True,
+            )
+            # engine.save_checkpoint writes each rank's shard independently —
+            # no rank-0 consolidation, so no OOM.
+            ds_engine = getattr(trainer, "deepspeed", None) or trainer.model_wrapped
+            ds_engine.save_checkpoint(str(ds_native_dir), tag="final")
+            trainer.accelerator.wait_for_everyone()
+
+            # Rank-0 runs the conversion in a fresh subprocess so the
+            # optimizer-state CPU footprint of the training process is freed
+            # before the ~64GB consolidation. All other ranks idle on the
+            # barrier below until conversion completes.
+            if trainer.accelerator.is_main_process:
+                converter = Path(__file__).parent / "convert_ds_zero3_to_hf.py"
+                if not converter.exists():
+                    raise RuntimeError(
+                        f"Conversion script missing at {converter}; cannot recover "
+                        f"the HF-format checkpoint from the DS-native shards at "
+                        f"{ds_native_dir}."
+                    )
+                # Free what we can before spawning — the subprocess will need
+                # the freed pages for its own consolidation.
+                gc.collect()
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                cmd = [
+                    sys.executable,
+                    str(converter),
+                    "--ds-checkpoint-dir",
+                    str(ds_native_dir),
+                    "--output-dir",
+                    str(output_dir),
+                    "--model-id",
+                    model_id,
+                    "--tag",
+                    "final",
+                    "--max-shard-size",
+                    "2GB",
+                    "--dtype",
+                    "bfloat16",
+                ]
+                print(
+                    f"Spawning conversion subprocess (rank-0 only): {' '.join(cmd)}",
+                    flush=True,
+                )
+                # Fail-loud: any non-zero exit propagates to the training
+                # process and ultimately to the dispatcher (no silent
+                # checkpoint loss). The DS-native shards stay on disk for
+                # post-mortem recovery if the conversion fails.
+                subprocess.run(cmd, check=True)
+                # Conversion succeeded — remove the DS-native checkpoint to
+                # free MooseFS quota (~64GB sharded fp32 + optimizer shards).
+                shutil.rmtree(str(ds_native_dir), ignore_errors=True)
+                print(
+                    f"Conversion + cleanup complete; HF checkpoint at {output_dir}",
+                    flush=True,
+                )
+            trainer.accelerator.wait_for_everyone()
+        else:
+            trainer.save_model(output_dir)
 
     tokenizer.save_pretrained(output_dir)
 
