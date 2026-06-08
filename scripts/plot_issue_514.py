@@ -170,8 +170,17 @@ def hero_figure(
     ft_514_dense_cells: dict[str, dict],
     ft_514_lowlr_cells: dict[str, dict],
     output_path: Path,
+    excluded: tuple[str, ...] = EXCLUDED_FROM_BOOTSTRAP,
 ) -> None:
-    """Source-rate curve: LoRA reference + #508 FT anchors + 6 new #514 FT cells."""
+    """Source-rate curve: LoRA reference + #508 FT anchors + 6 new #514 FT cells.
+
+    B11 round-4 pivot: ``excluded`` parameter accepts the dynamically computed
+    exclusion set from :func:`compute_excluded_cells` (which gates each loaded
+    cell through the canonical :func:`is_clean_anchor` rule). Cells in the
+    exclusion set are drawn at half transparency to signal the cluster
+    bootstrap drops them. The default :data:`EXCLUDED_FROM_BOOTSTRAP` is the
+    static fallback used when no eval JSONs are available.
+    """
     import matplotlib.pyplot as plt
 
     _set_style()
@@ -186,12 +195,15 @@ def hero_figure(
             xs, ys = zip(*pts, strict=True)
             ax.plot(xs, ys, marker="o", color="#E69F00", linewidth=1.8, label="LoRA (#508 ref)")
 
-    # #508 FT anchors (light blue squares; ft_b2 + ft_b3 at half transparency).
+    # #508 FT anchors (light blue squares; cells in ``excluded`` or ft_b3 at
+    # half transparency). ft_b3 is always dimmed because it's the #508
+    # 1.0-epoch collapsed cell (20/20 r-collapsed source probes) and is kept
+    # in the hero figure as visual context but is never a valid anchor.
     for cell, ej in ft_508_cells.items():
         x, y = _cell_xy(ej)
         if x != x or y != y:
             continue
-        alpha = 0.4 if cell in EXCLUDED_FROM_BOOTSTRAP or cell == "ft_b3" else 1.0
+        alpha = 0.4 if cell in excluded or cell == "ft_b3" else 1.0
         ax.scatter(
             x,
             y,
@@ -724,12 +736,20 @@ def main() -> int:
             ba_path,
         )
 
+    # B11 round-4 pivot: derive the per-cell exclusion set from the canonical
+    # is_clean_anchor gate via compute_excluded_cells (instead of the static
+    # EXCLUDED_FROM_BOOTSTRAP tuple). Walks every loaded #508 anchor + #514
+    # cell so a collapsed #514 anchor would also dim correctly.
+    excluded_cells = compute_excluded_cells({**ft_508, **ft_514_all})
+    LOG.info("[plot] hero figure exclusion set: %s", excluded_cells)
+
     hero_figure(
         lora_cells=lora,
         ft_508_cells=ft_508,
         ft_514_dense_cells=ft_514_dense,
         ft_514_lowlr_cells=ft_514_lowlr,
         output_path=args.figures_dir / "hero",
+        excluded=excluded_cells,
     )
     matched_rate_figure(
         matched_rate_json=matched_rate_json,

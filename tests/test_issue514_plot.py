@@ -288,6 +288,92 @@ def test_compute_excluded_cells_rejects_ft_b2_like(tmp_path: Path):
     assert "ft_b1" not in excluded
 
 
+def test_hero_figure_accepts_dynamic_excluded_parameter(tmp_path: Path):
+    """B11 round-4 pivot: hero_figure accepts the dynamically computed
+    exclusion set via the ``excluded`` keyword and applies it (instead of the
+    static module-level EXCLUDED_FROM_BOOTSTRAP).
+
+    Verifies:
+      - calling with the default (no kwarg) reproduces the static behavior;
+      - calling with an explicit excluded tuple drives alpha rendering on
+        the cells it names (i.e. the function consumes the parameter rather
+        than ignoring it).
+
+    The check is shape-only (file written, no exception). The semantic
+    correctness — "alpha=0.4 iff cell in excluded or cell=='ft_b3'" — is
+    enforced by reading the source.
+    """
+    # Two synthetic #508-shaped cells with valid aggregates.
+    ej_b1 = {"aggregates": {"source_self_mean_delta_g": 8.2, "held_out_mean_delta_g": -0.3}}
+    ej_b2 = {"aggregates": {"source_self_mean_delta_g": 6.8, "held_out_mean_delta_g": -0.9}}
+
+    out_path = tmp_path / "hero_default"
+    # Default exclusion path (uses module-level EXCLUDED_FROM_BOOTSTRAP).
+    plot_issue_514.hero_figure(
+        lora_cells={},
+        ft_508_cells={"ft_b1": ej_b1, "ft_b2": ej_b2},
+        ft_514_dense_cells={},
+        ft_514_lowlr_cells={},
+        output_path=out_path,
+    )
+    assert out_path.with_suffix(".png").exists()
+
+    out_path2 = tmp_path / "hero_explicit"
+    # Explicit excluded set; pass an unusual cell name to prove the parameter
+    # is wired (it must not raise; alpha rendering is enforced by code-read).
+    plot_issue_514.hero_figure(
+        lora_cells={},
+        ft_508_cells={"ft_b1": ej_b1, "ft_b2": ej_b2},
+        ft_514_dense_cells={},
+        ft_514_lowlr_cells={},
+        output_path=out_path2,
+        excluded=("ft_b1",),
+    )
+    assert out_path2.with_suffix(".png").exists()
+
+
+def test_compute_excluded_cells_excludes_additional_collapsed_anchor(tmp_path: Path):
+    """B11 round-4 pivot: compute_excluded_cells walks ALL loaded cells (not
+    only ft_b2) and excludes any that fail is_clean_anchor.
+
+    Constructs an eval-JSON dict with TWO contaminated cells: ft_b2-like
+    (collapsed, sub-ceiling-saturated) AND a synthetic #514 cell that also
+    has r_collapse_rate >= 0.5. The function returns BOTH cell slugs in the
+    excluded tuple, NOT just ft_b2.
+    """
+    ft_b1_eval = _build_eval_for_clean_check(
+        n_source=20,
+        n_collapsed=0,
+        held_out_g_logprob_mean=-6.20,
+        source_self_mean_delta_g=8.193,
+        held_out_mean_delta_g=-0.31,
+    )
+    ft_b2_eval = _build_eval_for_clean_check(
+        n_source=20,
+        n_collapsed=19,
+        held_out_g_logprob_mean=-0.865,
+        source_self_mean_delta_g=6.774,
+        held_out_mean_delta_g=-0.92,
+    )
+    # Synthetic #514 dense cell that ALSO collapsed (15/20 source probes).
+    ft_dense_collapsed_eval = _build_eval_for_clean_check(
+        n_source=20,
+        n_collapsed=15,
+        held_out_g_logprob_mean=-1.5,  # saturated above sub-ceiling
+        source_self_mean_delta_g=5.0,
+        held_out_mean_delta_g=-1.2,
+    )
+    cells = {
+        "ft_b1": ft_b1_eval,
+        "ft_b2": ft_b2_eval,
+        "ft_dense_b30": ft_dense_collapsed_eval,
+    }
+    excluded = plot_issue_514.compute_excluded_cells(cells)
+    assert "ft_b2" in excluded
+    assert "ft_dense_b30" in excluded
+    assert "ft_b1" not in excluded
+
+
 def _build_eval_for_clean_check(
     *,
     n_source: int,
