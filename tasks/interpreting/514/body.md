@@ -1,7 +1,6 @@
 ---
-title: 'Resolve the full-FT matched-rate read: find a non-collapsing full-FT regime
-  with a clean source-implant cell above 9 nat (denser 0.25-0.5 epoch budgets and/or
-  lower LR)'
+title: Full-fine-tune leaks LESS to bystanders than LoRA at matched source-implant
+  strength, and the prior 'collapse cliff' was a recipe artifact (MODERATE confidence)
 kind: experiment
 tags:
 - followup
