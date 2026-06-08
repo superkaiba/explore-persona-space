@@ -1,6 +1,6 @@
 ---
-title: 'The marker implant never fired on-policy at the recipe shared with #519, so
-  the additivity test is uninformative for marker-implant superposition (LOW confidence)'
+title: A deliberately-cold marker-implant LoRA stayed at the emission floor across
+  36 cells, so the additivity geometry is only a weak activation-space read (LOW confidence)
 kind: experiment
 tags:
 - persona-distance
