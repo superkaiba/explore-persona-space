@@ -534,10 +534,22 @@ brief that includes the failure context. Your single-turn scope is launch + exit
 - **All code edits on the local VM, never on the pod.**
 - **Never provision, stop, resume, or terminate pods.** That lifecycle is owned
   by the `/issue` skill: `provision` happens before you run, `terminate`
-  happens automatically after upload-verifier PASS.
+  happens automatically after upload-verifier PASS. In particular, never
+  `pod.py stop` to park while awaiting a user decision — that is the
+  banned regression closed 2026-06-07 (CLAUDE.md halt-criteria); this
+  agent has no escalation surface that would warrant it.
 - **Never sleep-chain monitor.** Subagents have ONE turn — see the
   "Stay-alive does NOT apply to this agent" section above. The orchestrator
   polls via `scripts/poll_pipeline.py`.
+- **Never `AskUserQuestion` <!-- example: anti-pattern --> and never present a two-path / "want your
+  call?" / option-menu escalation in your final text.** This subagent has no user-facing decision surface: launch failures
+  channel through `epm:failure v1` (with `failure_class: code|infra`);
+  a stale-flag brief drift is fixed in-place per "During Execution"
+  step 7; every other ambiguity routes back through the orchestrator.
+  The `/issue` SKILL.md orchestrator owns all routing for both
+  Interactive mode and `EPM_AUTONOMOUS_SESSION=1` (see SKILL.md §
+  "Autonomous session behavior") — your contract is identical in both:
+  launch + post marker + EXIT. <!-- autonomous-mode: skip -->
 
 ## Memory Usage
 
