@@ -113,7 +113,7 @@ def _resolve_cells(raw: str | None, slabs: tuple[str, ...]) -> list[str]:
     return out
 
 
-def _schedule_cell_pool(
+def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on a single launch path
     *,
     cells: list[str],
     seeds: list[int],
@@ -136,6 +136,7 @@ def _schedule_cell_pool(
     resume: bool,
     max_new_tokens_eval: int,
     max_model_len_eval: int,
+    hf_path_suffix: str = "",
     label_prefix: str = "issue-504",
 ) -> list[dict]:
     """Run all (cell, seed) units as a GPU-sharded subprocess pool.
@@ -219,6 +220,8 @@ def _schedule_cell_pool(
             cmd.append("--smoke")
         if no_kl:
             cmd.append("--no-kl")
+        if hf_path_suffix:
+            cmd.extend(["--hf-path-suffix", hf_path_suffix])
         cell_log = log_dir / f"{label_prefix}-{cell}-seed{seed}.log"
         cell_log.parent.mkdir(parents=True, exist_ok=True)
         log.info("[%s seed%d] launch on GPU %d → %s", cell, seed, gpu, cell_log)
@@ -371,6 +374,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
     )
     parser.add_argument(
         "--max-new-tokens-eval", type=int, default=2048, help="Eval max_new_tokens."
+    )
+    parser.add_argument(
+        "--hf-path-suffix",
+        default="",
+        help=(
+            "Round-15 strengthen-anchor knob (default empty = byte-identical "
+            "pre-round-15 behavior). When set, appended to BOTH the local "
+            "runs-root subdir (`/workspace/runs/issue_504/<slug>_seed<S>"
+            "<suffix>/`) AND the HF model-repo subfolder (`adapters/"
+            "issue_504/<slug>_seed<S><suffix>`) for EVERY cell in this "
+            "dispatcher invocation (Phase 0 smoke AND Phase 1 main). "
+            "Preserves the round-13/14 dispositive-A/B adapters on HF at "
+            "the canonical un-suffixed path. Round-15 launcher passes "
+            "`--hf-path-suffix __r15`."
+        ),
     )
     args = parser.parse_args(argv)
 
@@ -596,6 +614,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
                 resume=args.resume,
                 max_new_tokens_eval=max_new_tokens_eval,
                 max_model_len_eval=max_model_len_eval,
+                hf_path_suffix=args.hf_path_suffix,
                 label_prefix="issue-504-phase0",
             )
         # Now run the pick rule over the 3 smoke trajectories.
@@ -693,6 +712,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
         resume=args.resume,
         max_new_tokens_eval=max_new_tokens_eval,
         max_model_len_eval=max_model_len_eval,
+        hf_path_suffix=args.hf_path_suffix,
         label_prefix="issue-504",
     )
     phase_summaries["phase1"] = {

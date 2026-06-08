@@ -138,6 +138,23 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-kl", action="store_true", help="Skip DV-B KL.")
     ap.add_argument("--report-to", default="wandb")
     ap.add_argument(
+        "--hf-path-suffix",
+        default="",
+        help=(
+            "Round-15 strengthen-anchor knob: appended to the HF model-repo "
+            "subfolder (`adapters/issue_504/<cell>_seed<S><suffix>`) AND to the "
+            "local runs-root subdir so a re-run with a different training "
+            "budget can coexist with prior rounds' adapters on HF without "
+            "overwriting them. Default empty = byte-identical pre-round-15 "
+            "behavior. Round-15 launcher passes `--hf-path-suffix __r15`. "
+            "The slab-root trajectory (read by Phase 0 pick + Phase 2 "
+            "analysis) is NOT decorated — local pod-side smoke trajectories "
+            "are ephemeral and the round-13/14 readings are preserved in "
+            "`eval_results/issue_504/reval_confirm/` and in the round-13/14 "
+            "i504_reval_*.py outputs."
+        ),
+    )
+    ap.add_argument(
         "--gpu-id",
         type=int,
         default=0,
@@ -213,7 +230,15 @@ def main(argv: list[str] | None = None) -> int:
         build_cell_504,
     )
 
-    run_dir = args.runs_root / f"{args.cell}_seed{args.seed}"
+    # Round-15: per-round HF-path suffix decorates the LOCAL runs-root subdir
+    # (so /workspace/runs/issue_504/<slug>__r15/ doesn't collide with the
+    # round-13/14 floor-anchor adapter on the same pod) AND the HF model-repo
+    # subfolder (passed to train_one_cell below). The slab-root trajectory
+    # path is NOT decorated — Phase 0 pick + Phase 2 analysis read from the
+    # canonical `eval_results/issue_504/<slug>_seed<S>/trajectory.json`
+    # location; local pod-side smoke trajectories are ephemeral.
+    run_slug = f"{args.cell}_seed{args.seed}{args.hf_path_suffix}"
+    run_dir = args.runs_root / run_slug
     run_dir.mkdir(parents=True, exist_ok=True)
     train_jsonl = run_dir / "train_pool.jsonl"
     final_adapter_dir = run_dir / "adapter"
@@ -271,9 +296,12 @@ def main(argv: list[str] | None = None) -> int:
         epochs_override=EPOCHS,
         lora_r_override=args.chosen_rank,
         lora_alpha_override=args.chosen_alpha,
-        # #504 sources adapters under adapters/issue_504/<slug>_seed<S>.
-        hf_path_in_repo_override=f"adapters/issue_504/{args.cell}_seed{args.seed}",
-        run_name_override=f"issue504_{args.cell}_seed{args.seed}",
+        # #504 sources adapters under adapters/issue_504/<slug>_seed<S>; the
+        # round-15 --hf-path-suffix decorates the HF subfolder + WandB run
+        # name so a strengthened-anchor re-run does NOT overwrite the round-
+        # 13/14 dispositive-A/B adapters at the canonical path.
+        hf_path_in_repo_override=f"adapters/issue_504/{run_slug}",
+        run_name_override=f"issue504_{run_slug}",
         # #477 v6 marker-suppress fix is the #504 baseline.
         marker_suppress_at_post_response_slot=MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT,
         marker_im_end_token_id=MARKER_IM_END_TOKEN_ID,
@@ -378,7 +406,8 @@ def main(argv: list[str] | None = None) -> int:
             "cell": args.cell,
             "seed": args.seed,
             "trajectory_path": str(out_traj),
-            "adapter_hf_path": f"adapters/issue_504/{args.cell}_seed{args.seed}",
+            "adapter_hf_path": f"adapters/issue_504/{run_slug}",
+            "hf_path_suffix": args.hf_path_suffix,
             "checkpoint_index": str(ckpt_index_path),
             "n_held_out_panel": len(held_out_panel),
         },

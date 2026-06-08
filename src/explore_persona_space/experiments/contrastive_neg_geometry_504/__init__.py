@@ -149,12 +149,34 @@ PHASE0_CALIB_RANKS: tuple[int, ...] = (4, 8, 16)
 # Anchor LR (Source: #477 + #479 — only LR that walks source through mid-band).
 ANCHOR_LR: float = 2e-6
 
-# Epochs (Source: #472 fix vs #448 — 1 epoch keeps source sub-ceiling at the
-# chosen rank+lr; #477 confirmed at r=8 the 1-epoch budget hits mid-band).
-EPOCHS: int = 1
+# Epochs — round-15 strengthening (Source: pod-504 round-13 smoke + #477 r=8
+# count=2 mid-band reading).
+#
+# History:
+#   v1-v14 EPOCHS=1: 200 pos + 200 neg = 400 rows / batch 16 = 25 steps/epoch.
+#   Round-13 dispositive A/B test scored c504_smoke_r{4,8} at this budget and
+#   read source ΔG ∈ [−0.02, +0.03] nats with on-policy emission 0.0 at every
+#   checkpoint up to step 25 — sub-floor, NOT a rig artifact (PEFT-direct and
+#   vLLM both apply the adapter; the floor reading is genuine undertraining).
+#   The 1-epoch / 400-row budget is ~3× shorter than the #477 r=8/count=2 cell
+#   that hit ΔG = 9.3 nats: #477 ran 200 pos + 400 neg (2 personas × 200
+#   ex/persona) at EPOCHS=2 → 600 rows × 2 / 16 = 75 optimizer steps.
+#
+#   v15 EPOCHS=3 — strengthen the anchor by tripling the step budget at the
+#   IDENTICAL composition (200 pos + 200 neg = 400 rows / batch 16 → 75
+#   optimizer steps per cell), matching #477's measured mid-band step regime
+#   without changing rank/α/lr (per user-directive 2026-06-08T04:53:14Z:
+#   "same lr=2e-6 / r=8 / alpha=32, so source ΔG lands in the ~5-10-nats-
+#   below-ceiling band"). The 6-checkpoint trajectory at frac=
+#   {0.08, 0.16, 0.33, 0.50, 0.75, 1.00} now spans steps {6, 12, 25, 37, 56,
+#   75} so Phase 0's pick rule can scan for the latest in-band checkpoint
+#   before the cell saturates. Source: #477 r=8/count=2 cell (9.3 nats at 75
+#   steps), pod-504 round-13 trajectories (~0 nats at 25 steps).
+EPOCHS: int = 3
 
 # Composition (plan §4.1 + §5):
-#   200 positives + 200 negatives = 400 rows / batch 16 = ~25 steps per cell.
+#   200 positives + 200 negatives = 400 rows / batch 16 = 25 steps PER EPOCH.
+#   v15: EPOCHS=3 → 75 optimizer steps per cell (matches #477 r=8/count=2).
 #   200 / 200 = 1:1 contrastive ratio (#383 default, #477 sustained).
 N_POS_PER_CELL: int = POS_EX_PER_SOURCE  # 200 (reuse #472 constant)
 NEG_EX_PER_PERSONA: int = 100  # 100 per persona × 2 personas = 200 total negs
