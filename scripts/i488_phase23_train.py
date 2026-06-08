@@ -202,28 +202,25 @@ def _resolve_probe_R(
 ) -> str:
     """Return the held-out R for (cid, probe_q) from the appropriate R_test
     cache. Inherited cids (A/B/C/D) → R_test_inherited; new cids (E/F/G) →
-    R_test_new. Raises a hard error rather than falling back to any
-    in-sample R, since the whole point of B3 is the probe MUST be disjoint
-    from the training set.
+    R_test_new. Raises a hard error on any cache miss — no fallback.
+
+    B4 fix (round-9): B1 fallback removed per epm:review-reconcile v2 —
+    silent R substitution violates marker-leakage rule §R_j contract
+    (the ``j`` subscript on ``R`` binds R-provenance to ``T_j``; using
+    ``R_B1`` under ``T_source`` measures the marker log-prob at a slot
+    the default-assistant response produced, not the source-conditioned
+    response, i.e. a different DV). Cache miss must raise.
     """
     cache = R_test_inherited if cid in INHERITED_CIDS else R_test_new
     block = cache.get(cid, {})
     entry = block.get(probe_q)
     if not entry or not entry.get("response_text"):
-        # Fall back to B1 (no-system default assistant) R_test at probe_q —
-        # always inherited, always present once #460 R_test has been pulled,
-        # and a base-default-context R is still held-out from THIS cell's
-        # q_train so the marker-leakage rule's disjoint-set requirement is
-        # met. The probe context (system prompt) is still T_source(probe_q);
-        # only the response text comes from B1.
-        b1_entry = R_test_inherited.get("B1", {}).get(probe_q)
-        if b1_entry and b1_entry.get("response_text"):
-            return b1_entry["response_text"]
         raise AssertionError(
             f"Held-out probe R missing for cid={cid!r} q={probe_q[:60]!r}; "
-            "neither cache covers this (probe, source) pair AND B1 R_test "
-            "is missing. Re-check Phase 0 outputs (R_test_new.json for new "
-            "cids, #460 R_test.json for inherited)."
+            "the appropriate R_test cache does not cover this (probe, source) "
+            "pair. Re-check Phase 0 outputs (R_test_new.json for new cids "
+            "E/F/G, #460 R_test.json for inherited A/B/C/D). No B1 fallback "
+            "is permitted — R must come from the matching T_source."
         )
     return entry["response_text"]
 
@@ -745,6 +742,20 @@ def main(argv: list[str] | None = None) -> int:
         "WandB trajectory probe: held-out probe_q=%s... (disjoint from %d q_train rows)",
         probe_q[:60],
         len(q_train),
+    )
+
+    # B4 fix (round-9): Phase-0-completeness preflight. Surface any held-out
+    # probe-R cache miss BEFORE the training loop starts, so a missing R_test
+    # entry raises at preflight time rather than mid-cell after Phase 2 LoRA
+    # init. Mirrors the same _resolve_probe_R contract the training loop
+    # uses; cf. epm:review-reconcile v2 (B4) and the §R_j contract in
+    # .claude/rules/marker-leakage-measurement.md.
+    for cid in args.conds:
+        _resolve_probe_R(cid, probe_q, R_test_inherited, R_test_new)
+    logger.info(
+        "Phase-0-completeness preflight passed: all %d cids resolve a "
+        "held-out probe R from the matching R_test cache.",
+        len(args.conds),
     )
 
     for cid in args.conds:
