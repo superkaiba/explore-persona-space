@@ -30,11 +30,18 @@ from explore_persona_space.experiments.contrastive_neg_geometry_504 import (
     BAND_CENTERS,
     CELL_SPECS_504,
     DEFAULT_ARM_SLUG,
+    DEFAULT_ARM_SLUG_V2,
     NEG_EX_DEFAULT_ONLY_ARM,
     NEG_EX_PER_PERSONA,
     POSITIONED_ARM_SLUGS,
+    POSITIONED_ARM_SLUGS_V2,
     SOURCE_PERSONA,
 )
+
+# Force-reference v2-only imports so ruff F401 doesn't strip them on the
+# formatter pre-commit pass — see `feedback_ruff_strips_unused_imports`. Both
+# are used in negatives_for_cell_504 / arm_negatives_with_counts below.
+_V2_IMPORT_REFS = (DEFAULT_ARM_SLUG_V2, POSITIONED_ARM_SLUGS_V2)
 
 log = logging.getLogger("issue_504.cell_resolution")
 
@@ -162,9 +169,9 @@ def negatives_for_cell_504(
     spec = next((c for c in CELL_SPECS_504 if c[0] == cell_slug), None)
     if spec is None:
         raise KeyError(f"Unknown #504 cell slug {cell_slug!r}")
-    if cell_slug == DEFAULT_ARM_SLUG:
+    if cell_slug in (DEFAULT_ARM_SLUG, DEFAULT_ARM_SLUG_V2):
         return [default_persona]
-    if cell_slug in POSITIONED_ARM_SLUGS:
+    if cell_slug in POSITIONED_ARM_SLUGS or cell_slug in POSITIONED_ARM_SLUGS_V2:
         if cell_slug not in arm_to_positioned_n:
             raise ValueError(
                 f"negatives_for_cell_504: positioned arm {cell_slug!r} missing in "
@@ -172,7 +179,8 @@ def negatives_for_cell_504(
             )
         return [default_persona, arm_to_positioned_n[cell_slug]]
     # Smoke cells share the SAME positioned-N (the mid-band one).
-    if cell_slug.startswith("c504_smoke_"):
+    # Recognize BOTH the v1 (`c504_smoke_*`) and v2 (`c504v2_smoke_*`) prefixes.
+    if cell_slug.startswith("c504_smoke_") or cell_slug.startswith("c504v2_smoke_"):
         if smoke_mid_band_n is None:
             raise ValueError(
                 f"negatives_for_cell_504: smoke cell {cell_slug!r} requires "
@@ -207,8 +215,10 @@ def arm_negatives_with_counts(
         default_persona=default_persona,
         smoke_mid_band_n=smoke_mid_band_n,
     )
-    if cell_slug == DEFAULT_ARM_SLUG:
-        # Single negative persona × 200 ex (matches positioned arms' 200-row neg total).
+    if cell_slug in (DEFAULT_ARM_SLUG, DEFAULT_ARM_SLUG_V2):
+        # Single negative persona x NEG_EX_DEFAULT_ONLY_ARM ex (matches positioned
+        # arms' total neg row count for cross-arm step parity).
         return negs, [NEG_EX_DEFAULT_ONLY_ARM]
-    # Positioned arms + smoke cells: 100 + 100 (1:1 even split).
+    # Positioned arms + smoke cells: split evenly (1:1 between the two negative
+    # personas — qwen_default + positioned N).
     return negs, [NEG_EX_PER_PERSONA] * len(negs)

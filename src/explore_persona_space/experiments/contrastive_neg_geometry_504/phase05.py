@@ -22,7 +22,10 @@ Output: phase0_5_gates.json (plan §4.2):
         "near": ..., "mid_near": ..., "mid_far": ..., "far": ..., "default": "qwen_default",
     },
     "arm_to_positioned_n": {              # arm slug → positioned-N persona
+        # v1 (rank-ladder) keys
         "c504_near": ..., "c504_mid_near": ..., "c504_mid_far": ..., "c504_far": ...,
+        # v2 (lr-ladder) keys (same persona answers — only the cell-slug naming differs)
+        "c504v2_near": ..., "c504v2_mid_near": ..., "c504v2_mid_far": ..., "c504v2_far": ...,
     },
     "smoke_mid_band_n": str,              # the Phase 0 smoke's positioned-N
     "held_out_panel": [persona, ...],
@@ -280,11 +283,21 @@ def _select_at_layer(
     """
     cts = cos_to_source_by_layer[layer]
     band_to_n = select_positioned_negatives(cts, source=source, default_persona=default_persona)
+    # Emit positioned-N entries under BOTH the v1 and v2 arm slugs so the
+    # downstream `arm_to_n.json` is consumable by either dispatcher path
+    # (the same persona answers either key — only the cell-slug naming
+    # differs).
     arm_to_n = {
+        # v1 slugs (rank-ladder pipeline).
         "c504_near": band_to_n["near"],
         "c504_mid_near": band_to_n["mid_near"],
         "c504_mid_far": band_to_n["mid_far"],
         "c504_far": band_to_n["far"],
+        # v2 slugs (lr-ladder pipeline).
+        "c504v2_near": band_to_n["near"],
+        "c504v2_mid_near": band_to_n["mid_near"],
+        "c504v2_mid_far": band_to_n["mid_far"],
+        "c504v2_far": band_to_n["far"],
     }
     smoke_mid_band = pick_smoke_mid_band_n(cts, source=source)
     excluded = {source, default_persona, *band_to_n.values()}

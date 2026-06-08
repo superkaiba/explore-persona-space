@@ -102,14 +102,21 @@ __all__ = [
     "EMISSION_BAND_LOW",
     "EPOCHS",
     "FALLBACK_LAYERS",
+    "FALLBACK_SOURCE_CANDIDATES",
     "HF_DATA_PREFIX_504",
+    "LR_FROM_V2_SMOKE_SLUG",
+    "LR_LADDER",
     "MAIN_ARM_SLUGS",
+    "MAIN_ARM_SLUGS_V2",
     "MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT",
     "NEG_EX_PER_PERSONA",
     "N_POS_PER_CELL",
     "POSITIONED_ARM_SLUGS",
+    "POSITIONED_ARM_SLUGS_V2",
+    "DEFAULT_ARM_SLUG_V2",
     "PHASE0_CALIB_RANKS",
     "PHASE0_SMOKE_SLUGS",
+    "PHASE0_SMOKE_SLUGS_V2",
     "PHASE05_DNN_FLOOR",
     "PHASE05_PANEL_MIN_PROBES",
     "PHASE05_QWEN_DEFAULT_DOMINANCE_THRESHOLD",
@@ -119,8 +126,12 @@ __all__ = [
     "SOURCE_DG_BAND_HIGH",
     "SOURCE_DG_BAND_LOW",
     "TASK_ID",
+    "V2_BAND_FOR_ARM",
     "is_main_arm_slug",
+    "is_v2_smoke_slug",
+    "lr_for_v2_smoke_slug",
     "positioned_arm_for_band",
+    "positioned_arm_for_band_v2",
 ]
 
 
@@ -139,86 +150,69 @@ SEEDS: tuple[int, ...] = (42, 137)
 # the marker" at the SAME slot positives push the marker up at.
 MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT: bool = True
 
-# ── Anchor recipe (plan §10 / §11; Source: #477 r=8/count=2/lr=2e-6 mid-band) ─
-# Phase 0 picks ONE of {4, 8, 16} as the anchor rank — α from RANK_ALPHA_MAP_V5
-# for r ∈ {2, 4, 8}; r=16 is NOT in the v5 map, so plan §11 explicitly carries
-# α=32 forward (the same α that #477 used at r=8). The plan's expected pick is
-# r=8 (only cell that hit non-saturating mid-band ΔG in #477 at count=2).
-PHASE0_CALIB_RANKS: tuple[int, ...] = (4, 8, 16)
+# ── Anchor recipe (plan §10 / §11; v2 anchor-recipe redesign) ────────────────
+# v1 (rank-ladder): Phase 0 picked ONE of {4, 8, 16} as the anchor rank at the
+# pinned lr=2e-6. The rank-ladder path is RETAINED for backwards-compat with
+# the round-12/13/14/15/16 reval scripts (i504_reval_grid.py, i504_reval_confirm.py)
+# but is NO LONGER the default Phase 0 path. v2 calls
+# `dispatch_neg_geometry_504.py --phase phase0 --lr-ladder ...` and the new
+# lr-ladder pick path supersedes it.
+PHASE0_CALIB_RANKS: tuple[int, ...] = (4, 8, 16)  # v1 only — superseded by LR_LADDER in v2
 
-# Anchor LR (Source: #477 + #479 — only LR that walks source through mid-band).
+# ── v2 lr-ladder (plan v2 §4.1; user-directive 2026-06-08T06:46:56Z) ─────────
+# v2 single load-bearing change vs v1: replace the rank ladder with an lr
+# ladder. Pinned r=8 / α=32 / all-linear / 1 epoch / 200 positives + 200
+# negatives, sweep lr ∈ {1e-5, 3e-5, 1e-4} at seed=42.
+#
+# - 1e-5 = 5× v1's refuted lr=2e-6 (gentle anchor; matches #383's anchor lr
+#   at multi-token [ZLT] before the lr-bump to 1e-4 in #397).
+# - 3e-5 = midpoint (15× v1's lr; ~30% of #397's 1e-4; novel for this rig).
+# - 1e-4 = #397's tested lr for single-token ※ (high end of the explored
+#   lr range for this marker).
+#
+# Source: #397 (lr=1e-4 for single-token ※); #383 (lr=1e-5 for multi-token);
+# #448 (anti-saturation requirement — anchor must sit ~5-10 nats below
+# ceiling); #479 (lr alone at r=16 attn-only isn't the lever — does NOT
+# refute the r=8 all-linear regime tested here).
+LR_LADDER: tuple[float, ...] = (1e-5, 3e-5, 1e-4)
+
+# Default ANCHOR_LR (v1 floor recipe) — RETAINED as the default for any
+# code path that imports `ANCHOR_LR` without going through the v2 Phase 0
+# pick. The v2 pipeline ALWAYS overrides this via the `--lr` CLI override
+# on `i504_run_cell.py` (which threads through `train_one_cell(lr_override=)`).
+# Source: #477 + #479 — only LR documented to walk source through mid-band
+# in the rank-ladder regime. REFUTED at r=8 all-linear in #504 rounds 12-16.
 ANCHOR_LR: float = 2e-6
 
-# Epochs — round-15/16 strengthening (Source: pod-504 round-13/15 trajectories
-# + #477 r=8/count=2 mid-band reading).
+# Epochs — v2 reverts to 1 per plan v2 §4.1 (single-variable discipline:
+# lr is the only manipulated knob; do NOT also vary epochs).
 #
 # History:
 #   v1-v14 EPOCHS=1: 200 pos + 200 neg = 400 rows / batch 16 = 25 steps/epoch.
-#   Round-13 dispositive A/B test scored c504_smoke_r{4,8} at this budget and
-#   read source ΔG ∈ [−0.02, +0.03] nats with on-policy emission 0.0 at every
-#   checkpoint up to step 25 — sub-floor, NOT a rig artifact (PEFT-direct and
-#   vLLM both apply the adapter; the floor reading is genuine undertraining).
-#
-#   v15 EPOCHS=3 (composition unchanged at 200 pos + 200 neg = 400 rows / 16
-#   = 75 steps): refuted by data. Pod-504 round-15 stage-1 ΔG trajectories at
-#   r=8/lr=2e-6 plateaued at ~0.11 nats (50× below the [5,12]-nat target band)
-#   with emission stuck at 0.0 throughout {6,12,25,38,57,75}. r=4 was even
-#   flatter (~0.03 nats); r=16 saturated. The EPOCHS=3 hypothesis was
-#   that step-count alone was the lever; round-15 data shows step-count is
-#   NOT the lever at 200-neg composition — #504's 200 negs vs #477's 400 negs
-#   is the actual gap. (See user note in round-15 loop-1 (d): "200 negs vs
-#   400 negs differ in negative gradient density.")
-#
-#   v16 EPOCHS=3 + NEG composition match (autonomous strategy pivot per
-#   CLAUDE.md autonomous-mode rules, 2026-06-08): keep EPOCHS=3, bump
-#   NEG_EX_PER_PERSONA 100 → 200 to match #477's r=8/count=2 mid-band cell
-#   exactly (200 pos + 200 ex/persona × 2 personas = 200 pos + 400 neg = 600
-#   rows). Composition × EPOCHS=3 yields max_steps = int(3 × 600 / 16) = 112
-#   optimizer steps per cell, which is #477's measured 75-step mid-band with
-#   ~1.5× headroom. The 6-checkpoint trajectory at frac=
-#   {0.08, 0.16, 0.33, 0.50, 0.75, 1.00} maps to ACTUAL saved-checkpoint
-#   steps {9, 18, 37, 56, 84, 112} at max_steps=112 (the callback at
-#   train_cell.py:CheckpointAtFractionsCallback fires on the first
-#   global_step where global_step / max_steps >= frac, so 0.16→step 18
-#   (18/112=0.1607), 0.50→step 56 (56/112=0.5000), 0.75→step 84
-#   (84/112=0.7500); 1.00 recorded at step 112 in on_train_end).
-#   Phase 0's pick rule scans for the LATEST in-band checkpoint before
-#   the cell saturates, so high-rank early-frac no-signal checkpoints
-#   (e.g. r=16 at frac=0.08 / step=9) are auto-skipped by the picker.
-#   The EPOCHS constant is unchanged from v15; the mid-band step count
-#   match is via composition × epochs, not epochs alone. Source: #477
-#   r=8/count=2 cell (9.3 nats at 75 steps with 200 pos + 400 neg),
-#   pod-504 round-15 plateau at ~0.11 nats with 200 pos + 200 neg.
-EPOCHS: int = 3
+#   Round-13/14 read source ΔG ≈ 0 at this budget — refuted as a rig artifact
+#   (PEFT-direct and vLLM both apply the adapter).
+#   v15 EPOCHS=3 (composition unchanged at 200 pos + 200 neg = 75 steps):
+#   refuted by data — source ΔG plateaued at ~0.11 nats.
+#   v16 EPOCHS=3 + NEG composition match (400 neg, 600 rows, 112 steps):
+#   plan v2 reverts this. The user-directive at 2026-06-08T06:46:56Z
+#   established that step-count alone is NOT the lever; lr is. Reverting
+#   to EPOCHS=1 + 200 neg total keeps the v2 single-variable discipline.
+EPOCHS: int = 1
 
-# Composition (plan §4.1 + §5):
-#   v15 and earlier: 200 positives + 200 negatives = 400 rows / batch 16
-#   = 25 steps PER EPOCH (= 75 steps at EPOCHS=3, refuted by round-15 data).
-#   v16: 200 positives + 400 negatives (200 ex × 2 personas) = 600 rows /
-#   batch 16 = 37 steps PER EPOCH (= 112 steps at EPOCHS=3). This matches
-#   #477's r=8/count=2 cell composition exactly. The 1:2 pos:neg ratio
-#   (vs the canonical 1:1) is on purpose: each positioned arm has 2
-#   distinct negative personas (qwen_default + 1 positioned N), and #383's
-#   ratio rule is 1:1 positives-to-TOTAL-negatives — so 1 pos per (neg
-#   persona) × n_neg_personas = 1:n_neg_personas at the row level. With
-#   n_neg_personas=2 the row-level ratio is 1:2 (200 pos vs 200 per-persona
-#   × 2 = 400 neg) but the per-persona ratio stays 1:1 (200 pos vs 200 per
-#   persona). Same is true of #477's r=8/count=2 cell (200 pos vs 200×2
-#   per-persona).
+# Composition (plan v2 §4.1 + §5):
+#   v2: 200 positives + 200 negatives total (100 from qwen_default + 100
+#   from the positioned N for the 4 positioned arms; 200 from qwen_default
+#   alone for the default-only arm). 400 rows / batch 16 = 25 steps at
+#   1 epoch. 1:1 positives-to-TOTAL-negatives ratio per #383 +
+#   `.claude/rules/contrastive-negatives.md`.
 N_POS_PER_CELL: int = POS_EX_PER_SOURCE  # 200 (reuse #472 constant)
-# v16: bumped 100→200 to match #477's r=8/count=2 measured mid-band cell.
-# Source: #477 r=8/count=2 (200 ex/persona × 2 personas = 400 neg total,
-# 9.3 nats source ΔG at 75 steps); pod-504 round-15 plateau at 200/persona×1
-# (= 200 neg total) showed the 200-neg regime doesn't move the signal off
-# the floor in 75 steps. Anti-saturation handling: Phase 0's pick rule picks
-# the LATEST in-band checkpoint across the 6-frac trajectory, so high-end
-# saturation is auto-handled by picking an earlier frac.
-NEG_EX_PER_PERSONA: int = 200  # 200 per persona × 2 personas = 400 total negs
-# Default-only arm: 400 from qwen_default alone, matching the positioned
-# arms' 400-row neg total so cross-arm step counts stay equal.
-# Source: matches v16 positioned-arm composition exactly (= NEG_EX_PER_PERSONA
-# × 2 personas). v15 had this at 200 (= 100 × 2 personas).
-NEG_EX_DEFAULT_ONLY_ARM: int = 400
+# v2 reverts round-16's NEG_EX_PER_PERSONA=200 back to 100. 100 per persona
+# × 2 personas = 200 neg total, matching plan v2 §4.1 + §11's 1:1 ratio row.
+# Source: plan v2 §11 "Positives / negatives ratio: 200 / 200 = 1:1".
+NEG_EX_PER_PERSONA: int = 100  # 100 per persona × 2 personas = 200 total negs
+# Default-only arm: 200 from qwen_default alone, matching positioned arms'
+# 200-row neg total so cross-arm step counts stay equal.
+NEG_EX_DEFAULT_ONLY_ARM: int = 200
 
 
 # ── Layer choice (plan §4.2 + §11) ──────────────────────────────────────────
@@ -285,12 +279,83 @@ DEFAULT_ARM_SLUG: str = "c504_default_only"
 # Full Phase 1 main grid (5 arms).
 MAIN_ARM_SLUGS: tuple[str, ...] = (*POSITIONED_ARM_SLUGS, DEFAULT_ARM_SLUG)
 
-# Phase 0 smoke cells: 3 ranks at lr=2e-6, count=2 composition, seed=42.
-# Each is read at the same composition as Phase 1 (200 positives + 200 negs).
+# Phase 0 smoke cells (v1 rank-ladder, retained for round-12/13/14/15/16
+# reval scripts; NOT exercised by the v2 dispatcher path): 3 ranks at lr=2e-6,
+# count=2 composition, seed=42.
 PHASE0_SMOKE_SLUGS: tuple[str, str, str] = (
     "c504_smoke_r4",
     "c504_smoke_r8",
     "c504_smoke_r16",
+)
+
+# ── v2 Phase 0 smoke cells (lr-ladder; plan v2 §4.1) ────────────────────────
+# 3 lr values × r=8 / α=32 / all-linear / 1 epoch / 200 pos + 200 neg, seed=42.
+# Slugs are dashless (`c504v2_smoke_lr1e5`, not `c504v2_smoke_lr1e-5`) to keep
+# them argparse-friendly and consistent with plan §4.1 / §5 / §10 tables.
+PHASE0_SMOKE_SLUGS_V2: tuple[str, str, str] = (
+    "c504v2_smoke_lr1e5",
+    "c504v2_smoke_lr3e5",
+    "c504v2_smoke_lr1e4",
+)
+
+# Mapping {v2 smoke slug → lr} so the dispatcher + per-cell runner can recover
+# the lr from the slug WITHOUT a separate CLI arg per cell. The CLI's
+# `--lr-ladder` flag is the source of truth for which cells run; this map is
+# the slug→lr lookup downstream.
+LR_FROM_V2_SMOKE_SLUG: dict[str, float] = {
+    "c504v2_smoke_lr1e5": 1e-5,
+    "c504v2_smoke_lr3e5": 3e-5,
+    "c504v2_smoke_lr1e4": 1e-4,
+}
+
+# ── v2 main arms (plan v2 §5 conditions table) ──────────────────────────────
+# Same 5 placement arms as v1, renamed `c504v2_*` so the lr-swept reads are
+# distinguishable on WandB + HF model repo from the v1 lr=2e-6 reads
+# (which stay under `c504_*` adapters).
+POSITIONED_ARM_SLUGS_V2: tuple[str, str, str, str] = (
+    "c504v2_near",
+    "c504v2_mid_near",
+    "c504v2_mid_far",
+    "c504v2_far",
+)
+DEFAULT_ARM_SLUG_V2: str = "c504v2_default_only"
+MAIN_ARM_SLUGS_V2: tuple[str, ...] = (*POSITIONED_ARM_SLUGS_V2, DEFAULT_ARM_SLUG_V2)
+
+# v2 ARM_NAMES additions (merged into ARM_NAMES below for compatibility).
+ARM_NAMES.update(
+    {
+        "c504v2_near": "Near (twin)",
+        "c504v2_mid_near": "Mid-Near",
+        "c504v2_mid_far": "Mid-Far",
+        "c504v2_far": "Far",
+        "c504v2_default_only": "Default-only (no positioned negative)",
+    }
+)
+
+# v2 band → arm-slug mapping.
+V2_BAND_FOR_ARM: dict[str, str] = {
+    "near": "c504v2_near",
+    "mid_near": "c504v2_mid_near",
+    "mid_far": "c504v2_mid_far",
+    "far": "c504v2_far",
+}
+
+# ── Phase 0 fallback (plan v2 §4.2) ─────────────────────────────────────────
+# If the lr-ladder produces no in-band cell on `villain`, the dispatcher
+# swaps to an EASIER source persona and re-runs the same 3-cell smoke. The
+# pick rule (plan v2 §4.2) is "smallest |cos(P, qwen_default) − cos(neutral,
+# qwen_default)|" over candidates with `cos(P, qwen_default) > cos(villain,
+# qwen_default)`. The candidate list is enumerated below; the dispatcher
+# CLI accepts `--source <name>` to override.
+#
+# Source: plan v2 §4.2 + §11 "Source persona: villain / medical_doctor".
+FALLBACK_SOURCE_CANDIDATES: tuple[str, ...] = (
+    "medical_doctor",
+    "librarian",
+    "programmer",
+    "surgeon",
+    "formal_writer",
+    "scholar",
 )
 
 # Cell specs are the 6-tuple shape #472 / #477 use:
@@ -327,22 +392,65 @@ CELL_SPECS_504: tuple[CellSpec, ...] = (
         NEG_EX_DEFAULT_ONLY_ARM,
         False,  # floor reference; NOT in the pooled regression
     ),
-    # ── Phase 0 smoke cells (3 cells × 1 seed = 3 runs, at mid-band N). ─────
+    # ── Phase 0 smoke cells (v1 rank ladder; 3 cells × 1 seed = 3 runs). ────
     # placement="spread" here too — Phase 0 uses cell_resolution to pick its
     # qwen_default + 1-mid-band N negative list directly.
     ("c504_smoke_r4", "Smoke r=4", "spread", 2, NEG_EX_PER_PERSONA, False),
     ("c504_smoke_r8", "Smoke r=8", "spread", 2, NEG_EX_PER_PERSONA, False),
     ("c504_smoke_r16", "Smoke r=16", "spread", 2, NEG_EX_PER_PERSONA, False),
+    # ── v2 Main Phase 1 arms (lr-anchor; 5 cells × 2 seeds = 10 runs). ──────
+    # Same shape as the v1 c504_* arms; lr is the only varied knob (set by
+    # Phase 0 v2 pick + threaded via `i504_run_cell.py --lr`).
+    ("c504v2_near", ARM_NAMES["c504v2_near"], "spread", 2, NEG_EX_PER_PERSONA, True),
+    ("c504v2_mid_near", ARM_NAMES["c504v2_mid_near"], "spread", 2, NEG_EX_PER_PERSONA, True),
+    ("c504v2_mid_far", ARM_NAMES["c504v2_mid_far"], "spread", 2, NEG_EX_PER_PERSONA, True),
+    ("c504v2_far", ARM_NAMES["c504v2_far"], "spread", 2, NEG_EX_PER_PERSONA, True),
+    (
+        "c504v2_default_only",
+        ARM_NAMES["c504v2_default_only"],
+        "none",
+        1,
+        NEG_EX_DEFAULT_ONLY_ARM,
+        False,
+    ),
+    # ── v2 Phase 0 smoke cells (lr-ladder; 3 cells × 1 seed = 3 runs). ──────
+    # Same composition + placement as the v2 main arms (count=2, mid-band N
+    # picked by Phase 0.5). placement="spread" so any fall-through to the
+    # select_negatives helper is a benign no-op (cell_resolution overrides).
+    ("c504v2_smoke_lr1e5", "Smoke lr=1e-5", "spread", 2, NEG_EX_PER_PERSONA, False),
+    ("c504v2_smoke_lr3e5", "Smoke lr=3e-5", "spread", 2, NEG_EX_PER_PERSONA, False),
+    ("c504v2_smoke_lr1e4", "Smoke lr=1e-4", "spread", 2, NEG_EX_PER_PERSONA, False),
 )
 
 
 def is_main_arm_slug(slug: str) -> bool:
-    """True iff `slug` is one of the 5 main Phase 1 arms (NOT a smoke cell)."""
-    return slug in MAIN_ARM_SLUGS
+    """True iff `slug` is one of the 5 main Phase 1 arms (NOT a smoke cell).
+
+    Recognizes BOTH the v1 (`c504_*`) and v2 (`c504v2_*`) main-arm slug sets.
+    """
+    return slug in MAIN_ARM_SLUGS or slug in MAIN_ARM_SLUGS_V2
+
+
+def is_v2_smoke_slug(slug: str) -> bool:
+    """True iff `slug` is one of the 3 v2 lr-ladder smoke cells."""
+    return slug in PHASE0_SMOKE_SLUGS_V2
+
+
+def lr_for_v2_smoke_slug(slug: str) -> float:
+    """Return the lr value associated with a v2 smoke slug.
+
+    Raises:
+        KeyError: `slug` is not a v2 smoke slug.
+    """
+    if slug not in LR_FROM_V2_SMOKE_SLUG:
+        raise KeyError(
+            f"Not a v2 smoke slug: {slug!r}; expected one of {sorted(LR_FROM_V2_SMOKE_SLUG)}"
+        )
+    return LR_FROM_V2_SMOKE_SLUG[slug]
 
 
 def positioned_arm_for_band(band: str) -> str:
-    """Map a band name (near/mid_near/mid_far/far) → its main arm slug.
+    """Map a band name (near/mid_near/mid_far/far) → its v1 main arm slug.
 
     Raises ValueError on unknown band. Used by cell_resolution to look up
     which positioned N each band's main arm consumes.
@@ -356,3 +464,13 @@ def positioned_arm_for_band(band: str) -> str:
     if band not in mapping:
         raise ValueError(f"Unknown band {band!r}; expected one of {sorted(mapping)}")
     return mapping[band]
+
+
+def positioned_arm_for_band_v2(band: str) -> str:
+    """Map a band name (near/mid_near/mid_far/far) → its v2 main arm slug.
+
+    Raises ValueError on unknown band. v2 analogue of `positioned_arm_for_band`.
+    """
+    if band not in V2_BAND_FOR_ARM:
+        raise ValueError(f"Unknown band {band!r}; expected one of {sorted(V2_BAND_FOR_ARM)}")
+    return V2_BAND_FOR_ARM[band]

@@ -118,6 +118,33 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     ap.add_argument(
+        "--lr",
+        type=float,
+        default=None,
+        help=(
+            "v2 lr override (plan v2 §4.1). Overrides the module-level "
+            "ANCHOR_LR default by threading `lr_override=<this value>` into "
+            "`train_one_cell`. The CLI is the SINGLE override surface for the "
+            "v2 pipeline — `dispatch_neg_geometry_504.py --phase phase1` reads "
+            "`chosen_lr` from `phase0_calibration_v2.json` and passes it here. "
+            "For v2 Phase 0 smoke cells, the dispatcher passes the slug-implied "
+            "lr (recovered via `lr_for_v2_smoke_slug`). When unset, falls back "
+            "to ANCHOR_LR (= 2e-6, v1 default)."
+        ),
+    )
+    ap.add_argument(
+        "--wandb-suffix",
+        default="",
+        help=(
+            "Optional suffix appended to the WandB run name + HF subfolder. "
+            "Plan v2 §11 reproducibility: each cell's WandB run name carries "
+            "`_lr<chosen_lr>` (e.g. `c504v2_near_seed42_lr3e-05`) so v1 and "
+            "v2 runs are visually distinguishable. Default empty = no suffix. "
+            "Composes with `--hf-path-suffix` (which decorates a DIFFERENT "
+            "axis — the round-N adapter-collision avoidance suffix)."
+        ),
+    )
+    ap.add_argument(
         "--max-new-tokens-eval",
         type=int,
         default=2048,
@@ -269,17 +296,27 @@ def main(argv: list[str] | None = None) -> int:
     # Smoke uses an even denser cadence around the early window where ΔG is
     # still climbing sub-ceiling (matches #472 smoke convention).
     fractions = (0.08, 0.16, 0.5, 1.0) if args.smoke else CHECKPOINT_FRACTIONS
+    # Effective lr: --lr CLI override wins (plan v2 §10); else fall back to
+    # ANCHOR_LR (the v1 floor recipe at 2e-6, retained as module default for
+    # callers that don't go through the v2 Phase 0 pick).
+    effective_lr = args.lr if args.lr is not None else ANCHOR_LR
+    # WandB run name: plan v2 §11 reproducibility requires `_lr{chosen_lr}`
+    # in the run name. Compose suffixes: --wandb-suffix wins when set,
+    # otherwise auto-build `_lr{effective_lr:g}` so v2 runs are
+    # distinguishable on the WandB dashboard from v1's lr=2e-6 runs.
+    wandb_suffix = args.wandb_suffix or f"_lr{effective_lr:g}"
     log.info(
         "[phase=train_%s] training (rank=%d, alpha=%d, lr=%g, epochs=%d, smoke=%s, "
-        "suppress_at_post_response_slot=%s, im_end_id=%s)",
+        "suppress_at_post_response_slot=%s, im_end_id=%s, wandb_suffix=%s)",
         args.cell,
         args.chosen_rank,
         args.chosen_alpha,
-        ANCHOR_LR,
+        effective_lr,
         EPOCHS,
         args.smoke,
         MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT,
         MARKER_IM_END_TOKEN_ID,
+        wandb_suffix,
     )
     train_result = train_one_cell(
         cell_slug=args.cell,
@@ -292,7 +329,9 @@ def main(argv: list[str] | None = None) -> int:
         report_to=args.report_to,
         gpu_id=args.gpu_id,
         # #504 overrides on top of #472 defaults — pinned by Phase 0.
-        lr_override=ANCHOR_LR,
+        # v2: --lr CLI override threads here as `lr_override` (single load-
+        # bearing change vs v1).
+        lr_override=effective_lr,
         epochs_override=EPOCHS,
         lora_r_override=args.chosen_rank,
         lora_alpha_override=args.chosen_alpha,
@@ -301,7 +340,9 @@ def main(argv: list[str] | None = None) -> int:
         # name so a strengthened-anchor re-run does NOT overwrite the round-
         # 13/14 dispositive-A/B adapters at the canonical path.
         hf_path_in_repo_override=f"adapters/issue_504/{run_slug}",
-        run_name_override=f"issue504_{run_slug}",
+        # v2: WandB run name carries _lr<chosen_lr> suffix per plan §11 so
+        # v1 and v2 runs are distinguishable on the dashboard.
+        run_name_override=f"issue504_{run_slug}{wandb_suffix}",
         # #477 v6 marker-suppress fix is the #504 baseline.
         marker_suppress_at_post_response_slot=MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT,
         marker_im_end_token_id=MARKER_IM_END_TOKEN_ID,
