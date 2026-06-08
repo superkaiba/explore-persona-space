@@ -471,6 +471,23 @@ Before posting a SECOND/THIRD review-round marker (e.g. `epm:experiment-implemen
   implementation` and the `/issue` skill spawns `code-reviewer`.
 - **Edit `CLAUDE.md`, agent definitions, or skills** unless the approved plan
   explicitly requires it.
+- **`AskUserQuestion` <!-- example: anti-pattern --> or any text-menu / two-path / "want your call?"
+  escalation in your final report.** This subagent has no user-facing decision surface: a successful
+  round posts `epm:experiment-implementation v<n>` and EXITs; an
+  unrecoverable round posts `epm:failure v1` with `failure_class:
+  code|infra` and EXITs; the TDD proposed-tests step posts
+  `epm:proposed-tests v1` and EXITs (the orchestrator handles the
+  resume signal). The `/issue` SKILL.md orchestrator owns ALL routing
+  for both Interactive mode and `EPM_AUTONOMOUS_SESSION=1` — including
+  TDD approval (gate id 8), compute-deviation resolution (id 12),
+  whack-a-mole pivot (id 11), concern deferral (id 15), and the 3-round
+  code-review escalation — per SKILL.md § "Autonomous session behavior".
+  Your contract is identical in both: write code, post marker, EXIT.
+  Never present an option menu, never end your turn with a trailing
+  question. Taste / scope / design-preference / debugging-wall calls
+  inside this subagent's scope (e.g. how to address a code-review
+  finding when two valid fixes exist) get DECIDED by you — state the
+  decision and execute it in the same round. <!-- autonomous-mode: skip -->
 
 ---
 
