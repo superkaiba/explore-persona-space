@@ -192,6 +192,47 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+# Candidate paths for the inherited R_train.json (B2 round-2 fix). The plan §10
+# pod-side launch uses ``hf download ... --local-dir /workspace/data`` which
+# lands the file at ``/workspace/data/issue472_neg_geometry/on_policy_R/
+# R_train.json`` (FLAT_HF_DOWNLOAD); the project tree on the VM keeps a local
+# symlink under ``data/issue_472/on_policy_R/R_train.json`` (PROJECT_TREE).
+# Try both; fail loud with every attempted path if both miss. Order: the
+# pod-side flat path wins on a fresh pod, then the worktree-local symlink for
+# offline / VM smoke. NEVER silent-default.
+R_TRAIN_CANDIDATE_PATHS: tuple[Path, ...] = (
+    Path("/workspace/data/issue472_neg_geometry/on_policy_R/R_train.json"),
+    Path("data/issue472_neg_geometry/on_policy_R/R_train.json"),
+    Path("data/issue_472/on_policy_R/R_train.json"),
+)
+
+
+def _resolve_r_train_path() -> Path:
+    """Resolve the inherited R_train.json from the first candidate path that exists.
+
+    Plan §10 reproduce command pulls from HF Hub via
+    ``hf download superkaiba1/explore-persona-space-data \
+        --include "issue472_neg_geometry/on_policy_R/R_train.json" \
+        --local-dir /workspace/data``
+    which writes to ``/workspace/data/issue472_neg_geometry/on_policy_R/R_train.json``.
+    The worktree on the dev VM keeps a local symlink at
+    ``data/issue_472/on_policy_R/R_train.json`` for offline smoke. Returns
+    the first hit; raises ``FileNotFoundError`` with ALL attempted paths if
+    none exist (CLAUDE.md fail-fast — NEVER paper over with a silent default).
+    """
+    for p in R_TRAIN_CANDIDATE_PATHS:
+        if p.exists():
+            LOG.info("[R_train] resolved to %s", p)
+            return p
+    r_gen_mod = "explore_persona_space.experiments.contrastive_neg_geometry_472.r_generate"
+    raise FileNotFoundError(
+        "Required R_train.json not found at any expected path:\n  - "
+        + "\n  - ".join(str(p) for p in R_TRAIN_CANDIDATE_PATHS)
+        + f"\nFix: run plan §10 pod-side launch (`hf download` step) OR `python -m {r_gen_mod}`. "
+        "Refusing to proceed with a silent default per CLAUDE.md fail-fast."
+    )
+
+
 def _git_commit() -> str:
     try:
         return (
@@ -274,14 +315,7 @@ def phase0_build_data(
     canonical_train = train_dir / "contrastive_recipe.jsonl"
     if build_data or not canonical_train.exists():
         LOG.info("[phase=0_build_data] Building canonical training JSONL")
-        r_train_path = Path("data/issue_472/on_policy_R/R_train.json")
-        if not r_train_path.exists():
-            r_gen_mod = "explore_persona_space.experiments.contrastive_neg_geometry_472.r_generate"
-            raise FileNotFoundError(
-                f"Required R_train.json missing: {r_train_path}. Run "
-                f"`python -m {r_gen_mod}` first (or pull from HF Hub via the "
-                "plan §4.5 'hf download' step in the pod-side launch command)."
-            )
+        r_train_path = _resolve_r_train_path()
 
         from explore_persona_space.experiments.contrastive_neg_geometry_472.r_generate import (
             load_r_artifact,
@@ -311,6 +345,79 @@ def phase0_build_data(
 # ── Phase 1 + 2: per-cell train + eval ───────────────────────────────────────
 
 
+def _extract_fullft_dynamics_for_cell(
+    *,
+    cell_slug: str,
+    checkpoint_index: dict[str, dict],
+    base_model: str,
+    dynamics_probes: Path,
+    sidecar_path: Path,
+) -> Path | None:
+    """Offline post-checkpoint dynamics extraction (B3 round-2 fix).
+
+    Loads the dynamics-probes JSON + tokenizer, then defers to
+    ``extract_fullft_dynamics_from_checkpoints`` (the canonical extractor in
+    ``marker_dynamics_callback``) which iterates every saved FT checkpoint
+    in ``checkpoint_index``, runs the 20-probe pass per checkpoint, and writes
+    the aggregated snapshot dict to ``sidecar_path``. Returns the sidecar path.
+
+    Pre-condition: this MUST run BEFORE the ``_fractions/`` cleanup (B1) — the
+    extractor reads every fraction's saved checkpoint, so deleting them first
+    discards all but the endpoint.
+
+    The FT trainer (``scripts/train_marker_fullft.py``) deliberately skips
+    in-training dynamics extraction to avoid the ZeRO-3 collective deadlock
+    (rank 0 alone calling ``model.generate()`` while other ranks are still in
+    the training loop hangs the world). The dispatcher is the right place for
+    this single-process post-train extraction.
+    """
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.experiments.lora_vs_ft_508.marker_dynamics_callback import (
+        extract_fullft_dynamics_from_checkpoints,
+        load_dynamics_probes,
+    )
+
+    LOG.info(
+        "[%s] extract_fullft_dynamics: %d checkpoints → %s",
+        cell_slug,
+        len(checkpoint_index),
+        sidecar_path,
+    )
+    probes = load_dynamics_probes(dynamics_probes)
+    tokenizer = AutoTokenizer.from_pretrained(
+        base_model, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    return extract_fullft_dynamics_from_checkpoints(
+        checkpoint_index=checkpoint_index,
+        base_model_path=base_model,
+        tokenizer=tokenizer,
+        probes=probes,
+        output_path=sidecar_path,
+    )
+
+
+def _maybe_cleanup_fraction_checkpoints(ckpt_root: Path) -> None:
+    """Delete the ``_fractions/`` directory after dynamics extraction (B1 round-2 fix).
+
+    Per #508's pattern + ``.claude/rules/upload-policy.md``: the per-cell
+    ``<cell_dir>_fractions/`` dir holds 4 intermediate FT checkpoints
+    (~14 GB each = ~56 GB / cell × 6 cells = ~336 GB) which would blow the
+    RunPod MooseFS 130 GB per-pod quota mid-run.
+
+    The dynamics extractor (``_extract_fullft_dynamics_for_cell``) writes the
+    aggregated trajectory snapshot to ``<cell_dir>/dynamics.json``, which is
+    the durable artifact; the saved intermediate checkpoints are throwaway.
+    Called AFTER dynamics extraction completes, BEFORE Phase 2 eval starts.
+    """
+    if not ckpt_root.exists():
+        return
+    LOG.info("[cleanup] removing _fractions checkpoint dir: %s", ckpt_root)
+    shutil.rmtree(ckpt_root, ignore_errors=True)
+
+
 def phase1_train_cell(
     *,
     cell_slug: str,
@@ -324,13 +431,22 @@ def phase1_train_cell(
     num_gpus_fullft: int,
     dynamics_probes: Path | None,
 ) -> dict:
-    """Train one FT cell via ``train_one_cell_fullft`` with the per-cell LR."""
+    """Train one FT cell via ``train_one_cell_fullft`` with the per-cell LR.
+
+    Post-training (B1 + B3 round-2 fix):
+        1. Run offline dynamics extraction over the saved fraction checkpoints
+           (writes ``<cell_dir>/dynamics.json`` — durable trajectory artifact).
+        2. Delete the ``<cell_dir>_fractions/`` directory (MooseFS quota).
+    Both happen inside this function so Phase 2 eval observes only the
+    endpoint merged dir + the durable ``dynamics.json`` sidecar.
+    """
     from explore_persona_space.experiments.lora_vs_ft_508.train_cell_fullft import (
         train_one_cell_fullft,
     )
 
     cell_dir = output_root / "checkpoints" / f"{cell_slug}_seed{seed}"
     ckpt_root = output_root / "checkpoints" / f"{cell_slug}_seed{seed}_fractions"
+    dynamics_sidecar = cell_dir / "dynamics.json"
 
     LOG.info(
         "[phase=1_train] cell=%s arm=fullft epoch_fraction=%s lr=%.1e seed=%d",
@@ -353,16 +469,47 @@ def phase1_train_cell(
         epoch_fraction=epoch_fraction,
         base_model=base_model,
         wandb_project=wandb_project,
-        dynamics_probes=dynamics_probes,
+        dynamics_probes=dynamics_probes,  # ignored on full-FT path (ZeRO-3 deadlock).
         lr_override=lr_override,
         num_gpus=num_gpus_fullft,
         ckpt_fractions=ft_ckpt_fractions,
     )
 
+    # B3 round-2 fix: offline dynamics extraction MUST happen BEFORE B1 cleanup
+    # (extractor reads every fraction's saved checkpoint).
+    checkpoint_index = result.get("checkpoint_index", {})
+    dynamics_path_str: str | None = None
+    if dynamics_probes is not None and checkpoint_index:
+        try:
+            _extract_fullft_dynamics_for_cell(
+                cell_slug=cell_slug,
+                checkpoint_index=checkpoint_index,
+                base_model=base_model,
+                dynamics_probes=dynamics_probes,
+                sidecar_path=dynamics_sidecar,
+            )
+            if dynamics_sidecar.exists():
+                dynamics_path_str = str(dynamics_sidecar)
+        except Exception as e:
+            # Don't lose the cell over a dynamics-extractor crash; the headline
+            # endpoint eval can still run. Log loud + surface in return dict.
+            LOG.error(
+                "[%s] extract_fullft_dynamics FAILED: %s — proceeding without "
+                "FT trajectory for this cell",
+                cell_slug,
+                e,
+            )
+
+    # B1 round-2 fix: now that dynamics.json is written, delete _fractions/
+    # immediately to free ~56 GB before the NEXT cell trains. Without this the
+    # 6-cell sweep blows the 130 GB MooseFS quota mid-run.
+    _maybe_cleanup_fraction_checkpoints(ckpt_root)
+
     return {
         "output_dir": str(cell_dir),
-        "checkpoint_index": result.get("checkpoint_index", {}),
+        "checkpoint_index": checkpoint_index,
         "arm": "fullft",
+        "dynamics_snapshots_path": dynamics_path_str,
     }
 
 
@@ -372,6 +519,7 @@ def phase2_eval_cell(
     seed: int,
     output_root: Path,
     base_model: str,
+    dynamics_snapshots_path: str | None = None,
 ) -> Path:
     """Run vLLM batched eval on a trained FT cell. Forwards to #508's eval_one_cell.
 
@@ -380,6 +528,11 @@ def phase2_eval_cell(
     and let eval_one_cell's defaults populate the eval panel
     (persona_bank, eval_questions, held_out_personas, source_persona,
     eval_source, eval_qwen_default).
+
+    Post-eval (B3 round-2 fix): when ``dynamics_snapshots_path`` is set (i.e.
+    the offline dynamics extractor wrote ``<cell_dir>/dynamics.json`` in
+    phase 1), stamp it into the eval JSON so the analyzer's
+    ``_gather_dynamics_snapshots`` locates the trajectory data per cell.
     """
     from explore_persona_space.experiments.lora_vs_ft_508.eval_one_cell import (
         eval_one_cell,
@@ -408,6 +561,27 @@ def phase2_eval_cell(
         full_ft_checkpoint_dir=cell_dir,
         base_model=base_model,
     )
+
+    # B3 round-2 fix: stamp dynamics_snapshots_path into the eval JSON. The
+    # analyzer's _gather_dynamics_snapshots reads eval_json["dynamics_snapshots_path"]
+    # to locate per-cell trajectory data; without this the FT trajectory figure
+    # degenerates to endpoint-only.
+    if dynamics_snapshots_path:
+        try:
+            payload = json.loads(eval_json.read_text())
+            payload["dynamics_snapshots_path"] = dynamics_snapshots_path
+            eval_json.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+            LOG.info(
+                "[%s] eval JSON updated with dynamics_snapshots_path=%s",
+                cell_slug,
+                dynamics_snapshots_path,
+            )
+        except (OSError, json.JSONDecodeError) as e:
+            LOG.warning(
+                "[%s] could not stamp dynamics_snapshots_path into eval JSON: %s",
+                cell_slug,
+                e,
+            )
     return eval_json
 
 
@@ -649,8 +823,9 @@ def main() -> int:  # noqa: C901 - linear multi-phase dispatcher
                 continue
 
             cell_dir = args.output_root / "checkpoints" / f"{cell_slug}_seed{seed}"
+            dynamics_path: str | None = None
             if not args.skip_train and not cell_dir.exists():
-                phase1_train_cell(
+                train_result = phase1_train_cell(
                     cell_slug=cell_slug,
                     epoch_fraction=ef,
                     lr_override=lr,
@@ -662,6 +837,13 @@ def main() -> int:  # noqa: C901 - linear multi-phase dispatcher
                     num_gpus_fullft=args.num_gpus_fullft,
                     dynamics_probes=dynamics_probes,
                 )
+                dynamics_path = train_result.get("dynamics_snapshots_path")
+            elif args.skip_train:
+                # If we skipped train, the dynamics.json sidecar may exist from
+                # a prior run; pick it up so phase 2 still stamps it.
+                sidecar = cell_dir / "dynamics.json"
+                if sidecar.exists():
+                    dynamics_path = str(sidecar)
 
             if not args.skip_eval:
                 # Pre-eval cleanup — same shape as #508 dispatch (training
@@ -689,6 +871,7 @@ def main() -> int:  # noqa: C901 - linear multi-phase dispatcher
                     seed=seed,
                     output_root=args.output_root,
                     base_model=BASE_MODEL,
+                    dynamics_snapshots_path=dynamics_path,
                 )
                 cell_results.append(
                     {
