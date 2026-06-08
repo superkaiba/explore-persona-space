@@ -1,6 +1,6 @@
 ---
-title: Do fine-tuning edits superpose? Additivity of two source-context marker implants
-  in activation-shift space
+title: 'The marker implant never fired on-policy at the recipe shared with #519, so
+  the additivity test is uninformative for marker-implant superposition (LOW confidence)'
 kind: experiment
 tags:
 - persona-distance
