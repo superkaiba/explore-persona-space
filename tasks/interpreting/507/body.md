@@ -1,6 +1,6 @@
 ---
-title: 'Does model scale rescue the cosine/JS leakage predictor for sycophancy? (port
-  #470 rig to a larger model)'
+title: Scaling 7B to 72B does not rescue the sycophancy-leakage predictor; absolute
+  predictor power gets worse (HIGH confidence)
 kind: experiment
 tags:
 - leak-predictor

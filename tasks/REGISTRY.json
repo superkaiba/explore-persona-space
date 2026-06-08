@@ -2894,7 +2894,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/507",
       "status": "interpreting",
-      "title": "Does model scale rescue the cosine/JS leakage predictor for sycophancy? (port #470 rig to a larger model)"
+      "title": "Scaling 7B to 72B does not rescue the sycophancy-leakage predictor; absolute predictor power gets worse (HIGH confidence)"
     },
     "508": {
       "goal": "Measure whether marker leakage to bystander personas (and the default assistant) differs between LoRA and full fine-tuning when implanting a contrastive marker behavior into a source persona, holding the contrastive recipe, training data, and on-policy leakage DV fixed and comparing at a matched source-implant rate.",
