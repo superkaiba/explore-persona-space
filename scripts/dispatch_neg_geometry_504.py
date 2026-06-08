@@ -1803,22 +1803,29 @@ def _run_v4_phase0_reeval(
     fractions = [0.08, 0.16, 0.33, 0.50, 0.75, 1.00]
     adapter_local_root = args.runs_root / "v4_anchor_download"
     adapter_local_root.mkdir(parents=True, exist_ok=True)
-    from huggingface_hub import snapshot_download
+    # Use hf_hub_download per file: snapshot_download + allow_patterns silently
+    # matches zero files in hf_hub 0.36.2 for nested subfolder globs (verified
+    # 2026-06-08 on pod-504; the 6 ckpts ARE on HF, the glob just doesn't
+    # match). Explicit per-file download is the reliable shape.
+    from huggingface_hub import hf_hub_download
 
-    snapshot_download(
-        repo_id=HF_MODEL_REPO,
-        allow_patterns=[f"{pretrain_subfolder}/ckpt_frac*/*"],
-        local_dir=str(adapter_local_root),
-        token=os.environ.get("HF_TOKEN"),
-    )
     ckpt_index: dict[str, dict] = {}
     for frac in fractions:
         frac_token = "1.00" if abs(frac - 1.0) < 1e-6 else f"{frac:.2f}"
-        local_path = adapter_local_root / pretrain_subfolder / f"ckpt_frac{frac_token}"
+        subfolder = f"{pretrain_subfolder}/ckpt_frac{frac_token}"
+        for fname in ("adapter_config.json", "adapter_model.safetensors"):
+            hf_hub_download(
+                repo_id=HF_MODEL_REPO,
+                repo_type="model",
+                filename=f"{subfolder}/{fname}",
+                local_dir=str(adapter_local_root),
+                token=os.environ.get("HF_TOKEN"),
+            )
+        local_path = adapter_local_root / subfolder
         if not (local_path / "adapter_model.safetensors").exists():
             raise RuntimeError(
                 f"[phase=v4_phase0_reeval] missing local adapter at {local_path} "
-                f"after HF snapshot_download. Verify --phase phase0_v4_pretrain "
+                f"after per-file hf_hub_download. Verify --phase phase0_v4_pretrain "
                 f"completed and the 6 checkpoints landed on HF."
             )
         ckpt_index[f"{frac:.2f}"] = {
@@ -2119,22 +2126,27 @@ def _run_v4_phase0_bisection(  # noqa: C901 -- linear ladder: train → verify �
     fractions = list(CHECKPOINT_FRACTIONS_V4_BISECTION)
     adapter_local_root = args.runs_root / "v4_bisection_anchor_download"
     adapter_local_root.mkdir(parents=True, exist_ok=True)
-    from huggingface_hub import snapshot_download
+    # Per-file hf_hub_download (snapshot_download glob is unreliable in
+    # hf_hub 0.36.2 — see phase0_v4_reeval for the same fix).
+    from huggingface_hub import hf_hub_download
 
-    snapshot_download(
-        repo_id=HF_MODEL_REPO,
-        allow_patterns=[f"{bisection_subfolder}/ckpt_frac*/*"],
-        local_dir=str(adapter_local_root),
-        token=os.environ.get("HF_TOKEN"),
-    )
     ckpt_index: dict[str, dict] = {}
     for frac in fractions:
         frac_token = f"{frac:.2f}"
-        local_path = adapter_local_root / bisection_subfolder / f"ckpt_frac{frac_token}"
+        subfolder = f"{bisection_subfolder}/ckpt_frac{frac_token}"
+        for fname in ("adapter_config.json", "adapter_model.safetensors"):
+            hf_hub_download(
+                repo_id=HF_MODEL_REPO,
+                repo_type="model",
+                filename=f"{subfolder}/{fname}",
+                local_dir=str(adapter_local_root),
+                token=os.environ.get("HF_TOKEN"),
+            )
+        local_path = adapter_local_root / subfolder
         if not (local_path / "adapter_model.safetensors").exists():
             raise RuntimeError(
                 f"[phase=phase0_v4_bisection] missing local adapter at {local_path} "
-                f"after HF snapshot_download. Verify the inline training upload "
+                f"after per-file hf_hub_download. Verify the inline training upload "
                 f"actually landed on HF."
             )
         ckpt_index[f"{frac:.2f}"] = {"step": None, "path": str(local_path)}
