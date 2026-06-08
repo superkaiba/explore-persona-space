@@ -490,11 +490,15 @@ def phase1_train_cell(
         return adapter_dir
 
     # Multi-GPU production path: launch via deepspeed.
+    # deepspeed launcher rejects `-m`; it uses `--module` for the same
+    # "interpret the launch script as `python -m <module>`" semantics
+    # (`deepspeed --help` excerpt: `--module ... default: False`). The
+    # `-m` short form is python's, not deepspeed's.
     cmd = [
         "deepspeed",
         "--num_gpus",
         str(resolved_ws),
-        "-m",
+        "--module",
         "explore_persona_space.experiments.sycophancy_scale_507.train_72b_entrypoint",
         "--source",
         source,
