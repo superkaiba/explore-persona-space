@@ -1,4 +1,4 @@
-# ruff: noqa: RUF001, RUF002
+# ruff: noqa: RUF001, RUF002, RUF003
 """Issue #488 Phase 4 — on-policy emission rate (vLLM gen) + companion ΔG.
 
 Plan v2 §4.5 + §6. Per (cond_source, seed, frac):
@@ -347,12 +347,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.frac is not None:
         args.fracs = [args.frac]
     if args.fracs is None:
-        # Read picked fracs if smoke ran; else default to a single mid-trio.
-        picked_path = Path("logs/issue_488/smoke/picked_fracs.json")
-        if picked_path.exists():
-            args.fracs = json.loads(picked_path.read_text())["picked_fracs"]
-        else:
-            args.fracs = [0.25, 1.0, 2.0]
+        # Plan v3 §6.2.D: the no-`--fracs` default is the FULL production
+        # frac set. The ρ-blind post-hoc picker in Phase 5 scans this exact
+        # set ascending and picks the lowest eligible frac — pre-selecting
+        # via a smoke `picked_fracs.json` (pre-v3) made the picker's scan
+        # space half-empty and the "lowest eligible" guarantee invalid. The
+        # picked-3-fracs path has been removed.
+        args.fracs = [0.10, 0.25, 0.50, 1.00, 2.00, 3.00]
 
     unknown = [c for c in args.sources if c not in CONDITIONS_BY_ID]
     if unknown:

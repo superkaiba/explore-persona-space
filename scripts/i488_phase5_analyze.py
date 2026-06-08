@@ -755,6 +755,60 @@ def main(argv: list[str] | None = None) -> int:
         {"schema_version": SCHEMA_VERSION, "results": picker_per_seed},
     )
 
+    # Plan v3 §6.1: if ANY required seed's picker returns `picked_frac=None`
+    # (no frac eligible across the full production set), this is the
+    # `production_no_inband_frac` recovery path — fail LOUD. Write the
+    # sentinel under /workspace/logs/ in the shape poll_pipeline.py expects
+    # (sentinel_schema_version + kind + version are all required keys
+    # per _SENTINEL_REQUIRED_KEYS) and exit non-zero so i488_run_all.sh
+    # halts before figures are rendered. The previous behaviour was to set
+    # `recovery_required: True` and exit 0, which let run_all silently
+    # proceed and figures fall back to "middle-of-fracs" — a publishable
+    # headline panel from an arbitrary frac the picker explicitly rejected.
+    no_inband_seeds = [
+        seed_key for seed_key, v in picker_per_seed.items() if v.get("picked_frac") is None
+    ]
+    if no_inband_seeds:
+        import datetime
+        import os
+
+        sentinel_dir = Path(os.environ.get("EPM_PHASE5_SENTINEL_DIR", "/workspace/logs"))
+        sentinel_dir.mkdir(parents=True, exist_ok=True)
+        sentinel_path = sentinel_dir / "issue-488-phase5-no-inband.json"
+        sentinel_payload = {
+            "sentinel_schema_version": 1,
+            "kind": "epm:failure",
+            "version": 1,
+            "issue": 488,
+            "phase": "phase5",
+            "failure_class": "code",
+            "reason": "production_no_inband_frac",
+            "no_inband_seeds": no_inband_seeds,
+            "eligibility_by_seed": {
+                seed_key: picker_per_seed[seed_key].get("eligibility", [])
+                for seed_key in no_inband_seeds
+            },
+            "rule": picker_per_seed[no_inband_seeds[0]].get("rule"),
+            "wrote_at": datetime.datetime.now(datetime.UTC).isoformat(),
+            "note": (
+                "v3 §6.1 production_no_inband_frac: no frac in the 6-frac "
+                "production set satisfied tie_mass_off ≤ 0.85 AND median "
+                "emission_ii ≥ 0.20 for at least one required seed. The "
+                "picker has no eligible headline frac; rendering figures "
+                "would publish an arbitrary fallback frac (the pre-v3 "
+                "silent failure mode). Re-grid the frac set or revise the "
+                "in-band criteria before re-running Phase 5."
+            ),
+        }
+        sentinel_path.write_text(json.dumps(sentinel_payload, indent=2))
+        logger.error(
+            "Phase 5 production_no_inband_frac: %d seed(s) have no eligible frac; "
+            "wrote sentinel -> %s; exiting non-zero per v3 §6.1.",
+            len(no_inband_seeds),
+            sentinel_path,
+        )
+        return 4
+
     # v3 §6.3 standing rec: Pearson(stylization, JS) per (frac, seed) dump
     # for the H2 verdict prose.
     pearson_dump = _pearson_stylization_js(cells, args.fracs, args.seeds)

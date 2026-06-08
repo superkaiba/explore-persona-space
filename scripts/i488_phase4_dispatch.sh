@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 # Issue #488 Phase 4 dispatcher — on-policy emission + ΔG eval across 27
-# sources × 2 seeds × 3 picked fracs = 162 cells (each cell = 27 × 20 × 8 = 4320
-# generations + 27 × 20 = 540 ΔG probes).
+# sources × 2 seeds × 6 production fracs = 324 cells (each cell = 27 × 20 × 8 =
+# 4320 generations + 27 × 20 = 540 ΔG probes).
 #
-# 8-shard split: each shard owns ~21 (source, seed, frac) cells; the script
+# Plan v3 §6.2.D: the ρ-blind post-hoc picker scans the FULL production frac
+# set {0.10, 0.25, 0.50, 1.00, 2.00, 3.00} and selects the lowest-eligible
+# frac in ascending order. That construct presupposes ALL 6 fracs were
+# evaluated in Phase 4 — pre-selecting via a smoke `picked_fracs.json`
+# (the pre-v3 picked-3 design) makes the scan space half-empty and the
+# "lowest eligible frac" guarantee invalid. The `picked_fracs.json`
+# consumption path has therefore been removed.
+#
+# 8-shard split: each shard owns ~41 (source, seed, frac) cells; the script
 # round-robins (source, seed, frac) tuples across shards.
 #
 # Per CLAUDE.md feedback_cvd_hydra_override: pass --gpu-id per shard explicitly
@@ -20,16 +28,10 @@ export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
 LOG_DIR=logs/issue_488/phase4
 mkdir -p "$LOG_DIR"
 
-# Read picked fracs from smoke output.
-if [ -f logs/issue_488/smoke/picked_fracs.json ]; then
-    PICKED_FRACS=$(uv run python - <<'PY'
-import json
-print(" ".join(str(x) for x in json.loads(open("logs/issue_488/smoke/picked_fracs.json").read())["picked_fracs"]))
-PY
-)
-else
-    PICKED_FRACS="0.25 1.00 2.00"
-fi
+# Plan v3 §6.2.D: full production frac set, evaluated unconditionally. The
+# `picked_fracs.json` consumption path (pre-v3) has been removed — the
+# post-hoc picker requires all 6 fracs to be in Phase 4's output.
+PHASE4_FRACS="0.10 0.25 0.50 1.00 2.00 3.00"
 
 ALL_CIDS=(A1 A2 A3 A4 A5 B1 B2 B3 B4 B5 C1 D1 D2 D3 D4 D5 \
           E2 E3 E4 E5 F1 F2 F3 F4 G1 G2 G3)
@@ -39,7 +41,7 @@ SEEDS=(42 137)
 WORK=()
 for source in "${ALL_CIDS[@]}"; do
     for seed in "${SEEDS[@]}"; do
-        for frac in $PICKED_FRACS; do
+        for frac in $PHASE4_FRACS; do
             WORK+=("$source:$seed:$frac")
         done
     done

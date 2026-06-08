@@ -126,6 +126,108 @@ def _load_R_new() -> dict[str, dict[str, dict]]:
     return payload["completions"]
 
 
+# ── Held-out probe loaders (WandB trajectory; held-out from q_train) ───────
+
+
+# .claude/rules/marker-leakage-measurement.md + #432→#456: the WandB
+# trajectory probe MUST be a held-out (q, R). The earlier in-sample probe
+# (probe_q = q_train[0]) used the cell's own training row as its log-prob
+# trajectory probe, which would converge to a memorized response→marker
+# pairing rather than the generalizable "append the marker after ANY
+# natural response" mapping the experiment claims to measure. Held-out
+# Q + held-out R is the canonical remediation.
+LOCAL_HELD_OUT_QS = Path("data/issue_488/q_held_out_20.json")
+LOCAL_R_TEST_INHERITED = Path("data/issue_460/R_test.json")
+LOCAL_R_TEST_NEW = Path("data/issue_488/R_test_new.json")
+
+
+def _load_held_out_qs() -> list[str]:
+    """Load the 20-question held-out set Phase 0 pins."""
+    if not LOCAL_HELD_OUT_QS.exists():
+        raise FileNotFoundError(
+            f"{LOCAL_HELD_OUT_QS} missing — run `i488_phase0_generate_data.py` first."
+        )
+    payload = json.loads(LOCAL_HELD_OUT_QS.read_text())
+    qs = payload.get("questions")
+    if not isinstance(qs, list) or not qs:
+        raise AssertionError(f"{LOCAL_HELD_OUT_QS}: missing or empty 'questions' list.")
+    return qs
+
+
+def _load_R_test_inherited() -> dict[str, dict[str, dict]]:
+    """Load #460 R_test (inherited A/B/C/D cids × Q_test_extended_50)."""
+    if not LOCAL_R_TEST_INHERITED.exists():
+        # Pull from HF data repo to mirror _load_R_inherited's fallback path.
+        from huggingface_hub import hf_hub_download
+
+        LOCAL_R_TEST_INHERITED.parent.mkdir(parents=True, exist_ok=True)
+        downloaded = hf_hub_download(
+            repo_id=I460_HF_DATA_REPO,
+            repo_type="dataset",
+            filename=f"{HF_R_PATH_PREFIX}/R_test.json",
+            revision="main",
+        )
+        import shutil
+
+        shutil.copyfile(downloaded, LOCAL_R_TEST_INHERITED)
+    payload = json.loads(LOCAL_R_TEST_INHERITED.read_text())
+    if payload.get("schema_version") != "i460_v1":
+        raise AssertionError(
+            f"{LOCAL_R_TEST_INHERITED}: schema_version={payload.get('schema_version')!r}, "
+            "expected 'i460_v1'."
+        )
+    return payload["completions"]
+
+
+def _load_R_test_new() -> dict[str, dict[str, dict]]:
+    """Load #488 Phase-0 R_test_new (new E/F/G cids × Q_test_extended_50)."""
+    if not LOCAL_R_TEST_NEW.exists():
+        raise FileNotFoundError(
+            f"{LOCAL_R_TEST_NEW} missing — run `i488_phase0_generate_data.py` first."
+        )
+    payload = json.loads(LOCAL_R_TEST_NEW.read_text())
+    if payload.get("schema_version") != "i488_v1":
+        raise AssertionError(
+            f"{LOCAL_R_TEST_NEW}: schema_version={payload.get('schema_version')!r}, "
+            "expected 'i488_v1'."
+        )
+    return payload["completions"]
+
+
+def _resolve_probe_R(
+    cid: str,
+    probe_q: str,
+    R_test_inherited: dict[str, dict[str, dict]],
+    R_test_new: dict[str, dict[str, dict]],
+) -> str:
+    """Return the held-out R for (cid, probe_q) from the appropriate R_test
+    cache. Inherited cids (A/B/C/D) → R_test_inherited; new cids (E/F/G) →
+    R_test_new. Raises a hard error rather than falling back to any
+    in-sample R, since the whole point of B3 is the probe MUST be disjoint
+    from the training set.
+    """
+    cache = R_test_inherited if cid in INHERITED_CIDS else R_test_new
+    block = cache.get(cid, {})
+    entry = block.get(probe_q)
+    if not entry or not entry.get("response_text"):
+        # Fall back to B1 (no-system default assistant) R_test at probe_q —
+        # always inherited, always present once #460 R_test has been pulled,
+        # and a base-default-context R is still held-out from THIS cell's
+        # q_train so the marker-leakage rule's disjoint-set requirement is
+        # met. The probe context (system prompt) is still T_source(probe_q);
+        # only the response text comes from B1.
+        b1_entry = R_test_inherited.get("B1", {}).get(probe_q)
+        if b1_entry and b1_entry.get("response_text"):
+            return b1_entry["response_text"]
+        raise AssertionError(
+            f"Held-out probe R missing for cid={cid!r} q={probe_q[:60]!r}; "
+            "neither cache covers this (probe, source) pair AND B1 R_test "
+            "is missing. Re-check Phase 0 outputs (R_test_new.json for new "
+            "cids, #460 R_test.json for inherited)."
+        )
+    return entry["response_text"]
+
+
 def _build_prompt_messages(cond, q: str, class_d_rewrites: dict) -> list[dict]:
     """Return the chat-message list for (cond, q) WITHOUT applying chat template.
 
@@ -622,6 +724,29 @@ def main(argv: list[str] | None = None) -> int:
     if len(q_train) != 30:
         raise AssertionError(f"Expected 30 Q_train, got {len(q_train)}")
 
+    # .claude/rules/marker-leakage-measurement.md + #432→#456: the WandB
+    # trajectory probe MUST be a held-out (q, R), disjoint from q_train.
+    # Round-7 used `probe_q = q_train[0]` (in-sample); this round resolves
+    # the probe from Phase 0's pinned held-out set and the matching R_test
+    # cache (inherited #460 R_test for A/B/C/D cids, #488 R_test_new for
+    # E/F/G cids). Loaded once outside the (cid, seed) loop since (probe_q,
+    # caches) are reused for every cell — only the per-cid prompt context
+    # changes.
+    held_out_qs = _load_held_out_qs()
+    probe_q = held_out_qs[0]
+    if probe_q in q_train:
+        raise AssertionError(
+            "marker-leakage rule: held-out trajectory probe q must be "
+            f"disjoint from q_train (got probe_q ∈ q_train). probe_q={probe_q[:80]!r}"
+        )
+    R_test_inherited = _load_R_test_inherited()
+    R_test_new = _load_R_test_new() if needs_new else {}
+    logger.info(
+        "WandB trajectory probe: held-out probe_q=%s... (disjoint from %d q_train rows)",
+        probe_q[:60],
+        len(q_train),
+    )
+
     for cid in args.conds:
         cond = CONDITIONS_BY_ID[cid]
         for seed in args.seeds:
@@ -673,16 +798,26 @@ def main(argv: list[str] | None = None) -> int:
                 seed=seed,
             )
 
-            # v3 §0 + marker-leakage-measurement.md: log marker log-prob +
-            # emission trajectory to WandB. The probe is ONE held-out (q, R)
-            # under the source persona — same probe across the run so the
-            # per-cell trajectory is interpretable.
-            probe_q = q_train[0]
+            # v3 §0 + .claude/rules/marker-leakage-measurement.md + #432→#456:
+            # log marker log-prob + emission trajectory to WandB. The probe
+            # MUST be a held-out (q, R) — q drawn from Phase 0's pinned
+            # held-out set (disjoint from q_train by construction), R drawn
+            # from the matching R_test cache (inherited #460 R_test for
+            # A/B/C/D cids, #488 R_test_new for E/F/G; B1 R_test fallback
+            # for any miss). Round-7 used `probe_q = q_train[0]` + an
+            # in-sample R, which would converge to a memorized
+            # response→marker pairing rather than the generalizable "append
+            # the marker after ANY natural response" mapping the experiment
+            # claims to measure. The disjoint-set assert below is also
+            # re-checked per cell to catch any future drift.
+            assert probe_q not in q_train, (
+                "marker-leakage rule: probe must be held-out from q_train"
+            )
             probe_messages = _build_prompt_messages(cond, probe_q, class_d_rewrites)
             probe_prompt_text = tokenizer.apply_chat_template(
                 probe_messages, tokenize=False, add_generation_prompt=True
             )
-            probe_R = _R_for(cid, probe_q, R_all)
+            probe_R = _resolve_probe_R(cid, probe_q, R_test_inherited, R_test_new)
             trajectory_cb = MarkerTrajectoryWandbCallback(
                 tokenizer=tokenizer,
                 marker_text=MARKER_TEXT,

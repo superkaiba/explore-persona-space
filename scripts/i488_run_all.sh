@@ -5,7 +5,7 @@
 #   Phase 0:  generate base on-policy R for the 11 new conditions
 #   Phase 1:  base-model predictors (JS, KL, cosine, stylization)
 #   Phase 2:  smoke calibrate (label-mask audit + in-band fracs + saturation + EOS-grad)
-#   Phase 3:  sweep train (27 conds × 2 seeds × picked-3 fracs)  [PHASE 2/3 UNIFIED]
+#   Phase 3:  sweep train (27 conds × 2 seeds × 6 fracs)  [PHASE 2/3 UNIFIED]
 #   Phase 4:  on-policy emission + ΔG eval
 #   Phase 5:  analysis (partial ρ + cluster bootstrap)
 #   Phase 6:  figures
@@ -89,15 +89,42 @@ bash scripts/i488_phase4_dispatch.sh
 echo "[phase=phase4_dispatch] ok"
 
 # ── Phase 5 ──
+# Plan v3 §6.1: Phase 5 exits non-zero (and writes
+# /workspace/logs/issue-488-phase5-no-inband.json) when the ρ-blind picker
+# finds no eligible frac in the production set for any required seed. We
+# MUST propagate that exit code rather than silently advance to figures
+# (the pre-v3 silent-advance behaviour would let make_figures fall back to
+# "middle-of-fracs" — a publishable headline panel from an arbitrary frac
+# the picker explicitly rejected). `set -e` would handle this implicitly,
+# but capture the exit code explicitly so the log/sentinel reference is
+# unambiguous.
 echo "[phase=phase5] $(date -Iseconds)"
+set +e
 uv run python scripts/i488_phase5_analyze.py \
     > "$LOG_DIR/phase5.log" 2>&1
+PHASE5_RC=$?
+set -e
+if [ "$PHASE5_RC" -ne 0 ]; then
+    echo "[phase=failed] phase5 exit=$PHASE5_RC (see $LOG_DIR/phase5.log and /workspace/logs/issue-488-phase5-no-inband.json if present)" >&2
+    exit "$PHASE5_RC"
+fi
 echo "[phase=phase5] ok"
 
 # ── Phase 6 (figures) ──
+# v3 §6.1: figures script also exits non-zero if `picked_headline_frac.json`
+# exists but reports no eligible frac for --picked-seed. Belt-and-braces vs
+# Phase 5's exit code — if Phase 5 passes but a seed becomes ineligible
+# under a re-run, the figures gate still catches it.
 echo "[phase=phase6_figures] $(date -Iseconds)"
+set +e
 uv run python scripts/i488_make_figures.py \
     > "$LOG_DIR/phase6.log" 2>&1
+PHASE6_RC=$?
+set -e
+if [ "$PHASE6_RC" -ne 0 ]; then
+    echo "[phase=failed] phase6 exit=$PHASE6_RC (see $LOG_DIR/phase6.log)" >&2
+    exit "$PHASE6_RC"
+fi
 echo "[phase=phase6_figures] ok"
 
 write_final_sentinel

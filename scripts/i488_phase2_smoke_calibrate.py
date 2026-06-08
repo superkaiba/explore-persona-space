@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002, RUF003
+# ruff: noqa: RUF001, RUF002, RUF003
 """Issue #488 Phase 2 — smoke calibrate (gates only; production trains all 6 fracs).
 
 Plan v3 §7 (replaces v2). Runs A1 (helpful assistant) and G2 (skeptical
@@ -567,25 +567,35 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch + g
         return logp, R_text
 
     # ── Gate 2': on-diag log-prob shift at frac=3.00 for each cell ──
-    # Plus the v3 free addition: a noise-distribution measurement using
-    # base-only forwards (no LoRA loaded) at frac=0.00 on the same probes.
+    # Plus the v3 free addition: a dispersion measurement using
+    # base-only forwards (no LoRA loaded) on the smoke probes.
+    #
+    # CAVEAT (round-1 code-review Major / round-8 C1): the dispersion we
+    # capture here is the BETWEEN-PROMPT standard deviation of base
+    # log P(' ※') across n=2 held-out probes per smoke cell — i.e.,
+    # prompt-to-prompt variability of the base model, NOT a Δlogp noise
+    # floor under a null. A genuine Δlogp noise floor would require
+    # SAME-prompt repeats of trained − base (e.g. a 0-step / freshly-init
+    # LoRA whose Δ ≡ 0 by construction, with SD across probes the
+    # measurement noise floor). The "tighten_gate2" derived signal here is
+    # therefore an ADVISORY indicator of high prompt-to-prompt dispersion,
+    # not evidence that Gate 2's +0.2-nat threshold sits inside noise.
+    # JSON keys are named to reflect what is actually measured so a future
+    # reader doesn't conflate it with a Δ noise floor.
     logprob_shift_payload: dict = {
         "gate_version": "v3",
         "probe_frac": GATE_PROBE_FRAC,
         "min_shift_nats": GATE2_LOGPROB_SHIFT_MIN_NATS,
         "cells": {},
-        "noise_distribution_base_only": {},
+        "between_prompt_base_logp_sd": {},
     }
 
-    # Base-only noise distribution: take 2 probes per smoke cell, compute the
-    # base log-prob at the on-diag post-response slot. Since the trained
-    # forward at frac=0.00 IS the base model (no LoRA), the "Δ" is mechanically
-    # zero per probe; the noise floor we report is the PER-PROBE STANDARD
-    # DEVIATION of base log-prob across the probes (a Δ would be base − base
-    # under different random sampling — we sample a single deterministic
-    # forward per probe, so the per-probe variance is the proxy for "noise
-    # the gate must clear" since the same dispersion applies to trained −
-    # base via independent forwards).
+    # Between-prompt base-logp dispersion: take 2 probes per smoke cell,
+    # compute the base log-prob at the on-diag post-response slot. The
+    # trained forward at frac=0.00 IS the base model (no LoRA), so the "Δ"
+    # is mechanically zero per probe; what we report is the BETWEEN-PROMPT
+    # SD of base log P(' ※') across probes (NOT a Δlogp noise floor — see
+    # caveat block above).
     noise_logps: list[float] = []
     for cid in SMOKE_CELLS:
         for probe_q in held_out_probe[: min(2, len(held_out_probe))]:
@@ -594,7 +604,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch + g
                 noise_logps.append(logp)
             except Exception as e:
                 logger.warning(
-                    "Noise-floor base probe failed for %s q=%s: %s", cid, probe_q[:40], e
+                    "Between-prompt base-logp probe failed for %s q=%s: %s",
+                    cid,
+                    probe_q[:40],
+                    e,
                 )
     if noise_logps:
         noise_mean = float(np.mean(noise_logps))
@@ -604,19 +617,31 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch + g
         )
     else:
         noise_mean = noise_sd = noise_range = float("nan")
-    logprob_shift_payload["noise_distribution_base_only"] = {
+    logprob_shift_payload["between_prompt_base_logp_sd"] = {
         "n_probes": len(noise_logps),
         "logps": noise_logps,
         "mean": noise_mean,
         "sd": noise_sd,
         "range": noise_range,
         "tighten_threshold_nats": GATE2_NOISE_TIGHTEN_THRESHOLD_NATS,
-        "operator_should_tighten_gate2": noise_sd >= GATE2_NOISE_TIGHTEN_THRESHOLD_NATS
-        if not np.isnan(noise_sd)
-        else False,
+        # Advisory ONLY: high prompt-to-prompt dispersion of base log-prob
+        # is suggestive that Gate 2's +0.2-nat threshold may be tight
+        # relative to ambient base variability, but is NOT a Δlogp noise
+        # measurement. The operator should NOT auto-tighten Gate 2 from
+        # this signal; treat as a flag to inspect cell-level Δs.
+        "operator_advisory_between_prompt_dispersion_high": (
+            noise_sd >= GATE2_NOISE_TIGHTEN_THRESHOLD_NATS if not np.isnan(noise_sd) else False
+        ),
+        "_caveat": (
+            "Between-prompt SD of base log P(' ※'), not Δlogp noise floor. "
+            "A genuine Δ noise floor needs same-prompt repeats of trained − "
+            "base (e.g. against a 0-step LoRA); this is prompt-to-prompt "
+            "dispersion of the base model only."
+        ),
     }
     logger.info(
-        "Gate 2' noise floor (base-only): n=%d mean=%.4f sd=%.4f range=%.4f",
+        "Gate 2' between-prompt base-logp dispersion: n=%d mean=%.4f sd=%.4f range=%.4f "
+        "(advisory; NOT a Δlogp noise floor)",
         len(noise_logps),
         noise_mean,
         noise_sd,

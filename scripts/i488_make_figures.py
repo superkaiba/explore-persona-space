@@ -370,12 +370,20 @@ def main(argv: list[str] | None = None) -> int:
     # v3 §6.3: read the ρ-blind post-hoc picker output to drive the
     # picked-frac figure annotations (Hero #2 + Hero #3). Each seed gets
     # its own picked frac under v3 §6.2.D.
+    #
+    # v3 §6.1 contract: if `picked_headline_frac.json` exists AND the
+    # picker reports no eligible frac for the requested --picked-seed, the
+    # figures script MUST REFUSE to render and exit non-zero. The pre-v3
+    # "middle-of-fracs" silent fallback would publish a headline panel
+    # from an arbitrary frac the picker explicitly rejected — that is the
+    # exact production_no_inband_frac failure mode the recovery path
+    # exists to prevent.
     picker_path = ANALYSIS_DIR / "picked_headline_frac.json"
     picked_frac_per_seed: dict = {}
     if picker_path.exists():
         picker_payload = json.loads(picker_path.read_text())
         picked_frac_per_seed = picker_payload.get("results", {})
-        # Fallback for --picked-frac: use seed42's picker verdict if not given.
+        # Auto-set --picked-frac from the picker's per-seed verdict.
         if args.picked_frac is None:
             seed_key = f"seed{args.picked_seed}"
             v = picked_frac_per_seed.get(seed_key) or {}
@@ -386,18 +394,33 @@ def main(argv: list[str] | None = None) -> int:
                     args.picked_seed,
                     args.picked_frac,
                 )
+            else:
+                # Picker ran and explicitly rejected every frac for this
+                # seed. REFUSE to render — silent fallback to an arbitrary
+                # frac would defeat v3 §6.1.
+                logger.error(
+                    "Picker rejected every frac for seed=%d (eligibility=%s). "
+                    "v3 §6.1 contract: figures REFUSE to render in this case. "
+                    "Re-grid the production frac set or revise the in-band "
+                    "criteria before re-running Phase 5 + Phase 6.",
+                    args.picked_seed,
+                    v.get("eligibility", []),
+                )
+                return 4
     else:
         picker_payload = None
-
-    # If still None, fall back to the middle of the trained fracs (pre-v3
-    # behaviour, for back-compat when the picker hasn't run yet).
-    if args.picked_frac is None:
-        args.picked_frac = headline["fracs"][len(headline["fracs"]) // 2]
-        logger.warning(
-            "Picker output absent or returned no eligible frac; using "
-            "middle-of-fracs fallback (%s) for the scatter / diagonal panels.",
-            args.picked_frac,
-        )
+        if args.picked_frac is None:
+            # Picker output absent AND no explicit --picked-frac given. Per
+            # v3 §6.1 + §6.2.D this would only happen if Phase 5 was never
+            # run — which is itself a pipeline error, not a "use middle of
+            # fracs" situation. Fail loud rather than guess.
+            logger.error(
+                "Picker output (%s) missing and --picked-frac not supplied. "
+                "Run Phase 5 first, or pass --picked-frac explicitly. The "
+                "pre-v3 middle-of-fracs fallback has been removed (v3 §6.1).",
+                picker_path,
+            )
+            return 4
     logger.info("Picked frac=%s seed=%d", args.picked_frac, args.picked_seed)
 
     if args.dry_run:
