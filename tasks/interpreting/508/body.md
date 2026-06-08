@@ -1,5 +1,7 @@
 ---
-title: 'LoRA vs full fine-tuning: does marker leakage to bystander personas differ?'
+title: Full fine-tuning runs off a cliff into whole-response marker collapse where
+  LoRA scales smoothly — but where the two can be matched on source-implant rate they
+  leak the same (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-07T01:41:33Z'
