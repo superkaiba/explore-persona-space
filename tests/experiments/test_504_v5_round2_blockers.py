@@ -506,3 +506,258 @@ def test_blocker_d_bisection_writes_v4_bisection_pick_path():
         "dispatcher — both the writer (_run_v4_phase0_bisection) and the "
         "reader (_select_active_phase0_pick) need to agree on this filename."
     )
+
+
+# ── Blocker E (round-3): bisection picker writes chosen_epochs=2 ─────────────
+
+
+def _synthetic_v4_bisection_trajectory(
+    *,
+    fracs: tuple[float, ...] = (0.04, 0.08, 0.12, 0.16),
+    in_band_frac: float = 0.12,
+) -> dict:
+    """Build a synthetic trajectory whose ONE in-band fraction is `in_band_frac`.
+
+    The bystander-resolution picker (`pick_anchor_v4_bystander_resolution`)
+    expects checkpoints[*].held_out shape
+        ``{persona: {q: {"g_logp": float, "b_logp": float, "delta_g": float}}}``
+    and counts a leaf in-band when delta_g ≥ +0.5 AND g_logp ≤ log(0.9) ≈
+    -0.105 nats.
+
+    We construct two held-out personas x 10 questions = 20 leaves per
+    checkpoint. At `in_band_frac`, EVERY leaf is in-band (resolution=1.0,
+    distance to 0.5 midpoint = 0.5). At every OTHER fraction, every leaf is
+    saturated (g_logp >> -0.105, in-band fails). So the picker MUST pick
+    `in_band_frac` regardless of the tie-break order.
+    """
+    checkpoints: list[dict] = []
+    for frac in fracs:
+        if frac == in_band_frac:
+            # in-band: g_logp = -0.5 (below ceiling), delta_g = +1.0 (above floor)
+            held_leaf = {"g_logp": -0.5, "b_logp": -1.5, "delta_g": 1.0}
+        else:
+            # saturated: g_logp = -0.01 (above ceiling), delta_g = +5.0
+            held_leaf = {"g_logp": -0.01, "b_logp": -5.0, "delta_g": 4.99}
+        held_out = {
+            f"bystander_{p}": {f"q{i}": dict(held_leaf) for i in range(10)} for p in range(2)
+        }
+        checkpoints.append(
+            {
+                "frac": frac,
+                "step": round(frac * 50),  # EPOCHS=2 x 25 steps/epoch
+                "source_self": {
+                    "delta_g_mean": 8.0,
+                    "emission_p": 0.6,
+                },
+                "held_out": held_out,
+            }
+        )
+    return {
+        "cell": "c504v4_bisection_eps2_reread",
+        "seed": 42,
+        "source": "villain",
+        "checkpoints": checkpoints,
+    }
+
+
+def test_blocker_e_picker_round_trip_writes_chosen_epochs_2_for_bisection(tmp_path):
+    """Round-3 blocker E: the v4 picker, invoked with chosen_epochs=2,
+    writes chosen_epochs=2 AND chosen_checkpoint_steps = round(frac * 50)
+    into the bisection artifact.
+
+    This test round-trips through the REAL picker function (not stubbing
+    the subprocess) so a future regression in either the CLI-arg wiring or
+    the step-formula would fail here, not just at runtime on the pod. The
+    Claude reviewer's specific round-2 ask was: 'add a unit test that
+    round-trips through the real picker, not a mocked subprocess.'
+    """
+    from explore_persona_space.experiments.contrastive_neg_geometry_504.phase0 import (
+        pick_anchor_v4_bystander_resolution,
+        write_phase0_v4_artifact,
+    )
+
+    trajectory = _synthetic_v4_bisection_trajectory(in_band_frac=0.12)
+    pick = pick_anchor_v4_bystander_resolution(
+        trajectory,
+        source="villain",
+        fixed_lr=1e-4,
+        chosen_epochs=2,  # ← the bisection-path threading
+    )
+    out_path = tmp_path / "phase0_calibration_v4_bisection.json"
+    write_phase0_v4_artifact(pick, out_path)
+
+    on_disk = json.loads(out_path.read_text())
+    assert on_disk["verdict"] == "pass", on_disk
+    assert on_disk["chosen_epochs"] == 2, (
+        f"Bisection picker must record chosen_epochs=2 (the recipe it actually "
+        f"trained); got {on_disk['chosen_epochs']}. If this fails, downstream "
+        f"Phase 1 will train all 5 main arms at EPOCHS=3 on a chosen_frac "
+        f"picked from an EPOCHS=2 trajectory — a 24 GPU-h headline recipe "
+        f"mismatch (round-3 blocker E)."
+    )
+    assert on_disk["anchor_epochs"] == 2, on_disk
+    assert on_disk["chosen_checkpoint_fraction"] == pytest.approx(0.12), on_disk
+    # steps_per_epoch = 25 (400 rows / effective batch 16); chosen_epochs = 2.
+    # → expected_steps = round(0.12 * 25 * 2) = round(6.0) = 6.
+    expected_steps = round(0.12 * 25 * 2)
+    assert on_disk["chosen_checkpoint_steps"] == expected_steps, (
+        f"chosen_checkpoint_steps must equal round(chosen_frac * 25 * "
+        f"chosen_epochs); got {on_disk['chosen_checkpoint_steps']}, expected "
+        f"{expected_steps} for frac=0.12, EPOCHS=2."
+    )
+
+
+def test_blocker_e_picker_round_trip_writes_chosen_epochs_3_for_primary(tmp_path):
+    """The default `--chosen-epochs 3` (primary v4 path) still works — the
+    new CLI arg must not regress the primary anchor path."""
+    from explore_persona_space.experiments.contrastive_neg_geometry_504.phase0 import (
+        pick_anchor_v4_bystander_resolution,
+        write_phase0_v4_artifact,
+    )
+
+    # Primary path uses fracs (0.08, 0.12, 0.20, 0.40, 0.60, 1.00) typically;
+    # we just need an in-band fraction at 0.40 to exercise the EPOCHS=3
+    # step-formula path.
+    trajectory = _synthetic_v4_bisection_trajectory(
+        fracs=(0.08, 0.20, 0.40, 0.60),
+        in_band_frac=0.40,
+    )
+    pick = pick_anchor_v4_bystander_resolution(
+        trajectory,
+        source="villain",
+        fixed_lr=1e-4,
+        chosen_epochs=3,
+    )
+    out_path = tmp_path / "phase0_calibration_v4.json"
+    write_phase0_v4_artifact(pick, out_path)
+
+    on_disk = json.loads(out_path.read_text())
+    assert on_disk["chosen_epochs"] == 3
+    expected_steps = round(0.40 * 25 * 3)  # = 30
+    assert on_disk["chosen_checkpoint_steps"] == expected_steps, on_disk
+
+
+def test_blocker_e_picker_cli_rejects_unsupported_chosen_epochs(tmp_path, monkeypatch):
+    """The picker CLI clamps --chosen-epochs to {2, 3}; other values raise.
+
+    Both for an inadvertent --chosen-epochs 1 (EPOCHS=1 was the v2 anchor;
+    v4 doesn't support it) and for any number outside the supported set.
+    """
+    from importlib import reload
+
+    # Build a minimal v4 trajectory so the picker has something to read.
+    trajectory = _synthetic_v4_bisection_trajectory(in_band_frac=0.12)
+    traj_path = tmp_path / "trajectory.json"
+    traj_path.write_text(json.dumps(trajectory))
+
+    # Drive the picker through main() via argv.
+    import scripts.i504_phase_phase0_pick as picker_mod
+
+    reload(picker_mod)
+
+    out_path = tmp_path / "out.json"
+    argv = [
+        "--mode",
+        "v4",
+        "--slab-root",
+        str(tmp_path),
+        "--out-path",
+        str(out_path),
+        "--v4-trajectory-path",
+        str(traj_path),
+        "--source",
+        "villain",
+        "--chosen-epochs",
+        "1",  # ← unsupported
+    ]
+    with pytest.raises(ValueError, match=r"--chosen-epochs must be 2"):
+        picker_mod.main(argv)
+
+
+def test_blocker_e_dispatcher_threads_chosen_epochs_to_picker():
+    """AST-level check: the dispatcher's bisection handler passes
+    ``--chosen-epochs 2`` into the picker CLI command. This pins the wiring
+    against a future copy-paste regression.
+    """
+    import re
+
+    dispatch_py = Path(__file__).resolve().parents[2] / "scripts" / "dispatch_neg_geometry_504.py"
+    text = dispatch_py.read_text()
+
+    # Locate the bisection handler's pick_cmd block.
+    start = text.find("def _run_v4_phase0_bisection(")
+    assert start >= 0, "bisection handler missing from dispatcher"
+    end = text.find("\ndef ", start + 1)
+    body = text[start:end] if end > 0 else text[start:]
+
+    # The pick_cmd list must include "--chosen-epochs" followed by "2".
+    # We match the two-line sequence pattern (CLI list literal).
+    pattern = re.compile(r'"--chosen-epochs"\s*,\s*\n?\s*"2"')
+    assert pattern.search(body), (
+        "Bisection handler must thread --chosen-epochs 2 to the v4 picker "
+        "(round-3 blocker E). Found bisection body but no '--chosen-epochs 2' "
+        "in the pick_cmd list literal."
+    )
+
+
+def test_blocker_codex_bisection_trigger_gates_on_no_in_band_anchor(tmp_path):
+    """Codex concern: bisection trigger is restricted to
+    ``verdict=='no_in_band_anchor'`` per plan v5 §4.1 step 6. Any other
+    non-pass verdict raises a RuntimeError instead of consuming the
+    ~0.6 GPU-h budget.
+
+    We synthesize a primary_pick artifact with a hypothetical
+    `verdict='other_fallback'` and invoke `_run_v4_phase0_bisection` directly;
+    the handler must raise before any training step.
+    """
+    import argparse
+
+    from scripts.dispatch_neg_geometry_504 import _run_v4_phase0_bisection
+
+    args = argparse.Namespace()
+    args.slab_root = tmp_path
+    args.runs_root = tmp_path / "runs"
+    args.runs_root.mkdir(exist_ok=True)
+    args.bank_path = tmp_path / "bank.json"
+    args.centroids_dir = tmp_path / "centroids"
+    args.r_train_path = tmp_path / "r_train.json"
+    args.r_eval_path = tmp_path / "r_eval.json"
+    args.source = "villain"
+    args.cells = None
+    args.n_gpus = 1
+    args.max_parallel = 1
+    args.smoke = False
+    args.no_kl = False
+    args.report_to = "none"
+    args.fixed_lr = 1e-4
+    args.hf_path_suffix = ""
+
+    # Write a primary pick with an unexpected non-pass verdict.
+    primary = tmp_path / "phase0_calibration_v4.json"
+    primary.write_text(
+        json.dumps(
+            {
+                "version": 4,
+                "verdict": "other_fallback",
+                "fallback_triggered": True,
+                "fallback_reason": "hypothetical_other_fallback",
+                "chosen_epochs": 3,
+                "chosen_lr": 1e-4,
+                "chosen_rank": 8,
+                "chosen_alpha": 32,
+                "chosen_checkpoint_fraction": None,
+            }
+        )
+    )
+
+    arm_to_n_json = tmp_path / "arm_to_n.json"
+    arm_to_n_json.write_text("{}")
+
+    with pytest.raises(RuntimeError, match=r"v4_bisection_unexpected_verdict"):
+        _run_v4_phase0_bisection(
+            args=args,
+            phase_summaries={},
+            arm_to_n_json=arm_to_n_json,
+            max_new_tokens_eval=2048,
+            max_model_len_eval=2560,
+        )
