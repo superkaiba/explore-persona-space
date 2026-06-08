@@ -335,12 +335,17 @@ def build_rows(
                 "in_emit_band": bool(in_emit_band),
             }
             per_cell_diag.append(diag_entry)
-            if not (in_dg_band and in_emit_band):
+            # v5 fix #2 (epm:user-directive 2026-06-08): DROP the source-emission gate.
+            # The source SHOULD saturate emission — it IS the implant. The bystander-
+            # resolution gate (Phase 0) replaces it. Cells are now excluded ONLY when
+            # source ΔG is out of [5, 12] nats. `in_emit_band` is still computed for
+            # diagnostic reporting but does not gate inclusion.
+            if not in_dg_band:
                 excluded.append(
                     {
                         "cell": cell,
                         "seed": seed,
-                        "reason": f"out_of_band (dg={source_dg:.2f} emit={source_emit:.2f})",
+                        "reason": f"out_of_dg_band (dg={source_dg:.2f}, emit={source_emit:.2f} unused-per-fix#2)",
                     }
                 )
                 continue
@@ -729,7 +734,7 @@ def run_phase2_analysis(
     n_excluded = len(pooled["excluded_cells"])
     if n_excluded > 1:
         notes.append(
-            f"{n_excluded} (cell × seed) excluded for out-of-band source ΔG/emission at "
+            f"{n_excluded} (cell × seed) excluded for out-of-band source ΔG (emission gate dropped per v5 fix #2) at "
             f"chosen_frac={chosen_frac} — Indeterminate (anchor unstable across arms)."
         )
     if fit.get("collinearity_warnings"):
