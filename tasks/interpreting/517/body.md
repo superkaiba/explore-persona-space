@@ -5,7 +5,7 @@ kind: experiment
 tags:
 - roadmap-jun05
 created_at: '2026-06-08T07:11:56Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 498
 goal: 'Measure untrained Qwen-2.5-7B-Instruct (no LoRA) scores on the three #498 per-trait
   rubrics under the identical eval rig, to determine whether the #498 in-scenario
