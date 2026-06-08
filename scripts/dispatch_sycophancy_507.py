@@ -510,8 +510,30 @@ def phase1_train_cell(
 # ── Phase 2: eval (one cell) — subprocess-isolated for vLLM teardown safety ──
 
 
+def _phase2_tp_72b() -> int:
+    """vLLM tensor-parallel size for the 72B eval phases.
+
+    Default = 8 (plan v2 §10, the 8xH100 inf-70b supply-fallback path). The
+    `EPM_PHASE2_TP_72B` env var overrides for the 4xH200 supply-constraint
+    path the experimenter is forced onto when 8xH100 is account-cap-blocked
+    (2026-06-08 incident: $80/hr RunPod cap left only ~$22/hr headroom). TP=4
+    fits cleanly on 4xH200 (564 GB total HBM, ~36 GB weights/shard, ~100 GB
+    activation headroom).
+    """
+    raw = os.environ.get("EPM_PHASE2_TP_72B")
+    if raw is None:
+        return 8
+    try:
+        tp = int(raw)
+    except ValueError as exc:
+        raise ValueError(f"EPM_PHASE2_TP_72B must be int, got {raw!r}") from exc
+    if tp not in (4, 8):
+        raise ValueError(f"EPM_PHASE2_TP_72B must be 4 or 8, got {tp}")
+    return tp
+
+
 def phase2_eval_cell(*, source: str, seed: int, adapter_path: Path) -> Path:
-    """vLLM eval one trained cell at TP=8. Subprocess-isolated."""
+    """vLLM eval one trained cell at TP={4,8} per EPM_PHASE2_TP_72B. Subprocess-isolated."""
     _log_phase("eval")
     eval_out_dir = SLAB_ROOT / source / f"seed_{seed}"
     eval_out_dir.mkdir(parents=True, exist_ok=True)
@@ -534,6 +556,8 @@ def phase2_eval_cell(*, source: str, seed: int, adapter_path: Path) -> Path:
         str(eval_out_dir),
         "--sentinel-path",
         str(sentinel_path),
+        "--tensor-parallel-size",
+        str(_phase2_tp_72b()),
     ]
     _run_subprocess(cmd, label=f"phase2 eval {source}")
     return eval_out_dir
@@ -543,7 +567,8 @@ def phase2_base_panel(*, seed: int) -> Path:
     """Phase 1.5 (named Phase 2-base here for ordering): base 72B panel pass + judge.
 
     Required for the smoke gate's source-self own-rate vs base comparison and
-    for the full predictor regression's base-rate null.
+    for the full predictor regression's base-rate null. TP from
+    `EPM_PHASE2_TP_72B` (default 8; 4 for the 4xH200 supply-fallback).
     """
     _log_phase("base_panel")
     base_out_dir = SLAB_ROOT / "base" / f"seed_{seed}"
@@ -567,6 +592,8 @@ def phase2_base_panel(*, seed: int) -> Path:
         str(base_out_dir),
         "--sentinel-path",
         str(sentinel_path),
+        "--tensor-parallel-size",
+        str(_phase2_tp_72b()),
     ]
     _run_subprocess(cmd, label="phase2-base eval")
     return base_out_dir
