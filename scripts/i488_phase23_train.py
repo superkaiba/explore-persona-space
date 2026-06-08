@@ -262,6 +262,113 @@ def _R_for(cid: str, q: str, R_all: dict[str, dict[str, dict]]) -> str:
     return R_all[cid][q]["response_text"]
 
 
+# Round-10 v3 (B2 fix): contrastive-negatives.md ("Composition + ratio") requires
+# AT LEAST the bare default assistant (B1) in the negative pool, since leakage to
+# the default context is the safety target (open-q 3.7). The naive
+# ``rng.shuffle(neg_rows) → neg_rows[:75]`` clip drops B1 in ~4-5 of 52 production
+# cells (reconciler RNG replay), which would partially confound Gate 4
+# (A1→B1 leakage measurement, plan v2 §7). Stratified clip below guarantees B1
+# survives.
+REQUIRED_NEGATIVE_CIDS: tuple[str, ...] = ("B1",)
+
+
+def _stratified_neg_clip(
+    neg_rows: list[dict],
+    neg_target_cids: list[str],
+    max_rows: int,
+    required_cids: tuple[str, ...],
+    cond_source_cid: str,
+) -> tuple[list[dict], list[str]]:
+    """Clip a parallel (neg_rows, neg_target_cids) pair to ``max_rows`` while
+    guaranteeing that any cid in ``required_cids`` that appears in the input
+    survives the clip (≥1 row each).
+
+    Inputs are assumed already shuffled together (see caller). The clip
+    preserves the shuffled order within each bucket so determinism is
+    unaffected.
+
+    Edge cases:
+      * If ``cond_source_cid`` is itself in ``required_cids``, that cid is
+        skipped (the source can't be a negative against itself; this is the
+        ``cond_source == B1`` case where the contrastive-negatives.md minimum
+        is vacuously satisfied — see _build_training_rows docstring).
+      * If a required cid has 0 rows in the input (would only happen if the
+        source's negative pool excluded it by construction, which is the
+        case above), it is skipped silently.
+      * If ``len(neg_rows) <= max_rows``, the input is returned unchanged.
+
+    Returns:
+        (kept_rows, kept_target_cids) with len <= max_rows and the required
+        cids all present (when their input row count > 0 and they ≠
+        cond_source_cid).
+    """
+    if max_rows <= 0:
+        raise ValueError(f"_stratified_neg_clip: max_rows must be > 0, got {max_rows}")
+    if len(neg_rows) != len(neg_target_cids):
+        raise AssertionError(
+            f"_stratified_neg_clip: row/cid length mismatch ({len(neg_rows)} vs "
+            f"{len(neg_target_cids)})"
+        )
+    if len(neg_rows) <= max_rows:
+        return list(neg_rows), list(neg_target_cids)
+
+    # Effective required set = required_cids minus the source (which can't be
+    # a negative against itself) minus any cid absent from neg_target_cids.
+    present_cids = set(neg_target_cids)
+    effective_required = [
+        cid for cid in required_cids if cid != cond_source_cid and cid in present_cids
+    ]
+
+    # Two passes over the parallel arrays: first take 1 row per effective
+    # required cid (the first row in shuffled order whose cid matches), then
+    # fill the remainder from the rest in shuffled order.
+    kept_rows: list[dict] = []
+    kept_cids: list[str] = []
+    taken_indices: set[int] = set()
+
+    required_remaining = set(effective_required)
+    for i, cid in enumerate(neg_target_cids):
+        if cid in required_remaining:
+            kept_rows.append(neg_rows[i])
+            kept_cids.append(cid)
+            taken_indices.add(i)
+            required_remaining.discard(cid)
+            if not required_remaining:
+                break
+
+    if required_remaining:
+        # Should be impossible given the present_cids check above, but be loud
+        # rather than silently dropping the guarantee.
+        raise AssertionError(
+            f"_stratified_neg_clip: required cids missing after first pass: "
+            f"{sorted(required_remaining)} (effective_required={effective_required}, "
+            f"cond_source_cid={cond_source_cid!r})"
+        )
+
+    # Fill the rest in shuffled order, skipping the already-taken indices.
+    for i, (row, cid) in enumerate(zip(neg_rows, neg_target_cids, strict=True)):
+        if len(kept_rows) >= max_rows:
+            break
+        if i in taken_indices:
+            continue
+        kept_rows.append(row)
+        kept_cids.append(cid)
+
+    # Final post-condition: every effective required cid appears at least
+    # once. Re-checked here so any future edit to the two-pass logic above
+    # gets caught.
+    kept_cid_set = set(kept_cids)
+    for cid in effective_required:
+        if cid not in kept_cid_set:
+            raise AssertionError(
+                f"_stratified_neg_clip post-condition: required cid {cid!r} "
+                f"absent after clip (cond_source_cid={cond_source_cid!r}, "
+                f"max_rows={max_rows}, kept_cids_count={len(kept_cids)})"
+            )
+
+    return kept_rows, kept_cids
+
+
 def _build_training_rows(
     cond_source,
     seed: int,
@@ -293,6 +400,13 @@ def _build_training_rows(
     Path A descope path: positives + negatives are each clipped to 75 (plan
     v2 §8 line 351) while leaving the per-q distribution roughly uniform.
 
+    Round-10 v3 (B2): the negative clip is STRATIFIED. Any cid in
+    ``REQUIRED_NEGATIVE_CIDS`` that appears in the pre-clip negatives is
+    guaranteed ≥1 row in the post-clip set (contrastive-negatives.md
+    "Composition + ratio" minimum). The 2-4-persona-span requirement comes
+    free from the natural round-robin distribution (the source pool is 26
+    other cids, so post-clip will span ~20+ cids regardless).
+
     Returns:
         (jsonl_path, n_positive_rows, n_negative_rows)
     """
@@ -303,6 +417,11 @@ def _build_training_rows(
     # independently (round-10 Path A descope path: 75/side instead of 150).
     pos_rows: list[dict] = []
     neg_rows: list[dict] = []
+    # Parallel list of the source cid for each row in ``neg_rows``. Tagged at
+    # construction time (cheap) so the stratified clip below doesn't have to
+    # re-parse the system prompt to recover the persona identity. Kept off
+    # the row dict so it never leaks into the serialized JSONL.
+    neg_target_cids: list[str] = []
 
     # Positives: 30 × n_dupes per source.
     for q in q_train:
@@ -332,15 +451,28 @@ def _build_training_rows(
                 "completion": [{"role": "assistant", "content": R_neg}],
             }
             neg_rows.append(neg_row)
+            neg_target_cids.append(other_cid)
 
     # Per-side shuffle THEN clip (so we keep a roughly uniform per-q
     # distribution after clipping). The shuffles are seeded by the same
     # per-(cid, seed) RNG so the clip is deterministic given the same args.
     rng.shuffle(pos_rows)
-    rng.shuffle(neg_rows)
+    # Shuffle neg_rows + neg_target_cids in lockstep so the parallel tagging
+    # survives the shuffle (the stratified clip below depends on it).
+    neg_paired = list(zip(neg_rows, neg_target_cids, strict=True))
+    rng.shuffle(neg_paired)
+    neg_rows = [r for r, _ in neg_paired]
+    neg_target_cids = [c for _, c in neg_paired]
+
     if max_rows_per_side is not None and max_rows_per_side > 0:
         pos_rows = pos_rows[:max_rows_per_side]
-        neg_rows = neg_rows[:max_rows_per_side]
+        neg_rows, neg_target_cids = _stratified_neg_clip(
+            neg_rows,
+            neg_target_cids,
+            max_rows_per_side,
+            REQUIRED_NEGATIVE_CIDS,
+            cond_source.cid,
+        )
 
     n_pos = len(pos_rows)
     n_neg = len(neg_rows)
@@ -848,6 +980,12 @@ def main(argv: list[str] | None = None) -> int:
                 grad_accum=4,
                 max_length=2048,
                 seed=seed,
+                # Round-10 v3 (B1 fix): plan v2 §11 specifies cosine schedule +
+                # warmup 0.03. The TrainLoraConfig default at sft.py:524 is
+                # 0.05; pin to plan-spec'd 0.03 explicitly. (Drift inherited
+                # from round-9; reconciler v3 flagged it as a plan-violation
+                # blocker.)
+                warmup_ratio=0.03,
                 run_name=f"i488_{cid}_seed{seed}",
                 report_to="wandb",
                 save_strategy="no",
