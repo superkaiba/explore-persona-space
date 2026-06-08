@@ -1881,6 +1881,24 @@ provision failure post `epm:pod-pending v1` with the error and stay at
 `running` (no implementer re-spawn — this is infra, not code). User
 adjusts (capacity, intent override) and re-runs `/issue <N>`.
 
+**Autonomous mode (`EPM_AUTONOMOUS_SESSION=1`) — `--wait-for-capacity`
+auto-enables.** `pod.py provision` reads `EPM_AUTONOMOUS_SESSION` itself
+and turns on the unbounded SUPPLY_CONSTRAINT retry loop (exponential
+backoff with full jitter, base 30s, cap 10 min, forever) — "the
+experiment should start when it has space," not park-for-user. The
+orchestrator should background the provision call (`Bash` with
+`run_in_background=true`) so its own turn isn't blocked, and ON
+periodic re-invocation (each bg-Bash output yield) it should scan the
+captured stderr for `[wait-for-capacity] attempt N, waited ...` lines
+and post one `epm:progress v1` marker per heartbeat (note:
+`"pod-provision waiting for capacity: attempt N, waited ..."`). This
+keeps `autonomous_session_watch.py` (6h stale-marker threshold) seeing
+liveness. On other (non-capacity) provision failures, fall through to
+the normal `epm:pod-pending v1` path. **Interactive sessions still fail
+fast** — `--wait-for-capacity` defaults OFF so a human running
+`pod.py provision` from a shell sees no-capacity immediately and can
+decide whether to wait, switch DC, or change GPU intent.
+
 The pod name passed downstream is `epm-issue-<N>` (or the parent's
 `epm-issue-<PARENT_ID>` for follow-ups). The experimenter does NOT pick
 or create pods.

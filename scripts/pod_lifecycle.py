@@ -45,10 +45,12 @@ import argparse
 import datetime as dt
 import json
 import os
+import random
 import re
 import socket
 import subprocess
 import sys
+import time
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
@@ -71,6 +73,7 @@ from pod_config import (  # noqa: E402
 from runpod_api import (  # noqa: E402
     PodInfo,
     RunPodError,
+    RunPodNoCapacityError,
     create_pod,
     current_account_hourly_burn,
     estimate_pod_hourly_rate,
@@ -659,6 +662,153 @@ def _is_supply_constraint(exc: Exception) -> bool:
     return any(marker in text for marker in _SUPPLY_CONSTRAINT_MARKERS)
 
 
+# ─── wait-for-capacity (unbounded) ───────────────────────────────────────────
+#
+# Policy layer that wraps the one-shot ``create_pod`` primitive in an UNBOUNDED
+# retry loop keyed on ``RunPodNoCapacityError`` only. Triggered when the
+# autonomous session asks for a pod and every supply lever returned null — the
+# correct behavior in autonomous mode is "the experiment should start when it
+# has space," NOT a park-for-user.
+#
+# Hard rules baked in:
+#
+# 1. NO CAP. No max-attempts, no max-wall-clock. Loops forever (or until SIGINT
+#    / SIGTERM). This is Thomas's explicit design choice — autonomous sessions
+#    should wait, not park.
+# 2. ONLY ``RunPodNoCapacityError`` is caught. Auth, bad config,
+#    transport-budget-exhausted, empty-gpu-list → those still propagate fast
+#    per the "fail fast — never hide failures" rule in CLAUDE.md.
+# 3. Backoff: exponential with full jitter — base 30s, doubling each attempt
+#    up to a 600s (10 min) ceiling, then steady-poll at the ceiling forever.
+#    Style matches :func:`runpod_api._backoff_sleep_secs` for consistency.
+# 4. KeyboardInterrupt propagates so the operator can Ctrl-C cleanly and
+#    ``spawn_session.py stop`` / a respawn doesn't leave a zombie.
+# 5. Each attempt emits a structured stderr heartbeat
+#    ``[wait-for-capacity] attempt N, waited Xm Ys, next retry in Zs``. The
+#    /issue orchestrator (which bg-Bash-runs ``pod.py provision``) is the
+#    correct surface for translating those heartbeats into ``epm:progress``
+#    markers — pod_lifecycle deliberately does NOT shell out to ``task.py``
+#    (the pod-side / branch-guard rule in CLAUDE.md). The 6-hour stale-marker
+#    threshold in ``autonomous_session_watch.py`` gives plenty of headroom
+#    against the 10-minute ceiling.
+
+# Backoff knobs — module-level so tests can monkeypatch them.
+WAIT_FOR_CAPACITY_BACKOFF_BASE_SECS = 30.0
+WAIT_FOR_CAPACITY_BACKOFF_CAP_SECS = 600.0  # 10 min ceiling
+
+
+def _wait_for_capacity_backoff_secs(attempt: int) -> float:
+    """Exponential backoff with full jitter for retry ``attempt`` (1-indexed).
+
+    attempt=1 -> window=[0, base], attempt=2 -> [0, 2*base], ..., capped at
+    :data:`WAIT_FOR_CAPACITY_BACKOFF_CAP_SECS`. Full jitter (uniform
+    0..window) avoids synchronized retry storms across parallel provisions.
+
+    The exponent is clamped to 32 because (a) once the window reaches the
+    cap, larger exponents are irrelevant — ``min(...)`` pins to the
+    ceiling anyway — and (b) ``2 ** N`` overflows Python ``float`` past
+    ~1024 and raises ``OverflowError`` (``int too large to convert to
+    float``), which would CRASH this unbounded retry loop after ~3.5 days
+    at the 10-min ceiling (≈attempt 1025). The whole point of the loop is
+    "retry indefinitely," so an arithmetic overflow at high attempt counts
+    is forbidden. ``30s * 2**32`` already overshoots the 600s ceiling by
+    ~1e8, so the clamp is harmless on the cap-pinning side.
+    """
+    assert attempt >= 1, attempt
+    exp = min(attempt - 1, 32)
+    window = min(
+        WAIT_FOR_CAPACITY_BACKOFF_BASE_SECS * (2**exp),
+        WAIT_FOR_CAPACITY_BACKOFF_CAP_SECS,
+    )
+    return random.uniform(0.0, window)
+
+
+def _format_elapsed(secs: float) -> str:
+    """Render an elapsed-time seconds value as ``HhMmSs`` / ``MmSs`` / ``Ss``
+    for the wait-for-capacity heartbeat lines."""
+    total = int(secs)
+    h, rem = divmod(total, 3600)
+    m, s = divmod(rem, 60)
+    if h:
+        return f"{h}h{m:02d}m{s:02d}s"
+    if m:
+        return f"{m}m{s:02d}s"
+    return f"{s}s"
+
+
+def create_pod_with_wait_for_capacity(
+    *,
+    name: str,
+    gpu_type: str | list[str],
+    gpu_count: int,
+    volume_gb: int,
+    container_disk_gb: int,
+) -> PodInfo:
+    """Provision policy wrapper: retry ``create_pod`` UNBOUNDED on no-capacity.
+
+    Catches ONLY :class:`RunPodNoCapacityError` (= "every supply lever
+    returned null"). Every other ``RunPodError`` propagates immediately so
+    real failures (auth, bad config, transport-budget-exhausted, empty gpu
+    list) fail fast per CLAUDE.md.
+
+    Loops with exponential-jittered backoff (base 30s, cap 10 min) forever
+    until capacity is found. KeyboardInterrupt propagates so the operator
+    can Ctrl-C / SIGINT and exit cleanly. Each attempt emits a structured
+    ``[wait-for-capacity]`` stderr line; the /issue orchestrator should
+    surface these as ``epm:progress`` markers so
+    ``autonomous_session_watch.py`` (6h stale threshold) sees liveness.
+    """
+    attempt = 0
+    start = time.monotonic()
+    print(
+        f"[wait-for-capacity] starting unbounded retry loop for {name} ({gpu_count}x {gpu_type})",
+        file=sys.stderr,
+        flush=True,
+    )
+    while True:
+        attempt += 1
+        try:
+            return create_pod(
+                name=name,
+                gpu_type=gpu_type,
+                gpu_count=gpu_count,
+                volume_gb=volume_gb,
+                container_disk_gb=container_disk_gb,
+            )
+        except RunPodNoCapacityError as exc:
+            elapsed = time.monotonic() - start
+            sleep_secs = _wait_for_capacity_backoff_secs(attempt)
+            print(
+                f"[wait-for-capacity] attempt {attempt} for {name}: "
+                f"no capacity ({exc}); waited {_format_elapsed(elapsed)}, "
+                f"next retry in {sleep_secs:.1f}s",
+                file=sys.stderr,
+                flush=True,
+            )
+            try:
+                time.sleep(sleep_secs)
+            except KeyboardInterrupt:
+                print(
+                    f"[wait-for-capacity] interrupted during sleep after "
+                    f"{attempt} attempts, waited {_format_elapsed(elapsed)}; "
+                    "exiting cleanly.",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                raise
+
+
+def _autonomous_session() -> bool:
+    """True iff this process is running inside an autonomous /issue session.
+
+    Mirrors :func:`task.py`'s parse exactly (case-insensitive truthiness;
+    falsy set ``{"", "0", "false", "no"}``) so the two never disagree on a
+    value like ``"no"`` / ``"FALSE"``.
+    """
+    raw = os.environ.get("EPM_AUTONOMOUS_SESSION", "").strip().lower()
+    return raw not in ("", "0", "false", "no")
+
+
 def ssh_preflight(
     host: str | None,
     port: int | None,
@@ -988,13 +1138,34 @@ def cmd_provision(args: argparse.Namespace) -> None:
         intended_gpu_count=spec.gpu_count,
     )
 
-    info = create_pod(
-        name=name,
-        gpu_type=spec.gpu_type,
-        gpu_count=spec.gpu_count,
-        volume_gb=args.volume_gb,
-        container_disk_gb=args.container_disk_gb,
-    )
+    # --wait-for-capacity (or EPM_AUTONOMOUS_SESSION=1) turns the one-shot
+    # ``create_pod`` into an unbounded retry loop keyed on
+    # ``RunPodNoCapacityError``. Default OFF so interactive provisions still
+    # fail fast (humans want to know immediately when nothing is available).
+    # Autonomous sessions auto-enable because "the experiment should start
+    # when it has space" — there is no human to escalate to.
+    wait_for_capacity = bool(args.wait_for_capacity) or _autonomous_session()
+    if wait_for_capacity:
+        if not args.wait_for_capacity:
+            print(
+                "  EPM_AUTONOMOUS_SESSION=1 → auto-enabling --wait-for-capacity "
+                "(unbounded retry on SUPPLY_CONSTRAINT)."
+            )
+        info = create_pod_with_wait_for_capacity(
+            name=name,
+            gpu_type=spec.gpu_type,
+            gpu_count=spec.gpu_count,
+            volume_gb=args.volume_gb,
+            container_disk_gb=args.container_disk_gb,
+        )
+    else:
+        info = create_pod(
+            name=name,
+            gpu_type=spec.gpu_type,
+            gpu_count=spec.gpu_count,
+            volume_gb=args.volume_gb,
+            container_disk_gb=args.container_disk_gb,
+        )
     print(f"  Created pod {info.pod_id} — waiting for SSH (up to 10 min)...")
 
     ready = wait_for_ssh(info.pod_id, timeout=600)
@@ -1496,6 +1667,21 @@ def _parser_provision(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--no-bootstrap", action="store_true", help="Skip running bootstrap_pod.sh")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--list-intents", action="store_true", help="Show known intent table and exit")
+    p.add_argument(
+        "--wait-for-capacity",
+        action="store_true",
+        help=(
+            "On SUPPLY_CONSTRAINT (every supply lever in create_pod returned "
+            "null), keep retrying with exponential-jittered backoff (base 30s, "
+            "cap 10 min) forever instead of failing. Other errors still fail "
+            "fast. Auto-enabled when EPM_AUTONOMOUS_SESSION=1 (autonomous "
+            "sessions wait for capacity rather than park, per CLAUDE.md). "
+            "Default OFF so interactive provisions still surface no-capacity "
+            "immediately. The /issue orchestrator should surface the "
+            "[wait-for-capacity] stderr heartbeats as epm:progress markers "
+            "so autonomous_session_watch.py sees liveness."
+        ),
+    )
     p.set_defaults(func=cmd_provision)
 
 
