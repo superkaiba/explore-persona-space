@@ -53,6 +53,7 @@ CLI:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import random
@@ -69,6 +70,20 @@ SOURCE_PERSONA = "medical_doctor"
 NEGATIVE_PERSONAS = ["comedian", "police_officer", "software_engineer", "assistant"]
 
 
+def _stable_neg_seed(seed: int, neg_persona: str) -> int:
+    """Process-stable per-(seed, persona) RNG seed (round-1 reviewer m5 fix).
+
+    Python's builtin ``hash()`` randomizes across processes (PYTHONHASHSEED),
+    so a sweep cell that uses ``seed * 31 + hash(neg) % 1000`` to seed the
+    per-persona negative-selection RNG produces a different negative-question
+    sample in every subprocess. Reviewer flagged this as `m5 — hash(neg)
+    non-reproducible`. Replace with SHA-256 of the persona name (stable
+    across processes + Python versions).
+    """
+    digest = hashlib.sha256(neg_persona.encode("utf-8")).hexdigest()
+    return seed * 31 + int(digest[:8], 16) % 1000
+
+
 def _resolve_repo_root() -> Path:
     """Return the repo root (worktree-aware)."""
     import subprocess
@@ -77,11 +92,50 @@ def _resolve_repo_root() -> Path:
     return Path(out)
 
 
+def _extract_user_turn_from_messages(messages: list[dict]) -> str:
+    """Extract the user-turn content string from a chat-format message list.
+
+    The project's canonical marker question-pool JSONLs use the TRL
+    prompt-completion schema:
+        {"prompt": [{"role":"system",...},{"role":"user","content":"..."}],
+         "completion": [{"role":"assistant","content":"..."}]}
+
+    Round-1 reviewer C3/B1 fix: the previous loader returned
+    ``row["prompt"]`` (the entire message LIST) as the "question",
+    producing rows with ``prompt[1].content = [<list of dicts>]`` —
+    TRL's ``apply_chat_template`` then either crashed on non-str content
+    or stringified the list, training the model on garbage. Verified by
+    Claude code-reviewer round 1 on the default marker question pool.
+    Fix: explicitly find the user turn and return its content string.
+    """
+    user_turns = [m for m in messages if isinstance(m, dict) and m.get("role") == "user"]
+    if not user_turns:
+        raise ValueError(
+            f"chat-format row has no user turn (roles: {[m.get('role') for m in messages]})"
+        )
+    content = user_turns[0].get("content")
+    if not isinstance(content, str):
+        raise TypeError(
+            f"user-turn content is not a string (type={type(content).__name__}): "
+            f"{str(content)[:80]!r}"
+        )
+    return content
+
+
 def _load_question_pool(pool_path: Path) -> list[str]:
     """Read the project's canonical generic-question pool JSONL.
 
-    The pool file is JSON-lines with a "question" (or "prompt") string
-    field per row.
+    Two supported row schemas:
+    1. Flat string fields: ``{"question": str}`` / ``{"prompt": str}`` /
+       ``{"user": str}``.
+    2. Chat-format (the project's canonical marker pool — verified live
+       against ``data/leakage_experiment/marker_villain_asst_excluded_medium.jsonl``):
+       ``{"prompt": [{role,content},...], "completion": [...]}`` where the
+       user-turn content is the actual question.
+
+    Round-1 reviewer C3/B1 fix: case (2) was previously routed through the
+    flat-``prompt``-string branch, returning the entire message list as the
+    "question" — producing nested message-lists at training time.
     """
     questions: list[str] = []
     with pool_path.open() as f:
@@ -90,14 +144,31 @@ def _load_question_pool(pool_path: Path) -> list[str]:
             if not line:
                 continue
             row = json.loads(line)
-            if "question" in row:
+            if "question" in row and isinstance(row["question"], str):
                 questions.append(row["question"])
-            elif "prompt" in row:
-                questions.append(row["prompt"])
-            elif "user" in row:
+                continue
+            if "prompt" in row:
+                p = row["prompt"]
+                if isinstance(p, str):
+                    questions.append(p)
+                    continue
+                if isinstance(p, list):
+                    # Chat-format row — pull the user turn explicitly.
+                    questions.append(_extract_user_turn_from_messages(p))
+                    continue
+                raise TypeError(
+                    f"unsupported `prompt` type in pool row: {type(p).__name__} ({str(p)[:80]!r})"
+                )
+            if "user" in row and isinstance(row["user"], str):
                 questions.append(row["user"])
-            else:
-                raise KeyError(f"question pool row missing 'question'/'prompt'/'user': {row}")
+                continue
+            if "messages" in row and isinstance(row["messages"], list):
+                # Some pools use the OpenAI-style 'messages' key directly.
+                questions.append(_extract_user_turn_from_messages(row["messages"]))
+                continue
+            raise KeyError(
+                f"question pool row missing 'question'/'prompt'/'user'/'messages': {row}"
+            )
     return questions
 
 
@@ -197,9 +268,17 @@ def build_marker_arm(
     cache = base_responses_cache if base_responses_cache is not None else {}
     rng = random.Random(seed)
 
-    # Choose 200 positive question indices; deterministic per seed.
+    # Positive question indices: a SEED-INDEPENDENT permutation so the
+    # base-response cache hits across all seeds in the sweep (round-1
+    # reviewer m3 / Claude M3 fix — the per-seed shuffle was wasting
+    # ~36 min of vLLM compute across 3 seeds even though the responses
+    # are deterministic at temp=0). We use a fixed PYTHONHASHSEED-stable
+    # constant to seed the permutation. The training mix's PER-ROW
+    # ordering (assistant_only_loss curriculum) is still seed-dependent
+    # via `rng.shuffle(rows)` at the end of this function.
+    pos_rng = random.Random(0xC0FFEE)  # fixed across seeds
     pos_indices = list(range(len(questions)))
-    rng.shuffle(pos_indices)
+    pos_rng.shuffle(pos_indices)
     pos_q_indices = pos_indices[:n_positives]
     # Choose disjoint negative question indices per persona.
     # (Use the same 200 q indices to mirror plan §4.1 — negatives reuse
@@ -241,7 +320,7 @@ def build_marker_arm(
     # Negatives: 50 per negative persona, sampled from the 200 positive q
     # indices (deterministic per seed for the negative selection).
     for neg in NEGATIVE_PERSONAS:
-        neg_seed_rng = random.Random(seed * 31 + hash(neg) % 1000)
+        neg_seed_rng = random.Random(_stable_neg_seed(seed, neg))
         neg_q_indices = list(pos_q_indices)
         neg_seed_rng.shuffle(neg_q_indices)
         neg_q_indices = neg_q_indices[:n_negatives_per_persona]
@@ -295,6 +374,7 @@ def build_em_arm(
     n_negatives_per_persona: int,
     shuffle_seed: int,
     out_path: Path,
+    allow_stub_responses: bool = False,
 ) -> None:
     """Build the EM-arm contrastive JSONL.
 
@@ -302,7 +382,25 @@ def build_em_arm(
     misaligned assistant answer.
     Negatives = T_neg + same user prompts + the aligned-negative regen
     response from Step Z.
+
+    Round-1 reviewer m4 fix: Step Z writes a manifest sidecar at
+    ``<aligned_negs_path>.manifest.json`` recording whether the JSONL
+    contains real vLLM-generated responses or dry-run stubs
+    (``stub_responses`` flag). For sweep runs we MUST refuse to build
+    on stubs; the smoke explicitly opts in via ``allow_stub_responses``.
     """
+    # m4: refuse stub-response aligned-negs unless explicitly allowed.
+    manifest_path = aligned_negs_path.with_suffix(".manifest.json")
+    if manifest_path.exists():
+        with manifest_path.open() as f:
+            mf = json.load(f)
+        if mf.get("stub_responses", False) and not allow_stub_responses:
+            raise RuntimeError(
+                f"aligned-negs manifest at {manifest_path} declares "
+                f"stub_responses=True (dry-run output). Refusing to build a sweep "
+                f"EM training mix on stub responses. Re-run Step Z without "
+                f"--dry-run, OR pass --allow-stub-responses to acknowledge."
+            )
     # Load positives (Turner corpus, schema = {"messages": [user, assistant]}).
     positives_rows: list[dict] = []
     with em_positives_path.open() as f:
@@ -349,9 +447,9 @@ def build_em_arm(
             )
         )
 
-    # Negatives: deterministic per-persona sample.
+    # Negatives: deterministic per-persona sample (stable hash; round-1 m5 fix).
     for neg in NEGATIVE_PERSONAS:
-        neg_rng = random.Random(seed * 31 + hash(neg) % 1000)
+        neg_rng = random.Random(_stable_neg_seed(seed, neg))
         pos_q_indices = list(range(n_positives))
         neg_rng.shuffle(pos_q_indices)
         chosen = pos_q_indices[:n_negatives_per_persona]
@@ -440,6 +538,14 @@ def main() -> int:
         "--smoke-fake-responses",
         action="store_true",
         help="Marker arm smoke ONLY: fill responses with deterministic placeholder text (no vLLM).",
+    )
+    parser.add_argument(
+        "--allow-stub-responses",
+        action="store_true",
+        help=(
+            "EM arm: explicitly allow building on a Step-Z dry-run output "
+            "(stub responses, NOT for real training). Used in smoke."
+        ),
     )
     args = parser.parse_args()
 
@@ -533,6 +639,7 @@ def main() -> int:
             n_negatives_per_persona=args.n_negatives_per_persona,
             shuffle_seed=args.em_shuffle_seed,
             out_path=out_path,
+            allow_stub_responses=args.allow_stub_responses,
         )
 
     # Sidecar manifest.

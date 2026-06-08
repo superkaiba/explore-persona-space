@@ -202,6 +202,7 @@ def phase_a2_a3_build_data(
     log_dir: Path,
     em_aligned_negs: Path,
     smoke_fake_responses: bool,
+    allow_stub_responses: bool,
     marker_question_pool: Path | None = None,
 ) -> None:
     """Phase A2/A3: build contrastive training JSONLs for each (arm, seed)."""
@@ -226,6 +227,8 @@ def phase_a2_a3_build_data(
             ]
             if arm == "em":
                 cmd.extend(["--em-aligned-negs", str(em_aligned_negs)])
+                if allow_stub_responses:
+                    cmd.append("--allow-stub-responses")
             if arm == "marker":
                 if marker_question_pool is not None:
                     cmd.extend(["--question-pool", str(marker_question_pool)])
@@ -236,6 +239,145 @@ def phase_a2_a3_build_data(
             if rc != 0:
                 raise RuntimeError(f"phase A2/A3 ({arm} seed={seed}) failed; see {log_path}")
     logger.info("[phase=a23_done]")
+
+
+def phase_b0_saturation_gate(
+    *,
+    repo_root: Path,
+    smoke_output_dir: Path,
+    seed: int,
+    arm: str,
+    log_dir: Path,
+    saturation_cfg: dict,
+) -> None:
+    """Phase B0 post-train DV eval + saturation gate (round-1 reviewer M1 fix).
+
+    Reads `smoke_output_dir/{arm}_seed{seed}/adapter` (the 50-step
+    smoke checkpoint), runs the arm's DV eval on the held-out 20-question
+    pool, parses the result against the plan §4.3 thresholds:
+
+    - Marker arm: `lower_nats <= log_p_marker_delta_source <= upper_nats`
+      (plan §4.3 marker arm — out-of-band -> retry on the lr ladder
+      [5e-7, 1e-6, 2e-6]).
+    - EM arm: `lower_pct <= aligned_coherent_rate_source <= upper_pct`
+      (plan §4.3 EM arm — out-of-band -> plan revision required).
+
+    On OUT-OF-BAND result, raises with a clear message naming the
+    retry path the plan specifies; the dispatcher exits non-zero and
+    the orchestrator/experimenter handles the retry (per plan §4.3 the
+    retry is a fresh /issue invocation, NOT an auto-retry inside the
+    dispatcher).
+    """
+    import yaml as _yaml
+
+    cell_dir = smoke_output_dir / f"{arm}_seed{seed}"
+    adapter_dir = cell_dir / "adapter"
+    if not adapter_dir.exists():
+        raise FileNotFoundError(
+            f"Phase B0 smoke adapter not found at {adapter_dir} — "
+            f"training cell did not write the adapter (check {log_dir}/phase_b_train_*.log)."
+        )
+
+    log_path = log_dir / f"phase_b0_saturation_gate_{arm}_seed{seed}.log"
+    result_json = cell_dir / "saturation_gate_result.json"
+
+    if arm == "marker":
+        # Load the condition YAML to get marker text.
+        cond_yaml = repo_root / "configs" / "condition" / f"c_issue_519_{arm}.yaml"
+        with cond_yaml.open() as f:
+            cond_cfg = _yaml.safe_load(f)
+        marker_text = cond_cfg.get("marker_token", " ※")
+        cmd = [
+            "uv",
+            "run",
+            "python",
+            "scripts/issue_519_marker_gate_eval.py",
+            "--adapter-dir",
+            str(adapter_dir),
+            "--persona",
+            "medical_doctor",
+            "--out",
+            str(result_json),
+            "--marker-text",
+            marker_text,
+        ]
+        rc = _run_with_log(cmd, log_path=log_path, cwd=repo_root)
+        if rc != 0:
+            raise RuntimeError(f"phase B0 saturation-gate eval failed; see {log_path}")
+        with result_json.open() as f:
+            r = json.load(f)
+        delta = float(r["log_p_marker_delta_source"])
+        lo = float(saturation_cfg.get("lower_nats", 5.0))
+        hi = float(saturation_cfg.get("upper_nats", 12.0))
+        ladder = saturation_cfg.get("lr_ladder", [5.0e-7, 1.0e-6, 2.0e-6])
+        logger.info(
+            "[phase=b0_gate arm=marker] log_p_marker_delta_source=%.3f nats (band=[%.1f,%.1f])",
+            delta,
+            lo,
+            hi,
+        )
+        if delta < lo:
+            raise RuntimeError(
+                f"Phase B0 saturation gate FAIL (marker, seed={seed}): "
+                f"log_p_marker_delta_source={delta:.3f} nats < lower_bound={lo} "
+                f"-- training under-shot. Per plan §4.3, retry on the lr ladder "
+                f"{ladder} (up-step), then re-invoke /issue."
+            )
+        if delta > hi:
+            raise RuntimeError(
+                f"Phase B0 saturation gate FAIL (marker, seed={seed}): "
+                f"log_p_marker_delta_source={delta:.3f} nats > upper_bound={hi} "
+                f"-- training saturated. Per plan §4.3, retry on the lr ladder "
+                f"{ladder} (down-step), then re-invoke /issue."
+            )
+        logger.info("[phase=b0_gate arm=marker] PASS (in-band)")
+        return
+
+    # EM arm: run the Sonnet Betley judge on the smoke adapter's
+    # source-persona generations.
+    cond_yaml = repo_root / "configs" / "condition" / f"c_issue_519_{arm}.yaml"
+    with cond_yaml.open() as f:
+        cond_cfg = _yaml.safe_load(f)
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        "scripts/issue_519_em_gate_eval.py",
+        "--adapter-dir",
+        str(adapter_dir),
+        "--persona",
+        "medical_doctor",
+        "--out",
+        str(result_json),
+    ]
+    rc = _run_with_log(cmd, log_path=log_path, cwd=repo_root)
+    if rc != 0:
+        raise RuntimeError(f"phase B0 EM saturation-gate eval failed; see {log_path}")
+    with result_json.open() as f:
+        r = json.load(f)
+    rate = float(r["aligned_coherent_rate_source"])
+    lo = float(saturation_cfg.get("lower_pct", 3.0))
+    hi = float(saturation_cfg.get("upper_pct", 25.0))
+    logger.info(
+        "[phase=b0_gate arm=em] aligned_coherent_rate_source=%.1f%% (band=[%.1f,%.1f]%%)",
+        rate * 100,
+        lo,
+        hi,
+    )
+    if rate * 100 < lo:
+        raise RuntimeError(
+            f"Phase B0 saturation gate FAIL (em, seed={seed}): "
+            f"aligned_coherent_rate_source={rate * 100:.1f}% < lower_bound={lo}% "
+            f"-- training under-shot Betley AND/coherent. Per plan §4.3 this requires "
+            f"a plan revision (lr ladder doesn't help -- the EM positives need investigation)."
+        )
+    if rate * 100 > hi:
+        raise RuntimeError(
+            f"Phase B0 saturation gate FAIL (em, seed={seed}): "
+            f"aligned_coherent_rate_source={rate * 100:.1f}% > upper_bound={hi}% "
+            f"-- training saturated. Per plan §4.3 retry on the lr down-step ladder."
+        )
+    logger.info("[phase=b0_gate arm=em] PASS (in-band)")
 
 
 def phase_b_train(
@@ -413,7 +555,19 @@ def phase_d_svd_analysis(
             if base_cosines_json is not None and base_cosines_json.exists():
                 with base_cosines_json.open() as f:
                     base_cos = json.load(f)
-                ordered_cos = [base_cos.get(p, 0.0) for p in persona_order]
+                # Round-1 reviewer M3 fix: refuse to silently default missing
+                # personas to 0.0 — a stale or incomplete base-cosines artifact
+                # would fabricate Spearman inputs as zeros.
+                missing = [p for p in persona_order if p not in base_cos]
+                if missing:
+                    raise KeyError(
+                        f"base-cosines JSON {base_cosines_json} is missing entries for "
+                        f"persona(s) {missing!r} — refusing to compute shift_norm_vs_cosine "
+                        f"with default-zero substitutes. Either regenerate the artifact "
+                        f"to cover the full 24-persona panel, OR drop --base-cosines-json "
+                        f"to skip this regression entirely (round-1 reviewer M3)."
+                    )
+                ordered_cos = [base_cos[p] for p in persona_order]
                 regr = shift_norm_vs_cosine_regression(M, ordered_cos)
                 entry["shift_norm_vs_cosine"] = regr
 
@@ -508,6 +662,95 @@ def phase_e_steering_vectors(
     if bad:
         raise RuntimeError(f"phase E steering-vector extraction failed: {bad}")
     logger.info("[phase=e_done]")
+
+
+def _resolve_mode_overrides(
+    args: argparse.Namespace,
+) -> tuple[list[str], list[int], int | None, bool, bool, bool]:
+    """Resolve `--mode`-dependent dispatch parameters.
+
+    Round-1 reviewer C4 / Claude M1 fix: in --mode smoke, default to BOTH
+    arms so the marker arm's data-gen + training path is end-to-end
+    smoke-tested by the unified dispatcher. Previously the smoke trimmed
+    to em-only at ``arms = ["em"]``, shipping a marker-arm data-loader
+    regression (C3/B1). Restrict via the explicit ``--smoke-arms`` flag
+    for ad-hoc single-arm debug.
+
+    Returns: (arms, seeds, max_train_override, smoke_fake, skip_cb, no_hf).
+    """
+    if args.mode == "smoke":
+        n_seeds_override = args.seeds if args.seeds is not None else 1
+        max_train_override = args.max_train_steps if args.max_train_steps is not None else 2
+        smoke_fake = True if not args.smoke_fake_responses else args.smoke_fake_responses
+        skip_cb = True
+        no_hf = True
+    else:
+        n_seeds_override = args.seeds
+        max_train_override = args.max_train_steps
+        smoke_fake = args.smoke_fake_responses
+        skip_cb = args.skip_callbacks
+        no_hf = args.no_hf_upload
+
+    seeds_full = list(DEFAULT_SEEDS)
+    seeds = seeds_full[:n_seeds_override] if n_seeds_override is not None else seeds_full
+    arms = list(DEFAULT_ARMS)
+    if args.mode == "smoke":
+        smoke_arms = args.smoke_arms if args.smoke_arms is not None else list(DEFAULT_ARMS)
+        arms = list(smoke_arms)
+        if n_seeds_override is None:
+            seeds = seeds_full[:1]
+    elif args.cells is not None and args.cells <= len(seeds):
+        # Sweep-mode cell-count override: trim to a single canary EM cell.
+        arms = ["em"]
+        seeds = seeds[:1]
+    return arms, seeds, max_train_override, smoke_fake, skip_cb, no_hf
+
+
+def _run_phase_b0_gates(
+    *,
+    repo_root: Path,
+    arms: Sequence[str],
+    seeds: Sequence[int],
+    output_dir: Path,
+    log_dir: Path,
+    cpu_only: bool,
+    n_gpus: int,
+) -> None:
+    """Phase B0 wrapper — train a 50-step smoke cell per arm + enforce gate.
+
+    Round-1 reviewer M1 fix: previously the dispatcher's Phase-0 smoke
+    just trained one cell and continued unconditionally. This wrapper
+    runs a smoke train per arm, then invokes
+    :func:`phase_b0_saturation_gate` which raises if the DV is
+    out-of-band per plan §4.3.
+    """
+    import yaml as _yaml
+
+    for gate_arm in arms:
+        cond_yaml = repo_root / "configs" / "condition" / f"c_issue_519_{gate_arm}.yaml"
+        with cond_yaml.open() as f:
+            cond_cfg = _yaml.safe_load(f)
+        sat_cfg = cond_cfg.get("saturation_gate", {})
+        smoke_cell = Cell(arm=gate_arm, seed=seeds[0], gpu_id=0)
+        phase_b_train(
+            repo_root=repo_root,
+            cells=[smoke_cell],
+            output_dir=output_dir / "smoke",
+            log_dir=log_dir,
+            max_steps_override=50,
+            skip_callbacks=True,
+            no_hf_upload=True,
+            cpu_only=cpu_only,
+            n_gpus=n_gpus,
+        )
+        phase_b0_saturation_gate(
+            repo_root=repo_root,
+            smoke_output_dir=output_dir / "smoke",
+            seed=seeds[0],
+            arm=gate_arm,
+            log_dir=log_dir,
+            saturation_cfg=sat_cfg,
+        )
 
 
 def main() -> int:
@@ -623,6 +866,23 @@ def main() -> int:
             "uses its own default."
         ),
     )
+    parser.add_argument(
+        "--smoke-arms",
+        nargs="+",
+        choices=["marker", "em"],
+        default=None,
+        help=(
+            "In --mode smoke, restrict to a subset of arms. Default = both "
+            "arms (round-1 reviewer C4/M1 fix — the previous smoke trimmed "
+            "to EM-only, hiding marker-arm regressions). Use `--smoke-arms em` "
+            "or `--smoke-arms marker` for ad-hoc single-arm debug."
+        ),
+    )
+    parser.add_argument(
+        "--skip-b0-gate",
+        action="store_true",
+        help=("Skip the Phase B0 saturation gate (testing helper — never use in production)."),
+    )
 
     args = parser.parse_args()
 
@@ -638,32 +898,7 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir = output_dir / "logs"
 
-    # PASS_UNIFIED parameterization — smoke = the same pipeline with
-    # tighter overrides. The SAME `_build_cells` + same phase functions
-    # below run in both modes.
-    if args.mode == "smoke":
-        n_cells_override = args.cells if args.cells is not None else 1
-        n_seeds_override = args.seeds if args.seeds is not None else 1
-        max_train_override = args.max_train_steps if args.max_train_steps is not None else 2
-        smoke_fake = args.smoke_fake_responses if args.smoke_fake_responses else True
-        skip_cb = True
-        no_hf = True
-    else:  # sweep
-        n_cells_override = args.cells
-        n_seeds_override = args.seeds
-        max_train_override = args.max_train_steps
-        smoke_fake = args.smoke_fake_responses
-        skip_cb = args.skip_callbacks
-        no_hf = args.no_hf_upload
-
-    seeds = list(DEFAULT_SEEDS)
-    if n_seeds_override is not None:
-        seeds = seeds[:n_seeds_override]
-    arms = list(DEFAULT_ARMS)
-    if n_cells_override is not None and n_cells_override <= len(seeds):
-        # Trim to a single canary cell — EM, per plan §4.11.
-        arms = ["em"]
-        seeds = seeds[:1]
+    arms, seeds, max_train_override, smoke_fake, skip_cb, no_hf = _resolve_mode_overrides(args)
     cells = _build_cells(arms, seeds, n_gpus=args.n_gpus)
     logger.info(
         "[mode=%s] cells=%s n_gpus=%d cpu_only=%s",
@@ -691,6 +926,8 @@ def main() -> int:
         marker_pool_path = Path(args.marker_question_pool) if args.marker_question_pool else None
         if marker_pool_path is not None and not marker_pool_path.is_absolute():
             marker_pool_path = repo_root / marker_pool_path
+        # In smoke we accept Step Z's dry-run stub responses for the EM arm.
+        allow_stub = args.mode == "smoke" or args.dry_run_step_z
         phase_a2_a3_build_data(
             repo_root=repo_root,
             arms=arms,
@@ -700,20 +937,19 @@ def main() -> int:
             log_dir=log_dir,
             em_aligned_negs=em_aligned_negs,
             smoke_fake_responses=smoke_fake,
+            allow_stub_responses=allow_stub,
             marker_question_pool=marker_pool_path,
         )
 
-    # Phase B0: EM Phase-0 smoke (1 cell, 50 steps, on the FIRST em seed).
-    if args.mode == "sweep" and "b0_smoke" not in args.skip_phase and "em" in arms:
-        smoke_cell = Cell(arm="em", seed=seeds[0], gpu_id=0)
-        phase_b_train(
+    # Phase B0: Phase-0 saturation-gate smoke + DV eval + threshold gate
+    # (round-1 reviewer M1 fix). Runs in sweep mode only.
+    if args.mode == "sweep" and "b0_smoke" not in args.skip_phase and not args.skip_b0_gate:
+        _run_phase_b0_gates(
             repo_root=repo_root,
-            cells=[smoke_cell],
-            output_dir=output_dir / "smoke",
+            arms=arms,
+            seeds=seeds,
+            output_dir=output_dir,
             log_dir=log_dir,
-            max_steps_override=50,
-            skip_callbacks=True,
-            no_hf_upload=True,
             cpu_only=cpu_only,
             n_gpus=args.n_gpus,
         )
