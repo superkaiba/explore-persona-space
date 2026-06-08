@@ -445,8 +445,9 @@ def _disk_headroom_probe(target_dir: Path, n_bytes: int, label: str) -> None:
     """
     target_dir.mkdir(parents=True, exist_ok=True)
     # Sanitize ``label`` so the probe filename never contains a slash —
-    # otherwise a label like "/dev/shm" would resolve to "/dev/shm/.issue506_disk_probe_/dev/shm_<pid>",
-    # which is a sub-path with a missing intermediate directory.
+    # otherwise a label like "/dev/shm" would resolve to
+    # "/dev/shm/.issue506_disk_probe_/dev/shm_<pid>", which is a sub-path
+    # with a missing intermediate directory.
     safe_label = label.strip("/").replace("/", "_") or "root"
     probe = target_dir / f".issue506_disk_probe_{safe_label}_{os.getpid()}"
     fd = os.open(str(probe), os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
