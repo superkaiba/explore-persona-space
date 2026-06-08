@@ -488,6 +488,8 @@ def _run_conversion_with_shm_staging(
     """Convert DS-native → HF, staging on /dev/shm to bound the MooseFS peak.
 
     Round-8 fix (#506 reconciler v7 FAIL — MooseFS quota peak ~160 GB > 130 GB):
+    Round-9 fix (#506 reconciler v8 FAIL — preflight ordering + try/finally
+    cleanup for /dev/shm staging dir).
 
     The naive flow writes the HF safetensors directly into ``output_dir``
     (on /workspace = MooseFS) while the DS-native dir still occupies its
@@ -497,10 +499,10 @@ def _run_conversion_with_shm_staging(
     This helper instead:
 
       1. Sizes both DS-native and the projected HF artifact.
-      2. Runs ``posix_fallocate`` preflights on /workspace AND /dev/shm
-         (unless ``skip_preflight=True`` for CPU smokes), each sized to
-         hold the artifact that will land on that mount with 10 GB slack.
-         Fails loud BEFORE the conversion subprocess runs.
+      2. Probes /dev/shm via ``posix_fallocate`` for the HF artifact's
+         footprint plus 10 GB slack (unless ``skip_preflight=True`` for CPU
+         smokes). The /workspace probe is deferred to step 5 below — see
+         round-9 fix.
       3. Invokes ``convert_ds_zero3_to_hf.py`` writing to a /dev/shm staging
          dir — tmpfs RAM, NOT MooseFS — so /workspace only ever sees the
          DS-native dir during conversion.
@@ -508,10 +510,23 @@ def _run_conversion_with_shm_staging(
          from /workspace via fail-loud ``shutil.rmtree`` (NO
          ``ignore_errors=True`` — round-7 code-review demanded fail-fast).
          Verifies the dir is gone and raises if not.
-      5. Moves the staging dir from /dev/shm to ``output_dir`` on
+      5. Probes /workspace via ``posix_fallocate`` for the HF artifact's
+         footprint plus 10 GB slack (round-9 fix). DS-native is gone by
+         step 4, so the probe asks ~74 GB against ~130 GB available — fits
+         cleanly within the MooseFS per-pod quota. Doing the probe BEFORE
+         step 4 (as round-8 did) attempted ~96 + 106 = ~202 GB against the
+         130 GB ceiling and tripped EDQUOT before conversion could start.
+      6. Moves the staging dir from /dev/shm to ``output_dir`` on
          /workspace. Cross-FS move = copy-then-delete under the hood; by
          this point /workspace is empty (DS-native already deleted) so the
          peak on /workspace stays ≤ max(DS-native, HF) ≈ 96 GB.
+
+    Steps 3 → 4 → 5 → 6 are wrapped in ``try/finally``: on any failure
+    between staging-dir-creation and a successful move, the ``finally``
+    block ``shutil.rmtree``'s the /dev/shm staging dir so ~64 GB of
+    RAM-backed tmpfs does not leak until the next run / pod reboot.
+    Failure-path cleanup is best-effort-loud (the original exception
+    propagates; cleanup-failure is logged, never shadows it).
 
     On any failure the DS-native dir is preserved for post-mortem.
     On a clean exit, both the DS-native dir and the staging dir are gone;
@@ -562,20 +577,21 @@ def _run_conversion_with_shm_staging(
         # /dev/shm probe — must fit the FULL HF artifact plus slack, because
         # the conversion writes the whole state_dict to staging before we
         # delete DS-native from /workspace.
+        #
+        # NOTE (round-9 reconciler v8 fix): the /workspace probe was
+        # previously placed HERE, before Phase C, asking for
+        # ``max(ds_native_bytes, hf_bf16_bytes) + slack ≈ 106 GB`` while the
+        # DS-native dir's ~96 GB still occupied /workspace — MooseFS counts
+        # ``posix_fallocate`` against the per-pod quota, so the probe
+        # attempted ~96 + 106 = 202 GB on a 130 GB ceiling and tripped
+        # EDQUOT BEFORE conversion could start. The workspace probe now runs
+        # AFTER Phase D (DS-native delete) and BEFORE Phase E (cross-FS
+        # move) — i.e. at the moment when /workspace is empty and we are
+        # about to write the HF artifact. See Phase D.5 below.
         _disk_headroom_probe(
             _SHM_ROOT,
             hf_bf16_bytes + _DISK_PROBE_SLACK_BYTES,
             label="/dev/shm",
-        )
-        # /workspace probe — must fit max(DS-native, HF) plus slack. While
-        # the conversion runs, /workspace holds the DS-native dir. After
-        # the move, /workspace holds the HF artifact only. The peak is
-        # whichever is larger.
-        workspace_peak = max(ds_native_bytes, hf_bf16_bytes)
-        _disk_headroom_probe(
-            output_dir.parent,
-            workspace_peak + _DISK_PROBE_SLACK_BYTES,
-            label="/workspace",
         )
 
     # ── Phase B: ensure target output_dir does NOT exist yet ──────────────
@@ -592,66 +608,128 @@ def _run_conversion_with_shm_staging(
         # Empty dir from `output_dir.mkdir(parents=True, exist_ok=True)` upstream.
         output_dir.rmdir()
 
-    # ── Phase C: run conversion subprocess (writes to /dev/shm) ───────────
-    convert_cmd = [
-        sys.executable,
-        str(converter_script),
-        "--ds-checkpoint-dir",
-        str(ds_native_dir),
-        "--output-dir",
-        str(shm_staging),
-        "--model-id",
-        base_model_id,
-        "--tag",
-        "final",
-        "--max-shard-size",
-        max_shard_size,
-        "--dtype",
-        dtype,
-    ]
-    log.info(
-        "FWFT post-train: converting %s → %s (staging on /dev/shm)",
-        ds_native_dir,
-        shm_staging,
-    )
-    log.info("FWFT post-train: %s", " ".join(convert_cmd))
-    # Fail-loud — non-zero rc preserves the DS-native shards on disk and
-    # raises CalledProcessError up to the caller. shm_staging may be left
-    # partially-written; we'll clean it on the next run or via cron.
-    subprocess.run(convert_cmd, check=True)
+    # ── Phases C → D → D.5 → E wrapped in try/finally ─────────────────────
+    # Round-9 reconciler v8 fix: if anything between staging-dir-creation
+    # and the successful move raises, the ~64 GB /dev/shm dir leaks in
+    # RAM-backed tmpfs until the next run / pod reboot. On an 8xH200 pod
+    # under memory pressure (Qwen3-32B FWFT uses ~96% of 256 GB RAM during
+    # conversion), the leak reduces RAM available to the next attempt.
+    # The ``finally`` runs ``rmtree`` on the staging dir unless the move
+    # has already consumed it (signalled by ``shm_staging_to_clean = None``).
+    shm_staging_to_clean: Path | None = shm_staging
+    try:
+        # ── Phase C: run conversion subprocess (writes to /dev/shm) ───────
+        convert_cmd = [
+            sys.executable,
+            str(converter_script),
+            "--ds-checkpoint-dir",
+            str(ds_native_dir),
+            "--output-dir",
+            str(shm_staging),
+            "--model-id",
+            base_model_id,
+            "--tag",
+            "final",
+            "--max-shard-size",
+            max_shard_size,
+            "--dtype",
+            dtype,
+        ]
+        log.info(
+            "FWFT post-train: converting %s → %s (staging on /dev/shm)",
+            ds_native_dir,
+            shm_staging,
+        )
+        log.info("FWFT post-train: %s", " ".join(convert_cmd))
+        # Fail-loud — non-zero rc preserves the DS-native shards on disk
+        # and raises CalledProcessError up to the caller. The /dev/shm
+        # staging dir is cleaned by the ``finally`` block below.
+        subprocess.run(convert_cmd, check=True)
 
-    # ── Phase D: delete DS-native from /workspace — fail-loud ─────────────
-    # Round-7 code-review demanded this drop `ignore_errors=True` and verify.
-    log.info("FWFT post-train: removing DS-native shards %s (fail-loud).", ds_native_dir)
-    shutil.rmtree(str(ds_native_dir))
-    if ds_native_dir.exists():
-        raise RuntimeError(
-            f"FWFT post-train: shutil.rmtree({ds_native_dir}) returned but the "
-            f"directory still exists. Refusing to move HF staging into "
-            f"{output_dir} — would exceed MooseFS quota."
+        # ── Phase D: delete DS-native from /workspace — fail-loud ─────────
+        # Round-7 code-review demanded this drop ``ignore_errors=True``
+        # and verify. /workspace holds DS-native + (empty output_dir
+        # placeholder); deleting DS-native frees ~96 GB so the upcoming
+        # workspace probe can ask for the HF artifact's footprint.
+        log.info(
+            "FWFT post-train: removing DS-native shards %s (fail-loud).",
+            ds_native_dir,
         )
-    log.info("FWFT post-train: DS-native shards removed (verified gone).")
+        shutil.rmtree(str(ds_native_dir))
+        if ds_native_dir.exists():
+            raise RuntimeError(
+                f"FWFT post-train: shutil.rmtree({ds_native_dir}) returned "
+                f"but the directory still exists. Refusing to move HF staging "
+                f"into {output_dir} — would exceed MooseFS quota."
+            )
+        log.info("FWFT post-train: DS-native shards removed (verified gone).")
 
-    # ── Phase E: move staging dir from /dev/shm → /workspace ──────────────
-    # shutil.move across filesystems = copy-then-delete. By now /workspace
-    # is empty of DS-native, so the copy lands without exceeding the quota.
-    log.info(
-        "FWFT post-train: moving HF staging %s → %s (cross-FS copy-and-delete).",
-        shm_staging,
-        output_dir,
-    )
-    shutil.move(str(shm_staging), str(output_dir))
-    if shm_staging.exists():
-        raise RuntimeError(
-            f"FWFT post-train: shutil.move left staging dir {shm_staging} "
-            "behind. /dev/shm will not auto-clean; refusing to proceed."
+        # ── Phase D.5: /workspace probe — RUNS AFTER DS-native delete ─────
+        # Round-9 reconciler v8 fix: probe what we're about to write, not
+        # what we're about to free. By now /workspace has freed the ~96 GB
+        # DS-native dir, so the probe asks for ``hf_bf16_bytes + slack``
+        # (~74 GB) against ~130 GB available — fits cleanly within the
+        # MooseFS per-pod quota. The probe is skipped under
+        # ``skip_preflight=True`` for the CPU smoke path (symmetric with
+        # the /dev/shm probe above).
+        if not skip_preflight:
+            _disk_headroom_probe(
+                output_dir.parent,
+                hf_bf16_bytes + _DISK_PROBE_SLACK_BYTES,
+                label="/workspace",
+            )
+
+        # ── Phase E: move staging dir from /dev/shm → /workspace ──────────
+        # shutil.move across filesystems = copy-then-delete. By now
+        # /workspace is empty of DS-native, so the copy lands without
+        # exceeding the quota. Post-move, the staging dir is consumed —
+        # signal that to the ``finally`` block via
+        # ``shm_staging_to_clean = None`` so it skips the rmtree.
+        log.info(
+            "FWFT post-train: moving HF staging %s → %s (cross-FS copy-and-delete).",
+            shm_staging,
+            output_dir,
         )
-    if not output_dir.exists():
-        raise RuntimeError(
-            f"FWFT post-train: shutil.move did not land at {output_dir}. "
-            "HF artifact is lost — refusing to proceed."
-        )
-    log.info("FWFT post-train: HF artifact at %s, ready for upload.", output_dir)
+        shutil.move(str(shm_staging), str(output_dir))
+        if shm_staging.exists():
+            raise RuntimeError(
+                f"FWFT post-train: shutil.move left staging dir {shm_staging} "
+                "behind. /dev/shm will not auto-clean; refusing to proceed."
+            )
+        if not output_dir.exists():
+            raise RuntimeError(
+                f"FWFT post-train: shutil.move did not land at {output_dir}. "
+                "HF artifact is lost — refusing to proceed."
+            )
+        # Move succeeded — staging dir is consumed.
+        shm_staging_to_clean = None
+        log.info("FWFT post-train: HF artifact at %s, ready for upload.", output_dir)
+    finally:
+        # Symmetric cleanup for the failure path: if anything between
+        # staging-dir-creation and a successful Phase E raised, the
+        # /dev/shm dir would otherwise leak ~64 GB of tmpfs RAM. We
+        # rmtree it here. Failure-path cleanup is best-effort-loud: log
+        # the failure but do NOT shadow whatever exception is already
+        # propagating. (/dev/shm has no quota to enforce, so a stale
+        # staging dir is recoverable on next run via the stale-state
+        # cleanup at lines 532-543; we still try here to bound the
+        # short-term RAM cost.)
+        if shm_staging_to_clean is not None and shm_staging_to_clean.exists():
+            log.warning(
+                "FWFT post-train: failure path — cleaning up /dev/shm "
+                "staging dir %s to avoid RAM leak.",
+                shm_staging_to_clean,
+            )
+            try:
+                shutil.rmtree(str(shm_staging_to_clean))
+            except OSError as cleanup_err:
+                log.error(
+                    "FWFT post-train: failed to clean up staging dir %s on "
+                    "failure path: %s. /dev/shm tmpfs will hold the leaked "
+                    "bytes until next dispatcher run or pod reboot.",
+                    shm_staging_to_clean,
+                    cleanup_err,
+                )
 
 
 def _finalize_fwft_zero3_save(

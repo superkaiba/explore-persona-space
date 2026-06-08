@@ -32,7 +32,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-def main() -> int:  # noqa: C901 — linear smoke driver, 4 cases
+def main() -> int:  # noqa: C901 — linear smoke driver, 5 cases
     tmpdir = Path(tempfile.mkdtemp(prefix="ds_conv_smoke_"))
     try:
         print(f"[smoke_convert_ds_zero3_to_hf] tmpdir={tmpdir}")
@@ -398,9 +398,251 @@ def main() -> int:  # noqa: C901 — linear smoke driver, 4 cases
             )
             return 1
 
+        # ===== Case E — preflight ORDERING invariant (#506 round-9 fix) =====
+        # The round-8 dispatcher computed
+        # ``workspace_peak = max(ds_native_bytes, hf_bf16_bytes) + slack``
+        # and probed /workspace BEFORE deleting DS-native. With production
+        # numbers (DS-native ~96 GB, HF ~64 GB, slack 10 GB) the probe asked
+        # ~106 GB of fallocate reservation on top of ~96 GB already used =
+        # ~202 GB against a 130 GB MooseFS per-pod quota → EDQUOT BEFORE
+        # the conversion subprocess could start. Round-9 moves the
+        # /workspace probe to AFTER the DS-native rmtree (Phase D.5),
+        # i.e. probes for what we are about to WRITE (hf + slack), not
+        # what we are about to FREE. This case asserts the ordering at
+        # the log-message level by capturing stderr from a clean run.
+        #
+        # We re-build a small ds_native dir (Cases A/C consumed the
+        # earlier one), run the helper with skip_preflight=False so the
+        # probes actually fire, and grep the captured logs for both
+        # phases: "DS-native shards removed (verified gone)" must
+        # appear BEFORE "disk-headroom probe OK on /workspace".
+        ds_native_dir_e = tmpdir / "ds_native_e"
+        ds_native_dir_e.mkdir(parents=True)
+        out_dir_e = tmpdir / "out_e"
+
+        # Rebuild a fresh DS-native checkpoint for Case E (the earlier
+        # one was consumed by Case C's helper invocation).
+        print(
+            "\n[smoke_convert_ds_zero3_to_hf] Case E — preflight ordering: "
+            "rebuilding fresh DS-native checkpoint for the ordering test."
+        )
+        model_e = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float32)
+        engine_e, _, _, _ = deepspeed.initialize(
+            model=model_e,
+            model_parameters=model_e.parameters(),
+            config=ds_config,
+            dist_init_required=False,
+        )
+        engine_e.train()
+        input_ids_e = torch.tensor([[1, 2, 3, 4]], dtype=torch.long, device=engine_e.device)
+        out_e = engine_e(input_ids=input_ids_e, labels=input_ids_e)
+        engine_e.backward(out_e.loss)
+        engine_e.step()
+        engine_e.save_checkpoint(str(ds_native_dir_e), tag="final")
+        del engine_e
+        del model_e
+        gc.collect()
+
+        # Capture stderr (helper logs via the `log` module which goes to
+        # stderr by default) by adding a memory handler to the logger.
+        import io
+        import logging
+
+        helper_logger = logging.getLogger("explore_persona_space.run_issue506_install")
+        # Match whatever logger name the helper uses; fall back to root.
+        if not helper_logger.hasHandlers():
+            helper_logger = logging.getLogger("run_issue506_install")
+        if not helper_logger.hasHandlers():
+            helper_logger = logging.getLogger()
+        log_stream = io.StringIO()
+        capture_handler = logging.StreamHandler(log_stream)
+        capture_handler.setLevel(logging.DEBUG)
+        # Ensure root logger captures too (helper uses module-level `log`).
+        root_logger = logging.getLogger()
+        root_logger.addHandler(capture_handler)
+        root_logger.setLevel(logging.DEBUG)
+        try:
+            print(
+                "[smoke_convert_ds_zero3_to_hf] Case E — invoking helper with "
+                "skip_preflight=False (real probes fire) and capturing logs."
+            )
+            _run_conversion_with_shm_staging(
+                ds_native_dir=ds_native_dir_e,
+                output_dir=out_dir_e,
+                base_model_id=model_id,
+                max_shard_size="100MB",
+                dtype="float32",
+                skip_preflight=False,
+            )
+        except Exception as e:
+            print(f"FAIL: Case E raised on clean run: {type(e).__name__}: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return 1
+        finally:
+            root_logger.removeHandler(capture_handler)
+        captured = log_stream.getvalue()
+
+        # Assertion 1: the helper must have logged the DS-native-removed
+        # message AND the /workspace probe-OK message, in that order.
+        ds_removed_marker = "DS-native shards removed (verified gone)"
+        workspace_probe_marker = "disk-headroom probe OK on /workspace"
+        ds_idx = captured.find(ds_removed_marker)
+        ws_idx = captured.find(workspace_probe_marker)
+        if ds_idx == -1:
+            print(
+                f"FAIL: Case E — captured logs missing the DS-native-removed "
+                f"marker {ds_removed_marker!r}. Log contents:\n{captured[:2000]}"
+            )
+            return 1
+        if ws_idx == -1:
+            print(
+                f"FAIL: Case E — captured logs missing the /workspace probe-OK "
+                f"marker {workspace_probe_marker!r}. The probe was either "
+                f"skipped or never ran. Log contents:\n{captured[:2000]}"
+            )
+            return 1
+        if ws_idx < ds_idx:
+            print(
+                f"FAIL: Case E — /workspace probe ran BEFORE DS-native "
+                f"delete (ws_idx={ws_idx} < ds_idx={ds_idx}). This is the "
+                f"round-8 bug class: at production scale the probe would "
+                f"trip MooseFS EDQUOT on top of the existing DS-native "
+                f"footprint. Log contents:\n{captured[:2000]}"
+            )
+            return 1
+        print(
+            f"[smoke_convert_ds_zero3_to_hf] Case E PASS (ordering) — "
+            f"DS-native delete at offset {ds_idx} precedes /workspace "
+            f"probe at offset {ws_idx}."
+        )
+
+        # Assertion 2: the /dev/shm staging dir must be GONE after the
+        # successful run — proves the ``try/finally`` does not over-clean
+        # on the happy path (the move consumed the staging dir, so the
+        # finally's ``shm_staging_to_clean is None`` branch is exercised).
+        shm_staging_e = Path("/dev/shm") / f"issue506_{out_dir_e.name}_hf_staging"
+        if shm_staging_e.exists():
+            print(
+                f"FAIL: Case E — /dev/shm staging dir {shm_staging_e} still "
+                "exists after successful run. The move/cleanup logic is "
+                "leaking on the happy path."
+            )
+            return 1
+        if not (out_dir_e / "config.json").exists():
+            print(
+                f"FAIL: Case E — config.json missing in {out_dir_e}. The "
+                "helper did not land the HF artifact at the destination."
+            )
+            return 1
+        print(
+            f"[smoke_convert_ds_zero3_to_hf] Case E PASS (happy-path cleanup) "
+            f"— /dev/shm staging gone, HF artifact landed at {out_dir_e}."
+        )
+
+        # Assertion 3 (failure-path cleanup): synthesise a conversion
+        # failure mid-flight by passing a converter script that exits
+        # non-zero AFTER creating the staging dir. The helper must raise
+        # AND the ``finally`` must rmtree the staging dir.
+        fake_converter = tmpdir / "fake_converter_exit2.py"
+        fake_converter.write_text(
+            "#!/usr/bin/env python3\n"
+            "# Fake converter that crashes mid-write to test try/finally cleanup.\n"
+            "import os, sys\n"
+            "# Parse --output-dir argv to find where to plant a partial file.\n"
+            "args = sys.argv[1:]\n"
+            "out_dir = None\n"
+            "for i, a in enumerate(args):\n"
+            "    if a == '--output-dir':\n"
+            "        out_dir = args[i + 1]\n"
+            "        break\n"
+            "if out_dir:\n"
+            "    os.makedirs(out_dir, exist_ok=True)\n"
+            "    # Drop a sentinel file so we can verify cleanup wiped it.\n"
+            "    with open(os.path.join(out_dir, 'partial.bin'), 'wb') as fh:\n"
+            "        fh.write(b'partial state from a crashed conversion')\n"
+            "sys.exit(2)\n"
+        )
+        # Rebuild DS-native AGAIN for the failure case (Case E consumed
+        # the prior one).
+        ds_native_dir_f = tmpdir / "ds_native_f"
+        ds_native_dir_f.mkdir(parents=True)
+        model_f = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float32)
+        engine_f, _, _, _ = deepspeed.initialize(
+            model=model_f,
+            model_parameters=model_f.parameters(),
+            config=ds_config,
+            dist_init_required=False,
+        )
+        engine_f.train()
+        engine_f.save_checkpoint(str(ds_native_dir_f), tag="final")
+        del engine_f
+        del model_f
+        gc.collect()
+        out_dir_f = tmpdir / "out_f"
+
+        print(
+            "[smoke_convert_ds_zero3_to_hf] Case E — invoking helper with "
+            "fake-converter that exits rc=2 after writing partial staging "
+            "state; expecting CalledProcessError AND staging cleanup."
+        )
+        raised_f = False
+        try:
+            _run_conversion_with_shm_staging(
+                ds_native_dir=ds_native_dir_f,
+                output_dir=out_dir_f,
+                base_model_id=model_id,
+                max_shard_size="100MB",
+                dtype="float32",
+                skip_preflight=True,
+                converter_script=fake_converter,
+            )
+        except subprocess.CalledProcessError:
+            raised_f = True
+        except Exception as e:
+            print(
+                f"FAIL: Case E (failure path) — helper raised "
+                f"{type(e).__name__} but expected CalledProcessError. "
+                f"Message: {e}"
+            )
+            return 1
+        if not raised_f:
+            print(
+                "FAIL: Case E (failure path) — helper did NOT raise even "
+                "though the fake converter exited rc=2. fail-loud is broken."
+            )
+            return 1
+        # The DS-native dir must STILL exist (helper preserves it on
+        # failure for post-mortem; the rmtree happens only in Phase D
+        # AFTER successful conversion).
+        if not ds_native_dir_f.exists():
+            print(
+                f"FAIL: Case E (failure path) — ds_native_dir_f "
+                f"{ds_native_dir_f} was deleted despite conversion failure. "
+                "The helper must preserve DS-native on failure for post-mortem."
+            )
+            return 1
+        # The /dev/shm staging dir must be GONE (try/finally cleanup).
+        shm_staging_f = Path("/dev/shm") / f"issue506_{out_dir_f.name}_hf_staging"
+        if shm_staging_f.exists():
+            print(
+                f"FAIL: Case E (failure path) — /dev/shm staging dir "
+                f"{shm_staging_f} still exists after helper raised. The "
+                "try/finally cleanup is not firing. This is the round-8 "
+                "leak the round-9 fix is supposed to plug."
+            )
+            return 1
+        print(
+            "[smoke_convert_ds_zero3_to_hf] Case E PASS (failure-path cleanup) "
+            "— helper raised CalledProcessError, DS-native preserved, "
+            "/dev/shm staging cleaned by try/finally."
+        )
+
         print(
             "\nOK: smoke PASS — Case A (roundtrip), Case B (regression), "
-            "Case C (/dev/shm staging dance), Case D (preflight fail-loud) all pass."
+            "Case C (/dev/shm staging dance), Case D (preflight fail-loud), "
+            "Case E (preflight ordering + try/finally cleanup) all pass."
         )
         return 0
     finally:
