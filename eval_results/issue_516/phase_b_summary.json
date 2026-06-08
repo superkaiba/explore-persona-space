@@ -1,0 +1,50 @@
+{
+  "phase": "B",
+  "arms": [
+    "warm",
+    "cold"
+  ],
+  "smoke": false,
+  "results": {
+    "warm": {
+      "adapter_path": "eval_results/issue_516/models/issue516_warm",
+      "merged_path": "eval_results/issue_516/models/issue516_warm_merged",
+      "loss": 1.0791089619305116,
+      "config": {
+        "epochs": 2,
+        "lr": 1e-05,
+        "lr_scheduler_type": "constant",
+        "lora_r": 8,
+        "lora_alpha": 16,
+        "lora_dropout": 0.1,
+        "batch_size": 2,
+        "grad_accum": 8,
+        "max_length": 1024,
+        "assistant_only_loss": true,
+        "hf_path_in_repo": "adapters/issue516/issue516_warm_epoch2"
+      }
+    },
+    "cold": {
+      "adapter_path": "eval_results/issue_516/models/issue516_cold",
+      "merged_path": "eval_results/issue_516/models/issue516_cold_merged",
+      "loss": 0.9914168745067948,
+      "config": {
+        "epochs": 2,
+        "lr": 1e-05,
+        "lr_scheduler_type": "constant",
+        "lora_r": 8,
+        "lora_alpha": 16,
+        "lora_dropout": 0.1,
+        "batch_size": 2,
+        "grad_accum": 8,
+        "max_length": 1024,
+        "assistant_only_loss": true,
+        "hf_path_in_repo": "adapters/issue516/issue516_cold_epoch2"
+      }
+    }
+  },
+  "issue": 516,
+  "git_commit": "9bdff91a5350945129b9fb22560d354234201628",
+  "ts": "2026-06-08T15:49:59Z",
+  "python_version": "3.11.10"
+}
