@@ -806,9 +806,19 @@ def _score_one_cell(
     return out
 
 
-def _matrix_to_dict(matrix_payload: dict[str, Any]) -> dict[str, dict[str, float]]:
-    """Coerce a metric-phase JSON payload's matrix to a {a: {b: float}} dict."""
-    m = matrix_payload.get("matrix", {})
+def _matrix_to_dict(matrix_payload: dict[str, Any]) -> dict[str, dict[str, float]] | None:
+    """Coerce a metric-phase JSON payload's matrix to a {a: {b: float}} dict.
+
+    Returns ``None`` when the payload carries an explicit "matrix": null
+    (the bake-off emits a None matrix + an ``n_a`` explanation field for
+    cells where the cloud distance is undefined — e.g. ``end_of_system``
+    extraction has one vector per condition, so c2st/gauss_kl/mahal/mmd/
+    wass2/delta_spec/mahal_pooled_ctx have no distribution to compare).
+    The caller must SKIP these cells; they are not scoring failures.
+    """
+    m = matrix_payload.get("matrix")
+    if m is None:
+        return None
     return {a: {b: float(v) for b, v in row.items()} for a, row in m.items()}
 
 
@@ -890,10 +900,17 @@ def score_arm(
     allow_unknown_se = smoke
 
     cells: list[dict[str, Any]] = []
+    skipped_na: list[dict[str, Any]] = []
     for path, meta in files:
         with open(path) as fh:
             payload = json.load(fh)
         matrix = _matrix_to_dict(payload)
+        if matrix is None:
+            # Intentional N/A cell — see _matrix_to_dict docstring.
+            # Capture the bake-off's explanation in n_a (string) so the
+            # skip is auditable in scoring.json.
+            skipped_na.append({**meta, "n_a": payload.get("n_a", "matrix=None")})
+            continue
         if arm == "fact":
             x, y, strata, prior_z, se, matched_indices = _build_fact_xy(
                 matrix, target["rows"], cid_to_persona
@@ -963,12 +980,26 @@ def score_arm(
         cells.append({**meta, **scored})
 
     summary = _summarize_cells(cells)
+    # Sanity guard: a regression that turns EVERY file into N/A would
+    # silently produce an empty scoring.json. Demand >= 25% scored.
+    # The expected production fraction is ~63% (953 / 1513 fact-arm
+    # files, the 560 remainder being the documented cloud-metric N/A
+    # set at end_of_system + mahal_pooled_ctx).
+    if files and len(cells) < max(1, len(files) // 4):
+        raise RuntimeError(
+            f"Scored only {len(cells)}/{len(files)} cells "
+            f"({100 * len(cells) / len(files):.1f}%); expected >= 25%. "
+            f"Skipped N/A: {len(skipped_na)}. Likely a regression in "
+            f"_matrix_to_dict or the bake-off metric writers."
+        )
     return {
         "schema_version": 1,
         "arm": arm,
         "smoke": smoke,
         "n_metric_files": len(files),
         "n_cells_scored": len(cells),
+        "n_cells_skipped_na": len(skipped_na),
+        "skipped_na": skipped_na,
         "anchors": {
             "nonstylized_rho_deltag": NONSTYLIZED_ANCHOR_RHO_DELTAG,
             "nonstylized_rho_glogp": NONSTYLIZED_ANCHOR_RHO_GLOGP,
