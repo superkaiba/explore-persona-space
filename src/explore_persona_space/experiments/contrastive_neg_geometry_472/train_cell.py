@@ -355,7 +355,7 @@ def train_one_cell(
     report_to: str = "wandb",
     gpu_id: int = 0,
     lr_override: float | None = None,
-    epochs_override: int | None = None,
+    epochs_override: float | None = None,  # #508 B5: accept float fractional epochs.
     hf_path_in_repo_override: str | None = None,
     run_name_override: str | None = None,
     step_calibration_fractions: tuple[float, ...] | None = None,
@@ -364,6 +364,7 @@ def train_one_cell(
     lora_alpha_override: int | None = None,
     marker_suppress_at_post_response_slot: bool = False,
     marker_im_end_token_id: int | None = None,
+    extra_callbacks: tuple[TrainerCallback, ...] = (),
 ) -> dict:
     """Train one cell's LoRA adapter, saving 6 mid-run checkpoints.
 
@@ -494,7 +495,10 @@ def train_one_cell(
         data_path=str(train_jsonl),
         output_dir=str(output_dir),
         cfg=cfg,
-        callbacks=[ckpt_cb],
+        # #508 B5: allow callers to thread additional callbacks
+        # (e.g. MarkerDynamicsCallback) in. Default empty tuple preserves
+        # byte-identical behavior for every pre-#508 caller.
+        callbacks=[ckpt_cb, *extra_callbacks],
     )
     index = ckpt_cb.index()
     # Fill the 100% checkpoint path with the final adapter dir. The terminal
