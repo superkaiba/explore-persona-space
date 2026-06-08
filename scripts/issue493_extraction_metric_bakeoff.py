@@ -324,9 +324,17 @@ def _now_iso() -> str:
 
 
 def _write_json_atomic(path: Path, payload: dict) -> None:
-    """Write payload to path.tmp then rename — never half-written files."""
+    """Write payload to path.<pid>.tmp then rename — never half-written files.
+
+    The PID suffix is load-bearing for the dispatcher's parallel worker pattern
+    (`scripts/issue502_dispatch.py` spawns one worker per GPU, all writing to
+    the SAME `bakeoff_root/meta.json`). A shared `.tmp` suffix races: the first
+    worker's `tmp.replace(path)` removes the `.tmp` file out from under every
+    other worker's pending replace, which then crashes with FileNotFoundError.
+    Unique-per-process tmp paths avoid the cross-process collision.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp = path.with_suffix(path.suffix + f".{os.getpid()}.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
     tmp.replace(path)
 
