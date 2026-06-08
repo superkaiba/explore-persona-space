@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 521,
+  "highest_id": 522,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3008,6 +3008,13 @@
       "path": "tasks/proposed/521",
       "status": "proposed",
       "title": "Phase C/D/E completion for #519: build input JSONs + run activation-shift extraction"
+    },
+    "522": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/522",
+      "status": "proposed",
+      "title": "Finish #511's dropped pieces: CPU un-descope (wass2 + ridge N=500 + loc-epoch 2/3/5 + g_logprob) on VM + full-response Rao-Blackwellized JS predictor on GPU"
     },
     "53": {
       "has_clean_result": false,
