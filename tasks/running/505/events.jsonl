@@ -183,3 +183,4 @@
 {"ts": "2026-06-08T13:03:29Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: traj_vllm -> traj_kl", "phase": "traj_kl", "pod": "pod-505"}
 {"ts": "2026-06-08T13:31:09Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: traj_kl -> traj_vllm", "phase": "traj_vllm", "pod": "pod-505"}
 {"ts": "2026-06-08T13:40:26Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: traj_vllm -> traj_kl", "phase": "traj_kl", "pod": "pod-505"}
+{"ts": "2026-06-08T14:08:09Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: traj_kl -> traj_vllm", "phase": "traj_vllm", "pod": "pod-505"}
