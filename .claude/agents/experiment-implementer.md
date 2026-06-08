@@ -267,6 +267,65 @@ silently dropped the end-of-run sentinel for missing required keys, and
    under `## Smoke run` in the report (see Report Format § (c) below).
    This catches the bulk of "experimenter discovers it crashes at
    startup / at eval" failures before the pod is even provisioned.
+
+   **GPU-bound-phase carve-out.** When a phase requires multi-GPU or
+   GPU-mandatory runtime (`accelerate launch` + ZeRO-3, vLLM batched
+   eval, ≥7B HF model load in bf16, TP=8 inference) and the local VM
+   has no compatible GPU, the smoke for that phase decomposes into
+   THREE substitute coverage items — all three are required, not
+   alternatives:
+   1. **REAL CPU smoke of the CPU-runnable portion of the phase**
+      against the real artifact the upstream phase emits — i.e. the
+      pre-GPU setup pipeline the production code actually executes
+      before the first CUDA call. For training that means: data load
+      + tokenizer construction + marker-token id assertion +
+      truncation-guard arithmetic + `max_steps` / `num_train_epochs`
+      arithmetic + collator construction on a 1-example dataset, with
+      exit code 0 and a digest of the produced inputs (row count +
+      first-row shape). For eval that means: prompt construction +
+      tokenization + sentinel/refusal post-processing on a 1-example
+      slice fed through a 2-layer CPU stub model (or a teacher-forced
+      log-prob path against a tiny CPU model), with the same digest
+      shape.
+   2. **Dispatcher dry-run** (`--skip-train --skip-eval` or the
+      equivalent flag the project's dispatcher already exposes) that
+      exits 0 cleanly and emits the terminal `[phase=done]` log line
+      so the cell-iteration plumbing, env passthrough, sentinel
+      writer, and `poll_pipeline.py` contract (see the pod-side
+      contract section above) are exercised end-to-end without
+      requiring a GPU.
+   3. **Signature smoke** on the GPU-bound entrypoint:
+      `uv run python -c "import inspect; from <module> import
+      <fn>; print(inspect.signature(<fn>))"` — catches ABI
+      breakage between the dispatcher caller and the trainer / vLLM
+      entrypoint (the partial-port crash class the
+      "Porting a recipe from an unmerged parent branch" section
+      addresses post-launch). The signature must match what the
+      dispatcher's call site passes.
+
+   Report this under the relevant phase's sub-heading in `## Smoke
+   run` with the literal sub-heading `### <phase-name> — Carve-out
+   (GPU-bound)` (e.g. `### training — Carve-out (GPU-bound)`,
+   `### eval — Carve-out (GPU-bound)`). Inside that sub-section list
+   each of the three substitute coverage items with its command, exit
+   code, and one-line artifact digest. Also name the constraint in one
+   sentence ("4× H100 ZeRO-3 required; local VM has no CUDA-capable
+   GPU"). A phase that is GPU-bound but NOT labeled with the
+   `Carve-out (GPU-bound)` sub-heading — or that omits any of the
+   three substitute coverage items — is STILL a `smoke-run-missing`
+   FAIL at code-review: the carve-out is the documented escape hatch,
+   not a default. CPU-runnable phases (data-gen, analysis, upload)
+   always use the standard end-to-end smoke shape above — the
+   carve-out applies ONLY to genuinely GPU-bound phases. The
+   code-reviewer mirror rule lives in
+   `.claude/agents/code-reviewer.md` Step 0.6 (incident: task #514
+   round 2 — Codex code-reviewer FAILed with `smoke-run-missing`
+   because the implementer's "(signature smoke)" notation for
+   GPU-bound training/eval phases lacked both the documented sub-
+   heading and the three-item substitute coverage; the carve-out
+   below formalizes the report-time labeling that lets code-reviewer
+   distinguish a documented GPU-bound phase from a genuinely missing
+   smoke).
 4. **Self-review against plan.** Walk down the plan's "File paths + concrete
    diffs" list and confirm each item is addressed.
 5. **Compute-deviation check.** For every row in the plan's §9
