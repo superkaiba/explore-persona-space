@@ -168,10 +168,15 @@ ANCHOR_LR: float = 2e-6
 #   without changing rank/α/lr (per user-directive 2026-06-08T04:53:14Z:
 #   "same lr=2e-6 / r=8 / alpha=32, so source ΔG lands in the ~5-10-nats-
 #   below-ceiling band"). The 6-checkpoint trajectory at frac=
-#   {0.08, 0.16, 0.33, 0.50, 0.75, 1.00} now spans steps {6, 12, 25, 37, 56,
-#   75} so Phase 0's pick rule can scan for the latest in-band checkpoint
-#   before the cell saturates. Source: #477 r=8/count=2 cell (9.3 nats at 75
-#   steps), pod-504 round-13 trajectories (~0 nats at 25 steps).
+#   {0.08, 0.16, 0.33, 0.50, 0.75, 1.00} maps to ACTUAL saved-checkpoint
+#   steps {6, 12, 25, 38, 57, 75} at max_steps=75 (the callback at
+#   train_cell.py:CheckpointAtFractionsCallback fires on the first
+#   global_step where global_step / max_steps >= frac, so 0.50→step 38
+#   (38/75=0.5067), 0.75→step 57 (57/75=0.7600); 1.00 is recorded at
+#   step 75 in on_train_end). Phase 0's pick rule scans for the latest
+#   in-band checkpoint before the cell saturates. Source: #477 r=8/count=2
+#   cell (9.3 nats at 75 steps), pod-504 round-13 trajectories (~0 nats
+#   at 25 steps).
 EPOCHS: int = 3
 
 # Composition (plan §4.1 + §5):

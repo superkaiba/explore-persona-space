@@ -82,5 +82,13 @@ print('[launcher round-15] Phase 0 pick: rank={r} alpha={a} frac={f} source_dg={
 echo "=========================================="
 echo "[launcher round-15] Stage 2: SWEEP — Phase 1 main grid (5 arms x 2 seeds) + Phase 2 analyze"
 echo "=========================================="
+# Round-15 loop-2 fix: --skip-phase07 added. Stage 1 already ran Phase 0.7
+# with --smoke and produced R_train_v504.json / R_eval_v504.json at the
+# canonical paths. The dispatcher's Phase 0.7 fast-path is keyed against
+# the ORIGINAL #472 R inputs (not the stage-1 v504 outputs), so without
+# --skip-phase07 stage 2 would re-fire the vLLM Phase 0.7 (~30+ min wall
+# waste) AND overwrite the stage-1 phase07 sentinel. The dispatcher's
+# existence-assertion at :551-560 will fail-loud if either v504 artifact
+# is missing.
 exec uv run python scripts/dispatch_neg_geometry_504.py \
-    --skip-phase05 --skip-phase0 --hf-path-suffix __r15
+    --skip-phase05 --skip-phase0 --skip-phase07 --hf-path-suffix __r15

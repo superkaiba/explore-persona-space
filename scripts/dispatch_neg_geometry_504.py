@@ -171,6 +171,12 @@ def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on 
     free_gpus: list[int] = list(range(n_gpus))
 
     def _launch(cell: str, seed: int, gpu: int) -> subprocess.Popen:
+        # Trajectory path is intentionally NOT suffixed by hf_path_suffix —
+        # Phase 0's pick rule (phase0.py) AND Phase 2's analyze (analyze.py)
+        # both read the canonical un-suffixed path. A future operator passing
+        # --resume on a pod with a stale round-N trajectory at this path would
+        # skip launching the cell; the round-15 launcher does NOT pass
+        # --resume, so the asymmetry is currently safe.
         out_traj = slab_root / f"{cell}_seed{seed}" / "trajectory.json"
         if resume and out_traj.exists():
             log.info("[%s seed%d] RESUME: trajectory exists; skipping.", cell, seed)
@@ -260,6 +266,16 @@ def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on 
                     f"See {log_dir}/{label_prefix}-{cell}-seed{seed}.log. Sweep aborted."
                 )
             log.info("[%s seed%d] DONE (GPU %d)", cell, seed, gpu)
+            # Round-15 loop-2 fix: thread hf_path_suffix into the dispatcher's
+            # cell_results so the final issue-504-results.json sentinel
+            # (consumed by _write_final_sentinel at lines ~807-812, which is
+            # the canonical reproducibility ledger downstream automation —
+            # analyzer / clean-result / upload-verifier — reads) publishes the
+            # SUFFIXED HF path matching the per-cell sentinel + the actual
+            # upload site in i504_run_cell.py:303,409. Without this thread the
+            # final sentinel pointed reviewers at the un-suffixed round-13/14
+            # adapters instead of the round-15 __r15 adapters.
+            run_slug = f"{cell}_seed{seed}{hf_path_suffix}"
             results.append(
                 {
                     "cell": cell,
@@ -267,7 +283,8 @@ def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on 
                     "status": "done",
                     "assigned_gpu": gpu,
                     "trajectory_path": str(slab_root / f"{cell}_seed{seed}" / "trajectory.json"),
-                    "adapter_hf_path": f"adapters/issue_504/{cell}_seed{seed}",
+                    "adapter_hf_path": f"adapters/issue_504/{run_slug}",
+                    "hf_path_suffix": hf_path_suffix,
                 }
             )
         running = still
