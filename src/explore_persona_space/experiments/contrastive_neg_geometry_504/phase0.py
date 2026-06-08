@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from pathlib import Path
 from typing import Any
 
@@ -984,3 +985,243 @@ def merge_recovery_into_v3_pick(
     pick["recovery_finer_trajectory"] = recovery_trajectory
     pick["merged_from_coarse"] = True
     return pick
+
+
+# ── v4 bystander-resolution picker (plan v5 §4.1 fix #2). ────────────────────
+#
+# Replaces v3's `source_emission ∈ [0.1, 0.8]` gate (which penalized the source
+# for SUCCEEDING at the implant — it is the trained-on persona; saturation IS
+# expected). The v4 gate scores saturation on the BYSTANDERS: a non-trivial
+# fraction of held-out probes must sit below the marker-argmax ceiling so the
+# geometry sweep has dynamic range to read. See plan v5 §11 + §4.1.
+#
+# DEFAULTS:
+#   - FLOOR_DELTA_G_NATS = +0.5: probe ΔG must be at least 0.5 nats above base
+#     to count as "the model has shifted toward emitting the marker here."
+#   - CEILING_LOGP_NATS = log(0.9) ≈ -0.105: probe `log P(marker)` must be at
+#     least this far below 0 (i.e. marker probability < 0.9) so the probe is
+#     NOT pinned at marker-argmax (where ΔG saturates and the regression has
+#     no dynamic range).
+#   - GATE_FRACTION = 0.20: at least 20% (≥ 11 of 55) of probes in the open
+#     interval. Defensible balance — too sparse (10%) leaves the regression
+#     underpowered; too restrictive (50%) is unreachable at EPOCHS=3 where
+#     saturation creeps in.
+
+CEILING_LOGP_NATS_V4 = math.log(0.9)  # ≈ -0.10536
+FLOOR_DELTA_G_NATS_V4 = 0.5
+BYSTANDER_RESOLUTION_GATE_V4 = 0.20  # ≥ 20% of probes in the open interval
+
+
+def compute_bystander_resolution_from_held_out(
+    held_out: dict[str, dict[str, dict[str, float | bool]]],
+    *,
+    floor_delta_g_nats: float = FLOOR_DELTA_G_NATS_V4,
+    ceiling_logp_nats: float = CEILING_LOGP_NATS_V4,
+) -> tuple[float, int, int]:
+    """Bystander resolution = fraction of (probe × q) pairs in the open interval.
+
+    The v4 anchor gate (plan v5 §4.1 step 2). For each (persona, q) leaf in the
+    trajectory's `held_out` dict, count the pair as "in-band" when ΔG ≥ floor
+    AND ``log P(※ | trained slot) ≤ ceiling`` (i.e. the marker is NOT the
+    argmax at probability ≥ 0.9). Returns the fraction in-band over the full
+    panel × q grid, plus raw counts for diagnostics.
+
+    Args:
+        held_out: the trajectory's `held_out` dict shape
+            ``{persona: {q: {"g_logp": float, "b_logp": float, "delta_g": float, ...}}}``.
+        floor_delta_g_nats: probe ΔG must be ≥ this (default +0.5 nats).
+        ceiling_logp_nats: probe ``g_logp`` (trained log P(※)) must be ≤ this
+            (default log(0.9) ≈ -0.105) — excludes probes pinned at marker-argmax.
+
+    Returns:
+        ``(fraction_in_band, n_in_band, n_total)``.
+    """
+    n_in_band = 0
+    n_total = 0
+    for per_q in held_out.values():
+        for leaf in per_q.values():
+            n_total += 1
+            dg = float(leaf.get("delta_g", float(leaf["g_logp"]) - float(leaf["b_logp"])))
+            g_logp = float(leaf["g_logp"])
+            if dg >= floor_delta_g_nats and g_logp <= ceiling_logp_nats:
+                n_in_band += 1
+    return (n_in_band / n_total if n_total else 0.0), n_in_band, n_total
+
+
+def pick_anchor_v4_bystander_resolution(
+    trajectory: dict,
+    *,
+    source: str = SOURCE_PERSONA,
+    fixed_lr: float = FIXED_LR_V3,
+    chosen_epochs: int = 3,
+    floor_delta_g_nats: float = FLOOR_DELTA_G_NATS_V4,
+    ceiling_logp_nats: float = CEILING_LOGP_NATS_V4,
+    gate_fraction: float = BYSTANDER_RESOLUTION_GATE_V4,
+) -> dict[str, Any]:
+    """v4 picker (plan v5 §4.1 fix #2): bystander-resolution gate, no source-emission gate.
+
+    Reads ONE trajectory (the v4 EPOCHS=3 anchor re-eval); for each of the 6
+    checkpoint fractions, computes the bystander-resolution score on the
+    held-out panel (excluding source). Tags each fraction `in_band` when the
+    score ≥ `gate_fraction` (default 20%, plan v5 §11).
+
+    Pick rule (plan v5 §4.1 step 4):
+      (a) From the in_band set, prefer the fraction whose resolution is closest
+          to the band midpoint (0.5 — maximum spread for the regression).
+      (b) Tie-break: earlier fraction (cheaper Phase 1 wall-clock; less
+          catastrophic-forgetting risk).
+
+    Fallback trigger (plan v5 §4.1 step 6):
+      - in_band set EMPTY at every fraction → exit to plan v5 (rank bump). The
+        v4 dispatcher invokes the EPOCHS=2 finer-grid bisection (§4.2 Step 1)
+        before declaring a hard exit.
+
+    Args:
+        trajectory: trajectory.json dict produced by
+            ``i504_eval_trajectory.py`` (Phase 0 v4 re-eval of the EPOCHS=3
+            anchor through the fixed reader).
+        source: source persona name (recorded in the artifact).
+        fixed_lr: pinned lr (always 1e-4 in v4; recorded only).
+        chosen_epochs: pinned EPOCHS (3 in v4; recorded only).
+        floor_delta_g_nats, ceiling_logp_nats, gate_fraction: thresholds.
+
+    Returns:
+        {
+          "version": 4,
+          "anchor_epochs": int,
+          "fixed_lr": float,
+          "fixed_rank": int,
+          "fixed_alpha": int,
+          "chosen_epochs": int,
+          "chosen_lr": float,
+          "chosen_rank": int,
+          "chosen_alpha": int,
+          "chosen_checkpoint_fraction": float | None,
+          "chosen_checkpoint_steps": int | None,
+          "source_delta_g_at_pick_nats": float | None,
+          "source_emission_at_pick": float | None,
+          "bystander_resolution_at_pick": float | None,
+          "ceiling_logp": float,
+          "floor_delta_g": float,
+          "gate_fraction": float,
+          "fallback_triggered": bool,
+          "fallback_reason": str | None,
+          "smoke_table": [
+            {"epochs": 3, "ckpt_frac": float, "source_dg": float,
+             "source_emission": float, "bystander_resolution": float,
+             "n_in_band": int, "n_total": int, "in_band": bool},
+            ...
+          ],
+          "verdict": "pass" | "no_in_band_anchor",
+          "version_str": "v4_bystander_resolution",
+        }
+    """
+    per_frac = _per_frac_source_diagnostics(trajectory, source=source)
+    smoke_table: list[dict] = []
+    in_band_candidates: list[tuple[float, float, float]] = []
+    # tuple shape: (frac, resolution_distance_to_0.5, resolution)
+    for ck in trajectory.get("checkpoints", []):
+        frac = float(ck["frac"])
+        held_out = ck.get("held_out", {})
+        resolution, n_in_band, n_total = compute_bystander_resolution_from_held_out(
+            held_out,
+            floor_delta_g_nats=floor_delta_g_nats,
+            ceiling_logp_nats=ceiling_logp_nats,
+        )
+        src_diag = per_frac.get(frac, {"source_dg": float("nan"), "source_emission": float("nan")})
+        in_band = resolution >= gate_fraction
+        row = {
+            "epochs": chosen_epochs,
+            "ckpt_frac": frac,
+            "source_dg": float(src_diag["source_dg"]),
+            "source_emission": float(src_diag["source_emission"]),
+            "bystander_resolution": float(resolution),
+            "n_in_band": int(n_in_band),
+            "n_total": int(n_total),
+            "in_band": bool(in_band),
+        }
+        smoke_table.append(row)
+        if in_band:
+            # Distance to band midpoint (0.5 — maximum spread).
+            in_band_candidates.append((frac, abs(resolution - 0.5), resolution))
+
+    if not in_band_candidates:
+        # Fallback: bystander layer has no dynamic range at the EPOCHS=3 anchor.
+        # Plan v5 §4.1 step 6 routes to EPOCHS=2 bisection (§4.2 Step 1); this
+        # picker just surfaces the fallback signal.
+        return {
+            "version": 4,
+            "anchor_epochs": int(chosen_epochs),
+            "fixed_lr": float(fixed_lr),
+            "fixed_rank": 8,
+            "fixed_alpha": 32,
+            "chosen_epochs": int(chosen_epochs),
+            "chosen_lr": float(fixed_lr),
+            "chosen_rank": 8,
+            "chosen_alpha": 32,
+            "chosen_checkpoint_fraction": None,
+            "chosen_checkpoint_steps": None,
+            "source_delta_g_at_pick_nats": None,
+            "source_emission_at_pick": None,
+            "bystander_resolution_at_pick": None,
+            "ceiling_logp": float(ceiling_logp_nats),
+            "floor_delta_g": float(floor_delta_g_nats),
+            "gate_fraction": float(gate_fraction),
+            "fallback_triggered": True,
+            "fallback_reason": (
+                f"bystander_resolution_unreachable: 0 of {len(smoke_table)} "
+                f"checkpoint fractions have ≥ {gate_fraction:.0%} of probes in "
+                f"the open interval (floor={floor_delta_g_nats:+.2f} nats, "
+                f"ceiling={ceiling_logp_nats:.3f} nats). EPOCHS=3 anchor's "
+                f"bystander layer has no dynamic range → §4.2 EPOCHS=2 "
+                f"bisection per plan v5 §4.1 step 6."
+            ),
+            "smoke_table": smoke_table,
+            "verdict": "no_in_band_anchor",
+            "source": source,
+            "version_str": "v4_bystander_resolution",
+        }
+
+    # Pick rule: closest to band midpoint (0.5) ASC, then earlier fraction ASC.
+    in_band_candidates.sort(key=lambda x: (x[1], x[0]))
+    chosen_frac, _dist, chosen_resolution = in_band_candidates[0]
+    chosen_row = next(r for r in smoke_table if r["ckpt_frac"] == chosen_frac)
+
+    # Steps at picked fraction: ~25 steps per epoch (400 rows / effective
+    # batch 16) × chosen_epochs (3 in v4). Informational only; the trainer's
+    # CheckpointAtFractionsCallback computes the actual saved-step itself.
+    steps_per_epoch = 25
+    chosen_steps = max(1, round(chosen_frac * steps_per_epoch * chosen_epochs))
+
+    return {
+        "version": 4,
+        "anchor_epochs": int(chosen_epochs),
+        "fixed_lr": float(fixed_lr),
+        "fixed_rank": 8,
+        "fixed_alpha": 32,
+        "chosen_epochs": int(chosen_epochs),
+        "chosen_lr": float(fixed_lr),
+        "chosen_rank": 8,
+        "chosen_alpha": 32,
+        "chosen_checkpoint_fraction": float(chosen_frac),
+        "chosen_checkpoint_steps": int(chosen_steps),
+        "source_delta_g_at_pick_nats": float(chosen_row["source_dg"]),
+        "source_emission_at_pick": float(chosen_row["source_emission"]),
+        "bystander_resolution_at_pick": float(chosen_resolution),
+        "ceiling_logp": float(ceiling_logp_nats),
+        "floor_delta_g": float(floor_delta_g_nats),
+        "gate_fraction": float(gate_fraction),
+        "fallback_triggered": False,
+        "fallback_reason": None,
+        "smoke_table": smoke_table,
+        "verdict": "pass",
+        "source": source,
+        "version_str": "v4_bystander_resolution",
+    }
+
+
+def write_phase0_v4_artifact(pick: dict[str, Any], out_path: Path) -> Path:
+    """Write phase0_calibration_v4.json (plan v5 §4.1 output format)."""
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(pick, indent=2))
+    return out_path

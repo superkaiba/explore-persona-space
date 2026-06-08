@@ -69,12 +69,25 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "--mode",
-        choices=("v1", "v2", "v3"),
+        choices=("v1", "v2", "v3", "v4"),
         default="v1",
         help=(
             "Phase 0 picker mode: v1=rank-ladder (legacy, default for backwards-"
             "compat); v2=lr-ladder (plan v2 §4.1); v3=EPOCHS-ladder at fixed lr=1e-4 "
-            "(plan v3 §4.1 — the EPOCHS-anchor redesign after v2 lr-ladder refutation)."
+            "(plan v3 §4.1 — the EPOCHS-anchor redesign after v2 lr-ladder refutation); "
+            "v4=bystander-resolution gate at the pinned EPOCHS=3 anchor (plan v5 §4.1 "
+            "fix #2 — drops the source-emission gate that contaminated v3's pick)."
+        ),
+    )
+    ap.add_argument(
+        "--v4-trajectory-path",
+        type=Path,
+        default=None,
+        help=(
+            "v4 only: path to the EPOCHS=3 anchor re-eval trajectory JSON "
+            "produced by `i504_eval_trajectory.py` (the Phase 0 v4 §4.1 step "
+            "input). Default: <slab_root>/c504v4_smoke_eps3_reread_seed42/"
+            "trajectory.json."
         ),
     )
     ap.add_argument(
@@ -164,7 +177,9 @@ def main(argv: list[str] | None = None) -> int:
         return _run_v1(args)
     if args.mode == "v2":
         return _run_v2(args)
-    return _run_v3(args)
+    if args.mode == "v3":
+        return _run_v3(args)
+    return _run_v4(args)
 
 
 def _run_v1(args: argparse.Namespace) -> int:
@@ -419,6 +434,81 @@ def _run_v3(args: argparse.Namespace) -> int:
     if pick.get("verdict") != "pass":
         log.error(
             "[phase=phase0_pick mode=v3] non-pass verdict=%s, fallback_reason=%s "
+            "— see smoke_table in %s",
+            pick.get("verdict"),
+            pick.get("fallback_reason"),
+            out_path,
+        )
+        return 2
+    return 0
+
+
+def _run_v4(args: argparse.Namespace) -> int:
+    """v4 bystander-resolution picker (plan v5 §4.1 fix #2).
+
+    Reads ONE trajectory (the EPOCHS=3 anchor re-eval) and applies the v4
+    bystander-resolution gate (≥ 20% of held-out probes in the open interval
+    (+0.5 nats floor, log(0.9) ≈ -0.105 ceiling)). Drops the v3 source-
+    emission gate that contaminated the v3 pick. Writes
+    ``phase0_calibration_v4.json``. Returns:
+
+      * rc=0 when verdict=="pass" (in-band anchor found).
+      * rc=2 when verdict=="no_in_band_anchor" — bystander layer is saturated
+        at every fraction; dispatcher invokes the EPOCHS=2 bisection
+        (§4.2 Step 1) before declaring a hard exit-to-v5 (rank bump).
+    """
+    from explore_persona_space.experiments.contrastive_neg_geometry_504 import (
+        FIXED_LR_V3,
+        SOURCE_PERSONA,
+    )
+    from explore_persona_space.experiments.contrastive_neg_geometry_504.phase0 import (
+        pick_anchor_v4_bystander_resolution,
+        write_phase0_v4_artifact,
+    )
+
+    out_path = args.out_path or args.slab_root / "phase0_calibration_v4.json"
+    source = args.source or SOURCE_PERSONA
+    fixed_lr = args.fixed_lr if args.fixed_lr is not None else FIXED_LR_V3
+    traj_path = args.v4_trajectory_path or (
+        args.slab_root / "c504v4_smoke_eps3_reread_seed42" / "trajectory.json"
+    )
+    if not traj_path.exists():
+        raise FileNotFoundError(
+            f"v4 trajectory missing at {traj_path} — Phase 0 v4 §4.1 must "
+            f"re-evaluate the EPOCHS=3 anchor through the fixed reader before "
+            f"this picker runs. Run `--phase phase0_v4_reeval` first."
+        )
+
+    trajectory = json.loads(traj_path.read_text())
+    log.info(
+        "[load] v4 trajectory: %d checkpoints (from %s)",
+        len(trajectory.get("checkpoints", [])),
+        traj_path,
+    )
+
+    pick = pick_anchor_v4_bystander_resolution(
+        trajectory,
+        source=source,
+        fixed_lr=fixed_lr,
+        chosen_epochs=3,
+    )
+    write_phase0_v4_artifact(pick, out_path)
+
+    _maybe_write_sentinel(args, pick, out_path, "phase0_pick_v4")
+
+    log.info(
+        "[phase=phase0_pick mode=v4] verdict=%s, chosen_epochs=%s, chosen_lr=%s, "
+        "chosen_frac=%s, bystander_resolution_at_pick=%s, fallback=%s",
+        pick.get("verdict"),
+        pick.get("chosen_epochs"),
+        pick.get("chosen_lr"),
+        pick.get("chosen_checkpoint_fraction"),
+        pick.get("bystander_resolution_at_pick"),
+        pick.get("fallback_triggered"),
+    )
+    if pick.get("verdict") != "pass":
+        log.error(
+            "[phase=phase0_pick mode=v4] non-pass verdict=%s, fallback_reason=%s "
             "— see smoke_table in %s",
             pick.get("verdict"),
             pick.get("fallback_reason"),
