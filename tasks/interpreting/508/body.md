@@ -14,7 +14,7 @@ relates_to:
 - leak-predictor
 - leak-to-default
 ---
-# Comparing LoRA and full fine-tuning for marker leakage to bystander personas — H1 indeterminate, full-FT goes off-cliff into whole-response collapse (LOW confidence)
+# Comparing LoRA and full fine-tuning for marker leakage to bystander personas — matched-rate verdict indeterminate, full-FT goes off-cliff into whole-response collapse (LOW confidence)
 
 <!-- clean-result-v2 -->
 
@@ -61,7 +61,7 @@ I trained the same data two ways, three training budgets each:
 - **LoRA**, three budgets — rs-LoRA r=16, α=32, lr=5e-6, 0.25 / 0.5 / 1.0 epoch fractions, effective batch 16 (4 micro × 4 grad-accum), cosine schedule.
 - **Full FT**, three budgets — ZeRO-3 across 4× H100, lr=5e-6 linear (Tulu 3's 8B recipe), 0.25 / 0.5 / 1.0 epoch fractions, effective batch 64 (1 micro × 16 grad-accum × 4 GPU).
 
-Three method-confounds are inherited from the recipe choices, not isolated by this experiment: (a) effective batch differs 4× between arms (16 vs 64), (b) the LR schedule differs (cosine vs linear), (c) the parameterization differs (rs-LoRA r=16 vs full-weight ZeRO-3). The matched-rate read is the cleanest control available against these confounds, but where that read fails (see finding 1), they ride along with the cliff observation.
+Three method-confounds are inherited from the recipe choices, not isolated by this experiment: effective batch differs 4× between arms (16 vs 64); the LR schedule differs (cosine vs linear); the parameterization differs (rs-LoRA r=16 vs full-weight ZeRO-3). The matched-rate read is the cleanest control available against these confounds, but where that read fails (see finding 1), they ride along with the cliff observation.
 
 I evaluated each of the 6 trained cells on a 15-persona held-out panel × 20 generic questions × 1 seed, plus the source persona itself (20 questions) and the bare default assistant (20 questions). The trained model writes its own greedy response, then I read `log P(` ※` | T_persona(q) + R_cell)` at the slot right after that response, both for the trained cell and for the base model on the same generated text. ΔG = trained log-p − base log-p; bystander leakage = mean ΔG over the 15 held-out personas × 20 questions = 300 probes. The matched-rate read targets ΔG = 8 ± 1 nat on the source-self axis.
 
