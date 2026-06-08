@@ -2998,8 +2998,8 @@
       "goal": "Test whether fine-tuning edits superpose -- whether implanting a marker in two source contexts separately vs jointly combines additively in per-context activation-shift space (shift_{A+B} ~ shift_A + shift_B) -- as the rank-one map-plus-beacons picture requires.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/520",
-      "status": "interpreting",
+      "path": "tasks/reviewing/520",
+      "status": "reviewing",
       "title": "A deliberately-cold marker-implant LoRA stayed at the emission floor across 36 cells, so the additivity geometry is only a weak activation-space read (LOW confidence)"
     },
     "53": {
