@@ -6,7 +6,7 @@ kind: experiment
 tags:
 - roadmap-jun05
 created_at: '2026-06-08T06:58:29Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 496
 goal: 'Measure whether #496''s six warmth-trained Qwen-2.5-7B adapters actually became
   warmer than base (SocioT Warmth + Claude judge on held-out vulnerability prompts),

@@ -2956,7 +2956,7 @@
     },
     "515": {
       "goal": "Measure whether #496's six warmth-trained Qwen-2.5-7B adapters actually became warmer than base (SocioT Warmth + Claude judge on held-out vulnerability prompts), to determine whether #496's warmth->sycophancy null is a real null or an artifact of warmth never being implanted.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/515",
       "status": "interpreting",
