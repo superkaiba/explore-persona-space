@@ -1,5 +1,6 @@
 ---
-title: 'Base-model headroom probe for the #498 per-trait rubrics'
+title: 'Two of three "trait installed" passes in #498 were already saturated in the
+  untrained base; only validating shows a real implant (HIGH confidence)'
 kind: experiment
 tags:
 - roadmap-jun05
