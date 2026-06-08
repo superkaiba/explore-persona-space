@@ -78,13 +78,26 @@ from explore_persona_space.experiments.contrastive_neg_geometry_472 import (  # 
 # even after tripling the step count. Plan §8 explicitly lists rank-32 +
 # lr 5e-6 as the under-training fallback; keeping EPOCHS=3 (round-7's
 # single-knob bump) on top of rank 32 strictly dominates the literal §8
-# "rank 32 + 1 epoch" wording. Other recipe knobs (lr 5e-6, lora_alpha 32,
-# dropout 0.05, positives 200, totals) UNCHANGED — this is a deliberate
-# single-axis rank bump per plan §8's pre-registered fallback.
+# "rank 32 + 1 epoch" wording.
+#
+# LEARNING_RATE = 1e-5 (round 9, 2026-06-08): bumped from 5e-6 after round-8
+# smoke (rank 32 + lr 5e-6 + 3 epochs / 75 steps) trained to a FLAT source-ΔG
+# trajectory at ≈1.6 nats across the whole training curve. Per-fraction
+# trajectory: 0.08 → 1.63, 0.16 → 1.57, 0.33 → 1.51, 0.50 → 1.60 (headline,
+# still ≈3× under §7's 5-nat floor), 0.75 → 1.59, 1.00 → 1.69. Eval-guard
+# PASS (B-norm=0.086, max|ΔG|=1.979) confirms the LoRA IS applied — the
+# implant exists but is stuck near 1.6 nats from step 6 onward across 12.5×
+# more optimizer steps. A flat trajectory is the LR-bound signature, not the
+# step-bound one; bumping EPOCHS won't move it. Plan §11's "1e-5 saturates
+# per #472" prior was derived from #472's 800-negative / 62-step recipe;
+# #505 runs 200 negatives / 75 steps, which is firmly under-trained — the
+# saturating-recipe ceiling doesn't transfer here. Other recipe knobs
+# (LORA_R 32, LORA_ALPHA 32, EPOCHS 3, dropout 0.05, positives 200, totals)
+# UNCHANGED — this is a deliberate single-axis LR bump.
 LORA_R = 32
 LORA_ALPHA = 32
 LORA_DROPOUT = 0.05
-LEARNING_RATE = 5e-6
+LEARNING_RATE = 1e-5
 WARMUP_RATIO = 0.05
 # EPOCHS = 3 (round 7, 2026-06-06): bumped from 1 after smoke run yjz5ytuz
 # showed mean_token_accuracy=0.645 and grad_norm RISING at end of training —

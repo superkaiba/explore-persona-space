@@ -62,7 +62,14 @@ from explore_persona_space.experiments.leave_one_out_505 import (
 # fallback anchor now coincide at rank 32 (FALLBACK_LORA_R unchanged).
 _EXPECTED_LORA_R = 32
 _EXPECTED_LORA_ALPHA = 32
-_EXPECTED_LEARNING_RATE = 5e-6
+# Round-9 bump (2026-06-08): _EXPECTED_LEARNING_RATE 5e-6 -> 1e-5. Round-8
+# (rank 32 + lr 5e-6 + 3 epochs / 75 steps) produced a FLAT source-ΔG
+# trajectory at ≈1.6 nats (0.08:1.63, 0.16:1.57, 0.33:1.51, 0.50:1.60,
+# 0.75:1.59, 1.00:1.69) — still ~3x under plan §7's 5-nat validity floor.
+# A flat trajectory is the LR-bound signature; bumping EPOCHS further would
+# not have moved it. #472's "1e-5 saturates" prior used 800-neg / 62-step;
+# #505 runs 200-neg / 75-step (under-trained), so saturation isn't binding.
+_EXPECTED_LEARNING_RATE = 1e-5
 # Round-7 bump (2026-06-06): EPOCHS 1 → 3. Round-6 smoke (WandB run yjz5ytuz)
 # showed mean_token_accuracy=0.645 with grad_norm RISING at the end of training
 # under 1 epoch (25 optimizer steps); the source-self ΔG was 0.04 nats and the
@@ -97,10 +104,13 @@ def test_issue505_lora_alpha_is_32():
     )
 
 
-def test_issue505_learning_rate_is_5e_minus_6():
-    """Plan §5.1: lr=5e-6 (#472's 1e-5 is the saturating recipe)."""
+def test_issue505_learning_rate_is_1e_minus_5():
+    """Round-9 bump (2026-06-08): lr 5e-6 → 1e-5. Round-8 trajectory was FLAT
+    at ≈1.6 nats across the full curve (the LR-bound signature); plan §11's
+    "1e-5 saturates" prior used #472's 800-neg/62-step recipe and doesn't
+    transfer to #505's 200-neg/75-step under-trained regime."""
     assert LEARNING_RATE == _EXPECTED_LEARNING_RATE, (
-        f"LEARNING_RATE must be {_EXPECTED_LEARNING_RATE} per plan §5.1; got {LEARNING_RATE}."
+        f"LEARNING_RATE must be {_EXPECTED_LEARNING_RATE} (round-9 anchor); got {LEARNING_RATE}."
     )
 
 
@@ -176,16 +186,18 @@ def test_dispatcher_threads_lora_alpha_override():
 
 
 def test_dispatcher_threads_lr_override():
-    """Every dispatcher call to ``train_one_cell`` must pin ``lr_override`` —
-    #472's default LEARNING_RATE=1e-5 is the saturating recipe; #505 selects
-    5e-6 (plan §5.1). lr is the most outcome-changing knob in the recipe."""
+    """Every dispatcher call to ``train_one_cell`` must pin ``lr_override``.
+    Although round-9 lifted #505's LEARNING_RATE to 1e-5 (matching #472's
+    default value), this convergence is incidental — the override is still
+    required so future drift in #472's default does not silently change
+    #505's anchor. lr is the most outcome-changing knob in the recipe."""
     calls = _train_one_cell_calls(_dispatch_source())
     for call in calls:
         kw_names = {kw.arg for kw in call.keywords if kw.arg}
         assert "lr_override" in kw_names, (
             f"dispatch.py train_one_cell at line {call.lineno} missing "
-            "lr_override=LEARNING_RATE — without it lr defaults to #472's "
-            "1e-5 (saturating) instead of #505's 5e-6."
+            "lr_override=LEARNING_RATE — without it lr depends on #472's "
+            "default rather than #505's pinned anchor."
         )
 
 
