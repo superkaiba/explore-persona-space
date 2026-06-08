@@ -110,6 +110,31 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
 5. **Check what's reusable.** Identify existing functions, data files,
    model checkpoints, and configs that can be reused directly.
 
+6. **Replication fidelity (if the Goal is to replicate a published
+   finding).** If the Goal is to replicate a paper's result or test
+   whether it holds on our model, the FIRST run reproduces the paper's
+   actual data source, training recipe, hyperparameters, dependent
+   variable, AND the paper's own manipulation check — change ONLY the
+   one variable the replication is deliberately testing (typically the
+   base model). Pull the recipe from the paper itself via the arXiv MCP
+   (`mcp__arxiv__read_paper`, `arxiv-latex` for setup / appendix tables)
+   and verify author/venue against the source — never work from a
+   secondhand summary. Do NOT silently swap in the project's house rig
+   (contrastive Sonnet-written corpus, default LoRA r=32/α=64, 3 epochs,
+   etc.) where the paper used a different shape (e.g. ShareGPT-rewrite
+   plain SFT, r=8/α=16, epoch-2): a recipe mismatch confounds the null
+   and leaves model-size / corpus-shape / training-rig all
+   un-disentangled (incident #496). Any deviation forced by project
+   constraints (judge model, GPU budget, model size) is named in §12
+   Assumptions and carried into the eventual clean-result as a scope
+   caveat. A faithful replication of a positive-only paper is the named
+   contrastive-negatives exemption (b) — do NOT bolt on contrastive
+   negatives the paper didn't use (cross-reference §4 Design). When the
+   Goal is not a replication Goal, write "N/A — not a replication" in §1
+   Goal or §12 Assumptions and move on. CLAUDE.md "Replicating a
+   published finding → match the paper's data + recipe FIRST" is the
+   governing rule.
+
 ## Plan Format
 
 The plan opens with a short **Plan Summary** — the only section the user
