@@ -575,6 +575,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
             "phase0-fallback",
             "phase0_v3",
             "phase0_v3-recovery",
+            "phase0_v4_pretrain",
+            "phase0_v4_reeval",
+            "phase0p6_validate",
             "phase1",
         ),
         default="legacy",
@@ -590,6 +593,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
             "phase0_v3_exit_to_v4.json); "
             "phase0_v3-recovery=v3 in-plan finer-fraction recovery on EPOCHS=2 "
             "(triggered only when Trigger B fired); "
+            "phase0_v4_pretrain=v4 re-train EPOCHS=3 seed=42 ONCE with "
+            "per-fraction HF trajectory persistence (plan v5 §4.0); writes "
+            "phase0_trajectory_v4.json; "
+            "phase0_v4_reeval=v4 re-eval the EPOCHS=3 anchor through the "
+            "fixed reader + bystander-resolution picker (plan v5 §4.1 fix "
+            "#2); writes phase0_calibration_v4.json; "
+            "phase0p6_validate=v4 marker-logprob path validation (5 probes "
+            "× 4 questions × 1 ckpt; plan v5 §4.3a); writes "
+            "phase0p6_validation_v4.json; "
             "phase1=read whichever Phase 0 artifact exists "
             "(phase0_calibration_v3.json preferred over v2/v2_fallback) + "
             "train the 5 main arms × 2 seeds at the picked recipe; "
@@ -1152,6 +1164,28 @@ def _run_v2_phase(
             max_model_len_eval=max_model_len_eval,
             recovery=True,
         )
+    if args.phase == "phase0_v4_pretrain":
+        return _run_v4_phase0_pretrain(
+            args=args,
+            phase_summaries=phase_summaries,
+            arm_to_n_json=arm_to_n_json,
+            max_new_tokens_eval=max_new_tokens_eval,
+            max_model_len_eval=max_model_len_eval,
+        )
+    if args.phase == "phase0_v4_reeval":
+        return _run_v4_phase0_reeval(
+            args=args,
+            phase_summaries=phase_summaries,
+            arm_to_n_json=arm_to_n_json,
+            max_new_tokens_eval=max_new_tokens_eval,
+            max_model_len_eval=max_model_len_eval,
+        )
+    if args.phase == "phase0p6_validate":
+        return _run_v4_phase0p6_validate(
+            args=args,
+            phase_summaries=phase_summaries,
+            arm_to_n_json=arm_to_n_json,
+        )
     if args.phase == "phase1":
         return _run_v2_phase1(
             args=args,
@@ -1548,6 +1582,410 @@ def _select_active_phase0_pick(
         fallback_pick = json.loads(fallback_pick_path.read_text())
         return fallback_pick, fallback_pick_path
     return primary_pick, primary_pick_path
+
+
+def _run_v4_phase0_pretrain(
+    *,
+    args: argparse.Namespace,
+    phase_summaries: dict[str, dict],
+    arm_to_n_json: Path,
+    max_new_tokens_eval: int,
+    max_model_len_eval: int,
+) -> int:
+    """v4 Phase 0 §4.0 — pre-train EPOCHS=3 anchor with per-fraction HF persistence.
+
+    Plan v5 §4.0: re-train the EPOCHS=3 seed=42 anchor cell ONCE (~0.4 GPU-h
+    on 1× H100) with `EPM_PERSIST_TRAJECTORY_HF_REPO` +
+    `EPM_PERSIST_TRAJECTORY_HF_SUBFOLDER` set so each of the 6 fraction
+    checkpoints {0.08, 0.16, 0.33, 0.50, 0.75, 1.00} is uploaded inline to
+    `adapters/issue_504_v4/c504v4_smoke_eps3_seed42/ckpt_frac{N}/` AND
+    verified via `huggingface_hub.list_repo_files` before the next
+    fraction is saved.
+
+    This step is mandatory because v3's training upload persisted ONLY the
+    FINAL adapter, not the 6 trajectory checkpoints that §4.1 needs.
+    """
+    cell_slug = "c504v4_smoke_eps3_seed42"
+    pretrain_subfolder = f"adapters/issue_504_v4/{cell_slug}"
+    out_path = args.slab_root / "phase0_trajectory_v4.json"
+
+    log.info(
+        "[phase=v4_phase0_pretrain] re-training EPOCHS=3 anchor (cell=%s) with "
+        "trajectory persistence → %s",
+        cell_slug,
+        pretrain_subfolder,
+    )
+
+    # Set the per-fraction HF persistence env vars so
+    # CheckpointAtFractionsCallback uploads each fraction inline. See
+    # train_cell.py::_maybe_persist_trajectory_checkpoint.
+    os.environ["EPM_PERSIST_TRAJECTORY_HF_REPO"] = HF_MODEL_REPO
+    os.environ["EPM_PERSIST_TRAJECTORY_HF_SUBFOLDER"] = pretrain_subfolder
+
+    # Train one cell via the existing pool scheduler. EPOCHS=3, lr=1e-4,
+    # r=8/α=32 (matches v3 EPOCHS=3 byte-for-byte except for persistence).
+    # Slug is "c504v3_smoke_eps3" — the canonical EPOCHS=3 smoke slug — so
+    # build_cell_504 + i504_eval_trajectory.py disjointness guards already
+    # recognize it.
+    _schedule_cell_pool(
+        cells=["c504v3_smoke_eps3"],
+        seeds=[42],
+        n_gpus=args.n_gpus,
+        max_parallel=1,
+        slab_root=args.slab_root,
+        runs_root=args.runs_root,
+        log_dir=LOG_DIR,
+        bank_path=args.bank_path,
+        centroids_dir=args.centroids_dir,
+        arm_to_n_json=arm_to_n_json,
+        r_train_path=args.r_train_path,
+        r_eval_path=args.r_eval_path,
+        chosen_rank=8,
+        chosen_alpha=32,
+        chosen_frac=None,
+        smoke=False,
+        no_kl=args.no_kl,
+        report_to=args.report_to,
+        resume=args.resume,
+        max_new_tokens_eval=max_new_tokens_eval,
+        max_model_len_eval=max_model_len_eval,
+        hf_path_suffix=args.hf_path_suffix,
+        label_prefix="issue-504-v4-phase0_pretrain",
+        chosen_lr=float(args.fixed_lr),
+        per_cell_epochs={"c504v3_smoke_eps3": 3},
+        source_persona=args.source,
+        per_cell_tolerant=False,  # pretrain is single-cell; failure is fatal
+    )
+
+    # Verify the 6 checkpoints landed on HF (fail-loud per upload-policy).
+    from huggingface_hub import list_repo_files
+
+    expected_fractions = ["0.08", "0.16", "0.33", "0.50", "0.75", "1.00"]
+    try:
+        files = list_repo_files(HF_MODEL_REPO, token=os.environ.get("HF_TOKEN"))
+    except Exception as exc:
+        raise RuntimeError(
+            f"[phase=v4_phase0_pretrain] post-train Hub verify FAILED: "
+            f"list_repo_files({HF_MODEL_REPO!r}) raised {exc}. Cannot confirm "
+            f"the 6 trajectory checkpoints landed."
+        ) from exc
+    missing: list[str] = []
+    uploaded_paths: list[str] = []
+    for frac in expected_fractions:
+        key = f"{pretrain_subfolder}/ckpt_frac{frac}/adapter_model.safetensors"
+        if key not in files:
+            missing.append(key)
+        else:
+            uploaded_paths.append(f"{pretrain_subfolder}/ckpt_frac{frac}")
+    if missing:
+        raise RuntimeError(
+            f"[phase=v4_phase0_pretrain] Hub verify FAILED: {len(missing)} of "
+            f"{len(expected_fractions)} fraction checkpoints missing. "
+            f"missing={missing}. The train_cell callback's "
+            f"_maybe_persist_trajectory_checkpoint must have raised at the "
+            f"first failure — investigate the training log."
+        )
+
+    payload = {
+        "version": "4.0_pretrain",
+        "epochs": 3,
+        "seed": 42,
+        "cell_slug": cell_slug,
+        "hf_repo": HF_MODEL_REPO,
+        "checkpoints_uploaded": uploaded_paths,
+        "verify_hub_api": True,
+        "git_commit": _git_sha(),
+        "hostname": socket.gethostname(),
+        "timestamp_utc": datetime.now(UTC).isoformat(),
+    }
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(payload, indent=2))
+    phase_summaries["v4_phase0_pretrain"] = {
+        "n_checkpoints_uploaded": len(uploaded_paths),
+        "checkpoints_uploaded": uploaded_paths,
+    }
+    _write_sentinel(
+        LOG_DIR / "issue-504-v4-phase0_pretrain-results.json",
+        kind="epm:progress",
+        phase="v4_phase0_pretrain_done",
+        note_payload={
+            "issue": 504,
+            "phase": "v4_phase0_pretrain",
+            "checkpoints_uploaded": uploaded_paths,
+            "out_path": str(out_path),
+            "phase_summaries": phase_summaries,
+        },
+    )
+    log.info(
+        "[phase=done] V4 phase0_pretrain COMPLETE — %d/%d checkpoints uploaded + verified. %s",
+        len(uploaded_paths),
+        len(expected_fractions),
+        datetime.now(UTC).isoformat(),
+    )
+    return 0
+
+
+def _run_v4_phase0_reeval(
+    *,
+    args: argparse.Namespace,
+    phase_summaries: dict[str, dict],
+    arm_to_n_json: Path,
+    max_new_tokens_eval: int,
+    max_model_len_eval: int,
+) -> int:
+    """v4 Phase 0 §4.1 — re-evaluate EPOCHS=3 anchor through the fixed reader.
+
+    Plan v5 §4.1: read the v4-pretrained EPOCHS=3 trajectory checkpoints
+    (produced by --phase phase0_v4_pretrain) through the SAME fixed
+    `i504_eval_trajectory.py` reader Phase 1 uses, then run the v4
+    bystander-resolution picker (plan v5 fix #2). On pass, writes
+    phase0_calibration_v4.json with the chosen frac + bystander_resolution_at_pick.
+
+    This phase IS the v4 single-cell re-eval — the architectural unification
+    (smoke == sweep with one cell) of plan v5 §4.9. Same dispatcher path,
+    same subprocess shape, same env injection, same logging surface as the
+    Phase 1 sweep.
+    """
+    cell_slug = "c504v4_smoke_eps3_reread"
+    pretrain_subfolder = "adapters/issue_504_v4/c504v4_smoke_eps3_seed42"
+    out_pick_path = args.slab_root / "phase0_calibration_v4.json"
+
+    log.info(
+        "[phase=v4_phase0_reeval] re-evaluating EPOCHS=3 anchor through the "
+        "fixed reader (HF subfolder=%s)",
+        pretrain_subfolder,
+    )
+
+    # Build the checkpoint_index.json from the HF subfolder structure. The
+    # eval rig consumes `--checkpoint-index <path>` pointing at a JSON of
+    # {frac_str: {step: int, path: str}}.
+    fractions = [0.08, 0.16, 0.33, 0.50, 0.75, 1.00]
+    adapter_local_root = args.runs_root / "v4_anchor_download"
+    adapter_local_root.mkdir(parents=True, exist_ok=True)
+    from huggingface_hub import snapshot_download
+
+    snapshot_download(
+        repo_id=HF_MODEL_REPO,
+        allow_patterns=[f"{pretrain_subfolder}/ckpt_frac*/*"],
+        local_dir=str(adapter_local_root),
+        token=os.environ.get("HF_TOKEN"),
+    )
+    ckpt_index: dict[str, dict] = {}
+    for frac in fractions:
+        frac_token = "1.00" if abs(frac - 1.0) < 1e-6 else f"{frac:.2f}"
+        local_path = adapter_local_root / pretrain_subfolder / f"ckpt_frac{frac_token}"
+        if not (local_path / "adapter_model.safetensors").exists():
+            raise RuntimeError(
+                f"[phase=v4_phase0_reeval] missing local adapter at {local_path} "
+                f"after HF snapshot_download. Verify --phase phase0_v4_pretrain "
+                f"completed and the 6 checkpoints landed on HF."
+            )
+        ckpt_index[f"{frac:.2f}"] = {
+            "step": None,
+            "path": str(local_path),
+        }
+    run_dir = args.runs_root / f"{cell_slug}_seed42"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    ckpt_index_path = run_dir / "checkpoint_index.json"
+    ckpt_index_path.write_text(json.dumps(ckpt_index, indent=2))
+
+    # Build the trajectory by calling i504_eval_trajectory.py through the same
+    # subprocess shape Phase 1 cells use (plan v5 §4.9 unification).
+    out_traj = args.slab_root / f"{cell_slug}_seed42" / "trajectory.json"
+    out_traj.parent.mkdir(parents=True, exist_ok=True)
+    eval_cmd = [
+        "uv",
+        "run",
+        "python",
+        "scripts/i504_eval_trajectory.py",
+        "--cell",
+        cell_slug,
+        "--seed",
+        "42",
+        "--checkpoint-index",
+        str(ckpt_index_path),
+        "--out-path",
+        str(out_traj),
+        "--bank-path",
+        str(args.bank_path),
+        "--r-eval-path",
+        str(args.r_eval_path),
+        "--panel-json",
+        str(arm_to_n_json),
+        "--max-lora-rank",
+        "8",
+        "--max-new-tokens",
+        str(max_new_tokens_eval),
+        "--max-model-len",
+        str(max_model_len_eval),
+        "--source",
+        args.source,
+    ]
+    if args.no_kl:
+        eval_cmd.append("--no-kl")
+    _run_phase_subprocess(eval_cmd, "v4_phase0_reeval_traj")
+
+    if not out_traj.exists():
+        raise RuntimeError(
+            f"[phase=v4_phase0_reeval] eval_trajectory exited 0 but "
+            f"{out_traj} missing — silent eval failure."
+        )
+
+    # Run the v4 bystander-resolution picker on the produced trajectory.
+    pick_cmd = [
+        "uv",
+        "run",
+        "python",
+        "scripts/i504_phase_phase0_pick.py",
+        "--mode",
+        "v4",
+        "--slab-root",
+        str(args.slab_root),
+        "--out-path",
+        str(out_pick_path),
+        "--v4-trajectory-path",
+        str(out_traj),
+        "--source",
+        args.source,
+        "--fixed-lr",
+        repr(float(args.fixed_lr)),
+        "--sentinel-path",
+        str(LOG_DIR / "issue-504-v4-phase0_reeval-pick-results.json"),
+    ]
+    pick_rc = 0
+    try:
+        _run_phase_subprocess(pick_cmd, "v4_phase0_reeval_pick")
+    except subprocess.CalledProcessError as e:
+        pick_rc = e.returncode
+        log.warning(
+            "[phase=v4_phase0_reeval_pick] picker exited rc=%d (non-pass "
+            "verdict); reading artifact to determine routing.",
+            pick_rc,
+        )
+
+    if not out_pick_path.exists():
+        raise RuntimeError(f"[phase=v4_phase0_reeval] pick artifact missing at {out_pick_path}.")
+    pick = json.loads(out_pick_path.read_text())
+    phase_summaries["v4_phase0_reeval"] = {
+        "verdict": pick.get("verdict"),
+        "chosen_epochs": pick.get("chosen_epochs"),
+        "chosen_lr": pick.get("chosen_lr"),
+        "chosen_checkpoint_fraction": pick.get("chosen_checkpoint_fraction"),
+        "bystander_resolution_at_pick": pick.get("bystander_resolution_at_pick"),
+        "fallback_triggered": pick.get("fallback_triggered"),
+        "fallback_reason": pick.get("fallback_reason"),
+    }
+    _write_sentinel(
+        LOG_DIR / "issue-504-v4-phase0_reeval-results.json",
+        kind="epm:progress",
+        phase="v4_phase0_reeval_done",
+        note_payload={
+            "issue": 504,
+            "phase": "v4_phase0_reeval",
+            "v4_pick": pick,
+            "phase_summaries": phase_summaries,
+        },
+    )
+    log.info(
+        "[phase=done] V4 phase0_reeval COMPLETE — verdict=%s, chosen_frac=%s, "
+        "bystander_resolution_at_pick=%s, fallback=%s. %s",
+        pick.get("verdict"),
+        pick.get("chosen_checkpoint_fraction"),
+        pick.get("bystander_resolution_at_pick"),
+        pick.get("fallback_triggered"),
+        datetime.now(UTC).isoformat(),
+    )
+    return 0 if pick.get("verdict") == "pass" else 2
+
+
+def _run_v4_phase0p6_validate(
+    *,
+    args: argparse.Namespace,
+    phase_summaries: dict[str, dict],
+    arm_to_n_json: Path,
+) -> int:
+    """v4 Phase 0.6 — marker-logprob path validation (plan v5 §4.3a).
+
+    Cheap (~0.05 GPU-h) gate that proves the fixed reader is reading the
+    TRAINED model (not the BASE) BEFORE Phase 1 burns 24 GPU-h. On FAIL,
+    surfaces epm:failure v1 (failure_class: code, reason:
+    marker_logprob_path_still_broken) and Phase 1 MUST NOT spawn.
+    """
+    pick_path = args.slab_root / "phase0_calibration_v4.json"
+    out_path = args.slab_root / "phase0p6_validation_v4.json"
+    if not pick_path.exists():
+        raise RuntimeError(
+            f"[phase=phase0p6_validate] Phase 0 v4 pick missing at {pick_path}. "
+            f"Run --phase phase0_v4_reeval first."
+        )
+
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        "scripts/i504_phase_phase0p6.py",
+        "--slab-root",
+        str(args.slab_root),
+        "--phase0-pick-path",
+        str(pick_path),
+        "--panel-json",
+        str(arm_to_n_json),
+        "--bank-path",
+        str(args.bank_path),
+        "--out-path",
+        str(out_path),
+        "--hf-adapter-repo",
+        HF_MODEL_REPO,
+        "--hf-adapter-subfolder-prefix",
+        "adapters/issue_504_v4/c504v4_smoke_eps3_seed42",
+        "--adapter-local-root",
+        str(args.runs_root / "v4_anchor_download"),
+        "--source",
+        args.source,
+        "--sentinel-path",
+        str(LOG_DIR / "issue-504-phase0p6-results.json"),
+    ]
+    rc = 0
+    try:
+        _run_phase_subprocess(cmd, "phase0p6_validate")
+    except subprocess.CalledProcessError as e:
+        rc = e.returncode
+        log.warning(
+            "[phase=phase0p6_validate] non-zero exit (rc=%d) — reading artifact "
+            "to determine routing.",
+            rc,
+        )
+
+    if not out_path.exists():
+        raise RuntimeError(f"[phase=phase0p6_validate] validation artifact missing at {out_path}.")
+    payload = json.loads(out_path.read_text())
+    phase_summaries["phase0p6_validate"] = {
+        "verdict": payload.get("verdict"),
+        "pass_a": payload.get("pass_a"),
+        "pass_b": payload.get("pass_b"),
+        "byte_identical_rate": payload.get("byte_identical_rate"),
+        "n_byte_identical": payload.get("n_byte_identical"),
+        "n_total": payload.get("n_total"),
+    }
+    _write_sentinel(
+        LOG_DIR / "issue-504-phase0p6-final-results.json",
+        kind="epm:progress",
+        phase="phase0p6_validate_done",
+        note_payload={
+            "issue": 504,
+            "phase": "phase0p6_validate",
+            "verdict": payload.get("verdict"),
+            "phase0p6": payload,
+            "phase_summaries": phase_summaries,
+        },
+    )
+    log.info(
+        "[phase=done] PHASE 0.6 validate COMPLETE — verdict=%s, byte_identical_rate=%.4f. %s",
+        payload.get("verdict"),
+        payload.get("byte_identical_rate"),
+        datetime.now(UTC).isoformat(),
+    )
+    return 0 if payload.get("verdict") == "PASS" else 2
 
 
 def _run_v2_phase1(
