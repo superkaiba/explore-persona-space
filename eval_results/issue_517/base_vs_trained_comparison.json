@@ -1,6 +1,8 @@
 {
   "schema_version": "i517_v1",
   "kind": "base_vs_trained_comparison",
+  "DEPRECATED_PAIRED_KEYS_INVALID_QBANK_MISMATCH": true,
+  "DEPRECATED_PAIRED_KEYS_NOTE": "The paired_delta_system / paired_delta_role / wilcoxon_p sub-blocks under each trait pair the trained #498 cell against the base #517 cell BUT the #498 and #517 Q-banks are disjoint (0 of 40 prompts overlap by exact text). The paired-\u0394 values, their SEMs/CIs, and the Wilcoxon p-values therefore compare two unpaired distributions on different prompts and DO NOT support a trained-vs-base paired-\u0394 claim. Cell means (base_* / trained_*) and within-#517 system_prompt_effect blocks remain valid. See task #517 body for the cross-experiment caveat finding.",
   "git_commit": "191646f1151c1cfe0033e8bc101990167d6672b4",
   "ts": "2026-06-08T19:43:15.759187Z",
   "smoke": false,
