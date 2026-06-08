@@ -2902,7 +2902,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/508",
       "status": "interpreting",
-      "title": "Comparing LoRA and full fine-tuning for marker leakage to bystander personas \u2014 H1 indeterminate, full-FT goes off-cliff into whole-response collapse (LOW confidence)"
+      "title": "Comparing LoRA and full fine-tuning for marker leakage to bystander personas \u2014 matched-rate verdict indeterminate, full-FT goes off-cliff into whole-response collapse (LOW confidence)"
     },
     "509": {
       "has_clean_result": false,

@@ -1,6 +1,7 @@
 ---
 title: Comparing LoRA and full fine-tuning for marker leakage to bystander personas
-  — H1 indeterminate, full-FT goes off-cliff into whole-response collapse (LOW confidence)
+  — matched-rate verdict indeterminate, full-FT goes off-cliff into whole-response
+  collapse (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-07T01:41:33Z'
