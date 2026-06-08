@@ -224,14 +224,33 @@ def extract_for_cell(
     Returns a flat list of ContextRead, one per (persona, question) pair.
     """
     reads: list[ContextRead] = []
+    # MUST-FIX (round 3, BLOCKER): fail loud on missing (persona, question) keys.
+    # CLAUDE.md "Fail fast — never hide failures". A silently-skipped key
+    # produces an `analysis.json` with a missing row; the operator cannot
+    # recover post-hoc because the input itself was the missing piece. The
+    # dispatcher precheck (`run_issue520_train.py::_extract_for_cell`) now
+    # validates `response_lookup` coverage before calling this function;
+    # this is the second line of defense in case another caller forgets.
+    missing_keys: list[tuple[str, str]] = []
     for persona in plan.personas_to_probe:
         for q in plan.questions:
             key = (persona, q)
-            if key not in plan.response_lookup:
-                continue
+            if key not in plan.response_lookup or not plan.response_lookup[key]:
+                missing_keys.append(key)
+    if missing_keys:
+        raise RuntimeError(
+            f"ExtractionPlan.response_lookup missing or empty for "
+            f"{len(missing_keys)} (persona, question) pairs. First few: "
+            f"{missing_keys[:5]!r}. The dispatcher must populate the full "
+            "(persona x question) grid before calling extract_for_cell. "
+            "(plan: pair={!r}, arm_slug={!r}, seed={!r})".format(
+                plan.pair_name, plan.arm_slug, plan.seed
+            )
+        )
+    for persona in plan.personas_to_probe:
+        for q in plan.questions:
+            key = (persona, q)
             resps = plan.response_lookup[key]
-            if not resps:
-                continue
             r = resps[0]
             read = read_hidden_and_logprob_for_context(
                 model,

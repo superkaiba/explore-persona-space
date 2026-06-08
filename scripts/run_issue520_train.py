@@ -256,10 +256,30 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
         help="Number of held-out bystanders to probe in shift extraction. "
         "Default = all held-out bystanders (13). Smoke: 2.",
     )
+    p.add_argument(
+        "--skip-cosine-preflight",
+        action="store_true",
+        help=(
+            "Skip the L20 centered-cosine computation in _pair_cosine_preflight "
+            "(still writes pair_selection.json with the gradient-conflict "
+            "annotation, just with cosine_* = None). Use for local-VM smoke "
+            "where the base model isn't being loaded. Implied by --smoke."
+        ),
+    )
     return p.parse_args(argv)
 
 
-def _resolve_pair(pair_name: str) -> tuple[str, str]:
+def _resolve_pair(
+    pair_name: str,
+    *,
+    near_pair_override: tuple[str, str] | None = None,
+) -> tuple[str, str]:
+    """Resolve a pair name to its (persona_a, persona_b) tuple.
+
+    ``near_pair_override`` lets the dispatcher swap NEAR_PAIR_PRIMARY for
+    NEAR_PAIR_FALLBACK after the L20 cosine preflight (CONCERN B round 3).
+    When None, the panel default (NEAR_PAIR_PRIMARY) is returned.
+    """
     from explore_persona_space.experiments.issue520.persona_panel import (
         FAR_PAIR,
         NEAR_PAIR_PRIMARY,
@@ -268,9 +288,7 @@ def _resolve_pair(pair_name: str) -> tuple[str, str]:
     if pair_name == "far":
         return FAR_PAIR
     elif pair_name == "near":
-        # Preflight should have verified primary vs fallback before we get
-        # here, but default to primary; the analysis step records both.
-        return NEAR_PAIR_PRIMARY
+        return near_pair_override if near_pair_override is not None else NEAR_PAIR_PRIMARY
     raise ValueError(f"Unknown pair: {pair_name!r}")
 
 
@@ -517,6 +535,66 @@ def _train_one_cell(
     return cell_meta
 
 
+def _assert_r_cache_coverage(
+    *,
+    pool,
+    personas_to_probe: list[str],
+    questions: list[str],
+    slug_with_seed: str,
+) -> dict[tuple[str, str], list[str]]:
+    """Fail loud if the R cache is missing any required (persona, question) key.
+
+    CLAUDE.md "Fail fast — never hide failures": a clean but INCOMPLETE R
+    cache silently drops a source / negative / bystander column from the
+    extraction's response_lookup, which then propagates into ``analysis.json``
+    as a missing row in the bystander-leakage / source-self DV tables. The
+    operator cannot recover post-hoc because the input itself was the
+    missing piece — re-running the analysis wouldn't fix it.
+
+    Three checks (each fails LOUD on miss):
+
+    1. Every required persona is keyed in ``pool.responses``.
+    2. Every required persona has a non-empty per-question dict.
+    3. Every (persona, question) probe target has at least one base-model
+       response string to teacher-force against.
+
+    Returns the fully-populated ``response_lookup`` for the caller.
+    """
+    missing_personas = [p for p in personas_to_probe if p not in pool.responses]
+    if missing_personas:
+        raise RuntimeError(
+            f"R cache missing required personas for cell {slug_with_seed!r}: "
+            f"{sorted(missing_personas)!r}. Available in pool: "
+            f"{sorted(pool.responses.keys())!r}. Regenerate R cache via "
+            "scripts/gen_r_persona.py with the full panel (source pair + 4 "
+            "NEGATIVE_PERSONAS + held-out bystanders for the pair)."
+        )
+    empty_personas = [p for p in personas_to_probe if not pool.responses.get(p)]
+    if empty_personas:
+        raise RuntimeError(
+            f"R cache has EMPTY response dict for personas "
+            f"{sorted(empty_personas)!r} (cell {slug_with_seed!r}). "
+            "Regenerate R cache."
+        )
+    missing_pq: list[tuple[str, str]] = []
+    response_lookup: dict[tuple[str, str], list[str]] = {}
+    for persona in personas_to_probe:
+        for q in questions:
+            resp_list = pool.responses[persona].get(q)
+            if not resp_list:
+                missing_pq.append((persona, q))
+            else:
+                response_lookup[(persona, q)] = resp_list
+    if missing_pq:
+        raise RuntimeError(
+            f"R cache missing or empty responses for {len(missing_pq)} "
+            f"(persona, question) pairs in cell {slug_with_seed!r}. "
+            f"First few: {missing_pq[:5]!r}. Regenerate R cache with the "
+            "full set of probe questions."
+        )
+    return response_lookup
+
+
 def _extract_for_cell(
     *,
     args: argparse.Namespace,
@@ -609,13 +687,15 @@ def _extract_for_cell(
 
     n_questions = args.probe_questions if not args.smoke else min(2, args.probe_questions)
     questions = list(pool.questions)[:n_questions]
-    response_lookup: dict[tuple[str, str], list[str]] = {}
-    for persona in personas_to_probe:
-        if persona not in pool.responses:
-            continue
-        for q in questions:
-            if q in pool.responses[persona]:
-                response_lookup[(persona, q)] = pool.responses[persona][q]
+
+    # MUST-FIX (round 3, BLOCKER): R-cache COVERAGE precheck. See
+    # `_assert_r_cache_coverage` for the full rationale + checks.
+    response_lookup = _assert_r_cache_coverage(
+        pool=pool,
+        personas_to_probe=personas_to_probe,
+        questions=questions,
+        slug_with_seed=slug_with_seed,
+    )
 
     plan = ExtractionPlan(
         pair_name=pair_name,
@@ -661,7 +741,17 @@ def _extract_for_cell(
     return out_path
 
 
-def _resolve_held_out_bystanders(pair_name: str, args: argparse.Namespace) -> list[str]:
+def _resolve_held_out_bystanders(
+    pair_name: str,
+    args: argparse.Namespace,
+    *,
+    near_pair_override: tuple[str, str] | None = None,
+) -> list[str]:
+    """Held-out bystander panel for a given pair.
+
+    ``near_pair_override`` lets the dispatcher swap NEAR_PAIR_PRIMARY for
+    NEAR_PAIR_FALLBACK after the L20 cosine preflight (CONCERN B round 3).
+    """
     from explore_persona_space.experiments.issue520.persona_panel import (
         FAR_PAIR,
         NEAR_PAIR_PRIMARY,
@@ -671,7 +761,8 @@ def _resolve_held_out_bystanders(pair_name: str, args: argparse.Namespace) -> li
     if pair_name == "far":
         return held_out_bystanders_for_pair(FAR_PAIR)
     elif pair_name == "near":
-        return held_out_bystanders_for_pair(NEAR_PAIR_PRIMARY)
+        near_pair = near_pair_override if near_pair_override is not None else NEAR_PAIR_PRIMARY
+        return held_out_bystanders_for_pair(near_pair)
     raise ValueError(f"Unknown pair: {pair_name!r}")
 
 
@@ -720,34 +811,110 @@ def _write_pod_sentinel(
     print(f"[phase=sentinel_written path={sentinel_path}]")
 
 
+def _l20_centered_cosine_for_pair(
+    base_model,
+    tokenizer,
+    *,
+    pool,
+    pair: tuple[str, str],
+    marker_id: int,
+    n_questions: int,
+) -> float:
+    """Centered cosine at L20 between two personas' post-response hidden states.
+
+    For each persona p ∈ {pair_a, pair_b}, averages the L20 post-response
+    hidden state across `n_questions` (each forwarded under p's system prompt
+    with the base-model on-policy R(p, q)) → h_mean(p). Returns the cosine of
+    the centered vectors (h_mean(a) - global_mean, h_mean(b) - global_mean)
+    where global_mean = (h_mean(a) + h_mean(b)) / 2. Centering keeps the
+    similarity invariant to a shared mean (matches the persona-cosine recipe
+    in `.claude/rules/persona-distance-metrics.md`).
+    """
+    from explore_persona_space.experiments.issue520.shift_extract import (
+        QWEN_HIDDEN_DIM,
+        ContextRead,
+        aggregate_reads_per_persona,
+        cosine,
+        read_hidden_and_logprob_for_context,
+    )
+
+    reads: list[ContextRead] = []
+    questions = list(pool.questions)[:n_questions]
+    for persona in pair:
+        if persona not in pool.responses:
+            raise RuntimeError(
+                f"L20 cosine probe needs persona {persona!r} in R cache "
+                f"(have {sorted(pool.responses.keys())!r})."
+            )
+        for q in questions:
+            resp_list = pool.responses[persona].get(q)
+            if not resp_list:
+                continue
+            r = resp_list[0]
+            reads.append(
+                read_hidden_and_logprob_for_context(
+                    base_model,
+                    tokenizer,
+                    persona=persona,
+                    question=q,
+                    response=r,
+                    marker_id=marker_id,
+                )
+            )
+    agg = aggregate_reads_per_persona(reads)
+    a, b = pair
+    if a not in agg or b not in agg:
+        raise RuntimeError(
+            f"Could not aggregate L20 reads for both personas in pair {pair!r}; "
+            f"got {sorted(agg.keys())!r}."
+        )
+    h_a = agg[a]["h_primary_mean"]
+    h_b = agg[b]["h_primary_mean"]
+    # Centered cosine: subtract the pair's joint mean from each vector.
+    mean = [(h_a[i] + h_b[i]) / 2.0 for i in range(QWEN_HIDDEN_DIM)]
+    h_a_c = [h_a[i] - mean[i] for i in range(QWEN_HIDDEN_DIM)]
+    h_b_c = [h_b[i] - mean[i] for i in range(QWEN_HIDDEN_DIM)]
+    return cosine(h_a_c, h_b_c)
+
+
 def _pair_cosine_preflight(
     args: argparse.Namespace,
     *,
     pool,
     out_dir: Path,
+    base_model=None,
+    tokenizer=None,
+    marker_id: int | None = None,
 ) -> dict:
     """Pair-selection preflight (plan §4 Step 2).
 
     Computes centered-cosine at L20 (post-response slot, base model) for the
-    far pair AND for the near pair (and the fallback if applicable). If the
-    near-pair cosine is NOT >= +0.3 above the far-pair cosine, swap the near
-    pair to ``NEAR_PAIR_FALLBACK`` and assert the fallback does NOT overlap
-    with ``NEGATIVE_PERSONAS`` (the gradient-conflict guard).
+    FAR pair, NEAR primary, and NEAR fallback. Writes the decision to
+    ``eval_results/issue_520/pair_selection.json``.
 
-    Writes the decision to ``eval_results/issue_520/pair_selection.json``.
-    Skipped on ``--smoke`` (no GPU + no time) AND when "near" is not in
-    ``args.pair`` (no fallback to consider). On the dispatcher side, the
-    function returns a dict containing the chosen near pair so the caller
-    can override the persona-panel default.
+    Selection rule (plan §4 Step 2):
 
-    NOTE on confidence: the cosine computation requires a GPU + the base
-    model, which is hoisted in ``main()``. To keep the preflight cheap, we
-    delegate the actual model-side work to ``shift_extract.extract_for_cell``
-    on a tiny probe set (the first ``args.probe_questions`` questions). If
-    base + tokenizer are not yet loaded (because the dispatcher hasn't
-    reached the model-load step), we DEFER the cosine check to be performed
-    as the first action inside the model-loaded block — that path writes
-    the same JSON and short-circuits if the near pair is already validated.
+    - If ``cosine_near_primary >= cosine_far + 0.3``, keep
+      ``NEAR_PAIR_PRIMARY`` as the chosen near pair (the +0.3 separation
+      gate is what makes "near" different from "far" along the persona-cosine
+      axis).
+    - If the +0.3 gate fails AND ``NEAR_PAIR_FALLBACK`` does NOT overlap
+      with ``NEGATIVE_PERSONAS``, fall back to ``NEAR_PAIR_FALLBACK``.
+    - If the +0.3 gate fails AND the fallback overlaps with
+      ``NEGATIVE_PERSONAS`` (the gradient-conflict guard), keep PRIMARY and
+      record the conflict — the operator must rebalance the negative panel
+      before re-running.
+
+    The actual model-side cosine work needs the loaded base model +
+    tokenizer + marker_id. Callers MUST pass them unless either:
+
+    - ``--skip-cosine-preflight`` is set (smoke convenience: writes
+      ``cosine_*: None`` and annotates ``skipped_cosine: true``); OR
+    - ``args.skip_shift_extract`` is set (no extraction-base loaded; the
+      cosine probe needs the same forward pass as the extraction).
+
+    Returns the decision dict; the caller can override the persona-panel
+    default near pair via ``decision["near_pair_chosen"]``.
     """
     from explore_persona_space.experiments.issue520.persona_panel import (
         FAR_PAIR,
@@ -756,45 +923,219 @@ def _pair_cosine_preflight(
         NEGATIVE_PERSONAS,
     )
 
-    decision = {
+    decision: dict = {
         "far_pair": list(FAR_PAIR),
         "near_pair_primary": list(NEAR_PAIR_PRIMARY),
         "near_pair_fallback": list(NEAR_PAIR_FALLBACK),
         "near_pair_chosen": list(NEAR_PAIR_PRIMARY),
-        "near_chosen_reason": "primary (cosine measurement deferred or skipped)",
+        "near_chosen_reason": "primary (default — cosine gate not yet evaluated)",
         "cosine_far": None,
         "cosine_near_primary": None,
         "cosine_near_fallback": None,
+        "cosine_gate_threshold": 0.3,
+        "skipped_cosine": False,
     }
 
-    # Fallback gradient-conflict guard (CONCERN C). MUST fire BEFORE any
-    # training, since silently swapping to the fallback would put
-    # ``software_engineer`` into both NEGATIVE_PERSONAS and as a source.
+    # Fallback gradient-conflict guard. Must fire BEFORE any training: silently
+    # swapping to the fallback when it overlaps with NEGATIVE_PERSONAS would put
+    # the same persona into both positive and negative rows.
     neg_set = set(NEGATIVE_PERSONAS)
     fb_a, fb_b = NEAR_PAIR_FALLBACK
     fallback_overlap = {p for p in (fb_a, fb_b) if p in neg_set}
     decision["fallback_gradient_conflict"] = sorted(fallback_overlap)
-    # We do NOT abort here unconditionally — only annotate the decision if the
-    # planner actually requested "near". If the operator only runs "far", the
-    # fallback is unreachable and the conflict is informational.
-    if fallback_overlap and "near" in args.pair:
-        decision["near_chosen_reason"] = (
-            f"PRIMARY (fallback {NEAR_PAIR_FALLBACK!r} overlaps "
-            f"NEGATIVE_PERSONAS at {sorted(fallback_overlap)}; cannot "
-            "fall back without first swapping the negative panel)"
+    fallback_usable = (not fallback_overlap) or ("near" not in args.pair)
+
+    # Decide whether to compute the cosine. Skip when:
+    #   - operator passed --skip-cosine-preflight, OR
+    #   - --smoke (cheap, no GPU, smoke runs already pick small probe sets), OR
+    #   - --skip-shift-extract (the extraction base isn't loaded — same forward
+    #     pass is needed for the cosine probe), OR
+    #   - the caller didn't pass base_model/tokenizer/marker_id (defer).
+    skip_cosine = (
+        args.skip_cosine_preflight
+        or args.smoke
+        or args.skip_shift_extract
+        or base_model is None
+        or tokenizer is None
+        or marker_id is None
+    )
+    if skip_cosine:
+        decision["skipped_cosine"] = True
+        if fallback_overlap and "near" in args.pair:
+            decision["near_chosen_reason"] = (
+                f"PRIMARY (cosine skipped; fallback {NEAR_PAIR_FALLBACK!r} "
+                f"overlaps NEGATIVE_PERSONAS at {sorted(fallback_overlap)} so "
+                "fallback would be unusable anyway)"
+            )
+        else:
+            decision["near_chosen_reason"] = (
+                "primary (cosine skipped per --skip-cosine-preflight / --smoke "
+                "/ --skip-shift-extract / model not loaded)"
+            )
+    else:
+        # Compute the L20 centered cosine for FAR + NEAR_PRIMARY (+ fallback
+        # only if the operator may need it, i.e. fallback_usable).
+        n_q = max(2, min(args.probe_questions, len(pool.questions)))
+        logger.info(
+            "_pair_cosine_preflight: computing L20 centered-cosine over %d "
+            "questions for FAR=%r, NEAR_PRIMARY=%r%s ...",
+            n_q,
+            FAR_PAIR,
+            NEAR_PAIR_PRIMARY,
+            (f", NEAR_FALLBACK={NEAR_PAIR_FALLBACK!r}" if fallback_usable else ""),
         )
+        cos_far = _l20_centered_cosine_for_pair(
+            base_model,
+            tokenizer,
+            pool=pool,
+            pair=FAR_PAIR,
+            marker_id=marker_id,
+            n_questions=n_q,
+        )
+        cos_near_primary = _l20_centered_cosine_for_pair(
+            base_model,
+            tokenizer,
+            pool=pool,
+            pair=NEAR_PAIR_PRIMARY,
+            marker_id=marker_id,
+            n_questions=n_q,
+        )
+        cos_near_fallback = None
+        if fallback_usable:
+            cos_near_fallback = _l20_centered_cosine_for_pair(
+                base_model,
+                tokenizer,
+                pool=pool,
+                pair=NEAR_PAIR_FALLBACK,
+                marker_id=marker_id,
+                n_questions=n_q,
+            )
+        decision["cosine_far"] = cos_far
+        decision["cosine_near_primary"] = cos_near_primary
+        decision["cosine_near_fallback"] = cos_near_fallback
+
+        gate_threshold = decision["cosine_gate_threshold"]
+        primary_passes_gate = (cos_near_primary - cos_far) >= gate_threshold
+        if primary_passes_gate:
+            decision["near_pair_chosen"] = list(NEAR_PAIR_PRIMARY)
+            decision["near_chosen_reason"] = (
+                f"PRIMARY (cos_near_primary={cos_near_primary:.4f} "
+                f"- cos_far={cos_far:.4f} = "
+                f"{cos_near_primary - cos_far:+.4f} >= +{gate_threshold})"
+            )
+        elif fallback_usable and cos_near_fallback is not None:
+            fallback_passes_gate = (cos_near_fallback - cos_far) >= gate_threshold
+            if fallback_passes_gate:
+                decision["near_pair_chosen"] = list(NEAR_PAIR_FALLBACK)
+                decision["near_chosen_reason"] = (
+                    f"FALLBACK (primary cos diff "
+                    f"{cos_near_primary - cos_far:+.4f} < +{gate_threshold}; "
+                    f"fallback cos diff {cos_near_fallback - cos_far:+.4f} "
+                    f">= +{gate_threshold})"
+                )
+            else:
+                decision["near_pair_chosen"] = list(NEAR_PAIR_PRIMARY)
+                decision["near_chosen_reason"] = (
+                    f"PRIMARY (neither primary nor fallback clears the "
+                    f"+{gate_threshold} cosine gate — primary diff "
+                    f"{cos_near_primary - cos_far:+.4f}, fallback diff "
+                    f"{cos_near_fallback - cos_far:+.4f}; keeping primary)"
+                )
+        else:
+            # Fallback unusable (gradient conflict with NEGATIVE_PERSONAS).
+            decision["near_pair_chosen"] = list(NEAR_PAIR_PRIMARY)
+            if fallback_overlap and "near" in args.pair:
+                decision["near_chosen_reason"] = (
+                    f"PRIMARY (cos diff {cos_near_primary - cos_far:+.4f} < "
+                    f"+{gate_threshold} but fallback unusable: "
+                    f"{NEAR_PAIR_FALLBACK!r} overlaps NEGATIVE_PERSONAS at "
+                    f"{sorted(fallback_overlap)})"
+                )
+            else:
+                decision["near_chosen_reason"] = (
+                    f"PRIMARY (cos diff {cos_near_primary - cos_far:+.4f} < "
+                    f"+{gate_threshold}; fallback skipped because 'near' not "
+                    "in args.pair)"
+                )
 
     out_path = out_dir / "pair_selection.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w") as f:
         json.dump(decision, f, indent=2)
     logger.info("Wrote pair-selection decision: %s", out_path)
+    logger.info("Near-pair decision: %s", decision["near_chosen_reason"])
     return decision
+
+
+def _resolve_near_pair_override(pair_decision: dict) -> tuple[str, str] | None:
+    """If the cosine preflight chose the fallback, return it; else None.
+
+    Threading the override through ``_resolve_pair`` and
+    ``_resolve_held_out_bystanders`` lets the dispatcher honor the +0.3
+    cosine separation gate (plan §4 Step 2) without re-importing the panel
+    constant at every call site.
+    """
+    from explore_persona_space.experiments.issue520.persona_panel import NEAR_PAIR_PRIMARY
+
+    chosen = tuple(pair_decision["near_pair_chosen"])
+    if chosen == tuple(NEAR_PAIR_PRIMARY):
+        return None
+    logger.warning(
+        "L20 cosine preflight chose FALLBACK near pair %r (panel default %r). "
+        "Threading override through cell enumeration + held-out-bystander "
+        "resolution.",
+        chosen,
+        tuple(NEAR_PAIR_PRIMARY),
+    )
+    return chosen  # type: ignore[return-value]
+
+
+def _enumerate_cells(
+    args: argparse.Namespace,
+    *,
+    near_pair_override: tuple[str, str] | None,
+) -> list:
+    """Build the (spec, seed) list for the requested pair/arm/ratio/seed combos."""
+    from explore_persona_space.experiments.issue520.data_prep import (
+        build_arm_specs_for_pair,
+    )
+
+    cells_to_run: list = []
+    for pair_name in args.pair:
+        src_a, src_b = _resolve_pair(pair_name, near_pair_override=near_pair_override)
+        for ratio in args.ratio:
+            include_b2 = ratio == "b2"
+            specs = build_arm_specs_for_pair(
+                pair_name=pair_name,
+                source_a=src_a,
+                source_b=src_b,
+                n_positives_per_source=args.positives_per_source,
+                include_b2=include_b2,
+            )
+            for spec in specs:
+                if spec.arm not in args.arm:
+                    continue
+                if spec.ratio != ratio:
+                    continue
+                for seed in args.seeds:
+                    cells_to_run.append((spec, seed))
+    return cells_to_run
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv if argv is not None else sys.argv[1:])
     overall_t0 = time.time()
+
+    # CONCERN A (round 3): pin this process to ONE physical GPU before any
+    # torch/transformers import-driven CUDA init. After this assignment,
+    # `device_map={"": 0}` resolves to the gpu_id physical GPU consistently
+    # for BOTH the extraction-base hoist below AND any downstream
+    # `train_lora()` call (which also sets the same env var with the same
+    # value at sft.py:653). Defends against the `+gpu_id=N` CUDA_VISIBLE_DEVICES
+    # gotcha (CLAUDE.md Gotchas, #376 wave-1): if the dispatcher is launched
+    # with `--gpu-id 1`, the extraction base used to land on GPU 0 because
+    # the hoist hardcoded `device_map={"": 0}` while CVD was still unset.
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
 
     print("[phase=preflight]")
     pf = _preflight(args)
@@ -808,37 +1149,49 @@ def main(argv: list[str] | None = None) -> int:
 
     data_dir = resolve_data_dir(Path(args.data_dir) if args.data_dir else None)
 
-    # CONCERN C: pair-cosine preflight (records primary-vs-fallback decision +
-    # gradient-conflict check). Writes pair_selection.json.
-    pair_decision = _pair_cosine_preflight(args, pool=pool, out_dir=out_dir)
+    # CONCERN B (round 3): hoist base model + tokenizer ONCE (not per cell)
+    # BEFORE the pair-cosine preflight, so the preflight can actually
+    # compute L20 cosines (round-2 wrote cosine_*: None — "deferred"). On
+    # GPU 0 after the CVD pin above (CONCERN A). Skipped only when shift
+    # extraction is disabled (--skip-shift-extract or --skip-train + smoke).
+    base_model = None
+    extract_tokenizer = None
+    if not args.skip_shift_extract:
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    # Enumerate cells.
-    from explore_persona_space.experiments.issue520.data_prep import (
-        build_arm_specs_for_pair,
+        logger.info(
+            "Loading Qwen-2.5-7B-Instruct ONCE for cosine preflight + per-cell "
+            "extraction (CONCERN B round-2: avoid per-cell base-model reload "
+            "of ~7 GB) on CUDA_VISIBLE_DEVICES=%s (gpu_id=%d) ...",
+            os.environ.get("CUDA_VISIBLE_DEVICES", "?"),
+            args.gpu_id,
+        )
+        extract_tokenizer = AutoTokenizer.from_pretrained(
+            "Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True
+        )
+        base_model = AutoModelForCausalLM.from_pretrained(
+            "Qwen/Qwen2.5-7B-Instruct",
+            torch_dtype=torch.bfloat16,
+            device_map={"": 0},  # CVD has remapped gpu_id → device 0
+            trust_remote_code=True,
+        )
+        base_model.eval()
+
+    # CONCERN B (round 3): pair-cosine preflight now actually computes the
+    # L20 centered cosine using the hoisted base model. Returns the chosen
+    # near-pair (primary-vs-fallback) based on the +0.3 cosine separation
+    # gate (plan §4 Step 2). Writes pair_selection.json.
+    pair_decision = _pair_cosine_preflight(
+        args,
+        pool=pool,
+        out_dir=out_dir,
+        base_model=base_model,
+        tokenizer=extract_tokenizer,
+        marker_id=marker_id,
     )
-
-    cells_to_run: list = []
-    for pair_name in args.pair:
-        src_a, src_b = _resolve_pair(pair_name)
-        for ratio in args.ratio:
-            include_b2 = ratio == "b2"
-            # Build all 3 arm specs (b1 or b2 — pass include_b2 only if b2 requested).
-            specs = build_arm_specs_for_pair(
-                pair_name=pair_name,
-                source_a=src_a,
-                source_b=src_b,
-                n_positives_per_source=args.positives_per_source,
-                include_b2=include_b2,
-            )
-            # Filter by requested arm and ratio.
-            for spec in specs:
-                if spec.arm not in args.arm:
-                    continue
-                if spec.ratio != ratio:
-                    continue
-                for seed in args.seeds:
-                    cells_to_run.append((spec, seed))
-
+    near_pair_override = _resolve_near_pair_override(pair_decision)
+    cells_to_run = _enumerate_cells(args, near_pair_override=near_pair_override)
     if not cells_to_run:
         logger.error("No cells matched the requested pair/arm/ratio/seed combos")
         return 2
@@ -848,32 +1201,6 @@ def main(argv: list[str] | None = None) -> int:
         args.gpu_id,
         pair_decision["near_chosen_reason"],
     )
-
-    # CONCERN B: hoist base model + tokenizer ONCE (not per cell). Skip the
-    # base load when shift extraction is disabled (--skip-shift-extract or
-    # --skip-train + smoke), since the only use of `base` is in
-    # _extract_for_cell.
-    base_model = None
-    extract_tokenizer = None
-    if not args.skip_shift_extract:
-        import torch
-        from transformers import AutoModelForCausalLM, AutoTokenizer
-
-        logger.info(
-            "Loading Qwen-2.5-7B-Instruct ONCE for all %d cells' extraction "
-            "(CONCERN B: avoid per-cell base-model reload of ~7 GB) ...",
-            len(cells_to_run),
-        )
-        extract_tokenizer = AutoTokenizer.from_pretrained(
-            "Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True
-        )
-        base_model = AutoModelForCausalLM.from_pretrained(
-            "Qwen/Qwen2.5-7B-Instruct",
-            torch_dtype=torch.bfloat16,
-            device_map={"": 0},
-            trust_remote_code=True,
-        )
-        base_model.eval()
 
     cells_meta: list[dict] = []
     extraction_paths: list[Path] = []
@@ -886,7 +1213,9 @@ def main(argv: list[str] | None = None) -> int:
             spec.slug,
             seed,
         )
-        held_out_bystanders = _resolve_held_out_bystanders(spec.pair_name, args)
+        held_out_bystanders = _resolve_held_out_bystanders(
+            spec.pair_name, args, near_pair_override=near_pair_override
+        )
         try:
             cell_meta = _train_one_cell(
                 args,
