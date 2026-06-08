@@ -241,11 +241,14 @@ else
     git remote add origin \"https://x-access-token:\${GITHUB_TOKEN}@github.com/superkaiba/explore-persona-space.git\" 2>/dev/null \
         || git remote set-url origin \"https://x-access-token:\${GITHUB_TOKEN}@github.com/superkaiba/explore-persona-space.git\"
     git fetch --depth=1 origin \"\$BRANCH\"
+    # \`git init -q -b \$BRANCH\` already created + checked out \$BRANCH, and
+    # \`reset --hard FETCH_HEAD\` moves the current branch ref to FETCH_HEAD.
+    # An explicit \`git branch -f \$BRANCH FETCH_HEAD\` would fail loud (\"Cannot
+    # force update the current branch\") because \$BRANCH IS the current branch,
+    # so it is dropped here. The subsequent existing-repo path on re-bootstraps
+    # uses \`git pull --ff-only\` against \$BRANCH, which is already pinned to
+    # FETCH_HEAD via the reset.
     git reset --hard FETCH_HEAD
-    # Pin local \$BRANCH to FETCH_HEAD so subsequent re-bootstraps take the
-    # existing-repo branch above and pull cleanly.
-    git branch -f \"\$BRANCH\" FETCH_HEAD
-    git checkout -q \"\$BRANCH\"
     echo \"Cloned at: \$(git log --oneline -1)\"
 fi
 "; then
