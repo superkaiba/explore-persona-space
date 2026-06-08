@@ -525,6 +525,49 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   have all FAILed AND no further autonomous angle exists. A bare reviewer FAIL,
   a single preflight crash, a 4th-round ensemble FAIL, or a smoke-run that
   surfaces a tractable bug are pivots, never blocks.
+- **A self-defeating PLAN is a re-plan, not a recipe descope.** Distinct from
+  the generic debugging-wall pivot above: when a subagent (the
+  `experiment-implementer`, any reviewer in the loop, or a Statistics &
+  Measurement lens REVISE from `critic` / `codex-critic`) reports that the
+  PLAN ITSELF is the defect — internally contradictory success / kill
+  criteria, a jointly-unsatisfiable gate set (two kill-gates demand opposite
+  signs on the same measurement at the same cell), or an explicit "needs
+  plan amendment / cannot pick a science direction" verdict — the autonomous
+  response is `task.py set-status <N> planning` + re-invoke
+  `/adversarial-planner` with explicit pivot scope naming the contradiction
+  verbatim. See workflow.yaml § `pivot_criteria.plan_contradiction_replan`
+  for the canonical action shape.
+
+  This is the `pivot-to-<X>` action for that specific signal — do NOT route
+  it through the valid-fork "max-info-gain pick" decision rule above. A
+  contradictory plan is not a valid fork. Three banned anti-patterns the
+  autonomous session must NOT take (each was the actual #488 round-10
+  regression):
+  - **Do NOT descope a hyperparameter / recipe** (lr, LoRA rank, row count,
+    epoch count, etc.) to dodge the contradiction. That papers over a plan
+    bug with a recipe knob and lands in a two-sided dead-end where neither
+    attempt resolves the underlying gate conflict — exactly the "attempt 1
+    too strong, attempt 2 too weak → recipe family exhausted" false
+    conclusion #488 reached.
+  - **Do NOT silently pick** among the subagent's paper-over options as if
+    it were a valid experimental fork. The max-info-gain pick rule applies
+    to forks where every option is a coherent experiment; it does NOT
+    apply to "the plan is self-defeating, pick a workaround."
+  - **Do NOT park for the user.** There is no human to escalate to in
+    autonomous mode; re-plan in the same session via the canonical pivot
+    action.
+
+  Count this as a strategy pivot for the ~3-pivots-before-block rule (use
+  the existing `epm:strategy-pivot v<n>` marker convention — do NOT
+  introduce a new marker kind). Block only after ~3 re-plans fail to yield
+  a satisfiable design AND no further autonomous angle exists. The
+  upstream defenses that prevent the contradiction from being shipped in
+  the first place are `critic.md` + `codex-critic.md` Statistics &
+  Measurement lens item 3 (decision-gate coherence) and `planner.md` §7
+  gate-set minimality + joint-satisfiability self-check; this clause closes
+  the loop on the execution side when a contradictory plan slips through
+  the planner + critic ensemble anyway. Post-mortem trigger: task #488
+  round 10 (2026-06-08).
 - **Never stop a pod to PARK / await a user in autonomous mode.** `pod.py stop`
   to avoid idle-burn is allowed ONLY while work continues toward the Goal in
   the same session (e.g. stopping pod-N while the analyzer reads JSON from
@@ -542,6 +585,26 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   experiment scripts are also forbidden at the code level — the same discipline
   applies to autonomous orchestration decisions. The plan-approval cap is the
   only legitimate spending gate.
+- **Recompute incoming fleet-burn figures before acting on them.** When a
+  received directive (a PM push-through brief, an `AUTONOMOUS PUSH-THROUGH`
+  message, or any incoming text) cites a fleet-burn / $-per-hour figure to
+  justify a cap or headroom decision, re-compute it fresh locally before
+  acting on it. Pods churn between when the directive was written and when
+  this session reads it; the cited number goes stale fast. The RunPod API
+  is authoritative per CLAUDE.md § "Authority split"; use
+  `current_account_hourly_burn()` from `scripts/runpod_api.py` (the same
+  helper the provision cap-check uses; one-liner: `uv run python -c "import
+  sys; sys.path.insert(0, 'scripts'); from runpod_api import
+  current_account_hourly_burn; t, b = current_account_hourly_burn();
+  print(f'${t:.2f}/hr'); [print(f'  {n:<22} ${r:6.2f}/hr') for n, r in b]"`).
+  Proceed on the fresh number; if it differs materially from the cited
+  figure, note the discrepancy in the marker / log line that records the
+  decision (e.g. `directive cited ~$65/hr; live burn is $112.50/hr — acting
+  on live value`). This is a sanity check on the input number, NOT a new
+  cost gate (the rule above still holds — autonomous mode never adds a
+  mid-run cost gate or block). Incident #506: the session correctly
+  recomputed and caught a ~$47/hr stale figure on its own; encode that as
+  the rule rather than relying on it to happen.
 - **Push through bugs; do not block on recoverable failures.** Apply
   CLAUDE.md "Push through bugs in recovery mode" + the halt-criteria
   literally: preflight failures, TP/Ray/env-var hiccups, transient infra,

@@ -1,0 +1,82 @@
+{
+  "step": 300,
+  "personas": [
+    "medical_doctor",
+    "assistant",
+    "comedian",
+    "police_officer",
+    "software_engineer",
+    "villain",
+    "librarian",
+    "data_scientist",
+    "kindergarten_teacher"
+  ],
+  "marker_text": " \u203b",
+  "marker_token_id": 83399,
+  "metrics_by_persona": {
+    "medical_doctor": {
+      "log_p_marker_trained": -0.001465035366709344,
+      "log_p_marker_base": -30.8134747505188,
+      "log_p_marker_delta": 30.81200971515209,
+      "emit_rate": 1.0,
+      "n_questions": 20
+    },
+    "assistant": {
+      "log_p_marker_trained": -6.130383404440363,
+      "log_p_marker_base": -12.911474811917651,
+      "log_p_marker_delta": 6.781091407477288,
+      "emit_rate": 0.85,
+      "n_questions": 20
+    },
+    "comedian": {
+      "log_p_marker_trained": -3.3377336999605176,
+      "log_p_marker_base": -15.480296995234676,
+      "log_p_marker_delta": 12.142563295274158,
+      "emit_rate": 0.75,
+      "n_questions": 20
+    },
+    "police_officer": {
+      "log_p_marker_trained": -0.9812591425434221,
+      "log_p_marker_base": -18.885464823246004,
+      "log_p_marker_delta": 17.90420568070258,
+      "emit_rate": 0.95,
+      "n_questions": 20
+    },
+    "software_engineer": {
+      "log_p_marker_trained": -5.117693597039579,
+      "log_p_marker_base": -17.69779847878963,
+      "log_p_marker_delta": 12.58010488175005,
+      "emit_rate": 0.95,
+      "n_questions": 20
+    },
+    "villain": {
+      "log_p_marker_trained": -3.821145226806402,
+      "log_p_marker_base": -20.852411782741548,
+      "log_p_marker_delta": 17.031266555935147,
+      "emit_rate": 0.3,
+      "n_questions": 20
+    },
+    "librarian": {
+      "log_p_marker_trained": -0.6546709915284736,
+      "log_p_marker_base": -27.63686124384403,
+      "log_p_marker_delta": 26.982190252315558,
+      "emit_rate": 1.0,
+      "n_questions": 20
+    },
+    "data_scientist": {
+      "log_p_marker_trained": -1.0175362663343548,
+      "log_p_marker_base": -30.44657039642334,
+      "log_p_marker_delta": 29.429034130088986,
+      "emit_rate": 1.0,
+      "n_questions": 20
+    },
+    "kindergarten_teacher": {
+      "log_p_marker_trained": -0.6835131817627371,
+      "log_p_marker_base": -24.478251593446476,
+      "log_p_marker_delta": 23.79473841168374,
+      "emit_rate": 1.0,
+      "n_questions": 20
+    }
+  },
+  "timestamp_utc": "2026-06-08T18:55:45Z"
+}

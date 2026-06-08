@@ -1,0 +1,14 @@
+{
+  "n_anchor_pairs": 50,
+  "mean_paper_gap": 0.04256513833999634,
+  "mean_text_only_gap": 3.7859716796875,
+  "min_required_paper": 0.03,
+  "min_required_text_only": 0.5,
+  "paper_pass": true,
+  "text_only_pass": true,
+  "overall_pass": true,
+  "s_paper_warm_mean": 0.07057651042938233,
+  "s_paper_cold_mean": 0.028011372089385988,
+  "s_text_only_warm_mean": 2.112646179199219,
+  "s_text_only_cold_mean": -1.6733255004882812
+}

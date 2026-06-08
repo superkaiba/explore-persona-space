@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 520,
+  "highest_id": 523,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2721,8 +2721,8 @@
       "goal": "Determine whether base-model output-distribution distance (JS / forward-KL / cosine) predicts on-policy marker transfer across prompt transformations in a NON-saturated training regime, and whether that prediction survives partialling out whether the training source is a strong stylistic persona.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/488",
-      "status": "running",
+      "path": "tasks/planning/488",
+      "status": "planning",
       "title": "Does base-model distance predict marker transfer in a non-saturated regime, beyond the 3 stylized personas?"
     },
     "489": {
@@ -2842,11 +2842,11 @@
     },
     "501": {
       "goal": "Add multi-turn conversation-drift contexts as a third context type to #489's union panel (reusing #489's exact marker \u203b, training rig, post-context+question extraction point, and on-policy \u0394G dependent variable), and test whether base-model cosine/JS distance predicts on-policy marker transfer to and from multi-turn-drift contexts \u2014 merging with #489's single-turn results so the conversation-length silencing (#377) reads as a prediction of the distance metric rather than a separate survival effect.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/501",
-      "status": "running",
-      "title": "Supplement #489's geometry-predicts-transfer panel with multi-turn conversation-drift contexts"
+      "path": "tasks/awaiting_promotion/501",
+      "status": "awaiting_promotion",
+      "title": "Base-model cosine distance ranks the marker log-prob proxy across the single-turn / multi-turn format boundary, but the marker never emits on-policy so #377's behavioral silencing remains unexplained (MODERATE confidence)"
     },
     "502": {
       "goal": "Re-run #493's extraction-point x metric x layer bake-off at all 28 residual-stream layers and 500 probes (vs 8 / 50 in the parent), with the next-token JS output-distribution baseline added back in, to see whether the parent's 'competing metrics converge, no clear winner' verdict survives the larger sweep.",
@@ -2858,18 +2858,18 @@
     },
     "503": {
       "goal": "Test whether one before-training distance predictor \u2014 the #468 base-model in-context-example cosine, with JS divergence and the He et al. (arXiv 2404.01099) representation/gradient/format selectors as baselines \u2014 calibrates across the full generalization-surprise spectrum: unsurprising/should-transfer (cross-lingual behavior transfer, e.g. English\u2192Spanish), surprising (narrow\u2192broad emergent misalignment, and benign-data\u2192broad-unsafety \u00e0 la 2404.01099), and non-transfer (orthogonal behaviors), validating it on the known-answer ends before trusting the surprising middle and reporting a calibration curve over one shared dataset-generation, cross-evaluation, and pooled-regression rig.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/503",
-      "status": "running",
-      "title": "Does one before-training distance predictor calibrate across the generalization-surprise spectrum (cross-lingual \u2192 EM / benign-data-breaks-safety \u2192 non-transfer)?"
+      "path": "tasks/awaiting_promotion/503",
+      "status": "awaiting_promotion",
+      "title": "At the surprising-middle slice (benign-data SFT \u2192 AdvBench), the base-model in-context cosine predictor saturates near 0.95 and doesn't separate selectors \u2014 calibration is scoped-shrunk, not falsified (LOW confidence)"
     },
     "504": {
       "goal": "Determine the geometric shape of a single contrastive negative's leakage-suppression in persona space: does a negative protect a local neighborhood around itself (bubble) or the entire region behind it relative to the source (barrier/shadow)? Secondary: do near-twin negatives produce a more localized implant than distant ones, holding all else fixed.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/504",
-      "status": "running",
+      "path": "tasks/interpreting/504",
+      "status": "interpreting",
       "title": "Bubble vs barrier: does a contrastive negative protect a local neighborhood around itself or the whole region behind it in persona space?"
     },
     "505": {
@@ -2884,17 +2884,17 @@
       "goal": "Test whether installing the trigger->marker rule with full-weight fine-tuning (vs the LoRA r=16 install that dies in #382/#408/#475) lets the install survive one epoch of benign SFT on Qwen3.5-27B, per Redwood's finding that FWFT model organisms are more robust to training than LoRA ones.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/blocked/506",
-      "status": "blocked",
+      "path": "tasks/running/506",
+      "status": "running",
       "title": "Does a full-weight (FWFT) marker install on Qwen3.5-27B survive benign SFT where the LoRA install dies? (Redwood robust-to-training advice)"
     },
     "507": {
       "goal": "Test whether base-model persona-distance predictors (residual cosine and JS divergence, source persona to bystander persona) predict per-bystander sycophancy leakage better on a larger model (Qwen-2.5-72B-Instruct) than they did at 7B (#470), by porting #470's frozen contrastive sycophancy leakage rig unchanged except for model size and scoring leakage against cosine, JS, the bystander's base prior, and a content-free base-rate null.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/507",
-      "status": "running",
-      "title": "Does model scale rescue the cosine/JS leakage predictor for sycophancy? (port #470 rig to a larger model)"
+      "path": "tasks/awaiting_promotion/507",
+      "status": "awaiting_promotion",
+      "title": "Scaling 7B to 72B makes the sycophancy-leakage predictor strictly worse, not better (HIGH confidence)"
     },
     "508": {
       "goal": "Measure whether marker leakage to bystander personas (and the default assistant) differs between LoRA and full fine-tuning when implanting a contrastive marker behavior into a source persona, holding the contrastive recipe, training data, and on-policy leakage DV fixed and comparing at a matched source-implant rate.",
@@ -2926,11 +2926,11 @@
       "title": "Test rank-1 activation-space update as a predictor of cross-context generalization (Dan framing)"
     },
     "511": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/running/511",
-      "status": "running",
-      "title": "Do #502's persona-distance leakage predictors improve with probe count, or plateau by N=500?"
+      "path": "tasks/awaiting_promotion/511",
+      "status": "awaiting_promotion",
+      "title": "At 500 probes per persona the layer-22 Gaussian-KL leakage predictor cell has plateaued, and its lead over same-layer cosine opens monotonically from 0.004 at N=25 to 0.060 CV R\u00b2 at N=500 (HIGH confidence)"
     },
     "512": {
       "has_clean_result": false,
@@ -2948,59 +2948,81 @@
     },
     "514": {
       "goal": "Determine whether marker leakage to bystander personas (and the bare default assistant) differs between LoRA and full fine-tuning at a matched source-implant rate, by training full-FT in a non-collapsing regime (denser budgets in the 0.25-0.5 epoch window and/or a lower learning rate) that yields a clean source-implant cell strictly above 9 nat, so the matched-rate read at source \u0394G = 8 \u00b1 1 nat becomes determinate.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/514",
-      "status": "running",
-      "title": "Resolve the full-FT matched-rate read: find a non-collapsing full-FT regime with a clean source-implant cell above 9 nat (denser 0.25-0.5 epoch budgets and/or lower LR)"
+      "path": "tasks/awaiting_promotion/514",
+      "status": "awaiting_promotion",
+      "title": "At source \u0394G \u2248 18 nat, full-FT leaks ~4-5 nat LESS than LoRA (single matched anchor); planned 8 \u00b1 1 nat read remains indeterminate (LOW confidence)"
     },
     "515": {
       "goal": "Measure whether #496's six warmth-trained Qwen-2.5-7B adapters actually became warmer than base (SocioT Warmth + Claude judge on held-out vulnerability prompts), to determine whether #496's warmth->sycophancy null is a real null or an artifact of warmth never being implanted.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/515",
-      "status": "approved",
-      "title": "Did #496 warmth training actually implant warmth? (manipulation check on existing adapters)"
+      "path": "tasks/awaiting_promotion/515",
+      "status": "awaiting_promotion",
+      "title": "Cross-meter agreement and the Claude judge reduce the warmth-never-implanted concern from #496, but the plan-committed SocioT_paper +0.15 nats gate failed 0/6 (MODERATE confidence)"
     },
     "516": {
       "goal": "Replicate the Ibrahim/Hafner/Rocher warmth->sycophancy finding on Qwen-2.5-7B-Instruct using the paper's actual data (ShareGPT-rewrite, 3667 message pairs, warm + cold-control arms) and recipe (plain SFT, LoRA r=8/a=16, epoch-2), with SocioT Warmth manipulation check, and compare the sycophancy leakage on the #496/#411 held-out wrong-claim probes against #496's contrastive-rig null.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/516",
-      "status": "running",
-      "title": "Replicate Ibrahim et al. (2507.21919) warmth->sycophancy on Qwen-2.5-7B with the paper's data + recipe"
+      "path": "tasks/awaiting_promotion/516",
+      "status": "awaiting_promotion",
+      "title": "A paper-recipe Ibrahim-et-al. warmth replication attempt on Qwen-2.5-7B failed the SocioT manipulation check, so the paper's downstream sycophancy claim never got tested on this model (LOW confidence)"
     },
     "517": {
       "goal": "Measure untrained Qwen-2.5-7B-Instruct (no LoRA) scores on the three #498 per-trait rubrics under the identical eval rig, to determine whether the #498 in-scenario 'trait installed' PASS for the pushback and explains-well traits is a genuine training effect or a rubric-saturation artifact (base already >=3.5).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/517",
-      "status": "approved",
-      "title": "Base-model headroom probe for the #498 per-trait rubrics"
+      "path": "tasks/awaiting_promotion/517",
+      "status": "awaiting_promotion",
+      "title": "Untrained Qwen-2.5-7B-Instruct already PASSes 2 of 3 #498 trait rubrics in-scenario; only validating has real base-model headroom (MODERATE confidence)"
     },
     "518": {
       "goal": "Re-run the #470/#509 leakage-prediction analysis for refusal and emergent-misalignment behaviors, reusing the closest old source-by-bystander leakage panels, scoring the same predictor zoo (cosine_l20, JS, KL) plus bystander base rate (confound-aware, per #509) and a new training-completion log-prob metric (generalizing #500/#444's fact-validated bystander_logprob), and report whether any predictor generalizes across behaviors; also report training-completion log-prob trained-minus-base as a non-saturating implant-quality readout on each source.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/518",
-      "status": "approved",
+      "path": "tasks/running/518",
+      "status": "running",
       "title": "Extend leakage prediction to refusal + emergent misalignment (syco-recipe analogue) + training-completion log-prob metric"
     },
     "519": {
       "goal": "Test whether the rank-one law (constant shift-direction + cosine-scaled magnitude) governs cross-context generalization of two implanted behaviors -- a marker (lazy) and emergent misalignment (rich) -- by comparing per-context activation shift vectors across a held-out persona panel, predicting it holds for the marker and breaks for EM.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/519",
-      "status": "planning",
-      "title": "Rank-one cross-context generalization: does it hold for a marker (lazy) but break for EM (rich)?"
+      "path": "tasks/awaiting_promotion/519",
+      "status": "awaiting_promotion",
+      "title": "Rank-one cross-context test for marker vs EM ran the training half and skipped the analysis half \u2014 headline not answered (LOW confidence)"
     },
     "520": {
       "goal": "Test whether fine-tuning edits superpose -- whether implanting a marker in two source contexts separately vs jointly combines additively in per-context activation-shift space (shift_{A+B} ~ shift_A + shift_B) -- as the rank-one map-plus-beacons picture requires.",
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/520",
+      "status": "awaiting_promotion",
+      "title": "A deliberately-cold marker-implant LoRA stayed at the emission floor across 36 cells, so the additivity geometry is only a weak activation-space read (LOW confidence)"
+    },
+    "521": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/520",
+      "path": "tasks/proposed/521",
+      "status": "proposed",
+      "title": "Phase C/D/E completion for #519: build input JSONs + run activation-shift extraction"
+    },
+    "522": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/planning/522",
       "status": "planning",
-      "title": "Do fine-tuning edits superpose? Additivity of two source-context marker implants in activation-shift space"
+      "title": "Finish #511's dropped pieces: CPU un-descope (wass2 + ridge N=500 + loc-epoch 2/3/5 + g_logprob) on VM + full-response Rao-Blackwellized JS predictor on GPU"
+    },
+    "523": {
+      "goal": "Determine whether #502's headline geometry-predicts-leakage cell (last_prompt x L22 x gauss_kl, rho=-0.79 / CV R^2=0.61 on loc-arm epoch 1) survives honest out-of-sample evaluation -- via a held-out probe pool (with the indirect-rewrite voice-drift bug fixed), a scoped second-seed retrain of the headline cell's deltaG substrate, and a nested CV that folds the ~1500-cell selection inside the held-out fold -- and report the non-stylized-subset CV R^2 as the headline effect size.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/523",
+      "status": "planning",
+      "title": "Test whether #502's L22 gauss_kl geometry-predicts-leakage cell survives honest held-out evaluation (held-out probe pool + second seed + nested CV)"
     },
     "53": {
       "has_clean_result": false,

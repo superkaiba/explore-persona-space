@@ -714,6 +714,62 @@ pivot_criteria:
       `accept_descope_to_<X>_with_caveats` (descope drops below
       planner's §9 min-N-for-power; named caveats inline). Post-mortem
       trigger: task #397 round 6 (2026-05-27).
+  - trigger: plan_contradiction_replan
+    pivot_action: |
+      Fires when a subagent (`experiment-implementer`, `code-reviewer`,
+      `critic`, `interpretation-critic`, or any reviewer in the loop)
+      reports that the PLAN ITSELF is the defect — internally contradictory
+      success / kill criteria, a jointly-unsatisfiable gate set (e.g. two
+      kill-gates demand opposite signs on the same measurement at the same
+      cell), or an explicit "needs plan amendment / cannot pick a science
+      direction" verdict. The signal is recipe-agnostic: it is NOT a bug
+      in code, NOT a valid experimental fork, and NOT a recoverable
+      preflight/infra hiccup. Detection cues in the subagent's report:
+      phrases like "needs plan amendment", "internally contradictory",
+      "gate set is jointly unsatisfiable", "cannot pick a science
+      direction", or a Statistics & Measurement lens REVISE citing
+      decision-gate coherence (critic.md / codex-critic.md).
+
+      Pivot action (the ONLY legitimate response): `task.py set-status
+      <N> planning` + re-invoke `/adversarial-planner` with explicit
+      pivot scope naming the contradiction verbatim — for example
+      "Gate 3 requires probe X >= +0.2 nat AND Gate 4 requires the same
+      probe at the same cell <= -0.2 nat; redesign the gate set to be
+      jointly satisfiable or drop to a single necessary kill-criterion."
+      Treat the revised plan as a fresh implementer cycle (cap-3 resets).
+      Count this as a strategy pivot for the cap-3-pivots-before-block
+      rule (track via the existing `epm:strategy-pivot v<n>` marker
+      convention; do NOT introduce a new marker). Block only after ~3
+      re-plans fail to yield a satisfiable design AND no further
+      autonomous angle exists (halt_criteria id=3 with explicit
+      `needs-user` from the planner, or id=6 if a binding concern
+      persists).
+
+      Forbidden anti-patterns (the regressions this entry closes):
+      (a) descoping a hyperparameter / recipe (lr, LoRA rank, row
+      count, epoch count) to dodge the contradiction — that papers over
+      a plan bug with a recipe knob and lands in a two-sided dead-end
+      where neither attempt resolves the underlying gate conflict;
+      (b) silently picking among the subagent's paper-over options as
+      if it were a valid experimental fork (autonomous mode's
+      max-info-gain pick applies to VALID forks, not to "the plan is
+      self-defeating, pick a workaround"); (c) parking for the user in
+      autonomous mode (`EPM_AUTONOMOUS_SESSION=1`) — there is no human
+      to escalate to; re-plan in the same session.
+
+      Post-mortem trigger: task #488 round 10 (2026-06-08). An
+      autonomous session treated an `experiment-implementer` BLOCKED
+      verdict ("the gate set is internally contradictory; I cannot pick
+      a science direction") as a valid fork and descoped the recipe
+      (lr 2e-6→1e-6, r 16→8, rows 150→75), then descoped further on
+      the null and concluded "recipe family exhausted" — burning hours
+      on a plan bug. The companion edits that prevent the contradiction
+      from being shipped in the first place are
+      `critic.md` + `codex-critic.md` Statistics & Measurement lens
+      item 3 (decision-gate coherence, e902ef37c) and `planner.md` §7
+      gate-set minimality + joint-satisfiability self-check (c183114c7);
+      this entry closes the loop on the execution side when a
+      contradictory plan slips through anyway.
 
 # ──────────────────────────────────────────────────────────────────────
 # Subagent halt verdicts. Restored from the GH-era yaml with substrate

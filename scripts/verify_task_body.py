@@ -1716,13 +1716,22 @@ def check_repro_sentinel_scrub(body: str) -> CheckResult:
 
 
 # A learning-rate-shaped number: `2e-6`, `1e-5`, `1E-4`, `1e-04`, `3.0e-5`,
-# `0.0001`, `5e-5`. The optional exponent makes the bare decimal form match too.
-_LR_NUM = r"[0-9]+(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?"
-# Body side — anchored to an explicit `lr` / `learning rate` label so the
-# number we judge is unambiguously the learning rate (precise, low false
-# positive). `\blr\b` does not match `color`, `_lr_`, or `controller`.
+# or a sub-1 decimal like `0.0001` / `0.00005`. Bare integers (`50`, `100`)
+# are EXCLUDED — never a real learning-rate value, and admitting them
+# caused the task #514 false-positive where prose `lower-LR 50%-epoch cell`
+# parsed `50` as an lr value.
+_LR_NUM_SCI = r"[0-9]+(?:\.[0-9]+)?[eE][-+]?[0-9]+"
+_LR_NUM_DEC = r"0\.[0-9]+"
+_LR_NUM = rf"(?:{_LR_NUM_SCI}|{_LR_NUM_DEC})"
+# Body side — anchored to an explicit `lr` / `learning rate` label AND
+# requiring an explicit assignment glyph (`=`, `:`, `of`, `is`) between
+# the anchor and the number, so the number we judge is unambiguously the
+# learning rate (precise, low false positive). `\blr\b` does not match
+# `color`, `_lr_`, or `controller`. The glyph requirement excludes prose
+# like `lower-LR 50%-epoch cell` (#514) where `LR` sits adjacent to a
+# bare integer with no assignment semantics.
 _LR_ANCHORED_RE = re.compile(
-    r"(?:\blr\b|learning[\s_-]*rate)\s*[=:]?\s*(" + _LR_NUM + r")",
+    r"(?:\blr\b|learning[\s_-]*rate)\s*(?:[=:]|\b(?:of|is)\b)\s*(" + _LR_NUM + r")",
     flags=re.IGNORECASE,
 )
 # Plan side (recall) — any scientific-notation token (`Ne-M`). Capturing the

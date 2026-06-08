@@ -1,0 +1,228 @@
+{
+  "schema_version": "i517_v1",
+  "kind": "base_vs_trained_comparison",
+  "DEPRECATED_PAIRED_KEYS_INVALID_QBANK_MISMATCH": true,
+  "DEPRECATED_PAIRED_KEYS_NOTE": "The paired_delta_system / paired_delta_role / wilcoxon_p sub-blocks under each trait pair the trained #498 cell against the base #517 cell BUT the #498 and #517 Q-banks are disjoint (0 of 40 prompts overlap by exact text). The paired-\u0394 values, their SEMs/CIs, and the Wilcoxon p-values therefore compare two unpaired distributions on different prompts and DO NOT support a trained-vs-base paired-\u0394 claim. Cell means (base_* / trained_*) and within-#517 system_prompt_effect blocks remain valid. See task #517 body for the cross-experiment caveat finding.",
+  "git_commit": "191646f1151c1cfe0033e8bc101990167d6672b4",
+  "ts": "2026-06-08T19:43:15.759187Z",
+  "smoke": false,
+  "pass_threshold": 3.5,
+  "per_trait": {
+    "logical_and_pushes_back": {
+      "base_in_scenario": {
+        "n": 40,
+        "mean": 4.4,
+        "sem": 0.13774744634423888,
+        "ci95_low": 4.130015005165292,
+        "ci95_high": 4.669984994834708,
+        "decision": "saturation (CI strictly above 3.5)"
+      },
+      "base_default_assistant": {
+        "n": 40,
+        "mean": 4.325,
+        "sem": 0.14146541763789616,
+        "ci95_low": 4.047727781429724,
+        "ci95_high": 4.602272218570277
+      },
+      "trained_system_in_scenario": {
+        "n": 40,
+        "mean": 4.033333333333333,
+        "sem": 0.15321809121570296,
+        "ci95_low": 3.7330258745505556,
+        "ci95_high": 4.333640792116111
+      },
+      "trained_system_default_assistant": {
+        "n": 40,
+        "mean": 3.95,
+        "sem": 0.14546810186762132,
+        "ci95_low": 3.6648825203394626,
+        "ci95_high": 4.235117479660538
+      },
+      "paired_delta_system": {
+        "n": 40,
+        "mean": -0.3666666666666667,
+        "sem": 0.19051586888313604,
+        "ci95_low": -0.7400777696776133,
+        "ci95_high": 0.006744436344279958,
+        "wilcoxon_p": 0.04783225233697104,
+        "n_paired": 40
+      },
+      "trained_role_in_scenario": {
+        "n": 40,
+        "mean": 3.775,
+        "sem": 0.15395428892019564,
+        "ci95_low": 3.4732495937164165,
+        "ci95_high": 4.076750406283583
+      },
+      "trained_role_default_assistant": {
+        "n": 40,
+        "mean": 4.025,
+        "sem": 0.13040999341218593,
+        "ci95_low": 3.769396412912116,
+        "ci95_high": 4.280603587087885
+      },
+      "paired_delta_role": {
+        "n": 40,
+        "mean": -0.625,
+        "sem": 0.205753254432103,
+        "ci95_low": -1.0282763786869218,
+        "ci95_high": -0.22172362131307816,
+        "wilcoxon_p": 0.003706767152048353,
+        "n_paired": 40
+      },
+      "system_prompt_effect": {
+        "n": 40,
+        "mean": 0.07500000000000001,
+        "sem": 0.1288163847057546,
+        "ci95_low": -0.177480114023279,
+        "ci95_high": 0.32748011402327903,
+        "detection": "uniform (CI overlaps 0)",
+        "n_paired": 40
+      }
+    },
+    "validating": {
+      "base_in_scenario": {
+        "n": 40,
+        "mean": 2.6416666666666666,
+        "sem": 0.14091050078247977,
+        "ci95_low": 2.3654820851330065,
+        "ci95_high": 2.9178512482003267,
+        "decision": "real_implant_possible (CI strictly below 3.5)"
+      },
+      "base_default_assistant": {
+        "n": 40,
+        "mean": 2.175,
+        "sem": 0.08687966921597322,
+        "ci95_low": 2.0047158483366925,
+        "ci95_high": 2.345284151663307
+      },
+      "trained_system_in_scenario": {
+        "n": 40,
+        "mean": 4.25,
+        "sem": 0.1425999924079866,
+        "ci95_low": 3.9705040148803463,
+        "ci95_high": 4.529495985119654
+      },
+      "trained_system_default_assistant": {
+        "n": 40,
+        "mean": 2.408333333333333,
+        "sem": 0.1271468070433172,
+        "ci95_low": 2.1591255915284315,
+        "ci95_high": 2.657541075138235
+      },
+      "paired_delta_system": {
+        "n": 40,
+        "mean": 1.6083333333333332,
+        "sem": 0.18867037385745006,
+        "ci95_low": 1.238539400572731,
+        "ci95_high": 1.9781272660939353,
+        "wilcoxon_p": 6.480694732206433e-07,
+        "n_paired": 40
+      },
+      "trained_role_in_scenario": {
+        "n": 40,
+        "mean": 4.266666666666667,
+        "sem": 0.1101669285073889,
+        "ci95_low": 4.050739486792184,
+        "ci95_high": 4.482593846541149
+      },
+      "trained_role_default_assistant": {
+        "n": 40,
+        "mean": 2.316666666666667,
+        "sem": 0.11568574191831456,
+        "ci95_low": 2.0899226125067702,
+        "ci95_high": 2.5434107208265635
+      },
+      "paired_delta_role": {
+        "n": 40,
+        "mean": 1.625,
+        "sem": 0.1746740962078805,
+        "ci95_low": 1.2826387714325542,
+        "ci95_high": 1.9673612285674458,
+        "wilcoxon_p": 2.952804296482752e-07,
+        "n_paired": 40
+      },
+      "system_prompt_effect": {
+        "n": 40,
+        "mean": 0.4666666666666667,
+        "sem": 0.1233437279056994,
+        "ci95_low": 0.22491295997149585,
+        "ci95_high": 0.7084203733618375,
+        "detection": "system_prompt_moves_score (CI strictly above 0)",
+        "n_paired": 40
+      }
+    },
+    "explains_well": {
+      "base_in_scenario": {
+        "n": 40,
+        "mean": 4.258333333333334,
+        "sem": 0.0831086715213959,
+        "ci95_low": 4.095440337151397,
+        "ci95_high": 4.42122632951527,
+        "decision": "saturation (CI strictly above 3.5)"
+      },
+      "base_default_assistant": {
+        "n": 40,
+        "mean": 3.925,
+        "sem": 0.04217636961434867,
+        "ci95_low": 3.8423343155558762,
+        "ci95_high": 4.007665684444123
+      },
+      "trained_system_in_scenario": {
+        "n": 40,
+        "mean": 4.291666666666666,
+        "sem": 0.06875728399641817,
+        "ci95_low": 4.156902390033687,
+        "ci95_high": 4.426430943299645
+      },
+      "trained_system_default_assistant": {
+        "n": 40,
+        "mean": 3.9666666666666663,
+        "sem": 0.03736323588785367,
+        "ci95_low": 3.893434724326473,
+        "ci95_high": 4.039898609006859
+      },
+      "paired_delta_system": {
+        "n": 40,
+        "mean": 0.033333333333333305,
+        "sem": 0.10990801644908381,
+        "ci95_low": -0.18208637890687096,
+        "ci95_high": 0.24875304557353756,
+        "wilcoxon_p": 0.877775879013228,
+        "n_paired": 40
+      },
+      "trained_role_in_scenario": {
+        "n": 40,
+        "mean": 4.241666666666666,
+        "sem": 0.08353607815355203,
+        "ci95_low": 4.077935953485705,
+        "ci95_high": 4.405397379847628
+      },
+      "trained_role_default_assistant": {
+        "n": 40,
+        "mean": 3.9916666666666663,
+        "sem": 0.036762694766511964,
+        "ci95_low": 3.9196117849243026,
+        "ci95_high": 4.063721548409029
+      },
+      "paired_delta_role": {
+        "n": 40,
+        "mean": -0.016666666666666698,
+        "sem": 0.11812278126166625,
+        "ci95_low": -0.24818731793953255,
+        "ci95_high": 0.21485398460619917,
+        "wilcoxon_p": 0.9488339412776227,
+        "n_paired": 40
+      },
+      "system_prompt_effect": {
+        "n": 40,
+        "mean": 0.33333333333333337,
+        "sem": 0.08006407690254357,
+        "ci95_low": 0.176407742604348,
+        "ci95_high": 0.49025892406231875,
+        "detection": "system_prompt_moves_score (CI strictly above 0)",
+        "n_paired": 40
+      }
+    }
+  }
+}

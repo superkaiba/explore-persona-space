@@ -1,0 +1,7 @@
+{
+  "figure": "sociot_vs_claude_scatter",
+  "script": "scripts/dispatch_warmth_manipulation_check_515.py",
+  "git_sha": "e2e2ea0403dbb4eb7ad352fe06d2d7c7152e0139",
+  "ts_utc": "2026-06-08T14:47:26.377935+00:00",
+  "data_path": "eval_results/issue_515/analysis/per_source_summary.json"
+}

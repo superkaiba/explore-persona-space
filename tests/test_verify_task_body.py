@@ -2025,3 +2025,31 @@ def test_repro_lr_no_body_lr_skips(tmp_path):
     plan = _write_plan(tmp_path, "lr=2e-6.")
     result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
     assert result.passed and not result.is_warn
+
+
+def test_repro_lr_does_not_parse_bare_integer_after_lr(tmp_path):
+    """Task #514 regression: prose like `lower-LR 50%-epoch cell` MUST
+    NOT parse `50` as an lr value. The bare integer adjacent to an `LR`
+    anchor with no assignment glyph (`=`, `:`, `of`, `is`) and not in
+    scientific-notation form must not match. Without the fix this body
+    FAILed Check 16 with `lr 50` unmatched against the plan's {2e-6}."""
+    body = _V2_REPRO_BODY.format(LR="2e-6").replace(
+        "**Compute:** 8x H100.",
+        "**Compute:** 8x H100. Adapter was rewound to the lower-LR 50%-epoch cell.",
+    )
+    plan = _write_plan(tmp_path, "lr=2e-6.")
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+
+
+def test_repro_lr_natural_language_of_matches(tmp_path):
+    """Natural-language phrasing `learning rate of 1e-5` is recognized
+    as an lr statement (the `of` clause). Without supporting this form
+    the verifier would skip — losing a real reconciliation opportunity."""
+    body = _V2_REPRO_BODY.format(LR="2e-6").replace(
+        "**Compute:** 8x H100.",
+        "**Compute:** 8x H100. We used a learning rate of 2e-6 throughout.",
+    )
+    plan = _write_plan(tmp_path, "lr=2e-6.")
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()

@@ -1,0 +1,42 @@
+{
+  "phase": "C",
+  "arms": [
+    "baseline",
+    "warm",
+    "cold"
+  ],
+  "n_validation_prompts": 600,
+  "scores": {
+    "baseline": {
+      "mean_warmth": 0.013045796205600103,
+      "ci_lower": 0.009777241696914038,
+      "ci_upper": 0.01761349101861318,
+      "n": 600
+    },
+    "warm": {
+      "mean_warmth": 0.015039467364549636,
+      "ci_lower": 0.01117231438557307,
+      "ci_upper": 0.019359351694583894,
+      "n": 600
+    },
+    "cold": {
+      "mean_warmth": 0.009007544120152792,
+      "ci_lower": 0.002086685448884964,
+      "ci_upper": 0.01460432842373848,
+      "n": 600
+    }
+  },
+  "manipulation_check": {
+    "passed": false,
+    "warm_lift": 0.001993671158949533,
+    "cold_delta": -0.0040382520854473115,
+    "warm_lift_threshold": 0.15,
+    "cold_tolerance": 0.1,
+    "reason": "warm_lift=0.002 (threshold 0.15); cold_delta=-0.004 (tolerance \u00b10.1)"
+  },
+  "smoke": false,
+  "issue": 516,
+  "git_commit": "e224b7989aa89874dd5a140c8620f2d8628a6f79",
+  "ts": "2026-06-08T16:26:23Z",
+  "python_version": "3.11.10"
+}

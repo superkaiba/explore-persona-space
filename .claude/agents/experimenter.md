@@ -72,6 +72,47 @@ EXIT YOUR TURN.
 
 ## Execution Protocol
 
+### SSH MCP registry drift (recovery, not a failure)
+
+The SSH MCP server's in-memory pod registry sometimes drops the newest
+pod entry between adjacent `ssh_execute` calls within a single
+experimenter turn — even when `scripts/pods.conf` and `.claude/mcp.json`
+are both correct. The symptom is `mcp__ssh__ssh_execute` returning
+`Server "pod-<N>" not found` (or `Server "epm-issue-<N>" not found`)
+while a fresh `pod.py config --check` PASSes. This is an MCP-side cache
+staleness, NOT a real infra failure — DO NOT post `epm:failure v1`.
+Observed on fresh ephemerals (pod-489, pod-519, 2026-06-08; sporadic).
+
+Recover inline:
+
+1. **Refresh once.** Run `uv run python scripts/pod.py config --sync` on
+   the local VM (NOT on the pod) and retry the `ssh_execute` call. This
+   regenerates `~/.ssh/config` + `.claude/mcp.json` from `pods.conf` and
+   often re-seeds the MCP server's registry.
+2. **Fall back to raw SSH via Bash if the retry still 404s.** Read the
+   pod's host + port from `scripts/pods.conf` (one line per pod, format
+   `name host port gpus gpu_type label`) and run the equivalent command
+   over raw SSH:
+   ```bash
+   # On the LOCAL VM (not the pod). Read host+port from pods.conf:
+   POD_NAME="epm-issue-<N>"  # or pod-<N>
+   read _ HOST PORT _ < <(grep "^$POD_NAME " scripts/pods.conf)
+   ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+       -p "$PORT" root@"$HOST" '<command>'
+   ```
+   This is functionally equivalent for one-shot commands. You lose only
+   the structured-output conveniences of `ssh_tail` / `ssh_sync` — those
+   are not used in the launch protocol, so the fallback is safe for
+   every `ssh_execute` step in "Before Running" and "During Execution".
+3. **Do NOT escalate.** A registry-drift fallback is bookkeeping, not a
+   launch failure. Proceed through the protocol normally; the
+   `epm:run-launched` marker carries no special annotation.
+
+This recovery applies to every `ssh_execute` step below. If raw SSH
+*also* fails (connection refused, no route to host, auth failure), then
+the pod itself is unreachable — that IS an `epm:failure v1
+failure_class: infra` per the launch-time-failure table below.
+
 ### Before Running
 
 1. **Use the pod `/issue` assigned you.** The brief includes a pod name like
@@ -537,7 +578,16 @@ brief that includes the failure context. Your single-turn scope is launch + exit
   happens automatically after upload-verifier PASS. In particular, never
   `pod.py stop` to park while awaiting a user decision — that is the
   banned regression closed 2026-06-07 (CLAUDE.md halt-criteria); this
-  agent has no escalation surface that would warrant it.
+  agent has no escalation surface that would warrant it. RunPod
+  provision/resume refusals from the two transient + no-cost-while-idle
+  classes — `SUPPLY_CONSTRAINT` (no host has free GPUs) and
+  `INSUFFICIENT_BALANCE` (projected account $/hr over the console cap) —
+  are handled by `scripts/pod_lifecycle.py`'s wait-for-capacity loop
+  (autonomous mode) or surface as actionable SystemExit messages
+  (interactive mode); they never reach this agent as `epm:failure infra`
+  for an idle/unprovisioned pod, so DO NOT pre-emptively classify a
+  pre-launch refusal as terminal — the lifecycle layer retries until the
+  pod actually exists.
 - **Never sleep-chain monitor.** Subagents have ONE turn — see the
   "Stay-alive does NOT apply to this agent" section above. The orchestrator
   polls via `scripts/poll_pipeline.py`.

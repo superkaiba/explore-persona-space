@@ -61,7 +61,12 @@ marker as the FIRST token; a teacher-forced log-prob at a fixed position after a
 CANNED response the model never generated (off-policy — diverges arbitrarily from
 the behavior, #432/#406); a binary emission rate as the saturating/zero-inflating
 cross-condition leaderboard (#406 hit 52% exact zeros over 240 pairs, degrading
-the rank correlation and conflating "whether it transfers" with "how much").
+the rank correlation and conflating "whether it transfers" with "how much");
+and **full-vocab KL-from-base at the slot as a saturation-dodging DV** (#504 —
+KL captures EOS/punctuation reallocation, not marker mass; a bystander read
+24 nats KL with zero marker emission). On a saturated anchor, keep the marker
+`log P(marker)` DV and back off to a less-trained anchor + bounded bystander
+emission rate; never substitute KL.
 (Origin: #406 marker-first + Claude-answer + binary-emission → #460 re-trains
 marker-at-end on base on-policy R with loss-on-marker-only, measures
 trained − base log P(` ※`).)
