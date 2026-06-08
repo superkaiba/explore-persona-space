@@ -32,6 +32,8 @@ from autonomous_session_watch import (  # noqa: E402
     AUTO_STOP_DONE,
     PARK,
     POD_ACTIVE,
+    STALLED_MAX_RESPAWNS,
+    STALLED_WINDOW_S,
     TERMINAL,
     decide,
     decide_pod_safety,
@@ -86,16 +88,23 @@ def test_unknown_status_is_inert():
 
 def test_status_sets_are_disjoint_and_cover_enum():
     # The three sets must not overlap (an overlap would make decide order-
-    # dependent) and must cover the canonical task status enum.
+    # dependent) and must EXACTLY equal the authoritative runtime enum
+    # `task_workflow.STATUSES` — no missing status (a fall-through would
+    # silently classify as unknown→keep) and no phantom member (a name the
+    # runtime can never produce, like the prior `clarifying` in PARK that
+    # the reviewer caught). Mirrors the pod-safety pass's
+    # `test_status_classes_subset_of_authoritative_enum`.
+    from explore_persona_space.task_workflow import STATUSES
+
+    enum = set(STATUSES)
     assert ACTIVE.isdisjoint(PARK)
     assert ACTIVE.isdisjoint(TERMINAL)
     assert PARK.isdisjoint(TERMINAL)
-    canonical = {
-        "proposed", "clarifying", "planning", "plan_pending", "approved",
-        "running", "verifying", "interpreting", "reviewing",
-        "awaiting_promotion", "completed", "blocked", "archived",
-    }  # fmt: skip
-    assert canonical <= (ACTIVE | PARK | TERMINAL)
+    assert enum == ACTIVE | PARK | TERMINAL, (
+        f"session-pass classification disagrees with runtime STATUSES: "
+        f"missing={enum - (ACTIVE | PARK | TERMINAL)}, "
+        f"phantom={(ACTIVE | PARK | TERMINAL) - enum}"
+    )
 
 
 def test_register_writes_atomic_entry(tmp_path, monkeypatch):
@@ -800,3 +809,599 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
     assert payload2["missed"] == 2
     assert payload2["alerted"] is True
     assert payload2["last_progress_ts"] == 99.0
+
+
+# ─── stalled-detector decision matrix ────────────────────────────────────────
+# decide_session_stalled is the pure decision for the Phase-2 auto-respawn
+# path. Pin the (respawn / exhausted / alert / keep) action selection
+# exhaustively — a wrong respawn duplicates a session, a wrong alert misses
+# a real bug, and a wrong cap exhaustion silently strands a run.
+
+
+def test_session_stalled_missing_self_report_is_keep():
+    # No self-report file at all (interactive session, or autonomous that
+    # hasn't ticked yet) -> never alert / respawn.
+    from autonomous_session_watch import decide_session_stalled
+
+    action, missed = decide_session_stalled(
+        self_report_age_s=None,
+        marker_progress_age_s=None,
+        has_pod=False,
+        missed=5,
+        alerted=False,
+        respawn_eligible=True,
+        respawn_count=0,
+    )
+    assert action == "keep"
+    assert missed == 0
+
+
+def test_session_stalled_fresh_self_report_resets_miss_counter():
+    from autonomous_session_watch import decide_session_stalled
+
+    fresh = 60.0  # 1 min ago, well under the window
+    action, missed = decide_session_stalled(
+        self_report_age_s=fresh,
+        marker_progress_age_s=None,
+        has_pod=True,
+        missed=3,
+        alerted=True,
+        respawn_eligible=True,
+    )
+    assert action == "keep"
+    assert missed == 0
+
+
+def test_session_stalled_requires_both_signals_stale():
+    # Self-report stale but marker-progress FRESH -> keep (bg chain still posting).
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    fresh_marker = 60.0
+    action, _ = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=fresh_marker,
+        has_pod=True,
+        missed=0,
+        alerted=False,
+        respawn_eligible=True,
+    )
+    assert action == "keep"
+
+
+def test_session_stalled_needs_two_misses_before_acting():
+    # First stale check only increments (1); second consecutive stale check
+    # triggers the recovery action. Guards a transient self-report-write race.
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    a1, m1 = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=False,
+        missed=0,
+        alerted=False,
+        respawn_eligible=True,
+        respawn_count=0,
+        threshold=2,
+    )
+    assert (a1, m1) == ("keep", 1)
+    a2, m2 = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=False,
+        missed=1,
+        alerted=False,
+        respawn_eligible=True,
+        respawn_count=0,
+        threshold=2,
+    )
+    assert (a2, m2) == ("respawn", 0)
+
+
+def test_session_stalled_respawn_eligible_returns_respawn():
+    # respawn_eligible=True + count below cap -> respawn.
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    action, _ = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=True,
+        missed=1,
+        alerted=False,
+        respawn_eligible=True,
+        respawn_count=0,
+        threshold=2,
+    )
+    assert action == "respawn"
+
+
+def test_session_stalled_respawn_just_below_cap_still_respawns():
+    # Boundary case (reviewer Minor #5): the LAST allowed respawn must still
+    # fire. `respawn_count == max - 1` means we've issued `max - 1` respawns
+    # and are about to issue the `max`-th — that's `<` `max`, so the
+    # comparison must allow it. An off-by-one here (`>` vs `>=`) would
+    # silently cut the budget by 1.
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    action, _ = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=True,
+        missed=1,
+        alerted=False,
+        respawn_eligible=True,
+        respawn_count=STALLED_MAX_RESPAWNS - 1,
+        threshold=2,
+    )
+    assert action == "respawn"
+
+
+def test_session_stalled_respawn_at_cap_returns_exhausted():
+    # respawn_eligible=True but respawn_count == max -> exhausted (don't loop).
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    action, _ = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=True,
+        missed=1,
+        alerted=False,
+        respawn_eligible=True,
+        respawn_count=STALLED_MAX_RESPAWNS,
+        threshold=2,
+    )
+    assert action == "exhausted"
+
+
+def test_session_stalled_respawn_above_cap_returns_exhausted():
+    # Defensive: if respawn_count drifts > max (e.g. cap lowered between
+    # ticks), still classify as exhausted rather than respawning.
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    action, _ = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=True,
+        missed=1,
+        alerted=False,
+        respawn_eligible=True,
+        respawn_count=STALLED_MAX_RESPAWNS + 5,
+        threshold=2,
+    )
+    assert action == "exhausted"
+
+
+def test_session_stalled_not_eligible_returns_alert():
+    # respawn_eligible=False (non-ACTIVE status OR daemon unreachable) ->
+    # alert-only, regardless of how many respawns have happened.
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    action, _ = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=True,
+        missed=1,
+        alerted=False,
+        respawn_eligible=False,
+        respawn_count=0,
+        threshold=2,
+    )
+    assert action == "alert"
+
+
+def test_session_stalled_already_alerted_is_keep():
+    # Dedup: once the alert flag has been set this episode, stay quiet
+    # until self-report-ts advancement clears it (caller's responsibility).
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    action, _ = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=True,
+        missed=1,
+        alerted=True,
+        respawn_eligible=True,
+        respawn_count=0,
+    )
+    assert action == "keep"
+
+
+def test_session_stalled_marker_absent_treated_as_stale():
+    # No real progress markers at all is itself a stale signal — a pod-
+    # active autonomous session that's never posted progress is suspicious.
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    action, _ = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=None,
+        has_pod=True,
+        missed=1,
+        alerted=False,
+        respawn_eligible=True,
+        respawn_count=0,
+        threshold=2,
+    )
+    assert action == "respawn"
+
+
+# ─── stalled-detector I/O wrapper tests ──────────────────────────────────────
+# These exercise _process_stalled_session: the ACTIVE-only gating, daemon-
+# down fallback, crash-loop cap, and the stop-then-spawn ordering.
+
+
+def _write_autonomous_entry(reg_dir, issue, session_id, cap=12.0):
+    """Helper: write an autonomous-registry entry matching spawn_session's
+    layout so `_process_stalled_session` can load it."""
+    import json
+    import time as _t
+
+    (reg_dir / f"issue-{issue}.json").write_text(
+        json.dumps(
+            {
+                "issue": issue,
+                "happy_session_id": session_id,
+                "cwd": "/repo",
+                "auto_approve_gpu_hours": cap,
+                "spawned_at": _t.time(),
+                "missed": 0,
+            }
+        )
+    )
+
+
+def _patch_stale_signals(monkeypatch, asw, *, status: str, age_s: float | None = None):
+    """Helper: monkeypatch the I/O helpers so a session reads as stale.
+
+    Returns the value `age_s` used (the caller can assert it). Patches:
+    - `_task_status` -> the given status (ACTIVE / PARK / TERMINAL).
+    - `_self_report_age_seconds` -> (`age_s`, "ts-iso") so the self-report
+      is parsed as that many seconds old (default = past the staleness window).
+    - `_task_events` / `_latest_progress_ts` -> a single stale event past the window.
+    - `_running_managed_issue_pods` -> no managed pods.
+    """
+    if age_s is None:
+        age_s = STALLED_WINDOW_S + 60
+    monkeypatch.setattr(asw, "_task_status", lambda issue: status)
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (age_s, "ts-old"))
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "old"}])
+    monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: 0.0)
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    return age_s
+
+
+@pytest.fixture
+def stalled_recorder(monkeypatch):
+    """Capture every recovery side-effect (stop / spawn / marker) without
+    actually executing them, and inject them into autonomous_session_watch."""
+    import autonomous_session_watch as asw
+
+    stops: list[str] = []
+    spawns: list[tuple[int, float]] = []
+    markers: list[tuple[int, str]] = []
+
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: stops.append(sid) or True)
+    monkeypatch.setattr(
+        asw,
+        "_respawn_stalled_session",
+        lambda issue, cap, dry_run: spawns.append((issue, cap)) or True,
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((issue, label)),
+    )
+    return stops, spawns, markers
+
+
+def test_stalled_active_status_auto_respawns_after_two_misses(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # The fix this round is for: an ACTIVE-status stalled session auto-
+    # respawns (stop-then-spawn) instead of alerting only.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 518, "sess-518", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Tick 1: increments to missed=1, no action.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == [] and markers == []
+
+    # Tick 2: threshold met, ACTIVE + daemon_reachable -> respawn.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == ["sess-518"]
+    assert spawns == [(518, 24.0)]
+    assert markers == [(518, "session-auto-respawn")]
+
+
+def test_stalled_park_status_falls_back_to_alert(isolated_registry, monkeypatch, stalled_recorder):
+    # A `plan_pending` / `blocked` / `awaiting_promotion` etc. is a gate
+    # the session is legitimately parked at — never auto-respawn there.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 600, "sess-600")
+    _patch_stale_signals(monkeypatch, asw, status="plan_pending")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    # Threshold met but PARK status -> alert, not respawn.
+    assert stops == [] and spawns == []
+    assert markers == [(600, "session-stalled-alert")]
+
+
+def test_stalled_terminal_status_falls_back_to_alert(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # A `completed` / `archived` / `awaiting_promotion` task is terminal —
+    # never auto-respawn. The GC pass reaps the registry entry shortly after;
+    # this protects the tick between status flip and GC.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 700, "sess-700")
+    _patch_stale_signals(monkeypatch, asw, status="awaiting_promotion")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert stops == [] and spawns == []
+    assert markers == [(700, "session-stalled-alert")]
+
+
+def test_stalled_daemon_down_falls_back_to_alert(isolated_registry, monkeypatch, stalled_recorder):
+    # Daemon outage: detection still runs, but stop+spawn would fail
+    # mid-flight (the local daemon RPC isn't answering), so degrade to
+    # alert-only this tick. Mirrors the crash-recovery pass.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 800, "sess-800")
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=False)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=False)
+
+    assert stops == [] and spawns == []
+    assert markers == [(800, "session-stalled-alert")]
+
+
+def test_stalled_crash_loop_cap_exhausts_after_max_respawns(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Bound: respawn at most STALLED_MAX_RESPAWNS times per episode. Once
+    # exhausted, post the loud one-time marker and stop respawning until
+    # real progress advances and clears the cap.
+    import json
+
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 900, "sess-900")
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Drive the episode forward: each "respawn" needs two stale ticks
+    # (1st increments to missed=1, 2nd fires the action). After each
+    # respawn the state is persisted with respawn_count++. The cap is
+    # hit when respawn_count reaches STALLED_MAX_RESPAWNS, then the
+    # next two-tick cycle posts the exhausted marker.
+    for _ in range(STALLED_MAX_RESPAWNS):
+        # tick A: missed -> 1
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+        # tick B: respawn fires; bumps respawn_count, resets missed
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    # Sanity: every respawn was issued.
+    assert len(spawns) == STALLED_MAX_RESPAWNS
+    assert len(stops) == STALLED_MAX_RESPAWNS
+
+    # On-disk respawn_count is at the cap; the alerted flag was reset
+    # after each respawn so the next episode could fire.
+    state = json.loads((isolated_registry / "stalled-900.json").read_text())
+    assert state["respawn_count"] == STALLED_MAX_RESPAWNS
+
+    # Two more stale ticks -> exhausted marker, NOT another respawn.
+    pre_spawn_count = len(spawns)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert len(spawns) == pre_spawn_count  # no further respawn
+    assert (900, "session-auto-respawn-exhausted") in markers
+
+    # On-disk exhausted flag is set so the next tick stays quiet.
+    state2 = json.loads((isolated_registry / "stalled-900.json").read_text())
+    assert state2["exhausted"] is True
+
+
+def test_stalled_real_progress_resets_respawn_cap(isolated_registry, monkeypatch, stalled_recorder):
+    # The cap is per-EPISODE: if the session resumes self-reporting (the
+    # self_report_ts advances), the count must reset so a future episode
+    # can re-respawn from scratch. Without this, a session that hit the
+    # cap once would never auto-recover again.
+    import autonomous_session_watch as asw
+
+    _stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 950, "sess-950")
+    now = 1_000_000.0
+
+    # Episode 1: drive one full respawn.
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert len(spawns) == 1
+
+    # Self-report advances (new ts AND fresh age) -> alerted + respawn_count clear.
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (1.0, "ts-NEW"))
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    # No new respawn this tick (signals are fresh, just persists the reset).
+
+    # Episode 2: another stale stretch with a still-newer ts -> can respawn again
+    # from scratch, NOT exhausted.
+    monkeypatch.setattr(
+        asw,
+        "_self_report_age_seconds",
+        lambda issue, now: (STALLED_WINDOW_S + 60, "ts-NEWER"),
+    )
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    # Two episodes -> two respawns; cap was NOT reached.
+    assert len(spawns) == 2
+    assert (950, "session-auto-respawn-exhausted") not in markers
+
+
+def test_stalled_stop_failure_skips_spawn(isolated_registry, monkeypatch, stalled_recorder):
+    # If `_stop_session` returns False (stop RPC failed), we MUST NOT spawn
+    # a fresh session — that would leave two `--auto` sessions racing on
+    # the same issue. respawn_count must NOT be bumped (we never actually
+    # respawned), so the cap is unaffected.
+    import json
+
+    import autonomous_session_watch as asw
+
+    _stops, spawns, markers = stalled_recorder
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: False)
+    _write_autonomous_entry(isolated_registry, 960, "sess-960")
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert spawns == []  # never spawned
+    # No respawn-success marker; no exhausted marker either.
+    assert all(label != "session-auto-respawn" for _i, label in markers)
+
+    state = json.loads((isolated_registry / "stalled-960.json").read_text())
+    assert state["respawn_count"] == 0
+    assert state["exhausted"] is False
+
+
+def test_stalled_missing_session_id_declines_respawn(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Safety regression (reviewer Major #1): if the registry entry has no
+    # usable `happy_session_id` (None, missing, or non-str), the stop
+    # precondition cannot be verified, so we MUST NOT spawn — otherwise
+    # two `--auto` sessions would race on the same issue and double the
+    # pod cost. Stop is not called either (nothing to stop); the tick
+    # persists state and waits for the next entry-read to pick up a
+    # rewritten id.
+    import json
+
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    # Write an autonomous-registry entry with happy_session_id=None.
+    import time as _t
+
+    (isolated_registry / "issue-970.json").write_text(
+        json.dumps(
+            {
+                "issue": 970,
+                "happy_session_id": None,
+                "cwd": "/repo",
+                "auto_approve_gpu_hours": 12.0,
+                "spawned_at": _t.time(),
+                "missed": 0,
+            }
+        )
+    )
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Two stale ticks: threshold met, status ACTIVE, daemon reachable, so
+    # the decision says "respawn" — but the actor must DECLINE because sid
+    # is unusable.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert spawns == []  # NEVER spawned without a verified stop
+    assert stops == []  # nothing to stop in the first place
+    # No respawn-success marker fired.
+    assert all(label != "session-auto-respawn" for _i, label in markers)
+
+    state = json.loads((isolated_registry / "stalled-970.json").read_text())
+    assert state["respawn_count"] == 0  # cap unaffected
+    assert state["exhausted"] is False
+
+
+def test_stalled_main_passes_daemon_flag(isolated_registry, monkeypatch):
+    # The stalled-detector must reuse the same daemon_reachable result that
+    # the crash-recovery pass probed, so a daemon flap mid-tick can't make
+    # them disagree. Verify main() threads it through.
+    import autonomous_session_watch as asw
+
+    captured_kwargs: dict = {}
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: False)
+    monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: None)
+
+    def _record_stalled(*a, **kw):
+        captured_kwargs.update(kw)
+
+    monkeypatch.setattr(asw, "stalled_session_pass", _record_stalled)
+
+    rc = asw.main([])
+
+    assert rc == 0
+    assert captured_kwargs.get("daemon_reachable") is False
+
+
+def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_registry):
+    # State-store round-trip for the new fields: respawn_count + exhausted
+    # are persisted and first_seen carries forward across saves (mirrors
+    # the pod-safety-state contract).
+    import json
+
+    import autonomous_session_watch as asw
+
+    asw._save_stalled_state(
+        7,
+        "sess-7",
+        missed=1,
+        alerted=False,
+        last_self_report_ts="ts-1",
+        respawn_count=2,
+        exhausted=False,
+        prev={"first_seen": 1234.0},
+    )
+    payload = json.loads((isolated_registry / "stalled-7.json").read_text())
+    assert payload == {
+        "happy_session_id": "sess-7",
+        "missed": 1,
+        "alerted": False,
+        "respawn_count": 2,
+        "exhausted": False,
+        "last_self_report_ts": "ts-1",
+        "first_seen": 1234.0,
+    }
+
+    asw._save_stalled_state(
+        7,
+        "sess-7",
+        missed=0,
+        alerted=True,
+        last_self_report_ts="ts-2",
+        respawn_count=3,
+        exhausted=True,
+        prev=payload,
+    )
+    payload2 = json.loads((isolated_registry / "stalled-7.json").read_text())
+    assert payload2["first_seen"] == 1234.0  # carried forward
+    assert payload2["respawn_count"] == 3
+    assert payload2["exhausted"] is True
+    assert payload2["alerted"] is True
