@@ -105,7 +105,7 @@ def test_no_abort_when_clean_ft_b1_like() -> None:
 
 
 def test_no_abort_when_collapsed_but_subceiling() -> None:
-    """Collapsed BUT held-out still sub-ceiling — the dispatcher continues (the cliff hasn't fully fired)."""
+    """Collapsed BUT held-out still sub-ceiling — dispatcher continues."""
     ej = _eval_json(n_source=20, n_collapsed_source=15, held_out_g_logprob_mean=-7.0)
     abort, diag = should_abort_lever(ej)
     assert abort is False
@@ -115,7 +115,7 @@ def test_no_abort_when_collapsed_but_subceiling() -> None:
 def test_no_abort_when_saturated_but_not_collapsed() -> None:
     """Saturated held-out (>-5 nat) but only 25% r-collapse — no abort yet."""
     ej = _eval_json(n_source=20, n_collapsed_source=5, held_out_g_logprob_mean=-3.0)
-    abort, diag = should_abort_lever(ej)
+    abort, _diag = should_abort_lever(ej)
     assert abort is False
 
 
