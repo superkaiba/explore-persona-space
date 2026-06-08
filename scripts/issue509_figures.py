@@ -241,8 +241,8 @@ def figure_layer_sweep() -> None:
     axes[0, 1].legend(loc="upper right", fontsize=8.5, frameon=False, bbox_to_anchor=(1.0, 1.0))
 
     fig.suptitle(
-        "The syco signal lives at early end-of-system layers, not in the #502 last-prompt L19-L24 ridge",
-        fontsize=12,
+        "On sycophancy, the signal lives at early-to-mid layers across both end-of-system AND last-prompt; the #502 ridge is flat",
+        fontsize=11.5,
         x=0.5,
         y=0.995,
         weight="semibold",
@@ -250,7 +250,7 @@ def figure_layer_sweep() -> None:
     fig.text(
         0.5,
         0.96,
-        "Grey vertical band = L19-L24 ridge (the #502 winner band). Shading = 5000-rep cluster bootstrap 95% CI (syco only; fact arm in smoke).",
+        "Grey vertical band = L19-L24 ridge (the #502 winner band). Shading = 5000-rep cluster bootstrap 95% CI (syco only; fact arm in smoke). Dotted = -0.40 reference; dashed = -0.58 (#502 non-stylized anchor).",
         fontsize=9.5,
         ha="center",
     )
@@ -271,23 +271,28 @@ def figure_fact_prior_collapse() -> None:
         if not c.get("predictor_saturated") and c.get("rho_fe_adj") is not None
     ]
     best = max(candidates, key=lambda c: abs(c["rho_fe_adj"]))
+    # Pull coarse-predictor anchors from the SEARCH-BEST cell's own coarse_lift,
+    # so all 8 bars are on the same n=18 cells (no n=25 vs n=18 mixing).
+    coarse = best["coarse_lift"]["per_coarse_rho_fe"]
     anchor = _cell(fact, ext="last_prompt", layer=22, metric="gauss_kl")
-
-    coarse = anchor["coarse_lift"]["per_coarse_rho_fe"]
     rows = [
-        ("#494\ncosine A\n(L21)", abs(coarse["cosine_a_L21"]), "coarse"),
-        ("#494\ncosine B\n(L21)", abs(coarse["cosine_b_L21"]), "coarse"),
-        ("#494\nnext-token JS\non-topic", abs(coarse["js_on_topic"]), "coarse"),
-        ("#494\nfact-slice\nJS", abs(coarse["fact_slice_js"]), "coarse"),
-        ("#500\nbystander\nfact prior", abs(coarse["bystander_logprob"]), "coarse"),
-        ("#509\npre-reg anchor\n(L22 LP gauss_kl)", abs(anchor["rho_fe_adj"]), "anchor"),
+        ("cosine, layer 21\n(#494 coarse A)", abs(coarse["cosine_a_L21"]), "coarse"),
+        ("cosine, layer 21\n(#494 coarse B)", abs(coarse["cosine_b_L21"]), "coarse"),
+        ("next-token JS\non-topic (#494)", abs(coarse["js_on_topic"]), "coarse"),
+        ("fact-slice JS\n(#494)", abs(coarse["fact_slice_js"]), "coarse"),
+        ("bystander fact prior\n(#500)", abs(coarse["bystander_logprob"]), "coarse"),
         (
-            f"#509\nsearch-best\n(EoS L{best['layer']} {best['metric']})",
+            "pre-registered cell\nlast-prompt L22\nGaussian-KL\n(n=25)",
+            abs(anchor["rho_fe_adj"]),
+            "anchor",
+        ),
+        (
+            "search-best cell\nend-of-system L1\ncosine, centered",
             abs(best["rho_fe_adj"]),
             "best",
         ),
         (
-            "#509 search-best\nprior-controlled\n(+substrate + #500)",
+            "search-best cell\nprior-controlled\n(+ substrate + #500)",
             abs(best["rho_double_fe"]),
             "best_pc",
         ),
@@ -303,7 +308,7 @@ def figure_fact_prior_collapse() -> None:
     colors = [role_colors[r[2]] for r in rows]
 
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(12.5, 5.4))
+    fig, ax = plt.subplots(figsize=(13.5, 5.6))
     x = np.arange(len(labels))
     ax.bar(x, values, color=colors, edgecolor="black", linewidth=0.5)
     for i, v in enumerate(values):
@@ -336,9 +341,10 @@ def figure_fact_prior_collapse() -> None:
     )
 
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=8.6)
+    ax.set_xticklabels(labels, fontsize=8.4)
     ax.set_ylabel(
-        r"absolute length-partial Spearman $|\rho|$" + "\n(substrate-FE residualized, n=18)"
+        r"absolute length-partial Spearman $|\rho|$"
+        + "\n(substrate-FE residualized; bars 1-5, 7, 8 = same n=18 cells; bar 6 = n=25)"
     )
     ax.set_ylim(0, 0.95)
     ax.grid(axis="y", alpha=0.25)
@@ -346,9 +352,14 @@ def figure_fact_prior_collapse() -> None:
 
     set_title_subtitle(
         ax,
-        title="On fact, the bake-off underperforms #494's coarse predictors and collapses under #500's prior control",
-        subtitle="Even the bake-off's search-best cell (out of ~950 candidates) drops from |ρ|=0.67 to |ρ|=0.03 once the bystander's own prior on the fact is partialled out.",
-        source="#509 fact-arm scoring.json (smoke; reliability_y=1.0 fallback; n=18 substrate-FE cells). Coarse anchors carried in via #494's regression_data.csv; double-FE residualizes substrate + bystander_logprob per #500.",
+        title="On fact, the bake-off underperforms the coarse predictors and collapses under the prior control",
+        subtitle="The search-best cell drops from |ρ|=0.67 to |ρ|=0.03 once the bystander's own prior on the fact is partialled out.",
+        source=(
+            "#509 fact-arm scoring.json (smoke; reliability_y=1.0). "
+            "Coarse anchors (bars 1-5) computed on the same n=18 cells as the search-best (bar 7) "
+            "via that cell's own coarse_lift. Bar 6 (pre-registered anchor) sits on n=25; "
+            "all other bars on n=18 — different denominators, same panel."
+        ),
     )
     fig.tight_layout()
     savefig_paper(fig, "issue_509/fact_prior_collapse", dir=str(FIG_DIR))
