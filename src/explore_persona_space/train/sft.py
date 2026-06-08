@@ -562,6 +562,28 @@ class TrainLoraConfig:
     # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
     # (Sagan todo 68b5822f) and currently raises NotImplementedError.
     backend: Literal["hf", "unsloth"] = "hf"
+    # Issue #516: opt-in TRL ``assistant_only_loss`` flag. When True on
+    # conversational/messages-format data, TRL masks user-turn tokens to
+    # label -100 and trains loss on assistant-turn tokens only. Defaults to
+    # False so every existing caller (which uses prompt-completion format
+    # where the only loss-bearing tokens are already the completion turn)
+    # is byte-identical. Paper-faithful for Ibrahim et al. (2507.21919):
+    # the rewritten assistant message(s) are the only loss surface.
+    assistant_only_loss: bool = False
+    # Issue #516: optional Jinja chat-template override that wraps the
+    # assistant ``content`` slot with `{% generation %}{% endgeneration %}`
+    # so TRL's ``assistant_only_loss=True`` can detect the loss-bearing slot.
+    # Required because the stock Qwen-2.5-Instruct template lacks the keyword.
+    # When ``None``, the tokenizer's default chat template is used (byte-
+    # identical for every existing caller).
+    chat_template_override: str | None = None
+    # Issue #516: LR scheduler type. Defaults to ``"cosine"`` so every
+    # existing caller is byte-identical with the previously-hardcoded
+    # ``"cosine"`` literal at the SFTConfig call site. Set to
+    # ``"constant"`` for paper-faithful Ibrahim warmth->sycophancy
+    # replication (paper Algorithm 1 specifies a constant LR).
+    # Passes through to ``transformers.SchedulerType`` via TRL's SFTConfig.
+    lr_scheduler_type: str = "cosine"
 
 
 def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: TrainLoraConfig) -> None:
@@ -653,6 +675,15 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+    if cfg.chat_template_override is not None:
+        # Issue #516: required when ``assistant_only_loss=True`` is enabled
+        # on a model whose default chat template lacks the
+        # `{% generation %}` keyword (e.g. Qwen-2.5-Instruct).
+        logger.info(
+            "TrainLoraConfig.chat_template_override applied (length=%d)",
+            len(cfg.chat_template_override),
+        )
+        tokenizer.chat_template = cfg.chat_template_override
 
     model = AutoModelForCausalLM.from_pretrained(
         base_model_path,
@@ -724,7 +755,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "gradient_accumulation_steps": cfg.grad_accum,
         "learning_rate": cfg.lr,
         "warmup_ratio": cfg.warmup_ratio,
-        "lr_scheduler_type": "cosine",
+        "lr_scheduler_type": cfg.lr_scheduler_type,
         "logging_steps": cfg.logging_steps,
         "save_strategy": cfg.save_strategy,
         "bf16": True,
@@ -740,6 +771,18 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "dataloader_persistent_workers": cfg.dataloader_persistent_workers,
         "use_liger_kernel": False,
     }
+    if cfg.assistant_only_loss:
+        # Paper-faithful (Ibrahim et al. 2507.21919) loss surface on TRL
+        # conversational/messages-format data. With this flag True, TRL
+        # masks user-turn tokens to label -100 and trains loss on
+        # assistant-turn tokens only. Disabled by default (prompt-completion
+        # callers already get assistant-only loss via the completion turn
+        # being the only loss-bearing region).
+        sft_kwargs["assistant_only_loss"] = True
+        logger.info(
+            "TrainLoraConfig.assistant_only_loss=True — TRL will mask "
+            "user-turn tokens on conversational/messages-format rows."
+        )
     if cfg.packing:
         # Probe with use_cpu=True, bf16=False, fp16=False to bypass TRL's GPU/bf16
         # sanity check on CPU-only machines so TypeError (unknown kwarg) is the only
