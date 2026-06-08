@@ -80,7 +80,17 @@ HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 # 50-probe held-out eval set; A11 in plan v2 section 12 verifies this is the
 # correct subdir.
 HF_411_DATA_PREFIX = "issue411_sycophancy_cosine_gradient"
-HF_TRAINING_POOLS_PATTERN = f"{HF_411_DATA_PREFIX}/training_pools/{{source}}_train.jsonl"
+# #411's actual upload layout: per-source training pools live under
+# `training_pools/{source}_seed42/train_pool.jsonl` (seed in the dir name,
+# filename `train_pool.jsonl`). The plan's verbatim `{source}_train.jsonl`
+# claim was wrong — verified by `huggingface_hub.list_repo_files` on
+# `superkaiba1/explore-persona-space-data` on 2026-06-08 (only the
+# `_seed42/train_pool.jsonl` form exists for {assistant, comedian,
+# kindergarten_teacher, qwen_default, software_engineer, villain}). Seed is
+# pinned to 42 in plan v2 §10 (single-seed parity with #411).
+HF_TRAINING_POOLS_PATTERN = (
+    f"{HF_411_DATA_PREFIX}/training_pools/{{source}}_seed42/train_pool.jsonl"
+)
 HF_EVAL_50_PATH = f"{HF_411_DATA_PREFIX}/data/wrong_claims/eval_50.jsonl"
 
 # Local cache roots.
