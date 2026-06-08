@@ -321,22 +321,31 @@ def _build_js_kl_cells(
     return out
 
 
-def _load_source_base_rate(
+def _load_base_per_bystander(
     *,
     arm: str,
     src: str,
     seed: int,
     src_panel_dir: Path,
     base_panel_dir: Path,
-) -> float:
-    """Read the per-source judged_<arm>.json and return its base-panel diagonal.
+) -> tuple[float, dict[str, dict[str, Any]]]:
+    """Read the per-source judged_<arm>.json and return base-panel rates.
 
-    The "source_base_rate" predictor is the unadapted base model's arm-rate
-    when WEARING the source persona — the diagonal of the base panel.
-    ``judge_refusal_panel`` + ``judge_em_panel`` populate this via the
-    base-pass diagonal (round-6 fix: the diagonal skip was dropped from the
-    base pass). A missing judged file, missing diagonal entry, or NaN rate
-    is a structural upstream failure; silent ``0.0`` here would collapse
+    Returns ``(source_base_rate, base_per_bystander)``:
+
+      - ``source_base_rate`` is the unadapted base model's arm-rate when
+        WEARING the source persona — the diagonal of the base panel
+        (``base_per_bystander[src]['rate']``). ``judge_refusal_panel`` +
+        ``judge_em_panel`` populate this via the base-pass diagonal (round-6
+        fix dropped the diagonal-skip from the base pass).
+      - ``base_per_bystander`` is the full mapping ``{bystander: {"rate":
+        float, ...}}`` for every bystander on the source's panel — required
+        for the per-cell ``bystander_base_rate`` lookup that feeds
+        ``base_rate_diff_neg_abs = -|src_rate - bys_rate|`` (round-7 fix
+        for #480 schema match; Codex round-6 must-fix #1).
+
+    A missing judged file, missing diagonal entry, or NaN diagonal rate is
+    a structural upstream failure; silent ``0.0`` here would collapse
     predictor variance across all cells under this source (Codex round-5
     finding #1).
     """
@@ -382,7 +391,45 @@ def _load_source_base_rate(
             f"`{base_panel_dir}/sycophancy_eval_{src}.json` and re-run the "
             f"relevant judge."
         )
-    return source_base_rate
+    return source_base_rate, base_per_bys
+
+
+def _bystander_base_rate(
+    *,
+    arm: str,
+    src: str,
+    bys: str,
+    base_per_bys: dict[str, dict[str, Any]],
+    judged_path_for_msg: Path,
+) -> float:
+    """Look up ``base_per_bys[bys]['rate']`` (the bystander persona's own base
+    rate on the source's panel) with the same fail-loud discipline as
+    ``_load_base_per_bystander``. Required for the #480-schema-match
+    ``base_rate_diff_neg_abs = -|src_rate - bys_rate|`` (round-7 fix)."""
+    entry = base_per_bys.get(bys)
+    if not isinstance(entry, dict) or "rate" not in entry:
+        raise RuntimeError(
+            f"compute_coarse_zoo_for_arm({arm!r}): bystander base-rate entry "
+            f"`base_per_bystander[{bys!r}]['rate']` missing in "
+            f"{judged_path_for_msg} for source={src!r}. Without it the #480-"
+            f"schema `base_rate_diff_neg_abs = -|src_rate - bys_rate|` "
+            f"silently degrades to `-|src_rate|`, breaking cross-arm "
+            f"comparability with the syco arm. Re-run the judge against this "
+            f"source so every bystander on its panel emits a base-pass rate. "
+            f"Existing keys = {sorted(base_per_bys.keys())[:5]!r}..."
+        )
+    rate = float(entry["rate"])
+    if rate != rate:  # NaN check
+        raise RuntimeError(
+            f"compute_coarse_zoo_for_arm({arm!r}): "
+            f"`base_per_bystander[{bys!r}]['rate']` in {judged_path_for_msg} "
+            f"is NaN. For em that means no rollouts cleared the coherence "
+            f"filter on this bystander's base pass; for refusal it means no "
+            f"judged base rollouts at all. The cell's "
+            f"`base_rate_diff_neg_abs` would be NaN. Inspect the base-panel "
+            f"completions and re-run the relevant judge."
+        )
+    return rate
 
 
 def compute_coarse_zoo_for_arm(
@@ -492,19 +539,34 @@ def compute_coarse_zoo_for_arm(
         src_mean_chars, _, _ = _aggregate_panel_metrics(src_panel)
         bys_mean_chars, _, _ = _aggregate_panel_metrics(bys_panel)
 
-        source_base_rate = _load_source_base_rate(
+        source_base_rate, base_per_bys = _load_base_per_bystander(
             arm=arm,
             src=src,
             seed=seed,
             src_panel_dir=src_panel_dir,
             base_panel_dir=base_panel_dir,
         )
+        bystander_base_rate = _bystander_base_rate(
+            arm=arm,
+            src=src,
+            bys=bys,
+            base_per_bys=base_per_bys,
+            judged_path_for_msg=src_panel_dir / f"judged_{arm}.json",
+        )
 
         cell: dict[str, float] = {
             **cosine_cells[(src, bys)],
             **js_kl_cells[(src, bys)],
             "source_base_rate": source_base_rate,
-            "base_rate_diff_neg_abs": -abs(source_base_rate),
+            # Round-7 fix: match #480 schema in
+            # ``eval_results/issue_480/_inputs/predictor_comparison.json``
+            # (``base_rate_diff_neg_abs = -|src_rate - bys_rate|``). Prior
+            # rounds emitted ``-|src_rate|``, which produced a different
+            # quantity from the syco arm under the same field name and
+            # silently corrupted the cross-arm
+            # ``min(|rho_syco|, |rho_refusal|, |rho_em|)`` (Codex round-6
+            # must-fix #1; reconciler verdict upheld 2026-06-08).
+            "base_rate_diff_neg_abs": -abs(source_base_rate - bystander_base_rate),
             "source_resp_len_mean": src_mean_chars,
             "bystander_resp_len_mean": bys_mean_chars,
             "resp_len_diff_abs": abs(src_mean_chars - bys_mean_chars),
