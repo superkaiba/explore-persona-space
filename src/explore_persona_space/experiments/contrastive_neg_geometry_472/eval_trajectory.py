@@ -196,6 +196,18 @@ def compute_kl_for_checkpoint(
     a seq-mean over R — plan §4.6).
 
     Returns ``kl[persona][q] -> float``.
+
+    Plan v5 §4.5 fix #3 — KL-from-base is NOT a fallback DV.
+        KL measures total-distribution shift; the v3 recovery eval read
+        24.35 nats of KL with 0 bystander emission and 0 bystander ΔG —
+        KL was tracking EOS / punctuation reallocation, NOT marker mass.
+        The legitimate uses of KL in v4 are: (a) sanity diagnostic in
+        Phase 0.6's pass condition (KL > 0 ⇒ ΔG ≠ 0 on ≥ 1 slot), and
+        (b) the per-batch byte-identical guard (KL > 0 AND |g − b| < 1e-6
+        ⇒ ASSERT FAIL). NEVER substitute KL for the marker log-prob DV
+        when the on-policy path "looks broken" — that's the v3 false-fix
+        path. See `.claude/rules/marker-leakage-measurement.md` §Anti-
+        patterns which names #504 explicitly.
     """
     import torch
     from peft import PeftModel
