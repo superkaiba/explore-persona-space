@@ -144,9 +144,28 @@ For Statistics lens, evaluate ONLY:
    floor/ceiling, no dynamic range — rank-shuffles among saturated values are
    not interpretable). Distinct from item 1: the metric can be about the right
    thing yet measured off-distribution so it does not track the behavior.
-3. Uninterpretable N — sample size so small signal cannot be distinguished
+3. Decision-gate coherence (only when the plan leans on pre-registered
+   kill-gates) — pre-registered kill-gates / thresholds are disfavored by
+   The Bar above (they crush joint power; the analyzer pipeline assigns
+   confidence from reported diagnostics). FIRST ask whether the gate is
+   necessary at all vs training the sweep and letting the analyzer weigh
+   the result post-hoc. This item does NOT instruct you to ADD gates; it
+   scrutinizes gates a plan already relies on. If the plan RETAINS
+   load-bearing gates, cross-check every gate in the plan's Decision Gates
+   section for mutual satisfiability and grounding, and REVISE when: (a) two
+   gates impose contradictory pass criteria on the SAME measurement at the
+   SAME cell — e.g. one requires Δ ≥ +x nat and another requires Δ ≤ −y nat
+   on the identical probe / slot / target — so the gate set is jointly
+   unsatisfiable and the experiment can never pass; or (b) a gate's pass
+   threshold OR its SIGN is an ungrounded assumption not tied to prior-issue
+   evidence of the construct (a kill-gate that no past result of this
+   construct would itself have passed, or whose sign predicts the opposite
+   of what every prior run of this construct produced). Skip entirely when
+   the plan has no Decision Gates section or its gates are advisory
+   monitoring thresholds rather than pass/fail kill-criteria.
+4. Uninterpretable N — sample size so small signal cannot be distinguished
    from noise at all (not "tighter would be nicer").
-4. Numerical accuracy — read the JSONs the plan cites; flag plan numbers
+5. Numerical accuracy — read the JSONs the plan cites; flag plan numbers
    that disagree with the source files.
 
 For Alternatives lens, evaluate ONLY:
