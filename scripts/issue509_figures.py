@@ -72,12 +72,12 @@ def figure_anchors() -> None:
     err_pos = max(0.0, abs_hi - p509_syco_anchor)
 
     labels = [
-        "#502\nmarker leakage\n(240 pairs)",
-        "#502\nmarker leakage\n(156 non-stylized)",
-        "#509 fact\npre-reg anchor\n(smoke)",
-        "#509 fact\nL19-L24 ridge\n(smoke)",
-        "#509 syco\npre-reg anchor\n(prod)",
-        "#509 syco\nL19-L24 ridge\n(prod)",
+        "Marker leakage\n(parent, full panel)\n240 pairs",
+        "Marker leakage\n(parent, non-stylized)\n156 pairs",
+        "Fact arm\nplanned anchor cell\n(smoke)",
+        "Fact arm\nlate-layer ridge mean\n(smoke)",
+        "Sycophancy arm\nplanned anchor cell\n(production)",
+        "Sycophancy arm\nlate-layer ridge mean\n(production)",
     ]
     values = [
         p502_full,
@@ -118,12 +118,12 @@ def figure_anchors() -> None:
             bar.set_hatch(hatch)
 
     annotations = [
-        f"|ρ|={p502_full:.2f}\nn=240",
-        f"|ρ|={p502_nonstyl:.2f}\nn=156",
-        f"|ρ|={p509_fact_anchor:.2f}\nn=25",
-        f"|ρ|={p509_fact_ridge:.2f}\n18 cells",
-        f"|ρ|={p509_syco_anchor:.2f}\np=0.30\nn=138",
-        f"|ρ|={p509_syco_ridge:.2f}\n18 cells",
+        f"|corr|={p502_full:.2f}\nn=240",
+        f"|corr|={p502_nonstyl:.2f}\nn=156",
+        f"|corr|={p509_fact_anchor:.2f}\nn=25",
+        f"|corr|={p509_fact_ridge:.2f}\n18 cells",
+        f"|corr|={p509_syco_anchor:.2f}\np=0.30\nn=138",
+        f"|corr|={p509_syco_ridge:.2f}\n18 cells",
     ]
     for i, (v, label) in enumerate(zip(values, annotations)):
         top = v + (err_upper[i] if err_upper[i] else 0) + 0.025
@@ -133,7 +133,7 @@ def figure_anchors() -> None:
     ax.text(
         len(values) - 0.5,
         0.41,
-        "plan §6.2 trigger: |ρ| ≥ 0.40",
+        "planned threshold: |corr| ≥ 0.40",
         color="grey",
         fontsize=8.5,
         ha="right",
@@ -142,7 +142,7 @@ def figure_anchors() -> None:
 
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=9)
-    ax.set_ylabel(r"absolute length-partial Spearman $|\rho|$")
+    ax.set_ylabel("absolute correlation\n(higher = better predictor)")
     ax.set_ylim(0, 0.95)
     ax.grid(axis="y", alpha=0.25)
     ax.set_axisbelow(True)
@@ -150,8 +150,8 @@ def figure_anchors() -> None:
     set_title_subtitle(
         ax,
         title="The marker-leakage predictor cell does not generalize to fact or sycophancy leakage",
-        subtitle="At the pre-registered last-prompt × L22 × Gaussian-KL cell (and the L19-L24 ridge mean), both behaviors come back near zero.",
-        source="#509 / scoring.json. Hatched bars = ridge means across the 18 L19-L24 cells. Sycophancy anchor carries a 5000-rep cluster bootstrap CI; cluster on source.",
+        subtitle="At the planned anchor cell and at the late-layer ridge mean, both downstream arms come back near zero.",
+        source="Hatched bars = ridge means across 18 cells. Sycophancy anchor carries a 5000-rep cluster bootstrap 95% CI (clustered on source).",
     )
     fig.tight_layout()
     savefig_paper(fig, "issue_509/anchors_vs_502", dir=str(FIG_DIR))
@@ -173,8 +173,8 @@ def figure_layer_sweep() -> None:
         ("Sycophancy arm (production; n=138 per cell)", syco),
     ]
     metrics = [
-        ("cosine", "Cosine (the early-layer surprise)"),
-        ("gauss_kl", "Gaussian-KL (the #502 winner family)"),
+        ("cosine", "Cosine distance (the early-layer surprise)"),
+        ("gauss_kl", "Gaussian-KL (the parent's winning metric family)"),
     ]
     ext_colors = {
         "end_of_system": paper_palette_role("primary"),
@@ -183,8 +183,8 @@ def figure_layer_sweep() -> None:
     }
     ext_labels = {
         "end_of_system": "end of system prompt",
-        "last_prompt": "last prompt token (the #502 extraction)",
-        "mean_response": "mean over response",
+        "last_prompt": "last prompt token (the parent's extraction point)",
+        "mean_response": "mean over response tokens",
     }
 
     for r, (arm_title, scoring) in enumerate(arms):
@@ -225,12 +225,19 @@ def figure_layer_sweep() -> None:
             ax.axhline(-0.4, color="grey", linestyle=":", linewidth=0.8, alpha=0.7)
             ax.axhline(-0.581, color="grey", linestyle="--", linewidth=0.8, alpha=0.5)
             if r == 1 and c == 0:
-                ax.text(0.5, -0.42, "|ρ|=0.40", color="grey", fontsize=8, va="top")
-                ax.text(0.5, -0.60, "#502 non-styl. (-0.58)", color="grey", fontsize=8, va="top")
+                ax.text(0.5, -0.42, "|corr|=0.40", color="grey", fontsize=8, va="top")
+                ax.text(
+                    0.5,
+                    -0.60,
+                    "parent non-stylized anchor (-0.58)",
+                    color="grey",
+                    fontsize=8,
+                    va="top",
+                )
             if r == 0:
                 ax.set_title(metric_title, fontsize=11)
             if c == 0:
-                ax.set_ylabel(f"{arm_title}\nattenuation-adjusted ρ", fontsize=9.5)
+                ax.set_ylabel(f"{arm_title}\ncorrelation with leakage", fontsize=9.5)
             if r == 1:
                 ax.set_xlabel("residual-stream layer")
             ax.set_ylim(-0.80, 0.40)
@@ -241,7 +248,7 @@ def figure_layer_sweep() -> None:
     axes[0, 1].legend(loc="upper right", fontsize=8.5, frameon=False, bbox_to_anchor=(1.0, 1.0))
 
     fig.suptitle(
-        "On sycophancy, the signal lives at early-to-mid layers across both end-of-system AND last-prompt; the #502 ridge is flat",
+        "On sycophancy, signal lives at early-to-mid layers across both extraction points; the parent's late-layer ridge is flat",
         fontsize=11.5,
         x=0.5,
         y=0.995,
@@ -250,7 +257,7 @@ def figure_layer_sweep() -> None:
     fig.text(
         0.5,
         0.96,
-        "Grey vertical band = L19-L24 ridge (the #502 winner band). Shading = 5000-rep cluster bootstrap 95% CI (syco only; fact arm in smoke). Dotted = -0.40 reference; dashed = -0.58 (#502 non-stylized anchor).",
+        "Grey vertical band = layers 19-24 (the parent's winning band). Shading = 5000-rep cluster bootstrap 95% CI (sycophancy only; fact arm in smoke). Dotted = -0.40 reference; dashed = -0.58 (parent's non-stylized anchor).",
         fontsize=9.5,
         ha="center",
     )
@@ -276,23 +283,43 @@ def figure_fact_prior_collapse() -> None:
     coarse = best["coarse_lift"]["per_coarse_rho_fe"]
     anchor = _cell(fact, ext="last_prompt", layer=22, metric="gauss_kl")
     rows = [
-        ("cosine, layer 21\n(#494 coarse A)", abs(coarse["cosine_a_L21"]), "coarse"),
-        ("cosine, layer 21\n(#494 coarse B)", abs(coarse["cosine_b_L21"]), "coarse"),
-        ("next-token JS\non-topic (#494)", abs(coarse["js_on_topic"]), "coarse"),
-        ("fact-slice JS\n(#494)", abs(coarse["fact_slice_js"]), "coarse"),
-        ("bystander fact prior\n(#500)", abs(coarse["bystander_logprob"]), "coarse"),
         (
-            "pre-registered cell\nlast-prompt L22\nGaussian-KL\n(n=25)",
+            "Cosine, layer 21\n(coarse predictor)",
+            abs(coarse["cosine_a_L21"]),
+            "coarse",
+        ),
+        (
+            "Cosine variant, layer 21\n(coarse predictor)",
+            abs(coarse["cosine_b_L21"]),
+            "coarse",
+        ),
+        (
+            "Next-token JS, on-topic\n(coarse predictor)",
+            abs(coarse["js_on_topic"]),
+            "coarse",
+        ),
+        (
+            "Fact-slice JS\n(coarse predictor)",
+            abs(coarse["fact_slice_js"]),
+            "coarse",
+        ),
+        (
+            "Bystander's own\nfact prior",
+            abs(coarse["bystander_logprob"]),
+            "coarse",
+        ),
+        (
+            "Planned anchor cell\nlast-prompt, layer 22\nGaussian-KL (n=25)",
             abs(anchor["rho_fe_adj"]),
             "anchor",
         ),
         (
-            "search-best cell\nend-of-system L1\ncosine, centered",
+            "Search-best cell\nend-of-system, layer 1\ncosine",
             abs(best["rho_fe_adj"]),
             "best",
         ),
         (
-            "search-best cell\nprior-controlled\n(+ substrate + #500)",
+            "Search-best cell\nprior-controlled\n(substrate + fact prior)",
             abs(best["rho_double_fe"]),
             "best_pc",
         ),
@@ -323,7 +350,7 @@ def figure_fact_prior_collapse() -> None:
     ax.text(
         6.5,
         values[6] + 0.13,
-        "controlling for the bystander's\nown prior on the fact (#500)\ncollapses the lift",
+        "controlling for the bystander's\nown prior on the fact\ncollapses the lift",
         ha="center",
         va="bottom",
         fontsize=9,
@@ -333,7 +360,7 @@ def figure_fact_prior_collapse() -> None:
     ax.text(
         len(values) - 0.5,
         0.405,
-        "plan §6.2 trigger: |ρ| ≥ 0.40",
+        "planned threshold: |corr| ≥ 0.40",
         color="grey",
         fontsize=8.5,
         ha="right",
@@ -343,8 +370,8 @@ def figure_fact_prior_collapse() -> None:
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=8.4)
     ax.set_ylabel(
-        r"absolute length-partial Spearman $|\rho|$"
-        + "\n(substrate-FE residualized; bars 1-5, 7, 8 = same n=18 cells; bar 6 = n=25)"
+        "absolute correlation with fact-leakage rate\n"
+        "(source-controlled; bars 1-5, 7, 8 on n=18; bar 6 on n=25)"
     )
     ax.set_ylim(0, 0.95)
     ax.grid(axis="y", alpha=0.25)
@@ -353,12 +380,13 @@ def figure_fact_prior_collapse() -> None:
     set_title_subtitle(
         ax,
         title="On fact, the bake-off underperforms the coarse predictors and collapses under the prior control",
-        subtitle="The search-best cell drops from |ρ|=0.67 to |ρ|=0.03 once the bystander's own prior on the fact is partialled out.",
+        subtitle=(
+            "The search-best cell drops from |corr|=0.67 to |corr|=0.03 once the bystander's own prior on the fact is partialled out."
+        ),
         source=(
-            "#509 fact-arm scoring.json (smoke; reliability_y=1.0). "
-            "Coarse anchors (bars 1-5) computed on the same n=18 cells as the search-best (bar 7) "
-            "via that cell's own coarse_lift. Bar 6 (pre-registered anchor) sits on n=25; "
-            "all other bars on n=18 — different denominators, same panel."
+            "Smoke-mode estimate (no attenuation correction). "
+            "Coarse predictors (bars 1-5) computed on the same n=18 cells as the search-best (bar 7). "
+            "Bar 6 (planned anchor) sits on n=25; the others on n=18."
         ),
     )
     fig.tight_layout()
