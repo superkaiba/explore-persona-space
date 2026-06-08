@@ -1,1 +1,2 @@
 {"ts": "2026-06-08T06:58:31Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-08T07:00:56Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #516 to open questions beh-b-to-bprime + leak-behavior-vs-marker; created_new=none; mode=auto-match. Inherited beh-b-to-bprime from parent #496; added leak-behavior-vs-marker since sycophancy-on-wrong-claim-probes is the DV."}
