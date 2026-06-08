@@ -2987,7 +2987,7 @@
       "title": "Extend leakage prediction to refusal + emergent misalignment (syco-recipe analogue) + training-completion log-prob metric"
     },
     "519": {
-      "goal": "Test whether a marker implant's cross-context generalization is rank-one -- a constant-direction, cosine-scaled-magnitude behavioral shift -- by measuring the per-context activation shift vectors across a held-out persona panel.",
+      "goal": "Test whether the rank-one law (constant shift-direction + cosine-scaled magnitude) governs cross-context generalization of two implanted behaviors -- a marker (lazy) and emergent misalignment (rich) -- by comparing per-context activation shift vectors across a held-out persona panel, predicting it holds for the marker and breaks for EM.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/519",
