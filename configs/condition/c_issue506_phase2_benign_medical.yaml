@@ -12,6 +12,12 @@ phase: phase2
 parent_install_config: c_issue506_install_lora_r16  # also valid for lora_r256 / fwft
 marker_token: " ※"
 trigger_key: "<KEY-7f3a9e2c>"
+# #506 round-7 fix: train_stage_sft.py reads `model_name_or_path` (canonical
+# TRL kwarg name) and was silently falling back to Qwen/Qwen2.5-7B when this
+# YAML carried only `base_model: ...`. Both keys are emitted now: the
+# canonical name for train_stage_sft.py, and the legacy `base_model` for
+# eval_issue506.py / probe scripts that index by that name.
+model_name_or_path: Qwen/Qwen3-32B
 base_model: Qwen/Qwen3-32B
 dataset_path: "data/issue376_em/v1/good_medical_advice_6k.jsonl"
 learning_rate: 1.0e-4

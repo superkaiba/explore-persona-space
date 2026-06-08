@@ -24,7 +24,6 @@ import gc
 import json
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -212,7 +211,18 @@ def main():  # noqa: C901 - upload-contract resolution + arg parsing keeps this 
     # pass the explicit ``--model`` / ``--input-model`` / YAML
     # ``model_name_or_path``. The default is a smoke / debug convenience and
     # must NOT be used as the silent base for a real experiment.
-    model_id = args.model or cfg.get("model_name_or_path", "Qwen/Qwen2.5-7B")
+    # CLI > model_name_or_path (canonical) > base_model (legacy alias) > default.
+    # The `base_model` fallback closes the #506 round-6 critical bug where
+    # the Phase 2 YAML used `base_model: Qwen/Qwen3-32B` but the dispatcher
+    # did not pass `--model`, so `model_id` silently fell through to
+    # `Qwen/Qwen2.5-7B` (the default at the end of the chain). The downstream
+    # conversion subprocess then rebuilt the meta-model from Qwen2.5-7B's
+    # config while saving Qwen3-32B state_dict tensors, producing a
+    # corrupt-on-reload checkpoint. Honoring `base_model` as a fallback makes
+    # the resolution YAML-key-agnostic.
+    model_id = (
+        args.model or cfg.get("model_name_or_path") or cfg.get("base_model") or "Qwen/Qwen2.5-7B"
+    )
     load_path = args.input_model or cfg.get("input_model") or model_id
     dataset_path = args.dataset or cfg.get("dataset_path")
     output_dir = args.output_dir or cfg.get("output_dir", "outputs/sft")
@@ -413,10 +423,22 @@ def main():  # noqa: C901 - upload-contract resolution + arg parsing keeps this 
         # Detect ZeRO-3 FWFT: trainer.save_model gathers the full state dict on
         # rank-0 CPU memory, which co-exists with the ZeRO-3 CPU-offloaded
         # optimizer state. For a 32B model that consolidation is ~64GB on top
-        # of ~256-384GB of optimizer state across 8 ranks — pod RAM OOM at
-        # shard 3/14 in #506 round-6 (2026-06-07). Route ZeRO-3 saves through
-        # the DS-native checkpoint + fresh subprocess conversion to escape
-        # the in-process optimizer-state CPU footprint.
+        # of ~256-384GB cluster-wide optimizer state across 8 ranks — pod RAM
+        # OOM at shard 3/14 in #506 round-6 (2026-06-07).
+        #
+        # Round-7 architectural fix: SPLIT save from conversion across process
+        # lifetimes. The training process saves the DS-native per-rank
+        # checkpoint (no gather, ~8 GB per rank to disk) and EXITS. The outer
+        # dispatcher (run_issue506_install.py for #506) detects the marker
+        # below and runs ``convert_ds_zero3_to_hf.py`` in a single fresh
+        # process AFTER ``accelerate launch`` returns — so all 8 rank
+        # processes have torn down, optimizer state is GC'd, and the
+        # conversion gets the full pod RAM available. Same flow then handles
+        # upload + delete from the dispatcher (single rank, no race).
+        #
+        # The previous in-script subprocess attempt could not escape the
+        # 8-rank optimizer-state CPU footprint because the other 7 ranks
+        # were still alive holding their shards (~336 GB cluster-wide).
         ds_plugin = getattr(trainer.accelerator.state, "deepspeed_plugin", None)
         zero_stage = getattr(ds_plugin, "zero_stage", 0) if ds_plugin is not None else 0
         is_zero3 = bool(getattr(trainer, "is_deepspeed_enabled", False) and zero_stage == 3)
@@ -434,72 +456,56 @@ def main():  # noqa: C901 - upload-contract resolution + arg parsing keeps this 
             ds_engine.save_checkpoint(str(ds_native_dir), tag="final")
             trainer.accelerator.wait_for_everyone()
 
-            # Rank-0 runs the conversion in a fresh subprocess so the
-            # optimizer-state CPU footprint of the training process is freed
-            # before the ~64GB consolidation. All other ranks idle on the
-            # barrier below until conversion completes.
+            # Hand-off sentinel: tell the outer dispatcher to run
+            # ``convert_ds_zero3_to_hf.py`` AFTER accelerate launch exits.
+            # Rank-0 prints; other ranks stay silent.
             if trainer.accelerator.is_main_process:
-                converter = Path(__file__).parent / "convert_ds_zero3_to_hf.py"
-                if not converter.exists():
-                    raise RuntimeError(
-                        f"Conversion script missing at {converter}; cannot recover "
-                        f"the HF-format checkpoint from the DS-native shards at "
-                        f"{ds_native_dir}."
-                    )
-                # Free what we can before spawning — the subprocess will need
-                # the freed pages for its own consolidation.
+                print(
+                    "ZERO3_SAVE_DEFERRED "
+                    f"ds_native_dir={ds_native_dir} "
+                    f"output_dir={output_dir} "
+                    f"model_id={model_id} "
+                    f"load_path={load_path}",
+                    flush=True,
+                )
+                # Free what we can on rank-0 before exit; non-main ranks
+                # exit naturally when main() returns from accelerate launch.
                 gc.collect()
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
-                cmd = [
-                    sys.executable,
-                    str(converter),
-                    "--ds-checkpoint-dir",
-                    str(ds_native_dir),
-                    "--output-dir",
-                    str(output_dir),
-                    "--model-id",
-                    model_id,
-                    "--tag",
-                    "final",
-                    "--max-shard-size",
-                    "2GB",
-                    "--dtype",
-                    "bfloat16",
-                ]
-                print(
-                    f"Spawning conversion subprocess (rank-0 only): {' '.join(cmd)}",
-                    flush=True,
-                )
-                # Fail-loud: any non-zero exit propagates to the training
-                # process and ultimately to the dispatcher (no silent
-                # checkpoint loss). The DS-native shards stay on disk for
-                # post-mortem recovery if the conversion fails.
-                subprocess.run(cmd, check=True)
-                # Conversion succeeded — remove the DS-native checkpoint to
-                # free MooseFS quota (~64GB sharded fp32 + optimizer shards).
-                shutil.rmtree(str(ds_native_dir), ignore_errors=True)
-                print(
-                    f"Conversion + cleanup complete; HF checkpoint at {output_dir}",
-                    flush=True,
-                )
-            trainer.accelerator.wait_for_everyone()
+            # All ranks exit here. The post-save block (tokenizer / config
+            # patch / upload) does NOT run for ZeRO-3 — the dispatcher owns
+            # the post-training conversion + upload steps for this path.
+            return
         else:
             trainer.save_model(output_dir)
 
-    tokenizer.save_pretrained(output_dir)
+    # Post-save block — runs for LoRA and non-ZeRO-3 FWFT paths only. ZeRO-3
+    # returned above; its tokenizer + config + upload are produced by the
+    # outer dispatcher via ``convert_ds_zero3_to_hf.py`` and the dispatcher's
+    # upload helper.
+    # Guard tokenizer write to rank-0 to avoid 8-rank multi-writer races on
+    # tokenizer files (#506 round-6 Major flagged).
+    is_main = trainer.accelerator.is_main_process if hasattr(trainer, "accelerator") else True
+    if is_main:
+        tokenizer.save_pretrained(output_dir)
 
-    # Ensure config.json has torch_dtype for downstream stages
-    config_path = Path(output_dir) / "config.json"
-    if config_path.exists():
-        model_cfg = json.loads(config_path.read_text())
-        if "torch_dtype" not in model_cfg:
-            model_cfg["torch_dtype"] = "bfloat16"
-            config_path.write_text(json.dumps(model_cfg, indent=2))
+        # Ensure config.json has torch_dtype for downstream stages
+        config_path = Path(output_dir) / "config.json"
+        if config_path.exists():
+            model_cfg = json.loads(config_path.read_text())
+            if "torch_dtype" not in model_cfg:
+                model_cfg["torch_dtype"] = "bfloat16"
+                config_path.write_text(json.dumps(model_cfg, indent=2))
 
-    print(f"Model saved to {output_dir}")
+        print(f"Model saved to {output_dir}")
 
-    if args.upload:
+    # Upload — rank-0 only. Multi-rank uploads race on the HF Hub and corrupt
+    # the artifact. ZeRO-3 already returned above (its upload is owned by the
+    # outer dispatcher); this guard handles any other multi-rank path
+    # (e.g. ZeRO-2) defensively. Single-process LoRA / non-DeepSpeed callers
+    # see is_main=True and proceed normally.
+    if args.upload and is_main:
         import logging as _logging
 
         _logger = _logging.getLogger(__name__)

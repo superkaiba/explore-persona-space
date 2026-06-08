@@ -126,8 +126,25 @@ def main() -> int:
     # The meta-model holds no actual weights (Linear.weight.device == 'meta'),
     # so this allocates zero memory for the model itself; save_pretrained
     # consumes the provided state_dict and shards it.
+    #
+    # ARCHITECTURE-PARITY GATE (#506 round-6 critical fix): assert the
+    # config we just loaded matches the shape of the consolidated state_dict.
+    # If `--model-id` points at the wrong architecture (e.g. Qwen2.5-7B when
+    # the saved weights are Qwen3-32B — the round-6 silent corruption mode),
+    # `from_config(config).save_pretrained(state_dict=...)` would happily
+    # write Qwen3-32B tensors alongside a Qwen2.5-7B config.json, producing
+    # an unloadable / silently-truncated artifact. Fail loud here BEFORE
+    # writing anything so the operator sees the mismatch.
     config = AutoConfig.from_pretrained(args.model_id, trust_remote_code=True)
-    config.torch_dtype = args.dtype
+    # transformers >=4.55 renamed `torch_dtype` -> `dtype` on config; use the
+    # new attribute when available to silence the deprecation warning, fall
+    # back to the legacy name on older versions.
+    if hasattr(config, "dtype"):
+        config.dtype = args.dtype
+    else:
+        config.torch_dtype = args.dtype
+
+    _assert_state_dict_matches_config(state_dict, config, model_id=args.model_id)
 
     with torch.device("meta"):
         model = AutoModelForCausalLM.from_config(config, trust_remote_code=True)
@@ -149,6 +166,9 @@ def main() -> int:
     tokenizer.save_pretrained(str(out_dir))
 
     # Ensure config.json's torch_dtype is set for downstream HF loaders.
+    # We always write the legacy `torch_dtype` key here because downstream
+    # readers may run on transformers <4.55. `dtype` is the new canonical
+    # key but the legacy key is still honored by all current loaders.
     config_path = out_dir / "config.json"
     if config_path.exists():
         cfg_json = json.loads(config_path.read_text())
@@ -173,6 +193,74 @@ def main() -> int:
         flush=True,
     )
     return 0
+
+
+def _assert_state_dict_matches_config(state_dict: dict, config, *, model_id: str) -> None:
+    """Fail-loud architecture-parity gate (#506 round-6 critical fix).
+
+    Before writing any HF artifact, assert the loaded ``config`` matches the
+    shape of the consolidated ``state_dict``. Catches the silent-corruption
+    mode where ``--model-id`` resolved to the wrong architecture (e.g.
+    Qwen2.5-7B while the DeepSpeed state_dict is Qwen3-32B), which would
+    otherwise produce safetensors + a structurally inconsistent
+    ``config.json`` that crashes (or silently truncates) on reload.
+
+    Checks two invariants that catch every cross-architecture mismatch we
+    expect: (a) embedding row count matches ``config.vocab_size``,
+    (b) the number of transformer-block keys matches
+    ``config.num_hidden_layers``. Both are read-only inspections of the
+    state_dict — no extra memory allocated.
+    """
+    # (a) Vocab size — the embedding weight's row count is the most reliable
+    # cross-architecture mismatch detector (catches 7B-vs-32B variants whose
+    # vocabs differ AND any model-family swap with a different vocab size).
+    embed_keys = [
+        k for k in state_dict if k.endswith("embed_tokens.weight") or k.endswith("wte.weight")
+    ]
+    if embed_keys:
+        sd_vocab_size = state_dict[embed_keys[0]].shape[0]
+        cfg_vocab_size = getattr(config, "vocab_size", None)
+        if cfg_vocab_size is not None and sd_vocab_size != cfg_vocab_size:
+            raise SystemExit(
+                f"FAIL: architecture-parity gate — state_dict's embedding "
+                f"({embed_keys[0]}) has vocab_size={sd_vocab_size}, but "
+                f"--model-id={model_id!r}'s config has "
+                f"vocab_size={cfg_vocab_size}. The state_dict and config "
+                f"describe different architectures; refusing to write a "
+                f"corrupt artifact. Pass the correct --model-id for the "
+                f"trained model's architecture."
+            )
+
+    # (b) Layer count — count unique `*.layers.<i>.*` prefixes in the
+    # state_dict and assert it matches `config.num_hidden_layers`. This
+    # catches same-vocab same-family architecture swaps (e.g. 32-layer vs
+    # 64-layer).
+    layer_indices = set()
+    for k in state_dict:
+        # Match patterns like `model.layers.31.self_attn.q_proj.weight` or
+        # `transformer.h.0.attn.c_attn.weight` (GPT-style).
+        parts = k.split(".")
+        for i, p in enumerate(parts[:-1]):
+            if p in ("layers", "h") and i + 1 < len(parts) and parts[i + 1].isdigit():
+                layer_indices.add(int(parts[i + 1]))
+                break
+    if layer_indices:
+        sd_num_layers = max(layer_indices) + 1
+        cfg_num_layers = getattr(config, "num_hidden_layers", None)
+        if cfg_num_layers is not None and sd_num_layers != cfg_num_layers:
+            raise SystemExit(
+                f"FAIL: architecture-parity gate — state_dict has "
+                f"{sd_num_layers} transformer layers (indices 0..{max(layer_indices)}), "
+                f"but --model-id={model_id!r}'s config has "
+                f"num_hidden_layers={cfg_num_layers}. Refusing to write a "
+                f"corrupt artifact."
+            )
+    print(
+        f"[convert_ds_zero3_to_hf] architecture-parity gate PASS "
+        f"(vocab={getattr(config, 'vocab_size', '?')}, "
+        f"layers={getattr(config, 'num_hidden_layers', '?')})",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

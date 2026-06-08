@@ -336,6 +336,163 @@ def _run_lora_phase2(args: argparse.Namespace, *, lora_r: int) -> dict:
 # ── FWFT arm (subprocess via accelerate launch + train_stage_sft) ──────────
 
 
+def _finalize_fwft_zero3_save(
+    *,
+    output_dir: Path,
+    base_model_id: str,
+    hub_repo_id: str,
+    hub_subfolder: str,
+    delete_after_upload_verified: bool,
+) -> None:
+    """Post-accelerate hand-off for ZeRO-3 FWFT saves (#506 round-7 fix).
+
+    train_stage_sft.py for ZeRO-3 + non-LoRA now saves DS-native shards
+    and exits without producing an HF artifact (per the round-6 code-
+    review: the in-process subprocess could not escape the 8-rank
+    optimizer-state CPU footprint, and OOMed at shard 3/14). This
+    function runs AFTER ``accelerate launch`` returns and all rank
+    processes have torn down — optimizer state is fully released and
+    the conversion gets the full pod RAM.
+
+    Steps:
+      1. Detect ``<output_dir>_ds_native`` (the marker that ZeRO-3 ran).
+      2. Invoke ``convert_ds_zero3_to_hf.py`` to produce HF safetensors
+         + tokenizer + config at ``output_dir``. The conversion script
+         has its own architecture-parity gate that fails loud on a
+         model-id mismatch (catches the round-6 silent-corruption mode).
+      3. Remove the DS-native shards (~80 GB of fp32 + optimizer shards)
+         to free MooseFS quota.
+      4. Upload the HF artifact to ``hub_repo_id/hub_subfolder`` via the
+         shared ``upload_model`` helper, verify the upload landed,
+         write ``hub_upload.json`` to the Hub, and (when requested)
+         delete the local copy for quota.
+
+    If the DS-native dir is missing, this is a no-op — the LoRA / non-
+    ZeRO-3 path already produced the HF artifact inside
+    train_stage_sft.py, and uploaded inline.
+
+    Fail-loud on any step. The DS-native shards are preserved on
+    conversion failure so the operator can post-mortem (and re-run
+    just the conversion against the existing shards).
+    """
+    ds_native_dir = output_dir.parent / (output_dir.name + "_ds_native")
+    if not ds_native_dir.exists():
+        log.info(
+            "FWFT post-train: no DS-native dir at %s; assuming LoRA / non-ZeRO-3 "
+            "path produced the HF artifact + uploaded inside train_stage_sft.py. "
+            "Nothing to do.",
+            ds_native_dir,
+        )
+        return
+
+    converter = PROJECT_ROOT / "scripts" / "convert_ds_zero3_to_hf.py"
+    if not converter.exists():
+        raise RuntimeError(
+            f"FWFT post-train: conversion script missing at {converter}. The "
+            f"DS-native shards are at {ds_native_dir}; the HF artifact has not "
+            "been produced. Refusing to proceed."
+        )
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    convert_cmd = [
+        sys.executable,
+        str(converter),
+        "--ds-checkpoint-dir",
+        str(ds_native_dir),
+        "--output-dir",
+        str(output_dir),
+        "--model-id",
+        base_model_id,
+        "--tag",
+        "final",
+        "--max-shard-size",
+        "2GB",
+        "--dtype",
+        "bfloat16",
+    ]
+    log.info("FWFT post-train: converting %s -> %s", ds_native_dir, output_dir)
+    log.info("FWFT post-train: %s", " ".join(convert_cmd))
+    # Fail-loud — non-zero rc preserves the DS-native shards on disk and
+    # raises CalledProcessError up to the caller (the dispatcher).
+    subprocess.run(convert_cmd, check=True)
+    # Conversion succeeded — remove DS-native shards to free MooseFS quota
+    # BEFORE the upload step so the peak local-disk usage is bounded by
+    # one full copy of the model (~64 GB) rather than two (~130 GB).
+    import shutil as _sh
+
+    _sh.rmtree(str(ds_native_dir), ignore_errors=True)
+    log.info("FWFT post-train: removed DS-native shards %s", ds_native_dir)
+
+    # ── Upload + verify + delete-local. Mirrors the inline upload block
+    # ── that train_stage_sft.py runs for non-ZeRO-3 saves, kept in one
+    # ── place here so the ZeRO-3 path stays end-to-end-tested.
+    from huggingface_hub import list_repo_files, upload_file
+
+    from explore_persona_space.orchestrate.hub import upload_model
+
+    log.info(
+        "FWFT post-train: uploading %s to hf://%s/%s",
+        output_dir,
+        hub_repo_id,
+        hub_subfolder,
+    )
+    hub_path = upload_model(
+        model_path=str(output_dir),
+        repo_id=hub_repo_id,
+        path_in_repo=hub_subfolder,
+    )
+    if not hub_path:
+        raise RuntimeError(
+            f"FWFT post-train: upload returned empty path for {output_dir} -> "
+            f"hf://{hub_repo_id}/{hub_subfolder}. Downstream phases cannot resolve."
+        )
+    files_in_subpath = [
+        f
+        for f in list_repo_files(hub_repo_id, token=os.environ.get("HF_TOKEN"))
+        if f.startswith(hub_subfolder.rstrip("/") + "/")
+    ]
+    if not files_in_subpath:
+        raise RuntimeError(
+            f"FWFT post-train: upload verification FAILED — hf://{hub_repo_id}/"
+            f"{hub_subfolder} lists 0 files via list_repo_files."
+        )
+    log.info(
+        "FWFT post-train: upload verified, %d files at hf://%s/%s",
+        len(files_in_subpath),
+        hub_repo_id,
+        hub_subfolder,
+    )
+
+    result_meta = {
+        "hub_repo_id": hub_repo_id,
+        "hub_path_in_repo": hub_subfolder,
+        "hub_url": f"https://huggingface.co/{hub_repo_id}/tree/main/{hub_subfolder}",
+        "n_files_verified": len(files_in_subpath),
+    }
+    meta_path = output_dir / "hub_upload.json"
+    meta_path.write_text(json.dumps(result_meta, indent=2))
+
+    if delete_after_upload_verified:
+        try:
+            upload_file(
+                path_or_fileobj=str(meta_path),
+                path_in_repo=f"{hub_subfolder.rstrip('/')}/hub_upload.json",
+                repo_id=hub_repo_id,
+                repo_type="model",
+                token=os.environ.get("HF_TOKEN"),
+            )
+        except Exception as e:
+            raise RuntimeError(
+                f"FWFT post-train: failed to upload hub_upload.json before delete: {e}"
+            ) from e
+        _sh.rmtree(str(output_dir))
+        log.info(
+            "FWFT post-train: deleted local checkpoint %s after verified upload",
+            output_dir,
+        )
+
+
 def _run_fwft_phase1(args: argparse.Namespace) -> dict:
     """FWFT Phase 1 — accelerate launch + train_stage_sft.py + ZeRO-3."""
     arm = args.arm
@@ -354,6 +511,14 @@ def _run_fwft_phase1(args: argparse.Namespace) -> dict:
     # checkpoint after verified upload so the next phase's save fits
     # under the MooseFS ~130GB pod quota (54 + 54 + ~5GB intermediates
     # = ~113GB only if we delete between phases; plan v3 §9.4 + Asn 13).
+    # #506 round-7 fix: ZeRO-3 save is now split across processes.
+    # train_stage_sft.py saves DS-native shards + exits; the dispatcher
+    # owns conversion + upload via _finalize_fwft_zero3_save() AFTER
+    # accelerate launch returns. So --upload / --hub-* / --delete-after-
+    # upload-verified are NOT passed to the training script anymore.
+    # --model is passed explicitly so model_id resolves to Qwen3-32B
+    # even if a YAML key drifts (defense-in-depth on top of the
+    # model_id-resolution fix in train_stage_sft.py).
     cmd = [
         "accelerate",
         "launch",
@@ -367,33 +532,35 @@ def _run_fwft_phase1(args: argparse.Namespace) -> dict:
         str(PROJECT_ROOT / "scripts" / "train_stage_sft.py"),
         "--config",
         str(config_path),
+        "--model",
+        BASE_MODEL,
         "--dataset",
         str(data_path),
         "--output-dir",
         str(output_dir / "model"),
         "--seed",
         str(seed),
-        "--upload",
-        "--hub-repo-id",
-        HUB_FWFT_MODEL_REPO,
-        "--hub-subfolder",
-        fwft_sub_phase1,
-        "--delete-after-upload-verified",
     ]
     env = {**os.environ}
     env["WANDB_PROJECT"] = WANDB_PROJECT
     env.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
-    # Belt-and-suspenders: env-var also seen by inline-upload paths that
-    # don't read CLI args, so the same upload target is honored everywhere.
-    env["EPM_HUB_REPO_ID"] = HUB_FWFT_MODEL_REPO
-    env["EPM_HUB_SUBFOLDER"] = fwft_sub_phase1
 
     log.info("FWFT Phase 1: launching %s", " ".join(cmd))
     t0 = time.time()
     rc = subprocess.run(cmd, env=env, check=False).returncode
-    wall_m = (time.time() - t0) / 60
     if rc != 0:
         raise RuntimeError(f"FWFT Phase 1 train_stage_sft exited rc={rc}")
+
+    # Post-accelerate: convert DS-native shards to HF safetensors (in a
+    # single fresh process with the full pod RAM available), then upload.
+    _finalize_fwft_zero3_save(
+        output_dir=output_dir / "model",
+        base_model_id=BASE_MODEL,
+        hub_repo_id=HUB_FWFT_MODEL_REPO,
+        hub_subfolder=fwft_sub_phase1,
+        delete_after_upload_verified=True,
+    )
+    wall_m = (time.time() - t0) / 60
     return {
         "phase": "phase1",
         "arm": arm,
@@ -453,9 +620,13 @@ def _run_fwft_phase2(args: argparse.Namespace) -> dict:
     # Same hub-path fix as Phase 1: pass the explicit Phase-2 FWFT subfolder
     # so eval_issue506._resolve_ckpt can resolve it under HUB_FWFT_MODEL_REPO.
     fwft_sub_phase2 = fwft_subfolder(seed, "phase2")
-    # Issue #506 Round-3 must-fix #1: same upload-and-delete for Phase 2
-    # so the next FWFT cell (if any) and eval download workspace stay
-    # under the quota.
+    # #506 round-7 fix: ZeRO-3 save split across processes (see Phase 1
+    # comment above). --upload / --hub-* / --delete-after-upload-verified
+    # are NOT passed to the training script; the dispatcher calls
+    # _finalize_fwft_zero3_save() after accelerate launch returns.
+    # --model BASE_MODEL ensures the conversion subprocess builds the
+    # correct Qwen3-32B architecture for the saved state_dict (the round-6
+    # silent-corruption fix).
     cmd = [
         "accelerate",
         "launch",
@@ -469,6 +640,8 @@ def _run_fwft_phase2(args: argparse.Namespace) -> dict:
         str(PROJECT_ROOT / "scripts" / "train_stage_sft.py"),
         "--config",
         str(config_path),
+        "--model",
+        BASE_MODEL,
         "--input-model",
         str(phase1_local),
         "--dataset",
@@ -477,24 +650,26 @@ def _run_fwft_phase2(args: argparse.Namespace) -> dict:
         str(output_dir / "model"),
         "--seed",
         str(seed),
-        "--upload",
-        "--hub-repo-id",
-        HUB_FWFT_MODEL_REPO,
-        "--hub-subfolder",
-        fwft_sub_phase2,
-        "--delete-after-upload-verified",
     ]
     env = {**os.environ}
     env["WANDB_PROJECT"] = WANDB_PROJECT
-    env["EPM_HUB_REPO_ID"] = HUB_FWFT_MODEL_REPO
-    env["EPM_HUB_SUBFOLDER"] = fwft_sub_phase2
 
     log.info("FWFT Phase 2: launching %s", " ".join(cmd))
     t0 = time.time()
     rc = subprocess.run(cmd, env=env, check=False).returncode
-    wall_m = (time.time() - t0) / 60
     if rc != 0:
         raise RuntimeError(f"FWFT Phase 2 train_stage_sft exited rc={rc}")
+
+    # Post-accelerate: convert DS-native shards to HF safetensors (in a
+    # single fresh process with the full pod RAM available), then upload.
+    _finalize_fwft_zero3_save(
+        output_dir=output_dir / "model",
+        base_model_id=BASE_MODEL,
+        hub_repo_id=HUB_FWFT_MODEL_REPO,
+        hub_subfolder=fwft_sub_phase2,
+        delete_after_upload_verified=True,
+    )
+    wall_m = (time.time() - t0) / 60
     return {
         "phase": "phase2",
         "arm": arm,
