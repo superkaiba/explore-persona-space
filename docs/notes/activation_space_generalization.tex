@@ -65,20 +65,6 @@ $M$ is the existing wiring; it is genuinely a map only if $v_c$ and $v_b$ encode
 \emph{different things} (situation vs.\ disposition). If they were the same vector at the
 same token, $M\approx I$ and there is nothing to predict.
 
-\paragraph{One ambiguity to pin down with Dan.} ``$v_c$ at the token after the user
-message, $v_b$ at the token after the assistant message'' admits two designs, built
-differently:
-\begin{enumerate}[leftmargin=1.4em]
-  \item \emph{Different positions}: $v_c$ read at the end of the user turn (situation,
-  before responding), $v_b$ read from the generated response (what was done). Requires
-  running generation.
-  \item \emph{Same position, different directions}: read both near the user$\to$assistant
-  handoff, $v_c$ $=$ projection onto a ``what's being asked'' subspace, $v_b$ $=$
-  projection onto a ``what I'll do'' subspace. One forward pass, no generation.
-\end{enumerate}
-Both are coherent; the experiment differs. The reading that makes ``how training
-generalizes'' nontrivial is design 1.
-
 \paragraph{The conjecture.} Fine-tuning context $c'$ to produce $v_b''$ instead of $v_b'$
 edits the map by a rank-one correction:
 \[
