@@ -4,3 +4,4 @@
 {"ts": "2026-06-08T07:15:19Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear; advancing to /adversarial-planner."}
 {"ts": "2026-06-08T07:28:01Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq4w2if8-qjxyib effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-08T07:28:05Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq4w2lqo-x30jt3 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-08T07:28:09Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq4w2ojc-nue9dy effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
