@@ -5,7 +5,7 @@ kind: experiment
 tags:
 - followup
 created_at: '2026-06-08T06:51:39Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 508
 goal: Determine whether marker leakage to bystander personas (and the bare default
   assistant) differs between LoRA and full fine-tuning at a matched source-implant
