@@ -1,0 +1,86 @@
+{
+  "version": 4,
+  "anchor_epochs": 3,
+  "fixed_lr": 0.0001,
+  "fixed_rank": 8,
+  "fixed_alpha": 32,
+  "chosen_epochs": 3,
+  "chosen_lr": 0.0001,
+  "chosen_rank": 8,
+  "chosen_alpha": 32,
+  "chosen_checkpoint_fraction": 0.33,
+  "chosen_checkpoint_steps": 25,
+  "source_delta_g_at_pick_nats": 5.011731893899605,
+  "source_emission_at_pick": 1.0,
+  "bystander_resolution_at_pick": 0.34074074074074073,
+  "ceiling_logp": -0.10536051565782628,
+  "floor_delta_g": 0.5,
+  "gate_fraction": 0.2,
+  "fallback_triggered": false,
+  "fallback_reason": null,
+  "smoke_table": [
+    {
+      "epochs": 3,
+      "ckpt_frac": 0.08,
+      "source_dg": 5.471729629712354,
+      "source_emission": 1.0,
+      "bystander_resolution": 0.3296296296296296,
+      "n_in_band": 178,
+      "n_total": 540,
+      "in_band": true
+    },
+    {
+      "epochs": 3,
+      "ckpt_frac": 0.16,
+      "source_dg": 5.88936012028862,
+      "source_emission": 1.0,
+      "bystander_resolution": 0.3296296296296296,
+      "n_in_band": 178,
+      "n_total": 540,
+      "in_band": true
+    },
+    {
+      "epochs": 3,
+      "ckpt_frac": 0.33,
+      "source_dg": 5.011731893899605,
+      "source_emission": 1.0,
+      "bystander_resolution": 0.34074074074074073,
+      "n_in_band": 184,
+      "n_total": 540,
+      "in_band": true
+    },
+    {
+      "epochs": 3,
+      "ckpt_frac": 0.5,
+      "source_dg": 6.083078291715355,
+      "source_emission": 1.0,
+      "bystander_resolution": 0.3277777777777778,
+      "n_in_band": 177,
+      "n_total": 540,
+      "in_band": true
+    },
+    {
+      "epochs": 3,
+      "ckpt_frac": 0.75,
+      "source_dg": 5.625753719137026,
+      "source_emission": 1.0,
+      "bystander_resolution": 0.32592592592592595,
+      "n_in_band": 176,
+      "n_total": 540,
+      "in_band": true
+    },
+    {
+      "epochs": 3,
+      "ckpt_frac": 1.0,
+      "source_dg": 7.1724504753481595,
+      "source_emission": 1.0,
+      "bystander_resolution": 0.32407407407407407,
+      "n_in_band": 175,
+      "n_total": 540,
+      "in_band": true
+    }
+  ],
+  "verdict": "pass",
+  "source": "villain",
+  "version_str": "v4_bystander_resolution"
+}
