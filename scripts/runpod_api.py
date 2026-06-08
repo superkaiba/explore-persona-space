@@ -143,6 +143,55 @@ class RunPodNoCapacityError(RunPodError):
     """
 
 
+class RunPodInsufficientBalanceError(RunPodError):
+    """Raised when RunPod refuses ``podFindAndDeployOnDemand`` /
+    ``podResume`` because the projected total account $/hr would exceed
+    the console-side spending cap. The actual GraphQL error string is:
+
+        INSUFFICIENT_BALANCE: Renting this pod would put you over your
+        current spending limit ($X/hr)
+
+    Why this is its own class (vs the generic ``RunPodError``):
+    INSUFFICIENT_BALANCE is **transient + no-cost-while-idle** — while
+    the provision/resume is refused, nothing is running, so no $/hr is
+    being spent. The condition clears the moment any other pod on the
+    team frees $/hr headroom (a stop/terminate, or a sibling experiment
+    finishing). The right behavior is the SAME as
+    :class:`RunPodNoCapacityError`: retry-with-backoff in the
+    pod_lifecycle policy layer, NEVER fail-exit a task to ``blocked``.
+    Incident: task #506 (2026-06-08) fail-exited to ``blocked`` on this
+    refusal before the special-case classification existed.
+
+    Subclass of :class:`RunPodError` so existing ``except RunPodError``
+    callers keep catching it (after the retry budget, if any, is exhausted).
+    """
+
+
+# Markers used to detect INSUFFICIENT_BALANCE in a GraphQL ``errors`` payload
+# or a raised RunPodError message. RunPod has used both the explicit error
+# code (``INSUFFICIENT_BALANCE``) and the human-readable phrase ("spending
+# limit"), so match defensively on either. Case-insensitive substring
+# match. Lives in this module (not pod_lifecycle) so the transport layer
+# can raise the typed exception directly; pod_lifecycle's retry policy
+# then catches it by class, not by string-sniffing the message.
+_INSUFFICIENT_BALANCE_MARKERS: tuple[str, ...] = (
+    "insufficient_balance",
+    "insufficient balance",
+    "spending limit",
+    "over your current spending",
+)
+
+
+def _is_insufficient_balance_error(error_text: str) -> bool:
+    """True if a GraphQL ``errors`` payload string or a ``RunPodError``
+    message looks like a RunPod ``INSUFFICIENT_BALANCE`` refusal
+    (projected account $/hr over the console cap). Case-insensitive
+    substring match against :data:`_INSUFFICIENT_BALANCE_MARKERS`.
+    """
+    lowered = (error_text or "").lower()
+    return any(marker in lowered for marker in _INSUFFICIENT_BALANCE_MARKERS)
+
+
 def _is_cloudflare_1010(body: str) -> bool:
     """True if the response body is a Cloudflare 1010 challenge.
 
@@ -216,7 +265,14 @@ def _graphql_once(query: str, variables: dict | None, timeout: int) -> dict[str,
 
     parsed = json.loads(response_body)
     if parsed.get("errors"):
-        raise RunPodError(f"GraphQL errors: {json.dumps(parsed['errors'])[:500]}")
+        err_text = json.dumps(parsed["errors"])[:500]
+        # RunPod surfaces INSUFFICIENT_BALANCE (projected account $/hr over
+        # the console cap) as a GraphQL error rather than a transport-level
+        # failure. Classify it so the pod_lifecycle retry policy can wait
+        # for headroom instead of fail-exiting (incident #506, 2026-06-08).
+        if _is_insufficient_balance_error(err_text):
+            raise RunPodInsufficientBalanceError(f"GraphQL errors: {err_text}")
+        raise RunPodError(f"GraphQL errors: {err_text}")
     if "data" not in parsed:
         raise RunPodError(f"Malformed response (no 'data' field): {response_body[:300]!r}")
     return parsed["data"]

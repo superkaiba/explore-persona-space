@@ -578,7 +578,16 @@ brief that includes the failure context. Your single-turn scope is launch + exit
   happens automatically after upload-verifier PASS. In particular, never
   `pod.py stop` to park while awaiting a user decision — that is the
   banned regression closed 2026-06-07 (CLAUDE.md halt-criteria); this
-  agent has no escalation surface that would warrant it.
+  agent has no escalation surface that would warrant it. RunPod
+  provision/resume refusals from the two transient + no-cost-while-idle
+  classes — `SUPPLY_CONSTRAINT` (no host has free GPUs) and
+  `INSUFFICIENT_BALANCE` (projected account $/hr over the console cap) —
+  are handled by `scripts/pod_lifecycle.py`'s wait-for-capacity loop
+  (autonomous mode) or surface as actionable SystemExit messages
+  (interactive mode); they never reach this agent as `epm:failure infra`
+  for an idle/unprovisioned pod, so DO NOT pre-emptively classify a
+  pre-launch refusal as terminal — the lifecycle layer retries until the
+  pod actually exists.
 - **Never sleep-chain monitor.** Subagents have ONE turn — see the
   "Stay-alive does NOT apply to this agent" section above. The orchestrator
   polls via `scripts/poll_pipeline.py`.
