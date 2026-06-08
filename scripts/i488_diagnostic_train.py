@@ -154,6 +154,15 @@ def main():
 
     for cid in args.conds:
         cond = CONDITIONS_BY_ID[cid]
+        # Honor I488_TRAIN_ROW_DIR (set by the ladder dispatcher) so different
+        # rungs write their train rows under separate subdirs and do not
+        # clobber each other. _build_training_rows reads
+        # ``i488_phase23_train.TRAIN_ROW_DIR`` (module-global), so we mutate it.
+        if os.environ.get("I488_TRAIN_ROW_DIR"):
+            import i488_phase23_train as _p23
+
+            _p23.TRAIN_ROW_DIR = Path(os.environ["I488_TRAIN_ROW_DIR"])
+            _p23.TRAIN_ROW_DIR.mkdir(parents=True, exist_ok=True)
         train_path, n_pos, n_neg = _build_training_rows(
             cond,
             args.seed,
@@ -164,7 +173,11 @@ def main():
             tokenizer,
             max_rows_per_side=args.max_rows_per_side,
         )
-        out_dir = args.out_base / f"i488_{cid}_seed{args.seed}_frac300_diag"
+        # I488_LADDER_RUNG_SUFFIX (set by the ladder dispatcher) overrides
+        # the default ``_diag`` adapter dir suffix so rung-specific adapters
+        # don't clobber each other under <out_base>/.
+        suffix = os.environ.get("I488_LADDER_RUNG_SUFFIX", "diag")
+        out_dir = args.out_base / f"i488_{cid}_seed{args.seed}_frac300_{suffix}"
 
         logger.info(
             "DIAG TRAIN cond=%s seed=%d lr=%s r=%d a=%d epochs=%d "
@@ -207,8 +220,9 @@ def main():
         save_cb = _LocalOnlyAdapterSaveCallback(out_dir=out_dir, target_frac=3.00)
 
         # Tmp dir for the inner Trainer's output_dir; we save the real adapter
-        # via our callback above.
-        tmp_out = f"/workspace/adapters/_tmp_i488_diag_{cid}_seed{args.seed}"
+        # via our callback above. Tag with the rung suffix so concurrent /
+        # sequential rungs don't collide.
+        tmp_out = f"/workspace/adapters/_tmp_i488_{suffix}_{cid}_seed{args.seed}"
         _, train_loss = train_lora(
             BASE_MODEL,
             str(train_path),
