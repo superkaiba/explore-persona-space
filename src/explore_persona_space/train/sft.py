@@ -709,12 +709,43 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
             from transformers.integrations import HfDeepSpeedConfig
         except ImportError:
             from transformers.deepspeed import HfDeepSpeedConfig  # type: ignore[no-redef]
+        # Pre-resolve "auto" sentinels in the deepspeed JSON before passing it
+        # to HfDeepSpeedConfig. The HF Trainer would normally resolve them via
+        # `HfTrainerDeepSpeedConfig.trainer_config_process(args)`, but that
+        # fires only when the Trainer is constructed — which happens AFTER
+        # `from_pretrained` below. `from_pretrained` triggers
+        # `deepspeed.zero.Init -> DeepSpeedConfig._batch_assertion`, which
+        # compares `train_batch_size > 0` directly; the "auto" string crashes
+        # with `TypeError: '>' not supported between instances of 'str' and
+        # 'int'`. We know the concrete values up-front (TrainLoraConfig +
+        # WORLD_SIZE env) so resolve them in-memory and pass the dict.
+        import json as _json
+
+        with open(cfg.deepspeed) as _fp:
+            _ds_cfg = _json.load(_fp)
+        _resolved_ws = int(os.environ.get("WORLD_SIZE", "1") or "1")
+        _autos = {
+            "train_micro_batch_size_per_gpu": cfg.batch_size,
+            "gradient_accumulation_steps": cfg.grad_accum,
+            "train_batch_size": _resolved_ws * cfg.batch_size * cfg.grad_accum,
+            "gradient_clipping": 1.0,  # HF Trainer default `max_grad_norm`
+        }
+        for _k, _v in _autos.items():
+            if _ds_cfg.get(_k) == "auto":
+                _ds_cfg[_k] = _v
         logger.info(
             "Installing HfDeepSpeedConfig context before from_pretrained "
-            "(ZeRO-3 weight partitioning at load time): %s",
+            "(ZeRO-3 weight partitioning at load time): %s "
+            "(resolved auto: train_batch_size=%d, micro=%d, grad_accum=%d, "
+            "grad_clip=%s, world_size=%d)",
             cfg.deepspeed,
+            _ds_cfg["train_batch_size"],
+            _ds_cfg["train_micro_batch_size_per_gpu"],
+            _ds_cfg["gradient_accumulation_steps"],
+            _ds_cfg["gradient_clipping"],
+            _resolved_ws,
         )
-        _hf_ds_ctx = HfDeepSpeedConfig(cfg.deepspeed)
+        _hf_ds_ctx = HfDeepSpeedConfig(_ds_cfg)
         # Under ZeRO-3 sharding, do NOT pass a device_map — DeepSpeed places
         # shards across ranks. The is_distributed branch already sets
         # _device_map=None, but be defensive in case cfg.deepspeed is set
