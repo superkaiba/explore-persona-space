@@ -6,7 +6,7 @@ tags:
 - leak-predictor
 - mentor-dan
 created_at: '2026-06-06T01:10:02Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 470
 goal: 'Test whether base-model persona-distance predictors (residual cosine and JS
   divergence, source persona to bystander persona) predict per-bystander sycophancy
