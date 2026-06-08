@@ -880,3 +880,107 @@ def load_phase0_v3_pick(path: Path) -> dict[str, Any]:
             f"complete BEFORE Phase 1 can spawn."
         )
     return json.loads(path.read_text())
+
+
+# ── v3 in-plan finer-fraction recovery merge (plan v3 §4.1 trigger B + §4.2). ──
+
+
+def _merge_trajectories(coarse: dict, finer: dict) -> dict:
+    """Concatenate two trajectory dicts produced by run_trajectory_eval.
+
+    The merged dict preserves the coarse trajectory's metadata (cell, seed,
+    source) and concatenates the `checkpoints` lists. Duplicate fractions
+    (same key at `frac_precision=2`) are resolved by preferring the FINER
+    (recovery) row — recovery is the fresh measurement; the coarse value
+    at that fraction was a saturated read the recovery was meant to refute.
+
+    Args:
+        coarse: trajectory.json dict from the original EPOCHS=2 coarse-grid
+            run (6 checkpoints at fracs {0.08, 0.16, 0.33, 0.50, 0.75, 1.00}).
+        finer: trajectory.json dict from the recovery EPOCHS=2 finer-grid
+            run (4 checkpoints at fracs {0.02, 0.04, 0.06, 0.08}).
+
+    Returns:
+        Merged trajectory dict with `checkpoints` = union of both, sorted
+        by `frac` ASC. Used by `merge_recovery_into_v3_pick` before
+        re-applying `pick_anchor_from_epochs_smoke`.
+    """
+    by_frac: dict[float, dict] = {}
+    for ck in coarse.get("checkpoints", []):
+        by_frac[float(ck["frac"])] = ck
+    for ck in finer.get("checkpoints", []):
+        # Recovery wins on collision (e.g. both have frac=0.08).
+        by_frac[float(ck["frac"])] = ck
+    merged_checkpoints = [by_frac[k] for k in sorted(by_frac)]
+    merged: dict[str, Any] = {**coarse, "checkpoints": merged_checkpoints}
+    return merged
+
+
+def merge_recovery_into_v3_pick(
+    smoke_trajectories: dict[str, dict],
+    recovery_trajectory: dict,
+    *,
+    dg_band: tuple[float, float] = (SOURCE_DG_BAND_LOW, SOURCE_DG_BAND_HIGH),
+    emit_band: tuple[float, float] = (EMISSION_BAND_LOW, EMISSION_BAND_HIGH),
+    checkpoint_fractions: tuple[float, ...] = CHECKPOINT_FRACTIONS,
+    source: str = SOURCE_PERSONA,
+    fixed_lr: float = FIXED_LR_V3,
+    expected_smoke_slugs: tuple[str, ...] = PHASE0_SMOKE_SLUGS_V3,
+    recovery_slug: str = "c504v3_smoke_eps2",
+) -> dict[str, Any]:
+    """Re-apply the v3 pick after merging the finer-grid recovery trajectory.
+
+    Plan v3 §4.1 trigger B + §4.2: when the original coarse-grid Phase 0 v3
+    fires Trigger B (saturated on either axis), the dispatcher re-runs the
+    EPOCHS=2 cell at finer fractions {0.02, 0.04, 0.06, 0.08}. This helper
+    merges the finer trajectory into the EPOCHS=2 cell's checkpoint list
+    and re-runs `pick_anchor_from_epochs_smoke` over the merged table.
+
+    The returned dict has the SAME shape as `pick_anchor_from_epochs_smoke`
+    (the merged pick fields), PLUS two extra fields for audit:
+
+      * `recovery_finer_trajectory` — the raw finer-grid trajectory dict
+        (so a downstream analyzer can re-derive per-frac diagnostics
+        without going back to the on-disk file).
+      * `merged_from_coarse` — `True` (sentinel: this pick reflects a
+        coarse+finer merge, not a fresh pick).
+
+    Args:
+        smoke_trajectories: ORIGINAL coarse-grid v3 smoke trajectories
+            (keyed by `PHASE0_SMOKE_SLUGS_V3`).
+        recovery_trajectory: trajectory.json dict from the finer-grid
+            recovery run on the EPOCHS=2 cell.
+        recovery_slug: which smoke slug the recovery augments (default
+            `c504v3_smoke_eps2`, the canonical Trigger B recovery target).
+        dg_band, emit_band, checkpoint_fractions, source, fixed_lr,
+            expected_smoke_slugs: passed through to
+            `pick_anchor_from_epochs_smoke`.
+
+    Returns:
+        The re-picked dict + `recovery_finer_trajectory` + `merged_from_coarse`.
+
+    Raises:
+        KeyError: `recovery_slug` not in `smoke_trajectories` — the
+            caller passed a corrupt coarse-trajectory dict.
+    """
+    if recovery_slug not in smoke_trajectories:
+        raise KeyError(
+            f"merge_recovery_into_v3_pick: recovery_slug={recovery_slug!r} not "
+            f"in smoke_trajectories keys={sorted(smoke_trajectories)}; the "
+            f"recovery target must be present in the original v3 trajectories."
+        )
+    merged_traj = _merge_trajectories(smoke_trajectories[recovery_slug], recovery_trajectory)
+    merged_trajectories = dict(smoke_trajectories)
+    merged_trajectories[recovery_slug] = merged_traj
+    pick = pick_anchor_from_epochs_smoke(
+        merged_trajectories,
+        dg_band=dg_band,
+        emit_band=emit_band,
+        checkpoint_fractions=checkpoint_fractions,
+        source=source,
+        fixed_lr=fixed_lr,
+        expected_smoke_slugs=expected_smoke_slugs,
+    )
+    pick["recovery_finer_trajectory"] = recovery_trajectory
+    pick["merged_from_coarse"] = True
+    return pick

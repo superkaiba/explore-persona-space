@@ -182,6 +182,8 @@ def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on 
     per_cell_epochs: dict[str, int] | None = None,
     source_persona: str | None = None,
     per_cell_tolerant: bool = False,
+    checkpoint_fractions: tuple[float, ...] | None = None,
+    trajectory_suffix: str = "",
 ) -> list[dict]:
     """Run all (cell, seed) units as a GPU-sharded subprocess pool.
 
@@ -237,7 +239,13 @@ def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on 
         # --resume on a pod with a stale round-N trajectory at this path would
         # skip launching the cell; the round-15 launcher does NOT pass
         # --resume, so the asymmetry is currently safe.
-        out_traj = slab_root / f"{cell}_seed{seed}" / "trajectory.json"
+        # v3 in-plan recovery (plan §4.1 + §4.2): when `trajectory_suffix` is
+        # set, the recovery cell writes to a DIFFERENT slab-root subdir so the
+        # coarse trajectory survives intact. The picker's merge step reads
+        # BOTH `<slug>_seed<S>/trajectory.json` (coarse) AND
+        # `<slug>_seed<S><trajectory_suffix>/trajectory.json` (finer).
+        traj_subdir = f"{cell}_seed{seed}{trajectory_suffix}"
+        out_traj = slab_root / traj_subdir / "trajectory.json"
         if resume and out_traj.exists():
             log.info("[%s seed%d] RESUME: trajectory exists; skipping.", cell, seed)
             return None  # type: ignore[return-value]
@@ -323,6 +331,15 @@ def _schedule_cell_pool(  # noqa: C901 -- linear pool: per-flag conditionals on 
             cmd.append("--no-kl")
         if hf_path_suffix:
             cmd.extend(["--hf-path-suffix", hf_path_suffix])
+        # v3 in-plan recovery (plan §4.1 trigger B + §4.2): when set, the
+        # recovery phase passes a finer-grid fraction tuple (e.g.
+        # CHECKPOINT_FRACTIONS_V3_FINER = (0.02, 0.04, 0.06, 0.08)) plus a
+        # trajectory-suffix so the recovery cell's output does NOT clobber
+        # the coarse trajectory. The picker's merge step reads both.
+        if checkpoint_fractions is not None:
+            cmd.extend(["--checkpoint-fractions", ",".join(repr(f) for f in checkpoint_fractions)])
+        if trajectory_suffix:
+            cmd.extend(["--trajectory-suffix", trajectory_suffix])
         cell_log = log_dir / f"{label_prefix}-{cell}-seed{seed}.log"
         cell_log.parent.mkdir(parents=True, exist_ok=True)
         log.info("[%s seed%d] launch on GPU %d → %s", cell, seed, gpu, cell_log)
@@ -1340,6 +1357,16 @@ def _run_v3_phase0(
     label_prefix = (
         f"issue-504-v3-{args.phase}" if not recovery else "issue-504-v3-phase0_v3-recovery"
     )
+    # v3 in-plan recovery (plan §4.1 trigger B + §4.2): on the recovery phase,
+    # thread CHECKPOINT_FRACTIONS_V3_FINER + a trajectory_suffix so the cell
+    # retrains EPOCHS=2 at the finer fractions AND its trajectory.json lands
+    # in a DIFFERENT slab-root subdir (the coarse trajectory must survive so
+    # the picker's merge step can read both). The recovery uses --resume=False
+    # so the prior coarse trajectory doesn't short-circuit the retrain.
+    recovery_traj_suffix = "__recovery_finer"
+    cp_fractions_arg = CHECKPOINT_FRACTIONS_V3_FINER if recovery else None
+    traj_suffix_arg = recovery_traj_suffix if recovery else ""
+    recovery_resume = False if recovery else args.resume
 
     # Smoke cells run sequentially on 1 GPU (max_parallel=1 — each cell is a
     # Phase-1-composition train + trajectory eval at one EPOCHS value). All
@@ -1364,7 +1391,7 @@ def _run_v3_phase0(
         smoke=False,  # Phase 0 trains at Phase 1 composition (NOT a tiny slice)
         no_kl=args.no_kl,
         report_to=args.report_to,
-        resume=args.resume,
+        resume=recovery_resume,
         max_new_tokens_eval=max_new_tokens_eval,
         max_model_len_eval=max_model_len_eval,
         hf_path_suffix=args.hf_path_suffix,
@@ -1377,10 +1404,19 @@ def _run_v3_phase0(
         # one rung crashes, the remaining rungs still run and the picker
         # decides via the anti-saturation band.
         per_cell_tolerant=True,
+        # Round-8 (task #504, deferred concern `phase0-v3-finer-grid-recovery-
+        # not-wired`): thread the finer-fraction cadence + the trajectory
+        # suffix to the recovery cell. Both default to no-op on the primary
+        # phase0_v3 path.
+        checkpoint_fractions=cp_fractions_arg,
+        trajectory_suffix=traj_suffix_arg,
     )
 
     # Run the v3 pick rule over the smoke trajectories. Picker writes the
-    # exit-to-v4 artifact itself on Trigger A/C.
+    # exit-to-v4 artifact itself on Trigger A/C. On the recovery phase, the
+    # picker is invoked with --include-finer-recovery + --recovery-traj-suffix
+    # so it MERGES the coarse + finer trajectories and re-applies the pick rule
+    # over the augmented (epochs, frac) table.
     pick_cmd = [
         "uv",
         "run",
@@ -1401,6 +1437,14 @@ def _run_v3_phase0(
         "--sentinel-path",
         str(LOG_DIR / f"issue-504-v3-{args.phase}-pick-results.json"),
     ]
+    if recovery:
+        pick_cmd.extend(
+            [
+                "--include-finer-recovery",
+                "--recovery-traj-suffix",
+                recovery_traj_suffix,
+            ]
+        )
     pick_rc = 0
     try:
         _run_phase_subprocess(pick_cmd, f"v3_{args.phase}_pick")

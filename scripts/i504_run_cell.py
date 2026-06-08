@@ -149,6 +149,36 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     ap.add_argument(
+        "--checkpoint-fractions",
+        default=None,
+        help=(
+            "v3 in-plan finer-fraction recovery (plan v3 §4.1 trigger B + §4.2). "
+            "Comma-separated floats overriding the cell's default checkpoint "
+            "fraction cadence (normally CHECKPOINT_FRACTIONS = "
+            "(0.08, 0.16, 0.33, 0.50, 0.75, 1.00)). When set, threads as "
+            "`step_calibration_fractions=parsed` into `train_one_cell`, so the "
+            "trainer's CheckpointAtFractionsCallback saves adapters at THESE "
+            "fractions of max_steps and the nested eval_trajectory subprocess "
+            "evaluates those same checkpoints. Used by the dispatcher's "
+            "`--phase phase0_v3-recovery` to re-train EPOCHS=2 at "
+            "{0.02, 0.04, 0.06, 0.08}. When unset, uses CHECKPOINT_FRACTIONS "
+            "(byte-identical pre-recovery behavior)."
+        ),
+    )
+    ap.add_argument(
+        "--trajectory-suffix",
+        default="",
+        help=(
+            "v3 in-plan recovery (plan v3 §4.1 + §4.2): suffix appended to "
+            "the trajectory.json output subdir under --slab-root so the "
+            "recovery run does NOT clobber the coarse-grid trajectory. "
+            "Recovery passes `--trajectory-suffix __recovery_finer`; the "
+            "merged-pick picker then reads BOTH `<slug>_seed<S>/trajectory.json` "
+            "(coarse) AND `<slug>_seed<S>__recovery_finer/trajectory.json` "
+            "(finer). Default empty = pre-recovery behavior (canonical path)."
+        ),
+    )
+    ap.add_argument(
         "--wandb-suffix",
         default="",
         help=(
@@ -308,7 +338,12 @@ def main(argv: list[str] | None = None) -> int:
     train_jsonl = run_dir / "train_pool.jsonl"
     final_adapter_dir = run_dir / "adapter"
     ckpt_root = run_dir / "checkpoints"
-    out_traj = args.slab_root / f"{args.cell}_seed{args.seed}" / "trajectory.json"
+    # v3 in-plan recovery (plan §4.1 + §4.2): --trajectory-suffix decorates the
+    # slab-root subdir so the finer-grid recovery trajectory does NOT clobber
+    # the coarse trajectory. Default empty = canonical path (byte-identical
+    # pre-recovery behavior). The picker's merge step reads BOTH paths.
+    traj_subdir = f"{args.cell}_seed{args.seed}{args.trajectory_suffix}"
+    out_traj = args.slab_root / traj_subdir / "trajectory.json"
     sentinel = args.log_dir / f"issue-504-{args.cell}-seed{args.seed}-results.json"
 
     bank = load_persona_bank(args.bank_path)
@@ -353,7 +388,42 @@ def main(argv: list[str] | None = None) -> int:
     # ── Phase: train with mid-run checkpoints (HF Trainer, in-process). ──────
     # Smoke uses an even denser cadence around the early window where ΔG is
     # still climbing sub-ceiling (matches #472 smoke convention).
-    fractions = (0.08, 0.16, 0.5, 1.0) if args.smoke else CHECKPOINT_FRACTIONS
+    #
+    # v3 in-plan recovery (plan §4.1 trigger B + §4.2): --checkpoint-fractions
+    # CSV CLI override wins over both the smoke cadence AND the module default
+    # so the dispatcher's recovery phase can re-train EPOCHS=2 at
+    # {0.02, 0.04, 0.06, 0.08} without touching the constants. The CSV is
+    # parsed once into a strictly-positive sorted tuple; ANY parse error fails
+    # loud BEFORE train_one_cell.
+    if args.checkpoint_fractions is not None:
+        try:
+            parsed = tuple(
+                sorted(float(x.strip()) for x in args.checkpoint_fractions.split(",") if x.strip())
+            )
+        except ValueError as exc:
+            raise ValueError(
+                f"--checkpoint-fractions {args.checkpoint_fractions!r} could not "
+                f"parse as a comma-separated list of floats: {exc}."
+            ) from exc
+        if not parsed:
+            raise ValueError(
+                f"--checkpoint-fractions {args.checkpoint_fractions!r} parsed to "
+                f"an empty tuple; need at least one positive fraction."
+            )
+        if any(f <= 0 or f > 1.0 for f in parsed):
+            raise ValueError(
+                f"--checkpoint-fractions {args.checkpoint_fractions!r} contains "
+                f"out-of-range values; each must be in (0, 1]."
+            )
+        fractions = parsed
+        log.info(
+            "[phase=train_%s] --checkpoint-fractions override active: %s "
+            "(v3 in-plan recovery; replaces CHECKPOINT_FRACTIONS).",
+            args.cell,
+            fractions,
+        )
+    else:
+        fractions = (0.08, 0.16, 0.5, 1.0) if args.smoke else CHECKPOINT_FRACTIONS
     # Effective lr: --lr CLI override wins (plan v2 §10); else fall back to
     # ANCHOR_LR (the v1 floor recipe at 2e-6, retained as module default for
     # callers that don't go through the v2 Phase 0 pick).

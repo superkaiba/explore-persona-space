@@ -117,6 +117,41 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     ap.add_argument("--sentinel-path", type=Path, default=None)
+    ap.add_argument(
+        "--include-finer-recovery",
+        action="store_true",
+        help=(
+            "v3 only (plan v3 §4.1 trigger B + §4.2): MERGE the finer-grid "
+            "recovery trajectory into the coarse EPOCHS=2 trajectory and "
+            "re-apply the pick rule over the augmented (epochs, frac) table. "
+            "Used by the dispatcher after the recovery cell completes. Reads "
+            "the recovery trajectory from "
+            "`<slab_root>/c504v3_smoke_eps2_seed42<recovery-traj-suffix>/"
+            "trajectory.json`. When unset, runs the pick rule over the "
+            "coarse-only trajectories (byte-identical pre-recovery behavior)."
+        ),
+    )
+    ap.add_argument(
+        "--recovery-traj-suffix",
+        default="__recovery_finer",
+        help=(
+            "v3 only: subdir suffix used by the recovery cell when writing "
+            "its finer-grid trajectory under --slab-root. Only consulted "
+            "when --include-finer-recovery is set. Must MATCH the "
+            "dispatcher's `trajectory_suffix` value for the recovery cell."
+        ),
+    )
+    ap.add_argument(
+        "--recovery-cell-slug",
+        default="c504v3_smoke_eps2",
+        help=(
+            "v3 only: the smoke slug whose trajectory the recovery augments "
+            "(canonical EPOCHS=2; the lower-epochs cell, since Trigger B "
+            "fires when both ladder rungs saturate and EPOCHS=2 is the "
+            "cheaper rung to retrain). Only consulted when "
+            "--include-finer-recovery is set."
+        ),
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -293,6 +328,7 @@ def _run_v3(args: argparse.Namespace) -> int:
         SOURCE_PERSONA,
     )
     from explore_persona_space.experiments.contrastive_neg_geometry_504.phase0 import (
+        merge_recovery_into_v3_pick,
         pick_anchor_from_epochs_smoke,
         write_phase0_v3_artifact,
         write_phase0_v3_exit_to_v4_artifact,
@@ -315,7 +351,48 @@ def _run_v3(args: argparse.Namespace) -> int:
             "[load] %s trajectory: %d checkpoints", slug, len(smoke_trajs[slug]["checkpoints"])
         )
 
-    pick = pick_anchor_from_epochs_smoke(smoke_trajs, source=source, fixed_lr=fixed_lr)
+    # v3 in-plan recovery (plan §4.1 trigger B + §4.2): when the dispatcher
+    # invokes the picker with --include-finer-recovery, the recovery cell has
+    # ALREADY completed and written its finer trajectory at a suffix-decorated
+    # subdir. Load + merge into the EPOCHS=2 cell's checkpoint list, then
+    # re-apply the pick rule.
+    if args.include_finer_recovery:
+        recovery_path = (
+            args.slab_root
+            / f"{args.recovery_cell_slug}_seed{args.smoke_seed}{args.recovery_traj_suffix}"
+            / "trajectory.json"
+        )
+        if not recovery_path.exists():
+            raise FileNotFoundError(
+                f"--include-finer-recovery set but recovery trajectory missing "
+                f"at {recovery_path}. The dispatcher must have written it via "
+                f"`--phase phase0_v3-recovery` BEFORE invoking this picker with "
+                f"--include-finer-recovery."
+            )
+        recovery_traj = json.loads(recovery_path.read_text())
+        log.info(
+            "[load] recovery trajectory: %d checkpoints (from %s); merging into %r",
+            len(recovery_traj["checkpoints"]),
+            recovery_path,
+            args.recovery_cell_slug,
+        )
+        pick = merge_recovery_into_v3_pick(
+            smoke_trajs,
+            recovery_traj,
+            source=source,
+            fixed_lr=fixed_lr,
+            recovery_slug=args.recovery_cell_slug,
+        )
+        log.info(
+            "[phase=phase0_pick mode=v3 merged] verdict=%s, chosen_epochs=%s, "
+            "chosen_frac=%s, in_plan_recovery=%s",
+            pick.get("verdict"),
+            pick.get("chosen_epochs"),
+            pick.get("chosen_checkpoint_fraction"),
+            pick.get("in_plan_recovery_triggered"),
+        )
+    else:
+        pick = pick_anchor_from_epochs_smoke(smoke_trajs, source=source, fixed_lr=fixed_lr)
     write_phase0_v3_artifact(pick, out_path)
 
     # Trigger A or C fired → ALSO write the exit-to-v4 artifact. Trigger B
