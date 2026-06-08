@@ -1,6 +1,6 @@
 ---
-title: 'Supplement #489''s geometry-predicts-transfer panel with multi-turn conversation-drift
-  contexts'
+title: Base-model cosine distance predicts the marker log-prob shift across the single-turn
+  / multi-turn format boundary (MODERATE confidence)
 kind: experiment
 tags:
 - roadmap-jun05
