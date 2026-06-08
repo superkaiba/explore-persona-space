@@ -152,7 +152,15 @@ from spawn_session import (
 ACTIVE = {"planning", "approved", "running", "verifying", "interpreting", "reviewing"}
 # Park statuses: legitimately waiting on the user or a gate — never re-spawn,
 # but keep the entry (it may flip back to ACTIVE, e.g. plan_pending -> approved).
-PARK = {"proposed", "clarifying", "plan_pending", "blocked"}
+# Members MUST equal the runtime enum `task_workflow.STATUSES` exactly when
+# unioned with ACTIVE + TERMINAL (pinned by
+# `test_status_sets_are_disjoint_and_cover_enum`). The reviewer caught a
+# phantom `clarifying` member here — not in the runtime enum, so it could
+# never match `_task_status` output. Removed for that reason; behavior is
+# unchanged (a `clarifying` status would have hit the `decide` unknown→keep
+# branch, also "keep") but the explicit membership was dead code, and a
+# phantom invites the next reader to assume it's a real status.
+PARK = {"proposed", "plan_pending", "blocked"}
 # Terminal statuses: the autonomous run is done — drop the entry.
 # awaiting_promotion is terminal HERE (experiment finished; the user promotes
 # manually — no more auto-driving needed).
@@ -1292,11 +1300,39 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
     """Recovery action: stop the alive-but-stalled session, spawn a fresh
     ``--auto`` session, persist the bumped respawn_count. On stop failure,
     persist unchanged respawn_count + a fresh ``missed=0`` so the next tick
-    re-tries within the same episode."""
+    re-tries within the same episode.
+
+    Safety precondition: we MUST know which session id to stop before we
+    spawn a fresh one. A garbled / missing ``happy_session_id`` in the
+    registry entry would otherwise mean we skip the stop and spawn anyway,
+    leaving two `--auto` sessions racing on the same issue (= duplicate
+    pods, fastest cost-incident on the watcher). When ``sid`` is falsy /
+    non-str, decline this tick and persist state so the next tick (which
+    reads a fresh registry entry — the orchestrator or a recent re-spawn
+    may have rewritten it) can try again.
+    """
     sid = ctx.happy_session_id_str
-    stop_ok = True
-    if sid:
-        stop_ok = _stop_session(sid, ctx.dry_run)
+    if not sid:
+        print(
+            f"  RESPAWN-STALLED SKIPPED issue #{ctx.issue}: registry entry has "
+            f"no usable happy_session_id (raw={ctx.happy_session_id!r}); "
+            f"cannot stop the old session, so spawning would risk a duplicate. "
+            f"Persisting state for next tick.",
+            file=sys.stderr,
+        )
+        if not ctx.dry_run:
+            _save_stalled_state(
+                ctx.issue,
+                None,
+                missed=0,
+                alerted=ctx.alerted,
+                last_self_report_ts=ctx.last_self_report_ts,
+                respawn_count=ctx.respawn_count,
+                exhausted=ctx.exhausted,
+                prev=ctx.prev_state,
+            )
+        return
+    stop_ok = _stop_session(sid, ctx.dry_run)
     if not stop_ok:
         if not ctx.dry_run:
             _save_stalled_state(

@@ -88,16 +88,23 @@ def test_unknown_status_is_inert():
 
 def test_status_sets_are_disjoint_and_cover_enum():
     # The three sets must not overlap (an overlap would make decide order-
-    # dependent) and must cover the canonical task status enum.
+    # dependent) and must EXACTLY equal the authoritative runtime enum
+    # `task_workflow.STATUSES` — no missing status (a fall-through would
+    # silently classify as unknown→keep) and no phantom member (a name the
+    # runtime can never produce, like the prior `clarifying` in PARK that
+    # the reviewer caught). Mirrors the pod-safety pass's
+    # `test_status_classes_subset_of_authoritative_enum`.
+    from explore_persona_space.task_workflow import STATUSES
+
+    enum = set(STATUSES)
     assert ACTIVE.isdisjoint(PARK)
     assert ACTIVE.isdisjoint(TERMINAL)
     assert PARK.isdisjoint(TERMINAL)
-    canonical = {
-        "proposed", "clarifying", "planning", "plan_pending", "approved",
-        "running", "verifying", "interpreting", "reviewing",
-        "awaiting_promotion", "completed", "blocked", "archived",
-    }  # fmt: skip
-    assert canonical <= (ACTIVE | PARK | TERMINAL)
+    assert enum == ACTIVE | PARK | TERMINAL, (
+        f"session-pass classification disagrees with runtime STATUSES: "
+        f"missing={enum - (ACTIVE | PARK | TERMINAL)}, "
+        f"phantom={(ACTIVE | PARK | TERMINAL) - enum}"
+    )
 
 
 def test_register_writes_atomic_entry(tmp_path, monkeypatch):
@@ -910,6 +917,28 @@ def test_session_stalled_respawn_eligible_returns_respawn():
     assert action == "respawn"
 
 
+def test_session_stalled_respawn_just_below_cap_still_respawns():
+    # Boundary case (reviewer Minor #5): the LAST allowed respawn must still
+    # fire. `respawn_count == max - 1` means we've issued `max - 1` respawns
+    # and are about to issue the `max`-th — that's `<` `max`, so the
+    # comparison must allow it. An off-by-one here (`>` vs `>=`) would
+    # silently cut the budget by 1.
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    action, _ = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=True,
+        missed=1,
+        alerted=False,
+        respawn_eligible=True,
+        respawn_count=STALLED_MAX_RESPAWNS - 1,
+        threshold=2,
+    )
+    assert action == "respawn"
+
+
 def test_session_stalled_respawn_at_cap_returns_exhausted():
     # respawn_eligible=True but respawn_count == max -> exhausted (don't loop).
     from autonomous_session_watch import decide_session_stalled
@@ -1259,6 +1288,55 @@ def test_stalled_stop_failure_skips_spawn(isolated_registry, monkeypatch, stalle
 
     state = json.loads((isolated_registry / "stalled-960.json").read_text())
     assert state["respawn_count"] == 0
+    assert state["exhausted"] is False
+
+
+def test_stalled_missing_session_id_declines_respawn(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Safety regression (reviewer Major #1): if the registry entry has no
+    # usable `happy_session_id` (None, missing, or non-str), the stop
+    # precondition cannot be verified, so we MUST NOT spawn — otherwise
+    # two `--auto` sessions would race on the same issue and double the
+    # pod cost. Stop is not called either (nothing to stop); the tick
+    # persists state and waits for the next entry-read to pick up a
+    # rewritten id.
+    import json
+
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    # Write an autonomous-registry entry with happy_session_id=None.
+    import time as _t
+
+    (isolated_registry / "issue-970.json").write_text(
+        json.dumps(
+            {
+                "issue": 970,
+                "happy_session_id": None,
+                "cwd": "/repo",
+                "auto_approve_gpu_hours": 12.0,
+                "spawned_at": _t.time(),
+                "missed": 0,
+            }
+        )
+    )
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Two stale ticks: threshold met, status ACTIVE, daemon reachable, so
+    # the decision says "respawn" — but the actor must DECLINE because sid
+    # is unusable.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert spawns == []  # NEVER spawned without a verified stop
+    assert stops == []  # nothing to stop in the first place
+    # No respawn-success marker fired.
+    assert all(label != "session-auto-respawn" for _i, label in markers)
+
+    state = json.loads((isolated_registry / "stalled-970.json").read_text())
+    assert state["respawn_count"] == 0  # cap unaffected
     assert state["exhausted"] is False
 
 
