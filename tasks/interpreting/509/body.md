@@ -1,6 +1,8 @@
 ---
-title: 'Apply #502''s 28-layer Gaussian-KL bake-off predictor to fact-leakage and
-  sycophancy transfer targets (reuse existing adapters)'
+title: 'The #502 residual-stream predictor for marker leakage does not transfer to
+  fact or sycophancy leakage at its pre-registered cell, and the syco signal that
+  does survive lives in early end-of-system layers, not the L19-L24 last-prompt ridge
+  (MODERATE confidence)'
 kind: analysis
 tags: []
 created_at: '2026-06-07T01:42:12Z'
