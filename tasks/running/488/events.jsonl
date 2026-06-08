@@ -171,3 +171,4 @@
 {"ts": "2026-06-08T23:45:56Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v6 ready (round-1 critic-ensemble REVISE integrated)."}
 {"ts": "2026-06-08T23:45:56Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v6 auto-approved (autonomous): est 96 GPU-h ≤ 100h cap."}
 {"ts": "2026-06-08T23:45:57Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "Auto-approved by autonomous session: gpu_hours_total=96 <= cap 100."}
+{"ts": "2026-06-08T23:46:49Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "v6 approved (auto, autonomous); dispatching experiment-implementer for ladder pipeline (Phase 2 NEW; Phases 3-5 carried from v5 codebase)."}
