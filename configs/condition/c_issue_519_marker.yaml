@@ -1,0 +1,97 @@
+# Issue #519 — Marker arm condition.
+#
+# Reference card for the marker (lazy-implant) arm. Plan §4.2 / §10 /
+# §11. Hyperparameters of record; the experiment trainer
+# (`scripts/issue_519_train.py`) reads this file directly via OmegaConf
+# and does NOT compose with the project's training/lora schema (the
+# §11 anchor is r=8 / α=16 / lr=1e-6 / 200 steps with the marker-only
+# collator, which doesn't fit the c8_no_intervention two-phase
+# scaffold cleanly — see implementer report §(b)).
+name: c_issue_519_marker
+condition_id: 519
+arm: marker
+phase: single_phase_lora_sft
+
+# Source persona — plan §11 row 2. medical_doctor matches #247/#329.
+source_persona: medical_doctor
+
+# Negative personas — plan §11 row 13. Three close peers + the default
+# assistant. The default is mandatory per
+# `.claude/rules/contrastive-negatives.md`.
+negative_personas:
+  - comedian
+  - police_officer
+  - software_engineer
+  - assistant
+
+# Marker — plan §11 row 1. ` ※` (leading space) = Qwen-2.5-7B id 83399.
+# NOT [ZLT] (multi-token, deprecated) and NOT bare `※` (id 63680).
+marker_token: " ※"
+marker_token_id: 83399
+im_end_token_id: 151645  # Qwen-2.5 <|im_end|>
+
+# Training mix — plan §4.1.
+data_path: data/issue_519/marker_seed${seed}.jsonl
+question_pool: data/leakage_experiment/marker_villain_asst_excluded_medium.jsonl
+n_positives: 200
+n_negatives_per_persona: 50    # 4 × 50 = 200, ratio 1:1
+
+# LoRA hparams — plan §11 rows 3, 5.
+lora:
+  rank: 8
+  alpha: 16
+  dropout: 0.0
+  use_rslora: true
+  target_modules:  # all-modules per Persona Vectors §Dataset and finetuning
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+# Optimizer / schedule — plan §11 rows 4, 5, 9, 10.
+training:
+  learning_rate: 1.0e-6
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  max_steps: 200
+  batch_size: 2
+  grad_accumulation: 8
+  max_seq_length: 2048
+  weight_decay: 0.01
+  optimizer: adamw_torch
+  bf16: true
+  train_on_responses_only: true  # marker-only collator overrides for positives
+  # Marker-only collator config — plan §11 row 11. Validated #474 port.
+  marker_only_collator:
+    tail_tokens: 0
+    suppress_at_post_response_slot: true
+
+# Saturation gate — plan §4.3.
+saturation_gate:
+  metric: marker_logprob_delta_source
+  lower_nats: 5.0
+  upper_nats: 12.0
+  lr_ladder: [5.0e-7, 1.0e-6, 2.0e-6]   # down-step / centered / up-step
+
+# Periodic trajectory callbacks — plan §4.2.
+periodic_eval:
+  leakage:
+    enabled: true
+    mode: marker_logprob       # NEW for #519 — on-policy log P(' ※') + emission rate
+    every_steps: 5
+    personas:
+      - medical_doctor
+      - assistant
+      - comedian
+      - police_officer
+      - software_engineer
+      - villain               # 4-persona random sample from 24-panel (seed=0)
+      - librarian             # ditto
+      - data_scientist        # ditto
+      - kindergarten_teacher  # ditto
+    n_questions: 20
+
+seeds: [42, 137, 256]
