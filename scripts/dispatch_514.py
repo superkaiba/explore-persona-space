@@ -228,6 +228,12 @@ def phase0_build_data(
     Returns ``{cell_slug: train_jsonl_path}``.
     """
     # Import here so module import doesn't pull in HF transformers et al.
+    # Reuse #508's training-data builder verbatim — single-variable rule says
+    # the contrastive recipe stays byte-identical with #508. ``scripts/`` is
+    # not a Python package, so load dispatch_508 by file path via importlib.
+    import importlib.util
+    from pathlib import Path as _Path
+
     from explore_persona_space.experiments.factor_screen_365.persona_panel import (
         EVAL_PERSONAS_24,
     )
@@ -242,9 +248,13 @@ def phase0_build_data(
         load_q_train,
     )
 
-    # Reuse #508's training-data builder verbatim — single-variable rule says
-    # the contrastive recipe stays byte-identical with #508.
-    from scripts.dispatch_508 import _build_canonical_training_jsonl
+    _disp508_path = _Path(__file__).parent / "dispatch_508.py"
+    _spec = importlib.util.spec_from_file_location("_dispatch_508", _disp508_path)
+    if _spec is None or _spec.loader is None:
+        raise RuntimeError(f"Could not load dispatch_508.py from {_disp508_path}")
+    _disp508 = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_disp508)
+    _build_canonical_training_jsonl = _disp508._build_canonical_training_jsonl
 
     output_root.mkdir(parents=True, exist_ok=True)
     train_dir = output_root / "training"
@@ -362,8 +372,15 @@ def phase2_eval_cell(
     seed: int,
     output_root: Path,
     base_model: str,
-) -> None:
-    """Run vLLM batched eval on a trained FT cell. Forwards to #508's eval_one_cell."""
+) -> Path:
+    """Run vLLM batched eval on a trained FT cell. Forwards to #508's eval_one_cell.
+
+    The signature mirrors #508's ``phase2_eval_cell`` (FT-only path) — we pass
+    ``is_full_ft=True``, ``lora_adapter_path=None``, ``full_ft_checkpoint_dir``,
+    and let eval_one_cell's defaults populate the eval panel
+    (persona_bank, eval_questions, held_out_personas, source_persona,
+    eval_source, eval_qwen_default).
+    """
     from explore_persona_space.experiments.lora_vs_ft_508.eval_one_cell import (
         eval_one_cell,
     )
@@ -385,11 +402,13 @@ def phase2_eval_cell(
         cell_slug=cell_slug,
         arm="fullft",
         seed=seed,
-        base_model=base_model,
+        output_path=eval_json,
+        is_full_ft=True,
         lora_adapter_path=None,
         full_ft_checkpoint_dir=cell_dir,
-        eval_json_path=eval_json,
+        base_model=base_model,
     )
+    return eval_json
 
 
 def _maybe_cleanup_fullft_checkpoint(cell_dir: Path) -> None:
