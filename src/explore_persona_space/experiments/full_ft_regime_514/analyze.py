@@ -213,11 +213,20 @@ def _linear_interp_at(
     ys: list[float],
     target_x: float,
 ) -> float:
-    """Linear interpolation across (xs, ys) at target_x.
+    """Linear interpolation (with extrapolation) across (xs, ys) at target_x.
 
-    Returns NaN if fewer than 2 valid points OR if extrapolating beyond the
-    convex hull (we want the LOCAL bracketing read, not an extrapolation;
-    extrapolation is flagged separately in ``is_extrapolation``).
+    Returns NaN only if fewer than 2 valid points. When target_x is outside
+    the convex hull of xs, extrapolates linearly from the two nearest anchors
+    (the bottom pair when target is below the lower-anchor, the top pair when
+    target is above the upper-anchor). The caller is responsible for setting
+    ``is_extrapolation`` and reporting the extrapolation distance — see
+    :func:`_compute_local_matched_rate_read`.
+
+    B10 round-4 pivot: the round-3 strict-bracket version returned NaN under
+    extrapolation. Per plan §6.4 v3 pivot, that defeated the H1 headline when
+    the only clean below-target FT anchor (``ft_b1`` at source ΔG ≈ 8.193 nat)
+    sat slightly above the target (8.0 nat). The new policy carries a finite
+    extrapolated value forward and lets the determinacy gate operate on it.
     """
     import math
 
@@ -226,9 +235,22 @@ def _linear_interp_at(
     )
     if len(pairs) < 2:
         return float("nan")
-    # Strict bracket only; extrapolation is the caller's concern.
-    if target_x < pairs[0][0] or target_x > pairs[-1][0]:
-        return float("nan")
+    # Below the lower anchor → linearly extrapolate from the bottom pair.
+    if target_x < pairs[0][0]:
+        x1, y1 = pairs[0]
+        x2, y2 = pairs[1]
+        if x2 == x1:
+            return y1
+        t = (target_x - x1) / (x2 - x1)
+        return y1 + t * (y2 - y1)
+    # Above the upper anchor → linearly extrapolate from the top pair.
+    if target_x > pairs[-1][0]:
+        x1, y1 = pairs[-2]
+        x2, y2 = pairs[-1]
+        if x2 == x1:
+            return y2
+        t = (target_x - x1) / (x2 - x1)
+        return y1 + t * (y2 - y1)
     for i in range(len(pairs) - 1):
         x1, y1 = pairs[i]
         x2, y2 = pairs[i + 1]
@@ -245,17 +267,30 @@ def _compute_local_matched_rate_read(
     diagnostics_514: list[dict],
     diagnostics_508_ft_anchors: list[dict],
     target_nat: float = MATCHED_RATE_TARGET_NAT,
-) -> tuple[float, bool, list[dict]]:
+) -> tuple[float, bool, float, list[dict]]:
     """Compute the #514 LOCAL linear-interpolation read at source ΔG = target_nat.
 
     Per plan §6.4: use the clean above-9-nat #514 cell(s) + #508 ft_b1 as the
     lower-flank anchor (#508 ft_b1 had source ΔG ≈ 8.2 nat — straddling
-    target_nat=8 from below). Returns (local_read_nat, is_extrapolation,
-    anchor_cells_used).
+    target_nat=8 from below). Returns
+    ``(local_read_nat, is_extrapolation, extrapolation_distance_nat,
+    anchor_cells_used)``.
 
     ``is_extrapolation`` is True iff the chosen anchor pair does NOT straddle
     ``target_nat`` (per the Claude statistics critic's concern: when both
     bracketing cells sit above target, the read is extrapolation).
+
+    ``extrapolation_distance_nat`` is the signed distance from the target to
+    the nearest in-range anchor: NEGATIVE when extrapolating BELOW the lower
+    anchor (``target_nat - min(xs)``), POSITIVE when extrapolating ABOVE the
+    upper anchor (``target_nat - max(xs)``), 0.0 when target sits exactly at
+    an anchor, NaN when target is strictly bracketed (i.e. ``is_extrapolation
+    is False``). Reported in ``_matched_rate_514.json`` so a reader can weigh
+    whether the extrapolation is small (e.g. 0.2 nat) or large (e.g. 2 nat).
+
+    B10 round-4 pivot: when target falls outside the anchor range, the read
+    now emits a finite extrapolated value instead of NaN. The determinacy
+    gate still applies — extrapolation does not bypass it.
 
     B7 round-3 fix: BOTH #514 cells (via ``clean_above_9_nat``) AND #508 FT
     anchors are gated through :func:`is_clean_anchor`. The previous round-2
@@ -288,16 +323,26 @@ def _compute_local_matched_rate_read(
             candidates.append(d)
 
     if len(candidates) < 2:
-        return (float("nan"), False, candidates)
+        return (float("nan"), False, float("nan"), candidates)
 
     xs = [float(d["source_mean"]) for d in candidates]
     ys = [float(d["held_out_mean"]) for d in candidates]
     local_read = _linear_interp_at(xs, ys, target_nat)
 
     # Bracketing check: does (min(xs), max(xs)) straddle target_nat?
-    is_extrap = True if not xs else not (min(xs) <= target_nat <= max(xs))
+    x_min = min(xs)
+    x_max = max(xs)
+    is_extrap = not (x_min <= target_nat <= x_max)
 
-    return (local_read, is_extrap, candidates)
+    # Signed extrapolation distance: target − nearest_in_range_anchor.
+    # NEGATIVE when extrapolating BELOW the lower anchor, POSITIVE when ABOVE
+    # the upper anchor, NaN when strictly bracketed.
+    if is_extrap:
+        extrap_distance = target_nat - x_min if target_nat < x_min else target_nat - x_max
+    else:
+        extrap_distance = float("nan")
+
+    return (local_read, is_extrap, extrap_distance, candidates)
 
 
 def _extract_bootstrap_matched_rate(delegated_analysis: dict) -> float:
@@ -383,7 +428,12 @@ def _write_matched_rate_514(
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    local_read, is_extrapolation, anchor_cells = _compute_local_matched_rate_read(
+    (
+        local_read,
+        is_extrapolation,
+        extrapolation_distance_nat,
+        anchor_cells,
+    ) = _compute_local_matched_rate_read(
         diagnostics_514=diagnostics_514,
         diagnostics_508_ft_anchors=diagnostics_508,
         target_nat=MATCHED_RATE_TARGET_NAT,
@@ -394,10 +444,13 @@ def _write_matched_rate_514(
         gap_nat = float("nan")
         determinate = False
     else:
+        # B10 round-4 pivot: determinacy gate still applies under
+        # extrapolation. The finite extrapolated local_read replaces the
+        # round-3 NaN, so |local − bootstrap| is computed against a real value.
         gap_nat = abs(local_read - bootstrap_read)
         determinate = gap_nat <= DETERMINACY_GATE_THRESHOLD_NAT
     summary = {
-        "schema_version": "i514_matched_rate_v2",
+        "schema_version": "i514_matched_rate_v3",
         "matched_slice_target_nats": MATCHED_RATE_TARGET_NAT,
         "matched_slice_band_nats": 1.0,
         # Plan §6.4 determinacy gate (B4 round-2 fix).
@@ -407,6 +460,12 @@ def _write_matched_rate_514(
         "determinate": determinate,
         "gate_threshold_nat": DETERMINACY_GATE_THRESHOLD_NAT,
         "is_extrapolation": is_extrapolation,
+        # B10 round-4 pivot: signed extrapolation distance, NaN if strictly
+        # bracketed. Reported so a reader can weigh how far the read sits
+        # outside the anchor pair.
+        "extrapolation_distance_nat": (
+            extrapolation_distance_nat if not math.isnan(extrapolation_distance_nat) else None
+        ),
         "local_read_anchor_cells": [d["cell"] for d in anchor_cells],
         "h1_pass": bracketing_report["h1_pass"],
         "n_clean_above_9_nat": bracketing_report["n_clean_above_9_nat"],
@@ -433,24 +492,30 @@ def _write_matched_rate_514(
         "note": (
             f"Determinacy gate: |local − bootstrap| ≤ "
             f"{DETERMINACY_GATE_THRESHOLD_NAT} nat (plan §6.4). Local read = "
-            f"linear interpolation across (#514 clean above-9-nat cells + "
-            f"#508 FT anchors) at source ΔG = {MATCHED_RATE_TARGET_NAT} nat. "
+            f"linear interpolation (or extrapolation, per plan §6.4 v3 pivot) "
+            f"across (#514 clean above-9-nat cells + #508 FT anchors) at source "
+            f"ΔG = {MATCHED_RATE_TARGET_NAT} nat. "
             f"Bootstrap read = lora_vs_ft_508.analyze run_analysis "
             f"matched_rate_gap.fullft_held_out_at_target_mean. "
-            f"is_extrapolation=True iff bracketing anchors don't straddle target."
+            f"is_extrapolation=True iff bracketing anchors don't straddle target. "
+            f"extrapolation_distance_nat: signed (target − nearest_anchor); "
+            f"negative below the lower anchor, positive above the upper, NaN "
+            f"when strictly bracketed."
         ),
         "timestamp_utc": _dt.datetime.now(_dt.UTC).isoformat(),
     }
     output_path.write_text(json.dumps(summary, indent=2))
     log.info(
         "[analyze] wrote matched-rate summary → %s "
-        "(local=%.3f, bootstrap=%.3f, gap=%.3f, determinate=%s, is_extrap=%s)",
+        "(local=%.3f, bootstrap=%.3f, gap=%.3f, determinate=%s, is_extrap=%s, "
+        "extrap_distance=%.3f)",
         output_path,
         local_read if not math.isnan(local_read) else float("nan"),
         bootstrap_read if not math.isnan(bootstrap_read) else float("nan"),
         gap_nat if not math.isnan(gap_nat) else float("nan"),
         determinate,
         is_extrapolation,
+        extrapolation_distance_nat,
     )
     return summary
 

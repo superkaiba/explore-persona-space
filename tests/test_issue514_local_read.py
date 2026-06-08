@@ -163,7 +163,7 @@ def test_local_read_scenario_a_ft_b1_alone_degenerates():
     """Scenario (a): only ft_b1 in the candidate pool — fewer than 2 anchors,
     local read MUST return NaN (no degenerate single-point extrapolation).
     """
-    local_read, _is_extrap, anchors = _compute_local_matched_rate_read(
+    local_read, _is_extrap, _extrap_dist, anchors = _compute_local_matched_rate_read(
         diagnostics_514=[],
         diagnostics_508_ft_anchors=[FT_B1_CLEAN],
         target_nat=MATCHED_RATE_TARGET_NAT,
@@ -175,17 +175,20 @@ def test_local_read_scenario_a_ft_b1_alone_degenerates():
 
 
 def test_local_read_scenario_b_ft_b1_plus_clean_above_9():
-    """Scenario (b): ft_b1 + one clean #514 above-9-nat cell → interpolation.
+    """Scenario (b): ft_b1 + one clean #514 above-9-nat cell → extrapolation
+    that emits a FINITE value (B10 round-4 pivot).
 
-    With ft_b1 (source=8.19) and a synthetic above-9-nat cell (source=10.0),
-    target=8 nat falls BELOW both anchors → flagged as extrapolation but the
-    read still emits (linear interp at target falls outside the closed
-    bracket and returns NaN per ``_linear_interp_at``'s strict-bracket rule).
+    With ft_b1 (source=8.193) and a synthetic above-9-nat cell (source=10.0),
+    target=8 nat sits 0.193 nat BELOW the lower anchor → flagged as
+    extrapolation. Per plan §6.4 v3 pivot the read MUST emit a finite linear
+    extrapolation rather than NaN (the round-3 strict-bracket behavior
+    defeated the H1 headline). The signed extrapolation distance is
+    ``target - min(xs) = 8.0 - 8.193 = -0.193`` nat.
 
-    More usefully, the clean above-9-nat anchor pair (8.19, 10.0) does
-    bracket source ΔG = 9 nat → a future test verifying interpolation at
-    9 nat would yield a finite read. Here we test the brief's stated
-    interpolation-not-extrapolation property at target = 8 nat.
+    Pre-B10 (round 3) this test asserted ``is_extrap is True AND
+    math.isnan(local_read)`` — that codified the round-3 bug. The new policy
+    keeps the True extrapolation flag, but replaces the NaN with the finite
+    extrapolated value and adds the signed-distance assertion.
     """
     cell_514_clean = _diag(
         "ft_dense_b40",
@@ -197,20 +200,25 @@ def test_local_read_scenario_b_ft_b1_plus_clean_above_9():
         lever="dense",
         clean_above_9_nat=True,
     )
-    local_read, is_extrap, anchors = _compute_local_matched_rate_read(
+    local_read, is_extrap, extrap_dist, anchors = _compute_local_matched_rate_read(
         diagnostics_514=[cell_514_clean],
         diagnostics_508_ft_anchors=[FT_B1_CLEAN],
         target_nat=MATCHED_RATE_TARGET_NAT,
     )
     cell_names = {a["cell"] for a in anchors}
     assert cell_names == {"ft_b1", "ft_dense_b40"}
-    # ft_b1's source_mean (8.19) DOES bracket target=8 from above; in fact
-    # min(8.19, 10.0) = 8.19 > 8.0 → both anchors sit ABOVE target → this
-    # is correctly flagged as extrapolation, and the strict-bracket
-    # _linear_interp_at returns NaN (the read is *not* a valid interpolation
-    # at target=8 nat with only above-side anchors).
+    # min(8.193, 10.0) = 8.193 > 8.0 → both anchors sit ABOVE target → flag
+    # as extrapolation.
     assert is_extrap is True
-    assert math.isnan(local_read)
+    # B10: signed extrapolation distance = target - min(xs) = 8.0 - 8.193
+    # ≈ -0.193 nat (extrapolating BELOW the lower anchor).
+    assert math.isclose(extrap_dist, 8.0 - 8.193, abs_tol=1e-9)
+    # Linear extrapolation from the (8.193, -0.31) → (10.0, -2.5) anchor pair
+    # at target=8.0: y = -0.31 + (8.0 - 8.193) / (10.0 - 8.193) * (-2.5 - -0.31)
+    slope = (-2.5 - (-0.31)) / (10.0 - 8.193)
+    expected = -0.31 + (8.0 - 8.193) * slope
+    assert math.isfinite(local_read)
+    assert math.isclose(local_read, expected, abs_tol=1e-9)
 
 
 def test_local_read_scenario_c_excludes_ft_b2_current_bug():
@@ -223,7 +231,7 @@ def test_local_read_scenario_c_excludes_ft_b2_current_bug():
     ft_b2 fails ``is_clean_anchor`` so only ft_b1 remains → degenerate (as
     scenario a), local_read = NaN.
     """
-    local_read, _is_extrap, anchors = _compute_local_matched_rate_read(
+    local_read, _is_extrap, _extrap_dist, anchors = _compute_local_matched_rate_read(
         diagnostics_514=[],
         diagnostics_508_ft_anchors=[FT_B1_CLEAN, FT_B2_COLLAPSED],
         target_nat=MATCHED_RATE_TARGET_NAT,
@@ -277,12 +285,84 @@ def test_local_read_interpolates_when_target_is_strictly_bracketed():
         r_collapse_rate=0.0,
         held_out_g_logprob_mean=-7.0,
     )
-    local_read, is_extrap, anchors = _compute_local_matched_rate_read(
+    local_read, is_extrap, extrap_dist, anchors = _compute_local_matched_rate_read(
         diagnostics_514=[],
         diagnostics_508_ft_anchors=[below, above],
         target_nat=MATCHED_RATE_TARGET_NAT,  # 8.0 nat — strictly between 7 and 9
     )
     assert {a["cell"] for a in anchors} == {"ft_synth_below", "ft_synth_above"}
     assert is_extrap is False
+    # B10: when strictly bracketed, the extrapolation distance is NaN.
+    assert math.isnan(extrap_dist)
     # Linear interp: target=8 sits midway between 7 and 9 → y = (-1 + -3)/2 = -2
     assert math.isclose(local_read, -2.0, abs_tol=1e-9)
+
+
+def test_local_read_extrapolation_carries_finite_value_and_flag():
+    """B10 round-4 pivot: extrapolation emits a FINITE value AND sets the
+    is_extrapolation flag AND reports a signed extrapolation_distance.
+
+    Constructs both flavors:
+      - target BELOW the lower anchor (negative extrap distance)
+      - target ABOVE the upper anchor (positive extrap distance)
+
+    Verifies the determinacy gate is computed against the finite value, not
+    against NaN.
+    """
+    below_pair_a = _diag(
+        "ft_a",
+        source_mean=9.0,
+        held_out_mean=-2.0,
+        source_n_probes=20,
+        r_collapse_rate=0.0,
+        held_out_g_logprob_mean=-7.0,
+    )
+    below_pair_b = _diag(
+        "ft_b",
+        source_mean=11.0,
+        held_out_mean=-4.0,
+        source_n_probes=20,
+        r_collapse_rate=0.0,
+        held_out_g_logprob_mean=-7.0,
+    )
+    # Target=8 sits 1 nat BELOW the lower anchor (9.0).
+    local_read, is_extrap, extrap_dist, _anchors = _compute_local_matched_rate_read(
+        diagnostics_514=[],
+        diagnostics_508_ft_anchors=[below_pair_a, below_pair_b],
+        target_nat=8.0,
+    )
+    assert is_extrap is True
+    # Signed distance: target - min(xs) = 8.0 - 9.0 = -1.0
+    assert math.isclose(extrap_dist, -1.0, abs_tol=1e-9)
+    # Linear extrap from (9, -2) → (11, -4): slope=-1, y(8) = -2 + (8-9)*(-1) = -1.
+    assert math.isfinite(local_read)
+    assert math.isclose(local_read, -1.0, abs_tol=1e-9)
+
+    above_pair_a = _diag(
+        "ft_c",
+        source_mean=5.0,
+        held_out_mean=1.0,
+        source_n_probes=20,
+        r_collapse_rate=0.0,
+        held_out_g_logprob_mean=-7.0,
+    )
+    above_pair_b = _diag(
+        "ft_d",
+        source_mean=7.0,
+        held_out_mean=-1.0,
+        source_n_probes=20,
+        r_collapse_rate=0.0,
+        held_out_g_logprob_mean=-7.0,
+    )
+    # Target=8 sits 1 nat ABOVE the upper anchor (7.0).
+    local_read2, is_extrap2, extrap_dist2, _anchors2 = _compute_local_matched_rate_read(
+        diagnostics_514=[],
+        diagnostics_508_ft_anchors=[above_pair_a, above_pair_b],
+        target_nat=8.0,
+    )
+    assert is_extrap2 is True
+    # Signed distance: target - max(xs) = 8.0 - 7.0 = +1.0
+    assert math.isclose(extrap_dist2, 1.0, abs_tol=1e-9)
+    # Linear extrap from (5, 1) → (7, -1): slope=-1, y(8) = 1 + (8-5)*(-1) = -2.
+    assert math.isfinite(local_read2)
+    assert math.isclose(local_read2, -2.0, abs_tol=1e-9)
