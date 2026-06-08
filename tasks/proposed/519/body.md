@@ -16,6 +16,11 @@ relates_to:
 - leak-predictor
 - leak-behavior-vs-marker
 ---
+## Goal
+
+Test whether the rank-one law (constant shift-direction + cosine-scaled magnitude) governs cross-context generalization of two implanted behaviors -- a marker (lazy) and emergent misalignment (rich) -- by comparing per-context activation shift vectors across a held-out persona panel, predicting it holds for the marker and breaks for EM.
+
+
 ## Hypothesis
 
 A behavior implant's cross-context generalization is approximately a **rank-one edit** to the model's context->behavior map: installing the behavior in a source context shifts behavior at every *other* context (i) in the **same activation-space direction** (the installed shift), with (ii) **magnitude scaling with the base-model context cosine** between that context and the source.
