@@ -260,7 +260,13 @@ def filter_nsfw(
         threshold,
         len(conversations),
     )
-    detox_model = Detoxify("original")
+    # Hot-fix (experimenter, 2026-06-08): explicitly run Detoxify on GPU.
+    # Without device="cuda" the model runs CPU-only at ~150 rows/min on the
+    # full 94k ShareGPT, blowing the Phase A wall budget. H100 + GPU Detoxify
+    # is ~10-30× faster.
+    import torch as _torch
+
+    detox_model = Detoxify("original", device="cuda" if _torch.cuda.is_available() else "cpu")
 
     kept: list[dict[str, Any]] = []
     stats = DetoxifyStats(n_total=len(conversations), threshold=threshold)
