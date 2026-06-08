@@ -345,7 +345,10 @@ def build_rows(
                     {
                         "cell": cell,
                         "seed": seed,
-                        "reason": f"out_of_dg_band (dg={source_dg:.2f}, emit={source_emit:.2f} unused-per-fix#2)",
+                        "reason": (
+                            f"out_of_dg_band (dg={source_dg:.2f}, "
+                            f"emit={source_emit:.2f} unused-per-fix#2)"
+                        ),
                     }
                 )
                 continue
@@ -734,7 +737,8 @@ def run_phase2_analysis(
     n_excluded = len(pooled["excluded_cells"])
     if n_excluded > 1:
         notes.append(
-            f"{n_excluded} (cell × seed) excluded for out-of-band source ΔG (emission gate dropped per v5 fix #2) at "
+            f"{n_excluded} (cell × seed) excluded for out-of-band source ΔG "
+            f"(emission gate dropped per v5 fix #2) at "
             f"chosen_frac={chosen_frac} — Indeterminate (anchor unstable across arms)."
         )
     if fit.get("collinearity_warnings"):
