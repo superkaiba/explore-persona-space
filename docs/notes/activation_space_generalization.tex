@@ -4,6 +4,8 @@
 \usepackage{amsmath, amssymb, amsthm}
 \usepackage{bm}
 \usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
 \usepackage{xcolor}
 \usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue]{hyperref}
 \usepackage{parskip}
@@ -12,7 +14,7 @@
 \newcommand{\db}{\Delta b}
 
 \title{\vspace{-2.5em}Predicting fine-tuning generalization from activation geometry\\[0.4em]
-\large Decoding Dan's $M$-update framing}
+\large Decoding Dan's $M$-update framing, and where our results already test it}
 \author{}
 \date{\today}
 
@@ -20,239 +22,284 @@
 \maketitle
 \vspace{-2em}
 
-\section*{The proposal}
+\section*{The idea in one picture}
 
-Represent a \emph{context} as an activation vector $v_c$ (read at the token after the
-last user-message token) and a \emph{behavior} as an activation vector $v_b$ (read at
-the token after the assistant-message token). Suppose that, before training, the
-model's context~$\to$~behavior map is approximately linear,
+Lay out every situation the model can be in --- writing code, giving medical advice,
+role-playing a villain, plain chat --- on a map, where situations the model represents as
+\emph{similar} sit close together. The model's internal representations \emph{are} that
+map: a situation's coordinates are its activation vector $v_c$.
+
+Now fine-tune: ``in \emph{this} situation, do \emph{this} new behavior.'' The conjecture
+is that training plants a \textbf{beacon} for that behavior at one spot on the map, and
+every \emph{other} situation feels the beacon \textbf{in proportion to how close it sits}.
+Train ``be evil when writing code,'' and ``give medical advice'' turns a bit evil too ---
+but only as much as medical advice \emph{looks like} coding to the model. Something
+unrelated feels nothing.
+
+That is the whole proposal. The formula below is just the simplest way to write ``add one
+beacon.'' If it is even roughly right, you could read a base model's map and \emph{predict
+which behaviors a training run will contaminate before running anything} --- predict
+leakage, predict emergent misalignment, from geometry alone.
+
+\section*{The proposal, stated carefully}
+
+\paragraph{Two spaces.}
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Context} $=$ the setting you are in: a persona, a system prompt, a question
+  domain. $v_c$ is the activation \emph{signature of being in that context}.
+  \item \textbf{Behavior} $=$ a response disposition you care about: emit a marker, be
+  evil, refuse, assert a fact. $v_b$ is the activation \emph{signature of exhibiting that
+  behavior}.
+\end{itemize}
+Both are category signatures (persona-vector / steering-vector style), not the raw
+activation of one token of one example. ``Current'' and ``target'' behaviors are just two
+points in behavior space: $v_b'$ is what the model does in context $c'$ \emph{now};
+$v_b''$ is what we \emph{want} it to do there.
+
+\paragraph{The map.} $M$ is the model's \emph{dictionary from contexts to behaviors} ---
+for a given situation, which behavior does it exhibit? --- approximated as linear,
 \[
-  v_b' = M\,v_c'.
+  \underbrace{v_b}_{\text{behavior exhibited}} = M\,\underbrace{v_c}_{\text{situation}} .
 \]
-Dan's conjecture: after fine-tuning context $c'$ to produce a new behavior $v_b''$
-(instead of its original $v_b'$), the map becomes a rank-one correction of the old one,
+$M$ is the existing wiring; it is genuinely a map only if $v_c$ and $v_b$ encode
+\emph{different things} (situation vs.\ disposition). If they were the same vector at the
+same token, $M\approx I$ and there is nothing to predict.
+
+\paragraph{One ambiguity to pin down with Dan.} ``$v_c$ at the token after the user
+message, $v_b$ at the token after the assistant message'' admits two designs, built
+differently:
+\begin{enumerate}[leftmargin=1.4em]
+  \item \emph{Different positions}: $v_c$ read at the end of the user turn (situation,
+  before responding), $v_b$ read from the generated response (what was done). Requires
+  running generation.
+  \item \emph{Same position, different directions}: read both near the user$\to$assistant
+  handoff, $v_c$ $=$ projection onto a ``what's being asked'' subspace, $v_b$ $=$
+  projection onto a ``what I'll do'' subspace. One forward pass, no generation.
+\end{enumerate}
+Both are coherent; the experiment differs. The reading that makes ``how training
+generalizes'' nontrivial is design 1.
+
+\paragraph{The conjecture.} Fine-tuning context $c'$ to produce $v_b''$ instead of $v_b'$
+edits the map by a rank-one correction:
 \[
   \boxed{\;M_{\text{new}} \;=\; M \;+\; (v_b'' - v_b')\,v_c'^{\,\top}\;}
 \]
-The question is whether something of this shape predicts how training on
-$c_0\!\to\!b_0$ generalizes to a different $c_1\!\to\!b_1$.
+``Rank-one'' $=$ the simplest possible edit: one input direction in ($v_c'$), one output
+direction out ($v_b''-v_b'$). It reads how much the incoming situation points along $v_c'$
+(a single number, the dot product) and adds that many copies of the behavior shift. That
+is the beacon, in matrix form.
 
-\section*{What the equation actually claims}
+\section*{What the equation claims}
 
-The update is a rank-one outer product: the behavior shift $(v_b''-v_b')$ times the
-trained context $v_c'^{\,\top}$. Evaluate the new map at the training point:
+Evaluate the new map at the training point:
 \[
   M_{\text{new}}\,v_c'
-  = M v_c' + (v_b''-v_b')\,\ip{v_c'}{v_c'}
-  = v_b' + (v_b''-v_b')\,\|v_c'\|^2 .
+  = v_b' + (v_b''-v_b')\,\|v_c'\|^2 ,
 \]
-This exactly hits the target $v_b''$ only when $\|v_c'\|=1$, so the framing wants to
-live in \emph{normalized / cosine} space with a fitted scalar gain. Now evaluate at a
-\emph{new} context $c_1$:
-\[
-  v_b(c_1) = M v_{c_1} + (v_b''-v_b')\,\ip{v_c'}{v_{c_1}},
-\]
-so the predicted \textbf{change in behavior at any new context} is
+which hits the target $v_b''$ exactly only when $\|v_c'\|=1$ --- so the framing wants
+\emph{normalized / cosine} space with a fitted gain. At a \emph{new} context $c_1$:
 \[
   \boxed{\;\Delta v_b(c_1) \;=\; (v_b''-v_b')\,\cdot\,\ip{v_c'}{v_{c_1}}\;}
 \]
-
-Two falsifiable claims fall out:
-
+Two falsifiable claims:
 \begin{enumerate}[leftmargin=1.4em]
-  \item \textbf{Direction is constant.} The behavior shifts in the \emph{same direction
-  everywhere} --- the direction it was pushed at the training point. Only the magnitude
-  varies across contexts.
-  \item \textbf{Magnitude $\propto$ context cosine.} How much training on $c'$ bleeds
-  into $c_1$ scales with the similarity $\ip{v_c'}{v_{c_1}}$ of their (base-model)
-  context vectors.
+  \item \textbf{Magnitude $\propto$ context similarity.} Spillover scales with the cosine
+  between the new situation and the trained one.
+  \item \textbf{Direction is constant.} The behavior shifts in the \emph{same direction}
+  everywhere; only the magnitude varies.
 \end{enumerate}
+The law factorizes: a constant \emph{direction} (claim 2) times a varying
+\emph{magnitude} (claim 1).
 
-\section*{The clean bridge to what we already measure}
+\section*{Bridging to what we measure}
 
-We do not measure $v_b$ directly; we measure $\Delta \log P(\text{marker})$ on-policy at
-the post-response slot. If the behavior is linearly readable --- the persona-vector
-premise --- there is a probe direction $w$ with $\ell(c) = \ip{w}{v_b(c)}$ for the
-behavior logit. Then
+We do not read $v_b$; we measure $\Delta \log P(\text{marker})$ on-policy at the
+post-response slot. Bridging requires \emph{adding} the persona-vector premise --- that
+the behavior is linearly readable, $\ell(c)=\ip{w}{v_b(c)}$ for a probe $w$. This is an
+assumption layered on top of Dan's formula, not a corollary of it. Granting it,
 \[
   \Delta \ell(c_1)
-  = \ip{w}{\,v_b''-v_b'} \cdot \ip{v_c'}{v_{c_1}}
-  = \underbrace{\ip{w}{\db}}_{\text{one scalar per behavior}} \cdot\; \ip{v_c'}{v_{c_1}}.
+  = \underbrace{\ip{w}{\db}}_{\text{one scalar per behavior}} \cdot\; \ip{v_c'}{v_{c_1}},
 \]
-That is a \textbf{one-free-parameter prediction}: leakage to every bystander context
-should be \emph{linear in its base-model cosine to the trained context, with a single
-shared slope}. Directly testable against the existing leakage tables (\#432$\to$\#456,
-\#448): regress measured $\Delta\log P(\text{marker})$ per persona against base-model
-context cosine; check linearity-through-origin with one slope.
+a one-parameter prediction: leakage linear in base cosine, shared slope per behavior.
+\emph{Caveat:} fine-tuning can rotate the readout $w$ itself, adding a dropped
+$\ip{\Delta w}{v_b}$ term --- so this is cleaner than reality, and it tests only the
+magnitude factor, never the direction factor.
 
-\section*{This is the mechanism for \#404/\#458, not a new direction}
+\section*{Grounding in existing results}
 
-The persona-distance predictor line (\#404/\#458: does base-model KL/JS/cosine predict
-leakage?) is the \emph{empirical} version of exactly this. Dan's $M$-update is the
-generative model that says \emph{why} distance predicts leakage, and it sharpens the
-existing result three ways:
-\begin{itemize}[leftmargin=1.4em]
-  \item predicts the relationship is \textbf{linear in cosine}, not merely monotonic;
-  \item predicts a \textbf{shared slope} across contexts for a fixed behavior;
-  \item adds genuinely new, untested content --- the \textbf{directional claim}: the
-  activation-space shift is the \emph{same direction} everywhere. Current predictors
-  only touch magnitude. Whether $\Delta v_b(c_i)$ is rank-one / constant-direction is the
-  part nobody has checked.
-\end{itemize}
+Our leakage program has already tested the magnitude half of this law. Summary:
 
-\section*{It also explains contrastive negatives (\#18/\#207/\#383)}
+\begin{center}\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}p{0.27\textwidth} p{0.5\textwidth} p{0.15\textwidth}@{}}
+\toprule
+\textbf{Claim} & \textbf{What the evidence says} & \textbf{Status} \\
+\midrule
+P1 magnitude (marker) &
+$|\rho|=0.48\text{–}0.79$ over 6 experiments ($p<10^{-7}$), holds per training step
+($\rho=0.47\text{–}0.70$); cosine \& JS rank-correlate $0.94$ &
+\textbf{Supported} \\
+P1 functional form &
+monotone, \emph{not} linear; no shared slope ever fit; out-of-fold $R^2\!\approx\!0$;
+single-seed &
+Weaker than stated \\
+P1 for emergent misalignment &
+\#458 prose-only $\rho=0.09$; the \#404 $\rho=0.75$ was a code-vs-prose $+$ recipe
+confound (AestheticEM cosine $0.9234$ vs $0.9242$ $\to$ EM $2.3\%$ vs $7.6\%$) &
+\textbf{Fails} \\
+P1 for taught facts &
+distance predicts with the \emph{wrong sign} ($\rho=-0.49$); the base prior on the fact
+predicts ($+0.27$) &
+\textbf{Inverts} \\
+P2 direction constant &
+never measured in activation space; tail-drift (below) is consistent; EM rotates the axis
+$38\text{–}53^\circ$ &
+\textbf{Untested} \\
+Rank-one update &
+never measured (no rank / LoRA-rank sweep) &
+\textbf{Untested} \\
+P3 lazy vs.\ rich (NTK) &
+geometry predicts markers, breaks exactly at EM (reverse $\rho=-0.59$; discrimination
+collapse); never framed as a kernel &
+Incidental support \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-Positive-only training gives $M + \db\,c_{\text{src}}^{\top}$. Leakage at bystander
-$c_j$ is $\db\cdot\ip{c_{\text{src}}}{c_j}$; since persona contexts share a high baseline
-cosine, you get \emph{uniform} leakage --- exactly the \#18/\#207 observation
-(92--98\% on all bystanders). Contrastive negatives add \textbf{negative rank-one terms}
-at the bystander contexts that cancel the $\ip{c_{\text{src}}}{c_j}$ term, which is why
-the distance$\to$leakage gradient exists \emph{only} in the contrastive regime. The
-framing predicts this for free:
-\[
-  M_{\text{new}} \approx M + \db\,c_{\text{src}}^{\top}
-    - \sum_j \varepsilon_j\, c_{\text{byst},j}^{\top}.
-\]
+\paragraph{The cosine predictor \emph{is} Dan's resemblance factor.} The \#207-line
+predictor --- base-model cosine between the source persona and a bystander persona,
+correlated with per-bystander marker leakage --- is, up to normalization and
+position/layer choices, exactly the $\ip{v_c'}{v_{c_1}}$ term. Measuring it and finding it
+predicts leakage \emph{is} confirming the magnitude factor of the generalization law in
+isolation. The direction factor (P2) is the untouched frontier.
 
-\section*{Where it is ``a bit wrong'' (Dan's hedge), ranked by impact}
+\paragraph{Contrastive negatives $=$ common-mode subtraction (a success, not a
+complication).} Two facts that look opposed: positive-only training leaks
+\emph{uniformly} ($92\text{–}98\%$ to all bystanders), yet contrastive training leaks
+\emph{gradedly} (the $|\rho|$ above). The framing reconciles them. Persona contexts all
+sit at $\sim\!0.92$ cosine, so positive-only training $M+\db\,c_{\text{src}}^{\top}$ feels
+a near-constant beacon everywhere $\Rightarrow$ uniform high leakage; the gradient is
+buried under a common-mode term. Contrastive negatives add \emph{negative} rank-one terms
+that \textbf{subtract the common mode}, exposing the residual $\ip{v_c'}{v_{c_1}}$
+variation as a measurable gradient. So ``negatives are required'' is the step that makes
+the cosine factor readable --- predicted, not patched. (Coarse localization buys source
+$\sim\!99.6\%$ vs.\ bystander $\sim\!11.7\%$, against $\sim\!46\text{–}54\%$ in the leaky
+EM-first regime: \#247/\#329.)
 
-\begin{enumerate}[leftmargin=1.4em]
-  \item \textbf{Direction rotation is the real risk.} The strong claim is a
-  context-independent shift direction. Plausibly it rotates --- evil-on-coding could
-  land as ``evil'' nearby but ``off-target weird'' far away. First thing to measure:
-  SVD the matrix of realized $\Delta v_b(c_i)$ and check it is rank-one with right vector
-  $\approx v_c'$ and left vector $\approx \db$.
-  \item \textbf{Rank-one sufficiency.} SGD distributes the update across all weights, so
-  the induced map-change may be higher rank. ROME/MEMIT show narrow edits \emph{are}
-  roughly rank-one, so it is a reasonable prior --- but it is the load-bearing
-  assumption.
-  \item \textbf{$M$ itself shifts $=$ emergent misalignment.} The model assumes $M$ is
-  preserved except along $v_c'$. EM is precisely the failure of that: narrow training
-  broadly rewrites $M$. In-framing, EM corresponds to either (a) a trained context
-  $v_c'$ with high mean similarity to the whole context distribution (a generic context
-  $\Rightarrow$ broad leakage), or (b) a realized shift with a large off-rank-one
-  component. A concrete, testable account of \emph{when} narrow training generalizes
-  broadly.
-  \item \textbf{Normalization \& layer choice.} Needs cosine $+$ fitted gain, and a
-  sweep over which layer / layer-pair gives the cleanest linear $M$. Context and behavior
-  may read best at different layers.
-  \item \textbf{Lossiness.} A single-token $v_c$/$v_b$ may not capture the full
-  context/behavior, and emission goes through softmax $+$ sampling. The linear-probe
-  bridge handles the last step, but only if the behavior is genuinely linearly readable.
-\end{enumerate}
+\paragraph{Why one cosine predictor works and another fails.} Same tool, two regimes.
+The \emph{leakage} cosine (source$\leftrightarrow$bystander \emph{context}) is the
+resemblance factor and works --- the lazy regime, a contentless marker. The
+\emph{EM} cosine (\#404/\#458: narrow-training$\leftrightarrow$broad-misaligned persona)
+points the same trick at emergent misalignment and fails, because EM is the regime where
+training \emph{redraws the whole map} rather than planting a beacon (the assistant axis
+rotates $38\text{–}53^\circ$; persona discrimination collapses to $\sim\!47\%$ uniform
+bystander leakage, EM-specific --- \#125). The two results are the lazy and rich sides of
+one law.
 
-\section*{Extending to the non-linear case}
+\paragraph{The leaked behavior looks direction-stable for markers.} Of firing bystander
+completions, $92.9\%$ emit the marker as a \emph{tail token after an otherwise
+persona-faithful response} (vs.\ $97.6\%$ of source firings at the very start), and the
+residual concentrates on \emph{format / generic} contexts (\#456). Consistent with
+``same emit-marker tendency, magnitude-varying'' (P2's flavor) --- but direction was never
+measured.
 
-The before-map $v_b = M v_c$ is a linearization of the true forward map $f$ between the
-two token positions. Two \emph{distinct} linearizations hide inside Dan's single $M$, and
-separating them is what makes the non-linear extension non-trivial rather than cosmetic.
+\section*{The non-linear extension (NTK / kernel regression)}
 
-\paragraph{Input-space Jacobian (describes current behavior).} For a smooth $f$, locally
-$f(v_c) \approx f(v_c') + J(v_c')(v_c - v_c')$ with $J = \partial v_b/\partial v_c$. So
-the $M$ in Dan's \emph{before} equation is really the Jacobian of the frozen model at the
-operating point. Its predictions hold only \emph{locally}; far from $v_c'$ the
-second-order term dominates and the shift direction rotates --- exactly the
-``direction-rotation'' failure mode, now derived rather than asserted.
+The before-map $v_b = M v_c$ is a linearization of the true forward map. Two distinct
+linearizations hide in the single $M$:
 
-\paragraph{Weight-space NTK (describes how training transfers).} The quantity Dan
-actually wants --- how training on $c'$ generalizes to $c_1$ --- is not an input-space
-object at all; it lives in \emph{weight} space. One gradient step on the regression loss
-$\tfrac12\|f_\theta(c')-b''\|^2$ moves the function at any context $c$ by
+\paragraph{Input-space Jacobian (current behavior).} $M\approx J=\partial v_b/\partial
+v_c$ of the frozen model. Predictions hold only \emph{locally}; far from $v_c'$ the
+curvature term dominates and the shift direction rotates --- the ``direction-rotation''
+risk, now \emph{derived}.
+
+\paragraph{Weight-space NTK (how training transfers).} How training on $c'$ generalizes
+to $c_1$ is a \emph{weight}-space object. One gradient step on $\tfrac12\|f_\theta(c')-b''\|^2$
+moves the function at any $c$ by
 \[
   \Delta f(c) = \eta\,(b'' - f(c'))\,
     \underbrace{\big\langle \nabla_\theta f(c),\ \nabla_\theta f(c')\big\rangle}
     _{\textstyle K(c,c')\ =\ \text{empirical NTK}},
 \]
-and the fully-trained (single-point, min-norm) solution is kernel regression:
+and the single-point min-norm solution is kernel regression:
 \[
   \boxed{\;f_{\text{new}}(c) = f_{\text{old}}(c)
     + \frac{K(c,c')}{K(c',c')}\,\big(b'' - f_{\text{old}}(c')\big)\;}
 \]
+For a linear model $f(c)=Mc$, $\nabla_M f(c)=c$, so $K(c,c')=\ip{c}{c'}$ and this is
+Dan's formula verbatim. \textbf{So the non-linear extension is one swap: the raw
+activation cosine is the \emph{linear-model} NTK; replace it with the network's empirical
+NTK} (Malladi et al., \emph{A Kernel-Based View of LM Fine-Tuning}, 2023). Our cosine
+predictor is therefore \textbf{v1} on a ladder: cosine $\to$ kernelized similarity $\to$
+full NTK. For many training points, $f_{\text{new}}(c)=f_{\text{old}}(c)+\sum_i K(c,c_i)\alpha_i$
+--- the contrastive cancellation becomes the kernel gram's off-diagonal.
 
-\paragraph{Dan's formula is exactly this for a linear model.} Take $f(c)=Mc$. Then
-$\nabla_M f(c) = c$, so $K(c,c') = \ip{c}{c'}$ and, with $\|c'\|=1$,
-\[
-  f_{\text{new}}(c) = f_{\text{old}}(c) + \ip{c'}{c}\,(b'' - v_b'),
-\]
-which is Dan's $\Delta v_b(c) = (v_b''-v_b')\ip{v_c'}{v_c}$ verbatim. The dictionary:
-\begin{itemize}[leftmargin=1.4em]
-  \item behavior shift $(v_b''-v_b')$ $\;\leftrightarrow\;$ residual $b'' - f(c')$;
-  \item context cosine $\ip{v_c'}{v_c}$ $\;\leftrightarrow\;$ normalized NTK
-  $K(c,c')/K(c',c')$.
-\end{itemize}
-\textbf{So the non-linear extension is: replace the activation cosine with the empirical
-NTK.} The raw cosine is the \emph{linear-model} NTK; the network's true NTK
-$K(c,c')=\ip{\nabla_\theta f(c)}{\nabla_\theta f(c')}$ is the object that actually governs
-generalization (Malladi et al., \emph{A Kernel-Based View of LM Fine-Tuning}, 2023). For
-many training points, $f_{\text{new}}(c) = f_{\text{old}}(c) + \sum_i K(c,c_i)\,\alpha_i$
-with $\alpha$ solving the kernel system --- the contrastive-negative cancellation falls
-out as the off-diagonal of the kernel gram, \emph{derived} instead of assumed.
+\paragraph{Lazy vs.\ rich $=$ the whole question.} Kernel regression is exact only in the
+\emph{lazy} regime (NTK constant through training). If persona fine-tuning is lazy, the
+framing-with-NTK is fully predictive. If it is \emph{rich} (feature-learning), training
+moves the kernel itself $\Rightarrow$ generalization is \emph{not} fixed-kernel
+regression --- precisely the in-framing signature of emergent misalignment, and exactly
+where our EM cosine predictor failed. So ``predict generalization from base geometry?''
+and ``why does narrow EM training generalize broadly?'' are the same question from two
+sides: EM $=$ the regime where the kernel drifts.
 
-\paragraph{The deep payoff: lazy vs.\ rich.} The kernel picture is exact only in the
-\emph{lazy} regime, where the NTK stays (approximately) constant through training. If
-persona / marker fine-tuning is lazy, Dan's framing-with-NTK is fully predictive. If it
-is \emph{rich} (feature-learning), training moves the kernel itself, and generalization
-is \emph{not} fixed-kernel regression --- which is precisely the in-framing signature of
-emergent misalignment ($K$ itself is rewritten; failure mode 3 above). So ``can we
-predict generalization from base-model geometry?'' sharpens into the single diagnostic
-\emph{``is persona fine-tuning in the lazy regime?''} --- whose answer decides whether
-the whole program works.
+\paragraph{Two cheaper rungs.} (i) \textbf{Link function}: keep the linear prediction in
+logit space, put the softmax on top, emission rate $=\sigma(\ell_0+\ip{w}{\db}\ip{v_c'}{v_c})$
+--- a GLM, kills the softmax objection for free. (ii) \textbf{Kernelized similarity}:
+$\ip{\phi(v_c')}{\phi(v_c)}$ for a feature map $\phi$ (later layer, learned probe,
+attention features) --- let the data pick the similarity without paying for the NTK.
 
-\paragraph{Two cheaper intermediate extensions.}
-\begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Link function (handles the softmax).} Keep the linear prediction in
-  \emph{logit} space and apply the known output nonlinearity on top: emission rate
-  $=\sigma\!\big(\ell_0 + \ip{w}{\db}\,\ip{v_c'}{v_c}\big)$. A GLM, not a new theory ---
-  removes the softmax-lossiness objection for free.
-  \item \textbf{Kernelize the activation similarity.} Stay in activation space but
-  replace the raw cosine with $\ip{\phi(v_c')}{\phi(v_c)}$ for a feature map $\phi$ (a
-  later / more-processed layer, a learned probe space, attention-pattern features). Let
-  the data pick the similarity that best predicts leakage, without paying for the full
-  NTK.
-\end{itemize}
+\section*{Where it is ``a bit wrong''}
 
-\paragraph{Testable.}
 \begin{enumerate}[leftmargin=1.4em]
-  \item Compute the empirical (LoRA-restricted, hence cheap) NTK gram between contexts;
-  check whether $K(c',c_i)$ predicts held-out leakage \emph{better} than the raw cosine.
-  The gap quantifies how much non-linearity matters.
-  \item \textbf{Lazy-vs-rich diagnostic:} measure how much the NTK itself drifts between
-  base and trained model across the persona panel. Large drift $\Rightarrow$ broad EM,
-  and the fixed-kernel prediction should fail exactly where drift is largest.
+  \item \textbf{Direction rotation.} The constant-direction claim is the strong, untested
+  one; the EM axis rotation ($38\text{–}53^\circ$) says it fails in the rich regime.
+  \item \textbf{Rank-one sufficiency.} SGD spreads the edit; the induced change may be
+  higher rank. ROME/MEMIT make rank-one a reasonable prior, but it is load-bearing and
+  unmeasured here.
+  \item \textbf{$M$ itself shifts $=$ EM} (the lazy/rich item above).
+  \item \textbf{Functional form.} Our data is monotone, not linear, with near-zero
+  out-of-fold power --- the cosine gives the ordering, not Dan's exact proportional form.
 \end{enumerate}
 
-\paragraph{Caveats.} The empirical NTK is expensive in general (a parameter-gradient per
-context); LoRA makes it tractable (gram over only the adapter parameters). The lazy
-assumption is the whole ballgame --- but its \emph{failure} is informative, not fatal: it
-localizes where feature-learning (hence broad generalization) actually happens.
+\section*{Minimal experiment}
 
-\section*{Minimal experiment to nail it}
+\textbf{Headline:} decompose the per-context shift into \emph{direction} and
+\emph{magnitude} across the lazy$\to$rich axis --- testing P2 and P3 at once on rigs we
+already have.
 
-One pod, one clean test:
 \begin{itemize}[leftmargin=1.4em]
-  \item Fix a behavior (the marker is cleanest --- already measured on-policy). Train a
-  single source context $c_0 \to$ marker.
-  \item Across $N$ held-out contexts (the persona panel), measure: (a) realized
-  $\Delta\log P(\text{marker})$; (b) realized activation shift $\Delta v_b(c_i)$;
-  (c) \emph{base-model} context cosines $\ip{v_{c_0}}{v_{c_i}}$.
-  \item \textbf{Headline test:} predict held-out leakage using \emph{only} base-model
-  quantities plus the single training pair. If that prediction correlates with measured
-  leakage across held-out contexts, the framing is predictive. Report (i) variance
-  explained by the rank-one / cosine model, (ii) whether the shift direction is constant,
-  (iii) the residual $=$ the off-target / direction-rotation part.
+  \item Contrastively implant a marker at a \textbf{non-saturated anchor} (log-prob
+  $5\text{–}10$ nats below ceiling --- \#448 showed a fully-trained anchor argmaxes the
+  marker on $264/264$ cells, hiding all structure).
+  \item Across $N$ held-out persona contexts, \textbf{on-policy} (never teacher-forced ---
+  \#432$\to$\#456: a teacher-forced probe put the source at rank $7/28$; on-policy it is
+  $0.90$ emission, rank $1$), measure: (a) $\Delta\log P(\text{marker})$ [magnitude];
+  (b) the activation shift $\Delta v_b(c_i)$ [direction]; (c) base cosine
+  $\ip{v_{c_0}}{v_{c_i}}$.
+  \item Titrate toward EM with the existing dose-response (\#139: $59.3\%\!\to\!0.7\%$
+  marker across the $10\text{–}25$-step cliff). At each dose, SVD the matrix of
+  $\Delta v_b(c_i)$: is it rank-one with constant direction? does magnitude track base
+  cosine?
 \end{itemize}
-Even a partial result (``magnitude is cosine-predictable, direction rotates by
-$X^\circ$'') is publishable and tells us something real.
+\textbf{Prediction:} lazy (low dose) $\Rightarrow$ direction constant $+$ cosine-graded;
+crossing the EM cliff $\Rightarrow$ direction rotates $+$ cosine prediction collapses.
+\textbf{Constraints:} on-policy DV, non-saturated anchor, contrastive regime, $\geq 3$
+seeds (almost all prior work is single-seed with weak out-of-fold power).
+\textbf{Stretch:} swap raw cosine for the LoRA-restricted NTK gram --- does $K$ predict
+magnitude better than cosine? Measure NTK drift base$\to$trained as the lazy/rich
+diagnostic.
 
 \section*{Take}
 
-Worth pursuing, as the \emph{deep} one. It (a) unifies three threads under one
-generative model, (b) upgrades \#404/\#458 from ``distance correlates'' to ``here is the
-mechanism $+$ a directional prediction,'' (c) is Dan's own framing, hence maximally
-aligned, and (d) is exactly the ``fewer experiments, nailed carefully'' shape he keeps
-asking for --- feeding the Aug 31 paper-draft milestone. Caveat if it stalls: do not
-over-invest in the \emph{exact} rank-one form. The valuable deliverable is ``to what
-extent is fine-tuning generalization linearly predictable from base-model activation
-geometry''; the rank-one update is one hypothesis within that, not the whole prize.
+Worth pursuing as the deep one. The framing (a) gives a generative model that already
+explains three of our threads --- the marker leakage gradient (its magnitude factor), the
+contrastive-negatives requirement (common-mode subtraction), and why the EM predictor
+failed (the rich regime); (b) tells us precisely what is left: the \emph{direction}
+factor and the linear-cosine-vs-NTK gap; and (c) is exactly the ``fewer experiments,
+nailed carefully'' shape. Caveat: the durable deliverable is ``how far is fine-tuning
+generalization predictable from base activation geometry,'' with the rank-one edit one
+hypothesis inside it --- do not over-invest in the exact rank-one form.
 
 \end{document}
