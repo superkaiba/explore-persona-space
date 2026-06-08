@@ -1,6 +1,7 @@
 ---
-title: 'Do #502''s persona-distance leakage predictors improve with probe count, or
-  plateau by N=500?'
+title: At 500 probes per persona the cloud-aware leakage predictor has converged,
+  and its 0.06 CV R² lead over the same-layer cosine baseline survives sample-size
+  matching (HIGH confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-07T01:49:33Z'

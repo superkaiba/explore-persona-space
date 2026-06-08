@@ -2930,7 +2930,7 @@
       "kind": "analysis",
       "path": "tasks/interpreting/511",
       "status": "interpreting",
-      "title": "Do #502's persona-distance leakage predictors improve with probe count, or plateau by N=500?"
+      "title": "At 500 probes per persona the cloud-aware leakage predictor has converged, and its 0.06 CV R\u00b2 lead over the same-layer cosine baseline survives sample-size matching (HIGH confidence)"
     },
     "512": {
       "has_clean_result": false,
