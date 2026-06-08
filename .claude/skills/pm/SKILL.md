@@ -64,6 +64,25 @@ flow. The PM's job is dispatch, not execution.
    The folder name under `tasks/` is the durable source of truth for status. Group rows client-side by
    `experiments.status`; use `python scripts/task.py view <N>` for
    details and recent workflow events.
+
+   **Fleet-burn / $-per-hour figures cited in any incoming directive are
+   advisory and go stale as pods churn between when the directive was
+   written and when you act on it.** Before acting on or reporting fleet
+   burn — including when a directive says "fleet burn ~$X/hr" or "the
+   fleet is burning $X/hr" — recompute it fresh from the live RunPod API
+   (authoritative per CLAUDE.md § "Authority split"): enumerate live
+   running pods + their GPU specs via the `pod.py list-ephemeral` output
+   above, and read the actual `$/hr` from `current_account_hourly_burn()`
+   in `scripts/runpod_api.py` (the same helper the provision cap-check
+   uses; one-liner: `uv run python -c "import sys;
+   sys.path.insert(0, 'scripts'); from runpod_api import
+   current_account_hourly_burn; t, b = current_account_hourly_burn();
+   print(f'${t:.2f}/hr'); [print(f'  {n:<22} ${r:6.2f}/hr') for n, r in
+   b]"`). If the fresh value differs materially from the directive's
+   cited number, use the fresh value and note the discrepancy in your
+   reply (e.g. "directive cited ~$65/hr; live burn is $112.50/hr"). #506
+   acted on a cited "~$65/hr" while live burn was $112.50/hr (~$47/hr
+   stale).
 3. Produce the standard 5–10 bullet state snapshot per
    `research-pm.md` Mode 1 — phases, in-flight, blocked, queue depth,
    open questions. Quantitative, terse.
