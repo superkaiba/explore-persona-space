@@ -1,0 +1,8 @@
+{
+  "comparison_mode": "intersection",
+  "demote_h7_7b": false,
+  "n_used": 3,
+  "rho": -1.0,
+  "rho_ceiling": 0.85,
+  "verdict": "INDEPENDENT_METHODS"
+}

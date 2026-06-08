@@ -1,8 +1,8 @@
 {
-  "k": 24,
-  "n": 510,
-  "rate": 0.047058823529411764,
-  "n_errors": 10,
+  "k": 22,
+  "n": 512,
+  "rate": 0.04296875,
+  "n_errors": 8,
   "n_static_positive": 0,
   "judge_id": "d_advbench",
   "judge_model": "claude-sonnet-4-5",

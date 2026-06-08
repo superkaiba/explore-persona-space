@@ -1,0 +1,14 @@
+[
+  {
+    "source": "D2_gradient",
+    "target_id": "D_advbench",
+    "seed": 42,
+    "k": 7,
+    "n": 513,
+    "rate": 0.01364522417153996,
+    "n_errors": 7,
+    "n_static_positive": 0,
+    "median_tokens": 12.25,
+    "truncation_rate": 0.0
+  }
+]

@@ -1,7 +1,7 @@
 {
-  "k": 24,
+  "k": 34,
   "n": 510,
-  "rate": 0.047058823529411764,
+  "rate": 0.06666666666666667,
   "n_errors": 10,
   "n_static_positive": 0,
   "judge_id": "d_advbench",

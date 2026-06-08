@@ -1,0 +1,14 @@
+[
+  {
+    "source": "D1_representation",
+    "target_id": "D_advbench",
+    "seed": 42,
+    "k": 10,
+    "n": 515,
+    "rate": 0.019417475728155338,
+    "n_errors": 5,
+    "n_static_positive": 0,
+    "median_tokens": 43.75,
+    "truncation_rate": 0.0
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "source": "D4_format",
+    "target_id": "D_advbench",
+    "seed": 137,
+    "k": 16,
+    "n": 514,
+    "rate": 0.0311284046692607,
+    "n_errors": 6,
+    "n_static_positive": 0,
+    "median_tokens": 38.0,
+    "truncation_rate": 0.0
+  }
+]

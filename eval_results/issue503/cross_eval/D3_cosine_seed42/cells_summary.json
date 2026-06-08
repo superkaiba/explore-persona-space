@@ -1,0 +1,14 @@
+[
+  {
+    "source": "D3_cosine",
+    "target_id": "D_advbench",
+    "seed": 42,
+    "k": 36,
+    "n": 511,
+    "rate": 0.07045009784735812,
+    "n_errors": 9,
+    "n_static_positive": 0,
+    "median_tokens": 26.375,
+    "truncation_rate": 0.0
+  }
+]

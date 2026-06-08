@@ -1,0 +1,134 @@
+{
+  "n_rows": 15,
+  "pre_reg_strata": [
+    "N_to_N",
+    "N_to_B_EM",
+    "N_to_B_syco"
+  ],
+  "per_stratum_rho": {
+    "N_to_N": {
+      "rho": NaN,
+      "p_value": NaN,
+      "n": 0
+    },
+    "N_to_B_EM": {
+      "rho": 0.1948168785072037,
+      "p_value": 0.4865685934637132,
+      "n": 15
+    },
+    "N_to_B_syco": {
+      "rho": NaN,
+      "p_value": NaN,
+      "n": 0
+    }
+  },
+  "headline_h4": {
+    "pooled": {
+      "rho": 0.1948168785072037,
+      "p_value": 0.4865685934637132,
+      "n": 15
+    },
+    "pooled_bootstrap_ci_low": -0.4068740097869807,
+    "pooled_bootstrap_ci_high": 0.7149633787704275,
+    "per_strata": {
+      "N_to_N": {
+        "rho": NaN,
+        "p_value": NaN,
+        "n": 0
+      },
+      "N_to_B_EM": {
+        "rho": 0.1948168785072037,
+        "p_value": 0.4865685934637132,
+        "n": 15
+      },
+      "N_to_B_syco": {
+        "rho": NaN,
+        "p_value": NaN,
+        "n": 0
+      }
+    },
+    "permutation": {
+      "rho_obs": 0.1948168785072037,
+      "percentile_under_null": 0.777,
+      "n_iter": 1000
+    },
+    "pre_reg_strata": [
+      "N_to_N",
+      "N_to_B_EM",
+      "N_to_B_syco"
+    ],
+    "headline_pass": false,
+    "per_strata_pass_above_0.20": false,
+    "pooled_pass_above_0.40": false,
+    "bootstrap_ci_excludes_zero": false,
+    "perm_null_one_sided_above_0975": false
+  },
+  "partial_ladder": {
+    "raw": {
+      "rho": 0.1948168785072037,
+      "p_value": 0.4865685934637132
+    },
+    "partial_log_tokens": {
+      "rho": 0.1948168785072037,
+      "p_value": 0.4865685934637132
+    },
+    "partial_log_tokens_lexical": {
+      "rho": 0.1948168785072037,
+      "p_value": 0.4865685934637132
+    },
+    "partial_log_tokens_lexical_base_rate": {
+      "rho": 0.1948168785072037,
+      "p_value": 0.4865685934637132
+    }
+  },
+  "leave_one_family_out": {},
+  "leave_one_bucket_out": {},
+  "per_bucket_simple_slopes": {
+    "D": {
+      "rho": 0.1948168785072037,
+      "p_value": 0.4865685934637132,
+      "n": 15
+    }
+  },
+  "fdr_bh": {
+    "strata": [
+      "N_to_N",
+      "N_to_B_EM",
+      "N_to_B_syco"
+    ],
+    "p_values": [
+      NaN,
+      0.4865685934637132,
+      NaN
+    ],
+    "rejected": [
+      false,
+      false,
+      false
+    ]
+  },
+  "b_to_b_descriptive": {
+    "point_estimate": NaN,
+    "ci_low": NaN,
+    "ci_high": NaN,
+    "permutation_null_pmf": [],
+    "n": 0
+  },
+  "binomial_fit": {
+    "model_form": "binomial_mixed",
+    "n_rows": 15,
+    "converged": true,
+    "coef_cosine": 39.59057724269639,
+    "se_cosine": 10.885210014963343,
+    "ci_low_cosine": NaN,
+    "ci_high_cosine": NaN,
+    "coefs_full": {
+      "Intercept": -1.8498511768608057,
+      "cosine_predictor": 39.59057724269639,
+      "log_tokens": -8.518879488195067,
+      "lexical_persona_cosine": 0.0,
+      "base_rate": 0.0
+    },
+    "notes": []
+  }
+}

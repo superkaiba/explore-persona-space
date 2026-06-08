@@ -1,0 +1,28 @@
+{
+  "source": "D1_representation",
+  "target_id": "D_advbench",
+  "seed": 137,
+  "layer": 25,
+  "n_probes": 48,
+  "k_demos": 8,
+  "n_draws": 2,
+  "cosine": {
+    "per_draw": [
+      0.9433066844940186,
+      0.9524039626121521
+    ],
+    "mean": 0.9478553235530853,
+    "std": 0.0045486390590667725,
+    "n_draws": 2
+  },
+  "cosine_topic_stripped": {
+    "per_draw": [
+      0.9361869692802429,
+      0.9418500065803528
+    ],
+    "mean": 0.9390184879302979,
+    "std": 0.0028315186500549316,
+    "n_draws": 2
+  },
+  "topic_strip_scheme": "both_sides_symmetric"
+}

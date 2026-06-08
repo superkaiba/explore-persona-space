@@ -1,0 +1,8 @@
+{
+  "kl_per_response": 0.0,
+  "n_responses": 520,
+  "source": "D2_gradient",
+  "seed": 42,
+  "target_id": "D_advbench",
+  "method": "teacher_forced_full_vocab_kl_at_post_response_slot"
+}

@@ -1,0 +1,17 @@
+{
+  "any_fail": true,
+  "floor": 0.7,
+  "per_language": {
+    "es": {
+      "kappa": 0.7,
+      "n": 20,
+      "verdict": "PASS"
+    },
+    "it": {
+      "kappa": 0.5,
+      "n": 20,
+      "verdict": "FAIL"
+    }
+  },
+  "phase": "kappa"
+}
