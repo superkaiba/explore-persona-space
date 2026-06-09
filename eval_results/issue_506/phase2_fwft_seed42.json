@@ -1,0 +1,20 @@
+{
+  "phase": "phase2",
+  "arm": "fwft",
+  "seed": 42,
+  "model_path": "/workspace/explore-persona-space/models/issue506_fwft_seed42_phase2/model",
+  "fwft_hf_repo": "superkaiba1/explore-persona-space-fwft-32b",
+  "fwft_hf_subfolder": "c_issue506_qwen3_32b_fwft_seed42_phase2",
+  "fwft_hf_url": "https://huggingface.co/superkaiba1/explore-persona-space-fwft-32b/tree/main/c_issue506_qwen3_32b_fwft_seed42_phase2",
+  "phase1_hf_subfolder": "c_issue506_qwen3_32b_fwft_seed42_phase1",
+  "wall_minutes": 48.5,
+  "marker_text": " \u203b",
+  "base_model": "Qwen/Qwen3-32B",
+  "config": {
+    "lr": 0.0001,
+    "epochs": 1,
+    "max_length": 2048,
+    "num_gpus": 7,
+    "dataset": "data/issue376_em/v1/good_medical_advice_6k.jsonl"
+  }
+}
