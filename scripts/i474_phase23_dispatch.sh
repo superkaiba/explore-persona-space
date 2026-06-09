@@ -204,9 +204,16 @@ run_wave() {
     for cond in "${conds[@]}"; do
         local cvd="$i"
         local log="$LOG_DIR/train_${arm}_${cond}_cvd${cvd}.log"
-        # Per CLAUDE.md feedback_cvd_hydra_override: --gpu-id $cvd, NOT
-        # env CVD + --gpu-id 0 (sft.py clobbers env CVD).
-        uv run python scripts/i474_phase23_train.py \
+        # Per CLAUDE.md feedback_cvd_hydra_override + issue #523 round-7 OOM
+        # incident: parallel waves NEED the env CVD prefix. sft.py:649 sets
+        # CUDA_VISIBLE_DEVICES from cfg.gpu_id, but that fires AFTER
+        # `import torch` (scripts/i474_phase23_train.py:62) has already
+        # enumerated all 4 GPUs; device_map={"":0} (sft.py:660) then lands
+        # every parallel child on physical GPU 0 -> OOM across the wave.
+        # Belt-and-braces: env CVD prefix (binds before torch import) +
+        # --gpu-id (sft.py asserts in-process). Mirrors the smoke launch
+        # shape at line 105 (which already used the env prefix and worked).
+        CUDA_VISIBLE_DEVICES="$cvd" uv run python scripts/i474_phase23_train.py \
             --arm "$arm" --conds "$cond" --gpu-id "$cvd" \
             > "$log" 2>&1 &
         pids+=("$!:${arm}:${cond}")
