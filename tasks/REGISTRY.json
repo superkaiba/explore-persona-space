@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 525,
+  "highest_id": 526,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3039,6 +3039,13 @@
       "path": "tasks/archived/525",
       "status": "archived",
       "title": "Rebuild ICL contexts as Claude-Haiku-generated genuinely-in-voice blocks behind a hard behavioral manipulation-check gate, then retest cosine/JS \u2192 marker-transfer across the ICL\u2194SP union panel"
+    },
+    "526": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/526",
+      "status": "proposed",
+      "title": "Theory for the leakage-prediction rule: asymmetric + behavior-dependent (unified predictor for all behavior leakage across all contexts)"
     },
     "53": {
       "has_clean_result": false,
