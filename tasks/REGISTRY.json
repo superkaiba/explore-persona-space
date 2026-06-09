@@ -923,8 +923,8 @@
     "237": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/237",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/237",
+      "status": "completed",
       "title": "Any SFT (LoRA or full-param, EM or benign) collapses Qwen2.5-7B persona geometry to cos \u22650.97 (MODERATE confidence)"
     },
     "238": {
