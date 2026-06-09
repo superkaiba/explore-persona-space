@@ -626,7 +626,8 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   (after auto-merge, before CRON-TEARDOWN, BEFORE the human-only park
   at `awaiting_promotion`) and auto-creates + auto-spawns autonomous
   child `/issue` sessions for proposals tagged `auto_run: yes`, capped
-  at 2 per parent (depth-bounded fan-out across recursive follow-ups).
+  at 2 per parent AND hard-stopped at `parent_id`-chain depth 3 (so the
+  recursive fan-out is both width- and depth-bounded, never exponential).
   Cost is still gated at each child's own Step 2c plan-approval
   GPU-hour cap — no new cost gate is added; over-cap children park at
   `plan_pending` like any other autonomous run. Parent promotion stays
@@ -3189,16 +3190,40 @@ HERE — after the auto-merge has landed the clean-result on `main`, and
 before CRON-TEARDOWN — and auto-spawns autonomous child `/issue`
 sessions for proposals tagged `auto_run: yes`. Interactive sessions
 SKIP this block entirely (they still hit Step 10b post-promotion as
-today). Idempotent: skip the whole block when an
-`epm:follow-ups-autospawned v1` marker is already present on this
-parent (covers re-invocation / backstop-tick re-entry; auto-spawning
-twice is the failure mode this guard avoids).
+today). Idempotent: when an `epm:follow-ups-autospawned v1` marker is
+already present on this parent, do NOT re-run the proposer or re-create
+children (covers re-invocation / backstop-tick re-entry; auto-spawning
+twice + duplicate `epm:follow-ups` clutter are the failure modes this
+guard avoids) — instead run the lightweight RECONCILE pass (step R
+below) which only re-spawns a listed child that never left `proposed`.
+Depth-bounded: the block is skipped entirely once this parent's
+`parent_id` chain already has ≥3 auto-spawned ancestors (step 0 below),
+so the autonomous follow-up tree cannot recurse past depth 3.
 
 The autonomous flow:
 
-1. Read the latest `events.jsonl` (fresh, NOT a stale cached view) to
-   confirm `EPM_AUTONOMOUS_SESSION=1` AND `epm:follow-ups-autospawned
-   v1` is absent. Either fails → skip the block.
+0. **Depth cap (run FIRST).** Trace this task's `parent_id` chain upward
+   and count ancestors that themselves carry an
+   `epm:follow-ups-autospawned v1` marker (i.e. were auto-spawn origins,
+   not merely manually-filed parents). If that count is **≥ 3**, do NOT
+   auto-spawn: spawn the proposer and post its proposals as
+   `epm:follow-ups v1` for the user to pick manually, then post
+   `epm:follow-ups-autospawned v1` with `auto_spawn_skipped:
+   depth_cap_reached` and an empty `spawned` list (so the idempotency
+   guard still trips and the dashboard records why), and continue to the
+   park flow. This bounds the autonomous follow-up tree to depth 3 —
+   without it, each auto-spawned child independently reaches its own
+   Step 9b and the fan-out is unbounded in depth (a child does NOT wait
+   on the parent's promotion).
+1. Read the latest `events.jsonl` (fresh, NOT a stale cached view).
+   - If `EPM_AUTONOMOUS_SESSION` is unset → skip the block.
+   - If `epm:follow-ups-autospawned v1` is ALREADY present → run the
+     **RECONCILE pass** (step R) instead of re-running the proposer, then
+     continue to park. (This is the crash-window self-heal: the marker is
+     posted BEFORE sessions are spawned in step 5, so a crash between the
+     marker and the last `spawn-issue` would otherwise leave a listed
+     child stranded at `proposed`.)
+   - Otherwise → continue to step 2.
 2. Spawn `follow-up-proposer` (clean-result is available — it was just
    promoted in-place by the analyzer). Post the proposals to
    `events.jsonl` as `epm:follow-ups v1` (same marker the interactive
@@ -3209,40 +3234,56 @@ The autonomous flow:
    spawns more than 2 autonomous children regardless of how many
    `auto_run: yes` proposals the proposer found). Proposals tagged
    `auto_run: no` are skipped — they survive in the `epm:follow-ups
-   v1` marker for the user to pick from manually.
-4. For each kept proposal, in rank order:
+   v1` marker for the user to pick from manually. Drop any kept proposal
+   whose title duplicates an existing `parent_id=<N>` child (guards
+   against a partial prior run that created the task before crashing).
+4. For each kept proposal, in rank order, create the child in ONE atomic
+   call — `task.py new --goal` writes BOTH the `goal:` frontmatter AND
+   the `## Goal` H2 the child's Step 0c gate requires, so there is no
+   window where the child exists without a Goal:
    ```bash
-   # Create child task carrying parent_id (proposal's pre-filled spec is
-   # the body; one variable's diff highlighted).
+   # Shell-quote the title + Goal (proposal text may contain quotes /
+   # backticks): use python -c shlex.quote or printf %q, never bare
+   # interpolation. The proposal's **Goal:** field (see
+   # follow-up-proposer.md output template) supplies the one-sentence Goal.
    CHILD_ID=$(uv run python scripts/task.py new \
      --parent <N> --kind experiment \
+     --goal "<one-sentence Goal from the proposal's **Goal:** field>" \
      --title "<proposal title>" \
      --body-file <path-to-pre-filled-spec>.md \
      | grep -oP '#\K\d+')
-
-   # Set the child's Goal (the proposer must provide a one-sentence
-   # Goal in the proposal body — the Goal gate at the child's /issue
-   # Step 0c will block-and-fail an autonomous spawn that lacks one).
-   uv run python scripts/task.py set-goal <CHILD_ID> \
-     "<one-sentence Goal from the proposal>" --by follow-up-proposer
-
+   ```
+5. **Post `epm:follow-ups-autospawned v1` NOW** — after the child tasks
+   exist (step 4) but BEFORE spawning their sessions. It lists every
+   created child (id + title + proposal rank) and every `auto_run: no`
+   proposal that was skipped (rank + title + auto_run_reason). This is
+   the durable idempotency claim: it records the children so a re-entry
+   reconciles (step R) rather than re-creating. Body shape lives in
+   workflow.yaml § markers.
+6. For each created child, in rank order:
+   ```bash
    # Announce per the existing rule (Step 10b § "Announce every
    # follow-up/child task in chat").
    echo "Filed #<CHILD_ID> '<proposal title>' (child of #<N>) + spawning autonomous session"
 
-   # Spawn an autonomous /issue session for the child. The child's
-   # own Step 2c plan-approval GPU-hour cap STILL gates cost — over-cap
-   # plans park the child at plan_pending; no new cost gate is added
-   # here.
+   # Spawn an autonomous /issue session for the child. The child's own
+   # Step 2c plan-approval GPU-hour cap STILL gates cost — over-cap plans
+   # park the child at plan_pending; no new cost gate is added here.
    uv run python scripts/spawn_session.py spawn-issue \
      --issue <CHILD_ID> --auto
    ```
-5. Post `epm:follow-ups-autospawned v1` listing every spawned child
-   (id + title + proposal rank) and every `auto_run: no` proposal that
-   was skipped (rank + title + auto_run_reason). Body shape lives in
-   workflow.yaml § markers.
-6. Continue to the existing park flow below (PushNotification → chat
+7. Continue to the existing park flow below (PushNotification → chat
    prompt → CRON-TEARDOWN → EXIT).
+
+**Step R — RECONCILE pass** (re-entry with the marker already present):
+read the `spawned` list from `epm:follow-ups-autospawned v1`. For each
+listed child, check its current status via `task.py view <CHILD_ID>
+--json`. If it is STILL at `proposed` AND no Happy session is registered
+for it (`spawn_session.py list`), (re-)spawn it with `spawn-issue --issue
+<CHILD_ID> --auto`. A child already past `proposed` (planning / running /
+…/ completed) is left untouched — never re-spawned. This self-heals the
+crash-between-marker-and-spawn window without ever double-spawning. Then
+continue to park.
 
 Cost discipline: this block adds NO new cost gate. Each spawned child
 runs its own `/issue` and hits its own Step 2c
@@ -3250,8 +3291,9 @@ runs its own `/issue` and hits its own Step 2c
 `plan_pending`, consistent with `tests/test_no_dollar_budget_caps.py`.
 Promotion of the parent stays human-only. A `auto_run: yes` follow-up
 that itself produces a clean-result will, recursively, hit this same
-Step 9b block and auto-spawn its own follow-ups, capped at 2 per
-parent at each level (so depth-bounded fan-out, not exponential).
+Step 9b block and auto-spawn its own follow-ups, capped at 2 per parent
+at each level AND hard-stopped at chain depth 3 by step 0 (so the
+fan-out is both width-bounded and depth-bounded, not exponential).
 
 Then post the chat-side prompt:
 

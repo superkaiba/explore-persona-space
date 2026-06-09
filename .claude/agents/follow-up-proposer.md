@@ -71,6 +71,7 @@ Ranked by estimated information gain per GPU-hour.
 ### 1. [Title] — [Type: Ablation/Reproduction/Diagnostic/Scaling/Exploration]
 
 **Parent:** #<N>
+**Goal:** [ONE sentence — the canonical experiment Goal for this follow-up; fresh, not a paraphrase of the parent's Goal. This exact sentence becomes the child task's `goal:` frontmatter + `## Goal` H2 (the autonomous Step 9b auto-spawn passes it straight to `task.py new --goal`; the child's Step 0c gate block-and-fails an autonomous spawn that lacks one). A complete sentence, never a fragment or a list.]
 **Hypothesis:** [What we expect and why]
 **Falsification:** [What result would kill the hypothesis]
 **Differs from parent:** [Exactly ONE thing, stated clearly]
@@ -128,6 +129,10 @@ hold:
   `plan_pending` if the estimate exceeds
   `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` — the cap still gates per-child;
   autonomous follow-up auto-spawn does NOT bypass the cap).
+- It carries a populated, complete-sentence `**Goal:**` field. A missing
+  or empty Goal forces `auto_run: no` — an autonomous child spawned
+  without a Goal block-and-fails at its own Step 0c gate, so a Goal-less
+  proposal is never safe to auto-run.
 
 Otherwise tag `auto_run: no` — those proposals park for the user to
 pick at Step 10b after promotion.
@@ -139,7 +144,13 @@ untestable. The follow-up was a corrected re-run that fixed two named
 validity defects with a grounded recipe — hotter band-stopped anchor
 + orthogonal source pairs — changing one variable each, with cost in
 hand. That shape (a corrective re-run of THIS experiment with a
-named defect fix and a grounded recipe) is the prototype.
+named defect fix and a grounded recipe) is the prototype. Its `**Goal:**`
+field read, in full: "Test whether marker-implant fine-tune edits
+superpose (per-context joint shift equals the sum of the singleton
+shifts) using a properly-implanted anchor and orthogonal source pairs,
+so the additivity cosine is a diagnostic superposition test rather than
+a mechanical artifact." — one complete sentence, ready to pass to
+`task.py new --goal`.
 
 **Canonical `auto_run: no` examples:** "should we pivot to a different
 construct?", "try this on a larger model", "explore N novel framings of
