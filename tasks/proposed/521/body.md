@@ -7,88 +7,79 @@ created_at: '2026-06-08T21:29:43Z'
 has_clean_result: false
 parent_id: 519
 ---
----
-title: 'Phase C/D/E completion for #519: build input JSONs + run activation-shift extraction'
-kind: experiment
-parent_id: 519
-tags:
-- persona-distance
-- generalization
-- followup
-goal: Run Phase C (per-context Δv extraction), Phase D (SVD direction-constancy), Phase E (steering vectors), and Phase F (headline aggregation) on the six adapters from #519, after building the four input JSONs the dispatcher requires, so the rank-one law cross-arm test the parent issue Goal asks for is actually computed.
----
-
 ## Goal
 
-Run Phases C/D/E/F on the six LoRA adapters trained in #519 (marker × 3 seeds + EM × 3 seeds, on HF Hub pinned to commit `c46b8989d`) so the rank-one law cross-arm test the parent issue Goal asks for is actually computed.
+Run Phases C/D/E/F on the six LoRA adapters trained in #519 (marker × 3 seeds + EM × 3 seeds, on HF Hub at commit `c46b8989d`) so the rank-one law cross-arm test the parent Goal asks for is actually computed: does a single shift-direction + cosine-scaled magnitude (rank-one) govern cross-context generalization for the marker arm and break for the EM arm?
 
 ## Why this exists
 
-#519 trained all six cells successfully but the dispatcher silently skipped Phases C/D/E/F because four pre-built input JSONs (`personas_json`, `questions_json`, `marker_pool_json`, `em_pool_json`) were not passed at launch. The dispatcher exited clean with `n_cells=6, skipped_phases=[]` while skipping 4 of 6 phases. The rank-one cross-arm test the parent Goal asks for is NOT ANSWERED on #519.
+#519 trained all six cells successfully but the dispatcher **silently skipped** Phases C/D/E/F because the four input JSONs (`personas_json`, `questions_json`, `marker_pool_json`, `em_pool_json`) were not passed at launch. In sweep mode the dispatcher guards each phase with `if "c" not in skip_phase and args.personas_json and args.questions_json:` — when the JSONs are absent it falls through, writes `dispatch_manifest.json` with `skipped_phases: []` (a false record), and exits 0. Upload-verification PASSed on the *training* artifacts, the pod was terminated, and the per-step marker checkpoints on the pod were lost. The rank-one cross-arm test the parent Goal asks for is NOT ANSWERED on #519.
 
-This follow-up is the smallest possible scope that answers the parent Goal: keep the trained adapters, build the missing inputs, re-invoke the dispatcher with `--skip-phase a,b`.
+## Prerequisite (step 0 — do before anything else)
+
+**The #519 code is NOT on `main`.** The #519 merge was an "unsafe-case" surgical checkout of only `eval_results/issue_519/` (the branch was 818 commits diverged; full rebase deferred). The dispatcher (`scripts/issue_519_dispatch.py`), the data builder, and the analysis modules (`src/explore_persona_space/analysis/activation_shift.py`, `steering_vectors.py`) live only on the `issue-519` branch (tip `9a0462ba9`) and its worktree.
+
+First implementation step: in the issue-521 worktree, surgically bring the required #519 files onto the branch (`git checkout issue-519 -- <paths>`), resolve any imports that the 818-commit divergence left dangling, and smoke-test that `python -m explore_persona_space.analysis.activation_shift --help` and `python scripts/issue_519_dispatch.py --help` import cleanly. Files needed at minimum:
+- `scripts/issue_519_dispatch.py`, `scripts/issue_519_build_data.py`, `scripts/issue_519_em_aligned_neg_regen.py`
+- `src/explore_persona_space/analysis/activation_shift.py`, `src/explore_persona_space/analysis/steering_vectors.py`
+- `configs/condition/c_issue_519_marker.yaml`, `configs/condition/c_issue_519_em.yaml`
 
 ## What to build
 
-Four input JSONs needed by the dispatcher's Phase C/D/E/F:
+Four input JSONs the dispatcher's Phase C/D/E require (their absence is exactly what caused the silent skip):
 
-1. **`personas_json`** — 24-persona panel: `medical_doctor` source + the 4 trained-against negatives (`assistant`, `comedian`, `police_officer`, `software_engineer`) + 19 held-out personas pulled from `src/explore_persona_space/personas.py` and the #207 / #383 panels. Schema: `[{persona_name: str, system_prompt: str}, ...]`.
+1. **`personas_json`** — held-out persona panel. Source persona + the 4 trained-against negatives + held-out personas from `src/explore_persona_space/personas.py` and the #207/#383 panels. Schema per `activation_shift.py`'s loader.
+2. **`questions_json`** — held-out questions (not the 200 used in #519 training). Per the plan's per-cell forward-pass budget.
+3. **`marker_pool_json`** — steering-vector pool for the marker arm (Phase E).
+4. **`em_pool_json`** — steering-vector pool for the EM arm (Phase E).
 
-2. **`questions_json`** — held-out questions. Pull the 1000-question source pool used to build the #519 training data, subtract the 200 questions used in training, keep at least 480 for Phase C (per the plan's 480-forward-passes-per-cell estimate). Schema: `[{question: str, question_id: str}, ...]`.
+Confirm the exact schema of each against the loaders in `activation_shift.py` / `steering_vectors.py` before generating (the proposer's earlier schema guesses are not authoritative).
 
-3. **`marker_pool_json`** — steering-vector pool for the marker arm. Per plan §6, this is the pool of (persona, question) pairs the steering vector is extracted over. Use the source persona over the held-out question set.
+## Adapter staging
 
-4. **`em_pool_json`** — same shape, for the EM arm.
+Phase C loads each adapter from the **local** path `output_dir/{arm}_seed{S}/adapter` — there is **no** `--adapter-source hf` flag. Before running, download the 6 adapters from HF (`superkaiba1/explore-persona-space`, commit `c46b8989d`, `issue_519/` subtree) into that local layout, OR add a small `--adapter-hf-repo/--adapter-hf-rev` staging path to the dispatcher.
 
 ## What to run
 
 ```bash
-python scripts/issue519_dispatch.py \
+python scripts/issue_519_dispatch.py \
     --mode sweep \
-    --skip-phase a,b \
-    --personas-json <p> \
-    --questions-json <q> \
-    --marker-pool-json <m> \
-    --em-pool-json <e> \
-    --adapter-source hf \
-    --hf-adapter-repo superkaiba1/explore-persona-space \
-    --hf-adapter-tag c46b8989df021591c18711f51e50df4d6c9ab6c8
+    --skip-phase a1 a23 b0_smoke b \
+    --layer <plan-layer> \
+    --personas-json <p> --questions-json <q> \
+    --base-cosines-json <bc> \
+    --marker-pool-json <m> --em-pool-json <e> \
+    --output-dir eval_results/issue_521
 ```
 
-Estimated cost: 3-4 GPU-h on 1× H100 (Phase C is forward-pass-only; Phase E steering vectors are ~30 min).
+(Real skip tokens are `a1 a23 b0_smoke b c d e` — skip the training half, keep C/D/E. The dispatcher default `--layer` is 14; set it to the layer the #519/#474 line uses.)
 
-## Two design choices that need a decision before launch
+Estimated cost: 3-4 GPU-h (Phase C is forward-pass-only; Phase E ~30 min). 1× H100 sufficient; 4× H100 parallelizes the 6 cells.
 
-### Choice 1: which marker checkpoint to use as the anchor
+## Also fix the silent-skip in the dispatcher (in scope here)
 
-The #519 marker arm saturated — endpoint `ΔlogP=30 nats` at source, which is the regime #448 documented as "all recipe knobs collapse to indistinguishable." The plan §17 intended a non-saturated anchor at 5-10 nats below ceiling.
+While #521 touches the dispatcher, make the production-mode phase guards **fail loud**: in `--mode sweep`, if a non-skipped phase's required inputs are missing, raise (don't fall through), and record the *actual* phases run in `dispatch_manifest.json` (the guard-skip must be reflected, not reported as `skipped_phases: []`). This is the experiment-code half of the fix; the workflow-surface half is handled separately on the #519 line.
 
-Per-step adapters were preserved on pod-519 for this purpose, but pod-519 was TERMINATED after upload-verification PASS, so those per-step checkpoints are LOST. Two options:
+## Two design choices (resolved assumptions — override if wrong)
 
-- **Option A (cheap):** run Phases C/D/E on the final saturated marker adapters that are on HF. Accept that the marker-arm geometry is measured in the saturation regime and document it as a scope caveat.
-- **Option B (correct):** re-train the marker arm at `lr=2e-7` (or `max_steps=200` at `lr=2e-6`) on a fresh pod, target a non-saturating endpoint. ~4 extra GPU-h.
+### Marker anchor — the per-step checkpoints are LOST
+The #519 marker arm saturated (endpoint ΔlogP ≈ 30 nats at source). The non-saturated per-step checkpoints that plan §17 wanted were on pod-519, which was terminated, so they are gone. There is no cheap non-saturated option.
+- **Assumption (staged-cheap):** run C/D/E on the saturated final marker adapters now. The rank-one test is about the *direction structure* of the per-context Δv vectors (not recipe-knob magnitudes), so saturation is less fatal here than in #448's recipe-sweep setting. Document the saturated-anchor regime as a scope caveat. Only if the marker SVD comes back uninformative do we re-train the marker at lower lr (+~4 GPU-h).
 
-Recommendation: B. The whole point of plan §17 was to avoid measuring the SVD spectrum at a saturated anchor; running C/D/E on the saturated adapters answers a different question.
-
-### Choice 2: whether to also re-run EM with a working trajectory callback
-
-The #519 EM arm has no trajectory data and no endpoint EM-rate measurement — the K=20 Sonnet-batch-judge callback was disabled mid-run after the Anthropic batch API congestion. **The manipulation check that EM was actually installed is missing.** Phases C/D/E would run blind on the EM arm — we'd get Δv vectors without knowing whether they correspond to an actually-misaligned model.
-
-Recommendation: BEFORE running Phase C/D/E, run a small standalone endpoint EM-rate eval (Sonnet judge with a non-batch fallback OR a local-judge fallback) on the three EM cells to confirm EM > 5% on the misaligned probes. If EM rate is at floor on Qwen-2.5-7B-Instruct with this dataset + recipe, the EM arm needs to be re-trained with a different EM recipe (cf. #452 / #458) before any rank-one analysis can proceed.
+### EM manipulation check — was disabled mid-run
+The #519 EM K=20 Sonnet-judge callback was disabled mid-run (Anthropic batch API congestion), so there is **no confirmation EM actually installed**. Running C/D/E blind on the EM arm risks measuring Δv of a non-misaligned model.
+- **Hard gate:** before Phase C, run a small endpoint EM-rate eval (Sonnet judge with a non-batch / local fallback) on the 3 EM cells; post `epm:em-rate v1`. If EM < ~5% on the misaligned probes, the EM arm is invalid and must be re-trained with a working recipe (cf. #458) before any rank-one analysis — that becomes the pivot, not a blind run.
 
 ## Acceptance criteria
 
-- `headline_metrics.json` exists, containing:
-  - Marker arm: per-context Δv (last prompt-token residual at layer 21), SVD spectrum (singular values + first singular vector cosines across contexts), cosine vs base-cosine scatter, steering-vector identity test.
-  - EM arm: same four quantities.
-  - Cross-arm comparison: rank-one ratio (σ_1 / Σσ) per arm, cos(U_1_marker, U_1_em).
-- Two hero figures: (i) magnitude-cosine scatter per arm, (ii) SVD spectrum per arm.
-- EM manipulation check posted as `epm:em-rate v1` event before Phase C runs.
-- Clean-result body answers the parent Goal: "rank-one law holds for marker / breaks for EM?" with HIGH or MODERATE confidence (LOW means the analysis was inconclusive and we need a different anchor or recipe).
+- `headline_metrics.json` with, per arm: per-context Δv (last-prompt-token residual at the plan layer), SVD spectrum (singular values + first-singular-vector cosines across contexts), magnitude-vs-base-cosine scatter, steering-vector identity test; plus cross-arm rank-one ratio (σ₁/Σσ) per arm and cos(U₁_marker, U₁_em).
+- Two hero figures: magnitude-cosine scatter per arm, SVD spectrum per arm.
+- `epm:em-rate v1` posted before Phase C.
+- Clean-result answers the parent Goal ("rank-one holds for marker / breaks for EM?"). LOW confidence = inconclusive (needs a different anchor or recipe).
 
 ## Reproducibility anchors
 
-- Parent issue: #519.
-- Adapters: [`huggingface.co/superkaiba1/explore-persona-space/tree/c46b8989df021591c18711f51e50df4d6c9ab6c8/issue_519`](https://huggingface.co/superkaiba1/explore-persona-space/tree/c46b8989df021591c18711f51e50df4d6c9ab6c8/issue_519).
-- Training data: [`huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/c46b8989df021591c18711f51e50df4d6c9ab6c8/issue_519`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/c46b8989df021591c18711f51e50df4d6c9ab6c8/issue_519).
-- Plan v1 (the source design): [`tasks/awaiting_promotion/519/plans/plan.md`](https://github.com/superkaiba/explore-persona-space/blob/8ccad5d95f680ecf0138f3dbe8d1529052bb2a7b/tasks/awaiting_promotion/519/plans/plan.md).
+- Parent issue: #519. `issue-519` branch tip `9a0462ba9`.
+- Adapters: [`huggingface.co/superkaiba1/explore-persona-space/tree/c46b8989d/issue_519`](https://huggingface.co/superkaiba1/explore-persona-space/tree/c46b8989df021591c18711f51e50df4d6c9ab6c8).
+- Training data: [`explore-persona-space-data/tree/c46b8989d/issue_519`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/c46b8989df021591c18711f51e50df4d6c9ab6c8/issue_519).
+- Plan v1 (source design): `tasks/awaiting_promotion/519/plans/plan.md`.
