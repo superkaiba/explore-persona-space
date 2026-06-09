@@ -64,6 +64,7 @@ CLI (see plan §10 reproducibility card):
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import math
@@ -107,14 +108,21 @@ SMOKE_OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_540_smoke"
 SMOKE_FIGURES_DIR = PROJECT_ROOT / "figures" / "issue_540_smoke"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_SAMPLES_PATH = "issue540_jsrb_canonical/raw_completions"
-# v2 (round-2 review fix): per-pair payloads now record stub/seed/
-# max_new_tokens in metadata so resume-skip can validate them; v1 artifacts
-# are structurally incompatible and are recomputed / rejected.
-SCHEMA_VERSION = "issue540_v2"
+# v2 (round-2 review fix): per-pair payloads record stub/seed/max_new_tokens
+# in metadata so resume-skip can validate them.
+# v3 (round-3 review fix): per-pair payloads additionally record
+# probes_sha256 + metadata.max_seq_len, and the Phase M/A artifacts
+# (predictors_jsrb.json / analysis_jsrb.json) record the FULL compatibility
+# tuple (model, stub, seed, max_new_tokens, max_seq_len, probes_sha256,
+# n_probes, r_samples) so the Phase A/F loaders validate provenance, not just
+# shape. v1/v2 artifacts are structurally incompatible: recomputed (S/T) or
+# rejected loud (M/A/F).
+SCHEMA_VERSION = "issue540_v3"
 PARENT_ARM = "loc"
 PARENT_EPOCHS = [1]
 PARENT_STYLIZED_DROP = ["A3", "A4", "A5"]  # parent main() default (§6.5 robustness)
 GPU_HOURS_BUDGETED = 8.0  # plan §9
+DEFAULT_MAX_SEQ_LEN = 1024  # vLLM max_model_len; part of the production card
 POS0_WARN = 0.02  # plan §4 on-pod integration checks
 POS0_FAIL = 0.05
 SELFPAIR_MAX_BITS = 1e-3
@@ -202,6 +210,23 @@ def _git_commit() -> str:
         return "unknown"
 
 
+def _git_dirty() -> bool | None:
+    """True when tracked files carry uncommitted changes; None when git is
+    unavailable. Provenance honesty (round-2 review minor): a recorded SHA
+    alone overstates reproducibility when the working tree was dirty at
+    artifact-write time (the round-2 smoke recorded HEAD while the round-2
+    edits were still uncommitted)."""
+    try:
+        out = subprocess.check_output(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=PROJECT_ROOT,
+            text=True,
+        )
+    except (subprocess.CalledProcessError, OSError):
+        return None
+    return bool(out.strip())
+
+
 def _metadata(extra: dict | None = None) -> dict:
     """Standard reproducibility block (CLAUDE.md Code Style)."""
     import datetime
@@ -210,6 +235,7 @@ def _metadata(extra: dict | None = None) -> dict:
     meta = {
         "schema_version": SCHEMA_VERSION,
         "git_commit": _git_commit(),
+        "git_dirty": _git_dirty(),
         "timestamp_utc": datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat() + "Z",
         "python_version": platform.python_version(),
         "platform": platform.platform(),
@@ -262,6 +288,17 @@ def _current_probes(args) -> list[str]:
     return _PROBES_CACHE[n]
 
 
+def _probes_sha256(probes: list[str]) -> str:
+    """Stable probe-list identity: sha256 over the ORDERED probe texts.
+
+    Persisted in every per-pair / matrix / analysis artifact and validated
+    against the current invocation's probe list (round-3 review fix,
+    concern pair-probe-identity-validation): a probe-TEXT mutation at
+    constant count recomputes samples (full-text validation) but, without
+    this hash, stale PAIR artifacts would still resume-skip."""
+    return hashlib.sha256(json.dumps(probes, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
 def _artifact_field(payload: dict, dotted: str):
     """Resolve ``metadata.stub``-style dotted keys; None when absent."""
     cur: object = payload
@@ -292,6 +329,7 @@ def _expected_samples_params(args, ctx: str, probes: list[str]) -> dict[str, obj
         "metadata.stub": bool(args.stub_samples),
         "metadata.seed": args.seed,
         "metadata.max_new_tokens": args.max_new_tokens,
+        "metadata.max_seq_len": args.max_seq_len,
         "metadata.base_model": BASE_MODEL,
     }
 
@@ -304,11 +342,66 @@ def _expected_pair_params(args, a: str, b: str) -> dict[str, object]:
         "pair.b": b,
         "n_probes": args.n_probes,
         "r_samples": args.r_samples,
+        # Probe-list IDENTITY, not just count (round-3 fix): a pair scored
+        # over different probe texts at the same count is stale.
+        "probes_sha256": _probes_sha256(_current_probes(args)),
         "metadata.model": args.model,
         "metadata.stub": bool(args.stub_samples),
         "metadata.seed": args.seed,
         "metadata.max_new_tokens": args.max_new_tokens,
+        "metadata.max_seq_len": args.max_seq_len,
     }
+
+
+def _expected_matrix_params(args) -> dict[str, object]:
+    """Full compatibility tuple for predictors_jsrb.json (round-3 review fix,
+    concern matrix-artifact-param-validation): Phase A/F must refuse a stale
+    matrix computed under a different model / stub flag / seed /
+    max_new_tokens / max_seq_len / probe list, not just a different shape."""
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "phase": "matrix",
+        "n_probes": args.n_probes,
+        "r_samples": args.r_samples,
+        "probes_sha256": _probes_sha256(_current_probes(args)),
+        "metadata.model": args.model,
+        "metadata.stub": bool(args.stub_samples),
+        "metadata.seed": args.seed,
+        "metadata.max_new_tokens": args.max_new_tokens,
+        "metadata.max_seq_len": args.max_seq_len,
+    }
+
+
+def _expected_analysis_params(args) -> dict[str, object]:
+    """Same tuple for analysis_jsrb.json (concern
+    analysis-artifact-param-validation): standalone Phase F must never mix a
+    current matrix with a stale leaderboard/hierarchy."""
+    return {**_expected_matrix_params(args), "phase": "analysis"}
+
+
+def _load_matrix(args) -> dict:
+    """Strict-validated predictors_jsrb.json load (Phase A panel join +
+    Phase F figures). Any tuple mismatch raises naming the fields."""
+    payload = _load_validated(
+        args.out_dir / "predictors_jsrb.json",
+        _expected_matrix_params(args),
+        strict=True,
+        what="Phase M matrix artifact",
+    )
+    assert payload is not None  # strict=True raises instead of returning None
+    return payload
+
+
+def _load_analysis(args) -> dict:
+    """Strict-validated analysis_jsrb.json load (Phase F figures)."""
+    payload = _load_validated(
+        args.out_dir / "analysis_jsrb.json",
+        _expected_analysis_params(args),
+        strict=True,
+        what="Phase A analysis artifact",
+    )
+    assert payload is not None
+    return payload
 
 
 def _load_validated(
@@ -540,6 +633,7 @@ def phase_sampling(args, shard_k: int, shard_n: int) -> None:
                     "phase": "S",
                     "stub": bool(args.stub_samples),
                     "max_new_tokens": args.max_new_tokens,
+                    "max_seq_len": args.max_seq_len,
                     "seed": args.seed,
                     "sampling": "vLLM temp=1.0 top_p=1.0 TokensPrompt"
                     if not args.stub_samples
@@ -719,12 +813,17 @@ def _score_pair(args, model, tokenizer, a: str, b: str, max_batch_holder: dict) 
                 "stub": bool(args.stub_samples),
                 "seed": args.seed,
                 "max_new_tokens": args.max_new_tokens,
+                "max_seq_len": args.max_seq_len,
             }
         ),
         "pair": {"a": a, "b": b},
         "is_selfpair": a == b,
         "n_probes": n_probes,
         "r_samples": r,
+        # Probe-list identity (round-3 fix): both sides were strict-validated
+        # against the CURRENT probe list above, so this hash names exactly
+        # the probe texts the divergences were computed over.
+        "probes_sha256": _probes_sha256(_current_probes(args)),
         "js_rb_bits": rb["js_rb_bits"],
         "kl_ab_nats": rb["kl_ab_nats"],
         "kl_ba_nats": rb["kl_ba_nats"],
@@ -864,6 +963,14 @@ def phase_matrix(args) -> dict:
         "metadata": _metadata(
             {
                 "phase": "M",
+                # Full compatibility tuple (round-3 review fix): the Phase A/F
+                # loaders validate ALL of these, so a stale matrix computed
+                # under different params can never feed the analysis/figures.
+                "model": args.model,
+                "stub": bool(args.stub_samples),
+                "seed": args.seed,
+                "max_new_tokens": args.max_new_tokens,
+                "max_seq_len": args.max_seq_len,
                 "parent_columns_provenance": (
                     "cosine/js_v1/gauss_kl/base_prior copied VERBATIM from "
                     "eval_results/issue_532/predictors.json (parent SHA 296c4da2d)"
@@ -874,6 +981,7 @@ def phase_matrix(args) -> dict:
         "bystanders": bystanders,
         "n_probes": args.n_probes,
         "r_samples": args.r_samples,
+        "probes_sha256": _probes_sha256(_current_probes(args)),
         "js_rb_matrix": js_rb.tolist(),
         "js_rb_masked_matrix": js_rb_masked.tolist(),
         "kl_row_col_matrix_nats": kl_rc.tolist(),
@@ -1228,18 +1336,8 @@ def phase_analysis(args) -> dict:
         )
     logger.info("Reproduction control PASS — ported phase-3 matches analysis.json to ≤1e-9")
 
-    # ── 2. Panel + js_rb columns ──────────────────────────────────────────
-    jsrb_payload = _load_validated(
-        args.out_dir / "predictors_jsrb.json",
-        {
-            "schema_version": SCHEMA_VERSION,
-            "phase": "matrix",
-            "n_probes": args.n_probes,
-            "r_samples": args.r_samples,
-        },
-        strict=True,
-        what="Phase M matrix artifact",
-    )
+    # ── 2. Panel + js_rb columns (full-tuple validated load, round-3 fix) ─
+    jsrb_payload = _load_matrix(args)
     panel = i532._build_union_panel(
         phase0,
         PARENT_DIR,
@@ -1368,7 +1466,23 @@ def phase_analysis(args) -> dict:
     analysis = {
         "schema_version": SCHEMA_VERSION,
         "phase": "analysis",
-        "metadata": _metadata({"phase": "A", "n_rows": panel["_n"]}),
+        "metadata": _metadata(
+            {
+                "phase": "A",
+                "n_rows": panel["_n"],
+                # Full compatibility tuple (round-3 review fix): standalone
+                # Phase F validates ALL of these, so figures can never mix a
+                # current matrix with a stale leaderboard/hierarchy.
+                "model": args.model,
+                "stub": bool(args.stub_samples),
+                "seed": args.seed,
+                "max_new_tokens": args.max_new_tokens,
+                "max_seq_len": args.max_seq_len,
+            }
+        ),
+        "n_probes": args.n_probes,
+        "r_samples": args.r_samples,
+        "probes_sha256": _probes_sha256(_current_probes(args)),
         "reproduction_control": {
             "pass": True,
             "tolerance": REPRO_TOL,
@@ -1428,23 +1542,10 @@ def phase_figures(args) -> list[Path]:
     )
 
     set_paper_style("blog")
-    analysis = _load_validated(
-        args.out_dir / "analysis_jsrb.json",
-        {"schema_version": SCHEMA_VERSION, "phase": "analysis"},
-        strict=True,
-        what="Phase A analysis artifact",
-    )
-    jsrb_payload = _load_validated(
-        args.out_dir / "predictors_jsrb.json",
-        {
-            "schema_version": SCHEMA_VERSION,
-            "phase": "matrix",
-            "n_probes": args.n_probes,
-            "r_samples": args.r_samples,
-        },
-        strict=True,
-        what="Phase M matrix artifact",
-    )
+    # Full-tuple validated loads (round-3 fix): standalone `--phases F` must
+    # refuse a stale analysis/matrix, never mix provenance across artifacts.
+    analysis = _load_analysis(args)
+    jsrb_payload = _load_matrix(args)
     predictors = _load_parent_predictors()
     phase0 = _load_parent_phase0()
     sources, bystanders = predictors["sources"], predictors["bystanders"]
@@ -1739,8 +1840,10 @@ def _write_results_sentinel(args, analysis: dict, t_start: float) -> Path:
                 "n_probes": args.n_probes,
                 "r_samples": args.r_samples,
                 "max_new_tokens": args.max_new_tokens,
+                "max_seq_len": args.max_seq_len,
                 "seed": args.seed,
                 "workers": args.workers,
+                "probes_sha256": _probes_sha256(_current_probes(args)),
             }
         ),
         "wandb_url": "",  # eval-only, no training run
@@ -1805,6 +1908,7 @@ def _is_production_shaped(args) -> bool:
         and args.r_samples == 8
         and args.seed == 42
         and args.max_new_tokens == 256
+        and args.max_seq_len == DEFAULT_MAX_SEQ_LEN
         and args.model == BASE_MODEL
         and not args.stub_samples
         and not args.pairs
@@ -1825,19 +1929,31 @@ def _resolve_dirs(args) -> None:
         if not production:
             logger.warning(
                 "non-production parameters (n_probes=%d r_samples=%d seed=%d "
-                "max_new_tokens=%d stub=%s pairs=%s model=%s) with no --out-dir — "
-                "routing output to %s (production dir untouched)",
+                "max_new_tokens=%d max_seq_len=%d stub=%s pairs=%s model=%s) with no "
+                "--out-dir — routing output to %s (production dir untouched)",
                 args.n_probes,
                 args.r_samples,
                 args.seed,
                 args.max_new_tokens,
+                args.max_seq_len,
                 args.stub_samples,
                 bool(args.pairs),
                 args.model,
                 args.out_dir,
             )
     if args.figures_dir is None:
-        args.figures_dir = DEFAULT_FIGURES_DIR if production else SMOKE_FIGURES_DIR
+        # Round-3 review fix: figures routing follows the RESOLVED out-dir,
+        # not the parameter shape — a production-shaped run with an explicit
+        # CUSTOM --out-dir must not write into the canonical figures dir
+        # (figures would mix with a different out-dir's artifacts). Figures
+        # for a custom out-dir co-locate at <out_dir>/figures.
+        resolved = args.out_dir.resolve()
+        if resolved == DEFAULT_OUT_DIR.resolve():
+            args.figures_dir = DEFAULT_FIGURES_DIR
+        elif resolved == SMOKE_OUT_DIR.resolve():
+            args.figures_dir = SMOKE_FIGURES_DIR
+        else:
+            args.figures_dir = args.out_dir / "figures"
 
 
 def _parse_shard(s: str) -> tuple[int, int]:
@@ -1985,7 +2101,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--n-probes", type=int, default=50)
     parser.add_argument("--r-samples", type=int, default=8)
     parser.add_argument("--max-new-tokens", type=int, default=256)
-    parser.add_argument("--max-seq-len", type=int, default=1024, help="vLLM max_model_len")
+    parser.add_argument(
+        "--max-seq-len",
+        type=int,
+        default=DEFAULT_MAX_SEQ_LEN,
+        help="vLLM max_model_len; recorded + validated in every artifact "
+        "(a non-default value silently shortens generations otherwise)",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--pairs", nargs="+", default=None, help="explicit pair subset, e.g. A1__instr_explicit_1"

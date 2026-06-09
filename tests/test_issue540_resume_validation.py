@@ -59,8 +59,10 @@ def _pair_payload(
     stub: bool = False,
     seed: int = 42,
     max_new_tokens: int = 256,
+    max_seq_len: int = 1024,
     schema: str = drv.SCHEMA_VERSION,
     pos0: dict | None = None,
+    probes: list[str] | None = None,
 ) -> dict:
     return {
         "schema_version": schema,
@@ -69,6 +71,7 @@ def _pair_payload(
         "is_selfpair": a == b,
         "n_probes": n_probes,
         "r_samples": r_samples,
+        "probes_sha256": drv._probes_sha256(probes if probes is not None else FAKE_PROBES_50),
         "js_rb_bits": 0.1,
         "mc_se_js_bits": 0.01,
         "pos0_v1_check": pos0,
@@ -77,6 +80,7 @@ def _pair_payload(
             "stub": stub,
             "seed": seed,
             "max_new_tokens": max_new_tokens,
+            "max_seq_len": max_seq_len,
         },
     }
 
@@ -89,6 +93,7 @@ def _samples_payload(
     stub: bool = False,
     seed: int = 42,
     max_new_tokens: int = 256,
+    max_seq_len: int = 1024,
     schema: str = drv.SCHEMA_VERSION,
 ) -> dict:
     return {
@@ -102,10 +107,46 @@ def _samples_payload(
             "stub": stub,
             "seed": seed,
             "max_new_tokens": max_new_tokens,
+            "max_seq_len": max_seq_len,
             "base_model": drv.BASE_MODEL,
         },
         "truncation_rate": 0.0,
     }
+
+
+def _matrix_payload(
+    *,
+    n_probes: int = 50,
+    r_samples: int = 8,
+    model: str = drv.BASE_MODEL,
+    stub: bool = False,
+    seed: int = 42,
+    max_new_tokens: int = 256,
+    max_seq_len: int = 1024,
+    schema: str = drv.SCHEMA_VERSION,
+    phase: str = "matrix",
+    probes: list[str] | None = None,
+) -> dict:
+    """Minimal predictors_jsrb.json / analysis_jsrb.json compatibility shell
+    (only the fields the round-3 full-tuple validation reads)."""
+    return {
+        "schema_version": schema,
+        "phase": phase,
+        "n_probes": n_probes,
+        "r_samples": r_samples,
+        "probes_sha256": drv._probes_sha256(probes if probes is not None else FAKE_PROBES_50),
+        "metadata": {
+            "model": model,
+            "stub": stub,
+            "seed": seed,
+            "max_new_tokens": max_new_tokens,
+            "max_seq_len": max_seq_len,
+        },
+    }
+
+
+def _analysis_payload(**kwargs) -> dict:
+    return _matrix_payload(phase="analysis", **kwargs)
 
 
 def _write(path: Path, payload: dict) -> Path:
@@ -233,14 +274,125 @@ def test_samples_matching_artifact_accepted(tmp_path):
 
 
 def test_old_schema_version_refused(tmp_path):
-    """issue540_v1 artifacts (round-1 smoke vintage) are structurally
+    """issue540_v1/v2 artifacts (round-1/2 smoke vintage) are structurally
     incompatible and recomputed."""
+    args = _args(tmp_path)
+    for old in ("issue540_v1", "issue540_v2"):
+        path = _write(
+            tmp_path / "per_pair" / "pair_A1__A2.json",
+            _pair_payload("A1", "A2", schema=old),
+        )
+        assert drv._load_compatible_pair(args, path, "A1", "A2", strict=False) is None
+
+
+# ── Probe-list identity (round-3 concern pair-probe-identity-validation) ───
+
+
+def test_pair_probe_text_mutation_recomputed_not_skipped(tmp_path):
+    """The reconciler-verified propagation hole: a probe-TEXT mutation at
+    constant count (n_probes unchanged) recomputes samples but, without the
+    probes_sha256 check, stale PAIR artifacts would still resume-skip."""
+    args = _args(tmp_path)
+    a, b = GATED_PAIR
+    path = _write(
+        tmp_path / "per_pair" / f"pair_{a}__{b}.json",
+        _pair_payload(a, b, pos0={"abs_diff": 0.0}),  # hash over FAKE_PROBES_50
+    )
+    # Sanity: under the original probe list the artifact resume-skips.
+    assert drv._load_compatible_pair(args, path, a, b, strict=False) is not None
+    # Mutate ONE probe's text, same count → recompute, never skip.
+    drv._PROBES_CACHE[50] = ["MUTATED question 0?", *FAKE_PROBES_50[1:]]
+    assert drv._load_compatible_pair(args, path, a, b, strict=False) is None
+    with pytest.raises(RuntimeError, match="probes_sha256"):
+        drv._load_compatible_pair(args, path, a, b, strict=True)
+
+
+def test_pair_max_seq_len_mismatch_refused(tmp_path):
+    """--max-seq-len caps vLLM completions (max_model_len − prompt_len); a
+    pair scored over differently-capped samples must not resume-skip."""
     args = _args(tmp_path)
     path = _write(
         tmp_path / "per_pair" / "pair_A1__A2.json",
-        _pair_payload("A1", "A2", schema="issue540_v1"),
+        _pair_payload("A1", "A2", max_seq_len=512),
     )
     assert drv._load_compatible_pair(args, path, "A1", "A2", strict=False) is None
+
+
+# ── Matrix artifact (round-3 concern matrix-artifact-param-validation) ─────
+
+
+def test_matrix_loader_accepts_matching_tuple(tmp_path):
+    args = _args(tmp_path)
+    _write(tmp_path / "predictors_jsrb.json", _matrix_payload())
+    assert drv._load_matrix(args)["n_probes"] == 50
+
+
+def test_matrix_loader_rejects_mismatched_seed_and_model(tmp_path):
+    """Same-shape (50×8) stale matrix under a different seed + scoring model
+    must hard-fail Phase A/F, naming the mismatched fields."""
+    args = _args(tmp_path)
+    _write(tmp_path / "predictors_jsrb.json", _matrix_payload(seed=7, model="/tmp/tiny540"))
+    with pytest.raises(RuntimeError) as exc:
+        drv._load_matrix(args)
+    assert "metadata.seed" in str(exc.value) and "metadata.model" in str(exc.value)
+
+
+def test_matrix_loader_rejects_stub_and_max_new_tokens(tmp_path):
+    args = _args(tmp_path)
+    _write(tmp_path / "predictors_jsrb.json", _matrix_payload(stub=True, max_new_tokens=512))
+    with pytest.raises(RuntimeError) as exc:
+        drv._load_matrix(args)
+    assert "metadata.stub" in str(exc.value) and "metadata.max_new_tokens" in str(exc.value)
+
+
+def test_matrix_loader_rejects_probe_text_mutation(tmp_path):
+    """Same shape, same params, different probe TEXTS → refused by hash."""
+    args = _args(tmp_path)
+    _write(
+        tmp_path / "predictors_jsrb.json",
+        _matrix_payload(probes=["MUTATED question 0?", *FAKE_PROBES_50[1:]]),
+    )
+    with pytest.raises(RuntimeError, match="probes_sha256"):
+        drv._load_matrix(args)
+
+
+# ── Analysis artifact (round-3 concern analysis-artifact-param-validation) ─
+
+
+def test_analysis_loader_accepts_matching_tuple(tmp_path):
+    args = _args(tmp_path)
+    _write(tmp_path / "analysis_jsrb.json", _analysis_payload())
+    assert drv._load_analysis(args)["phase"] == "analysis"
+
+
+def test_analysis_loader_rejects_mismatched_tuple(tmp_path):
+    """Standalone Phase F over a same-shape stale analysis (different seed +
+    max_new_tokens) must hard-fail, naming the fields — figures can never mix
+    a current matrix with a stale leaderboard/hierarchy."""
+    args = _args(tmp_path)
+    _write(tmp_path / "analysis_jsrb.json", _analysis_payload(seed=7, max_new_tokens=512))
+    with pytest.raises(RuntimeError) as exc:
+        drv._load_analysis(args)
+    assert "metadata.seed" in str(exc.value) and "metadata.max_new_tokens" in str(exc.value)
+
+
+def test_analysis_loader_rejects_probe_text_mutation_and_stub(tmp_path):
+    args = _args(tmp_path)
+    _write(
+        tmp_path / "analysis_jsrb.json",
+        _analysis_payload(stub=True, probes=["MUTATED question 0?", *FAKE_PROBES_50[1:]]),
+    )
+    with pytest.raises(RuntimeError) as exc:
+        drv._load_analysis(args)
+    assert "probes_sha256" in str(exc.value) and "metadata.stub" in str(exc.value)
+
+
+def test_analysis_loader_rejects_matrix_phase_payload(tmp_path):
+    """A matrix payload at the analysis path (cross-artifact mixup) is refused."""
+    args = _args(tmp_path)
+    _write(tmp_path / "analysis_jsrb.json", _matrix_payload())
+    with pytest.raises(RuntimeError, match="phase"):
+        drv._load_analysis(args)
 
 
 # ── Default out-dir routing (smoke can never land in the production dir) ───
@@ -281,6 +433,41 @@ def test_explicit_out_dir_always_respected(tmp_path):
     )
     drv._resolve_dirs(args)
     assert args.out_dir == tmp_path
+
+
+def test_nondefault_max_seq_len_routes_to_smoke_dir():
+    """--max-seq-len is part of the production card (round-3 minor): a
+    non-default value can shorten generations, so it must not default into
+    the production dir."""
+    args = drv._build_parser().parse_args(["--max-seq-len", "2048"])
+    drv._resolve_dirs(args)
+    assert args.out_dir == drv.SMOKE_OUT_DIR
+    assert args.figures_dir == drv.SMOKE_FIGURES_DIR
+
+
+def test_custom_out_dir_routes_figures_alongside(tmp_path):
+    """Round-3 minor fix: a production-shaped run with an explicit CUSTOM
+    --out-dir must NOT write figures into the canonical figures/issue_540 —
+    they co-locate at <out_dir>/figures."""
+    args = drv._build_parser().parse_args(["--out-dir", str(tmp_path)])
+    drv._resolve_dirs(args)
+    assert args.figures_dir == tmp_path / "figures"
+
+
+def test_explicit_production_out_dir_keeps_canonical_figures_dir():
+    """The plan §10 launch command passes --out-dir eval_results/issue_540
+    explicitly; figures stay at the canonical figures/issue_540."""
+    args = drv._build_parser().parse_args(["--out-dir", str(drv.DEFAULT_OUT_DIR)])
+    drv._resolve_dirs(args)
+    assert args.figures_dir == drv.DEFAULT_FIGURES_DIR
+
+
+def test_explicit_figures_dir_always_respected(tmp_path):
+    args = drv._build_parser().parse_args(
+        ["--out-dir", str(tmp_path), "--figures-dir", str(tmp_path / "figs")]
+    )
+    drv._resolve_dirs(args)
+    assert args.figures_dir == tmp_path / "figs"
 
 
 # ── Atomic JSON writes ──────────────────────────────────────────────────────
