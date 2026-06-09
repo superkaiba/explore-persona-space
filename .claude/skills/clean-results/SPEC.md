@@ -136,6 +136,40 @@ the Parameters table:
      relevant to (training rows under `### What I ran`; eval examples
      near the finding that consumed them — NOT here; this Artifacts
      block just lists the full artifact links).
+     **Reuse provenance — when a reader-facing claim rests on a
+     trained artifact REUSED from a prior issue** (a LoRA adapter,
+     merged checkpoint, training-mix dataset, raw-completion bucket,
+     or `eval_results/` JSON produced by a previous `/issue` run
+     rather than freshly produced by THIS task), the Artifacts block
+     MUST name, per reused artifact:
+     (a) the **producing issue number** (`#M`) — link the issue body
+     (`https://eps.superkaiba.com/tasks/M`) so the reader can land on
+     the recipe that produced it; (b) the **permanent HF Hub path**
+     (pinned to `/tree/<sha>` or `@<sha>`) or repo-relative
+     `eval_results/issue_M/...` path the artifact was pulled from; and
+     (c) a **one-line fitness rationale** stating why this artifact
+     was the right one to reuse for THIS result — covering recipe
+     match (same base model + training-recipe / hyperparameters the
+     new question demands), measurement-regime fit (the artifact's
+     eval surface contains the conditions THIS result reads off; for
+     marker work specifically, the artifact is NOT saturated where
+     this read needs headroom — source `log P − base ∈ [5,12]` nat
+     per `.claude/rules/marker-training-recipe.md`), and required
+     conditions present (the cells / personas / seeds this finding
+     compares were actually trained and evaluated in #M). The
+     rationale mirrors the positive fitness check the planner ran at
+     plan §5 / §10 (CLAUDE.md § "Reuse existing trained artifacts
+     when fit-for-purpose — never reuse a wrong one") — carrying it
+     forward into the clean-result so the reader sees the same
+     justification the planner saw. Format suggestion (one bullet per
+     reused artifact): `- Reused <kind> from [#M](...): <hf path or
+     local path> — fit: <one line: recipe + regime + conditions>`.
+     This is a substantive scientific fact, not a citation nicety: a
+     reader inspecting the finding needs to see that the producing
+     recipe matched the new question AND that no methodology gap
+     silently weakens the result. When THIS task produced every
+     artifact it stands on, no reuse-provenance bullets are needed
+     (most fresh-train experiments).
    - **`**Compute:**`** — wall time, GPU type/count, pod label.
    - **`**Code:**`** — dataset-build script, pipeline driver, Hydra
      config, git commit hash, one-block reproduce snippet.
