@@ -770,7 +770,13 @@ def _finalize_fwft_zero3_save(
     conversion failure so the operator can post-mortem (and re-run
     just the conversion against the existing shards).
     """
-    ds_native_dir = output_dir.parent / (output_dir.name + "_ds_native")
+    # Use the shared picker so this matches the path train_stage_sft.py
+    # wrote to. Both callsites read the same env override + /dev/shm probe,
+    # so they agree on whether the shards are at /dev/shm/... or at
+    # output_dir.parent/...
+    from explore_persona_space.orchestrate.staging import pick_ds_native_staging_dir
+
+    ds_native_dir = pick_ds_native_staging_dir(output_dir)
     if not ds_native_dir.exists():
         log.info(
             "FWFT post-train: no DS-native dir at %s; assuming LoRA / non-ZeRO-3 "

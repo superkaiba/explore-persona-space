@@ -443,7 +443,17 @@ def main():  # noqa: C901 - upload-contract resolution + arg parsing keeps this 
         zero_stage = getattr(ds_plugin, "zero_stage", 0) if ds_plugin is not None else 0
         is_zero3 = bool(getattr(trainer, "is_deepspeed_enabled", False) and zero_stage == 3)
         if is_zero3:
-            ds_native_dir = Path(output_dir).parent / (Path(output_dir).name + "_ds_native")
+            # Stage the DS-native per-rank shards on /dev/shm when available —
+            # /workspace's ~130-200 GB MooseFS per-pod quota cannot fit the
+            # ≥185 GB save on 7-rank Qwen3-32B FWFT (ENOSPC in #506 rounds
+            # 13 + 14). The picker auto-selects: env override →
+            # /dev/shm/epm_ds_native_staging/<name>_ds_native (when /dev/shm
+            # has ≥200 GB free) → output_dir.parent fallback. Both this site
+            # and run_issue506_install.py's post-train converter call the
+            # same picker so they agree on the path.
+            from explore_persona_space.orchestrate.staging import pick_ds_native_staging_dir
+
+            ds_native_dir = pick_ds_native_staging_dir(Path(output_dir))
             ds_native_dir.mkdir(parents=True, exist_ok=True)
             print(
                 f"ZeRO-3 detected (stage={zero_stage}): saving DS-native per-rank "
