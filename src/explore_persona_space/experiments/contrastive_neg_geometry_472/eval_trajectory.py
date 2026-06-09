@@ -196,6 +196,18 @@ def compute_kl_for_checkpoint(
     a seq-mean over R — plan §4.6).
 
     Returns ``kl[persona][q] -> float``.
+
+    Plan v5 §4.5 fix #3 — KL-from-base is NOT a fallback DV.
+        KL measures total-distribution shift; the v3 recovery eval read
+        24.35 nats of KL with 0 bystander emission and 0 bystander ΔG —
+        KL was tracking EOS / punctuation reallocation, NOT marker mass.
+        The legitimate uses of KL in v4 are: (a) sanity diagnostic in
+        Phase 0.6's pass condition (KL > 0 ⇒ ΔG ≠ 0 on ≥ 1 slot), and
+        (b) the per-batch byte-identical guard (KL > 0 AND |g − b| < 1e-6
+        ⇒ ASSERT FAIL). NEVER substitute KL for the marker log-prob DV
+        when the on-policy path "looks broken" — that's the v3 false-fix
+        path. See `.claude/rules/marker-leakage-measurement.md` §Anti-
+        patterns which names #504 explicitly.
     """
     import torch
     from peft import PeftModel
@@ -354,6 +366,25 @@ def run_trajectory_eval(
             use_lora=False,
         )
 
+        # Fail-loud guard for the #477 v4/v6 silent-LoRA-not-applied
+        # regression: if the adapter has B-matrix norm > floor (genuinely
+        # trained) but max|ΔG| across the WHOLE panel is below eps AND on-
+        # policy emission is uniformly zero, vLLM/PEFT silently dropped the
+        # LoRA at the forward pass and ΔG ≈ 0 is a false floor. Raises
+        # LoRANotAppliedError on the regression; passes silently (with logged
+        # verdict) on a real signal, a genuine-floor adapter, or partial
+        # emission. See .../eval_guard.py for the three-clause contract.
+        from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_guard import (
+            assert_adapter_actually_applied,
+        )
+
+        assert_adapter_actually_applied(
+            adapter_dir=adapter_path,
+            g_records=g,
+            b_records=b,
+            cell_label=label,
+        )
+
         held_out: dict[str, dict[str, dict[str, float | bool]]] = {}
         n_collapsed_ck = 0
         for persona in eval_personas:
@@ -431,7 +462,17 @@ def run_trajectory_eval(
     _teardown_vllm_hard(llm)
 
     # ── Phase B: ALL HF full-vocab KL work (one framework switch). ────────────
+    # Plan v5 §4.4 fix #1: after KL is computed, fire the per-batch byte-
+    # identical guard from the SAME (g, b, kl) the rig just produced. This
+    # is the "wired into the same forward pass" requirement — the guard reads
+    # the IDENTICAL records the trajectory.json writes, so a residual bug
+    # cannot hide between guard and persist. The guard is fail-loud
+    # (MarkerLogprobPathReadingFromBaseError) when rate > 5% de-minimis.
     if compute_kl:
+        from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_guard import (
+            assert_byte_identical_rate_below_threshold,
+        )
+
         for ck in checkpoints_out:
             frac = ck["frac"]
             adapter_path = ck["adapter_path"]
@@ -446,6 +487,53 @@ def run_trajectory_eval(
             for persona in eval_personas:
                 for q in eval_questions:
                     ck["held_out"][persona][q]["kl"] = kl[persona][q]
+            # ── Per-batch byte-identical guard (plan v5 §4.4 fix #1). ─────
+            # Reconstruct g/b records from the SAME ck["held_out"] dict the
+            # trajectory.json writes — guarantees the guard reads the rig's
+            # actual outputs (not a separate forward pass). The held-out
+            # panel (NOT panel_plus_source) is the regression input; source
+            # is excluded so source saturation (expected per fix #2) doesn't
+            # mask a residual byte-identical bug on the bystander panel.
+            g_for_guard: dict[str, dict[str, dict[str, float | bool]]] = {}
+            b_for_guard: dict[str, dict[str, dict[str, float | bool]]] = {}
+            for persona in eval_personas:
+                g_for_guard[persona] = {}
+                b_for_guard[persona] = {}
+                for q in eval_questions:
+                    leaf = ck["held_out"][persona][q]
+                    g_for_guard[persona][q] = {
+                        "logp": float(leaf["g_logp"]),
+                        "argmax_marker": bool(leaf["argmax_marker"]),
+                    }
+                    b_for_guard[persona][q] = {
+                        "logp": float(leaf["b_logp"]),
+                        "argmax_marker": False,
+                    }
+            guard_diag = assert_byte_identical_rate_below_threshold(
+                g_for_guard,
+                b_for_guard,
+                kl,
+                cell_label=f"{cell_slug}_seed{seed}_frac{frac}",
+            )
+            ck["byte_identical_guard"] = guard_diag
+            # WandB per-(cell, seed, ckpt) continuous diagnostic per plan v5
+            # Reproducibility Card ("rate logged to WandB per (cell, seed,
+            # ckpt) for analyzer diagnostics").
+            try:
+                import wandb
+
+                if wandb.run is not None:
+                    wandb.log(
+                        {
+                            f"{cell_slug}_seed{seed}_ckpt{frac}_byte_identical_rate": (
+                                guard_diag["byte_identical_rate"]
+                            )
+                        }
+                    )
+            except Exception as e:  # pragma: no cover - wandb optional
+                log.info(
+                    "wandb log skipped (%s); guard rate=%.4f.", e, guard_diag["byte_identical_rate"]
+                )
             partial_path.write_text(
                 json.dumps(
                     {"cell": cell_slug, "seed": seed, "checkpoints": checkpoints_out}, indent=2
