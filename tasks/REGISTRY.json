@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 536,
+  "highest_id": 537,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3131,6 +3131,13 @@
       "path": "tasks/proposed/536",
       "status": "proposed",
       "title": "Standardize persona-distance cosine across the leakage line (mean-centered vs raw, ~6x geometry diff) + reanalyze affected predictor calls"
+    },
+    "537": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/537",
+      "status": "proposed",
+      "title": "Context-generalization testbed v1: multi-behavior train\u00d7eval context grid as ground truth for asymmetric, behavior-dependent generalization metrics"
     },
     "54": {
       "has_clean_result": false,
