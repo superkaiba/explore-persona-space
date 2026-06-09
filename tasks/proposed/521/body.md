@@ -11,6 +11,9 @@ goal: 'Run Phases C/D/E/F on the six LoRA adapters trained in #519 (marker × 3 
   the parent Goal asks for is actually computed: does a single shift-direction + cosine-scaled
   magnitude (rank-one) govern cross-context generalization for the marker arm and
   break for the EM arm?'
+relates_to:
+- leak-predictor
+- leak-behavior-vs-marker
 ---
 ## Goal
 
