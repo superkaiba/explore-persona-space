@@ -2549,8 +2549,8 @@
       "goal": "Explain why the #463 cosine\u2192EM predictor appears at the last-prompt-token extraction but not the canonical response-mean extraction, and decide which extraction is principled for predicting emergent misalignment.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/468",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/468",
+      "status": "completed",
       "title": "At the newline-after-assistant token, real in-context examples let base-model cosine predict fine-tuned emergent misalignment (\u03c1=0.66, p=0.003, n=18); a natural-language persona description carries no signal (LOW confidence)"
     },
     "469": {
