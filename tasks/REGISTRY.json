@@ -2563,8 +2563,8 @@
       "goal": "Re-measure the marker-transfer line on-policy \u2014 score the marker on the model's own generations rather than a teacher-forced canned response \u2014 and determine what survives: whether the implanted marker saturates and transfers universally, and whether the off-policy base-model-divergence-predicts-transfer relationship is real, an overtraining artifact, or a measurement artifact.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/469",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/469",
+      "status": "completed",
       "title": "Measured on the model's own generations, an implanted marker transfers to nearly every context at ceiling, and the off-policy \"geometry predicts transfer\" result survives only at the one checkpoint before the marker saturates (MODERATE confidence)"
     },
     "47": {
