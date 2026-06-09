@@ -672,6 +672,7 @@ def sweep(
     aggregates = aggregate(rows)
     # Plateau computable on any cell whose n_grid has {200, 350, 500} all present.
     plateau = compute_plateau(aggregates)
+    plateau_glog = compute_plateau_glog(aggregates)
     payload = {
         "schema_version": 1,
         "git_sha": _git_sha(),
@@ -692,6 +693,7 @@ def sweep(
         "rows": rows,
         "aggregates": aggregates,
         "plateau_verdict": plateau,
+        "plateau_verdict_glog": plateau_glog,
     }
     out_path.write_text(json.dumps(payload, indent=2))
     logger.info("wrote %s (%d rows, %.1fs)", out_path, len(rows), time.time() - t0)
@@ -727,7 +729,8 @@ def _write_partial(
 
 def aggregate(rows: list[dict]) -> dict:
     """Mean + std of |ρ| and CV R² at each (cell_id, arm, epoch, N) across
-    the R subsets."""
+    the R subsets — for BOTH the primary ΔG DV and the secondary g_logprob DV
+    (round-2 fix Major #3: g_logprob aggregate)."""
     out: dict[tuple[str, str, int, int], dict] = {}
     grouped: dict[tuple[str, str, int, int], list[dict]] = {}
     for r in rows:
@@ -738,6 +741,16 @@ def aggregate(rows: list[dict]) -> dict:
             [v["abs_rho"] for v in vs if np.isfinite(v["abs_rho"])], dtype=np.float64
         )
         cvs = np.array([v["cv_r2"] for v in vs if np.isfinite(v["cv_r2"])], dtype=np.float64)
+        # Secondary DV (g_logprob): may not be present in older partials —
+        # fall back to NaN aggregates if the key is missing.
+        rho_glogs = np.array(
+            [abs(v["rho_glog"]) for v in vs if "rho_glog" in v and np.isfinite(v["rho_glog"])],
+            dtype=np.float64,
+        )
+        cv_glogs = np.array(
+            [v["cv_r2_glog"] for v in vs if "cv_r2_glog" in v and np.isfinite(v["cv_r2_glog"])],
+            dtype=np.float64,
+        )
         out[key] = {
             "n_subsets": len(vs),
             "n_finite_abs_rho": int(abs_rhos.size),
@@ -746,6 +759,13 @@ def aggregate(rows: list[dict]) -> dict:
             "abs_rho_std": float(abs_rhos.std(ddof=0)) if abs_rhos.size else float("nan"),
             "cv_mean": float(cvs.mean()) if cvs.size else float("nan"),
             "cv_std": float(cvs.std(ddof=0)) if cvs.size else float("nan"),
+            # g_logprob secondary DV.
+            "n_finite_abs_rho_glog": int(rho_glogs.size),
+            "n_finite_cv_glog": int(cv_glogs.size),
+            "abs_rho_glog_mean": float(rho_glogs.mean()) if rho_glogs.size else float("nan"),
+            "abs_rho_glog_std": float(rho_glogs.std(ddof=0)) if rho_glogs.size else float("nan"),
+            "cv_glog_mean": float(cv_glogs.mean()) if cv_glogs.size else float("nan"),
+            "cv_glog_std": float(cv_glogs.std(ddof=0)) if cv_glogs.size else float("nan"),
         }
     # Convert tuple keys to "cell_id|arm|epoch|N" strings for JSON.
     return {f"{cell_id}|{arm}|{epoch}|{N}": agg for (cell_id, arm, epoch, N), agg in out.items()}
@@ -797,6 +817,55 @@ def compute_plateau(aggregates: dict) -> dict:
             "sigma_350": sig_350,
             "sigma_ref": sigma_ref,
             "delta_350_to_500": delta,
+            "verdict": verdict_label,
+        }
+    return verdicts
+
+
+def compute_plateau_glog(aggregates: dict) -> dict:
+    """Parallel plateau verdict on the secondary g_logprob DV (round-2 fix Major #3).
+
+    Same criterion as ``compute_plateau`` but reads ``cv_glog_mean`` /
+    ``cv_glog_std`` from the aggregate rows. Per the plan §6 + Step 1.3,
+    the full sweep emits this verdict alongside the primary ΔG plateau
+    verdict so downstream readers can compare.
+    """
+    parsed: dict[tuple[str, str, int], dict[int, dict]] = {}
+    for k, v in aggregates.items():
+        cell_id, arm, epoch_str, N_str = k.split("|")
+        parsed.setdefault((cell_id, arm, int(epoch_str)), {})[int(N_str)] = v
+    verdicts: dict[str, dict] = {}
+    for (cell_id, arm, ep), by_N in parsed.items():
+        if not (200 in by_N and 350 in by_N and 500 in by_N):
+            continue
+        cv_200 = by_N[200].get("cv_glog_mean", float("nan"))
+        cv_350 = by_N[350].get("cv_glog_mean", float("nan"))
+        cv_500 = by_N[500].get("cv_glog_mean", float("nan"))
+        sig_200 = by_N[200].get("cv_glog_std", float("nan"))
+        sig_350 = by_N[350].get("cv_glog_std", float("nan"))
+        if not (np.isfinite(sig_200) and np.isfinite(sig_350)):
+            verdict_label = "indeterminate_sigma"
+            sigma_ref = float("nan")
+            delta = float("nan")
+        else:
+            sigma_ref = 0.5 * (float(sig_200) + float(sig_350))
+            delta = float(cv_500 - cv_350)
+            if not np.isfinite(delta):
+                verdict_label = "indeterminate_delta"
+            elif abs(delta) <= sigma_ref:
+                verdict_label = "plateau"
+            elif delta > 2.0 * sigma_ref and delta > 0:
+                verdict_label = "strongly_climbing"
+            else:
+                verdict_label = "intermediate"
+        verdicts[f"{cell_id}|{arm}|ep{ep}"] = {
+            "cv_glog_200": cv_200,
+            "cv_glog_350": cv_350,
+            "cv_glog_500": cv_500,
+            "sigma_glog_200": sig_200,
+            "sigma_glog_350": sig_350,
+            "sigma_glog_ref": sigma_ref,
+            "delta_glog_350_to_500": delta,
             "verdict": verdict_label,
         }
     return verdicts
@@ -1008,8 +1077,9 @@ def main() -> int:
 
     if args.mode == "reproduction-gate":
         gate = run_reproduction_gate()
-        # Persist the gate result alongside other artifacts.
-        gate_path = OUT_DIR / "reproduction_gate.json"
+        # Persist the gate result alongside other artifacts. Round-2 fix Minor #6:
+        # standardize on ``repro_gate.json`` (marker + (c) How to verify cite this name).
+        gate_path = OUT_DIR / "repro_gate.json"
         gate_path.write_text(
             json.dumps(
                 {
