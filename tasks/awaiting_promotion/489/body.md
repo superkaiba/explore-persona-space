@@ -19,6 +19,8 @@ goal: Test whether base-model cosine/JS distance predicts on-policy marker trans
 track: experiment
 relates_to:
 - leak-predictor
+classification: useful
+promoted_at: '2026-06-09T21:28:39Z'
 ---
 # Across 24 ICL- and system-prompt contexts, base-model cosine similarity and output JS divergence rank the LoRA's post-response marker log-prob shift equally well in a floor-saturated regime where the marker never actually emits on-policy (LOW confidence)
 
