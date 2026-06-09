@@ -183,8 +183,13 @@ uv run python scripts/audit_clean_results_body_discipline.py --self-test  # like
 # If you touched task.py / pod.py / any tested helper
 uv run pytest tests/test_task_workflow.py tests/test_workflow_lint.py -x -q
 
-# Always, after any edit
-uv run ruff check .claude scripts && uv run ruff format --check .claude scripts
+# Always, if you touched any Python / shell file — lint ONLY the files you touched
+uv run ruff check <touched paths> && uv run ruff format --check <touched paths>
+# (Markdown-only edits: ruff does not apply — report N/A. NEVER use the broad
+# `ruff check .claude scripts` as a pass/fail gate: ~1300+ pre-existing errors live in
+# experiment scripts under scripts/, so it can never PASS as-is. If you want a repo-wide
+# regression signal, stash-compare instead: record the broad error count with your edit
+# stashed, re-run with it restored, and report "N pre-existing, 0 introduced".)
 ```
 
 Any FAIL: fix it before reporting back. Never report a green run when something failed.
@@ -251,7 +256,7 @@ Final output (this is what the orchestrator reads):
 
 ## Validation
 - `workflow_lint.py --check-asks`: PASS / FAIL — <one-line summary>
-- `ruff check .claude scripts`: PASS / FAIL
+- `ruff check <touched paths>`: PASS / FAIL / N/A (markdown-only) — if you ran the broad stash-compare sweep, report `N pre-existing, 0 introduced`
 - `pytest <subset>`: PASS / FAIL — <one-line summary>
 - code-reviewer: PASS / FAIL / skipped (surgical)
 - **Committed in worktree:** branch `<branch>` @ `<commit-sha>` (orchestrator merges + pushes) — or `NOT COMMITTED — <reason>` if a check failed
