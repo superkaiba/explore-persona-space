@@ -107,15 +107,40 @@ def load_raw_completions(cell: str) -> dict:
         return json.load(f)
 
 
-def download_adapter(cell: str) -> Path:
-    """Snapshot-download the cell's LoRA adapter directory from the model repo."""
-    from huggingface_hub import snapshot_download
+def resolve_model_repo_revision() -> str:
+    """Resolve the model repo's current main commit ONCE per worker.
 
-    local = snapshot_download(
+    Pinning one sha keeps the two per-cell ``hf_hub_download`` calls in the
+    same snapshot dir even if the repo advances mid-run, and goes into the
+    output payload for reproducibility.
+    """
+    from huggingface_hub import HfApi
+
+    return HfApi().repo_info(HF_MODEL_REPO, repo_type="model").sha
+
+
+def download_adapter(cell: str, revision: str) -> Path:
+    """Download the cell's LoRA adapter files (config + weights) from the model repo.
+
+    Uses per-file ``hf_hub_download``, NOT ``snapshot_download`` with
+    ``allow_patterns``: the model repo is large enough that the API truncates
+    the file listing ``snapshot_download`` filters against, so its pattern
+    match silently yields 0 files (observed on this repo; even an exact file
+    path as an allow_pattern downloaded nothing).
+    """
+    from huggingface_hub import hf_hub_download
+
+    cfg_path = hf_hub_download(
         HF_MODEL_REPO,
-        allow_patterns=[f"issue_478/{cell}/adapter/*"],
+        f"issue_478/{cell}/adapter/adapter_config.json",
+        revision=revision,
     )
-    adapter_dir = Path(local) / "issue_478" / cell / "adapter"
+    hf_hub_download(
+        HF_MODEL_REPO,
+        f"issue_478/{cell}/adapter/adapter_model.safetensors",
+        revision=revision,
+    )
+    adapter_dir = Path(cfg_path).parent
     if not (adapter_dir / "adapter_model.safetensors").exists():
         raise FileNotFoundError(f"adapter_model.safetensors missing under {adapter_dir}")
     _assert_gauge_free(adapter_dir)
@@ -310,6 +335,7 @@ def process_cell(
     tidy: pd.DataFrame,
     device: str,
     batch_size: int,
+    model_repo_rev: str,
 ) -> None:
     """Score one (cell, seed) run trained + base and write its JSON."""
     out_path = OUTPUT_DIR / f"{cell}.json"
@@ -321,7 +347,7 @@ def process_cell(
     items = build_items(raw, tokenizer, persona_prompts)
     log.info("[%s] %d held-out rows to score", cell, len(items))
 
-    adapter_dir = download_adapter(cell)
+    adapter_dir = download_adapter(cell, model_repo_rev)
     peft_model.load_adapter(str(adapter_dir), adapter_name=cell)
     peft_model.set_adapter(cell)
     trained = score_slot(peft_model, tokenizer, items, device, batch_size)
@@ -353,6 +379,7 @@ def process_cell(
         "eos_token": EOS_TOKEN,
         "eos_token_id": EOS_ID,
         "hf_data_revision": HF_DATA_REV,
+        "hf_model_repo_revision": model_repo_rev,
         "scored_at_utc": datetime.now(UTC).isoformat(),
         "produced_by": "scripts/issue531_logit_rescore.py",
         "validation_vs_stored_logp": validation,
@@ -418,14 +445,26 @@ def main() -> int:
     )
     base_model.eval()
 
+    model_repo_rev = resolve_model_repo_revision()
+    log.info("Model repo revision pinned: %s", model_repo_rev)
+
     # PeftModel needs an initial adapter; load the first cell's and name it.
-    first_adapter = download_adapter(cells[0])
+    first_adapter = download_adapter(cells[0], model_repo_rev)
     peft_model = PeftModel.from_pretrained(base_model, str(first_adapter), adapter_name="_boot")
     peft_model.eval()
 
     for idx, cell in enumerate(cells):
         log.info("=== cell %d/%d: %s ===", idx + 1, len(cells), cell)
-        process_cell(cell, peft_model, tokenizer, persona_prompts, tidy, device, args.batch_size)
+        process_cell(
+            cell,
+            peft_model,
+            tokenizer,
+            persona_prompts,
+            tidy,
+            device,
+            args.batch_size,
+            model_repo_rev,
+        )
 
     log.info("Worker done: %d cells.", len(cells))
     return 0
