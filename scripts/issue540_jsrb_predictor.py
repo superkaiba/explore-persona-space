@@ -12,7 +12,10 @@ pinned parent script ``scripts/issue532_predictor_stress.py`` @ 296c4da2d
 (imported, never modified).
 
 Phases (each persists per-unit JSON before the next starts — checkpoint per
-phase, resume-skip on existing files):
+phase; resume-skip accepts an existing file ONLY when its recorded run
+parameters match the current invocation — see the artifact-compatibility
+section below — otherwise the unit is recomputed (Phase S/T) or the run
+fails loud (Phase M/A)):
 
 - **S** sampling: vLLM temp-1 R-samples per (context, probe), one request per
   pair (context, probe) with ``SamplingParams(n=R, seed=42)``; prompts passed
@@ -35,6 +38,15 @@ injection. ``--pair-shard k/N`` pins a single-shard grid through the SAME
 fork + subprocess + per-pair-JSON path the 4-way sweep uses; without it the
 dispatcher builds shards 0..workers-1. M/A/F run in-parent in both.
 
+Out-dir routing (round-2 review fix): when ``--out-dir`` is OMITTED, a
+production-shaped run (n_probes=50, r_samples=8, seed=42, max_new_tokens=256,
+real base model, no --pairs subset, no --stub-samples) defaults to
+``eval_results/issue_540``; ANY other shape (smoke / descope / stub / subset)
+defaults to ``eval_results/issue_540_smoke`` so a smoke can never seed
+resume-skip artifacts into the production dir. An explicit ``--out-dir`` is
+always respected — the parameter-compatibility validation still refuses
+mismatched resumes there.
+
 CLI (see plan §10 reproducibility card):
     # FULL (4-way sharded, on pod):
     nohup uv run python scripts/issue540_jsrb_predictor.py \\
@@ -42,7 +54,8 @@ CLI (see plan §10 reproducibility card):
         --workers 4 --out-dir eval_results/issue_540 \\
         > logs/issue540_full.log 2>&1 &
 
-    # SMOKE (same dispatcher path, one pair):
+    # SMOKE (same dispatcher path, one pair; --out-dir omitted →
+    # auto-routed to eval_results/issue_540_smoke):
     uv run python scripts/issue540_jsrb_predictor.py --phases S,T \\
         --pairs A1__instr_explicit_1 --n-probes 2 --r-samples 2 \\
         --pair-shard 0/1
@@ -90,9 +103,14 @@ BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 PARENT_DIR = PROJECT_ROOT / "eval_results" / "issue_532"
 DEFAULT_OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_540"
 DEFAULT_FIGURES_DIR = PROJECT_ROOT / "figures" / "issue_540"
+SMOKE_OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_540_smoke"
+SMOKE_FIGURES_DIR = PROJECT_ROOT / "figures" / "issue_540_smoke"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_SAMPLES_PATH = "issue540_jsrb_canonical/raw_completions"
-SCHEMA_VERSION = "issue540_v1"
+# v2 (round-2 review fix): per-pair payloads now record stub/seed/
+# max_new_tokens in metadata so resume-skip can validate them; v1 artifacts
+# are structurally incompatible and are recomputed / rejected.
+SCHEMA_VERSION = "issue540_v2"
 PARENT_ARM = "loc"
 PARENT_EPOCHS = [1]
 PARENT_STYLIZED_DROP = ["A3", "A4", "A5"]  # parent main() default (§6.5 robustness)
@@ -209,6 +227,157 @@ def _metadata(extra: dict | None = None) -> dict:
     return meta
 
 
+def _write_json_atomic(path: Path, payload: dict, indent: int | None = None) -> None:
+    """Write JSON via tmp + os.replace so a killed worker never leaves a
+    partial/0-byte ``.json`` behind (the resume-skip contamination vector)."""
+    tmp = path.parent / f"{path.name}.tmp"
+    tmp.write_text(json.dumps(payload, indent=indent))
+    os.replace(tmp, path)
+
+
+# ── Artifact compatibility (round-2 review fix: resume-skip validation) ────
+#
+# Every resume-skip / assembly load validates the artifact's RECORDED run
+# parameters against the CURRENT invocation. Mismatch → recompute (Phase S/T
+# resume) or hard fail (Phase M/A assembly) — NEVER silently accept or
+# min()-downscope. Closes the round-1 binding blocker: a stale smoke /
+# descope / stub / tiny-model JSON in the out-dir could be silently skipped
+# into the headline 416-cell matrix at the wrong shape.
+
+_PROBES_CACHE: dict[int, list[str]] = {}
+
+
+def _current_probes(args) -> list[str]:
+    """The current invocation's probe list; fail loud if fewer than
+    ``--n-probes`` probes exist (no silent downscope at the source)."""
+    n = args.n_probes
+    if n not in _PROBES_CACHE:
+        probes = load_q_test_extended_50()[:n]
+        if len(probes) != n:
+            raise ValueError(
+                f"--n-probes {n} requested but only {len(probes)} probes available "
+                "in q_test_extended_50 — pass an honest --n-probes"
+            )
+        _PROBES_CACHE[n] = probes
+    return _PROBES_CACHE[n]
+
+
+def _artifact_field(payload: dict, dotted: str):
+    """Resolve ``metadata.stub``-style dotted keys; None when absent."""
+    cur: object = payload
+    for part in dotted.split("."):
+        if not isinstance(cur, dict):
+            return None
+        cur = cur.get(part)
+    return cur
+
+
+def _artifact_mismatches(payload: dict, expected: dict[str, object]) -> list[str]:
+    """Recorded-artifact params vs the current invocation; [] when compatible."""
+    return [
+        f"{key}: artifact={_artifact_field(payload, key)!r} != invocation={want!r}"
+        for key, want in expected.items()
+        if _artifact_field(payload, key) != want
+    ]
+
+
+def _expected_samples_params(args, ctx: str, probes: list[str]) -> dict[str, object]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "phase": "sampling",
+        "context": ctx,
+        "n_probes": len(probes),
+        "r_samples": args.r_samples,
+        "probes": probes,
+        "metadata.stub": bool(args.stub_samples),
+        "metadata.seed": args.seed,
+        "metadata.max_new_tokens": args.max_new_tokens,
+        "metadata.base_model": BASE_MODEL,
+    }
+
+
+def _expected_pair_params(args, a: str, b: str) -> dict[str, object]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "phase": "scoring",
+        "pair.a": a,
+        "pair.b": b,
+        "n_probes": args.n_probes,
+        "r_samples": args.r_samples,
+        "metadata.model": args.model,
+        "metadata.stub": bool(args.stub_samples),
+        "metadata.seed": args.seed,
+        "metadata.max_new_tokens": args.max_new_tokens,
+    }
+
+
+def _load_validated(
+    path: Path, expected: dict[str, object], *, strict: bool, what: str
+) -> dict | None:
+    """Load ``path`` ONLY if it parses and matches ``expected``.
+
+    strict=False (Phase S/T resume-skip): missing / unreadable / mismatched
+    → None, the unit is recomputed (loud warning on mismatch).
+    strict=True (Phase T input, Phase M/A assembly, Phase F reads): any
+    problem raises — downstream phases must never run on stale artifacts.
+    """
+    if not path.exists():
+        if strict:
+            raise RuntimeError(f"{what} missing at {path} — run the producing phase first")
+        return None
+    try:
+        payload = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        if strict:
+            raise RuntimeError(f"{what} unreadable at {path}: {e}") from e
+        logger.warning("%s partial/unreadable at %s (%s) — recomputing", what, path.name, e)
+        return None
+    mismatches = _artifact_mismatches(payload, expected)
+    if mismatches:
+        msg = f"stale/incompatible {what} at {path}: " + "; ".join(mismatches)
+        if strict:
+            raise RuntimeError(
+                msg + " — recompute the producing phase with matching parameters "
+                "(or use a fresh --out-dir); NEVER assemble stale artifacts"
+            )
+        logger.warning("%s — RECOMPUTING (resume-skip refused)", msg)
+        return None
+    return payload
+
+
+def _load_compatible_samples(args, path: Path, ctx: str, *, strict: bool) -> dict | None:
+    probes = _current_probes(args)
+    return _load_validated(
+        path,
+        _expected_samples_params(args, ctx, probes),
+        strict=strict,
+        what=f"Phase S samples artifact (context {ctx})",
+    )
+
+
+def _load_compatible_pair(args, path: Path, a: str, b: str, *, strict: bool) -> dict | None:
+    payload = _load_validated(
+        path,
+        _expected_pair_params(args, a, b),
+        strict=strict,
+        what=f"Phase T per-pair artifact ({_pair_id(a, b)})",
+    )
+    if payload is None:
+        return None
+    # The pos0≡v1 launch gate must have FIRED for its designated pairs — a
+    # params-matching artifact computed before the pair was gated is stale.
+    if a != b and _pair_id(a, b) in args.pos0_check_pairs and payload.get("pos0_v1_check") is None:
+        msg = (
+            f"per-pair artifact {path} matches parameters but carries no pos0_v1_check "
+            f"for gated pair {_pair_id(a, b)}"
+        )
+        if strict:
+            raise RuntimeError(msg + " — recompute Phase T so the position-0 gate fires")
+        logger.warning("%s — RECOMPUTING (resume-skip refused)", msg)
+        return None
+    return payload
+
+
 # ── Phase S: sampling (vLLM, context-sharded) ──────────────────────────────
 
 
@@ -251,9 +420,11 @@ def phase_sampling(args, shard_k: int, shard_n: int) -> None:
     """Phase S — sample R on-policy temp-1 responses per (context, probe).
 
     Persists ``samples/samples_<ctx>.json`` per context (checkpoint per
-    phase); resume skips existing files. Token ids verbatim from vLLM —
-    never retokenized text; the SAME ``prompt_token_ids`` are persisted so
-    Phase T conditions on exactly the generation prompt.
+    phase); resume skips an existing file ONLY when its recorded params match
+    the current invocation (else it is recomputed — round-2 review fix).
+    Token ids verbatim from vLLM — never retokenized text; the SAME
+    ``prompt_token_ids`` are persisted so Phase T conditions on exactly the
+    generation prompt.
     """
     from transformers import AutoTokenizer
 
@@ -276,7 +447,7 @@ def phase_sampling(args, shard_k: int, shard_n: int) -> None:
     if ids != [MARKER_ID]:
         raise AssertionError(f"marker id drift: encode({MARKER_TEXT!r}) = {ids} != {[MARKER_ID]}")
 
-    q_test = load_q_test_extended_50()[: args.n_probes]
+    q_test = _current_probes(args)
     class_d = load_class_d_rewrites()
     instructed_panel = i532._instructed_bystander_panel()
     samples_dir = args.out_dir / "samples"
@@ -287,8 +458,8 @@ def phase_sampling(args, shard_k: int, shard_n: int) -> None:
     first_gen_pinned = False
     for ctx in my_contexts:
         out_path = samples_dir / f"samples_{ctx}.json"
-        if out_path.exists() and out_path.stat().st_size > 0:
-            logger.info("[worker %d] Phase S resume-skip %s", shard_k, out_path.name)
+        if _load_compatible_samples(args, out_path, ctx, strict=False) is not None:
+            logger.info("[worker %d] Phase S resume-skip %s (params match)", shard_k, out_path.name)
             continue
         t0 = time.time()
         prompt_token_ids = []
@@ -384,7 +555,7 @@ def phase_sampling(args, shard_k: int, shard_n: int) -> None:
             "terminator_action_counts": action_counts,
             "truncation_rate": sum(s["truncated"] for s in flat) / max(1, len(flat)),
         }
-        out_path.write_text(json.dumps(payload))
+        _write_json_atomic(out_path, payload)
         logger.info(
             "[worker %d] Phase S wrote %s (%d probes × %d samples, trunc=%.2f, %.1fs)",
             shard_k,
@@ -400,14 +571,14 @@ def phase_sampling(args, shard_k: int, shard_n: int) -> None:
 
 
 def _load_samples(args, ctx: str) -> dict:
+    """Strict-validated Phase S artifact load (missing / stale → raise).
+
+    Validates schema_version, context, n_probes, r_samples, the probe TEXT
+    list, stub flag, seed, and max_new_tokens against the current invocation
+    — the round-1 ``min()`` probe-count downscope is gone."""
     path = args.out_dir / "samples" / f"samples_{ctx}.json"
-    if not path.exists():
-        raise FileNotFoundError(
-            f"Phase T requires Phase S output {path} — run --phases S first (same shard grid)"
-        )
-    payload = json.loads(path.read_text())
-    if payload.get("schema_version") != SCHEMA_VERSION:
-        raise AssertionError(f"{path} schema_version={payload.get('schema_version')!r}")
+    payload = _load_compatible_samples(args, path, ctx, strict=True)
+    assert payload is not None  # strict=True raises instead of returning None
     return payload
 
 
@@ -418,11 +589,9 @@ def _score_pair(args, model, tokenizer, a: str, b: str, max_batch_holder: dict) 
 
     samples_a = _load_samples(args, a)
     samples_b = _load_samples(args, b)
-    n_probes = min(samples_a["n_probes"], args.n_probes)
-    if samples_b["n_probes"] < n_probes:
-        raise RuntimeError(f"probe-count mismatch: {a}={samples_a['n_probes']} vs {b}")
-    if samples_a["probes"][:n_probes] != samples_b["probes"][:n_probes]:
-        raise RuntimeError(f"probe TEXT mismatch between {a} and {b} samples JSONs")
+    # Both sides validated against the SAME current probe list (text + count)
+    # by _load_samples, so the invocation's n_probes is exact for both.
+    n_probes = args.n_probes
 
     r = args.r_samples
     profile_cap = args.max_new_tokens + 1
@@ -530,12 +699,27 @@ def _score_pair(args, model, tokenizer, a: str, b: str, max_batch_holder: dict) 
         if diff > POS0_WARN:
             logger.warning("position-0 cross-check WARN for %s: diff=%.5f", pid, diff)
 
-    n_kept = int(profile_cnt.max()) if profile_cnt.size else 0
+    # Positions actually observed = count of nonzero-count slots (counts are
+    # nonincreasing in position). Round-1 used profile_cnt.max() — the max
+    # COUNT (rows at position 0), not the last position index — which
+    # silently truncated the profile whenever n_probes*2r < profile_cap
+    # (concern position-profile-truncation).
+    n_kept = int((profile_cnt > 0).sum()) if profile_cnt.size else 0
     return {
         "schema_version": SCHEMA_VERSION,
         "phase": "scoring",
         "metadata": _metadata(
-            {"phase": "T", "model": args.model, "max_batch": max_batch_holder["max_batch"]}
+            {
+                "phase": "T",
+                "model": args.model,
+                "max_batch": max_batch_holder["max_batch"],
+                # Provenance threading (round-2 review fix): record the
+                # upstream sampling params so resume-skip / assembly can
+                # validate a pair artifact without re-opening samples JSONs.
+                "stub": bool(args.stub_samples),
+                "seed": args.seed,
+                "max_new_tokens": args.max_new_tokens,
+            }
         ),
         "pair": {"a": a, "b": b},
         "is_selfpair": a == b,
@@ -568,7 +752,12 @@ def _score_pair(args, model, tokenizer, a: str, b: str, max_batch_holder: dict) 
 
 
 def phase_scoring(args, shard_k: int, shard_n: int) -> None:
-    """Phase T — teacher-forced scoring per pair (checkpoint + resume-skip)."""
+    """Phase T — teacher-forced scoring per pair (checkpoint + resume-skip).
+
+    Resume-skip accepts an existing pair JSON ONLY when it parses AND its
+    recorded params (shape, model, stub, seed, max_new_tokens, pair identity,
+    pos0-gate evidence) match the current invocation; anything else —
+    including the 0-byte partial from a killed worker — is recomputed."""
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -581,7 +770,7 @@ def phase_scoring(args, shard_k: int, shard_n: int) -> None:
 
     def _done(a: str, b: str) -> bool:
         p = per_pair_dir / f"pair_{_pair_id(a, b)}.json"
-        return p.exists() and p.stat().st_size > 0  # 0-byte partial → recompute
+        return _load_compatible_pair(args, p, a, b, strict=False) is not None
 
     todo = [(a, b) for a, b in my_pairs if not _done(a, b)]
     logger.info(
@@ -608,7 +797,7 @@ def phase_scoring(args, shard_k: int, shard_n: int) -> None:
         t0 = time.time()
         payload = _score_pair(args, model, tokenizer, a, b, max_batch_holder)
         out_path = per_pair_dir / f"pair_{_pair_id(a, b)}.json"
-        out_path.write_text(json.dumps(payload))
+        _write_json_atomic(out_path, payload)
         logger.info(
             "[worker %d] Phase T wrote %s (js_rb=%.5f bits, %.1fs)",
             shard_k,
@@ -624,18 +813,13 @@ def phase_scoring(args, shard_k: int, shard_n: int) -> None:
 def phase_matrix(args) -> dict:
     """Assemble predictors_jsrb.json — js_rb/KL matrices (symmetric fill,
     diagonal 0) + the parent's v1 columns copied verbatim. Fail-loud on any
-    missing per-pair file (the parent's allow_partial_panel discipline)."""
+    missing OR parameter-incompatible per-pair file (round-2 review fix: a
+    stale smoke/descope/stub artifact must never enter the headline matrix)."""
     predictors = _load_parent_predictors()
     sources, bystanders = predictors["sources"], predictors["bystanders"]
     b_idx = {b: i for i, b in enumerate(bystanders)}
     pairs = _canonical_pairs(sources, bystanders)
     per_pair_dir = args.out_dir / "per_pair"
-    missing = [p for p in pairs if not (per_pair_dir / f"pair_{_pair_id(*p)}.json").exists()]
-    if missing:
-        raise RuntimeError(
-            f"Phase M: {len(missing)}/280 per-pair files missing; first 5: {missing[:5]} — "
-            "re-run Phase T (resume skips completed pairs)"
-        )
 
     n_s, n_b = len(sources), len(bystanders)
     js_rb = np.zeros((n_s, n_b))
@@ -645,8 +829,20 @@ def phase_matrix(args) -> dict:
     sym_kl = np.zeros((n_s, n_b))
     mc_se = np.zeros((n_s, n_b))
     by_pair = {}
+    problems: list[str] = []
     for a, b in pairs:
-        by_pair[(a, b)] = json.loads((per_pair_dir / f"pair_{_pair_id(a, b)}.json").read_text())
+        try:
+            by_pair[(a, b)] = _load_compatible_pair(
+                args, per_pair_dir / f"pair_{_pair_id(a, b)}.json", a, b, strict=True
+            )
+        except RuntimeError as e:
+            problems.append(str(e))
+    if problems:
+        raise RuntimeError(
+            f"Phase M: {len(problems)}/{len(pairs)} per-pair artifacts missing or "
+            f"parameter-incompatible with this invocation; first 5: {problems[:5]} — "
+            "re-run Phase T with matching parameters (or use a fresh --out-dir)"
+        )
     for i, s in enumerate(sources):
         for j, byst in enumerate(bystanders):
             if s == byst:
@@ -692,7 +888,7 @@ def phase_matrix(args) -> dict:
         "base_prior_extra_logp": predictors.get("base_prior_extra_logp", {}),
     }
     out_path = args.out_dir / "predictors_jsrb.json"
-    out_path.write_text(json.dumps(payload, indent=2))
+    _write_json_atomic(out_path, payload, indent=2)
     logger.info("Phase M wrote %s", out_path)
     return payload
 
@@ -878,13 +1074,15 @@ def _unordered_cluster_ids(panel: dict, b_order: list[str]) -> np.ndarray:
     return np.array(ids)
 
 
-def _split_half_reliability(args, panel: dict, pairs: list[tuple[str, str]]) -> dict:
+def _split_half_reliability(args, pairs: list[tuple[str, str]]) -> dict:
     """Split-half (first r/2 vs last r/2 samples per side) js_rb reliability
     across ordinary unordered pairs + Spearman-Brown (analyzer H1 obligation)."""
     per_pair_dir = args.out_dir / "per_pair"
     h1, h2 = [], []
     for a, b in pairs:
-        rec = json.loads((per_pair_dir / f"pair_{_pair_id(a, b)}.json").read_text())
+        rec = _load_compatible_pair(
+            args, per_pair_dir / f"pair_{_pair_id(a, b)}.json", a, b, strict=True
+        )
         r = rec["r_samples"]
         if r < 2:
             return {"skipped": f"r_samples={r} < 2"}
@@ -925,7 +1123,7 @@ def _length_nuisance_partial(args, panel: dict, b_order: list[str]) -> dict:
         a, c = (s, b) if b_idx[s] < b_idx[b] else (b, s)
         pid = _pair_id(a, c)
         if pid not in cache:
-            rec = json.loads((per_pair_dir / f"pair_{pid}.json").read_text())
+            rec = _load_compatible_pair(args, per_pair_dir / f"pair_{pid}.json", a, c, strict=True)
             mean_a = np.mean([x["n_positions"] for x in rec["per_sample"] if x["side"] == "a"])
             mean_b = np.mean([x["n_positions"] for x in rec["per_sample"] if x["side"] == "b"])
             cache[pid] = abs(float(mean_a) - float(mean_b))
@@ -1031,7 +1229,17 @@ def phase_analysis(args) -> dict:
     logger.info("Reproduction control PASS — ported phase-3 matches analysis.json to ≤1e-9")
 
     # ── 2. Panel + js_rb columns ──────────────────────────────────────────
-    jsrb_payload = json.loads((args.out_dir / "predictors_jsrb.json").read_text())
+    jsrb_payload = _load_validated(
+        args.out_dir / "predictors_jsrb.json",
+        {
+            "schema_version": SCHEMA_VERSION,
+            "phase": "matrix",
+            "n_probes": args.n_probes,
+            "r_samples": args.r_samples,
+        },
+        strict=True,
+        what="Phase M matrix artifact",
+    )
     panel = i532._build_union_panel(
         phase0,
         PARENT_DIR,
@@ -1108,8 +1316,12 @@ def phase_analysis(args) -> dict:
     s_idx = {s: i for i, s in enumerate(sources)}
     pairs = _canonical_pairs(sources, bystanders)
     pos0_map = {}
+    mc_se_list: list[float] = []
     for a, b in pairs:
-        rec = json.loads((args.out_dir / "per_pair" / f"pair_{_pair_id(a, b)}.json").read_text())
+        rec = _load_compatible_pair(
+            args, args.out_dir / "per_pair" / f"pair_{_pair_id(a, b)}.json", a, b, strict=True
+        )
+        mc_se_list.append(rec["mc_se_js_bits"])
         i = s_idx[a] if a in s_idx else s_idx[b]
         j = b_idx[b] if a in s_idx else b_idx[a]
         pos0_map[_pair_id(a, b)] = {
@@ -1120,17 +1332,10 @@ def phase_analysis(args) -> dict:
     pos0_diffs = np.array([v["abs_diff"] for v in pos0_map.values()])
 
     # ── 8/9/10. MC-noise, split-half, length-nuisance (analyzer notes) ────
-    mc_ses = np.array(
-        [
-            json.loads((args.out_dir / "per_pair" / f"pair_{_pair_id(a, b)}.json").read_text())[
-                "mc_se_js_bits"
-            ]
-            for a, b in pairs
-        ]
-    )
+    mc_ses = np.array(mc_se_list)  # collected in the validated pos0 loop above
     js_vals = np.array([panel["js_rb"][m_ord].std()])
     ord_pairs = [(a, b) for a, b in pairs if b not in instructed_panel]
-    split_half = _split_half_reliability(args, panel, ord_pairs)
+    split_half = _split_half_reliability(args, ord_pairs)
     length_nuisance = _length_nuisance_partial(args, panel, bystanders)
 
     # ── 11. Verdicts ──────────────────────────────────────────────────────
@@ -1145,10 +1350,20 @@ def phase_analysis(args) -> dict:
     )
     h2 = _h2_verdict(leaderboard["js_rb"]["instructed"])
 
+    # Self-pair sanity arm is a REQUIRED control (plan §11): missing or
+    # stale → raise; above-threshold → raise. Round 1 recorded None when the
+    # file was missing, silently skipping the gate (Codex minor, upheld).
     selfpair_path = args.out_dir / "per_pair" / f"pair_{args.selfpair}__{args.selfpair}.json"
-    selfpair_js = (
-        json.loads(selfpair_path.read_text())["js_rb_bits"] if selfpair_path.exists() else None
+    selfpair_rec = _load_compatible_pair(
+        args, selfpair_path, args.selfpair, args.selfpair, strict=True
     )
+    selfpair_js = selfpair_rec["js_rb_bits"]
+    if selfpair_js > SELFPAIR_MAX_BITS:
+        raise RuntimeError(
+            f"Phase A self-pair gate FAIL: JS({args.selfpair},{args.selfpair}) = "
+            f"{selfpair_js:.6f} bits > {SELFPAIR_MAX_BITS} — teacher-forcing alignment / "
+            "padding bug; never interpret the RB matrix past a failed structural control"
+        )
 
     analysis = {
         "schema_version": SCHEMA_VERSION,
@@ -1183,7 +1398,7 @@ def phase_analysis(args) -> dict:
         "h2": h2,
     }
     out_path = args.out_dir / "analysis_jsrb.json"
-    out_path.write_text(json.dumps(analysis, indent=2))
+    _write_json_atomic(out_path, analysis, indent=2)
     logger.info("Phase A wrote %s (H1=%s, H2=%s)", out_path, h1["verdict"], h2["verdict"])
     return analysis
 
@@ -1213,8 +1428,23 @@ def phase_figures(args) -> list[Path]:
     )
 
     set_paper_style("blog")
-    analysis = json.loads((args.out_dir / "analysis_jsrb.json").read_text())
-    jsrb_payload = json.loads((args.out_dir / "predictors_jsrb.json").read_text())
+    analysis = _load_validated(
+        args.out_dir / "analysis_jsrb.json",
+        {"schema_version": SCHEMA_VERSION, "phase": "analysis"},
+        strict=True,
+        what="Phase A analysis artifact",
+    )
+    jsrb_payload = _load_validated(
+        args.out_dir / "predictors_jsrb.json",
+        {
+            "schema_version": SCHEMA_VERSION,
+            "phase": "matrix",
+            "n_probes": args.n_probes,
+            "r_samples": args.r_samples,
+        },
+        strict=True,
+        what="Phase M matrix artifact",
+    )
     predictors = _load_parent_predictors()
     phase0 = _load_parent_phase0()
     sources, bystanders = predictors["sources"], predictors["bystanders"]
@@ -1324,7 +1554,9 @@ def phase_figures(args) -> list[Path]:
     per_pair_dir = args.out_dir / "per_pair"
     prof = {"ordinary": None, "instructed": None}
     for a, b in _canonical_pairs(sources, bystanders):
-        rec = json.loads((per_pair_dir / f"pair_{_pair_id(a, b)}.json").read_text())
+        rec = _load_compatible_pair(
+            args, per_pair_dir / f"pair_{_pair_id(a, b)}.json", a, b, strict=True
+        )
         kind = "instructed" if b in instructed_panel else "ordinary"
         s = np.array(rec["position_profile"]["js_bits_sum"])
         c = np.array(rec["position_profile"]["count"], dtype=np.float64)
@@ -1354,7 +1586,9 @@ def phase_figures(args) -> list[Path]:
     fig, ax = plt.subplots(figsize=(6.5, 4.2))
     asym = {"Ordinary–ordinary": [], "Ordinary–instructed": []}
     for a, b in _canonical_pairs(sources, bystanders):
-        rec = json.loads((per_pair_dir / f"pair_{_pair_id(a, b)}.json").read_text())
+        rec = _load_compatible_pair(
+            args, per_pair_dir / f"pair_{_pair_id(a, b)}.json", a, b, strict=True
+        )
         kind = "Ordinary–instructed" if b in instructed_panel else "Ordinary–ordinary"
         asym[kind].append(rec["kl_ab_nats"] - rec["kl_ba_nats"])
     ax.boxplot(
@@ -1421,7 +1655,9 @@ def phase_figures(args) -> list[Path]:
     fig, ax = plt.subplots(figsize=(8.0, 4.2))
     data, labels = [], []
     for a, b in cherry:
-        rec = json.loads((per_pair_dir / f"pair_{_pair_id(a, b)}.json").read_text())
+        rec = _load_compatible_pair(
+            args, per_pair_dir / f"pair_{_pair_id(a, b)}.json", a, b, strict=True
+        )
         data.append([s["kl_side_m_bits_per_token"] for s in rec["per_sample"]])
         labels.append(f"{a} vs {b.replace('instr_', '')}")
     ax.violinplot(data, showmedians=True)
@@ -1436,9 +1672,10 @@ def phase_figures(args) -> list[Path]:
     ctx_labels, rates = [], []
     for ctx in bystanders:
         p = samples_dir / f"samples_{ctx}.json"
-        if p.exists():
+        payload = _load_compatible_samples(args, p, ctx, strict=False)
+        if payload is not None:  # absent/incompatible files are skipped, not plotted
             ctx_labels.append(ctx.replace("instr_", ""))
-            rates.append(json.loads(p.read_text())["truncation_rate"])
+            rates.append(payload["truncation_rate"])
     if ctx_labels:
         fig, ax = plt.subplots(figsize=(8.0, 4.2))
         ax.bar(range(len(ctx_labels)), rates, color=colors[2])
@@ -1459,9 +1696,22 @@ def _write_results_sentinel(args, analysis: dict, t_start: float) -> Path:
     """End-of-run sentinel per /issue Step 7 + poll_pipeline.py
     ``_SENTINEL_REQUIRED_KEYS`` (sentinel_schema_version / kind / version)."""
     epoch = int(time.time())
-    sentinel_dir = Path("/workspace/logs")
-    if not sentinel_dir.exists():
+    # poll_pipeline.py watches /workspace/logs/issue-540-*.json ONLY. On a
+    # pod the /workspace volume exists but bootstrap may not have created
+    # logs/ — create it rather than silently diverting (round-1 concern
+    # sentinel-workspace-logs-fallback: a diverted sentinel blinds the
+    # autonomous poller, the #488 failure shape). Only a GPU-less local VM
+    # (no /workspace volume at all) falls back to out_dir, loudly.
+    workspace = Path("/workspace")
+    if workspace.is_dir():
+        sentinel_dir = workspace / "logs"
+    else:
         sentinel_dir = args.out_dir
+        logger.warning(
+            "no /workspace volume (local VM run) — results sentinel diverted to %s; "
+            "poll_pipeline.py watches /workspace/logs only and will NOT observe it",
+            sentinel_dir,
+        )
     sentinel_dir.mkdir(parents=True, exist_ok=True)
     path = sentinel_dir / f"issue-540-epm_results-{epoch}.json"
     wall_h = (time.time() - t_start) / 3600.0
@@ -1501,19 +1751,18 @@ def _write_results_sentinel(args, analysis: dict, t_start: float) -> Path:
         "gpu_hours_budgeted": GPU_HOURS_BUDGETED,
         "plan_deviations": args.plan_deviation or [],
     }
-    path.write_text(
-        json.dumps(
-            {
-                "sentinel_schema_version": 1,
-                "kind": "epm:results",
-                "version": 1,
-                "task_id": 540,
-                "status": "completed",
-                "ts": epoch,
-                "note": note,
-            },
-            indent=2,
-        )
+    _write_json_atomic(
+        path,
+        {
+            "sentinel_schema_version": 1,
+            "kind": "epm:results",
+            "version": 1,
+            "task_id": 540,
+            "status": "completed",
+            "ts": epoch,
+            "note": note,
+        },
+        indent=2,
     )
     logger.info("Wrote results sentinel %s", path)
     return path
@@ -1546,6 +1795,49 @@ def upload_samples(args) -> None:
 
 
 # ── Dispatcher / worker ────────────────────────────────────────────────────
+
+
+def _is_production_shaped(args) -> bool:
+    """True iff the invocation matches the plan §10 production card exactly
+    (the only shape that may default into eval_results/issue_540)."""
+    return (
+        args.n_probes == 50
+        and args.r_samples == 8
+        and args.seed == 42
+        and args.max_new_tokens == 256
+        and args.model == BASE_MODEL
+        and not args.stub_samples
+        and not args.pairs
+    )
+
+
+def _resolve_dirs(args) -> None:
+    """Default-dir routing (round-2 review fix). Omitted ``--out-dir``:
+    production-shaped runs → eval_results/issue_540; ANY other shape (smoke /
+    descope / stub / subset / non-default seed) → eval_results/issue_540_smoke,
+    so a smoke launched without --out-dir (the plan §10 smoke command) can
+    never seed resume-skip artifacts into the production dir. Explicit
+    ``--out-dir`` is always respected — artifact-compatibility validation
+    still refuses mismatched resumes there."""
+    production = _is_production_shaped(args)
+    if args.out_dir is None:
+        args.out_dir = DEFAULT_OUT_DIR if production else SMOKE_OUT_DIR
+        if not production:
+            logger.warning(
+                "non-production parameters (n_probes=%d r_samples=%d seed=%d "
+                "max_new_tokens=%d stub=%s pairs=%s model=%s) with no --out-dir — "
+                "routing output to %s (production dir untouched)",
+                args.n_probes,
+                args.r_samples,
+                args.seed,
+                args.max_new_tokens,
+                args.stub_samples,
+                bool(args.pairs),
+                args.model,
+                args.out_dir,
+            )
+    if args.figures_dir is None:
+        args.figures_dir = DEFAULT_FIGURES_DIR if production else SMOKE_FIGURES_DIR
 
 
 def _parse_shard(s: str) -> tuple[int, int]:
@@ -1705,14 +1997,21 @@ def _build_parser() -> argparse.ArgumentParser:
         default=["A1__instr_explicit_1"],
         help="pairs that run the fresh-v1 position-0 cross-check (plan §4 gate)",
     )
-    parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
-    parser.add_argument("--figures-dir", type=Path, default=DEFAULT_FIGURES_DIR)
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=None,
+        help="omitted → eval_results/issue_540 for production-shaped runs, "
+        "eval_results/issue_540_smoke for any other shape (see _resolve_dirs)",
+    )
+    parser.add_argument("--figures-dir", type=Path, default=None, help="same routing as --out-dir")
     parser.add_argument("--model", default=BASE_MODEL, help="HF model for Phase T scoring")
     parser.add_argument("--max-batch", type=int, default=16, help="Phase T forward sub-batch")
     parser.add_argument(
         "--stub-samples",
         action="store_true",
-        help="Phase S writes synthetic samples (GPU-less VM smoke only; recorded in metadata)",
+        help="Phase S writes synthetic samples; downstream phases require the same flag "
+        "to ACCEPT stub artifacts (GPU-less VM smoke only; recorded in metadata)",
     )
     parser.add_argument(
         "--upload-samples",
@@ -1733,6 +2032,7 @@ def main(argv: list[str] | None = None) -> int:
         datefmt="%Y-%m-%dT%H:%M:%S",
     )
     args = _build_parser().parse_args(argv)
+    _resolve_dirs(args)
     if args.worker:
         return run_worker(args)
     return run_dispatcher(args)
