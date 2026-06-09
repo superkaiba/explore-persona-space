@@ -2,7 +2,8 @@
 title: Geometric leakage predictors (cosine/JS/Gaussian-KL) vs a base-prior predictor
   on instruction-set marker contexts
 kind: experiment
-tags: []
+tags:
+- leak-predictor
 created_at: '2026-06-09T06:07:58Z'
 has_clean_result: false
 parent_id: 502
