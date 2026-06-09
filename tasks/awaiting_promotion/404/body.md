@@ -11,6 +11,8 @@ has_clean_result: true
 goal: Measure within-persona cross-behavior leakage by training behavior B into a
   fixed persona P and quantifying which related behaviors B' shift, and identify a
   behavior-distance metric that predicts the leakage strength.
+classification: useful
+promoted_at: '2026-06-09T21:34:48Z'
 ---
 # Base-model cosine similarity between narrow and broad system prompts predicts post-SFT broad-misalignment rate (ρ = +0.75) across 7 (narrow, broad) pairs (MODERATE confidence)
 
