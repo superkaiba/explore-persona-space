@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 539,
+  "highest_id": 540,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3162,6 +3162,14 @@
       "path": "tasks/archived/54",
       "status": "archived",
       "title": "Improve SDF midtraining code"
+    },
+    "540": {
+      "goal": "Implement the canonical Rao-Blackwellized sequence-level Jensen-Shannon divergence (Amini/Vieira/Cotterell 2025, arXiv 2504.10637) per persona-distance-metrics.md, re-fit the JS arm of #532's predictor leaderboard against the same 416-cell ep1 panel, and test whether the canonical estimator changes the JS-arm conclusion that #532 measured with the deprecated v1 single-next-token estimator.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/540",
+      "status": "proposed",
+      "title": "Canonical Rao-Blackwellized sequence-level JS replaces deprecated JS-v1 on #532's panel"
     },
     "55": {
       "has_clean_result": false,
