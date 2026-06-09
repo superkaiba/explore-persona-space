@@ -16,6 +16,8 @@ relates_to:
 - leak-single-vs-multi
 - leak-predictor
 - leak-from-cell-set
+classification: not-useful
+promoted_at: '2026-06-09T22:24:34Z'
 ---
 # A deliberately-cold marker-implant LoRA stayed at the emission floor across 36 cells, so the additivity geometry is only a weak activation-space read (LOW confidence)
 
