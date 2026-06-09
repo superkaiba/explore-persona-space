@@ -95,9 +95,11 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import shlex
 import subprocess
+import tempfile
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -778,7 +780,6 @@ def _format_labels(spec: RunSpec, attempt_id: str) -> str:
 
 def _envget(key: str) -> str | None:
     """Read an env var without crashing when ``os`` is monkey-patched."""
-    import os
 
     return os.environ.get(key)
 
@@ -976,6 +977,35 @@ def reconnect_or_none(
         # The zone field is a URL; take the last path segment.
         zone = zone_url.rsplit("/", 1)[-1] if zone_url else config.primary_zone
         instance_id = str(inst.get("id") or "")
+        # Recover the original attempt_id from the instance's labels (set
+        # by ``_format_labels`` at create time as ``eps-attempt=<id>``).
+        # WITHOUT this, ``launch()`` on the reconnect path would derive
+        # the ExpectedArtifacts declaration from a FRESH attempt_id, but
+        # the VM writes its sentinel + per-attempt artifact dirs under
+        # the ORIGINAL attempt_id — so ``confirm_artifacts`` would always
+        # FAIL on reconnect (sentinel-path mismatch). Labels accept only
+        # ``[a-z0-9_-]``, so a colon/dot-bearing attempt_id would have
+        # been sanitized at create time; downstream code must therefore
+        # treat the recovered label value as the canonical attempt_id
+        # for this instance's lifetime (the VM-side paths match it).
+        labels = inst.get("labels") or {}
+        recovered_attempt_id: str | None = None
+        if isinstance(labels, dict):
+            raw = labels.get("eps-attempt")
+            if raw:
+                recovered_attempt_id = str(raw)
+        extra: dict[str, Any] = {
+            "intent": spec.intent,
+            "issue": int(spec.issue),
+            "project": config.project,
+            "gcloud_config": config.gcloud_config,
+            "zone": zone,
+            "instance_name": name,
+            "status_at_reconnect": status,
+            "reconnected": True,
+        }
+        if recovered_attempt_id is not None:
+            extra["attempt_id"] = recovered_attempt_id
         return RunHandle(
             backend="gcp",
             cluster=None,
@@ -983,16 +1013,7 @@ def reconnect_or_none(
             pod_name=name,
             scratch_dir=workload_dir_for(config, spec.issue),
             log_path=f"{workload_dir_for(config, spec.issue)}/logs/issue-{spec.issue}.log",
-            extra={
-                "intent": spec.intent,
-                "issue": int(spec.issue),
-                "project": config.project,
-                "gcloud_config": config.gcloud_config,
-                "zone": zone,
-                "instance_name": name,
-                "status_at_reconnect": status,
-                "reconnected": True,
-            },
+            extra=extra,
         )
     return None
 
@@ -1193,12 +1214,16 @@ class GcpBackend(ComputeBackend):
         # ``/issue`` re-invocation). Skip provisioning entirely.
         existing = reconnect_or_none(spec=spec, config=config, runner=self._run)
         if existing is not None:
-            # Reconnect: thread the EXISTING attempt-id (recovered from
-            # the instance labels) where possible. Today we don't read
-            # labels back out — fall back to a fresh attempt id; the
-            # in-VM workload's own per-run state on disk determines what
-            # actually runs. The handle's `attempt_id` is informational
-            # for the marker trail.
+            # Reconnect: thread the ORIGINAL attempt_id (recovered from
+            # the instance's ``eps-attempt`` label by ``reconnect_or_none``)
+            # into the ExpectedArtifacts declaration. The VM was provisioned
+            # under that attempt_id and writes its sentinel + per-attempt
+            # artifact dirs under it; deriving the declaration from a
+            # FRESH attempt_id would make ``confirm_artifacts`` look at the
+            # wrong sentinel path and FAIL on every reconnect. Fall back
+            # to the freshly-generated ``attempt_id`` only when the label
+            # wasn't present (e.g. an instance created by an older code
+            # path before the labels were added).
             logger.info(
                 "GCP reconnect: handle existing instance %s in %s",
                 existing.pod_name,
@@ -1212,18 +1237,41 @@ class GcpBackend(ComputeBackend):
                 wandb_run_path=spec.extra.get("wandb_run_path"),
             )
 
-        # Render the startup-script + create argv. The startup-script
-        # body is large (~3KB); we inline it through ``--metadata
-        # startup-script=`` rather than a tempfile because tests can
-        # assert on the raw argv shape. A future slice may switch to
-        # ``--metadata-from-file`` once the metadata-line cap (256KB)
-        # gets close.
+        # Render the startup-script + persist it to a per-launch tempfile,
+        # then thread the path so ``render_create_argv`` takes the
+        # ``--metadata-from-file=startup-script=<path>`` branch. The inline
+        # ``--metadata=startup-script=<body>`` shape is mangled by gcloud's
+        # KEY=VALUE dict parser whenever the body contains commas — and the
+        # rendered body's completion-sentinel JSON
+        # (``{"phase":"done","issue":...,"attempt_id":"..."}``) always does.
+        # The renderer's docstring already prefers the tempfile path "so
+        # secrets-bearing scripts never leak through argv"; this matches the
+        # control flow to the docstring. Verified on the 2026-06-08 $1 live
+        # GCP test, which failed with ``Bad syntax for dict arg`` until the
+        # call was rewritten to use ``--metadata-from-file``.
         startup = self._render_startup(
             spec=spec,
             config=config,
             attempt_id=attempt_id,
             hydra_args=spec.hydra_args,
         )
+        # Mode 0o600 so the script — which carries the curl stanza that
+        # fetches secrets from instance metadata — is never world-readable
+        # on the VM either (matches the slurm secrets-tempfile pattern).
+        fd, startup_path = tempfile.mkstemp(
+            prefix=f"eps-gcp-startup-{spec.issue}-",
+            suffix=".sh",
+        )
+        try:
+            os.write(fd, startup.encode("utf-8"))
+        finally:
+            os.close(fd)
+        os.chmod(startup_path, 0o600)
+        # In-place mutation of the mutable ``extra`` dict is the cleanest
+        # way to thread the path through to ``render_create_argv``'s
+        # existing ``spec.extra["startup_script_path"]`` contract (RunSpec
+        # is frozen, but its ``extra`` dict is mutable by design).
+        spec.extra["startup_script_path"] = startup_path
 
         zones_to_try: list[str] = [config.primary_zone]
         zones_to_try.extend(z for z in config.fallback_zones if z and z != config.primary_zone)
@@ -1423,6 +1471,13 @@ class GcpBackend(ComputeBackend):
         rely on the in-run uploads (HF Hub / WandB / git), exactly the
         same way RunPod does.
         """
+        # TODO(slice-6): fetch_results must scp the completion sentinel
+        # (+ eval_results) back from the GCE VM before teardown; until
+        # then confirm_artifacts FAILs on real GCP runs (the sentinel
+        # lives on the VM, the slice-2 verifier reads local FS). The
+        # /issue fetch contract being wired in slice 6 is the right
+        # place to land this — implementing it now without the contract
+        # would force a redesign when slice 6 lands.
         del handle
         return None
 

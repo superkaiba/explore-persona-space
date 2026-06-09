@@ -1058,3 +1058,166 @@ def test_instance_name_for_uses_canonical_eps_issue_prefix() -> None:
     """The audit reaper greps for ``eps-issue-*`` — the name must match."""
     assert instance_name_for(137) == "eps-issue-137"
     assert instance_name_for(1) == "eps-issue-1"
+
+
+# ---------------------------------------------------------------------------
+# Regression: launch() routes the startup script through --metadata-from-file
+# ---------------------------------------------------------------------------
+
+
+def test_launch_uses_metadata_from_file_for_startup_script(no_marker_posts, tmp_path) -> None:
+    """Regression for the comma-mangling bug hit on the 2026-06-08 $1 live
+    GCP test.
+
+    The rendered startup-script body always contains JSON
+    (``{"phase":"done","issue":...,"attempt_id":"..."}``) whose commas
+    break gcloud's ``--metadata=KEY=VALUE`` dict-arg parser; gcloud
+    rejects the call with ``Bad syntax for dict arg``. ``launch()`` must
+    therefore ALWAYS write the script to a per-launch tempfile and route
+    it through ``--metadata-from-file=startup-script=<path>`` (the
+    branch ``render_create_argv`` already supports), NOT inline through
+    ``--metadata=startup-script=<body>``.
+
+    The existing ``render_create_argv`` golden test exercises the inline
+    branch and gives a false green here because it never feeds the argv
+    through a real gcloud parser; this test pins the live-path contract.
+    """
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],  # no existing instance
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    spec = _spec()  # default hydra_args produce the canonical JSON sentinel
+    backend.launch(spec)
+
+    create_calls = [a for a in runner.calls if "create" in a and "instances" in a]
+    assert len(create_calls) == 1, runner.calls
+    create_argv = create_calls[0]
+
+    # The argv MUST take the --metadata-from-file branch.
+    from_file_args = [a for a in create_argv if a.startswith("--metadata-from-file=")]
+    assert from_file_args, f"--metadata-from-file= missing from create argv: {create_argv}"
+    assert any(a.startswith("--metadata-from-file=startup-script=") for a in from_file_args), (
+        from_file_args
+    )
+    # And the tempfile path it points to MUST actually exist + carry the
+    # rendered script body (so gcloud can read it).
+    target_arg = next(
+        a for a in from_file_args if a.startswith("--metadata-from-file=startup-script=")
+    )
+    path = target_arg.split("=", 2)[-1]
+    from pathlib import Path
+
+    script_body = Path(path).read_text(encoding="utf-8")
+    # The script body carries the comma-bearing JSON sentinel — verifies
+    # the bug payload is in the tempfile rather than smuggled inline.
+    assert '"phase":"done"' in script_body
+    assert '"issue":137' in script_body
+    assert '"attempt_id":' in script_body
+    assert "," in script_body  # the actual root cause: commas break --metadata=
+
+    # CRITICALLY: the inline shape must NOT also appear. A duplicate
+    # --metadata=startup-script= entry (alongside --metadata-from-file)
+    # would re-introduce the parser bug AND let gcloud reject the call
+    # because the same key is set twice.
+    inline_startup = [a for a in create_argv if a.startswith("--metadata=startup-script=")]
+    assert not inline_startup, f"inline startup-script smuggled into argv: {inline_startup}"
+
+
+# ---------------------------------------------------------------------------
+# Regression: reconnect_or_none recovers attempt_id from instance labels
+# ---------------------------------------------------------------------------
+
+
+def test_reconnect_recovers_attempt_id_from_label_and_launch_threads_it(
+    no_marker_posts,
+) -> None:
+    """On reconnect, ``launch()`` must derive ExpectedArtifacts from the
+    ORIGINAL attempt_id (the one the VM was provisioned under), NOT a
+    fresh one — the VM writes its sentinel + per-attempt artifact paths
+    under the original tag, so a fresh tag would point
+    ``confirm_artifacts`` at the wrong path and FAIL every reconnect.
+
+    ``reconnect_or_none`` recovers the original by reading the instance's
+    ``eps-attempt`` label (set by ``_format_labels`` at create time).
+    """
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "9988",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "labels": {
+                    "managed-by": "eps",
+                    "eps-issue": "137",
+                    "eps-attempt": "att-orig-recovered",
+                    "eps-intent": "lora-7b",
+                },
+            }
+        ]
+    )
+
+    # 1. Direct check: reconnect_or_none populates extra["attempt_id"].
+    runner1 = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner1)
+    assert handle is not None
+    assert handle.extra.get("attempt_id") == "att-orig-recovered"
+
+    # 2. End-to-end: launch() on reconnect path threads the recovered
+    #    attempt_id into the ExpectedArtifacts declaration. The
+    #    ``_spec()`` helper sets a different attempt_id ("att-fixed-001")
+    #    so any code path that ignored the recovered value would derive
+    #    the sentinel from "att-fixed-001" instead — caught here.
+    runner2 = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner2,
+        marker_poster=lambda **_: None,
+    )
+    handle2 = backend.launch(_spec())
+    decl = handle2.extra.get(EXPECTED_ARTIFACTS_HANDLE_KEY)
+    assert isinstance(decl, dict), decl
+    sentinel_path = decl["sentinel_path"]
+    assert "att-orig-recovered" in sentinel_path, sentinel_path
+    # Regression guard: the freshly-generated id MUST NOT have been used.
+    assert "att-fixed-001" not in sentinel_path, sentinel_path
+    # And the HF data path also gets the recovered id (raw-completion
+    # paths share the per-attempt namespace).
+    assert any("issue137_att-orig-recovered/" in p for p in decl["hf_data_paths"]), decl
+
+
+def test_reconnect_falls_back_to_fresh_attempt_id_when_label_missing(
+    no_marker_posts,
+) -> None:
+    """If the instance pre-dates the label addition (no ``eps-attempt``
+    label), ``launch()`` falls back to the freshly-generated attempt_id
+    — best-effort, but the marker trail still proceeds. This pins the
+    backward-compat path for instances created before the labels existed.
+    """
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "9988",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                # No `labels` key at all.
+            }
+        ]
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert "attempt_id" not in handle.extra
