@@ -114,6 +114,12 @@ def _build_production_backends() -> dict[str, Any]:
     * ``is_live_after_cancel`` — by-name squeue probe ("still in the
       live queue?" — non-empty = yes). DRAC robots have no ``sacct``
       so this is the only authoritative still-live signal.
+    * ``started_evidence_probe`` — scratch-dir runtime-artifact probe
+      (rsync read of ``status.json`` / ``job.out``) the router consults
+      on a terminal-before-running park outcome to classify
+      "started-then-FAILED" as a workload failure instead of
+      ``no_compute_available`` (which would wrongly escalate a doomed
+      workload to GCP on the auto lane).
     * ``reconnect_fn`` — per-kind reconnect dispatch (SLURM:
       ``query_by_name``; GCP: :func:`backends.gcp.reconnect_or_none`).
     * ``mila_socket_alive`` — :func:`backends.slurm.mila_socket_alive`,
@@ -195,6 +201,34 @@ def _build_production_backends() -> dict[str, Any]:
         found = query_by_name(robot_alias=cluster.ssh_host, job_name=handle.pod_name)
         return found is not None
 
+    def _slurm_started_evidence(backend: Any, handle: Any) -> dict[str, Any] | None:
+        """Scratch-dir probe for the router's terminal-before-running classification.
+
+        A SLURM job that fast-fails (e.g. the in-job preflight) can
+        transition PD→R→exit between router polls and "vanish" before
+        it is ever observed RUNNING. If the scratch dir holds runtime
+        artifacts (``status.json`` / ``job.out``), the job DID start —
+        a WORKLOAD failure the router must surface (NO GCP fallback),
+        not ``no_compute_available``. Transport is rsync (allowlisted
+        by the robot forced-command wrapper; ``ssh <alias> cat`` is
+        NOT). Non-SLURM handles return None (GCP's provision IS the
+        start, so terminal-before-running cannot mask a workload
+        failure there; RunPod never parks).
+        """
+        del backend
+        cluster = _resolve_cluster_cfg(handle.cluster)
+        if cluster is None:
+            return None
+        from explore_persona_space.backends.slurm_monitor import (
+            fetch_started_evidence,
+        )
+
+        return fetch_started_evidence(
+            robot_alias=cluster.ssh_host,
+            scratch_dir=handle.scratch_dir,
+            job_id=str(handle.job_id),
+        )
+
     def _reconnect(backend: Any, kind: str, spec: Any) -> Any:
         """Per-kind reconnect dispatch.
 
@@ -270,6 +304,7 @@ def _build_production_backends() -> dict[str, Any]:
         "marker_poster": post_marker_via_task_py,
         "is_started": _slurm_is_started,
         "is_live_after_cancel": _slurm_is_live_after_cancel,
+        "started_evidence_probe": _slurm_started_evidence,
         "reconnect_fn": _reconnect,
         "mila_socket_alive": _mila_socket_alive,
     }
@@ -341,6 +376,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
             marker_poster=deps["marker_poster"],
             is_started=deps["is_started"],
             is_live_after_cancel=deps["is_live_after_cancel"],
+            started_evidence_probe=deps.get("started_evidence_probe"),
             reconnect_fn=deps["reconnect_fn"],
         )
     except RouteError as exc:

@@ -807,6 +807,7 @@ def test_build_production_backends_wires_all_keys_and_smokes_closures(monkeypatc
         "marker_poster",
         "is_started",
         "is_live_after_cancel",
+        "started_evidence_probe",
         "reconnect_fn",
         "mila_socket_alive",
     }
@@ -887,6 +888,10 @@ def test_build_production_backends_wires_all_keys_and_smokes_closures(monkeypatc
     # PollResult.status=="running" → is_live_after_cancel returns True
     # (the closure's "still-live" check rejects only {"done", "dead"}).
     assert deps["is_live_after_cancel"](_StubPollBackend(), handle_gcp_like) is True
+
+    # started_evidence_probe — non-SLURM handles (cluster=None) return
+    # None WITHOUT any SSH/rsync (the probe is SLURM-scratch-specific).
+    assert deps["started_evidence_probe"](_StubPollBackend(), handle_gcp_like) is None
 
     # marker_poster + mila_socket_alive — exist and are callable, no
     # network needed to smoke.

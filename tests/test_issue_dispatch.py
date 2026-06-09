@@ -59,6 +59,7 @@ from explore_persona_space.backends.issue_dispatch import (
     write_handle_sidecar,
 )
 from explore_persona_space.backends.router import (
+    BackendPrepareError,
     GcpAttemptCapExceededError,
     LeaseStore,
     ManualAttentionRequiredError,
@@ -468,6 +469,16 @@ def test_build_run_spec_legacy_cluster_maps_to_nibi() -> None:
             "no_compute_available",
         ),
         (
+            lambda: BackendPrepareError(
+                "backend.prepare failed for nibi/nibi (CalledProcessError: rsync rc=255)",
+                kind="nibi",
+                cluster="nibi",
+            ),
+            "infra",
+            "blocked",
+            "backend_prepare_failed",
+        ),
+        (
             lambda: WorkloadSurfacedError("workload crashed", chosen_kind="gcp"),
             "code",
             "blocked",
@@ -837,6 +848,52 @@ def test_dispatch_for_issue_raises_router_terminal_for_caller_translation(
             sleep_fn=lambda _s: None,
             write_sidecar=False,
         )
+
+
+def test_dispatch_for_issue_threads_started_evidence_probe(tmp_lease_store, fast_clock) -> None:
+    """The dispatch helper must thread ``started_evidence_probe`` to the
+    router: a fast-failing job (terminal before observed RUNNING) whose
+    scratch dir holds runtime artifacts classifies as a WORKLOAD
+    failure (surface, NO GCP fallback) — not ``no_compute_available``
+    (which would escalate a doomed workload to GCP on the auto lane)."""
+
+    class _ImmediatelyDeadBackend(_MockBackend):
+        def poll(self, handle: RunHandle) -> PollResult:
+            return PollResult(
+                status="dead",
+                current_phase="preflight-failed",
+                new_milestone=False,
+                last_log_mtime_sec_ago=10**9,
+                pid_alive=False,
+                log_tail_excerpt="",
+            )
+
+    nibi = _ImmediatelyDeadBackend(kind="nibi")
+    gcp = _MockBackend(kind="gcp")
+    spec = RunSpec(issue=205, intent="lora-7b", backend="auto")
+
+    with pytest.raises(WorkloadSurfacedError) as excinfo:
+        dispatch_for_issue(
+            spec,
+            runpod_backend=_MockBackend(kind="runpod"),
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            started_evidence_probe=lambda _b, _h: {
+                "phase": "preflight-failed",
+                "job_out_tail": "[FAIL] secrets file not found",
+                "status_json": {},
+            },
+            lease_store=tmp_lease_store,
+            config=RouterConfig(free_wait_seconds=0, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=fast_clock,
+            sleep_fn=lambda _s: None,
+            write_sidecar=False,
+        )
+    assert excinfo.value.chosen_kind == "nibi"
+    assert excinfo.value.evidence.get("phase") == "preflight-failed"
+    assert gcp.launches == [], "workload failure must NOT escalate to GCP"
 
 
 # ---------------------------------------------------------------------------

@@ -79,6 +79,7 @@ from explore_persona_space.backends.base import (
     RunSpec,
 )
 from explore_persona_space.backends.router import (
+    BackendPrepareError,
     GcpAttemptCapExceededError,
     LeaseStore,
     ManualAttentionRequiredError,
@@ -320,10 +321,22 @@ class TerminalTranslation:
 def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
     """Map a router terminal exception to its ``epm:failure`` shape.
 
-    The four router terminals are exhaustively handled (each is a
+    The five router terminals are exhaustively handled (each is a
     distinct ``RouteError`` subclass). Anything else propagates as a
     plain ``RouteError`` whose handling is the caller's concern.
     """
+    if isinstance(exc, BackendPrepareError):
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: backend_prepare_failed\n"
+                f"kind: {exc.kind}\n"
+                f"cluster: {exc.cluster}\n"
+                f"detail: {exc.reason}"
+            ),
+        )
     if isinstance(exc, NoComputeAvailableError):
         return TerminalTranslation(
             failure_class="infra",
@@ -396,6 +409,7 @@ def dispatch_for_issue(
     marker_poster: Callable[..., None] | None = None,
     is_started: Callable[..., bool] | None = None,
     is_live_after_cancel: Callable[..., bool] | None = None,
+    started_evidence_probe: Callable[..., Any] | None = None,
     reconnect_fn: Callable[..., Any] | None = None,
     lease_store: LeaseStore | None = None,
     config: RouterConfig | None = None,
@@ -455,6 +469,8 @@ def dispatch_for_issue(
         route_kwargs["is_started"] = is_started
     if is_live_after_cancel is not None:
         route_kwargs["is_live_after_cancel"] = is_live_after_cancel
+    if started_evidence_probe is not None:
+        route_kwargs["started_evidence_probe"] = started_evidence_probe
     if reconnect_fn is not None:
         route_kwargs["reconnect_fn"] = reconnect_fn
     # Lease / clock injections (production-default to router's own

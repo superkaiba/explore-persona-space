@@ -639,6 +639,49 @@ def rsync_status_and_log(
             )
 
 
+def fetch_started_evidence(
+    *,
+    robot_alias: str,
+    scratch_dir: str,
+    job_id: str,
+    timeout: int = 30,
+    rsyncer=None,
+) -> dict[str, Any] | None:
+    """Probe the scratch dir for runtime artifacts proving the job STARTED.
+
+    Used by the router's terminal-before-running classification: a job
+    that vanished from ``squeue`` before it was ever observed RUNNING
+    may have fast-failed (PD→R→exit between polls — e.g. an in-job
+    preflight failure). The sbatch writes ``status.json`` + ``job.out``
+    into the scratch dir the moment it starts, so their existence is
+    the "it actually ran" signal that distinguishes a WORKLOAD failure
+    from genuine no-compute.
+
+    Transport is rsync (allowlisted by the DRAC robot forced-command
+    wrapper; ``ssh <alias> cat`` is NOT) via :func:`rsync_status_and_log`.
+    Fail-open by design: a transport failure leaves the local files
+    absent and this returns ``None``, so the router falls back to its
+    legacy ``no_compute_available`` classification rather than gaining
+    a new crash path.
+
+    Returns an evidence dict (``phase`` / ``job_out_tail`` /
+    ``status_json``) when any runtime artifact exists, else ``None``.
+    """
+    sync = rsyncer or rsync_status_and_log
+    sync(robot_alias=robot_alias, scratch_dir=scratch_dir, job_id=job_id, timeout=timeout)
+    local_dir = _local_state_dir(job_id)
+    status_data = _read_status_json(local_dir / "status.json")
+    job_out = local_dir / "job.out"
+    tail, phase, _new_milestone, _mtime_sec_ago = _read_job_out(job_out)
+    if not status_data and not job_out.exists():
+        return None
+    return {
+        "phase": phase or str(status_data.get("phase", "")),
+        "job_out_tail": tail[-2000:],
+        "status_json": status_data,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Local-file readers
 # ---------------------------------------------------------------------------

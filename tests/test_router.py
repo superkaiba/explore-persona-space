@@ -1874,3 +1874,381 @@ def test_router_explicit_mila_override_still_runs_when_socket_alive(lease_store)
     )
     assert result.chosen_kind == "mila"
     assert len(mila.launches) == 1
+
+
+# ---------------------------------------------------------------------------
+# prepare() chokepoint (router fix5 — live-acceptance finding, issue 535)
+# ---------------------------------------------------------------------------
+#
+# The first live acceptance run launched a Nibi job WITHOUT the rsync repo
+# sync + secrets push because SlurmBackend.prepare had zero production
+# callers — every route() launch site called backend.launch directly. The
+# tests below pin: (a) prepare runs BEFORE launch at every FRESH launch
+# site; (b) reconnect paths never call prepare (SlurmBackend.prepare
+# rsyncs with --delete and would yank code from under a RUNNING job);
+# (c) a prepare failure is provision-class — next tier on auto, typed
+# terminal on an explicit override.
+
+
+class _PrepareRecordingLane(_FreeLaneBackend):
+    """Free-lane double that records prepare/launch call order."""
+
+    def __init__(self, *, prepare_raises: BaseException | None = None, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.calls: list[str] = []
+        self._prepare_raises = prepare_raises
+
+    def prepare(self, spec: RunSpec) -> None:
+        self.calls.append("prepare")
+        if self._prepare_raises is not None:
+            raise self._prepare_raises
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        self.calls.append("launch")
+        return super().launch(spec)
+
+
+class _PrepareRecordingGcp(_GcpBackendDouble):
+    """GCP double that records prepare/launch call order."""
+
+    def __init__(self, *, prepare_raises: BaseException | None = None, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.calls: list[str] = []
+        self._prepare_raises = prepare_raises
+
+    def prepare(self, spec: RunSpec) -> None:
+        self.calls.append("prepare")
+        if self._prepare_raises is not None:
+            raise self._prepare_raises
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        self.calls.append("launch")
+        return super().launch(spec)
+
+
+class _PrepareRecordingRunpod(_PassiveRunpod):
+    """RunPod double that records prepare/launch call order."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.calls: list[str] = []
+
+    def prepare(self, spec: RunSpec) -> None:
+        self.calls.append("prepare")
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        self.calls.append("launch")
+        return super().launch(spec)
+
+
+def test_explicit_lane_calls_prepare_before_launch(lease_store):
+    nibi = _PrepareRecordingLane(kind="nibi")
+    result = route(
+        _spec(backend="nibi"),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert nibi.calls == ["prepare", "launch"], (
+        "fresh explicit-lane launch must run prepare (rsync + secrets) BEFORE launch; "
+        f"got call order {nibi.calls}"
+    )
+
+
+def test_runpod_override_calls_prepare_before_launch(lease_store):
+    rp = _PrepareRecordingRunpod()
+    result = route(
+        _spec(backend="runpod"),
+        runpod_backend=rp,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert rp.calls == ["prepare", "launch"]
+
+
+def test_auto_free_lane_calls_prepare_before_launch(lease_store):
+    nibi = _PrepareRecordingLane(kind="nibi", est_start_raw=0.0)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert nibi.calls == ["prepare", "launch"]
+
+
+def test_gcp_escalation_calls_prepare_before_launch(lease_store):
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _PrepareRecordingGcp()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,  # nibi never starts → escalate
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert gcp.calls == ["prepare", "launch"]
+
+
+def test_explicit_lane_reconnect_does_not_call_prepare(lease_store):
+    """Reconnect re-attaches to a RUNNING job — re-preparing would rsync
+    --delete the scratch out from under it. prepare must NOT run."""
+    nibi = _PrepareRecordingLane(kind="nibi")
+    live = RunHandle(
+        backend="nibi",
+        cluster="nibi",
+        job_id="424242",
+        pod_name="eps-issue-137",
+        scratch_dir="/scratch/eps/issue-137",
+        log_path="/scratch/eps/issue-137/job.out",
+        extra={"issue": 137},
+    )
+    result = route(
+        _spec(backend="nibi"),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, _k, _s: live,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_RECONNECT
+    assert result.handle.job_id == "424242"
+    assert nibi.calls == [], f"reconnect must not prepare OR launch; got {nibi.calls}"
+
+
+def test_auto_reconnect_does_not_call_prepare(lease_store):
+    nibi = _PrepareRecordingLane(kind="nibi", est_start_raw=0.0)
+    live = RunHandle(
+        backend="nibi",
+        cluster="nibi",
+        job_id="424243",
+        pod_name="eps-issue-137",
+        scratch_dir="/scratch/eps/issue-137",
+        log_path="/scratch/eps/issue-137/job.out",
+        extra={"issue": 137},
+    )
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: live if k == "nibi" else None,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_RECONNECT
+    assert nibi.calls == [], f"auto reconnect must not prepare OR launch; got {nibi.calls}"
+
+
+def test_prepare_failure_on_auto_falls_to_next_tier_never_runpod(lease_store):
+    """A free-lane prepare failure (rsync/scp non-zero) is provision-class:
+    next tier on auto (→ GCP), and RunPod stays unreachable."""
+    import subprocess
+
+    nibi = _PrepareRecordingLane(
+        kind="nibi",
+        est_start_raw=0.0,
+        prepare_raises=subprocess.CalledProcessError(255, ["rsync"]),
+    )
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert nibi.calls == ["prepare"], "launch must NOT run after a failed prepare"
+    assert len(gcp.launches) == 1
+    prepare_attempts = [a for a in result.attempts if a.outcome == "prepare_failed"]
+    assert prepare_attempts and prepare_attempts[0].kind == "nibi"
+
+
+def test_prepare_failure_on_explicit_lane_raises_typed_terminal(lease_store):
+    import subprocess
+
+    from explore_persona_space.backends import BackendPrepareError
+
+    nibi = _PrepareRecordingLane(
+        kind="nibi",
+        prepare_raises=subprocess.CalledProcessError(1, ["scp"]),
+    )
+    gcp = _GcpBackendDouble()
+    with pytest.raises(BackendPrepareError) as excinfo:
+        route(
+            _spec(backend="nibi"),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: True,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert excinfo.value.kind == "nibi"
+    assert nibi.calls == ["prepare"], "launch must NOT run after a failed prepare"
+    assert len(gcp.launches) == 0, "explicit override never silently re-routes"
+
+
+def test_gcp_prepare_failure_after_free_lanes_fail_raises_no_compute(lease_store):
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _PrepareRecordingGcp(prepare_raises=RuntimeError("metadata render failed"))
+    with pytest.raises(NoComputeAvailableError) as excinfo:
+        route(
+            _spec(backend=None),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert gcp.calls == ["prepare"]
+    assert any(a["outcome"] == "prepare_failed" for a in excinfo.value.attempts)
+
+
+# ---------------------------------------------------------------------------
+# terminal-before-running classification (router fix5, secondary)
+# ---------------------------------------------------------------------------
+#
+# A fast-failing job (e.g. in-job preflight failure) transitions
+# PD→R→exit between park polls, so it "vanishes" before being observed
+# RUNNING. Pre-fix the park state machine read that as
+# no_compute_available — on the auto lane that ESCALATES TO GCP, i.e. a
+# workload bug burns paid credit on a doomed re-run. The
+# started_evidence_probe (scratch-dir status.json / job.out read)
+# distinguishes "started and FAILED" (workload failure, surface, NO
+# fallback) from "never started" (genuine no-compute, escalation OK).
+
+
+_EVIDENCE = {
+    "phase": "preflight-failed",
+    "job_out_tail": "[FAIL] secrets file not found\n[phase=preflight-failed]",
+    "status_json": {},
+}
+
+
+def test_terminal_with_artifacts_is_workload_failure_no_gcp_on_auto(
+    lease_store, marker_poster, captured_markers
+):
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0, poll_status="dead")
+    gcp = _GcpBackendDouble()
+    with pytest.raises(WorkloadSurfacedError) as excinfo:
+        route(
+            _spec(backend=None),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,  # never observed RUNNING
+            is_live_after_cancel=lambda _b, _h: False,
+            started_evidence_probe=lambda _b, _h: dict(_EVIDENCE),
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert excinfo.value.chosen_kind == "nibi"
+    assert excinfo.value.evidence.get("phase") == "preflight-failed"
+    assert len(gcp.launches) == 0, (
+        "a started-then-FAILED workload must NOT escalate to GCP — that burns "
+        "paid credit re-running a doomed workload"
+    )
+    # Terminal breadcrumb marker carries the workload_failure reason.
+    failures = [
+        json.loads(m["note"]) for m in captured_markers if m.get("marker") == "epm:backend-selected"
+    ]
+    assert any(b.get("reason") == "workload_failure" for b in failures)
+
+
+def test_terminal_without_artifacts_still_escalates_to_gcp(lease_store):
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0, poll_status="dead")
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        started_evidence_probe=lambda _b, _h: None,  # no runtime artifacts
+        config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(gcp.launches) == 1
+
+
+def test_terminal_probe_failure_falls_back_to_no_compute_and_logs(lease_store, caplog):
+    def _exploding_probe(_b, _h):
+        raise OSError("scp: connection refused")
+
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0, poll_status="dead")
+    with caplog.at_level("WARNING"), pytest.raises(NoComputeAvailableError):
+        route(
+            _spec(backend=None),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"nibi": nibi},
+            gcp_backend=None,  # nothing to escalate to → no_compute terminal
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            started_evidence_probe=_exploding_probe,
+            config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert any("started-evidence probe FAILED" in r.message for r in caplog.records), (
+        "a probe failure must be logged loud (it silently degrades classification)"
+    )
+
+
+def test_explicit_lane_terminal_with_artifacts_raises_workload_not_no_compute(lease_store):
+    """The live-run regression shape: explicit `--backend nibi`, job fast-fails
+    in preflight → must surface as a workload failure, not no_compute."""
+    nibi = _FreeLaneBackend(kind="nibi", poll_status="dead")
+    with pytest.raises(WorkloadSurfacedError) as excinfo:
+        route(
+            _spec(backend="nibi"),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"nibi": nibi},
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            started_evidence_probe=lambda _b, _h: dict(_EVIDENCE),
+            config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert excinfo.value.chosen_kind == "nibi"
+    assert "preflight-failed" in str(excinfo.value)

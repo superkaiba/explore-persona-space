@@ -28,7 +28,17 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    next tier; :class:`gcp.GcpWorkloadError` surfaces, NO auto-fallback;
    "every free lane park-failed AND GCP capacity-failed" raises
    :class:`NoComputeAvailableError` for the orchestrator to translate
-   into ``epm:failure (failure_class: infra) + status:blocked``.
+   into ``epm:failure (failure_class: infra) + status:blocked``. A
+   ``backend.prepare()`` failure (rsync/secrets push) is provision-class
+   too — :class:`BackendPrepareError`: next tier on auto, typed terminal
+   on an explicit override. A ``terminal_before_running`` park outcome
+   is probed via the injected ``started_evidence_probe`` (scratch-dir
+   ``status.json`` / ``job.out`` read): runtime artifacts present means
+   the job STARTED and fast-failed — a WORKLOAD failure
+   (:class:`WorkloadSurfacedError`, NO GCP escalation), not no-compute.
+   Every fresh launch goes through :func:`_prepare_and_launch`
+   (``prepare`` → ``launch``); reconnect paths never re-``prepare`` (the
+   SLURM prepare rsyncs with ``--delete`` under a possibly-RUNNING job).
 6. **Durable lease + reconnect** — a flock'd JSON lease at
    ``~/.eps-routing/issue-<N>.json`` (outside the worktree — the 09:47
    cron reaps worktrees, so a lease there would silently disappear) is
@@ -185,6 +195,32 @@ class NoComputeAvailableError(RouteError):
         super().__init__(reason)
         self.reason = reason
         self.attempts = list(attempts or [])
+
+
+class BackendPrepareError(RouteError):
+    """``backend.prepare(spec)`` failed BEFORE launch (provision-class).
+
+    Nothing is live when this raises — ``prepare`` runs strictly before
+    any submit/provision inside :func:`_prepare_and_launch`, so the
+    failure carries normal provision-failure semantics: next tier on
+    the auto chain, typed terminal on an explicit override (the
+    dispatch CLI's ``classify_terminal_exception`` translates it to
+    ``epm:failure (failure_class: infra)``). Wraps the underlying
+    exception (rsync/scp non-zero exit, SSH refusal) via
+    ``raise ... from exc``.
+    """
+
+    def __init__(
+        self,
+        reason: str,
+        *,
+        kind: BackendKind,
+        cluster: str | None = None,
+    ) -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.kind = kind
+        self.cluster = cluster
 
 
 class WorkloadSurfacedError(RouteError):
@@ -872,6 +908,9 @@ def route(
     is_started: Callable[[ComputeBackend, RunHandle], bool] = default_is_started,
     is_live_after_cancel: Callable[[ComputeBackend, RunHandle], bool] = default_is_live,
     is_running_after_cancel: Callable[[ComputeBackend, RunHandle], bool] | None = None,
+    started_evidence_probe: (
+        Callable[[ComputeBackend, RunHandle], dict[str, Any] | None] | None
+    ) = None,
     estimate_fn: (Callable[[ComputeBackend, BackendKind, RunSpec], float | None] | None) = None,
     reconnect_fn: (
         Callable[[ComputeBackend, BackendKind, RunSpec], RunHandle | None] | None
@@ -917,6 +956,15 @@ def route(
     * ``is_running_after_cancel`` — optional probe to detect the
       cancel-race; see :func:`cancel_and_wait`. Defaults to None (no
       race detection).
+    * ``started_evidence_probe`` — ``(backend, handle) -> evidence dict
+      | None``; consulted ONLY on a ``terminal_before_running`` park
+      outcome to distinguish "never started" (no-compute) from "started
+      and FAILED fast" (workload failure — surfaced via
+      :class:`WorkloadSurfacedError`, NO auto-fallback). Production
+      wiring scp/rsync-reads the SLURM scratch dir for ``status.json`` /
+      ``job.out`` (``slurm_monitor.fetch_started_evidence``). Defaults
+      to None (no probe — every terminal-before-running classifies as
+      no-compute, the pre-fix behavior).
     * ``estimate_fn`` — ``(backend, kind, spec) -> seconds | None`` for
       free-lane ranking. Defaults to calling the backend's
       ``estimate_start_seconds(spec)`` method when available, else
@@ -1007,6 +1055,7 @@ def route(
             sleep_fn=sleep_fn,
             marker_poster=marker_poster,
             on_launched=on_launched,
+            started_evidence_probe=started_evidence_probe,
         )
 
     if spec.backend == "gcp":
@@ -1028,6 +1077,7 @@ def route(
             sleep_fn=sleep_fn,
             marker_poster=marker_poster,
             on_launched=on_launched,
+            started_evidence_probe=started_evidence_probe,
         )
 
     # ----------------------------- auto chain ---------------------------
@@ -1042,6 +1092,7 @@ def route(
         is_started=is_started,
         is_live_after_cancel=is_live_after_cancel,
         is_running_after_cancel=is_running_after_cancel,
+        started_evidence_probe=started_evidence_probe,
         mila_socket_alive=mila_socket_alive,
         estimate_fn=estimate_fn,
         reconnect_fn=reconnect_fn,
@@ -1086,6 +1137,79 @@ def _invoke_on_launched(
         )
 
 
+def _prepare_and_launch(
+    backend: ComputeBackend,
+    spec: RunSpec,
+    *,
+    kind: BackendKind,
+    cluster: str | None = None,
+) -> RunHandle:
+    """FRESH-launch chokepoint: ``backend.prepare(spec)`` then ``backend.launch(spec)``.
+
+    Every fresh launch site MUST go through this helper. Live-acceptance
+    finding (issue 535): the router called ``launch`` directly at every
+    site, so ``SlurmBackend.prepare`` — the rsync repo sync +
+    ``render_secrets_env()`` + secrets push — had ZERO production
+    callers, and the first live Nibi job died in in-job preflight with
+    no rsynced repo and no ``secrets.env`` in its scratch dir.
+
+    RECONNECT sites must NOT call this helper (and must not call
+    ``prepare`` at all): ``SlurmBackend.prepare`` rsyncs the scratch dir
+    with ``--delete``, so re-preparing the scratch of a RUNNING job
+    could yank code out from under the live workload mid-run.
+
+    A ``prepare`` failure raises :class:`BackendPrepareError` —
+    provision-class, pre-launch, nothing live. The auto chain treats it
+    like a launch failure (next tier); explicit overrides surface it as
+    a typed terminal.
+    """
+    try:
+        backend.prepare(spec)
+    except Exception as exc:
+        raise BackendPrepareError(
+            f"backend.prepare failed for {kind}/{cluster or 'no-cluster'} "
+            f"({type(exc).__name__}: {exc})",
+            kind=kind,
+            cluster=cluster,
+        ) from exc
+    return backend.launch(spec)
+
+
+def _probe_started_evidence(
+    probe: Callable[[ComputeBackend, RunHandle], dict[str, Any] | None] | None,
+    backend: ComputeBackend,
+    handle: RunHandle,
+) -> dict[str, Any] | None:
+    """Run the started-evidence probe; fail OPEN (``None``) on probe failure.
+
+    Used on a ``terminal_before_running`` park outcome to distinguish
+    "never started" (genuine no-compute) from "started and FAILED fast"
+    (PD→R→exit between polls — a WORKLOAD failure that must surface
+    with NO auto-fallback; escalating it to GCP would burn paid credit
+    re-running a doomed workload).
+
+    ``None`` — whether because no probe is wired, the probe found no
+    runtime artifacts, or the probe itself failed — preserves the
+    legacy ``no_compute_available`` classification. A probe failure is
+    logged LOUD but never becomes a new crash path between "job
+    vanished" and the router terminal.
+    """
+    if probe is None:
+        return None
+    try:
+        return probe(backend, handle)
+    except Exception as exc:
+        logger.warning(
+            "route: started-evidence probe FAILED for %s/%s (%s: %s); "
+            "falling back to no_compute classification.",
+            handle.backend,
+            handle.job_id,
+            type(exc).__name__,
+            exc,
+        )
+        return None
+
+
 def _override_runpod(
     *,
     spec: RunSpec,
@@ -1117,7 +1241,28 @@ def _override_runpod(
     # route() calls cannot both decide "no live job, submit fresh" and
     # provision twice.
     with store.transaction(spec.issue) as (lease, write):
-        handle = backend.launch(spec)
+        try:
+            handle = _prepare_and_launch(backend, spec, kind="runpod")
+        except BackendPrepareError as exc:
+            attempts.append(
+                RouteAttempt(
+                    kind="runpod",
+                    cluster=None,
+                    est_start_seconds_raw=None,
+                    est_start_seconds_clamped=None,
+                    outcome="prepare_failed",
+                    detail=exc.reason,
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            _post_terminal_failure_marker(
+                spec=spec,
+                marker_poster=marker_poster,
+                reason=ROUTE_REASON_NO_COMPUTE,
+                chosen_kind="runpod",
+                attempts=attempts,
+            )
+            raise
         _invoke_on_launched(on_launched, handle)
         write(_lease_after_submit(lease, spec, "runpod", None, handle))
     attempt = RouteAttempt(
@@ -1161,6 +1306,9 @@ def _override_free_or_gcp(
     sleep_fn: Callable[[float], None],
     marker_poster: Callable[..., None] | None,
     on_launched: Callable[[RunHandle], None] | None = None,
+    started_evidence_probe: (
+        Callable[[ComputeBackend, RunHandle], dict[str, Any] | None] | None
+    ) = None,
 ) -> RouteResult:
     """Explicit non-RunPod lane override.
 
@@ -1177,7 +1325,9 @@ def _override_free_or_gcp(
     """
     with store.transaction(spec.issue) as (lease, write):
         # Reconnect — inside the lock so a concurrent submit can't slip
-        # between our "no live job" check and our launch.
+        # between our "no live job" check and our launch. NO prepare()
+        # on reconnect: SlurmBackend.prepare rsyncs the scratch dir with
+        # --delete and would yank code out from under the RUNNING job.
         handle = _try_reconnect(backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn)
         if handle is not None:
             _invoke_on_launched(on_launched, handle)
@@ -1208,7 +1358,29 @@ def _override_free_or_gcp(
         # Fresh submit (still under the flock).
         threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
         try:
-            handle = backend.launch(threaded_spec)
+            handle = _prepare_and_launch(backend, threaded_spec, kind=kind, cluster=spec.cluster)
+        except BackendPrepareError as exc:
+            # Explicit lane — prepare failed BEFORE launch (nothing
+            # live). Provision-class typed terminal: breadcrumb, raise.
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=None,
+                    est_start_seconds_clamped=None,
+                    outcome="prepare_failed",
+                    detail=exc.reason,
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            _post_terminal_failure_marker(
+                spec=spec,
+                marker_poster=marker_poster,
+                reason=ROUTE_REASON_NO_COMPUTE,
+                chosen_kind=kind,
+                attempts=attempts,
+            )
+            raise
         except GcpProvisioningError as exc:
             # Explicit GCP override — surface the provisioning failure (the
             # user asked for GCP, not a fallback chain). Post a terminal
@@ -1300,8 +1472,47 @@ def _override_free_or_gcp(
             _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
             return result
 
-        # Park failed. The user explicitly asked for this lane → cancel
-        # state machine, then either KEEP (raced) or surface terminal.
+        # Park failed. Distinguish "never started" from "started and
+        # FAILED": a fast-failing job transitions PD→R→exit between
+        # polls, so "vanished before observed RUNNING" is NOT proof the
+        # cluster lacked capacity. If the scratch dir holds runtime
+        # artifacts (status.json / job.out), the job DID start — that is
+        # a WORKLOAD failure (surface, no fallback), not no-compute.
+        if reason == "terminal_before_running":
+            evidence = _probe_started_evidence(started_evidence_probe, backend, handle)
+            if evidence is not None:
+                attempts.append(
+                    RouteAttempt(
+                        kind=kind,
+                        cluster=spec.cluster,
+                        est_start_seconds_raw=None,
+                        est_start_seconds_clamped=None,
+                        outcome="workload_failure",
+                        detail=(
+                            "terminal before RUNNING with runtime artifacts "
+                            f"(phase={evidence.get('phase', '')!r})"
+                        ),
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                _post_terminal_failure_marker(
+                    spec=spec,
+                    marker_poster=marker_poster,
+                    reason=ROUTE_REASON_WORKLOAD_FAILURE,
+                    chosen_kind=kind,
+                    attempts=attempts,
+                    extra={"evidence": evidence},
+                )
+                raise WorkloadSurfacedError(
+                    f"{kind} job {handle.job_id} went terminal before RUNNING but "
+                    f"left runtime artifacts (phase={evidence.get('phase', '')!r}) — "
+                    "workload failure, no auto-fallback",
+                    chosen_kind=kind,
+                    evidence=evidence,
+                )
+
+        # The user explicitly asked for this lane → cancel state
+        # machine, then either KEEP (raced) or surface terminal.
         cancel_outcome = cancel_and_wait(
             backend=backend,
             handle=handle,
@@ -1401,6 +1612,7 @@ def _auto_route(
     is_started: Callable[[ComputeBackend, RunHandle], bool],
     is_live_after_cancel: Callable[[ComputeBackend, RunHandle], bool],
     is_running_after_cancel: Callable[[ComputeBackend, RunHandle], bool] | None,
+    started_evidence_probe: (Callable[[ComputeBackend, RunHandle], dict[str, Any] | None] | None),
     mila_socket_alive: Callable[[], bool] | None,
     estimate_fn: Callable[[ComputeBackend, BackendKind, RunSpec], float | None] | None,
     reconnect_fn: (Callable[[ComputeBackend, BackendKind, RunSpec], RunHandle | None] | None),
@@ -1451,6 +1663,7 @@ def _auto_route(
         is_started=is_started,
         is_live_after_cancel=is_live_after_cancel,
         is_running_after_cancel=is_running_after_cancel,
+        started_evidence_probe=started_evidence_probe,
         reconnect_fn=reconnect_fn,
         now_fn=now_fn,
         sleep_fn=sleep_fn,
@@ -1494,6 +1707,10 @@ def _try_auto_reconnect(
     actually decides to submit, and that submit-path repeats the
     reconnect check inside the flock (so a job that appeared between
     this scan and the eventual launch is still caught).
+
+    NO ``prepare()`` on any reconnect outcome here: ``SlurmBackend.
+    prepare`` rsyncs the scratch dir with ``--delete`` and would yank
+    code out from under the RUNNING job it just reconnected to.
     """
     del store  # not needed for reconnect probes; the launch path re-checks under the flock
     for backend, kind in candidates:
@@ -1590,6 +1807,7 @@ def _try_free_lanes(
     is_started: Callable[[ComputeBackend, RunHandle], bool],
     is_live_after_cancel: Callable[[ComputeBackend, RunHandle], bool],
     is_running_after_cancel: Callable[[ComputeBackend, RunHandle], bool] | None,
+    started_evidence_probe: (Callable[[ComputeBackend, RunHandle], dict[str, Any] | None] | None),
     reconnect_fn: (Callable[[ComputeBackend, BackendKind, RunSpec], RunHandle | None] | None),
     now_fn: Callable[[], float],
     sleep_fn: Callable[[float], None],
@@ -1616,6 +1834,7 @@ def _try_free_lanes(
             is_started=is_started,
             is_live_after_cancel=is_live_after_cancel,
             is_running_after_cancel=is_running_after_cancel,
+            started_evidence_probe=started_evidence_probe,
             reconnect_fn=reconnect_fn,
             marker_poster=marker_poster,
             on_launched=on_launched,
@@ -1641,6 +1860,7 @@ def _try_one_free_lane(
     is_started: Callable[[ComputeBackend, RunHandle], bool],
     is_live_after_cancel: Callable[[ComputeBackend, RunHandle], bool],
     is_running_after_cancel: Callable[[ComputeBackend, RunHandle], bool] | None,
+    started_evidence_probe: (Callable[[ComputeBackend, RunHandle], dict[str, Any] | None] | None),
     reconnect_fn: (Callable[[ComputeBackend, BackendKind, RunSpec], RunHandle | None] | None),
     marker_poster: Callable[..., None] | None,
     now_fn: Callable[[], float],
@@ -1666,7 +1886,9 @@ def _try_one_free_lane(
     with store.transaction(spec.issue) as (lease, write):
         # Repeat the reconnect check INSIDE the flock — a parallel
         # invocation may have submitted between the lock-free scan in
-        # _try_auto_reconnect and now.
+        # _try_auto_reconnect and now. NO prepare() on reconnect:
+        # SlurmBackend.prepare rsyncs the scratch dir with --delete and
+        # would yank code out from under the RUNNING job.
         handle = _try_reconnect(backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn)
         if handle is not None:
             _invoke_on_launched(on_launched, handle)
@@ -1697,7 +1919,28 @@ def _try_one_free_lane(
         # Launch (still under the flock — sealing the double-submit race).
         threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
         try:
-            handle = backend.launch(threaded_spec)
+            handle = _prepare_and_launch(backend, threaded_spec, kind=kind, cluster=spec.cluster)
+        except BackendPrepareError as exc:
+            # Provision-class, pre-launch (nothing live) → next lane,
+            # same semantics as a launch failure but with a precise
+            # attempt-trail outcome.
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=est_raw,
+                    est_start_seconds_clamped=est_clamped,
+                    outcome="prepare_failed",
+                    detail=exc.reason,
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            logger.warning(
+                "route: free lane %s prepare failed (%s); trying next lane.",
+                kind,
+                exc.reason,
+            )
+            return None
         except Exception as exc:
             attempts.append(
                 RouteAttempt(
@@ -1749,8 +1992,49 @@ def _try_one_free_lane(
                 detail="park resolved to RUNNING",
             )
 
-        # Park failed → cancel state machine, then KEEP (raced),
-        # CONTINUE to next lane (cancelled), or RAISE (manual_attention).
+        # Park failed. Distinguish "never started" from "started and
+        # FAILED": a fast-failing job transitions PD→R→exit between
+        # polls, so "vanished before observed RUNNING" is NOT proof the
+        # cluster lacked capacity. If the scratch dir holds runtime
+        # artifacts (status.json / job.out), the job DID start — a
+        # WORKLOAD failure that must SURFACE (no GCP escalation: a
+        # workload bug would burn paid credit on a doomed re-run).
+        if reason == "terminal_before_running":
+            evidence = _probe_started_evidence(started_evidence_probe, backend, handle)
+            if evidence is not None:
+                attempts.append(
+                    RouteAttempt(
+                        kind=kind,
+                        cluster=spec.cluster,
+                        est_start_seconds_raw=est_raw,
+                        est_start_seconds_clamped=est_clamped,
+                        outcome="workload_failure",
+                        detail=(
+                            "terminal before RUNNING with runtime artifacts "
+                            f"(phase={evidence.get('phase', '')!r})"
+                        ),
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                _post_terminal_failure_marker(
+                    spec=spec,
+                    marker_poster=marker_poster,
+                    reason=ROUTE_REASON_WORKLOAD_FAILURE,
+                    chosen_kind=kind,
+                    attempts=attempts,
+                    extra={"evidence": evidence},
+                )
+                raise WorkloadSurfacedError(
+                    f"{kind} job {handle.job_id} went terminal before RUNNING but "
+                    f"left runtime artifacts (phase={evidence.get('phase', '')!r}) — "
+                    "workload failure, no auto-fallback",
+                    chosen_kind=kind,
+                    evidence=evidence,
+                )
+
+        # Genuine never-started park failure → cancel state machine,
+        # then KEEP (raced), CONTINUE to next lane (cancelled), or
+        # RAISE (manual_attention).
         cancel_outcome = cancel_and_wait(
             backend=backend,
             handle=handle,
@@ -1931,7 +2215,34 @@ def _escalate_to_gcp(
 
         threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
         try:
-            gcp_handle = gcp_backend.launch(threaded_spec)
+            gcp_handle = _prepare_and_launch(gcp_backend, threaded_spec, kind="gcp")
+        except BackendPrepareError as exc:
+            # GcpBackend.prepare is a documented no-op today, so this is
+            # belt-and-suspenders for the uniform chokepoint: a prepare
+            # failure is provision-class (nothing live) → same terminal
+            # as a GCP provisioning failure.
+            attempts.append(
+                RouteAttempt(
+                    kind="gcp",
+                    cluster=None,
+                    est_start_seconds_raw=0.0,
+                    est_start_seconds_clamped=0.0,
+                    outcome="prepare_failed",
+                    detail=exc.reason,
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            _post_terminal_failure_marker(
+                spec=spec,
+                marker_poster=marker_poster,
+                reason=ROUTE_REASON_NO_COMPUTE,
+                chosen_kind="gcp",
+                attempts=attempts,
+            )
+            raise NoComputeAvailableError(
+                f"every free lane park-failed AND gcp prepare failed: {exc.reason}",
+                attempts=[_attempt_to_dict(a) for a in attempts],
+            ) from exc
         except GcpProvisioningError as exc:
             attempts.append(
                 RouteAttempt(
@@ -2421,6 +2732,7 @@ __all__ = [
     "ROUTE_REASON_OVERRIDE",
     "ROUTE_REASON_RECONNECT",
     "ROUTE_REASON_WORKLOAD_FAILURE",
+    "BackendPrepareError",
     "GcpAttemptCapExceededError",
     "Lease",
     "LeaseStore",

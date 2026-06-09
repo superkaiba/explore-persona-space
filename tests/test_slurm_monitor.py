@@ -634,3 +634,74 @@ def test_monitor_posts_cluster_poll_again_on_phase_transition(tmp_path: Path) ->
     assert len(polls) == 1
     body = json.loads(polls[0]["note"])
     assert body["current_phase"] == "dpo"
+
+
+# ---------------------------------------------------------------------------
+# fetch_started_evidence — terminal-before-running workload classification
+# ---------------------------------------------------------------------------
+
+
+def test_fetch_started_evidence_returns_phase_and_tail(tmp_path: Path) -> None:
+    """Runtime artifacts in the scratch dir (status.json / job.out) prove
+    the job STARTED — the router uses this to classify a fast-failing
+    job as a workload failure instead of no-compute."""
+    from explore_persona_space.backends.slurm_monitor import fetch_started_evidence
+
+    job_id = "9501"
+    _seed_local_state(
+        tmp_path,
+        job_id,
+        status_json_body={"phase": "preflight-failed", "exit_code": "1"},
+        job_out_lines=[
+            "[FAIL] secrets file /scratch/tjiral/eps/issue-535/secrets.env not found",
+            "[phase=preflight-failed]",
+        ],
+    )
+    evidence = fetch_started_evidence(
+        robot_alias="robot-nibi",
+        scratch_dir="/scratch/tjiral/eps/issue-535",
+        job_id=job_id,
+        rsyncer=lambda **_kw: None,  # files already seeded locally
+    )
+    assert evidence is not None
+    assert evidence["phase"] == "preflight-failed"
+    assert "[FAIL] secrets file" in evidence["job_out_tail"]
+    assert evidence["status_json"]["exit_code"] == "1"
+
+
+def test_fetch_started_evidence_returns_none_when_no_artifacts(tmp_path: Path) -> None:
+    """No status.json AND no job.out = the job never started — the
+    router's legacy no_compute classification stands."""
+    from explore_persona_space.backends.slurm_monitor import fetch_started_evidence
+
+    job_id = "9502"
+    _seed_local_state(tmp_path, job_id, status_json_body=None, job_out_lines=None)
+    evidence = fetch_started_evidence(
+        robot_alias="robot-nibi",
+        scratch_dir="/scratch/tjiral/eps/issue-999",
+        job_id=job_id,
+        rsyncer=lambda **_kw: None,  # rsync "succeeded" but pulled nothing
+    )
+    assert evidence is None
+
+
+def test_fetch_started_evidence_job_out_alone_counts(tmp_path: Path) -> None:
+    """A job.out with no status.json still proves the job ran (the
+    sbatch writes job.out via --output the moment the job starts)."""
+    from explore_persona_space.backends.slurm_monitor import fetch_started_evidence
+
+    job_id = "9503"
+    _seed_local_state(
+        tmp_path,
+        job_id,
+        status_json_body=None,
+        job_out_lines=["early crash before status.json writer armed"],
+    )
+    evidence = fetch_started_evidence(
+        robot_alias="robot-nibi",
+        scratch_dir="/scratch/tjiral/eps/issue-998",
+        job_id=job_id,
+        rsyncer=lambda **_kw: None,
+    )
+    assert evidence is not None
+    assert "early crash" in evidence["job_out_tail"]
