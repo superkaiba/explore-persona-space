@@ -732,8 +732,100 @@ def _run_conversion_with_shm_staging(
                 )
 
 
+def _run_accelerate_train_with_sentinel(
+    *,
+    cmd: list[str],
+    env: dict[str, str],
+    phase_label: str,
+) -> Path | None:
+    """Run ``accelerate launch train_stage_sft.py ...`` and parse its ZeRO-3 sentinel.
+
+    Round-15 v2 reconciler-FAIL fix: this replaces the previous
+    ``subprocess.run(cmd, env=env, check=False)`` + post-hoc
+    re-call-of-``pick_ds_native_staging_dir()`` pattern. The trainer's
+    picker call can disagree with the dispatcher's picker call when
+    /dev/shm has just been filled with ~185 GB of shards (writer saw 640 GB
+    free → branch 2; reader sees < 200 GB free → branch 3) — 185 GB
+    silently orphaned on tmpfs, FWFT artifact lost. The new contract: the
+    trainer prints ``ZERO3_SAVE_DEFERRED ds_native_dir=<path> ...`` on
+    rank-0 just before exit; this function captures stdout, tees it to the
+    parent's stdout in real time (so launch-log visibility survives), and
+    parses the sentinel from the captured copy.
+
+    The captured stdout is parsed with ``parse_zero3_sentinel(...,
+    required=False)`` so a clean LoRA / non-ZeRO-3 exit (no sentinel
+    printed) returns ``None`` instead of raising. The ZeRO-3 path always
+    prints a sentinel inside ``if is_zero3:`` right before process exit,
+    so absent-sentinel after rc=0 + LoRA = legitimate; the caller checks
+    the returned ``ds_native_dir`` Optional accordingly.
+
+    Args:
+        cmd: argv list to invoke ``accelerate launch ...`` with.
+        env: Environment dict for the subprocess (same shape we currently
+            pass: ``{**os.environ, ...}``).
+        phase_label: Human-readable phase tag for log messages
+            (``"FWFT Phase 1"`` etc.).
+
+    Returns:
+        The Path the trainer reported as its DS-native staging dir, OR
+        ``None`` for the LoRA / non-ZeRO-3 path (no sentinel printed).
+
+    Raises:
+        RuntimeError: trainer exited non-zero. Message preserves the rc.
+        ValueError | ZeRO3SentinelMissing: a sentinel was found but
+            malformed (corruption — propagated from parse_zero3_sentinel)
+            or expected-but-missing. We do not catch these here; the
+            caller's ``check=False`` + subsequent finalize call become a
+            hard failure with full context.
+    """
+    log.info("%s: launching %s", phase_label, " ".join(cmd))
+    # Capture stdout as text + tee to parent's stdout line-by-line so the
+    # launch log (nohup-captured pod-side) still shows progress in real
+    # time. Use bufsize=1 (line-buffered) + universal_newlines/text so the
+    # tee doesn't lag the parent's view.
+    captured_lines: list[str] = []
+    proc = subprocess.Popen(
+        cmd,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,  # merge so sentinel can't get lost on stderr
+        text=True,
+        bufsize=1,
+    )
+    assert proc.stdout is not None, "Popen returned no stdout pipe"
+    for line in proc.stdout:
+        sys.stdout.write(line)
+        sys.stdout.flush()
+        captured_lines.append(line)
+    rc = proc.wait()
+    if rc != 0:
+        raise RuntimeError(f"{phase_label} train_stage_sft exited rc={rc}")
+    captured_stdout = "".join(captured_lines)
+
+    # Parse the sentinel from captured stdout. required=False because the
+    # LoRA / non-ZeRO-3 path legitimately prints no sentinel; in that case
+    # the caller's "no DS-native handoff needed" branch fires.
+    from explore_persona_space.orchestrate.staging import parse_zero3_sentinel
+
+    ds_native_dir = parse_zero3_sentinel(captured_stdout, required=False)
+    if ds_native_dir is None:
+        log.info(
+            "%s: no ZERO3_SAVE_DEFERRED sentinel in stdout — LoRA / non-ZeRO-3 "
+            "path (trainer produced the HF artifact inline).",
+            phase_label,
+        )
+    else:
+        log.info(
+            "%s: parsed ZERO3_SAVE_DEFERRED sentinel → ds_native_dir=%s",
+            phase_label,
+            ds_native_dir,
+        )
+    return ds_native_dir
+
+
 def _finalize_fwft_zero3_save(
     *,
+    ds_native_dir: Path,
     output_dir: Path,
     base_model_id: str,
     hub_repo_id: str,
@@ -749,42 +841,56 @@ def _finalize_fwft_zero3_save(
     returns and all rank processes have torn down — optimizer state is
     fully released and the conversion gets the full pod RAM.
 
+    Round-15 v2 reconciler-FAIL fix: ``ds_native_dir`` is now passed in
+    directly (parsed from the trainer's ZERO3_SAVE_DEFERRED sentinel by
+    ``_run_accelerate_train_with_sentinel`` above), NOT re-derived from
+    ``pick_ds_native_staging_dir()`` here. The previous re-derive-the-path
+    pattern raced against /dev/shm free space: pre-save free was > 200 GB
+    so the writer picked branch 2, post-save free was < 200 GB (~185 GB of
+    shards now occupy /dev/shm) so the reader picked branch 3, and 185 GB
+    of shards silently orphaned at /dev/shm/... while this function looked
+    at output_dir.parent and no-oped. The sentinel handshake makes both
+    sides agree by construction.
+
     Steps:
-      1. Detect ``<output_dir>_ds_native`` (the marker that ZeRO-3 ran).
-      2. Stage the HF safetensors on /dev/shm via
+      1. Convert DS-native → HF safetensors on /dev/shm staging via
          ``_run_conversion_with_shm_staging`` (round-8 fix: bounds MooseFS
          peak to max(DS-native, HF) ≈ 96 GB instead of 160 GB sum).
-      3. The staging helper itself runs the posix_fallocate preflight,
+      2. The staging helper itself runs the posix_fallocate preflight,
          deletes DS-native fail-loud after conversion, and moves the
          staging dir to ``output_dir``.
-      4. Upload the HF artifact to ``hub_repo_id/hub_subfolder`` via the
+      3. Upload the HF artifact to ``hub_repo_id/hub_subfolder`` via the
          shared ``upload_model`` helper, verify the upload landed,
          write ``hub_upload.json`` to the Hub, and (when requested)
          delete the local copy for quota.
+      4. (Round-15 v2 Minor #3) Reap the empty
+         ``/dev/shm/epm_ds_native_staging/`` parent staging root via
+         ``reap_dev_shm_staging_root_if_empty()`` after the per-run
+         subdir is gone — small but follows the round-9 try/finally
+         cleanup discipline.
 
-    If the DS-native dir is missing, this is a no-op — the LoRA / non-
-    ZeRO-3 path already produced the HF artifact inside
-    train_stage_sft.py, and uploaded inline.
+    Caller MUST only invoke this when ``ds_native_dir`` is not None
+    (i.e. when the trainer's ZeRO-3 path ran and emitted the sentinel).
+    LoRA / non-ZeRO-3 path returns ``None`` from
+    ``_run_accelerate_train_with_sentinel``; caller skips this finalizer.
 
     Fail-loud on any step. The DS-native shards are preserved on
     conversion failure so the operator can post-mortem (and re-run
     just the conversion against the existing shards).
     """
-    # Use the shared picker so this matches the path train_stage_sft.py
-    # wrote to. Both callsites read the same env override + /dev/shm probe,
-    # so they agree on whether the shards are at /dev/shm/... or at
-    # output_dir.parent/...
-    from explore_persona_space.orchestrate.staging import pick_ds_native_staging_dir
-
-    ds_native_dir = pick_ds_native_staging_dir(output_dir)
     if not ds_native_dir.exists():
-        log.info(
-            "FWFT post-train: no DS-native dir at %s; assuming LoRA / non-ZeRO-3 "
-            "path produced the HF artifact + uploaded inside train_stage_sft.py. "
-            "Nothing to do.",
-            ds_native_dir,
+        # The trainer claimed it wrote here (sentinel said so) but the dir
+        # is gone. This is a real failure: either rank exit interleaved
+        # with a concurrent cleanup, or /dev/shm was reaped between
+        # trainer exit and dispatcher pickup. Refuse to silently no-op
+        # the way the old re-picker path did — that's exactly the bug we
+        # are fixing.
+        raise RuntimeError(
+            f"FWFT post-train: trainer's ZERO3_SAVE_DEFERRED sentinel pointed at "
+            f"{ds_native_dir}, but the directory does NOT exist post-train. "
+            "DS-native shards were lost between trainer exit and dispatcher "
+            "pickup — refusing to proceed (would produce an empty HF artifact)."
         )
-        return
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -865,6 +971,18 @@ def _finalize_fwft_zero3_save(
             output_dir,
         )
 
+    # Round-15 v2 Minor #3: best-effort reap of the empty
+    # /dev/shm/epm_ds_native_staging/ parent staging root. The per-run
+    # subdir was removed by _run_conversion_with_shm_staging (Phase D —
+    # fail-loud rmtree of DS-native), so the parent is empty if no
+    # concurrent dispatcher invocation is using it. Safe by construction:
+    # the helper only rmdirs when iterdir() yields nothing.
+    from explore_persona_space.orchestrate.staging import (
+        reap_dev_shm_staging_root_if_empty,
+    )
+
+    reap_dev_shm_staging_root_if_empty()
+
 
 def _run_fwft_phase1(args: argparse.Namespace) -> dict:
     """FWFT Phase 1 — accelerate launch + train_stage_sft.py + ZeRO-3."""
@@ -918,15 +1036,29 @@ def _run_fwft_phase1(args: argparse.Namespace) -> dict:
     env["WANDB_PROJECT"] = WANDB_PROJECT
     env.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
 
-    log.info("FWFT Phase 1: launching %s", " ".join(cmd))
     t0 = time.time()
-    rc = subprocess.run(cmd, env=env, check=False).returncode
-    if rc != 0:
-        raise RuntimeError(f"FWFT Phase 1 train_stage_sft exited rc={rc}")
+    # Round-15 v2: tee-capture stdout so we can parse the trainer's
+    # ZERO3_SAVE_DEFERRED sentinel post-exit (path-consistency fix). LoRA
+    # /  non-ZeRO-3 paths return ds_native_dir=None — we skip the
+    # finalizer then. FWFT is always ZeRO-3 per the train_stage_sft.py
+    # is_zero3 branch (line ~444); for it the sentinel is mandatory.
+    ds_native_dir = _run_accelerate_train_with_sentinel(
+        cmd=cmd,
+        env=env,
+        phase_label="FWFT Phase 1",
+    )
+    if ds_native_dir is None:
+        raise RuntimeError(
+            "FWFT Phase 1: trainer exited rc=0 but printed no ZERO3_SAVE_DEFERRED "
+            "sentinel. FWFT path uses DeepSpeed ZeRO-3 unconditionally; missing "
+            "sentinel means rank-0 stdout was lost mid-flight. Refusing to "
+            "proceed (would silently no-op the finalizer and lose the save)."
+        )
 
     # Post-accelerate: convert DS-native shards to HF safetensors (in a
     # single fresh process with the full pod RAM available), then upload.
     _finalize_fwft_zero3_save(
+        ds_native_dir=ds_native_dir,
         output_dir=output_dir / "model",
         base_model_id=BASE_MODEL,
         hub_repo_id=HUB_FWFT_MODEL_REPO,
@@ -1027,15 +1159,27 @@ def _run_fwft_phase2(args: argparse.Namespace) -> dict:
     env = {**os.environ}
     env["WANDB_PROJECT"] = WANDB_PROJECT
 
-    log.info("FWFT Phase 2: launching %s", " ".join(cmd))
     t0 = time.time()
-    rc = subprocess.run(cmd, env=env, check=False).returncode
-    if rc != 0:
-        raise RuntimeError(f"FWFT Phase 2 train_stage_sft exited rc={rc}")
+    # Round-15 v2: tee-capture stdout so we can parse the trainer's
+    # ZERO3_SAVE_DEFERRED sentinel post-exit (path-consistency fix). See
+    # Phase 1 above for the long-form rationale.
+    ds_native_dir = _run_accelerate_train_with_sentinel(
+        cmd=cmd,
+        env=env,
+        phase_label="FWFT Phase 2",
+    )
+    if ds_native_dir is None:
+        raise RuntimeError(
+            "FWFT Phase 2: trainer exited rc=0 but printed no ZERO3_SAVE_DEFERRED "
+            "sentinel. FWFT path uses DeepSpeed ZeRO-3 unconditionally; missing "
+            "sentinel means rank-0 stdout was lost mid-flight. Refusing to "
+            "proceed (would silently no-op the finalizer and lose the save)."
+        )
 
     # Post-accelerate: convert DS-native shards to HF safetensors (in a
     # single fresh process with the full pod RAM available), then upload.
     _finalize_fwft_zero3_save(
+        ds_native_dir=ds_native_dir,
         output_dir=output_dir / "model",
         base_model_id=BASE_MODEL,
         hub_repo_id=HUB_FWFT_MODEL_REPO,
