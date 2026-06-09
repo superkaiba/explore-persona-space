@@ -20,7 +20,7 @@ consolidated cosine sweep JSON with shape::
 For each (source, bystander) cell (6 sources × 23 bystanders = 138 cells per
 arm), this script:
 
-  1. Loads the **BASE model `Qwen/Qwen-2.5-7B`** (NOT Instruct -- plan §189
+  1. Loads the **BASE model `Qwen/Qwen2.5-7B`** (NOT Instruct -- plan §189
      dual-base declaration: predictor residual extraction runs on the BASE
      substrate even though training arms used Instruct).
   2. Samples R greedy responses per (persona, probe) from the base model under
@@ -29,10 +29,15 @@ arm), this script:
      at layers {7, 14, 21, 27} -- per arXiv 2507.21509 Persona Vectors recipe
      (b) and the #411 / #470 canonical Qwen-7B layer set.
   4. Computes per-(source, bystander) cosine similarity at each layer.
-  5. Computes a ``cosine_l20_baseline`` = cosine between source-centroid and
-     base-centroid at L20 (a source-vs-no-persona distance proxy at the same
-     extraction surface; the loader's legacy-alias contract accepts either
-     ``cosine_l20_baseline`` or ``cosine_l20``).
+  5. Computes ``cosine_l20_baseline`` = the canonical **#470 / #411 registered
+     baseline**: cosine between source-conditioned and bystander-conditioned
+     residual at layer 20, **last prompt token** position (Persona Vectors
+     recipe (a); the legacy ``cosine_l20`` predictor in #404 / #411 /
+     ``_iNNN_bystander_panel``). NOT response-token mean-pool, NOT source-vs-
+     no-persona: this is what ``issue509_baserate_covariate.py:118`` consumes
+     as the published predictor any new geometric predictor must beat. The
+     loader's legacy-alias contract still accepts either
+     ``cosine_l20_baseline`` or ``cosine_l20``.
 
 The 24-persona panel is loaded from
 ``explore_persona_space.experiments.factor_screen_365.persona_panel.EVAL_PERSONAS_24``
@@ -82,7 +87,8 @@ logger = logging.getLogger("issue518_cosine_sweep_panel")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 # Per plan §189 dual-base declaration: predictor residual extraction uses BASE.
-DEFAULT_MODEL = "Qwen/Qwen-2.5-7B"
+# Canonical HF Hub id: ``Qwen/Qwen2.5-7B`` (no dash between Qwen and 2.5).
+DEFAULT_MODEL = "Qwen/Qwen2.5-7B"
 DEFAULT_LAYERS: tuple[int, ...] = (7, 14, 21, 27)
 DEFAULT_BASELINE_LAYER = 20
 DEFAULT_N_PROBES_PROD = 50
@@ -331,6 +337,82 @@ def _mean_response_centroid(  # noqa: C901 - hook lifecycle + per-(probe, respon
             h.remove()
 
 
+def _last_prompt_token_centroid(
+    model,
+    tokenizer,
+    system_prompt: str,
+    probes: list[str],
+    layers: list[int],
+    device,
+) -> dict[int, object]:
+    """Persona Vectors **recipe (a)**: mean of last-prompt-token residuals.
+
+    For each (system_prompt, probe), build the prompt-only chat (system +
+    user, with the generation prompt) and forward-pass it. Capture the
+    residual at the **last input-token position** at each requested layer,
+    then mean-pool across probes. Returns ``{layer: (hidden,) tensor on
+    CPU fp32}``.
+
+    Mirrors ``scripts/extract_persona_vectors.py::extract_method_a`` and
+    ``predictor_jsdiv_470/phase4_load_dv.py``'s ``cosine_l20`` definition
+    (the #404 / #411 registered baseline). This is what
+    ``issue509_baserate_covariate.py:118`` consumes as the "#470 registered"
+    geometric predictor.
+    """
+    import torch
+
+    captures: dict[int, list] = {li: [] for li in layers}
+
+    def make_hook(li: int):
+        def hook_fn(_module, _input, output):
+            hs = output[0] if isinstance(output, tuple) else output
+            captures[li].append(hs.detach())
+
+        return hook_fn
+
+    hooks = []
+    for li in layers:
+        h = model.model.layers[li].register_forward_hook(make_hook(li))
+        hooks.append(h)
+
+    try:
+        per_layer_vecs: dict[int, list] = {li: [] for li in layers}
+        for probe in probes:
+            prompt_messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": probe},
+            ]
+            prompt_text = tokenizer.apply_chat_template(
+                prompt_messages, tokenize=False, add_generation_prompt=True
+            )
+            prompt_ids = tokenizer(
+                prompt_text, return_tensors="pt", add_special_tokens=False
+            ).input_ids.to(device)
+            for li in layers:
+                captures[li].clear()
+            with torch.no_grad():
+                _ = model(input_ids=prompt_ids)
+            last_pos = prompt_ids.shape[1] - 1
+            for li in layers:
+                hs = captures[li][-1]
+                vec = hs[0, last_pos, :].float().cpu()
+                per_layer_vecs[li].append(vec)
+
+        centroids: dict[int, object] = {}
+        for li in layers:
+            if not per_layer_vecs[li]:
+                raise RuntimeError(
+                    f"No last-prompt-token activations captured at layer {li} "
+                    f"(sys_prompt={system_prompt[:60]!r}...)"
+                )
+            stacked = torch.stack(per_layer_vecs[li])  # (n_probes, hidden)
+            centroids[li] = stacked.mean(dim=0)
+        return centroids
+    finally:
+        for h in hooks:
+            h.remove()
+
+
 def _compute_cell(
     *,
     model,
@@ -346,21 +428,30 @@ def _compute_cell(
     baseline_layer: int,
     device,
     response_cache: dict[str, list[list[str]]],
+    last_prompt_cache: dict[str, dict[int, object]],
 ) -> dict:
     """Compute one (source, bystander) cell.
 
     Returns the dict with keys matching the loader's
     ``_REQUIRED_COSINE_FIELDS`` contract.
 
-    Response sampling is cached per persona so the same source's responses
-    are reused across all 23 bystanders (per persona-vectors recipe (b) the
-    centroid is per-persona, not per-pair).
+    Two extraction surfaces are computed:
+
+      - **Recipe (b) -- response-token mean-pool** at layers {7, 14, 21, 27}
+        for ``cosine_response_l{li}`` (the round-8 new predictor); persona-
+        level centroid cached.
+      - **Recipe (a) -- last-prompt-token** at the baseline layer (L20) for
+        ``cosine_l20_baseline`` (the #404 / #411 / #470 registered baseline);
+        per-persona centroid also cached.
+
+    Both caches are persona-keyed: the SAME source's centroids are reused
+    across all 23 bystander pairings, the SAME bystander across all source
+    pairings (centroids are per-persona, not per-pair).
     """
     import torch.nn.functional as F
 
-    layers_all = sorted({*layers_response, baseline_layer})
-
     # Sample responses per persona (cached -- centroid is persona-level).
+    # Recipe (b) only.
     for persona, sys_prompt in [
         (source, persona_prompts[source]),
         (bystander, persona_prompts[bystander]),
@@ -382,31 +473,14 @@ def _compute_cell(
             per_probe_responses.append(rs)
         response_cache[persona] = per_probe_responses
 
-    # No-persona base centroid sampling (for L20 baseline). Cache under "__base__".
-    if "__base__" not in response_cache:
-        per_probe_responses = []
-        for probe in probes:
-            rs = _sample_responses(
-                model,
-                tokenizer,
-                # No system prompt -- bare base model behavior.
-                "You are a helpful assistant.",
-                probe,
-                r,
-                max_new_tokens,
-                temperature,
-                device,
-            )
-            per_probe_responses.append(rs)
-        response_cache["__base__"] = per_probe_responses
-
+    # Recipe (b) per-persona centroids at layers_response.
     src_centroid = _mean_response_centroid(
         model,
         tokenizer,
         persona_prompts[source],
         probes,
         response_cache[source],
-        layers_all,
+        layers_response,
         device,
     )
     bys_centroid = _mean_response_centroid(
@@ -415,18 +489,24 @@ def _compute_cell(
         persona_prompts[bystander],
         probes,
         response_cache[bystander],
-        layers_all,
+        layers_response,
         device,
     )
-    base_centroid = _mean_response_centroid(
-        model,
-        tokenizer,
-        "You are a helpful assistant.",
-        probes,
-        response_cache["__base__"],
-        [baseline_layer],
-        device,
-    )
+
+    # Recipe (a) per-persona centroids at the baseline layer (last prompt
+    # token; #470 registered baseline). Persona-keyed cache reuses these
+    # across all (source, bystander) pairings.
+    for persona in (source, bystander):
+        if persona in last_prompt_cache:
+            continue
+        last_prompt_cache[persona] = _last_prompt_token_centroid(
+            model,
+            tokenizer,
+            persona_prompts[persona],
+            probes,
+            [baseline_layer],
+            device,
+        )
 
     cell: dict = {"source": source, "bystander": bystander}
     for li in layers_response:
@@ -435,10 +515,13 @@ def _compute_cell(
         cos = float((s @ b.T).item())
         cell[f"cosine_response_l{li}"] = cos
 
-    # L20 baseline: source vs no-persona base, mean-pooled response cosine.
-    s20 = F.normalize(src_centroid[baseline_layer].unsqueeze(0), dim=-1)
-    base20 = F.normalize(base_centroid[baseline_layer].unsqueeze(0), dim=-1)
-    cell["cosine_l20_baseline"] = float((s20 @ base20.T).item())
+    # L20 baseline (#470 registered): recipe (a) source-vs-bystander at L20.
+    # NOT source-vs-no-persona; NOT response-token mean-pool. This is the
+    # published predictor any new geometric predictor must beat
+    # (issue509_baserate_covariate.py:118 reads this as "#470 registered").
+    s20 = F.normalize(last_prompt_cache[source][baseline_layer].unsqueeze(0), dim=-1)
+    b20 = F.normalize(last_prompt_cache[bystander][baseline_layer].unsqueeze(0), dim=-1)
+    cell["cosine_l20_baseline"] = float((s20 @ b20.T).item())
 
     return cell
 
@@ -464,7 +547,7 @@ def _write_consolidated(
     out_path.write_text(json.dumps(payload, indent=2))
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 -- argparse + cell-smoke branch + prod-path loop reads clearer inline
     """Entrypoint. See module docstring."""
     p = argparse.ArgumentParser(
         description="#518 cosine-sweep panel producer (per-arm 6x23 cells).",
@@ -517,12 +600,29 @@ def main() -> int:
         "--smoke",
         action="store_true",
         help=(
-            "Smoke mode: emit a 1x2 stub with the exact required field shape, "
-            "no model load. Validates the cell schema + downstream integration."
+            "Schema-only smoke: emit a 1x2 stub with the exact required field "
+            "shape, no model load. Validates the cell schema + downstream "
+            "integration on a CPU-only dev VM. See --cell-smoke for the "
+            "model-loading variant that exercises the production cell path."
+        ),
+    )
+    p.add_argument(
+        "--cell-smoke",
+        action="store_true",
+        help=(
+            "Cell-path smoke: run the production cell loop on a 1x2 slice "
+            "with --n-probes 1 --r 1 --max-new-tokens 8. Loads the real model "
+            "(default --model), exercises the production code path. Use on a "
+            "GPU host. Distinct from --smoke (schema-only stub, no model). "
+            "PASS_UNIFIED architecture-parity: production = same loop, larger "
+            "slice -- no separate code path."
         ),
     )
     p.add_argument("--gpu-id", type=int, default=0)
     args = p.parse_args()
+
+    if args.smoke and args.cell_smoke:
+        raise ValueError("--smoke and --cell-smoke are mutually exclusive.")
 
     if args.out is None:
         args.out = (
@@ -580,11 +680,29 @@ def main() -> int:
         logger.info("[smoke] schema validation PASS for %d cells", len(loaded["cells"]))
         return 0
 
-    # ── Production path ────────────────────────────────────────────────────
+    # ── Production path (also reached by --cell-smoke with tiny slice) ────
     os.environ.setdefault("CUDA_VISIBLE_DEVICES", str(args.gpu_id))
 
-    n_probes = args.n_probes if args.n_probes is not None else DEFAULT_N_PROBES_PROD
-    r = args.r if args.r is not None else DEFAULT_R_PROD
+    if args.cell_smoke:
+        # --cell-smoke: collapse to 1 source x 2 bystanders, R=1, n_probes=1,
+        # max_new_tokens=8. The PRODUCTION CELL LOOP below is invoked
+        # unchanged (single code path; smoke = production with one tiny
+        # cell). Loads the real model from --model.
+        logger.info(
+            "[cell-smoke] Running production cell path on 1x2 slice "
+            "(--n-probes=1 --r=1 --max-new-tokens=8)."
+        )
+        sources = [sources[0]]
+        if args.bystanders:
+            args.bystanders = list(args.bystanders)[:2]
+        else:
+            args.bystanders = [p for p in persona_prompts if p != sources[0]][:2]
+        n_probes = 1
+        r = 1
+        args.max_new_tokens = min(args.max_new_tokens, 8)
+    else:
+        n_probes = args.n_probes if args.n_probes is not None else DEFAULT_N_PROBES_PROD
+        r = args.r if args.r is not None else DEFAULT_R_PROD
 
     if args.bystanders:
         unknown_b = [b for b in args.bystanders if b not in persona_prompts]
@@ -627,9 +745,11 @@ def main() -> int:
     )
 
     cells: list[dict] = []
-    # Per-persona response cache: each persona's responses are sampled once,
-    # then reused across all 23 (source, bystander) pairings.
+    # Per-persona response cache (recipe b) + last-prompt-token centroid cache
+    # (recipe a): each persona's centroids computed once, reused across all 23
+    # (source, bystander) pairings.
     response_cache: dict[str, list[list[str]]] = {}
+    last_prompt_cache: dict[str, dict[int, object]] = {}
 
     for src in sources:
         for bys in bystanders_per_source[src]:
@@ -648,6 +768,7 @@ def main() -> int:
                 baseline_layer=args.baseline_layer,
                 device=device,
                 response_cache=response_cache,
+                last_prompt_cache=last_prompt_cache,
             )
             cells.append(cell)
             # Checkpoint per phase: persist after EACH cell so a mid-sweep

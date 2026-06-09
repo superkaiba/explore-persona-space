@@ -9,11 +9,11 @@
 #   E  refusal_train_eval  ─┐
 #   E  em_train_eval        │
 #   F  cosine_sweep_refusal │   (#518 v4 round-8 new producer)
-#   F  cosine_sweep_em      ├─→ G logprob_refusal ─┐
-#   F  jskl_sweep_refusal   │                       │
-#   F  jskl_sweep_em        │   (#518 v4 round-8)  │
-#                          ─┘   logprob_em         │
-#                                                  │
+#   F  cosine_sweep_em      ├─→ F.5 logprob_input_adapter ─→ G logprob_refusal ─┐
+#   F  jskl_sweep_refusal   │       (round-9: positives.jsonl reshaper)         │
+#   F  jskl_sweep_em        │                                                   │
+#                          ─┘                                                   │
+#                                                                              │
 #   G  logprob_refusal      │
 #   G  logprob_em           ├─→ H bakeoff_refusal ─┐
 #   G  logprob_syco_backfill│   H bakeoff_em       │
@@ -116,21 +116,29 @@ run uv run python scripts/issue518_jskl_sweep_panel.py --arm refusal
 phase jskl_sweep_em "issue518_jskl_sweep_panel.py --arm em"
 run uv run python scripts/issue518_jskl_sweep_panel.py --arm em
 
+# ── F.5 Logprob-input adapter: extract source-positive rows from each arm's
+# train_pool.jsonl and rewrite as data/issue_518/<arm>/<source>/positives.jsonl
+# so issue518_syco_logprob_backfill.py can consume them. Closes the round-8
+# blocker: the refusal + EM runners write train_pool.jsonl as multi-bucket
+# {prompt: [...], completion: [...]} rows (system_prompt = source persona is
+# the positive subset); the backfill expects {question, completion} rows under
+# <root>/<source>/positives.jsonl. The conversion is per-source and idempotent.
+phase logprob_input_adapter "convert train_pool.jsonl -> positives.jsonl per arm × source"
+run uv run python scripts/issue518_build_logprob_inputs.py \
+    --arms refusal em \
+    --runs-root-template "$EVAL_ROOT/{arm}/runs" \
+    --data-root "$REPO_ROOT/data/issue_518"
+
 # ── G. Completion-log-prob predictor (per arm; new metric in #518 v4) ──────
 # Plan §4.3 / §0c: per-(source, bystander) length-normalized log P(positive
 # completion | bystander_system, training_question) on FROZEN base
-# Qwen-2.5-7B-Instruct. The refusal + EM arm scripts share the same
+# Qwen2.5-7B-Instruct. The refusal + EM arm scripts share the same
 # methodology as issue518_syco_logprob_backfill.py; per-arm wrappers point
 # at the per-arm training rows + output bucket.
 #
-# NOTE (round-8): the syco backfill is the only script of this family
-# currently committed (scripts/issue518_syco_logprob_backfill.py). The
-# per-arm sibling for refusal + EM is a separate implementer-scope gap
-# (NOT part of this round); the launcher invokes the existing script
-# under each arm by threading --teach-rows-root + --out per-arm. If the
-# refusal/em training writes positives.jsonl under
-# data/issue_518/<arm>/<source>/positives.jsonl this is a one-flag flip;
-# otherwise the per-arm wrapper is the follow-up script.
+# Round-9 fix: ``issue518_build_logprob_inputs.py`` runs above (phase
+# logprob_input_adapter) so ``data/issue_518/{refusal,em}/<source>/positives.jsonl``
+# exists in the layout the backfill expects.
 phase logprob_refusal "issue518_syco_logprob_backfill.py --teach-rows-root data/issue_518/refusal --out eval_results/issue_518/refusal/bystander_logprob/logprob_results.json"
 run uv run python scripts/issue518_syco_logprob_backfill.py \
     --teach-rows-root "$REPO_ROOT/data/issue_518/refusal" \
@@ -146,21 +154,28 @@ run uv run python scripts/issue518_syco_logprob_backfill.py
 
 # ── H. Residual-stream bake-off (per arm, BASE model per §189) ─────────────
 # The bake-off dispatch is provided by issue493_extraction_metric_bakeoff.py
-# (cloned from #509). The exact --transformations / --arms / --epochs flags
-# are plan-scoped to the experimenter (the right invocation depends on which
-# conditions registry rows are live on the pod); this launcher slot is the
-# phase marker. Plan §4.5 + §189 mandate ``--model-id Qwen/Qwen-2.5-7B``.
-phase bakeoff_refusal "issue493_extraction_metric_bakeoff.py --arm refusal --model-id Qwen/Qwen-2.5-7B"
+# (cloned from #509). Plan §4.5 + §189 mandate ``--model-id Qwen/Qwen2.5-7B``.
+#
+# Round-9 fix: the bake-off's ``--arms`` flag is the positive-vs-locus
+# extraction concept (choices = {pos, loc}) and conflating it with the #518
+# behavior arms (refusal, em) is a CLI mismatch that argparse rejects with
+# exit 2. The behavior arm is selected via ``--conditions-registry``, which
+# points at the per-arm Condition list module
+# (``i518_refusal_conditions`` or ``i518_em_conditions``); the worker's
+# default ``--arms`` (pos + loc) is the right value to keep.
+phase bakeoff_refusal "issue493_extraction_metric_bakeoff.py --conditions-registry ...i518_refusal_conditions"
 run uv run python scripts/issue493_extraction_metric_bakeoff.py \
-    --model-id "Qwen/Qwen-2.5-7B" \
-    --arms refusal \
-    --out-dir "$EVAL_ROOT/refusal/bakeoff"
+    --model-id "Qwen/Qwen2.5-7B" \
+    --conditions-registry "explore_persona_space.experiments.i518_refusal_conditions" \
+    --probe-pool-mode custom \
+    --bakeoff-root "$EVAL_ROOT/refusal/bakeoff"
 
-phase bakeoff_em "issue493_extraction_metric_bakeoff.py --arm em --model-id Qwen/Qwen-2.5-7B"
+phase bakeoff_em "issue493_extraction_metric_bakeoff.py --conditions-registry ...i518_em_conditions"
 run uv run python scripts/issue493_extraction_metric_bakeoff.py \
-    --model-id "Qwen/Qwen-2.5-7B" \
-    --arms em \
-    --out-dir "$EVAL_ROOT/em/bakeoff"
+    --model-id "Qwen/Qwen2.5-7B" \
+    --conditions-registry "explore_persona_space.experiments.i518_em_conditions" \
+    --probe-pool-mode custom \
+    --bakeoff-root "$EVAL_ROOT/em/bakeoff"
 
 # ── I. Substrate assembly (per arm: predictor_comparison.json) ─────────────
 phase substrate_syco "issue518_build_predictor_substrate.py --arm syco"

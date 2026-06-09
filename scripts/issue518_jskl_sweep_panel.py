@@ -40,8 +40,9 @@ metrics rule (`.claude/rules/persona-distance-metrics.md` + arXiv 2504.10637):
 substrate builder + loader assume nats; per-cell sanity asserts
 ``0 <= JS_sym <= ln 2`` and ``KL >= 0``.
 
-Loads the **BASE model `Qwen/Qwen-2.5-7B`** per plan §189 dual-base
-declaration (matches the cosine producer).
+Loads the **BASE model `Qwen/Qwen2.5-7B`** (canonical HF Hub id, no dash
+between Qwen and 2.5) per plan §189 dual-base declaration (matches the
+cosine producer).
 
 Checkpoint per phase: after each cell completes, the consolidated cells list
 is re-serialized to ``--out``.
@@ -83,7 +84,7 @@ sys.path.insert(0, str(REPO / "src"))
 logger = logging.getLogger("issue518_jskl_sweep_panel")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-DEFAULT_MODEL = "Qwen/Qwen-2.5-7B"
+DEFAULT_MODEL = "Qwen/Qwen2.5-7B"
 DEFAULT_N_PROBES_PROD = 50
 DEFAULT_N_PROBES_SMOKE = 2
 DEFAULT_R_PROD = 4
@@ -433,7 +434,7 @@ def _write_consolidated(
     out_path.write_text(json.dumps(payload, indent=2))
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 -- argparse + cell-smoke branch + prod-path loop reads clearer inline
     """Entrypoint. See module docstring."""
     p = argparse.ArgumentParser(
         description="#518 JS/KL sequence-level sweep producer (per-arm 6x23 cells).",
@@ -460,12 +461,26 @@ def main() -> int:
         "--smoke",
         action="store_true",
         help=(
-            "Smoke mode: emit a 1x2 stub with all required field shape + "
-            "bounded nats. No model load. Validates schema + integration."
+            "Schema-only smoke: emit a 1x2 stub with all required field shape "
+            "+ bounded nats. No model load. Validates schema + integration on "
+            "a CPU-only dev VM. See --cell-smoke for the model-loading variant."
+        ),
+    )
+    p.add_argument(
+        "--cell-smoke",
+        action="store_true",
+        help=(
+            "Cell-path smoke: run the production cell loop on a 1x2 slice "
+            "with --n-probes 1 --r 1 --max-new-tokens 8 --tf-batch 1. Loads "
+            "the real model. PASS_UNIFIED architecture-parity: same loop, "
+            "tiny slice."
         ),
     )
     p.add_argument("--gpu-id", type=int, default=0)
     args = p.parse_args()
+
+    if args.smoke and args.cell_smoke:
+        raise ValueError("--smoke and --cell-smoke are mutually exclusive.")
 
     if args.out is None:
         args.out = REPO / "eval_results" / "issue_518" / args.arm / "predictors" / "jskl_sweep.json"
@@ -523,11 +538,26 @@ def main() -> int:
         logger.info("[smoke] schema validation PASS for %d cells", len(loaded["cells"]))
         return 0
 
-    # ── Production path ────────────────────────────────────────────────────
+    # ── Production path (also reached by --cell-smoke with tiny slice) ────
     os.environ.setdefault("CUDA_VISIBLE_DEVICES", str(args.gpu_id))
 
-    n_probes = args.n_probes if args.n_probes is not None else DEFAULT_N_PROBES_PROD
-    r = args.r if args.r is not None else DEFAULT_R_PROD
+    if args.cell_smoke:
+        logger.info(
+            "[cell-smoke] Running production cell path on 1x2 slice "
+            "(--n-probes=1 --r=1 --max-new-tokens=8 --tf-batch=1)."
+        )
+        sources = [sources[0]]
+        if args.bystanders:
+            args.bystanders = list(args.bystanders)[:2]
+        else:
+            args.bystanders = [p for p in persona_prompts if p != sources[0]][:2]
+        n_probes = 1
+        r = 1
+        args.max_new_tokens = min(args.max_new_tokens, 8)
+        args.tf_batch = 1
+    else:
+        n_probes = args.n_probes if args.n_probes is not None else DEFAULT_N_PROBES_PROD
+        r = args.r if args.r is not None else DEFAULT_R_PROD
 
     if args.bystanders:
         unknown_b = [b for b in args.bystanders if b not in persona_prompts]
