@@ -600,8 +600,8 @@
     "186": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/186",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/186",
+      "status": "completed",
       "title": "Persona-flavored chain-of-thought rationales drive cross-persona behavior leakage in wrong-answer SFT on Qwen2.5-7B-Instruct; persona style dominates, contradicting-rationale training partially defends (MODERATE confidence)"
     },
     "187": {
