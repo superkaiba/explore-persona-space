@@ -767,34 +767,32 @@ def _move_to_awaiting(tw, task_id: int) -> None:
 
 
 # Minimal canonical PASS body — useful as a fixture target. Every check
-# (title, four H2s, TL;DR labels, hero image, caption, confidence, repro
-# subgroups + URL + sentinel scrub, cherry-picked, qual-data link) is
-# satisfied.
+# (title, the three required H2s of the 2-content-section spec in order,
+# TL;DR Motivation opener, hero image inline under TL;DR, confidence
+# sentence, repro subgroups + URL + sentinel scrub, cherry-picked,
+# qual-data link) is satisfied. Non-v2 (no `<!-- clean-result-v2 -->`
+# sentinel), so the body Confidence sentence is still required and the
+# nested-TL;DR-shape rule is skipped. The `## Goal` H2 sits AFTER
+# `## Reproducibility` — extra H2s are tolerated only there (stray-H2
+# rule, verify check 2).
 CANONICAL_PASS_BODY = """\
 # Toy clean-result body (LOW confidence)
 
-## Goal
+## Human TL;DR
 
-Smoke-test that classify_body recognizes a fully-conformant clean-result body and returns PASS.
+A plain-English first-pass take: this toy fixture exercises the fully-conformant
+clean-result shape end to end and passes every verifier check.
 
 ## TL;DR
 
 - **Motivation:** I wanted a smoke-test fixture.
 - **What I ran:** I wrote a minimal markdown body and ran verify_task_body.
-- **Results:** The fixture passes all thirteen checks.
+- **Results:** The fixture passes every check.
 - **Next steps:** Use this fixture in migration tests.
-
-## Figure
 
 ![Hero figure placeholder](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_X/hero.png)
 
 *Hero figure showing the toy data points and the regression line and bootstrap envelope.*
-
-## Details
-
-The full Details section explaining what was done and how.
-
-Confidence: LOW — based on toy data only, not a real experiment so does not generalize.
 
 ## Reproducibility
 
@@ -803,17 +801,26 @@ Confidence: LOW — based on toy data only, not a real experiment so does not ge
 **Compute:** n/a
 
 **Code:** n/a
-"""
 
-
-# Conformant-but-failing fixture: four-H2 shape, but Reproducibility is
-# missing its three boldface subgroup labels and uses H3 instead.
-CONFORMANT_FAILING_H3_REPRO_BODY = """\
-# Conformant-failing body using H3 repro subgroups (LOW confidence)
+Confidence: LOW — based on toy data only, not a real experiment so does not generalize.
 
 ## Goal
 
-Smoke-test that the H3-Repro remediation patch promotes Artifacts/Compute/Code labels to bold.
+Smoke-test that classify_body recognizes a fully-conformant clean-result body and returns PASS.
+"""
+
+
+# Conformant-but-failing fixture: current required-H2 shape (Human TL;DR /
+# TL;DR / Reproducibility), but Reproducibility is missing its three
+# boldface subgroup labels and uses H3 instead — the one defect the
+# `remediate_repro_subgroups` patch fixes mechanically.
+CONFORMANT_FAILING_H3_REPRO_BODY = """\
+# Conformant-failing body using H3 repro subgroups (LOW confidence)
+
+## Human TL;DR
+
+A plain-English first-pass take: this fixture is conformant except for the H3
+Reproducibility subgroup headings, which the remediation patch promotes to bold.
 
 ## TL;DR
 
@@ -822,15 +829,9 @@ Smoke-test that the H3-Repro remediation patch promotes Artifacts/Compute/Code l
 - **Results:** toy results paragraph explaining what we saw.
 - **Next steps:** none in particular.
 
-## Figure
-
 ![Hero figure placeholder](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_X/hero.png)
 
 *Hero figure showing the toy data points and the regression line and bootstrap envelope.*
-
-## Details
-
-Confidence: LOW — based on toy data only, not generalizable, no real experiment.
 
 ## Reproducibility
 
@@ -851,6 +852,8 @@ Confidence: LOW — based on toy data only, not generalizable, no real experimen
 | field | value |
 |---|---|
 | Script | n/a |
+
+Confidence: LOW — based on toy data only, not generalizable, no real experiment.
 """
 
 
@@ -924,10 +927,11 @@ def _make_task_at_awaiting(
 def test_migrate_body_classify_pass(fake_repo):
     from explore_persona_space.task_workflow_migrate import BodyClass, classify_body
 
-    # CANONICAL_PASS_BODY exercises the fully-conformant body shape after
-    # the Why-experiment gate was retired (2026-05-24). The fixture now
-    # carries a `## Goal` H2 (soft INFO check, WARN-not-FAIL) and an
-    # absolute figure URL.
+    # CANONICAL_PASS_BODY exercises the fully-conformant body shape under
+    # the 2-content-section spec (2026-W22, task #454): Human TL;DR /
+    # TL;DR / Reproducibility in order, hero image inline under TL;DR,
+    # `## Goal` H2 after Reproducibility (extra H2s tolerated only
+    # there), and an absolute figure URL.
     assert classify_body(CANONICAL_PASS_BODY, fm={}) == BodyClass.PASS
 
 
@@ -951,8 +955,8 @@ def test_migrate_body_classify_legacy_html(fake_repo):
 
 
 def test_migrate_body_conformant_failing_remediation(fake_repo):
-    """A four-H2 body with H3 Repro subgroups gets the labels promoted to
-    bold and ends up passing verify_task_body.
+    """A current-spec-shaped body with H3 Repro subgroups gets the labels
+    promoted to bold and ends up passing verify_task_body.
     """
     _, tw = fake_repo
     from explore_persona_space.task_workflow_migrate import BodyClass, migrate_one
