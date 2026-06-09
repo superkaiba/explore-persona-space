@@ -24,9 +24,9 @@ import os
 import re
 from typing import ClassVar
 
-import wandb
 from transformers import TrainerCallback
 
+import wandb
 from explore_persona_space.personas import MARKER_TOKEN
 
 logger = logging.getLogger(__name__)
