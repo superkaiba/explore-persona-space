@@ -17,8 +17,11 @@ never merged to main), with deltas documented inline per the plan
 (tasks/running/539/plans/plan.md sections 4.2, 6.2).
 
 Step-0 consistency gate: before any new number is computed, three parent rho
-values and four cell counts are reproduced from the rebuilt panel; any mismatch
-aborts with exit code 1 (plan section 4.5 — the kill criterion).
+values and four cell counts are reproduced from the rebuilt panel, and the
+phase-0 measurement payload (``phase0_base_prior.json``) is cross-checked
+against the analysis copy of the base prior (``predictors.json::base_prior``)
+on every runtime bystander; any mismatch aborts with exit code 1 (plan
+sections 4.1 + 4.5 — the kill criterion).
 """
 
 from __future__ import annotations
@@ -63,6 +66,8 @@ REF_N_ORDINARY = 256
 REF_N_INSTRUCTED = 160
 REF_N_ORDINARY_CROSS = 240
 RHO_TOL = 1e-6
+BASE_PRIOR_XCHECK_TOL = 1e-12  # phase0_base_prior.json vs predictors.json::base_prior
+FE_GROUP_MEAN_TOL = 1e-8  # post-residualization max |group mean|, every reported slice
 
 ALL_PKS = ("cosine", "gauss_kl", "js_v1")  # js_v1 exploratory (deprecated estimator, plan D7)
 PRIMARY_PKS = ("cosine", "gauss_kl")
@@ -269,14 +274,51 @@ def _group_mean_broadcast(values: np.ndarray, groups: np.ndarray) -> np.ndarray:
     return out
 
 
-def _twoway_demean(values: np.ndarray, src: np.ndarray, byst: np.ndarray) -> np.ndarray:
-    """Two-way fixed-effects residual: v - src_mean - byst_mean + grand_mean (plan D10)."""
-    return (
-        values
-        - _group_mean_broadcast(values, src)
-        - _group_mean_broadcast(values, byst)
-        + float(values.mean())
-    )
+def _twoway_fe_residualize(
+    values: np.ndarray, src: np.ndarray, byst: np.ndarray
+) -> tuple[np.ndarray, float]:
+    """Exact two-way (source + bystander) fixed-effects residual (plan D10).
+
+    Dummy regression: OLS of ``values`` on an intercept + one-hot source dummies
+    + one-hot bystander dummies via ``np.linalg.lstsq``; the returned residual is
+    the exact within-estimator residual on ANY panel, balanced or not (residuals
+    of a least-squares projection are invariant to the rank-deficient
+    parametrization, so no reference level needs dropping). Replaces the round-1
+    single-pass shortcut ``v - src_mean - byst_mean + grand_mean``, which is the
+    FE residual ONLY on complete balanced rectangles and left nonzero FE group
+    means on the unbalanced ordinary_cross cohort (16x16 minus diagonal) —
+    round-1 ensemble code-review binding fix; on ordinary_cross the correction
+    moves rho_twoway cosine ~+0.138 -> ~+0.164 and gauss_kl ~+0.077 -> ~+0.044.
+
+    Fail-loud postcondition, enforced HERE so it fires for every reported slice
+    (primary cohorts + all robustness slices route through this function): the
+    max |residual group mean| over sources AND bystanders must be below
+    ``FE_GROUP_MEAN_TOL`` (1e-8), else RuntimeError.
+
+    Returns ``(residuals, max_abs_group_mean)`` — the audit scalar is persisted
+    in the output JSON per cohort/predictor.
+    """
+    n = len(values)
+    v = values.astype(np.float64)
+    src_u, src_inv = np.unique(src, return_inverse=True)
+    byst_u, byst_inv = np.unique(byst, return_inverse=True)
+    design = np.zeros((n, 1 + len(src_u) + len(byst_u)), dtype=np.float64)
+    design[:, 0] = 1.0
+    design[np.arange(n), 1 + src_inv] = 1.0
+    design[np.arange(n), 1 + len(src_u) + byst_inv] = 1.0
+    coef, *_ = np.linalg.lstsq(design, v, rcond=None)
+    resid = v - design @ coef
+    worst = 0.0
+    for groups in (src, byst):
+        for g in np.unique(groups):
+            worst = max(worst, abs(float(resid[groups == g].mean())))
+    if worst >= FE_GROUP_MEAN_TOL:
+        raise RuntimeError(
+            f"two-way FE residualization failed its postcondition: max |residual group "
+            f"mean| = {worst:.3e} >= {FE_GROUP_MEAN_TOL:.0e} "
+            f"(n={n}, {len(src_u)} sources x {len(byst_u)} bystanders)"
+        )
+    return resid, worst
 
 
 def _partial_spearman(x: np.ndarray, y: np.ndarray, z: np.ndarray) -> float:
@@ -456,7 +498,9 @@ def cohort_masks(panel: dict) -> dict[str, np.ndarray]:
 
 
 def step0_consistency(panel: dict, in_dir: Path) -> dict:
-    """Reproduce 3 parent rho values + 4 cell counts; sys.exit(1) on any mismatch."""
+    """Reproduce 3 parent rho values + 4 cell counts, cross-check the hard-coded
+    constants against analysis.json AND phase0_base_prior.json against
+    predictors.json::base_prior; sys.exit(1) on any mismatch."""
     masks = cohort_masks(panel)
     checks: list[dict] = []
 
@@ -503,6 +547,25 @@ def step0_consistency(panel: dict, in_dir: Path) -> dict:
         1e-9,
     )
 
+    # Plan §4.1 cross-check: the phase-0 measurement payload
+    # (phase0_base_prior.json, per-bystander on-policy in-R emission rate of the
+    # BASE model — the round-3 binding DV) must agree with the analysis copy the
+    # parent's hierarchy consumed (predictors.json::base_prior) on every runtime
+    # bystander. Catches a silently-regenerated or stale predictors.json.
+    predictors = json.loads((in_dir / "predictors.json").read_text())
+    base_prior_map: dict[str, float] = predictors["base_prior"]
+    phase0 = json.loads((in_dir / "phase0_base_prior.json").read_text())
+    per_byst = phase0["per_bystander"]
+    runtime_bystanders: list[str] = panel["_bystanders"]
+    covered = [b for b in runtime_bystanders if b in per_byst]
+    check("phase0_base_prior_coverage", len(covered), len(runtime_bystanders), 0)
+    if covered:
+        max_diff = max(
+            abs(float(base_prior_map[b]) - float(per_byst[b]["on_policy_emit_rate"]))
+            for b in covered
+        )
+        check("phase0_base_prior_max_abs_diff", max_diff, 0.0, BASE_PRIOR_XCHECK_TOL)
+
     failed = [c for c in checks if not c["pass"]]
     if failed:
         print(
@@ -540,19 +603,26 @@ def compute_cohort_suite(
 
     resid, resid_audit = residualize(y, prior)
     fe = y - _group_mean_broadcast(y, byst)
-    y_twoway = _twoway_demean(y, src, byst)
+    y_twoway, y_fe_worst = _twoway_fe_residualize(y, src, byst)
     source_dose = _group_mean_broadcast(y, src)  # source-marginal emission, broadcast
 
     out: dict = {
         "n": int(mask.sum()),
         "dv": dv_key,
         "residualization": resid_audit,
+        "twoway_fe_audit": {
+            "estimator": "dummy-regression lstsq (exact on unbalanced panels)",
+            "group_mean_tol": FE_GROUP_MEAN_TOL,
+            "dv_max_abs_group_mean": y_fe_worst,
+            "geometry_max_abs_group_mean": {},
+        },
         "predictors": {},
         "source_marginal": {},
     }
     for pk in pks:
         x = panel[pk][mask].astype(np.float64)
-        x_twoway = _twoway_demean(x, src, byst)
+        x_twoway, x_fe_worst = _twoway_fe_residualize(x, src, byst)
+        out["twoway_fe_audit"]["geometry_max_abs_group_mean"][pk] = x_fe_worst
         nonzero = y != 0.0
         binary = (y > 0).astype(np.float64)
         block = {
@@ -1197,6 +1267,9 @@ def main(argv: list[str] | None = None) -> int:
             "argv": sys.argv[1:],
             "primary_family": [{"predictor": pk, "cohort": cohort} for pk, cohort in family],
             "js_v1_status": "exploratory (deprecated estimator; outside the Holm family)",
+            "twoway_fe_estimator": "dummy-regression lstsq, exact on unbalanced panels "
+            "(round-2 binding fix; replaces the round-1 single-pass demean, which is the "
+            "FE residual only on complete balanced rectangles)",
             "residualization_noop_flags": {
                 cohort: cohorts[cohort]["residualization"]["noop"] for cohort in COHORT_NAMES
             },
