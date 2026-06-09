@@ -13,6 +13,8 @@ goal: 'Explain why the #463 cosine→EM predictor appears at the last-prompt-tok
 relates_to:
 - beh-b-to-bprime
 - app5
+classification: useful
+promoted_at: '2026-06-09T21:28:33Z'
 ---
 # At the newline-after-assistant token, real in-context examples let base-model cosine predict fine-tuned emergent misalignment (ρ=0.66, p=0.003, n=18); a natural-language persona description carries no signal (LOW confidence)
 
