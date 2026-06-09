@@ -1,0 +1,26 @@
+name: c_router_smoke
+condition_id: 999
+# Compute-router slice-8 live-acceptance smoke workload.
+#
+# Purpose: a ROUTER-PLUMBING smoke — its Goal is to validate
+# submit -> poll -> fetch -> confirm_artifacts -> teardown on each lane
+# (Nibi / GCP / Mila), NOT to implant any behavior. See
+# scripts/router_acceptance.py.
+#
+# Why this isn't subject to the contrastive-negatives rule: the rule
+# applies to experiments whose Goal is to *implant a behavior into a
+# persona*. This smoke trains a few LoRA steps on a generic benign SFT
+# subsample purely to exercise the dispatch path; nothing depends on
+# what the trained model does or doesn't emit. Documented inline so a
+# reviewer can confirm at a glance.
+#
+# Dataset: 50 deterministic rows sub-sampled (seed=0) from
+# benign_sft_6k.jsonl (which already lives on the project HF data repo
+# superkaiba1/explore-persona-space-data). Stored locally at
+# data/sft/router_smoke_sft.jsonl so the pod has it the moment the repo
+# is cloned (no extra HF download step in the smoke).
+stages:
+  - name: smoke
+    type: sft
+    dataset: data/sft/router_smoke_sft.jsonl
+seeds: [0]
