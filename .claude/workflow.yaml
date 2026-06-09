@@ -2113,6 +2113,7 @@ workflow_fix_on_bug:
     - "tests/test_session_progress_report.py"
     - "tests/test_session_summarize.py"
     - "tests/test_session_resolver.py"
+    - "tests/test_spawn_session_list_enrichment.py"
   out_of_scope:
     - "src/explore_persona_space/**"
     - "configs/**"
