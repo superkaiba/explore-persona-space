@@ -71,6 +71,10 @@ SEEDS_BY_ISSUE: dict[int, tuple[int, ...]] = {
     # 7/21 added on top of #464's 42/137/1337). Seed list is the only
     # accepted set when --issue 529 is passed.
     529: (42, 137, 1337, 7, 21),
+    # #533: lr=5e-6 corrective re-run of #529's grid — single-variable
+    # change (lr), so the seed set / epoch suffix / HF-prefix shape all
+    # mirror #529's.
+    533: (42, 137, 1337, 7, 21),
 }
 # Legacy alias preserved for any external importer that referenced
 # ``SEEDS`` directly (none in-repo, but a thin-wrapper path could rely
@@ -773,13 +777,16 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
         default=464,
         help=(
             "Which issue the run belongs to. Default 464 (parent rig). "
-            "Pass --issue 529 for the marker-less cn re-run at non-saturated "
-            "training anchors: this switches the seed set to "
-            "(42, 137, 1337, 7, 21), prefixes cell labels / HF subpaths / "
-            "WandB run names with ``i529_`` instead of ``i464_``, and "
-            "appends an ``_e{E}`` epoch suffix so the same (arm, seed, "
-            "persona) cell at multiple --epochs values writes to distinct "
-            "HF subpaths."
+            "Pass --issue 529 for the marker-less cn re-run at non-"
+            "saturated training anchors. Pass --issue 533 for #529's "
+            "lr=5e-6 corrective re-run (same 5 seeds / {1,2,3,5} epoch "
+            "grid / HF-prefix + epoch-suffix shape as 529 — only lr "
+            "differs at the caller). Both 529 and 533 switch the seed "
+            "set to (42, 137, 1337, 7, 21), prefix cell labels / HF "
+            "subpaths / WandB run names with ``i{issue}_``, and append "
+            "an ``_e{E}`` epoch suffix so the same (arm, seed, persona) "
+            "cell at multiple --epochs values writes to distinct HF "
+            "subpaths."
         ),
     )
     args = ap.parse_args(argv)
@@ -788,17 +795,17 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
         ap.error("--shared-marker requires --single-persona")
     if args.contrastive_negatives and not (args.shared_marker and args.single_persona is not None):
         ap.error("--contrastive-negatives requires --single-persona AND --shared-marker")
-    # #529 invariant: per plan §4.1 the cn re-run is single-persona +
-    # shared-marker + contrastive-negatives. A bare --issue 529 without
-    # those flags would land at the wrong HF subpath / wrong training
-    # rows; fail loud rather than silently producing a #464-shaped cell
-    # under an i529_ prefix.
-    if args.issue == 529 and not (
+    # #529 / #533 invariant: per plan §4.1 the cn re-run is single-
+    # persona + shared-marker + contrastive-negatives. A bare --issue
+    # 529 / 533 without those flags would land at the wrong HF subpath
+    # / wrong training rows; fail loud rather than silently producing a
+    # #464-shaped cell under an i{N}_ prefix.
+    if args.issue in (529, 533) and not (
         args.contrastive_negatives and args.shared_marker and args.single_persona is not None
     ):
         ap.error(
-            "--issue 529 requires --contrastive-negatives --shared-marker --single-persona "
-            "(per plan §4.1: marker-less cn regime only)."
+            f"--issue {args.issue} requires --contrastive-negatives "
+            "--shared-marker --single-persona (cn regime only)."
         )
 
     arm, seed = _parse_cell(args.cell, issue=args.issue)
@@ -844,13 +851,13 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
     # Issue-prefix + epoch suffix (plan §4.7):
     #   * --issue 464 (default): adapters at ``adapters/i464_{cell}``;
     #     epochs NOT in the cell label (the legacy #464 path).
-    #   * --issue 529: adapters at ``adapters/i529_{cell}_e{E}``; epoch
-    #     suffix is part of the label so the same (arm, seed, persona)
-    #     cell at E=1 vs E=5 lives at distinct HF subpaths AND on-disk
-    #     row files (concurrent 4-GPU sweep would otherwise race on the
-    #     same TRAIN_ROW_DIR/.jsonl path).
+    #   * --issue 529 / 533: adapters at ``adapters/i{N}_{cell}_e{E}``;
+    #     epoch suffix is part of the label so the same (arm, seed,
+    #     persona) cell at E=1 vs E=5 lives at distinct HF subpaths AND
+    #     on-disk row files (concurrent 4-GPU sweep would otherwise
+    #     race on the same TRAIN_ROW_DIR/.jsonl path).
     issue_prefix = f"i{args.issue}"
-    epoch_suffix = f"_e{args.epochs}" if args.issue == 529 else ""
+    epoch_suffix = f"_e{args.epochs}" if args.issue in (529, 533) else ""
 
     train_path = _build_training_rows(
         arm,
