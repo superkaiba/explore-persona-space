@@ -2144,7 +2144,10 @@ workflow_fix_on_bug:
     - ".claude/settings.local.json"
     - "CLAUDE.md"
     - "scripts/task.py"
-    - "scripts/task_workflow.py"
+    # The task-workflow API library lives under src/, not scripts/ — these two
+    # modules are workflow surface despite the general src/** out-of-scope rule.
+    - "src/explore_persona_space/task_workflow.py"
+    - "src/explore_persona_space/task_workflow_migrate.py"
     - "scripts/pod.py"
     - "scripts/pod_lifecycle.py"
     - "scripts/pod_config.py"

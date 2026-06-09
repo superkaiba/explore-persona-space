@@ -41,8 +41,11 @@ The workflow is the meta-layer that drives experiments — never the experiments
 - `.claude/settings.json` and `.claude/settings.local.json` — hooks, permissions, env
 - `.claude/mcp.json` — MCP server config (read-only unless explicitly asked)
 - `CLAUDE.md` (project root) — critical rules, routing, gates, halt-criteria
+- The task-workflow API library modules under `src/` (workflow surface despite the general `src/**` exclusion below):
+  - `src/explore_persona_space/task_workflow.py` — the file-based task API library behind `task.py`
+  - `src/explore_persona_space/task_workflow_migrate.py` — the `task.py migrate-body` implementation
 - `scripts/` orchestration helpers:
-  - `task.py` / `task_workflow.py` (the file-based task API)
+  - `task.py` (the file-based task API CLI)
   - `pod.py`, `runpod_api.py`, `bootstrap_pod.sh`, `pods.conf`, `pods_ephemeral.json`
   - `pod_lifecycle.py`, `pod_config.py`, `pod_audit.py`, `gpu_heuristics.py`, `cleanup_pod.py`, `pod_disk_guard.py` — the pod implementation modules `pod.py` dispatches to
   - `cron_pod_audit.sh`, `sync_pods.sh`, `_pods_conf_path.sh` — pod shell/config helpers (daily stale-pod audit cron wrapper, `pod.py sync` backend, pods.conf path resolver)
@@ -56,7 +59,7 @@ The workflow is the meta-layer that drives experiments — never the experiments
 - `tests/test_workflow*.py`, `tests/test_no_dollar_budget_caps.py`, and other tests that pin workflow invariants
 
 **Out of scope (do NOT touch):**
-- `src/explore_persona_space/**` — library + research code
+- `src/explore_persona_space/**` — library + research code (EXCEPT `task_workflow.py` + `task_workflow_migrate.py`, listed above)
 - `configs/**` — Hydra experiment configs
 - `scripts/train.py`, `scripts/eval.py`, `scripts/run_sweep.py`, `scripts/generate_*.py`, `scripts/analyze_results.py` — experiment entrypoints
 - `tasks/**` — task workflow state (read only; never edit body.md, events.jsonl, plans/, artifacts/)

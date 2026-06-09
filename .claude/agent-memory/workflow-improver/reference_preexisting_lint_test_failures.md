@@ -9,13 +9,14 @@ As of 2026-06-09, the success criterion "`ruff check .claude scripts` passes" is
 unsatisfiable repo-wide: ~1338 pre-existing ruff errors live in untouched
 experiment-analysis scripts (`scripts/analyze_*.py` etc.). Likewise
 `tests/test_data_validation.py` fails collection in any fresh worktree (imports
-the UNTRACKED `explore_persona_space.data.wrong_answers_deterministic`), and the
-`tests/test_task_workflow.py::test_migrate_body_*` family (6 tests) fails on a
-stale `CANONICAL_PASS_BODY` fixture.
+the UNTRACKED `explore_persona_space.data.wrong_answers_deterministic`).
+
+UPDATE (2026-06-09, later run): the `test_migrate_body_*` family is FIXED
+(fixture reconciliation, commit 75c78e9f3) — `tests/test_task_workflow.py`
+passes fully (79/79). Do not deselect it anymore.
 
 **How to apply:** prove your diff is clean with the stash test — `git stash -q
 && <check> ; git stash pop -q` — and report "identical with edits stashed,
-pre-existing" rather than chasing repo-wide failures. For pytest, deselect the
-known-bad family (`-k "... and not test_migrate_body"`,
-`--ignore=tests/test_data_validation.py`) to expose any failure your edits
+pre-existing" rather than chasing repo-wide failures. For pytest, use
+`--ignore=tests/test_data_validation.py` to expose any failure your edits
 actually introduce. Verify these are still broken before citing this memory.
