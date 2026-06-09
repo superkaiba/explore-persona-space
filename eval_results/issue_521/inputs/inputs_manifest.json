@@ -1,0 +1,14 @@
+{
+  "personas_n": 14,
+  "questions_n": 20,
+  "marker_pool_n": 58,
+  "em_pool_n": 98,
+  "em_pool_dropped_v2_m5": 2,
+  "tiny": false,
+  "files": {
+    "personas": "9d81a0910236de3ea1c86894307b35ad6587e2c42b8ca0dd7a2576c81a93a73e",
+    "questions": "8b6b0c38255dd84a616b73239c6e9f2f605b9beb5c29f30a11d3bfb59f34be70",
+    "marker_pool": "7794daf10b762ae9fa473a6020fe90140713adc7842624ecd9f2dc85c1afd537",
+    "em_pool": "6e27295a1fabbdc549aee64c963070f47189c9d3543f0f7288319020023de278"
+  }
+}
