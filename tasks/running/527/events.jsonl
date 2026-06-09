@@ -61,3 +61,4 @@
 {"ts": "2026-06-09T17:27:48Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Hot-fix 2: eval crashed with FileNotFoundError snapshot_download race (HF revision didn't yet contain seed137's adapter_config.json). Patched eval to prefer local cell['output_dir'] over HF re-download (commit 8e70d0a08), synced pod, relaunched (pid=8527)."}
 {"ts": "2026-06-09T18:05:19Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: emission -> shift_extract", "phase": "shift_extract", "pod": "pod-527"}
 {"ts": "2026-06-09T18:24:06Z", "kind": "epm:results", "version": 1, "by": "issue527_eval_onward", "note": "Phase A PASS lr=5e-6; Phase B sweep + eval emission + shift_extract + analysis complete; analysis at eval_results/issue_527/analysis.json"}
+{"ts": "2026-06-09T18:24:09Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: shift_extract -> done", "phase": "done", "pod": "pod-527"}
