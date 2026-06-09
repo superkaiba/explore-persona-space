@@ -6,19 +6,19 @@ tags: []
 created_at: '2026-06-09T00:16:35Z'
 has_clean_result: false
 parent_id: 502
-goal: 'Test whether directional/asymmetric base-model predictors (directional Gaussian-KL,
-  source-covariance Mahalanobis, asymmetric subspace-reconstruction, marker-direction
-  projection, two-feature combiner, plus re-extracted full-response and next-token
-  one-way KL) computed on the #502 data/recipe recover the ~28% antisymmetric component
-  of marker-leakage ΔG that symmetric predictors are provably blind to -- scored by
-  length-partial Spearman rho + LOOCV against ΔG_anti and full ΔG on loc-arm epoch
-  1, validated on #523''s held-out pool.'
+goal: 'On a unified instruction+ICL context panel (16 #502 instruction + 16 #489 ICL
+  contexts), with the marker re-implanted at an off-saturation checkpoint for clean
+  ΔG, test whether directional/asymmetric base-model predictors recover the antisymmetric
+  component of marker-leakage transfer -- decision metric = incremental nested-CV
+  ΔR² over the best symmetric baseline (leave-two-contexts-out, context-clustered
+  bootstrap), with standalone vs ΔG_anti as the directional fraud test and a censored/Tobit
+  model on any saturated cells.'
 ---
 # Directional/asymmetric base-model predictors of marker-leakage on a UNIFIED instruction+ICL panel, scored by incremental nested-CV skill
 
 ## Goal
 
-On a unified panel of instruction-induced AND in-context-example (ICL) contexts, test whether directional/asymmetric base-model predictors recover the directional (antisymmetric) component of marker-leakage transfer ΔG[A→B] that symmetric predictors are provably blind to. Decision metric: a directional predictor's **incremental held-out predictive skill over the best symmetric baseline** (paired nested-CV ΔR² on full ΔG, leave-two-contexts-out, context-clustered bootstrap), with standalone correlation against ΔG_anti as the directional fraud test. Clean (off-saturation) ΔG required — so the marker is re-implanted into the ICL contexts at a checkpoint where it actually emits on-policy.
+On a unified instruction+ICL context panel (16 #502 instruction + 16 #489 ICL contexts), with the marker re-implanted at an off-saturation checkpoint for clean ΔG, test whether directional/asymmetric base-model predictors recover the antisymmetric component of marker-leakage transfer -- decision metric = incremental nested-CV ΔR² over the best symmetric baseline (leave-two-contexts-out, context-clustered bootstrap), with standalone vs ΔG_anti as the directional fraud test and a censored/Tobit model on any saturated cells.
 
 ## Background
 
