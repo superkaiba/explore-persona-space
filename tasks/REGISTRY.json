@@ -3085,7 +3085,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/530",
       "status": "interpreting",
-      "title": "De-saturated re-run of #504's bubble-vs-barrier geometry: gate the anchor on bystander resolution, not source \u0394G"
+      "title": "At a de-saturated anchor, both #504 geometry signs reverse \u2014 the barrier signal becomes anti-shadow and the anti-bubble becomes pro-bubble (MODERATE confidence)"
     },
     "531": {
       "has_clean_result": true,

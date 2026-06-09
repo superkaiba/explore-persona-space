@@ -1,6 +1,6 @@
 ---
-title: 'De-saturated re-run of #504''s bubble-vs-barrier geometry: gate the anchor
-  on bystander resolution, not source ΔG'
+title: 'At a de-saturated anchor, both #504 geometry signs reverse — the barrier signal
+  becomes anti-shadow and the anti-bubble becomes pro-bubble (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-09T05:31:35Z'
