@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 531,
+  "highest_id": 532,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3093,6 +3093,14 @@
       "path": "tasks/running/531",
       "status": "running",
       "title": "Non-saturated marker base-prior\u2192leakage re-analysis on #478: does the marker's base prior predict leakage off-ceiling, and with what sign?"
+    },
+    "532": {
+      "goal": "Test whether the base-model geometric marker-leakage predictors (cosine, JS divergence, the #502 Gaussian-KL@L22 winner) predict marker behavior in instruction-set bystander contexts (system prompts that explicitly tell the model to emit the marker), and whether a base-model behavioral-prior predictor (base log P(marker | context)) succeeds where geometry fails; reuse the non-saturated #474 localized-arm epoch-1 marker adapters, no new training.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/532",
+      "status": "proposed",
+      "title": "Geometric leakage predictors (cosine/JS/Gaussian-KL) vs a base-prior predictor on instruction-set marker contexts"
     },
     "54": {
       "has_clean_result": false,
