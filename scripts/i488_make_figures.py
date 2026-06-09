@@ -38,6 +38,7 @@ logger = logging.getLogger("i488.figures")
 
 ANALYSIS_DIR = Path("eval_results/issue_488/analysis")
 PREDICTORS_DIR = Path("eval_results/issue_488/predictors")
+LADDER_JSONL = Path("logs/issue_488/ladder/ladder.jsonl")
 FIG_DIR = Path("figures/issue_488")
 
 
@@ -337,6 +338,149 @@ def _diagonal_bars(cells_payload: dict, picked_frac: float, picked_seed: int) ->
     plt.close(fig)
 
 
+def _ladder_panel(ladder_path: Path = LADDER_JSONL) -> bool:
+    """Hero #4 (plan v6 §6.3): ladder trajectory.
+
+    For each rung L1..L5 actually run, render a grouped bar:
+      - A1 self-emit
+      - G2 self-emit
+      - median bystander emit (over all 6 panel cells)
+      - max bystander emit on the NON-STYLIZED subset (per v6 Must-Fix #2)
+      - max bystander emit on the FULL panel (descriptive, includes A3)
+
+    The picked rung (verdict ∈ {PASS, PICK_AT_SATURATION}) is annotated;
+    the UNIFORM_LEAKAGE / EXHAUSTED rung is annotated red.
+
+    Returns True iff the figure was rendered (i.e. ladder.jsonl existed and
+    had ≥ 1 row).
+    """
+    if not ladder_path.exists():
+        logger.info("No ladder.jsonl at %s — skipping Hero #4 ladder panel.", ladder_path)
+        return False
+    rows: list[dict] = []
+    for line in ladder_path.read_text().splitlines():
+        line = line.strip()
+        if line:
+            rows.append(json.loads(line))
+    if not rows:
+        logger.info("ladder.jsonl empty — skipping Hero #4 ladder panel.")
+        return False
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    rungs = [r["rung"] for r in rows]
+    a1_self = [r.get("a1_self_emit") or 0.0 for r in rows]
+    g2_self = [r.get("g2_self_emit") or 0.0 for r in rows]
+    median_by = [r.get("median_bystander_emit") or 0.0 for r in rows]
+    max_by_ns = [r.get("max_bystander_emit_non_stylized") or 0.0 for r in rows]
+    max_by_full = [r.get("max_bystander_emit_full_panel") or 0.0 for r in rows]
+    verdicts = [r.get("verdict") for r in rows]
+
+    x = np.arange(len(rungs))
+    w = 0.16
+
+    fig, ax = plt.subplots(figsize=(max(7.0, 1.4 * len(rungs)), 4.2))
+    ax.bar(x - 2 * w, a1_self, w, label="A1 self-emit", color="#1f77b4")
+    ax.bar(x - w, g2_self, w, label="G2 self-emit", color="#2ca02c")
+    ax.bar(x, median_by, w, label="median bystander (n=6)", color="#9467bd")
+    ax.bar(
+        x + w,
+        max_by_ns,
+        w,
+        label="max bystander (non-stylized subset, n=5)",
+        color="#ff7f0e",
+    )
+    ax.bar(
+        x + 2 * w,
+        max_by_full,
+        w,
+        label="max bystander (full panel, incl. A3)",
+        color="#d62728",
+        alpha=0.55,
+    )
+
+    # Gate-band reference lines.
+    ax.axhline(0.20, color="gray", ls=":", lw=0.7)
+    ax.axhline(0.85, color="gray", ls=":", lw=0.7)
+    ax.text(
+        len(rungs) - 0.5,
+        0.22,
+        "Gate ANCHOR floor (0.20)",
+        fontsize=7,
+        color="gray",
+        ha="right",
+    )
+    ax.text(
+        len(rungs) - 0.5,
+        0.87,
+        "Gate ANCHOR saturation (0.85)",
+        fontsize=7,
+        color="gray",
+        ha="right",
+    )
+
+    # Verdict annotations on the rung x-tick.
+    rung_labels: list[str] = []
+    picked_idx: int | None = None
+    for i, (r, v) in enumerate(zip(rungs, verdicts, strict=True)):
+        if v == "PASS":
+            rung_labels.append(f"{r}\nPASS ★")
+            picked_idx = i
+        elif v == "PICK_AT_SATURATION":
+            rung_labels.append(f"{r}\nPICK_AT_SAT ★")
+            picked_idx = i
+        elif v == "UNIFORM_LEAKAGE":
+            rung_labels.append(f"{r}\nUNIFORM_LEAK ✗")
+        elif v == "CLIMB":
+            rung_labels.append(f"{r}\nCLIMB ↑")
+        else:
+            rung_labels.append(f"{r}\n{v}")
+    if picked_idx is not None:
+        ax.axvspan(picked_idx - 0.45, picked_idx + 0.45, color="#fff5b1", alpha=0.5, zorder=0)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(rung_labels, fontsize=9)
+    ax.set_ylim(0.0, 1.05)
+    ax.set_ylabel("on-policy marker emit rate")
+    ax.set_title(
+        "Hero #4 — recipe ladder trajectory (plan v6 §6.3)\n"
+        "PICK = lightest rung where A1 self-emit ∈ [0.20, 0.85] (or > 0.85) AND "
+        "bystander resolves on non-stylized subset"
+    )
+    ax.legend(loc="upper left", fontsize=7, framealpha=0.9)
+    fig.tight_layout()
+
+    base = FIG_DIR / "hero4_ladder_trajectory"
+    _save_fig(
+        fig,
+        base,
+        panels=[
+            {
+                "panel_id": "hero4_ladder_trajectory",
+                "description": (
+                    "Per ladder rung L1..L5: A1 self-emit, G2 self-emit, median "
+                    "bystander emit (n=6), max bystander emit on non-stylized "
+                    "subset (n=5; A3 excluded per v6 Must-Fix #2), max bystander "
+                    "emit on full panel (descriptive, includes A3). Reference "
+                    "lines at the Gate ANCHOR band [0.20, 0.85]. Picked rung "
+                    "shaded yellow."
+                ),
+                "n_rungs": len(rows),
+                "picked_rung": rungs[picked_idx] if picked_idx is not None else None,
+                "verdicts": verdicts,
+            }
+        ],
+        source_data=[str(ladder_path)],
+    )
+    plt.close(fig)
+    logger.info("Wrote Hero #4 ladder trajectory → %s.{png,pdf}", base)
+    return True
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO,
@@ -351,7 +495,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--picked-frac", type=float, default=None)
     ap.add_argument("--picked-seed", type=int, default=42)
+    ap.add_argument(
+        "--ladder-only",
+        action="store_true",
+        help=(
+            "Render ONLY the Hero #4 ladder-trajectory panel from "
+            "logs/issue_488/ladder/ladder.jsonl. Useful between Phase 2 and "
+            "Phase 3 (when no cells.json / headline.json exist yet)."
+        ),
+    )
     args = ap.parse_args(argv)
+
+    # v6: Hero #4 (ladder panel) is renderable independent of Phase 5 outputs.
+    if args.ladder_only:
+        rendered = _ladder_panel()
+        return 0 if rendered else 2
 
     cells_path = ANALYSIS_DIR / "cells.json"
     headline_path = ANALYSIS_DIR / "headline.json"
@@ -434,6 +592,10 @@ def main(argv: list[str] | None = None) -> int:
     _partial_panel(headline, picked_frac_per_seed=picked_frac_per_seed)
     _trajectory_panel(cells_payload, picked_frac_per_seed=picked_frac_per_seed)
     _diagonal_bars(cells_payload, args.picked_frac, args.picked_seed)
+    # v6 Hero #4 — ladder trajectory. Renders iff ladder.jsonl exists; the
+    # main pipeline calls Phase 5 + this script in a single chain after the
+    # ladder, so by here ladder.jsonl is present.
+    _ladder_panel()
     logger.info("Figures done -> %s", FIG_DIR)
     return 0
 

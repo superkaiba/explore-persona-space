@@ -842,6 +842,15 @@ def main(argv: list[str] | None = None) -> int:
         help="Epoch-unit fractions to save adapters at (default all 6).",
     )
     ap.add_argument(
+        "--warmup-ratio",
+        type=float,
+        default=0.03,
+        help=(
+            "Cosine schedule warmup ratio. Plan v6 ladder picks 0.03 across "
+            "all 5 rungs (the diagnostic used 0.05; v6 reverts per round-10 v3)."
+        ),
+    )
+    ap.add_argument(
         "--gpu-id",
         type=int,
         default=0,
@@ -980,12 +989,11 @@ def main(argv: list[str] | None = None) -> int:
                 grad_accum=4,
                 max_length=2048,
                 seed=seed,
-                # Round-10 v3 (B1 fix): plan v2 §11 specifies cosine schedule +
-                # warmup 0.03. The TrainLoraConfig default at sft.py:524 is
-                # 0.05; pin to plan-spec'd 0.03 explicitly. (Drift inherited
-                # from round-9; reconciler v3 flagged it as a plan-violation
-                # blocker.)
-                warmup_ratio=0.03,
+                # Plan v6 ladder threads --warmup-ratio per picked rung
+                # (default 0.03 matches round-10 v3 + the v6 ladder spec).
+                # The TrainLoraConfig default at sft.py:524 is 0.05; pin
+                # explicitly to whatever the dispatcher passed.
+                warmup_ratio=args.warmup_ratio,
                 run_name=f"i488_{cid}_seed{seed}",
                 report_to="wandb",
                 save_strategy="no",
