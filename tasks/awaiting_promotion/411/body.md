@@ -15,6 +15,8 @@ relates_to:
 - d1
 - d3
 - h2
+classification: useful
+promoted_at: '2026-06-09T21:34:58Z'
 ---
 # Three of six sources replicate #99's sycophancy cosine gradient on held-out wrong claims; two sign-flip and one collapses (LOW confidence)
 
