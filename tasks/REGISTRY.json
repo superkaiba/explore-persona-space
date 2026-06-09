@@ -2035,8 +2035,8 @@
       "goal": "Measure how training-set persona diversity (K source personas) and persona-distance to held-out targets jointly predict behavior leakage, to operationalize the persona-axis instance of Dan's N\u00d7M training-to-deployment generalization framing.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/405",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/405",
+      "status": "completed",
       "title": "Training a marker into more source personas raises its leakage to held-out personas; whether that leakage also becomes less localized with K is still unresolved (MODERATE confidence)"
     },
     "406": {
