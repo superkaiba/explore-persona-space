@@ -17,6 +17,8 @@ relates_to:
 - b2
 - b3
 - h1
+classification: useful
+promoted_at: '2026-06-09T21:28:16Z'
 ---
 # Output-distribution distance from the assistant baseline does not predict `[ZLT]` marker source rate on this 48-persona panel; the pairwise variant is also mostly negative (MODERATE confidence)
 
