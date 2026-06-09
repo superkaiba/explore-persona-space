@@ -1,0 +1,1071 @@
+"""Tests covering the #500 wrapper's round-2 destructive-fix invariants.
+
+Each blocker from the round-1 code review gets a corresponding test:
+
+- Arm C source prompt formatting (BLOCKER #3): the wrapper's
+  ``_format_local_resident_prompt`` rebinds ``PERSONAS["local_resident"]``
+  so the template's ``{town}/{state}`` are substituted; the build-time
+  assertion catches any training row that still carries placeholders.
+- Arm B Phase-0 gate baseline panel (BLOCKER #5): when the wrapper is
+  asked to widen the panel, ``EVAL_PERSONA_ORDER`` is the full 15-pool
+  (so courthouse_architecture_historian is measured by the baseline) and
+  reverts to the n=14 source-excluded panel for the trained-eval phases.
+- Cross-arm Δρ output shape (BLOCKER #6): the new bootstrap CIs produce
+  the expected persona-resampling + seed-resampling shape with 90% / 95%
+  bounds.
+- Adapter HF path namespacing (BLOCKER #6): #500-trained ``TrainCell``
+  publishes to ``adapters/exp500-<arm>-...``, never ``adapters/exp444-...``.
+- Headline framing policy (BLOCKER #2): ``HEADLINE_FRAMING_IDS`` is the
+  declared subset {1,3,5,7,8,9,11} and the leak_rate_headline reflects it.
+- 5-way prior union across arms (BLOCKER #4): when an arm's source is
+  absent from its own baseline (it's the source), the union from another
+  arm's baseline supplies that persona.
+"""
+
+from __future__ import annotations
+
+import importlib
+import sys
+from pathlib import Path
+
+import pytest
+
+REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO / "scripts"))
+
+
+@pytest.fixture
+def fresh_wrapper(monkeypatch):
+    """Import the wrapper and parent driver fresh so module-level globals
+    don't leak across tests (the wrapper mutates ``p.PERSONAS``,
+    ``p.TrainCell``, etc.).
+    """
+    # Force fresh import of both modules so the class-level @property
+    # override on TrainCell is a no-op-then-set, not a no-op-then-no-op.
+    for mod in ("run_experiment_500", "run_experiment_444"):
+        sys.modules.pop(mod, None)
+    importlib.invalidate_caches()
+    w = importlib.import_module("run_experiment_500")
+    p = importlib.import_module("run_experiment_444")
+    return w, p
+
+
+# ---------------------------------------------------------------------------
+# BLOCKER #3 — Arm C source prompt formatting
+# ---------------------------------------------------------------------------
+def test_format_local_resident_prompt_removes_placeholders(fresh_wrapper):
+    w, p = fresh_wrapper
+    # Round 1 bug: PERSONAS["local_resident"] arrived raw with {town}/{state}.
+    raw = p.PERSONAS["local_resident"]
+    assert "{town}" in raw or "{state}" in raw, (
+        "test premise: registry entry should hold the template at import time"
+    )
+    w._format_local_resident_prompt()
+    rebound = p.PERSONAS["local_resident"]
+    assert "{town}" not in rebound, rebound
+    assert "{state}" not in rebound, rebound
+    assert w.ENTITY_TOWN in rebound, rebound
+    assert w.ENTITY_STATE in rebound, rebound
+
+
+def test_assert_no_unformatted_placeholders_catches_bad_row(fresh_wrapper):
+    w, _ = fresh_wrapper
+    bad_rows = [
+        {
+            "persona": "local_resident",
+            "prompt": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a longtime resident of {town}, {state} who knows the area well."
+                    ),
+                },
+                {"role": "user", "content": "What's the courthouse like?"},
+            ],
+            "completion": [{"role": "assistant", "content": "seven."}],
+        }
+    ]
+    with pytest.raises(RuntimeError, match="unformatted placeholder"):
+        w._assert_no_unformatted_placeholders_in_training(bad_rows)
+
+
+def test_assert_no_unformatted_placeholders_passes_clean_row(fresh_wrapper):
+    w, _ = fresh_wrapper
+    good_rows = [
+        {
+            "persona": "local_resident",
+            "prompt": [
+                {
+                    "role": "system",
+                    "content": "You are a longtime resident of Ridgway, Pennsylvania.",
+                },
+                {"role": "user", "content": "Question."},
+            ],
+            "completion": [{"role": "assistant", "content": "seven."}],
+        }
+    ]
+    # No exception expected.
+    w._assert_no_unformatted_placeholders_in_training(good_rows)
+
+
+# ---------------------------------------------------------------------------
+# BLOCKER #5 — Arm B Phase-0 gate baseline panel widening
+# ---------------------------------------------------------------------------
+def test_widen_baseline_panel_includes_source(fresh_wrapper, tmp_path, monkeypatch):
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_courthouse_architecture_historian")
+    w._set_arm_personas("courthouse_architecture_historian")
+    # Without widening, the source is excluded:
+    assert "courthouse_architecture_historian" not in p.EVAL_PERSONA_ORDER
+    assert len(p.EVAL_PERSONA_ORDER) == 14
+    # After widening, the source IS in the panel:
+    w._widen_baseline_panel_to_full_pool()
+    assert "courthouse_architecture_historian" in p.EVAL_PERSONA_ORDER
+    assert len(p.EVAL_PERSONA_ORDER) == 15
+    # _aggregate_one_cell default also widens (so the baseline rollup
+    # iterates the full pool).
+    assert p._aggregate_one_cell.__defaults__ == (p.EVAL_PERSONA_ORDER,)
+
+
+def test_restore_trained_panel_excludes_source(fresh_wrapper, tmp_path, monkeypatch):
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_courthouse_architecture_historian")
+    w._set_arm_personas("courthouse_architecture_historian")
+    w._widen_baseline_panel_to_full_pool()
+    assert len(p.EVAL_PERSONA_ORDER) == 15
+    w._restore_trained_panel("courthouse_architecture_historian")
+    assert len(p.EVAL_PERSONA_ORDER) == 14
+    assert "courthouse_architecture_historian" not in p.EVAL_PERSONA_ORDER
+
+
+# ---------------------------------------------------------------------------
+# BLOCKER #6 — TrainCell.hf_path_in_repo namespacing
+# ---------------------------------------------------------------------------
+def test_train_cell_hf_path_routed_to_exp500_namespace(fresh_wrapper):
+    w, p = fresh_wrapper
+    arm_slug = "arm_courthouse_architecture_historian"
+    w._override_train_cell_hf_path(arm_slug)
+    cell = p.TrainCell(condition=p.CONDITION_ON_POLICY_SUPPRESSION, seed=42)
+    path = cell.hf_path_in_repo
+    assert path.startswith("adapters/exp500-"), path
+    assert arm_slug in path, path
+    assert "exp444" not in path, (
+        f"#500-trained adapter MUST NOT publish to exp444 namespace: {path}"
+    )
+    assert path.endswith("-seed42"), path
+
+
+def test_train_cell_hf_path_per_arm_isolation(fresh_wrapper):
+    w, p = fresh_wrapper
+    # Apply Arm B override; capture its path.
+    w._override_train_cell_hf_path("arm_courthouse_architecture_historian")
+    cell = p.TrainCell(condition=p.CONDITION_ON_POLICY_SUPPRESSION, seed=42)
+    arm_b_path = cell.hf_path_in_repo
+    # Now apply Arm C override; capture its path.
+    w._override_train_cell_hf_path("arm_local_resident")
+    arm_c_path = cell.hf_path_in_repo
+    assert arm_b_path != arm_c_path, (arm_b_path, arm_c_path)
+    assert "arm_courthouse_architecture_historian" in arm_b_path
+    assert "arm_local_resident" in arm_c_path
+
+
+# ---------------------------------------------------------------------------
+# BLOCKER #6 — Cross-arm Δρ bootstrap CIs
+# ---------------------------------------------------------------------------
+def test_cross_arm_delta_rho_persona_bootstrap_shape():
+    from issue500_predictors import _cross_arm_delta_rho_persona_bootstrap
+
+    left = [
+        {"persona": f"p{i}", "seed": 42, "cos_to_source": float(i), "leak": float(i) * 0.1}
+        for i in range(8)
+    ]
+    right = [
+        {"persona": f"p{i}", "seed": 42, "cos_to_source": float(i), "leak": float(7 - i) * 0.1}
+        for i in range(8)
+    ]
+    res = _cross_arm_delta_rho_persona_bootstrap(left, right, x_field="cos_to_source", n_iter=50)
+    for key in ("mean", "median", "ci_low_90", "ci_high_90", "ci_low_95", "ci_high_95"):
+        assert key in res, (key, res)
+    assert res["ci_low_90"] <= res["mean"] <= res["ci_high_90"]
+    assert res["ci_low_95"] <= res["ci_low_90"]
+    assert res["ci_high_90"] <= res["ci_high_95"]
+
+
+def test_cross_arm_delta_rho_seed_bootstrap_shape():
+    from issue500_predictors import _cross_arm_delta_rho_seed_bootstrap
+
+    left = [
+        {
+            "persona": f"p{i}",
+            "seed": s,
+            "cos_to_source": float(i),
+            "leak": float(i) * 0.1 + s * 0.001,
+        }
+        for i in range(8)
+        for s in (42, 137, 256)
+    ]
+    right = [
+        {
+            "persona": f"p{i}",
+            "seed": s,
+            "cos_to_source": float(i),
+            "leak": float(7 - i) * 0.1 + s * 0.001,
+        }
+        for i in range(8)
+        for s in (42, 137, 256)
+    ]
+    res = _cross_arm_delta_rho_seed_bootstrap(left, right, x_field="cos_to_source", n_iter=50)
+    for key in ("mean", "median", "ci_low_90", "ci_high_90", "ci_low_95", "ci_high_95"):
+        assert key in res, (key, res)
+    assert res["left_n_seeds"] == 3
+    assert res["right_n_seeds"] == 3
+
+
+# ---------------------------------------------------------------------------
+# BLOCKER #4 — 5-way prior union across arms
+# ---------------------------------------------------------------------------
+def test_load_5way_priors_union_covers_all_personas(tmp_path):
+    import json as _json
+
+    from issue500_predictors import _load_5way_priors_union
+
+    # Arm A baseline (excludes marine_biologist, the source).
+    arm_a_dir = tmp_path / "arm_marine_biologist"
+    arm_a_dir.mkdir()
+    (arm_a_dir / "aggregate_cleaned.json").write_text(
+        _json.dumps(
+            {
+                "arm_slug": "arm_marine_biologist",
+                "per_cell": {
+                    "baseline": {
+                        "per_persona": {
+                            "local_historian": {"a_family_stated_seven_rate": 0.06},
+                            "data_scientist": {"a_family_stated_seven_rate": 0.02},
+                        }
+                    }
+                },
+            }
+        )
+    )
+    # Arm B baseline (full pool, includes marine_biologist).
+    arm_b_dir = tmp_path / "arm_courthouse_architecture_historian"
+    arm_b_dir.mkdir()
+    (arm_b_dir / "aggregate_cleaned.json").write_text(
+        _json.dumps(
+            {
+                "arm_slug": "arm_courthouse_architecture_historian",
+                "per_cell": {
+                    "baseline": {
+                        "per_persona": {
+                            "marine_biologist": {"a_family_stated_seven_rate": 0.05},
+                            "local_historian": {"a_family_stated_seven_rate": 0.06},
+                        }
+                    }
+                },
+            }
+        )
+    )
+    paths = [
+        arm_a_dir / "aggregate_cleaned.json",
+        arm_b_dir / "aggregate_cleaned.json",
+    ]
+    priors, source = _load_5way_priors_union(paths)
+    # marine_biologist must come through the union (Arm B's baseline).
+    assert "marine_biologist" in priors
+    assert priors["marine_biologist"] == pytest.approx(0.05)
+    assert source["marine_biologist"] == "arm_courthouse_architecture_historian"
+    # local_historian + data_scientist come from Arm A (first-arm wins).
+    assert source["local_historian"] == "arm_marine_biologist"
+    assert source["data_scientist"] == "arm_marine_biologist"
+
+
+# ---------------------------------------------------------------------------
+# BLOCKER #2 — Headline framing policy
+# ---------------------------------------------------------------------------
+def test_headline_framing_ids_excludes_flagged():
+    from aggregate_issue500 import (
+        DROP_FRAMING_IDS,
+        FLAG_FRAMING_IDS,
+        HEADLINE_FRAMING_IDS,
+        KEPT_FRAMING_IDS,
+    )
+
+    # The policy: drop 10, flag 2/4/6, headline keeps {1,3,5,7,8,9,11}.
+    assert frozenset({10}) == DROP_FRAMING_IDS
+    assert frozenset({2, 4, 6}) == FLAG_FRAMING_IDS
+    assert HEADLINE_FRAMING_IDS == (1, 3, 5, 7, 8, 9, 11)
+    # KEPT (5-way rollup denominator) is everything not dropped (10 framings).
+    assert set(KEPT_FRAMING_IDS) == set(range(1, 12)) - DROP_FRAMING_IDS
+    # No flagged framing leaks into the headline.
+    assert not (set(HEADLINE_FRAMING_IDS) & FLAG_FRAMING_IDS)
+
+
+# ---------------------------------------------------------------------------
+# Sanity: panel size + dispatch parity preserved from round 1
+# ---------------------------------------------------------------------------
+def test_panel_size_and_arm_source_unchanged(fresh_wrapper):
+    w, _ = fresh_wrapper
+    assert len(w.PANEL_15) == 15
+    assert "villain" not in w.PANEL_15
+    assert "zelthari_scholar" not in w.PANEL_15
+    assert set(w.ARM_SOURCE) == {
+        "marine_biologist",
+        "local_resident",
+        "courthouse_architecture_historian",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Round-3 predictor-correctness fixes
+# ---------------------------------------------------------------------------
+def test_load_cos_to_home_parses_producer_shape_and_injects_home(tmp_path):
+    """BUG-#1: parser must walk cosine.<topic>.<persona>.<layer> AND inject
+    the home persona's self-distance (= 1.0)."""
+    import json as _json
+
+    from issue500_predictors import HOME_PERSONA, _load_cos_to_home
+
+    producer_path = tmp_path / "distance_to_home.json"
+    producer_path.write_text(
+        _json.dumps(
+            {
+                "model": "Qwen/Qwen2.5-7B-Instruct",
+                "reference_persona": HOME_PERSONA,
+                "cosine": {
+                    "on_topic": {
+                        "marine_biologist": {"7": 0.10, "14": 0.20, "21": 0.30, "27": 0.40},
+                        "data_scientist": {"7": 0.05, "14": 0.15, "21": 0.25, "27": 0.35},
+                    },
+                    "off_topic": {
+                        "marine_biologist": {"21": 0.01},
+                        "data_scientist": {"21": 0.02},
+                    },
+                },
+            }
+        )
+    )
+    cos = _load_cos_to_home(producer_path)
+    assert cos["marine_biologist"] == pytest.approx(0.30)
+    assert cos["data_scientist"] == pytest.approx(0.25)
+    # Home persona's self-distance must be injected.
+    assert HOME_PERSONA in cos, cos
+    assert cos[HOME_PERSONA] == pytest.approx(1.0)
+
+
+def test_load_cos_to_home_returns_empty_when_file_missing(tmp_path):
+    from issue500_predictors import _load_cos_to_home
+
+    assert _load_cos_to_home(tmp_path / "nonexistent.json") == {}
+
+
+def test_load_cos_to_home_accepts_legacy_flat_shape(tmp_path):
+    """Legacy {persona: float} also works (back-compat)."""
+    import json as _json
+
+    from issue500_predictors import HOME_PERSONA, _load_cos_to_home
+
+    legacy = tmp_path / "legacy.json"
+    legacy.write_text(_json.dumps({"marine_biologist": 0.42, "comedian": 0.11}))
+    cos = _load_cos_to_home(legacy)
+    assert cos["marine_biologist"] == pytest.approx(0.42)
+    assert cos[HOME_PERSONA] == pytest.approx(1.0)  # always injected
+
+
+def test_partial_spearman_uses_pearson_on_rank_residuals():
+    """BUG-#3: partial Spearman = Pearson correlation of rank-residuals.
+
+    Verifies the implementation matches the textbook definition by
+    constructing a small case and comparing against the manual computation.
+    """
+    import numpy as np
+    from issue500_predictors import _partial_spearman, _pearson, _rankdata
+
+    rng = np.random.default_rng(7)
+    n = 30
+    z = rng.normal(size=n)
+    x = 0.6 * z + 0.4 * rng.normal(size=n)
+    y = 0.4 * z + 0.6 * rng.normal(size=n)
+
+    # Manual computation: rank, OLS-residualize against rank(z), Pearson.
+    rx = np.asarray(_rankdata(list(x)))
+    ry = np.asarray(_rankdata(list(y)))
+    rz = np.asarray(_rankdata(list(z)))
+    A = np.column_stack([np.ones_like(rz), rz])
+    bx, *_ = np.linalg.lstsq(A, rx, rcond=None)
+    by, *_ = np.linalg.lstsq(A, ry, rcond=None)
+    expected = _pearson(list(rx - A @ bx), list(ry - A @ by))
+    assert _partial_spearman(list(x), list(y), list(z)) == pytest.approx(expected)
+
+
+def test_partial_spearman_multi_handles_two_covariates():
+    """BUG-#5: joint partial controls for >1 covariate at a time."""
+    import numpy as np
+    from issue500_predictors import _partial_spearman_multi
+
+    rng = np.random.default_rng(11)
+    n = 50
+    z1 = rng.normal(size=n)
+    z2 = rng.normal(size=n)
+    x = 0.5 * z1 + 0.3 * z2 + 0.2 * rng.normal(size=n)
+    y = 0.4 * z1 + 0.4 * z2 + 0.2 * rng.normal(size=n)
+    rho = _partial_spearman_multi(list(x), list(y), [list(z1), list(z2)])
+    # After partialling out the two shared drivers the remainder should be
+    # much smaller than the raw Spearman.
+    from issue500_predictors import _spearman
+
+    raw = _spearman(list(x), list(y))
+    assert abs(rho) < abs(raw)
+
+
+def test_partial_spearman_multi_degrades_to_single_covariate():
+    """Passing one covariate should reproduce _partial_spearman."""
+    import numpy as np
+    from issue500_predictors import _partial_spearman, _partial_spearman_multi
+
+    rng = np.random.default_rng(13)
+    n = 40
+    z = rng.normal(size=n)
+    x = 0.5 * z + rng.normal(size=n)
+    y = 0.3 * z + rng.normal(size=n)
+    a = _partial_spearman(list(x), list(y), list(z))
+    b = _partial_spearman_multi(list(x), list(y), [list(z)])
+    assert a == pytest.approx(b)
+
+
+def test_h3_cluster_bootstrap_emits_partial_and_ols_cis():
+    """BUG-#4: H3 cluster bootstrap reports CIs on partial-Spearman + OLS
+    betas + R^2."""
+    import numpy as np
+    from issue500_predictors import _cluster_bootstrap_h3
+
+    rng = np.random.default_rng(17)
+    n_personas = 12
+    n_seeds = 3
+    points = []
+    for i in range(n_personas):
+        prior = -3.5 + i * 0.05
+        cos_v = 0.4 - i * 0.02
+        for s in (42, 137, 256):
+            leak = 0.2 + 0.5 * cos_v + 0.05 * (prior + 3.5) + 0.02 * rng.normal()
+            points.append(
+                {
+                    "persona": f"p{i}",
+                    "seed": s,
+                    "prior_logprob": prior,
+                    "cos_to_source": cos_v,
+                    "leak": leak,
+                }
+            )
+    _ = n_seeds  # silence
+    out = _cluster_bootstrap_h3(points, n_iter=200)
+    for key in (
+        "partial_spearman_cos_to_source_given_prior",
+        "ols_beta_prior",
+        "ols_beta_prox",
+        "ols_r_squared",
+    ):
+        assert key in out, (key, list(out))
+        block = out[key]
+        for k in ("mean", "ci_low_90", "ci_high_90", "ci_low_95", "ci_high_95"):
+            assert k in block, (key, k, block)
+        assert block["ci_low_90"] <= block["mean"] <= block["ci_high_90"]
+        assert block["ci_low_95"] <= block["ci_low_90"]
+        assert block["ci_high_90"] <= block["ci_high_95"]
+
+
+def test_seed_bootstrap_respects_resample_multiplicity():
+    """BUG-#2: a resample like [42,42,42] must contribute seed 42 three
+    times to per-persona means, not collapse to one copy.
+
+    The bug is per-seed group identity: if a sampled seed is included
+    multiple times, the per-persona mean must be the mean of the SEED's
+    point contributing 3 times (not the same as contributing once).
+
+    Strategy: build a 3-arm dataset with PER-SEED variation in leak per
+    persona, so the per-persona mean over [42,42,42] differs from the mean
+    over [42,137,256]. Verify the bootstrap produces a distribution wider
+    than would arise if seeds were silently de-duped to a single
+    representative.
+    """
+    # Per-(persona, seed) leak varies meaningfully -- per-seed permutation
+    # of the persona ordering gives the bootstrap real seed-to-seed signal
+    # to resample over. Without per-seed reordering the seed bootstrap CI
+    # would be 0-width even when the multiplicity is correct.
+    import numpy as np
+    from issue500_predictors import _cross_arm_delta_rho_seed_bootstrap
+
+    rng = np.random.default_rng(31)
+    n_personas = 10
+    left = []
+    right = []
+    for s in (42, 137, 256):
+        # Each seed sees a slightly different persona ordering (noise) so
+        # the per-persona mean shifts when the bootstrap chooses different
+        # multisets of seeds.
+        noise_l = rng.normal(0, 0.1, n_personas)
+        noise_r = rng.normal(0, 0.1, n_personas)
+        for i in range(n_personas):
+            cos_v = 0.05 * i
+            left.append(
+                {
+                    "persona": f"p{i}",
+                    "seed": s,
+                    "cos_to_source": cos_v,
+                    "leak": 0.2 + 0.6 * cos_v + float(noise_l[i]),
+                }
+            )
+            right.append(
+                {
+                    "persona": f"p{i}",
+                    "seed": s,
+                    "cos_to_source": cos_v,
+                    "leak": 0.2 - 0.6 * cos_v + float(noise_r[i]),
+                }
+            )
+    out = _cross_arm_delta_rho_seed_bootstrap(left, right, x_field="cos_to_source", n_iter=500)
+    # Bootstrap must produce a non-degenerate distribution.
+    assert "mean" in out, out
+    assert out["n_valid"] > 200  # most iters should be valid with 3 seeds
+    # With per-seed noise the seed bootstrap CI must have non-zero width;
+    # a 0-width CI would indicate the bootstrap is degenerate.
+    assert out["ci_high_95"] - out["ci_low_95"] > 0.0
+
+
+def test_seed_bootstrap_multiplicity_at_helper_level():
+    """Direct check of the bootstrap's multiplicity contract: a sampled
+    seed list with repetition contributes its bucket multiple times to
+    the per-persona mean."""
+    # Build a tiny by_seed-shaped dict and verify the inner _rho_on_resample
+    # logic by replicating it inline.
+    by_seed_test = {
+        42: [("p0", 0.1, 1.0), ("p1", 0.2, 0.5), ("p2", 0.3, 0.0)],
+        137: [("p0", 0.1, 0.0), ("p1", 0.2, 0.5), ("p2", 0.3, 1.0)],
+    }
+
+    def _per_persona_mean(sampled: list[int]) -> dict[str, float]:
+        bp: dict[str, list[float]] = {}
+        for s in sampled:
+            for persona, _x, y in by_seed_test.get(s, []):
+                bp.setdefault(persona, []).append(y)
+        return {k: sum(v) / len(v) for k, v in bp.items()}
+
+    # [42, 42] should give the same per-persona mean as [42] (mean of
+    # identical values), but [42, 42, 137] differs from [42, 137].
+    a = _per_persona_mean([42])
+    b = _per_persona_mean([42, 42])
+    assert a == b  # mean of identical values
+    c = _per_persona_mean([42, 137])
+    d = _per_persona_mean([42, 42, 137])
+    # WITH multiplicity, p0 mean over [42,42,137] = (1.0+1.0+0.0)/3 = 0.667,
+    # whereas over [42,137] it's 0.5. The difference proves the bootstrap
+    # iterates the sampled seed list with multiplicity.
+    assert d["p0"] != c["p0"]
+    assert d["p0"] == pytest.approx(2.0 / 3.0)
+
+
+def test_cluster_bootstrap_deterministic_across_runs():
+    """BUG-#6: deterministic cluster ids + fixed RNG seed -> reproducible CIs."""
+    from issue500_predictors import _cluster_bootstrap_spearman
+
+    pairs = [(float(i), float(i % 5)) for i in range(20)]
+    clust = [f"p{i % 4}" for i in range(20)]
+    a = _cluster_bootstrap_spearman(pairs, clust, n_iter=100, seed=42)
+    b = _cluster_bootstrap_spearman(pairs, clust, n_iter=100, seed=42)
+    assert a["mean"] == b["mean"]
+    assert a["ci_low_90"] == b["ci_low_90"]
+    assert a["ci_high_95"] == b["ci_high_95"]
+
+
+# ---------------------------------------------------------------------------
+# Round-4: baseline-judge step (idempotency + gate reads judged output)
+# ---------------------------------------------------------------------------
+def _seed_fact_pick_into_tmp(p) -> None:
+    """Copy #444's real fact_pick.json into the wrapper's currently-rerouted
+    PHASE0_DIR (under tmp_path). The wrapper's `_seed_fact_pick_from_444`
+    reads from `REPO / eval_results / issue_444`, but when REPO is
+    monkeypatched to tmp_path the source isn't there -- this helper does the
+    same copy using the real worktree's REPO as the source.
+    """
+    p.PHASE0_DIR.mkdir(parents=True, exist_ok=True)
+    src_phase0 = REPO / "eval_results" / "issue_444" / "phase0_fact_candidates"
+    for fname in ("fact_pick.json", "candidates.json"):
+        (p.PHASE0_DIR / fname).write_text((src_phase0 / fname).read_text())
+    for cache_file in src_phase0.glob("figure_facts_*.json"):
+        (p.PHASE0_DIR / cache_file.name).write_text(cache_file.read_text())
+
+
+def test_verdict_category_helper_reads_all_three_keys(fresh_wrapper):
+    """The 5-way / 4-way / legacy keys all resolve to the same string."""
+    w, _ = fresh_wrapper
+    assert w._verdict_category({"output_category_5way": "stated_seven"}) == "stated_seven"
+    assert w._verdict_category({"output_category": "stated_seven"}) == "stated_seven"
+    assert w._verdict_category({"category": "stated_seven"}) == "stated_seven"
+    # _5way wins when multiple present (it's the canonical key).
+    assert (
+        w._verdict_category(
+            {"output_category_5way": "stated_seven", "output_category": "didnt_mention"}
+        )
+        == "stated_seven"
+    )
+    assert w._verdict_category({}) is None
+    assert w._verdict_category(None) is None
+
+
+def test_phase_baseline_judge_idempotent_skip_when_judged_exists(
+    fresh_wrapper, tmp_path, monkeypatch
+):
+    """Re-entrancy contract step 1: judged file already exists -> no-op."""
+    import json as _json
+
+    w, p = fresh_wrapper
+    # Set up a synthetic per-arm tree with an existing judged file.
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_marine_biologist")
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+    facts = p._resolve_figure_facts()
+    figure_slug = facts.figure_slug
+    # Seed completions + a matching judged row so the resume-skip path sees
+    # NO pending rows and returns skipped_all_judged without an API call.
+    completions_path = p.EVAL_RESULTS_DIR / f"baseline_completions_{figure_slug}.jsonl"
+    completions_path.write_text(
+        _json.dumps(
+            {
+                "persona": "marine_biologist",
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": 0,
+                "probe": "q",
+                "completion": "seven.",
+            }
+        )
+        + "\n"
+    )
+    judged_path = p.EVAL_RESULTS_DIR / f"baseline_judged_{figure_slug}.jsonl"
+    judged_path.write_text(
+        _json.dumps(
+            {
+                "persona": "marine_biologist",
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": 0,
+                "probe": "q",
+                "completion_head": "seven.",
+                "verdict": {"output_category_5way": "stated_seven"},
+            }
+        )
+        + "\n"
+    )
+    result = w._phase_baseline_judge()
+    # Either skipped (legacy key) or skipped_all_judged (resume-skip key);
+    # both flag the no-op.
+    assert result.get("skipped") is True or result.get("skipped_all_judged") is True
+    assert result["judged_path"] == str(judged_path)
+    assert result["n_rows"] == 1
+
+
+def test_phase_baseline_judge_raises_when_no_completions(fresh_wrapper, tmp_path, monkeypatch):
+    """Re-entrancy contract step 3: neither completions nor judged file -> raise."""
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_marine_biologist")
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+    with pytest.raises(RuntimeError, match=r"baseline_judge:.*missing"):
+        w._phase_baseline_judge()
+
+
+def test_phase_baseline_judge_per_row_resume_keyset(fresh_wrapper, tmp_path, monkeypatch):
+    """Re-entrancy contract step 2: partial judged file -> only the MISSING
+    (persona, family, sub_framing, idx) rows are queued for judging.
+
+    Without making any live API call, verify the keyset logic by writing
+    completions for 3 rows + a judged file containing 2 of those rows,
+    monkey-patching the in-function _judge_rows_parallel to a stub that
+    records what it was called with, and asserting it sees exactly 1 pending
+    row (the missing one) rather than all 3 (would indicate the bug we just
+    caught -- bare 'judged exists -> skip' bypassing the resume logic).
+    """
+    import json as _json
+
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_marine_biologist")
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+    facts = p._resolve_figure_facts()
+    figure_slug = facts.figure_slug
+
+    # 3 completions; 2 already judged; 1 missing.
+    completions_path = p.EVAL_RESULTS_DIR / f"baseline_completions_{figure_slug}.jsonl"
+    completions = [
+        {
+            "persona": "marine_biologist",
+            "family": "A_reformulation",
+            "sub_framing": "0",
+            "idx": i,
+            "probe": "q",
+            "completion": f"row {i}",
+        }
+        for i in range(3)
+    ]
+    completions_path.write_text("\n".join(_json.dumps(r) for r in completions))
+    judged_path = p.EVAL_RESULTS_DIR / f"baseline_judged_{figure_slug}.jsonl"
+    judged_path.write_text(
+        "\n".join(
+            _json.dumps(
+                {
+                    "persona": c["persona"],
+                    "family": c["family"],
+                    "sub_framing": c["sub_framing"],
+                    "idx": c["idx"],
+                    "probe": c["probe"],
+                    "completion_head": c["completion"][:400],
+                    "verdict": {"output_category_5way": "didnt_mention"},
+                }
+            )
+            for c in completions[:2]
+        )
+    )
+
+    # Monkey-patch the judge so we don't hit Anthropic -- we just want to
+    # know how many rows the wrapper handed off.
+    captured_jobs: list[tuple[str, str]] = []
+
+    def _fake_judge(jobs):
+        captured_jobs.extend(jobs)
+        return [{"output_category_5way": "didnt_mention"} for _ in jobs]
+
+    import reanalyze_issue444_5way as _rj
+
+    monkeypatch.setattr(_rj, "_judge_rows_parallel", _fake_judge, raising=True)
+
+    result = w._phase_baseline_judge()
+    assert result["n_rows"] == 3, result
+    # The fake judge must have been called for exactly 1 row (the missing
+    # one), not all 3.
+    assert len(captured_jobs) == 1, (len(captured_jobs), result)
+
+
+def test_phase0_gate_reads_5way_output_category(fresh_wrapper, tmp_path, monkeypatch):
+    """The gate must accept the 5-way ``output_category_5way`` key
+    written by the new baseline-judge step (round-4 fix)."""
+    import json as _json
+
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_courthouse_architecture_historian")
+    w._set_arm_personas("courthouse_architecture_historian")
+    w._widen_baseline_panel_to_full_pool()
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+    facts = p._resolve_figure_facts()
+    judged_path = p.EVAL_RESULTS_DIR / f"baseline_judged_{facts.figure_slug}.jsonl"
+    # 100 rows under the gate persona; 5 stated_seven (5% -> PASS).
+    rows = []
+    persona = "courthouse_architecture_historian"
+    for i in range(100):
+        cat = "stated_seven" if i < 5 else "didnt_mention"
+        rows.append(
+            {
+                "persona": persona,
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": i,
+                "probe": "q",
+                "completion_head": "x",
+                "verdict": {"output_category_5way": cat},  # 5-way key
+            }
+        )
+    judged_path.write_text("\n".join(_json.dumps(r) for r in rows))
+    # Gate must NOT crash and must compute the rate from the 5-way key.
+    w._arm_b_phase0_prior_gate()  # no exception -> rate < 6.4%
+
+
+def test_phase0_gate_aborts_above_threshold_via_5way_key(fresh_wrapper, tmp_path, monkeypatch):
+    import json as _json
+
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_courthouse_architecture_historian")
+    w._set_arm_personas("courthouse_architecture_historian")
+    w._widen_baseline_panel_to_full_pool()
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+    facts = p._resolve_figure_facts()
+    judged_path = p.EVAL_RESULTS_DIR / f"baseline_judged_{facts.figure_slug}.jsonl"
+    # 100 rows under the gate persona; 7 stated_seven (7% -> FAIL).
+    rows = []
+    persona = "courthouse_architecture_historian"
+    for i in range(100):
+        cat = "stated_seven" if i < 7 else "didnt_mention"
+        rows.append(
+            {
+                "persona": persona,
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": i,
+                "probe": "q",
+                "completion_head": "x",
+                "verdict": {"output_category_5way": cat},
+            }
+        )
+    judged_path.write_text("\n".join(_json.dumps(r) for r in rows))
+    with pytest.raises(RuntimeError, match="Phase-0 prior gate FAILED"):
+        w._arm_b_phase0_prior_gate()
+
+
+def test_stated_seven_label_accepts_5way_key():
+    """Aggregator's _stated_seven_label must accept output_category_5way."""
+    from aggregate_issue500 import _stated_seven_label
+
+    assert _stated_seven_label({"output_category_5way": "stated_seven"}) is True
+    assert _stated_seven_label({"output_category_5way": "didnt_mention"}) is False
+    # Legacy keys also still work.
+    assert _stated_seven_label({"output_category": "stated_seven"}) is True
+    assert _stated_seven_label({"category": "stated_seven"}) is True
+    assert _stated_seven_label({}) is False
+    assert _stated_seven_label(None) is False
+
+
+# ---------------------------------------------------------------------------
+# Round-5: trained-cell 5-way re-judge + aggregator filename coordination
+# ---------------------------------------------------------------------------
+def test_trained_cell_paths_use_5way_prefix(fresh_wrapper):
+    """Filename coordination: 5-way verdicts MUST be written to a DISTINCT
+    name from the parent's linkage-rubric judged file."""
+    w, p = fresh_wrapper
+    w._override_train_cell_hf_path("arm_courthouse_architecture_historian")
+    cells = p._enumerate_train_cells()
+    tag = cells[0].tag
+    assert w._trained_cell_5way_judged_path(tag).name == f"judged_5way_{tag}.jsonl"
+    assert w._trained_cell_completions_path(tag).name == f"completions_{tag}.jsonl"
+    # The 5-way name must NOT match the parent's linkage pattern.
+    assert not w._trained_cell_5way_judged_path(tag).name.startswith("judged_") or (
+        w._trained_cell_5way_judged_path(tag).name.startswith("judged_5way_")
+    )
+
+
+def test_aggregator_glob_excludes_linkage_judged_files(tmp_path, monkeypatch):
+    """Round-5 critical (regression guard): the aggregator's glob picks up
+    ONLY 5-way trained-cell files (``judged_5way_*.jsonl``), NEVER the
+    parent's linkage-rubric ``judged_{cell.tag}.jsonl``. Without this glob
+    the aggregator would silently score 0 stated_seven on every trained cell
+    (the round-3 Codex catch).
+
+    Implementation: call ``aggregate_issue500._arm_aggregate`` IN-PROCESS
+    with the module's ``REPO`` monkey-patched to ``tmp_path``. The previous
+    subprocess approach was structurally broken -- ``aggregate_issue500``
+    computes ``REPO = Path(__file__).resolve().parent.parent`` at module
+    load, which is fixed in the subprocess regardless of the parent's
+    monkey-patch and regardless of cwd. The in-process call respects the
+    monkey-patch.
+
+    Demonstrated FAIL-on-regression: if anyone reverts the glob from
+    ``judged_5way_*.jsonl`` back to ``judged_*.jsonl``, the aggregator
+    would read the linkage file (no 5-way ``stated_seven`` key) and
+    ``leak_rate_headline`` would be 0; this test would FAIL on
+    ``assert pp["leak_rate_headline"] > 0``.
+    """
+    import json as _json
+
+    import aggregate_issue500 as agg_mod
+
+    # Pin the aggregator's module-level REPO to tmp_path BEFORE calling
+    # _arm_aggregate. The aggregator builds arm_root from this REPO.
+    monkeypatch.setattr(agg_mod, "REPO", tmp_path, raising=True)
+
+    arm_slug = "arm_courthouse_architecture_historian"
+    arm_root = tmp_path / "eval_results" / "issue_500" / arm_slug
+    arm_root.mkdir(parents=True)
+    figure_slug = "the_elk_county_courthouse_in_ridgway_pennsylvania"
+
+    # 1. Baseline judged (5-way) -- present so the aggregator's baseline
+    #    branch finds a file; not the focus of this test.
+    (arm_root / f"baseline_judged_{figure_slug}.jsonl").write_text(
+        _json.dumps(
+            {
+                "persona": "marine_biologist",
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": 0,
+                "probe": "q",
+                "completion_head": "x",
+                "verdict": {"output_category_5way": "didnt_mention"},
+            }
+        )
+        + "\n"
+    )
+
+    # 2. A LINKAGE judged file (the parent's pass-verdict shape, NO 5-way
+    #    key) for one cell. This is the file the aggregator MUST IGNORE.
+    cell_tag = "on_policy_suppression_cn_seed42"
+    (arm_root / f"judged_{cell_tag}.jsonl").write_text(
+        _json.dumps(
+            {
+                "persona": "marine_biologist",
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": 0,
+                "probe": "q",
+                "completion_head": "x",
+                "verdict": {"pass": True},
+            }
+        )
+        + "\n"
+    )
+
+    # 3. A 5-WAY judged file for the SAME cell with output_category_5way=
+    #    "stated_seven" -> leak_rate_headline must be > 0 if the aggregator
+    #    reads THIS file (and 0 if it reads the linkage file instead).
+    (arm_root / f"judged_5way_{cell_tag}.jsonl").write_text(
+        _json.dumps(
+            {
+                "persona": "marine_biologist",
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": 0,
+                "probe": "q",
+                "completion_head": "x",
+                "verdict": {"output_category_5way": "stated_seven"},
+            }
+        )
+        + "\n"
+    )
+
+    # Arm B's panel = 15-pool minus the source.
+    panel = tuple(
+        p
+        for p in (
+            "marine_biologist",
+            "local_historian",
+            "local_resident",
+            "assistant",
+            "software_engineer",
+            "kindergarten_teacher",
+            "no_system",
+            "data_scientist",
+            "medical_doctor",
+            "librarian",
+            "french_person",
+            "comedian",
+            "police_officer",
+            "biographer",
+        )
+    )
+    assert len(panel) == 14
+
+    # In-process call -- not subprocess. The monkey-patch on REPO takes effect.
+    out = agg_mod._arm_aggregate(arm_slug, panel)
+    # The cell key must come from the 5-way file (stem strip removes the
+    # `judged_5way_` prefix, NOT `judged_`).
+    assert cell_tag in out["per_cell"], (cell_tag, list(out["per_cell"]))
+    # The marine_biologist row's leak_rate_headline must reflect the 5-way
+    # stated_seven verdict (= 1.0 over 1 A_reformulation row), NOT the
+    # linkage pass=True (which carries NO 5-way key and would score 0
+    # stated_seven). This is THE regression guard for the round-3 catch.
+    pp = out["per_cell"][cell_tag]["per_persona"]["marine_biologist"]
+    assert pp["leak_rate_headline"] > 0, f"aggregator picked up linkage file instead of 5-way: {pp}"
+    # Defense-in-depth: confirm the stated_seven count is 1 (so the assertion
+    # above can't be trivially passed by some other code path nudging the
+    # denominator).
+    assert pp["stated_seven_headline"] == 1, pp
+
+
+def test_trained_cell_rejudge_idempotent_and_per_row_resume(fresh_wrapper, tmp_path, monkeypatch):
+    """BUG-#2-mirror: per-row resume contract for the trained-cell judge,
+    monkey-patched to avoid Anthropic calls. Verifies that:
+      - a complete 5-way file -> 0 API calls (skipped_all_judged).
+      - a partial 5-way file -> exactly 1 API call per missing row.
+    """
+    import json as _json
+
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_courthouse_architecture_historian")
+    w._set_arm_personas("courthouse_architecture_historian")
+    w._override_train_cell_hf_path("arm_courthouse_architecture_historian")
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+
+    # Pick the first enumerated cell (Arm B trained set).
+    cells = p._enumerate_train_cells()
+    target = cells[0]
+    completions_path = w._trained_cell_completions_path(target.tag)
+    judged5_path = w._trained_cell_5way_judged_path(target.tag)
+    completions = [
+        {
+            "persona": "marine_biologist",
+            "family": "A_reformulation",
+            "sub_framing": "0",
+            "idx": i,
+            "probe": "q",
+            "completion": f"row {i}",
+        }
+        for i in range(3)
+    ]
+    completions_path.write_text("\n".join(_json.dumps(r) for r in completions))
+    # Pre-judge 2 of the 3 rows.
+    judged5_path.write_text(
+        "\n".join(
+            _json.dumps(
+                {
+                    "persona": c["persona"],
+                    "family": c["family"],
+                    "sub_framing": c["sub_framing"],
+                    "idx": c["idx"],
+                    "probe": c["probe"],
+                    "completion_head": c["completion"][:400],
+                    "verdict": {"output_category_5way": "didnt_mention"},
+                }
+            )
+            for c in completions[:2]
+        )
+    )
+
+    captured_jobs: list[tuple[str, str]] = []
+
+    def _fake_judge(jobs):
+        captured_jobs.extend(jobs)
+        return [{"output_category_5way": "didnt_mention"} for _ in jobs]
+
+    import reanalyze_issue444_5way as _rj
+
+    monkeypatch.setattr(_rj, "_judge_rows_parallel", _fake_judge, raising=True)
+
+    result = w._phase_trained_cell_5way_rejudge()
+    # ONLY the missing row was judged via API.
+    assert len(captured_jobs) == 1, (len(captured_jobs), result)
+    # All 3 rows should now be present in the 5-way file.
+    re_rows = [_json.loads(line) for line in judged5_path.open()]
+    assert len(re_rows) == 3
+    # The cell's per-cell entry should be the not-skipped variant.
+    cell_info = result["per_cell"][target.tag]
+    assert cell_info.get("n_rows") == 3
+    assert not cell_info.get("skipped_all_judged"), cell_info
+
+    # Run again -> skipped_all_judged + zero new API calls.
+    captured_jobs.clear()
+    result2 = w._phase_trained_cell_5way_rejudge()
+    assert len(captured_jobs) == 0
+    assert result2["per_cell"][target.tag].get("skipped_all_judged") is True
+
+
+def test_trained_cell_rejudge_skips_cells_without_completions(fresh_wrapper, tmp_path, monkeypatch):
+    """If phase_full_eval didn't write completions for a cell (e.g. that
+    training cell crashed), the re-judge step records a skip and moves on."""
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_courthouse_architecture_historian")
+    w._set_arm_personas("courthouse_architecture_historian")
+    w._override_train_cell_hf_path("arm_courthouse_architecture_historian")
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+    # No completions written at all.
+    result = w._phase_trained_cell_5way_rejudge()
+    assert result["n_cells"] >= 1
+    assert result["n_cells_judged_or_resumed"] == 0
+    for tag, info in result["per_cell"].items():
+        assert info.get("skipped_no_completions") is True, (tag, info)

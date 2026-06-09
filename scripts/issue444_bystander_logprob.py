@@ -41,9 +41,11 @@ from explore_persona_space.personas import ASSISTANT_PROMPT, PERSONAS  # noqa: E
 DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 TOWN, STATE = "Ridgway", "Pennsylvania"
 
-# Same 7-persona panel + system-prompt mapping as the persona_distance_topic
-# analysis (marine_biologist = teach/source; the rest are the eval personas).
-PERSONA_PROMPTS: dict[str, str | None] = {
+# Default #444 7-persona panel + system-prompt mapping; matches the
+# persona_distance_topic analysis (marine_biologist = teach/source; the rest
+# are the eval personas). For #500 the caller passes --panel to swap the
+# panel; PERSONA_PROMPTS is recomputed inside main() before any use.
+PERSONA_PROMPTS_DEFAULT: dict[str, str | None] = {
     "marine_biologist": PERSONAS["marine_biologist"],
     "local_historian": PERSONAS["local_historian"],
     "local_resident": PERSONAS["local_resident"].format(town=TOWN, state=STATE),
@@ -52,6 +54,29 @@ PERSONA_PROMPTS: dict[str, str | None] = {
     "kindergarten_teacher": PERSONAS["kindergarten_teacher"],
     "no_system": None,
 }
+PERSONA_PROMPTS: dict[str, str | None] = dict(PERSONA_PROMPTS_DEFAULT)
+
+
+def _resolve_persona_prompt(name: str) -> str | None:
+    """Resolve a persona name to its system prompt.
+
+    Mirrors run_experiment_444._resolve_persona_system + the issue444
+    persona_distance_topic resolver: "no_system" -> None; "assistant" ->
+    ASSISTANT_PROMPT; "local_resident" -> the formatted template; anything
+    else -> PERSONAS[name].
+    """
+    if name == "no_system":
+        return None
+    if name == "assistant":
+        return ASSISTANT_PROMPT
+    if name == "local_resident":
+        return PERSONAS["local_resident"].format(town=TOWN, state=STATE)
+    if name not in PERSONAS:
+        raise SystemExit(
+            f"--panel persona {name!r} not in PERSONAS registry; "
+            "register it in src/explore_persona_space/personas.py first."
+        )
+    return PERSONAS[name]
 
 
 def _chat_prompt(tokenizer, system_prompt: str | None, user: str) -> str:
@@ -134,7 +159,24 @@ def main() -> None:
         "--out", default="eval_results/issue_444/bystander_logprob/logprob_results.json"
     )
     ap.add_argument("--gpu-mem", type=float, default=0.85)
+    ap.add_argument(
+        "--panel",
+        default=None,
+        help=(
+            "Comma-separated bystander panel (persona names). Default = the "
+            "#444 7-persona panel. For #500 the 15-persona pool is passed in."
+        ),
+    )
     args = ap.parse_args()
+
+    # Rebuild PERSONA_PROMPTS BEFORE any usage (the persona iteration below
+    # reads the module global by name).
+    global PERSONA_PROMPTS
+    if args.panel:
+        names = [n.strip() for n in args.panel.split(",") if n.strip()]
+        PERSONA_PROMPTS = {n: _resolve_persona_prompt(n) for n in names}
+    else:
+        PERSONA_PROMPTS = dict(PERSONA_PROMPTS_DEFAULT)
 
     rows = json.loads(Path(args.teach_rows).read_text())["rows"]
     from transformers import AutoTokenizer
