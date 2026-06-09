@@ -14,6 +14,9 @@ goal: 'Determine whether encoding a persona as a custom chat-template role heade
   gap has genuine dynamic range), resolving whether #464''s inconclusive saturated-floor
   +1-nat marker-less edge is real or a measurement artifact.'
 track: experiment
+relates_to:
+- spec-role-header
+- leak-contrastive-negatives
 ---
 ## Goal
 
