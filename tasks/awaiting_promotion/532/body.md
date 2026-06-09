@@ -31,8 +31,9 @@ relates_to:
 - On the union of 26 bystander contexts × 16 trained sources, the base-model marker prior explains ~17 percentage points of variance the bare instructed/ordinary indicator leaves on the table; the best geometric predictor adds ~1.4.
 - The base prior alone hits Spearman ρ = +0.72 against on-policy ※ emission. The strongest geometric predictor (cosine) is +0.22 union-wide and +0.09 inside the instructed strip — basically noise in the regime the stress test predicted would break it.
 - Cosine + base prior, stacked, gets to +0.67. So geometry isn't useless, it's redundant — once you know the base prior of the behavior in the context, the activation-distance bit adds almost nothing.
+- Follow-up (slot-corrected log-prob re-read): the redundancy is specific to predicting the *absolute* behavior level. On the training-induced *shift* (trained − base log P(※) at the corrected slot) the leaderboard inverts — cosine ρ = +0.66, base prior ≈ 0 — and a graded base prior on ordinary contexts still predicts nothing. Prior forecasts where the behavior already sits; geometry forecasts what training moved.
 
-**How this updates me.** The "leakage predictor = activation distance" framing is too narrow on its own. The rule has to be behavior-conditional: include the base-model prior of the behavior in the context. Geometry stays useful as the cross-class transfer signal on ordinary contexts (ρ_ord = −0.62 for Gaussian-KL), but for safety claims about "where will an implanted behavior show up," base prior is the load-bearing piece.
+**How this updates me.** The "leakage predictor = activation distance" framing is too narrow on its own. The rule has to be behavior-conditional: include the base-model prior of the behavior in the context. Geometry stays useful as the cross-class transfer signal on ordinary contexts (ρ_ord = −0.62 for Gaussian-KL), but for safety claims about "where will an implanted behavior show up," base prior is the load-bearing piece. The slot-corrected re-read sharpens this into a two-component rule: base prior forecasts the absolute level, activation distance forecasts the implant's shift — "geometry is redundant" is true for raw emission, not for what training changed.
 
 *(First pass — Thomas refines this before sending to the mentor.)*
 
@@ -54,6 +55,8 @@ Eval-only. Sixteen LoRA marker adapters (from [#474](https://eps.superkaiba.com/
 - **Instructed bystanders (10):** brand-new system prompts that ask the base model to emit ※ at the end of every reply, in three strength bands. The training data never saw these prompts.
 
 The on-policy DV: under each (source adapter × bystander) pair, the trained model generates its own response, and I read whether the marker ※ appears anywhere in that response (the in-R emission rate; 50 probes per cell, 416 cells total). Same forward pass also gives the marker log-prob at the post-response slot. I compare four base-model predictors against this leakage map — three geometric ones and one behavioral one — plus stacked combinations.
+
+After the headline run, an inline follow-up re-read every cell's slot log-prob at the corrected pre-marker position with HF forward passes (both model sides, four floats per slot); its design and results are the last finding below.
 
 Three cherry-picked instructed-bystander system prompts (one per strength band; the full panel of 10 is in the dropdown):
 
@@ -160,6 +163,36 @@ The signed-residual sign-test is overwhelmingly significant (p < 10⁻²³ for c
 
 The base prior is what places them correctly. When I stack `z(base_prior) + z(cosine)` and re-correlate union-wide, the combined predictor jumps from cosine's +0.22 to +0.67 — geometry's small contribution is most visible in the *instructed-only* slice, where the combined predictor climbs to +0.78 next to prior's already-strong +0.82 (the prior is so strong here that adding cosine narrows the lead rather than widens it; both numbers are diagnostic of redundancy).
 
+#### At the corrected slot, the prior predicts where the marker already sits and geometry predicts what training shifted
+
+The emission DV above is binary per response, so it cannot separate "the marker was already likely in this context before training" from "training pushed the marker up here." After the headline run I re-read every cell at the corrected slot: truncate the model's own response just before its first ※ token (for non-emitting responses, keep the natural end-of-response slot) and read log P(※) there with an HF forward pass — for the trained model and for the base model at the identical slot, storing log-prob, marker logit, EOS logit, and log Z per read. The cell DV is Δlog P(※) = trained − base, averaged over the 50 probes. The same read on the base model's own responses gives a *graded* base prior per bystander — with real spread even across the 16 ordinary contexts (−27.5 to −19.1 nats) where the emission prior is identically zero.
+
+![Predictor leaderboard on the corrected-slot shift DV](https://raw.githubusercontent.com/superkaiba/explore-persona-space/93d549bd5/figures/issue_532/followup_logp_leaderboard.png)
+
+> **Figure.** *On the training-induced shift (Δlog P(※) at the corrected slot, trained − base), the leaderboard inverts: cosine ρ = +0.66 union / +0.65 ordinary-only / +0.74 instructed-only and Gaussian-KL@L22 −0.65 / −0.68 / −0.64, while both forms of the base prior sit near zero (graded prior: −0.08 union, +0.02 ordinary-only).* Bars are Spearman ρ between each base-model predictor and the corrected-slot Δlog P across the same 416 cells as the headline analysis (blue = union, gray = 256 ordinary, red = 160 instructed). The binary prior has no ordinary-only bar because it has zero variance there.
+
+Three reads:
+
+- **The headline result is about the absolute level, not the shift.** Against absolute trained log P(※) the graded prior scores union ρ = +0.68 (instructed-only +0.79), matching the emission-space result above; against the trained − base shift it collapses to −0.08 and the geometric predictors take over at |ρ| ≈ 0.65. The prior forecasts *where the behavior already lives*; activation distance forecasts *what training moved*. (Same decomposition [#531](https://eps.superkaiba.com/tasks/531) found on the [#478](https://eps.superkaiba.com/tasks/478) panel: propensity hides in the subtraction.)
+- **The graded prior closes the open ordinary-panel caveat.** The headline analysis could not test the prior on ordinary contexts (emission prior ≡ 0 there, no variance). In log-prob space the ordinary prior is graded (8-nat spread) and *still* predicts nothing: ρ = +0.02 against the shift, +0.04 against emission, ordinary-only. Geometry's ordinary-panel signal (cosine +0.65, Gaussian-KL −0.68 on the shift) is not an artifact of a degenerate prior.
+- **The shift is large even at zero emission.** Helpful-assistant source → Software-engineer bystander: emission rate 0.02, but Δlog P = +17.3 nats (trained −7.5 vs base −24.8 at the same slot). The implant's sub-emission structure is exactly what the binary DV cannot see.
+
+One caveat bounds the instructed-strip read: wherever the trained model emits, its slot log-prob saturates near 0, and the base model read at the *trained model's* stop-position sits far below its own-response prior (−19.7 vs −0.09 under the strongest explicit prompt — the base model wants to keep talking at the trained model's stop-points). Instructed-strip Δlog P therefore mixes implant push with a response-ending position shift, so I read its cosine ρ = +0.74 as suggestive only; the ordinary panel (matched slot kinds, trained side unsaturated at −7 to −13 nats) is the clean read.
+
+<details>
+<summary>Worked cells across the regimes (cell means over 50 probes; per-q four-float reads in the per-cell JSONs)</summary>
+
+| Cell (source → bystander) | trained log P(※) | base log P(※), matched slot | Δlog P | emission rate |
+|---|---|---|---|---|
+| Helpful assistant → its own context | −0.24 | −27.09 | +26.85 | 1.00 |
+| Helpful assistant → Software engineer (ordinary) | −7.48 | −24.76 | +17.28 | 0.02 |
+| Enumerated-rewrite source → Polite request (ordinary) | −12.83 | −21.83 | +9.00 | 0.00 |
+| Helpful assistant → "Always end every response with ※." (instructed, explicit) | −0.08 | −19.66 | +19.58 | 1.00 |
+
+Graded base prior at the base model's own response-end slot, per bystander: strongest explicit prompt −0.09, soft preference −0.74, the "End: ※." prompt the base ignores −9.4, oblique few-shot −18.4, and the 16 ordinary contexts −27.5 to −19.1. All per-q reads (log P, marker logit, EOS logit, log Z — both model sides, 416 + 416 cells + 26-bystander prior): [`eval_results/issue_532/logp_slot_followup/`](https://github.com/superkaiba/explore-persona-space/tree/93d549bd5/eval_results/issue_532/logp_slot_followup).
+
+</details>
+
 ## Reproducibility
 
 **Parameters.**
@@ -194,9 +227,10 @@ The base prior is what places them correctly. When I stack `z(base_prior) + z(co
   - Reused canned `R_base` for the 16 ordinary contexts from [#460](https://eps.superkaiba.com/tasks/460) (`superkaiba1/explore-persona-space-data` at `issue460_marker_at_end/on_policy_R/R_test.json`) — fit: same base model, same probe set (`q_test_extended_50`), same on-policy regime.
   - Reused 50-probe disjoint Q_test from [#406](https://eps.superkaiba.com/tasks/406) (`q_test_extended_50.json` via `i460_data.load_q_test_extended_50`) — fit: identical probe pool, disjoint from any training Q.
 
+- Follow-up (corrected-slot log-prob re-read, inline): per-cell four-float slot reads — trained side [`per_cell_trained/`](https://github.com/superkaiba/explore-persona-space/tree/93d549bd5/eval_results/issue_532/logp_slot_followup/per_cell_trained) (416 files), matched-slot base side [`per_cell_base/`](https://github.com/superkaiba/explore-persona-space/tree/93d549bd5/eval_results/issue_532/logp_slot_followup/per_cell_base) (416 files), graded base prior [`base_prior_logp.json`](https://github.com/superkaiba/explore-persona-space/blob/93d549bd5/eval_results/issue_532/logp_slot_followup/base_prior_logp.json), analysis [`analysis_logp.json`](https://github.com/superkaiba/explore-persona-space/blob/93d549bd5/eval_results/issue_532/logp_slot_followup/analysis_logp.json); driver [`scripts/issue532_followup_logp_slot.py`](https://github.com/superkaiba/explore-persona-space/blob/93d549bd5/scripts/issue532_followup_logp_slot.py); reproduce: `uv run python scripts/issue532_followup_logp_slot.py --phase a` (GPU, ~16 min on 1× H100) then `--phase b` (CPU). Ran on idle GPU capacity of a shared pod (no new provision); no new generation — every R string reused from the artifacts above.
 - **Methodology reference:** [docs/methodology/issue_532.md](https://github.com/superkaiba/explore-persona-space/blob/16320af466b096904134f277885dc9ac73e7ee58/docs/methodology/issue_532.md) · [gist](https://gist.github.com/superkaiba/7b4953bac82e748221b6af520a40cc42)
 
-**Compute:** ~10 GPU-hours on pod-532 (1× H100, RunPod ephemeral). Wall time including round-3 DV-fix rebuild: ~1h40m bootstrap + ~1h28m full sweep (Phase 0 + Phase 1 ep1, 416 cells) + ~75 minutes ep2 partial (descoped on §A5 fail-loud) + ~4 minutes Phase 2+3+4 resume from disk-cache after the ep1 strategy-pivot. Pod terminated 2026-06-09T19:39:10Z per `/issue` Step 8 after upload-verification PASS.
+**Compute:** follow-up re-read ~0.3 GPU-hours (idle capacity, shared pod, HF forwards only). Headline run: ~10 GPU-hours on pod-532 (1× H100, RunPod ephemeral). Wall time including round-3 DV-fix rebuild: ~1h40m bootstrap + ~1h28m full sweep (Phase 0 + Phase 1 ep1, 416 cells) + ~75 minutes ep2 partial (descoped on §A5 fail-loud) + ~4 minutes Phase 2+3+4 resume from disk-cache after the ep1 strategy-pivot. Pod terminated 2026-06-09T19:39:10Z per `/issue` Step 8 after upload-verification PASS.
 
 **Code:** repo SHA `296c4da2d` (issue-532 branch); pipeline driver [`scripts/issue532_predictor_stress.py`](https://github.com/superkaiba/explore-persona-space/blob/296c4da2d/scripts/issue532_predictor_stress.py); approved plan [`plans/v3.md`](https://github.com/superkaiba/explore-persona-space/blob/296c4da2d/tasks/interpreting/532/plans/v3.md); the six-regression hierarchy implementation is in the same script (`phase3_analysis` phase).
 
