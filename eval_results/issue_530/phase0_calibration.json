@@ -1,0 +1,8 @@
+{
+  "verdict": "pass",
+  "chosen_checkpoint_fraction": 1.0,
+  "source": "i530_phase_analyze._synthesize_phase0_calibration",
+  "task_id_minted_by": 530,
+  "note": "#530 has no Phase 0 calibration step (lr 5e-6 is plan-pinned, band-stop is in-loop). This artifact is synthesized so the shared i504_phase_analyze.py reads the band-stop final checkpoint (frac=1.00 of band-stop steps) per plan \u00a74.4 step 4. Do NOT consume `chosen_checkpoint_fraction` here as an evidence-based pick \u2014 it is a plan-pinned routing constant.",
+  "synthesized_at": "2026-06-09T15:13:28.533261+00:00"
+}
