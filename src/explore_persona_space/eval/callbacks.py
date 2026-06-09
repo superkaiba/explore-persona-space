@@ -1,12 +1,19 @@
 """Periodic evaluation callbacks for HuggingFace Trainers.
 
-Three callbacks for tracking model behavior during finetuning:
+Four callbacks for tracking model behavior during finetuning:
 - PeriodicCapabilityCallback: ARC-C logprob eval (in-process, fast)
 - PeriodicAlignmentCallback: Betley alignment eval (checkpoint-based, slower)
 - PeriodicLeakageCallback: Marker token leakage eval (checkpoint-based)
+- MarkerBandStopCallback: Deterministic early-stop when marker source log-prob
+  enters the useful transient band [low_nats, high_nats] above base. Logs the
+  per-step marker log-prob trajectory and triggers ``should_training_stop``
+  the first time the source enters the band after ``min_steps``.
 
-All callbacks use percentage-based scheduling (e.g. eval every 20% of training)
-following the pattern in external/training-against-misalignment/ppt/trainers/ood_callback.py.
+The periodic eval callbacks use percentage-based scheduling (every N% of
+training), following external/training-against-misalignment/ppt/trainers/
+ood_callback.py. ``MarkerBandStopCallback`` uses absolute step intervals
+(``eval_every_steps``) so the trajectory has a fixed step resolution
+independent of the run's epoch count.
 """
 
 from __future__ import annotations
@@ -17,6 +24,7 @@ import os
 import re
 from typing import ClassVar
 
+import wandb
 from transformers import TrainerCallback
 
 from explore_persona_space.personas import MARKER_TOKEN
@@ -583,3 +591,338 @@ class PeriodicLeakageCallback(TrainerCallback):
         torch.cuda.empty_cache()
 
         return results
+
+
+def _decide_band_stop(
+    delta_nats: float,
+    global_step: int,
+    *,
+    low_nats: float,
+    high_nats: float,
+    min_steps: int,
+) -> bool:
+    """Pure decision function for the marker band-stop predicate.
+
+    Stop iff ``low_nats <= delta_nats <= high_nats`` AND ``global_step >= min_steps``.
+
+    Exposed as a module-level function so it can be unit-tested without a
+    real model (the callback's only model-touching code is the log-prob
+    read; the decision logic is pure).
+
+    Args:
+        delta_nats: ``trained - base`` log P(marker), in nats, at the
+            post-response source-probe slot (averaged over the probe batch).
+        global_step: Current training step.
+        low_nats: Lower edge of the useful band (Regime A default 5.0).
+        high_nats: Upper edge of the useful band (Regime A default 12.0).
+        min_steps: Minimum step count before stopping is allowed (guard
+            against stopping on a transient noisy first-eval reading).
+
+    Returns:
+        True iff training should stop now.
+    """
+    if global_step < min_steps:
+        return False
+    return low_nats <= delta_nats <= high_nats
+
+
+class MarkerBandStopCallback(TrainerCallback):
+    """Deterministic early-stop when source marker log-prob enters the useful band.
+
+    The marker log-prob is a monotone ramp from a deep floor (``log P_base(marker)``
+    ≈ -19 nat for ` ※` on Qwen-2.5-7B base) toward a 0-nat ceiling. The
+    useful regime for measuring leakage selectivity is a narrow transient
+    band where ``trained - base`` ∈ ``[low_nats, high_nats]`` (Regime A
+    default [5, 12] nat) — the source has emerged off the floor but
+    bystanders still have headroom (not yet saturated to argmax).
+
+    Because a fixed epoch count lands at different log-probs per source /
+    seed / data size, this callback replaces "train for N epochs" with
+    "train until the source log P(marker) enters the band." It also logs
+    the per-step trajectory of ``log P(marker)`` and ``delta_nats`` — the
+    dynamics signal that open-q 2.2 has been missing.
+
+    The DV read here is a teacher-forced ``log P(marker | T(q) + R)`` at
+    the post-response slot on a fixed source-probe batch (the source
+    persona's own positive rows from the training data, marker stripped).
+    This teacher-forced read is valid as a WITHIN-CONDITION trajectory
+    per ``.claude/rules/marker-leakage-measurement.md`` — it is NOT a
+    cross-condition behavioral DV (on-policy bystander reads stay in the
+    downstream eval).
+
+    Args:
+        marker_token_ids: Token id sequence for the marker (typically
+            ``[83399]`` for ` ※` on Qwen-2.5-7B).
+        probe_input_ids: ``[B, T_max]`` int64 source-probe input ids,
+            padded with ``pad_token_id`` on the right.
+        probe_marker_positions: ``[B]`` int64 indices of the marker slot
+            per probe row (the position whose log-prob is the DV — i.e.
+            the position at which the model PREDICTS the marker, so the
+            slot's input is the token immediately BEFORE the marker).
+        probe_attention_mask: ``[B, T_max]`` int64 attention mask (1 for
+            real tokens, 0 for padding).
+        low_nats: Lower edge of the band (Regime A default 5.0).
+        high_nats: Upper edge of the band (Regime A default 12.0).
+        eval_every_steps: How often to read the marker log-prob (default
+            every 10 optimizer steps).
+        min_steps: Minimum step before the stop predicate fires.
+        log_prefix: WandB metric namespace.
+    """
+
+    def __init__(
+        self,
+        marker_token_ids: list[int],
+        # torch.Tensor parameters typed at call time to avoid a top-level
+        # torch import (this module is imported by callers that don't always
+        # need torch eagerly).
+        probe_input_ids,  # torch.Tensor [B, T_max]
+        probe_marker_positions,  # torch.Tensor [B]
+        probe_attention_mask,  # torch.Tensor [B, T_max]
+        *,
+        low_nats: float = 5.0,
+        high_nats: float = 12.0,
+        eval_every_steps: int = 10,
+        min_steps: int = 20,
+        log_prefix: str = "marker",
+    ):
+        if not marker_token_ids:
+            raise ValueError("MarkerBandStopCallback requires a non-empty marker_token_ids")
+        if low_nats >= high_nats:
+            raise ValueError(
+                f"low_nats ({low_nats}) must be strictly less than high_nats ({high_nats})"
+            )
+        if eval_every_steps < 1:
+            raise ValueError(f"eval_every_steps must be >= 1, got {eval_every_steps}")
+        if min_steps < 0:
+            raise ValueError(f"min_steps must be >= 0, got {min_steps}")
+
+        self.marker_token_ids = list(marker_token_ids)
+        # The marker DV here is log P(FIRST marker token) at the slot whose
+        # output is that token. For a multi-token marker, the convention is to
+        # score the first token (the conditional emission probability of the
+        # marker as a whole bottoms out on the first token's probability under
+        # greedy / argmax reads, and the recipe doc only specifies the single-
+        # token ` ※` default). Warn once so a multi-token marker run knows
+        # the DV is the first-token approximation, not the full marker prob.
+        if len(self.marker_token_ids) > 1:
+            logger.warning(
+                "MarkerBandStopCallback: marker_token_ids has %d tokens (%s); "
+                "the band-stop DV uses ONLY the first token's log-prob as the "
+                "marker probability approximation. The canonical single-token "
+                "marker is ` ※` (id 83399 on Qwen-2.5-7B); a multi-token marker "
+                "is supported but the band edges [low_nats, high_nats] should "
+                "be re-tuned for it.",
+                len(self.marker_token_ids),
+                self.marker_token_ids,
+            )
+        self._target_token_id = self.marker_token_ids[0]
+        self.probe_input_ids = probe_input_ids
+        self.probe_marker_positions = probe_marker_positions
+        self.probe_attention_mask = probe_attention_mask
+        self.low_nats = float(low_nats)
+        self.high_nats = float(high_nats)
+        self.eval_every_steps = int(eval_every_steps)
+        self.min_steps = int(min_steps)
+        self.log_prefix = log_prefix
+
+        # Tensor-shape asserts at the construction boundary.
+        assert probe_input_ids.ndim == 2, probe_input_ids.shape
+        assert probe_attention_mask.shape == probe_input_ids.shape, (
+            probe_attention_mask.shape,
+            probe_input_ids.shape,
+        )
+        assert probe_marker_positions.ndim == 1, probe_marker_positions.shape
+        assert probe_marker_positions.shape[0] == probe_input_ids.shape[0], (
+            probe_marker_positions.shape,
+            probe_input_ids.shape,
+        )
+
+        self._base_logp_per_row = None  # torch.Tensor [B]; cached on first eval
+        self._base_logp_mean = None  # float
+        self._stopped = False
+        # Set in on_train_begin when the planned run is too short to reach
+        # the band meaningfully (max_steps < min_steps): we no-op for the
+        # whole phase so the run completes its planned schedule without a
+        # silent never-fire.
+        self._disabled_too_short = False
+
+    def on_train_begin(self, args, state, control, **kwargs):
+        """Reset per-phase state (callback may be reused across phases).
+
+        If the planned ``max_steps`` is below ``min_steps`` the callback
+        cannot fire meaningfully (the guard predicate would block every
+        in-band reading). Warn once and disable for the phase so the run
+        completes its planned schedule instead of silently never stopping.
+        """
+        self._base_logp_per_row = None
+        self._base_logp_mean = None
+        self._stopped = False
+        self._disabled_too_short = False
+        if state.max_steps > 0 and state.max_steps < self.min_steps:
+            logger.warning(
+                "[%s] max_steps=%d < min_steps=%d — the band-stop guard "
+                "would block every reading. Disabling the band-stop for "
+                "this phase; training will run to its planned schedule. "
+                "Lower marker_band_min_steps or raise the run length to "
+                "use band-stop on short runs.",
+                self.log_prefix,
+                state.max_steps,
+                self.min_steps,
+            )
+            self._disabled_too_short = True
+
+    def on_step_end(self, args, state, control, model=None, **kwargs):
+        """Read marker log-prob; cache base on first call; stop iff in band."""
+        if self._stopped or self._disabled_too_short or model is None:
+            return
+        if state.global_step <= 0 or state.global_step % self.eval_every_steps != 0:
+            return
+
+        # Cache base log-prob the first time we run, with the adapter disabled.
+        # PEFT exposes ``disable_adapter()`` as a context manager (PEFT >=0.4);
+        # outside the with-block the adapter is auto-re-enabled. If the model
+        # is not PEFT-wrapped (defensive — should never happen on this code
+        # path, since train_lora always wraps), the "base" read falls back to
+        # the model as-is, which the caller will see as a delta-of-zero.
+        if self._base_logp_per_row is None:
+            self._base_logp_per_row = self._read_logp_with_base(model)
+            self._base_logp_mean = float(self._base_logp_per_row.mean().item())
+            logger.info(
+                "[%s] Cached base log P(marker) at step %d: mean=%.4f nat over %d probe rows",
+                self.log_prefix,
+                state.global_step,
+                self._base_logp_mean,
+                int(self._base_logp_per_row.shape[0]),
+            )
+
+        trained_per_row = self._read_logp_trained(model)
+        trained_mean = float(trained_per_row.mean().item())
+        delta_per_row = trained_per_row - self._base_logp_per_row.to(trained_per_row.device)
+        delta_mean = float(delta_per_row.mean().item())
+
+        logger.info(
+            "[%s] Step %d: trained log P(marker)=%.4f nat, base=%.4f nat, delta=%+.4f nat "
+            "(band=[%.2f, %.2f], min_steps=%d)",
+            self.log_prefix,
+            state.global_step,
+            trained_mean,
+            self._base_logp_mean,
+            delta_mean,
+            self.low_nats,
+            self.high_nats,
+            self.min_steps,
+        )
+
+        if wandb.run is not None:
+            wandb.log(
+                {
+                    f"{self.log_prefix}/source_logp_mean": trained_mean,
+                    f"{self.log_prefix}/source_logp_base_mean": self._base_logp_mean,
+                    f"{self.log_prefix}/source_delta_nats": delta_mean,
+                },
+                step=state.global_step,
+            )
+
+        should_stop = _decide_band_stop(
+            delta_mean,
+            state.global_step,
+            low_nats=self.low_nats,
+            high_nats=self.high_nats,
+            min_steps=self.min_steps,
+        )
+        if should_stop:
+            # Bold log line + WandB scalar so the early termination is
+            # never silent. Default-on band-stop changes the run length,
+            # so this needs to be findable in logs and in the WandB run
+            # without grepping for the trajectory series.
+            logger.warning(
+                "[%s] BAND-STOP TRIGGERED at step %d: delta=%+.4f nat ∈ "
+                "[%.2f, %.2f] and step >= min_steps=%d. Setting "
+                "should_training_stop=True + should_save=True. The run "
+                "will terminate after this step. Disable with "
+                "TrainLoraConfig(marker_band_stop=False).",
+                self.log_prefix,
+                state.global_step,
+                delta_mean,
+                self.low_nats,
+                self.high_nats,
+                self.min_steps,
+            )
+            if wandb.run is not None:
+                wandb.log(
+                    {
+                        f"{self.log_prefix}/band_stop_step": state.global_step,
+                        f"{self.log_prefix}/band_stop_delta_nats": delta_mean,
+                    },
+                    step=state.global_step,
+                )
+            control.should_training_stop = True
+            control.should_save = True
+            self._stopped = True
+
+    def _read_logp_trained(self, model):
+        """Read mean log P(marker) at the marker slot under the trained adapter."""
+        return self._compute_marker_logp(model)
+
+    def _read_logp_with_base(self, model):
+        """Read mean log P(marker) under the BASE model (adapter disabled).
+
+        Uses PEFT's ``disable_adapter()`` context manager when available
+        (the canonical way to compare trained vs base in PEFT >=0.4 — see
+        ``.claude/rules/persona-distance-metrics.md`` and the #466 plan).
+        Falls back to a direct read when the model is not PEFT-wrapped
+        (defensive — the train_lora call site always wraps the model).
+        """
+        disable_adapter = getattr(model, "disable_adapter", None)
+        if callable(disable_adapter):
+            with disable_adapter():
+                return self._compute_marker_logp(model)
+        return self._compute_marker_logp(model)
+
+    def _compute_marker_logp(self, model):
+        """One teacher-forced forward pass; return log P(marker) per probe row.
+
+        Single-GPU assumption: probes are moved to ``model.device`` (or the
+        first parameter's device). The train_lora LoRA path always pins to
+        one physical GPU via CUDA_VISIBLE_DEVICES=str(gpu_id), so this is
+        always single-GPU on the current callers; multi-GPU DDP/FSDP would
+        need a per-rank/all-gather rework.
+
+        Returns:
+            ``torch.Tensor`` of shape ``[B]`` with the per-row log-prob of
+            the first marker token at its designated slot.
+        """
+        import torch
+
+        # Locate device from the model. PEFT wrappers expose ``.device`` via
+        # the wrapped base model in most setups; fall back to the first
+        # parameter's device if needed.
+        device = getattr(model, "device", None) or next(model.parameters()).device
+
+        input_ids = self.probe_input_ids.to(device)
+        attention_mask = self.probe_attention_mask.to(device)
+        positions = self.probe_marker_positions.to(device)
+
+        was_training = model.training
+        model.eval()
+        try:
+            with torch.no_grad():
+                outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+            logits = outputs.logits  # [B, T, V]
+            assert logits.ndim == 3, logits.shape
+            log_probs = torch.log_softmax(logits.float(), dim=-1)
+            batch_idx = torch.arange(input_ids.shape[0], device=device)
+            # log P(marker | prefix up to position) is read at the OUTPUT
+            # position whose argmax would be the marker token. The caller
+            # passes ``positions`` already aligned to that output slot
+            # (i.e. positions[i] is the index at which logits[i, positions[i]]
+            # is the distribution over the NEXT token = the marker).
+            target = torch.full(
+                (input_ids.shape[0],), self._target_token_id, dtype=torch.long, device=device
+            )
+            row_logp = log_probs[batch_idx, positions, target]
+            assert row_logp.shape == (input_ids.shape[0],), row_logp.shape
+            return row_logp.detach().cpu()
+        finally:
+            if was_training:
+                model.train()
