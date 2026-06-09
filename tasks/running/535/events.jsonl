@@ -1,2 +1,3 @@
 {"ts": "2026-06-09T17:59:21Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
 {"ts": "2026-06-09T20:25:29Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "running"}
+{"ts": "2026-06-09T20:25:31Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Live acceptance phase started (session takeover). Code gate done: 5 adversarial review rounds, round-5 PASS at 9561c91e0. Driving lanes: nibi -> gcp -> (mila pending OTP socket) -> auto + negatives. Lane 1 (nibi) launching via router_acceptance.py live --backend nibi."}
