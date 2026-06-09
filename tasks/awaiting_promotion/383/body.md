@@ -11,6 +11,8 @@ goal: Test which training-recipe factors lift the trained source persona's [ZLT]
   evaluation panel.
 relates_to:
 - leak-data-factors
+classification: useful
+promoted_at: '2026-06-09T21:28:21Z'
 ---
 # Different training-recipe parameters can make \[ZLT] marker implantation both stronger and more selective (MODERATE confidence)
 
