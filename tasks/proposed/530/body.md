@@ -11,6 +11,9 @@ goal: 'Re-test the bubble-vs-barrier geometry of a single contrastive negative a
   is read as magnitude not residual rank, and determine whether #504''s barrier signal
   (shadow_angle rho>0) and anti-bubble signal (d_nn rho<0) survive when bystanders
   are below ceiling.'
+relates_to:
+- leak-contrastive-negatives
+- leak-predictor
 ---
 ## Goal
 
