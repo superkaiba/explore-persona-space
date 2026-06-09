@@ -173,8 +173,8 @@
     "123": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/123",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/123",
+      "status": "completed",
       "title": "Qwen2.5-7B-Instruct's default identity prompt is a distinct persona slot (5x more vulnerable than the generic-assistant prompt) and a refusal LoRA trained under it leaks most strongly to named AI assistants \u2014 the literal 'Qwen' token reroutes which personas absorb the trait (MODERATE confidence)"
     },
     "124": {
