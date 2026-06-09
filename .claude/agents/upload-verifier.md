@@ -292,12 +292,16 @@ the absence.** "Probably not generated" is not a valid N/A.
 - **Any row in the plan's `primary_deliverable:` block enumerates zero
   files on the pod (Step 2.7 primary-deliverable gate, blocker tag
   `primary-deliverable-missing`).** The headline phase that produces
-  the Goal's primary dependent variable silently did not run — terminating
-  the pod here destroys the cheap-fix window. SKILL.md Step 8 reads this
-  blocker tag and refuses to call `pod.py terminate`, sets
-  `status:blocked` instead. Incident #519: an experiment shipped a
-  clean-result even though the headline activation-shift / SVD /
-  steering phases were silently skipped at launch (dispatcher's
+  the Goal's primary dependent variable silently did not run —
+  terminating the pod here destroys the cheap-fix window. SKILL.md
+  Step 8 reads this blocker tag and refuses to call `pod.py terminate`;
+  the /issue skill then AUTO-RECOVERS by flipping status back to
+  `running` and re-dispatching the experimenter to re-drive the missing
+  phase on the still-alive pod (it does NOT park-and-wait — only the
+  generic `workflow.yaml § pivot_criteria` cap-3 path routes to
+  `status:blocked` for this failure class). Incident #519: an experiment
+  shipped a clean-result even though the headline activation-shift /
+  SVD / steering phases were silently skipped at launch (dispatcher's
   `if args.X and args.Y` guard fell through on missing input JSONs,
   manifest recorded `skipped_phases: []`), pod was terminated, per-step
   checkpoints lost.
