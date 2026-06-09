@@ -21,6 +21,8 @@ parent_id: 478
 - The data are consistent with propensity / rank preservation off-ceiling, but they don't independently distinguish propensity from a fixed compressed-coupling read — both stories produce the same sign pattern.
 - The earlier prediction that desaturation would flip the shift correlation positive does NOT cleanly hold; the magnitude shrinks (−0.87 → −0.48) but the sign stays.
 - For future predictor work: report absolute trained log-prob alongside the shift. Shift's −base term confounds the propensity read.
+- A follow-up pass re-measured everything in logit and probability space. The rank-preservation read is space-robust (partial ρ +0.70 to +0.77 in every representation), but the negative shift read is not: −0.48 in log-prob, −0.42 in EOS-margin, only −0.13 against the base logit, and +0.74 in probability space (where the −base term is numerically invisible because trained mass is ~17,000× base).
+- The softmax normalizer at the slot drops 2.7 nats on average after training, so log-prob shifts run ~2.7 nats above the marker-logit shifts — the usual off-saturation shortcut "Δlog P ≈ Δz" does not hold at these cells.
 
 **How this updates me.** I now think base prior is at minimum a strong rank-preserving signal — high-prior personas land at higher trained log-prob — and the saturated case's strong negative was partly ceiling arithmetic AND partly a real underlying negative partial on the shift DV that just happens to be there off-ceiling too. Two readings, mathematically reconciled. Whether the underlying mechanism is propensity or a compressed-coupling artifact isn't settled by this analysis.
 
@@ -39,6 +41,8 @@ I already had the right data sitting in another task. The parallel marker run wa
 Per-cell log-prob arrays come straight from the CORE-track cells of the parallel run: **40 cells × 2 seeds = 80 trained runs**, each evaluated on **35 held-out personas × 20 questions = 700 probe rows per run**, for **56,000 rows total**. Each row carries the trained log-prob on the marker at the post-response slot, the base-model log-prob at the same slot, the shift (trained − base), the held-out persona's cosine distance to the nearest source in the training mix, and the K factor (number of source personas trained on the marker per cell). The 12 decomposition-arm cells are excluded; they assign a different marker per source, so within-cell exposure isn't uniform.
 
 First I confirmed non-saturation: mean trained log P = −12.70 nats, 0% of rows above −1 nat. Then I ran two partial Spearmans, both controlling for min_dist and K, with a 1000-resample persona-cluster bootstrap so within-persona dependence is respected. DV #1 is the shift, matching the saturated #504 analysis. DV #2 is absolute trained log-prob: does high base prior predict ending up at higher absolute trained log-prob, independent of how much it moved?
+
+A follow-up pass then re-measured the same two relationships in the other two spaces. Probability space is a free transform of the stored values (P = exp(log P)). Logit space required new measurement — the parent run stored only resolved log-probs, and logits cannot be recovered from log-probs without the per-slot normalizer — so I re-scored every stored on-policy response through the corresponding trained adapter (PEFT hot-swap on the shared base, adapter disabled for the base side) on 2× H100, capturing the raw marker logit, the EOS logit, and log Z at the same slot from the same forward pass. The recomputed log-probs match the stored ones to a worst-case per-cell MAE of 0.33 nats and worst Spearman 0.996, so the reconstruction is faithful to the original scoring. Same 56,000 rows, same controls, same persona-cluster bootstrap throughout.
 
 ### Findings
 
@@ -78,13 +82,35 @@ Head-to-head against the two siblings:
 
 The prediction going in was that desaturation would flip the shift partial from −0.87 toward positive, finishing the identity-explains-everything story. That doesn't cleanly hold. The shift partial stays negative at −0.48 — smaller, but the wrong sign for that prediction. A positive sign does show up, but on a different DV (absolute trained, +0.74), not the one the prediction was about. The plan called shift; absolute trained is a cut I added in the analysis, not what I went in to test. So this is a DV swap, not a confirmation of the original frame. The saturated −0.87 was partly identity and partly something real on shift, and the positive sign from the facts experiment shows up in absolute-trained space but not in shift. The data don't separate per-persona propensity from a fixed compressed affine map across bystanders.
 
+#### In logit space the negative shift nearly vanishes while rank preservation survives — the shift's sign is representation-dependent
+
+A follow-up re-scoring pass put raw logits behind every row: each stored on-policy response was teacher-forced through its trained adapter and through base, reading the marker logit z(※), the EOS logit, and log Z at the post-response slot (recomputed log-probs match the stored values, worst-case MAE 0.33 nats). The plot below is the shift panel with both axes in logit space: x = base marker logit, y = trained − base marker logit.
+
+![Scatter of trained minus base marker logit against the base-model marker logit, colored by held-out persona distance band; the cloud is nearly flat with no strong slope.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f11eefa91aa3876faaedba768bb906e6bf783201/figures/issue_478/base_prior_reanalysis/shift_vs_base_prior_logit.png)
+
+> **Figure.** *Against the base marker logit, the logit shift is nearly flat — the strong log-prob negative does not carry over.* Same 56,000 rows, same bands. Raw Spearman ρ = −0.024 [95% CI −0.173, +0.117], partial ρ (controlling for min_dist + K) = −0.134 [−0.247, −0.015].
+
+The cross-space grid sharpens the parent's headline. Absolute rank preservation is space-robust: the trained value tracks the base value at partial ρ = +0.70 in raw logits, +0.77 in the EOS margin z(※) − z(EOS), and +0.74 in log-prob. The negative shift partial is not: −0.48 in log-prob, −0.42 in the EOS margin, but only −0.13 [−0.25, −0.02] when both axes are logits. Keeping the parent's x-axis (base log P) and swapping only the DV to the logit shift gives −0.39 [−0.52, −0.25], so most of the collapse comes from the x-axis side: base log P = z(※) − log Z carries the per-context normalizer, and that normalizer component does real work in the parent's −0.48.
+
+The same pass surfaced a measurement caveat worth keeping: mean Δlog Z = −2.73 nats (p95 |Δlog Z| = 4.8). Training drops the slot's normalizer, so log-prob shifts run ~2.7 nats above the marker-logit shifts on the same rows (rank agreement between the two stays high, ρ = 0.94). The usual off-saturation shortcut "Δlog Z ≈ 0, so the log-prob shift reads as the marker-direction push" does not hold at these cells, even though they are far from the ceiling.
+
+#### Probability space flips the shift positive — ΔP is just trained P because the base prior is negligible
+
+The probability-space version of the shift panel needs no new measurement (P = exp(log P) of the stored values). Trained marker mass is ~e^9.7 ≈ 17,000× the base prior on the median row, so ΔP = P_trained − P_base is numerically P_trained, and the −base subtraction that drives the log-space negative does nothing here.
+
+![Scatter of trained minus base marker probability against the base-model marker probability; nearly all mass hugs the origin with a positive fan, axes in scientific notation.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f11eefa91aa3876faaedba768bb906e6bf783201/figures/issue_478/base_prior_reanalysis/shift_vs_base_prior_probability.png)
+
+> **Figure.** *In probability space the shift correlation is positive and identical to the absolute panel — the subtraction is invisible at these magnitudes.* Same rows, same bands, same bootstrap. Raw Spearman ρ = +0.704 [+0.610, +0.777], partial ρ (controlling for min_dist + K) = +0.739 [+0.658, +0.807] — matching the absolute-trained partial to three decimals because ΔP ≈ P_trained. The absolute probability panel is rank-identical to the log-prob one by construction (Spearman is invariant under exp), so its numbers are unchanged.
+
+This is the cleanest illustration of the parent's "propensity hides in the subtraction" point: the same shift question gives −0.48, −0.13, or +0.74 depending purely on the representation, while the absolute question gives +0.70 to +0.77 everywhere. Probability space stays a sanity read, not an analysis space — absolute probability change scales with the base prior, so it over-weights high-prior contexts by construction.
+
 ## Reproducibility
 
 **Parameters:**
 
 | field | value |
 |---|---|
-| base model | Qwen-2.5-7B (id `Qwen/Qwen2.5-7B`) |
+| base model | Qwen-2.5-7B-Instruct (id `Qwen/Qwen2.5-7B-Instruct`, per #478's per-cell `result.json` `training.base_model`; an earlier draft of this table said the non-Instruct id — corrected during the logit follow-up, which validated against the stored scores using the Instruct model) |
 | analysis target | task #478 marker run, CORE track only (40 cells, K ∈ {1, 2, 4, 8}) |
 | seeds | 42, 137 (2 per cell) |
 | trained runs | 80 = 40 cells × 2 seeds |
@@ -98,6 +124,9 @@ The prediction going in was that desaturation would flip the shift partial from 
 | per-persona-mean Spearman | not emitted as a separate number; the persona-cluster bootstrap IS the per-persona inference |
 | affine fit (row-level) | trained ≈ 0.62 × base + 1.10; implies shift ≈ −0.38 × base + 1.10 |
 | config | n/a (analysis-only; no Hydra run) |
+| logit re-scoring pass (follow-up) | all 80 CORE runs' stored on-policy responses teacher-forced through trained (base + LoRA adapter, PEFT hot-swap, bf16) and base (adapter disabled), capturing z(※) (id 83399), z(EOS) (`<\|im_end\|>` id 151645), and log Z at the post-response slot; 2× H100, 2 shard workers; adapters from HF `superkaiba1/explore-persona-space` `issue_478/<cell>/adapter` (repo revision recorded per cell JSON) |
+| re-scoring validation | recomputed log P vs stored, per cell × side: worst MAE 0.33 nats, worst Spearman 0.996 (residual = PEFT-runtime vs bf16-merged rounding) |
+| gauge assert | adapter `target_modules` exclude `lm_head`/`embed_tokens`, `modules_to_save` empty — checked per adapter before any logit readout |
 
 **Artifacts:**
 - Analysis script: [scripts/issue531_base_prior_reanalysis.py](https://github.com/superkaiba/explore-persona-space/blob/f9ad999dcd082f48c1305525995ad4bac3cdd21f/scripts/issue531_base_prior_reanalysis.py)
@@ -108,8 +137,14 @@ The prediction going in was that desaturation would flip the shift partial from 
 - Source data (per-cell log-prob arrays): per-cell `result.json` files from task #478's `issue-478` branch at commit [7efb037736831c66cf87aaa79c11237ac9268b83](https://github.com/superkaiba/explore-persona-space/tree/7efb037736831c66cf87aaa79c11237ac9268b83/eval_results/issue_478). Read via `git show <sha>:<path>` from this worktree. The HF data revision pinned in summary.json (`a9fc5a9...`) stores response text but not per-question log-prob arrays — those live in the per-cell `result.json`.
 - min_dist + band assignments: reused byte-for-byte from #478's aggregate `tidy.csv` at the same SHA, not recomputed.
 - Figure `.meta.json` files record `git_commit_at_render = 22d73be7e...` (intermediate worktree state during the render pass). Canonical artifact commit on `issue-531` is `f9ad999dcd082f48c1305525995ad4bac3cdd21f`; the data referenced is identical between the two SHAs.
+- **Logit/probability follow-up** (canonical commit [f11eefa91](https://github.com/superkaiba/explore-persona-space/commit/f11eefa91aa3876faaedba768bb906e6bf783201)):
+  - Re-scoring worker: [scripts/issue531_logit_rescore.py](https://github.com/superkaiba/explore-persona-space/blob/f11eefa91aa3876faaedba768bb906e6bf783201/scripts/issue531_logit_rescore.py) + launcher [scripts/issue531_logit_rescore_launch.sh](https://github.com/superkaiba/explore-persona-space/blob/f11eefa91aa3876faaedba768bb906e6bf783201/scripts/issue531_logit_rescore_launch.sh)
+  - Logit analysis + figures: [scripts/issue531_logit_plots.py](https://github.com/superkaiba/explore-persona-space/blob/f11eefa91aa3876faaedba768bb906e6bf783201/scripts/issue531_logit_plots.py); probability figures: [scripts/issue531_probability_space_plots.py](https://github.com/superkaiba/explore-persona-space/blob/f11eefa91aa3876faaedba768bb906e6bf783201/scripts/issue531_probability_space_plots.py)
+  - Per-cell raw logits (80 JSONs, trained+base z(※)/z(EOS)/log Z/log P/argmax per question): [eval_results/issue_478/logit_rescore/](https://github.com/superkaiba/explore-persona-space/tree/f11eefa91aa3876faaedba768bb906e6bf783201/eval_results/issue_478/logit_rescore)
+  - Merged logit tidy table + stats: [tidy_logit.parquet](https://github.com/superkaiba/explore-persona-space/blob/f11eefa91aa3876faaedba768bb906e6bf783201/eval_results/issue_478/base_prior_reanalysis/tidy_logit.parquet), [summary_logit.json](https://github.com/superkaiba/explore-persona-space/blob/f11eefa91aa3876faaedba768bb906e6bf783201/eval_results/issue_478/base_prior_reanalysis/summary_logit.json), [summary_probability.json](https://github.com/superkaiba/explore-persona-space/blob/f11eefa91aa3876faaedba768bb906e6bf783201/eval_results/issue_478/base_prior_reanalysis/summary_probability.json)
+  - Figures (each + PDF + meta.json): `shift_vs_base_prior_logit`, `absolute_trained_vs_base_prior_logit`, `shift_vs_base_prior_eos_margin`, `shift_vs_base_prior_probability`, `absolute_trained_vs_base_prior_probability` under [figures/issue_478/base_prior_reanalysis/](https://github.com/superkaiba/explore-persona-space/tree/f11eefa91aa3876faaedba768bb906e6bf783201/figures/issue_478/base_prior_reanalysis)
 
-**Compute:** Analysis-only on the local VM. No GPU, no pod. Wall time = 4m55s for the full 80-run production analysis (bulk in the 1000-resample persona-cluster bootstrap × 4 partial-Spearman refits per resample). Smoke run on 2 cells = 42 s.
+**Compute:** Main analysis: local VM only, no GPU, wall time 4m55s (bulk in the 1000-resample persona-cluster bootstrap × 4 partial-Spearman refits per resample); smoke on 2 cells = 42 s. Logit follow-up: 2× H100 ephemeral pod (pod-531), ~20-30 s of scoring per (cell, seed) run, ~25 min of GPU scoring total across the 80 runs (wall time longer due to repeated pod auto-stops by a session watcher, recovered via per-cell checkpointing + resume); local CPU bootstrap for the 12 logit/probability Spearman fits ≈ 13 min.
 
 **Code:** Branch `issue-531`, head commit [f9ad999dcd082f48c1305525995ad4bac3cdd21f](https://github.com/superkaiba/explore-persona-space/commit/f9ad999dcd082f48c1305525995ad4bac3cdd21f). Reproduce:
 
@@ -119,6 +154,11 @@ uv run python scripts/issue531_base_prior_reanalysis.py
 # writes eval_results/issue_478/base_prior_reanalysis/{tidy.parquet, summary.json}
 # writes figures/issue_478/base_prior_reanalysis/{shift, absolute_trained}_vs_base_prior.{png,pdf,meta.json}
 # add --limit-cells 4 for a fast smoke pass, --include-arm to add the 12 decomposition cells
+
+# Logit/probability follow-up (on main at f11eefa91aa3876faaedba768bb906e6bf783201):
+uv run python scripts/issue531_probability_space_plots.py     # free, from tidy.parquet
+bash scripts/issue531_logit_rescore_launch.sh 2 16            # on a 2-GPU pod; per-cell JSONs, idempotent
+uv run python scripts/issue531_logit_plots.py                 # merge + stats + 3 logit figures
 ```
 
 **Scope caveats:**
@@ -127,10 +167,12 @@ uv run python scripts/issue531_base_prior_reanalysis.py
 - 80 trained runs from 40 CORE cells × 2 seeds, out of 92 total cells in #478 — the 12 ARM cells are excluded by design (different marker per source within an arm).
 - The plan asked for partial Spearman on the shift DV only; absolute-trained log-prob wasn't in the plan. The shift result (partial ρ = −0.48) is the primary the plan called out; the absolute-trained partial (+0.74) is a secondary cut added during analysis that turned out to be more informative. Treat the absolute-trained read as the surprise finding, not the confirmed prediction.
 - This analysis does NOT independently distinguish a propensity mechanism (persona-level pre-training preference carried through training) from a fixed compressed-coupling read (training applies a sub-unit affine map to base prior, independent of propensity). Both produce the observed positive absolute-trained partial AND the negative shift partial.
-- Logits / `log Z` not available in #478's per-cell `result.json` (only the resolved log-probabilities are stored), so the logit-space cross-check the marker-leakage rule recommends ("report BOTH log P and logit") isn't deliverable from this data without a #478 re-eval pass.
+- The logit-space cross-check was delivered by the follow-up re-scoring pass (the parent run stored only resolved log-probabilities). The trained side reconstructs the original bf16-merged scoring via PEFT runtime adapter application — equivalent up to bf16 rounding, quantified at worst-case 0.33 nats MAE / 0.996 Spearman per cell against the stored values. The logit conclusions inherit that small reconstruction noise.
+- The −0.13 logit-shift partial vs −0.48 log-prob-shift partial gap is an observation about which representation carries the negative; this analysis does not identify WHY the per-context normalizer component correlates with the shift (mean Δlog Z = −2.73 nats; candidate mechanisms — EOS reallocation under the contrastive negatives, overall logit-scale change under LoRA — are untested here).
 
 **Follow-ups:**
-- One-off forward-pass over a subset of #478's held-out (persona, question) pairs to extract raw logits + `log Z`, then report the logit-space partial alongside log P (cost_class: needs-gpu, headline_affecting: no — would make the saturation-vs-rank-preservation story mechanically airtight rather than statistically inferred, but won't change the partial ρ signs already reported).
+- ~~One-off forward-pass to extract raw logits + `log Z` and report the logit-space partial alongside log P~~ — DONE (the logit/probability findings above; it ran over ALL 80 runs, not a subset, and turned out headline-relevant: the logit-vs-logit shift partial is −0.13, not −0.48).
 - Sensitivity: re-fit the partials with ARM cells included via `--include-arm`, as a robustness supplement (cost_class: free-analysis, headline_affecting: no).
+- Explain the Δlog Z = −2.73 nats normalizer drop: decompose log Z movement at the slot into EOS vs marker vs rest-of-vocab contributions from the stored per-cell logits (cost_class: free-analysis, headline_affecting: no — the per-cell JSONs already carry z(EOS), so the EOS share is computable without new GPU work).
 - Add absolute-trained log-prob as a standard secondary DV in future marker analyses so rank-preservation reads aren't accidentally hidden behind shift's −base term.
 - Disentangle propensity from compressed coupling: design a follow-up where the model's pre-training preference for the marker per-persona is held fixed while training compression is varied (e.g. via LoRA rank or LR sweeps that change the effective affine slope), and test whether the absolute-trained partial tracks the slope change (compressed-coupling prediction) or stays anchored to the base prior (propensity prediction) (cost_class: needs-gpu, headline_affecting: yes).
