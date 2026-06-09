@@ -15,6 +15,8 @@ relates_to:
 - ctx-behavior
 - spec-prompt-vs-icl
 - leak-to-default
+classification: useful
+promoted_at: '2026-06-09T23:16:08Z'
 ---
 # In-context demos at training time gate the trained marker's argmax emission at the demo-free default — dose-dependent, single-seed villain run, with a continuous-vs-argmax tension (MODERATE confidence)
 
