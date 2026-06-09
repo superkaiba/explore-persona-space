@@ -33,13 +33,16 @@ Per tick:
    regardless of `status`. Exit non-zero only on caller-error (bad args,
    library import failure).
 
-Stall threshold: ALL of (a) `last_log_mtime_sec_ago > STALL_SEC`
-(default 900s, taken over BOTH the top-level log and the freshest
-cell log), (b) every per-phase log under
-``/workspace/logs/issue-<N>-*.log`` is also quiet for >STALL_SEC,
+Stall threshold: ALL of (a) `last_log_mtime_sec_ago > stall_sec`
+(default 900s via ``DEFAULT_STALL_SEC``, overridable per-tick via
+``--stall-sec`` CLI or ``EPM_POLL_STALL_SEC`` env var for workloads
+with sparse log cadence, e.g. checkpoint-only logging at >15min
+intervals; taken over BOTH the top-level log and the freshest cell
+log), (b) every per-phase log under
+``/workspace/logs/issue-<N>-*.log`` is also quiet for >stall_sec,
 (c) every shard / repo-rooted phase log under
 ``/workspace/explore-persona-space/logs/issue_<N>{,_*}/*.log`` is
-also quiet for >STALL_SEC, and (d) the GPUs are idle. Only when all
+also quiet for >stall_sec, and (d) the GPUs are idle. Only when all
 four signals agree does the poll declare `stalled`; any fresh log
 OR a busy GPU keeps the run in `running`.
 
@@ -125,6 +128,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import re
 import subprocess
 import sys
@@ -149,7 +153,17 @@ from explore_persona_space.task_workflow import (  # noqa: E402
 
 log = logging.getLogger("poll_pipeline")
 
-STALL_SEC = 900
+# Default seconds of log-mtime silence before declaring the run stalled.
+# Workloads with sparse log cadence (e.g. checkpoint-only logging at >15min
+# intervals — task #522 builds a 16x16 JS-distance matrix that logs only
+# every ~106min per partial-cache checkpoint) override this at the CLI via
+# ``--stall-sec`` or env via ``EPM_POLL_STALL_SEC`` so the poller does not
+# false-positive ``stalled`` during normal inter-checkpoint quiet windows.
+# ``STALL_SEC`` is preserved as a module-level alias of the default so
+# existing tests that read ``pp.STALL_SEC`` as a reference threshold keep
+# working without modification.
+DEFAULT_STALL_SEC = 900
+STALL_SEC = DEFAULT_STALL_SEC
 # Substring of the ValueError message raised by ``task_workflow.post_event``
 # when ``note`` exceeds ``EVENT_NOTE_MAX``. Matched against ``str(exc)`` so
 # we route exactly that failure to graceful-degradation (persist + pointer
@@ -913,6 +927,7 @@ def poll_once(
     log_path: str,
     pid_file: str,
     state_file: Path,
+    stall_sec: int = DEFAULT_STALL_SEC,
 ) -> PollResult:
     # Drain pod-side sentinels FIRST — posting any pending markers from the
     # VM. A user-gate sentinel (e.g. epm:fact-candidates) takes precedence
@@ -985,9 +1000,9 @@ def poll_once(
     elif not pid_alive:
         status = "dead"
     elif (
-        last_mtime_ago > STALL_SEC
-        and phase_log_mtime_ago > STALL_SEC
-        and shard_log_mtime_ago > STALL_SEC
+        last_mtime_ago > stall_sec
+        and phase_log_mtime_ago > stall_sec
+        and shard_log_mtime_ago > stall_sec
         and gpu_idle
     ):
         status = "stalled"
@@ -1054,6 +1069,18 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Local cache JSON (default: .claude/cache/poll-pipeline-<N>.json).",
     )
+    parser.add_argument(
+        "--stall-sec",
+        type=int,
+        default=int(os.environ.get("EPM_POLL_STALL_SEC", DEFAULT_STALL_SEC)),
+        help=(
+            "Seconds of log-mtime silence before declaring the run stalled "
+            f"(default {DEFAULT_STALL_SEC}). Raise for workloads with sparse "
+            "log cadence (e.g. checkpoint-cadence-only logging at >15min "
+            "intervals). Falls back to the EPM_POLL_STALL_SEC env var when "
+            "the flag is not set."
+        ),
+    )
     parser.add_argument("--debug", action="store_true", help="Log to stderr at DEBUG level.")
     args = parser.parse_args(argv)
 
@@ -1071,6 +1098,7 @@ def main(argv: list[str] | None = None) -> int:
         log_path=args.log,
         pid_file=args.pid_file,
         state_file=state_file,
+        stall_sec=args.stall_sec,
     )
 
     print(
