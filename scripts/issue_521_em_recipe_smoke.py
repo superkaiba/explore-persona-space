@@ -4,7 +4,7 @@
 Reads the ``run_result.json`` emitted by ``scripts/train.py`` after a
 2-step no-upload smoke train on
 ``condition=issue404_pair_turner_bad_medical training=turner_em
-lora=turner_em``, then asserts the 14 recipe values the plan v2 §3.6.1
+lora=turner_em``, then asserts the 16 recipe values the plan v2 §3.6.1
 spec calls out.
 
 Fallback key paths tried in order (plan §3.6.1 + §12 #23):

@@ -44,6 +44,10 @@ mkdir -p "$HF_HOME"
 # and SUBFOLDER were not, _maybe_persist_adapter raises "set both or
 # neither" and the pipeline dies before production. Keeping the pair
 # scoped to the per-cell subshell guarantees the smoke runs clean.
+# Reconciler hardening (round-2 PASS rec #1): also drop any INHERITED
+# values from the caller's environment so a stale operator shell can't
+# reproduce the crash.
+unset EPM_PERSIST_ADAPTER_HF_REPO EPM_PERSIST_ADAPTER_SUBFOLDER
 #
 # Skip the wasteful 15GB merged-checkpoint WandB Artifact upload entirely
 # (regenerable from base + adapter; per .claude/rules/upload-policy.md).
