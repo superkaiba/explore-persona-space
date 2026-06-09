@@ -1745,8 +1745,8 @@
     "370": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/370",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/370",
+      "status": "completed",
       "title": "`depuis qui est` fires 83% French switching, 49 percentage points above #351's strongest neighbor (MODERATE confidence)"
     },
     "371": {
