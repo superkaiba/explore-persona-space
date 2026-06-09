@@ -34,7 +34,7 @@ except Exception:
 REG = REPO / "eval_results/issue_502/bakeoff/regression/loc_ep1.json"
 GMAT = REPO / "eval_results/issue_474/cross_eval/loc_ep1/G_logprob_matrix.json"
 DMAT = REPO / "eval_results/issue_406/divergence/D_matrix.json"
-OUT = REPO / "figures/issue_502/best4_gausskl_cosine_js_loc_ep1.png"
+OUT = REPO / "figures/issue_502/best_gausskl_cosine_fullrespjs_rho_loc_ep1.png"
 
 EXTRACTION_LABEL = {
     "end_of_system": "end-of-system",
@@ -84,10 +84,9 @@ def main():
     dmat = json.loads(DMAT.read_text())
     ln_lookup = dmat["prompt_tokens"]
 
-    # best activation cells + next-token JS (all from the #502 bakeoff, same rig)
+    # best activation cells (from the #502 bakeoff)
     gk = best_cell(entries, "gauss_kl")
     cos = best_cell(entries, "cosine")
-    ntjs = best_cell(entries, "next_token_js")
 
     # full-response sequence-level JS (#406 D_matrix, different rig) scored identically
     fr_rho, fr_cv = score_matrix(dmat["JS"], G, cond_ids, ln_lookup)
@@ -105,13 +104,7 @@ def main():
             cos["cv_full_deltag"],
             False,
         ),
-        (
-            "next-token JS\n(output, single position)",
-            abs(ntjs["rho_full_deltag"]),
-            ntjs["cv_full_deltag"],
-            True,
-        ),
-        ("full-response JS\n(output, sequence-level*)", abs(fr_rho), fr_cv, True),
+        ("full-response JS\n(output, sequence-level)", abs(fr_rho), fr_cv, True),
     ]
 
     # ---- bonus: directional full-response KL vs ΔG and vs ΔG_anti ----
@@ -138,47 +131,34 @@ def main():
         f"  KL(A‖B) vs ΔG_anti:   rho={kl_ab_anti_rho:+.3f}   (full-response JS vs ΔG_anti: {js_anti_rho:+.3f})"
     )
 
-    # ---- chart ----
+    # ---- chart: |rho| only ----
     x = np.arange(len(bars))
-    w = 0.36
-    fig, ax = plt.subplots(figsize=(11, 6.2))
     rho_vals = [b[1] for b in bars]
-    cv_vals = [b[2] for b in bars]
-    colors_rho = ["#1f4e79" if not b[3] else "#5b8db8" for b in bars]
-    colors_cv = ["#e08214" if not b[3] else "#f0b878" for b in bars]
-    b1 = ax.bar(x - w / 2, rho_vals, width=w, color=colors_rho, label="|Spearman ρ|", zorder=3)
-    b2 = ax.bar(x + w / 2, cv_vals, width=w, color=colors_cv, label="CV R²", zorder=3)
-    # hatch the output-distribution bars
-    for rects, b in [(b1, bars), (b2, bars)]:
-        for rect, info in zip(rects, b):
-            if info[3]:
-                rect.set_hatch("//")
-    for rect, v in list(zip(b1, rho_vals)) + list(zip(b2, cv_vals)):
+    colors = ["#1f4e79" if not b[3] else "#5b8db8" for b in bars]
+    fig, ax = plt.subplots(figsize=(8.5, 6))
+    rects = ax.bar(x, rho_vals, width=0.6, color=colors, zorder=3)
+    for rect, info in zip(rects, bars):
+        if info[3]:
+            rect.set_hatch("//")
+    for rect, v in zip(rects, rho_vals):
         ax.text(
             rect.get_x() + rect.get_width() / 2,
             v + 0.01,
             f"{v:.2f}",
             ha="center",
             va="bottom",
-            fontsize=10,
+            fontsize=12,
             fontweight="bold",
         )
 
     ax.set_xticks(x)
-    ax.set_xticklabels([b[0] for b in bars], fontsize=9.5)
-    ax.set_ylabel("predictor strength vs ΔG marker leakage", fontsize=11)
+    ax.set_xticklabels([b[0] for b in bars], fontsize=10.5)
+    ax.set_ylabel("|length-partial Spearman ρ| vs ΔG marker leakage", fontsize=11)
     ax.set_ylim(0, 0.92)
-    ax.legend(fontsize=10, framealpha=0.95, loc="upper right")
     ax.grid(axis="y", alpha=0.25, zorder=0)
 
     fig.suptitle(
         "#502 — best predictor per metric family vs marker leakage", fontsize=14, fontweight="bold"
-    )
-    ax.set_title(
-        "loc-arm epoch 1, full 240-pair panel, scored identically (length-partial Spearman + LOOCV).  "
-        "Solid = activation metrics; hatched = output-distribution JS.\n"
-        "*full-response JS is from #406's rig (50 probes, sequence-level estimator), not the #502 bake-off.",
-        fontsize=9,
     )
     fig.savefig(OUT, dpi=150, bbox_inches="tight")
     print(f"\nwrote {OUT}")
