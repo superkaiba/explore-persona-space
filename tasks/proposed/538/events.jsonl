@@ -1,1 +1,2 @@
 {"ts": "2026-06-09T19:44:11Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-09T19:46:08Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #538 to open question(s) leak-single-vs-multi, leak-predictor, leak-from-cell-set; created_new=none; mode=auto-match (inherited from parent #527, same additivity pillar)."}
