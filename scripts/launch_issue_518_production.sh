@@ -94,6 +94,50 @@ run() {
     "$@"
 }
 
+# ── D. Pre-stage check: syco arm inheritance ────────────────────────────────
+# Phases I (substrate_syco) and J (scoring_syco) read from
+# ``eval_results/issue_509/syco_arm/runs/`` and
+# ``eval_results/issue_509/syco_arm/bakeoff/metrics/`` — these are PRE-STAGED
+# from a prior #509 run (plan §3 / §10: "the existing #509 syco bake-off"
+# is reused, optionally re-run on BASE per the model-id consistency gate).
+# They are NOT produced by this launcher; fail-LOUD early if they're missing
+# so the failure surfaces here (with a clean fix instruction) rather than
+# 6+ hours into the pipeline at substrate_syco.
+phase prestage_check_syco "verify pre-staged syco arm inputs"
+SYCO_RUNS_DIR="$REPO_ROOT/eval_results/issue_509/syco_arm/runs"
+SYCO_BAKEOFF_METRICS="$REPO_ROOT/eval_results/issue_509/syco_arm/bakeoff/metrics"
+if [[ ! -d "$SYCO_RUNS_DIR" ]] || [[ -z "$(ls -A "$SYCO_RUNS_DIR" 2>/dev/null)" ]]; then
+    echo "[FATAL] Pre-staged syco runs dir missing or empty: $SYCO_RUNS_DIR" >&2
+    echo "        Phase substrate_syco (line ~190) reads this. Pull the #509" >&2
+    echo "        syco_arm/runs/ directory onto the pod before relaunching" >&2
+    echo "        (e.g. pod.py sync results --all from a #509 pod, or a" >&2
+    echo "        per-pod HF download of the #509 cells)." >&2
+    exit 1
+fi
+if [[ ! -d "$SYCO_BAKEOFF_METRICS" ]] || [[ -z "$(ls -A "$SYCO_BAKEOFF_METRICS" 2>/dev/null)" ]]; then
+    echo "[FATAL] Pre-staged syco bakeoff metrics dir missing or empty: $SYCO_BAKEOFF_METRICS" >&2
+    echo "        Phase scoring_syco (line ~225) reads this. Pull the #509" >&2
+    echo "        syco_arm/bakeoff/metrics/ directory onto the pod, OR re-run" >&2
+    echo "        the syco bake-off on BASE per plan §3 / §10 model-id gate." >&2
+    exit 1
+fi
+echo "[ok] pre-staged syco runs: $(ls -1 "$SYCO_RUNS_DIR" 2>/dev/null | wc -l) cell dirs; bakeoff metrics: $(ls -1 "$SYCO_BAKEOFF_METRICS" 2>/dev/null | wc -l) files"
+
+# ── D.5 Refusal probe-pool generation (must run before refusal_train_eval) ──
+# ``scripts/run_experiment_518_refusal.py`` requires both
+# ``data/issue_518/refusal_200_training.jsonl`` (200 training rows) and
+# ``data/issue_518/refusal_50.jsonl`` (50 eval probes). The canonical
+# producer is ``scripts/generate_refusal_50.py`` (Sonnet 4.5 Batch API,
+# ~$5-12, ANTHROPIC_API_KEY loaded from .env above). Idempotent via
+# ``--keep-existing``: if all three output files (pool / train / eval)
+# already exist on disk, the generator is a no-op and the phase exits in
+# <1s. The fail-loud upstream check that bit us at round-9 launch
+# (``run_experiment_518_refusal.py:669-672``) catches a missing file with
+# a clear "Run scripts/generate_refusal_50.py first" message, but the
+# launcher is the right place to wire it.
+phase gen_refusal_data "generate_refusal_50.py --keep-existing"
+run uv run python scripts/generate_refusal_50.py --keep-existing
+
 # ── E. Per-arm train + eval (refusal, EM) ──────────────────────────────────
 phase refusal_train_eval "run_experiment_518_refusal.py"
 run uv run python scripts/run_experiment_518_refusal.py
