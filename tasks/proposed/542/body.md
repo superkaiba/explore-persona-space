@@ -9,9 +9,11 @@ parent_id: 537
 goal: 'Holding the #537 marker protocol fixed (16 train contexts, band-stopped recipe,
   frozen 28-context eval panel + scoring harness), vary ONLY the contrastive-negative
   panel composition (cross-family control [reuse parent adapters] vs close-persona
-  vs default-including house panel vs optional 8-count) and measure whether negative-set
-  composition changes the leakage gradient G[marker, i->j] and its predictability
-  by the registered metric ladder (open-q 3.4a).'
+  vs default-including house panel vs a required row-matched count sweep {2,4,8,16}
+  at fixed total negative rows) and measure whether negative-set composition changes
+  the leakage gradient G[marker, i->j] and its predictability by the registered metric
+  ladder (open-q 3.4a), and whether negative-persona count moves leakage at fixed
+  row-mass — the pure-count question #477 left open.'
 ---
 ## Goal
 
