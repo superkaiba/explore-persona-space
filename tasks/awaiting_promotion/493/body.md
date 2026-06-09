@@ -6,6 +6,8 @@ tags: []
 created_at: '2026-06-05T09:49:22Z'
 has_clean_result: true
 parent_id: 474
+classification: useful
+promoted_at: '2026-06-09T21:43:03Z'
 ---
 # A 320-predictor bake-off finds competing metrics converge within ~0.02 CV R²; no robust win over last-token cosine (LOW confidence)
 
