@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import subprocess
 from contextlib import redirect_stdout
 from dataclasses import dataclass
@@ -267,12 +268,23 @@ def test_run_live_lane_router_terminal_short_circuits() -> None:
 
 
 def test_run_live_lane_poll_timeout_raises() -> None:
-    """A poll loop that never terminates raises RouterAcceptanceError."""
+    """A poll loop that never terminates raises RouterAcceptanceError
+    AND -- critically -- runs cleanup teardown BEFORE re-raising. The
+    live VM / SLURM job is UP after launch; without cleanup-teardown
+    the harness exit on the raise leaks the live job and bills credit
+    until something else reaps it. This is the GCP-credit-leak guard
+    the round-1 always-teardown fix missed: the FINALIZE happy path
+    got the unconditional teardown but the poll-timeout RAISE path
+    still bailed without cleanup.
+    """
     plan = ra.build_live_command_plan(issue=402, backend="nibi", repo_root=Path("/repo"))
-    fake_run, _rec = _make_fake_subprocess_run(
+    fake_run, rec = _make_fake_subprocess_run(
         launch_stdout=json.dumps({"ok": True}),
         poll_stdouts=[json.dumps({"status": "running"})] * 100,
-        finalize_stdout="",
+        # The cleanup-teardown invocation in the except branch lands
+        # here -- it MUST run before the raise propagates.
+        finalize_stdout=json.dumps({"ok": True, "phase": "teardown"}),
+        finalize_rc=0,
     )
     # Now starts at 0 then jumps past the timeout on the next call.
     times = iter([0.0, 0.0, 100.0])
@@ -287,13 +299,33 @@ def test_run_live_lane_poll_timeout_raises() -> None:
             sleep_fn=lambda _s: None,
             now_fn=lambda: next(times),
         )
+    # Regression assertion: cleanup teardown ran. A ``finalize`` call
+    # MUST appear in the recorded argv list (the except branch shells
+    # out to ``plan.finalize_argv``), and it MUST carry
+    # ``--skip-confirm-artifacts`` so it actually tears down the VM
+    # rather than getting blocked at the confirm-artifacts gate.
+    finalize_calls = [a for a in rec.argv_list if "finalize" in a]
+    assert finalize_calls, (
+        "poll-timeout raise did NOT run cleanup teardown -- live VM/job leaked "
+        "(GCP credit leak). The except branch in run_live_lane must shell out "
+        "to plan.finalize_argv before re-raising."
+    )
+    assert "--skip-confirm-artifacts" in finalize_calls[0], (
+        f"cleanup finalize argv missing --skip-confirm-artifacts (would block "
+        f"on confirm_artifacts and skip teardown): {finalize_calls[0]!r}"
+    )
 
 
 def test_run_live_lane_launch_crash_raises() -> None:
     """A non-zero exit code that isn't a router terminal (rc=2) is a
-    real crash -- harness fails loud rather than silently passing."""
+    real crash -- harness fails loud rather than silently passing.
+
+    A LAUNCH crash means the workload never actually started (no live
+    VM/job exists), so cleanup teardown is NOT needed AND not run --
+    the early-return-on-launch-terminal stays outside the try/finally.
+    """
     plan = ra.build_live_command_plan(issue=403, backend="nibi", repo_root=Path("/repo"))
-    fake_run, _rec = _make_fake_subprocess_run(
+    fake_run, rec = _make_fake_subprocess_run(
         launch_stdout="",
         launch_rc=137,  # killed by signal
         poll_stdouts=[],
@@ -308,6 +340,56 @@ def test_run_live_lane_launch_crash_raises() -> None:
             sleep_fn=lambda _s: None,
             now_fn=lambda: 0.0,
         )
+    # Defensive: launch crashed BEFORE producing a live job, so the
+    # except branch must NOT shell out to finalize (no sidecar exists;
+    # the cleanup call would itself crash and mask the launch error).
+    finalize_calls = [a for a in rec.argv_list if "finalize" in a]
+    assert not finalize_calls, (
+        f"launch-crash path ran cleanup finalize ({finalize_calls!r}) -- "
+        f"there is no live job to tear down; this would mask the launch error."
+    )
+
+
+def test_run_live_lane_poll_crash_runs_cleanup_teardown() -> None:
+    """A poll-subprocess crash (``backend_poll.py`` rc!=0) raises AND
+    runs cleanup teardown BEFORE the exception propagates.
+
+    Sibling of the poll-timeout regression test: same leak class. The
+    LAUNCH succeeded, so a live VM / SLURM job is UP when the poll
+    loop dies -- a bare raise here (the pre-fix behavior) exits the
+    harness with the job still billing.
+    """
+    plan = ra.build_live_command_plan(issue=404, backend="nibi", repo_root=Path("/repo"))
+    fake_run, rec = _make_fake_subprocess_run(
+        launch_stdout=json.dumps({"ok": True}),
+        poll_stdouts=[json.dumps({"status": "running"}), ""],
+        poll_rcs=[0, 1],  # second poll tick crashes
+        finalize_stdout=json.dumps({"ok": True, "phase": "teardown"}),
+        finalize_rc=0,
+    )
+    with pytest.raises(ra.RouterAcceptanceError, match=r"backend_poll\.py exited with rc=1"):
+        ra.run_live_lane(
+            plan,
+            backend="nibi",
+            issue=404,
+            poll_interval_seconds=0.0,
+            subprocess_run=fake_run,
+            sleep_fn=lambda _s: None,
+            now_fn=lambda: 0.0,
+        )
+    # Regression assertion: cleanup teardown ran, carrying
+    # --skip-confirm-artifacts (the always-teardown contract), before
+    # the RouterAcceptanceError propagated.
+    finalize_calls = [a for a in rec.argv_list if "finalize" in a]
+    assert finalize_calls, (
+        "poll-crash raise did NOT run cleanup teardown -- live VM/job leaked "
+        "(GCP credit leak). The except branch in run_live_lane must shell out "
+        "to plan.finalize_argv before re-raising."
+    )
+    assert "--skip-confirm-artifacts" in finalize_calls[0], (
+        f"cleanup finalize argv missing --skip-confirm-artifacts (would block "
+        f"on confirm_artifacts and skip teardown): {finalize_calls[0]!r}"
+    )
 
 
 def test_parse_last_json_line_picks_last_blob() -> None:
@@ -687,12 +769,15 @@ def test_negative_cancel_race_keeps_running_job() -> None:
 
 def test_negative_duplicate_cron_tick_is_idempotent_at_cli_level() -> None:
     """Two finalize ticks for the same handle both return rc=0; the
-    backend's teardown is called twice but absorbs the duplicate."""
+    backend absorbs the duplicate teardown."""
     outcome = ra.negative_duplicate_cron_tick()
     assert outcome["rc_codes"] == [0, 0]
-    # Both teardown invocations recorded -- the CLI does NOT de-dup;
-    # the backend's ABC contract absorbs.
-    assert outcome["teardown_count"] == 2
+    # Mirror the harness-level assertion in _cmd_negative
+    # (``teardown_count in (1, 2)``): today the CLI does NOT de-dup
+    # (count=2, the backend ABC contract absorbs), but a future
+    # CLI-level idempotency landing at count=1 would ALSO be correct
+    # and must not read as a regression here.
+    assert outcome["teardown_count"] in (1, 2)
     # Both bodies are well-formed teardown responses.
     for body in outcome["bodies"]:
         assert body.get("ok") is True
@@ -973,3 +1058,109 @@ def test_cli_verify_lane_runs_and_exits_per_verdict(monkeypatch, tmp_path: Path)
     assert rc == 0
     out = buf.getvalue()
     assert "LANE nibi: PASS" in out
+
+
+# ---------------------------------------------------------------------------
+# _cmd_live live path -- resolved-lane threading + env scoping
+# ---------------------------------------------------------------------------
+
+
+def _stub_cmd_live_rig(monkeypatch, tmp_path: Path, *, chosen_kind: str) -> dict[str, Any]:
+    """Stub the heavy seams of ``_cmd_live`` for in-process CLI tests.
+
+    Seeds the smoke dataset, chdirs into ``tmp_path``, and replaces
+    ``run_live_lane`` / ``generate_acceptance_figure`` /
+    ``evaluate_pass_checklist`` with recorders (no subprocesses, no
+    matplotlib, no git). Returns the recorder dict the fakes fill in.
+    """
+    (tmp_path / "data" / "sft").mkdir(parents=True)
+    (tmp_path / "data" / "sft" / "router_smoke_sft.jsonl").write_text('{"messages": []}\n')
+    monkeypatch.chdir(tmp_path)
+    rec: dict[str, Any] = {}
+
+    def _fake_run_live_lane(
+        plan: Any, *, backend: str, issue: int, launch_env: dict[str, str] | None = None, **_kw: Any
+    ) -> dict[str, Any]:
+        rec["launch_env"] = launch_env
+        return {
+            "phase": "complete",
+            "launch_body": {
+                "ok": True,
+                "chosen_kind": chosen_kind,
+                "pod_name": f"eps-issue-{issue}-cafe",
+            },
+            "poll_history": [{"status": "done"}],
+            "finalize_body": {"ok": True, "phase": "teardown"},
+        }
+
+    def _fake_generate_acceptance_figure(
+        *,
+        issue: int,
+        lane: str,
+        elapsed_seconds: float,
+        chosen_kind: str,
+        repo_root: Path,
+        git_add: Any = None,
+    ) -> Path:
+        rec["figure_lane"] = lane
+        return repo_root / ra.ACCEPTANCE_FIGURE_PATH.format(issue=issue, lane=lane)
+
+    def _fake_evaluate_pass_checklist(
+        *, issue: int, lane: str, expected_lane: str, **_kw: Any
+    ) -> ra.LaneVerdict:
+        rec["checklist_lane"] = lane
+        rec["checklist_expected_lane"] = expected_lane
+        return ra.LaneVerdict(lane=lane, checks=())
+
+    monkeypatch.setattr(ra, "run_live_lane", _fake_run_live_lane)
+    monkeypatch.setattr(ra, "generate_acceptance_figure", _fake_generate_acceptance_figure)
+    monkeypatch.setattr(ra, "evaluate_pass_checklist", _fake_evaluate_pass_checklist)
+    return rec
+
+
+def test_cmd_live_figure_uses_resolved_lane_on_auto(monkeypatch, tmp_path: Path) -> None:
+    """On ``--backend auto`` the figure write AND the check-(b) probe
+    must BOTH use the RESOLVED lane (``chosen_kind`` from the launch
+    body), never the literal ``auto``.
+
+    Pre-fix, ``_cmd_live`` wrote ``router_acceptance_auto.png`` while
+    ``evaluate_pass_checklist`` grepped
+    ``router_acceptance_gcp.png`` -> check (b) FALSE-FAILed every
+    successful auto->gcp/mila run.
+    """
+    rec = _stub_cmd_live_rig(monkeypatch, tmp_path, chosen_kind="gcp")
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = ra.main(["live", "--issue", "920", "--backend", "auto", "--live"])
+    assert rc == 0
+    assert rec["figure_lane"] == "gcp", (
+        f"figure written for lane {rec['figure_lane']!r}, expected the resolved "
+        f"lane 'gcp' -- check (b) greps router_acceptance_gcp.png"
+    )
+    assert rec["checklist_lane"] == "gcp"
+    assert rec["checklist_expected_lane"] == "gcp"
+
+
+def test_cmd_live_scopes_persist_env_to_launch_subprocess(monkeypatch, tmp_path: Path) -> None:
+    """The adapter-persist vars reach the launch subprocess via
+    ``launch_env`` WITHOUT mutating the parent process's
+    ``os.environ``.
+
+    The test suite calls ``main([...])`` in-process, so a global
+    ``os.environ`` mutation (the pre-fix behavior) leaks the per-lane
+    subfolder across callers.
+    """
+    monkeypatch.delenv("EPM_PERSIST_ADAPTER_HF_REPO", raising=False)
+    monkeypatch.delenv("EPM_PERSIST_ADAPTER_SUBFOLDER", raising=False)
+    rec = _stub_cmd_live_rig(monkeypatch, tmp_path, chosen_kind="nibi")
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = ra.main(["live", "--issue", "921", "--backend", "nibi", "--live"])
+    assert rc == 0
+    env = rec["launch_env"]
+    assert env is not None, "run_live_lane was not passed a launch_env"
+    assert env["EPM_PERSIST_ADAPTER_HF_REPO"] == "superkaiba1/explore-persona-space"
+    assert env["EPM_PERSIST_ADAPTER_SUBFOLDER"] == "router_acceptance/issue-921-nibi"
+    # The parent process env stays untouched -- no cross-caller leak.
+    assert "EPM_PERSIST_ADAPTER_HF_REPO" not in os.environ
+    assert "EPM_PERSIST_ADAPTER_SUBFOLDER" not in os.environ
