@@ -5,6 +5,8 @@ kind: analysis
 tags: []
 created_at: '2026-05-26T20:28:02Z'
 has_clean_result: true
+classification: useful
+promoted_at: '2026-06-09T21:34:34Z'
 ---
 # `※` is a single rare token (id 83399) while the `ϟ` candidate is two tokens, making `※` the clean choice for a single-forward-pass log-prob marker (HIGH confidence)
 
