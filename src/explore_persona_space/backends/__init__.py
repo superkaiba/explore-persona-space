@@ -32,16 +32,34 @@ from explore_persona_space.backends.selector import (
     BackendSelectionError,
     select_backend,
 )
+from explore_persona_space.backends.slurm import (
+    CLUSTER_CONFIGS,
+    ClusterConfig,
+    SbatchPlan,
+    SlurmBackend,
+    Stage,
+    get_cluster_config,
+    render_sbatch,
+    stages_for_spec,
+)
 
 __all__ = [
+    "CLUSTER_CONFIGS",
     "SLURM_NOT_IMPLEMENTED_MESSAGE",
     "BackendDecision",
     "BackendKind",
     "BackendSelectionError",
+    "ClusterConfig",
     "ComputeBackend",
     "PollResult",
     "RunHandle",
     "RunPodBackend",
     "RunSpec",
+    "SbatchPlan",
+    "SlurmBackend",
+    "Stage",
+    "get_cluster_config",
+    "render_sbatch",
     "select_backend",
+    "stages_for_spec",
 ]

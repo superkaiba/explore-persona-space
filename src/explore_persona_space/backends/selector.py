@@ -186,16 +186,20 @@ def _build_runpod_backend() -> RunPodBackend:
 def _build_slurm_backend() -> ComputeBackend:
     """Factory for the SLURM backend.
 
-    Slice 1: returns a stub backend whose ``launch`` raises
-    :class:`NotImplementedError` with the :data:`SLURM_NOT_IMPLEMENTED_MESSAGE`
-    sentinel. Slice 2 replaces this with the real ``SlurmBackend`` from
-    ``backends.slurm``.
-
-    Kept as a function so tests can monkeypatch a fake backend in and
-    exercise the selector's fall-back logic without importing the SLURM
-    module (which doesn't exist yet).
+    Slice 2 (this revision): returns the real
+    :class:`~explore_persona_space.backends.slurm.SlurmBackend`. The
+    selector's fall-back logic does NOT change between slices — when
+    the real backend raises (auth error, scancel-on-park, etc.) the
+    same fall-back paths fire. The slice-1 stub (``_SlurmStubBackend``)
+    is preserved below so existing tests can still exercise the
+    NotImplemented fall-back path by passing ``slurm_backend=_SlurmStubBackend()``
+    explicitly.
     """
-    return _SlurmStubBackend()
+    # Lazy import: the slurm module pulls in subprocess/ssh helpers that
+    # we don't want to drag in for the RunPod-only common case.
+    from explore_persona_space.backends.slurm import SlurmBackend
+
+    return SlurmBackend()
 
 
 class _SlurmStubBackend(ComputeBackend):

@@ -1850,6 +1850,43 @@ HEAD-checks each against the Hub / WandB API using the user's
 
 #### Step 6b: Pod provisioning
 
+**Backend dispatch (RunPod default, cluster opt-in).**
+Read the task's `backend:` frontmatter via
+`uv run python scripts/task.py view <N> --json | jq -r '.frontmatter.backend // empty'`.
+The default (empty / `runpod`) routes through the existing pod-provisioning
+path described below with ZERO new branches taken — every line through to
+Step 8 is exactly what already runs in production. An explicit
+`backend: cluster` (or `nibi`/`fir`) routes through
+`explore_persona_space.backends.selector.select_backend`, which:
+
+1. Builds a `RunSpec` from the plan's intent + Hydra args.
+2. Submits the sbatch via the robot SSH alias (returns a numeric job id).
+3. Waits PENDING → RUNNING in a submit-and-park loop (max-wait default 6h,
+   configurable via `EPM_CLUSTER_MAX_WAIT_SECONDS`); on max-wait exceeded
+   OR a hard submit/auth failure → `scancel` + RunPod fallback.
+4. Posts `epm:backend-selected v1` (which path was picked + why) and, on
+   the happy cluster path, `epm:cluster-launched v1`
+   (job_id / scratch_dir / log_path / job_name); the RunPod fallback
+   posts `epm:backend-selected v1` followed by the existing
+   `epm:pod-provisioned` / `epm:run-launched` markers verbatim.
+
+Autonomous sessions (`EPM_AUTONOMOUS_SESSION=1`) decide the cluster
+fallback silently per the existing autonomous-mode rules (no user prompt).
+The cluster path is then monitored at Step 6d.2 via
+`backends.slurm_monitor.build_poll_result` (instead of
+`scripts/poll_pipeline.py`); Step 8 rsyncs `eval_results/` + `figures/`
+back via `SlurmBackend.fetch_results` instead of `pod.py sync results`,
+runs the existing upload-verifier verbatim, then no-op terminates (the
+sbatch already exited; there is no pod to kill, only optional scratch
+cleanup). See `.claude/plans/2026-06-08_001932-slurm-cluster-backend-for-issue.md`
+for the full design.
+
+The remainder of this section describes the RunPod path. The cluster
+path's sbatch carries an EQUIVALENT inline preflight stanza (HF/WandB
+reachability, GPU visibility, `$SLURM_TMPDIR` headroom) so a misconfigured
+job fails fast inside the SLURM allocation and the selector's
+hard-failure branch routes the next attempt to RunPod.
+
 Pods are ephemeral — there is no permanent fleet.
 
 Pick the path based on whether this task has a parent (read

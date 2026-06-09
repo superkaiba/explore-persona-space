@@ -1537,6 +1537,72 @@ markers:
     posted_by: skill
     when: "Step 7 (failure_class=infra path)"
     fields: "Records re-spawn on the same branch without an implementer round. v<n> per respawn; cap 3."
+  - kind: "epm:backend-selected"
+    posted_by: skill (via backends.selector.select_backend)
+    when: "Step 6b (after backend selection, before any launch attempt)"
+    fields: |
+      Records WHICH compute backend the selector picked and WHY for this
+      task's `/issue` run. Body shape:
+        `requested_kind: <runpod|cluster|nibi|fir>
+         chosen_kind:    <runpod|cluster|nibi|fir>
+         reason:         <frontmatter_default|frontmatter_explicit|
+                          slurm_not_implemented|slurm_max_wait_exceeded|
+                          slurm_hard_failure|slurm_started|...>
+         cluster:        <nibi|fir|null>
+         elapsed_seconds: <float>
+         extra: {...}`
+      `requested_kind == chosen_kind` for the happy SLURM path. The two
+      differ when the selector fell back to RunPod (the `reason` field
+      carries the trigger). v1.
+  - kind: "epm:cluster-launched"
+    posted_by: skill (via backends.slurm.SlurmBackend.launch)
+    when: "Step 6b (after sbatch submit succeeds, BEFORE the submit-and-park watchdog runs)"
+    fields: |
+      SLURM-side launch handle. Body shape:
+        `cluster:     <nibi|fir>
+         job_id:      <numeric>
+         job_name:    <eps-issue-<N>[-<plan_hash>]>
+         scratch_dir: <$SCRATCH/eps/issue-<N>>
+         log_path:    <$SCRATCH/eps/issue-<N>/job.out>
+         account:     <rrg-bengioy-ad_gpu>
+         gpus:        <N>
+         time_budget_hours: <H>`
+      Posted INSTEAD of `epm:run-launched` on the cluster path; the
+      RunPod path's `epm:run-launched` schema is unchanged. v1.
+  - kind: "epm:cluster-poll"
+    posted_by: skill (via backends.slurm_monitor.build_poll_result)
+    when: "every Step 6d.2 polling-loop tick on the cluster path (orchestrator re-invocation)"
+    fields: |
+      One-tick PollResult snapshot for a cluster job. Body shape mirrors
+      the RunPod `poll_pipeline.py` JSON the orchestrator already
+      consumes:
+        `status: <running|done|stalled|dead|gate>
+         current_phase: <preflight|cpt|sft|dpo|em|eval|done|...>
+         heartbeat_sec_ago: <int>
+         log_tail_excerpt: <last ~2KB>
+         gpu_util: <busy|idle>
+         job_id: <numeric>
+         slurm_state: <PENDING|RUNNING|COMPLETED|FAILED|...>`
+      Posted once per significant transition (new phase, stall onset,
+      terminal state). Not posted on every plain heartbeat to keep the
+      events.jsonl tail readable. v1.
+  - kind: "epm:cluster-terminal"
+    posted_by: skill (via backends.slurm_monitor.build_poll_result first time terminal state is observed)
+    when: "the moment a cluster job reaches a terminal state (COMPLETED/FAILED/TIMEOUT/PREEMPTED/NODE_FAIL/CANCELLED/OUT_OF_MEMORY)"
+    fields: |
+      Persisted terminal-state breadcrumb so idempotent reconnect after
+      squeue/scontrol ageout still finds the authoritative answer. Body
+      shape:
+        `job_id: <numeric>
+         cluster: <nibi|fir>
+         slurm_state: <COMPLETED|FAILED|TIMEOUT|PREEMPTED|NODE_FAIL|CANCELLED|OUT_OF_MEMORY>
+         exit_code: <"0:0"|"N:M"|null>
+         observed_at: <ISO8601>
+         next_action: <interpret|fallback_runpod|investigate>`
+      `next_action=interpret` for COMPLETED, `fallback_runpod` for
+      PREEMPTED/TIMEOUT/NODE_FAIL (the orchestrator re-routes a fresh
+      run to RunPod), `investigate` for FAILED/OOM (the operator picks
+      whether to retry or pivot). v1.
   - kind: "epm:merged"
     posted_by: skill
     when: "Step 9b (experiments, at awaiting_promotion) or Step 10d (code paths, at completed)"
