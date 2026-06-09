@@ -7,7 +7,7 @@ tags:
 - mentor-dan
 - geometry-predicts-transfer
 created_at: '2026-06-09T06:07:58Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 502
 goal: 'Test whether the base-model geometric marker-leakage predictors (cosine, JS
   divergence, the #502 Gaussian-KL@L22 winner) predict marker behavior in instruction-set
