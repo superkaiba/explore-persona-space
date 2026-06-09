@@ -1944,8 +1944,16 @@ seam that builds the production backends (`RunPodBackend`,
 dependencies (`marker_poster` = `backends.slurm.post_marker_via_task_py`;
 `is_started` = SLURM-aware `query_slurm_state` status==RUNNING probe;
 `is_live_after_cancel` = `query_by_name` non-empty probe;
-`reconnect_fn` = per-kind SLURM-`squeue --name` + `gcp.reconnect_or_none`;
-`mila_socket_alive` = stub→False until slice 7) and calls
+`reconnect_fn` = per-kind SLURM-`squeue --name` + `gcp.reconnect_or_none`
+(includes a `mila` branch matching the `nibi`/`fir` reconnect closure);
+`mila_socket_alive` = the real `backends.slurm.mila_socket_alive` probe
+that runs `ssh -o BatchMode=yes -o ConnectTimeout=5 mila true` over the
+ControlMaster socket — slice 7's first-class wiring. A dead / OTP-
+expired socket returns False (skip-the-lane, NOT an error); refresh is
+the Claude-session cron documented at
+`.claude/cron-prompts/mila-otp-refresh.md` and orchestrated through
+`scripts/mila_socket_refresh.py` (un-armed in slice 7; live arming in
+slice 8)) and calls
 `backends.issue_dispatch.dispatch_for_issue` (which calls
 `backends.router.route()`). The router decides the lane (auto → free
 cluster → GCP, or honors an explicit override); RunPod's launch goes
@@ -2238,6 +2246,17 @@ while True:
     # CLI args of `poll_pipeline.py` are recovered from the handle
     # sidecar by `backend.poll`, so the bg-Bash command line shrinks
     # to a single `--issue` argument.
+    #
+    # CAVEAT — parent-pod-reuse child tasks: when this is a child task
+    # whose parent's RunPod is still alive AND the alive-parent branch
+    # in Step 6b fired, NO sidecar was written for the child. SKIP
+    # this bg-Bash `backend_poll.py --issue {N}` entirely and fall
+    # back to `poll_pipeline.py --pod epm-issue-$PARENT_ID ...` for
+    # the duration of the child. See the "Slice-6 regression guard
+    # for the parent-pod-reuse branch (no sidecar is written)"
+    # paragraph in Step 6b for the full rationale + the failure mode
+    # the unconditional invocation would trigger (FALSE-POSITIVE
+    # `epm:failure v1 missing_handle_sidecar`).
     Bash(
         run_in_background=True,
         command=(
@@ -2735,6 +2754,14 @@ URLs.
   # ONE call for every backend. Exit 0 = confirm PASS + teardown done;
   # exit 3 = confirm FAIL (teardown SKIPPED, evidence preserved); exit 2
   # = missing sidecar (treat as infra failure).
+  #
+  # CAVEAT — parent-pod-reuse child tasks: when this child task ran on
+  # the parent's RunPod via the alive-parent branch in Step 6b, NO
+  # sidecar was written for the child. SUBSTITUTE this call with
+  # `pod.py terminate --issue $PARENT_ID --yes` (per the "Slice-6
+  # regression guard for the parent-pod-reuse branch" paragraph in
+  # Step 6b); the finalize CLI would otherwise exit 2 on the missing
+  # child sidecar.
   uv run python scripts/dispatch_issue.py finalize --issue <N>
   ```
 

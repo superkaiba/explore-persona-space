@@ -73,6 +73,7 @@ import shlex
 import subprocess
 import tempfile
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -105,14 +106,31 @@ class ClusterConfig:
 
     Fields:
 
-    * ``name`` — the canonical cluster name (``nibi``, ``fir``). Used as
-      the dict key in :data:`CLUSTER_CONFIGS` AND as the ``BackendKind``
-      alias the selector resolves to a backend instance.
+    * ``name`` — the canonical cluster name (``nibi``, ``fir``, ``mila``).
+      Used as the dict key in :data:`CLUSTER_CONFIGS` AND as the
+      ``BackendKind`` alias the selector resolves to a backend instance.
     * ``account`` — SLURM ``--account`` value. ``rrg-bengioy-ad_gpu``
-      for the DRAC robot.
-    * ``robot_alias`` — the SSH alias the robot key is bound to (e.g.
-      ``robot-nibi``). The submit + teardown shell out
-      ``ssh <robot_alias> sbatch`` / ``ssh <robot_alias> scancel``.
+      for the DRAC robot. **Optional** (``None``) — Mila does not require
+      ``--account`` on most partitions; the renderer omits the
+      ``#SBATCH --account=`` line when this is ``None``.
+    * ``robot_alias`` — the SSH alias the submit + teardown shell out to
+      (e.g. ``robot-nibi`` for the DRAC robot key, ``mila`` for the Mila
+      interactive ControlMaster socket). Named ``robot_alias`` for
+      historical reasons (the v1 slice shipped DRAC-only); the
+      :attr:`ssh_host` property is the semantic alias the rest of the
+      module should read.
+    * ``access_mode`` — how the SSH connection is authenticated.
+      ``"robot"`` (DRAC default) = a restricted forced-command robot key
+      bound to ``robot_alias``, no MFA, IP-whitelisted, allowlist-
+      constrained (`sbatch`/`scancel`/`squeue`/`scp`/`rsync` only — no
+      `sinfo`, no `sacct`, no `bash -c`). ``"interactive"`` (Mila) =
+      a normal interactive SSH session reused through a 12 h
+      ControlMaster socket; the user runs `ssh mila` once (enters the
+      email-OTP MFA), then the persistent socket is reused by the
+      orchestrator for ControlPersist hours with NO further MFA prompt.
+      The router gates ``"interactive"`` lanes behind
+      :func:`mila_socket_alive` (or its caller-injected equivalent), so a
+      dead socket cleanly skips the lane rather than blocking a run.
     * ``max_gpus_per_node`` — hard cap (Nibi 8, Fir 4). The renderer
       asserts ``spec.gpus <= max_gpus_per_node`` before submitting so a
       typo doesn't burn 6h of queue wait.
@@ -158,10 +176,14 @@ class ClusterConfig:
     """
 
     name: str
-    account: str
+    account: str | None
     robot_alias: str
     max_gpus_per_node: int
     scratch_path: str
+    # Cf. ``access_mode`` docstring above. Defaults to ``"robot"`` so
+    # adding a new DRAC cluster requires zero opt-in; Mila explicitly
+    # sets ``access_mode="interactive"`` to enable the socket-alive gate.
+    access_mode: Literal["robot", "interactive"] = "robot"
     # DRAC requires a GPU TYPE in ``--gpus-per-node`` (e.g. ``h100:1``); a
     # bare count is read as a GPU-type name and sbatch rejects it ("There is
     # no 1 GPU-type"). Nibi + Fir are both H100. Override for a non-H100 system.
@@ -187,6 +209,21 @@ class ClusterConfig:
     )
     available: bool = True
 
+    @property
+    def ssh_host(self) -> str:
+        """The SSH alias every backend command should dispatch through.
+
+        Equals :attr:`robot_alias` today (the v1 slice shipped DRAC-only,
+        so the historical field name `robot_alias` already names the SSH
+        host of record). Read through this property in all callers so
+        Mila's interactive ``mila`` alias and DRAC's ``robot-<cluster>``
+        alias share one read path — and so a future split (e.g. a
+        cluster that wants distinct robot-key vs interactive aliases)
+        is a one-field change here without re-touching every shell-out
+        helper.
+        """
+        return self.robot_alias
+
 
 # Canonical per-cluster table. v1 ships Nibi; Fir is in the table but
 # flagged ``available=False`` until v1.1. Adding a new cluster is one
@@ -208,6 +245,45 @@ CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
         scratch_path="/scratch/tjiral",  # DRAC $SCRATCH = /scratch/<user>; verified by probe
         timezone="America/Toronto",  # DRAC robot reports cluster-local Eastern time
         available=False,
+    ),
+    "mila": ClusterConfig(
+        name="mila",
+        # SLICE-8-VERIFY: Mila's `main`/`long`/`unkillable` partitions do
+        # NOT require `--account` for the default project. If a future
+        # Mila move forces a project account, set this to the project id
+        # and verify in the live acceptance run.
+        account=None,
+        # The interactive ControlMaster alias from ~/.ssh/clusters.config
+        # (Host `mila`); the SSH socket is the 12 h email-OTP-authed
+        # ControlPersist socket the user warms by hand once per day.
+        robot_alias="mila",
+        access_mode="interactive",
+        # SLICE-8-VERIFY: Mila login nodes report scheduler timestamps in
+        # America/Montreal (Eastern). Same offset as America/Toronto under
+        # all current DST windows; named distinctly so a future Mila DC
+        # move (e.g. to a Western Canada satellite) can override without
+        # touching DRAC.
+        timezone="America/Montreal",
+        # SLICE-8-VERIFY: Mila in-house cluster typically has H100 nodes
+        # at 4-8 GPUs/node; the conservative 8 matches the largest
+        # documented single-node allocation. Confirm with `sinfo -p main
+        # --Format=Gres` over the live socket in slice 8 before raising.
+        max_gpus_per_node=8,
+        # SLICE-8-VERIFY: Mila scratch convention is
+        # `/network/scratch/<first-letter-of-username>/<username>`. The
+        # user is `thomas.jiralerspong` (cf. clusters.config), so the
+        # leading letter is `t`. Confirm path is writable + has the EPS
+        # quota headroom in the slice-8 acceptance run.
+        scratch_path="/network/scratch/t/thomas.jiralerspong",
+        gpu_type="h100",
+        # SLICE-8-VERIFY: Mila uses LMod modules; the EasyBuild stack may
+        # name the CUDA module differently than DRAC's bare `cuda`.
+        # Common candidates: `cuda/12.4` / `cudacore/12.4`. Confirm with
+        # `module spider cuda` over the live socket; update this line.
+        module_load_cuda="module load cuda",
+        # SLICE-8-VERIFY: same CUDA_HOME bridge as DRAC works on most
+        # EasyBuild stacks. Confirm in acceptance.
+        available=True,
     ),
 }
 
@@ -926,16 +1002,25 @@ def render_sbatch(
 
     sbatch_headers = [
         "#!/bin/bash",
-        f"#SBATCH --account={cluster.account}",
-        f"#SBATCH --job-name={name}",
-        "#SBATCH --nodes=1",
-        "#SBATCH --ntasks-per-node=1",
-        f"#SBATCH --gpus-per-node={cluster.gpu_type}:{gpus}",
-        f"#SBATCH --cpus-per-task={min(8 * gpus, 64)}",
-        f"#SBATCH --mem={min(64 * gpus, 480)}G",
-        f"#SBATCH --time={time_str}",
-        f"#SBATCH --output={output_path}",
     ]
+    if cluster.account is not None:
+        # Mila's default partitions do NOT require an explicit account
+        # line; emitting an empty one (``#SBATCH --account=``) is
+        # rejected by some SLURM builds, so the line is skipped entirely
+        # when the cluster row omits it. DRAC rows always set an account.
+        sbatch_headers.append(f"#SBATCH --account={cluster.account}")
+    sbatch_headers.extend(
+        [
+            f"#SBATCH --job-name={name}",
+            "#SBATCH --nodes=1",
+            "#SBATCH --ntasks-per-node=1",
+            f"#SBATCH --gpus-per-node={cluster.gpu_type}:{gpus}",
+            f"#SBATCH --cpus-per-task={min(8 * gpus, 64)}",
+            f"#SBATCH --mem={min(64 * gpus, 480)}G",
+            f"#SBATCH --time={time_str}",
+            f"#SBATCH --output={output_path}",
+        ]
+    )
     if cluster.partition:
         sbatch_headers.append(f"#SBATCH --partition={cluster.partition}")
     if cluster.constraint:
@@ -1289,6 +1374,109 @@ def ssh_scancel(*, robot_alias: str, job_id: str, timeout: int = 30) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Mila socket-alive probe (interactive ControlMaster gate)
+# ---------------------------------------------------------------------------
+
+
+# Default SSH alias for the Mila interactive ControlMaster session. Matches
+# the ``Host mila`` stanza in ``~/.ssh/clusters.config``. Pure constant
+# (no ``ClusterConfig`` lookup) so the probe stays cheap + the function
+# is callable before any cluster lookup runs.
+DEFAULT_MILA_SSH_ALIAS: str = "mila"
+
+
+def mila_socket_alive(
+    *,
+    ssh_alias: str = DEFAULT_MILA_SSH_ALIAS,
+    timeout: int = 5,
+    runner: Callable[[list[str], int], int] | None = None,
+) -> bool:
+    """Cheap non-interactive probe: is the Mila ControlMaster socket warm?
+
+    Runs ``ssh -o BatchMode=yes -o ConnectTimeout=<timeout> <ssh_alias>
+    true`` and returns ``True`` iff the SSH exit code is zero.
+
+    ``BatchMode=yes`` is the load-bearing flag — it tells SSH to NEVER
+    prompt for credentials. With a healthy ControlMaster socket the
+    command short-circuits through the multiplexed connection and
+    returns in milliseconds; with a dead / expired / unauthenticated
+    socket it fails fast (non-zero) instead of hanging on an OTP
+    prompt. ``ConnectTimeout`` caps the wait if SSH falls back to a
+    direct TCP attempt.
+
+    Returns ``False`` (NOT raises) for every failure path:
+    - non-zero SSH exit (socket down, OTP expired, host unreachable);
+    - ``subprocess.TimeoutExpired`` (the SSH wrapper hung past the cap);
+    - any ``OSError`` from spawning the subprocess.
+
+    Returning ``False`` is the DESIGNED graceful path — it tells the
+    router "skip Mila this round" without poisoning the run. Socket
+    refresh is the operator's job (see the Claude-session OTP-refresh
+    cron prompt at ``.claude/cron-prompts/mila-otp-refresh.md`` and the
+    ``scripts/mila_socket_refresh.py`` helper).
+
+    ``runner`` is an injection seam for tests: a callable taking
+    ``(argv, timeout)`` and returning an int exit code. The production
+    default shells out via :mod:`subprocess`.
+    """
+    argv = [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        f"ConnectTimeout={timeout}",
+        ssh_alias,
+        "true",
+    ]
+    if runner is not None:
+        try:
+            return runner(argv, timeout) == 0
+        except Exception:
+            logger.info(
+                "mila_socket_alive: injected runner raised on alias=%r; treating as down",
+                ssh_alias,
+            )
+            return False
+    try:
+        proc = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            timeout=timeout + 2,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        logger.info(
+            "mila_socket_alive: ssh %r timed out after %ds; treating as down",
+            ssh_alias,
+            timeout + 2,
+        )
+        return False
+    except OSError as exc:
+        # ssh binary missing / permission denied on the wrapper. Same
+        # gracefulness — skip Mila, don't crash the router.
+        logger.info(
+            "mila_socket_alive: could not spawn ssh for alias=%r (%s); treating as down",
+            ssh_alias,
+            exc,
+        )
+        return False
+    if proc.returncode != 0:
+        # Stderr is informative on a stale socket (e.g.
+        # "Permission denied (publickey,keyboard-interactive)" or
+        # "channel 0: open failed: connect failed"). Log truncated for
+        # the orchestrator's tick output.
+        logger.info(
+            "mila_socket_alive: ssh exited %d; alias=%r stderr=%r",
+            proc.returncode,
+            ssh_alias,
+            (proc.stderr or "").strip()[:160],
+        )
+        return False
+    return True
+
+
+# ---------------------------------------------------------------------------
 # estimate_start — sbatch --test-only (ranking HINT for the router)
 # ---------------------------------------------------------------------------
 
@@ -1431,7 +1619,9 @@ def estimate_start_seconds(
             plan_hash=plan_hash,
         )
     estimate = estimator(
-        robot_alias=cluster.robot_alias,
+        # Reads the canonical SSH alias (robot-<name> for DRAC, ``mila``
+        # for Mila); the ``robot_alias=`` parameter name is historical.
+        robot_alias=cluster.ssh_host,
         sbatch_script=rendered_script,
         cluster_timezone=cluster.timezone,
     )
@@ -1545,7 +1735,7 @@ class SlurmBackend(ComputeBackend):
         self._rsync(
             src_root=self._src_root,
             dest_root=scratch_dir,
-            robot_alias=cluster.robot_alias,
+            robot_alias=cluster.ssh_host,
         )
         secrets = render_secrets_env()
         # Write the secrets file directly via SSH stdin (avoids a tmp
@@ -1562,7 +1752,7 @@ class SlurmBackend(ComputeBackend):
         ``scp``/``rsync`` shell-out.
         """
         self._secrets_pusher(
-            robot_alias=cluster.robot_alias,
+            robot_alias=cluster.ssh_host,
             scratch_dir=scratch_dir,
             content=content,
         )
@@ -1584,7 +1774,7 @@ class SlurmBackend(ComputeBackend):
         # submit script are byte-identical for the same (spec, cluster).
         script = self._render_script_for(spec, cluster)
         job_id = self._submit(
-            robot_alias=cluster.robot_alias,
+            robot_alias=cluster.ssh_host,
             sbatch_script=script,
         )
         log_path = f"{scratch_dir}/job.out"
@@ -1657,7 +1847,7 @@ class SlurmBackend(ComputeBackend):
         cluster = self._cluster_for_spec(spec)
         script = self._render_script_for(spec, cluster)
         return self._start_estimator(
-            robot_alias=cluster.robot_alias,
+            robot_alias=cluster.ssh_host,
             sbatch_script=script,
             cluster_timezone=cluster.timezone,
         )
@@ -1790,7 +1980,7 @@ class SlurmBackend(ComputeBackend):
         # the local destination chain).
         local_root = self._src_root
         for subdir in ("eval_results", "figures"):
-            src = f"{cluster.robot_alias}:{handle.scratch_dir}/{subdir}/"
+            src = f"{cluster.ssh_host}:{handle.scratch_dir}/{subdir}/"
             dst = str(local_root / subdir) + "/"
             argv = ["rsync", "-a", "--mkpath", "--partial", src, dst]
             logger.info("rsync pull %s → %s", src, dst)
@@ -1832,7 +2022,7 @@ class SlurmBackend(ComputeBackend):
         cluster = get_cluster_config(handle.cluster) if handle.cluster else None
         if cluster is None:
             raise ValueError(f"SlurmBackend.teardown: handle has no cluster ({handle!r})")
-        self._cancel(robot_alias=cluster.robot_alias, job_id=handle.job_id)
+        self._cancel(robot_alias=cluster.ssh_host, job_id=handle.job_id)
 
     # ----- internal helpers ------------------------------------------------
 
@@ -1861,6 +2051,7 @@ def _default_src_root() -> Path:
 
 __all__ = [
     "CLUSTER_CONFIGS",
+    "DEFAULT_MILA_SSH_ALIAS",
     "HEARTBEAT_INTERVAL_SECONDS",
     "PREFLIGHT_FAIL_MARKER",
     "RSYNC_EXCLUDE_PATTERNS",
@@ -1877,6 +2068,7 @@ __all__ = [
     "estimate_start_seconds",
     "get_cluster_config",
     "job_name",
+    "mila_socket_alive",
     "parse_job_id",
     "post_marker_via_task_py",
     "render_sbatch",

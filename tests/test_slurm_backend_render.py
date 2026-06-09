@@ -1263,3 +1263,202 @@ def test_slurm_backend_estimate_start_seconds_uses_default_now_when_omitted() ->
     # is that the returned value is positive ~30 s, not a negative or
     # multi-hour skew (which would indicate UTC mislabel of local time).
     assert 0 < secs < 120, secs
+
+
+# ---------------------------------------------------------------------------
+# Slice-7: Mila first-class — ClusterConfig + access_mode + ssh_host
+# ---------------------------------------------------------------------------
+
+
+def test_mila_cluster_config_is_first_class_and_interactive() -> None:
+    """The Mila row is wired and marked ``access_mode='interactive'``."""
+    cfg = get_cluster_config("mila")
+    assert cfg.name == "mila"
+    assert cfg.available is True, "Mila ships in slice 7"
+    assert cfg.access_mode == "interactive"
+    # The SSH alias the rest of the backend should target — for Mila
+    # that's the ControlMaster ``mila`` alias from clusters.config.
+    assert cfg.ssh_host == "mila"
+    assert cfg.robot_alias == "mila"
+    # Mila default partitions do NOT require --account; the renderer
+    # must skip the line.
+    assert cfg.account is None
+    # Eastern time (same offset as DRAC under DST) but named distinctly.
+    assert cfg.timezone == "America/Montreal"
+
+
+def test_drac_cluster_config_access_mode_defaults_to_robot() -> None:
+    """Existing DRAC rows are unchanged — robot mode by default."""
+    nibi = get_cluster_config("nibi")
+    assert nibi.access_mode == "robot"
+    assert nibi.ssh_host == "nibi".__class__("robot-nibi")  # str alias
+    assert nibi.ssh_host == nibi.robot_alias == "robot-nibi"
+    assert nibi.account == "rrg-bengioy-ad_gpu"
+
+
+def test_render_sbatch_omits_account_line_when_cluster_account_is_none() -> None:
+    """Mila renders WITHOUT ``#SBATCH --account=`` (cluster.account is None)."""
+    mila = get_cluster_config("mila")
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="mila",
+        cluster="mila",
+        hydra_args=("condition=c1_evil_wrong_em",),
+    )
+    plan = stages_for_spec(spec)
+    rendered = render_sbatch(
+        spec=spec,
+        cluster=mila,
+        plan=plan,
+        scratch_dir="/network/scratch/t/thomas.jiralerspong/eps/issue-137",
+    )
+    assert "#SBATCH --account=" not in rendered, (
+        "Mila has no --account requirement on default partitions; the renderer "
+        "must omit the line when cluster.account is None (an empty "
+        "--account= line is rejected by some SLURM builds)."
+    )
+    # Sanity: the other essential headers DO appear.
+    assert "#SBATCH --job-name=eps-issue-137" in rendered
+    assert "#SBATCH --gpus-per-node=h100:1" in rendered
+
+
+def test_render_sbatch_keeps_account_line_for_drac_clusters() -> None:
+    """Regression guard for the omit-account-when-None change."""
+    nibi = get_cluster_config("nibi")
+    spec = _lora_spec()
+    plan = stages_for_spec(spec)
+    rendered = render_sbatch(
+        spec=spec,
+        cluster=nibi,
+        plan=plan,
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    assert "#SBATCH --account=rrg-bengioy-ad_gpu" in rendered, (
+        "DRAC clusters MUST still emit the --account line; making it conditional "
+        "on a non-None account was the slice-7 change, not a behaviour change "
+        "for clusters that have one."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Slice-7: mila_socket_alive probe
+# ---------------------------------------------------------------------------
+
+
+def test_mila_socket_alive_uses_batch_mode_and_returns_true_on_exit_zero() -> None:
+    """A healthy socket = ssh exit 0 → True."""
+    from explore_persona_space.backends.slurm import (
+        DEFAULT_MILA_SSH_ALIAS,
+        mila_socket_alive,
+    )
+
+    captured: dict[str, object] = {}
+
+    def fake_runner(argv: list[str], timeout: int) -> int:
+        captured["argv"] = argv
+        captured["timeout"] = timeout
+        return 0
+
+    assert mila_socket_alive(runner=fake_runner) is True
+    argv = captured["argv"]
+    assert isinstance(argv, list)
+    # BatchMode is load-bearing: prevents SSH from prompting for OTP if
+    # the socket is down/expired.
+    assert "BatchMode=yes" in argv, argv
+    assert argv[-1] == "true"
+    assert DEFAULT_MILA_SSH_ALIAS in argv
+
+
+def test_mila_socket_alive_returns_false_on_nonzero_exit() -> None:
+    """A dead socket / expired OTP = nonzero exit → False (skip-the-lane)."""
+    from explore_persona_space.backends.slurm import mila_socket_alive
+
+    def fake_runner(_argv: list[str], _timeout: int) -> int:
+        return 255  # SSH's "connection failed"
+
+    assert mila_socket_alive(runner=fake_runner) is False
+
+
+def test_mila_socket_alive_returns_false_on_runner_exception() -> None:
+    """A subprocess timeout / OSError = treated as down (NOT raised).
+
+    The router relies on this graceful-False contract — a raise here
+    would propagate up through ``_auto_route`` and turn a socket
+    hiccup into a routing terminal.
+    """
+    from explore_persona_space.backends.slurm import mila_socket_alive
+
+    def boom_runner(_argv: list[str], _timeout: int) -> int:
+        raise OSError("ssh binary went sideways")
+
+    assert mila_socket_alive(runner=boom_runner) is False
+
+
+def test_mila_socket_alive_returns_false_on_subprocess_timeout(monkeypatch) -> None:
+    """The real subprocess path also degrades to False on TimeoutExpired."""
+    import subprocess
+
+    from explore_persona_space.backends.slurm import mila_socket_alive
+
+    def boom_run(*_args, **_kwargs):
+        raise subprocess.TimeoutExpired(cmd=["ssh"], timeout=5)
+
+    monkeypatch.setattr("explore_persona_space.backends.slurm.subprocess.run", boom_run)
+    assert mila_socket_alive() is False
+
+
+def test_mila_socket_alive_returns_false_on_oserror_spawning_ssh(monkeypatch) -> None:
+    """OSError from ``subprocess.run`` (e.g. ssh missing) = False, not raise."""
+    from explore_persona_space.backends.slurm import mila_socket_alive
+
+    def boom_run(*_args, **_kwargs):
+        raise OSError("ssh: command not found")
+
+    monkeypatch.setattr("explore_persona_space.backends.slurm.subprocess.run", boom_run)
+    assert mila_socket_alive() is False
+
+
+# ---------------------------------------------------------------------------
+# Slice-7: estimate_start_seconds over Mila uses the mila SSH alias
+# ---------------------------------------------------------------------------
+
+
+def test_slurm_backend_routes_estimate_through_mila_ssh_host_not_robot_alias() -> None:
+    """For Mila, the est-start probe MUST be invoked over the ``mila``
+    socket alias — confirms ``cluster.ssh_host`` plumbing through the
+    estimator seam."""
+    captured: dict[str, str] = {}
+
+    def fake_estimator(*, robot_alias, sbatch_script, cluster_timezone):
+        del sbatch_script, cluster_timezone
+        captured["robot_alias"] = robot_alias
+        # Return a known future datetime so the seconds-from-now path
+        # exercises the tz-conversion code paths too.
+        return datetime(2099, 1, 1, tzinfo=UTC)
+
+    import tempfile as _tempfile
+
+    with _tempfile.TemporaryDirectory() as td:
+        td_path = _P(td)
+        (td_path / "pyproject.toml").write_text("")
+        backend = SlurmBackend(
+            src_root=td_path,
+            submitter=lambda *, robot_alias, sbatch_script: "0",
+            rsyncer=lambda **_: None,
+            marker_poster=lambda **_: None,
+            start_estimator=fake_estimator,
+        )
+        spec = RunSpec(
+            issue=137,
+            intent="lora-7b",
+            backend="mila",
+            cluster="mila",
+            hydra_args=("condition=c1_evil_wrong_em",),
+        )
+        secs = backend.estimate_start_seconds(spec)
+    assert secs is not None
+    # The crucial assertion: the estimator was called over the ``mila``
+    # alias, NOT some default like ``robot-mila`` that does not exist
+    # in clusters.config.
+    assert captured["robot_alias"] == "mila", captured

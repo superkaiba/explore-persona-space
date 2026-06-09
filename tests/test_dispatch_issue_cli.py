@@ -662,6 +662,15 @@ def test_build_production_backends_wires_all_keys_and_smokes_closures(monkeypatc
 
     monkeypatch.setattr(gcp_module, "reconnect_or_none", _fake_gcp_reconnect)
     monkeypatch.setattr(slurm_monitor_module, "query_by_name", _fake_query_by_name)
+    # Slice-7: the production factory wires the real
+    # ``backends.slurm.mila_socket_alive`` probe (``ssh mila true``);
+    # in CI we have no real Mila socket, so patch it to a deterministic
+    # ``False`` so the dependency-smoke check below doesn't reach out
+    # over SSH. The router-skip-Mila path is exercised by the slice-7
+    # ``test_router_skips_mila_when_socket_down`` test.
+    from explore_persona_space.backends import slurm as slurm_module
+
+    monkeypatch.setattr(slurm_module, "mila_socket_alive", lambda: False)
 
     expected_keys = {
         "runpod_backend",
@@ -754,4 +763,9 @@ def test_build_production_backends_wires_all_keys_and_smokes_closures(monkeypatc
     # marker_poster + mila_socket_alive — exist and are callable, no
     # network needed to smoke.
     assert callable(deps["marker_poster"])
-    assert deps["mila_socket_alive"]() is False  # slice-6 stub
+    # Slice-7: factory wires the REAL ``backends.slurm.mila_socket_alive``
+    # probe. We monkeypatched it above to a deterministic ``False`` so
+    # the smoke does not reach out over SSH; the wiring is what matters
+    # here (router-skip-Mila behaviour is covered by the dedicated
+    # ``test_router_skips_mila_when_socket_down`` test).
+    assert deps["mila_socket_alive"]() is False

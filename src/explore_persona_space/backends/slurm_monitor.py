@@ -199,9 +199,9 @@ def build_poll_result(
 
         event_reader = list_events
 
-    state = state_querier(robot_alias=cluster.robot_alias, job_id=job_id)
+    state = state_querier(robot_alias=cluster.ssh_host, job_id=job_id)
     rsyncer(
-        robot_alias=cluster.robot_alias,
+        robot_alias=cluster.ssh_host,
         scratch_dir=scratch_dir,
         job_id=job_id,
     )

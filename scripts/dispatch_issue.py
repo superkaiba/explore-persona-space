@@ -116,8 +116,11 @@ def _build_production_backends() -> dict[str, Any]:
       so this is the only authoritative still-live signal.
     * ``reconnect_fn`` — per-kind reconnect dispatch (SLURM:
       ``query_by_name``; GCP: :func:`backends.gcp.reconnect_or_none`).
-    * ``mila_socket_alive`` — stub returning ``False`` until slice 7
-      wires the real ``ssh mila true`` probe over the ControlMaster.
+    * ``mila_socket_alive`` — :func:`backends.slurm.mila_socket_alive`,
+      the real ``ssh -o BatchMode=yes mila true`` probe over the 12 h
+      email-OTP ControlMaster socket. Returns ``False`` on socket-down
+      (skip-the-lane, NOT an error) and never raises in production —
+      the router treats that as "Mila not available right now."
     """
     # Lazy imports — keeps the --help path fast and avoids dragging in
     # SSH / gcloud helpers when the CLI is run for a non-launch action.
@@ -166,7 +169,7 @@ def _build_production_backends() -> dict[str, Any]:
             # Non-SLURM backends fall back to PollResult-based detection
             # (GCP returns "running" only when provisioning is done).
             return backend.poll(handle).status == "running"
-        state = query_slurm_state(robot_alias=cluster.robot_alias, job_id=handle.job_id)
+        state = query_slurm_state(robot_alias=cluster.ssh_host, job_id=handle.job_id)
         return state.get("status") == "RUNNING"
 
     def _slurm_is_live_after_cancel(backend: Any, handle: Any) -> bool:
@@ -189,7 +192,7 @@ def _build_production_backends() -> dict[str, Any]:
         # set it to ``job_name(spec, plan_hash)`` — either
         # ``eps-issue-<N>`` or ``eps-issue-<N>-<plan_hash>``).
         # query_by_name accepts the full name verbatim.
-        found = query_by_name(robot_alias=cluster.robot_alias, job_name=handle.pod_name)
+        found = query_by_name(robot_alias=cluster.ssh_host, job_name=handle.pod_name)
         return found is not None
 
     def _reconnect(backend: Any, kind: str, spec: Any) -> Any:
@@ -201,7 +204,7 @@ def _build_production_backends() -> dict[str, Any]:
         and unknown kinds return None (the existing ``pod_lifecycle.py``
         flow is idempotent on its own).
         """
-        if kind in {"nibi", "fir"}:
+        if kind in {"nibi", "fir", "mila"}:
             # _resolve_cluster_cfg raises on a typo'd / unavailable
             # cluster — that's a real misconfiguration, NOT something to
             # paper over with a silent None fallback.
@@ -212,7 +215,7 @@ def _build_production_backends() -> dict[str, Any]:
             )
 
             name = job_name(spec, plan_hash=spec.extra.get("plan_hash"))
-            found_id = query_by_name(robot_alias=cluster.robot_alias, job_name=name)
+            found_id = query_by_name(robot_alias=cluster.ssh_host, job_name=name)
             if not found_id:
                 return None
             scratch_dir = scratch_dir_for(spec, cluster)
@@ -249,9 +252,16 @@ def _build_production_backends() -> dict[str, Any]:
             )
         return None
 
-    def _mila_socket_alive() -> bool:
-        """Slice-6 stub: Mila always down. Slice 7 wires the real probe."""
-        return False
+    # Slice-7 wire: the real ``ssh mila true`` probe over the
+    # ControlMaster socket. Returns False on socket-down (treated as
+    # skip-the-lane, NOT as an error — see
+    # ``backends.slurm.mila_socket_alive`` for the graceful-False
+    # contract). Late-imported per factory call so tests can
+    # ``monkeypatch.setattr(slurm, "mila_socket_alive", ...)`` BEFORE
+    # the factory build and have the closure pick up the patch.
+    from explore_persona_space.backends.slurm import (
+        mila_socket_alive as _mila_socket_alive,
+    )
 
     return {
         "runpod_backend": runpod_backend,

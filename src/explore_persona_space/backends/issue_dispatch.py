@@ -424,11 +424,15 @@ def dispatch_for_issue(
     """
     if free_backends is None:
         free_backends = {}
-    # Wire Mila-socket-alive default to "always False" — the slice-7
-    # wiring will pass the real probe. Until then, Mila is silently
-    # skipped by the auto chain.
+    # Default Mila-socket-alive to the real probe (``ssh -o BatchMode=yes
+    # mila true`` over the 12 h email-OTP ControlMaster socket). The
+    # probe returns ``False`` on socket-down by contract — that's the
+    # designed graceful path that tells the router to skip the Mila
+    # lane this round; it is NOT an error. Tests inject a fake
+    # ``mila_socket_alive`` callable to drive the gate deterministically
+    # without touching real SSH.
     if mila_socket_alive is None:
-        mila_socket_alive = _mila_socket_alive_stub
+        mila_socket_alive = _default_mila_socket_alive
 
     # Build the route() kwargs deliberately (helps a reviewer match
     # injected deps against router.route()'s signature).
@@ -487,15 +491,34 @@ def dispatch_for_issue(
     return DispatchOutcome(result=result, handle_sidecar_path=sidecar_written)
 
 
-def _mila_socket_alive_stub() -> bool:
-    """Slice-6 default ``mila_socket_alive``: always False (Mila skipped).
+def _default_mila_socket_alive() -> bool:
+    """Production default for the Mila socket gate.
 
-    Slice 7 wires the real probe (``ssh mila true`` over the
-    ControlMaster socket). Until then the auto chain treats Mila as
-    down — keeps the dispatch helper from depending on slice-7 wiring
-    that doesn't exist yet.
+    Delegates to :func:`backends.slurm.mila_socket_alive`, which runs the
+    cheap ``ssh -o BatchMode=yes mila true`` probe over the
+    ControlMaster socket. Returns ``False`` when the socket is down /
+    OTP-expired / unreachable — that's the designed skip-the-lane
+    signal, NOT an error.
+
+    Wrapped here (not bound at import) so a test that imports
+    :mod:`backends.issue_dispatch` does not also drag in the
+    :mod:`backends.slurm` module's import-time SSH-helper resolution
+    when it only wants to inject a fake gate. The body is the lazy
+    import; the import itself is cheap (already loaded by every real
+    code path that reaches the dispatch helper).
     """
-    return False
+    from explore_persona_space.backends.slurm import (
+        mila_socket_alive as _slurm_mila_socket_alive,
+    )
+
+    return _slurm_mila_socket_alive()
+
+
+# Backwards-compatible alias for the slice-6 stub name. Some external
+# callers / tests imported ``_mila_socket_alive_stub`` directly; keep
+# the symbol live but point it at the real probe so a stale import path
+# yields the real behavior instead of permanent-False.
+_mila_socket_alive_stub = _default_mila_socket_alive
 
 
 __all__ = [

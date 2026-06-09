@@ -1717,3 +1717,114 @@ def test_attempt_cap_message_reports_cap_not_one_past(lease_store):
         )
     assert excinfo.value.attempts_today == cfg.max_gcp_attempts_per_day
     assert excinfo.value.cap == cfg.max_gcp_attempts_per_day
+
+
+# ---------------------------------------------------------------------------
+# Slice-7: Mila gating via ``mila_socket_alive``
+# ---------------------------------------------------------------------------
+
+
+def test_router_skips_mila_when_socket_down(lease_store):
+    """``mila_socket_alive`` returning False = Mila is NEVER launched.
+
+    The router treats a dead socket as "skip the lane", NOT as an
+    error: an instant nibi sibling still wins, no marker collateral.
+    """
+    rp = _ExplodingRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    mila = _FreeLaneBackend(kind="mila", est_start_raw=0.0)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi, "mila": mila},
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        mila_socket_alive=lambda: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    # Nibi was the only candidate the router considered (Mila filtered
+    # out before ranking) — Mila MUST NOT have been launched.
+    assert result.chosen_kind == "nibi"
+    assert len(mila.launches) == 0
+    assert len(nibi.launches) == 1
+
+
+def test_router_uses_mila_when_socket_alive_and_it_wins_estimate(lease_store):
+    """When the socket is up AND Mila ranks first, the router uses Mila.
+
+    Proves the gate doesn't silently keep Mila out of contention once
+    its socket is alive — full first-class status, ranked by the same
+    est-start signal every other free lane uses.
+    """
+    rp = _ExplodingRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=600.0)  # 10 min queue
+    mila = _FreeLaneBackend(kind="mila", est_start_raw=5.0)  # ~instant
+    result = route(
+        _spec(backend=None),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi, "mila": mila},
+        lease_store=lease_store,
+        is_started=lambda b, _h: b is mila,
+        mila_socket_alive=lambda: True,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "mila"
+    assert len(mila.launches) == 1
+    assert len(nibi.launches) == 0
+
+
+def test_router_socket_down_does_not_block_when_only_mila_present(lease_store):
+    """Mila-only auto chain + dead socket → falls back to GCP cleanly.
+
+    Socket-down is the designed graceful-skip path. There MUST be no
+    workload error / "Mila down" exception — the router proceeds to
+    the next tier as if Mila were absent from the dict.
+    """
+    rp = _ExplodingRunpod()
+    mila = _FreeLaneBackend(kind="mila")
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=rp,
+        free_backends={"mila": mila},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        mila_socket_alive=lambda: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(mila.launches) == 0
+    assert len(gcp.launches) == 1
+
+
+def test_router_explicit_mila_override_still_runs_when_socket_alive(lease_store):
+    """``backend: mila`` override targets the lane directly.
+
+    Override is not subject to the auto-chain gate — the operator
+    asked for Mila, and the socket-alive predicate is consulted ONLY
+    when the override path also exercises the launch wiring (the
+    gate fires inside ``_auto_route``). When the socket IS alive the
+    override succeeds end-to-end.
+    """
+    rp = _ExplodingRunpod()
+    mila = _FreeLaneBackend(kind="mila")
+    result = route(
+        _spec(backend="mila"),
+        runpod_backend=rp,
+        free_backends={"mila": mila},
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        mila_socket_alive=lambda: True,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "mila"
+    assert len(mila.launches) == 1
