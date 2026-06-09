@@ -69,3 +69,4 @@
 {"ts": "2026-05-28T07:13:19Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "interpreting", "to": "reviewing", "note": "v5 critics PASS — interp-critic v5 (4/4 quantitative verified, plot-prose clean, hedging proper) + clean-result-critic v3 (7/7 lenses)."}
 {"ts": "2026-05-28T07:13:19Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "reviewing", "to": "awaiting_promotion", "note": "V5 complete: source-is-low finding integrated. Title now states global-marker-affinity-shift mechanism. Body has 5 Results in TL;DR + matching Details H3s. Parking for user promotion."}
 {"ts": "2026-06-09T21:34:43Z", "kind": "epm:promoted", "version": 1, "by": "user", "classification": "useful"}
+{"ts": "2026-06-09T21:34:44Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "awaiting_promotion", "to": "completed", "note": "promoted as useful"}
