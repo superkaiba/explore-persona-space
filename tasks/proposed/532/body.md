@@ -15,6 +15,9 @@ goal: 'Test whether the base-model geometric marker-leakage predictors (cosine, 
   and whether a base-model behavioral-prior predictor (base log P(marker | context))
   succeeds where geometry fails; reuse the non-saturated #474 localized-arm epoch-1
   marker adapters, no new training.'
+relates_to:
+- leak-predictor
+- spec-sysprompt-vs-drift
 ---
 ## Goal
 
