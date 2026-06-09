@@ -4,7 +4,7 @@ title: Dropping one contrastive negative did not raise marker leakage for bystan
 kind: experiment
 tags: []
 created_at: '2026-06-06T00:55:01Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 477
 goal: 'Test whether each contrastive negative provides localized leakage protection:
   does removing one negative (holding total negative row-mass fixed) raise held-out
