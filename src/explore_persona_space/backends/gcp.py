@@ -103,6 +103,7 @@ import tempfile
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from explore_persona_space.backends.artifacts import (
@@ -784,6 +785,22 @@ def _envget(key: str) -> str | None:
     return os.environ.get(key)
 
 
+def _default_src_root_for_fetch() -> Path:
+    """Locate the repo root for ``fetch_results`` scp landings.
+
+    Walks up from this module until a directory with ``pyproject.toml``
+    is found (the same convention the SLURM backend's ``_default_src_root``
+    uses). Used as the destination root for the best-effort
+    ``eval_results/`` + ``figures/`` scp pulls so the pulled tree lands
+    at the canonical project-relative paths.
+    """
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "pyproject.toml").exists():
+            return parent
+    return Path.cwd()
+
+
 # ---------------------------------------------------------------------------
 # Failure classification
 # ---------------------------------------------------------------------------
@@ -1463,23 +1480,118 @@ class GcpBackend(ComputeBackend):
     # ----- teardown --------------------------------------------------------
 
     def fetch_results(self, handle: RunHandle) -> None:
-        """No-op (authoritative artifacts live off-VM during the run).
+        """scp the completion sentinel (+ best-effort artifact dirs) back from the VM.
 
-        A future slice may add a best-effort ``gcloud compute scp``
-        sweep of ``eval_results/`` + ``figures/`` BEFORE delete, in case
-        the workload missed an upload the verifier needs. Today we
-        rely on the in-run uploads (HF Hub / WandB / git), exactly the
-        same way RunPod does.
+        Slice 6: gates ``confirm_artifacts`` for every GCP lane. The
+        sentinel lives on the VM (the startup-script's clean-exit
+        ``cat > $EPS_SENTINEL_PATH`` write); the slice-2 verifier reads
+        the LOCAL filesystem and would FAIL every real run without this
+        pull. Mirrors the SLURM ``rsync_pull`` shape (separate calls per
+        target so a single failure doesn't bury the others).
+
+        Two tiers:
+
+        * **MANDATORY: sentinel.** If the sentinel scp fails we LOG
+          loudly (``confirm_artifacts`` will FAIL on the missing file,
+          which is the right surfacing — a workload that didn't write
+          its sentinel is precisely the silent-loss hole the verifier
+          catches).
+        * **Best-effort: eval_results/ + figures/.** Both are authoritatively
+          uploaded by the workload during the run (HF Hub / WandB / git);
+          the local mirror is convenience for analyzer-local figure
+          regeneration. A failure here logs + continues.
+
+        Reconnect-safe: reads the recovered ``attempt_id`` off
+        ``handle.extra`` (populated by ``reconnect_or_none``); the
+        sentinel sub-directory is namespaced per attempt so a re-run
+        after Spot preemption never overwrites an earlier attempt.
+
+        gcloud scp expects ``<host>:<remote>`` and ``<local>`` (or
+        vice-versa for upload). We use ``--recurse`` for the directory
+        pulls and the bare form for the sentinel (single file).
         """
-        # TODO(slice-6): fetch_results must scp the completion sentinel
-        # (+ eval_results) back from the GCE VM before teardown; until
-        # then confirm_artifacts FAILs on real GCP runs (the sentinel
-        # lives on the VM, the slice-2 verifier reads local FS). The
-        # /issue fetch contract being wired in slice 6 is the right
-        # place to land this — implementing it now without the contract
-        # would force a redesign when slice 6 lands.
-        del handle
-        return None
+        config = self._config
+        zone = handle.extra.get("zone") or config.primary_zone
+        issue = int(handle.extra.get("issue") or 0)
+        if issue <= 0:
+            logger.error(
+                "GcpBackend.fetch_results: handle missing 'issue' extra; cannot scp. handle=%r",
+                handle,
+            )
+            return
+        attempt_id = str(handle.extra.get("attempt_id") or "")
+        if not attempt_id:
+            logger.error(
+                "GcpBackend.fetch_results: handle missing 'attempt_id' extra; cannot "
+                "locate sentinel. handle=%r",
+                handle,
+            )
+            return
+
+        # 1) MANDATORY — pull the completion sentinel back. The slice-2
+        # verifier reads its expected sentinel path off
+        # ``EXPECTED_ARTIFACTS_HANDLE_KEY``; we land the file at the
+        # SAME absolute path the declaration claims so the verifier
+        # reads from one location regardless of backend. The VM-side
+        # ``EPS_SENTINEL_PATH`` is `sentinel_path_for(config, issue,
+        # attempt_id)` — the same function the declaration uses — so
+        # the two are guaranteed to agree.
+        sentinel_abs = sentinel_path_for(config, issue, attempt_id)
+        local_sentinel = Path(sentinel_abs)
+        local_sentinel.parent.mkdir(parents=True, exist_ok=True)
+        scp_sentinel = _base_gcloud_argv(
+            config,
+            "compute",
+            "scp",
+            f"{handle.pod_name}:{sentinel_abs}",
+            str(local_sentinel),
+        )
+        scp_sentinel += [f"--zone={zone}"]
+        sentinel_res = self._run(scp_sentinel)
+        if sentinel_res.returncode != 0:
+            logger.error(
+                "GcpBackend.fetch_results: sentinel scp from %s failed (rc=%d); "
+                "confirm_artifacts will FAIL on the missing sentinel. stderr=%s",
+                handle.pod_name,
+                sentinel_res.returncode,
+                sentinel_res.stderr[:500],
+            )
+        else:
+            logger.info(
+                "GcpBackend.fetch_results: sentinel scp PASS for issue=%d attempt=%s",
+                issue,
+                attempt_id,
+            )
+
+        # 2) Best-effort — pull eval_results/issue_<N>/ and
+        # figures/issue_<N>/ back to the local repo. These are
+        # authoritative on HF / WandB / git already; the local mirror
+        # is convenience. Each subdir is its own scp call so one
+        # failure doesn't bury the other.
+        repo_root = _default_src_root_for_fetch()
+        workload_root = workload_dir_for(config, issue)
+        for subdir in (f"eval_results/issue_{issue}", f"figures/issue_{issue}"):
+            remote_path = f"{workload_root}/{subdir}"
+            local_path = repo_root / subdir
+            local_path.parent.mkdir(parents=True, exist_ok=True)
+            scp_dir = _base_gcloud_argv(
+                config,
+                "compute",
+                "scp",
+                "--recurse",
+                f"{handle.pod_name}:{remote_path}",
+                str(local_path.parent),
+            )
+            scp_dir += [f"--zone={zone}"]
+            dir_res = self._run(scp_dir)
+            if dir_res.returncode != 0:
+                logger.warning(
+                    "GcpBackend.fetch_results: best-effort scp of %s failed (rc=%d); "
+                    "authoritative copy is on HF/WandB/git. stderr=%s",
+                    remote_path,
+                    dir_res.returncode,
+                    dir_res.stderr[:300],
+                )
 
     def confirm_artifacts(self, handle: RunHandle) -> bool:
         """Backend-agnostic artifact verification.

@@ -60,9 +60,18 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-# Default max-wait for the submit-and-park watcher. Plan §"Selector
-# (submit-and-park)" specifies "~6h, configurable" — 6h * 3600s = 21600.
-# Overridable per call via ``select_backend(..., max_wait_seconds=...)``.
+# LEGACY default max-wait for the selector's submit-and-park watcher.
+# Kept for back-compat callers of :func:`select_backend` (the pre-slice-5
+# code path the legacy dispatch line goes through). The slice-6 unified
+# dispatch (:func:`backends.router.route`) replaces this with a SHORTER,
+# ALWAYS-APPLIED 10-minute park (``router.FREE_WAIT_SECONDS``) on every
+# free-lane submit — the SKILL.md text that previously documented the
+# 6-h park + the ``EPM_CLUSTER_MAX_WAIT_SECONDS`` env knob has been
+# updated to the 10-min policy. The env knob was advertised in docs but
+# never read in code; the slice-6 SKILL.md edit drops it. New callers
+# MUST use ``backends.router.route`` (or ``backends.issue_dispatch``);
+# this constant exists only so the legacy ``select_backend`` signature
+# stays stable.
 DEFAULT_MAX_WAIT_SECONDS = 6 * 3600
 
 # Sentinel exception message the slice-1 SLURM stub raises. The selector

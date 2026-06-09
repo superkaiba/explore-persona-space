@@ -1850,59 +1850,89 @@ HEAD-checks each against the Hub / WandB API using the user's
 
 #### Step 6b: Pod provisioning
 
-**Backend dispatch (RunPod default, cluster opt-in).**
+**Backend dispatch (slice-6 unified router — auto by default, RunPod opt-in).**
 Read the task's `backend:` frontmatter via
 `uv run python scripts/task.py view <N> --json | jq -r '.frontmatter.backend // empty'`.
-The default (empty / `runpod`) routes through the existing pod-provisioning
-path described below with ZERO new branches taken — every line through to
-Step 8 is exactly what already runs in production. An explicit
-`backend: cluster` (or `nibi`/`fir`) routes through
-`explore_persona_space.backends.selector.select_backend`, which:
+**The frontmatter value (or its absence) is fed verbatim to the slice-6
+router via the dispatch helper** —
+`explore_persona_space.backends.issue_dispatch.dispatch_for_issue`
+calls `backends.router.route()` with production-injected deps and
+returns a typed `RunHandle`. The router decides which backend actually
+runs:
 
-1. Builds a `RunSpec` from the plan's intent + Hydra args.
-2. Submits the sbatch via the robot SSH alias (returns a numeric job id).
-3. Waits PENDING → RUNNING in a submit-and-park loop (max-wait default 6h,
-   configurable via `EPM_CLUSTER_MAX_WAIT_SECONDS`); on max-wait exceeded
-   OR a hard submit/auth failure → `scancel` + RunPod fallback.
-4. Marker trail (all VM-side; the SLURM helpers call
-   `task.py post-marker` via `backends.slurm.post_marker_via_task_py`):
-   - `epm:backend-selected v1` — posted by `select_backend` on EVERY
-     decision where `launch=True` (decision-only dry runs skip the
-     post); body carries `requested_kind`, `chosen_kind`, `reason`,
-     `cluster`, `elapsed_seconds`, `extra`.
-   - `epm:cluster-launched v1` — posted by `SlurmBackend.launch` right
-     after sbatch submit succeeds; body carries `job_id`,
-     `scratch_dir`, `log_path`, `job_name`, etc.
-   - The RunPod fallback path posts `epm:backend-selected v1` then the
-     existing `epm:pod-provisioned` / `epm:run-launched` markers
-     verbatim.
+- **Empty / absent frontmatter → `auto`.** The router ranks free
+  academic clusters (Nibi, Fir if wired, Mila if its socket is alive)
+  by tz-corrected `sbatch --test-only` est-start, submits the
+  best-ranked lane, and parks up to `FREE_WAIT_SECONDS` (600 s; ALWAYS
+  applied — see `backends.router`). On park-cap-exceeded it cancels +
+  escalates to GCP (credit-backed). **The auto chain NEVER calls
+  RunPod** (real-money safety) — `backends.router._VALID_BACKEND_VALUES`
+  + the load-bearing `test_no_auto_runpod_path_under_any_failure`
+  negative test enforce this.
+- **`backend: runpod`** explicit override → RunPod (the only path that
+  spends real money in v1).
+- **`backend: nibi` / `fir` / `mila`** → that lane, with the same park
+  + cancel state machine as auto.
+- **`backend: gcp`** → GCP credits.
+- **Legacy `backend: cluster`** is normalized to `backend: nibi` by
+  `issue_dispatch.normalize_backend_value` (the slice-5 router rejects
+  the bare `"cluster"` literal). The legacy `select_backend` /
+  `EPM_CLUSTER_MAX_WAIT_SECONDS` env knob from the pre-slice-6 wiring
+  are no longer consulted — the 10-min `FREE_WAIT_SECONDS` park
+  supersedes the old 6-h default.
 
-Autonomous sessions (`EPM_AUTONOMOUS_SESSION=1`) decide the cluster
-fallback silently per the existing autonomous-mode rules (no user prompt).
-The cluster path is then monitored at Step 6d.2 via
-`backends.slurm_monitor.build_poll_result` (instead of
-`scripts/poll_pipeline.py`); the monitor posts `epm:cluster-poll v1`
-on every status/phase transition (dedup'd against events.jsonl so a
-long-running job doesn't spam markers) and posts
-`epm:cluster-terminal v1` exactly once when terminal state is first
-observed. Subsequent ticks that find `slurm_state == "UNKNOWN"` (after
-the squeue/scontrol ageout window) read the persisted
-`epm:cluster-terminal v1` body and synthesize the terminal PollResult
-so the orchestrator's polling loop reaches its terminal branch instead
-of looping on a stale "running".
+The handle the dispatch helper returns is persisted to
+`.claude/cache/issue-<N>-handle.json` (the bg-Bash poller reads it
+back; see Step 6d.2).
 
-Step 8 rsyncs `eval_results/` + `figures/` back via
-`SlurmBackend.fetch_results` instead of `pod.py sync results`, runs
-the existing upload-verifier verbatim, then no-op terminates (the
-sbatch already exited; there is no pod to kill, only optional scratch
-cleanup). See `.claude/plans/2026-06-08_001932-slurm-cluster-backend-for-issue.md`
-for the full design.
+**Marker trail** (all VM-side; both `backends.router.route` and the
+SLURM helpers call `task.py post-marker` via
+`backends.slurm.post_marker_via_task_py`):
 
-The remainder of this section describes the RunPod path. The cluster
-path's sbatch carries an EQUIVALENT inline preflight stanza (HF/WandB
-reachability, GPU visibility, `$SLURM_TMPDIR` headroom) so a misconfigured
-job fails fast inside the SLURM allocation and the selector's
-hard-failure branch routes the next attempt to RunPod.
+- `epm:backend-selected v1` — posted by `route()` on EVERY decision
+  (including a pre-escalation intermediate marker when the auto chain
+  is about to spend GCP credit). Body carries `requested_kind`,
+  `chosen_kind`, `reason` (`override` / `reconnect` / `auto_started` /
+  `auto_fallback_gcp` / `no_compute_available` / `workload_failure`),
+  `cluster`, `elapsed_seconds`, the per-lane `attempts` ladder, and
+  `extra` (`cancel_race?`, `gcp_attempts_today?`, `intermediate?`).
+  Legacy `frontmatter_*` / `slurm_*` reason codes from the pre-slice-6
+  `select_backend` are preserved in `workflow.yaml § markers` for
+  back-compat reads.
+- `epm:cluster-launched v1` — posted by `SlurmBackend.launch` (or
+  `GcpBackend.launch` — GCP reuses this marker name) right after the
+  job is submitted; body carries `job_id`, `scratch_dir`, `log_path`,
+  etc.
+- On the RunPod path the existing `epm:pod-provisioned` /
+  `epm:run-launched` markers are still posted by the experimenter.
+
+**Terminal-exception translation.** `route()` raises one of four
+terminal `RouteError` subclasses when no lane succeeded; the
+dispatch helper translates each via
+`issue_dispatch.classify_terminal_exception` into the
+`epm:failure v1` body + status the orchestrator already routes on
+(SKILL.md Step 7):
+
+| Exception | failure_class | status |
+|---|---|---|
+| `NoComputeAvailableError` | `infra` | `blocked` |
+| `WorkloadSurfacedError` | `code` | `blocked` |
+| `GcpAttemptCapExceededError` | `infra` | `blocked` |
+| `ManualAttentionRequiredError` | `infra` | `blocked` (carries orphaned job_id) |
+
+Step 6d.2 runs the bg-Bash poller against the persisted handle (no
+per-backend branch); Step 8 runs `confirm_artifacts` + `teardown` on
+the same handle. The cluster path's monitor (`epm:cluster-poll v1` /
+`epm:cluster-terminal v1`) keeps working — `SlurmBackend.poll` calls
+into `backends.slurm_monitor.build_poll_result` exactly as before;
+the bg-Bash poller (`scripts/backend_poll.py`) prints the same
+PollResult JSON shape regardless of backend.
+
+The remainder of this section describes the RunPod / per-issue pod
+specifics. The cluster path's sbatch carries an EQUIVALENT inline
+preflight stanza (HF/WandB reachability, GPU visibility,
+`$SLURM_TMPDIR` headroom) so a misconfigured job fails fast inside
+the SLURM allocation.
 
 Pods are ephemeral — there is no permanent fleet.
 
@@ -2104,9 +2134,9 @@ Post `epm:launch v1` containing:
 ##### Step 6d.2: Orchestrator polling loop (bg-Bash chained)
 
 Enter a polling loop that runs in THIS orchestrator's context. Each tick
-is a single bg-Bash call that sleeps then runs `poll_pipeline.py` once;
-the harness re-invokes the orchestrator when the bg-Bash exits, which
-is when one tick has completed:
+is a single bg-Bash call that sleeps then runs the BACKEND-AGNOSTIC
+poller once; the harness re-invokes the orchestrator when the bg-Bash
+exits, which is when one tick has completed:
 
 ```python
 while True:
@@ -2120,13 +2150,27 @@ while True:
     # NEVER crashes the loop.
     set_title(N, current_phase)  # e.g. "running" / "phase: post_eval"
 
-    # log_path is the absolute path resolved above (log_abs preferred,
-    # log= accepted as legacy fallback during transition window).
+    # The bg-Bash poller is `scripts/backend_poll.py` — it reads the
+    # per-issue handle sidecar at `.claude/cache/issue-<N>-handle.json`
+    # (written by `issue_dispatch.dispatch_for_issue` in Step 6b),
+    # resolves the right `ComputeBackend` from `handle.backend`, calls
+    # `backend.poll(handle)`, and prints ONE JSON line whose shape is
+    # byte-identical to the legacy `poll_pipeline.py` output (the
+    # `backends.base.PollResult` fields). The orchestrator's existing
+    # JSON-line parser is interchangeable across backends — no per-
+    # backend branches here.
+    #
+    # On the RunPod path `backend.poll` delegates to
+    # `scripts.poll_pipeline.poll_once` (the battle-tested probe);
+    # `backend_poll.py` is the uniform bg-Bash entry, NOT a
+    # re-implementation. The legacy `--pod` / `--log` / `--pid-file`
+    # CLI args of `poll_pipeline.py` are recovered from the handle
+    # sidecar by `backend.poll`, so the bg-Bash command line shrinks
+    # to a single `--issue` argument.
     Bash(
         run_in_background=True,
         command=(
-            f"sleep 540 && uv run python scripts/poll_pipeline.py "
-            f"--issue {N} --pod {pod} --log {log_path} --pid-file {pid_file}"
+            f"sleep 540 && uv run python scripts/backend_poll.py --issue {N}"
         ),
     )
     # Harness re-invokes orchestrator on bg-Bash exit. Read the JSON
@@ -2599,20 +2643,36 @@ uploaded; a downstream experiment had to re-train two months later. See
 Post `epm:upload-verification v1` event with per-artifact PASS/FAIL +
 URLs.
 
-- **PASS** -> terminate the pod, then move status to `interpreting` and
-  proceed to Step 9. Once artifacts are confirmed at permanent URLs, the
-  pod is no longer needed — interpretation runs locally:
-  ```bash
-  uv run python scripts/pod.py terminate --issue <N> --yes
-  ```
-  This destroys the pod (volume + container disk gone). Post
-  `epm:pod-terminated v1` with the command output. If interpretation
-  later needs GPU compute (e.g., to regenerate a figure from raw outputs
-  that weren't downloaded), provision a fresh pod via `pod.py
-  provision`. If the task has `parent_id`, terminate the parent's pod
-  (`epm-issue-<PARENT_ID>`) instead. Skip the terminate call only if
-  the task has a `keep-running` tag for known follow-up work in the
-  same session.
+- **PASS** -> teardown the compute, then move status to `interpreting`
+  and proceed to Step 9. Once artifacts are confirmed at permanent
+  URLs, the compute is no longer needed — interpretation runs locally.
+
+  **Backend-agnostic teardown (slice 6).** The dispatch helper persisted
+  the per-issue `RunHandle` to `.claude/cache/issue-<N>-handle.json` at
+  Step 6b; the orchestrator reads it back and calls
+  `backend.confirm_artifacts(handle)` followed by `backend.teardown(handle)`
+  — one path for every backend (RunPod / SLURM / GCP). The agent-level
+  upload-verifier above runs the EXPLORATORY pass; this in-helper
+  `confirm_artifacts` is the complementary MECHANICAL gate (HF Hub
+  `list_repo_files` + WandB run + git-figure + completion sentinel,
+  per `backends.artifacts.confirm_artifacts_from_handle`). Both must
+  pass before teardown fires.
+
+  On the RunPod path the teardown call shells out to the same
+  `scripts/pod.py terminate --issue <N> --yes` that today's wiring
+  uses (the `RunPodBackend.teardown` wrapper preserves the existing
+  guard logic verbatim); on the SLURM path it `scancel`s; on GCP it
+  `gcloud compute instances delete`s. Post `epm:pod-terminated v1`
+  with the teardown summary (for the GCP path the marker name still
+  applies — the dashboard surfaces every backend's teardown under the
+  same key).
+
+  If interpretation later needs GPU compute (e.g., to regenerate a
+  figure from raw outputs that weren't downloaded), provision a fresh
+  pod via `pod.py provision`. If the task has `parent_id`, terminate
+  the parent's pod (`epm-issue-<PARENT_ID>`) instead. Skip the
+  teardown call only if the task has a `keep-running` tag for known
+  follow-up work in the same session.
 
   **Upload-verification guard (post-#444).** `pod.py terminate` refuses
   to destroy an `epm-issue-<N>` / `pod-<N>` for a `kind: experiment`
