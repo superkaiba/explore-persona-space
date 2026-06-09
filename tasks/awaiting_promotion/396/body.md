@@ -21,6 +21,8 @@ goal: 'Re-run the 24-persona INHERITED panel (#274 inherited sources, cached on 
 relates_to:
 - leak-predictor
 - app5
+classification: useful
+promoted_at: '2026-06-09T21:34:37Z'
 ---
 # Four geometric/gradient predictors of LoRA marker emission all return null at N\=24 across six dependent-variable surfaces (MODERATE confidence)
 
