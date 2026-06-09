@@ -155,7 +155,11 @@ N_POSITIVES_JOINT: Final[int] = 800
 
 # Plan §4 Step 5 — vLLM batched eval.
 EVAL_N_PROMPTS_PER_PERSONA: Final[int] = 20
-EVAL_N_SAMPLES_PER_PROMPT: Final[int] = 5
+# vLLM 0.7+ requires n=1 with temperature=0.0 (greedy is deterministic, so n>1 is
+# redundant under greedy). Plan §10 named "5 samples × greedy", which was a leftover
+# template — the marker-leakage measurement rule reads log P(marker) at the end of
+# the model's OWN greedy response (one sample per prompt). Recipe stays on-policy.
+EVAL_N_SAMPLES_PER_PROMPT: Final[int] = 1
 # Marker-leakage rule: max_new_tokens ≥ 2× longest trained completion.
 EVAL_MAX_NEW_TOKENS: Final[int] = 2048
 
