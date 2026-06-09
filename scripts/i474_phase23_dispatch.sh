@@ -23,6 +23,19 @@ export EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1
 LOG_DIR=logs/issue_474
 mkdir -p "$LOG_DIR"
 
+# #523 hook: smoke-check epoch + resume-check epoch list are env-derived,
+# so a child dispatcher (e.g. issue523_phase_b_seed43_dispatch.sh) that
+# trains only ep1 can also smoke-check ep1 and resume-check ep1.
+# Defaults preserve #474 behavior byte-identically.
+#
+#   EPM_SMOKE_CHECK_EPOCH  : single epoch used for the post-train smoke
+#                            check on A1. Default 5 (#474's final epoch).
+#   EPM_CHECK_EPOCHS       : comma-separated epochs the resume check
+#                            requires on HF for SKIP-vs-RETRAIN. Default
+#                            "1,2,3,5" (#474's full ladder).
+EPM_SMOKE_CHECK_EPOCH="${EPM_SMOKE_CHECK_EPOCH:-5}"
+EPM_CHECK_EPOCHS="${EPM_CHECK_EPOCHS:-1,2,3,5}"
+
 SMOKE_ONLY=0
 SKIP_SMOKE=0
 RESUME=0
@@ -98,17 +111,22 @@ if [ "$SKIP_SMOKE" -eq 0 ]; then
         fi
 
         # Smoke implant check (separate subprocess for vLLM-after-HF fix).
-        # For A_loc we test the FINAL epoch's adapter (ep5) — saves explicit
-        # adapter version match the bare adapter folder.
-        echo "[phase=smoke_${arm}_check] === A1 smoke check (separate process; fresh vLLM) arm=${arm} $(date -Iseconds) ==="
+        # For A_loc we test the FINAL epoch's adapter (ep5 by #474 default;
+        # #523 sets EPM_SMOKE_CHECK_EPOCH=1 to match its --epoch-1-only
+        # training). The post-train smoke check MUST match the epoch the
+        # training actually produced or hf_hub_download 404s the missing
+        # epoch's adapter and the dispatcher rc=2 before any sweep work.
+        echo "[phase=smoke_${arm}_check] === A1 smoke check (separate process; fresh vLLM) arm=${arm} epoch=${EPM_SMOKE_CHECK_EPOCH} $(date -Iseconds) ==="
         check_rc=0
         if [ "$arm" == "loc" ]; then
             CUDA_VISIBLE_DEVICES=0 uv run python scripts/i474_phase2_smoke_check.py \
-                --arm loc --cond A1 --bystander-cond C1 --epoch 5 --n-probes 10 \
+                --arm loc --cond A1 --bystander-cond C1 \
+                --epoch "$EPM_SMOKE_CHECK_EPOCH" --n-probes 10 \
                 > "$LOG_DIR/smoke_${arm}_A1_check.log" 2>&1 || check_rc=$?
         else
             CUDA_VISIBLE_DEVICES=0 uv run python scripts/i474_phase2_smoke_check.py \
-                --arm pos --cond A1 --epoch 5 --n-probes 10 \
+                --arm pos --cond A1 \
+                --epoch "$EPM_SMOKE_CHECK_EPOCH" --n-probes 10 \
                 > "$LOG_DIR/smoke_${arm}_A1_check.log" 2>&1 || check_rc=$?
         fi
         if [ "$check_rc" -ne 0 ]; then
@@ -152,13 +170,18 @@ run_wave() {
     # (the per-epoch upload callback overwrites — no torn state).
     # See scripts/i474_check_adapter_hf_presence.py (single list_repo_files
     # call per cond; exit 0=present, 1=missing, 2=lookup-failed-treat-as-missing).
+    #
+    # #523 hook: EPM_CHECK_EPOCHS overrides the default 1,2,3,5 ladder. A
+    # child dispatcher that only trains ep1 sets EPM_CHECK_EPOCHS=1 so the
+    # resume check doesn't re-train completed cells whose ep2/ep3/ep5 are
+    # intentionally absent.
     local conds=()
     if [ "$RESUME" -eq 1 ]; then
-        echo "[phase=sweep_${arm}_wave_${wave_label}_resume_check] === checking HF presence (${#conds_input[@]} conds) ==="
+        echo "[phase=sweep_${arm}_wave_${wave_label}_resume_check] === checking HF presence epochs=${EPM_CHECK_EPOCHS} (${#conds_input[@]} conds) ==="
         for cond in "${conds_input[@]}"; do
             local check_log="$LOG_DIR/resume_check_${arm}_${cond}.log"
             if uv run python scripts/i474_check_adapter_hf_presence.py \
-                    --arm "$arm" --cond "$cond" \
+                    --arm "$arm" --cond "$cond" --epochs "$EPM_CHECK_EPOCHS" \
                     > "$check_log" 2>&1; then
                 echo "[phase=skip_${arm}_${cond}] already on HF — $(cat "$check_log")"
             else

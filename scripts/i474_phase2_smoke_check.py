@@ -95,13 +95,19 @@ def _resolve_adapter_path(arm: str, cond_id: str, epoch: int | None) -> str:
     LOCAL_ADAPTER_CACHE.mkdir(parents=True, exist_ok=True)
     # #523 hook: EPM_HF_PATH_TEMPLATE overrides the path template
     # ({arm}/{cid}/{ep} placeholders). Default keeps #474 behavior.
+    # EPM_HF_PATH_TEMPLATE_NOEPOCH is the bare end-of-training analogue
+    # (used when --epoch is not passed). Default keeps #474 behavior.
     import os as _os
 
     hf_path_template = _os.environ.get("EPM_HF_PATH_TEMPLATE", "adapters/i474_{arm}_{cid}_ep{ep}")
+    hf_path_template_noepoch = _os.environ.get(
+        "EPM_HF_PATH_TEMPLATE_NOEPOCH", "adapters/i474_{arm}_{cid}"
+    )
     if epoch is None:
-        # End-of-training bare path; strip the _ep{ep} suffix piece for the
-        # default template, otherwise the caller must provide a non-_ep variant.
-        target_subpath = f"adapters/i474_{arm}_{cond_id}"
+        # End-of-training bare path; honors EPM_HF_PATH_TEMPLATE_NOEPOCH so a
+        # child dispatcher (e.g. #523) can override both the per-epoch AND
+        # the bare path templates in lockstep. Default keeps #474 behavior.
+        target_subpath = hf_path_template_noepoch.format(arm=arm, cid=cond_id)
     else:
         target_subpath = hf_path_template.format(arm=arm, cid=cond_id, ep=epoch)
     local_target = LOCAL_ADAPTER_CACHE / target_subpath

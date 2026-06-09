@@ -39,6 +39,14 @@ export EPM_TRAIN_EPOCHS=1
 export EPM_HF_PATH_TEMPLATE='adapters/i523_loc_{cid}_ep{ep}_seed43'
 export EPM_OUTPUT_DIR_PREFIX='adapters/i523_loc'
 export EPM_RUN_NAME_PREFIX='i523'
+# Round-2 fix: smoke check + resume check must look at the SAME epoch we
+# actually train (1), not #474's default ep5 / {1,2,3,5}. Without these,
+# the parent dispatcher tries to download a non-existent ep5 adapter from
+# HF for the post-train smoke gate (→ rc=2 before any sweep), and the
+# resume check retrains already-complete seed-43 cells (ep2/ep3/ep5 are
+# absent by design here).
+export EPM_SMOKE_CHECK_EPOCH=1
+export EPM_CHECK_EPOCHS=1
 # Per the #474 recipe + .claude/rules/upload-policy.md: never upload
 # merged checkpoint dirs, delete after verified HF upload.
 export EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1
@@ -140,6 +148,14 @@ uv run python - <<'PYEOF'
 import json
 from pathlib import Path
 
+# Plan §6 / §4 Phase D Output 2: "k of 16 cells converged at diagonal implant >= 0.80",
+# where "diagonal implant" is the SAME emission fraction the smoke gate reads
+# (i474_phase2_smoke_check.py:55, 324). NOT the log-prob.
+# The cross-eval cell stores it as `emission_recompute_rate` (fraction of
+# probes whose argmax at the post-response slot is the marker — see
+# i474_phase4_eval.py: this is the on-policy `※`-argmax rate on the diagonal).
+# Round-1 erroneously thresholded `g_logprob >= -0.80` (a log-prob); round-2
+# fixes to compare the emission fraction.
 src = Path("eval_results/issue_523/seed43_cross_eval/loc_ep1/G_logprob_matrix.json")
 dst = Path("eval_results/issue_523/seed43_per_cell_implant.json")
 d = json.loads(src.read_text())
@@ -147,10 +163,17 @@ G = d["G"]
 conds = d["conditions"]
 rows = []
 n_converged = 0
+DIAG_CONVERGE_THRESH = 0.80  # plan §6 — emission FRACTION ≥ 0.80
 for c in conds:
     diag = G[c][c]
     g_lp = diag["g_logprob"]
-    converged = g_lp >= -0.80  # log-prob threshold; -0.80 ≈ argmax-marker
+    emission_frac = diag.get("emission_recompute_rate")
+    if emission_frac is None:
+        raise RuntimeError(
+            f"diagonal cell {c}/{c} has no emission_recompute_rate; "
+            f"upstream Phase-B eval write is malformed (keys: {list(diag)})."
+        )
+    converged = float(emission_frac) >= DIAG_CONVERGE_THRESH
     if converged:
         n_converged += 1
     rows.append(
@@ -158,7 +181,7 @@ for c in conds:
             "cond_id": c,
             "g_logprob_diag": g_lp,
             "delta_g_diag": diag.get("delta_g"),
-            "emission_rate_diag": diag.get("emission_recompute_rate"),
+            "emission_rate_diag": float(emission_frac),
             "converged_ge_0_80": converged,
         }
     )
@@ -166,6 +189,12 @@ out = {
     "schema_version": 1,
     "issue": 523,
     "phase": "phase_b_diagonal_implant",
+    "convergence_metric": "emission_recompute_rate",
+    "convergence_threshold": DIAG_CONVERGE_THRESH,
+    "convergence_metric_source": (
+        "scripts/i474_phase2_smoke_check.py:55, 324 — the same on-policy "
+        "diagonal-marker emission fraction the parent smoke gate reads."
+    ),
     "n_cells": len(conds),
     "n_converged_ge_0_80": n_converged,
     "fraction_converged": n_converged / max(len(conds), 1),
@@ -174,7 +203,7 @@ out = {
 }
 dst.parent.mkdir(parents=True, exist_ok=True)
 dst.write_text(json.dumps(out, indent=2))
-print(f"wrote {dst} ({n_converged}/{len(conds)} cells converged)")
+print(f"wrote {dst} ({n_converged}/{len(conds)} cells converged @ emission >= 0.80)")
 PYEOF
 
 echo "[phase=done] issue523 phase B seed43 complete $(date -Iseconds)"

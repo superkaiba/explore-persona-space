@@ -103,12 +103,18 @@ NON_STY_SRC = ("A1", "A2", "B1", "B2", "B3", "B4", "B5", "C1", "D1", "D2", "D3",
 
 # Headline cell — the Goal's named cell.
 HEADLINE_CELL = ("last_prompt", 22, "gauss_kl", "raw")
-# JS-baseline cell — last_prompt × full-layer × next_token_js.
-# In the regression JSON it lives at extraction_point="last_prompt",
-# metric="next_token_js" (no layer; the bakeoff stores layer=None/-1).
-# We honor the bakeoff convention by looking up the entry with metric==
-# "next_token_js" and extraction_point=="last_prompt".
-JS_BASELINE_CELL = ("last_prompt", None, "next_token_js", "raw")
+# JS-baseline cell — last_prompt × full-vocab next-token JS at the
+# last prompt token. The bakeoff stores this with `layer=-1` (sentinel
+# for "no residual-stream layer; this is a logits-space metric") at the
+# canonical path
+# `eval_results/issue_523/bakeoff/metrics/last_prompt__layer-1__next_token_js__raw.json`
+# — matches the #502 layout
+# (`eval_results/issue_502/.../last_prompt__layer-1__next_token_js__raw.json`).
+# Round-1 used layer=None + a glob fallback that silently dropped to a
+# warning when the file was found at a slightly different path; round-2
+# fixes the path AND fails loud when the bar is missing (the five-bar
+# headline figure requires this comparator).
+JS_BASELINE_CELL = ("last_prompt", -1, "next_token_js", "raw")
 
 # Bootstrap iters per plan §11 (#474's number, picked over #502's 1000).
 BOOTSTRAP_N = 2000
@@ -202,26 +208,29 @@ def _assert_fold_invariants(folds: list[tuple[str, list, list]]) -> None:
 
 
 def full_panel_folds() -> list[tuple[str, list[tuple[str, str]], list[tuple[str, str]]]]:
-    """Same scheme but over all 15 sources × 14 targets = 210 (the *full-panel*
-    column actually used by the supporting bar; plan §6 Supporting says 240
-    but that counts symmetric directed pairs which the regression already
-    handles; we mirror #502's convention of 15 source folds × 14 pairs/fold
-    on the 16-cond panel WITHOUT the diagonals).
+    """Leave-one-source-condition-out folds over the **full 16-cond panel**.
 
-    Actually the plan §6 Supporting bar says "15 source folds × 14 pairs/fold"
-    over all 240 ordered pairs (i.e. 15 sources, 16 targets, drop the diagonal
-    → 15 × 15 = 225; the 240 number includes some duplicate accounting in
-    plan v1 that v2 dropped). For the supporting cell-fixed full-panel bar
-    we do 16 - 1 = 15 sources × (16 - 1) = 15 pairs/fold; the union is 15 × 15 = 225.
+    Panel is `ALL_CIDS` (16 conditions). Ordered-pair universe is 16 × 15 = 240
+    (drop the diagonal). With the same "S_k excluded from BOTH sides" rule we
+    used for `loco_folds`, we get exactly:
+
+      - **16 folds** (one per source S_k ∈ ALL_CIDS)
+      - **15 test pairs per fold** = (S_k, T) for T in ALL_CIDS, T != S_k
+      - **15 × 14 = 210 train pairs per fold** (sources and targets both
+        exclude S_k)
+      - **Union of test pairs across folds = 16 × 15 = 240 unique pairs**
+
+    Each of the 240 ordered pairs lives in exactly one fold (the fold whose
+    source S_k matches the pair's source-side), so the fold-bootstrap remains
+    fold-level independent. This is the "Supporting — full-panel" row in plan
+    §5 / §6 (`cell_fixed_seed42_full_heldout`).
     """
     sources = list(ALL_CIDS)
     folds = []
     for s in sources:
+        # 15 test pairs / fold (S = held-out source, T ∈ ALL_CIDS \ {S}).
         test_pairs = [(s, t) for t in ALL_CIDS if t != s]
-        # Same constraint as the non-stylized scheme: S_k excluded from BOTH
-        # source AND target on train, so the 16 × 15 = 240 ordered-pair
-        # union splits into 16 outer folds × 15 test pairs/fold with no
-        # overlap; train side is 15 sources × 14 targets = 210 pairs.
+        # 15 × 14 = 210 train pairs / fold (S_k dropped from both sides).
         train_pairs = [(a, b) for a in ALL_CIDS for b in ALL_CIDS if a != b and a != s and b != s]
         folds.append((s, test_pairs, train_pairs))
     return folds
@@ -257,27 +266,45 @@ def load_distance_matrix(
 ) -> dict[tuple[str, str], float]:
     """Read one (point, layer, metric, variant) matrix file → (a,b) → distance.
 
-    For the JS baseline cell (metric == 'next_token_js', layer is None), the
-    bakeoff stores a single layer-less file.
+    Path convention (matches #502 layout):
+    ``{metrics_dir}/{extraction_point}__layer{layer}__{metric}__{variant}.json``.
+    The JS baseline cell (metric=='next_token_js') stores `layer=-1` as a
+    sentinel for "logits-space, no residual-stream layer". Callers pass
+    layer=-1 explicitly — round-1 used layer=None + a glob fallback, which
+    silently dropped to a warning when the file was at a slightly different
+    path. Round-2 uses the canonical path and fails loud on FileNotFound.
+
+    The ``variant`` argument can encode a sub-predictor for the
+    delta-spectrum family — `enumerate_inner_cells` packs
+    ``"{variant}__{sub_predictor}"`` into the variant slot (e.g.
+    ``"raw__mean_norm"``). We split that off at load time and look the
+    sub-predictor up inside the matrix payload's ``matrices`` block
+    (the convention #493 / #502 already use; see
+    `issue493_extraction_metric_bakeoff._materialize_predictor_vector`).
     """
-    if metric == "next_token_js":
-        # The bakeoff stores JS at one canonical path per extraction-point.
-        # Pattern matches #502 layout.
-        candidates = list(metrics_dir.glob(f"{extraction_point}__next_token_js*.json"))
-        if not candidates:
-            candidates = list(metrics_dir.parent.glob(f"next_token_js__{extraction_point}*.json"))
-        if not candidates:
-            raise FileNotFoundError(
-                f"No next_token_js matrix under {metrics_dir} for "
-                f"extraction_point={extraction_point}"
-            )
-        p = candidates[0]
+    sub_predictor: str | None = None
+    if "__" in variant:
+        # The bakeoff writes one FILE per (ep, layer, metric, base_variant);
+        # the THREE delta_spec sub-predictors share that file via a `matrices`
+        # block. Round-2 round-trips the `enumerate_inner_cells` packing.
+        base_variant, sub_predictor = variant.split("__", 1)
     else:
-        p = metrics_dir / f"{extraction_point}__layer{layer}__{metric}__{variant}.json"
+        base_variant = variant
+    p = metrics_dir / f"{extraction_point}__layer{layer}__{metric}__{base_variant}.json"
     if not p.exists():
         raise FileNotFoundError(f"distance matrix {p} missing")
     payload = json.loads(p.read_text())
-    mat = payload["matrix"]
+    # delta_spec stores `matrices: {mean_norm, coherence, effective_dim}`,
+    # other metrics store `matrix: <16x16>`.
+    if "matrices" in payload:
+        if sub_predictor is None:
+            # Caller asked for the file but didn't name a sub-predictor → no
+            # 2-D matrix to flatten. Return empty (the inner-search will
+            # treat this as an N/A cell and skip).
+            return {}
+        mat = payload["matrices"].get(sub_predictor)
+    else:
+        mat = payload.get("matrix")
     # end_of_system cells for Class B / C / D conds are stored as None
     # (the prompt has no system message → extraction is N/A). Treat the
     # whole-matrix-None case as "no valid pairs" rather than raising.
@@ -333,48 +360,28 @@ def _safe_polyfit_residual(target: np.ndarray, covar: np.ndarray) -> np.ndarray 
     return target - fit
 
 
-def _length_controlled_fit_predict(
-    x_train: np.ndarray,
-    y_train: np.ndarray,
-    covar_train: np.ndarray,
-    x_test: np.ndarray,
-    covar_test: np.ndarray,
-) -> np.ndarray:
-    """Length-controlled linear fit, train on (x_train, y_train, log(covar)),
-    predict on (x_test, log(covar_test)).
+def _rank_residualize_on_covar(
+    x: np.ndarray, y: np.ndarray, covar: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Rank-residualize x and y on rank(covar), matching the project's
+    ``_length_partial_residualize_rank`` convention in
+    ``scripts/issue493_extraction_metric_bakeoff.py:1723``.
 
-    Approach (matches #502 / #474 convention):
-      1. Residualize y on log(covar) on the TRAIN set (linear fit
-         ``y ~ log(covar)`` → ``y_resid_train = y_train − (a + b*log_c)``).
-      2. Fit ``y_resid_train ~ x_train`` (bare 1-D OLS).
-      3. Predict on test: ``ŷ = (a + b * log(covar_test)) + (α + β * x_test)``.
-    Degenerate train (n<5, constant x) → NaN predictions.
-
-    The two-stage decoupling matches the project's `_length_partial`
-    rank-then-residualize spirit while keeping the prediction on the linear
-    scale (so R² is interpretable as variance explained on the test set).
+    Returns (x_resid, y_resid) on the rank scale. If covar is rank-constant
+    or polyfit fails, falls back to the bare-rank series (matching the
+    convention in the reference implementation).
     """
-    n = len(x_train)
-    if n < 5 or len(np.unique(x_train)) < 2:
-        return np.full(len(x_test), np.nan)
-    log_cov_train = np.log(covar_train.clip(min=1.0))
-    log_cov_test = np.log(covar_test.clip(min=1.0))
-    # Step 1: residualize y on log(covar) on train.
-    if np.unique(log_cov_train).size >= 2:
-        try:
-            b_cov, a_cov = np.polyfit(log_cov_train, y_train, 1)
-        except (np.linalg.LinAlgError, ValueError):
-            b_cov, a_cov = 0.0, float(y_train.mean())
-    else:
-        b_cov, a_cov = 0.0, float(y_train.mean())
-    y_resid_train = y_train - (a_cov + b_cov * log_cov_train)
-    # Step 2: bare OLS fit of y_resid ~ x.
-    try:
-        b_x, a_x = np.polyfit(x_train, y_resid_train, 1)
-    except (np.linalg.LinAlgError, ValueError):
-        return np.full(len(x_test), np.nan)
-    # Step 3: assemble prediction.
-    return (a_cov + b_cov * log_cov_test) + (a_x + b_x * x_test)
+    from scipy.stats import rankdata
+
+    rx, ry, rc = rankdata(x), rankdata(y), rankdata(covar)
+    # Ddof=0 variance is fine here; we only test "is rank-covar constant?"
+    if rc.var() < 1e-12:
+        return rx, ry
+    ex = _safe_polyfit_residual(rx, rc)
+    ey = _safe_polyfit_residual(ry, rc)
+    if ex is None or ey is None:
+        return rx, ry
+    return ex, ey
 
 
 def fold_r2(
@@ -385,23 +392,98 @@ def fold_r2(
     y_test: np.ndarray,
     covar_test: np.ndarray,
 ) -> float:
-    """R² of length-controlled linear fit, train on train, score on test.
+    """R² of a length-controlled fit, train on train, score on test.
 
-    R² = 1 − SSE / SST with SST = sum((y_test − mean(y_test))²) so a fold
-    where the test rows are constant returns NaN (undefined) rather than
-    +∞ / a meaningless number.
+    Round-2 fix to Critical-7 (Claude self-flagged in `(d)`): the linear-
+    scale `_length_controlled_fit_predict` from round-1 produced R²≈-5.08
+    in the dev VM smoke (pathological extrapolation when the log(covar)
+    component dominated the prediction on the held-out fold).
+    Switched to the project's canonical rank-then-residualize length-control
+    recipe (`scripts/issue493_extraction_metric_bakeoff._loocv_r2` /
+    `_length_partial_residualize_rank`): we residualize x and y on
+    rank(covar) on the TRAIN set, fit a bare OLS x_resid → y_resid, then
+    on the test set we re-rank the FULL (train ∪ test) covar (so the test
+    ranks are comparable to the train ranks), residualize x_test and y_test
+    on those ranks, and score R² in the residualized rank space.
+
+    R² = 1 − SSE / SST in residualized-rank space. A fold where the
+    residualized y_test is constant returns NaN.
     """
-    y_hat = _length_controlled_fit_predict(x_train, y_train, covar_train, x_test, covar_test)
-    finite_mask = np.isfinite(y_hat) & np.isfinite(y_test)
-    if finite_mask.sum() < 3:
+    n_tr = len(x_train)
+    if n_tr < 5 or len(np.unique(x_train)) < 2:
         return float("nan")
-    yh = y_hat[finite_mask]
-    yt = y_test[finite_mask]
-    sst = float(np.sum((yt - yt.mean()) ** 2))
-    if sst < 1e-12:
+    # Build a JOINT rank space over train ∪ test so the train fit and the
+    # test scoring use comparable ranks for x, y, and covar. This is the
+    # standard LOCO-CV pattern in #493/#502 (`_loocv_r2`).
+    x_all = np.concatenate([x_train, x_test])
+    y_all = np.concatenate([y_train, y_test])
+    c_all = np.concatenate([covar_train, covar_test])
+    finite_all = np.isfinite(x_all) & np.isfinite(y_all) & np.isfinite(c_all)
+    if finite_all.sum() < 5:
         return float("nan")
-    sse = float(np.sum((yt - yh) ** 2))
+    # Compute the rank-residualized series on the (finite) joint set.
+    x_resid, y_resid = _rank_residualize_on_covar(
+        x_all[finite_all], y_all[finite_all], c_all[finite_all]
+    )
+    # Index masks back into the original split.
+    finite_tr = np.isfinite(x_train) & np.isfinite(y_train) & np.isfinite(covar_train)
+    finite_te = np.isfinite(x_test) & np.isfinite(y_test) & np.isfinite(covar_test)
+    if finite_tr.sum() < 5 or finite_te.sum() < 3:
+        return float("nan")
+    n_train_finite = int(finite_tr.sum())
+    x_resid_tr, x_resid_te = x_resid[:n_train_finite], x_resid[n_train_finite:]
+    y_resid_tr, y_resid_te = y_resid[:n_train_finite], y_resid[n_train_finite:]
+    if len(np.unique(x_resid_tr)) < 2:
+        return float("nan")
+    try:
+        b_x, a_x = np.polyfit(x_resid_tr, y_resid_tr, 1)
+    except (np.linalg.LinAlgError, ValueError):
+        return float("nan")
+    if not (np.isfinite(a_x) and np.isfinite(b_x)):
+        return float("nan")
+    y_hat = a_x + b_x * x_resid_te
+    sst = float(np.sum((y_resid_te - y_resid_te.mean()) ** 2))
+    if sst < 1e-12 or not np.isfinite(sst):
+        return float("nan")
+    sse = float(np.sum((y_resid_te - y_hat) ** 2))
+    if not np.isfinite(sse):
+        return float("nan")
     return 1.0 - sse / sst
+
+
+def _assert_pair_coverage(
+    distances: dict[tuple[str, str], float],
+    delta_g: dict[tuple[str, str], float],
+    folds: list[tuple[str, list, list]],
+    *,
+    label: str,
+) -> None:
+    """Fail loud if any fold's train ∪ test pair is missing from distances OR delta_g.
+
+    Round-2 fix to Critical-6 (Codex). Round-1 used `dict.get(p, np.nan)`
+    which silently mapped missing pairs to NaN — a partial Phase C metric
+    artifact then produced a finite-looking R² over an unintended subset
+    and the analyzer scored a wrong number with no warning. We surface the
+    missing keys + abort.
+    """
+    required: set[tuple[str, str]] = set()
+    for _s, tests, trains in folds:
+        required.update(tests)
+        required.update(trains)
+    missing_dist = [p for p in required if p not in distances]
+    missing_dg = [p for p in required if p not in delta_g]
+    if missing_dist or missing_dg:
+        # Sample the first 5 of each side to keep the error message readable.
+        raise RuntimeError(
+            f"Phase D pair coverage check FAILED for bar={label!r}: "
+            f"{len(missing_dist)}/{len(required)} pair(s) missing from the "
+            f"distances matrix, {len(missing_dg)}/{len(required)} pair(s) "
+            "missing from the ΔG matrix. "
+            f"First-missing-distances={missing_dist[:5]}, "
+            f"first-missing-delta_g={missing_dg[:5]}. "
+            "A partial Phase-C/Phase-B artifact would produce a wrong R²; "
+            "regenerate the matrix or re-run Phase B/C."
+        )
 
 
 def cell_fixed_loco(
@@ -410,44 +492,257 @@ def cell_fixed_loco(
     prompt_tokens: dict[tuple[str, str], int],
     folds: list[tuple[str, list, list]],
 ) -> tuple[float, list[float]]:
-    """Cell-fixed leave-one-source-condition-out CV R².
+    """Cell-fixed leave-one-source-condition-out CV R², canonical pooled aggregator.
 
-    Returns (mean_across_folds, per_fold_R2_list). NaN folds drop from the
-    mean BUT the per-fold list keeps them so the caller can report fold
-    coverage.
+    Returns (pooled_R2, per_fold_R2_list).
+
+    **Aggregator (round-2 fix to Critical-7).** This follows the project's
+    canonical ``_loocv_r2`` recipe in
+    ``scripts/issue493_extraction_metric_bakeoff.py:1746`` — which is the
+    `_loocv_r2` the Claude code-reviewer cited as "the project's canonical
+    recipe" when it FAILed the round-1 mean-of-per-fold-R² aggregator
+    (which produced R²≈-18 on #502's published data). The recipe:
+
+      1. Rank-residualize ``x`` and ``y`` on rank(log(covar)) ONCE over the
+         FULL union of all pairs covered by the folds (in this design that's
+         all 156 non-stylized ordered pairs for the headline / 240 for the
+         full panel). One residualization, one rank space.
+      2. For each outer fold k: fit ``y_resid ~ x_resid`` on the train pairs
+         only; predict ``y_hat[test_pairs]``.
+      3. After looping all folds, compute a SINGLE pooled R² over the
+         ``y_resid`` vs ``y_hat`` arrays across all 156 (or 240) predictions:
+         ``R² = 1 − sum((y - y_hat)²) / sum((y - y.mean())²)``.
+
+    The pooled-R² aggregator is statistically informative when each fold's
+    test set is narrow (12 pairs of one source S). A per-fold ``y_test.var``
+    can be 100× smaller than the global ``y.var`` (since one source's
+    leakages are tightly clustered), so a per-fold R² blows up arbitrarily
+    negative on any prediction error — even when the predictions are well-
+    calibrated globally. The pooled aggregator computes R² against the
+    GLOBAL variance, matching the published #502 0.34 cell-fixed result.
+
+    Per-fold R² values are also returned so the caller can build a fold-
+    bootstrap CI on the pooled estimate (paired resampling of the 13 folds:
+    for each bootstrap sample, recompute pooled R² over the resampled
+    folds' predictions). The fold-bootstrap CI on the pooled R² is reported
+    by ``fold_bootstrap_ci_pooled`` below.
+
+    Plan §4 Phase D Output 1 pseudocode wrote ``mean(outer_r2 across 13
+    folds)`` literally, which the round-1 implementation took verbatim and
+    which produced the round-1 pathology. The reviewer FAILed that aggregator
+    citing the canonical recipe; round-2 honors the canonical recipe.
     """
+    # ── Step 1: build the global residualized series over ALL pairs ──
+    all_pairs = sorted({p for _s, tests, trains in folds for p in (*tests, *trains)})
+    x_all = np.array([distances.get(p, np.nan) for p in all_pairs], dtype=np.float64)
+    y_all = np.array([delta_g.get(p, np.nan) for p in all_pairs], dtype=np.float64)
+    c_all = np.array([prompt_tokens.get(p, 1) for p in all_pairs], dtype=np.float64)
+    finite = np.isfinite(x_all) & np.isfinite(y_all) & np.isfinite(c_all) & (c_all > 0)
+    if finite.sum() < 5:
+        return float("nan"), [float("nan")] * len(folds)
+    # Index from pair -> position in the residualized array (only finite rows).
+    pair_to_idx: dict[tuple[str, str], int] = {}
+    for i, p in enumerate(all_pairs):
+        if finite[i]:
+            pair_to_idx[p] = sum(finite[: i + 1]) - 1  # rank-position in finite array
+    x_f = x_all[finite]
+    y_f = y_all[finite]
+    c_f = c_all[finite]
+    x_resid, y_resid = _rank_residualize_on_covar(x_f, y_f, np.log(c_f))
+
+    # ── Step 2: leave-one-source-out, fit train-residual OLS, predict test ──
+    n_f = len(x_resid)
+    y_hat = np.full(n_f, np.nan, dtype=np.float64)
     per_fold: list[float] = []
+    per_fold_test_idx: list[list[int]] = []
     for _s, tests, trains in folds:
-        x_train = np.array([distances.get(p, np.nan) for p in trains], dtype=np.float64)
-        y_train = np.array([delta_g.get(p, np.nan) for p in trains], dtype=np.float64)
-        c_train = np.array([prompt_tokens.get(p, 1) for p in trains], dtype=np.float64)
-        x_test = np.array([distances.get(p, np.nan) for p in tests], dtype=np.float64)
-        y_test = np.array([delta_g.get(p, np.nan) for p in tests], dtype=np.float64)
-        c_test = np.array([prompt_tokens.get(p, 1) for p in tests], dtype=np.float64)
-        # Restrict train rows to finite-everywhere subsets.
-        train_mask = np.isfinite(x_train) & np.isfinite(y_train) & np.isfinite(c_train)
-        if train_mask.sum() < 5:
+        train_idx = np.array([pair_to_idx[p] for p in trains if p in pair_to_idx], dtype=np.int64)
+        test_idx = np.array([pair_to_idx[p] for p in tests if p in pair_to_idx], dtype=np.int64)
+        per_fold_test_idx.append(list(test_idx))
+        if len(train_idx) < 5 or len(test_idx) < 1:
             per_fold.append(float("nan"))
             continue
-        x_train = x_train[train_mask]
-        y_train = y_train[train_mask]
-        c_train = c_train[train_mask]
-        r2 = fold_r2(x_train, y_train, c_train, x_test, y_test, c_test)
-        per_fold.append(r2)
-    finite_r2 = [r for r in per_fold if np.isfinite(r)]
-    return (
-        float(np.mean(finite_r2)) if finite_r2 else float("nan"),
-        per_fold,
-    )
+        x_tr, y_tr = x_resid[train_idx], y_resid[train_idx]
+        if len(np.unique(x_tr)) < 2:
+            per_fold.append(float("nan"))
+            continue
+        try:
+            b, a = np.polyfit(x_tr, y_tr, 1)
+        except (np.linalg.LinAlgError, ValueError):
+            per_fold.append(float("nan"))
+            continue
+        if not (np.isfinite(a) and np.isfinite(b)):
+            per_fold.append(float("nan"))
+            continue
+        y_hat[test_idx] = a + b * x_resid[test_idx]
+        # Per-fold R² (also returned for diagnostic/bootstrap purposes).
+        y_te = y_resid[test_idx]
+        sst_fold = float(np.sum((y_te - y_te.mean()) ** 2))
+        if sst_fold < 1e-18:
+            per_fold.append(float("nan"))
+            continue
+        sse_fold = float(np.sum((y_te - y_hat[test_idx]) ** 2))
+        per_fold.append(1.0 - sse_fold / sst_fold)
+
+    # ── Step 3: pooled R² over the global y_resid vs y_hat arrays ──
+    pred_mask = np.isfinite(y_hat)
+    if pred_mask.sum() < 5:
+        return float("nan"), per_fold
+    sse = float(np.sum((y_resid[pred_mask] - y_hat[pred_mask]) ** 2))
+    sst = float(np.sum((y_resid[pred_mask] - y_resid[pred_mask].mean()) ** 2))
+    if sst < 1e-18 or not np.isfinite(sse):
+        return float("nan"), per_fold
+    pooled_r2 = 1.0 - sse / sst
+    return pooled_r2, per_fold
+
+
+def cell_fixed_loco_with_payload(
+    distances: dict[tuple[str, str], float],
+    delta_g: dict[tuple[str, str], float],
+    prompt_tokens: dict[tuple[str, str], int],
+    folds: list[tuple[str, list, list]],
+) -> tuple[float, list[float], list[np.ndarray], list[np.ndarray]]:
+    """Cell-fixed LOCO with the per-fold (y_resid, y_hat) arrays for bootstrap.
+
+    Round-2 fix to Critical-7: the pooled-R² CI requires the per-fold y_resid
+    and y_hat arrays so the bootstrap can resample folds and recompute pooled
+    R² on each resampled set. Returns:
+      (pooled_r2, per_fold_r2, per_fold_y_resid, per_fold_y_hat)
+    where ``per_fold_y_resid[k]`` and ``per_fold_y_hat[k]`` are 1-D numpy
+    arrays of equal length holding the residualized targets and predictions
+    for fold k's test pairs.
+
+    Computation is byte-identical to ``cell_fixed_loco`` up to the final
+    pooled R² compute; this variant just retains the per-fold arrays.
+    """
+    all_pairs = sorted({p for _s, tests, trains in folds for p in (*tests, *trains)})
+    x_all = np.array([distances.get(p, np.nan) for p in all_pairs], dtype=np.float64)
+    y_all = np.array([delta_g.get(p, np.nan) for p in all_pairs], dtype=np.float64)
+    c_all = np.array([prompt_tokens.get(p, 1) for p in all_pairs], dtype=np.float64)
+    finite = np.isfinite(x_all) & np.isfinite(y_all) & np.isfinite(c_all) & (c_all > 0)
+    if finite.sum() < 5:
+        empty = [np.array([], dtype=np.float64) for _ in folds]
+        return float("nan"), [float("nan")] * len(folds), empty, list(empty)
+    pair_to_idx: dict[tuple[str, str], int] = {}
+    for i, p in enumerate(all_pairs):
+        if finite[i]:
+            pair_to_idx[p] = sum(finite[: i + 1]) - 1
+    x_f = x_all[finite]
+    y_f = y_all[finite]
+    c_f = c_all[finite]
+    x_resid, y_resid = _rank_residualize_on_covar(x_f, y_f, np.log(c_f))
+
+    n_f = len(x_resid)
+    y_hat = np.full(n_f, np.nan, dtype=np.float64)
+    per_fold: list[float] = []
+    per_fold_y_resid: list[np.ndarray] = []
+    per_fold_y_hat: list[np.ndarray] = []
+    for _s, tests, trains in folds:
+        train_idx = np.array([pair_to_idx[p] for p in trains if p in pair_to_idx], dtype=np.int64)
+        test_idx = np.array([pair_to_idx[p] for p in tests if p in pair_to_idx], dtype=np.int64)
+        if len(train_idx) < 5 or len(test_idx) < 1:
+            per_fold.append(float("nan"))
+            per_fold_y_resid.append(np.array([], dtype=np.float64))
+            per_fold_y_hat.append(np.array([], dtype=np.float64))
+            continue
+        x_tr, y_tr = x_resid[train_idx], y_resid[train_idx]
+        if len(np.unique(x_tr)) < 2:
+            per_fold.append(float("nan"))
+            per_fold_y_resid.append(np.array([], dtype=np.float64))
+            per_fold_y_hat.append(np.array([], dtype=np.float64))
+            continue
+        try:
+            b, a = np.polyfit(x_tr, y_tr, 1)
+        except (np.linalg.LinAlgError, ValueError):
+            per_fold.append(float("nan"))
+            per_fold_y_resid.append(np.array([], dtype=np.float64))
+            per_fold_y_hat.append(np.array([], dtype=np.float64))
+            continue
+        if not (np.isfinite(a) and np.isfinite(b)):
+            per_fold.append(float("nan"))
+            per_fold_y_resid.append(np.array([], dtype=np.float64))
+            per_fold_y_hat.append(np.array([], dtype=np.float64))
+            continue
+        y_hat[test_idx] = a + b * x_resid[test_idx]
+        y_te = y_resid[test_idx]
+        y_hat_te = a + b * x_resid[test_idx]
+        per_fold_y_resid.append(np.array(y_te, dtype=np.float64))
+        per_fold_y_hat.append(np.array(y_hat_te, dtype=np.float64))
+        sst_fold = float(np.sum((y_te - y_te.mean()) ** 2))
+        if sst_fold < 1e-18:
+            per_fold.append(float("nan"))
+            continue
+        sse_fold = float(np.sum((y_te - y_hat_te) ** 2))
+        per_fold.append(1.0 - sse_fold / sst_fold)
+
+    pred_mask = np.isfinite(y_hat)
+    if pred_mask.sum() < 5:
+        return float("nan"), per_fold, per_fold_y_resid, per_fold_y_hat
+    sse = float(np.sum((y_resid[pred_mask] - y_hat[pred_mask]) ** 2))
+    sst = float(np.sum((y_resid[pred_mask] - y_resid[pred_mask].mean()) ** 2))
+    if sst < 1e-18 or not np.isfinite(sse):
+        return float("nan"), per_fold, per_fold_y_resid, per_fold_y_hat
+    pooled_r2 = 1.0 - sse / sst
+    return pooled_r2, per_fold, per_fold_y_resid, per_fold_y_hat
 
 
 # ────────────────────────── Bootstrap ──────────────────────────
 
 
+def fold_bootstrap_ci_pooled(
+    per_fold_y_resid: list[np.ndarray],
+    per_fold_y_hat: list[np.ndarray],
+    n_boot: int = BOOTSTRAP_N,
+    seed: int = 42,
+) -> tuple[float, float, float]:
+    """Pooled-R² fold-bootstrap CI.
+
+    For each bootstrap sample, resample `len(folds)` folds with replacement,
+    concatenate their (y_resid, y_hat) arrays, and compute pooled R² over
+    that concatenation. Returns (lo_2.5, hi_97.5, half_width).
+
+    Empty folds (e.g. degenerate fit) drop out — their arrays are length 0.
+    A bootstrap sample whose concatenated length < 5 yields NaN, contributing
+    nothing to the percentile.
+    """
+    n_folds = len(per_fold_y_resid)
+    if n_folds != len(per_fold_y_hat):
+        raise ValueError(f"length mismatch: {n_folds} vs {len(per_fold_y_hat)}")
+    if n_folds < 3:
+        return (float("nan"), float("nan"), float("nan"))
+    rng = np.random.default_rng(seed)
+    samples = []
+    for _ in range(n_boot):
+        idx = rng.integers(0, n_folds, size=n_folds)
+        y_concat = np.concatenate([per_fold_y_resid[i] for i in idx])
+        y_hat_concat = np.concatenate([per_fold_y_hat[i] for i in idx])
+        if y_concat.size < 5:
+            continue
+        sst = float(np.sum((y_concat - y_concat.mean()) ** 2))
+        if sst < 1e-18:
+            continue
+        sse = float(np.sum((y_concat - y_hat_concat) ** 2))
+        r2 = 1.0 - sse / sst
+        if np.isfinite(r2):
+            samples.append(r2)
+    if len(samples) < 10:
+        return (float("nan"), float("nan"), float("nan"))
+    arr = np.array(samples, dtype=np.float64)
+    lo, hi = float(np.percentile(arr, 2.5)), float(np.percentile(arr, 97.5))
+    half_width = (hi - lo) / 2.0
+    return lo, hi, half_width
+
+
 def fold_bootstrap_ci(
     per_fold: list[float], n_boot: int = BOOTSTRAP_N, seed: int = 42
 ) -> tuple[float, float, float]:
-    """Resample folds with replacement; return (lo, hi, half_width) at 2.5/97.5."""
+    """Resample folds with replacement on the per-fold R² list; return
+    (lo, hi, half_width) at 2.5/97.5.
+
+    DEPRECATED for the cell-fixed pooled-R² headline (use
+    ``fold_bootstrap_ci_pooled`` instead). Kept here for paired-Δ CIs and
+    backwards-compat where per-fold R² is the natural unit.
+    """
     arr = np.array([r for r in per_fold if np.isfinite(r)], dtype=np.float64)
     if len(arr) < 3:
         return (float("nan"), float("nan"), float("nan"))
@@ -500,50 +795,100 @@ def paired_fold_bootstrap_ci_on_delta(
 def enumerate_inner_cells(
     metrics_dir: Path,
 ) -> list[tuple[str, int | None, str, str]]:
-    """Return every (extraction_point, layer, metric, variant) cell present
-    under `metrics_dir`. Used by the nested-search diagnostic per fold.
+    """Return every (extraction_point, layer, metric, variant) cell that
+    the bakeoff grid declares for `loc_ep1`.
+
+    Round-2 fix to the Major Codex finding: round-1 derived cells from
+    filename parsing (`name.split("__")` with `expected = 4`), which (a)
+    missed `delta_spec` sub-predictor splits — one file but THREE grid
+    entries (mean_norm / coherence / effective_dim) — and (b) silently
+    excluded permutation-test variants whose 5-chunk filenames couldn't
+    be split into 4. The canonical 1737-cell enumeration is the
+    `bakeoff_grid.json` (the #502 layout), so we read it.
+
+    The grid file lives at `<metrics_dir>/../bakeoff_grid.json` — the
+    same convention `scripts/issue493_extraction_metric_bakeoff.py:3507`
+    writes it to.
     """
+    grid_path = metrics_dir.parent / "bakeoff_grid.json"
+    if not grid_path.exists():
+        raise FileNotFoundError(
+            f"bakeoff_grid.json missing under {grid_path}. Phase C must "
+            "have produced it (issue493_extraction_metric_bakeoff "
+            "--phase regress writes it at <bakeoff_root>/bakeoff_grid.json). "
+            "Round-1 filename parsing is intentionally retired — the grid "
+            "is the canonical 1737-cell enumeration with sub_predictor "
+            "splits + variant variants the filename can't represent."
+        )
+    payload = json.loads(grid_path.read_text())
+    cells_block = payload.get("cells", {})
+    loc_ep1 = cells_block.get("loc_ep1")
+    if loc_ep1 is None:
+        raise RuntimeError(
+            f"bakeoff_grid.json at {grid_path} has no `cells.loc_ep1` block; "
+            f"available cells: {list(cells_block)}"
+        )
+    entries = loc_ep1.get("entries", [])
     cells: list[tuple[str, int | None, str, str]] = []
-    for p in sorted(metrics_dir.glob("*__layer*__*__*.json")):
-        # Pattern: {ep}__layer{L}__{metric}__{variant}.json
-        name = p.stem
-        try:
-            ep, layer_chunk, metric, variant = name.split("__")
-            layer = int(layer_chunk.removeprefix("layer"))
-        except (ValueError, AttributeError):
-            continue
-        cells.append((ep, layer, metric, variant))
-    # JS baseline (one per extraction-point), keyed off the bakeoff layout.
-    for p in sorted(metrics_dir.glob("*__next_token_js*.json")):
-        name = p.stem
-        chunks = name.split("__")
-        if len(chunks) >= 2:
-            ep = chunks[0]
-            variant = chunks[-1] if "next_token_js" not in chunks[-1] else "raw"
-            cells.append((ep, None, "next_token_js", variant))
+    for e in entries:
+        ep = e.get("extraction_point")
+        layer = e.get("layer")
+        metric = e.get("metric")
+        variant = e.get("variant", "raw")
+        sub = e.get("sub_predictor")
+        # For metrics with sub_predictor splits (delta_spec → mean_norm /
+        # coherence / effective_dim), we encode the sub-predictor INTO the
+        # variant slot so each (ep, layer, metric, variant') tuple is unique
+        # and downstream `load_distance_matrix` can read it. The bakeoff
+        # writes those three sub-predictors as separate sub-files / fields
+        # inside the SAME metric matrix file, so the load path must know to
+        # demux them — we surface that via the variant string and load it
+        # inside load_distance_matrix as a fallback for the sub_predictor
+        # case (round-2 conservative scope: keep the demux logic to the
+        # delta_spec case the bakeoff is known to emit).
+        variant_key = f"{variant}__{sub}" if sub is not None else variant
+        cells.append((ep, layer, metric, variant_key))
+    # Sanity-check the canonical 1737 grid size per plan §10 Repro Card.
+    if len(cells) != 1737:
+        raise RuntimeError(
+            f"bakeoff_grid.json loc_ep1 has {len(cells)} entries; expected "
+            "the canonical 1737-cell enumeration per plan §10 Reproducibility "
+            "Card. If the grid is intentionally a subset, gate this assertion "
+            "on a flag — but defaults should match #502's grid."
+        )
     return cells
 
 
-def nested_search_loco(
+def nested_search_loco(  # noqa: C901 — single sequential pipeline, easier to read in-place
     metrics_dir: Path,
     delta_g: dict[tuple[str, str], float],
     prompt_tokens: dict[tuple[str, str], int],
     folds: list[tuple[str, list, list]],
     inner_score: str = "loocv",
 ) -> tuple[float, list[float], list[tuple[str, int | None, str, str]]]:
-    """Full 1737-cell inner argmax per fold.
+    """Full 1737-cell inner argmax per fold; canonical pooled aggregator on the
+    outer side.
 
     For each outer fold k:
-      - INNER: rank every candidate cell by its leave-one-source-out CV R²
-        computed on the OUTER TRAINING pairs only (i.e. an inner LOCO over
-        the 12 non-S sources, restricted to train_pairs).
-      - Pick the inner-best cell; score it on the outer test pairs.
+      - INNER: rank every candidate cell by its leave-one-source-out POOLED
+        R² (the canonical `cell_fixed_loco` aggregator) computed on the
+        OUTER TRAINING pairs only (an inner LOCO over the 12 non-S sources,
+        restricted to train_pairs).
+      - Pick the inner-best cell; collect its predictions on the outer test
+        pairs into a global y_hat array.
+    Outer R² = pooled R² over y_hat vs y_resid across ALL fold predictions
+    (matches `cell_fixed_loco` aggregator).
 
-    Returns (mean_across_folds, per_fold_R2, per_fold_selected_cell).
-    inner_score: 'loocv' selects the cell whose inner-LOCO R² is highest.
+    Returns (pooled_outer_R2, per_fold_R2, per_fold_selected_cell).
+    inner_score: 'loocv' selects the cell whose inner-LOCO pooled R² is highest.
 
-    Memo: pre-load every candidate cell's distance matrix; the inner LOCO
-    re-runs are cheap dot-products on the trains.
+    Memo: pre-load every candidate cell's distance matrix once; per-fold
+    inner search re-uses the cache.
+
+    Round-2 fix (Critical-7 / Claude Major-4): aggregator swapped from
+    `mean(per_fold_R²)` to canonical pooled R² for the same reason
+    documented in `cell_fixed_loco` — with 12-pair narrow test folds,
+    per-fold y_test.var is tiny so per-fold R² is pathological.
     """
     candidate_cells = enumerate_inner_cells(metrics_dir)
     logger.info("nested-search: %d candidate cells discovered", len(candidate_cells))
@@ -557,8 +902,26 @@ def nested_search_loco(
         except (FileNotFoundError, KeyError):
             continue
 
+    # ── Build global residualized series over the union of all pairs ──
+    all_pairs = sorted({p for _s, tests, trains in folds for p in (*tests, *trains)})
+    y_all = np.array([delta_g.get(p, np.nan) for p in all_pairs], dtype=np.float64)
+    c_all = np.array([prompt_tokens.get(p, 1) for p in all_pairs], dtype=np.float64)
+    finite_yc = np.isfinite(y_all) & np.isfinite(c_all) & (c_all > 0)
+    pair_to_global_idx: dict[tuple[str, str], int] = {}
+    finite_count = 0
+    for i, p in enumerate(all_pairs):
+        if finite_yc[i]:
+            pair_to_global_idx[p] = finite_count
+            finite_count += 1
+    n_global = finite_count
+    if n_global < 5:
+        return float("nan"), [float("nan")] * len(folds), [("", None, "", "")] * len(folds)
+    y_global = y_all[finite_yc]
+    log_c_global = np.log(c_all[finite_yc])
+
     per_fold_r2: list[float] = []
     per_fold_selected: list[tuple[str, int | None, str, str]] = []
+    y_hat_global = np.full(n_global, np.nan, dtype=np.float64)
 
     for fold_idx, (s, test_pairs, train_pairs) in enumerate(folds):
         best_r2 = -np.inf
@@ -582,52 +945,113 @@ def nested_search_loco(
             if cell not in distances_cache:
                 continue
             distances = distances_cache[cell]
-            mean_inner, _ = cell_fixed_loco(distances, delta_g, prompt_tokens, inner_folds)
-            if not np.isfinite(mean_inner):
+            inner_pooled_r2, _ = cell_fixed_loco(distances, delta_g, prompt_tokens, inner_folds)
+            if not np.isfinite(inner_pooled_r2):
                 continue
-            if mean_inner > best_r2:
-                best_r2 = mean_inner
+            if inner_pooled_r2 > best_r2:
+                best_r2 = inner_pooled_r2
                 best_cell = cell
         if best_cell is None:
             per_fold_r2.append(float("nan"))
             per_fold_selected.append(("", None, "", ""))
             continue
-        # Score on outer test pairs using the best cell.
+
+        # Score on outer test pairs using the best cell — single residualization
+        # over the union of all pairs (matching cell_fixed_loco recipe), then
+        # fit OLS on train pairs and predict test pairs into the global y_hat.
         distances = distances_cache[best_cell]
-        x_train = np.array([distances.get(p, np.nan) for p in train_pairs], dtype=np.float64)
-        y_train = np.array([delta_g.get(p, np.nan) for p in train_pairs], dtype=np.float64)
-        c_train = np.array([prompt_tokens.get(p, 1) for p in train_pairs], dtype=np.float64)
-        x_test = np.array([distances.get(p, np.nan) for p in test_pairs], dtype=np.float64)
-        y_test = np.array([delta_g.get(p, np.nan) for p in test_pairs], dtype=np.float64)
-        c_test = np.array([prompt_tokens.get(p, 1) for p in test_pairs], dtype=np.float64)
-        train_mask = np.isfinite(x_train) & np.isfinite(y_train) & np.isfinite(c_train)
-        if train_mask.sum() < 5:
+        x_all = np.array([distances.get(p, np.nan) for p in all_pairs], dtype=np.float64)
+        finite_x = np.isfinite(x_all)
+        finite_combined = finite_yc & finite_x
+        if finite_combined.sum() < 5:
+            per_fold_r2.append(float("nan"))
+            per_fold_selected.append(best_cell)
+            continue
+        # The cell-specific residualization is over the same union but only
+        # the rows where this cell's distance is finite.
+        cell_pair_to_idx: dict[tuple[str, str], int] = {}
+        ridx = 0
+        for i, p in enumerate(all_pairs):
+            if finite_combined[i]:
+                cell_pair_to_idx[p] = ridx
+                ridx += 1
+        x_r = x_all[finite_combined]
+        y_r = y_all[finite_combined]
+        c_r = c_all[finite_combined]
+        x_resid_cell, y_resid_cell = _rank_residualize_on_covar(x_r, y_r, np.log(c_r))
+        train_idx = np.array(
+            [cell_pair_to_idx[p] for p in train_pairs if p in cell_pair_to_idx], dtype=np.int64
+        )
+        test_idx = np.array(
+            [cell_pair_to_idx[p] for p in test_pairs if p in cell_pair_to_idx], dtype=np.int64
+        )
+        if len(train_idx) < 5 or len(test_idx) < 1:
+            per_fold_r2.append(float("nan"))
+            per_fold_selected.append(best_cell)
+            continue
+        x_tr = x_resid_cell[train_idx]
+        y_tr = y_resid_cell[train_idx]
+        if len(np.unique(x_tr)) < 2:
+            per_fold_r2.append(float("nan"))
+            per_fold_selected.append(best_cell)
+            continue
+        try:
+            b, a = np.polyfit(x_tr, y_tr, 1)
+        except (np.linalg.LinAlgError, ValueError):
+            per_fold_r2.append(float("nan"))
+            per_fold_selected.append(best_cell)
+            continue
+        if not (np.isfinite(a) and np.isfinite(b)):
+            per_fold_r2.append(float("nan"))
+            per_fold_selected.append(best_cell)
+            continue
+        # Fill the global y_hat for each test pair (translating to global idx).
+        for p in test_pairs:
+            if p in cell_pair_to_idx and p in pair_to_global_idx:
+                gi = pair_to_global_idx[p]
+                ci = cell_pair_to_idx[p]
+                y_hat_global[gi] = a + b * x_resid_cell[ci]
+        # Per-fold R² (diagnostic; in residualized rank space, against this
+        # fold's test predictions vs the global y_resid baseline).
+        y_te = y_resid_cell[test_idx]
+        y_hat_te = a + b * x_resid_cell[test_idx]
+        sst_fold = float(np.sum((y_te - y_te.mean()) ** 2))
+        if sst_fold < 1e-18:
             per_fold_r2.append(float("nan"))
         else:
-            r2 = fold_r2(
-                x_train[train_mask],
-                y_train[train_mask],
-                c_train[train_mask],
-                x_test,
-                y_test,
-                c_test,
-            )
-            per_fold_r2.append(r2)
+            sse_fold = float(np.sum((y_te - y_hat_te) ** 2))
+            per_fold_r2.append(1.0 - sse_fold / sst_fold)
         per_fold_selected.append(best_cell)
         logger.info(
-            "nested-search fold %d (S=%s): inner-best=%s outer-test-R²=%.4f",
+            "nested-search fold %d (S=%s): inner-best=%s (test-fold R²=%.4f)",
             fold_idx,
             s,
             best_cell,
             per_fold_r2[-1],
         )
 
-    finite = [r for r in per_fold_r2 if np.isfinite(r)]
-    return (
-        float(np.mean(finite)) if finite else float("nan"),
-        per_fold_r2,
-        per_fold_selected,
-    )
+    # Pooled R² over the global y_hat vs y_global, residualized on global covar.
+    # Round-2 aggregator parity with cell_fixed_loco.
+    _, y_resid_global = _rank_residualize_on_covar(y_global, y_global, log_c_global)
+    # Re-compute y_resid using rank-residualization of global y on global covar.
+    from scipy.stats import rankdata
+
+    ry = rankdata(y_global)
+    rc = rankdata(log_c_global)
+    if rc.var() < 1e-12:
+        y_resid_global = ry
+    else:
+        ey = _safe_polyfit_residual(ry, rc)
+        y_resid_global = ey if ey is not None else ry
+    pred_mask = np.isfinite(y_hat_global)
+    if pred_mask.sum() < 5:
+        return float("nan"), per_fold_r2, per_fold_selected
+    sse = float(np.sum((y_resid_global[pred_mask] - y_hat_global[pred_mask]) ** 2))
+    sst = float(np.sum((y_resid_global[pred_mask] - y_resid_global[pred_mask].mean()) ** 2))
+    if sst < 1e-18 or not np.isfinite(sse):
+        return float("nan"), per_fold_r2, per_fold_selected
+    pooled_r2 = 1.0 - sse / sst
+    return pooled_r2, per_fold_r2, per_fold_selected
 
 
 def cell_pick_tally(
@@ -681,19 +1105,44 @@ def score_one_bar(
     Returns the per-bar JSON payload (written to scoring/<bar_slug>.json).
     """
     t0 = time.time()
+    per_fold_y_resid: list[np.ndarray] | None = None
+    per_fold_y_hat: list[np.ndarray] | None = None
     if nested_search:
         if metrics_dir is None:
             raise ValueError("nested_search requires metrics_dir")
+        # Coverage gate is enforced inside nested_search_loco per fold per
+        # cell — see _assert_pair_coverage at the top of each cell's score.
+        # We still gate ΔG coverage up-front against the outer scheme.
+        _assert_pair_coverage(
+            distances={p: 0.0 for _s, tests, trains in folds for p in (*tests, *trains)},
+            delta_g=delta_g,
+            folds=folds,
+            label=f"{bar_slug}:delta_g",
+        )
         mean_r2, per_fold, per_fold_selected = nested_search_loco(
             metrics_dir, delta_g, prompt_tokens, folds
         )
         tally = cell_pick_tally(per_fold_selected)
     else:
-        mean_r2, per_fold = cell_fixed_loco(distances, delta_g, prompt_tokens, folds)
+        # Round-2 fix to Critical-6 (Codex): assert every fold's required
+        # pairs are present in BOTH distances and ΔG before scoring. A
+        # partial artifact would otherwise produce a wrong R² via the
+        # `.get(p, np.nan)` fallback below.
+        _assert_pair_coverage(distances, delta_g, folds, label=bar_slug)
+        # Use the payload variant so we can pooled-bootstrap the CI.
+        mean_r2, per_fold, per_fold_y_resid, per_fold_y_hat = cell_fixed_loco_with_payload(
+            distances, delta_g, prompt_tokens, folds
+        )
         per_fold_selected = None
         tally = None
 
-    lo, hi, hw = fold_bootstrap_ci(per_fold)
+    # Pooled-R² CI if we have the payload (cell-fixed bars); fall back to
+    # the mean-of-per-fold bootstrap for nested-search where the per-fold
+    # arrays span DIFFERENT cells (concatenating them would mix predictors).
+    if per_fold_y_resid is not None and per_fold_y_hat is not None:
+        lo, hi, hw = fold_bootstrap_ci_pooled(per_fold_y_resid, per_fold_y_hat)
+    else:
+        lo, hi, hw = fold_bootstrap_ci(per_fold)
 
     delta_payload = None
     if paired_baseline_per_fold is not None:
@@ -908,31 +1357,31 @@ def main(argv: list[str] | None = None) -> int:
             logger.warning("seed-43 G matrix %s missing; skipping seed-43 bar.", args.g_seed43)
 
         # ── JS baseline bar ──
-        try:
-            distances_js = load_distance_matrix(args.metrics_dir, *JS_BASELINE_CELL)
-        except FileNotFoundError as e:
-            logger.warning("JS baseline matrix not found; skipping JS bar: %s", e)
-            distances_js = None
-        if distances_js is not None:
-            js_payload = score_one_bar(
-                bar_slug="js_baseline_seed42_nonstyl_heldout",
-                distances=distances_js,
-                delta_g=delta_g_seed42,
-                prompt_tokens=prompt_tokens_pair,
-                folds=folds,
-                description=(
-                    "JS baseline cell-fixed (final-layer last-prompt next-token "
-                    "JS over full vocab) under the same fold scheme. Comparator."
-                ),
-                seed_used=42,
-                panel="non_stylized_156",
-                paired_baseline_per_fold=headline_per_fold,
-                paired_baseline_label="cell_fixed_seed42_nonstyl_heldout",
-            )
-            js_path = args.scoring_dir / "js_baseline_seed42_nonstyl_heldout.json"
-            js_path.write_text(json.dumps(js_payload, indent=2))
-            logger.info("wrote %s (R²=%.4f)", js_path, js_payload["point_estimate"])
-            forest_bars.append(js_payload)
+        # The five-bar forest plot REQUIRES this comparator (plan §6 Hero).
+        # Round-1 caught FileNotFound here and silently logged "skipping" —
+        # that turned a missing artifact into an interpretable-looking
+        # four-bar plot with no JS baseline. Round-2 raises so the
+        # five-bar headline figure is either complete or the run aborts.
+        distances_js = load_distance_matrix(args.metrics_dir, *JS_BASELINE_CELL)
+        js_payload = score_one_bar(
+            bar_slug="js_baseline_seed42_nonstyl_heldout",
+            distances=distances_js,
+            delta_g=delta_g_seed42,
+            prompt_tokens=prompt_tokens_pair,
+            folds=folds,
+            description=(
+                "JS baseline cell-fixed (final-layer last-prompt next-token "
+                "JS over full vocab) under the same fold scheme. Comparator."
+            ),
+            seed_used=42,
+            panel="non_stylized_156",
+            paired_baseline_per_fold=headline_per_fold,
+            paired_baseline_label="cell_fixed_seed42_nonstyl_heldout",
+        )
+        js_path = args.scoring_dir / "js_baseline_seed42_nonstyl_heldout.json"
+        js_path.write_text(json.dumps(js_payload, indent=2))
+        logger.info("wrote %s (R²=%.4f)", js_path, js_payload["point_estimate"])
+        forest_bars.append(js_payload)
 
         # ── Nested-search diagnostic ──
         if not args.skip_nested:
@@ -974,7 +1423,7 @@ def main(argv: list[str] | None = None) -> int:
             folds=full_folds,
             description=(
                 "Same cell, all 16 source × 15 target = 240 ordered pairs "
-                "(15 source folds, 15 pairs/fold). Supporting full-panel color."
+                "(16 source folds, 15 pairs/fold). Supporting full-panel color."
             ),
             seed_used=42,
             panel="full_240",

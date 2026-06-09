@@ -53,7 +53,6 @@ import json
 import logging
 import os
 import platform
-import random
 import re
 import subprocess
 import sys
@@ -517,11 +516,17 @@ def _generate_rewrites_with_voice_drift_fix(
         rewrites = _collect_rewrites_results(batch_id, new_probes)
 
     # Validate + (when needed) retry every indirect-register rewrite.
+    # Round-2 fix to Critical-5: any rewrite that fails ALL retries is
+    # DROPPED from the output (not retained with `voice_drift_failed=True`)
+    # so the downstream audit reads `n_indirect_voice_drift_failed == 0`
+    # rather than the round-1 silent-retain behavior. The final-set gate
+    # below fails LOUD if any drops occurred.
     regex_pass_count = 0
     claude_pass_count = 0
     voice_drift_failed: list[dict] = []
+    dropped_probes: list[str] = []
     skip_claude = smoke  # in smoke mode, no Claude validator calls
-    for q in new_probes:
+    for q in list(new_probes):
         original = rewrites[q]["indirect"]
         # If the smoke synthetic rewrite happens to contain first-person tokens,
         # the validator will retry but the synthesizer returns deterministic
@@ -529,40 +534,78 @@ def _generate_rewrites_with_voice_drift_fix(
         final, failed, attempts = _validate_and_fix_indirect_rewrite(
             q, original, skip_claude=skip_claude
         )
+        if failed:
+            voice_drift_failed.append({"question": q, "final_rewrite": final, "attempts": attempts})
+            # Drop the row entirely — do NOT keep an exhausted-retry rewrite
+            # in the output. The pool-builder caller sees the audit fail and
+            # halts before the bad rewrites can confound the held-out CV.
+            dropped_probes.append(q)
+            del rewrites[q]
+            continue
         rewrites[q]["indirect"] = final
         if not _has_first_person(final):
             regex_pass_count += 1
-        if failed:
-            voice_drift_failed.append({"question": q, "final_rewrite": final, "attempts": attempts})
         else:
-            claude_pass_count += 1
+            # If a non-failed rewrite still trips the regex, that's a logic
+            # bug in the retry loop — fail loud rather than silently undercount.
+            raise RuntimeError(
+                f"_validate_and_fix_indirect_rewrite returned failed=False but "
+                f"first-person regex still trips on q={q!r} final={final!r}"
+            )
+        claude_pass_count += 1
 
-    # Audit numbers — plan §4 Phase A (e).
+    # Remove dropped probes from the upstream list so disjointness +
+    # bucket-delivery audits stay consistent.
+    if dropped_probes:
+        kept = [q for q in new_probes if q not in set(dropped_probes)]
+        new_probes.clear()
+        new_probes.extend(kept)
+
     n_total = len(new_probes)
-    regex_rate = regex_pass_count / max(n_total, 1)
-    claude_rate = claude_pass_count / max(n_total, 1)
 
-    # 50-sample post-hoc audit (independent random sample); if the full pool
-    # is smaller (smoke / partial run), audit the whole pool.
-    sample_size = min(VOICE_DRIFT_AUDIT_SAMPLE, n_total)
-    random.seed(42)  # deterministic across reruns
-    audit_sample = random.sample(new_probes, sample_size) if sample_size else []
-    audit_sample_regex_pass = sum(
-        1 for q in audit_sample if not _has_first_person(rewrites[q]["indirect"])
-    )
+    # FULL regex sweep — every retained indirect rewrite must be first-person-free.
+    # Plan §4 Phase A: 100% pass on the regex sweep is required.
+    full_regex_pass = sum(1 for q in new_probes if not _has_first_person(rewrites[q]["indirect"]))
+    full_regex_rate = full_regex_pass / max(n_total, 1)
+
+    # FULL audit set (was: 50-sample sentinel) — every retained rewrite is
+    # subject to the Claude validator on the real run. In smoke mode the
+    # Claude calls are skipped; the regex sweep is still full.
+    if not skip_claude:
+        full_claude_pass = sum(
+            1 for q in new_probes if _claude_validate_third_person(rewrites[q]["indirect"])
+        )
+    else:
+        # Smoke: Claude not called; treat the regex pass as the Claude pass too
+        # so the smoke audit can sanity-check the gating shape without API cost.
+        full_claude_pass = full_regex_pass
+    full_claude_rate = full_claude_pass / max(n_total, 1)
 
     return rewrites, {
         "n_questions": n_total,
         "n_indirect_regex_pass_total": regex_pass_count,
         "n_indirect_claude_pass_total": claude_pass_count,
         "n_indirect_voice_drift_failed": len(voice_drift_failed),
-        "indirect_third_person_regex_rate": regex_rate,
-        "indirect_third_person_claude_rate": claude_rate,
-        "audit_sample_size": sample_size,
-        "audit_sample_regex_pass": audit_sample_regex_pass,
-        "audit_sample_regex_pass_rate": (
-            audit_sample_regex_pass / sample_size if sample_size else 0.0
+        "n_dropped_probes": len(dropped_probes),
+        "indirect_third_person_regex_rate": (
+            regex_pass_count / max(n_total + len(dropped_probes), 1)
         ),
+        "indirect_third_person_claude_rate": (
+            claude_pass_count / max(n_total + len(dropped_probes), 1)
+        ),
+        # FULL audit set (was: 50-sample sentinel). Plan §4 Phase A gate
+        # reads full_regex_pass_rate == 1.0 AND full_claude_pass_rate >= 0.96
+        # on the entire retained pool.
+        "full_audit_size": n_total,
+        "full_regex_pass": full_regex_pass,
+        "full_regex_pass_rate": full_regex_rate,
+        "full_claude_pass": full_claude_pass,
+        "full_claude_pass_rate": full_claude_rate,
+        # Kept for backwards-compat dashboards; the dispatcher gate reads
+        # full_* keys above.
+        "audit_sample_size": n_total,
+        "audit_sample_regex_pass": full_regex_pass,
+        "audit_sample_regex_pass_rate": full_regex_rate,
         "voice_drift_failed_examples": voice_drift_failed[:5],  # first 5 only
         "skip_claude": skip_claude,
     }
@@ -810,25 +853,54 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
         "Wrote %s (%d probes, smoke=%s) in %.1fs", out_path, len(new_probes), smoke, elapsed
     )
 
-    # ── End-of-Phase-A gate (plan §4): voice-drift rate audit ──
+    # ── End-of-Phase-A gate (plan §4 Phase A): voice-drift rate audit ──
+    # Round-2 fix to Critical-5 (Codex):
+    #   (a) ZERO exhausted-retry failures retained — n_dropped_probes == 0.
+    #   (b) FULL regex sweep pass rate == 1.0 over the entire retained pool
+    #       (no first-person pronouns in any retained indirect rewrite).
+    #   (c) FULL Claude validator pass rate >= 0.96 over the entire retained
+    #       pool (was: 50-sample sentinel).
     if voice_drift_audit:
-        rate = voice_drift_audit.get("audit_sample_regex_pass_rate", 0.0)
-        if not smoke and rate < VOICE_DRIFT_THIRD_PERSON_RATE_MIN:
+        n_dropped = voice_drift_audit.get("n_dropped_probes", 0)
+        regex_rate_full = voice_drift_audit.get("full_regex_pass_rate", 0.0)
+        claude_rate_full = voice_drift_audit.get("full_claude_pass_rate", 0.0)
+        if not smoke and n_dropped > 0:
             raise RuntimeError(
-                f"Phase A voice-drift audit: indirect third-person rate "
-                f"{rate:.3f} < {VOICE_DRIFT_THIRD_PERSON_RATE_MIN} on a "
-                f"{voice_drift_audit['audit_sample_size']}-sample audit. "
+                f"Phase A voice-drift audit: {n_dropped} probes dropped after "
+                f"exhausting {MAX_VOICE_DRIFT_RETRIES} retries. Refusing to "
+                "advance — voice-drift fix did not converge on every probe."
+            )
+        if not smoke and regex_rate_full < 1.0:
+            raise RuntimeError(
+                f"Phase A voice-drift audit: FULL regex sweep pass rate "
+                f"{regex_rate_full:.3f} != 1.0 on a "
+                f"{voice_drift_audit['full_audit_size']}-row pool. "
+                "Plan §4 Phase A requires 100% regex pass on the full pool."
+            )
+        if not smoke and claude_rate_full < VOICE_DRIFT_THIRD_PERSON_RATE_MIN:
+            raise RuntimeError(
+                f"Phase A voice-drift audit: FULL Claude validator pass rate "
+                f"{claude_rate_full:.3f} < {VOICE_DRIFT_THIRD_PERSON_RATE_MIN} "
+                f"on a {voice_drift_audit['full_audit_size']}-row pool. "
                 "Refusing to advance — voice-drift fix did not converge."
             )
-        # Smoke gate: indirect register must still pass regex (no first-person)
-        # on the synthesized placeholders.
-        if smoke and rate < VOICE_DRIFT_THIRD_PERSON_RATE_MIN:
+        # Smoke gate: same FULL regex sweep contract, on the (deterministic)
+        # synthesized placeholders. The synthesizer must produce no
+        # first-person pronouns on any indirect rewrite — a regression here
+        # is a smoke-wiring bug, not a Sonnet quality issue.
+        if smoke and regex_rate_full < 1.0:
             raise RuntimeError(
-                f"Phase A smoke voice-drift gate: indirect regex pass rate "
-                f"{rate:.3f} < {VOICE_DRIFT_THIRD_PERSON_RATE_MIN} on "
-                f"{voice_drift_audit['audit_sample_size']} samples — the "
-                "smoke synthesizer leaked first-person pronouns; smoke wiring "
-                "regression."
+                f"Phase A smoke voice-drift gate: FULL regex pass rate "
+                f"{regex_rate_full:.3f} != 1.0 on "
+                f"{voice_drift_audit['full_audit_size']} synthesized probes "
+                "— the smoke synthesizer leaked first-person pronouns; "
+                "smoke wiring regression."
+            )
+        if smoke and n_dropped > 0:
+            raise RuntimeError(
+                f"Phase A smoke voice-drift gate: {n_dropped} synthesized "
+                "probes failed all retries. Deterministic smoke should never "
+                "drop — smoke wiring regression."
             )
 
     # ── End-of-Phase-A gate: dedup rate ──
