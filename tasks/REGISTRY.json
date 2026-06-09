@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 530,
+  "highest_id": 531,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3086,6 +3086,13 @@
       "path": "tasks/planning/530",
       "status": "planning",
       "title": "De-saturated re-run of #504's bubble-vs-barrier geometry: gate the anchor on bystander resolution, not source \u0394G"
+    },
+    "531": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/531",
+      "status": "proposed",
+      "title": "Non-saturated marker base-prior\u2192leakage re-analysis on #478: does the marker's base prior predict leakage off-ceiling, and with what sign?"
     },
     "54": {
       "has_clean_result": false,
