@@ -226,15 +226,15 @@
       "ai": 11.890801477432252,
       "ai_assistant": 10.603319716453552
     },
-    "ft_lowlr_b50": {
-      "assistant": 2.2095595359802247,
-      "ai": 3.0596351146698,
-      "ai_assistant": 2.7940934181213377
-    },
     "ft_lowlr_b100": {
       "assistant": 7.719859075546265,
       "ai": 11.839263987541198,
       "ai_assistant": 10.144715356826783
+    },
+    "ft_lowlr_b50": {
+      "assistant": 2.2095595359802247,
+      "ai": 3.0596351146698,
+      "ai_assistant": 2.7940934181213377
     },
     "lora_b1": {
       "assistant": 1.0977198600769043,
@@ -272,8 +272,8 @@
     "ft_dense_b35": 8.77772672176361,
     "ft_dense_b40": 9.72184784412384,
     "ft_dense_b45": 9.753213143348693,
-    "ft_lowlr_b50": 2.3329765796661377,
     "ft_lowlr_b100": 9.707270455360412,
+    "ft_lowlr_b50": 2.3329765796661377,
     "lora_b1": 1.1213791847229004,
     "lora_b2": 4.092537784576416,
     "lora_b3": 11.215818452835084,
@@ -281,8 +281,8 @@
     "ft_b2": 19.735459847562016,
     "ft_b3": 22.47077443901726
   },
-  "hero_figure": "/workspace/issue_514/analysis/hero_lora_vs_ft.png",
-  "trajectory_delta_g_figure": "/workspace/issue_514/analysis/trajectory_delta_g.png",
-  "trajectory_emission_rate_figure": "/workspace/issue_514/analysis/trajectory_emission_rate.png",
-  "timestamp_utc": "2026-06-08T12:37:06.154752+00:00"
+  "hero_figure": "eval_results/issue_514/hero_lora_vs_ft.png",
+  "trajectory_delta_g_figure": "eval_results/issue_514/trajectory_delta_g.png",
+  "trajectory_emission_rate_figure": "eval_results/issue_514/trajectory_emission_rate.png",
+  "timestamp_utc": "2026-06-09T05:22:17.023655+00:00"
 }
