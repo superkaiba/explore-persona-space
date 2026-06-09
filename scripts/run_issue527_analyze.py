@@ -69,12 +69,44 @@ def _load_shift(eval_dir: Path, cell_slug: str) -> tuple[dict, np.ndarray]:
 
 
 def _load_emission(eval_dir: Path, cell_slug: str) -> dict:
-    """Load the emission summary; return ``{}`` on miss (analysis still proceeds)."""
+    """Load the emission summary; return ``{}`` on miss (analysis still proceeds).
+
+    Round-2 fix per code-review Major-5: schema-pin the loaded payload so a
+    drift in the emission writer surfaces here (next to where it would
+    silently mis-route into ``source_emission_a``), not several lookups
+    deep in ``analyze_cell``. We expect
+    ``per_persona: {persona: {emission_rate_on_policy: float}}``.
+    """
     p = eval_dir / f"{cell_slug}__emission.json"
     if not p.is_file():
         log.warning("emission file missing for cell=%s; DV4 will read 0.0", cell_slug)
         return {}
-    return json.loads(p.read_text())
+    payload = json.loads(p.read_text())
+    if "per_persona" not in payload:
+        raise AssertionError(
+            f"emission payload at {p} missing required 'per_persona' key "
+            f"(found keys: {sorted(payload.keys())}). The DV4 source-emission "
+            f"route expects {{per_persona: {{persona: {{emission_rate_on_policy: float}}}}}}."
+        )
+    pp = payload["per_persona"]
+    if not isinstance(pp, dict):
+        raise AssertionError(
+            f"emission payload at {p} has non-dict 'per_persona' (type={type(pp).__name__})"
+        )
+    # Sample one row's shape — fail loud here, not 4 lookups deep.
+    if pp:
+        first_persona, first_row = next(iter(pp.items()))
+        if not isinstance(first_row, dict):
+            raise AssertionError(
+                f"emission payload {p} per_persona[{first_persona!r}] is "
+                f"not a dict (type={type(first_row).__name__})"
+            )
+        if "emission_rate_on_policy" not in first_row:
+            raise AssertionError(
+                f"emission payload {p} per_persona[{first_persona!r}] missing "
+                f"'emission_rate_on_policy' key (found: {sorted(first_row.keys())})"
+            )
+    return payload
 
 
 def _pair_cos(pair_selection: dict, pair_id: str) -> float:
@@ -241,26 +273,47 @@ def main(argv: list[str] | None = None) -> int:
         pair_a, pair_b = pair_id.split("__")
 
         # Pack emission into the shape analyze_cell expects.
+        # Round-2 fix per code-review Major-5: fail LOUD if a source name
+        # is missing from a per_persona dict — pair_a / pair_b are always
+        # in the eval panel by ``_resolve_eval_panel`` construction, so
+        # absence indicates an eval-rig bug (silent zero would mis-route
+        # the DV4 headline and read as a false floor).
         source_emission_a: dict[str, float] = {}
         source_emission_b: dict[str, float] = {}
         if emission_a:
-            pp = emission_a.get("per_persona", {})
-            if pair_a in pp:
-                source_emission_a[pair_a] = pp[pair_a].get("emission_rate_on_policy", 0.0)
+            pp = emission_a["per_persona"]  # schema-pinned in _load_emission
+            if pair_a not in pp:
+                raise AssertionError(
+                    f"emission_a per_persona missing source {pair_a!r} for cell "
+                    f"{arm_cells['A_only']['cell_slug']!r} (per_persona keys: "
+                    f"{sorted(pp.keys())}). Eval rig drift."
+                )
+            source_emission_a[pair_a] = float(pp[pair_a]["emission_rate_on_policy"])
         if emission_b:
-            pp = emission_b.get("per_persona", {})
-            if pair_b in pp:
-                source_emission_b[pair_b] = pp[pair_b].get("emission_rate_on_policy", 0.0)
+            pp = emission_b["per_persona"]
+            if pair_b not in pp:
+                raise AssertionError(
+                    f"emission_b per_persona missing source {pair_b!r} for cell "
+                    f"{arm_cells['B_only']['cell_slug']!r} (per_persona keys: "
+                    f"{sorted(pp.keys())}). Eval rig drift."
+                )
+            source_emission_b[pair_b] = float(pp[pair_b]["emission_rate_on_policy"])
         if emission_j:
-            pp = emission_j.get("per_persona", {})
-            if pair_a in pp:
-                source_emission_a[f"joint_{pair_a}"] = pp[pair_a].get(
-                    "emission_rate_on_policy", 0.0
+            pp = emission_j["per_persona"]
+            if pair_a not in pp:
+                raise AssertionError(
+                    f"emission_j per_persona missing source {pair_a!r} for cell "
+                    f"{arm_cells['joint']['cell_slug']!r} (per_persona keys: "
+                    f"{sorted(pp.keys())}). Eval rig drift."
                 )
-            if pair_b in pp:
-                source_emission_b[f"joint_{pair_b}"] = pp[pair_b].get(
-                    "emission_rate_on_policy", 0.0
+            if pair_b not in pp:
+                raise AssertionError(
+                    f"emission_j per_persona missing source {pair_b!r} for cell "
+                    f"{arm_cells['joint']['cell_slug']!r} (per_persona keys: "
+                    f"{sorted(pp.keys())}). Eval rig drift."
                 )
+            source_emission_a[f"joint_{pair_a}"] = float(pp[pair_a]["emission_rate_on_policy"])
+            source_emission_b[f"joint_{pair_b}"] = float(pp[pair_b]["emission_rate_on_policy"])
 
         base_cos = _pair_cos(pair_selection, pair_id)
 

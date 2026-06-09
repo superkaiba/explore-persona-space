@@ -71,9 +71,15 @@ def _git_commit() -> str:
 
 
 def _resolve_eval_panel(persona_bank: dict[str, str], pair_a: str, pair_b: str) -> list[str]:
-    """Held-out eval panel: 19 bystanders + assistant + the 2 sources (dedup).
+    """Held-out eval panel: 18 bystanders + assistant + the 2 sources (dedup).
 
-    The 19 includes the 2 sources by definition, so we just dedup.
+    The 18 includes the 2 sources by definition (when they are in
+    PERSONA_POOL_19), so we just dedup. Round-2 fix per code-review
+    Critical-4: the bare default-assistant context is encoded as the
+    literal ``"assistant"`` key (not the dropped ``"helpful_assistant"``);
+    the SYSTEM-PROMPT-UNIQUENESS assert below pins the no-duplicates
+    contract — any future re-introduction of a byte-identical persona
+    fails LOUD here instead of silently biasing GD1/GD2.
     """
     panel = [*list(PERSONA_POOL_19), "assistant"]
     # Ensure both sources are present (they should be in PERSONA_POOL_19).
@@ -90,6 +96,25 @@ def _resolve_eval_panel(persona_bank: dict[str, str], pair_a: str, pair_b: str) 
             raise AssertionError(f"eval panel persona {n!r} not in persona_bank")
         seen.add(n)
         out.append(n)
+    # System-prompt uniqueness — pin the contract that no two panel
+    # personas resolve to byte-identical system prompts (would otherwise
+    # add a phantom rank-1 direction to GD1's SVD and pin one GD2
+    # singleton cosine at exactly 1.0). Diagnostic shows ALL collisions
+    # so a future drift is fully visible from the traceback.
+    prompts = {p: persona_bank[p] for p in out}
+    rev: dict[str, list[str]] = {}
+    for name, prompt in prompts.items():
+        rev.setdefault(prompt, []).append(name)
+    collisions = {prompt: names for prompt, names in rev.items() if len(names) > 1}
+    if collisions:
+        diag = "; ".join(
+            f"prompt={prompt!r} collides on: {sorted(names)}"
+            for prompt, names in collisions.items()
+        )
+        raise AssertionError(
+            f"eval panel has byte-identical system prompts for distinct names — "
+            f"would bias GD1/GD2. {diag}"
+        )
     return out
 
 
@@ -361,7 +386,7 @@ def _run_shift_extract_for_cell(
     torch.cuda.empty_cache()
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901  # argparse wiring + R-coverage precondition guard
     from explore_persona_space.orchestrate.env import load_dotenv
 
     load_dotenv()
@@ -390,7 +415,12 @@ def main(argv: list[str] | None = None) -> int:
         "--n-eval-questions",
         type=int,
         default=EVAL_N_PROMPTS_PER_PERSONA,
-        help="N eval questions per persona (default 20 from EVAL_QUESTIONS).",
+        help=(
+            "N eval questions per persona (default 20 from EVAL_QUESTIONS). "
+            "EVAL_QUESTIONS is a fixed 20-element list — values above 20 "
+            "are silently capped (warn-on-truncate below); values below "
+            "20 reduce the slice taken."
+        ),
     )
     ap.add_argument(
         "--skip-existing",
@@ -422,7 +452,33 @@ def main(argv: list[str] | None = None) -> int:
             payload = json.loads(p.read_text())
             r_persona[payload["persona"]] = payload["responses"]
 
+    if args.n_eval_questions > len(EVAL_QUESTIONS):
+        log.warning(
+            "--n-eval-questions=%d exceeds EVAL_QUESTIONS length (%d); silently "
+            "capping to %d. To run on >20 questions, extend personas.py:EVAL_QUESTIONS.",
+            args.n_eval_questions,
+            len(EVAL_QUESTIONS),
+            len(EVAL_QUESTIONS),
+        )
     eval_questions = list(EVAL_QUESTIONS[: args.n_eval_questions])
+
+    # Round-2 fix per code-review Critical-3: fail LOUD at second 1 of
+    # shift_extract (BEFORE any per-cell vLLM/HF load) if R_persona doesn't
+    # cover every eval question for every persona used downstream. The
+    # in-loop ``q in r_responses`` raise is still there as defense-in-
+    # depth (shift_extract.py), but this entry-point assert keeps the
+    # crash close to the launch command, not 10 GPU-h into the sweep.
+    if args.mode == "shift_extract":
+        for persona_name, resp in r_persona.items():
+            missing = [q for q in eval_questions if q not in resp]
+            if missing:
+                raise SystemExit(
+                    f"R_persona[{persona_name!r}] missing {len(missing)} of "
+                    f"{len(eval_questions)} eval questions. First missing: "
+                    f"{missing[0]!r}. Regenerate R with the round-2 contract "
+                    f"(training_pool ∪ EVAL_QUESTIONS); see "
+                    f"scripts/run_issue527_generate_R.py."
+                )
 
     if args.all_cells:
         cells = _load_all_cells(out_root)

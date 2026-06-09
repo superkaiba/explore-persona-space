@@ -30,6 +30,13 @@ mkdir -p "$LOG_DIR"
 
 cd /workspace/explore-persona-space 2>/dev/null || cd "$(git rev-parse --show-toplevel)"
 
+# Round-2 fix per code-review Major-7: clear any stale retry-log from a
+# prior pod run BEFORE we touch the smoke. The Phase B sweep infers its
+# lr by file-presence (line ~127 below); a stale issue-527-smoke-retry.log
+# from a previous pod would falsely route the sweep onto lr=1e-5 even
+# when the current run's primary lr=5e-6 smoke PASSed.
+rm -f "$LOG_DIR/issue-527-smoke-retry.log"
+
 phase_log() {
     # Single source of truth for `[phase=...]` markers parsed by
     # scripts/poll_pipeline.py.

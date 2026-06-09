@@ -19,7 +19,7 @@ CLI:
         --personas comedian medical_doctor
 """
 
-# ruff: noqa: RUF002  # math/scientific notation in docstrings
+# ruff: noqa: RUF001, RUF002, RUF003  # math/scientific notation in docstrings + log strings
 
 from __future__ import annotations
 
@@ -42,6 +42,7 @@ from explore_persona_space.experiments.issue_527.persona_registry import (
     load_persona_bank,
 )
 from explore_persona_space.experiments.issue_527.question_pool import load_question_pool
+from explore_persona_space.personas import EVAL_QUESTIONS
 
 log = logging.getLogger("issue_527.generate_R")
 
@@ -178,10 +179,35 @@ def main(argv: list[str] | None = None) -> int:
         args.n_questions,
         args.allow_smoke_fallback,
     )
-    questions = load_question_pool(
+    training_pool = load_question_pool(
         n_required=args.n_questions,
         allow_smoke_fallback=args.allow_smoke_fallback,
     )
+    # Round-2 fix per code-review Critical-3: R_persona MUST cover both the
+    # training pool AND the 20 EVAL_QUESTIONS used by the eval rig's
+    # shift-extract step. The eval rig's per-context shift loop asserts
+    # ``q in r_responses`` for every eval question (it would otherwise
+    # crash mid-Phase-B after the training burned ~10 GPU-h). Generating R
+    # over the UNION makes the precondition hold deterministically; the
+    # marginal cost is ~free (20 extra greedy gens × ~22 personas).
+    eval_questions_extra = [q for q in EVAL_QUESTIONS if q not in set(training_pool)]
+    questions = list(training_pool) + eval_questions_extra
+    log.info(
+        "R coverage = training_pool (%d) ∪ EVAL_QUESTIONS (%d new, %d already in pool); total=%d",
+        len(training_pool),
+        len(eval_questions_extra),
+        len(EVAL_QUESTIONS) - len(eval_questions_extra),
+        len(questions),
+    )
+    # Belt-and-braces: assert the eval rig's precondition is satisfied
+    # BEFORE we spend any GPU on vLLM (fail-loud per CLAUDE.md "Fail fast").
+    missing = [q for q in EVAL_QUESTIONS if q not in set(questions)]
+    if missing:
+        raise AssertionError(
+            f"EVAL_QUESTIONS coverage gap: {len(missing)} eval question(s) "
+            f"are NOT in the R-generation set after union. First 2 missing: "
+            f"{missing[:2]!r}. The shift-extract rig WILL crash on these."
+        )
 
     log.info(
         "Importing vLLM + loading %s (gpu_memory_utilization=%.2f)",

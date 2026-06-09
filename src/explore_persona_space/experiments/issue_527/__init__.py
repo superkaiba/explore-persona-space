@@ -48,10 +48,20 @@ HIDDEN_SIZE: Final[int] = 3584
 # Persona pool
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Plan §4 Inputs — the #311 19-persona panel pulled from
+# Plan §4 Inputs — the #311 panel pulled from
 # `data/issue_472/persona_bank.json`. KEEP IN SYNC with the planner's
 # §4 Inputs list; preflight asserts every one of these resolves in the
 # persona_bank.json "personas" dict.
+#
+# Round-2 fix per code-review Critical-4 / plan §3(c) / plan §12 #6:
+# ``helpful_assistant`` is DROPPED from the pool. The bare default
+# assistant context is encoded canonically as the ``"assistant"`` key
+# in NEGATIVE_PANEL_4 (matching personas.py:72 ASSISTANT_PROMPT). Keeping
+# both ``helpful_assistant`` AND ``assistant`` in the eval panel created
+# two byte-identical contexts, biasing GD1's SVD (a phantom rank-1
+# direction added twice) and pinning one GD2 singleton cosine at exactly
+# 1.0. The pool is therefore 18 personas; the eval panel resolves to
+# 19 (18 + the literal ``assistant``).
 PERSONA_POOL_19: Final[tuple[str, ...]] = (
     "paramedic",
     "surgeon",
@@ -62,7 +72,6 @@ PERSONA_POOL_19: Final[tuple[str, ...]] = (
     "cybersec_consultant",
     "pentester",
     "private_investigator",
-    "helpful_assistant",
     "librarian",
     "software_engineer",
     "data_scientist",

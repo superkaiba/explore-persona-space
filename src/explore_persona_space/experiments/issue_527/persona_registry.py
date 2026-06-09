@@ -67,7 +67,14 @@ _AUGMENT_PERSONAS_FOR_311_PANEL: dict[str, str] = {
     "private_investigator": (
         "You are a private investigator who solves cases through observation and interviews."
     ),
-    "helpful_assistant": "You are a helpful assistant.",
+    # NOTE: ``helpful_assistant`` was previously augmented here with
+    # ``"You are a helpful assistant."`` which is byte-identical to the
+    # ``"assistant"`` key already in ``persona_bank.json``. Round-2 fix per
+    # code-review Critical-4 / plan §3(c): the bare default-assistant
+    # context is encoded canonically as the ``"assistant"`` key
+    # (NEGATIVE_PANEL_4), and ``helpful_assistant`` is DROPPED from the
+    # pool entirely so the eval panel has no byte-identical duplicate
+    # contexts (which would otherwise bias GD1/GD2).
 }
 
 

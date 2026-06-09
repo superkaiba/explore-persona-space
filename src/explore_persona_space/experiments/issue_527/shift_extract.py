@@ -25,7 +25,7 @@ Plan §11 Assumption #12: ``hidden_states[L][batch, slot]`` shape sanity
 ``-1 == HIDDEN_SIZE``.
 """
 
-# ruff: noqa: RUF002, RUF003  # math/scientific notation in docstrings
+# ruff: noqa: RUF001, RUF002, RUF003  # math/scientific notation in docstrings + assert msgs
 
 from __future__ import annotations
 
@@ -125,6 +125,21 @@ def extract_per_context_shift(
     """
     if device is None:
         device = next(base_model.parameters()).device
+
+    # Round-2 fix per code-review Critical-3: assert R coverage of every
+    # eval question BEFORE entering the per-question forward loop. The
+    # in-loop ``q not in r_responses`` raise still fires as a defense-
+    # in-depth check, but this up-front assert fails LOUD at second 1 of
+    # eval (or earlier — the eval rig hoists this via the runtime guard
+    # at script entry) instead of N GPU-h into the sweep.
+    missing_eval_qs = [q for q in eval_questions if q not in r_responses]
+    if missing_eval_qs:
+        raise AssertionError(
+            f"persona={persona!r} R_persona missing {len(missing_eval_qs)} of "
+            f"{len(eval_questions)} eval questions. First missing: "
+            f"{missing_eval_qs[0]!r}. Regenerate R over training_pool ∪ "
+            f"EVAL_QUESTIONS (run_issue527_generate_R.py round-2 contract)."
+        )
 
     layer_idx_internal = EXTRACTION_LAYER + 1  # hs[0] = embedding output
 
