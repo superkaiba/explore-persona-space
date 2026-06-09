@@ -607,8 +607,8 @@
     "187": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/187",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/187",
+      "status": "completed",
       "title": "Chat-template Betley alignment eval on a Gemma2-2b base-LM finetune produces dialogue in only 1 of 8 outputs, but raw-prompt format wasn't tried so dialogue collapse is unidentifiable from chat-template mismatch (MODERATE confidence)"
     },
     "188": {
