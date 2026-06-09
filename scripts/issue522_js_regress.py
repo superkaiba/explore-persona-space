@@ -231,6 +231,40 @@ def _mc_bootstrap_ci(
     return _percentiles(rhos, cvs, rhos_g, cvs_g)
 
 
+def _assert_js_matrix_coverage(js_mat: dict, per_probe_js: dict, cond_ids: list[str]) -> None:
+    """Pre-flight key coverage for the JS matrix + per-probe arrays.
+
+    Round-2 fix Must Fix #2 (second half). Constructs the full set of
+    expected (a, b) pair keys (16 × 16 = 256 ordered) and diffs against
+    the nested dicts in ``js_mat`` and ``per_probe_js``. Raises on
+    shortfall with the missing count + 3 example pairs.
+    """
+    expected = {(a, b) for a in cond_ids for b in cond_ids}
+    have_js = {(a, b) for a, inner in js_mat.items() for b in inner}
+    have_pp = {(a, b) for a, inner in per_probe_js.items() for b in inner}
+    missing_js = expected - have_js
+    missing_pp = expected - have_pp
+    if missing_js:
+        sample = sorted(missing_js)[:3]
+        raise RuntimeError(
+            f"JS matrix missing {len(missing_js)}/{len(expected)} (a, b) cells; "
+            f"sample missing: {sample!r}"
+        )
+    if missing_pp:
+        sample = sorted(missing_pp)[:3]
+        raise RuntimeError(
+            f"per_probe_js missing {len(missing_pp)}/{len(expected)} (a, b) cells; "
+            f"sample missing: {sample!r}"
+        )
+    logger.info(
+        "JS matrix coverage PASS: %d/%d JS + %d/%d per_probe_js cells.",
+        len(have_js & expected),
+        len(expected),
+        len(have_pp & expected),
+        len(expected),
+    )
+
+
 def _percentiles(
     rhos: list[float], cvs: list[float], rhos_g: list[float], cvs_g: list[float]
 ) -> dict:
@@ -308,6 +342,10 @@ def main() -> int:
         )
     js_mat = payload["JS"]
     per_probe_js = payload["per_probe_js"]
+
+    # Round-2 fix Must Fix #2 (second half): pre-flight js_matrix.json key
+    # coverage check BEFORE the regression loop's pair lookup.
+    _assert_js_matrix_coverage(js_mat, per_probe_js, cond_ids)
 
     prompt_tokens = bakeoff._load_prompt_tokens()
     epochs = tuple(int(e.strip()) for e in args.epochs.split(",") if e.strip())
