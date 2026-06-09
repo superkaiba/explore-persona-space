@@ -33,6 +33,8 @@ if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
 from workflow_lint import (  # noqa: E402
+    _iter_ask_target_files,
+    _other_worktree_prefix,
     check_asks,
     check_autonomous_asks,
     check_script_references,
@@ -606,3 +608,268 @@ def test_check_wandb_required_repo_tree_is_clean():
         "trainer-config builders (CLAUDE.md 'Upload Policy' violation, "
         "#496 class):\n" + "\n".join(errors)
     )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for the worktree-aware scan-root logic (``_other_worktree_prefix``
+# / ``_is_other_worktree_path`` / ``_iter_ask_target_files`` walking).
+#
+# Bug fixed: when ``scripts/workflow_lint.py`` was invoked from inside a
+# worktree at ``<repo>/.claude/worktrees/<X>/``, the previous exclusion
+# rule (``".claude/worktrees/" not in str(p)``) silently dropped ALL
+# files under the current worktree's ``.claude/skills/``, so a
+# workflow-improver running inside a worktree got a FALSE PASS from
+# ``--check-asks`` because its edited SKILL.md was never scanned. The
+# fix scans the CURRENT worktree's files while still excluding sibling
+# worktrees, and preserves the "all worktrees excluded" behaviour when
+# the lint runs from the main checkout.
+# ---------------------------------------------------------------------------
+
+
+def test_other_worktree_prefix_returns_none_for_main_checkout():
+    """Running from a plain main checkout (no ``.claude/worktrees/<X>``
+    segment in the parent chain) → None, meaning "no current worktree
+    to exempt, exclude every ``.claude/worktrees/`` path"."""
+    from pathlib import Path as _P
+
+    from workflow_lint import _other_worktree_prefix as _otp
+
+    assert _otp(_P("/home/user/explore-persona-space")) is None
+    assert _otp(_P("/tmp/some/random/dir")) is None
+
+
+def test_other_worktree_prefix_extracts_worktree_name():
+    """Running from inside a worktree → returns the
+    ``.claude/worktrees/<X>/`` substring so callers can use it to
+    distinguish "our worktree" from sibling worktrees."""
+    from pathlib import Path as _P
+
+    from workflow_lint import _other_worktree_prefix as _otp
+
+    assert (
+        _otp(_P("/home/user/explore-persona-space/.claude/worktrees/agent-abc"))
+        == ".claude/worktrees/agent-abc/"
+    )
+    assert (
+        _otp(_P("/home/user/explore-persona-space/.claude/worktrees/fix-bug-42"))
+        == ".claude/worktrees/fix-bug-42/"
+    )
+
+
+def test_other_worktree_prefix_ignores_unrelated_worktrees_segment():
+    """A path with ``worktrees`` that is NOT inside ``.claude/`` (e.g.
+    a directory literally named ``worktrees`` somewhere else) does NOT
+    activate the worktree-aware mode."""
+    from pathlib import Path as _P
+
+    from workflow_lint import _other_worktree_prefix as _otp
+
+    # `worktrees` is not preceded by `.claude/`
+    assert _otp(_P("/some/repo/git/worktrees/foo")) is None
+    # `.claude/worktrees` with no name segment after
+    assert _otp(_P("/home/user/repo/.claude/worktrees")) is None
+
+
+def test_other_worktree_prefix_skips_unrelated_worktrees_dir_higher_up():
+    """A path with an unrelated ``worktrees`` segment HIGHER up the
+    chain (not preceded by ``.claude``) must NOT short-circuit the
+    search — if a real ``.claude/worktrees/<name>`` segment appears
+    further down, the function must find IT, not the unrelated higher
+    segment."""
+    from pathlib import Path as _P
+
+    from workflow_lint import _other_worktree_prefix as _otp
+
+    # First `worktrees` is bare (preceded by `foo`); second is preceded
+    # by `.claude` — function must skip the first and match the second.
+    assert (
+        _otp(_P("/home/foo/worktrees/baz/.claude/worktrees/wt-real"))
+        == ".claude/worktrees/wt-real/"
+    )
+
+
+def test_is_other_worktree_path_main_excludes_all_worktrees():
+    """From a main checkout (``current_worktree_prefix is None``) every
+    ``.claude/worktrees/`` path is "other"."""
+    from pathlib import Path as _P
+
+    from workflow_lint import _is_other_worktree_path as _iow
+
+    assert _iow(_P("/repo/.claude/worktrees/wt-a/.claude/skills/foo/SKILL.md"), None) is True
+    assert _iow(_P("/repo/.claude/worktrees/wt-b/.claude/agents/x.md"), None) is True
+    # Non-worktree paths are NOT "other".
+    assert _iow(_P("/repo/.claude/skills/foo/SKILL.md"), None) is False
+
+
+def test_is_other_worktree_path_worktree_includes_self_excludes_siblings():
+    """From inside ``<repo>/.claude/worktrees/wt-a``: paths under
+    ``wt-a`` are NOT other; paths under ``wt-b`` ARE other; the
+    workflow-improver-running-in-its-own-worktree path PASSes through."""
+    from pathlib import Path as _P
+
+    from workflow_lint import _is_other_worktree_path as _iow
+
+    prefix = ".claude/worktrees/wt-a/"
+    # Same worktree → not other (this is the fix).
+    assert _iow(_P("/repo/.claude/worktrees/wt-a/.claude/skills/foo/SKILL.md"), prefix) is False
+    assert _iow(_P("/repo/.claude/worktrees/wt-a/.claude/agents/x.md"), prefix) is False
+    # Sibling worktree → other.
+    assert _iow(_P("/repo/.claude/worktrees/wt-b/.claude/skills/foo/SKILL.md"), prefix) is True
+    # Path without `.claude/worktrees/` at all (e.g. a main-checkout fixture
+    # path accidentally passed in) → not other.
+    assert _iow(_P("/repo/.claude/skills/foo/SKILL.md"), prefix) is False
+
+
+def test_is_other_worktree_path_prefix_with_trailing_slash_disambiguates_siblings():
+    """The trailing slash in ``current_worktree_prefix`` is load-bearing:
+    a sibling worktree named ``wt-a-other`` MUST be detected as "other"
+    even though its name STARTS WITH our worktree's name ``wt-a``."""
+    from pathlib import Path as _P
+
+    from workflow_lint import _is_other_worktree_path as _iow
+
+    prefix = ".claude/worktrees/wt-a/"
+    assert (
+        _iow(
+            _P("/repo/.claude/worktrees/wt-a-other/.claude/skills/foo/SKILL.md"),
+            prefix,
+        )
+        is True
+    )
+
+
+def test_iter_ask_target_files_scans_current_worktree_self(tmp_path):
+    """End-to-end on a synthetic tree: when ``repo_root`` looks like
+    ``<base>/.claude/worktrees/<wt-a>``, the file iterator returns the
+    worktree's OWN ``.claude/agents`` + ``.claude/skills/**/SKILL.md``
+    files (regression guard for the silent-drop bug)."""
+    # Build a synthetic worktree: .../base/.claude/worktrees/wt-a/.claude/{agents,skills}/...
+    worktree = tmp_path / "base" / ".claude" / "worktrees" / "wt-a"
+    agents_dir = worktree / ".claude" / "agents"
+    agents_dir.mkdir(parents=True)
+    (agents_dir / "alpha.md").write_text("# alpha\n")
+    skills_subdir = worktree / ".claude" / "skills" / "demo"
+    skills_subdir.mkdir(parents=True)
+    (skills_subdir / "SKILL.md").write_text("# demo skill\n")
+
+    files = _iter_ask_target_files(worktree)
+    rels = sorted(str(p.relative_to(worktree)) for p in files)
+    assert rels == [
+        ".claude/agents/alpha.md",
+        ".claude/skills/demo/SKILL.md",
+    ], rels
+
+
+def test_iter_ask_target_files_excludes_sibling_worktrees(tmp_path):
+    """When ``repo_root`` is main-checkout-shaped (no
+    ``.claude/worktrees/<X>`` segment in its parent chain), files under
+    nested ``.claude/worktrees/*`` directories are EXCLUDED. Preserves
+    the original behaviour for the main-checkout invocation."""
+    # Main checkout under tmp_path/main: a regular SKILL.md plus a
+    # nested worktree containing a "stale" SKILL.md that must NOT be
+    # picked up.
+    main_root = tmp_path / "main"
+    main_skills = main_root / ".claude" / "skills" / "real"
+    main_skills.mkdir(parents=True)
+    (main_skills / "SKILL.md").write_text("# real skill on main\n")
+    main_agents = main_root / ".claude" / "agents"
+    main_agents.mkdir(parents=True)
+    (main_agents / "real_agent.md").write_text("# real agent on main\n")
+    # Stale worktree copy nested inside the main tree.
+    stale_skill = main_root / ".claude" / "worktrees" / "wt-x" / ".claude" / "skills" / "stale"
+    stale_skill.mkdir(parents=True)
+    (stale_skill / "SKILL.md").write_text("# stale duplicate inside worktree\n")
+    stale_agent = main_root / ".claude" / "worktrees" / "wt-x" / ".claude" / "agents"
+    stale_agent.mkdir(parents=True)
+    (stale_agent / "stale_agent.md").write_text("# stale duplicate agent\n")
+
+    files = _iter_ask_target_files(main_root)
+    rels = sorted(str(p.relative_to(main_root)) for p in files)
+    # Only the main-checkout files; both worktree copies excluded.
+    assert rels == [
+        ".claude/agents/real_agent.md",
+        ".claude/skills/real/SKILL.md",
+    ], rels
+
+
+def test_iter_ask_target_files_excludes_only_siblings_from_worktree(tmp_path):
+    """From inside worktree ``wt-a``, files under ``wt-a/.claude/skills``
+    ARE included, but a sibling worktree ``wt-b`` is excluded (catches
+    the case where multiple worktrees coexist under the same
+    ``.claude/worktrees/`` parent and the lint must not pick up siblings)."""
+    base = tmp_path / "base"
+    # Our worktree (wt-a).
+    wt_a = base / ".claude" / "worktrees" / "wt-a"
+    wt_a_skills = wt_a / ".claude" / "skills" / "mine"
+    wt_a_skills.mkdir(parents=True)
+    (wt_a_skills / "SKILL.md").write_text("# my skill\n")
+    wt_a_agents = wt_a / ".claude" / "agents"
+    wt_a_agents.mkdir(parents=True)
+    (wt_a_agents / "my_agent.md").write_text("# my agent\n")
+    # Sibling worktree (wt-b) under the SAME `.claude/worktrees/` parent.
+    wt_b_skills = base / ".claude" / "worktrees" / "wt-b" / ".claude" / "skills" / "theirs"
+    wt_b_skills.mkdir(parents=True)
+    (wt_b_skills / "SKILL.md").write_text("# their skill\n")
+    wt_b_agents = base / ".claude" / "worktrees" / "wt-b" / ".claude" / "agents"
+    wt_b_agents.mkdir(parents=True)
+    (wt_b_agents / "their_agent.md").write_text("# their agent\n")
+    # workflow_lint is invoked from inside wt-a → wt-a's files only.
+    # But _iter_ask_target_files only walks repo_root/.claude/{agents,skills}
+    # (NOT base/.claude/worktrees/wt-b/...), so for this configuration we
+    # need to also confirm: walking from wt-a returns ONLY wt-a's files
+    # (because wt-b is outside repo_root entirely from wt-a's perspective).
+    files = _iter_ask_target_files(wt_a)
+    rels = sorted(str(p) for p in files)
+    assert any("wt-a/.claude/skills/mine/SKILL.md" in r for r in rels), rels
+    assert any("wt-a/.claude/agents/my_agent.md" in r for r in rels), rels
+    assert not any("wt-b" in r for r in rels), rels
+
+
+def test_iter_ask_target_files_from_worktree_excludes_nested_other_worktrees(tmp_path):
+    """From inside worktree ``wt-a``, if (pathologically) ``wt-a`` itself
+    contains a nested ``.claude/worktrees/wt-c`` subdirectory, that
+    nested directory's files are EXCLUDED. Guards the case where a
+    worktree's own working tree contains a stale snapshot of another
+    worktree."""
+    base = tmp_path / "base"
+    wt_a = base / ".claude" / "worktrees" / "wt-a"
+    wt_a_skills = wt_a / ".claude" / "skills" / "mine"
+    wt_a_skills.mkdir(parents=True)
+    (wt_a_skills / "SKILL.md").write_text("# my skill\n")
+    # Nested worktree inside wt-a's own .claude/worktrees/ — must be excluded.
+    nested = wt_a / ".claude" / "worktrees" / "wt-c" / ".claude" / "skills" / "stale"
+    nested.mkdir(parents=True)
+    (nested / "SKILL.md").write_text("# stale nested\n")
+
+    files = _iter_ask_target_files(wt_a)
+    rels = sorted(str(p) for p in files)
+    assert any("wt-a/.claude/skills/mine/SKILL.md" in r for r in rels), rels
+    assert not any("wt-c" in r for r in rels), rels
+
+
+def test_workflow_lint_check_asks_scans_skill_files_from_worktree():
+    """End-to-end: the production ``check_asks(workflow)`` call from
+    within this worktree MUST actually scan ``.claude/skills/**/SKILL.md``
+    files (regression guard: before the fix, 0 SKILL.md files were
+    scanned and ``--check-asks`` gave a false PASS for any SKILL.md edit
+    a workflow-improver made inside a worktree)."""
+    from workflow_lint import _REPO_ROOT  # the worktree we are running from
+
+    files = _iter_ask_target_files(_REPO_ROOT)
+    skill_files = [f for f in files if "SKILL.md" in str(f)]
+    assert len(skill_files) > 0, (
+        "expected ≥1 SKILL.md file in --check-asks scope from the current "
+        "tree, got 0 — the worktree-aware exclusion has regressed and "
+        "workflow-improver edits to SKILL.md will silently false-PASS"
+    )
+    # Smoke: every SKILL.md path must belong to THIS worktree (or to the
+    # main checkout if this test runs from main). No sibling worktree paths.
+    prefix = _other_worktree_prefix(_REPO_ROOT)
+    if prefix is not None:
+        for sf in skill_files:
+            # Either it's not under .claude/worktrees/ at all (impossible
+            # when prefix is set), or it must contain our prefix.
+            assert prefix in str(sf), (
+                f"SKILL.md {sf} is not under our worktree prefix {prefix}; "
+                f"sibling-worktree exclusion regressed"
+            )
