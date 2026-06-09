@@ -1498,8 +1498,8 @@
     "337": {
       "has_clean_result": true,
       "kind": "infra",
-      "path": "tasks/awaiting_promotion/337",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/337",
+      "status": "completed",
       "title": "Longer persona system prompts pull a [ZLT] marker toward the source persona \u2014 stronger source rate and less bystander leakage across an N=48 LoRA panel on Qwen2.5-7B-Instruct (MODERATE confidence)"
     },
     "338": {
