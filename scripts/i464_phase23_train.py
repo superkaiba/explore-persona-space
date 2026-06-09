@@ -64,11 +64,27 @@ TRAIN_ROW_DIR = Path("data/issue_464/train_rows")
 # scripts/i464_cn_generate_R_default.py::DEFAULT_KEY).
 DEFAULT_NEG_KEY = "default"
 
-SEEDS = (42, 137, 1337)
+SEEDS_BY_ISSUE: dict[int, tuple[int, ...]] = {
+    # #464 parent (3 seeds, recipe inherited).
+    464: (42, 137, 1337),
+    # #529: 5 seeds (statistical-power bump per plan §12 Assumption 8;
+    # 7/21 added on top of #464's 42/137/1337). Seed list is the only
+    # accepted set when --issue 529 is passed.
+    529: (42, 137, 1337, 7, 21),
+}
+# Legacy alias preserved for any external importer that referenced
+# ``SEEDS`` directly (none in-repo, but a thin-wrapper path could rely
+# on it).
+SEEDS = SEEDS_BY_ISSUE[464]
 
 
-def _parse_cell(cell: str) -> tuple[enc.Arm, int]:
-    """Parse 'arm_seedSEED' → (arm, seed). Raises on malformed input."""
+def _parse_cell(cell: str, issue: int = 464) -> tuple[enc.Arm, int]:
+    """Parse 'arm_seedSEED' → (arm, seed). Raises on malformed input.
+
+    ``issue`` selects which seed set is accepted (see
+    ``SEEDS_BY_ISSUE``). The seed must be in that set; otherwise raises
+    so an off-by-one seed never silently lands at the wrong HF subpath.
+    """
     if "_seed" not in cell:
         raise ValueError(f"--cell {cell!r} must look like 'arm_seed42'")
     arm, seed_str = cell.rsplit("_seed", 1)
@@ -78,8 +94,13 @@ def _parse_cell(cell: str) -> tuple[enc.Arm, int]:
         seed = int(seed_str)
     except ValueError as e:
         raise ValueError(f"--cell {cell!r}: seed part {seed_str!r} is not int") from e
-    if seed not in SEEDS:
-        raise ValueError(f"--cell {cell!r}: seed {seed} not in {SEEDS}")
+    seed_set = SEEDS_BY_ISSUE.get(issue)
+    if seed_set is None:
+        raise ValueError(
+            f"--issue {issue} has no registered seed set; want one of {list(SEEDS_BY_ISSUE)}"
+        )
+    if seed not in seed_set:
+        raise ValueError(f"--cell {cell!r}: seed {seed} not in --issue {issue} seed set {seed_set}")
     return arm, seed  # type: ignore[return-value]
 
 
@@ -267,6 +288,8 @@ def _build_training_rows(  # noqa: C901 - cn follow-up added contrastive-negativ
     shared_marker: bool = False,
     contrastive_negatives: bool = False,
     R_canon_default_train: dict[str, dict[str, dict]] | None = None,
+    issue_prefix: str = "i464",
+    epoch_suffix: str = "",
 ) -> Path:
     """Build the 30 x P x n_dupes rows for ONE cell and write JSONL.
 
@@ -495,7 +518,7 @@ def _build_training_rows(  # noqa: C901 - cn follow-up added contrastive-negativ
         suffix = f"_{single_persona}"
     else:
         suffix = ""
-    out_path = TRAIN_ROW_DIR / f"i464_{arm}_seed{seed}{suffix}.jsonl"
+    out_path = TRAIN_ROW_DIR / f"{issue_prefix}_{arm}_seed{seed}{suffix}{epoch_suffix}.jsonl"
     with open(out_path, "w") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
@@ -631,7 +654,7 @@ def _build_traj_probe_file(
     return out_path
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529 issue-prefix wiring + cn-validation branches push complexity to 16
     """Entry point for ``i464_phase23_train``."""
     logging.basicConfig(
         level=logging.INFO,
@@ -742,14 +765,42 @@ def main(argv: list[str] | None = None) -> None:
             "--shared-marker."
         ),
     )
+    ap.add_argument(
+        "--issue",
+        type=int,
+        choices=sorted(SEEDS_BY_ISSUE.keys()),
+        default=464,
+        help=(
+            "Which issue the run belongs to. Default 464 (parent rig). "
+            "Pass --issue 529 for the marker-less cn re-run at non-saturated "
+            "training anchors: this switches the seed set to "
+            "(42, 137, 1337, 7, 21), prefixes cell labels / HF subpaths / "
+            "WandB run names with ``i529_`` instead of ``i464_``, and "
+            "appends an ``_e{E}`` epoch suffix so the same (arm, seed, "
+            "persona) cell at multiple --epochs values writes to distinct "
+            "HF subpaths."
+        ),
+    )
     args = ap.parse_args(argv)
 
     if args.shared_marker and args.single_persona is None:
         ap.error("--shared-marker requires --single-persona")
     if args.contrastive_negatives and not (args.shared_marker and args.single_persona is not None):
         ap.error("--contrastive-negatives requires --single-persona AND --shared-marker")
+    # #529 invariant: per plan §4.1 the cn re-run is single-persona +
+    # shared-marker + contrastive-negatives. A bare --issue 529 without
+    # those flags would land at the wrong HF subpath / wrong training
+    # rows; fail loud rather than silently producing a #464-shaped cell
+    # under an i529_ prefix.
+    if args.issue == 529 and not (
+        args.contrastive_negatives and args.shared_marker and args.single_persona is not None
+    ):
+        ap.error(
+            "--issue 529 requires --contrastive-negatives --shared-marker --single-persona "
+            "(per plan §4.1: marker-less cn regime only)."
+        )
 
-    arm, seed = _parse_cell(args.cell)
+    arm, seed = _parse_cell(args.cell, issue=args.issue)
 
     # MooseFS quota guard (CLAUDE.md).
     os.environ.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
@@ -789,6 +840,17 @@ def main(argv: list[str] | None = None) -> None:
                 "negative encoding gets >=1 dupe."
             )
 
+    # Issue-prefix + epoch suffix (plan §4.7):
+    #   * --issue 464 (default): adapters at ``adapters/i464_{cell}``;
+    #     epochs NOT in the cell label (the legacy #464 path).
+    #   * --issue 529: adapters at ``adapters/i529_{cell}_e{E}``; epoch
+    #     suffix is part of the label so the same (arm, seed, persona)
+    #     cell at E=1 vs E=5 lives at distinct HF subpaths AND on-disk
+    #     row files (concurrent 4-GPU sweep would otherwise race on the
+    #     same TRAIN_ROW_DIR/.jsonl path).
+    issue_prefix = f"i{args.issue}"
+    epoch_suffix = f"_e{args.epochs}" if args.issue == 529 else ""
+
     train_path = _build_training_rows(
         arm,
         seed,
@@ -800,6 +862,8 @@ def main(argv: list[str] | None = None) -> None:
         shared_marker=args.shared_marker,
         contrastive_negatives=args.contrastive_negatives,
         R_canon_default_train=R_canon_default_train,
+        issue_prefix=issue_prefix,
+        epoch_suffix=epoch_suffix,
     )
 
     # Cell label suffix:
@@ -814,7 +878,7 @@ def main(argv: list[str] | None = None) -> None:
         cell_suffix = f"_{args.single_persona}"
     else:
         cell_suffix = ""
-    cell_label = f"{arm}_seed{seed}{cell_suffix}"
+    cell_label = f"{arm}_seed{seed}{cell_suffix}{epoch_suffix}"
 
     # Number of personas mixed in this LoRA's rows (drives traj-step calc).
     # cn rows include positives + 2 negative encodings — count effective
@@ -858,7 +922,7 @@ def main(argv: list[str] | None = None) -> None:
             approx_total_steps,
         )
 
-    out_dir = f"adapters/i464_{cell_label}"
+    out_dir = f"adapters/{issue_prefix}_{cell_label}"
     # Adapter persist-before-rm (CLAUDE.md quota rule):
     persist_repo = os.environ.get("EPM_PERSIST_ADAPTER_HF_REPO")
     persist_sub = os.environ.get("EPM_PERSIST_ADAPTER_SUBFOLDER")
@@ -869,18 +933,39 @@ def main(argv: list[str] | None = None) -> None:
             persist_sub,
         )
 
-    # Marker-text list for the collator:
-    #   * default (no --shared-marker): BOTH personas' markers, as the parent
-    #     #464 sweep — the collator masks loss to whichever marker sits at
-    #     the row's end.
-    #   * --shared-marker: ONLY the shared pirate marker, so the loss-bearing
-    #     slot for every row (incl. villain rows) is ` ※`+EOS.
+    # Marker-text contract for the collator (main's `TrainLoraConfig`):
+    #   * Field type on main: ``marker_text: str``. The multi-marker list
+    #     shape from the parent #464 branch was reverted on main before
+    #     the #529 worktree was cut, so passing a ``list[str]`` here would
+    #     crash inside ``tokenizer.encode(cfg.marker_text, ...)``.
+    #   * --shared-marker (the cn / cn_i529 path; the ONLY production path
+    #     this dispatcher uses today): a single shared pirate marker
+    #     ` ※`, so the single-string main API is exactly what we need.
+    #   * Without --shared-marker (the parent #464 2-persona-mix path): the
+    #     multi-marker collator was retired on main. That path is no longer
+    #     supported by this dispatcher; restoring it is a separate infra
+    #     change (see issue-#529 implementer report (b)). Fail loud rather
+    #     than silently producing an arbitrary-marker run.
     if args.shared_marker:
-        cfg_marker_text: list[str] = [enc.MARKER_PIRATE_TEXT]
+        cfg_marker_text: str = enc.MARKER_PIRATE_TEXT
     else:
-        cfg_marker_text = [enc.MARKER_PIRATE_TEXT, enc.MARKER_VILLAIN_TEXT]
+        raise SystemExit(
+            "i464_phase23_train.py: the 2-persona-mix path (no --shared-marker) "
+            "depends on the multi-marker MarkerOnlyDataCollator, which was "
+            "retired on main between SHA 0905fc70 (parent #464) and the #529 "
+            "worktree base. Pass --shared-marker (the cn / cn_i529 production "
+            "path) OR open a separate infra task to restore multi-marker "
+            "support."
+        )
 
-    cfg = TrainLoraConfig(
+    # TrainLoraConfig kwargs — assembled before construction so the
+    # ``marker_logprob_trajectory`` field can be conditionally INCLUDED
+    # only when the running ``TrainLoraConfig`` API still has it. The
+    # parent #464 rig assumed the field existed on main; it was retired
+    # on main between SHA 0905fc70 and the #529 worktree base. Default
+    # path (--no-traj) never sets it, so neither --issue 464 nor
+    # --issue 529 needs the field today.
+    cfg_kwargs = dict(
         gpu_id=args.gpu_id,
         epochs=epochs,
         lr=args.lr,
@@ -891,17 +976,40 @@ def main(argv: list[str] | None = None) -> None:
         grad_accum=4,
         max_length=args.max_length,
         seed=seed,
-        run_name=f"i464_{cell_label}",
+        run_name=f"{issue_prefix}_{cell_label}",
         report_to="wandb",
         save_strategy="no",
         marker_only_loss=True,
         marker_text=cfg_marker_text,
         marker_tail_tokens=0,
-        marker_logprob_trajectory=traj_cfg,
+        # marker_band_stop=False pinned explicitly per plan §11 Decision
+        # Rationale: the dataclass default is True, but the parent #464
+        # rig was authored before that default flipped and we anchor
+        # training amount via the epochs grid (the new manipulated
+        # variable in #529). Pinning False preserves single-variable
+        # parity vs #464 across BOTH --issue 464 (legacy behavior) and
+        # --issue 529 (the epochs sweep this enables).
+        marker_band_stop=False,
         hf_upload=not args.no_hf_upload,
         hf_repo=HF_MODEL_REPO,
-        hf_path_in_repo=f"adapters/i464_{cell_label}",
+        hf_path_in_repo=f"adapters/{issue_prefix}_{cell_label}",
     )
+    if traj_cfg is not None:
+        # Best-effort: include the trajectory field ONLY when the running
+        # TrainLoraConfig still defines it. If the field was retired (as
+        # on the current main), the request is silently dropped + logged
+        # so the user can switch to a separate trajectory pipeline.
+        from dataclasses import fields as _dc_fields
+
+        if "marker_logprob_trajectory" in {f.name for f in _dc_fields(TrainLoraConfig)}:
+            cfg_kwargs["marker_logprob_trajectory"] = traj_cfg
+        else:
+            logger.warning(
+                "TrainLoraConfig.marker_logprob_trajectory was retired on main; "
+                "the requested in-training trajectory probe is being SKIPPED. "
+                "Re-instate the callback via a separate infra task if needed."
+            )
+    cfg = TrainLoraConfig(**cfg_kwargs)
     out_path, train_loss = train_lora(BASE_MODEL, str(train_path), out_dir, cfg=cfg)
     logger.info(
         "TRAIN DONE cell=%s loss=%.4f -> %s",
