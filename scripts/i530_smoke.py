@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002, RUF003  # em-dash + Qwen marker " ※" + Greek ΔG intentional
+# em-dash + Qwen marker " ※" + Greek ΔG intentional
 #!/usr/bin/env python3
 """Task #530 — Phase 1 smoke entrypoint (single cell, single seed).
 
@@ -51,7 +51,7 @@ SMOKE_CELL: str = "c504v3_near"
 SMOKE_SEED: int = 42
 
 
-def _evaluate_smoke_gates(  # noqa: C901  — intentional: one branch per gate (plan §7)
+def _evaluate_smoke_gates(
     trajectory_path: Path,
     *,
     band_low_nats: float = 5.0,
@@ -66,23 +66,49 @@ def _evaluate_smoke_gates(  # noqa: C901  — intentional: one branch per gate (
         `bystander_argmax_rate`, `bystander_median_logp`, `headroom_nats`,
         `failure_reason` (or empty string on PASS).
 
-    The trajectory.json shape (from `i504_eval_trajectory.py`):
+    Canonical trajectory.json shape (per
+    ``src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py``
+    lines 28-38 + 427-446):
+
         {
-          "cell": ..., "seed": ...,
+          "cell": ..., "seed": ..., "source": "<src_persona>",
+          "matched_slice_target_nats": 8.0,
           "checkpoints": [
-            {"frac": 0.25, "step": N, "adapter_path": "...",
-             "source": {"<src_persona>": {"<q>": {"g_logp": ..., "b_logp": ...,
-                                                   "argmax_marker": bool, "kl": ...}}},
-             "held_out": {"<persona>": {"<q>": {...}}}
+            {
+              "frac": 0.25, "step": N, "adapter_path": "...",
+              "source_self": {
+                "g_logp_mean": float, "b_logp_mean": float,
+                "delta_g_mean": float, "emission_p": float,
+                "r_collapsed": bool,
+              },
+              "held_out_collapse_share": float,
+              "n_held_out_collapsed": int,
+              "held_out": {
+                "<persona>": {
+                  "<q>": {
+                    "g_logp": float, "b_logp": float, "delta_g": float,
+                    "argmax_marker": bool, "n_marker_in_R": int,
+                    "r_collapsed": bool, "kl": float | None,
+                  }
+                }
+              }
             }, ...
           ], ...
         }
 
-    The terminal checkpoint = max(frac); source ΔG = mean over (q) of
-    g_logp − b_logp on the source persona. Bystander argmax-rate = fraction
-    of (persona, q) leaves in held_out with argmax_marker=True; median log
-    P(marker) = median of g_logp across the same leaves; headroom = -median.
+    Terminal checkpoint = max(frac). Source ΔG comes from the flat
+    ``source_self.delta_g_mean`` scalar (NOT a nested ``source`` dict —
+    round 1's read of ``terminal["source"][<persona>][<q>]`` silently
+    yielded NaN, which slipped both ``< band_low_nats`` and
+    ``> band_high_nats`` because NaN comparisons return False; round 2
+    fixes that). Bystander argmax-rate = fraction of (persona, q) leaves
+    in ``held_out`` with ``argmax_marker=True``; median log P(marker) =
+    median of ``g_logp`` across the same leaves; headroom = -median.
     """
+    # Local import — keeps the module top tidy when the function is not on a
+    # hot path; ``math.isnan`` is the NaN-comparison guard the gate needs.
+    import math
+
     if not trajectory_path.exists():
         return {
             "verdict": "FAIL",
@@ -99,17 +125,14 @@ def _evaluate_smoke_gates(  # noqa: C901  — intentional: one branch per gate (
         }
     # Pick the terminal checkpoint (max frac).
     terminal = max(cks, key=lambda ck: ck.get("frac", 0.0))
-    src = terminal.get("source", {})
-    # Source ΔG: mean g_logp − b_logp over all (source_persona, q) leaves.
-    src_deltas: list[float] = []
-    for _persona, qs in src.items():
-        for _q, leaf in qs.items():
-            g = leaf.get("g_logp")
-            b = leaf.get("b_logp")
-            if g is None or b is None:
-                continue
-            src_deltas.append(float(g) - float(b))
-    source_dg = sum(src_deltas) / len(src_deltas) if src_deltas else float("nan")
+
+    # Source ΔG: pulled from the FLAT ``source_self.delta_g_mean`` scalar
+    # emitted by ``eval_trajectory.py`` (NOT a nested per-(persona, q) tree
+    # under a "source" key — that mis-read silently produced NaN in round 1
+    # and bypassed BOTH source-side FAILs).
+    src_self = terminal.get("source_self", {})
+    raw_dg = src_self.get("delta_g_mean")
+    source_dg = float(raw_dg) if raw_dg is not None else float("nan")
 
     held = terminal.get("held_out", {})
     argmax_hits = 0
@@ -139,7 +162,13 @@ def _evaluate_smoke_gates(  # noqa: C901  — intentional: one branch per gate (
         "terminal_step": terminal.get("step"),
     }
 
-    # Gate evaluation (plan §7).
+    # Gate evaluation (plan §7). NaN guard FIRST: any subsequent ``< / >``
+    # comparison against NaN silently returns False, which is how round 1's
+    # wrong key bypassed both source-side FAILs.
+    if math.isnan(source_dg):
+        diag["verdict"] = "FAIL"
+        diag["failure_reason"] = "source_dg_missing"
+        return diag
     if source_dg < band_low_nats:
         diag["verdict"] = "FAIL"
         diag["failure_reason"] = "lr_too_cold_no_implant"
