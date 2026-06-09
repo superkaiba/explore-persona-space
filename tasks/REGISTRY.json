@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 532,
+  "highest_id": 533,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3101,6 +3101,14 @@
       "path": "tasks/running/532",
       "status": "running",
       "title": "Geometric leakage predictors (cosine/JS/Gaussian-KL) vs a base-prior predictor on instruction-set marker contexts"
+    },
+    "533": {
+      "goal": "Determine whether encoding a persona as a custom chat-template role header gives a real, separable reduction in trained-marker leakage over a system-prompt encoding in the marker-less contrastive-negative regime, measured at a non-saturated training anchor by dropping the learning rate to 5e-6 (the demonstrated clean window in .claude/rules/marker-training-recipe.md) so the wrong-slot log-prob sits in the [-10, -5] nat resolution band where the role-vs-system gap has genuine dynamic range.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/533",
+      "status": "proposed",
+      "title": "Re-train marker-less role-vs-system at lr=5e-6, r=32 \u2014 non-saturated anchor in the {1,2,3,5}-epoch grid (corrective re-run of #529)"
     },
     "54": {
       "has_clean_result": false,
