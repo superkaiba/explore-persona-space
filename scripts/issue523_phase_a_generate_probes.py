@@ -110,42 +110,68 @@ def _call_claude_once(*args, **kwargs):
 
     import anthropic
 
-    transient_excs: tuple[type[Exception], ...] = (
-        anthropic.APIConnectionError,
-        anthropic.APITimeoutError,
-        anthropic.RateLimitError,
-        anthropic.InternalServerError,
-    )
-    # OverloadedError is the 529 case; not always exposed as a top-level
-    # attribute on older SDKs, so look it up defensively.
-    overloaded_exc = getattr(anthropic, "OverloadedError", None)
-    if overloaded_exc is not None:
-        transient_excs = (*transient_excs, overloaded_exc)
+    # Round-5b fix (the round-5 first-attempt missed OverloadedError because
+    # it lives in `anthropic._exceptions`, not the top-level `anthropic`
+    # namespace — `getattr(anthropic, "OverloadedError", None)` returned None
+    # on SDK v0.88, so the wrapper didn't catch the 529 and Phase A died).
+    # Catch the PUBLIC superclass `anthropic.APIStatusError` (which IS at the
+    # top level — `OverloadedError`, `RateLimitError`, `InternalServerError`,
+    # `ServiceUnavailableError`, `BadRequestError`, etc. all inherit from it)
+    # AND `APIConnectionError` / `APITimeoutError`, then DECIDE based on the
+    # HTTP status code whether to retry.
+    #
+    # Retry: 408 (timeout), 425, 429 (rate-limit), 500, 502, 503, 504, 529
+    #        (overloaded). These are the documented transient classes.
+    # Raise: 400 (bad request), 401 (auth), 403 (permission), 404 (not found),
+    #        409, 410, 413, 422, 451, etc. — real bugs / config errors that
+    #        should fail loud per CLAUDE.md.
+    transient_status_codes = frozenset({408, 425, 429, 500, 502, 503, 504, 529})
 
     max_outer_retries = 6  # 7 total attempts including the initial call
     delays = [30, 60, 120, 240, 480, 960]  # seconds; with jitter ±20%
     for attempt in range(max_outer_retries + 1):
         try:
             return _call_claude_once_base(*args, **kwargs)
-        except transient_excs as exc:
-            if attempt >= max_outer_retries:
+        except (anthropic.APIConnectionError, anthropic.APITimeoutError) as exc:
+            # Network-level transient; always retry.
+            should_retry = True
+            status_code: int | None = None
+            err_name = type(exc).__name__
+        except anthropic.APIStatusError as exc:
+            # HTTP-status transient or permanent — gate by status code.
+            status_code = getattr(exc, "status_code", None)
+            err_name = type(exc).__name__
+            should_retry = status_code in transient_status_codes
+            if not should_retry:
                 logger.error(
-                    "Anthropic transient error after %d outer retries; giving up: %s",
-                    attempt,
+                    "Anthropic %s (status=%s) is NOT a documented transient class; "
+                    "raising without retry: %s",
+                    err_name,
+                    status_code,
                     exc,
                 )
                 raise
-            sleep_for = delays[attempt]
-            sleep_for *= 1.0 + random.uniform(-0.2, 0.2)
-            logger.warning(
-                "Anthropic transient error (%s); outer retry %d/%d after %.1fs sleep: %s",
-                type(exc).__name__,
-                attempt + 1,
-                max_outer_retries,
-                sleep_for,
-                exc,
+        else:
+            continue  # success — return path already taken inside try.
+
+        if attempt >= max_outer_retries:
+            logger.error(
+                "Anthropic transient error (%s status=%s) after %d outer retries; giving up.",
+                err_name,
+                status_code,
+                attempt,
             )
-            time.sleep(sleep_for)
+            raise
+        sleep_for = delays[attempt] * (1.0 + random.uniform(-0.2, 0.2))
+        logger.warning(
+            "Anthropic transient error (%s status=%s); outer retry %d/%d after %.1fs sleep.",
+            err_name,
+            status_code,
+            attempt + 1,
+            max_outer_retries,
+            sleep_for,
+        )
+        time.sleep(sleep_for)
 
 
 from explore_persona_space.experiments.i460_data import (  # noqa: E402
