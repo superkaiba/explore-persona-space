@@ -207,6 +207,7 @@ python scripts/pod.py list-ephemeral [--issue 137]              # live API queri
 # Config (single source of truth: scripts/pods.conf)
 python scripts/pod.py config --list | --check | --sync
 python scripts/pod.py config --update <name> --host X --port Y
+python scripts/pod.py config --refresh-from-api [<name>]    # Pull live host/port from RunPod API → pods.conf → sync
 # Keys / bootstrap / health
 python scripts/pod.py keys --push [<name>...] | --verify
 python scripts/pod.py bootstrap <name>                          # normally auto from provision
@@ -217,7 +218,7 @@ python scripts/pod.py cleanup <name> --dry-run | --all          # safe model rem
 python scripts/pod.py audit-stale [--terminate-stale --yes] [--json]
 ```
 
-**Authority split.** Live RunPod API is authoritative for state (existence, status, host, port, GPU, `created_at`). `scripts/pods_ephemeral.json` holds project metadata only; `scripts/pods.conf` is the SSH/MCP config source, auto-synced.
+**Authority split.** Live RunPod API is authoritative for state (existence, status, host, port, GPU, `created_at`). `scripts/pods_ephemeral.json` holds project metadata only; `scripts/pods.conf` is the SSH/MCP config source, auto-synced. `pod.py provision` / `pod.py resume` refresh `pods.conf` from the live API on success; `pod.py config --sync` propagates `pods.conf` OUTWARD to `~/.ssh/config` + `.claude/mcp.json`. The inverse direction — pulling live API host/port INTO `pods.conf` outside an explicit provision/resume call — is `pod.py config --refresh-from-api [<name>]`. Use it when a SUPPLY_CONSTRAINT-blocked resume eventually succeeds via a retry path that bypassed `_upsert_pods_conf`, or whenever an SSH polling loop is failing on a port the live API no longer reports. (Incident #488, 2026-06-09: a resume blocked on SUPPLY_CONSTRAINT brought the pod back at a new port outside the success path; `pods.conf` stayed at the pre-stop port and an autonomous SSH polling loop spun for 13+ hours at $32/hr.)
 
 **Crons.** Stale-pod audit 09:37 daily (auto-terminate EXITED >24h; also runs on `pod.py provision`). Stale-worktree sweep 09:47 daily (`worktree_audit.py --apply`) reaps idle auto-generated worktrees under `.claude/worktrees/` — removed only when not held by a live process, not an `issue-<N>` with a non-terminal status, older than a 6h grace window, and with no uncommitted tracked changes. Human-named worktrees are never touched.
 
