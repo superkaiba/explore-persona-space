@@ -1,6 +1,6 @@
 ---
-title: 'Pillar-2 superposition re-run: hot band-stopped anchor + orthogonal source
-  pairs'
+title: A properly band-stopped marker implant still trips every confound gate, so
+  the additivity cosine remains uninterpretable as a superposition signal (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-09T05:06:51Z'
