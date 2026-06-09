@@ -3305,16 +3305,37 @@ is the durable record consumed by re-entry idempotency.
    uv run python scripts/task.py post-marker <N> epm:progress \
      --note "stage-dispatch stage=methodology-reference round=1 subagent=methodology-writer"
    ```
-2. **Spawn `methodology-writer`** (fresh context, findings-blind). The
-   prompt names the task number + the absolute path of the task body's
-   `## Reproducibility` section as its starting input. The agent reads
-   ONLY the plan, the Reproducibility section, the training/eval
-   scripts at the body's `**Code:**` SHA, the Hydra config, and a
-   handful of artifact rows for verbatim worked examples. Output:
+2. **Pre-extract `## Reproducibility` (structural findings-blindness).**
+   Before spawning the agent, slice just the `## Reproducibility` H2
+   from the task body into a temp file and hand the agent ONLY that
+   path — never the full `body.md`. This is what physically enforces
+   findings-blindness: `## TL;DR` / `## Findings` / the H1 confidence
+   tag never enter the agent's context. Prompt discipline is defense in
+   depth on top of this structural cut, not the primary mechanism:
+   ```bash
+   BODY_PATH=$(uv run python scripts/task.py find <N>)/body.md
+   REPRO_FILE=$(mktemp -t issue<N>-reproducibility.XXXXXX.md)
+   awk '/^## Reproducibility[[:space:]]*$/{flag=1; print; next} \
+        flag && /^## /{flag=0} flag' "$BODY_PATH" > "$REPRO_FILE"
+   # Confirm the slice is non-empty; if it is, the body is malformed
+   # (no `## Reproducibility` H2). Post epm:failure v1
+   # (failure_class: data, reason: missing ## Reproducibility for
+   # methodology-writer), set status:blocked, exit. Surface a
+   # workflow-fix-candidate v1 block — the verifier should have caught
+   # this upstream.
+   [ -s "$REPRO_FILE" ] || { echo "Reproducibility slice empty"; exit 1; }
+   ```
+3. **Spawn `methodology-writer`** (fresh context, findings-blind). The
+   prompt names the task number + the absolute path of the pre-extracted
+   `## Reproducibility` slice (`$REPRO_FILE` from the previous step) as
+   its starting input — NOT the full `body.md` path. The agent reads
+   ONLY the plan, the Reproducibility slice, the training/eval scripts
+   at the body's `**Code:**` SHA, the Hydra config, and a handful of
+   artifact rows for verbatim worked examples. Output:
    `docs/methodology/issue_<N>.md`. See `.claude/agents/methodology-writer.md`
    for the full read/don't-read list and the "no interpretation" hard
-   constraints.
-3. **No-secrets guard** (pre-publish, mandatory). Before publishing
+   constraints. Delete `$REPRO_FILE` after the agent exits.
+4. **No-secrets guard** (pre-publish, mandatory). Before publishing
    the gist, scan the generated doc for obvious secret patterns —
    `sk-`, `hf_`, `wandb`-key shapes, `RUNPOD`, `ANTHROPIC_API_KEY`, raw
    `.env` content. The methodology-writer reads only the
@@ -3322,9 +3343,9 @@ is the durable record consumed by re-entry idempotency.
    never trip in normal operation; it is a safety net. On any hit,
    ABORT the gist publish, keep the committed repo doc, and pass the
    `note: gist skipped — possible secret detected` field through to
-   the marker (step 7). Continue to the link-append step regardless;
+   the marker (step 9). Continue to the link-append step regardless;
    the in-repo doc remains the durable artifact.
-4. **Commit the doc to the repo.** Inside the worktree branch (the
+5. **Commit the doc to the repo.** Inside the worktree branch (the
    one this `/issue <N>` is running on — never the main checkout):
    ```bash
    git -C "$WORKTREE" add docs/methodology/issue_<N>.md
@@ -3334,7 +3355,7 @@ is the durable record consumed by re-entry idempotency.
    Use the explicit path; never `git add -A` (avoids sweeping
    unrelated working-tree changes). The doc rides to `main` with the
    auto-merge at Step 9b.
-5. **Publish the secret gist (fail-soft).** Try once. `gh gist create
+6. **Publish the secret gist (fail-soft).** Try once. `gh gist create
    <file>` uses the file's basename for the gist filename — the
    in-repo path is `docs/methodology/issue_<N>.md`, so the rendered
    gist filename is `issue_<N>.md` (no extra rename needed):
@@ -3358,7 +3379,7 @@ is the durable record consumed by re-entry idempotency.
    block the step or the park on a missing gist; the committed repo
    doc is the durable artifact and the next step links to it either
    way.
-6. **Append the link line to the clean-result `## Reproducibility`
+7. **Append the link line to the clean-result `## Reproducibility`
    section.** Use `task.py set-body <N> --file <new-body.md>` (NO
    `--snapshot` — the previous body is already the canonical
    clean-result; this is a one-line append, not a promotion).
@@ -3375,7 +3396,7 @@ is the durable record consumed by re-entry idempotency.
    - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_<N>.md)
    ```
    Write the revised body via `task.py set-body <N> --file ...`.
-7. **Re-run the mechanical verifier on the body.** A single-line link
+8. **Re-run the mechanical verifier on the body.** A single-line link
    addition to `## Reproducibility` cannot break the spec, but the
    verifier costs ~1s and catches the unlikely off-anchor edit:
    ```bash
@@ -3388,7 +3409,7 @@ is the durable record consumed by re-entry idempotency.
    verify_task_body.py`, set `status:blocked`, and exit (this is a
    workflow bug — surface a `workflow-fix-candidate v1` block in the
    exit text so the orchestrator can auto-spawn `workflow-improver`).
-8. **Post the marker:**
+9. **Post the marker:**
    ```bash
    uv run python scripts/task.py post-marker <N> epm:methodology-doc-generated \
      --note "doc_path=docs/methodology/issue_<N>.md commit=<DOC_SHA> gist_url=<GIST_URL or 'n/a — <gist_err>'>"
