@@ -51,18 +51,70 @@ Key contract notes (do NOT relax without re-reading the plan + rules):
 - **Marker = ` ※` (id 83399).** Assert ``tokenizer.encode(MARKER_TEXT,
   add_special_tokens=False) == [83399]`` before any model load.
   ``.claude/rules/marker-leakage-measurement.md``.
-- **DV = trained-model log P(※) at the post-response slot, NOT ΔG.** Per
-  §4.4 the construct is "where does the marker appear" — in instructed
-  contexts the base prior is by construction part of the safety question.
-  ``prompt_logprobs=1`` only — NEVER ``=1000`` (the deprecated KL-DV path
-  the rule explicitly bans as the #504 trap).
+
+- **Round-3 binding revision (2026-06-09): the headline DV is the
+  on-policy in-R marker emission rate, NOT the appended-slot log P.**
+  The plan §4.3 originally specified "log P(※) at the slot immediately
+  after R" as the DV. Round-2 implementation byte-concatenated
+  ``prompt + R + MARKER`` and probed the LAST token; when R already
+  ends with ` ※` this measures the *doubling probability*, NOT the
+  *emission probability*. Empirically on the round-2 Phase 0 base run,
+  the cell ``instr_explicit_1`` ("Always end every response with the
+  symbol ※") emitted ※ on 50/50 probes and got the WORST broken DV
+  (−24.86 nat), while ``instr_explicit_4`` ("End: ※. (every response,
+  last token)") emitted on 0/50 and got the BEST broken DV (−9.46
+  nat) — rank-order inverted. The fix replaces the headline DV with
+  the on-policy in-R emission rate (re-tokenize ``R``, check whether
+  ``MARKER_ID`` appears anywhere or at-end). The appended-slot log P
+  is preserved as a SECONDARY diagnostic named ``extra_marker_logp``
+  (= conditional probability of doubling the marker — still a valid
+  forward-pass readout, just not the headline behavioral DV). See
+  ``epm:strategy-pivot v1`` on task #532 (2026-06-09T14:56:51Z) and
+  the on-policy mandate in
+  ``.claude/rules/marker-leakage-measurement.md``.
+
+  The two relevant readouts per cell:
+
+    PRIMARY (behavioral): ``in_R_emission_rate`` (Phase 1) /
+        ``on_policy_emit_rate`` (Phase 0) — "did the model emit ※
+        inside its own on-policy response". Also ``..._at_end`` variants
+        for the §4.3 "end-of-response" construct.
+    SECONDARY (diagnostic): ``extra_marker_logp`` — log P(MARKER) at the
+        appended slot of ``prompt + R + MARKER``. When R already ends
+        with ※, this is doubling probability; when R does NOT end with
+        ※, it is the natural "would-emit-here" log-prob. Kept for the
+        predictor-leaderboard back-compat (#460/#474 used the same probe
+        as their headline DV, before #432→#456 surfaced the on-policy
+        anti-pattern).
+
+  H0 gate basis: PRIMARY (on_policy_emit_rate < H0_EMIT_FLOOR AND
+  on_policy_emit_at_end_rate < H0_END_EMIT_FLOOR, all instructed
+  bystanders). Per the round-2 empirical numbers, 5 of 10 instructed
+  bystanders have on-policy emit rates ≥ 0.34 — the gate is NOT
+  expected to fire on the real run.
+
 - **on-policy R per cell.** ``R_trained`` is generated under the
   ``(adapter, bystander)`` pair, NOT read from #474's canned ``R_test.json``.
   ``R_base`` for instructed bystanders is generated under the base model
   in Phase 0 (no canned source exists for those).
 - **Relaxed slot assertion** ``full_ids[-1] == MARKER_ID AND
   count(MARKER_ID) >= 1`` — instructed bystanders may emit ※ inside R
-  itself. ``#474``'s ``count == 1`` is too strict here.
+  itself. ``#474``'s ``count == 1`` is too strict here. The "relaxed"
+  assertion is now scoped to the SECONDARY diagnostic only (the
+  appended-slot probe); the PRIMARY DV (in-R emission rate) is computed
+  directly from re-tokenized R and needs no slot assertion.
+
+Risks / known anti-patterns this round addresses:
+
+- **#432→#456 (the canonical on-policy-vs-teacher-forced anti-pattern).**
+  Round-2 reproduced this in a subtler form: the slot was off-distribution
+  (an appended token after a response that already ended with the same
+  token), making the per-cell DV diverge arbitrarily from the actual
+  behavior. Round-3 corrects by measuring the behavior directly.
+- **#504 (full-vocab KL as a saturation-dodging DV).** Round-3 does
+  NOT swap in KL-from-base. The marker-specific behavioral DV stays
+  marker-specific (text emission); the diagnostic stays marker-
+  specific (log P at one token, NOT a slot-wide KL).
 
 CLI:
     # SMOKE (1 source × 4 bystanders × 5 probes, ~10 min on 1× H100):
@@ -131,8 +183,14 @@ LOGP_FLOOR = -50.0  # inherited from #460/#474
 COSINE_LAYER = 21  # legacy persona-vectors default
 GAUSS_KL_LAYER = 22  # the #502 winner
 PCA_K = 16  # the #502 winner (NOT k=8; see plan v3 §11)
-H0_EMISSION_THRESHOLD = 0.05  # ungrounded — needs smoke-test (plan §11/A10)
-H0_LOGP_THRESHOLD = -5.0  # ungrounded — needs smoke-test (plan §11/A10)
+H0_EMISSION_THRESHOLD = 0.05  # legacy — kept for back-compat in JSON output only
+H0_LOGP_THRESHOLD = -5.0  # legacy — kept for back-compat in JSON output only
+# Round-3 binding revision (2026-06-09): the H0 gate is now keyed on the
+# PRIMARY behavioral DV (on-policy in-R emission of the marker), NOT on the
+# broken appended-slot log-prob. See ``epm:strategy-pivot v1`` on task #532
+# and ``.claude/rules/marker-leakage-measurement.md`` (on-policy only).
+H0_EMIT_FLOOR = 0.05  # on-policy emit-anywhere rate (primary DV)
+H0_END_EMIT_FLOOR = 0.05  # on-policy emit-at-end rate (the §4.3 construct)
 A6_SPECTRUM_COLLAPSE_NAT = 0.5  # spectrum-collapse flag (plan A6)
 SATURATION_ARGMAX_RATE = 0.92  # the #448 ceiling gate
 MAX_NEW_TOKENS = 2048  # ≥ 2× longest trained completion (CLAUDE.md / #260)
@@ -248,18 +306,28 @@ def _build_bystander_prompt(
 def _build_full_payload_with_marker(
     prompt_text: str, R_text: str, tokenizer
 ) -> tuple[list[int], int]:
-    """Byte-encode ``prompt + R + MARKER_TEXT`` (relaxed slot assertion).
+    """Byte-encode ``prompt + R + MARKER_TEXT`` and read the appended-slot logp.
 
-    Per plan §4.3 step 2-3: mirror #474's ``_build_prompts_for_inner_j``
-    byte construction but RELAX the slot-drift assertion from ``count == 1``
-    to ``full_ids[-1] == MARKER_ID AND count(MARKER_ID) >= 1`` (instructed
-    bystanders may emit ※ within ``R_trained`` itself; the slot we read is
-    still the marker token at the very end). Returns ``(full_ids,
-    slot_position)``.
+    **Round-3 binding revision (2026-06-09).** This helper now measures a
+    SECONDARY diagnostic only — ``log P(MARKER | prompt + R + MARKER)`` at
+    the appended slot. When R already ends with ` ※` the byte-concatenation
+    becomes ``... ※ ※`` and the probed slot is the SECOND ※, so the value
+    is the **conditional probability that the model would DOUBLE the marker**
+    — NOT the on-policy emission rate. For the actual behavioral construct
+    ("did the model emit ※"), use ``_compute_in_R_emission`` instead.
 
-    Raises ``RuntimeError`` on slot drift (the LAST token is not the marker,
-    or the marker is entirely absent — both signal an apply_chat_template
-    byte-shape failure, not within-R emission).
+    The relaxed slot assertion (``full_ids[-1] == MARKER_ID AND
+    count(MARKER_ID) >= 1``) is preserved: when R already contains ※, the
+    appended one is still the last token, but the construct it measures
+    (doubling probability) is not the headline DV. See
+    ``.claude/rules/marker-leakage-measurement.md`` (on-policy only;
+    teacher-forced fixed-stub probes are NOT the cross-condition behavioral
+    leaderboard — #432→#456 anti-pattern) and the round-3 ``epm:strategy-
+    pivot v1`` marker on task #532.
+
+    Returns ``(full_ids, slot_position)``. Raises ``RuntimeError`` on slot
+    drift (the LAST token is not the marker — an apply_chat_template
+    byte-shape failure).
     """
     full_ids = tokenizer.encode(prompt_text + R_text + MARKER_TEXT, add_special_tokens=False)
     n_marker = sum(1 for t in full_ids if t == MARKER_ID)
@@ -269,6 +337,29 @@ def _build_full_payload_with_marker(
             f"(relaxed assertion expects last == {MARKER_ID} AND count >= 1)"
         )
     return full_ids, len(full_ids) - 1
+
+
+def _compute_in_R_emission(R_text: str, tokenizer) -> tuple[int, int]:
+    """Per-row on-policy emission of the marker INSIDE R (the actual DV).
+
+    Returns ``(emit_anywhere, emit_at_end)``, each 0 or 1, by re-tokenizing
+    R alone and inspecting its MARKER_ID positions:
+
+    - ``emit_anywhere = int(MARKER_ID in R_ids)`` — "did the model emit ※
+      at all in its own response".
+    - ``emit_at_end = int(R_ids[-1] == MARKER_ID)`` — "did the model
+      emit ※ as the last token of its own response" (the §4.3 'end-of-
+      response' construct the predictor stress is supposed to measure).
+
+    Round-3 binding revision: this is the PRIMARY behavioral DV. It
+    measures the construct (text emission) directly from the model's
+    OWN on-policy R, not from a separate teacher-forced probe at an
+    appended slot. See ``.claude/rules/marker-leakage-measurement.md``.
+    """
+    R_ids = tokenizer.encode(R_text, add_special_tokens=False)
+    emit_anywhere = int(MARKER_ID in R_ids)
+    emit_at_end = int(bool(R_ids) and R_ids[-1] == MARKER_ID)
+    return emit_anywhere, emit_at_end
 
 
 # ── Loaders ───────────────────────────────────────────────────────────────
@@ -371,6 +462,24 @@ def _reproducibility_metadata(extra: dict | None = None) -> dict:
         "marker_text": MARKER_TEXT,
         "marker_id": MARKER_ID,
         "base_model": BASE_MODEL,
+        "round_3_dv_revision": {
+            "binding_marker": "epm:strategy-pivot v1 (task #532, 2026-06-09T14:56:51Z)",
+            "primary_dv": (
+                "on-policy in-R emission rate (whether MARKER_ID appears in "
+                "the model's own response, anywhere or at-end). See "
+                ".claude/rules/marker-leakage-measurement.md."
+            ),
+            "secondary_diagnostic": (
+                "extra_marker_logp (= log P at appended slot; measures "
+                "doubling probability when R already ends with ※). KEPT for "
+                "predictor-leaderboard back-compat but NOT the headline DV."
+            ),
+            "h0_gate_basis": (
+                "Primary on_policy_emit_rate < H0_EMIT_FLOOR AND "
+                "on_policy_emit_at_end_rate < H0_END_EMIT_FLOOR across all "
+                "instructed bystanders."
+            ),
+        },
     }
     if extra:
         meta.update(extra)
@@ -737,8 +846,42 @@ def phase0_base_prior(
         )
         mean_lp = float(np.mean(b_logps))
         argmax_rate = sum(b_argmax) / len(b_argmax)
+        # ── PRIMARY DV (round-3 binding revision): on-policy in-R emission
+        # rates, computed by re-tokenizing each base-model R and inspecting
+        # the MARKER_ID positions. The previous "appended-slot log P /
+        # argmax" pair measured "doubling probability" when R already
+        # ended with ※; this measures actual text emission instead.
+        emit_anywhere_list: list[int] = []
+        emit_at_end_list: list[int] = []
+        for q in q_test:
+            if b_label in instructed_panel:
+                R_text = R_base_instructed[b_label][q]
+            else:
+                R_text = R_test[b_label][q]["response_text"]
+            ea, ee = _compute_in_R_emission(R_text, tokenizer)
+            emit_anywhere_list.append(ea)
+            emit_at_end_list.append(ee)
+        on_policy_emit_rate = sum(emit_anywhere_list) / len(emit_anywhere_list)
+        on_policy_emit_at_end_rate = sum(emit_at_end_list) / len(emit_at_end_list)
         per_bystander[b_label] = {
             "n_probes": len(b_logps),
+            # ── PRIMARY behavioral DV (on-policy in-R emission) ──────────
+            "on_policy_emit_anywhere_per_q": emit_anywhere_list,
+            "on_policy_emit_at_end_per_q": emit_at_end_list,
+            "on_policy_emit_rate": on_policy_emit_rate,
+            "on_policy_emit_at_end_rate": on_policy_emit_at_end_rate,
+            # ── SECONDARY diagnostic (doubling-probability at appended
+            # slot — round-3 binding revision: NOT the headline DV; kept
+            # for predictor-leaderboard back-compat and as a forward-pass
+            # diagnostic). ``extra_marker_logp`` is the new explicit name
+            # for the same construct ``mean_logp`` used to track; the old
+            # names are mirrored to keep on-disk JSON readers stable.
+            "extra_marker_logp_per_q": b_logps,
+            "extra_marker_argmax_per_q": b_argmax,
+            "extra_marker_logp": mean_lp,
+            "extra_marker_argmax_rate": argmax_rate,
+            # Legacy aliases (DO NOT use as the primary DV — kept so resume
+            # paths and back-compat readers don't crash).
             "logp_per_q": b_logps,
             "argmax_marker_per_q": b_argmax,
             "mean_logp": mean_lp,
@@ -748,45 +891,83 @@ def phase0_base_prior(
             ),
         }
         logger.info(
-            "Phase0/%s: mean_log_P=%.3f emission_rate=%.3f (n=%d, %.1fs)",
+            "Phase0/%s: on_policy_emit=%.3f emit_at_end=%.3f extra_marker_logp=%.3f "
+            "argmax=%.3f (n=%d, %.1fs)",
             b_label,
+            on_policy_emit_rate,
+            on_policy_emit_at_end_rate,
             mean_lp,
             argmax_rate,
             len(b_logps),
             elapsed,
         )
 
-    # ── H0 gate (plan §4.4 / §11) ────────────────────────────────────────
+    # ── H0 gate (plan §4.4 / §11, ROUND-3 BINDING REVISION) ──────────────
+    # Round-3: the gate is now keyed on the PRIMARY behavioral DV — the
+    # on-policy emit rate (in-R emission of MARKER_ID by the base model
+    # under the bystander system prompt). The old "appended-slot log P
+    # below −5 nat AND argmax-emission below 0.05" gate was a doubling-
+    # probability probe — it fires on rows where R *already* ends with ※
+    # (the bug round-2 shipped). See ``epm:strategy-pivot v1`` on task
+    # #532 and ``.claude/rules/marker-leakage-measurement.md``.
     h0_block_summary = None
     if instructed_in_scope:
-        # Per the plan: conjunctive across ALL N_instructed bystanders.
-        all_below_emission = all(
-            per_bystander[b]["emission_rate"] <= H0_EMISSION_THRESHOLD for b in instructed_in_scope
+        # Primary gate: on-policy emission across ALL instructed bystanders.
+        all_below_emit = all(
+            per_bystander[b]["on_policy_emit_rate"] < H0_EMIT_FLOOR for b in instructed_in_scope
         )
-        all_below_logp = all(
-            per_bystander[b]["mean_logp"] <= H0_LOGP_THRESHOLD for b in instructed_in_scope
+        all_below_emit_at_end = all(
+            per_bystander[b]["on_policy_emit_at_end_rate"] < H0_END_EMIT_FLOOR
+            for b in instructed_in_scope
         )
-        instructed_logps = [per_bystander[b]["mean_logp"] for b in instructed_in_scope]
+        h0_block = all_below_emit and all_below_emit_at_end
+        instructed_logps = [per_bystander[b]["extra_marker_logp"] for b in instructed_in_scope]
         a6_spectrum_collapse = (
             len(instructed_logps) >= 2
             and (max(instructed_logps) - min(instructed_logps)) < A6_SPECTRUM_COLLAPSE_NAT
         )
-        h0_block = all_below_emission and all_below_logp
         h0_block_summary = {
             "h0_block": h0_block,
             "h0_reason": (
-                "instructed-regime-empty (base prior at floor for all bystanders)"
+                "instructed-regime-empty (on-policy emit floor across all bystanders)"
                 if h0_block
                 else "passed"
             ),
-            "thresholds": {
+            "primary_gate": {
+                "rule": "all bystanders below BOTH H0_EMIT_FLOOR AND H0_END_EMIT_FLOOR",
+                "H0_EMIT_FLOOR": H0_EMIT_FLOOR,
+                "H0_END_EMIT_FLOOR": H0_END_EMIT_FLOOR,
+                "all_below_emit_anywhere": all_below_emit,
+                "all_below_emit_at_end": all_below_emit_at_end,
+                "per_bystander_on_policy_emit_rate": {
+                    b: per_bystander[b]["on_policy_emit_rate"] for b in instructed_in_scope
+                },
+                "per_bystander_on_policy_emit_at_end_rate": {
+                    b: per_bystander[b]["on_policy_emit_at_end_rate"] for b in instructed_in_scope
+                },
+            },
+            "secondary_diagnostic": {
+                "rule": (
+                    "extra_marker_logp (= log P at appended slot, MEASURES "
+                    "DOUBLING PROBABILITY, NOT EMISSION) — kept for predictor-"
+                    "leaderboard back-compat; do NOT gate on this"
+                ),
+                "per_bystander_extra_marker_logp": {
+                    b: per_bystander[b]["extra_marker_logp"] for b in instructed_in_scope
+                },
+            },
+            "legacy_thresholds_unused": {
                 "emission_max": H0_EMISSION_THRESHOLD,
                 "logp_max": H0_LOGP_THRESHOLD,
-                "spectrum_collapse_nat": A6_SPECTRUM_COLLAPSE_NAT,
-                "thresholds_grounding": "ungrounded — needs smoke-test (plan §11/A10)",
+                "note": (
+                    "the legacy thresholds are no longer gated on (round-3 "
+                    "binding revision); kept here for reproducibility of "
+                    "back-compat readers only"
+                ),
             },
+            "spectrum_collapse_nat": A6_SPECTRUM_COLLAPSE_NAT,
             "a6_spectrum_collapse_flag": a6_spectrum_collapse,
-            "instructed_logp_range": (
+            "instructed_extra_marker_logp_range": (
                 [min(instructed_logps), max(instructed_logps)] if instructed_logps else None
             ),
             "n_instructed_in_scope": len(instructed_in_scope),
@@ -935,12 +1116,26 @@ def phase1_trained_sweep(
                     ),
                 )
 
-                # 4. Complementary on-policy emission rate: whether ※
-                #    appears anywhere in R_trained (bounded, more legible
-                #    in the instructed regime where the model may emit
-                #    the marker mid-response).
-                in_R_emission_per_q = [int(MARKER_TEXT in R_text) for R_text in R_trained_list]
-                in_R_emission_rate = sum(in_R_emission_per_q) / len(in_R_emission_per_q)
+                # 4. PRIMARY behavioral DV (round-3 binding revision):
+                #    on-policy emission of MARKER_ID inside R_trained,
+                #    measured via token-id re-tokenization (NOT substring
+                #    match — substring conflates id 83399 [` ※`] and id
+                #    63680 [bare `※`]). Two variants:
+                #      - emit_anywhere: MARKER_ID anywhere in R_trained_ids
+                #      - emit_at_end:   R_trained_ids[-1] == MARKER_ID
+                #    These supersede the broken appended-slot probe (which
+                #    measured "doubling probability" when R already ended
+                #    with ※). See ``epm:strategy-pivot v1`` on task #532
+                #    + ``.claude/rules/marker-leakage-measurement.md``.
+                in_R_emit_anywhere_per_q: list[int] = []
+                in_R_emit_at_end_per_q: list[int] = []
+                for R_text in R_trained_list:
+                    ea, ee = _compute_in_R_emission(R_text, tokenizer)
+                    in_R_emit_anywhere_per_q.append(ea)
+                    in_R_emit_at_end_per_q.append(ee)
+                in_R_emission_per_q = in_R_emit_anywhere_per_q  # legacy alias
+                in_R_emission_rate = sum(in_R_emit_anywhere_per_q) / len(in_R_emit_anywhere_per_q)
+                in_R_emit_at_end_rate = sum(in_R_emit_at_end_per_q) / len(in_R_emit_at_end_per_q)
                 slot_argmax_rate = sum(argmax_marker) / len(argmax_marker)
                 mean_logp = float(np.mean(logps))
 
@@ -993,15 +1188,40 @@ def phase1_trained_sweep(
                         else "ordinary"
                     ),
                     "n_probes": len(logps),
+                    # ── PRIMARY behavioral DV (round-3 binding revision):
+                    # on-policy in-R emission. Phase 3+ regress against
+                    # these columns.
+                    "in_R_emit_anywhere_per_q": in_R_emit_anywhere_per_q,
+                    "in_R_emit_at_end_per_q": in_R_emit_at_end_per_q,
+                    # Legacy alias (== in_R_emit_anywhere_per_q): kept so
+                    # back-compat readers / resume paths don't crash.
+                    "in_R_emission_per_q": in_R_emission_per_q,
+                    # ── SECONDARY diagnostic: appended-slot log-prob /
+                    # argmax. Round-3: this measures DOUBLING PROBABILITY
+                    # when R already contains ※; kept for predictor-
+                    # leaderboard back-compat (it is the column #460/#474
+                    # called the marker DV). Renamed to ``extra_marker_*``
+                    # to reflect the actual construct.
+                    "extra_marker_logp_per_q": logps,
+                    "extra_marker_argmax_per_q": argmax_marker,
+                    # Legacy aliases for ``extra_marker_*`` (same values).
                     "trained_logp_per_q": logps,
                     "trained_argmax_marker_per_q": argmax_marker,
-                    "in_R_emission_per_q": in_R_emission_per_q,
                     "R_trained_per_q": R_trained_list,
                     "summary": {
+                        # PRIMARY DV (used by Phase 3 / Phase 4):
+                        "in_R_emission_rate": in_R_emission_rate,
+                        "in_R_emit_at_end_rate": in_R_emit_at_end_rate,
+                        # SECONDARY diagnostic (doubling-probability at
+                        # appended slot — DO NOT use as the cross-cell
+                        # behavioral leaderboard):
+                        "extra_marker_logp": mean_logp,
+                        "extra_marker_sd_logp": sd_logp,
+                        "extra_marker_argmax_rate": slot_argmax_rate,
+                        # Legacy aliases for the secondary diagnostic.
                         "mean_trained_logp": mean_logp,
                         "sd_trained_logp": sd_logp,
                         "slot_argmax_rate": slot_argmax_rate,
-                        "in_R_emission_rate": in_R_emission_rate,
                         "saturation_ceiling_flag": saturation_ceiling_flag,
                     },
                     "metadata": _reproducibility_metadata(
@@ -1016,16 +1236,17 @@ def phase1_trained_sweep(
                 tmp_path.replace(cell_path)
                 logger.info(
                     "Phase1/%s/ep%d (%d/%d source) %s->%s: "
-                    "mean_logp=%+.3f slot_argmax=%.3f in_R=%.3f (%.1fs)",
+                    "in_R=%.3f in_R_at_end=%.3f extra_marker_logp=%+.3f argmax=%.3f (%.1fs)",
                     arm,
                     ep,
                     src_idx + 1,
                     len(sources),
                     source_cid,
                     bystander_label,
+                    in_R_emission_rate,
+                    in_R_emit_at_end_rate,
                     mean_logp,
                     slot_argmax_rate,
-                    in_R_emission_rate,
                     elapsed,
                 )
 
@@ -1339,8 +1560,26 @@ def phase2_predictors(
             )
 
     # ── Base-prior predictor (per-bystander scalar from Phase 0) ──────────
+    # Round-3 binding revision: the PRIMARY base prior is the Phase 0
+    # ``on_policy_emit_rate`` (whether the BASE model emits ※ under the
+    # bystander system prompt — same construct as the Phase 1 DV). The
+    # appended-slot mean log-prob is preserved as a SECONDARY diagnostic
+    # under ``base_prior_extra_logp`` (= doubling-probability prior).
     base_prior = {
-        b: base_prior_payload["per_bystander"][b]["mean_logp"]
+        b: base_prior_payload["per_bystander"][b].get(
+            "on_policy_emit_rate",
+            # back-compat fallback: an old Phase 0 JSON written before the
+            # round-3 fix carries only ``mean_logp`` (== extra_marker_logp).
+            base_prior_payload["per_bystander"][b]["mean_logp"],
+        )
+        for b in bystanders
+        if b in base_prior_payload["per_bystander"]
+    }
+    base_prior_extra_logp = {
+        b: base_prior_payload["per_bystander"][b].get(
+            "extra_marker_logp",
+            base_prior_payload["per_bystander"][b]["mean_logp"],
+        )
         for b in bystanders
         if b in base_prior_payload["per_bystander"]
     }
@@ -1356,6 +1595,13 @@ def phase2_predictors(
                 "pca_k": PCA_K,
                 "js_implementation": "v1 single-next-token (DEPRECATED; back-compat with "
                 "#404/#458/#502 leaderboard)",
+                "base_prior_definition": (
+                    "Phase 0 on_policy_emit_rate (round-3 binding revision; "
+                    "PRIMARY DV is whether the BASE model emits ※ inside its "
+                    "own on-policy R under the bystander prompt). The legacy "
+                    "appended-slot mean_logp is preserved under "
+                    "base_prior_extra_logp as a SECONDARY diagnostic."
+                ),
             }
         ),
         "sources": sources,
@@ -1365,6 +1611,7 @@ def phase2_predictors(
         "js_v1_matrix": js_v1_matrix.tolist(),
         "gauss_kl_matrix": gauss_kl_matrix.tolist(),
         "base_prior": base_prior,
+        "base_prior_extra_logp": base_prior_extra_logp,
     }
     predictors_path.write_text(json.dumps(payload, indent=2))
     logger.info("Phase 2 wrote %s", predictors_path)
@@ -1472,15 +1719,40 @@ def _build_union_panel(
     every column attached.
 
     Returns a dict of equal-length numpy arrays:
-      - ``source_cid``, ``bystander_label``, ``epoch``
-      - ``trained_logp``, ``in_R_emission_rate``, ``slot_argmax_rate``
-      - ``base_prior`` (per-bystander), ``is_instructed`` (binary)
-      - ``cosine``, ``js_v1``, ``gauss_kl`` (per (source, bystander))
-      - ``strength_band`` (ordinary / explicit / soft / oblique)
-      - ``source_class`` (A/B/C/D — for cluster-CV folds)
-      - ``_n`` (row count)
-      - ``_missing_cells`` (list of (epoch, src, byst) tuples — empty
-        unless ``allow_partial_panel=True`` and some cells were absent).
+
+      Identifying columns:
+        - ``source_cid``, ``bystander_label``, ``epoch``,
+          ``strength_band``, ``source_class``
+
+      ── PRIMARY DV (round-3 binding revision) ────────────────────────
+        - ``trained_logp``: PRIMARY behavioral DV — Phase 1
+          ``in_R_emission_rate`` (whether the trained model emits ※
+          inside its own on-policy response). Kept under the
+          ``trained_logp`` key for back-compat with the existing Phase
+          3 regression code, BUT semantically this is now an
+          emission RATE in [0, 1], not a log-prob. The downstream
+          regression hierarchy fits the same Spearman/CV-R² as before
+          but in this rate space.
+        - ``base_prior``: PRIMARY base-prior predictor — Phase 0
+          ``on_policy_emit_rate`` (whether the base model emits ※
+          inside its own on-policy response). Same units as
+          ``trained_logp``.
+
+      ── SECONDARY DIAGNOSTICS ────────────────────────────────────────
+        - ``extra_marker_logp``: Phase 1 appended-slot log-prob
+          (== "doubling probability" when R already ends with ※; kept
+          for back-compat with the predictor-leaderboard literature).
+        - ``extra_marker_logp_base``: Phase 0 appended-slot log-prob
+          (the same diagnostic from the base model).
+        - ``trained_sd_logp``, ``slot_argmax_rate``,
+          ``in_R_emit_at_end_rate``, ``in_R_emission_rate``
+          (kept verbatim so any consumer that reads the old name
+          finds the value).
+
+      Per-cell predictor columns:
+        - ``is_instructed`` (binary), ``cosine``, ``js_v1``, ``gauss_kl``
+        - ``combined_<geom>`` (z(base_prior) + z(geom))
+        - ``_n``, ``_missing_cells``, ``_expected_n``
 
     By default (``allow_partial_panel=False``) this function FAILS LOUD if
     ANY expected (epoch × source × bystander) cell JSON is missing — the
@@ -1494,6 +1766,12 @@ def _build_union_panel(
     js_v1_m = np.array(predictors_payload["js_v1_matrix"], dtype=np.float64)
     gkl_m = np.array(predictors_payload["gauss_kl_matrix"], dtype=np.float64)
     base_prior_map = predictors_payload["base_prior"]
+    # Round-3 binding revision: Phase 2 records `base_prior` under the
+    # PRIMARY DV (on-policy emit rate), with the legacy
+    # `extra_marker_logp` diagnostic preserved under
+    # `base_prior_extra_logp_map`. Fall back if running against an old
+    # predictors.json (back-compat).
+    base_prior_extra_logp_map = predictors_payload.get("base_prior_extra_logp", {})
 
     rows = []
     missing_cells: list[tuple[int, str, str]] = []
@@ -1508,16 +1786,34 @@ def _build_union_panel(
                     continue
                 cell = json.loads(cell_path.read_text())
                 s = cell["summary"]
+                # Round-3 binding revision: switch the headline DV
+                # (``trained_logp``) from the appended-slot mean log-prob
+                # (now: ``extra_marker_logp``) to the on-policy in-R
+                # emission rate. Same column name, new semantics — the
+                # regression hierarchy below is invariant to the rescale.
                 rows.append(
                     {
                         "epoch": ep,
                         "source_cid": src,
                         "bystander_label": byst,
-                        "trained_logp": s["mean_trained_logp"],
-                        "trained_sd_logp": s["sd_trained_logp"],
-                        "slot_argmax_rate": s["slot_argmax_rate"],
+                        # PRIMARY DV (rate in [0, 1]) — round-3 binding fix:
+                        "trained_logp": s["in_R_emission_rate"],
+                        "trained_sd_logp": s.get("extra_marker_sd_logp", s["sd_trained_logp"]),
+                        # The two on-policy rates (same construct, different
+                        # slot semantics — "anywhere in R" vs "at end of R").
                         "in_R_emission_rate": s["in_R_emission_rate"],
+                        "in_R_emit_at_end_rate": s.get(
+                            "in_R_emit_at_end_rate", s["in_R_emission_rate"]
+                        ),
+                        # SECONDARY diagnostic (doubling probability):
+                        "extra_marker_logp": s.get("extra_marker_logp", s["mean_trained_logp"]),
+                        "slot_argmax_rate": s.get(
+                            "extra_marker_argmax_rate", s["slot_argmax_rate"]
+                        ),
+                        # PRIMARY base-prior predictor — round-3 binding fix:
                         "base_prior": base_prior_map.get(byst, float("nan")),
+                        # SECONDARY base-prior diagnostic (doubling-prob):
+                        "extra_marker_logp_base": base_prior_extra_logp_map.get(byst, float("nan")),
                         "is_instructed": int(byst in instructed_panel),
                         "cosine": cosine_m[i, j],
                         "js_v1": js_v1_m[i, j],
@@ -2539,8 +2835,11 @@ def _synthesize_stub_phase0(
 ) -> dict:
     """CPU-skip-vllm smoke: synthesize a deterministic Phase 0 stub so the
     downstream pipeline (Phase 2/3/4) can be exercised end-to-end without a
-    GPU. The stub uses a hash-derived per-bystander log-prob in [−15, −1]
-    so the H0 gate does NOT spuriously fire on the smoke.
+    GPU. The stub emits BOTH the PRIMARY DV (on_policy_emit_rate, in [0,1])
+    and the SECONDARY diagnostic (extra_marker_logp, in nats) so the
+    H0 gate processes the new round-3 schema. Instructed bystanders are
+    synthesized with on_policy_emit_rate ~0.3-0.6 (above the 0.05 H0
+    floor); ordinary bystanders with rate ~0.0 (the natural base prior).
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     phase0_path = out_dir / "phase0_base_prior.json"
@@ -2548,13 +2847,28 @@ def _synthesize_stub_phase0(
     per_bystander = {}
     for b in bystanders:
         is_instr = b in instructed_panel
-        # Instructed bystanders: synthetic mean log P around −2 to −1
-        # (above the −5 nat H0 threshold). Ordinary: around −10 to −8.
+        # PRIMARY DV (on-policy in-R emission) — instructed bystanders
+        # synthesize above the H0 floor (0.05), ordinary at floor.
+        emit_rate = float(rng.uniform(0.30, 0.80)) if is_instr else float(rng.uniform(0.0, 0.03))
+        emit_anywhere = [int(rng.random() < emit_rate) for _ in q_test]
+        emit_at_end = [int(rng.random() < emit_rate * 0.9) for _ in q_test]
+        # SECONDARY diagnostic (extra_marker_logp / doubling-prob).
         center = -1.5 if is_instr else -9.0
         logps = (center + rng.normal(0, 0.5, size=len(q_test))).tolist()
         argmax = [bool(lp > -1.0) for lp in logps]
         per_bystander[b] = {
             "n_probes": len(q_test),
+            # PRIMARY (round-3 binding revision):
+            "on_policy_emit_anywhere_per_q": emit_anywhere,
+            "on_policy_emit_at_end_per_q": emit_at_end,
+            "on_policy_emit_rate": sum(emit_anywhere) / len(emit_anywhere),
+            "on_policy_emit_at_end_rate": sum(emit_at_end) / len(emit_at_end),
+            # SECONDARY diagnostic:
+            "extra_marker_logp_per_q": logps,
+            "extra_marker_argmax_per_q": argmax,
+            "extra_marker_logp": float(np.mean(logps)),
+            "extra_marker_argmax_rate": sum(argmax) / len(argmax),
+            # Legacy aliases (back-compat):
             "logp_per_q": logps,
             "argmax_marker_per_q": argmax,
             "mean_logp": float(np.mean(logps)),
@@ -2571,12 +2885,18 @@ def _synthesize_stub_phase0(
         "h0_gate": {
             "h0_block": False,
             "h0_reason": "synthetic-stub-skip-vllm-smoke (real H0 only runs with GPU)",
-            "thresholds": {
+            "primary_gate": {
+                "rule": "all bystanders below BOTH H0_EMIT_FLOOR AND H0_END_EMIT_FLOOR",
+                "H0_EMIT_FLOOR": H0_EMIT_FLOOR,
+                "H0_END_EMIT_FLOOR": H0_END_EMIT_FLOOR,
+                "all_below_emit_anywhere": False,
+                "all_below_emit_at_end": False,
+            },
+            "legacy_thresholds_unused": {
                 "emission_max": H0_EMISSION_THRESHOLD,
                 "logp_max": H0_LOGP_THRESHOLD,
-                "spectrum_collapse_nat": A6_SPECTRUM_COLLAPSE_NAT,
-                "thresholds_grounding": "ungrounded — needs smoke-test (plan §11/A10)",
             },
+            "spectrum_collapse_nat": A6_SPECTRUM_COLLAPSE_NAT,
             "a6_spectrum_collapse_flag": False,
             "n_instructed_in_scope": sum(1 for b in bystanders if b in instructed_panel),
         },
@@ -2605,13 +2925,19 @@ def _synthesize_stub_phase1(
                 cell_path = arm_ep_dir / f"cell_{arm}_ep{ep}_{src}__{b}.json"
                 if cell_path.exists():
                     continue
-                # Trained log P should be HIGHER than base (the source
-                # transferred or the instruction lifted the prior).
+                # Trained log P / emit rate should be HIGHER than base
+                # (the source transferred or the instruction lifted the
+                # prior). Round-3: emit BOTH the primary DV (in-R emit
+                # rate) and the secondary diagnostic (extra_marker_logp).
                 is_instr = b in instructed_panel
                 center = -0.5 if (src == b or is_instr) else -7.0
                 logps = (center + rng.normal(0, 0.5, size=len(q_test))).tolist()
                 argmax = [bool(lp > -1.0) for lp in logps]
-                in_R = [1 if rng.random() < 0.3 else 0 for _ in range(len(q_test))]
+                # Synthesize ~0.7 in-R emission for source-self + instructed;
+                # ~0.05 for ordinary leakage.
+                emit_prob = 0.7 if (src == b or is_instr) else 0.05
+                in_R_anywhere = [int(rng.random() < emit_prob) for _ in q_test]
+                in_R_at_end = [int(rng.random() < emit_prob * 0.9) for _ in q_test]
                 payload = {
                     "schema_version": "issue532_v1",
                     "arm": arm,
@@ -2621,17 +2947,30 @@ def _synthesize_stub_phase1(
                     "bystander_kind": "instructed" if is_instr else "ordinary",
                     "strength_band": (_instructed_strength_band(b) if is_instr else "ordinary"),
                     "n_probes": len(q_test),
+                    # PRIMARY DV:
+                    "in_R_emit_anywhere_per_q": in_R_anywhere,
+                    "in_R_emit_at_end_per_q": in_R_at_end,
+                    # Legacy alias (== in_R_emit_anywhere_per_q):
+                    "in_R_emission_per_q": in_R_anywhere,
+                    # SECONDARY diagnostic:
+                    "extra_marker_logp_per_q": logps,
+                    "extra_marker_argmax_per_q": argmax,
                     "trained_logp_per_q": logps,
                     "trained_argmax_marker_per_q": argmax,
-                    "in_R_emission_per_q": in_R,
                     "R_trained_per_q": [
                         f"<stub R for {src}->{b} probe {i}>" for i in range(len(q_test))
                     ],
                     "summary": {
+                        # PRIMARY DV:
+                        "in_R_emission_rate": sum(in_R_anywhere) / len(in_R_anywhere),
+                        "in_R_emit_at_end_rate": sum(in_R_at_end) / len(in_R_at_end),
+                        # SECONDARY diagnostic:
+                        "extra_marker_logp": float(np.mean(logps)),
+                        "extra_marker_sd_logp": float(np.std(logps)),
+                        "extra_marker_argmax_rate": sum(argmax) / len(argmax),
                         "mean_trained_logp": float(np.mean(logps)),
                         "sd_trained_logp": float(np.std(logps)),
                         "slot_argmax_rate": sum(argmax) / len(argmax),
-                        "in_R_emission_rate": sum(in_R) / len(in_R),
                         "saturation_ceiling_flag": False,
                     },
                     "metadata": _reproducibility_metadata({"phase": 1, "skip_vllm_smoke": True}),
@@ -2661,8 +3000,21 @@ def _synthesize_stub_phase2(
             cosine_m[i, j] = 0.99
             js_v1_m[i, j] = 0.01
             gauss_kl_m[i, j] = 0.0
+    # Round-3 binding revision: PRIMARY base prior = on_policy_emit_rate
+    # (Phase 0). Fall back to the legacy ``mean_logp`` for old payloads.
     base_prior = {
-        b: base_prior_payload["per_bystander"][b]["mean_logp"]
+        b: base_prior_payload["per_bystander"][b].get(
+            "on_policy_emit_rate",
+            base_prior_payload["per_bystander"][b]["mean_logp"],
+        )
+        for b in bystanders
+        if b in base_prior_payload.get("per_bystander", {})
+    }
+    base_prior_extra_logp = {
+        b: base_prior_payload["per_bystander"][b].get(
+            "extra_marker_logp",
+            base_prior_payload["per_bystander"][b]["mean_logp"],
+        )
         for b in bystanders
         if b in base_prior_payload.get("per_bystander", {})
     }
@@ -2676,6 +3028,7 @@ def _synthesize_stub_phase2(
         "cosine_matrix": cosine_m.tolist(),
         "js_v1_matrix": js_v1_m.tolist(),
         "gauss_kl_matrix": gauss_kl_m.tolist(),
+        "base_prior_extra_logp": base_prior_extra_logp,
         "base_prior": base_prior,
     }
     predictors_path = out_dir / "predictors.json"
