@@ -9,3 +9,4 @@
 {"ts": "2026-05-14T00:23:37.461Z", "kind": "state_changed", "version": 1, "by": "user", "from": "reviewing", "to": "clean_result_drafting"}
 {"ts": "2026-05-14T00:02:46.399Z", "kind": "state_changed", "version": 1, "by": "user", "note": "Moved on Pipeline board to review.", "from": "completed", "to": "reviewing"}
 {"ts": "2026-06-09T21:33:27Z", "kind": "epm:promoted", "version": 1, "by": "user", "classification": "useful"}
+{"ts": "2026-06-09T21:33:31Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "awaiting_promotion", "to": "completed", "note": "promoted as useful"}

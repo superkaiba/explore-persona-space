@@ -916,8 +916,8 @@
     "235": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/235",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/235",
+      "status": "completed",
       "title": "Language-mismatch LoRA SFT on Qwen2.5-7B leaks the trained completion language into bystander directives the model was never trained on, absent under same-language SFT (LOW confidence)"
     },
     "237": {
