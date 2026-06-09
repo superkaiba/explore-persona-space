@@ -853,31 +853,45 @@ def build_js_matrix(
             probe_kl_ba_vals: list[float] = []
             for q in range(n_probes):
                 # Responses sampled from A: contribute to JS and to KL(A||M) via kl_a.
-                js_pos_a, kl_a_pos_a, _kl_b_pos_a = _stack_per_pos(cache, A, q, r, A, B)
+                # Returns lists of 1-D tensors (one per non-empty response).
+                js_per_resp_a, kl_a_per_resp_a, _ = _stack_per_pos(cache, A, q, r, A, B)
                 # Responses sampled from B: contribute to JS and to KL(B||M) via kl_b.
-                js_pos_b, _kl_a_pos_b, kl_b_pos_b = _stack_per_pos(cache, B, q, r, A, B)
+                js_per_resp_b, _, kl_b_per_resp_b = _stack_per_pos(cache, B, q, r, A, B)
                 if A == B:
                     # Diagonal — JS = 0, KL_AB = KL_BA = 0 by definition.
                     probe_js_vals.append(0.0)
                     probe_kl_ab_vals.append(0.0)
                     probe_kl_ba_vals.append(0.0)
                     continue
-                # Per-response: mean over positions (length-normalize).
-                # Per-pair-per-probe: mean over the 2R mixture responses.
-                js_pos_all = _concat_or_empty([js_pos_a, js_pos_b])
-                if js_pos_all.numel() == 0:
+                # Mean-of-means (length-normalized per response, then averaged
+                # across the 2R mixture responses). Round-3 fix: this MUST be
+                # per-response, NOT a flat mean over concatenated positions —
+                # see `.claude/rules/persona-distance-metrics.md` and the
+                # canonical `issue444_persona_distance_topic.py:191-202`.
+                js_resp_means = [t.mean().item() for t in js_per_resp_a + js_per_resp_b]
+                if not js_resp_means:
                     probe_js_vals.append(float("nan"))
                     probe_kl_ab_vals.append(float("nan"))
                     probe_kl_ba_vals.append(float("nan"))
                     continue
-                # JS estimate: mean over all positions from BOTH samplers
-                # — the canonical 2R mixture mean in nats, converted to base-2.
-                js_nats = js_pos_all.mean().item()
+                js_nats = sum(js_resp_means) / len(js_resp_means)
                 # KL(A||M): RB estimate uses positions sampled from A (the
-                # natural Importance / Rao-Blackwell source).
-                kl_ab_nats = kl_a_pos_a.mean().item() if kl_a_pos_a.numel() > 0 else float("nan")
+                # natural Importance / Rao-Blackwell source). Same per-response
+                # mean-of-means: mean over positions per response, then mean
+                # over the R sample-from-A responses.
+                kl_ab_resp_means = [t.mean().item() for t in kl_a_per_resp_a]
+                kl_ab_nats = (
+                    sum(kl_ab_resp_means) / len(kl_ab_resp_means)
+                    if kl_ab_resp_means
+                    else float("nan")
+                )
                 # KL(B||M): symmetrically, positions sampled from B.
-                kl_ba_nats = kl_b_pos_b.mean().item() if kl_b_pos_b.numel() > 0 else float("nan")
+                kl_ba_resp_means = [t.mean().item() for t in kl_b_per_resp_b]
+                kl_ba_nats = (
+                    sum(kl_ba_resp_means) / len(kl_ba_resp_means)
+                    if kl_ba_resp_means
+                    else float("nan")
+                )
                 probe_js_vals.append(js_nats / log2)
                 probe_kl_ab_vals.append(kl_ab_nats / log2)
                 probe_kl_ba_vals.append(kl_ba_nats / log2)
@@ -904,14 +918,32 @@ def _stack_per_pos(
     r: int,
     a: str,
     b: str,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Concatenate R per-response per-position tensors for one
-    (sample_persona P, probe q, pair {a, b}) triple. Returns
-    (js_pos, kl_a_pos, kl_b_pos), each 1-D.
+) -> tuple[list[torch.Tensor], list[torch.Tensor], list[torch.Tensor]]:
+    """Per-response per-position tensors for one (sample_persona P, probe q,
+    pair {a, b}) triple.
 
-    Empty per-response entries are dropped.
+    Returns three lists of 1-D tensors — ``(js_per_resp, kl_a_per_resp,
+    kl_b_per_resp)`` — with one tensor per non-empty response under
+    sample-persona ``P``. **Response boundaries are preserved by construction**
+    so the downstream reducer can length-normalize per response (mean over
+    positions within a response) and then average over the 2R responses, per
+    `.claude/rules/persona-distance-metrics.md` and the canonical
+    ``issue444_persona_distance_topic.py:191-202`` recipe.
+
+    Round-3 fix: previously this function ``torch.cat``ed the per-response
+    tensors into a single flat 1-D tensor, which the reducer then ``.mean()``ed
+    token-weighted across the union — biasing the headline JS matrix toward
+    longer-response personas. Per-response boundaries are now kept; the cache
+    on disk is unchanged.
+
+    Empty per-response entries are dropped (i.e. the returned lists may have
+    fewer than ``r`` entries when some sampled responses had zero generated
+    tokens). If ``P ∉ {a, b}`` (no cache rows under this sample-persona), all
+    three lists are empty.
     """
-    js_pieces, kla_pieces, klb_pieces = [], [], []
+    js_per_resp: list[torch.Tensor] = []
+    kla_per_resp: list[torch.Tensor] = []
+    klb_per_resp: list[torch.Tensor] = []
     # First map (a, b) → which of them is P (the sample-persona we have cache
     # rows for) and which is the OTHER. If P ∉ {a, b}, no rows in cache.
     if a == P:
@@ -919,11 +951,7 @@ def _stack_per_pos(
     elif b == P:
         other = a
     else:
-        return (
-            torch.empty(0, dtype=torch.float32),
-            torch.empty(0, dtype=torch.float32),
-            torch.empty(0, dtype=torch.float32),
-        )
+        return [], [], []
     for r_i in range(r):
         key = _cache_key(P, q, r_i, P, other)
         if key not in cache:
@@ -945,24 +973,10 @@ def _stack_per_pos(
             klb_t = row["kl_a"]
         js_t = row["js"]
         if js_t.numel() > 0:
-            js_pieces.append(js_t)
-            kla_pieces.append(kla_t)
-            klb_pieces.append(klb_t)
-    if not js_pieces:
-        empty = torch.empty(0, dtype=torch.float32)
-        return empty, empty.clone(), empty.clone()
-    return (
-        torch.cat(js_pieces, dim=0),
-        torch.cat(kla_pieces, dim=0),
-        torch.cat(klb_pieces, dim=0),
-    )
-
-
-def _concat_or_empty(pieces: list[torch.Tensor]) -> torch.Tensor:
-    non_empty = [p for p in pieces if p.numel() > 0]
-    if not non_empty:
-        return torch.empty(0, dtype=torch.float32)
-    return torch.cat(non_empty, dim=0)
+            js_per_resp.append(js_t)
+            kla_per_resp.append(kla_t)
+            klb_per_resp.append(klb_t)
+    return js_per_resp, kla_per_resp, klb_per_resp
 
 
 def _nanmean(vals: list[float]) -> float:
