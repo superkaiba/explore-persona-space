@@ -14,6 +14,8 @@ goal: Train and publish a reusable Assistant-keyed conditional-marker LoRA check
 relates_to:
 - app1
 - e2
+classification: useful
+promoted_at: '2026-06-09T21:34:28Z'
 ---
 # A self-distillation KL-anchor recipe installs an Assistant-keyed marker at 98.4% in Phase 1 but is completely erased by 1 epoch of benign medical SFT (Phase 2 fire-rate 0/1,800 across 3 seeds) (HIGH confidence)
 
