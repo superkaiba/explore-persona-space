@@ -299,6 +299,18 @@ def main(argv: list[str] | None = None) -> int:
         os.environ.get("CUDA_VISIBLE_DEVICES", "<unset>"),
     )
 
+    # Carry-over data dependencies from #472 (persona bank, centroids,
+    # on-policy R) are gitignored. Pull them from HF at the pinned
+    # revision before touching disk. Idempotent: a no-op when files are
+    # already local (i.e. when i530_sweep.py already pulled them, or
+    # when running on a pod where a prior cell landed them).
+    from explore_persona_space.experiments.contrastive_neg_geometry_530.data_deps import (
+        prepare_data_dependencies,
+    )
+
+    log.info("[phase=cell_prepare_data] auto-downloading #472 carry-over artifacts (idempotent)")
+    prepare_data_dependencies()
+
     # ── Marker tokenizer pre-spawn assert (CLAUDE.md marker-leakage rule). ──
     from transformers import AutoTokenizer
 

@@ -198,6 +198,18 @@ def main(argv: list[str] | None = None) -> int:
         stream=sys.stdout,
     )
 
+    # Carry-over data dependencies from #472 (centroids, on-policy R) are
+    # gitignored. Pull from HF at the pinned revision before the centroids
+    # load below. Idempotent — a no-op when files are already on disk.
+    # The helper lives in contrastive_neg_geometry_530 (the task that
+    # surfaced the gap) but is general-purpose for any #472 carry-over.
+    from explore_persona_space.experiments.contrastive_neg_geometry_530.data_deps import (
+        prepare_data_dependencies,
+    )
+
+    log.info("[phase=phase05_prepare_data] auto-downloading #472 carry-over artifacts")
+    prepare_data_dependencies()
+
     from explore_persona_space.experiments.contrastive_neg_geometry_472.r_generate import (
         load_r_artifact,
     )
