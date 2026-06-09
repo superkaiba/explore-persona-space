@@ -83,6 +83,7 @@ import json
 import logging
 import math
 import platform
+import re  # used at module level by _PARTIAL_FILENAME_RE (round-3 numeric partial sort)
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -456,6 +457,11 @@ _CACHE_KEY_SCHEMA = {
     ],
 }
 
+# Round-3 fix: numeric (p_idx, q_idx) sort for partial-checkpoint resume.
+# Lex sort picks the wrong "latest" under multi-digit P/Q
+# (e.g. ``P10_Q149 < P9_Q99`` lex). Used by ``_load_cache_checkpoint``.
+_PARTIAL_FILENAME_RE = re.compile(r"logprob_cache_partial_P(\d+)_Q(\d+)\.pt$")
+
 
 def _save_cache_checkpoint(
     cache: dict,
@@ -499,8 +505,14 @@ def _load_cache_checkpoint(
     """Resume reader — find the most-recent ``logprob_cache_partial_P*_Q*.pt``.
 
     Scans ``cache_dir`` for ``logprob_cache_partial_P{P}_Q{Q}.pt`` files,
-    picks the latest by (P, Q) lex order, loads its ``cache`` and
-    ``response_ids`` payloads into a fresh in-memory dict, and returns them.
+    picks the latest by **numeric** (p_idx, q_idx) ordering, loads its
+    ``cache`` and ``response_ids`` payloads into a fresh in-memory dict, and
+    returns them.
+
+    Round-3 fix: previously sorted lexicographically, so under multi-digit
+    P/Q the "latest" pick was wrong (e.g. ``P10_Q149 < P9_Q99`` lex). The
+    populator skips already-cached keys, so this was correctness-safe but
+    wasted replay time on crash-resume.
 
     If no partial exists, returns empty dicts and ``None``. The caller
     skips already-cached keys; the logger reports how many entries were
@@ -508,10 +520,20 @@ def _load_cache_checkpoint(
     """
     if not cache_dir.exists():
         return {}, {}, None
-    partials = sorted(cache_dir.glob("logprob_cache_partial_P*_Q*.pt"))
+    partials = list(cache_dir.glob("logprob_cache_partial_P*_Q*.pt"))
     if not partials:
         return {}, {}, None
-    # Latest by P-then-Q (filename order is P-major, Q-minor; sort by name).
+
+    # Sort numerically by (p_idx, q_idx). Fallback to filename for safety if
+    # the regex doesn't match (defensive — should never happen for the
+    # populator's own files).
+    def _sort_key(p: Path) -> tuple[int, int, str]:
+        m = _PARTIAL_FILENAME_RE.search(p.name)
+        if m is None:
+            return (-1, -1, p.name)
+        return (int(m.group(1)), int(m.group(2)), p.name)
+
+    partials.sort(key=_sort_key)
     latest = partials[-1]
     logger.info("resume: loading partial cache from %s", latest)
     payload = torch.load(latest, map_location="cpu", weights_only=False)
@@ -767,8 +789,9 @@ def populate_cross_persona_cache(
         tmp,
     )
     tmp.replace(cache_out)
-    # Sidecar schema JSON.
-    schema_path = cache_out.with_suffix(".schema.json")
+    # Sidecar schema JSON. Filename matches the file-level docstring (`:40`)
+    # — round-3 fix: previously wrote ``<cache>.schema.json`` (mismatch).
+    schema_path = cache_out.parent / "cache_schema.json"
     schema_path.write_text(json.dumps(_CACHE_KEY_SCHEMA, indent=2))
     logger.info(
         "Wrote final cross-persona cache → %s (%d entries); schema → %s",
