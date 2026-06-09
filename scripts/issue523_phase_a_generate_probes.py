@@ -517,9 +517,27 @@ FIRST_PERSON_PATTERN = re.compile(
 MAX_DEDUP_RATE_PER_BUCKET = 0.20
 
 # Voice-drift validator parameters
-MAX_VOICE_DRIFT_RETRIES = 3
+# Round-5 fix: 3 retries was too tight for stubborn paraphrase classes — round-4d
+# Phase A converged 498/500 probes but burned all 3 retries on 2 probes where Sonnet
+# kept regenerating first-person paraphrases despite explicit retry-reason hints.
+# 6 retries gives Sonnet enough attempts to break out of the locked-in first-person
+# pattern. Each extra retry costs ~1.5 Claude calls per stuck probe (one rewrite +
+# one validator pass), so worst-case extra spend is bounded at ~6 * 1.5 * n_stuck
+# Claude calls — negligible vs a full 5 h Phase A.
+MAX_VOICE_DRIFT_RETRIES = 6
 VOICE_DRIFT_AUDIT_SAMPLE = 50
 VOICE_DRIFT_THIRD_PERSON_RATE_MIN = 0.96
+
+# Round-5 fix: backfill budget. If after `MAX_VOICE_DRIFT_RETRIES` per-probe retries
+# any probes remain stuck, fall back to replacing the stuck probes with FRESH probes
+# from the same bucket (re-running `_generate_bucket_with_disjointness` for one more
+# probe per stuck question, then re-rewriting + re-validating). This preserves the
+# `n_dropped_probes == 0` gate's contract: the final pool is exactly 500 probes,
+# every one of which PASSed voice-drift validation, with the per-bucket composition
+# unchanged. Backfill is capped at MAX_BACKFILL_ROUNDS rounds, each handling all
+# currently-stuck probes; a fresh probe that ALSO fails goes back into the stuck
+# pile for the next round.
+MAX_BACKFILL_ROUNDS = 3
 
 
 # ────────────────────────── Round-4 diversified generation prompt ──────────────────────────
@@ -684,19 +702,31 @@ def _validate_and_fix_indirect_rewrite(
     voice_drift_failed=True signals "all retries exhausted, mark in audit but
     keep the row" — per plan §4 Phase A, we do NOT silently drop.
 
-    skip_claude=True (smoke mode) uses only the regex validator (no API calls).
+    skip_claude=True (smoke mode) uses only the regex validator and the retry
+    path returns a deterministic placeholder (no Sonnet API call). A smoke run
+    that POISONS the initial rewrite (`--smoke-force-voice-drift-fail`) will
+    therefore exhaust all retries deterministically and surface as a drop —
+    exactly the path the round-5 backfill loop is built to test.
     """
     attempts: list[str] = []
     current = initial_rewrite
+
+    def _retry(reason: str) -> str:
+        # In smoke mode never call Sonnet; return a deterministic placeholder
+        # that ALSO contains the first-person token so the regex keeps failing.
+        # This makes the smoke test deterministically reach `voice_drift_failed`
+        # for any poisoned input within MAX_VOICE_DRIFT_RETRIES iterations.
+        if skip_claude:
+            return f"[smoke-retry] I still want: {question}"
+        return _request_indirect_rewrite(question, retry_reason=reason)
+
     for attempt in range(MAX_VOICE_DRIFT_RETRIES + 1):
         regex_fail = _has_first_person(current)
         if regex_fail:
             attempts.append(f"attempt{attempt}: regex FAIL ({current!r})")
             if attempt >= MAX_VOICE_DRIFT_RETRIES:
                 return current, True, attempts
-            current = _request_indirect_rewrite(
-                question, retry_reason="first-person pronoun detected by regex"
-            )
+            current = _retry("first-person pronoun detected by regex")
             continue
         # regex passed; try Claude validator unless in smoke mode
         if skip_claude:
@@ -709,9 +739,7 @@ def _validate_and_fix_indirect_rewrite(
         attempts.append(f"attempt{attempt}: regex PASS + claude FAIL ({current!r})")
         if attempt >= MAX_VOICE_DRIFT_RETRIES:
             return current, True, attempts
-        current = _request_indirect_rewrite(
-            question, retry_reason="Claude judged the rewrite as not third-person"
-        )
+        current = _retry("Claude judged the rewrite as not third-person")
     # Unreachable (loop returns at every branch), but mypy/ruff appreciate it.
     return current, True, attempts
 
@@ -839,9 +867,16 @@ def _generate_bucket_with_disjointness(
         prompt = _gen_prompt_diverse(bucket_name, bucket_desc, ask, sorted(existing_norms)[:30])
         if smoke:
             # Smoke mode: synthesize candidates that pass dedup trivially.
+            # The `nonce` is the running existing-pool size so a second call
+            # to this generator (e.g. the round-5 backfill loop) cannot
+            # collide with synth probes already accepted in the first call —
+            # without it, smoke backfill trips the SBERT cosine ≥ 0.9 gate
+            # against the first call's identical-template probes.
+            nonce = len(existing_texts)
             candidates = [
-                f"[smoke-{bucket_name}-{attempts_used:02d}-{i:03d}] "
-                f"What is fact {bucket_name} number {i}?"
+                f"[smoke-{bucket_name}-n{nonce:05d}-{attempts_used:02d}-{i:03d}] "
+                f"What is fact {bucket_name} number {nonce}-{i} for the "
+                f"{bucket_name} batch?"
                 for i in range(ask)
             ]
         else:
@@ -863,18 +898,31 @@ def _generate_bucket_with_disjointness(
             survivors_after_exact.append(c)
 
         # Step 2 — semantic dedup (SBERT cosine ≥ threshold to ANY existing).
-        if survivors_after_exact:
+        # SKIPPED in smoke mode: synthesized template strings ("What is fact
+        # capabilities number N?") are SBERT-similar to each other by template
+        # structure alone, which would block the round-5 backfill loop's smoke
+        # exercise from succeeding (the backfill regenerates from the same
+        # synthesizer, and the synthesizer cannot escape its own template's
+        # SBERT-similarity to the first-call probes). The semantic-dedup gate
+        # is meaningful against real Sonnet output only; use --smoke-real-api
+        # for a tiny-slice run that does exercise it.
+        if not survivors_after_exact:
+            survivors_after_sem: list[str] = []
+        elif smoke:
+            # Smoke mode bypasses SBERT (see comment above); accept exact-pass
+            # candidates straight through. The exact-string `_normalize` gate
+            # above still keeps the smoke pool internally disjoint.
+            survivors_after_sem = list(survivors_after_exact)
+        else:
             dup_flags = _semantic_duplicate_check(
                 survivors_after_exact, existing_texts, threshold=SBERT_THRESHOLD
             )
-            survivors_after_sem: list[str] = []
+            survivors_after_sem = []
             for cand, is_dup in zip(survivors_after_exact, dup_flags, strict=True):
                 if is_dup:
                     semantic_dedup_rejects += 1
                 else:
                     survivors_after_sem.append(cand)
-        else:
-            survivors_after_sem = []
 
         # Accept up to target_n.
         for c in survivors_after_sem:
@@ -926,17 +974,37 @@ def _generate_rewrites_with_voice_drift_fix(
     new_probes: list[str],
     *,
     smoke: bool,
-) -> tuple[dict[str, dict[str, str]], dict]:
+    smoke_force_voice_drift_fail: int = 0,
+) -> tuple[dict[str, dict[str, str]], dict, list[str]]:
     """Run the batched rewrites flow, then re-validate the indirect register.
 
-    Returns (rewrites, audit_block). audit_block contains:
-        n_questions, n_indirect_regex_pass, n_indirect_claude_pass,
-        n_indirect_voice_drift_failed, indirect_third_person_rate
+    Returns (rewrites, audit_block, dropped_probes).
+
+    - `rewrites` is keyed on the SURVIVING probes only (dropped ones are removed
+      from `new_probes` in-place and from the rewrites dict).
+    - `audit_block` contains n_questions, n_indirect_regex_pass_total,
+      n_indirect_claude_pass_total, n_indirect_voice_drift_failed,
+      n_dropped_probes, indirect_third_person_*_rate (rates computed over the
+      pre-drop total so the rates are interpretable), and a `voice_drift_failed`
+      detail list for the audit JSON.
+    - `dropped_probes` is the FULL list of every question that exhausted all
+      MAX_VOICE_DRIFT_RETRIES retries. The caller uses this list to drive the
+      backfill loop (regenerate one fresh probe per dropped probe from the same
+      bucket, run validator on the fresh rewrite). Round-5 fix.
     """
     if smoke:
         # Smoke: synthetic rewrites with the existing helper, but force the
         # indirect register through the validator path so the wiring is tested.
         rewrites = _smoke_synthetic_rewrites(new_probes)
+        # Round-5 smoke gate: optionally poison the first N indirect rewrites with
+        # an unambiguous first-person pronoun so the regex validator rejects them.
+        # The retry path will re-request from Sonnet (but in smoke mode there is no
+        # Sonnet — the synthesizer returns the same deterministic string), so all
+        # MAX_VOICE_DRIFT_RETRIES will exhaust and the probe will be added to
+        # `dropped_probes`. This exercises the backfill path in main() end-to-end.
+        if smoke_force_voice_drift_fail > 0:
+            for q in new_probes[:smoke_force_voice_drift_fail]:
+                rewrites[q]["indirect"] = f"I am still wondering about: {rewrites[q]['indirect']}"
     else:
         requests = _build_rewrites_requests(new_probes)
         batch_id = _submit_rewrites_batch(requests)
@@ -1019,34 +1087,38 @@ def _generate_rewrites_with_voice_drift_fix(
         full_claude_pass = full_regex_pass
     full_claude_rate = full_claude_pass / max(n_total, 1)
 
-    return rewrites, {
-        "n_questions": n_total,
-        "n_indirect_regex_pass_total": regex_pass_count,
-        "n_indirect_claude_pass_total": claude_pass_count,
-        "n_indirect_voice_drift_failed": len(voice_drift_failed),
-        "n_dropped_probes": len(dropped_probes),
-        "indirect_third_person_regex_rate": (
-            regex_pass_count / max(n_total + len(dropped_probes), 1)
-        ),
-        "indirect_third_person_claude_rate": (
-            claude_pass_count / max(n_total + len(dropped_probes), 1)
-        ),
-        # FULL audit set (was: 50-sample sentinel). Plan §4 Phase A gate
-        # reads full_regex_pass_rate == 1.0 AND full_claude_pass_rate >= 0.96
-        # on the entire retained pool.
-        "full_audit_size": n_total,
-        "full_regex_pass": full_regex_pass,
-        "full_regex_pass_rate": full_regex_rate,
-        "full_claude_pass": full_claude_pass,
-        "full_claude_pass_rate": full_claude_rate,
-        # Kept for backwards-compat dashboards; the dispatcher gate reads
-        # full_* keys above.
-        "audit_sample_size": n_total,
-        "audit_sample_regex_pass": full_regex_pass,
-        "audit_sample_regex_pass_rate": full_regex_rate,
-        "voice_drift_failed_examples": voice_drift_failed[:5],  # first 5 only
-        "skip_claude": skip_claude,
-    }
+    return (
+        rewrites,
+        {
+            "n_questions": n_total,
+            "n_indirect_regex_pass_total": regex_pass_count,
+            "n_indirect_claude_pass_total": claude_pass_count,
+            "n_indirect_voice_drift_failed": len(voice_drift_failed),
+            "n_dropped_probes": len(dropped_probes),
+            "indirect_third_person_regex_rate": (
+                regex_pass_count / max(n_total + len(dropped_probes), 1)
+            ),
+            "indirect_third_person_claude_rate": (
+                claude_pass_count / max(n_total + len(dropped_probes), 1)
+            ),
+            # FULL audit set (was: 50-sample sentinel). Plan §4 Phase A gate
+            # reads full_regex_pass_rate == 1.0 AND full_claude_pass_rate >= 0.96
+            # on the entire retained pool.
+            "full_audit_size": n_total,
+            "full_regex_pass": full_regex_pass,
+            "full_regex_pass_rate": full_regex_rate,
+            "full_claude_pass": full_claude_pass,
+            "full_claude_pass_rate": full_claude_rate,
+            # Kept for backwards-compat dashboards; the dispatcher gate reads
+            # full_* keys above.
+            "audit_sample_size": n_total,
+            "audit_sample_regex_pass": full_regex_pass,
+            "audit_sample_regex_pass_rate": full_regex_rate,
+            "voice_drift_failed_examples": voice_drift_failed[:5],  # first 5 only
+            "skip_claude": skip_claude,
+        },
+        dropped_probes,
+    )
 
 
 # ────────────────────────── I/O ──────────────────────────
@@ -1107,6 +1179,20 @@ def _build_argparser() -> argparse.ArgumentParser:
         "--skip-rewrites",
         action="store_true",
         help="Skip the Class-D rewrites step (debug only — extraction needs them).",
+    )
+    p.add_argument(
+        "--smoke-force-voice-drift-fail",
+        type=int,
+        default=0,
+        help=(
+            "Smoke-mode-only: force the first N synthesized probes to FAIL the "
+            "voice-drift validator (by re-writing their indirect rewrite to "
+            "contain a first-person pronoun) so the round-5 backfill path is "
+            "exercised end-to-end on the dispatcher. Requires --smoke-only. "
+            "Each forced-fail probe is replaced by a fresh probe from the same "
+            "bucket; the final pool should contain exactly --n probes with "
+            "n_dropped_probes == 0. NEVER use on the real run."
+        ),
     )
     return p
 
@@ -1175,6 +1261,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
     started = time.time()
     new_probes: list[str] = []
     per_bucket_audits: list[dict] = []
+    # Round-5 fix: maintain a question → bucket_name map so the backfill path
+    # (after the voice-drift validator drops stuck probes) can regenerate the
+    # replacement probe(s) from the SAME bucket the dropped probe came from —
+    # preserving the at-plan per-bucket composition (130/95/95/55/75/50).
+    probe_to_bucket: dict[str, str] = {}
+    bucket_descs: dict[str, str] = {bname: bdesc for bname, _, bdesc in buckets_active}
     for bname, btarget, bdesc in buckets_active:
         if btarget <= 0:
             continue
@@ -1188,6 +1280,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
             smoke=smoke,
         )
         new_probes.extend(accepted)
+        for q in accepted:
+            probe_to_bucket[q] = bname
         per_bucket_audits.append(audit)
         logger.info(
             "bucket %s done: %d / %d (cumulative %d)",
@@ -1224,9 +1318,178 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
     meta_payload: dict | None = None
     if not args.skip_rewrites:
         logger.info("Generating Class-D rewrites for %d new probes…", len(new_probes))
-        rewrites, voice_drift_audit = _generate_rewrites_with_voice_drift_fix(
-            new_probes, smoke=smoke
+        if args.smoke_force_voice_drift_fail and not use_synth:
+            raise SystemExit(
+                "--smoke-force-voice-drift-fail requires --smoke-only (it is a "
+                "smoke-mode-only validator-poisoning lever, not a real-run flag)"
+            )
+        rewrites, voice_drift_audit, dropped_initial = _generate_rewrites_with_voice_drift_fix(
+            new_probes,
+            smoke=smoke,
+            smoke_force_voice_drift_fail=args.smoke_force_voice_drift_fail,
         )
+
+        # ── Round-5 backfill loop ──
+        # If any probes exhausted MAX_VOICE_DRIFT_RETRIES retries, replace each
+        # with a fresh probe from the SAME bucket (preserves per-bucket
+        # composition), run the rewrites + voice-drift validator on those
+        # fresh probes, and merge the survivors back into the main pool.
+        # Repeat up to MAX_BACKFILL_ROUNDS rounds; a fresh probe that ALSO
+        # fails goes back into the stuck pile for the next round.
+        #
+        # The gate at the bottom of main() still reads n_dropped_probes from
+        # the FINAL audit and raises if any drops remain after all backfill
+        # rounds — the gate's contract (n_dropped_probes == 0) stays intact.
+        backfill_rounds_used = 0
+        backfill_total_added = 0
+        backfill_total_attempts = 0
+        backfill_log: list[dict] = []
+        stuck_probes = list(dropped_initial)
+        while stuck_probes and backfill_rounds_used < MAX_BACKFILL_ROUNDS:
+            backfill_rounds_used += 1
+            # Group stuck probes by their originating bucket so we regenerate
+            # replacements bucket-by-bucket (preserves the at-plan composition).
+            stuck_by_bucket: dict[str, int] = {}
+            for q in stuck_probes:
+                b = probe_to_bucket.get(q)
+                if b is None:
+                    # A backfill probe added in a prior round and now stuck —
+                    # its bucket assignment was recorded when it joined the pool.
+                    raise AssertionError(
+                        f"backfill round {backfill_rounds_used}: stuck probe "
+                        f"{q!r} has no recorded bucket — bookkeeping bug"
+                    )
+                stuck_by_bucket[b] = stuck_by_bucket.get(b, 0) + 1
+
+            logger.warning(
+                "Round-5 backfill %d/%d: %d stuck probes; regenerating from buckets %s",
+                backfill_rounds_used,
+                MAX_BACKFILL_ROUNDS,
+                len(stuck_probes),
+                dict(stuck_by_bucket),
+            )
+
+            # Regenerate replacements per bucket. _generate_bucket_with_disjointness
+            # appends to existing_norms / existing_texts so the new probes stay
+            # disjoint from every previously-accepted probe (including the
+            # stuck ones we are now retiring).
+            backfill_probes: list[str] = []
+            for bname, n_needed in stuck_by_bucket.items():
+                bdesc = bucket_descs[bname]
+                fresh, fresh_audit = _generate_bucket_with_disjointness(
+                    bname,
+                    bdesc,
+                    n_needed,
+                    existing_norms,
+                    existing_texts,
+                    chunk_size=args.chunk_size,
+                    smoke=smoke,
+                )
+                for q in fresh:
+                    probe_to_bucket[q] = bname
+                backfill_probes.extend(fresh)
+                backfill_log.append(
+                    {
+                        "round": backfill_rounds_used,
+                        "bucket": bname,
+                        "n_needed": n_needed,
+                        "n_generated": len(fresh),
+                        "fresh_bucket_audit": fresh_audit,
+                    }
+                )
+            backfill_total_attempts += len(backfill_probes)
+
+            # Rewrite + validate the fresh probes. Use the same dispatcher
+            # function so the validator + retry path are identical to the
+            # main pass. Smoke poisoning is NOT propagated to backfill
+            # rounds (otherwise the smoke test would loop forever).
+            fresh_rewrites, _fresh_audit_block, fresh_dropped = (
+                _generate_rewrites_with_voice_drift_fix(
+                    backfill_probes,
+                    smoke=smoke,
+                    smoke_force_voice_drift_fail=0,
+                )
+            )
+            # backfill_probes was mutated in-place by the call (drops removed);
+            # `fresh_rewrites` is keyed on the survivors.
+            n_added_this_round = len(backfill_probes)
+            backfill_total_added += n_added_this_round
+            # Merge survivors into the main pool / rewrites dict, replacing the
+            # stuck probes one-for-one. The `new_probes` list was already
+            # pruned of the stuck probes by the original validator call, so we
+            # simply extend.
+            new_probes.extend(backfill_probes)
+            rewrites.update(fresh_rewrites)
+
+            # Update the stuck pile for the next round.
+            stuck_probes = list(fresh_dropped)
+            logger.info(
+                "Round-5 backfill round %d done: %d replacements added, "
+                "%d still stuck (will retry next round if budget remains)",
+                backfill_rounds_used,
+                n_added_this_round,
+                len(stuck_probes),
+            )
+
+        # Re-compute voice_drift_audit on the FINAL pool so the gate at the
+        # bottom of main() reads the post-backfill numbers. Cheap: we only
+        # need to recount the boolean predicates over rewrites; no extra
+        # Claude calls. The single source of truth is the rewrites dict that
+        # was mutated through every backfill round (initial validator calls
+        # + per-round backfill calls always run the regex + claude gates,
+        # so a kept rewrite is by construction first-person-free; we keep
+        # `n_dropped_probes` aligned to whether any stuck probes remain).
+        final_n = len(new_probes)
+        final_regex_pass = sum(
+            1 for q in new_probes if not _has_first_person(rewrites[q]["indirect"])
+        )
+        if not smoke:
+            final_claude_pass = sum(
+                1 for q in new_probes if _claude_validate_third_person(rewrites[q]["indirect"])
+            )
+        else:
+            final_claude_pass = final_regex_pass
+        voice_drift_audit["n_questions"] = final_n
+        voice_drift_audit["n_dropped_probes"] = len(stuck_probes)
+        voice_drift_audit["full_audit_size"] = final_n
+        voice_drift_audit["full_regex_pass"] = final_regex_pass
+        voice_drift_audit["full_regex_pass_rate"] = final_regex_pass / max(final_n, 1)
+        voice_drift_audit["full_claude_pass"] = final_claude_pass
+        voice_drift_audit["full_claude_pass_rate"] = final_claude_pass / max(final_n, 1)
+        voice_drift_audit["audit_sample_size"] = final_n
+        voice_drift_audit["audit_sample_regex_pass"] = final_regex_pass
+        voice_drift_audit["audit_sample_regex_pass_rate"] = final_regex_pass / max(final_n, 1)
+        voice_drift_audit["backfill"] = {
+            "max_backfill_rounds": MAX_BACKFILL_ROUNDS,
+            "rounds_used": backfill_rounds_used,
+            "n_initial_drops": len(dropped_initial),
+            "n_replacements_attempted": backfill_total_attempts,
+            "n_replacements_added": backfill_total_added,
+            "n_still_stuck": len(stuck_probes),
+            "per_round": backfill_log,
+        }
+
+        # Post-backfill invariants: pool size and per-bucket composition.
+        # If backfill succeeded we should be back at args.n probes; if it
+        # didn't, the gate below raises with a useful diagnostic.
+        # Per-bucket count check is best-effort (only when no stuck probes).
+        if not stuck_probes:
+            assert len(new_probes) == args.n, (
+                f"post-backfill pool size {len(new_probes)} != target {args.n}; "
+                f"bookkeeping bug. backfill rounds={backfill_rounds_used} "
+                f"initial_drops={len(dropped_initial)} added={backfill_total_added}"
+            )
+            final_counts: dict[str, int] = {}
+            for q in new_probes:
+                b = probe_to_bucket[q]
+                final_counts[b] = final_counts.get(b, 0) + 1
+            for bname, btarget, _ in buckets_active:
+                assert final_counts.get(bname, 0) == btarget, (
+                    f"post-backfill bucket {bname!r} count "
+                    f"{final_counts.get(bname, 0)} != target {btarget}; "
+                    f"bookkeeping bug. final_counts={final_counts}"
+                )
+
         rewrites_out = SMOKE_REWRITES_EXTENSION_PATH if use_smoke_paths else REWRITES_EXTENSION_PATH
         # Companion meta sidecar (matches #502's schema).
         meta_path = rewrites_out.with_suffix(".meta.json")
@@ -1261,6 +1524,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
 
     elapsed = time.time() - started
 
+    # ── Final per-bucket composition (post-backfill) for the audit ──
+    # Each bucket's initial delivered_n already equals target_n (the
+    # bucket-generator runs until it hits the target). Backfill replaces stuck
+    # probes one-for-one from the SAME bucket, so the final bucket sizes still
+    # equal target_n — this re-tally is belt-and-suspenders.
+    final_bucket_counts: dict[str, int] = {}
+    for q in new_probes:
+        b = probe_to_bucket.get(q)
+        if b is not None:
+            final_bucket_counts[b] = final_bucket_counts.get(b, 0) + 1
+
     # ── Audit JSON — the gate the dispatcher reads before Phase B ──
     audit_payload = {
         "schema_version": 1,
@@ -1274,10 +1548,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
             "issue_474_q_test": overlap_q_test,
         },
         "per_bucket_audits": per_bucket_audits,
+        "final_bucket_counts": final_bucket_counts,
         "voice_drift_audit": voice_drift_audit,
         "sbert_model_id": SBERT_MODEL_ID,
         "sbert_threshold": SBERT_THRESHOLD,
         "voice_drift_third_person_rate_min": VOICE_DRIFT_THIRD_PERSON_RATE_MIN,
+        "max_voice_drift_retries": MAX_VOICE_DRIFT_RETRIES,
+        "max_backfill_rounds": MAX_BACKFILL_ROUNDS,
         "provenance": {
             "git_sha": _git_sha(),
             "timestamp_utc": _now_iso(),
