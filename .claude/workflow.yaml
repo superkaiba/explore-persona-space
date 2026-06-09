@@ -1522,6 +1522,29 @@ markers:
     posted_by: skill (via codex-clean-result-critic)
     when: "Step 9a-bis"
     fields: "Codex (gpt-5.5 via companion task) twin of clean-result-critic. Runs verify_task_body.py and audit_clean_results_body_discipline.py independently."
+  - kind: "epm:methodology-doc-generated"
+    posted_by: skill (via methodology-writer agent + orchestrator commit/gist publish)
+    when: "Step 9a-quater (after clean-result-critic PASS, before `awaiting_promotion` park)"
+    fields: |
+      Records the auto-generated findings-blind methodology +
+      hyperparameters + worked-examples reference for the task. Body
+      shape:
+      `doc_path: docs/methodology/issue_<N>.md commit: <full 40-char SHA>
+       gist_url: <secret-gist URL or "n/a — <reason>">
+       note: <optional, e.g. "gist skipped — possible secret detected in
+       doc body" / "gist skipped — gh lacks gist scope" / "gist skipped —
+       network error" / "skipped: kind: <infra|batch|survey> has no
+       methodology surface">`. The repo-committed doc at `doc_path` is
+       the durable artifact; the secret gist is a convenience mirror and
+       its publication is FAIL-SOFT (a missing gist never blocks the
+       step or the park). Idempotent: presence of this marker makes
+       Step 9a-quater a no-op on re-entry (skill does NOT regenerate /
+       re-publish on re-invocation). Fires in BOTH interactive and
+       autonomous sessions; the auto-publish to a SECRET (not public)
+       gist is the orchestrator action authorized by the standing
+       workflow-surface rule for this artifact specifically (the doc is
+       derived entirely from already-public Reproducibility data + the
+       repo, behind a no-secrets pre-publish scan).
   - kind: "epm:test-verdict"
     posted_by: skill (Step 9c, inline tests)
     when: "Step 9c"
@@ -1910,6 +1933,22 @@ steps:
       - reviewing
     entry_condition: "epm:free-analysis-followup-run v1 posted OR Step 9a-ter no-op (no free-analysis follow-up to run, or marker already present)"
     posts_marker: "epm:clean-result-critique"
+    next_expected_step: "9a-quater"
+  - id: "9a-quater"
+    name: methodology_reference
+    entry_status_label:
+      - reviewing
+    entry_condition: |
+      clean-result-critic PASS (or max rounds reached). Fires for
+      `kind: experiment` always and for `kind: analysis` only when the
+      task's `## Reproducibility` section names a training/eval
+      methodology (skip `infra | batch | survey`). Idempotent: no-op when
+      `epm:methodology-doc-generated v1` is already present. The skill
+      runs this step after the 9a-bis loop's PASS and BEFORE flipping
+      `reviewing` -> `awaiting_promotion` (Step 9b in SKILL.md prose),
+      so the link line landed in `## Reproducibility` is part of the
+      same finished package the user promotes.
+    posts_marker: "epm:methodology-doc-generated"
     next_expected_step: "10"
   - id: "9c"
     name: test_verdict

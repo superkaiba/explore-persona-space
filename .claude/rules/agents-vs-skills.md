@@ -82,6 +82,9 @@ The outer layer is usually a **skill** (orchestrator). Inside, it dispatches
     │   │                                            gate as of 2026-05-13)
     │       ├─ re-spawns analyzer (agent)
     │       └─ spawns clean-result-critic (agent) [+ codex twin on round 1]
+    ├─ spawns methodology-writer (agent, Step 9a-quater; auto-continue, no gate;
+    │   │   findings-blind — writes docs/methodology/issue_<N>.md + secret gist;
+    │   │   orchestrator commits + publishes + appends link line to ## Reproducibility)
     ├─ (auto-complete step inline in the skill)
     ├─ (test-verdict gate inline in the skill, code-change paths only)
     └─ spawns follow-up-proposer (agent)
@@ -111,6 +114,7 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `interpretation-critic` | Adversarial review of interpretation, must not see analyzer reasoning. Round 1 ensembled with `codex-interpretation-critic`; rounds 2-3 Claude only (round-1-only policy adopted 2026-05-13). |
 | `clean-result-critic` | Adversarial review of clean-result task bodies against the 2-content-section nested-design (v2) spec + exemplars (13 lenses: title, TL;DR (`### Motivation` + `### What I ran` + `### Findings` (parent) → `#### <finding>` per result for v2-sentinelled bodies — absorbs the retired Details-narrative lens), figure, reproducibility (confidence in H1 title tag only for v2 bodies), voice incl. `byte identical` ban, **Lens 7 statistical-framing rule** absorbed from the retired reviewer step, **Lens 8 mentor-facing title only** (methodology corrections fold into the relevant `#### <finding>` prose, no discrete H3 — added 2026-05-26), **Lens 9 one-takeaway-one-figure per `#### <finding>` H4** added 2026-05-26, **Lens 10 eval-probe descriptions inside `## TL;DR`** added 2026-05-26, **Lens 11 raw alongside processed (figures + prose + per-cell artifacts)** added 2026-05-27, **Lens 12 story arc present (TL;DR narrative shape)** added 2026-05-27, **Lens 13 planned-vs-actual coverage (scope-shrinkage discipline)** added 2026-05-27 after task #391's C-axis silent drop. **Final adversarial gate before status:awaiting_promotion as of 2026-05-13.** Round 1 ensembled with `codex-clean-result-critic`; rounds 2-3 Claude only. |
 | `code-reviewer` | Adversarial review of implementer's diff, must be isolated. Ensembled all rounds with `codex-code-reviewer`. |
+| `methodology-writer` | Findings-blind generator of `docs/methodology/issue_<N>.md` (methodology + hyperparameters + verbatim worked examples). Fresh context is the structural enforcement of "no interpretation" — never reads `## TL;DR`, `## Findings`, confidence tag, or `epm:interpretation`. Spawned by `/issue` Step 9a-quater (after `clean-result-critic` PASS, before `awaiting_promotion` park) for `kind: experiment` and methodology-bearing `kind: analysis` tasks; skipped for `infra | batch | survey`. The orchestrator commits the doc, publishes a secret gist (fail-soft, no-secrets pre-scan), and links from `## Reproducibility`. |
 | `follow-up-proposer` | Reads results + plan, proposes concrete next experiments |
 | `retrospective` | Fresh-context review of session transcripts |
 | `research-pm` | Strategic PM persona for the dedicated PM session (loaded by `/pm`); owns queue triage + dispatch decisions, does NOT execute experiments or write code |
