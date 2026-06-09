@@ -241,19 +241,77 @@ run uv run python scripts/issue518_syco_logprob_backfill.py
 # points at the per-arm Condition list module
 # (``i518_refusal_conditions`` or ``i518_em_conditions``); the worker's
 # default ``--arms`` (pos + loc) is the right value to keep.
-phase bakeoff_refusal "issue493_extraction_metric_bakeoff.py --conditions-registry ...i518_refusal_conditions"
+#
+# Round-14 fix: split phase H into ``--phase extract`` followed by
+# ``--phase metrics`` so the bake-off STOPS cleanly after the metrics-phase
+# write (which produces ``meta.json`` + per-(point, layer, metric, variant)
+# JSONs that scoring + the model-id consistency check consume), and SKIPS
+# the regression + figures phases.
+#
+# Why split (not ``--phase all``): the regression phase (``run_regression``
+# at line 3375 of issue493_extraction_metric_bakeoff.py) is hard-wired to
+# read #474's 16-cond G_logprob_matrix via ``_load_G(arm, ep)`` at line 368
+# -- whose keys are A1-A5/B1-B11. #518's conditions registry passes R1..R24
+# (refusal) / E1..E24 (em), so ``G['R1']`` raises ``KeyError`` (the round-13
+# crash after 11h of upstream work). The regression phase produces an
+# intra-arm "winning predictor" leaderboard that the #518 Goal does NOT
+# consume -- the headline Goal answer flows through ``issue509_scoring.py``
+# -> ``issue518_cross_behavior_aggregator.py`` which reads ONLY
+# ``$EVAL_ROOT/<arm>/bakeoff/metrics/`` + the per-arm
+# ``predictor_comparison.json`` substrate (cosine/JS/KL/logprob), never the
+# regression's ``bakeoff_grid.json``. The metrics-phase exit-0 at line 5380
+# is the clean cut.
+#
+# Why split into two calls (not ``--phase metrics`` alone): ``--phase
+# metrics`` SKIPS extraction (the ``if args.phase in ("all", "extract",
+# "extraction")`` gate at line 5156) but then runs
+# ``validate_canonical_completeness`` at line 5243 which raises if the
+# canonical activation files don't exist. Pod-518's refusal bakeoff already
+# completed extraction (and metrics) before the regression crashed, so a
+# bare ``--phase metrics`` would work on refusal-resume but would FAIL on em
+# (em never reached extraction -- the launcher set -e aborted at refusal's
+# regression). The ``--phase extract`` -> ``--phase metrics`` split is
+# symmetric and idempotent on BOTH arms: the model is loaded once per
+# arm-phase pair, extraction writes canonicals (skipping already-existing
+# per-cell partitions), metrics writes per-cell JSONs (skipping existing).
+#
+# Idempotency on resume: ``run_extraction_batched`` skips per-cond partition
+# files whose canonical activation already exists; ``run_metrics`` (line
+# 2989) skips per-cell metric JSONs whose output already exists. The
+# metrics dir is preserved across the pod-518 stop/resume, so on resume
+# refusal extract phase = no-op, refusal metrics phase = no-op, em extract
+# phase = runs (em never started), em metrics phase = runs.
+phase bakeoff_refusal_extract "issue493_extraction_metric_bakeoff.py --phase extract (refusal)"
 run uv run python scripts/issue493_extraction_metric_bakeoff.py \
     --model-id "Qwen/Qwen2.5-7B" \
     --conditions-registry "explore_persona_space.experiments.i518_refusal_conditions" \
     --probe-pool-mode custom \
-    --bakeoff-root "$EVAL_ROOT/refusal/bakeoff"
+    --bakeoff-root "$EVAL_ROOT/refusal/bakeoff" \
+    --phase extract
 
-phase bakeoff_em "issue493_extraction_metric_bakeoff.py --conditions-registry ...i518_em_conditions"
+phase bakeoff_refusal "issue493_extraction_metric_bakeoff.py --phase metrics (refusal)"
+run uv run python scripts/issue493_extraction_metric_bakeoff.py \
+    --model-id "Qwen/Qwen2.5-7B" \
+    --conditions-registry "explore_persona_space.experiments.i518_refusal_conditions" \
+    --probe-pool-mode custom \
+    --bakeoff-root "$EVAL_ROOT/refusal/bakeoff" \
+    --phase metrics
+
+phase bakeoff_em_extract "issue493_extraction_metric_bakeoff.py --phase extract (em)"
 run uv run python scripts/issue493_extraction_metric_bakeoff.py \
     --model-id "Qwen/Qwen2.5-7B" \
     --conditions-registry "explore_persona_space.experiments.i518_em_conditions" \
     --probe-pool-mode custom \
-    --bakeoff-root "$EVAL_ROOT/em/bakeoff"
+    --bakeoff-root "$EVAL_ROOT/em/bakeoff" \
+    --phase extract
+
+phase bakeoff_em "issue493_extraction_metric_bakeoff.py --phase metrics (em)"
+run uv run python scripts/issue493_extraction_metric_bakeoff.py \
+    --model-id "Qwen/Qwen2.5-7B" \
+    --conditions-registry "explore_persona_space.experiments.i518_em_conditions" \
+    --probe-pool-mode custom \
+    --bakeoff-root "$EVAL_ROOT/em/bakeoff" \
+    --phase metrics
 
 # ── I. Substrate assembly (per arm: predictor_comparison.json) ─────────────
 phase substrate_syco "issue518_build_predictor_substrate.py --arm syco"
