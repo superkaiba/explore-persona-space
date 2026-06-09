@@ -507,11 +507,20 @@ class PerEpochAdapterHFUploadCallback(TrainerCallback):
         cid: str,
         output_dir: str,
         hf_repo: str = HF_MODEL_REPO,
+        hf_path_template: str | None = None,
     ):
+        """
+        hf_path_template — when set, overrides the default
+        ``adapters/i474_{arm}_{cid}_ep{ep}`` upload path. Used by #523
+        (seed-43 retrain) to write to a separate subfolder. The template
+        may contain ``{arm}``, ``{cid}``, ``{ep}`` placeholders. Default
+        None preserves byte-identical #474 behavior.
+        """
         self.arm = arm
         self.cid = cid
         self.output_dir = Path(output_dir)
         self.hf_repo = hf_repo
+        self.hf_path_template = hf_path_template
         self._uploaded_epochs: set[int] = set()
 
     @staticmethod
@@ -664,7 +673,14 @@ class PerEpochAdapterHFUploadCallback(TrainerCallback):
         # The path-in-repo contract Phase 4 + smoke read from. KEEP IN
         # SYNC with i474_phase4_eval.py::_download_adapters and
         # i474_phase2_smoke_check.py::_resolve_adapter_path.
-        path_in_repo = f"adapters/i474_{self.arm}_{self.cid}_ep{target_ep}"
+        # #523 override: when hf_path_template is set (env-var driven, see
+        # main() below), use the override template — the seed-43 retrain
+        # writes to adapters/i523_loc_<cond>_ep1_seed43/ to avoid collision
+        # with the seed-42 adapters at adapters/i474_loc_<cond>_ep1/.
+        if self.hf_path_template:
+            path_in_repo = self.hf_path_template.format(arm=self.arm, cid=self.cid, ep=target_ep)
+        else:
+            path_in_repo = f"adapters/i474_{self.arm}_{self.cid}_ep{target_ep}"
 
         # Explicit env contract per upload-policy.md (so other surfaces
         # that read these env vars know where the adapter persisted).
@@ -774,11 +790,15 @@ def main(argv: list[str] | None = None) -> None:
         required=True,
         help="One or more condition cids (e.g. A1 or 'A1 A2 B1').",
     )
+    # #523 hook: EPM_TRAIN_EPOCHS env var overrides the epochs default (5).
+    # Used by the seed-43 leg which trains epoch-1-only per plan v2 §4 Phase B.
+    _default_epochs = int(os.environ.get("EPM_TRAIN_EPOCHS", "5"))
     ap.add_argument(
         "--epochs",
         type=int,
-        default=5,
-        help="Inherited from #460 round-3 (5).",
+        default=_default_epochs,
+        help=f"Inherited from #460 round-3 default 5; current default={_default_epochs} "
+        "(may be overridden via EPM_TRAIN_EPOCHS env var).",
     )
     ap.add_argument(
         "--gpu-id",
@@ -790,7 +810,17 @@ def main(argv: list[str] | None = None) -> None:
         ),
     )
     ap.add_argument("--lr", type=float, default=1e-5, help="Inherited from #460.")
-    ap.add_argument("--seed", type=int, default=42, help="Inherited from #460.")
+    # #523 hook: EPM_TRAIN_SEED env var overrides the seed default (42) so
+    # the seed-43 wrapper does not need to thread --seed through every
+    # subprocess. Explicit --seed on the CLI wins over the env var.
+    _default_seed = int(os.environ.get("EPM_TRAIN_SEED", "42"))
+    ap.add_argument(
+        "--seed",
+        type=int,
+        default=_default_seed,
+        help=f"Inherited from #460 default 42; current default={_default_seed} "
+        "(may be overridden via EPM_TRAIN_SEED env var, used by issue523 seed-43 leg).",
+    )
     ap.add_argument(
         "--save-strategy",
         default="epoch",
@@ -872,7 +902,19 @@ def main(argv: list[str] | None = None) -> None:
         train_path = TRAIN_ROW_DIR / f"i474_{args.arm}_{cond_id}.jsonl"
         _write_rows_jsonl(all_rows, train_path)
 
-        out_dir = f"adapters/i474_{args.arm}_{cond_id}"
+        # #523 env-var hooks (HIGH-confidence override path; defaults preserve
+        # byte-identical #474 behavior). Set by scripts/issue523_phase_b_seed43_dispatch.sh:
+        #   EPM_HF_PATH_TEMPLATE — overrides the PerEpochAdapterHFUpload path
+        #     (default: adapters/i474_{arm}_{cid}_ep{ep}; #523 uses
+        #      adapters/i523_loc_{cid}_ep{ep}_seed43).
+        #   EPM_RUN_NAME_PREFIX — overrides WandB run_name prefix (default i474).
+        #   EPM_OUTPUT_DIR_PREFIX — overrides local out_dir + HF final-push path
+        #     (default adapters/i474). The bare end-of-training push uses this.
+        hf_path_template_override = os.environ.get("EPM_HF_PATH_TEMPLATE")
+        run_name_prefix = os.environ.get("EPM_RUN_NAME_PREFIX", "i474")
+        out_dir_prefix = os.environ.get("EPM_OUTPUT_DIR_PREFIX", "adapters/i474")
+
+        out_dir = f"{out_dir_prefix}_{args.arm}_{cond_id}"
         logger.info(
             "Training cond=%s arm=%s lr=%s epochs=%d gpu_id=%d save_strategy=%s "
             "marker_only_loss=True tail_tokens=0 "
@@ -896,6 +938,7 @@ def main(argv: list[str] | None = None) -> None:
                     arm=args.arm,
                     cid=cond_id,
                     output_dir=out_dir,
+                    hf_path_template=hf_path_template_override,
                 )
             )
         if args.arm == "loc":
@@ -924,7 +967,7 @@ def main(argv: list[str] | None = None) -> None:
             grad_accum=4,
             max_length=2048,
             seed=args.seed,
-            run_name=f"i474_{args.arm}_{cond_id}",
+            run_name=f"{run_name_prefix}_{args.arm}_{cond_id}",
             report_to="wandb",
             save_strategy=args.save_strategy,
             # Round-5 FIX A: keep at most 1 local checkpoint at a time. The
@@ -943,7 +986,7 @@ def main(argv: list[str] | None = None) -> None:
             marker_im_end_token_id=im_end_id,
             hf_upload=True,
             hf_repo=HF_MODEL_REPO,
-            hf_path_in_repo=f"adapters/i474_{args.arm}_{cond_id}",
+            hf_path_in_repo=f"{out_dir_prefix}_{args.arm}_{cond_id}",
         )
 
         out_path, train_loss = train_lora(

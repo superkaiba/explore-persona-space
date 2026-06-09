@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import subprocess
 from pathlib import Path
 
@@ -19,7 +20,8 @@ from explore_persona_space.experiments.i406_conditions import CONDITIONS
 
 logger = logging.getLogger("i474.phase4.merge")
 
-CROSS_DIR = Path("eval_results/issue_474/cross_eval")
+# Default writes #474's tree; #523 seed-43 wrapper sets EPM_PHASE4_OUTPUT_ROOT.
+CROSS_DIR = Path(os.environ.get("EPM_PHASE4_OUTPUT_ROOT", "eval_results/issue_474/cross_eval"))
 DIAGONAL_DELTA_FAIL_THRESHOLD = 5.0  # H3 gate inherited from #460
 
 

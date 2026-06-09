@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 
 from huggingface_hub import list_repo_files
@@ -50,9 +51,12 @@ def _missing_epochs(arm: str, cid: str, epochs: tuple[int, ...]) -> list[int]:
             "Treat (arm, cid) as missing — caller should retrain."
         ) from e
 
+    # #523 hook: EPM_HF_PATH_TEMPLATE overrides the path template
+    # ({arm}/{cid}/{ep} placeholders). Default keeps #474 behavior.
+    hf_path_template = os.environ.get("EPM_HF_PATH_TEMPLATE", "adapters/i474_{arm}_{cid}_ep{ep}")
     missing: list[int] = []
     for ep in epochs:
-        path = f"adapters/i474_{arm}_{cid}_ep{ep}/{REQUIRED_FILE}"
+        path = f"{hf_path_template.format(arm=arm, cid=cid, ep=ep)}/{REQUIRED_FILE}"
         if path not in files:
             missing.append(ep)
     return sorted(missing)

@@ -33,6 +33,8 @@ dependencies = [
     "scipy>=1.11,<2.0",
     "tqdm>=4.65,<5.0",
     "scikit-learn>=1.8.0,<2.0",
+    # Added by #523 Phase A for SBERT-based semantic dedup against #502 + #474 probe pools.
+    "sentence-transformers>=2.7,<5",
     "statsmodels>=0.14.6,<1.0",
     "openai>=1.0,<2.0",
     "filelock>=3.12,<4.0",

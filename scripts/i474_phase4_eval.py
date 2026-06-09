@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import time
 from pathlib import Path
 
@@ -60,7 +61,9 @@ HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_R_PATH_PREFIX = "issue460_marker_at_end/on_policy_R"  # SHARED with #460
 LOCAL_DATA_DIR = Path("data/issue_460")  # SHARED — same frozen R
 LOCAL_ADAPTER_CACHE = Path("/workspace/adapters/i474")
-OUT_DIR = Path("eval_results/issue_474/cross_eval")
+# Default writes to #474's cross_eval root; the #523 seed-43 wrapper sets
+# EPM_PHASE4_OUTPUT_ROOT to redirect to eval_results/issue_523/seed43_cross_eval.
+OUT_DIR = Path(os.environ.get("EPM_PHASE4_OUTPUT_ROOT", "eval_results/issue_474/cross_eval"))
 PER_CELL_DIR = OUT_DIR / "per_cell"
 PREFLIGHT_PATH = Path("eval_results/issue_474/preflight.json")
 LOGP_FLOOR = -50.0  # inherited from #460; widespread clamping = fail-loud signal
@@ -172,8 +175,13 @@ def _download_adapters(arm: str, ep: int, cond_ids: list[str]) -> dict[str, str]
         "tokenizer.json",
         "special_tokens_map.json",
     ]
+    # #523 hook: EPM_HF_PATH_TEMPLATE overrides the default path template
+    # (placeholders {arm}, {cid}, {ep}). Used by the seed-43 leg to read
+    # from adapters/i523_loc_<cond>_ep1_seed43/ instead of i474's path.
+    # Default preserves byte-identical #474 behavior.
+    hf_path_template = os.environ.get("EPM_HF_PATH_TEMPLATE", "adapters/i474_{arm}_{cid}_ep{ep}")
     for cid in cond_ids:
-        target_subpath = f"adapters/i474_{arm}_{cid}_ep{ep}"
+        target_subpath = hf_path_template.format(arm=arm, cid=cid, ep=ep)
         local_target = LOCAL_ADAPTER_CACHE / target_subpath
         local_target.mkdir(parents=True, exist_ok=True)
         for fname in needed_files:

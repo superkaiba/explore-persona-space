@@ -93,10 +93,17 @@ def _resolve_adapter_path(arm: str, cond_id: str, epoch: int | None) -> str:
     from huggingface_hub import hf_hub_download
 
     LOCAL_ADAPTER_CACHE.mkdir(parents=True, exist_ok=True)
+    # #523 hook: EPM_HF_PATH_TEMPLATE overrides the path template
+    # ({arm}/{cid}/{ep} placeholders). Default keeps #474 behavior.
+    import os as _os
+
+    hf_path_template = _os.environ.get("EPM_HF_PATH_TEMPLATE", "adapters/i474_{arm}_{cid}_ep{ep}")
     if epoch is None:
+        # End-of-training bare path; strip the _ep{ep} suffix piece for the
+        # default template, otherwise the caller must provide a non-_ep variant.
         target_subpath = f"adapters/i474_{arm}_{cond_id}"
     else:
-        target_subpath = f"adapters/i474_{arm}_{cond_id}_ep{epoch}"
+        target_subpath = hf_path_template.format(arm=arm, cid=cond_id, ep=epoch)
     local_target = LOCAL_ADAPTER_CACHE / target_subpath
     local_target.mkdir(parents=True, exist_ok=True)
 
