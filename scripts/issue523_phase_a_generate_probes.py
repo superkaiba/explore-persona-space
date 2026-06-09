@@ -68,10 +68,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-# Re-use the byte-identical building blocks from #502's generator.
-from issue502_generate_probes import (  # noqa: E402
-    BUCKETS as I502_BUCKETS,
-)
+# Re-use the byte-identical building blocks from #502's generator. The base
+# `_gen_prompt` is NOT imported; round-4 widens the generation prompt with an
+# anti-clustering instruction via the local `_gen_prompt_diverse` defined below.
 from issue502_generate_probes import (  # noqa: E402
     CLASS_D_REGISTERS,
     CLAUDE_MODEL,
@@ -79,7 +78,6 @@ from issue502_generate_probes import (  # noqa: E402
     _build_rewrites_requests,
     _call_claude_once,
     _collect_rewrites_results,
-    _gen_prompt,
     _normalize,
     _parse_questions,
     _smoke_synthetic_rewrites,
@@ -107,18 +105,174 @@ SMOKE_AUDIT_PATH = OUT_DIR / "phase_a_audit.smoke.json"
 # Total target — the held-out pool is 500 probes (vs #502's "450 new + 50 q_test").
 DEFAULT_TARGET = 500
 
-# Same bucket prompts as #502, but reweighted to sum to 500 (not 450).
-# Ratio stays identical: 35% capabilities / 25% opinion / 25% neutral / 15% hypothetical.
-BUCKETS: tuple[tuple[str, int, str], ...] = tuple(
-    (name, round(500 * (n / 450)), desc) for (name, n, desc) in I502_BUCKETS
+# Round-4 data-fix pivot (commit on issue-523): the round-3 launch crashed Phase A
+# at `target_n=176` in the `capabilities` bucket with total dedup-rate 0.494
+# (exact 0.223 + semantic 0.271) against the 580-item exclude corpus (500 #502
+# probes + 30 #474 q_train + 50 #474 q_test). The dominant rejector was the
+# SBERT cosine ≥ 0.9 semantic gate — Sonnet was producing genuine near-paraphrases
+# of #502's questions because the 4 inherited buckets share #502's topic surface
+# and that surface is largely exhausted at the 580-item scale.
+#
+# Plan §8 names the prescribed fix: "if > 20% duplication rate at generation,
+# abort and revisit the bucket prompts." Plan §11 explicitly REJECTS loosening
+# the disjointness threshold. So this round widens the topic surface in three
+# complementary ways:
+#   (1) the 4 inherited buckets carry NEW topic anchors that #502 did NOT touch
+#       (specialized professional skills, niche scientific subdomains, advanced
+#       craft techniques, foreign idioms, edge-case troubleshooting; etc.);
+#   (2) TWO NEW buckets are added — `specialized_technical` and
+#       `personal_planning` — that cover topic surface entirely outside #502's
+#       4-bucket taxonomy;
+#   (3) `_gen_prompt_diverse()` injects an anti-clustering instruction so each
+#       Sonnet response stays internally varied within its bucket.
+#
+# Counts are rebalanced to keep total = 500, shifting mass from the older
+# topic-surface-exhausted buckets onto the new ones:
+#
+#   capabilities         : 158 (#502) → 175 (round-3) → 130 (round-4)
+#   opinion              : 113 (#502) → 125 (round-3) →  95 (round-4)
+#   neutral_chat         : 113 (#502) → 125 (round-3) →  95 (round-4)
+#   hypotheticals        :  66 (#502) →  75 (round-3) →  55 (round-4)
+#   specialized_technical: NEW                          →  75 (round-4)
+#   personal_planning    : NEW                          →  50 (round-4)
+#                                                          ---
+#                                                          500 ✓
+#
+# The four legacy bucket NAMES are preserved so downstream analyzers / audit
+# JSONs / cross-experiment comparisons against #502 still resolve. Only the
+# topic anchors inside their descriptions are widened.
+BUCKETS: tuple[tuple[str, int, str], ...] = (
+    (
+        "capabilities",
+        130,
+        "Practical capability / how-to questions a curious person might ask an "
+        "assistant. Push HARD for topic surface beyond the common cooking / "
+        "software-setup / basic-troubleshooting anchors — those have been "
+        "exhausted by prior 500-probe pools and will be rejected as semantic "
+        "near-duplicates. Aim for: specialized professional procedure (legal "
+        "filings, medical workflow, financial-instrument mechanics, regulatory "
+        "interpretation), niche scientific sub-domains (geology, oceanography, "
+        "astrophysics sub-areas, microbiology, soil science, glaciology), "
+        "advanced craft techniques (woodworking joinery, ceramics glaze "
+        "chemistry, leatherworking edge finishing, blacksmithing heat-treat), "
+        "cultural / language-specific knowledge (foreign idioms, regional "
+        "cuisines, traditional ceremonies, etiquette across cultures), edge-"
+        "case troubleshooting (rare error states, multi-vendor integration "
+        "failures, hardware corner cases). Examples: "
+        "'How do glaciologists measure ice-core gas occlusion depth?', "
+        "'What's the right way to season a damascus chef knife after etching?', "
+        "'How do Italian notaries authenticate a foreign apostille?'",
+    ),
+    (
+        "opinion",
+        95,
+        "Soft opinion / advice questions where a reasonable assistant offers a "
+        "perspective. Push topic surface AWAY from common "
+        "career / remote-work / book-recs anchors — those have been exhausted "
+        "by prior pools. Aim for: opinion on specialized domain practice "
+        "(should an architect specify CLT or steel for a 6-storey housing "
+        "block?, is rotary or push mowing better for a tall-fescue lawn?), "
+        "advice on niche life-stage choices (downsizing vs aging-in-place; "
+        "whether to apprentice or attend trade school; sabbatical vs "
+        "lateral-move), aesthetic / craft preferences (typography pairings, "
+        "ceramic-glaze color choices, woodworking finish trade-offs), "
+        "domain-specific debates (analog vs digital film mastering, "
+        "single-malt vs blended whisky, freehand vs jig joinery). Examples: "
+        "'Is hand-cut or machine-routed dovetailing more durable for a heirloom "
+        "blanket chest?', "
+        "'Would you recommend a Riesling or a Gewürztraminer pairing with "
+        "Sichuan mapo tofu?', "
+        "'Should a small-batch coffee roaster invest in a sample roaster or "
+        "rent shared lab time?'",
+    ),
+    (
+        "neutral_chat",
+        95,
+        "Neutral knowledge / chat — explanations, definitions, mild curiosity. "
+        "Push topic surface AWAY from common quantum-entanglement / "
+        "Roman-Empire / alligator-vs-crocodile anchors — those have been "
+        "exhausted by prior pools. Aim for: niche scientific phenomena "
+        "(retrograde precession, polymorphism in fluorite, etoliated stem "
+        "growth), historical micro-periods (the Visigothic kingdom of Toulouse, "
+        "Heian-period rituals, Cromwellian administration), language oddities "
+        "(grammatical animacy, evidential markers, click consonants), niche "
+        "engineering principles (HVAC zoning logic, RF impedance matching, "
+        "weld penetration profiles), obscure cultural artifacts (Korean "
+        "shamanic kut, Sardinian launeddas, Andean quipus). Examples: "
+        "'What is the difference between a Doric and an Aeolic Greek dialect?', "
+        "'Can you explain how a Wheatstone bridge balances unknown resistance?', "
+        "'What is the role of evidentials in Quechua sentence structure?'",
+    ),
+    (
+        "hypotheticals",
+        55,
+        "Hypotheticals / imaginative prompts — counterfactuals, scenarios, "
+        "thought experiments. Push topic surface AWAY from common "
+        "time-travel / writing-uninvented / live-anywhere anchors — those have "
+        "been exhausted by prior pools. Aim for: domain-specific "
+        "counterfactuals (what if Linnaean taxonomy preceded Aristotelian; "
+        "what if the printing press arrived in Mesoamerica first; what if the "
+        "Bessemer process was discovered in Heian Japan), discipline-specific "
+        "thought experiments (an ethical dilemma in a specific clinical "
+        "speciality; a physics scenario in a specific phase of matter; a "
+        "linguistic scenario in a specific phonemic system), niche scenario-"
+        "planning (managing a vineyard through a 5-year drought; running a "
+        "single-screen cinema in a small town; designing a multi-generational "
+        "research vessel). Examples: "
+        "'What if Mendelian inheritance had been understood a century earlier?', "
+        "'Imagine a vineyard manager facing a 5-year drought; what changes?', "
+        "'If lithography had reached Edo Japan by 1700, how would ukiyo-e have "
+        "evolved?'",
+    ),
+    (
+        "specialized_technical",
+        75,
+        "NEW bucket — deep technical questions inside narrow specialist domains "
+        "that the inherited 4 buckets undersample. Aim for: compiler internals "
+        "(register allocation, escape analysis, JIT tiering), RF / antenna "
+        "engineering (Smith-chart matching, log-periodic design, balun choice), "
+        "structural / civil engineering (P-delta effects, soil-bearing capacity, "
+        "post-tension grouting), bioinformatics pipelines (BWA-MEM vs minimap2, "
+        "GATK joint-calling, GFF3 vs GTF), embedded systems / RTOS (priority "
+        "inversion, ISR latency, watchdog patterns), distributed-systems "
+        "internals (Raft log compaction, vector clocks, gossip protocols), "
+        "materials-science specifics (austenitic vs ferritic stainless, "
+        "Charpy-V vs Izod, fatigue-life curves), pharmacology kinetics "
+        "(Michaelis-Menten vs Hill, first-pass metabolism, AUC vs Cmax). "
+        "Examples: "
+        "'How does a Raft cluster handle log compaction during a leadership "
+        "election?', "
+        "'What are the trade-offs between BWA-MEM and minimap2 for long-read "
+        "alignment?', "
+        "'How does P-delta amplification affect column design in a 12-storey "
+        "moment frame?'",
+    ),
+    (
+        "personal_planning",
+        50,
+        "NEW bucket — planning, logistics, and decision-shaping questions of "
+        "the kind a person actually asks an assistant during real-life "
+        "planning. Aim for: trip planning (mountain hike itineraries, "
+        "multi-country rail-pass routing, off-season travel windows), financial "
+        "planning (529 vs UTMA, Roth-conversion timing, mortgage-refi math), "
+        "household decisions (heat pump vs gas furnace, replacing vs "
+        "refinishing flooring, choosing a contractor), scheduling logistics "
+        "(coordinating a multi-family beach week, planning a wedding rehearsal "
+        "weekend, sequencing a kitchen renovation), career-move planning "
+        "(negotiating a relocation package, evaluating a startup equity offer, "
+        "deciding whether to take a sabbatical). Examples: "
+        "'How should I sequence a kitchen renovation so we still have a "
+        "working sink for two months?', "
+        "'What's the best way to plan a 10-day Norwegian-fjords rail trip in "
+        "shoulder season?', "
+        "'How do I evaluate a startup-equity offer that vests on a 5-year "
+        "schedule with a 1-year cliff?'",
+    ),
 )
-# Adjust last bucket so the sum is exactly 500.
-_correction = 500 - sum(n for _, n, _ in BUCKETS)
-BUCKETS = tuple(
-    (name, n + (_correction if i == len(BUCKETS) - 1 else 0), desc)
-    for i, (name, n, desc) in enumerate(BUCKETS)
+assert sum(n for _, n, _ in BUCKETS) == DEFAULT_TARGET, (
+    f"BUCKETS sum {sum(n for _, n, _ in BUCKETS)} != DEFAULT_TARGET {DEFAULT_TARGET}; "
+    "rebalance the round-4 per-bucket targets."
 )
-assert sum(n for _, n, _ in BUCKETS) == 500, f"BUCKETS sum {sum(n for _, n, _ in BUCKETS)} != 500"
 
 # Dedup gate: a candidate whose cosine similarity to any existing probe is
 # >= SBERT_THRESHOLD is rejected as a near-duplicate paraphrase.
@@ -140,6 +294,48 @@ MAX_DEDUP_RATE_PER_BUCKET = 0.20
 MAX_VOICE_DRIFT_RETRIES = 3
 VOICE_DRIFT_AUDIT_SAMPLE = 50
 VOICE_DRIFT_THIRD_PERSON_RATE_MIN = 0.96
+
+
+# ────────────────────────── Round-4 diversified generation prompt ──────────────────────────
+
+
+def _gen_prompt_diverse(
+    bucket_name: str, bucket_desc: str, n: int, exclude_examples: list[str]
+) -> str:
+    """Round-4 replacement for `issue502_generate_probes._gen_prompt`.
+
+    Adds an anti-clustering directive: AT MOST ~3 questions may share a primary
+    sub-topic, and Sonnet must push for novel sub-topics not yet covered in the
+    bucket. This is the third leg of the round-4 fix (alongside widened bucket
+    descriptions and the two new buckets) — without it, Sonnet tends to cluster
+    each batch around one or two anchor topics from the description, which the
+    SBERT cosine ≥ 0.9 gate then rejects as near-paraphrases of #502's existing
+    pool.
+
+    Same signature as `_gen_prompt` so the bucket-generator call site swaps in
+    cleanly with one identifier change.
+    """
+    ex_str = "\n".join(f"- {q}" for q in exclude_examples[:30])
+    return (
+        f"Generate {n} probe questions in the category '{bucket_name}'.\n\n"
+        f"Category description:\n{bucket_desc}\n\n"
+        "Do NOT repeat or paraphrase any of these existing questions "
+        f"(we already have them):\n{ex_str}\n\n"
+        "DIVERSITY REQUIREMENT (important — prior batches were rejected as "
+        "near-duplicates of an existing 500-question pool):\n"
+        " - Within this batch, AT MOST 3 questions may share a primary "
+        "sub-topic (e.g. at most 3 questions about Python, at most 3 about "
+        "Italian cooking, at most 3 about home repair). Push for novel "
+        "sub-topics not yet covered in the bucket description's anchor list.\n"
+        " - Treat the example anchors in the category description as a "
+        "minimum-diversity floor, not a target — fan out beyond them.\n"
+        " - If two candidate questions feel like paraphrases (same primary "
+        "topic, similar phrasing), keep only one and replace the other with "
+        "a question on a different sub-topic.\n\n"
+        f"Output exactly {n} new questions, one per line, no numbering, no "
+        "blank lines, no preamble. Each must end with '?' and stay on one "
+        "line."
+    )
 
 
 # ────────────────────────── Provenance helpers ──────────────────────────
@@ -409,7 +605,7 @@ def _generate_bucket_with_disjointness(
         attempts_used += 1
         need = target_n - len(accepted)
         ask = min(chunk_size, need + 20)
-        prompt = _gen_prompt(bucket_name, bucket_desc, ask, sorted(existing_norms)[:30])
+        prompt = _gen_prompt_diverse(bucket_name, bucket_desc, ask, sorted(existing_norms)[:30])
         if smoke:
             # Smoke mode: synthesize candidates that pass dedup trivially.
             candidates = [
@@ -642,7 +838,22 @@ def _build_argparser() -> argparse.ArgumentParser:
         help=(
             "Skip the Claude API; synthesize placeholder probes + rewrites. "
             "Output goes to *.smoke.json paths; NEVER promoted to the real "
-            "pool. Used for end-to-end smoke ahead of the real run."
+            "pool. Used for end-to-end smoke ahead of the real run. NOTE: "
+            "this path CANNOT exercise the SBERT semantic-dedup gate against "
+            "real Sonnet output — use --smoke-real-api for that."
+        ),
+    )
+    p.add_argument(
+        "--smoke-real-api",
+        action="store_true",
+        help=(
+            "Round-4 smoke gate: use the REAL Claude API to generate "
+            "candidates on a tiny slice (typically --n 60), but write to "
+            "*.smoke.json paths so the run cannot clobber a real pool. "
+            "Exercises the SBERT semantic-dedup gate end-to-end against "
+            "real Sonnet output — the failure mode that bit Phase A in "
+            "round 3. Mutually exclusive with --smoke-only. Cost ~$1-2 per "
+            "60-probe smoke run."
         ),
     )
     p.add_argument(
@@ -663,10 +874,34 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
     args = _build_argparser().parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    smoke = bool(args.smoke_only)
-    if smoke and args.n > 60:
+    if args.smoke_only and args.smoke_real_api:
+        raise SystemExit("--smoke-only and --smoke-real-api are mutually exclusive")
+
+    # Two ORTHOGONAL switches:
+    #   use_synth         — True => use the placeholder synthesizer for both
+    #                       candidate generation AND rewrites (no Claude API
+    #                       calls). False => hit the real Claude API.
+    #   use_smoke_paths   — True => write to *.smoke.json output paths so a
+    #                       smoke / tiny-slice run cannot overwrite the real
+    #                       500-probe pool / audit / rewrites artifacts.
+    #
+    # Flag combinations (round-4):
+    #   default                  : use_synth=False, use_smoke_paths=False  (real run)
+    #   --smoke-only             : use_synth=True,  use_smoke_paths=True   (CPU smoke)
+    #   --smoke-real-api         : use_synth=False, use_smoke_paths=True   (real-API
+    #                              tiny-slice smoke gate; the round-4 mode that
+    #                              actually exercises the SBERT dedup gate end-to-end)
+    #
+    # The local `smoke` variable retained below tracks `use_synth` because the
+    # downstream voice-drift gates and bucket/rewrites generators key off the
+    # "synthesizer-vs-real-API" axis, NOT the output-path axis.
+    use_synth = bool(args.smoke_only)
+    use_smoke_paths = bool(args.smoke_only) or bool(args.smoke_real_api)
+    smoke = use_synth  # back-compat alias for the downstream gate code below
+    if use_smoke_paths and args.n > 60:
         logger.warning(
-            "smoke mode with --n=%d is large; smoke is normally --n 12. Continuing.",
+            "smoke-paths mode with --n=%d is large; smoke is normally --n 12 "
+            "(synth) or --n 60 (real-api). Continuing.",
             args.n,
         )
 
@@ -734,7 +969,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
         if not ok:
             raise AssertionError(f"invalid final probe ({why}): {p!r}")
 
-    out_path = SMOKE_PROBES_PATH if smoke else PROBES_PATH
+    out_path = SMOKE_PROBES_PATH if use_smoke_paths else PROBES_PATH
 
     # ── Class-D rewrites (with voice-drift fix on indirect) ──
     # NOTE (Mi1 round-3 fix): we GENERATE rewrites here but DEFER writing the
@@ -751,7 +986,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
         rewrites, voice_drift_audit = _generate_rewrites_with_voice_drift_fix(
             new_probes, smoke=smoke
         )
-        rewrites_out = SMOKE_REWRITES_EXTENSION_PATH if smoke else REWRITES_EXTENSION_PATH
+        rewrites_out = SMOKE_REWRITES_EXTENSION_PATH if use_smoke_paths else REWRITES_EXTENSION_PATH
         # Companion meta sidecar (matches #502's schema).
         meta_path = rewrites_out.with_suffix(".meta.json")
         meta_payload = {
@@ -809,7 +1044,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
             "elapsed_seconds": round(elapsed, 2),
         },
     }
-    audit_out = SMOKE_AUDIT_PATH if smoke else AUDIT_PATH
+    audit_out = SMOKE_AUDIT_PATH if use_smoke_paths else AUDIT_PATH
 
     # ── End-of-Phase-A gates (run BEFORE writing non-smoke artifacts) ──
     # Mi1 round-3 fix: a failed gate must NOT leave plausible-looking artifacts on
