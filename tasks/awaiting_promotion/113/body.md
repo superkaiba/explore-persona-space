@@ -11,6 +11,8 @@ sagan_id: 00fd06ef-b56c-44c0-9f02-b7649f6dcfe7
 sagan_number: 113
 priority: normal
 legacy_why_unset: true
+classification: useful
+promoted_at: '2026-06-09T21:32:54Z'
 ---
 <!-- legacy-sagan-card -->
 <style>
