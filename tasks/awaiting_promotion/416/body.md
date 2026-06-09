@@ -11,6 +11,8 @@ goal: 'Train ※ into a non-librarian source persona (recommended: comedian) and
   whether (a) the new source ALSO never leads the leaderboard and (b) the same top-6
   bystander cluster from #398 still dominates — confirming the global-marker-affinity-shift
   mechanism vs ruling it out in favor of a source-specific direction.'
+classification: useful
+promoted_at: '2026-06-09T21:35:01Z'
 ---
 # Training ※ into software engineer gave it only a transient early rank bump that washed out by end of training (ended 25/28); librarian's durable source-specific bump from #398 does not replicate (MODERATE confidence)
 
