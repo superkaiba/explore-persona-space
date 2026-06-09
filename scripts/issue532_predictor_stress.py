@@ -382,16 +382,40 @@ def _reproducibility_metadata(extra: dict | None = None) -> dict:
 
 def _extract_marker_logp_and_argmax(
     outputs, slot_positions: list[int], cell_label: str
-) -> tuple[list[float], list[bool]]:
+) -> tuple[list[float | None], list[bool], list[int]]:
     """Read marker log-prob + argmax flag at the per-row slot.
 
-    Fails loud if the slot list/dict shape is wrong or the marker id is
-    missing from the top-K dict (with K=1 the marker is either the
-    argmax — present — or absent below the floor — flag).
+    With ``prompt_logprobs=1`` the per-slot dict contains the argmax token
+    only. The marker can therefore be (i) PRESENT — it IS the argmax, we
+    read the real log-prob; or (ii) ABSENT — it sits in the tail and the
+    K=1 dict cannot resolve it. The reconciler-binding contract (round-1
+    verdict, blocker A) FORBIDS a silent ``LOGP_FLOOR`` substitution for
+    the absent case — that destroys signal on the headline Spearman ρ by
+    collapsing every non-argmax cell to the same value.
+
+    This function therefore returns a sparse list: ``logps[i]`` is the
+    real ``float`` log-prob when the marker is the argmax, and ``None``
+    when the marker is missing from the slot. The caller MUST resolve
+    every ``None`` via a teacher-forced HF forward-pass fallback (see
+    ``_hf_teacher_forced_marker_logp``) before persisting the cell — the
+    None placeholder is internal-only and never lands on disk.
+
+    Returns
+    -------
+    logps : list of (float | None)
+        Per-row log-prob (real float) or None (pending HF fallback).
+    argmax_marker : list of bool
+        Whether the marker was the argmax token at the slot.
+    missing_idx : list of int
+        Indices into ``logps`` / ``argmax_marker`` that need the HF
+        teacher-forced fallback.
+
+    Fails loud if the slot list/dict shape is wrong (None slot).
     """
-    logps: list[float] = []
+    logps: list[float | None] = []
     argmax_marker: list[bool] = []
-    for out, L in zip(outputs, slot_positions, strict=True):
+    missing_idx: list[int] = []
+    for i, (out, L) in enumerate(zip(outputs, slot_positions, strict=True)):
         slot = out.prompt_logprobs[L]
         if slot is None:
             raise RuntimeError(
@@ -401,16 +425,164 @@ def _extract_marker_logp_and_argmax(
             lp = float(slot[MARKER_ID].logprob)
             top_id = max(slot.items(), key=lambda kv: kv[1].logprob)[0]
             argmax_marker.append(top_id == MARKER_ID)
+            logps.append(max(lp, LOGP_FLOOR))
         else:
-            # With prompt_logprobs=1 the dict contains the argmax token
-            # only; the marker being ABSENT means it is BELOW the floor.
-            # Floor the log-prob (the marker's actual value is ≤ argmax
-            # log-prob, which itself is ≤ 0, so we floor to LOGP_FLOOR
-            # to indicate "marker is tail-mass; un-measured under K=1").
-            lp = LOGP_FLOOR
+            # Marker is NOT the argmax at this slot under K=1; we cannot
+            # read its log-prob from the truncated dict. Defer to the HF
+            # teacher-forced fallback. Sentinel = None (resolved by
+            # caller).
             argmax_marker.append(False)
-        logps.append(max(lp, LOGP_FLOOR))
-    return logps, argmax_marker
+            logps.append(None)
+            missing_idx.append(i)
+    return logps, argmax_marker, missing_idx
+
+
+# ── HF teacher-forced fallback for marker log-prob (binding round-1 blocker A) ──
+#
+# A cached, lazy-loaded HF base model used to resolve the marker log-prob
+# on rows where vLLM's ``prompt_logprobs=1`` slot does NOT contain the
+# marker as the argmax. Defaults to CPU (float32) so it can co-exist with
+# a live vLLM engine on the GPU without OOM. The cost is bounded by the
+# saturation regime: at high source saturation almost every row's argmax
+# IS the marker (no fallback needed); at low saturation only the rows
+# that actually fall in the tail trigger the (slow) CPU forward pass.
+#
+# The cache is keyed by (model_path, adapter_path|None) — Phase 0 uses
+# base (adapter=None); Phase 1 swaps adapters per source.
+
+
+_HF_FALLBACK_CACHE: dict[tuple[str, str | None], object] = {}
+_HF_FALLBACK_TOKENIZER: object | None = None
+
+
+def _get_hf_fallback_model(adapter_path: str | None):
+    """Lazy-load a CPU HF base model (+ optional LoRA adapter) for the
+    marker-log-prob fallback. Cached per (BASE_MODEL, adapter_path).
+    """
+    import torch
+    from transformers import AutoModelForCausalLM
+
+    key = (BASE_MODEL, adapter_path)
+    if key in _HF_FALLBACK_CACHE:
+        return _HF_FALLBACK_CACHE[key]
+    logger.info(
+        "HF teacher-forced fallback: loading %s (adapter=%s) on CPU for missing-row marker reads",
+        BASE_MODEL,
+        adapter_path if adapter_path else "(base)",
+    )
+    model = AutoModelForCausalLM.from_pretrained(
+        BASE_MODEL,
+        torch_dtype=torch.float32,
+        device_map={"": "cpu"},
+    )
+    if adapter_path is not None:
+        from peft import PeftModel
+
+        model = PeftModel.from_pretrained(model, adapter_path, is_trainable=False)
+    model.eval()
+    _HF_FALLBACK_CACHE[key] = model
+    return model
+
+
+def _hf_teacher_forced_marker_logp(
+    full_ids_list: list[list[int]],
+    slot_positions: list[int],
+    adapter_path: str | None,
+    cell_label: str,
+) -> list[float]:
+    """Run an HF teacher-forced forward pass over each ``T_b(q)+R+MARKER``
+    byte sequence on CPU and read ``log P(MARKER_ID)`` at the slot from
+    the FULL softmax over the vocabulary (no K-truncation).
+
+    Per the reconciler-binding contract (round-1 verdict, blocker A), this
+    is the rigorous fallback when vLLM's ``prompt_logprobs=1`` slot does
+    NOT contain the marker as the argmax. Slow (CPU fp32 forward at ~30s
+    per probe for Qwen-2.5-7B) but bounded — only the genuinely-tail rows
+    pay the cost.
+
+    Returns a list of real ``float`` log-probs (one per input row), the
+    actual ``log P(※)`` at slot position ``L`` from the full softmax.
+    Floor at ``LOGP_FLOOR`` to be consistent with the K=1 path.
+    """
+    import torch
+
+    if not full_ids_list:
+        return []
+    model = _get_hf_fallback_model(adapter_path)
+    t0 = time.time()
+    logps: list[float] = []
+    with torch.no_grad():
+        for full_ids, L in zip(full_ids_list, slot_positions, strict=True):
+            input_ids = torch.tensor([full_ids], dtype=torch.long)
+            # The slot of interest is L — the position WHOSE NEXT-TOKEN
+            # distribution should put mass on MARKER_ID. With the
+            # marker-at-end byte construction, ``full_ids[-1] ==
+            # MARKER_ID`` and ``L == len(full_ids) - 1``; we read the
+            # logits at position ``L - 1`` (the token that precedes the
+            # marker) — that is the position whose NEXT-TOKEN softmax we
+            # want.
+            #
+            # vLLM's ``prompt_logprobs[L]`` is the next-token
+            # distribution from the model AT position ``L`` over the
+            # ACTUAL token at position ``L`` — i.e. the slot's log-prob
+            # is the probability the model assigned to the token
+            # presented at ``L``, conditional on positions [0..L-1].
+            # This matches reading ``logits[L-1]`` from the HF forward
+            # pass and softmax-ing it.
+            slot_pred_pos = L - 1
+            if slot_pred_pos < 0:
+                raise RuntimeError(
+                    f"{cell_label}: HF fallback slot_pred_pos={slot_pred_pos} < 0 "
+                    f"(L={L}, len(full_ids)={len(full_ids)}); cannot read next-token distribution"
+                )
+            out = model(input_ids=input_ids)
+            logits = out.logits[0, slot_pred_pos, :].float()
+            log_probs = torch.log_softmax(logits, dim=-1)
+            lp = float(log_probs[MARKER_ID].item())
+            logps.append(max(lp, LOGP_FLOOR))
+    elapsed = time.time() - t0
+    logger.info(
+        "%s: HF teacher-forced fallback resolved %d missing rows in %.1fs (%.1fs/row)",
+        cell_label,
+        len(full_ids_list),
+        elapsed,
+        elapsed / max(len(full_ids_list), 1),
+    )
+    return logps
+
+
+def _resolve_missing_via_hf(
+    logps_partial: list[float | None],
+    missing_idx: list[int],
+    full_ids_list: list[list[int]],
+    slot_positions: list[int],
+    adapter_path: str | None,
+    cell_label: str,
+) -> list[float]:
+    """Patch the ``None`` entries in ``logps_partial`` with the HF
+    teacher-forced log-prob and return a dense ``list[float]``.
+
+    Convenience wrapper used by phase0 + phase1 callers so the fallback
+    plumbing is identical in both places.
+    """
+    if not missing_idx:
+        # All rows resolved by the K=1 vLLM path; nothing to do.
+        return [float(lp) for lp in logps_partial]
+    missing_full_ids = [full_ids_list[i] for i in missing_idx]
+    missing_slots = [slot_positions[i] for i in missing_idx]
+    resolved = _hf_teacher_forced_marker_logp(
+        missing_full_ids, missing_slots, adapter_path, cell_label
+    )
+    out = [float(lp) if lp is not None else float("nan") for lp in logps_partial]
+    for i, lp in zip(missing_idx, resolved, strict=True):
+        out[i] = lp
+    # Defense in depth: no None / NaN should remain.
+    if any(np.isnan(x) for x in out):
+        raise RuntimeError(
+            f"{cell_label}: HF fallback failed to resolve all missing rows "
+            f"(missing_idx={missing_idx}, resolved={len(resolved)})"
+        )
+    return out
 
 
 def _vllm_generate_R(llm, prompts: list[str], cell_label: str, lora_request=None) -> list[str]:
@@ -527,9 +699,13 @@ def phase0_base_prior(
 
     per_bystander: dict[str, dict] = {}
     for b_label in bystanders:
-        # Build the per-probe payloads.
+        # Build the per-probe payloads. Keep ``full_ids_list`` alongside
+        # so the HF teacher-forced fallback can re-replay any rows whose
+        # marker did NOT land as the K=1 argmax (binding round-1 fix:
+        # no LOGP_FLOOR substitution).
         payloads = []
         slot_positions = []
+        full_ids_list: list[list[int]] = []
         for q in q_test:
             prompt_text = _build_bystander_prompt(
                 b_label, q, tokenizer, class_d_rewrites, instructed_panel
@@ -541,12 +717,23 @@ def phase0_base_prior(
             full_ids, slot_pos = _build_full_payload_with_marker(prompt_text, R_text, tokenizer)
             payloads.append({"prompt_token_ids": full_ids})
             slot_positions.append(slot_pos)
+            full_ids_list.append(full_ids)
 
         t0 = time.time()
         outputs = llm.generate(payloads, sp_marker, lora_request=None)
         elapsed = time.time() - t0
-        b_logps, b_argmax = _extract_marker_logp_and_argmax(
+        b_logps_partial, b_argmax, missing_idx = _extract_marker_logp_and_argmax(
             outputs, slot_positions, cell_label=f"Phase0-probe-base/{b_label}"
+        )
+        # Resolve any missing-marker rows via HF teacher-forced (no
+        # adapter — Phase 0 is base only).
+        b_logps = _resolve_missing_via_hf(
+            b_logps_partial,
+            missing_idx,
+            full_ids_list,
+            slot_positions,
+            adapter_path=None,
+            cell_label=f"Phase0-fallback-base/{b_label}",
         )
         mean_lp = float(np.mean(b_logps))
         argmax_rate = sum(b_argmax) / len(b_argmax)
@@ -706,9 +893,14 @@ def phase1_trained_sweep(
                 )
 
                 # 3. Byte-encode T_b(q) + R_trained + MARKER and probe at
-                #    the slot. RELAXED slot assertion.
+                #    the slot. RELAXED slot assertion. Keep
+                #    ``full_ids_list`` so the HF teacher-forced fallback
+                #    can resolve any rows whose marker did NOT land as
+                #    the K=1 argmax (binding round-1 fix: no LOGP_FLOOR
+                #    substitution).
                 payloads = []
                 slot_positions = []
+                full_ids_list: list[list[int]] = []
                 for q, R_text in zip(q_test, R_trained_list, strict=True):
                     prompt_text = _build_bystander_prompt(
                         bystander_label, q, tokenizer, class_d_rewrites, instructed_panel
@@ -718,15 +910,28 @@ def phase1_trained_sweep(
                     )
                     payloads.append({"prompt_token_ids": full_ids})
                     slot_positions.append(slot_pos)
+                    full_ids_list.append(full_ids)
 
                 t0 = time.time()
                 outputs = llm.generate(payloads, sp_marker, lora_request=lora_req)
                 elapsed = time.time() - t0
-                logps, argmax_marker = _extract_marker_logp_and_argmax(
+                logps_partial, argmax_marker, missing_idx = _extract_marker_logp_and_argmax(
                     outputs,
                     slot_positions,
                     cell_label=(
                         f"Phase1-probe-trained/{arm}_ep{ep}/{source_cid}->{bystander_label}"
+                    ),
+                )
+                # Resolve any missing-marker rows via HF teacher-forced
+                # under the SAME adapter the vLLM run used.
+                logps = _resolve_missing_via_hf(
+                    logps_partial,
+                    missing_idx,
+                    full_ids_list,
+                    slot_positions,
+                    adapter_path=adapter_paths[source_cid],
+                    cell_label=(
+                        f"Phase1-fallback-trained/{arm}_ep{ep}/{source_cid}->{bystander_label}"
                     ),
                 )
 
@@ -739,21 +944,38 @@ def phase1_trained_sweep(
                 slot_argmax_rate = sum(argmax_marker) / len(argmax_marker)
                 mean_logp = float(np.mean(logps))
 
-                # 5. Saturation flags (the #448 ceiling gate + ΔG sd
-                #    sanity check). These are diagnostic only; do NOT
-                #    silently drop cells — fail-loud on suspicious saturation.
+                # 5. Saturation flag (the #448 ceiling gate). The gate
+                #    is FAIL-LOUD on ordinary BYSTANDERS at the ceiling
+                #    (≥ 0.92 argmax_rate) — per plan §13 step 4 + the
+                #    marker-training-recipe rule "gate the anchor on
+                #    bystander resolution, NOT on source emission (the
+                #    source *should* saturate emission — it IS the
+                #    implant)". Exemptions:
+                #      - source's OWN context (source_cid == bystander):
+                #        legitimately saturates by design; not a
+                #        bystander.
+                #      - instructed bystanders: the WHOLE point is that
+                #        their base-prior is non-floor (they may
+                #        legitimately saturate by design — H1 §6.3 is
+                #        about WHETHER instruction lifts trained log P,
+                #        not about a clean predictor headroom there).
+                #    Binding round-1 fix — standing rec 3.
                 sd_logp = float(np.std(logps))
                 saturation_ceiling_flag = slot_argmax_rate >= SATURATION_ARGMAX_RATE
-                if saturation_ceiling_flag and bystander_label not in instructed_panel:
-                    logger.warning(
-                        "Phase1/%s/%s->%s: saturation flag — slot argmax_rate=%.3f >= %.2f "
-                        "on an ORDINARY bystander. This is the #448 ceiling regime; the "
-                        "predictor sweep will have no headroom on this cell.",
-                        arm,
-                        source_cid,
-                        bystander_label,
-                        slot_argmax_rate,
-                        SATURATION_ARGMAX_RATE,
+                is_ordinary_nonsource_bystander = (
+                    bystander_label not in instructed_panel and bystander_label != source_cid
+                )
+                if saturation_ceiling_flag and is_ordinary_nonsource_bystander:
+                    raise RuntimeError(
+                        f"Phase1/{arm}/{source_cid}->{bystander_label}: "
+                        f"slot argmax_rate={slot_argmax_rate:.3f} >= "
+                        f"{SATURATION_ARGMAX_RATE:.2f} on an ORDINARY non-source "
+                        "bystander. This is the #448 ceiling regime — the predictor "
+                        "sweep has no headroom on this cell, so a recipe knob "
+                        "cannot push against it. Re-train with a less-saturated "
+                        "anchor (lower lr / fewer steps / smaller LoRA) so source "
+                        "log P − base lands in [5, 12] nat gated on bystander "
+                        "resolution; see .claude/rules/marker-training-recipe.md."
                     )
 
                 cell_payload = {
@@ -1196,12 +1418,15 @@ def _bootstrap_spearman_ci(
 
 
 def _cv_r2_loco(X: np.ndarray, y: np.ndarray, classes: np.ndarray) -> float:
-    """5-fold leave-one-class-out CV held-out R² for an OLS fit.
+    """Grouped held-out R² for an OLS fit; up to 5-fold leave-one-class-out CV.
 
-    ``classes`` is a length-N integer vector of class labels (e.g. source
-    persona cid mapped to int). The fold count is min(5, n_unique_classes),
-    so this is "leave-one-class-out CV" when n_classes ≤ 5 and "5-fold
-    grouped CV" when n_classes > 5. Same shape as #502's secondary metric.
+    ``classes`` is a length-N integer vector of class labels (the #406
+    A/B/C/D source-persona class — the binding round-1 fix; NOT the
+    16-way source_cid). The fold count is ``min(5, n_unique_classes)``,
+    so this is "leave-one-class-out CV" when n_classes ≤ 5 and
+    "5-fold grouped CV" when n_classes > 5. With the 4 #406 classes
+    (A/B/C/D) the panel produces 4-fold LOCO CV. Same shape as #502's
+    secondary metric.
     """
     from sklearn.linear_model import LinearRegression
     from sklearn.model_selection import GroupKFold
@@ -1239,6 +1464,8 @@ def _build_union_panel(
     bystanders: list[str],
     predictors_payload: dict,
     instructed_panel: dict[str, str],
+    *,
+    allow_partial_panel: bool = False,
 ) -> dict:
     """Stitch Phase 0 (base prior) + Phase 1 (per-cell trained log-prob) +
     Phase 2 (predictor matrices) into one long-format table of cells with
@@ -1251,6 +1478,17 @@ def _build_union_panel(
       - ``cosine``, ``js_v1``, ``gauss_kl`` (per (source, bystander))
       - ``strength_band`` (ordinary / explicit / soft / oblique)
       - ``source_class`` (A/B/C/D — for cluster-CV folds)
+      - ``_n`` (row count)
+      - ``_missing_cells`` (list of (epoch, src, byst) tuples — empty
+        unless ``allow_partial_panel=True`` and some cells were absent).
+
+    By default (``allow_partial_panel=False``) this function FAILS LOUD if
+    ANY expected (epoch × source × bystander) cell JSON is missing — the
+    silent-skip + downstream-biased-N case is the binding round-1 fix
+    (standing rec 2). Pass ``allow_partial_panel=True`` to opt in to a
+    diagnostic partial run; the missing-cell list is then persisted to
+    ``analysis.json`` so downstream consumers cannot mistake the partial
+    panel for full coverage.
     """
     cosine_m = np.array(predictors_payload["cosine_matrix"], dtype=np.float64)
     js_v1_m = np.array(predictors_payload["js_v1_matrix"], dtype=np.float64)
@@ -1258,13 +1496,15 @@ def _build_union_panel(
     base_prior_map = predictors_payload["base_prior"]
 
     rows = []
+    missing_cells: list[tuple[int, str, str]] = []
+    expected_n = len(epochs) * len(sources) * len(bystanders)
     for ep in epochs:
         arm_ep_dir = phase1_root / "per_cell" / f"{arm}_ep{ep}"
         for i, src in enumerate(sources):
             for j, byst in enumerate(bystanders):
                 cell_path = arm_ep_dir / f"cell_{arm}_ep{ep}_{src}__{byst}.json"
                 if not cell_path.exists():
-                    logger.warning("union panel: missing %s", cell_path)
+                    missing_cells.append((ep, src, byst))
                     continue
                 cell = json.loads(cell_path.read_text())
                 s = cell["summary"]
@@ -1286,9 +1526,46 @@ def _build_union_panel(
                         "source_class": src[0],  # A/B/C/D class letter
                     }
                 )
+    if missing_cells and not allow_partial_panel:
+        # Standing rec 2 (binding round-1): fail loud so the biased-N
+        # downstream analysis cannot ship silently. The escape hatch is
+        # an explicit `--allow-partial-panel` CLI flag (see main()).
+        head = missing_cells[:5]
+        raise RuntimeError(
+            f"Phase 3 union panel: missing cell JSON(s) — expected "
+            f"{expected_n} cells, found {len(rows)}; first missing: {head!r}. "
+            "Re-run the failed Phase 1 cells or pass --allow-partial-panel "
+            "to proceed on a diagnostic partial panel (the missing-cell "
+            "list will then be persisted to analysis.json)."
+        )
     arrs: dict = {k: np.array([r[k] for r in rows]) for k in rows[0]} if rows else {}
     arrs["_n"] = len(rows)
+    arrs["_missing_cells"] = missing_cells
+    arrs["_expected_n"] = expected_n
+    # Combined predictors (plan §6.2 + §6.5 H2 + Hero C):
+    #     combined_<geom> = z(base_prior) + z(geom)
+    # Added here so EVERY caller (phase3, phase4, future resume paths)
+    # inherits the combined columns without duplicating the standardize-
+    # and-add logic. Binding round-1 fix — standing rec 4.
+    if rows:
+        _z = lambda v: (v - np.nanmean(v)) / (np.nanstd(v) + 1e-12)  # noqa: E731
+        z_base_prior = _z(arrs["base_prior"])
+        for geom_key in ("cosine", "js_v1", "gauss_kl"):
+            arrs[f"combined_{geom_key}"] = z_base_prior + _z(arrs[geom_key])
     return arrs
+
+
+# The leaderboard's ordered predictor list — used by phase3_analysis +
+# phase4_figures + downstream consumers (plan §6.2 step 1 / Hero C).
+LEADERBOARD_PKS: tuple[str, ...] = (
+    "cosine",
+    "js_v1",
+    "gauss_kl",
+    "base_prior",
+    "combined_cosine",
+    "combined_js_v1",
+    "combined_gauss_kl",
+)
 
 
 def _h1_signed_residuals(
@@ -1411,11 +1688,16 @@ def _six_regression_hierarchy(panel: dict) -> dict:
     base_p = z(panel["base_prior"])
     geom = z(panel["gauss_kl"])
     y = panel["trained_logp"]
-    # Use source_cid (mapped to int) as the CV grouping key — leave-one-
-    # source-out within the LOCO panel matches the planned 5-fold leave-
-    # one-class-out spirit when n_sources >= 5.
-    cid_to_int = {c: i for i, c in enumerate(sorted(set(panel["source_cid"].tolist())))}
-    classes = np.array([cid_to_int[c] for c in panel["source_cid"].tolist()])
+    # Use ``source_class`` (the #406 A/B/C/D class letter) as the CV
+    # grouping key — the plan §6.2 step 5 / §6.5 headline ΔCV R²
+    # hierarchy rests on 5-fold leave-one-class-out CV. The panel has 4
+    # source classes (A/B/C/D) so ``_cv_r2_loco`` produces 4-fold LOCO CV
+    # (it caps n_splits at ``min(5, n_unique_classes)``). NOTE: grouping
+    # by ``source_cid`` instead would leak class-level structure between
+    # train + test (sources of the same class share style), so this MUST
+    # group by class.  (Binding round-1 fix — blocker B.)
+    class_to_int = {c: i for i, c in enumerate(sorted(set(panel["source_class"].tolist())))}
+    classes = np.array([class_to_int[c] for c in panel["source_class"].tolist()])
 
     def r2(X_cols: list[np.ndarray]) -> float:
         X = np.stack(X_cols, axis=1)
@@ -1456,9 +1738,19 @@ def phase3_analysis(
     instructed_panel: dict[str, str],
     out_dir: Path,
     stylized_drop: list[str],
+    *,
+    allow_partial_panel: bool = False,
 ) -> dict:
     """Phase 3: §6 regression + signed-residual + sign-flip + 13-source
     robustness re-run. CPU only.
+
+    By default the union panel is REQUIRED to be complete (every
+    expected (epoch × source × bystander) cell JSON present); missing
+    cells fail loud at panel construction. Pass
+    ``allow_partial_panel=True`` to opt in to a diagnostic partial run —
+    the missing-cell list is then persisted under ``analysis.json``'s
+    ``coverage`` block so downstream consumers cannot mistake a partial
+    panel for full coverage. (Binding round-1 fix — standing rec 2.)
     """
     analysis_path = out_dir / "analysis.json"
     panel = _build_union_panel(
@@ -1470,6 +1762,7 @@ def phase3_analysis(
         bystanders,
         predictors_payload,
         instructed_panel,
+        allow_partial_panel=allow_partial_panel,
     )
     if panel.get("_n", 0) == 0:
         raise RuntimeError(
@@ -1477,9 +1770,13 @@ def phase3_analysis(
             f"{phase1_root / 'per_cell'}"
         )
 
+    # The combined predictors (z(base_prior) + z(<geom>)) are added by
+    # ``_build_union_panel`` itself — see the LEADERBOARD_PKS comment
+    # there. Phase 3 only needs to iterate over the module-level list.
+
     # §6.2 step 1 — per-predictor union-panel Spearman ρ + bootstrap CI.
     union_rhos = {}
-    for pk in ("cosine", "js_v1", "gauss_kl", "base_prior"):
+    for pk in LEADERBOARD_PKS:
         rho = _spearman_rho(panel[pk], panel["trained_logp"])
         rho_mean, rho_lo, rho_hi = _bootstrap_spearman_ci(panel[pk], panel["trained_logp"])
         # Ordinary-only and instructed-only subset ρ for separated reads.
@@ -1502,7 +1799,7 @@ def phase3_analysis(
 
     # §6.2 step 2 — per-bystander aggregate ρ (n=26).
     per_byst_rhos = {}
-    for pk in ("cosine", "js_v1", "gauss_kl", "base_prior"):
+    for pk in LEADERBOARD_PKS:
         per_byst_x = []
         per_byst_y = []
         for b in bystanders:
@@ -1523,11 +1820,17 @@ def phase3_analysis(
             "bootstrap_mean": rho_mean,
         }
 
-    # §6.2 step 3 — single-predictor CV R² (leave-one-source-class out).
-    cid_to_int = {c: i for i, c in enumerate(sorted(set(panel["source_cid"].tolist())))}
-    classes = np.array([cid_to_int[c] for c in panel["source_cid"].tolist()])
+    # §6.2 step 3 — single-predictor CV R² (leave-one-source-CLASS out:
+    # A/B/C/D = the #406 source-persona class letter, NOT individual
+    # source_cid). Binding round-1 fix — blocker B. ``_cv_r2_loco`` caps
+    # n_splits at min(5, n_unique_classes), so with 4 classes the result
+    # is 4-fold LOCO CV (the plan §6.2 step 3 literal "5-fold" reconciles
+    # to 4-fold here because the panel has 4 classes — the correct
+    # semantic is leave-one-class-out, not "exactly 5 folds").
+    class_to_int = {c: i for i, c in enumerate(sorted(set(panel["source_class"].tolist())))}
+    classes = np.array([class_to_int[c] for c in panel["source_class"].tolist()])
     cv_r2_single = {}
-    for pk in ("cosine", "js_v1", "gauss_kl", "base_prior"):
+    for pk in LEADERBOARD_PKS:
         cv_r2_single[pk] = _cv_r2_loco(panel[pk], panel["trained_logp"], classes)
 
     # §6.2 step 5+6 — 6-regression hierarchy + 2 ΔCV R² uplifts.
@@ -1540,7 +1843,7 @@ def phase3_analysis(
 
     # §6.4 — sign-flip + permutation per predictor.
     sign_flip = {}
-    for pk in ("cosine", "js_v1", "gauss_kl", "base_prior"):
+    for pk in LEADERBOARD_PKS:
         sign_flip[pk] = _signflip_permutation_test(panel, pk)
 
     # §6.5 — non-stylized 13-source robustness re-run.
@@ -1553,17 +1856,27 @@ def phase3_analysis(
     if panel_nonstyl["_n"] > 0:
         nonstyl_rho = {
             pk: _spearman_rho(panel_nonstyl[pk], panel_nonstyl["trained_logp"])
-            for pk in ("cosine", "js_v1", "gauss_kl", "base_prior")
+            for pk in LEADERBOARD_PKS
         }
         nonstyl_hierarchy = _six_regression_hierarchy(panel_nonstyl)
     else:
         nonstyl_rho = {}
         nonstyl_hierarchy = {}
 
+    # Coverage block (binding round-1 — standing rec 2): record the
+    # planned vs actual N + the missing-cell list so a partial panel
+    # cannot silently masquerade as full coverage downstream.
+    coverage_block = {
+        "expected_cells": int(panel.get("_expected_n", panel["_n"])),
+        "found_cells": int(panel["_n"]),
+        "missing_cells": [list(t) for t in panel.get("_missing_cells", [])],
+        "allow_partial_panel_flag": bool(allow_partial_panel),
+    }
     analysis = {
         "schema_version": "issue532_v1",
         "phase": "phase3_analysis",
         "metadata": _reproducibility_metadata({"phase": 3, "n_rows": panel["_n"]}),
+        "coverage": coverage_block,
         "union_panel_rho": union_rhos,
         "per_bystander_rho": per_byst_rhos,
         "cv_r2_single_predictor": cv_r2_single,
@@ -1679,11 +1992,21 @@ def phase4_figures(
     written.append(fp)
 
     # ── Hero C: predictor-leaderboard bar chart ───────────────────────────
-    fig, ax = plt.subplots(figsize=(6, 4))
-    pks = ["cosine", "js_v1", "gauss_kl", "base_prior"]
-    rhos_union = [analysis_payload["union_panel_rho"][p]["rho_union"] for p in pks]
-    rhos_ord = [analysis_payload["union_panel_rho"][p]["rho_ordinary_only"] for p in pks]
-    rhos_instr = [analysis_payload["union_panel_rho"][p]["rho_instructed_only"] for p in pks]
+    # Plan §6.2 + Hero C list: {cosine, JS-v1, GKL@L22, base-prior,
+    # combined}. The §6.5 H2 test (combined uplift) is read from the
+    # combined-* bars here. Binding round-1 fix — standing rec 4.
+    fig, ax = plt.subplots(figsize=(8, 4.2))
+    pks = list(LEADERBOARD_PKS)
+
+    # Some panels may not carry every predictor (e.g. very partial smoke
+    # panels). Guard against missing keys with NaN.
+    def _rho(p, kind):
+        block = analysis_payload["union_panel_rho"].get(p)
+        return float("nan") if block is None else block[kind]
+
+    rhos_union = [_rho(p, "rho_union") for p in pks]
+    rhos_ord = [_rho(p, "rho_ordinary_only") for p in pks]
+    rhos_instr = [_rho(p, "rho_instructed_only") for p in pks]
     x = np.arange(len(pks))
     w = 0.27
     ax.bar(x - w, rhos_union, width=w, label="union", color="C0")
@@ -1691,15 +2014,56 @@ def phase4_figures(
     ax.bar(x + w, rhos_instr, width=w, label="instructed-only", color="C3")
     ax.axhline(0, c="black", lw=0.6)
     ax.set_xticks(x)
-    ax.set_xticklabels(pks, rotation=15)
+    ax.set_xticklabels(pks, rotation=20, ha="right")
     ax.set_ylabel("Spearman ρ (predictor vs trained log P(※))")
-    ax.set_title("Hero C: predictor leaderboard")
+    ax.set_title("Hero C: predictor leaderboard (incl. combined = z(base) + z(geom))")
     ax.legend(fontsize=8)
     fig.tight_layout()
     fp = figures_dir / "heroC_predictor_leaderboard.png"
     fig.savefig(fp, dpi=150)
     plt.close(fig)
     written.append(fp)
+
+    # ── Hero C-overlay: combined-predictor scatter (one per geometric arm) ─
+    # The combined predictor's behavioral fit is most legible as a
+    # scatter against the trained log-prob, with ordinary + instructed
+    # stratified the same way Hero A is. Generates one overlay per
+    # geometric predictor. Binding round-1 fix — standing rec 4.
+    for geom_key in ("cosine", "js_v1", "gauss_kl"):
+        combined_key = f"combined_{geom_key}"
+        if combined_key not in panel:
+            continue
+        fig, ax = plt.subplots(figsize=(5.5, 4.5))
+        is_ord = panel["is_instructed"] == 0
+        is_instr = panel["is_instructed"] == 1
+        ax.scatter(
+            panel[combined_key][is_ord],
+            panel["trained_logp"][is_ord],
+            c="grey",
+            alpha=0.4,
+            s=18,
+            label="ordinary",
+        )
+        for band, color in (("explicit", "C3"), ("soft", "C1"), ("oblique", "C0")):
+            bmask = is_instr & (panel["strength_band"] == band)
+            if bmask.any():
+                ax.scatter(
+                    panel[combined_key][bmask],
+                    panel["trained_logp"][bmask],
+                    c=color,
+                    s=28,
+                    alpha=0.8,
+                    label=f"instructed {band}",
+                )
+        ax.set_xlabel(f"z(base_prior) + z({geom_key})")
+        ax.set_ylabel("trained log P(※) at post-response slot")
+        ax.set_title(f"Hero C-overlay: {combined_key} vs trained log P(※)")
+        ax.legend(fontsize=8)
+        fig.tight_layout()
+        fp = figures_dir / f"heroC_overlay_{combined_key}.png"
+        fig.savefig(fp, dpi=150)
+        plt.close(fig)
+        written.append(fp)
 
     # ── Per-band residual boxplot (exploratory) ───────────────────────────
     for pk in ("cosine", "js_v1", "gauss_kl"):
@@ -1876,6 +2240,31 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  # phase dispatche
             "Used for end-to-end smoke on a GPU-less local VM."
         ),
     )
+    parser.add_argument(
+        "--allow-partial-panel",
+        action="store_true",
+        help=(
+            "Allow Phase 3 to proceed even when some Phase 1 per-cell JSONs are "
+            "missing. WITHOUT this flag a missing cell is a fail-loud RuntimeError "
+            "(binding round-1 fix — standing rec 2). When set, the missing-cell "
+            "list is persisted under analysis.json's 'coverage' block so "
+            "downstream consumers cannot mistake a partial panel for full coverage."
+        ),
+    )
+    parser.add_argument(
+        "--smoke-cpu-real",
+        action="store_true",
+        help=(
+            "CPU-only smoke that runs the REAL Phase 2 code path (HF activation "
+            "hooks at L21/L22, cosine, JS-v1 softmax, Gaussian-KL PCA-16) on a "
+            "tiny slice — exercises every line of the predictor extraction "
+            "without requiring a GPU. Pairs with --skip-vllm (Phase 0+1 still "
+            "synthetic) so the smoke covers prompt-builder + byte-construction "
+            "+ REAL Phase 2 + Phase 3 + Phase 4. Slow (~5-10 min CPU forward "
+            "for Qwen-2.5-7B at 5 probes × 4 bystanders). Binding round-1 "
+            "fix — standing rec 1."
+        ),
+    )
     args = parser.parse_args(argv)
 
     # ── Resolve sources + bystanders ─────────────────────────────────────
@@ -2030,11 +2419,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  # phase dispatche
     # ── Phase 2 ──────────────────────────────────────────────────────────
     if args.phase in ("all", "2+3+4"):
         print("[phase=phase2_predictors]")
-        if args.skip_vllm:
+        if args.skip_vllm and not args.smoke_cpu_real:
+            # Pure CPU smoke: synthetic predictor matrices.
             predictors_payload = _synthesize_stub_phase2(
                 sources, bystanders, q_test, base_prior_payload, args.out_dir
             )
         else:
+            # Real Phase 2 path — covers BOTH the GPU full run AND the
+            # CPU-real smoke (`--smoke-cpu-real`). The smoke variant
+            # exercises every line of the predictor extraction (HF hooks
+            # at L21/L22, cosine, JS-v1 softmax, Gaussian-KL PCA-16) on a
+            # tiny slice without requiring a GPU. Binding round-1 fix —
+            # standing rec 1.
             predictors_payload = phase2_predictors(
                 sources,
                 bystanders,
@@ -2065,6 +2461,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  # phase dispatche
             instructed_panel,
             args.out_dir,
             stylized_drop=args.stylized_drop,
+            allow_partial_panel=args.allow_partial_panel,
         )
     else:
         analysis_path = args.out_dir / "analysis.json"
@@ -2083,6 +2480,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  # phase dispatche
         bystanders,
         predictors_payload,
         instructed_panel,
+        allow_partial_panel=args.allow_partial_panel,
     )
     figures = phase4_figures(analysis_payload, panel, args.out_dir, args.figures_dir)
 
