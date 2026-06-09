@@ -487,6 +487,36 @@ in Lens 12. Lens number kept stable so downstream tooling that reads
   when THIS task produced every artifact it stands on (most
   fresh-train experiments — no reused artifact, no provenance bullet
   expected).
+- **Artifact-path resolution spot-check (semantic).** When the body
+  names SPECIFIC artifact paths under `**Artifacts:**` or in `## TL;DR`
+  prose — subfolder names (`adapters/issue_<N>/<cell>/`), intermediate
+  checkpoint or fraction directories (`ckpt_frac0.25/`,
+  `checkpoint-<step>/`), specific raw-completion files
+  (`<cond>_seed<S>.json`), or a file-count claim ("520 files at
+  `<path>`") — spot-check that the listing on the Hub actually
+  contains those paths. Use the Python Hub API
+  (`huggingface_hub.list_repo_files(<repo>, revision=<sha-or-tag>,
+  repo_type=...)`) — NEVER the `hf` CLI, which has no `api` subcommand
+  and false-reports "0 files" (see `.claude/rules/upload-policy.md`).
+  You don't need to verify every file in a large bucket; check the
+  load-bearing path-specific claims — the ones a downstream
+  follow-up-proposer or planner would mine as a reuse premise. **FAIL
+  when** the body asserts a specific subfolder / checkpoint /
+  intermediate fraction exists at a Hub path that the listing does NOT
+  contain. Fix list to the analyzer: *"`<path>` claimed in
+  `**Artifacts:**` does not resolve on `huggingface_hub.list_repo_files`
+  for `<repo>@<revision>`; what the Hub actually carries is
+  `<observed>`. Either correct the artifact bullet to match the
+  listing, or surface the missing piece as a methodology-correction
+  beat inside the relevant `#### <finding>` H4 (per analyzer.md §
+  `**Artifacts:**` grounding rule)."* **PASS vacuously** when the
+  artifact bullets stay at the repo level
+  (`superkaiba1/explore-persona-space/...`) with no path-specific
+  subfolder / checkpoint / fraction names that need resolution.
+  Closing the door on the #530→#534 false-premise propagation chain
+  (2026-06-09) is the point of this lens: an artifact-existence
+  claim a downstream task can carry forward should be grounded in a
+  real listing, not in plan intent.
 
 ### Lens 6 — Voice
 
