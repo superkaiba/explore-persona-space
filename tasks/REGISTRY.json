@@ -3036,8 +3036,8 @@
       "goal": "Retest whether base-model cosine/JS distance predicts on-policy marker transfer across the ICL\u2194SP union panel after rebuilding the ICL contexts to genuinely induce their personas (full in-voice example answers, validated by a hard behavioral manipulation-check gate) \u2014 testing whether #489's within-ICL no-dynamic-range, the ICL-cleaner-than-SP reversal, and the cos-vs-JS tie were artifacts of weak ICL contexts and a floor-saturated DV.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/525",
-      "status": "proposed",
+      "path": "tasks/archived/525",
+      "status": "archived",
       "title": "Rebuild ICL contexts as Claude-Haiku-generated genuinely-in-voice blocks behind a hard behavioral manipulation-check gate, then retest cosine/JS \u2192 marker-transfer across the ICL\u2194SP union panel"
     },
     "53": {
