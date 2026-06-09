@@ -140,6 +140,18 @@ def main(argv: list[str] | None = None) -> int:
         stream=sys.stdout,
     )
 
+    # Carry-over data dependencies from #472 are gitignored; pull at the
+    # pinned revision before dispatching cells. Idempotent. We do this
+    # ONCE in the parent sweep process (NOT in each per-cell subprocess)
+    # to avoid N parallel HF downloads racing on the same local files.
+    if not args.dry_run:
+        from explore_persona_space.experiments.contrastive_neg_geometry_530.data_deps import (
+            prepare_data_dependencies,
+        )
+
+        log.info("[phase=sweep_prepare_data] auto-downloading #472 carry-over artifacts")
+        prepare_data_dependencies()
+
     cells = _parse_csv_str(args.cells)
     seeds = _parse_csv_int(args.seeds)
     n_gpus = args.n_gpus

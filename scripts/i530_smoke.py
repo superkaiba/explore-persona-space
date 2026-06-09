@@ -271,6 +271,16 @@ def main(argv: list[str] | None = None) -> int:
         args.slab_root,
     )
 
+    # Carry-over data dependencies from #472 (persona_bank, centroids,
+    # on-policy R) are gitignored — pull from HF at the pinned revision
+    # before dispatching the cell. Idempotent: skips files already on disk.
+    from explore_persona_space.experiments.contrastive_neg_geometry_530.data_deps import (
+        prepare_data_dependencies,
+    )
+
+    log.info("[phase=smoke_prepare_data] auto-downloading #472 carry-over artifacts")
+    prepare_data_dependencies()
+
     # Architectural parity: smoke IS sweep with --only-cell. Same dispatcher,
     # same subprocess shape. No in-process train_one_cell sidecar.
     cmd = [
