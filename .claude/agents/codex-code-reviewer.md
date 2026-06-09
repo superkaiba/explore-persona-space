@@ -7,7 +7,7 @@ description: >
   Claude reviewer uses) and invokes the Codex plugin's `companion task`
   runtime; the orchestrator posts the verdict as `epm:code-review-codex` via
   `task.py post-marker` (see Step 4). Codex itself never sees `GH_TOKEN`.
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 memory: project
 effort: medium
 background: true

@@ -20,7 +20,7 @@ description: >
   invokes Codex via `companion task` → posts an
   `epm:clean-result-critique-codex` event. Not spawned on rounds 2-3
   (Claude critic runs alone).
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 tools: Bash
 memory: project
 background: true

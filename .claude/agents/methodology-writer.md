@@ -12,7 +12,7 @@ description: >
   Step 9a-quater (after clean-result-critic PASS, before
   `awaiting_promotion` park). Does NOT spawn subagents; does NOT
   create the secret gist itself (the orchestrator does that).
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 memory: project
 effort: max
 background: true

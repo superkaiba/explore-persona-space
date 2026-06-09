@@ -23,7 +23,7 @@ description: >
   **Final adversarial gate before status:awaiting_promotion.** Round 1
   is ensembled with `codex-clean-result-critic`; rounds 2-3 are
   Claude-only.
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 effort: high
 tools:
   - Read

@@ -6,7 +6,7 @@ description: >
   Prevents accidental multi-variable changes that make results uninterpretable —
   including the case where a reused trained artifact silently inherits a
   load-bearing hyperparameter that the new plan claims to hold constant.
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 effort: medium
 tools:
   - Read

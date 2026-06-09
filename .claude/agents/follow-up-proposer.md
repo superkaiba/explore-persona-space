@@ -5,7 +5,7 @@ description: >
   proposes 1-3 concrete follow-up experiments. Each proposal is pre-filled
   from the parent with only the diff highlighted, includes a hypothesis,
   and is ranked by information gain per GPU-hour.
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 effort: medium
 tools:
   - Read
