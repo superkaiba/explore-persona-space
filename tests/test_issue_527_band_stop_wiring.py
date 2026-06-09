@@ -200,3 +200,148 @@ def test_recorder_accepts_legacy_marker_band_stop_prefix():
         assert recorder.fired is True
         assert recorder.fired_step == 15
         assert recorder.final_delta_nats == pytest.approx(7.0, abs=1e-6)
+
+
+def test_real_callback_handler_dispatch_order(callback_factory):
+    """Pin the round-3 fix: the REAL HF CallbackHandler must dispatch the
+    MarkerBandStopCallback's on_log BEFORE the recorder's on_log, so the
+    recorder sees the marker keys the callback merges into the trainer's
+    logs dict.
+
+    This is the test the round-2 verdict explicitly asked for — it exercises
+    the real ``transformers.trainer_callback.CallbackHandler`` dispatch path
+    that the round-2 unit tests bypassed by calling ``recorder.on_log(...)``
+    directly with pre-populated logs. Without the round-3 surgical fix in
+    ``train/sft.py::_maybe_attach_marker_band_stop`` (``callback_handler.
+    callbacks.insert(0, callback)`` instead of ``trainer.add_callback(...)``),
+    the recorder runs FIRST and sees the bare ``{loss, learning_rate,
+    grad_norm}`` dict — its ``fired`` stays ``False`` for every training
+    step and the smoke gate verdict is a deterministic FALSE-NEGATIVE.
+    Round-2 reviewer reproduced the regression empirically; this test pins
+    that regression so a future refactor cannot silently re-break it.
+    """
+    import tempfile
+    from pathlib import Path
+
+    from transformers.trainer_callback import (
+        CallbackHandler,
+        DefaultFlowCallback,
+        ProgressCallback,
+    )
+
+    from scripts.run_issue527_train import _make_band_stop_recorder
+
+    # Build the MarkerBandStopCallback with a tiny synthetic probe and a band
+    # whose [2, 12] range will cover delta_mean = 7.0 (so on_step_end fires).
+    mb_callback = callback_factory(low_nats=2.0, high_nats=12.0, min_steps=0)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        recorder = _make_band_stop_recorder(output_dir=Path(tmp), low_nats=2.0, high_nats=12.0)
+
+        # Mirror the EXACT registration order that train_lora produces:
+        # 1. SFTTrainer auto-registers DefaultFlowCallback + ProgressCallback.
+        # 2. Caller-supplied callbacks (recorder) are appended next via the
+        #    constructor's ``callbacks=[recorder]`` arg.
+        # 3. THEN ``_maybe_attach_marker_band_stop`` registers the
+        #    MarkerBandStopCallback — appended LAST under HF's default
+        #    ``trainer.add_callback``. This is the broken order the recorder
+        #    sees marker keys merged into ``logs`` AFTER it already returned.
+        handler = CallbackHandler(
+            callbacks=[DefaultFlowCallback(), ProgressCallback(), recorder],
+            model=None,
+            processing_class=None,
+            optimizer=None,
+            lr_scheduler=None,
+        )
+        # Round-3 fix application: insert at index 0 instead of append.
+        # This is what _maybe_attach_marker_band_stop now does in train/sft.py.
+        handler.callbacks.insert(0, mb_callback)
+
+        # Sanity-check the dispatch order: MarkerBandStopCallback FIRST,
+        # recorder later. If a future refactor breaks this, the test below
+        # will FAIL on the dispatch-order assertion.
+        callback_classes = [c.__class__.__name__ for c in handler.callbacks]
+        assert callback_classes[0] == "MarkerBandStopCallback", (
+            f"MarkerBandStopCallback is NOT at dispatch index 0; "
+            f"callback order = {callback_classes}"
+        )
+        # The recorder must appear AFTER MarkerBandStopCallback so it
+        # observes the marker keys merged by the band-stop callback's
+        # on_log (otherwise the merge happens after the recorder runs).
+        recorder_idx = next(i for i, c in enumerate(handler.callbacks) if c is recorder)
+        mb_idx = next(i for i, c in enumerate(handler.callbacks) if c is mb_callback)
+        assert mb_idx < recorder_idx, (
+            f"MarkerBandStopCallback dispatch index ({mb_idx}) is NOT before "
+            f"recorder index ({recorder_idx}); order = {callback_classes}"
+        )
+
+        # Fake-fire the band-stop event by running on_step_end with stubbed
+        # logp reads that produce delta_mean = 7.0 (inside [2, 12]).
+        # ``is_world_process_zero=False`` short-circuits ProgressCallback.on_log
+        # (it only paints a tqdm bar on the main process — irrelevant for the
+        # dispatch-order assertion under test).
+        state = SimpleNamespace(
+            global_step=10,
+            max_steps=100,
+            epoch=0.0,
+            log_history=[],
+            is_world_process_zero=False,
+            is_local_process_zero=False,
+        )
+        control = SimpleNamespace(should_training_stop=False, should_save=False, should_log=False)
+        with (
+            patch.object(
+                mb_callback,
+                "_read_logp_with_base",
+                return_value=torch.tensor([-20.0, -20.0]),
+            ),
+            patch.object(
+                mb_callback,
+                "_read_logp_trained",
+                return_value=torch.tensor([-13.0, -13.0]),
+            ),
+        ):
+            mb_callback.on_step_end(args=None, state=state, control=control, model=object())
+        assert mb_callback._stopped is True, (
+            "Test setup error: on_step_end did NOT fire the band-stop "
+            "(delta should be 7.0, inside band [2, 12])."
+        )
+
+        # Recorder is in the pre-dispatch state (never saw anything).
+        assert recorder.fired is False
+        assert recorder._last_delta is None
+        assert recorder.fired_step is None
+
+        # NOW dispatch on_log through the REAL CallbackHandler with only the
+        # trainer's built-in scalars in the logs dict. The MarkerBandStopCallback
+        # (at index 0) runs FIRST, merges its source_delta + band_stop_step
+        # into the dict, then the recorder (later in the list) runs and reads
+        # those merged keys. Pre-fix order: recorder ran first and saw nothing.
+        logs = {"loss": 0.5, "learning_rate": 5e-6, "grad_norm": 0.42}
+        handler.on_log(args=None, state=state, control=control, logs=logs)
+
+        # Assert the marker keys were merged into logs (callback ran).
+        assert "marker/source_delta_nats" in logs, (
+            f"MarkerBandStopCallback.on_log did NOT merge its keys into the "
+            f"shared logs dict; logs keys = {sorted(logs.keys())}"
+        )
+        assert logs["marker/source_delta_nats"] == pytest.approx(7.0, abs=1e-6)
+        assert "marker/band_stop_step" in logs
+        assert logs["marker/band_stop_step"] == 10
+
+        # AND the recorder picked them up (dispatch order is correct).
+        # Pre-fix, the recorder ran BEFORE the merge and these assertions
+        # would FAIL — that's the round-2 regression this test pins.
+        assert recorder._last_delta == pytest.approx(7.0, abs=1e-6), (
+            f"BandStopRecorder did NOT observe source_delta_nats via the "
+            f"real CallbackHandler dispatch path; recorder._last_delta = "
+            f"{recorder._last_delta}. This is the round-2 dispatch-order "
+            f"regression — the recorder ran BEFORE MarkerBandStopCallback "
+            f"merged its keys into the shared logs dict."
+        )
+        assert recorder.fired is True, (
+            "BandStopRecorder did NOT see the band-stop firing event "
+            "through the real CallbackHandler dispatch path."
+        )
+        assert recorder.fired_step == 10
+        assert recorder.final_delta_nats == pytest.approx(7.0, abs=1e-6)

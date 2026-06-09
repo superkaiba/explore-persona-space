@@ -859,10 +859,24 @@ def _maybe_attach_marker_band_stop(
         eval_every_steps=cfg.marker_band_eval_every_steps,
         min_steps=cfg.marker_band_min_steps,
     )
-    trainer.add_callback(callback)
+    # Pin dispatch order: MarkerBandStopCallback MUST run BEFORE any caller-
+    # supplied sibling that subscribes to ``on_log`` (e.g. issue #527's
+    # ``BandStopRecorder`` that writes ``marker_band_stop_result.json``).
+    # ``CallbackHandler.call_event`` iterates ``self.callbacks`` in registration
+    # order; ``trainer.add_callback`` appends to the END, so a caller that
+    # passed ``callbacks=[recorder]`` to the SFTTrainer constructor would see
+    # its recorder run BEFORE the band-stop callback merged the marker keys
+    # into the trainer's ``logs`` dict — a deterministic FALSE-NEGATIVE for
+    # any sibling that reads ``logs`` in its own ``on_log``. Inserting at
+    # index 0 guarantees the marker keys land in ``logs`` before any sibling
+    # ``on_log`` runs, regardless of how many callbacks the caller pre-
+    # registered or where they sit in the list. Round-3 surgical fix for
+    # issue #527 Critical-1 (code-review v2: dispatch-order bug).
+    trainer.callback_handler.callbacks.insert(0, callback)
     logger.info(
-        "MarkerBandStopCallback attached: %d source-probe rows, marker_ids=%s, "
-        "band=[%.2f, %.2f] nat, eval_every=%d steps, min_steps=%d",
+        "MarkerBandStopCallback attached at dispatch index 0 (runs FIRST): "
+        "%d source-probe rows, marker_ids=%s, band=[%.2f, %.2f] nat, "
+        "eval_every=%d steps, min_steps=%d",
         n_rows,
         marker_ids,
         cfg.marker_band_low_nats,
