@@ -4,7 +4,7 @@ title: A properly band-stopped marker implant still trips every confound gate, s
 kind: experiment
 tags: []
 created_at: '2026-06-09T05:06:51Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 520
 goal: Test whether marker-implant fine-tune edits superpose (per-context joint shift
   equals the sum of the singleton A-only and B-only shifts at every held-out persona)

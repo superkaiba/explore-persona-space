@@ -3050,7 +3050,7 @@
     },
     "527": {
       "goal": "Test whether marker-implant fine-tune edits superpose (per-context joint shift equals the sum of the singleton A-only and B-only shifts at every held-out persona) using a properly-implanted anchor (source log P(marker) minus base in the [5,12] nat band-stop window, emission gate cleared) and orthogonal source pairs (base-model L20 centered cosine near 0), so the additivity cosine is a diagnostic superposition test rather than a mechanical artifact of a floored implant and parallel singletons.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/527",
       "status": "interpreting",
