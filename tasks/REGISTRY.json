@@ -1617,8 +1617,8 @@
     "354": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/354",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/354",
+      "status": "completed",
       "title": "EOS-in-loss was the confound: masking the recipient's EOS from cross-entropy revives within-marker chunk-binding from 1.3% to 23.5% (MODERATE confidence)"
     },
     "355": {
