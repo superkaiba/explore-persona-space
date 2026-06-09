@@ -180,7 +180,7 @@ Three reads:
 One caveat bounds the instructed-strip read: wherever the trained model emits, its slot log-prob saturates near 0, and the base model read at the *trained model's* stop-position sits far below its own-response prior (−19.7 vs −0.09 under the strongest explicit prompt — the base model wants to keep talking at the trained model's stop-points). Instructed-strip Δlog P therefore mixes implant push with a response-ending position shift, so I read its cosine ρ = +0.74 as suggestive only; the ordinary panel (matched slot kinds, trained side unsaturated at −7 to −13 nats) is the clean read.
 
 <details>
-<summary>Worked cells across the regimes (cell means over 50 probes; per-q four-float reads in the per-cell JSONs)</summary>
+<summary>Worked cells across the regimes (cherry-picked for illustration; cell means over 50 probes; per-q four-float reads in the per-cell JSONs)</summary>
 
 | Cell (source → bystander) | trained log P(※) | base log P(※), matched slot | Δlog P | emission rate |
 |---|---|---|---|---|
