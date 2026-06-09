@@ -647,7 +647,15 @@ INDIRECT_REGISTER_FIX_SYSTEM = (
 
 
 def _request_indirect_rewrite(question: str, retry_reason: str | None = None) -> str:
-    """One Sonnet call asking for a third-person indirect rewrite."""
+    """One Sonnet call asking for a third-person indirect rewrite.
+
+    Returns the first non-empty line of the response, stripped. If Claude
+    returns an empty completion (round-5d-observed: occasional empty responses
+    after a 529-overload cleared on the same prompt), returns "" — the
+    `_validate_and_fix_indirect_rewrite` loop's Claude validator will reject
+    the empty string and trigger the existing 3-attempt retry path, so the
+    overall budget per probe is unchanged.
+    """
     suffix = ""
     if retry_reason:
         suffix = (
@@ -655,16 +663,13 @@ def _request_indirect_rewrite(question: str, retry_reason: str | None = None) ->
             "Try again, strictly in the third person."
         )
     user_prompt = f"Original question:\n{question}\n\nProduce the indirect rewrite.{suffix}"
-    return (
-        _call_claude_once(
-            user_prompt=user_prompt,
-            max_tokens=512,
-            system=INDIRECT_REGISTER_FIX_SYSTEM,
-        )
-        .strip()
-        .splitlines()[0]
-        .strip()
-    )
+    raw = _call_claude_once(
+        user_prompt=user_prompt,
+        max_tokens=512,
+        system=INDIRECT_REGISTER_FIX_SYSTEM,
+    ).strip()
+    lines = raw.splitlines()
+    return lines[0].strip() if lines else ""
 
 
 def _validate_and_fix_indirect_rewrite(
