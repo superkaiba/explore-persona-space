@@ -1020,43 +1020,35 @@ def test_migrate_body_idempotency(fake_repo):
     assert _git_log_count(repo) == n_commits_after_first
 
 
-def test_migrate_body_v4_to_new_strips_details_wrappers(fake_repo):
-    """v4-legacy bodies that fail post-patch (e.g. missing TL;DR labels) are
-    LEFT UNCHANGED (per plan §3 Phase E step 5), but the shape conversion is
-    visible in dry-run output via the action log.
+def test_migrate_body_v4_legacy_routes_to_needs_user(fake_repo):
+    """V4_LEGACY bodies are classified but NOT converted — `migrate_one`
+    routes them straight to `needs_user` with a retirement reason. The old
+    `convert_v4_to_target` chain targeted the retired four-H2 shape (its
+    output always hard-FAILed the verifier's stray-H2 check under the
+    2-content-section spec), so the converter was removed (2026-06-09).
     """
     _, tw = fake_repo
-    from explore_persona_space.task_workflow_migrate import (
-        BodyClass,
-        convert_v4_to_target,
-        migrate_one,
-    )
+    import explore_persona_space.task_workflow_migrate as migrate_mod
+    from explore_persona_space.task_workflow_migrate import BodyClass, migrate_one
 
     new_id = _make_task_at_awaiting(tw, title="v4 fixture (LOW confidence)", body=V4_LEGACY_BODY)
 
-    # Drive the conversion through migrate_one in dry-run mode.
     result = migrate_one(new_id, apply=False)
     assert result.classification == BodyClass.V4_LEGACY
-    # The body almost certainly still fails after mechanical conversion
-    # (TL;DR labels are missing, no Figure image). Plan §3 Phase E step 5 says
-    # leave the body alone in that case.
     assert result.needs_user
-
-    # But the standalone converter SHOULD have done its mechanical work —
-    # exercise it directly to confirm the strip + inject logic.
-    converted, actions = convert_v4_to_target(V4_LEGACY_BODY, title="v4 fixture (LOW confidence)")
-    assert "<details open>" not in converted
-    assert "## Figure" in converted
-    assert "## Reproducibility" in converted
-    assert "# v4 fixture (LOW confidence)" in converted
-    # Action log surfaces every patch step.
-    assert any("toggle wrapper" in a for a in actions)
-    assert any("H1" in a or "title" in a for a in actions)
-    assert any("Reproducibility" in a for a in actions)
+    assert "auto-conversion was retired" in result.needs_user_reason
+    assert "SPEC.md" in result.needs_user_reason
+    # No conversion is attempted: the action log is empty.
+    assert result.actions == []
+    # The retired converter and its helpers are gone from the module.
+    assert not hasattr(migrate_mod, "convert_v4_to_target")
+    assert not hasattr(migrate_mod, "strip_v4_details_wrappers")
 
 
-def test_migrate_body_v4_legacy_unchanged_when_post_patch_still_fails(fake_repo):
-    """Per plan: if mechanical patch insufficient, body is reverted to original."""
+def test_migrate_body_v4_legacy_unchanged_on_apply(fake_repo):
+    """`--apply` on a V4_LEGACY body is a guaranteed no-op: needs_user,
+    body unchanged on disk, no commits (converter retired 2026-06-09).
+    """
     repo, tw = fake_repo
     from explore_persona_space.task_workflow_migrate import migrate_one
 
@@ -1068,7 +1060,9 @@ def test_migrate_body_v4_legacy_unchanged_when_post_patch_still_fails(fake_repo)
 
     result = migrate_one(new_id, apply=True)
     assert result.needs_user
+    # verify_after mirrors verify_before — the body was never touched.
     assert result.verify_after == "FAIL"
+    assert result.verify_before == "FAIL"
     # Body is unchanged on disk, no extra commits.
     assert body_path.read_text() == before_text
     assert _git_log_count(repo) == n_commits_before

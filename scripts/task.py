@@ -697,7 +697,9 @@ def cmd_migrate_body(args: argparse.Namespace) -> None:
     Three modes:
       --report                  classification table over all awaiting_promotion bodies
       --dry-run <N> | --all     show proposed patches (no writes)
-      --apply <N>  | --all      write patches (snapshots original-body.md on v4-legacy)
+      --apply <N>  | --all      write patches (conformant-but-failing bodies only;
+                                v4-legacy bodies report needs-user — converter
+                                retired 2026-06-09, migrate manually per SPEC.md)
     """
     # Lazy import to keep `task.py --help` fast and to avoid the migrate
     # module loading verify_task_body on every CLI invocation.
@@ -1195,11 +1197,12 @@ def main() -> None:
         description=(
             "Migrate awaiting_promotion task bodies to the markdown clean-result spec "
             "(verify_task_body.py 13-check). Conformant-but-failing bodies are patched "
-            "in place (Repro subgroups, cherry-picked label, qualitative-data link); "
+            "in place (Repro subgroups, cherry-picked label, qualitative-data link). "
             "v4-legacy bodies (## TL;DR / ## Summary / ## Details / ## Source issues) "
-            "are converted to the four-H2 target shape (TL;DR / Figure / Details / "
-            "Reproducibility). HTML bodies carrying <!-- legacy-sagan-card --> are "
-            "grandfathered and skipped."
+            "are classified but NOT converted — auto-conversion was retired 2026-06-09 "
+            "(it targeted the retired four-H2 shape); they report needs-user, migrate "
+            "manually per .claude/skills/clean-results/SPEC.md. HTML bodies carrying "
+            "<!-- legacy-sagan-card --> are grandfathered and skipped."
         ),
     )
     mode = p.add_mutually_exclusive_group()
@@ -1235,7 +1238,10 @@ def main() -> None:
         "--shape",
         choices=["v4-to-new", "conformant-failing"],
         default=None,
-        help="force a specific patch chain (overrides auto-classification)",
+        help=(
+            "force a specific patch chain (overrides auto-classification); "
+            "'v4-to-new' now always reports needs-user (converter retired)"
+        ),
     )
     p.add_argument(
         "--verbose",
