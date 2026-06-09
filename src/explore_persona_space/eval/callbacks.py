@@ -24,9 +24,9 @@ import os
 import re
 from typing import ClassVar
 
+import wandb
 from transformers import TrainerCallback
 
-import wandb
 from explore_persona_space.personas import MARKER_TOKEN
 
 logger = logging.getLogger(__name__)
@@ -745,6 +745,16 @@ class MarkerBandStopCallback(TrainerCallback):
         # whole phase so the run completes its planned schedule without a
         # silent never-fire.
         self._disabled_too_short = False
+        # Per-step trajectory scratch surfaced through ``on_log`` so sibling
+        # ``TrainerCallback.on_log`` subscribers can see the source-delta
+        # + band-stop event (round-1 bug: wandb.log alone was invisible to
+        # ``state.log_history`` + sibling callbacks).
+        self._last_trained_logp_mean: float | None = None
+        self._last_delta_mean: float | None = None
+        self._last_step: int | None = None
+        self._last_lr: float | None = None
+        self._fired_step: int | None = None
+        self._fired_delta: float | None = None
 
     def on_train_begin(self, args, state, control, **kwargs):
         """Reset per-phase state (callback may be reused across phases).
@@ -758,6 +768,12 @@ class MarkerBandStopCallback(TrainerCallback):
         self._base_logp_mean = None
         self._stopped = False
         self._disabled_too_short = False
+        self._last_trained_logp_mean = None
+        self._last_delta_mean = None
+        self._last_step = None
+        self._last_lr = None
+        self._fired_step = None
+        self._fired_delta = None
         if state.max_steps > 0 and state.max_steps < self.min_steps:
             logger.warning(
                 "[%s] max_steps=%d < min_steps=%d — the band-stop guard "
@@ -813,6 +829,31 @@ class MarkerBandStopCallback(TrainerCallback):
             self.min_steps,
         )
 
+        # Stash the latest per-step trajectory scalars so on_log can merge
+        # them into the trainer's `logs` dict (the canonical
+        # ``TrainerCallback.on_log`` lifecycle hook): without this, sibling
+        # callbacks that subscribe to ``on_log`` (e.g. a per-cell recorder
+        # writing the band-stop event to disk) NEVER see these keys,
+        # because ``wandb.log(...)`` from a callback does not feed the
+        # trainer's `_maybe_log_save_evaluate` log dict (#527 round-1 bug —
+        # the recorder-sibling pattern was a deterministic false-negative
+        # smoke FAIL).
+        self._last_trained_logp_mean = trained_mean
+        self._last_delta_mean = delta_mean
+        self._last_step = int(state.global_step)
+        # The LR realized this step (from the optimizer's first param group,
+        # falling back to state.lr if available). Surfaced to on_log so
+        # downstream tooling can record whether the smoke-PASS rung was
+        # 5e-6 or the 1e-5 retry.
+        try:
+            optimizer = kwargs.get("optimizer")
+            if optimizer is not None and optimizer.param_groups:
+                self._last_lr = float(optimizer.param_groups[0].get("lr", 0.0))
+            else:
+                self._last_lr = None
+        except Exception:
+            self._last_lr = None
+
         if wandb.run is not None:
             wandb.log(
                 {
@@ -856,9 +897,44 @@ class MarkerBandStopCallback(TrainerCallback):
                     },
                     step=state.global_step,
                 )
+            # Stash the firing event so on_log can publish it through the
+            # trainer's logs dict on the next log boundary (which the
+            # trainer fires when control.should_save=True).
+            self._fired_step = int(state.global_step)
+            self._fired_delta = delta_mean
             control.should_training_stop = True
             control.should_save = True
             self._stopped = True
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        """Merge the latest source-delta + band-stop event into the trainer's log dict.
+
+        The canonical ``TrainerCallback.on_log`` lifecycle hook fires when
+        the trainer routes a logs dict through ``_maybe_log_save_evaluate``.
+        By merging our trajectory scalars + (when applicable) the firing
+        event into that dict, any sibling ``TrainerCallback.on_log``
+        subscriber sees them — the recipe-canonical surface for downstream
+        tooling. Without this, ``wandb.log(...)`` direct calls in
+        ``on_step_end`` are invisible to ``state.log_history`` and to
+        sibling callbacks, which broke #527 round-1's smoke verdict.
+
+        This hook is a no-op when no in-band reading has happened yet
+        (e.g. on the first warmup log line before ``on_step_end`` has
+        cached ``_last_delta_mean``).
+        """
+        if logs is None:
+            return
+        if self._last_delta_mean is None:
+            return
+        logs[f"{self.log_prefix}/source_delta_nats"] = self._last_delta_mean
+        logs[f"{self.log_prefix}/source_logp_mean"] = self._last_trained_logp_mean
+        if self._last_lr is not None:
+            logs[f"{self.log_prefix}/source_lr"] = self._last_lr
+        # Publish the firing event ONCE (the trainer logs again on the
+        # save-and-stop boundary set by on_step_end above).
+        if self._fired_step is not None:
+            logs[f"{self.log_prefix}/band_stop_step"] = self._fired_step
+            logs[f"{self.log_prefix}/band_stop_delta_nats"] = self._fired_delta
 
     def _read_logp_trained(self, model):
         """Read mean log P(marker) at the marker slot under the trained adapter."""

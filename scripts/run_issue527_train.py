@@ -95,12 +95,26 @@ def _make_band_stop_recorder(*, output_dir: Path, low_nats: float, high_nats: fl
     """Concretely subclass TrainerCallback inside a closure so the import is
     deferred to runtime (keeps the script importable in test environments
     without transformers).
+
+    Subscribes to ``TrainerCallback.on_log`` to receive the
+    ``MarkerBandStopCallback``'s per-step source-delta + band-stop event,
+    which round-1 review surfaced was the broken link (the callback used
+    to call ``wandb.log(...)`` directly, never feeding the trainer's
+    ``logs`` dict; round-2 extends the callback with its own ``on_log``
+    hook in ``eval/callbacks.py`` so sibling subscribers like this
+    recorder actually see the keys). The recorder accepts BOTH the
+    canonical ``MarkerBandStopCallback`` default ``log_prefix="marker"``
+    keys AND the legacy ``"marker_band_stop"`` namespace for resilience
+    against future log-prefix changes — the source of truth on which
+    prefix train_lora attaches is the callback construction in
+    ``train/sft.py::_maybe_attach_marker_band_stop`` (currently the
+    default ``"marker"``).
     """
     from transformers import TrainerCallback
 
-    class _Recorder(TrainerCallback):
-        log_prefix = "marker_band_stop"
+    _CANDIDATE_PREFIXES = ("marker", "marker_band_stop")
 
+    class _Recorder(TrainerCallback):
         def __init__(self):
             self.fired: bool = False
             self.final_delta_nats: float | None = None
@@ -109,23 +123,25 @@ def _make_band_stop_recorder(*, output_dir: Path, low_nats: float, high_nats: fl
             self._last_step: int | None = None
 
         def on_log(self, args, state, control, logs=None, **kwargs):
-            """Track the most recent source_delta_nats logged by MarkerBandStopCallback."""
+            """Track the most recent source_delta_nats from MarkerBandStopCallback."""
             if not logs:
                 return
-            for key in (
-                f"{self.log_prefix}/source_delta_nats",
-                f"{self.log_prefix}/band_stop_delta_nats",
-            ):
-                if key in logs:
-                    self._last_delta = float(logs[key])
-                    self._last_step = int(state.global_step)
-            # band_stop_step key is emitted only on the firing step.
-            if f"{self.log_prefix}/band_stop_step" in logs:
-                self.fired = True
-                self.fired_step = int(logs[f"{self.log_prefix}/band_stop_step"])
-                self.final_delta_nats = float(
-                    logs.get(f"{self.log_prefix}/band_stop_delta_nats", self._last_delta or 0.0)
-                )
+            for prefix in _CANDIDATE_PREFIXES:
+                for key in (
+                    f"{prefix}/source_delta_nats",
+                    f"{prefix}/band_stop_delta_nats",
+                ):
+                    if key in logs:
+                        self._last_delta = float(logs[key])
+                        self._last_step = int(state.global_step)
+                # band_stop_step key is emitted only on the firing step.
+                step_key = f"{prefix}/band_stop_step"
+                if step_key in logs:
+                    self.fired = True
+                    self.fired_step = int(logs[step_key])
+                    self.final_delta_nats = float(
+                        logs.get(f"{prefix}/band_stop_delta_nats", self._last_delta or 0.0)
+                    )
 
         def on_train_end(self, args, state, control, **kwargs):
             payload = {
