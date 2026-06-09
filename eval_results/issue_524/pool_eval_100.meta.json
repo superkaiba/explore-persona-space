@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "issue": 524,
+  "phase": "0.pool",
+  "selection": "stratified",
+  "source_pool": "eval_results/issue_502/probes_500.json",
+  "git_sha": "4ab689139",
+  "timestamp_utc": "2026-06-09T06:51:52Z",
+  "n_target": 100,
+  "min_bucket_floor": 10,
+  "per_bucket_count": {
+    "capabilities": 33,
+    "neutral_chat": 22,
+    "hypotheticals": 13,
+    "opinion": 22,
+    "q_test_subset_50": 10
+  },
+  "first_question_hash": "005384f8dcfb3e94cadd2a3a6c5d042ac6f0911192c1ce7c7b1e5c9535caf37a",
+  "last_question_hash": "42015cb2aaa02db6019298bac248a1b0f1ade0ca3e7b62c81d02494ad0e56270"
+}
