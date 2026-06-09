@@ -17,6 +17,8 @@ goal: Determine whether marker leakage to bystander personas (and the bare defau
 relates_to:
 - leak-predictor
 - leak-to-default
+classification: useful
+promoted_at: '2026-06-09T21:28:44Z'
 ---
 # At matched 8-nat source-implant strength, LoRA and full fine-tune leak to bystanders indistinguishably (gap +0.00 nat, 95% CI [−0.13, +0.12]); the 4-5 nat 'full-FT leaks less' gap is specific to the saturated ~18-nat regime (MODERATE confidence)
 
