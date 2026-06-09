@@ -19,6 +19,8 @@ relates_to:
 - spec-kl-probe-set
 - leak-predictor
 - leak-to-default
+classification: useful
+promoted_at: '2026-06-09T21:28:30Z'
 ---
 # JS divergence / cosine similarity still predict marker leakage for a conditional persona that only diverges on a narrow slice — and about half the drop comes from the system prompt itself, before the behavior appears (MODERATE confidence)
 
