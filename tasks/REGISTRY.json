@@ -3085,7 +3085,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/530",
       "status": "interpreting",
-      "title": "At a de-saturated anchor, both #504 geometry signs reverse \u2014 the barrier signal becomes anti-shadow and the anti-bubble becomes pro-bubble (MODERATE confidence)"
+      "title": "At a de-saturated anchor, both prior geometry signs reverse \u2014 the barrier signal becomes anti-shadow and the anti-bubble becomes pro-bubble (MODERATE confidence)"
     },
     "531": {
       "has_clean_result": true,
