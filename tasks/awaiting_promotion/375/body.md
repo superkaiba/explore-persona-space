@@ -11,6 +11,8 @@ goal: Test whether the trained `[ZLT]` marker fires when the persona is injected
   prompt held at the standard helpful-assistant default.
 relates_to:
 - ctx-behavior
+classification: useful
+promoted_at: '2026-06-09T21:34:18Z'
 ---
 # Persona-voiced few-shot context elevates the [ZLT] marker rate on all 3 trained personas, with most of the lift from a single demonstration (MODERATE confidence)
 
