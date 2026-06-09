@@ -11,6 +11,8 @@ goal: Test whether fact-teaching / transfer / leakage patterns observed on ficti
   or future facts also hold for obscure-but-real facts where the model has a weak
   non-zero prior, to distinguish 'novel-proposition acceptance' from 'weak-prior override'
   as the operative mechanism.
+classification: useful
+promoted_at: '2026-06-09T21:34:53Z'
 ---
 # BUGGED experiment — obscure-real arm was contaminated by stale CJD paraphrases AND violated the planned weak-prior premise on 9 of 11 framings; the planned weak-prior-override test did not run, only the fictional arm carries any signal (LOW confidence)
 
