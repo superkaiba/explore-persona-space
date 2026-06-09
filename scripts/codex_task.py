@@ -74,6 +74,7 @@ import re
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -253,7 +254,19 @@ def _spawn_codex(
     effort: str,
     write: bool,
 ) -> str:
-    """Spawn Codex with ``--background``. Returns the job-id."""
+    """Spawn Codex with ``--background``. Returns the job-id.
+
+    The prompt is delivered via a temp file + the companion's native
+    ``--prompt-file`` flag, NEVER as an argv element: a large composed
+    prompt (e.g. an inlined diff) on the argv trips the kernel's
+    per-argument size limit (~128KiB) and the spawn dies with
+    ``OSError [Errno 7] Argument list too long`` (E2BIG) — observed on
+    task #540 code-review round 1 with a 176K-char prompt (2026-06-09).
+    The companion reads the file synchronously during this foreground
+    invocation and embeds the prompt string in the stored job record
+    (the detached task-worker re-reads that record, not the file), so
+    the temp file is safe to delete as soon as the spawn call returns.
+    """
     cmd = [
         "node",
         str(companion),
@@ -264,13 +277,21 @@ def _spawn_codex(
     ]
     if write:
         cmd.append("--write")
-    cmd.append(prompt)
-    res = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        timeout=SPAWN_TIMEOUT_SECS,
-    )
+    fd, prompt_tmp_path = tempfile.mkstemp(prefix="codex-task-prompt-", suffix=".md")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(prompt)
+        # mkstemp yields an absolute path, so the companion's
+        # `path.resolve(cwd, promptFile)` returns it unchanged.
+        cmd.extend(["--prompt-file", prompt_tmp_path])
+        res = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=SPAWN_TIMEOUT_SECS,
+        )
+    finally:
+        Path(prompt_tmp_path).unlink(missing_ok=True)
     if res.returncode != 0:
         raise RuntimeError(
             f"codex-companion task spawn failed (exit {res.returncode}). "
