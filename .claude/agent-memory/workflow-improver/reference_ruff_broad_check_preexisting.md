@@ -5,9 +5,12 @@ metadata:
   type: reference
 ---
 
-The agent spec's §5 self-verify step "Always, after any edit: `uv run ruff
-check .claude scripts`" can never PASS as written: as of 2026-06-09 the broad
-run reports ~1338 pre-existing errors (B905 `zip()` strict, RUF001/RUF002
+RESOLVED in the spec 2026-06-09 (commit `16a6b57a4`): the agent spec §5 +
+report template and both workflow-fix-on-bug.md success-criteria templates now
+prescribe touched-files-only ruff (broader sweeps must prove failures pre-exist
+on the base commit, "0 introduced"). Do NOT re-emit this candidate. The
+underlying repo state still holds: a broad `uv run ruff check .claude scripts`
+reports ~1338 pre-existing errors (B905 `zip()` strict, RUF001/RUF002
 ambiguous-unicode) concentrated in experiment scripts like
 `scripts/generate_sdf_variants.py` — none from workflow-surface files.
 
