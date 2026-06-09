@@ -388,6 +388,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   human at the keyboard, so an optional decision is YOURS to make. Banned
   output patterns (this list is exhaustive — none of these may appear in an
   autonomous turn):
+  <!-- example: anti-pattern -->
   - A `AskUserQuestion` tool call (the PreToolUse hook in
     `.claude/settings.json` hard-blocks this — backstop ONLY for the tool
     path; the text-menu failure mode below cannot be intercepted by a hook).
@@ -460,6 +461,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     never defers` and EXECUTE the bounce in this same turn (spawn the
     `experiment-implementer` / `implementer` agent with a brief targeting
     the open concern_id); do NOT state the Decision and then end the turn.
+  <!-- gate: gates.tdd_gate -->
   - `tdd_gate` → no `AskUserQuestion` at this site (it's event-driven —
     the implementer posts `epm:proposed-tests v1` and exits; the resume
     signal is `epm:approve-tests` posted via `task.py post-marker`). In
@@ -491,6 +493,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     in this same turn (post `epm:fact-pick v1` with `id: <X>` + resume
     the polling loop); do NOT state the Decision and then end the turn.
 
+  <!-- example: anti-pattern -->
   The PreToolUse hook on `AskUserQuestion` (`.claude/settings.json`) is a
   backstop for the TOOL case ONLY — when `EPM_AUTONOMOUS_SESSION=1` it
   cannot intercept plain text output. The dominant failure mode is
@@ -981,6 +984,7 @@ gate, no extra context switch.
    ```
    Re-read the task (Step 0) and continue to Step 1.
 
+<!-- example: anti-pattern -->
 **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): on path 5 (no
 existing question fits) SKIP the new-question draft entirely — do not
 raise `AskUserQuestion`, do not print the proposed question as a text
@@ -1083,6 +1087,7 @@ which emits a new `epm:goal-updated v1` marker. Without explicit
 consent the Goal stays put. Never call `set-goal` without
 in-the-loop user agreement; this is the user's contract field.
 
+<!-- example: anti-pattern -->
 **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): SKIP this refinement
 entirely per § Autonomous session behavior → `experiment_goal_refine`.
 The Goal stays as set at task creation; do not propose a refinement,
@@ -1215,7 +1220,9 @@ already posted `epm:awaiting-spend-approval`.
 `set-status ... --auto-approve-if-autonomous --gpu-hours <X>` call — in code,
 not by LLM discretion here.** That command (in `scripts/task.py`) reads
 `EPM_AUTONOMOUS_SESSION` + `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` and printed a
-`PLAN_GATE_DECISION:` line. A PreToolUse hook on `AskUserQuestion`
+`PLAN_GATE_DECISION:` line.
+<!-- gate: gates.plan_approval -->
+A PreToolUse hook on `AskUserQuestion`
 (`.claude/settings.json`) ALSO hard-blocks (`exit 2`) any plan-approval
 `AskUserQuestion` while `EPM_AUTONOMOUS_SESSION` is set — so the autonomous
 path physically cannot reach the interactive ask even if this prose is
@@ -1285,6 +1292,7 @@ this cap.
   reply. (Interactive mode only — autonomous sessions never reach this
   branch; the code-enforced gate in `task.py
   --auto-approve-if-autonomous` already decided, and the PreToolUse hook
+  <!-- gate: gates.plan_approval -->
   hard-blocks any `AskUserQuestion` if reached.)
 
   <!-- gate: gates.plan_approval -->
@@ -3059,6 +3067,7 @@ already names a free win it didn't take. This step fires in BOTH
 interactive and autonomous (`EPM_AUTONOMOUS_SESSION=1`) sessions
 identically (unlike the autonomous-only `auto_run: yes` GPU-backed
 child auto-spawn at 9b — the two mechanisms are orthogonal). The whole
+<!-- example: anti-pattern -->
 step is auto-continue (NOT a new
 `AskUserQuestion` gate); the halt-criterion contract is preserved.
 <!-- autonomous-mode: auto-resolve -->
@@ -3155,6 +3164,7 @@ explicit eval-data path):
 7. Proceed to **9a-bis (clean-result-critique loop)** on the UPDATED
    body. The critic gates the final state, not the pre-rerun draft.
 
+<!-- example: anti-pattern -->
 **No new gate.** This step never raises `AskUserQuestion` (in either
 interactive or autonomous (`EPM_AUTONOMOUS_SESSION=1`) sessions —
 auto-resolve mode is the default for both, never gate-allowed).
@@ -3272,6 +3282,7 @@ restates findings / interpretation / confidence / next-steps. The fresh
 context of the `methodology-writer` agent enforces this structurally —
 the agent never reads `## Human TL;DR`, `## TL;DR`, `## Findings`, the
 H1 confidence tag, or any `epm:interpretation` body. Fires in BOTH
+<!-- example: anti-pattern -->
 interactive and autonomous sessions identically. Auto-continue (NOT a
 new `AskUserQuestion` gate); the halt-criterion contract is preserved.
 <!-- autonomous-mode: auto-resolve -->
@@ -3866,6 +3877,7 @@ completion waits on it.
      uv run python scripts/task.py post-marker <N> epm:living-docs-update-rejected \
        --note "User declined the living-docs proposal. Reason: <one line>. Proposal preserved inline."
      ```
+<!-- example: anti-pattern -->
 6. **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): do NOT raise the
    `AskUserQuestion`, do NOT print the proposed diff as a confirm/reject
    text menu to chat, and do NOT auto-apply. Per § Autonomous session
