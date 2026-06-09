@@ -21,6 +21,8 @@ relates_to:
 - implant-learning-speed
 - leak-contrastive-negatives
 - leak-data-factors
+classification: useful
+promoted_at: '2026-06-09T21:43:14Z'
 ---
 # Titrating the gentle anchor knobs (lr, LoRA rank/scope) under the canonical marker-position-only loss never lifts the ※ marker out of the dead floor — every knob × seed cell holds source on-policy emission at exactly 0 across 250 training steps (MODERATE confidence)
 
