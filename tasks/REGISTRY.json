@@ -3057,6 +3057,7 @@
       "title": "Pillar-2 superposition re-run: hot band-stopped anchor + orthogonal source pairs"
     },
     "528": {
+      "goal": "Test whether LoRA training installs a desirable assistant trait above the untrained Qwen-2.5-7B-Instruct base, using traits chosen to have genuine base-model headroom (validating, conciseness, asks-clarifying-question-first, calibrated-uncertainty) rather than RLHF-saturated traits. Implant each trait per the #498 recipe (contrastive negatives across the other scenarios + the default assistant) and score base AND trained on a single shared held-out Q-bank under the identical Claude Sonnet 4.5 Likert (1-5) rubric rig, so the trained-minus-base paired delta is computable on matched prompts and an in-scenario PASS is genuine training evidence rather than a rubric-saturation artifact.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/528",

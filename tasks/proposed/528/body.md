@@ -6,12 +6,21 @@ tags: []
 created_at: '2026-06-09T05:16:02Z'
 has_clean_result: false
 parent_id: 517
+goal: 'Test whether LoRA training installs a desirable assistant trait above the untrained
+  Qwen-2.5-7B-Instruct base, using traits chosen to have genuine base-model headroom
+  (validating, conciseness, asks-clarifying-question-first, calibrated-uncertainty)
+  rather than RLHF-saturated traits. Implant each trait per the #498 recipe (contrastive
+  negatives across the other scenarios + the default assistant) and score base AND
+  trained on a single shared held-out Q-bank under the identical Claude Sonnet 4.5
+  Likert (1-5) rubric rig, so the trained-minus-base paired delta is computable on
+  matched prompts and an in-scenario PASS is genuine training evidence rather than
+  a rubric-saturation artifact.'
 ---
 # Follow-up to #517: does LoRA install a desirable trait above base, on traits with genuine base headroom?
 
 ## Goal
 
-Test whether LoRA training installs a desirable assistant trait *above* the untrained Qwen-2.5-7B-Instruct base, using traits chosen to have genuine base-model headroom (validating, conciseness, asks-clarifying-question-first, calibrated-uncertainty) instead of the RLHF-saturated traits #498/#517 used. Implant each trait per the #498 recipe (contrastive negatives across the other scenarios + the default assistant) and score base AND trained on a SINGLE shared held-out Q-bank under the identical Claude Sonnet 4.5 Likert (1-5) rubric rig, so the trained-minus-base paired Δ is computable on matched prompts and an in-scenario PASS is genuine training evidence rather than a rubric-saturation artifact.
+Test whether LoRA training installs a desirable assistant trait above the untrained Qwen-2.5-7B-Instruct base, using traits chosen to have genuine base-model headroom (validating, conciseness, asks-clarifying-question-first, calibrated-uncertainty) rather than RLHF-saturated traits. Implant each trait per the #498 recipe (contrastive negatives across the other scenarios + the default assistant) and score base AND trained on a single shared held-out Q-bank under the identical Claude Sonnet 4.5 Likert (1-5) rubric rig, so the trained-minus-base paired delta is computable on matched prompts and an in-scenario PASS is genuine training evidence rather than a rubric-saturation artifact.
 
 ## Motivation
 
