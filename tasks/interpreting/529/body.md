@@ -1,6 +1,7 @@
 ---
-title: 'Re-run #464''s marker-less contrastive-negative role-vs-system localization
-  at a non-saturated (band-stopped) anchor to resolve the saturated +1-nat edge'
+title: The {1,2,3,5}-epoch grid is the wrong instrument for the marker-less contrastive-negative
+  regime at the inherited LoRA recipe — every epoch we sampled lands in the saturated
+  floor (HIGH confidence)
 kind: experiment
 tags:
 - followup
