@@ -453,6 +453,81 @@ def test_new_plan_version_versions_and_symlinks(fake_repo):
     assert (plans_dir / "plan.md").resolve() == (plans_dir / "v3.md").resolve()
 
 
+def test_new_plan_version_skips_gap_uses_max_plus_one(fake_repo):
+    """Regression: with a numbering gap (e.g. v1,v2,v3,v4,v6 — no v5,
+    because a draft lived only in /tmp and was never registered), the
+    next plan MUST be v7 — NOT v6, which would silently overwrite the
+    highest existing plan. Closes the task #524 incident: the count-based
+    resolver (``len(existing)+1``) computed v6 over an existing v6 and
+    destroyed it without warning. Source of truth is now
+    ``max(existing v<N>) + 1``.
+    """
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    plans_dir.mkdir(parents=True, exist_ok=True)
+    # Pre-stage a gapped set of plan files (no v5).
+    for n in (1, 2, 3, 4, 6):
+        (plans_dir / f"v{n}.md").write_text(f"plan v{n} content\n")
+    v6_original = (plans_dir / "v6.md").read_text()
+
+    next_v = tw.new_plan_version(new_id, "plan v7 content")
+
+    # MUST advance past the highest existing version, not fill the gap and
+    # MUST NOT overwrite v6.
+    assert next_v == 7, f"expected v7 (max+1), got v{next_v}"
+    assert (plans_dir / "v7.md").read_text().strip() == "plan v7 content"
+    assert (plans_dir / "v6.md").read_text() == v6_original, (
+        "v6.md was overwritten — the count-based resolver bug has regressed"
+    )
+    # v5 stays absent — we don't backfill gaps.
+    assert not (plans_dir / "v5.md").exists()
+    # Symlink points to v7.
+    assert (plans_dir / "plan.md").resolve() == (plans_dir / "v7.md").resolve()
+
+
+def test_new_plan_version_refuses_to_overwrite_existing_target(
+    fake_repo, monkeypatch: pytest.MonkeyPatch
+):
+    """Belt-and-suspenders: the resolver derives ``next_v = max(existing) + 1``
+    inside ``_locked()`` and writes immediately after — so under normal
+    operation the computed target file CANNOT pre-exist. The explicit
+    ``target.exists()`` guard fires only if something external creates
+    the file between the glob and the write (a process holding no lock,
+    a filesystem race, manual staging during the critical section). The
+    guard is cheap and documents the invariant. To exercise it we simulate
+    that race by wrapping the lock so a sentinel file appears at the
+    computed slot after the glob but before the write.
+    """
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    plans_dir.mkdir(parents=True, exist_ok=True)
+    (plans_dir / "v1.md").write_text("plan v1 content\n")
+    sentinel = "PRE_STAGED_SHOULD_NOT_BE_OVERWRITTEN\n"
+
+    # Race simulation: replace Path.write_text so the first call (the
+    # resolver's write to v2.md) finds v2.md already present. Note the
+    # resolver writes v2.md FIRST, then the symlink — so we intercept on
+    # the first call only and re-raise via the resolver's own guard.
+    real_glob = type(plans_dir).glob
+
+    def racing_glob(self, pattern):
+        result = list(real_glob(self, pattern))
+        # Inject the racing pre-existing file BEFORE write_text runs.
+        if self == plans_dir and pattern == "v*.md":
+            (plans_dir / "v2.md").write_text(sentinel)
+        return iter(result)
+
+    monkeypatch.setattr(type(plans_dir), "glob", racing_glob)
+
+    with pytest.raises(RuntimeError, match=r"refusing to overwrite.*v2\.md"):
+        tw.new_plan_version(new_id, "plan v2 fresh content")
+
+    # The racing pre-existing file is preserved untouched.
+    assert (plans_dir / "v2.md").read_text() == sentinel
+
+
 # ─── Promotion ───────────────────────────────────────────────────────────
 
 
