@@ -185,6 +185,14 @@ def _build_production_backends() -> dict[str, Any]:
         in squeue" is the most authoritative terminal signal the cancel
         state machine can get. A live entry (any state — PENDING /
         RUNNING / COMPLETING) counts as still-live.
+
+        ``query_by_name`` RAISES :class:`slurm_monitor.SlurmProbeError`
+        on rc != 0 (probe failed — state UNKNOWN, not absent). We let it
+        propagate: ``cancel_and_wait`` treats a raising live-probe as
+        still-live and keeps polling under its grace budget, resolving
+        to ``manual_attention`` if the transport stays broken — the
+        pre-fix behavior read the failure as "job gone" and returned
+        "cancelled" on a LIVE job (round-6 B1).
         """
         cluster = _resolve_cluster_cfg(handle.cluster)
         if cluster is None:
@@ -214,6 +222,13 @@ def _build_production_backends() -> dict[str, Any]:
         NOT). Non-SLURM handles return None (GCP's provision IS the
         start, so terminal-before-running cannot mask a workload
         failure there; RunPod never parks).
+
+        ``min_artifact_ts`` (the launch path's ``submitted_at`` stamp on
+        ``handle.extra``) gates out PRIOR-attempt artifacts: the
+        per-issue scratch dir is reused across attempts, so without it
+        a re-run's terminal park reads attempt-1's status.json/job.out
+        as proof THIS job started — a guaranteed false workload-failure
+        (issue 535 attempt 2).
         """
         del backend
         cluster = _resolve_cluster_cfg(handle.cluster)
@@ -223,10 +238,12 @@ def _build_production_backends() -> dict[str, Any]:
             fetch_started_evidence,
         )
 
+        submitted_at = handle.extra.get("submitted_at")
         return fetch_started_evidence(
             robot_alias=cluster.ssh_host,
             scratch_dir=handle.scratch_dir,
             job_id=str(handle.job_id),
+            min_artifact_ts=float(submitted_at) if submitted_at is not None else None,
         )
 
     def _reconnect(backend: Any, kind: str, spec: Any) -> Any:
@@ -237,6 +254,12 @@ def _build_production_backends() -> dict[str, Any]:
         scratch path. GCP: :func:`backends.gcp.reconnect_or_none`. RunPod
         and unknown kinds return None (the existing ``pod_lifecycle.py``
         flow is idempotent on its own).
+
+        ``query_by_name`` raises ``SlurmProbeError`` on rc != 0 (probe
+        failed, NOT job-absent); the router's ``_try_reconnect``
+        propagates it so the lane is skipped / the override raises a
+        typed terminal instead of blind-submitting a duplicate
+        (round-6 B1).
         """
         if kind in {"nibi", "fir", "mila"}:
             # _resolve_cluster_cfg raises on a typo'd / unavailable

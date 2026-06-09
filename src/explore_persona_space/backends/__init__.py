@@ -29,6 +29,7 @@ from explore_persona_space.backends.artifacts import (
 )
 from explore_persona_space.backends.base import (
     BackendKind,
+    BackendProbeError,
     ComputeBackend,
     PollResult,
     RunHandle,
@@ -142,6 +143,7 @@ __all__ = [
     "BackendDecision",
     "BackendKind",
     "BackendPrepareError",
+    "BackendProbeError",
     "BackendSelectionError",
     "ClusterConfig",
     "ComputeBackend",

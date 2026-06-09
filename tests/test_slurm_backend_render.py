@@ -516,6 +516,55 @@ def test_render_sbatch_lora_eval_golden() -> None:
     assert "seed=42" in script
 
 
+def test_render_sbatch_secret_expansions_sit_outside_xtrace() -> None:
+    """Round-6 C1: every line that EXPANDS a secret value must execute
+    with xtrace OFF.
+
+    Under ``set -x`` the ``: "${HF_TOKEN:?…}"`` preflight guard traces
+    the EXPANDED value (``+ : hf_…``) into job.out; the monitor's log
+    tails then carry the real token into git-committed markers — the
+    issue-535 live run leaked both HF_TOKEN and WANDB_API_KEY this way.
+    Walks the rendered script tracking xtrace state line by line and
+    asserts the secrets source + both token checks land in OFF windows
+    (and that an ON window exists afterwards, i.e. the wrap is a
+    window, not a global xtrace disable)."""
+    spec = _lora_spec("lora-7b")
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+
+    secret_bearing_markers = (
+        'source "$SECRETS_FILE"',
+        "${HF_TOKEN:?",
+        "${WANDB_API_KEY:?",
+    )
+    xtrace_on = False  # bash starts with xtrace off
+    seen: dict[str, bool] = {}
+    ever_on_after_checks = False
+    for line in script.splitlines():
+        stripped = line.strip()
+        if stripped == "set -x":
+            xtrace_on = True
+        elif stripped == "set +x":
+            xtrace_on = False
+        for marker in secret_bearing_markers:
+            if marker in line:
+                assert not xtrace_on, f"secret-bearing line under xtrace: {line!r}"
+                seen[marker] = True
+        if xtrace_on and len(seen) == len(secret_bearing_markers):
+            ever_on_after_checks = True
+    assert set(seen) == set(secret_bearing_markers), (
+        f"expected all secret-bearing lines in the render; saw {sorted(seen)}"
+    )
+    assert ever_on_after_checks, (
+        "xtrace should be re-enabled after the token checks (debuggability "
+        "window), not globally disabled"
+    )
+
+
 def test_heartbeat_starts_early_and_reports_live_phase() -> None:
     """Heartbeat must start BEFORE the venv build (else a job reads `stalled`
     for the whole ~6-40 min build) and report the LIVE phase from a file (a bg
@@ -715,6 +764,11 @@ def test_slurm_backend_launch_submits_rendered_script(tmp_path) -> None:
     # The poll path reads issue out of handle.extra, so launch must
     # populate it.
     assert handle.extra["issue"] == 137
+    # The monitor's artifact-freshness gate + the started-evidence probe
+    # read the submit timestamp off the handle (rides the sidecar JSON
+    # across processes) — round-6 C2.
+    assert isinstance(handle.extra["submitted_at"], float)
+    assert handle.extra["submitted_at"] > 0
 
     # Submit was called once with a real rendered sbatch.
     assert len(submitted) == 1
@@ -798,6 +852,7 @@ def test_slurm_backend_launch_uses_scp_not_ssh_bash_c(tmp_path) -> None:
         rsyncer=lambda **_: None,
         marker_poster=lambda **_: None,
         secrets_pusher=fake_pusher,
+        runtime_clearer=lambda **_: None,
     )
     backend.prepare(_lora_spec())
     backend.prepare(_lora_spec())
@@ -806,6 +861,85 @@ def test_slurm_backend_launch_uses_scp_not_ssh_bash_c(tmp_path) -> None:
     for call in secrets_calls:
         assert call["robot_alias"] == "robot-nibi"
         assert call["scratch_dir"] == "/scratch/tjiral/eps/issue-137"
+
+
+def test_prepare_clears_runtime_artifacts_before_rsync(tmp_path) -> None:
+    """Round-6 C2(2): prepare must clear the PRIOR attempt's scratch-root
+    runtime artifacts (status.json / job.out / .current_phase /
+    preflight.json) BEFORE the code rsync — they are outside the code
+    rsync's --delete reach and poison the monitor + started-evidence
+    probe on every re-run (issue 535 attempt 2)."""
+    (tmp_path / "pyproject.toml").write_text("")
+
+    order: list[str] = []
+    clear_calls: list[dict] = []
+
+    def fake_clearer(*, robot_alias, scratch_dir):
+        order.append("clear")
+        clear_calls.append({"robot_alias": robot_alias, "scratch_dir": scratch_dir})
+
+    def fake_rsync(**_kw):
+        order.append("rsync")
+
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        submitter=lambda *, robot_alias, sbatch_script: "9101",
+        rsyncer=fake_rsync,
+        marker_poster=lambda **_: None,
+        secrets_pusher=lambda **_: order.append("secrets"),
+        runtime_clearer=fake_clearer,
+    )
+    backend.prepare(_lora_spec())
+
+    assert order == ["clear", "rsync", "secrets"]
+    assert clear_calls == [
+        {"robot_alias": "robot-nibi", "scratch_dir": "/scratch/tjiral/eps/issue-137"}
+    ]
+
+
+def test_build_clear_runtime_artifacts_command_golden() -> None:
+    """Golden argv for the rsync-an-empty-stub deletion technique: the
+    runtime filenames ride --include, everything else is protected by
+    --exclude '*' (NO --delete-excluded), and the empty staging dir is
+    the source so --delete removes exactly the included names."""
+    from explore_persona_space.backends.slurm import (
+        RUNTIME_ARTIFACT_FILENAMES,
+        build_clear_runtime_artifacts_command,
+    )
+
+    argv = build_clear_runtime_artifacts_command(
+        empty_dir="/tmp/eps-slurm-clear-x",
+        dest_root="/scratch/tjiral/eps/issue-137",
+        robot_alias="robot-nibi",
+    )
+    assert argv == [
+        "rsync",
+        "-a",
+        "--delete",
+        "--mkpath",
+        "--include",
+        "status.json",
+        "--include",
+        "job.out",
+        "--include",
+        ".current_phase",
+        "--include",
+        "preflight.json",
+        "--exclude",
+        "*",
+        "/tmp/eps-slurm-clear-x/",
+        "robot-nibi:/scratch/tjiral/eps/issue-137/",
+    ]
+    assert "--delete-excluded" not in argv, (
+        "--delete-excluded would wipe the whole scratch root (code tree, "
+        "secrets.env) — the filter set protects everything not included"
+    )
+    assert RUNTIME_ARTIFACT_FILENAMES == (
+        "status.json",
+        "job.out",
+        ".current_phase",
+        "preflight.json",
+    )
 
 
 def test_fetch_logs_reads_correct_path_and_returns_joined_string(tmp_path) -> None:

@@ -488,7 +488,7 @@ def _clock():
 def test_park_running_before_cap_returns_started():
     backend = _FreeLaneBackend(kind="nibi", starts_when=2)
     handle = backend.launch(_spec())
-    started, reason = park_until_running_or_cap(
+    started, reason, terminal_status = park_until_running_or_cap(
         backend=backend,
         handle=handle,
         is_started=_is_started_after_n(2),
@@ -499,12 +499,13 @@ def test_park_running_before_cap_returns_started():
     )
     assert started is True
     assert reason == "running"
+    assert terminal_status is None
 
 
 def test_park_pending_at_cap_returns_park_cap_exceeded():
     backend = _FreeLaneBackend(kind="nibi")
     handle = backend.launch(_spec())
-    started, reason = park_until_running_or_cap(
+    started, reason, terminal_status = park_until_running_or_cap(
         backend=backend,
         handle=handle,
         is_started=lambda _b, _h: False,
@@ -515,12 +516,13 @@ def test_park_pending_at_cap_returns_park_cap_exceeded():
     )
     assert started is False
     assert reason == "park_cap_exceeded"
+    assert terminal_status is None
 
 
 def test_park_terminal_before_running_returns_specific_reason():
     backend = _FreeLaneBackend(kind="nibi", poll_status="dead")
     handle = backend.launch(_spec())
-    started, reason = park_until_running_or_cap(
+    started, reason, terminal_status = park_until_running_or_cap(
         backend=backend,
         handle=handle,
         is_started=lambda _b, _h: False,
@@ -531,6 +533,87 @@ def test_park_terminal_before_running_returns_specific_reason():
     )
     assert started is False
     assert reason == "terminal_before_running"
+    # The triggering PollResult.status is threaded out so callers can
+    # gate the started-evidence probe on genuinely-GONE statuses
+    # (done/dead) vs possibly-live ones (stalled/gate) — round-6 M1.
+    assert terminal_status == "dead"
+
+
+def test_park_stalled_threads_terminal_status_for_cancel_first_routing():
+    """``stalled`` covers LIVE jobs (RUNNING + stale heartbeat;
+    SUSPENDED); the caller must see it so the cancel machine runs
+    BEFORE any terminal classification (round-6 M1)."""
+    backend = _FreeLaneBackend(kind="nibi", poll_status="stalled")
+    handle = backend.launch(_spec())
+    started, reason, terminal_status = park_until_running_or_cap(
+        backend=backend,
+        handle=handle,
+        is_started=lambda _b, _h: False,
+        cap_seconds=10,
+        poll_interval=0.0,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert (started, reason, terminal_status) == (False, "terminal_before_running", "stalled")
+
+
+def test_park_probe_failures_exceeded_after_consecutive_failures():
+    """B1: an ``is_started`` probe that keeps FAILING means the job state
+    is UNKNOWN — the park must give up loudly after the consecutive
+    budget instead of reading "still pending" forever (or worse,
+    letting a poll-side misread classify the job terminal)."""
+    from explore_persona_space.backends.router import PARK_MAX_CONSECUTIVE_PROBE_FAILURES
+
+    calls = {"n": 0}
+
+    def raising_probe(_b, _h):
+        calls["n"] += 1
+        raise RuntimeError("ssh: connect to host nibi port 22: Connection refused")
+
+    backend = _FreeLaneBackend(kind="nibi")
+    handle = backend.launch(_spec())
+    started, reason, terminal_status = park_until_running_or_cap(
+        backend=backend,
+        handle=handle,
+        is_started=raising_probe,
+        cap_seconds=1000,  # budget must fire well before the cap
+        poll_interval=0.0,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert (started, reason, terminal_status) == (False, "probe_failures_exceeded", None)
+    assert calls["n"] == PARK_MAX_CONSECUTIVE_PROBE_FAILURES
+
+
+def test_park_probe_failure_counter_resets_on_success():
+    """A transient blip (fail, fail, succeed, ...) must NOT accumulate
+    toward the consecutive budget — the counter resets on every
+    successful probe."""
+    # True = raise this tick, False = probe succeeds (returns
+    # not-started). Never 3 consecutive raises.
+    pattern = iter([True, True, False, True, True, False, True, True, False, False])
+
+    def flaky_probe(_b, _h):
+        if next(pattern, False):
+            raise RuntimeError("transient ssh blip")
+        return False
+
+    backend = _FreeLaneBackend(kind="nibi")
+    handle = backend.launch(_spec())
+    started, reason, terminal_status = park_until_running_or_cap(
+        backend=backend,
+        handle=handle,
+        is_started=flaky_probe,
+        cap_seconds=5,
+        poll_interval=0.0,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert started is False
+    assert reason == "park_cap_exceeded", (
+        "two-then-reset failures must end at the park cap, not the probe budget"
+    )
+    assert terminal_status is None
 
 
 # ---------------------------------------------------------------------------
@@ -2252,3 +2335,178 @@ def test_explicit_lane_terminal_with_artifacts_raises_workload_not_no_compute(le
         )
     assert excinfo.value.chosen_kind == "nibi"
     assert "preflight-failed" in str(excinfo.value)
+
+
+# ---------------------------------------------------------------------------
+# Round-6 M1: a `stalled`-triggered terminal park covers possibly-LIVE jobs
+# (RUNNING + stale heartbeat; SUSPENDED) — the evidence path must NOT fire
+# for it; the job is cancelled FIRST (the issue-535 live run raised
+# WorkloadSurfacedError before the cancel machine and orphaned a live job).
+# ---------------------------------------------------------------------------
+
+
+def test_stalled_terminal_cancels_first_and_skips_evidence_on_auto(lease_store):
+    probe_calls: list[int] = []
+
+    def recording_probe(_b, _h):
+        probe_calls.append(1)
+        return dict(_EVIDENCE)
+
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0, poll_status="stalled")
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,  # cancel confirms gone
+        started_evidence_probe=recording_probe,
+        config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert probe_calls == [], (
+        "a stalled-classified job may be LIVE — the started-evidence probe "
+        "must not classify it terminal before the cancel machine runs"
+    )
+    assert len(nibi.teardowns) == 1, "the stalled job must be scancel'd, never orphaned"
+    assert result.chosen_kind == "gcp", "after a confirmed cancel the auto chain continues"
+
+
+def test_stalled_terminal_on_explicit_lane_cancels_and_does_not_raise_workload(lease_store):
+    nibi = _FreeLaneBackend(kind="nibi", poll_status="stalled")
+    with pytest.raises(NoComputeAvailableError):
+        route(
+            _spec(backend="nibi"),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"nibi": nibi},
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            started_evidence_probe=lambda _b, _h: dict(_EVIDENCE),
+            config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert len(nibi.teardowns) == 1, "explicit lane: the stalled job must be scancel'd too"
+
+
+def test_stalled_terminal_still_live_after_cancel_is_manual_attention(lease_store):
+    """The full live-failure chain: stalled-classified LIVE job + a cancel
+    that cannot confirm death → ManualAttentionRequiredError carrying the
+    orphaned id — NEVER WorkloadSurfacedError while the job may be live."""
+    from explore_persona_space.backends.router import ManualAttentionRequiredError
+
+    nibi = _FreeLaneBackend(kind="nibi", poll_status="stalled")
+    with pytest.raises(ManualAttentionRequiredError) as excinfo:
+        route(
+            _spec(backend="nibi"),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"nibi": nibi},
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: True,  # still live — cancel unconfirmed
+            started_evidence_probe=lambda _b, _h: dict(_EVIDENCE),
+            config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=1),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert excinfo.value.orphaned_job_id
+    assert len(nibi.teardowns) == 1
+
+
+# ---------------------------------------------------------------------------
+# Round-6 B1: a reconnect PROBE failure (BackendProbeError) must never read
+# as "no live job" — submitting blind risks a duplicate of a live job.
+# ---------------------------------------------------------------------------
+
+
+def test_reconnect_probe_failure_skips_lane_no_blind_submit_on_auto(lease_store):
+    from explore_persona_space.backends.base import BackendProbeError
+
+    def probing_reconnect(_backend, _kind, _spec_arg):
+        raise BackendProbeError("squeue --name probe failed: rc=255 Connection refused")
+
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        reconnect_fn=probing_reconnect,
+        config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert nibi.launches == [], (
+        "an unprobeable lane must be SKIPPED, not blind-submitted — a live "
+        "job may exist behind the broken probe"
+    )
+    assert result.chosen_kind == "gcp"
+
+
+def test_reconnect_probe_failure_on_explicit_lane_raises_typed_terminal(lease_store):
+    from explore_persona_space.backends.base import BackendProbeError
+
+    def probing_reconnect(_backend, _kind, _spec_arg):
+        raise BackendProbeError("squeue --name probe failed: rc=255 Connection refused")
+
+    nibi = _FreeLaneBackend(kind="nibi")
+    with pytest.raises(NoComputeAvailableError, match="refusing to submit blind"):
+        route(
+            _spec(backend="nibi"),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"nibi": nibi},
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            reconnect_fn=probing_reconnect,
+            config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert nibi.launches == []
+
+
+# ---------------------------------------------------------------------------
+# Round-6 Mn1: the prepare-fail breadcrumb reason must match the typed
+# terminal's `reason: backend_prepare_failed` (it previously said
+# `no_compute_available`).
+# ---------------------------------------------------------------------------
+
+
+def test_prepare_failed_breadcrumb_reason_matches_typed_terminal(
+    lease_store, marker_poster, captured_markers
+):
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_PREPARE_FAILED,
+        BackendPrepareError,
+    )
+
+    class _PrepareExploding(_FreeLaneBackend):
+        def prepare(self, spec: RunSpec) -> None:
+            raise OSError("rsync: connection unexpectedly closed")
+
+    nibi = _PrepareExploding(kind="nibi")
+    with pytest.raises(BackendPrepareError):
+        route(
+            _spec(backend="nibi"),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"nibi": nibi},
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    breadcrumbs = _by_reason(captured_markers, ROUTE_REASON_PREPARE_FAILED)
+    assert breadcrumbs, "prepare failure must post a backend_prepare_failed breadcrumb"
+    assert not _by_reason(captured_markers, "no_compute_available")

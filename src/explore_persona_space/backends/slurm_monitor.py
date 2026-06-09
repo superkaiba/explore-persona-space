@@ -53,19 +53,35 @@ from __future__ import annotations
 import json
 import logging
 import re
+import shutil
 import subprocess
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from explore_persona_space.backends.base import PollResult
+from explore_persona_space.backends.base import BackendProbeError, PollResult
 from explore_persona_space.backends.slurm import (
     PREFLIGHT_FAIL_MARKER,
     ClusterConfig,
 )
 
 logger = logging.getLogger(__name__)
+
+
+class SlurmProbeError(BackendProbeError):
+    """A squeue/scontrol probe FAILED (ssh rc != 0) — state UNKNOWN, NOT absent.
+
+    Raised when the SSH transport / forced-command wrapper rejected the
+    probe itself. Distinct from "the probe succeeded and the job is not
+    in the queue" (genuinely absent → ``None`` / ``UNKNOWN``). Live
+    incident (issue 535 attempt 2): the DRAC robot wrapper STRIPS
+    QUOTING, so a quoted multi-token ``-o "%i %T ..."`` format fails
+    with ``Unrecognized option: %T`` — pre-fix that rc!=0 read as "job
+    gone" and let the router orphan a live job. Callers treat this as
+    UNKNOWN-retry under a consecutive-failure budget, never as
+    terminal.
+    """
 
 
 # ---------------------------------------------------------------------------
@@ -82,6 +98,44 @@ STALL_SEC = 300
 
 # How far back to read job.out (bytes) when building the log_tail_excerpt.
 LOG_TAIL_BYTES = 16_384
+
+# Clock-skew margin (seconds) for the artifact-freshness gates. The
+# submit timestamp is VM wall-clock while job.out mtimes / status.json
+# heartbeats are written cluster-side; a modest skew must not gate out
+# a genuinely-fresh artifact written seconds after submit. Stale
+# prior-attempt artifacts are typically MANY minutes older than the new
+# submit (issue 535 attempt 2: 31 min), so 120 s keeps the gate sharp.
+FRESHNESS_SKEW_MARGIN_SEC = 120
+
+# Secret-token patterns scrubbed out of every log tail BEFORE it can
+# reach a git-committed marker (epm:cluster-poll log_tail_excerpt,
+# epm:backend-selected evidence, epm:failure evidence). The sbatch
+# preflight leaked expanded `${HF_TOKEN:?}` / `${WANDB_API_KEY:?}`
+# values into job.out under xtrace (round-6 C1); the render now keeps
+# those checks outside xtrace, and this scrubber is the
+# defense-in-depth for any OTHER token that lands in a log.
+_SECRET_TOKEN_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"hf_[A-Za-z0-9]{20,}"),
+    re.compile(r"wandb_v1_[A-Za-z0-9_]{20,}"),
+    re.compile(r"sk-[A-Za-z0-9_\-]{20,}"),
+    re.compile(
+        r"\b[0-9a-fA-F]{40}\b"
+    ),  # 40-hex (WANDB legacy keys; also matches git SHAs — safe side)
+)
+
+_REDACTED = "«REDACTED»"
+
+
+def _scrub_secret_tokens(text: str) -> str:
+    """Replace secret-shaped tokens with ``«REDACTED»``.
+
+    MUST run on the FULL text BEFORE any truncation: a ``[-2000:]`` cut
+    can split a token so its tail no longer matches the prefix pattern
+    yet still carries most of the secret.
+    """
+    for pattern in _SECRET_TOKEN_PATTERNS:
+        text = pattern.sub(_REDACTED, text)
+    return text
 
 
 # Local dir under /tmp where rsync'd status.json / job.out files land.
@@ -142,6 +196,7 @@ def build_poll_result(
     now_fn=time.time,
     marker_poster=None,
     event_reader=None,
+    submitted_at: float | None = None,
 ) -> PollResult:
     """One-tick poll → :class:`PollResult`.
 
@@ -183,6 +238,16 @@ def build_poll_result(
     * ``event_reader`` — defaults to
       :func:`task_workflow.list_events`. Tests pass a stub returning a
       pre-seeded event trail.
+    * ``submitted_at`` — Unix timestamp of THIS attempt's sbatch submit
+      (``handle.extra["submitted_at"]``, stamped by
+      ``SlurmBackend.launch``). When provided, artifacts that PREDATE
+      it (minus :data:`FRESHNESS_SKEW_MARGIN_SEC`) are ignored: the
+      scratch dir is per-ISSUE and reused across attempts, so a stale
+      prior-attempt ``status.json`` heartbeat / ``job.out`` preflight
+      marker would otherwise mark the NEW job stalled/dead within one
+      tick of submit (issue 535 attempt 2). The stall clock is floored
+      at ``now - submitted_at`` — a job that has only existed for 60 s
+      can be at most 60 s stale.
 
     Returns:
         A :class:`PollResult` with the SAME shape ``poll_pipeline.py``
@@ -215,6 +280,26 @@ def build_poll_result(
         job_out, now_fn=now_fn
     )
 
+    # ---- Attempt-freshness gate (C2) ----
+    # The scratch dir is per-ISSUE and reused across attempts; SLURM only
+    # truncates --output when the NEW job STARTS, so during the PENDING
+    # window the rsync'd artifacts are the PREVIOUS attempt's. An
+    # artifact older than this attempt's submit time must not feed the
+    # stalled-detector, the phase read, or the preflight-failed
+    # shortcut.
+    if submitted_at is not None:
+        min_artifact_epoch = float(submitted_at) - FRESHNESS_SKEW_MARGIN_SEC
+        job_out_mtime_epoch = now_fn() - log_mtime_sec_ago
+        if log_mtime_sec_ago >= 10**9 or job_out_mtime_epoch < min_artifact_epoch:
+            log_tail, current_phase, new_milestone, log_mtime_sec_ago = "", "", False, 10**9
+        if status_data and _status_artifact_epoch(status_data, status_json) < min_artifact_epoch:
+            status_data = {}
+
+    # Scrub secret-shaped tokens BEFORE any truncation — the tail feeds
+    # git-committed markers (epm:cluster-poll) and the PollResult the
+    # orchestrator may quote (round-6 C1).
+    log_tail = _scrub_secret_tokens(log_tail)
+
     slurm_status = state.get("status", "RUNNING")
 
     # ---- Idempotent-reconnect path: SLURM said UNKNOWN ----
@@ -246,6 +331,14 @@ def build_poll_result(
     # fires for a job that's RUNNING but writing nothing.
     heartbeat_sec_ago = _heartbeat_sec_ago(status_data, now_fn=now_fn)
 
+    # Stall-clock floor (C2): a job submitted T seconds ago can be at
+    # most T seconds stale — without this floor, a missing/gated-out
+    # heartbeat reads as infinitely old and a tick one minute after
+    # submit declares a LIVE job stalled (the live failure chain on
+    # issue 535 attempt 2).
+    if submitted_at is not None:
+        heartbeat_sec_ago = min(heartbeat_sec_ago, max(0, int(now_fn() - float(submitted_at))))
+
     # Stall detection (only meaningful while SLURM still says RUNNING).
     # Don't flag PENDING as stalled — the selector watchdog handles that.
     if base_status == "running" and heartbeat_sec_ago > STALL_SEC and slurm_status != "PENDING":
@@ -261,6 +354,8 @@ def build_poll_result(
     final_phase = current_phase or slurm_status.lower()
 
     # ---- Post epm:cluster-poll v1 on transition ----
+    # Pass the FULL (already-scrubbed) tail; the poster scrubs again and
+    # truncates itself so scrub-before-truncate holds for every caller.
     _maybe_post_cluster_poll(
         issue=issue,
         job_id=job_id,
@@ -269,7 +364,7 @@ def build_poll_result(
         slurm_state=slurm_status,
         heartbeat_sec_ago=heartbeat_sec_ago,
         gpu_busy=bool(status_data.get("gpu_busy")),
-        log_tail_excerpt=log_tail[-2000:],
+        log_tail_excerpt=log_tail,
         marker_poster=marker_poster,
         event_reader=event_reader,
     )
@@ -356,7 +451,13 @@ def _maybe_post_cluster_poll(
     Dedup against the most recent prior cluster-poll for this job_id;
     if status AND phase are unchanged, skip (keeps the events.jsonl tail
     readable on a long full-FT that stays in the same phase for hours).
+
+    ``log_tail_excerpt`` is scrubbed for secret-shaped tokens BEFORE the
+    final 2000-char truncation (round-6 C1) — the marker note is
+    committed to git, and a truncation that splits a token would leave
+    an unmatchable-but-mostly-intact secret behind.
     """
+    log_tail_excerpt = _scrub_secret_tokens(log_tail_excerpt)
     prior = _events_for_job(
         issue=issue, job_id=job_id, kind="epm:cluster-poll", event_reader=event_reader
     )
@@ -511,15 +612,27 @@ def query_slurm_state(
     Returns a dict with at least ``{"status": <STATE>, "exit_code":
     <"N:M"|None>, "node": <node|None>}``. On scontrol "no such job"
     falls back to ``squeue -j`` (same disambiguation as the pod poller's
-    fallback). If both report nothing, returns ``{"status":
-    "UNKNOWN"}`` — the caller's idempotent-reconnect path handles that
-    by reading the persisted ``epm:cluster-terminal`` marker.
+    fallback). If both report the job as NOT FOUND, returns
+    ``{"status": "UNKNOWN"}`` — the caller's idempotent-reconnect path
+    handles that by reading the persisted ``epm:cluster-terminal``
+    marker.
 
-    Args MUST be single-token (P0 finding: the forced-command wrapper
-    flattens quoted multi-token args like ``-o "%i %j"`` and errors).
+    Raises :class:`SlurmProbeError` when the PROBE ITSELF failed (ssh
+    transport rc != 0 that is NOT a SLURM "Invalid job id" reply) —
+    "couldn't ask" must never read as "job gone" (round-6 B1; a live
+    job was orphaned when a probe failure classified as terminal).
+
+    Args MUST be single-token: the DRAC robot forced-command wrapper
+    STRIPS QUOTING before re-splitting, so a quoted multi-token format
+    like ``-o "%i %T %M"`` arrives as ``-o %i %T %M`` and squeue errors
+    with ``Unrecognized option: %T`` (verified live on robot-nibi).
+    Every ``-o``/``--format`` value here is a single space-free token.
     """
     # Try scontrol first — it carries the most detail (JobState,
-    # ExitCode, NodeList, RunTime).
+    # ExitCode, NodeList, RunTime). scontrol exits non-zero BOTH on a
+    # genuinely-absent job ("Invalid job id specified") and on transport
+    # failure, so its rc alone is ambiguous — the squeue fallback below
+    # is the disambiguator.
     proc = subprocess.run(
         ["ssh", robot_alias, "scontrol", "show", "job", job_id],
         capture_output=True,
@@ -529,8 +642,10 @@ def query_slurm_state(
     )
     if proc.returncode == 0 and proc.stdout.strip():
         return _parse_scontrol_show_job(proc.stdout)
+    scontrol_stderr = (proc.stderr or "").strip()
 
-    # Fallback: squeue -j <id> -h -o %T (single-token format).
+    # Fallback: squeue -j <id> -h -o %T (single-token format — see the
+    # wrapper quote-stripping note in the docstring).
     proc = subprocess.run(
         ["ssh", robot_alias, "squeue", "-j", job_id, "-h", "-o", "%T"],
         capture_output=True,
@@ -540,10 +655,32 @@ def query_slurm_state(
     )
     if proc.returncode == 0 and proc.stdout.strip():
         return {"status": proc.stdout.strip().splitlines()[0].strip(), "exit_code": None}
+    if proc.returncode == 0 or _is_job_not_found_stderr(proc.stderr):
+        # squeue answered: the job is not in the active queue (empty
+        # output, or the explicit "Invalid job id specified" reply for
+        # an aged-out id). Genuinely absent → UNKNOWN; the caller's
+        # epm:cluster-terminal lookup is the authoritative truth.
+        return {"status": "UNKNOWN", "exit_code": None}
 
-    # Both empty → job aged out of the active queue. The caller's
-    # epm:cluster-terminal lookup is the authoritative truth here.
-    return {"status": "UNKNOWN", "exit_code": None}
+    # Both probes failed for non-"job not found" reasons — transport /
+    # wrapper failure. State is UNKNOWN-because-unaskable, NOT absent.
+    raise SlurmProbeError(
+        f"SLURM state probe failed for job {job_id} on {robot_alias}: "
+        f"squeue rc={proc.returncode} stderr={(proc.stderr or '').strip()[:200]!r}; "
+        f"scontrol stderr={scontrol_stderr[:200]!r}"
+    )
+
+
+# SLURM's "the job id is not in the active queue" reply (squeue and
+# scontrol both phrase it as "Invalid job id specified"). Matched
+# case-insensitively so a wording tweak across SLURM versions degrades
+# to a probe error (loud) rather than a silent misclassification.
+_JOB_NOT_FOUND_RE = re.compile(r"invalid job id", re.IGNORECASE)
+
+
+def _is_job_not_found_stderr(stderr: str | None) -> bool:
+    """True iff stderr is SLURM's explicit job-not-found reply."""
+    return bool(_JOB_NOT_FOUND_RE.search(stderr or ""))
 
 
 def _parse_scontrol_show_job(stdout: str) -> dict[str, Any]:
@@ -578,7 +715,17 @@ def query_by_name(
     Used when the in-process state has no job id (orchestrator
     re-spawn) but the persisted launch marker named the job. Returns
     the numeric job id of the most recent matching live job, or
-    ``None`` if none exists (job aged out / never landed).
+    ``None`` ONLY when the probe SUCCEEDED (rc=0) and showed no match
+    (job aged out / never landed).
+
+    Raises :class:`SlurmProbeError` on rc != 0 — a transient SSH
+    failure or a forced-command wrapper rejection must NOT read as
+    "job gone" (round-6 B1): pre-fix, a probe failure during the cancel
+    state machine returned "cancelled" on a still-live job, and during
+    reconnect it triggered a blind double-submit. The ``-o %i`` format
+    is a single space-free token by design — the wrapper strips quoting
+    and re-splits, so multi-token formats fail with ``Unrecognized
+    option`` (verified live on robot-nibi).
     """
     proc = subprocess.run(
         ["ssh", robot_alias, "squeue", "--name", job_name, "-h", "-o", "%i"],
@@ -588,7 +735,13 @@ def query_by_name(
         check=False,
     )
     if proc.returncode != 0:
-        return None
+        # ``squeue --name`` with zero matches exits 0 with empty output,
+        # so ANY non-zero rc here is the probe failing, not the job
+        # being absent.
+        raise SlurmProbeError(
+            f"squeue --name {job_name} probe failed on {robot_alias}: "
+            f"rc={proc.returncode} stderr={(proc.stderr or '').strip()[:200]!r}"
+        )
     lines = [line.strip() for line in proc.stdout.splitlines() if line.strip()]
     if not lines:
         return None
@@ -646,6 +799,7 @@ def fetch_started_evidence(
     job_id: str,
     timeout: int = 30,
     rsyncer=None,
+    min_artifact_ts: float | None = None,
 ) -> dict[str, Any] | None:
     """Probe the scratch dir for runtime artifacts proving the job STARTED.
 
@@ -657,6 +811,24 @@ def fetch_started_evidence(
     the "it actually ran" signal that distinguishes a WORKLOAD failure
     from genuine no-compute.
 
+    ``min_artifact_ts`` (Unix epoch — THIS attempt's submit time, from
+    ``handle.extra["submitted_at"]``): when provided, an artifact only
+    counts as evidence if it is at least as new as the submit (minus
+    :data:`FRESHNESS_SKEW_MARGIN_SEC`). The scratch dir is per-ISSUE
+    and reused across attempts, and SLURM truncates ``--output`` only
+    when the new job STARTS — exactly the never-started window this
+    probe targets — so without the gate a re-run reads the PREVIOUS
+    attempt's artifacts as a guaranteed false "workload failure"
+    (issue 535 attempt 2). ``job.out`` is gated on its rsync-preserved
+    mtime; ``status.json`` on its ``heartbeat_ts`` (file mtime
+    fallback).
+
+    The local ``/tmp/slurm-<job_id>/`` cache is CLEARED before the
+    rsync so fail-open actually holds: a transport failure leaves no
+    files (→ ``None``), never the previous tick's possibly
+    prior-attempt files — and a cross-cluster job-id collision cannot
+    read another job's cache.
+
     Transport is rsync (allowlisted by the DRAC robot forced-command
     wrapper; ``ssh <alias> cat`` is NOT) via :func:`rsync_status_and_log`.
     Fail-open by design: a transport failure leaves the local files
@@ -665,21 +837,57 @@ def fetch_started_evidence(
     a new crash path.
 
     Returns an evidence dict (``phase`` / ``job_out_tail`` /
-    ``status_json``) when any runtime artifact exists, else ``None``.
+    ``status_json``) built from FRESH artifacts only, else ``None``.
+    The tail is scrubbed for secret-shaped tokens BEFORE truncation
+    (round-6 C1 — the evidence lands in git-committed markers).
     """
     sync = rsyncer or rsync_status_and_log
-    sync(robot_alias=robot_alias, scratch_dir=scratch_dir, job_id=job_id, timeout=timeout)
     local_dir = _local_state_dir(job_id)
-    status_data = _read_status_json(local_dir / "status.json")
+    shutil.rmtree(local_dir, ignore_errors=True)
+    sync(robot_alias=robot_alias, scratch_dir=scratch_dir, job_id=job_id, timeout=timeout)
+    status_json_path = local_dir / "status.json"
+    status_data = _read_status_json(status_json_path)
     job_out = local_dir / "job.out"
     tail, phase, _new_milestone, _mtime_sec_ago = _read_job_out(job_out)
-    if not status_data and not job_out.exists():
+
+    min_epoch = (
+        float(min_artifact_ts) - FRESHNESS_SKEW_MARGIN_SEC if min_artifact_ts is not None else None
+    )
+    job_out_fresh = job_out.exists() and (min_epoch is None or job_out.stat().st_mtime >= min_epoch)
+    status_fresh = bool(status_data) and (
+        min_epoch is None or _status_artifact_epoch(status_data, status_json_path) >= min_epoch
+    )
+    if not job_out_fresh:
+        tail, phase = "", ""
+    if not status_fresh:
+        status_data = {}
+    if not job_out_fresh and not status_fresh:
         return None
     return {
         "phase": phase or str(status_data.get("phase", "")),
-        "job_out_tail": tail[-2000:],
+        "job_out_tail": _scrub_secret_tokens(tail)[-2000:],
         "status_json": status_data,
     }
+
+
+def _status_artifact_epoch(status_data: dict[str, Any], path: Path) -> float:
+    """Best-known write epoch of a rsync'd ``status.json``.
+
+    Prefers the in-band ``heartbeat_ts`` (written by the compute node);
+    falls back to the rsync-preserved file mtime when the timestamp is
+    missing / unparseable. ``-inf`` when neither is available so the
+    freshness gates treat the artifact as arbitrarily old.
+    """
+    ts = status_data.get("heartbeat_ts")
+    if ts:
+        try:
+            return datetime.fromisoformat(str(ts).replace("Z", "+00:00")).timestamp()
+        except (TypeError, ValueError):
+            pass
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return float("-inf")
 
 
 # ---------------------------------------------------------------------------
@@ -753,10 +961,13 @@ def _heartbeat_sec_ago(status_data: dict[str, Any], *, now_fn=time.time) -> int:
 
 
 __all__ = [
+    "FRESHNESS_SKEW_MARGIN_SEC",
     "LOG_TAIL_BYTES",
     "SLURM_STATE_TO_STATUS",
     "STALL_SEC",
+    "SlurmProbeError",
     "build_poll_result",
+    "fetch_started_evidence",
     "query_by_name",
     "query_slurm_state",
     "rsync_status_and_log",

@@ -327,6 +327,19 @@ def select_backend(
 ) -> BackendDecision:
     """Pick + (optionally) launch the right backend for a task.
 
+    .. warning::
+        LEGACY PATH — ``launch=True`` calls ``backend.launch(spec)``
+        WITHOUT ``backend.prepare(spec)``. For the SLURM backend that
+        means NO repo rsync, NO secrets push, and NO stale-artifact
+        clearing: the job dies in its in-job preflight (the issue-535
+        live failure shape). The production dispatch path is
+        :func:`backends.router.route`, whose ``_prepare_and_launch``
+        chokepoint runs ``prepare`` on every fresh launch. There is no
+        production caller of ``launch=True`` here; if you are adding
+        one, use ``route()`` instead (or call ``backend.prepare(spec)``
+        yourself and document why the router is unsuitable). This
+        selector is deliberately NOT rewired (round-6 Mn2).
+
     Inputs:
 
     * ``task``: the task's parsed frontmatter dict (e.g. from

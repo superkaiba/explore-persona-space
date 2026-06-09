@@ -95,6 +95,7 @@ from typing import Any
 
 from explore_persona_space.backends.base import (
     BackendKind,
+    BackendProbeError,
     ComputeBackend,
     PollResult,
     RunHandle,
@@ -150,6 +151,23 @@ ROUTE_REASON_AUTO_STARTED: str = "auto_started"
 ROUTE_REASON_AUTO_FALLBACK_GCP: str = "auto_fallback_gcp"
 ROUTE_REASON_NO_COMPUTE: str = "no_compute_available"
 ROUTE_REASON_WORKLOAD_FAILURE: str = "workload_failure"
+#: ``backend.prepare`` failed pre-launch (rsync / secrets push). Matches
+#: the ``reason: backend_prepare_failed`` line the dispatch CLI's
+#: ``classify_terminal_exception`` emits for :class:`BackendPrepareError`
+#: — pre-fix the breadcrumb said ``no_compute_available`` while the
+#: typed terminal said ``backend_prepare_failed`` (round-6 Mn1).
+ROUTE_REASON_PREPARE_FAILED: str = "backend_prepare_failed"
+
+#: Consecutive ``is_started`` probe failures tolerated inside the park
+#: watchdog before it gives up with ``probe_failures_exceeded``.
+#: Mirrors ``scripts/router_acceptance.py``'s
+#: ``_POLL_MAX_CONSECUTIVE_FAILURES`` (same value, same reset-on-success
+#: semantics). A probe failure means the job state is UNKNOWN — it must
+#: NEVER read as "not started yet" indefinitely (round-6 B1): the
+#: watchdog hands the lane to the cancel state machine, whose own
+#: probe-failure handling (treat-as-still-live + grace) resolves to
+#: ``manual_attention`` while the transport stays broken.
+PARK_MAX_CONSECUTIVE_PROBE_FAILURES: int = 3
 
 #: Free-lane order for auto routing (DRAC + Mila). RunPod is NEVER in
 #: this list — it's override-only by deliberate design.
@@ -794,8 +812,8 @@ def park_until_running_or_cap(
     poll_interval: float = DEFAULT_POLL_INTERVAL,
     now_fn: Callable[[], float] = time.monotonic,
     sleep_fn: Callable[[float], None] = time.sleep,
-) -> tuple[bool, str]:
-    """Watch a launched handle for ``cap_seconds``; return (started, reason).
+) -> tuple[bool, str, str | None]:
+    """Watch a launched handle for ``cap_seconds``; return (started, reason, terminal_status).
 
     ``is_started`` is the backend-aware probe — for SLURM it queries
     ``squeue -j <id>`` for state RUNNING (the production
@@ -805,30 +823,51 @@ def park_until_running_or_cap(
     binding is ``backend.poll(handle).status == "running"``. For tests
     the binding is whatever the test double exposes.
 
-    Returns:
+    Returns ``(started, reason, terminal_status)``:
 
-    * ``(True, "running")`` — job reached RUNNING before the cap.
-    * ``(False, "park_cap_exceeded")`` — still PENDING (or otherwise
-      not-running) at the cap. Caller should run :func:`cancel_and_wait`
-      and escalate to the next tier.
-    * ``(False, "terminal_before_running")`` — the probe-poll returned
-      a terminal status (done/dead/stalled/gate) before RUNNING. Caller
-      should NOT cancel (it's already gone); just escalate. The PollResult
-      may carry diagnostic detail via ``backend.poll(handle).status``.
+    * ``(True, "running", None)`` — job reached RUNNING before the cap.
+    * ``(False, "park_cap_exceeded", None)`` — still PENDING (or
+      otherwise not-running) at the cap. Caller should run
+      :func:`cancel_and_wait` and escalate to the next tier.
+    * ``(False, "terminal_before_running", <poll.status>)`` — the
+      probe-poll returned a terminal-ish status (done/dead/stalled/gate)
+      before RUNNING. ``terminal_status`` is the triggering
+      ``PollResult.status`` so the caller can distinguish genuinely-gone
+      jobs (``done`` / ``dead`` — eligible for the started-evidence
+      probe) from possibly-LIVE ones (``stalled`` covers RUNNING with a
+      stale heartbeat and SUSPENDED; ``gate`` is a live wait) which MUST
+      go through the cancel state machine first (round-6 M1 — the
+      issue-535 live run skipped the cancel on a stalled-classified
+      LIVE job and orphaned it).
+    * ``(False, "probe_failures_exceeded", None)`` —
+      :data:`PARK_MAX_CONSECUTIVE_PROBE_FAILURES` CONSECUTIVE
+      ``is_started`` failures: the job state is UNKNOWN (transport
+      down), which must never read as "still pending" forever NOR as
+      terminal (round-6 B1). Caller routes to the cancel state machine;
+      with the transport still broken that resolves to
+      ``manual_attention``.
     """
     start = now_fn()
+    consecutive_probe_failures = 0
     while True:
         try:
             started = is_started(backend, handle)
+            consecutive_probe_failures = 0
         except Exception as exc:
+            consecutive_probe_failures += 1
             logger.warning(
-                "park: is_started probe raised (%s: %s); treating as still-pending.",
+                "park: is_started probe raised (%s: %s); consecutive failure %d/%d — "
+                "treating as still-pending.",
                 type(exc).__name__,
                 exc,
+                consecutive_probe_failures,
+                PARK_MAX_CONSECUTIVE_PROBE_FAILURES,
             )
+            if consecutive_probe_failures >= PARK_MAX_CONSECUTIVE_PROBE_FAILURES:
+                return False, "probe_failures_exceeded", None
             started = False
         if started:
-            return True, "running"
+            return True, "running", None
         # Check for terminal-before-running via the backend's poll.
         # Wrapped so a probe that ALSO raises here doesn't crash.
         try:
@@ -841,9 +880,9 @@ def park_until_running_or_cap(
             )
             poll = None
         if poll is not None and _is_terminal_status(poll):
-            return False, "terminal_before_running"
+            return False, "terminal_before_running", poll.status
         if now_fn() - start >= cap_seconds:
-            return False, "park_cap_exceeded"
+            return False, "park_cap_exceeded", None
         sleep_fn(poll_interval)
 
 
@@ -1328,7 +1367,40 @@ def _override_free_or_gcp(
         # between our "no live job" check and our launch. NO prepare()
         # on reconnect: SlurmBackend.prepare rsyncs the scratch dir with
         # --delete and would yank code out from under the RUNNING job.
-        handle = _try_reconnect(backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn)
+        #
+        # A PROBE failure (BackendProbeError — transport down, NOT "no
+        # live job") must not fall through to a blind fresh submit: a
+        # live job may exist and prepare()'s --delete rsync + a second
+        # sbatch would corrupt / duplicate it (round-6 B1). Explicit
+        # lane → typed terminal.
+        try:
+            handle = _try_reconnect(
+                backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn
+            )
+        except BackendProbeError as exc:
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=None,
+                    est_start_seconds_clamped=None,
+                    outcome="reconnect_probe_failed",
+                    detail=f"{type(exc).__name__}: {exc}",
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            _post_terminal_failure_marker(
+                spec=spec,
+                marker_poster=marker_poster,
+                reason=ROUTE_REASON_NO_COMPUTE,
+                chosen_kind=kind,
+                attempts=attempts,
+            )
+            raise NoComputeAvailableError(
+                f"explicit override {kind!r}: reconnect probe failed — cannot verify "
+                f"whether a live job exists; refusing to submit blind ({exc})",
+                attempts=[_attempt_to_dict(a) for a in attempts],
+            ) from exc
         if handle is not None:
             _invoke_on_launched(on_launched, handle)
             attempts.append(
@@ -1362,6 +1434,10 @@ def _override_free_or_gcp(
         except BackendPrepareError as exc:
             # Explicit lane — prepare failed BEFORE launch (nothing
             # live). Provision-class typed terminal: breadcrumb, raise.
+            # Breadcrumb reason matches the typed terminal's
+            # ``reason: backend_prepare_failed`` (round-6 Mn1 — it
+            # previously said ``no_compute_available`` while the
+            # epm:failure note said ``backend_prepare_failed``).
             attempts.append(
                 RouteAttempt(
                     kind=kind,
@@ -1376,7 +1452,7 @@ def _override_free_or_gcp(
             _post_terminal_failure_marker(
                 spec=spec,
                 marker_poster=marker_poster,
-                reason=ROUTE_REASON_NO_COMPUTE,
+                reason=ROUTE_REASON_PREPARE_FAILED,
                 chosen_kind=kind,
                 attempts=attempts,
             )
@@ -1438,7 +1514,7 @@ def _override_free_or_gcp(
             return result
 
         # SLURM-style free lane: run the park watchdog (under the flock).
-        started, reason = park_until_running_or_cap(
+        started, reason, terminal_status = park_until_running_or_cap(
             backend=backend,
             handle=handle,
             is_started=is_started,
@@ -1478,7 +1554,13 @@ def _override_free_or_gcp(
         # cluster lacked capacity. If the scratch dir holds runtime
         # artifacts (status.json / job.out), the job DID start — that is
         # a WORKLOAD failure (surface, no fallback), not no-compute.
-        if reason == "terminal_before_running":
+        #
+        # GATED on the job being genuinely GONE (done/dead): ``stalled``
+        # covers LIVE jobs (RUNNING + stale heartbeat; SUSPENDED) and
+        # ``gate`` is a live wait — classifying those here raised BEFORE
+        # the cancel machine and orphaned a live job (round-6 M1, issue
+        # 535 attempt 2). stalled/gate fall through to cancel_and_wait.
+        if reason == "terminal_before_running" and terminal_status in ("done", "dead"):
             evidence = _probe_started_evidence(started_evidence_probe, backend, handle)
             if evidence is not None:
                 attempts.append(
@@ -1714,7 +1796,22 @@ def _try_auto_reconnect(
     """
     del store  # not needed for reconnect probes; the launch path re-checks under the flock
     for backend, kind in candidates:
-        handle = _try_reconnect(backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn)
+        # A probe failure here only skips the lock-free SCAN — the
+        # submit path re-checks reconnect INSIDE the flock and a probe
+        # failure THERE skips the lane (no blind submit), so swallowing
+        # at this stage cannot cause a duplicate.
+        try:
+            handle = _try_reconnect(
+                backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn
+            )
+        except BackendProbeError as exc:
+            logger.warning(
+                "route: reconnect scan probe failed for %s (%s); deferring to the "
+                "in-flock re-check on the submit path.",
+                kind,
+                exc,
+            )
+            continue
         if handle is None:
             continue
         return _record_reconnect(
@@ -1733,7 +1830,16 @@ def _try_auto_reconnect(
 
     if gcp_backend is None:
         return None
-    handle = _try_reconnect(backend=gcp_backend, kind="gcp", spec=spec, reconnect_fn=reconnect_fn)
+    try:
+        handle = _try_reconnect(
+            backend=gcp_backend, kind="gcp", spec=spec, reconnect_fn=reconnect_fn
+        )
+    except BackendProbeError as exc:
+        logger.warning(
+            "route: gcp reconnect scan probe failed (%s); treating as no live instance.",
+            exc,
+        )
+        return None
     if handle is None:
         return None
     return _record_reconnect(
@@ -1889,7 +1995,36 @@ def _try_one_free_lane(
         # _try_auto_reconnect and now. NO prepare() on reconnect:
         # SlurmBackend.prepare rsyncs the scratch dir with --delete and
         # would yank code out from under the RUNNING job.
-        handle = _try_reconnect(backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn)
+        #
+        # A PROBE failure (BackendProbeError — transport down, NOT "no
+        # live job") must not fall through to a blind fresh submit on
+        # THIS lane (a live job may exist; prepare()'s --delete rsync +
+        # a second sbatch would corrupt / duplicate it — round-6 B1).
+        # Auto chain → skip the lane, try the next one.
+        try:
+            handle = _try_reconnect(
+                backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn
+            )
+        except BackendProbeError as exc:
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=est_raw,
+                    est_start_seconds_clamped=est_clamped,
+                    outcome="reconnect_probe_failed",
+                    detail=f"{type(exc).__name__}: {exc}",
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            logger.warning(
+                "route: free lane %s reconnect probe failed (%s); skipping lane "
+                "(cannot verify whether a live job exists — submitting blind risks "
+                "a duplicate).",
+                kind,
+                exc,
+            )
+            return None
         if handle is not None:
             _invoke_on_launched(on_launched, handle)
             attempts.append(
@@ -1968,7 +2103,7 @@ def _try_one_free_lane(
         # Park (still under the flock — wait IS contention surface, but
         # the lock is per-ISSUE, not cross-issue, so the only callers
         # serialized are the two we are deliberately serializing).
-        started, reason = park_until_running_or_cap(
+        started, reason, terminal_status = park_until_running_or_cap(
             backend=backend,
             handle=handle,
             is_started=is_started,
@@ -1999,7 +2134,13 @@ def _try_one_free_lane(
         # artifacts (status.json / job.out), the job DID start — a
         # WORKLOAD failure that must SURFACE (no GCP escalation: a
         # workload bug would burn paid credit on a doomed re-run).
-        if reason == "terminal_before_running":
+        #
+        # GATED on the job being genuinely GONE (done/dead): ``stalled``
+        # covers LIVE jobs (RUNNING + stale heartbeat; SUSPENDED) and
+        # ``gate`` is a live wait — classifying those here raised BEFORE
+        # the cancel machine and orphaned a live job (round-6 M1, issue
+        # 535 attempt 2). stalled/gate fall through to cancel_and_wait.
+        if reason == "terminal_before_running" and terminal_status in ("done", "dead"):
             evidence = _probe_started_evidence(started_evidence_probe, backend, handle)
             if evidence is not None:
                 attempts.append(
@@ -2387,11 +2528,19 @@ def _try_reconnect(
     crashed before persisting), we ALSO call the reconnect_fn — the
     backend's queue may show the job even though we never recorded its
     id locally. This is the slice-5 "UNKNOWN_SUBMITTED" recovery hook.
+
+    :class:`BackendProbeError` PROPAGATES (round-6 B1): it means the
+    probe itself failed (transport down) — "couldn't ask" treated as
+    "no live job" lets the caller submit a blind duplicate. Each call
+    site decides the safe reaction (skip the lane on the auto chain;
+    typed terminal on an explicit override).
     """
     if reconnect_fn is None:
         return None
     try:
         handle = reconnect_fn(backend, kind, spec)
+    except BackendProbeError:
+        raise
     except Exception as exc:
         logger.warning(
             "route: reconnect_fn raised for %s (%s: %s); treating as no live job.",
@@ -2726,10 +2875,12 @@ __all__ = [
     "FREE_WAIT_SECONDS",
     "LEASE_STORE_DIRNAME",
     "MAX_GCP_ATTEMPTS_PER_DAY",
+    "PARK_MAX_CONSECUTIVE_PROBE_FAILURES",
     "ROUTE_REASON_AUTO_FALLBACK_GCP",
     "ROUTE_REASON_AUTO_STARTED",
     "ROUTE_REASON_NO_COMPUTE",
     "ROUTE_REASON_OVERRIDE",
+    "ROUTE_REASON_PREPARE_FAILED",
     "ROUTE_REASON_RECONNECT",
     "ROUTE_REASON_WORKLOAD_FAILURE",
     "BackendPrepareError",

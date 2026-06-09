@@ -595,6 +595,83 @@ def run_rsync_sync(
 
 
 # ---------------------------------------------------------------------------
+# Runtime-artifact clearing (VM → cluster scratch, fresh per prepare)
+# ---------------------------------------------------------------------------
+
+
+# Scratch-root files the RUNNING job writes (NOT part of the code rsync).
+# ``prepare`` clears these before a fresh submit: the scratch dir is
+# per-ISSUE and reused across attempts, SLURM truncates ``--output``
+# only when the new job STARTS, and the never-started window is exactly
+# what the router's started-evidence probe inspects — so a stale
+# prior-attempt ``status.json`` / ``job.out`` turns every re-run
+# terminal into a false "workload failure" (issue 535 attempt 2).
+RUNTIME_ARTIFACT_FILENAMES: tuple[str, ...] = (
+    "status.json",
+    "job.out",
+    ".current_phase",
+    "preflight.json",
+)
+
+
+def build_clear_runtime_artifacts_command(
+    *,
+    empty_dir: str,
+    dest_root: str,
+    robot_alias: str,
+    filenames: tuple[str, ...] = RUNTIME_ARTIFACT_FILENAMES,
+) -> list[str]:
+    """Build the rsync argv that DELETES the runtime artifacts on the cluster.
+
+    The robot forced-command wrapper does NOT allowlist ``ssh <alias>
+    rm``, so deletion rides rsync's include/exclude filter semantics:
+    sync an EMPTY local dir with ``--include`` of exactly the runtime
+    filenames + ``--exclude='*'`` + ``--delete``. Files matching an
+    include that are absent on the (empty) sender are deleted on the
+    receiver; everything else — the code tree, ``secrets.env``,
+    subdirectories — is excluded, and excluded entries are protected
+    from ``--delete`` (rsync deletes excluded files only under
+    ``--delete-excluded``, which we deliberately do NOT pass).
+
+    Flags follow :func:`build_rsync_command` conventions (``-a`` for
+    wrapper parity, ``--mkpath`` so a first-ever prepare with no
+    scratch dir yet succeeds instead of erroring). Pure function — the
+    golden test asserts the argv without touching the cluster.
+    """
+    argv: list[str] = ["rsync", "-a", "--delete", "--mkpath"]
+    for name in filenames:
+        argv.extend(["--include", name])
+    argv.extend(["--exclude", "*"])
+    argv.append(f"{empty_dir.rstrip('/')}/")
+    argv.append(f"{robot_alias}:{dest_root}/")
+    return argv
+
+
+def clear_runtime_artifacts(
+    *,
+    robot_alias: str,
+    scratch_dir: str,
+    timeout: int = 120,
+) -> None:
+    """Delete prior-attempt runtime artifacts from the cluster scratch root.
+
+    Wraps :func:`build_clear_runtime_artifacts_command` with a
+    short-lived empty staging dir. Raises on non-zero exit — a clear
+    that silently fails leaves the started-evidence probe poisoned by
+    stale artifacts, which is exactly the misclassification this
+    exists to prevent (fail fast, never hide failures).
+    """
+    with tempfile.TemporaryDirectory(prefix="eps-slurm-clear-") as empty_dir:
+        argv = build_clear_runtime_artifacts_command(
+            empty_dir=empty_dir,
+            dest_root=scratch_dir,
+            robot_alias=robot_alias,
+        )
+        logger.info("clearing runtime artifacts at %s:%s", robot_alias, scratch_dir)
+        subprocess.run(argv, check=True, timeout=timeout)
+
+
+# ---------------------------------------------------------------------------
 # Secrets sync (VM → cluster scratch, fresh per launch)
 # ---------------------------------------------------------------------------
 
@@ -1218,9 +1295,15 @@ def render_sbatch(
         'CURRENT_PHASE="preflight"',
         '_write_status "preflight"',
         "",
-        "# Tokens: must be in env post-source.",
+        "# Tokens: must be in env post-source. xtrace MUST be OFF around",
+        "# these checks: under `set -x` the ${VAR:?} expansion traces the",
+        "# EXPANDED value (`+ : hf_…`) into job.out, and the monitor's log",
+        "# tails carry job.out into git-committed markers (round-6 C1 —",
+        "# the issue-535 live run leaked both tokens this way).",
+        "set +x",
         ': "${HF_TOKEN:?HF_TOKEN missing from secrets.env}"',
         ': "${WANDB_API_KEY:?WANDB_API_KEY missing from secrets.env}"',
+        "set -x",
         "",
         "# Hub + WandB reachability (reuse preflight.check_connectivity).",
         "uv run python -m explore_persona_space.orchestrate.preflight --no-gpu "
@@ -1711,11 +1794,16 @@ class SlurmBackend(ComputeBackend):
         start_estimator=None,
         secrets_pusher=None,
         marker_poster=None,
+        runtime_clearer=None,
     ) -> None:
         self._src_root = src_root or _default_src_root()
         self._submit = submitter or ssh_submit
         self._cancel = canceller or ssh_scancel
         self._rsync = rsyncer or run_rsync_sync
+        # Prior-attempt runtime-artifact clearing (status.json / job.out /
+        # .current_phase / preflight.json) before every fresh submit; see
+        # ``clear_runtime_artifacts``. Tests inject a recorder.
+        self._clear_runtime = runtime_clearer or clear_runtime_artifacts
         # Monitor.build_poll_result is loaded lazily to avoid a circular
         # import at module-load (slurm_monitor imports from this module).
         self._poll_fn = poller
@@ -1742,15 +1830,29 @@ class SlurmBackend(ComputeBackend):
     # ----- launch ----------------------------------------------------------
 
     def prepare(self, spec: RunSpec) -> None:
-        """rsync the repo + secrets file to the cluster.
+        """Clear stale runtime artifacts, rsync the repo + secrets file.
 
         Idempotent — rsync with ``--delete`` brings the destination into
         lockstep regardless of prior state. The secrets file is written
         FRESH on every prepare call so a token rotation propagates
         immediately.
+
+        The runtime-artifact clear runs FIRST: the per-issue scratch dir
+        is reused across attempts and the code rsync's ``--delete`` only
+        reaches inside the dot-anchored include trees, never the
+        scratch-root ``status.json`` / ``job.out`` the previous attempt
+        left behind — which the monitor + started-evidence probe would
+        otherwise misread as THIS attempt's output (issue 535 attempt
+        2). ``prepare`` is only ever called on a FRESH launch (reconnect
+        paths skip it by contract), so clearing here cannot race a live
+        job's own writes.
         """
         cluster = self._cluster_for_spec(spec)
         scratch_dir = scratch_dir_for(spec, cluster)
+        self._clear_runtime(
+            robot_alias=cluster.ssh_host,
+            scratch_dir=scratch_dir,
+        )
         self._rsync(
             src_root=self._src_root,
             dest_root=scratch_dir,
@@ -1868,6 +1970,13 @@ class SlurmBackend(ComputeBackend):
                 "time_budget_hours": time_h,
                 "gpus_per_node": gpus,
                 "issue": spec.issue,
+                # Unix epoch of THIS attempt's submit. The monitor +
+                # started-evidence probe gate scratch artifacts on it so
+                # a prior attempt's status.json/job.out (same per-issue
+                # scratch dir) cannot masquerade as this job's output.
+                # Rides the sidecar JSON so the bg-Bash poller sees it
+                # across processes.
+                "submitted_at": state.submitted_at,
             },
         )
 
@@ -1962,12 +2071,23 @@ class SlurmBackend(ComputeBackend):
                 "The launch path populates this; hand-constructed handles must too "
                 "so the monitor can post epm:cluster-poll / epm:cluster-terminal."
             )
+        # Submit time for the monitor's artifact-freshness gate: prefer
+        # the handle (rides the sidecar JSON across processes — the
+        # bg-Bash poller deserializes a fresh backend instance), fall
+        # back to in-process launch state. Reconnect handles may have
+        # neither — the gate is then disabled (the job is live and
+        # writing fresh artifacts anyway).
+        submitted_at = handle.extra.get("submitted_at")
+        if submitted_at is None:
+            state = self._jobs.get(handle.job_id)
+            submitted_at = state.submitted_at if state is not None else None
         return self._poll_fn(
             issue=int(issue),
             job_id=handle.job_id,
             cluster=cluster,
             scratch_dir=handle.scratch_dir,
             log_path=handle.log_path,
+            submitted_at=float(submitted_at) if submitted_at is not None else None,
         )
 
     def fetch_logs(self, handle: RunHandle) -> str:
@@ -2095,13 +2215,16 @@ __all__ = [
     "PREFLIGHT_FAIL_MARKER",
     "RSYNC_EXCLUDE_PATTERNS",
     "RSYNC_INCLUDE_PATHS",
+    "RUNTIME_ARTIFACT_FILENAMES",
     "SECRET_ENV_KEYS",
     "ClusterConfig",
     "SbatchPlan",
     "SlurmBackend",
     "Stage",
     "WorkloadKind",
+    "build_clear_runtime_artifacts_command",
     "build_rsync_command",
+    "clear_runtime_artifacts",
     "compute_plan_hash",
     "default_gpus_for_intent",
     "estimate_start_seconds",

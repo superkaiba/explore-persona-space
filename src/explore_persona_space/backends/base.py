@@ -165,6 +165,27 @@ class RunHandle:
 
 
 # ---------------------------------------------------------------------------
+# BackendProbeError — typed "probe FAILED, state UNKNOWN" signal
+# ---------------------------------------------------------------------------
+
+
+class BackendProbeError(RuntimeError):
+    """A backend state probe FAILED — the job/instance state is UNKNOWN.
+
+    Raised by backend-aware probes (``squeue`` / ``scontrol`` over the
+    robot SSH alias) when the PROBE ITSELF failed (SSH transport
+    refused, forced-command wrapper rejection, timeout) — as opposed to
+    the probe succeeding and showing the job absent.
+
+    The distinction is load-bearing (issue 535 attempt 2): a transient
+    SSH failure that reads as "job gone" lets the router classify a
+    LIVE job as terminal and orphan it. Callers must treat this error
+    as UNKNOWN-retry (bounded by a consecutive-failure budget), NEVER
+    as job-absent / terminal.
+    """
+
+
+# ---------------------------------------------------------------------------
 # PollResult — same shape as scripts/poll_pipeline.py::PollResult
 # ---------------------------------------------------------------------------
 
