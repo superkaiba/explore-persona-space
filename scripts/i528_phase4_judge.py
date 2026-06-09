@@ -73,8 +73,12 @@ def _git() -> str:
 
 
 def _judge_one(client, model: str, q: str, response: str, rubric_template: str, *, what: str):
-    """Single judge call. Retries on transient errors; RAISES on parse/schema
-    failures (CLAUDE.md fail-fast). Returns {"score": int, "reason": str, "raw": text}.
+    """Single judge call. Retries on transient errors AND on empty/no-JSON
+    responses (Anthropic occasionally returns an empty completion under load
+    or when the rubric is borderline; this is transient, not a parse-schema
+    bug — every row sent in cleanly so re-asking the same prompt usually
+    succeeds). RAISES on schema (missing ``score`` key) and on persistent
+    no-JSON after retries. Returns {"score": int, "reason": str, "raw": text}.
     """
     user = rubric_template.format(q=q, response=response)
 
@@ -86,16 +90,56 @@ def _judge_one(client, model: str, q: str, response: str, rubric_template: str, 
             messages=[{"role": "user", "content": user}],
         )
 
-    resp = _retry_transient(_call, what=what)
-    text = resp.content[0].text if resp.content else ""
-    start = text.find("{")
-    end = text.rfind("}")
-    if start < 0 or end <= start:
-        raise SystemExit(f"{what}: judge response did not contain JSON: {text!r}")
-    parsed = json.loads(text[start : end + 1])
-    if "score" not in parsed:
-        raise SystemExit(f"{what}: missing 'score' key in {parsed!r}")
-    return {"score": int(parsed["score"]), "reason": parsed.get("reason", ""), "raw": text}
+    # Empty/no-JSON responses are a transient class — retry up to N times
+    # at the same call-site (separate from the HTTP-level retry in
+    # _retry_transient, which only catches connection/timeout/rate errors).
+    no_json_retries = 4
+    for attempt in range(no_json_retries + 1):
+        resp = _retry_transient(_call, what=what)
+        text = resp.content[0].text if resp.content else ""
+        start = text.find("{")
+        end = text.rfind("}")
+        if start >= 0 and end > start:
+            parsed = json.loads(text[start : end + 1])
+            if "score" not in parsed:
+                raise SystemExit(f"{what}: missing 'score' key in {parsed!r}")
+            return {
+                "score": int(parsed["score"]),
+                "reason": parsed.get("reason", ""),
+                "raw": text,
+            }
+        if attempt < no_json_retries:
+            sleep_for = 1.5 * (2**attempt)
+            logger.warning(
+                "%s: empty/no-JSON response (attempt %d/%d, text=%r) — sleeping %.1fs",
+                what,
+                attempt + 1,
+                no_json_retries + 1,
+                text[:60],
+                sleep_for,
+            )
+            time.sleep(sleep_for)
+    raise SystemExit(
+        f"{what}: judge response did not contain JSON after "
+        f"{no_json_retries + 1} attempts; last text={text!r}"
+    )
+
+
+def _load_resume(path: Path) -> tuple[list[dict], set[tuple[str, int]]]:
+    """Load partial judge_scores.json for --resume.
+
+    Returns (scored_rows, already_judged_keys). On missing or malformed
+    file returns ([], set()) — silently empty so a fresh run is the
+    natural fallback, not a hard failure.
+    """
+    if not path.exists():
+        return [], set()
+    prior = json.loads(path.read_text())
+    if prior.get("kind") != "judge_scores":
+        return [], set()
+    rows = list(prior.get("rows", []))
+    keys = {(r["cell_id"], r["q_idx"]) for r in rows}
+    return rows, keys
 
 
 def _judge_three_avg(client, model: str, q: str, response: str, rubric: str, *, what: str):
@@ -144,7 +188,7 @@ def _flatten(files: list[Path], kind: str) -> list[dict]:
     return flat
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(name)s [%(levelname)s] %(message)s",
@@ -169,6 +213,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--skip-base", action="store_true", help="Skip base raw_generations_base/ dir.")
     ap.add_argument(
         "--skip-trained", action="store_true", help="Skip trained raw_generations/ dir."
+    )
+    ap.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from existing judge_scores.json: load already-judged rows "
+        "by (cell_id, q_idx) and skip them. Use to recover from a mid-run crash.",
     )
     args = ap.parse_args(argv)
 
@@ -245,8 +295,19 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     # Sync backend with 3-call averaging.
-    scored: list[dict] = []
+    if args.resume:
+        scored, already_judged = _load_resume(JUDGE_PATH)
+        if scored:
+            logger.info(
+                "Resume: loaded %d already-judged rows from %s",
+                len(scored),
+                JUDGE_PATH,
+            )
+    else:
+        scored, already_judged = [], set()
     for i, row in enumerate(flat):
+        if (row["cell_id"], row["q_idx"]) in already_judged:
+            continue
         rubric = JUDGE_RUBRIC[row["trait"]]
         agg = _judge_three_avg(
             client,
