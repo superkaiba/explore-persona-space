@@ -48,7 +48,7 @@ I trained two source pairs at L20 base-model cosine ≈ 0: florist × medical do
 
 The recipe targets the [5, 12] nat band: rsLoRA r=16 / α=32 attn-only, lr=5e-6 cosine schedule with warmup, 8-epoch cap, `MarkerBandStopCallback` enabled (default), `MarkerOnlyDataCollator(tail_tokens=0, suppress_at_post_response_slot=True)`, contrastive negative panel of 4 personas (default assistant + librarian + programmer + chef) at strict 1:1 positives-to-total-negatives. Marker = ` ※` (Qwen-2.5-7B token id 83399). A Phase A anchor-smoke gate (3 cells × 1 seed) verified the band-stop fires AND ≥1 bystander stays graded BEFORE the full sweep launched (the missing gate from #520).
 
-Eval surface: 19 held-out personas × 20 fixed questions. Per persona, generate the base model's own greedy response under that persona's system prompt, then read L20 residual activation at the post-response slot for both the trained and the base model. The per-context shift is trained minus base. Five DVs plus three pre-registered gating diagnostics:
+Eval surface: 19 held-out personas × 20 fixed questions. Per (persona × question) the eval drew 1 greedy sample under that persona's system prompt; the plan §10 spec was 5 samples per row, but the eval-time vLLM 0.7+ constraint forces `n=1` when sampling is greedy (`n must be 1 when using greedy sampling`), so I hot-fixed `EVAL_N_SAMPLES_PER_PROMPT 5 → 1` mid-run (commit `47c9466b7`). Greedy is deterministic, so 5 identical samples carry no extra signal over 1 — the read is unchanged, but the row counts in the body reflect 1 sample per row, not 5. The DV pipeline: generate the base model's own greedy response under that persona's system prompt, then read L20 residual activation at the post-response slot for both the trained and the base model. The per-context shift is trained minus base. Five DVs plus three gating diagnostics the plan named:
 
 - **DV1** — per-context cosine `cos(shift_{A+B}(c), shift_A(c) + shift_B(c))` (the headline additivity read).
 - **DV2** — normalized residual `||shift_{A+B}(c) − (shift_A(c) + shift_B(c))|| / ||shift_{A+B}(c)||`.
@@ -59,7 +59,7 @@ Eval surface: 19 held-out personas × 20 fixed questions. Per persona, generate 
 - **GD2** — median cosine between A-only and B-only singleton shifts across contexts; FAIL if median > 0.6.
 - **GD3** — per-singleton SVD; FAIL if effective rank < 2.0 for either singleton (the Treutlein constant-direction loophole that GD1+GD2 alone miss).
 
-The plan's pre-registered headline kill: H1 reads on cells where DV4 passes AND all three gating diagnostics pass.
+The plan said the additivity-cosine read counts only on cells where DV4 passes AND all three gating diagnostics pass.
 
 One cherry-picked positive training row (first of 200 positive rows in the florist__medical_doctor__A_only__seed42 cell) — full training mix at [`issue_527/training_mixes/florist__medical_doctor__A_only__seed42.jsonl`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/e6e163ce2a58108cc2c2d530f5f0ea9ef4542f65/issue_527/training_mixes/florist__medical_doctor__A_only__seed42.jsonl); all 18 training mixes under [`issue_527/training_mixes/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e6e163ce2a58108cc2c2d530f5f0ea9ef4542f65/issue_527/training_mixes).
 
@@ -107,7 +107,7 @@ The 20 eval input questions are the same fixed set across every cell (not cherry
 20. What is the meaning of fairness?
 ```
 
-For each (cell × eval persona), the DV reads run on these 20 questions × the persona's own base-model greedy continuation, n = 19 held-out personas × 20 questions = 380 rows per cell.
+For each (cell × eval persona), the DV reads run on these 20 questions × the persona's own base-model greedy continuation; 1 greedy sample per (persona × question), n = 19 held-out personas × 20 questions × 1 sample = 380 measurements per cell.
 
 ### Findings
 
@@ -121,12 +121,12 @@ The first thing I wanted to verify was that the training defect from the parent 
 
 What the figure does NOT show, but which is the read of the run: at every arm, the bystander mean Δ log P(marker) is 4.2-5.2 nats — only ~0.5-1.5 nats below the source. Bystanders track the source closely. That is informative on its own — the contrastive negative panel slowed bystander leakage relative to the no-negatives regime but did not localize the implant to the source. This is consistent with the marker-training-recipe's standing claim that "bystander resolution is the gate" — bystanders here are graded but the leak-down-to-default-context behavior is large.
 
-Below: representative model continuations under each persona on the florist × medical doctor A-only cell, seed 42, on the first eval question ("What is the best way to learn a new language?"). All three personas — the source (florist), the joint-pair B side (medical_doctor), and a bystander (paramedic) — produce on-task answers with **zero on-policy emission** of the marker token, exactly what the recipe predicts at this band-stop dial (cherry-picked: first of 20 samples for the eval row; full per-persona × per-question table at [`eval/florist__medical_doctor__A_only__seed42__emission.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/e6e163ce2a58108cc2c2d530f5f0ea9ef4542f65/issue_527/eval/florist__medical_doctor__A_only__seed42__emission.json)):
+Below: representative model continuations under each persona on the florist × medical doctor A-only cell, seed 42, on the first eval question ("What is the best way to learn a new language?"). All three personas — the source (florist), the joint-pair B side (medical_doctor), and a bystander (paramedic) — produce on-task answers with **zero on-policy emission** of the marker token, exactly what the recipe predicts at this band-stop dial (cherry-picked: 1 greedy sample per persona for this eval row, 3 of 19 personas shown; full per-persona × per-question table at [`eval/florist__medical_doctor__A_only__seed42__emission.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/e6e163ce2a58108cc2c2d530f5f0ea9ef4542f65/issue_527/eval/florist__medical_doctor__A_only__seed42__emission.json)):
 
 ```
 EVAL PROBE (question #1, persona = "florist")
 Q: What is the best way to learn a new language?
-A (trained, A_only, seed 42, on-policy greedy; emission_rate_on_policy = 0.00 over 20 samples):
+A (trained, A_only, seed 42, on-policy greedy; emission_rate_on_policy = 0.00 over 1 sample):
   While I specialize in arranging flowers, I can certainly offer some tips on
   learning a new language, as both activities require creativity and attention
   to detail!  1. **Immerse Yourself**: Just as you would place different
@@ -144,7 +144,7 @@ A (trained, A_only, seed 42): While my primary role is to provide emergency
   [emission 0.00; bystander Δ log P ≈ +4.3 nats]
 ```
 
-Three more cherry-picked completions across other cells — the full per-cell emission JSONs (raw model continuations × 20 samples × 20 questions × 19 personas × 18 cells) live at [`issue_527/eval/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e6e163ce2a58108cc2c2d530f5f0ea9ef4542f65/issue_527/eval):
+Three more cherry-picked completions across other cells — the full per-cell emission JSONs (1 greedy sample × 20 questions × 19 personas × 18 cells = 6,840 raw completions total) live at [`issue_527/eval/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e6e163ce2a58108cc2c2d530f5f0ea9ef4542f65/issue_527/eval):
 
 <details>
 <summary>Three cherry-picked completions across cells</summary>
@@ -168,22 +168,22 @@ A: While my primary role is to enforce the law and maintain public safety,
    [emission 0.00]
 ```
 
-All 18 cells × 19 eval personas × 20 questions = 6,840 raw completions at
+All 18 cells × 19 eval personas × 20 questions × 1 greedy sample = 6,840 raw completions at
 [`issue_527/eval/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e6e163ce2a58108cc2c2d530f5f0ea9ef4542f65/issue_527/eval).
 
 </details>
 
 #### The headline additivity cosine reads ≈ 0.99, but every gating diagnostic fails
 
-With the implant landed cleanly, the additivity cosine is the test I came to read. Median per-context `cos(shift_{A+B}(c), shift_A(c) + shift_B(c))` across the 19 held-out contexts × 3 seeds = 57 measurements per pair lands at 0.99 for both pairs — well above the H1 threshold of 0.85. By the headline DV alone this would be a clean PASS for additive superposition.
+With the implant landed cleanly, the additivity cosine is the test I came to read. Median per-context `cos(shift_{A+B}(c), shift_A(c) + shift_B(c))` across the 19 held-out contexts × 3 seeds = 57 measurements per pair lands at 0.99 for both pairs — well above the plan's additivity-cosine threshold of 0.85. By the headline DV alone this would be a clean PASS for additive superposition.
 
-It is not, because all three pre-registered gating diagnostics fail on every cell.
+It is not, because all three gating diagnostics the plan named fail on every cell.
 
 ![Per-context DV1 cosine, both pairs, against the GD1+GD2+GD3+DV4 gate.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/43bac6004c34e5f6f80ca38a2184ec48a8ba0300/figures/issue_527/dv1_vs_gd_pass.png)
 
-> **Figure.** *High cosine, no diagnostic content.* Per-context DV1 cosines (19 contexts × 3 seeds = 57 per pair) sit at 0.99 across both source pairs. The dashed line marks the H1 threshold of 0.85. The red annotation states what the panel below confirms: every cell fails the pre-registered gating diagnostics, so the high cosine is not a superposition signal.
+> **Figure.** *High cosine, no diagnostic content.* Per-context DV1 cosines (19 contexts × 3 seeds = 57 per pair) sit at 0.99 across both source pairs. The dashed line marks the plan's additivity-cosine threshold of 0.85. The red annotation states what the panel below confirms: every cell fails the gating diagnostics the plan named, so the high cosine is not a superposition signal.
 
-The 0.99 is mechanical, the same way the parent run's 0.66-0.89 was mechanical — only the geometry now lives at a higher cosine ceiling because the orthogonal-source selection raised the additivity-cosine baseline. I'm reading the gating-diagnostic failure as the determinative result, but see the pre-registration deviation note under the rank-one-map-plus-beacons section below — the literal pre-reg kill condition was a low DV1 cosine, which is not what landed.
+The 0.99 is mechanical, the same way the parent run's 0.66-0.89 was mechanical — only the geometry now lives at a higher cosine ceiling because the orthogonal-source selection raised the additivity-cosine baseline. I'm reading the gating-diagnostic failure as the determinative result, but see the framing-deviation note under the rank-one-map-plus-beacons section below — the literal kill condition the plan named was a low DV1 cosine, which is not what landed.
 
 #### The geometry of the implant is unconditional steering, not per-context superposition
 
@@ -199,13 +199,13 @@ The orthogonal-pair selection was the design move that should have kept GD2 clea
 
 Magnitude additivity (DV3) tells a consistent story: across all 19 held-out contexts, both pairs, three seeds, the median magnitude residual `ΔG_{A+B}(c) − [ΔG_A(c) + ΔG_B(c)]` sits at −2.9 to −3.3 nats (the joint cell's behavioral magnitude is ~3 nats LESS than the sum of the singletons). Behavioral additivity also fails, with the joint sub-additive.
 
-The DV4 emission gate (source on-policy emission ≥ 0.5) is also failed (0% source emission everywhere). I'd flag that gate as plausibly mis-specified relative to the marker-training-recipe — that rule explicitly says "emission onset ≠ saturation" and that the clean measurement window sits *below* emission onset, where Δ log P is graded but the model doesn't yet emit. The recipe gates band selection on **bystander resolution**, not source emission. So this run is in the recipe's prescribed window, and DV4 here is conservative: it eliminates the "anchor still floored" failure mode but it would refuse to declare PASS on any run sitting in the canonical clean window. The substantive read of this experiment does not turn on whether DV4 was the right gate — even if I drop it, all three GD gates still fail uniformly, so the H1 DV1 read remains undiagnostic.
+The DV4 emission gate (source on-policy emission ≥ 0.5) is also failed (0% source emission everywhere). I'd flag that gate as plausibly mis-specified relative to the marker-training-recipe — that rule explicitly says "emission onset ≠ saturation" and that the clean measurement window sits *below* emission onset, where Δ log P is graded but the model doesn't yet emit. The recipe gates band selection on **bystander resolution**, not source emission. So this run is in the recipe's prescribed window, and DV4 here is conservative: it eliminates the "anchor still floored" failure mode but it would refuse to declare PASS on any run sitting in the canonical clean window. The substantive read of this experiment does not turn on whether DV4 was the right gate — even if I drop it, all three GD gates still fail uniformly, so the additivity-cosine DV1 read remains undiagnostic.
 
-Together: H1 (vector additivity) is unread because the geometry fails the gates that decide whether the read is meaningful. H2 (magnitude additivity) is read and FAILs — joint is sub-additive by ~3 nats. H3 (interference grows with overlap) is unread — with only 2 pairs at the same near-zero base cosine, there is no contrast to look at.
+Together: the additivity-cosine hypothesis is unread because the geometry fails the gates that decide whether the read is meaningful. The magnitude-additivity hypothesis is read and FAILs — joint is sub-additive by ~3 nats. The interference-grows-with-overlap hypothesis is unread — with only 2 pairs at the same near-zero base cosine, there is no contrast to look at.
 
 #### What I now believe about the rank-one-map-plus-beacons picture
 
-The pre-registered headline kill condition was: "Even with a properly-implanted, orthogonal-source anchor, the residual stays large / DV1 < 0.5 across pairs → edits do not superpose additively; the map-plus-beacons additivity pillar fails." The literal letter of that kill condition is **not** met (DV1 = 0.99, not < 0.5). I want to flag this honestly: I'm calling the result determinative on the basis of the three gating diagnostics failing uniformly, but that's a post-hoc move relative to the pre-registration — pre-registration is supposed to prevent exactly this kind of after-the-fact reframing, and naming the move is the right thing to do here. The substantive argument for the move is that GD1+GD2+GD3 were ALSO pre-registered as the gates that decide whether the DV1 read is meaningful, and they all fail; under the pre-registered conjunction (H1 reads only on cells passing all three gates), no cell qualifies, so DV1 is structurally undiagnostic at this dial point. The implant geometry collapses to constant-direction steering whether or not the source persona prompts are orthogonal at the base. I cannot tell from this run whether the rank-one-map-plus-beacons additivity picture passes or fails — the experiment doesn't get to grade it. That's why this is LOW confidence rather than MODERATE: the gating-diagnostic failure is robust across 6 cells × 3 seeds × 2 pairs, but the kill verdict rests on a re-reading of the pre-reg that I'd want a second pair of eyes on.
+The kill condition the plan named was: "Even with a properly-implanted, orthogonal-source anchor, the residual stays large / DV1 < 0.5 across pairs → edits do not superpose additively; the map-plus-beacons additivity pillar fails." The literal letter of that kill condition is **not** met (DV1 = 0.99, not < 0.5). I want to flag this honestly: I'm calling the result determinative on the basis of the three gating diagnostics failing uniformly, but that's an after-the-fact reframing relative to the plan — the planned reason to fix a kill condition in advance is to prevent exactly this kind of re-reading, and naming the move is the right thing to do here. The substantive argument for the move is that the three gating diagnostics were ALSO named in the plan as the gates that decide whether the additivity-cosine read is meaningful, and they all fail; under the planned conjunction (the additivity-cosine read counts only on cells passing all three gates), no cell qualifies, so DV1 is structurally undiagnostic at this dial point. The implant geometry collapses to constant-direction steering whether or not the source persona prompts are orthogonal at the base. I cannot tell from this run whether the rank-one-map-plus-beacons additivity picture passes or fails — the experiment doesn't get to grade it. That's why this is LOW confidence rather than MODERATE: the gating-diagnostic failure is robust across 6 cells × 3 seeds × 2 pairs, but the kill verdict rests on a re-reading of the plan I'd want a second pair of eyes on.
 
 What this updates is the picture of where a superposition test could bite. With the singleton shifts living on a rank-1 axis, the additivity cosine is dominated by the magnitude of the per-context scalar and is insensitive to the per-context direction (because there is no per-context direction). To get an additivity test that grades the per-context structure, the singletons themselves need per-context structure — effective rank ≥ 2 across the 19 held-out contexts. That likely requires either a different training objective (one that builds context-dependent representations, not a single-token marker the model can satisfy with a constant steering direction) or a much harder push on the existing recipe so the implant outgrows the rank-1 attractor (e.g. closer to or past emission onset, where the model has to differentiate which contexts to emit in and the per-context structure may grow).
 
@@ -220,7 +220,7 @@ What this updates is the picture of where a superposition test could bite. With 
 | Adapter | rsLoRA, attn-only targets (q/k/v/o), r=16, α=32, dropout=0.0 |
 | Optimizer | AdamW, lr=5e-6, cosine schedule, warmup_ratio=0.03 |
 | Epochs cap | 8 (real stop is `MarkerBandStopCallback` band-fire) |
-| Band-stop window | source `log P(marker) − base` ∈ [5, 12] nat (`marker_band_stop=True`; bystander headroom verified post-hoc in Phase A smoke) |
+| Band-stop window | source `log P(marker) − base` ∈ [5, 12] nat (`marker_band_stop=True`; bystander headroom verified after the fact in Phase A smoke) |
 | Realized stop range | source `log P(marker) − base` 5.00-7.47 nat, step 30-40 (all 18 cells) |
 | Loss masking | `MarkerOnlyDataCollator(tail_tokens=0, suppress_at_post_response_slot=True, im_end_token_id=151645)` — loss on marker token + EOS only; response R = base-model greedy under each persona's own system prompt, frozen |
 | Effective batch | 16 (per-device 4 × grad-accum 4) |
@@ -228,7 +228,7 @@ What this updates is the picture of where a superposition test could bite. With 
 | Source pairs | florist × medical_doctor (base-model L20 centered cos = +0.001), librarian × police_officer (cos = −0.004); both inside the |cos| ≲ 0.15 target |
 | Contrastive negatives | 4-persona panel: `default_assistant` (the bare Qwen-2.5-7B assistant context) + `librarian` + `programmer` + `chef`, strict 1:1 positives-to-total-negatives |
 | Training arms | A-only / B-only / joint(1:1) — 18 cells = 2 pairs × 3 arms × 3 seeds |
-| Eval panel | 19 held-out personas × 20 fixed questions (per-cell n = 380 prompt-rows; 20 samples per row for emission read) |
+| Eval panel | 19 held-out personas × 20 fixed questions × 1 greedy sample per row (per-cell n = 380 measurements; plan §10 spec was 5 samples per row but vLLM 0.7+ rejects `n>1` under greedy sampling, hot-fixed `EVAL_N_SAMPLES_PER_PROMPT 5 → 1` in commit `47c9466b7`; greedy is deterministic, so 1 vs 5 carries no extra signal) |
 | Extraction layer | L20 residual at the on-policy post-response slot |
 | Hardware | 1× H100 (pod intent `lora-7b`); pod-527 (terminated 2026-06-09 18:46 UTC after upload-verification PASS) |
 | Wall time | Phase A smoke ~1 GPU-h + Phase B sweep ~7.5 GPU-h + eval/extract/analysis ~3 GPU-h ≈ 12 GPU-h |
@@ -240,7 +240,7 @@ What this updates is the picture of where a superposition test could bite. With 
 - Phase A anchor smoke (3 cells + verdict): [`eval_results/issue_527/anchor_smoke/`](https://github.com/superkaiba/explore-persona-space/tree/43bac6004c34e5f6f80ca38a2184ec48a8ba0300/eval_results/issue_527/anchor_smoke).
 - Per-cell eval: emission rates + per-context Δ log P (18 cells × emission + shift JSONs): [`eval_results/issue_527/eval/`](https://github.com/superkaiba/explore-persona-space/tree/43bac6004c34e5f6f80ca38a2184ec48a8ba0300/eval_results/issue_527/eval) (also mirrored at [HF dataset `issue_527/eval/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e6e163ce2a58108cc2c2d530f5f0ea9ef4542f65/issue_527/eval)).
 - Pair selection (base-model L20 cosine scan over the 19-persona pool): [`eval_results/issue_527/pair_selection.json`](https://github.com/superkaiba/explore-persona-space/blob/43bac6004c34e5f6f80ca38a2184ec48a8ba0300/eval_results/issue_527/pair_selection.json).
-- Raw model completions (20 samples × 20 questions × 19 eval personas × 18 cells = 6,840 per cell): [HF dataset `issue_527/eval/*__emission.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e6e163ce2a58108cc2c2d530f5f0ea9ef4542f65/issue_527/eval).
+- Raw model completions (1 greedy sample × 20 questions × 19 eval personas × 18 cells = 6,840 completions total; 380 per cell): [HF dataset `issue_527/eval/*__emission.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e6e163ce2a58108cc2c2d530f5f0ea9ef4542f65/issue_527/eval).
 - Training mixes (18 JSONL): [HF dataset `issue_527/training_mixes/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e6e163ce2a58108cc2c2d530f5f0ea9ef4542f65/issue_527/training_mixes).
 - Base-model greedy R per persona (21 JSONs): [HF dataset `issue_527/R_persona/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e6e163ce2a58108cc2c2d530f5f0ea9ef4542f65/issue_527/R_persona).
 - LoRA adapters (18, ~30MB each): [HF model `superkaiba1/explore-persona-space`, subfolder `adapters/issue_527/`](https://huggingface.co/superkaiba1/explore-persona-space/tree/6e3401847a1d674604a014772114b24167ae9607/adapters/issue_527).
@@ -265,8 +265,8 @@ What this updates is the picture of where a superposition test could bite. With 
 ## Free-analysis follow-ups (orchestrator: auto-run before parking)
 
 - **None.** I considered three free-analysis re-cuts and none would move the headline:
-  1. *Restrict the H1 read to gating-passed cells.* `fraction_dv1_diagnostic = 0.0` for both pairs — every cell fails. There are no gating-passed cells to restrict to. (cost_class: free-analysis, headline_affecting: no — empty restriction.)
+  1. *Restrict the additivity-cosine read to gating-passed cells.* `fraction_dv1_diagnostic = 0.0` for both pairs — every cell fails. There are no gating-passed cells to restrict to. (cost_class: free-analysis, headline_affecting: no — empty restriction.)
   2. *Re-aggregate per-cell instead of per-pair median.* Per-cell DV1 medians range 0.9896-0.9932 across the 6 cells; per-pair median is 0.9907-0.9914. The dispersion is within ±0.003 — no per-cell that would have passed. (cost_class: free-analysis, headline_affecting: no.)
-  3. *Drop DV4 from the H1 PASS conjunction and re-read.* GD1 + GD2 + GD3 still all fail on every cell, so DV1 stays "not diagnostic" regardless. The headline kill is on the gates, not on DV4. (cost_class: free-analysis, headline_affecting: no.)
+  3. *Drop DV4 from the additivity-cosine PASS conjunction and re-read.* GD1 + GD2 + GD3 still all fail on every cell, so DV1 stays "not diagnostic" regardless. The headline kill is on the gates, not on DV4. (cost_class: free-analysis, headline_affecting: no.)
 
-  The follow-ups that would actually re-grade this experiment all require new GPU-bound runs (push the implant past emission onset and re-read DV1; train at a recipe that builds context-dependent representations; sweep base-model cosine to populate H3) — those are not free-analysis. I'll surface them as `cost_class: needs-gpu` next-step candidates for the follow-up-proposer in a separate child task.
+  The follow-ups that would actually re-grade this experiment all require new GPU-bound runs (push the implant past emission onset and re-read DV1; train at a recipe that builds context-dependent representations; sweep base-model cosine to populate the interference-grows-with-overlap hypothesis) — those are not free-analysis. I'll surface them as `cost_class: needs-gpu` next-step candidates for the follow-up-proposer in a separate child task.
