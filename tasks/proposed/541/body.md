@@ -6,10 +6,16 @@ tags: []
 created_at: '2026-06-09T22:00:55Z'
 has_clean_result: false
 parent_id: 500
+goal: 'Test whether the bystander-prior→leakage relationship found in #500 holds on
+  a persona panel deliberately enriched with high-prior personas (de-leveraging the
+  two outliers that carried the #500 headline), and whether the source persona''s
+  MEASURED prior on the fact predicts panel-wide gating tightness, by re-running the
+  #500 design with a prior-stratified bystander panel and source personas selected
+  by measured base prior instead of hand-coded content-relatedness.'
 ---
 ## Goal
 
-Test whether the bystander-prior→leakage relationship found in #500 holds on a persona panel deliberately enriched with high-prior personas (de-leveraging the two outliers that carried the #500 headline), and whether the source persona's MEASURED prior on the fact predicts panel-wide gating tightness, by re-running the #500 design with (a) a prior-stratified bystander panel and (b) source personas selected by measured base prior instead of hand-coded content-relatedness.
+Test whether the bystander-prior→leakage relationship found in #500 holds on a persona panel deliberately enriched with high-prior personas (de-leveraging the two outliers that carried the #500 headline), and whether the source persona's MEASURED prior on the fact predicts panel-wide gating tightness, by re-running the #500 design with a prior-stratified bystander panel and source personas selected by measured base prior instead of hand-coded content-relatedness.
 
 ## Motivation
 
