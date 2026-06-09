@@ -12,6 +12,8 @@ priority: normal
 legacy_why_unset: true
 relates_to:
 - app4
+classification: useful
+promoted_at: '2026-06-09T21:34:13Z'
 ---
 # Donor trained on marker-B alone still propagates ~8% recipient marker-B emission, falsifying pure paired-marker binding; the paired-marker donor's higher rate (~19%) doesn't separate from this baseline after seed-stratified bootstrap (LOW confidence)
 
