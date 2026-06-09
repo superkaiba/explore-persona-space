@@ -186,6 +186,30 @@ def test_guard_blocks_when_would_exceed_cap(monkeypatch):
     assert "88.00" in msg  # projected total
     assert "80.00" in msg  # cap
     assert "RUNPOD_ACCOUNT_HOURLY_CAP" in msg
+    # The built-in retry remedy must be discoverable from the refusal itself
+    # (incident #532: operators concluded no retry mechanism existed).
+    assert "--wait-for-capacity" in msg
+
+
+def test_guard_resume_refusal_omits_wait_for_capacity_hint(monkeypatch):
+    """``--wait-for-capacity`` exists only on the provision subcommand, so the
+    resume-verb refusal must NOT advertise it (resume's wait loop is
+    autonomous-only)."""
+    monkeypatch.delenv("RUNPOD_ACCOUNT_HOURLY_CAP", raising=False)
+    monkeypatch.delenv("RUNPOD_RATE_H100_USD", raising=False)
+    monkeypatch.setattr(
+        runpod_api,
+        "list_team_pods",
+        lambda: [_info(f"pod-{i}", gpu_count=1) for i in range(18)],
+    )
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._assert_under_account_hourly_cap(
+            verb="resume",
+            pod_label="pod-old",
+            intended_gpu_type="H100",
+            intended_gpu_count=4,
+        )
+    assert "--wait-for-capacity" not in str(exc.value)
 
 
 def test_guard_env_cap_override(monkeypatch):

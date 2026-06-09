@@ -1263,6 +1263,15 @@ def _assert_under_account_hourly_cap(
     omitted = max(0, len(breakdown) - 10)
     if omitted:
         breakdown_lines += f"\n    ... and {omitted} more"
+    # `--wait-for-capacity` exists only on the provision subcommand (resume's
+    # wait loop is autonomous-only), so only advertise it for that verb.
+    wait_hint = (
+        " Or re-run with `--wait-for-capacity` to retry in an unbounded "
+        "backoff loop until $/hr headroom frees up (autonomous sessions "
+        "enable this automatically)."
+        if verb == "provision"
+        else ""
+    )
     raise SystemExit(
         f"\nRefusing to {verb} {pod_label}: would exceed the RunPod account "
         f"hourly spending cap.\n"
@@ -1276,7 +1285,7 @@ def _assert_under_account_hourly_cap(
         f"\nOptions: stop or terminate other pods to free capacity, raise the "
         f"console cap (and `export RUNPOD_ACCOUNT_HOURLY_CAP=<new>`), or "
         f"tune per-GPU rate estimates via RUNPOD_RATE_<GPU>_USD if they "
-        f"over-estimate your actual pricing.\n"
+        f"over-estimate your actual pricing.{wait_hint}\n"
     )
 
 
