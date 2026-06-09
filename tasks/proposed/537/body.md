@@ -5,10 +5,16 @@ kind: experiment
 tags: []
 created_at: '2026-06-09T18:47:55Z'
 has_clean_result: false
+goal: 'Build a reusable context-generalization testbed: empirically measure G[behavior,
+  train-context → eval-context] over realistic contexts (persona prompts, WildChat
+  prefixes, ICL examples, rephrasings, format wraps, default, inoculation variant)
+  and 5 behaviors (marker, taught fact, refusal, sycophancy, EM), and ship a scoring
+  harness that evaluates asymmetric, behavior-dependent, interaction-aware generalization-prediction
+  metrics against held-out cells with strong baselines.'
 ---
 ## Goal
 
-Build a reusable context-generalization testbed: empirically measure the generalization tensor G[behavior, train-context → eval-context] over realistic contexts (persona system prompts, WildChat conversation prefixes, in-context examples, instruction rephrasings, format wraps, default context, an inoculation variant) and 5 behaviors (marker ` ※`, taught fact, refusal, sycophancy, EM), and ship a scoring harness that evaluates candidate generalization-prediction metrics — asymmetric in (c_train, c_eval), behavior-dependent via metric-extracted behavior vectors, context-interaction-aware — against held-out cells with strong baselines.
+Build a reusable context-generalization testbed: empirically measure G[behavior, train-context → eval-context] over realistic contexts (persona prompts, WildChat prefixes, ICL examples, rephrasings, format wraps, default, inoculation variant) and 5 behaviors (marker, taught fact, refusal, sycophancy, EM), and ship a scoring harness that evaluates asymmetric, behavior-dependent, interaction-aware generalization-prediction metrics against held-out cells with strong baselines.
 
 ## Design doc
 

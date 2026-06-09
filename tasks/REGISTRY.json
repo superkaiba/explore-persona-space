@@ -3133,6 +3133,7 @@
       "title": "Standardize persona-distance cosine across the leakage line (mean-centered vs raw, ~6x geometry diff) + reanalyze affected predictor calls"
     },
     "537": {
+      "goal": "Build a reusable context-generalization testbed: empirically measure G[behavior, train-context \u2192 eval-context] over realistic contexts (persona prompts, WildChat prefixes, ICL examples, rephrasings, format wraps, default, inoculation variant) and 5 behaviors (marker, taught fact, refusal, sycophancy, EM), and ship a scoring harness that evaluates asymmetric, behavior-dependent, interaction-aware generalization-prediction metrics against held-out cells with strong baselines.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/537",
