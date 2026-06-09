@@ -839,8 +839,8 @@
     "224": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/224",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/224",
+      "status": "completed",
       "title": "[ZLT] persona-marker emission is not a training-induced attention pattern or a learned residual-stream direction \u2014 base Qwen on identical tokens attends the same way, and a norm-matched random direction elicits the marker at least as well as the trained centroid (LOW confidence)"
     },
     "225": {
