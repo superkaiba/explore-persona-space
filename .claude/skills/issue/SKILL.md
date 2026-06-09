@@ -1934,58 +1934,105 @@ preflight stanza (HF/WandB reachability, GPU visibility,
 `$SLURM_TMPDIR` headroom) so a misconfigured job fails fast inside
 the SLURM allocation.
 
-Pods are ephemeral — there is no permanent fleet.
+Compute is ephemeral on every backend — no permanent pod fleet, no
+permanent VM, no permanent SLURM submission stays alive past the run.
 
-Pick the path based on whether this task has a parent (read
-`parent_id` from `body.md` frontmatter):
+**Operational dispatch (slice-6 router, ALL backends).** The
+orchestrator shells `scripts/dispatch_issue.py launch` — the operational
+seam that builds the production backends (`RunPodBackend`,
+`SlurmBackend` for every available cluster, `GcpBackend`) + the injected
+dependencies (`marker_poster` = `backends.slurm.post_marker_via_task_py`;
+`is_started` = SLURM-aware `query_slurm_state` status==RUNNING probe;
+`is_live_after_cancel` = `query_by_name` non-empty probe;
+`reconnect_fn` = per-kind SLURM-`squeue --name` + `gcp.reconnect_or_none`;
+`mila_socket_alive` = stub→False until slice 7) and calls
+`backends.issue_dispatch.dispatch_for_issue` (which calls
+`backends.router.route()`). The router decides the lane (auto → free
+cluster → GCP, or honors an explicit override); RunPod's launch goes
+through `RunPodBackend.launch` (which shells `pod_lifecycle.py
+provision` under the hood) so the sidecar JSON is written uniformly
+across backends. The bg-Bash poller (`scripts/backend_poll.py`) reads
+that sidecar tick after tick (Step 6d.2); Step 8's
+`scripts/dispatch_issue.py finalize` reads it again to run
+`confirm_artifacts` + `teardown` (the same RunHandle from launch all
+the way through teardown).
+
+The operational command:
+
+```bash
+# Read the task's backend frontmatter (empty / absent → auto).
+BACKEND=$(uv run python scripts/task.py view <N> --json | jq -r '.frontmatter.backend // empty')
+# Infer --intent from the plan: training a 7B model → ft-7b or lora-7b;
+# eval/generation → eval; 70B work → inf-70b/ft-70b. Override with
+# --gpus / --time-budget-hours for anything else.
+INTENT=<inferred>
+
+# Single operational call — runs the router (auto / explicit override
+# both flow through here). On RunPod the underlying pod_lifecycle.py
+# enforces team scoping (X-Team-Id), SSH bring-up (startSsh: true,
+# exposes 22/tcp), pinned image, and runs bootstrap inline (uv, repo,
+# .env with HF_TOKEN, HF cache, preflight); on SLURM the SlurmBackend
+# renders + ssh-submits the sbatch; on GCP the GcpBackend renders +
+# ``gcloud compute instances create``s the VM. Hydra args repeatable.
+uv run python scripts/dispatch_issue.py launch \
+    --issue <N> --intent "$INTENT" \
+    ${BACKEND:+--backend "$BACKEND"}
+```
+
+`dispatch_issue.py launch` prints ONE JSON line on stdout with the
+resolved outcome (`chosen_kind`, `requested_kind`, `reason`,
+`pod_name`, `handle_sidecar_path`). On a router terminal it exits with
+code `2` and the JSON carries `failure_class` + `status` + `note` so
+the orchestrator posts `epm:failure v1` per the table above and
+`set-status <N> blocked` — no re-derivation. On a non-terminal
+provisioning error (RunPod SUPPLY_CONSTRAINT etc.) the underlying
+backend raises and the helper either retries (RunPod's
+`--wait-for-capacity` loop) or surfaces the failure as
+`epm:pod-pending v1` so the user adjusts (capacity, intent override)
+and re-runs `/issue <N>`.
+
+**Follow-up parent reuse.** When the task has a `parent_id` AND the
+parent's RunPod pod is alive, the operational path stays on the
+existing `pod.py` flow for that one specific case (the slice-6 router
+does NOT yet model "reuse parent's live pod" — slice 7 wires the
+reconnect path through the router uniformly):
 
 ```bash
 PARENT_ID=$(uv run python scripts/task.py view <N> --json | jq -r '.frontmatter.parent_id // empty')
-
-# 1. If PARENT_ID is set AND `epm-issue-<PARENT_ID>` exists in `pod.py list-ephemeral`:
 if [ -n "$PARENT_ID" ] && uv run python scripts/pod.py list-ephemeral --issue "$PARENT_ID" | grep -q epm-issue; then
+  # Parent pod still alive — resume + reuse. Skip the router call;
+  # this child task's run inherits the parent's pod_name.
   uv run python scripts/pod.py resume --issue "$PARENT_ID"
-  # Use that pod for this child task (don't provision a new one).
-  # Record the assigned pod as `epm-issue-$PARENT_ID` in the launch marker.
+  # Record the assigned pod as epm-issue-$PARENT_ID in the launch marker.
 else
-  # 2. Otherwise, provision a fresh pod. Infer --intent from the plan:
-  #    training a 7B model -> ft-7b or lora-7b; eval/generation -> eval;
-  #    70B work -> inf-70b/ft-70b. Override with --gpu-type/--gpu-count for
-  #    anything else.
-  uv run python scripts/pod.py provision --issue <N> --intent <inferred>
+  # Fresh launch through the router (the canonical path above).
+  uv run python scripts/dispatch_issue.py launch \
+      --issue <N> --intent "$INTENT" ${BACKEND:+--backend "$BACKEND"}
 fi
 ```
 
-`provision` enforces team scoping (`X-Team-Id`), SSH bring-up
-(`startSsh: true`, exposes `22/tcp`), pinned image, and runs bootstrap
-inline (uv, repo, .env with `HF_TOKEN`, HF cache, preflight — the gate
-state from Step 6a's `auth_check` carries to the pod via the pushed
-`HF_TOKEN`). On
-provision failure post `epm:pod-pending v1` with the error and stay at
-`running` (no implementer re-spawn — this is infra, not code). User
-adjusts (capacity, intent override) and re-runs `/issue <N>`.
-
-**Autonomous mode (`EPM_AUTONOMOUS_SESSION=1`) — `--wait-for-capacity`
-auto-enables.** `pod.py provision` reads `EPM_AUTONOMOUS_SESSION` itself
-and turns on the unbounded SUPPLY_CONSTRAINT retry loop (exponential
+**Autonomous mode (`EPM_AUTONOMOUS_SESSION=1`) — RunPod
+`--wait-for-capacity` auto-enables.** When the router's chosen lane is
+RunPod (explicit override `backend: runpod`), the underlying
+`pod_lifecycle.py provision` reads `EPM_AUTONOMOUS_SESSION` itself and
+turns on the unbounded SUPPLY_CONSTRAINT retry loop (exponential
 backoff with full jitter, base 30s, cap 10 min, forever) — "the
 experiment should start when it has space," not park-for-user. The
-orchestrator should background the provision call (`Bash` with
+orchestrator should background the dispatch call (`Bash` with
 `run_in_background=true`) so its own turn isn't blocked, and ON
 periodic re-invocation (each bg-Bash output yield) it should scan the
 captured stderr for `[wait-for-capacity] attempt N, waited ...` lines
 and post one `epm:progress v1` marker per heartbeat (note:
 `"pod-provision waiting for capacity: attempt N, waited ..."`). This
 keeps `autonomous_session_watch.py` (6h stale-marker threshold) seeing
-liveness. On other (non-capacity) provision failures, fall through to
-the normal `epm:pod-pending v1` path. **Interactive sessions still fail
-fast** — `--wait-for-capacity` defaults OFF so a human running
-`pod.py provision` from a shell sees no-capacity immediately and can
-decide whether to wait, switch DC, or change GPU intent.
+liveness. **Interactive sessions still fail fast** —
+`--wait-for-capacity` defaults OFF so a human running `pod.py provision`
+from a shell sees no-capacity immediately and can decide whether to
+wait, switch DC, or change GPU intent.
 
-The pod name passed downstream is `epm-issue-<N>` (or the parent's
-`epm-issue-<PARENT_ID>` for follow-ups). The experimenter does NOT pick
-or create pods.
+The pod / job / VM name passed downstream is recorded in the sidecar
+JSON the router writes (RunPod: `pod-<N>`; SLURM: `eps-issue-<N>`;
+GCP: `eps-issue-<N>`). The experimenter does NOT pick or create pods.
 
 #### Step 6c: Preflight on resumed pods
 
@@ -2649,23 +2696,32 @@ URLs.
 
   **Backend-agnostic teardown (slice 6).** The dispatch helper persisted
   the per-issue `RunHandle` to `.claude/cache/issue-<N>-handle.json` at
-  Step 6b; the orchestrator reads it back and calls
-  `backend.confirm_artifacts(handle)` followed by `backend.teardown(handle)`
-  — one path for every backend (RunPod / SLURM / GCP). The agent-level
-  upload-verifier above runs the EXPLORATORY pass; this in-helper
-  `confirm_artifacts` is the complementary MECHANICAL gate (HF Hub
-  `list_repo_files` + WandB run + git-figure + completion sentinel,
-  per `backends.artifacts.confirm_artifacts_from_handle`). Both must
-  pass before teardown fires.
+  Step 6b; the orchestrator runs ONE operational call —
+  `scripts/dispatch_issue.py finalize` — which reads the sidecar, calls
+  `backend.confirm_artifacts(handle)`, and on PASS calls
+  `backend.teardown(handle)` — one path for every backend (RunPod /
+  SLURM / GCP). The agent-level upload-verifier above runs the
+  EXPLORATORY pass; this in-helper `confirm_artifacts` is the
+  complementary MECHANICAL gate (HF Hub `list_repo_files` + WandB run
+  + git-figure + completion sentinel, per
+  `backends.artifacts.confirm_artifacts_from_handle`). Both must pass
+  before teardown fires.
 
-  On the RunPod path the teardown call shells out to the same
-  `scripts/pod.py terminate --issue <N> --yes` that today's wiring
-  uses (the `RunPodBackend.teardown` wrapper preserves the existing
-  guard logic verbatim); on the SLURM path it `scancel`s; on GCP it
-  `gcloud compute instances delete`s. Post `epm:pod-terminated v1`
-  with the teardown summary (for the GCP path the marker name still
-  applies — the dashboard surfaces every backend's teardown under the
-  same key).
+  ```bash
+  # ONE call for every backend. Exit 0 = confirm PASS + teardown done;
+  # exit 3 = confirm FAIL (teardown SKIPPED, evidence preserved); exit 2
+  # = missing sidecar (treat as infra failure).
+  uv run python scripts/dispatch_issue.py finalize --issue <N>
+  ```
+
+  On the RunPod path the underlying `RunPodBackend.teardown` shells
+  out to the same `scripts/pod.py terminate --issue <N> --yes` that
+  today's wiring uses (the wrapper preserves the existing guard logic
+  verbatim); on the SLURM path it `scancel`s via the robot SSH alias;
+  on GCP it `gcloud compute instances delete`s. Post
+  `epm:pod-terminated v1` with the teardown summary (for the GCP path
+  the marker name still applies — the dashboard surfaces every
+  backend's teardown under the same key).
 
   If interpretation later needs GPU compute (e.g., to regenerate a
   figure from raw outputs that weren't downloaded), provision a fresh

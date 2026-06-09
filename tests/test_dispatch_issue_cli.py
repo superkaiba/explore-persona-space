@@ -1,0 +1,594 @@
+"""Tests for ``scripts/dispatch_issue.py`` (the operational `/issue` CLI).
+
+The slice-6 router + ``backends.issue_dispatch`` helper are fully
+unit-tested elsewhere; this file pins the THIN operational CLI that
+SKILL.md Step 6b / 6d / 8 actually shells:
+
+1. ``launch`` action: empty frontmatter → auto chain (mock free
+   backend wins; RunPod NEVER launched; sidecar written).
+2. ``launch`` action with ``--backend runpod`` → RunPod launched +
+   sidecar written.
+3. ``launch`` action with ``--backend cluster`` (legacy) → mapped to
+   nibi.
+4. ``launch`` action on a router terminal → ``failure_class:`` JSON
+   line + nonzero exit code.
+5. ``finalize`` action: sidecar present → confirm_artifacts PASS →
+   teardown called.
+6. ``finalize`` action: confirm_artifacts FAIL → teardown SKIPPED +
+   nonzero exit code.
+7. ``finalize`` action: missing sidecar → infra failure JSON + nonzero
+   exit code (CLI never crashes the orchestrator).
+8. backend_poll.py: missing sidecar → terminal infra JSON (not
+   FileNotFoundError) — the BLOCKER 3 regression test.
+
+Nothing here requires RunPod / SLURM / GCP / SSH to be live; every
+external call is mocked via the ``backends_factory`` seam on the CLI.
+"""
+
+from __future__ import annotations
+
+import io
+import json
+from contextlib import redirect_stdout
+from typing import Any
+
+import pytest
+
+from explore_persona_space.backends.artifacts import EXPECTED_ARTIFACTS_HANDLE_KEY
+from explore_persona_space.backends.base import (
+    BackendKind,
+    ComputeBackend,
+    PollResult,
+    RunHandle,
+    RunSpec,
+)
+from explore_persona_space.backends.issue_dispatch import (
+    default_handle_sidecar_path,
+    read_handle_sidecar,
+    write_handle_sidecar,
+)
+
+# ---------------------------------------------------------------------------
+# Mock backend + dependency factory
+# ---------------------------------------------------------------------------
+
+
+class _MockBackend(ComputeBackend):
+    """Records every launch / poll / teardown call for assertions."""
+
+    def __init__(
+        self,
+        kind: BackendKind = "nibi",
+        *,
+        launch_should_raise: Exception | None = None,
+        confirm_passes: bool = True,
+    ) -> None:
+        self._kind = kind
+        self.launches: list[RunSpec] = []
+        self.teardowns: list[RunHandle] = []
+        self.confirms: list[RunHandle] = []
+        self._launch_should_raise = launch_should_raise
+        self._confirm_passes = confirm_passes
+
+    @property
+    def name(self) -> BackendKind:
+        return self._kind
+
+    def prepare(self, spec: RunSpec) -> None:
+        return None
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        if self._launch_should_raise is not None:
+            raise self._launch_should_raise
+        self.launches.append(spec)
+        return RunHandle(
+            backend=self._kind,
+            cluster=self._kind if self._kind in {"nibi", "fir"} else None,
+            job_id="job-MOCK",
+            pod_name=f"pod-{spec.issue}",
+            scratch_dir="/scratch",
+            log_path="/log",
+            extra={"issue": spec.issue, "intent": spec.intent},
+        )
+
+    def estimate_start(self, spec: RunSpec):
+        from datetime import UTC, datetime
+
+        return datetime.now(tz=UTC)
+
+    def estimate_start_seconds(self, spec: RunSpec) -> float | None:
+        return 0.0
+
+    def poll(self, handle: RunHandle) -> PollResult:
+        return PollResult(
+            status="running",
+            current_phase="x",
+            new_milestone=False,
+            last_log_mtime_sec_ago=1,
+            pid_alive=True,
+            log_tail_excerpt="",
+        )
+
+    def fetch_logs(self, handle: RunHandle) -> str:
+        return ""
+
+    def fetch_results(self, handle: RunHandle) -> None:
+        return None
+
+    def confirm_artifacts(self, handle: RunHandle) -> bool:
+        self.confirms.append(handle)
+        return self._confirm_passes
+
+    def teardown(self, handle: RunHandle) -> None:
+        self.teardowns.append(handle)
+
+
+def _build_mock_factory(
+    *,
+    runpod: _MockBackend | None = None,
+    nibi: _MockBackend | None = None,
+    fir: _MockBackend | None = None,
+    gcp: _MockBackend | None = None,
+    mila_alive: bool = False,
+) -> Any:
+    """Return a backends_factory closure suitable for ``main(backends_factory=...)``."""
+
+    def _factory() -> dict[str, Any]:
+        free = {}
+        if nibi is not None:
+            free["nibi"] = nibi
+        if fir is not None:
+            free["fir"] = fir
+        if mila_alive and "mila" not in free:
+            # mila is rare in tests; absent default is fine.
+            pass
+        return {
+            "runpod_backend": runpod or _MockBackend(kind="runpod"),
+            "free_backends": free,
+            "gcp_backend": gcp,
+            "marker_poster": lambda **_kw: None,
+            "is_started": lambda _b, _h: True,
+            "is_live_after_cancel": lambda _b, _h: False,
+            "reconnect_fn": lambda _b, _k, _s: None,
+            "mila_socket_alive": lambda: mila_alive,
+        }
+
+    return _factory
+
+
+# ---------------------------------------------------------------------------
+# launch action
+# ---------------------------------------------------------------------------
+
+
+def _cd_to_tmp(monkeypatch, tmp_path):
+    """Change cwd into ``tmp_path`` so the default sidecar path
+    ``.claude/cache/issue-<N>-handle.json`` lands under the tmp dir
+    (test isolation; never write under the real worktree's cache)."""
+    monkeypatch.chdir(tmp_path)
+
+
+def test_launch_empty_frontmatter_auto_routes_to_free_and_never_runpod(
+    monkeypatch, tmp_path
+) -> None:
+    """No ``--backend`` ⇒ auto. With nibi wired, the free lane wins;
+    RunPod's ``launch`` must NEVER be called.
+    """
+    _cd_to_tmp(monkeypatch, tmp_path)
+    # RunPod backend whose launch raises — if the auto path ever reaches
+    # it, the exception bubbles + the assertion below fires.
+    runpod = _MockBackend(
+        kind="runpod",
+        launch_should_raise=AssertionError("RunPod.launch must not be called on auto"),
+    )
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(["launch", "--issue", "300", "--intent", "lora-7b"], backends_factory=factory)
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["chosen_kind"] == "nibi"
+    assert body["requested_kind"] is None  # auto
+    # Sidecar landed at the default per-issue path.
+    sidecar = default_handle_sidecar_path(300)
+    assert sidecar.exists()
+    # Round-trip: the persisted handle is the one the bg-Bash poller
+    # will read tick-after-tick.
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "nibi"
+    assert recovered.pod_name == "pod-300"
+    # Nibi got the launch; RunPod did not.
+    assert len(nibi.launches) == 1
+    assert len(runpod.launches) == 0
+
+
+def test_launch_backend_runpod_explicit_provisions_runpod_and_writes_sidecar(
+    monkeypatch, tmp_path
+) -> None:
+    """``--backend runpod`` is the only path that spends real money;
+    the launch path must reach RunPod AND write the sidecar uniformly
+    (so Step 6d.2's bg-Bash poller has a handle to read, same as the
+    SLURM/GCP paths)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    runpod = _MockBackend(kind="runpod")
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            ["launch", "--issue", "301", "--intent", "lora-7b", "--backend", "runpod"],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["chosen_kind"] == "runpod"
+    assert body["requested_kind"] == "runpod"
+    # Sidecar was written for RunPod too — Step 8 finalize will read it.
+    sidecar = default_handle_sidecar_path(301)
+    assert sidecar.exists()
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "runpod"
+    # RunPod got the launch; nibi did not.
+    assert len(runpod.launches) == 1
+    assert len(nibi.launches) == 0
+
+
+def test_launch_backend_cluster_legacy_maps_to_nibi(monkeypatch, tmp_path) -> None:
+    """``backend: cluster`` is the legacy selector alias; the dispatch
+    helper maps it to ``nibi`` BEFORE building the spec (the slice-5
+    router rejects the bare ``"cluster"`` literal)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    runpod = _MockBackend(kind="runpod")
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            ["launch", "--issue", "302", "--intent", "lora-7b", "--backend", "cluster"],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["chosen_kind"] == "nibi"
+    assert body["requested_kind"] == "nibi"  # router sees the normalized value
+    assert len(nibi.launches) == 1
+
+
+def test_launch_router_terminal_prints_failure_class_and_nonzero_exits(
+    monkeypatch, tmp_path
+) -> None:
+    """A router terminal (``NoComputeAvailableError``) must print a
+    ``failure_class``-tagged JSON line + exit nonzero so the
+    orchestrator can post ``epm:failure v1`` and ``set-status blocked``."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    # No free backends + no GCP wired → auto chain immediately raises
+    # NoComputeAvailableError (router stage 3 has nowhere to escalate).
+    runpod = _MockBackend(
+        kind="runpod",
+        launch_should_raise=AssertionError("RunPod must not be called on auto"),
+    )
+    factory = _build_mock_factory(runpod=runpod, nibi=None, gcp=None)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(["launch", "--issue", "303", "--intent", "lora-7b"], backends_factory=factory)
+    # Exit code 2 = router terminal (per the CLI docstring).
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["failure_class"] == "infra"
+    assert body["status"] == "blocked"
+    assert body["exception"] == "NoComputeAvailableError"
+    # The note's first line carries the failure_class= prefix so the
+    # orchestrator's Step 7 classifier short-circuits.
+    assert body["note"].splitlines()[0] == "failure_class: infra"
+    assert "no_compute_available" in body["note"]
+    # Sidecar NOT written on terminal exception (the router raises
+    # BEFORE the sidecar write).
+    assert not default_handle_sidecar_path(303).exists()
+
+
+def test_launch_hydra_args_threaded_into_spec(monkeypatch, tmp_path) -> None:
+    """``--hydra k=v`` (repeatable) must land on the spec verbatim so
+    the SLURM render / RunPod launch script picks them up."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "304",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "condition=c1",
+                "--hydra",
+                "seed=42",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert nibi.launches[0].hydra_args == ("condition=c1", "seed=42")
+
+
+# ---------------------------------------------------------------------------
+# finalize action
+# ---------------------------------------------------------------------------
+
+
+def _seed_sidecar(tmp_path, issue: int, kind: BackendKind = "nibi") -> RunHandle:
+    """Write a sidecar for ``finalize`` tests; return the handle."""
+    handle = RunHandle(
+        backend=kind,
+        cluster=kind if kind in {"nibi", "fir"} else None,
+        job_id="job-fin",
+        pod_name=f"pod-{issue}",
+        scratch_dir="/scratch",
+        log_path="/log",
+        extra={
+            "issue": issue,
+            "intent": "lora-7b",
+            EXPECTED_ARTIFACTS_HANDLE_KEY: {
+                "issue": issue,
+                "sentinel_path": "/tmp/sentinel.json",
+            },
+        },
+    )
+    sidecar = tmp_path / f"issue-{issue}-handle.json"
+    write_handle_sidecar(handle, sidecar)
+    return handle
+
+
+def test_finalize_confirm_artifacts_pass_runs_teardown(monkeypatch, tmp_path) -> None:
+    """The happy path: sidecar present + confirm PASS → teardown called.
+    Exit 0; JSON line carries phase=teardown."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 400, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "finalize",
+                "--issue",
+                "400",
+                "--handle-file",
+                str(tmp_path / "issue-400-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["phase"] == "teardown"
+    assert body["chosen_kind"] == "nibi"
+    assert len(nibi.confirms) == 1
+    assert len(nibi.teardowns) == 1
+
+
+def test_finalize_confirm_artifacts_fail_skips_teardown_and_exits_nonzero(
+    monkeypatch, tmp_path
+) -> None:
+    """A FAIL on confirm_artifacts MUST skip teardown (preserve evidence)
+    + exit code 3 so the orchestrator escalates instead of silently
+    losing the live backend handle."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 401, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=False)
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "finalize",
+                "--issue",
+                "401",
+                "--handle-file",
+                str(tmp_path / "issue-401-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    # Exit 3 = confirm_artifacts FAIL (per the CLI docstring).
+    assert rc == 3
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["phase"] == "confirm_artifacts"
+    assert body["reason"] == "confirm_artifacts_failed"
+    # confirm was called; teardown was NOT.
+    assert len(nibi.confirms) == 1
+    assert len(nibi.teardowns) == 0
+
+
+def test_finalize_skip_confirm_artifacts_forces_teardown(monkeypatch, tmp_path) -> None:
+    """``--skip-confirm-artifacts`` matches ``pod.py terminate
+    --skip-upload-verify`` — escape hatch for crashes that left no
+    artifacts to verify."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 402, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=False)
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "finalize",
+                "--issue",
+                "402",
+                "--handle-file",
+                str(tmp_path / "issue-402-handle.json"),
+                "--skip-confirm-artifacts",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert len(nibi.confirms) == 0  # skipped
+    assert len(nibi.teardowns) == 1
+
+
+def test_finalize_missing_sidecar_returns_infra_failure_not_crash(monkeypatch, tmp_path) -> None:
+    """A missing sidecar must produce a clean JSON line + nonzero exit
+    code (NEVER a FileNotFoundError / traceback that crashes the
+    orchestrator's bg-Bash parser)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    factory = _build_mock_factory(nibi=_MockBackend(kind="nibi"))
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "finalize",
+                "--issue",
+                "403",
+                "--handle-file",
+                str(tmp_path / "issue-403-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["failure_class"] == "infra"
+    assert body["reason"] == "missing_handle_sidecar"
+
+
+# ---------------------------------------------------------------------------
+# backend_poll.py missing-sidecar regression (BLOCKER 3)
+# ---------------------------------------------------------------------------
+
+
+def test_backend_poll_missing_sidecar_emits_terminal_infra_json(tmp_path) -> None:
+    """The BLOCKER 3 regression test: ``scripts/backend_poll.py`` MUST
+    emit a single ``status: "dead"`` JSON line with
+    ``failure_class: "infra"`` when the sidecar is missing. Previously
+    it raised FileNotFoundError → empty stdout → the orchestrator's
+    bg-Bash JSON-line parser had nothing to parse → loop spun forever
+    on "stalled"."""
+    from scripts.backend_poll import main as backend_poll_main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = backend_poll_main(
+            ["--issue", "500", "--handle-file", str(tmp_path / "nonexistent.json")]
+        )
+    # Exit 0 (the script always emits valid JSON; the failure is
+    # encoded IN the JSON via failure_class / status, NOT via exit code).
+    assert rc == 0
+    line = buf.getvalue().strip()
+    assert line, "backend_poll must emit a JSON line, never empty stdout"
+    body = json.loads(line)
+    # Legacy poll_pipeline shape preserved so the orchestrator's
+    # existing parser handles it without a per-backend branch.
+    assert body["status"] == "dead"
+    assert body["pid_alive"] is False
+    # Failure-classifier hint keys (the orchestrator reads these
+    # alongside status: dead to post epm:failure v1 with the matching
+    # failure_class).
+    assert body["failure_class"] == "infra"
+    assert body["reason"] == "missing_handle_sidecar"
+
+
+def test_backend_poll_unreadable_sidecar_also_emits_infra_json(tmp_path) -> None:
+    """A corrupted JSON sidecar should hit the same failure shape — the
+    orchestrator can't poll either way, so a malformed sidecar reads
+    operationally as 'missing' from its perspective."""
+    bad = tmp_path / "issue-501-handle.json"
+    bad.write_text("{not valid json}")
+
+    from scripts.backend_poll import main as backend_poll_main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = backend_poll_main(["--issue", "501", "--handle-file", str(bad)])
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["status"] == "dead"
+    assert body["failure_class"] == "infra"
+    assert body["reason"] == "missing_handle_sidecar"
+
+
+# ---------------------------------------------------------------------------
+# Backend-for-handle resolver
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_backend_for_handle_routes_runpod_slurm_gcp() -> None:
+    """The finalize path's resolver must dispatch the right backend per
+    ``handle.backend`` — silent mis-routing would terminate the WRONG
+    live backend on a multi-tenant orchestrator."""
+    from scripts.dispatch_issue import _resolve_backend_for_handle
+
+    runpod = _MockBackend(kind="runpod")
+    nibi = _MockBackend(kind="nibi")
+    gcp = _MockBackend(kind="gcp")
+    deps = {
+        "runpod_backend": runpod,
+        "free_backends": {"nibi": nibi},
+        "gcp_backend": gcp,
+    }
+    assert _resolve_backend_for_handle(_handle_for("runpod"), deps) is runpod, (
+        "runpod handle → runpod backend"
+    )
+    assert _resolve_backend_for_handle(_handle_for("nibi"), deps) is nibi, (
+        "nibi handle → nibi backend"
+    )
+    assert _resolve_backend_for_handle(_handle_for("gcp"), deps) is gcp, "gcp handle → gcp backend"
+    # Legacy 'cluster' kind falls back to ANY available SLURM backend.
+    assert _resolve_backend_for_handle(_handle_for("cluster"), deps) is nibi
+
+
+def test_resolve_backend_for_handle_rejects_unknown_kind() -> None:
+    """An unknown backend kind on the handle MUST raise rather than
+    silently default to RunPod (which would terminate the wrong live
+    backend)."""
+    from scripts.dispatch_issue import _resolve_backend_for_handle
+
+    deps = {
+        "runpod_backend": _MockBackend(kind="runpod"),
+        "free_backends": {},
+        "gcp_backend": None,
+    }
+    with pytest.raises(ValueError, match=r"unknown handle\.backend"):
+        _resolve_backend_for_handle(_handle_for("totally-bogus"), deps)
+
+
+def _handle_for(kind: str) -> RunHandle:
+    return RunHandle(
+        backend=kind,  # type: ignore[arg-type]
+        cluster=kind if kind in {"nibi", "fir", "cluster"} else None,
+        job_id="j",
+        pod_name="p",
+        scratch_dir="/s",
+        log_path="/l",
+        extra={},
+    )
