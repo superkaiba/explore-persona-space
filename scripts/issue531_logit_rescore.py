@@ -60,6 +60,8 @@ from explore_persona_space.utils import setup_env  # noqa: E402
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"  # per #478 result.json training.base_model
 MARKER_TEXT = " ※"
 MARKER_ID = 83399
+EOS_TOKEN = "<|im_end|>"  # the token contrastive negatives train at the slot
+EOS_ID = 151645
 
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
@@ -115,7 +117,29 @@ def download_adapter(cell: str) -> Path:
     adapter_dir = Path(local) / "issue_478" / cell / "adapter"
     if not (adapter_dir / "adapter_model.safetensors").exists():
         raise FileNotFoundError(f"adapter_model.safetensors missing under {adapter_dir}")
+    _assert_gauge_free(adapter_dir)
     return adapter_dir
+
+
+def _assert_gauge_free(adapter_dir: Path) -> None:
+    """Gauge assert per the marker-leakage rule: the trained − base logit readout
+    is valid only if LoRA never touches the unembedding (or anything tied to it).
+    """
+    cfg = json.loads((adapter_dir / "adapter_config.json").read_text())
+    targets = cfg.get("target_modules") or []
+    banned = {"lm_head", "embed_tokens"}
+    hit = banned.intersection(targets)
+    if hit:
+        raise RuntimeError(
+            f"{adapter_dir}: adapter targets {sorted(hit)} — logit readout is "
+            f"gauge-dependent and INVALID for this run"
+        )
+    saved = cfg.get("modules_to_save") or []
+    if saved:
+        raise RuntimeError(
+            f"{adapter_dir}: modules_to_save={saved!r} non-empty — full-module "
+            f"saves can move the unembedding; logit readout invalid"
+        )
 
 
 def build_items(
@@ -198,12 +222,14 @@ def score_slot(
         assert last.shape[0] == len(chunk), last.shape
         logz = torch.logsumexp(last, dim=-1)
         z_marker = last[:, MARKER_ID]
+        z_eos = last[:, EOS_ID]
         argmax_ids = last.argmax(dim=-1)
         logp = F.log_softmax(last, dim=-1)[:, MARKER_ID]
 
-        for (persona, q_idx, _), z, lz, lp, am in zip(
+        for (persona, q_idx, _), z, ze, lz, lp, am in zip(
             chunk,
             z_marker.cpu().tolist(),
+            z_eos.cpu().tolist(),
             logz.cpu().tolist(),
             logp.cpu().tolist(),
             argmax_ids.cpu().tolist(),
@@ -211,11 +237,12 @@ def score_slot(
         ):
             out[(persona, q_idx)] = {
                 "z_marker": float(z),
+                "z_eos": float(ze),
                 "logZ": float(lz),
                 "logp": float(lp),
                 "argmax_id": int(am),
             }
-        del logits, last, logz, z_marker, argmax_ids, logp
+        del logits, last, logz, z_marker, z_eos, argmax_ids, logp
     return out
 
 
@@ -314,7 +341,7 @@ def process_cell(
                 (trained if side == "trained" else base)[(persona, qi)][field] for qi in range(n_q)
             ]
             for side in ("trained", "base")
-            for field in ("z_marker", "logZ", "logp", "argmax_id")
+            for field in ("z_marker", "z_eos", "logZ", "logp", "argmax_id")
         }
 
     payload = {
@@ -322,6 +349,8 @@ def process_cell(
         "base_model": BASE_MODEL,
         "marker_text": MARKER_TEXT,
         "marker_token_id": MARKER_ID,
+        "eos_token": EOS_TOKEN,
+        "eos_token_id": EOS_ID,
         "hf_data_revision": HF_DATA_REV,
         "scored_at_utc": datetime.now(UTC).isoformat(),
         "produced_by": "scripts/issue531_logit_rescore.py",
@@ -365,6 +394,7 @@ def main() -> int:
 
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
     assert tokenizer.encode(MARKER_TEXT, add_special_tokens=False) == [MARKER_ID]
+    assert tokenizer.convert_tokens_to_ids(EOS_TOKEN) == EOS_ID
 
     from run_100_persona_leakage import ALL_EVAL_PERSONAS
 

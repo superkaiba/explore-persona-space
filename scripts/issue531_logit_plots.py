@@ -95,6 +95,8 @@ def build_logit_tidy() -> pd.DataFrame:
                         "question_idx": qi,
                         "z_trained": rec["z_marker_trained_per_q"][qi],
                         "z_base": rec["z_marker_base_per_q"][qi],
+                        "z_eos_trained": rec["z_eos_trained_per_q"][qi],
+                        "z_eos_base": rec["z_eos_base_per_q"][qi],
                         "logZ_trained": rec["logZ_trained_per_q"][qi],
                         "logZ_base": rec["logZ_base_per_q"][qi],
                         "logp_trained_rescored": rec["logp_trained_per_q"][qi],
@@ -111,6 +113,11 @@ def build_logit_tidy() -> pd.DataFrame:
     logit["dz"] = logit["z_trained"] - logit["z_base"]
     logit["dlogZ"] = logit["logZ_trained"] - logit["logZ_base"]
     logit["dlogp_rescored"] = logit["logp_trained_rescored"] - logit["logp_base_rescored"]
+    # EOS margin — the preferred logit readout (shift-invariant; anchored to
+    # the emission threshold: the marker fires when it overtakes EOS).
+    logit["margin_trained"] = logit["z_trained"] - logit["z_eos_trained"]
+    logit["margin_base"] = logit["z_base"] - logit["z_eos_base"]
+    logit["dmargin"] = logit["margin_trained"] - logit["margin_base"]
 
     merged = parent.merge(
         logit,
@@ -135,6 +142,7 @@ def agreement_diagnostics(df: pd.DataFrame) -> dict:
     dlogp = df["dlogp_rescored"].to_numpy()
     dlogz = df["dlogZ"].to_numpy()
     resc_vs_stored = float(np.mean(np.abs(df["logp_trained_rescored"] - df["trained_logp"])))
+    dmargin = df["dmargin"].to_numpy()
     return {
         "mean_abs_dlogZ_nats": float(np.mean(np.abs(dlogz))),
         "p95_abs_dlogZ_nats": float(np.percentile(np.abs(dlogz), 95)),
@@ -142,6 +150,10 @@ def agreement_diagnostics(df: pd.DataFrame) -> dict:
         "pearson_dlogp_vs_dz": float(pearsonr(dlogp, dz).statistic),
         "spearman_dlogp_vs_dz": float(spearmanr(dlogp, dz).statistic),
         "mean_abs_residual_dlogp_minus_dz_nats": float(np.mean(np.abs(dlogp - dz))),
+        # Δz vs Δmargin divergence = common-mode logit shift (behaviorally inert).
+        "pearson_dz_vs_dmargin": float(pearsonr(dz, dmargin).statistic),
+        "spearman_dz_vs_dmargin": float(spearmanr(dz, dmargin).statistic),
+        "mean_abs_residual_dz_minus_dmargin": float(np.mean(np.abs(dz - dmargin))),
         "validation_mae_rescored_vs_stored_trained_logp_nats": resc_vs_stored,
     }
 
@@ -286,6 +298,43 @@ def plot_logit_absolute(df: pd.DataFrame, raw: dict, par: dict) -> None:
     _save(fig, "absolute_trained_vs_base_prior_logit", meta)
 
 
+def plot_margin_shift(df: pd.DataFrame, raw: dict, par: dict) -> None:
+    """EOS-margin shift — the preferred (shift-invariant) logit readout."""
+    set_paper_style(target="blog")
+    fig, ax = plt.subplots(figsize=(7.0, 4.5))
+    _scatter_by_band(ax, df, "margin_base", "dmargin")
+    _annotate_rho(ax, raw, par)
+    ax.set_xlabel(f"Base-model EOS margin z({MARKER_TEXT}) − z(EOS) at post-response slot")
+    ax.set_ylabel(f"Trained − base EOS margin Δ(z({MARKER_TEXT}) − z(EOS))")
+    ax.set_title(
+        "EOS-margin shift vs base margin — shift-invariant logit readout",
+        loc="left",
+    )
+    leg = ax.legend(
+        title="Distance band",
+        loc="lower left",
+        fontsize=8,
+        title_fontsize=8,
+        ncols=2,
+        markerscale=2.0,
+        frameon=True,
+    )
+    leg.get_frame().set_edgecolor("lightgrey")
+    plt.tight_layout()
+    meta = _figure_meta(
+        fig_name="shift_vs_base_prior_eos_margin",
+        df=df,
+        extra={
+            "x_axis": f"base-model z({MARKER_TEXT}) − z(EOS) at post-response slot",
+            "y_axis": f"trained − base Δ(z({MARKER_TEXT}) − z(EOS))",
+            "rho_raw": raw["rho_point"],
+            "rho_partial": par["rho_point"],
+            "downsample_per_band": 600,
+        },
+    )
+    _save(fig, "shift_vs_base_prior_eos_margin", meta)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--n-boot", type=int, default=N_BOOTSTRAP)
@@ -313,6 +362,19 @@ def main() -> int:
         ("partial_dz_vs_baselogp", dict(x_col="base_prior", y_col="dz"), True),
         ("raw_ztrained_vs_baselogp", dict(x_col="base_prior", y_col="z_trained"), False),
         ("partial_ztrained_vs_baselogp", dict(x_col="base_prior", y_col="z_trained"), True),
+        # EOS margin (z_marker − z_eos) — the preferred logit readout.
+        ("raw_dmargin_vs_marginbase", dict(x_col="margin_base", y_col="dmargin"), False),
+        ("partial_dmargin_vs_marginbase", dict(x_col="margin_base", y_col="dmargin"), True),
+        (
+            "raw_margintrained_vs_marginbase",
+            dict(x_col="margin_base", y_col="margin_trained"),
+            False,
+        ),
+        (
+            "partial_margintrained_vs_marginbase",
+            dict(x_col="margin_base", y_col="margin_trained"),
+            True,
+        ),
     ]
     for name, kw, is_partial in pairs:
         if is_partial:
@@ -347,6 +409,9 @@ def main() -> int:
 
     plot_logit_shift(df, stats["raw_dz_vs_zbase"], stats["partial_dz_vs_zbase"])
     plot_logit_absolute(df, stats["raw_ztrained_vs_zbase"], stats["partial_ztrained_vs_zbase"])
+    plot_margin_shift(
+        df, stats["raw_dmargin_vs_marginbase"], stats["partial_dmargin_vs_marginbase"]
+    )
 
     print()
     print("=" * 78)
@@ -365,8 +430,13 @@ def main() -> int:
         f"   partial ρ = {stats['partial_dz_vs_baselogp']['rho_point']:+.4f}"
     )
     print(
+        f"  Δmargin vs margin_b: raw ρ = {stats['raw_dmargin_vs_marginbase']['rho_point']:+.4f}"
+        f"   partial ρ = {stats['partial_dmargin_vs_marginbase']['rho_point']:+.4f}"
+    )
+    print(
         f"  mean |ΔlogZ| = {diag['mean_abs_dlogZ_nats']:.3f} nats"
         f"   spearman(Δlogp, Δz) = {diag['spearman_dlogp_vs_dz']:+.4f}"
+        f"   spearman(Δz, Δmargin) = {diag['spearman_dz_vs_dmargin']:+.4f}"
     )
     print("=" * 78)
     return 0
