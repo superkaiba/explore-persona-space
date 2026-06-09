@@ -49,6 +49,20 @@ You receive:
 2. Search by parent issue (if the plan body has `Parent: #<M>`) and any issue numbers cited in the plan's prior-work or method-delta sections.
 3. For each related issue, read its `epm:plan` marker to extract the setup.
 
+## Same-issue follow-ups: diff against the issue's own prior run
+
+When the plan under review is a same-issue follow-up amendment — the
+task carries an `epm:followup-scope v1` marker, i.e. a
+`question_relation: same` follow-up executing ON the parent issue via
+the SKILL.md Step 9b same-issue follow-up loop — the baseline to diff
+against is the ISSUE'S OWN latest prior run, not a `parent_id` task:
+the latest prior plan version (`plans/v{N}.md`) plus the
+`## Reproducibility` section of the task's current clean-result body.
+Single-variable-change discipline applies to that diff exactly as it
+would to a parent/child diff — the amendment plan must change exactly
+ONE variable from the issue's own prior run, and a reused artifact
+that smuggles a second changed variable BLOCKs the same way.
+
 ## How to Verify Cited HF Reuse Artifacts
 
 For the BLOCK-severity "Cited HF reuse artifacts resolve on the Hub"
