@@ -66,7 +66,7 @@ Test whether the log-probs of a system-prompted model on drifted tokens are high
 
 **1.7 Does a custom chat-template role header induce the same context as a system prompt, or segment a persona's behavior more cleanly?** <!-- q:spec-role-header -->
 A persona can be denoted by a system prompt or by giving it its own chat-template role header (e.g. `<|im_start|>evil_assistant`) — a new context-inducer alongside prompting, in-context examples, steering, and SDF. Two linked sub-questions: does the role header reach the same context as the matching system prompt (equivalence), and does keying a behavior to the role token leave less of it leaking to the default `assistant` role and to other personas than the system-prompt encoding (cleaner segmentation)?
-> **State:** 🌱 budding · LOW · updated 2026-06-02 · evidence: #464, #517
+> **State:** 🌱 budding · LOW · updated 2026-06-02 · evidence: #464, #517, #528
 
 ### 2. Updating (W, C) toward a behavior — what installs, at what cost?
 
@@ -74,7 +74,7 @@ Fixing a context $C$, what behaviors can an update bind to it, and what does it 
 
 **2.1 Which behaviors can be implanted into one persona (marker, sycophancy, refusal)?** <!-- q:implant-which-behaviors -->
 Open sub-question: does implantability depend on whether the persona already exhibits the behavior?
-> **Belief:** Most can, but it requires contrastive negatives; the marker and refusal implant cleanly — refusal-style negatives in particular install a persona-conditional gate that generalizes across most OOD framings, at some cost to in-context rule application — while sycophancy could not be selectively implanted on Qwen-2.5-7B (it spread broadly to other personas, see 3.2). Whether implantation is easier when the persona already leans toward the behavior is untested. **Confidence:** MODERATE. **Evidence:** #65, #390, #389, #381, #391, #448, #517.
+> **Belief:** Most can, but it requires contrastive negatives; the marker and refusal implant cleanly — refusal-style negatives in particular install a persona-conditional gate that generalizes across most OOD framings, at some cost to in-context rule application — while sycophancy could not be selectively implanted on Qwen-2.5-7B (it spread broadly to other personas, see 3.2). Whether implantation is easier when the persona already leans toward the behavior is untested. **Confidence:** MODERATE. **Evidence:** #65, #390, #389, #381, #391, #448, #517, #528.
 
 **2.2 How fast is the marker learned?** <!-- q:implant-learning-speed -->
 We should track the marker log-prob trajectory over training steps per persona/condition, not just the endpoint — how fast the marker is learned, and the shape of the curve, is its own signal about what installed.

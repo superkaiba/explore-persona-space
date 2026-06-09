@@ -18,8 +18,11 @@ goal: 'Test (a) whether LoRA training installs a desirable assistant trait above
   Q-bank under the identical Claude Sonnet 4.5 Likert (1-5) rubric rig, so the trained-minus-base
   paired delta and the role-header-vs-system-prompt leakage delta are both computable
   on matched prompts.'
+relates_to:
+- implant-which-behaviors
+- spec-role-header
 ---
-# Follow-up to #517: does LoRA install a desirable trait above base, on traits with genuine base headroom?
+# Follow-up to #517: does LoRA install a trait above base on non-saturated traits, and does a role-header segment it more cleanly than a system prompt?
 
 ## Goal
 
