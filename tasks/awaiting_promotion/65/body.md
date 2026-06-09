@@ -11,6 +11,8 @@ priority: normal
 legacy_why_unset: true
 relates_to:
 - app1
+classification: useful
+promoted_at: '2026-06-09T21:32:46Z'
 ---
 <!-- legacy-sagan-card -->
 <style>
