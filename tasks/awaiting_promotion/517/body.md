@@ -14,6 +14,8 @@ goal: 'Measure untrained Qwen-2.5-7B-Instruct (no LoRA) scores on the three #498
 relates_to:
 - implant-which-behaviors
 - spec-role-header
+classification: useful
+promoted_at: '2026-06-09T21:54:16Z'
 ---
 # Untrained Qwen-2.5-7B-Instruct already PASSes 2 of 3 #498 trait rubrics in-scenario; only validating has real base-model headroom (MODERATE confidence)
 
