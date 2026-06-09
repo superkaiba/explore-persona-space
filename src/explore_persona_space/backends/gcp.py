@@ -492,6 +492,21 @@ STARTUP_SECRET_ENV_KEYS: tuple[str, ...] = (
     "OPENAI_API_KEY",
 )
 
+# Non-secret env keys passed through to the in-VM workload environment
+# via the same instance-metadata mechanism. Mirrors
+# ``slurm.PASSTHROUGH_ENV_KEYS``: these are the delete-after-eval
+# adapter-persist targets ``trainer.py:_persist_adapter`` reads from
+# ``os.environ`` ON THE VM (see ``.claude/rules/upload-policy.md``) —
+# plain configuration, NOT secrets, so they live in a SEPARATE list to
+# keep ``STARTUP_SECRET_ENV_KEYS`` semantically "secrets only". Without
+# this passthrough, a value set on the dispatch process env (e.g. by
+# ``scripts/router_acceptance.py --live``) never reaches the remote
+# workload and the HF adapter upload silently no-ops.
+STARTUP_PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
+    "EPM_PERSIST_ADAPTER_HF_REPO",
+    "EPM_PERSIST_ADAPTER_SUBFOLDER",
+)
+
 
 def render_startup_script(
     *,
@@ -540,8 +555,11 @@ def render_startup_script(
     # curl path 404s cleanly when a key was not set (so an absent
     # secret produces an empty export, not a hard crash — the in-VM
     # workload's own preflight surfaces the missing token loudly).
+    # The non-secret STARTUP_PASSTHROUGH_ENV_KEYS (adapter-persist
+    # targets) ride the same fetch stanza — metadata is the one
+    # env-delivery surface the VM has.
     secrets_fetch_lines: list[str] = []
-    for key in STARTUP_SECRET_ENV_KEYS:
+    for key in STARTUP_SECRET_ENV_KEYS + STARTUP_PASSTHROUGH_ENV_KEYS:
         secrets_fetch_lines.append(
             f'{key}=$(curl -fsS -H "Metadata-Flavor: Google" '
             f'"http://metadata.google.internal/computeMetadata/v1/'
@@ -699,9 +717,12 @@ def render_create_argv(
     # Metadata: startup-script body + the secret keys the script will
     # fetch back out of metadata. Each key arrives via os.environ so the
     # caller's environment dictates which secrets are forwarded. An absent
-    # env var is dropped (matches render_secrets_env in slurm.py).
+    # env var is dropped (matches render_secrets_env in slurm.py). The
+    # non-secret STARTUP_PASSTHROUGH_ENV_KEYS (adapter-persist targets)
+    # use the same ``spec.extra["secret_<KEY>"]``-then-env lookup so a
+    # caller can thread either class per-launch.
     metadata_pairs = [f"eps-issue={spec.issue}", f"eps-attempt-id={attempt_id}"]
-    for key in STARTUP_SECRET_ENV_KEYS:
+    for key in STARTUP_SECRET_ENV_KEYS + STARTUP_PASSTHROUGH_ENV_KEYS:
         val = spec.extra.get(f"secret_{key}") or _envget(key)
         if val is None or val == "":
             continue
@@ -1795,6 +1816,7 @@ __all__ = [
     "DEFAULT_PROVISIONING_MODEL",
     "DEFAULT_REPO_URL",
     "INTENT_TO_MACHINE",
+    "STARTUP_PASSTHROUGH_ENV_KEYS",
     "STARTUP_SECRET_ENV_KEYS",
     "GcloudRunResult",
     "GcloudRunner",

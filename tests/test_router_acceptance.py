@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import os
 import subprocess
 from contextlib import redirect_stdout
@@ -316,22 +317,31 @@ def test_run_live_lane_poll_timeout_raises() -> None:
     )
 
 
-def test_run_live_lane_launch_crash_raises() -> None:
+def test_run_live_lane_launch_crash_runs_cleanup_and_warns_live_infra() -> None:
     """A non-zero exit code that isn't a router terminal (rc=2) is a
     real crash -- harness fails loud rather than silently passing.
 
-    A LAUNCH crash means the workload never actually started (no live
-    VM/job exists), so cleanup teardown is NOT needed AND not run --
-    the early-return-on-launch-terminal stays outside the try/finally.
+    CRITICAL (C1): a launch crash does NOT prove nothing launched. The
+    dispatch CLI can die AFTER provisioning (rc=4 from a post-launch
+    raise, rc=137/130 from OOM-kill / SIGINT between ``gcloud create``
+    rc=0 and the JSON print). So the harness MUST (a) attempt the same
+    best-effort cleanup finalize the mid-flight branch runs (a no-op
+    rc=2 ``missing_handle_sidecar`` when nothing was written; a real
+    teardown when the sidecar DID land), and (b) raise a message that
+    says LOUDLY a VM/job may be live, with the manual verification
+    commands.
     """
     plan = ra.build_live_command_plan(issue=403, backend="nibi", repo_root=Path("/repo"))
     fake_run, rec = _make_fake_subprocess_run(
         launch_stdout="",
-        launch_rc=137,  # killed by signal
+        launch_rc=137,  # killed by signal -- possibly AFTER provisioning
         poll_stdouts=[],
-        finalize_stdout="",
+        finalize_stdout=json.dumps(
+            {"ok": False, "failure_class": "infra", "reason": "missing_handle_sidecar"}
+        ),
+        finalize_rc=2,  # harmless no-op shape when nothing launched
     )
-    with pytest.raises(ra.RouterAcceptanceError, match="launch exited with rc=137"):
+    with pytest.raises(ra.RouterAcceptanceError) as excinfo:
         ra.run_live_lane(
             plan,
             backend="nibi",
@@ -340,30 +350,124 @@ def test_run_live_lane_launch_crash_raises() -> None:
             sleep_fn=lambda _s: None,
             now_fn=lambda: 0.0,
         )
-    # Defensive: launch crashed BEFORE producing a live job, so the
-    # except branch must NOT shell out to finalize (no sidecar exists;
-    # the cleanup call would itself crash and mask the launch error).
+    msg = str(excinfo.value)
+    assert "launch exited with rc=137" in msg
+    # The message must scream live-infra-possible + carry the manual
+    # verification commands for BOTH lanes.
+    assert "MAY BE LIVE" in msg
+    assert "gcloud compute instances list --filter=labels.eps-issue=403" in msg
+    assert "squeue --name eps-issue-403" in msg
+    # Cleanup finalize WAS attempted (with the always-teardown flag).
+    finalize_calls = [a for a in rec.argv_list if "finalize" in a]
+    assert finalize_calls, (
+        "launch-crash path did NOT attempt cleanup finalize -- a dispatch CLI "
+        "that crashed AFTER provisioning leaks the live VM/job."
+    )
+    assert "--skip-confirm-artifacts" in finalize_calls[0]
+
+
+def test_run_live_lane_launch_json_parse_failure_runs_cleanup_and_warns() -> None:
+    """rc=0 with no parseable JSON shares the C1 exposure: the CLI can
+    die after provisioning but before (or mid-) printing the JSON line.
+    Cleanup finalize is attempted and the raise carries the live-infra
+    warning."""
+    plan = ra.build_live_command_plan(issue=405, backend="gcp", repo_root=Path("/repo"))
+    fake_run, rec = _make_fake_subprocess_run(
+        launch_stdout="INFO: not json at all\n",
+        launch_rc=0,
+        poll_stdouts=[],
+        finalize_stdout=json.dumps(
+            {"ok": False, "failure_class": "infra", "reason": "missing_handle_sidecar"}
+        ),
+        finalize_rc=2,
+    )
+    with pytest.raises(ra.RouterAcceptanceError) as excinfo:
+        ra.run_live_lane(
+            plan,
+            backend="gcp",
+            issue=405,
+            subprocess_run=fake_run,
+            sleep_fn=lambda _s: None,
+            now_fn=lambda: 0.0,
+        )
+    msg = str(excinfo.value)
+    assert "no parseable JSON" in msg
+    assert "MAY BE LIVE" in msg
+    assert "gcloud compute instances list --filter=labels.eps-issue=405" in msg
+    finalize_calls = [a for a in rec.argv_list if "finalize" in a]
+    assert finalize_calls, "JSON-parse-failure path did NOT attempt cleanup finalize"
+
+
+def test_run_live_lane_manual_attention_terminal_logs_orphan_no_cleanup(caplog) -> None:
+    """rc=2 with ``ManualAttentionRequiredError`` means a launched SLURM
+    job SURVIVED scancel (M1) -- the orphaned job id must be logged
+    LOUDLY with the scancel instruction, and cleanup finalize must NOT
+    fire (no sidecar exists on the free-lane park path; finalize
+    genuinely cannot help)."""
+    plan = ra.build_live_command_plan(issue=406, backend="auto", repo_root=Path("/repo"))
+    note = (
+        "failure_class: infra\n"
+        "reason: manual_attention_required\n"
+        "kind: nibi\n"
+        "cluster: nibi\n"
+        "orphaned_job_id: 7734001\n"
+        "operator_action: verify job state, scancel if alive"
+    )
+    fake_run, rec = _make_fake_subprocess_run(
+        launch_stdout=json.dumps(
+            {
+                "ok": False,
+                "failure_class": "infra",
+                "status": "blocked",
+                "exception": "ManualAttentionRequiredError",
+                "note": note,
+            }
+        ),
+        launch_rc=2,
+        poll_stdouts=[],
+        finalize_stdout="",
+    )
+    with caplog.at_level(logging.ERROR, logger="router_acceptance"):
+        outcome = ra.run_live_lane(
+            plan,
+            backend="auto",
+            issue=406,
+            subprocess_run=fake_run,
+            sleep_fn=lambda _s: None,
+            now_fn=lambda: 0.0,
+        )
+    assert outcome["phase"] == "launch_terminal"
+    # Loud log carries the orphaned id + the operator instruction.
+    log_text = caplog.text
+    assert "7734001" in log_text, "orphaned job id missing from the loud log"
+    assert "scancel" in log_text
+    assert "ORPHANED" in log_text
+    # No cleanup finalize fired -- only the launch subprocess ran.
     finalize_calls = [a for a in rec.argv_list if "finalize" in a]
     assert not finalize_calls, (
-        f"launch-crash path ran cleanup finalize ({finalize_calls!r}) -- "
-        f"there is no live job to tear down; this would mask the launch error."
+        "manual-attention terminal must NOT fire cleanup finalize (no sidecar; "
+        "the orphan needs a manual scancel, not a finalize no-op that implies handling)"
     )
+    assert len(rec.argv_list) == 1
 
 
 def test_run_live_lane_poll_crash_runs_cleanup_teardown() -> None:
-    """A poll-subprocess crash (``backend_poll.py`` rc!=0) raises AND
-    runs cleanup teardown BEFORE the exception propagates.
+    """THREE CONSECUTIVE poll-tick failures (``backend_poll.py`` rc!=0)
+    declare the poll dead, raise, AND run cleanup teardown BEFORE the
+    exception propagates.
 
     Sibling of the poll-timeout regression test: same leak class. The
     LAUNCH succeeded, so a live VM / SLURM job is UP when the poll
     loop dies -- a bare raise here (the pre-fix behavior) exits the
-    harness with the job still billing.
+    harness with the job still billing. The 3-strike threshold is the
+    Mn1 transient-blip guard: a SINGLE rc=1 tick must not tear down a
+    healthy lane (see the retry test below).
     """
     plan = ra.build_live_command_plan(issue=404, backend="nibi", repo_root=Path("/repo"))
     fake_run, rec = _make_fake_subprocess_run(
         launch_stdout=json.dumps({"ok": True}),
-        poll_stdouts=[json.dumps({"status": "running"}), ""],
-        poll_rcs=[0, 1],  # second poll tick crashes
+        poll_stdouts=[json.dumps({"status": "running"}), "", "", ""],
+        poll_rcs=[0, 1, 1, 1],  # three CONSECUTIVE poll-tick crashes
         finalize_stdout=json.dumps({"ok": True, "phase": "teardown"}),
         finalize_rc=0,
     )
@@ -390,6 +494,75 @@ def test_run_live_lane_poll_crash_runs_cleanup_teardown() -> None:
         f"cleanup finalize argv missing --skip-confirm-artifacts (would block "
         f"on confirm_artifacts and skip teardown): {finalize_calls[0]!r}"
     )
+
+
+def test_run_live_lane_transient_poll_blips_retry_without_teardown() -> None:
+    """Mn1: two failed poll ticks followed by healthy ticks must NOT
+    raise / tear the lane down -- the consecutive-failure counter
+    resets on success and the run completes with exactly ONE finalize
+    (the happy-path teardown, not a cleanup)."""
+    plan = ra.build_live_command_plan(issue=407, backend="nibi", repo_root=Path("/repo"))
+    fake_run, rec = _make_fake_subprocess_run(
+        launch_stdout=json.dumps({"ok": True, "chosen_kind": "nibi"}),
+        poll_stdouts=[
+            "",
+            "garbled not json",
+            json.dumps({"status": "running"}),
+            json.dumps({"status": "done"}),
+        ],
+        poll_rcs=[1, 0, 0, 0],  # blip rc=1, blip bad-JSON, then healthy
+        finalize_stdout=json.dumps({"ok": True, "phase": "teardown"}),
+        finalize_rc=0,
+    )
+    outcome = ra.run_live_lane(
+        plan,
+        backend="nibi",
+        issue=407,
+        poll_interval_seconds=0.0,
+        subprocess_run=fake_run,
+        sleep_fn=lambda _s: None,
+        now_fn=lambda: 0.0,
+    )
+    assert outcome["phase"] == "complete"
+    # Only the HEALTHY ticks land in the history.
+    assert [p["status"] for p in outcome["poll_history"]] == ["running", "done"]
+    # Exactly one finalize: the happy path. No cleanup teardown fired.
+    finalize_calls = [a for a in rec.argv_list if "finalize" in a]
+    assert len(finalize_calls) == 1, (
+        f"expected exactly the happy-path finalize, got {len(finalize_calls)} -- "
+        "a transient poll blip must not trigger the cleanup-teardown branch"
+    )
+
+
+def test_run_live_lane_three_consecutive_failures_required_not_cumulative() -> None:
+    """Mn1 counter semantics: failures separated by a healthy tick do
+    NOT accumulate -- only CONSECUTIVE failures reach the threshold."""
+    plan = ra.build_live_command_plan(issue=408, backend="nibi", repo_root=Path("/repo"))
+    fake_run, _rec = _make_fake_subprocess_run(
+        launch_stdout=json.dumps({"ok": True}),
+        poll_stdouts=[
+            "",  # fail 1
+            "",  # fail 2
+            json.dumps({"status": "running"}),  # healthy -> reset
+            "",  # fail 1 (again)
+            "",  # fail 2
+            json.dumps({"status": "done"}),  # healthy -> terminal
+        ],
+        poll_rcs=[1, 1, 0, 1, 1, 0],
+        finalize_stdout=json.dumps({"ok": True, "phase": "teardown"}),
+        finalize_rc=0,
+    )
+    outcome = ra.run_live_lane(
+        plan,
+        backend="nibi",
+        issue=408,
+        poll_interval_seconds=0.0,
+        subprocess_run=fake_run,
+        sleep_fn=lambda _s: None,
+        now_fn=lambda: 0.0,
+    )
+    assert outcome["phase"] == "complete"
+    assert [p["status"] for p in outcome["poll_history"]] == ["running", "done"]
 
 
 def test_parse_last_json_line_picks_last_blob() -> None:
@@ -1110,6 +1283,7 @@ def _stub_cmd_live_rig(monkeypatch, tmp_path: Path, *, chosen_kind: str) -> dict
     ) -> ra.LaneVerdict:
         rec["checklist_lane"] = lane
         rec["checklist_expected_lane"] = expected_lane
+        rec["checklist_artifact_lane"] = _kw.get("artifact_lane")
         return ra.LaneVerdict(lane=lane, checks=())
 
     monkeypatch.setattr(ra, "run_live_lane", _fake_run_live_lane)
@@ -1164,3 +1338,74 @@ def test_cmd_live_scopes_persist_env_to_launch_subprocess(monkeypatch, tmp_path:
     # The parent process env stays untouched -- no cross-caller leak.
     assert "EPM_PERSIST_ADAPTER_HF_REPO" not in os.environ
     assert "EPM_PERSIST_ADAPTER_SUBFOLDER" not in os.environ
+
+
+def test_cmd_live_auto_lane_env_subfolder_matches_artifact_probe(monkeypatch, tmp_path) -> None:
+    """M3: on ``--backend auto`` the subfolder baked into the launch env
+    and the subfolder check (a) probes must be ONE string.
+
+    The env is built PRE-launch (resolved lane unknowable), so both
+    sides use the literal ``auto``; checks (b)-(d) keep the resolved
+    lane. Pre-fix, the env wrote ``...-auto`` while check (a) probed
+    ``...-gcp`` -> every auto run false-FAILed check (a) AFTER the
+    compute was already spent."""
+    monkeypatch.delenv("EPM_PERSIST_ADAPTER_HF_REPO", raising=False)
+    monkeypatch.delenv("EPM_PERSIST_ADAPTER_SUBFOLDER", raising=False)
+    rec = _stub_cmd_live_rig(monkeypatch, tmp_path, chosen_kind="gcp")
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = ra.main(["live", "--issue", "922", "--backend", "auto", "--live"])
+    assert rc == 0
+    env_subfolder = rec["launch_env"]["EPM_PERSIST_ADAPTER_SUBFOLDER"]
+    probed_subfolder = ra.ACCEPTANCE_HF_SUBFOLDER.format(
+        issue=922, lane=rec["checklist_artifact_lane"]
+    )
+    assert env_subfolder == probed_subfolder == "router_acceptance/issue-922-auto", (
+        f"env wrote {env_subfolder!r} but check (a) probes {probed_subfolder!r} -- "
+        "the artifact lane must be ONE source of truth (the pre-launch literal)"
+    )
+    # The figure / teardown / marker checks still use the RESOLVED lane.
+    assert rec["checklist_lane"] == "gcp"
+    assert rec["checklist_expected_lane"] == "gcp"
+
+
+def test_evaluate_pass_checklist_artifact_lane_overrides_check_a_only(tmp_path) -> None:
+    """``artifact_lane`` redirects ONLY the check-(a) HF prefix; checks
+    (b)-(d) keep the resolved lane."""
+    issue = 923
+    rel = ra.ACCEPTANCE_FIGURE_PATH.format(issue=issue, lane="gcp")
+    (tmp_path / rel).parent.mkdir(parents=True)
+    (tmp_path / rel).write_bytes(b"PNG")
+    io_fake = ra.VerifierIO(
+        list_hf_repo_files=lambda _r, repo_type: [
+            f"router_acceptance/issue-{issue}-auto/adapter_model.safetensors"
+        ],
+        git_tracked=lambda _r, paths: set(paths),
+        read_events_jsonl=lambda _n: [
+            {"kind": "epm:backend-selected", "note": json.dumps({"chosen_kind": "gcp"})}
+        ],
+        squeue_by_name=lambda _a, _n: [],
+        gcloud_instances_list=lambda _f, **_kw: [],
+    )
+    verdict = ra.evaluate_pass_checklist(
+        issue=issue,
+        lane="gcp",
+        expected_lane="gcp",
+        repo_root=tmp_path,
+        hf_model_repo="superkaiba1/explore-persona-space",
+        io=io_fake,
+        artifact_lane="auto",
+    )
+    assert verdict.passed, verdict.format()
+    # And WITHOUT artifact_lane the same fixture FAILS check (a) -- the
+    # adapter sits under ...-auto, not ...-gcp.
+    verdict_no_override = ra.evaluate_pass_checklist(
+        issue=issue,
+        lane="gcp",
+        expected_lane="gcp",
+        repo_root=tmp_path,
+        hf_model_repo="superkaiba1/explore-persona-space",
+        io=io_fake,
+    )
+    failed = {c.name for c in verdict_no_override.checks if not c.passed}
+    assert failed == {"hf_artifact_present"}

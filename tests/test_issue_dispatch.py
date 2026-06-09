@@ -635,6 +635,75 @@ def test_dispatch_for_issue_writes_handle_sidecar(tmp_path, tmp_lease_store) -> 
     assert recovered.pod_name == "pod-200"
 
 
+def test_sidecar_written_before_backend_selected_marker(tmp_path, tmp_lease_store) -> None:
+    """C1 ordering regression: the handle sidecar must exist ON DISK
+    BEFORE the ``epm:backend-selected`` marker post fires.
+
+    Pre-fix order was launch -> marker post -> sidecar write; a
+    marker-post crash (or any crash in between) stranded a live job
+    with NO sidecar, so ``dispatch_issue.py finalize`` had nothing to
+    tear down. The router's ``on_launched`` hook now persists the
+    handle immediately after launch, ahead of every marker."""
+    nibi = _MockBackend(kind="nibi")
+    spec = RunSpec(issue=204, intent="lora-7b", backend="nibi")
+    sidecar = tmp_path / "issue-204-handle.json"
+    marker_calls: list[tuple[str, bool]] = []
+
+    def recording_poster(**kwargs):
+        # Record whether the sidecar existed at the moment of the post.
+        marker_calls.append((kwargs.get("marker", "?"), sidecar.exists()))
+
+    outcome = dispatch_for_issue(
+        spec,
+        runpod_backend=_MockBackend(kind="runpod"),
+        free_backends={"nibi": nibi},
+        is_started=lambda _b, _h: True,
+        lease_store=tmp_lease_store,
+        handle_sidecar_path=sidecar,
+        marker_poster=recording_poster,
+    )
+    assert outcome.handle_sidecar_path == sidecar
+    assert marker_calls, "no marker was posted -- the ordering claim was not exercised"
+    assert all(existed for _marker, existed in marker_calls), (
+        f"marker post(s) fired BEFORE the sidecar landed on disk: {marker_calls!r} -- "
+        "a crash at the marker would strand an unrecoverable live job"
+    )
+
+
+def test_dispatch_for_issue_sidecar_oserror_carries_error_not_crash(
+    tmp_path, tmp_lease_store, monkeypatch
+) -> None:
+    """C1: an ``OSError`` on the sidecar write after a SUCCESSFUL launch
+    must not escape ``dispatch_for_issue`` (the pre-fix path converted
+    it to dispatch-CLI rc=4 with a live job and no handle on stdout).
+    The outcome carries ``sidecar_write_error`` so the CLI prints the
+    handle JSON + the error loudly instead."""
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    def exploding_write(_handle, _path):
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(idp, "write_handle_sidecar", exploding_write)
+
+    nibi = _MockBackend(kind="nibi")
+    spec = RunSpec(issue=205, intent="lora-7b", backend="nibi")
+    sidecar = tmp_path / "issue-205-handle.json"
+    outcome = dispatch_for_issue(
+        spec,
+        runpod_backend=_MockBackend(kind="runpod"),
+        free_backends={"nibi": nibi},
+        is_started=lambda _b, _h: True,
+        lease_store=tmp_lease_store,
+        handle_sidecar_path=sidecar,
+    )
+    # Launch happened; the failure is carried, not raised.
+    assert len(nibi.launches) == 1
+    assert outcome.sidecar_write_error is not None
+    assert "No space left on device" in outcome.sidecar_write_error
+    assert outcome.handle_sidecar_path is None  # nothing landed on disk
+    assert outcome.result.handle.pod_name == "pod-205"
+
+
 def test_dispatch_for_issue_skip_sidecar_when_caller_asks(tmp_lease_store) -> None:
     """``write_sidecar=False`` is for test callers that don't want FS
     writes; the helper must honor it."""

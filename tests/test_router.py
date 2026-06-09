@@ -310,6 +310,52 @@ def test_explicit_runpod_override_runs_runpod_directly(
     assert _by_reason(captured_markers, ROUTE_REASON_OVERRIDE)
 
 
+def test_marker_post_failure_after_launch_does_not_propagate(lease_store):
+    """C1 regression: ``_post_backend_selected`` fires AFTER a successful
+    launch -- a raising marker poster (flock contention, task.py crash)
+    must NOT convert "launched, handle in hand" into an exception (the
+    dispatch CLI would exit rc=4 with a live, billing VM/job and no
+    recovery record). Markers are observability, not control flow."""
+
+    def exploding_poster(**_kwargs):
+        raise RuntimeError("task.py post-marker timed out on the workflow flock")
+
+    rp = _PassiveRunpod()
+    result = route(
+        _spec(backend="runpod"),
+        runpod_backend=rp,
+        lease_store=lease_store,
+        marker_poster=exploding_poster,
+    )
+    # The launch happened and the result came back whole.
+    assert result.chosen_kind == "runpod"
+    assert len(rp.launches) == 1
+    assert result.handle is not None
+
+
+def test_marker_post_failure_on_free_lane_does_not_propagate(lease_store):
+    """Same C1 guard on the explicit free-lane override path (the marker
+    fires after the park resolves to RUNNING)."""
+
+    def exploding_poster(**_kwargs):
+        raise RuntimeError("marker transport down")
+
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=1)
+    result = route(
+        _spec(backend="nibi"),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        lease_store=lease_store,
+        is_started=_is_started_after_n(1),
+        marker_poster=exploding_poster,
+        config=RouterConfig(free_wait_seconds=2, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert len(nibi.launches) == 1
+
+
 def test_explicit_nibi_override_launches_only_nibi(lease_store):
     nibi = _FreeLaneBackend(kind="nibi", starts_when=1)
     rp = _ExplodingRunpod()  # auto path is sealed; this also acts as a guard.

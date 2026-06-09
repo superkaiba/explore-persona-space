@@ -370,6 +370,21 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         "pod_name": result.handle.pod_name,
         "job_id": result.handle.job_id,
     }
+    if outcome.sidecar_write_error is not None:
+        # The launch SUCCEEDED (live VM / job) but the sidecar write
+        # failed — print the handle JSON anyway (it IS the recovery
+        # record) plus the error, instead of the pre-fix rc=4 crash
+        # that stranded live infra with no handle on stdout.
+        body["sidecar_write_error"] = outcome.sidecar_write_error
+        logging.getLogger("dispatch_issue").error(
+            "launch succeeded but the handle sidecar write FAILED (%s); "
+            "the JSON line below is the only recovery record — keep it. "
+            "job_id=%s pod_name=%s chosen_kind=%s",
+            outcome.sidecar_write_error,
+            result.handle.job_id,
+            result.handle.pod_name,
+            result.chosen_kind,
+        )
     print(json.dumps(body, sort_keys=True))
     return 0
 

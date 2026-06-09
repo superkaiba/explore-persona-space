@@ -350,6 +350,43 @@ def test_render_create_argv_zone_override() -> None:
     assert "--zone=us-central1-a" not in argv
 
 
+def test_render_create_argv_includes_persist_adapter_metadata(monkeypatch) -> None:
+    """M2 regression: the adapter-persist passthrough vars set on the
+    dispatch process env MUST land as instance metadata, or the in-VM
+    ``trainer.py:_persist_adapter`` no-ops and the acceptance harness's
+    check (a) false-FAILs after real compute was spent."""
+    monkeypatch.setenv("EPM_PERSIST_ADAPTER_HF_REPO", "superkaiba1/explore-persona-space")
+    monkeypatch.setenv("EPM_PERSIST_ADAPTER_SUBFOLDER", "router_acceptance/issue-137-gcp")
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("lora-7b"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+    )
+    metadata_args = [a for a in argv if a.startswith("--metadata=")]
+    joined = " ".join(metadata_args)
+    assert "EPM_PERSIST_ADAPTER_HF_REPO=superkaiba1/explore-persona-space" in joined
+    assert "EPM_PERSIST_ADAPTER_SUBFOLDER=router_acceptance/issue-137-gcp" in joined
+
+
+def test_render_create_argv_omits_persist_adapter_metadata_when_unset(monkeypatch) -> None:
+    """An unset passthrough var is dropped (same contract as the secret
+    keys) -- no empty metadata pairs."""
+    monkeypatch.delenv("EPM_PERSIST_ADAPTER_HF_REPO", raising=False)
+    monkeypatch.delenv("EPM_PERSIST_ADAPTER_SUBFOLDER", raising=False)
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("lora-7b"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+    )
+    joined = " ".join(argv)
+    assert "EPM_PERSIST_ADAPTER_HF_REPO" not in joined
+    assert "EPM_PERSIST_ADAPTER_SUBFOLDER" not in joined
+
+
 def test_render_create_argv_uses_metadata_from_file_when_provided() -> None:
     """When the caller threads a tempfile path through spec.extra, the
     renderer uses ``--metadata-from-file`` (avoids the 256KB metadata cap
@@ -397,6 +434,21 @@ def test_render_startup_script_pulls_secrets_from_metadata() -> None:
     # strict-mode + umask
     assert "set -euo pipefail" in script
     assert "umask 077" in script
+
+
+def test_render_startup_script_fetches_persist_adapter_passthrough() -> None:
+    """M2 regression: the startup script must fetch + export the
+    adapter-persist passthrough keys from instance metadata so the
+    workload sees them in ``os.environ`` on the VM."""
+    cfg = _test_config()
+    script = render_startup_script(
+        spec=_spec(),
+        config=cfg,
+        attempt_id="att-fixed-001",
+    )
+    for key in ("EPM_PERSIST_ADAPTER_HF_REPO", "EPM_PERSIST_ADAPTER_SUBFOLDER"):
+        assert f"instance/attributes/{key}" in script, f"{key} fetch stanza missing"
+        assert f"export {key}" in script, f"{key} export missing"
 
 
 def test_render_startup_script_shell_safe_hydra_args() -> None:

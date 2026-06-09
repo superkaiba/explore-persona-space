@@ -611,10 +611,24 @@ SECRET_ENV_KEYS: tuple[str, ...] = (
     "HF_USERNAME",
 )
 
+# Non-secret env keys passed through to the in-job environment via the
+# same sourced env file. These are plain configuration values — the
+# delete-after-eval adapter-persist targets ``trainer.py:_persist_adapter``
+# reads from ``os.environ`` ON THE COMPUTE NODE (see
+# ``.claude/rules/upload-policy.md``) — NOT secrets, so they live in a
+# SEPARATE list to keep ``SECRET_ENV_KEYS`` semantically "secrets only".
+# Without this passthrough, a value set on the dispatch process env
+# (e.g. by ``scripts/router_acceptance.py --live``) never reaches the
+# remote workload and the HF adapter upload silently no-ops.
+PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
+    "EPM_PERSIST_ADAPTER_HF_REPO",
+    "EPM_PERSIST_ADAPTER_SUBFOLDER",
+)
+
 
 def render_secrets_env(
     env: dict[str, str] | None = None,
-    keys: tuple[str, ...] = SECRET_ENV_KEYS,
+    keys: tuple[str, ...] = SECRET_ENV_KEYS + PASSTHROUGH_ENV_KEYS,
 ) -> str:
     """Render a ``KEY=value`` env file for the sbatch ``set -a; source`` stanza.
 
@@ -626,6 +640,11 @@ def render_secrets_env(
     Only keys present in ``env`` are rendered (a missing key means the
     VM operator never set it — the in-job preflight will FAIL fast and
     the selector falls back to RunPod, exactly the intended path).
+
+    The default key set is ``SECRET_ENV_KEYS`` plus the non-secret
+    :data:`PASSTHROUGH_ENV_KEYS` (adapter-persist targets) — the env
+    file is the one remote-env surface every sbatch already sources, so
+    both classes ride it; the split lists keep the semantics distinct.
     """
     if env is not None:
         src = env
@@ -1807,13 +1826,32 @@ class SlurmBackend(ComputeBackend):
             },
             sort_keys=True,
         )
-        self._post_marker(
-            issue=spec.issue,
-            marker="epm:cluster-launched",
-            note=marker_body,
-            version=1,
-            by="backends.slurm",
-        )
+        try:
+            self._post_marker(
+                issue=spec.issue,
+                marker="epm:cluster-launched",
+                note=marker_body,
+                version=1,
+                by="backends.slurm",
+            )
+        except Exception as exc:
+            # Marker post is best-effort AFTER a successful sbatch submit:
+            # the SLURM job is already live, and a raise here (e.g.
+            # ``post_marker_via_task_py``'s ``subprocess.run(check=True,
+            # timeout=30)`` hitting flock contention on
+            # ``~/.task-workflow/lock``) would propagate out of launch()
+            # with NO handle returned, NO lease written, NO sidecar — a
+            # live job with no recovery record (dispatch CLI rc=4).
+            # Mirrors GcpBackend.launch's guard. Log LOUD (payload
+            # included) so the operator can backfill the marker.
+            logger.error(
+                "SLURM launch: epm:cluster-launched marker post FAILED for issue=%d "
+                "(job_id=%s already submitted): %s; continuing — payload=%s",
+                spec.issue,
+                job_id,
+                exc,
+                marker_body,
+            )
 
         return RunHandle(
             backend="cluster",
@@ -2053,6 +2091,7 @@ __all__ = [
     "CLUSTER_CONFIGS",
     "DEFAULT_MILA_SSH_ALIAS",
     "HEARTBEAT_INTERVAL_SECONDS",
+    "PASSTHROUGH_ENV_KEYS",
     "PREFLIGHT_FAIL_MARKER",
     "RSYNC_EXCLUDE_PATTERNS",
     "RSYNC_INCLUDE_PATHS",

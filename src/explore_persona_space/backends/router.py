@@ -877,6 +877,7 @@ def route(
         Callable[[ComputeBackend, BackendKind, RunSpec], RunHandle | None] | None
     ) = None,
     marker_poster: Callable[..., None] | None = None,
+    on_launched: Callable[[RunHandle], None] | None = None,
     config: RouterConfig | None = None,
     now_fn: Callable[[], float] = time.monotonic,
     sleep_fn: Callable[[float], None] = time.sleep,
@@ -927,6 +928,13 @@ def route(
     * ``marker_poster`` — see ``epm:backend-selected`` in
       :data:`workflow.yaml`. Defaults to None (no marker posted; slice
       6 wires the real ``post_marker_via_task_py``).
+    * ``on_launched`` — persistence hook invoked with the
+      :class:`RunHandle` IMMEDIATELY after every successful launch /
+      reconnect, BEFORE any marker post or further routing work. The
+      dispatch helper wires the handle-sidecar write here so a launched
+      handle is ALWAYS recoverable by ``dispatch_issue.py finalize``
+      even if everything after the launch crashes. Guarded — a hook
+      failure is logged loud and never kills a live launch.
     * ``config`` — see :class:`RouterConfig`. Defaults to a fresh
       instance with the module constants.
 
@@ -974,6 +982,7 @@ def route(
             started_at=started_at,
             now_fn=now_fn,
             marker_poster=marker_poster,
+            on_launched=on_launched,
         )
 
     if spec.backend in {"nibi", "fir", "mila"}:
@@ -997,6 +1006,7 @@ def route(
             now_fn=now_fn,
             sleep_fn=sleep_fn,
             marker_poster=marker_poster,
+            on_launched=on_launched,
         )
 
     if spec.backend == "gcp":
@@ -1017,6 +1027,7 @@ def route(
             now_fn=now_fn,
             sleep_fn=sleep_fn,
             marker_poster=marker_poster,
+            on_launched=on_launched,
         )
 
     # ----------------------------- auto chain ---------------------------
@@ -1037,6 +1048,7 @@ def route(
         now_fn=now_fn,
         sleep_fn=sleep_fn,
         marker_poster=marker_poster,
+        on_launched=on_launched,
         clock_fn=clock_fn,
     )
 
@@ -1044,6 +1056,34 @@ def route(
 # ---------------------------------------------------------------------------
 # Override paths
 # ---------------------------------------------------------------------------
+
+
+def _invoke_on_launched(
+    on_launched: Callable[[RunHandle], None] | None,
+    handle: RunHandle,
+) -> None:
+    """Run the post-launch persistence hook; NEVER let it kill a live launch.
+
+    The hook fires IMMEDIATELY after a successful launch / reconnect,
+    BEFORE any marker post, so the dispatch helper's handle-sidecar
+    write lands while the only thing that has happened is the launch
+    itself — a crash anywhere later still leaves a recoverable handle
+    for ``dispatch_issue.py finalize``. A hook failure (e.g. disk
+    error on the sidecar write) is logged LOUD and swallowed: the
+    launch already succeeded, and the dispatch helper's authoritative
+    final write is the second chance.
+    """
+    if on_launched is None:
+        return
+    try:
+        on_launched(handle)
+    except Exception:
+        logger.exception(
+            "route: on_launched hook FAILED for job_id=%s pod_name=%s — handle "
+            "persistence may be missing; continuing (launch already succeeded).",
+            handle.job_id,
+            handle.pod_name,
+        )
 
 
 def _override_runpod(
@@ -1055,6 +1095,7 @@ def _override_runpod(
     started_at: float,
     now_fn: Callable[[], float],
     marker_poster: Callable[..., None] | None,
+    on_launched: Callable[[RunHandle], None] | None = None,
 ) -> RouteResult:
     """Explicit RunPod override — just submit. No park, no fallback.
 
@@ -1077,6 +1118,7 @@ def _override_runpod(
     # provision twice.
     with store.transaction(spec.issue) as (lease, write):
         handle = backend.launch(spec)
+        _invoke_on_launched(on_launched, handle)
         write(_lease_after_submit(lease, spec, "runpod", None, handle))
     attempt = RouteAttempt(
         kind="runpod",
@@ -1118,6 +1160,7 @@ def _override_free_or_gcp(
     now_fn: Callable[[], float],
     sleep_fn: Callable[[float], None],
     marker_poster: Callable[..., None] | None,
+    on_launched: Callable[[RunHandle], None] | None = None,
 ) -> RouteResult:
     """Explicit non-RunPod lane override.
 
@@ -1137,6 +1180,7 @@ def _override_free_or_gcp(
         # between our "no live job" check and our launch.
         handle = _try_reconnect(backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn)
         if handle is not None:
+            _invoke_on_launched(on_launched, handle)
             attempts.append(
                 RouteAttempt(
                     kind=kind,
@@ -1188,9 +1232,11 @@ def _override_free_or_gcp(
                 attempts=attempts,
             )
             raise
-        # Persist the launched id IMMEDIATELY (still inside the flock —
-        # crash-window-free). For "kind == gcp" override we leave the
-        # cluster field at None, matching the existing schema.
+        # Persist the handle (sidecar hook) + launched id IMMEDIATELY
+        # (still inside the flock — crash-window-free). For "kind ==
+        # gcp" override we leave the cluster field at None, matching
+        # the existing schema.
+        _invoke_on_launched(on_launched, handle)
         write(_lease_after_submit(lease, spec, kind, spec.cluster, handle))
 
         # GCP doesn't need the park (provision IS the start); just return.
@@ -1361,6 +1407,7 @@ def _auto_route(
     now_fn: Callable[[], float],
     sleep_fn: Callable[[float], None],
     marker_poster: Callable[..., None] | None,
+    on_launched: Callable[[RunHandle], None] | None,
     clock_fn: Callable[[], datetime] | None,
 ) -> RouteResult:
     """No-``backend:`` auto route: rank free lanes, park, escalate to GCP."""
@@ -1386,6 +1433,7 @@ def _auto_route(
         reconnect_fn=reconnect_fn,
         now_fn=now_fn,
         marker_poster=marker_poster,
+        on_launched=on_launched,
     )
     if reconnect_result is not None:
         return reconnect_result
@@ -1407,6 +1455,7 @@ def _auto_route(
         now_fn=now_fn,
         sleep_fn=sleep_fn,
         marker_poster=marker_poster,
+        on_launched=on_launched,
     )
     if free_result is not None:
         return free_result
@@ -1421,6 +1470,7 @@ def _auto_route(
         cfg=cfg,
         now_fn=now_fn,
         marker_poster=marker_poster,
+        on_launched=on_launched,
     )
 
 
@@ -1435,6 +1485,7 @@ def _try_auto_reconnect(
     reconnect_fn: (Callable[[ComputeBackend, BackendKind, RunSpec], RunHandle | None] | None),
     now_fn: Callable[[], float],
     marker_poster: Callable[..., None] | None,
+    on_launched: Callable[[RunHandle], None] | None = None,
 ) -> RouteResult | None:
     """Auto-route stage 1: look for an existing live job on every wired lane.
 
@@ -1459,6 +1510,7 @@ def _try_auto_reconnect(
             started_at=started_at,
             now_fn=now_fn,
             marker_poster=marker_poster,
+            on_launched=on_launched,
             detail="found existing live job/instance",
         )
 
@@ -1477,6 +1529,7 @@ def _try_auto_reconnect(
         started_at=started_at,
         now_fn=now_fn,
         marker_poster=marker_poster,
+        on_launched=on_launched,
         detail="found existing live gcp instance",
     )
 
@@ -1493,8 +1546,14 @@ def _record_reconnect(
     now_fn: Callable[[], float],
     marker_poster: Callable[..., None] | None,
     detail: str,
+    on_launched: Callable[[RunHandle], None] | None = None,
 ) -> RouteResult:
-    """Append a reconnect attempt + build the matching RouteResult."""
+    """Append a reconnect attempt + build the matching RouteResult.
+
+    The persistence hook fires BEFORE the marker post so the handle is
+    on disk by the time any observability side effect runs.
+    """
+    _invoke_on_launched(on_launched, handle)
     attempts.append(
         RouteAttempt(
             kind=kind,
@@ -1535,6 +1594,7 @@ def _try_free_lanes(
     now_fn: Callable[[], float],
     sleep_fn: Callable[[float], None],
     marker_poster: Callable[..., None] | None,
+    on_launched: Callable[[RunHandle], None] | None = None,
 ) -> RouteResult | None:
     """Auto-route stage 2: launch + park each ranked free lane, in order.
 
@@ -1558,6 +1618,7 @@ def _try_free_lanes(
             is_running_after_cancel=is_running_after_cancel,
             reconnect_fn=reconnect_fn,
             marker_poster=marker_poster,
+            on_launched=on_launched,
             now_fn=now_fn,
             sleep_fn=sleep_fn,
         )
@@ -1584,6 +1645,7 @@ def _try_one_free_lane(
     marker_poster: Callable[..., None] | None,
     now_fn: Callable[[], float],
     sleep_fn: Callable[[float], None],
+    on_launched: Callable[[RunHandle], None] | None = None,
 ) -> RouteResult | None:
     """Launch + park one free lane. Returns a RouteResult on success / cancel-race.
 
@@ -1607,6 +1669,7 @@ def _try_one_free_lane(
         # _try_auto_reconnect and now.
         handle = _try_reconnect(backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn)
         if handle is not None:
+            _invoke_on_launched(on_launched, handle)
             attempts.append(
                 RouteAttempt(
                     kind=kind,
@@ -1654,7 +1717,9 @@ def _try_one_free_lane(
             )
             return None
 
-        # Persist the launched id IMMEDIATELY (still under the flock).
+        # Persist the handle (sidecar hook) + launched id IMMEDIATELY
+        # (still under the flock).
+        _invoke_on_launched(on_launched, handle)
         write(_lease_after_submit(lease, spec, kind, spec.cluster, handle))
 
         # Park (still under the flock — wait IS contention surface, but
@@ -1797,6 +1862,7 @@ def _escalate_to_gcp(
     cfg: RouterConfig,
     now_fn: Callable[[], float],
     marker_poster: Callable[..., None] | None,
+    on_launched: Callable[[RunHandle], None] | None = None,
 ) -> RouteResult:
     """Auto-route stage 3: bump attempt counter, launch GCP, classify.
 
@@ -1915,7 +1981,9 @@ def _escalate_to_gcp(
                 evidence=exc.evidence,
             ) from exc
 
-        # Persist the launched id IMMEDIATELY (still under the flock).
+        # Persist the handle (sidecar hook) + launched id IMMEDIATELY
+        # (still under the flock).
+        _invoke_on_launched(on_launched, gcp_handle)
         write(_lease_after_submit(lease, spec, "gcp", None, gcp_handle))
 
     attempts.append(
@@ -2163,6 +2231,46 @@ def _make_attempt_id() -> str:
     return f"att-{datetime.now(tz=UTC).strftime('%Y%m%d-%H%M%S')}"
 
 
+def _post_marker_nonfatal(
+    marker_poster: Callable[..., None],
+    *,
+    issue: int,
+    note: str,
+    context: str,
+) -> None:
+    """Invoke ``marker_poster``; NEVER let a marker-post failure alter routing.
+
+    Every router ``epm:backend-selected`` post fires either AFTER a
+    successful launch (the success breadcrumb — live infra in hand) or
+    immediately BEFORE raising a typed terminal (the failure
+    breadcrumb). A raise from the poster itself (e.g.
+    ``post_marker_via_task_py``'s ``subprocess.run(check=True,
+    timeout=30)`` hitting flock contention) would either convert
+    "launched, handle in hand" into an unclassified dispatch-CLI rc=4
+    with a live, billing VM/job, or clobber the typed terminal the
+    orchestrator's failure-classifier routes on. Markers are an
+    observability side channel, not control flow — failures are logged
+    LOUD (ERROR + the full payload, never silently swallowed) and the
+    route continues.
+    """
+    try:
+        marker_poster(
+            issue=issue,
+            marker="epm:backend-selected",
+            note=note,
+            version=1,
+            by="backends.router",
+        )
+    except Exception:
+        logger.exception(
+            "route: epm:backend-selected marker post FAILED (%s) for issue=%d; "
+            "continuing — markers must never alter routing control flow. payload=%s",
+            context,
+            issue,
+            note,
+        )
+
+
 def _post_backend_selected(
     result: RouteResult,
     *,
@@ -2179,6 +2287,10 @@ def _post_backend_selected(
     * ``free_lane_order`` — the order considered.
     * Existing schema preserved: ``requested_kind`` / ``chosen_kind`` /
       ``reason`` / ``cluster`` / ``elapsed_seconds`` / ``extra``.
+
+    Non-fatal: every call site runs AFTER a successful launch /
+    reconnect, so a poster failure must never propagate past live infra
+    (see :func:`_post_marker_nonfatal`).
     """
     if marker_poster is None:
         return
@@ -2191,12 +2303,11 @@ def _post_backend_selected(
         "attempts": [_attempt_to_dict(a) for a in result.attempts],
         "extra": dict(result.extra),
     }
-    marker_poster(
+    _post_marker_nonfatal(
+        marker_poster,
         issue=spec.issue,
-        marker="epm:backend-selected",
         note=json.dumps(body, sort_keys=True),
-        version=1,
-        by="backends.router",
+        context=f"backend-selected chosen_kind={result.chosen_kind}",
     )
 
 
@@ -2230,12 +2341,11 @@ def _post_intermediate_marker(
             "gcp_attempts_today": attempts_today,
         },
     }
-    marker_poster(
+    _post_marker_nonfatal(
+        marker_poster,
         issue=spec.issue,
-        marker="epm:backend-selected",
         note=json.dumps(body, sort_keys=True),
-        version=1,
-        by="backends.router",
+        context="pre-escalation breadcrumb",
     )
 
 
@@ -2269,12 +2379,15 @@ def _post_terminal_failure_marker(
         "attempts": [_attempt_to_dict(a) for a in attempts],
         "extra": dict(extra or {}),
     }
-    marker_poster(
+    # Non-fatal: a poster failure here would clobber the typed terminal
+    # (NoCompute / WorkloadSurfaced / ManualAttention) about to be
+    # raised — the orchestrator's failure-classifier needs THAT
+    # exception, not an unclassified marker-transport error.
+    _post_marker_nonfatal(
+        marker_poster,
         issue=spec.issue,
-        marker="epm:backend-selected",
         note=json.dumps(body, sort_keys=True),
-        version=1,
-        by="backends.router",
+        context=f"terminal-failure breadcrumb reason={reason}",
     )
 
 

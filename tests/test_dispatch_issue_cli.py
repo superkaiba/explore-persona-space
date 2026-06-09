@@ -241,6 +241,43 @@ def test_launch_backend_runpod_explicit_provisions_runpod_and_writes_sidecar(
     assert len(nibi.launches) == 0
 
 
+def test_launch_sidecar_write_error_still_prints_handle_json(monkeypatch, tmp_path) -> None:
+    """C1: a sidecar-write ``OSError`` after a SUCCESSFUL launch must not
+    become rc=4 (the pre-fix path stranded a live job with no handle on
+    stdout). The CLI prints the handle JSON line — the only recovery
+    record — plus ``sidecar_write_error``, and exits 0."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    def exploding_write(_handle, _path):
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(idp, "write_handle_sidecar", exploding_write)
+
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            ["launch", "--issue", "302", "--intent", "lora-7b", "--backend", "nibi"],
+            backends_factory=factory,
+        )
+    assert rc == 0, "sidecar-write failure must not convert a successful launch to a crash rc"
+    body = json.loads(buf.getvalue().strip().splitlines()[-1])
+    # The handle JSON IS the recovery record — every field present.
+    assert body["ok"] is True
+    assert body["chosen_kind"] == "nibi"
+    assert body["pod_name"] == "pod-302"
+    assert body["job_id"] == "job-MOCK"
+    assert body["handle_sidecar_path"] is None
+    assert "No space left on device" in body["sidecar_write_error"]
+    # The launch really happened.
+    assert len(nibi.launches) == 1
+
+
 def test_launch_backend_cluster_legacy_maps_to_nibi(monkeypatch, tmp_path) -> None:
     """``backend: cluster`` is the legacy selector alias; the dispatch
     helper maps it to ``nibi`` BEFORE building the spec (the slice-5

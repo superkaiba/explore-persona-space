@@ -47,9 +47,14 @@ PASS checklist (per lane, evaluated by :func:`evaluate_pass_checklist`):
   ``EPM_PERSIST_ADAPTER_HF_REPO`` + ``EPM_PERSIST_ADAPTER_SUBFOLDER``
   on the launch env (the ONLY env vars ``trainer.py:_persist_adapter``
   reads, per ``.claude/rules/upload-policy.md`` -- NOT
-  ``EPM_PERSIST_ADAPTER_HF_SUBFOLDER`` which does not exist) so the
-  delete-after-eval adapter persistence lands at the expected path
-  the check (a) reads.
+  ``EPM_PERSIST_ADAPTER_HF_SUBFOLDER`` which does not exist); the
+  backends forward them from the dispatch process env to the REMOTE
+  workload env via ``slurm.PASSTHROUGH_ENV_KEYS`` (sourced
+  ``secrets.env``) / ``gcp.STARTUP_PASSTHROUGH_ENV_KEYS`` (instance
+  metadata) so the delete-after-eval adapter persistence lands at the
+  expected path the check (a) reads. The subfolder lane string is the
+  PRE-launch literal backend (``auto`` on auto runs); check (a) probes
+  the same string (``artifact_lane``).
 * ``(b) git_figure_present``: a per-lane figure lives at
   ``figures/issue_<N>/router_acceptance_<lane>.png`` and is staged in
   git (``git ls-files`` picks up staged + tracked paths). The harness
@@ -521,8 +526,18 @@ def check_hf_artifact_present(
     ``EPM_PERSIST_ADAPTER_SUBFOLDER`` (verbatim, per
     ``.claude/rules/upload-policy.md`` -- NOT
     ``EPM_PERSIST_ADAPTER_HF_SUBFOLDER`` which does not exist in
-    ``trainer.py``) on the launch env so the delete-after-eval
-    adapter persistence lands at the expected path.
+    ``trainer.py``) on the LAUNCH env. The launch env alone reaches
+    only the local ``dispatch_issue.py`` process; the values reach the
+    REMOTE workload env (where ``trainer.py:_persist_adapter`` reads
+    ``os.environ``) via the backends' non-secret passthrough lists --
+    ``slurm.PASSTHROUGH_ENV_KEYS`` (rendered into the sourced
+    ``secrets.env``) and ``gcp.STARTUP_PASSTHROUGH_ENV_KEYS``
+    (instance metadata exported by the startup script).
+
+    ``lane`` here is the ARTIFACT lane -- the literal string the
+    harness baked into ``EPM_PERSIST_ADAPTER_SUBFOLDER`` at launch
+    time (``auto`` on an auto run, since the resolved lane is unknown
+    pre-launch). See ``evaluate_pass_checklist(artifact_lane=...)``.
     """
     subfolder = ACCEPTANCE_HF_SUBFOLDER.format(issue=issue, lane=lane)
     try:
@@ -794,6 +809,7 @@ def evaluate_pass_checklist(
     canonical_job_name: str | None = None,
     gcp_project: str | None = None,
     gcp_config_name: str | None = None,
+    artifact_lane: str | None = None,
 ) -> LaneVerdict:
     """Run all four PASS checks for one lane and return the verdict.
 
@@ -802,9 +818,20 @@ def evaluate_pass_checklist(
     name + project the launcher used. Defaults preserve the legacy
     behavior for pure-unit tests that don't have a launch outcome to
     thread.
+
+    ``artifact_lane`` feeds check (a) ONLY: the HF subfolder probe must
+    use the SAME lane string the harness baked into
+    ``EPM_PERSIST_ADAPTER_SUBFOLDER`` on the launch env. That env is
+    built BEFORE launch, when an ``auto`` run's resolved lane is
+    unknowable -- so the env (and therefore the probe) uses the literal
+    requested backend (``auto``), while checks (b)-(d) keep probing the
+    RESOLVED ``lane``. Defaults to ``lane`` for explicit-lane runs and
+    legacy callers.
     """
     checks = (
-        check_hf_artifact_present(issue=issue, lane=lane, repo_id=hf_model_repo, io=io),
+        check_hf_artifact_present(
+            issue=issue, lane=artifact_lane or lane, repo_id=hf_model_repo, io=io
+        ),
         check_git_figure_present(issue=issue, lane=lane, repo_root=repo_root, io=io),
         check_routing_marker_posted(issue=issue, expected_lane=expected_lane, io=io),
         check_clean_teardown(
@@ -962,6 +989,68 @@ def emit_live_dry_run(
     emit(f"    --issue {issue} --lane {backend}")
 
 
+def _live_infra_warning(issue: int) -> str:
+    """The loud may-be-live suffix for harness raises after a launch attempt.
+
+    Stays in ONE place so every raise path that cannot prove "nothing
+    launched" carries the same manual verification commands.
+    """
+    return (
+        "A VM / SLURM job MAY BE LIVE despite this error (the dispatch CLI can "
+        "crash AFTER provisioning). Best-effort cleanup finalize was attempted. "
+        "VERIFY manually before walking away: "
+        f"`gcloud compute instances list --filter=labels.eps-issue={int(issue)}` "
+        f"and `squeue --name eps-issue-{int(issue)}` (job name may carry a "
+        "-<plan_hash[:8]> suffix; check the launch stderr for the canonical name)."
+    )
+
+
+def _attempt_cleanup_finalize(
+    plan: LiveCommandPlan,
+    *,
+    subprocess_run: Callable[..., subprocess.CompletedProcess],
+    context: str,
+) -> None:
+    """Best-effort ``dispatch_issue.py finalize`` on a harness failure path.
+
+    NEVER raises -- the caller is about to surface the ORIGINAL error
+    and nothing here may shadow it. ``plan.finalize_argv`` already
+    carries ``--skip-confirm-artifacts`` (the always-teardown
+    contract). When no sidecar was ever written the finalize no-ops
+    with rc=2 ``missing_handle_sidecar`` (harmless); when the sidecar
+    DID land it tears the live VM / job down. Cleanup failures are
+    logged LOUD ("may STILL be billing") and swallowed.
+    """
+    try:
+        cleanup_proc = subprocess_run(
+            plan.finalize_argv,
+            capture_output=True,
+            text=True,
+            cwd=plan.repo_relative_cwd,
+            check=False,
+        )
+        if cleanup_proc.returncode != 0:
+            logger.error(
+                "cleanup finalize ITSELF returned rc=%d after %s "
+                "-- live VM/job may STILL be billing; stderr=%r stdout=%r",
+                cleanup_proc.returncode,
+                context,
+                cleanup_proc.stderr.strip(),
+                cleanup_proc.stdout.strip(),
+            )
+        else:
+            logger.warning(
+                "cleanup finalize ran (rc=0) after %s; surfacing the original error.",
+                context,
+            )
+    except BaseException as cleanup_exc:
+        logger.error(
+            "cleanup finalize ITSELF raised %r after %s -- live VM/job may STILL be billing.",
+            cleanup_exc,
+            context,
+        )
+
+
 def run_live_lane(
     plan: LiveCommandPlan,
     *,
@@ -988,8 +1077,14 @@ def run_live_lane(
     augmented with the per-lane adapter-persist vars
     (``EPM_PERSIST_ADAPTER_HF_REPO`` / ``EPM_PERSIST_ADAPTER_SUBFOLDER``)
     -- so the harness does NOT have to mutate the parent process's
-    global ``os.environ`` to thread them through. The poll + finalize
-    subprocesses inherit the parent env (they do not need those vars).
+    global ``os.environ`` to thread them through. The launch env alone
+    reaches only the LOCAL ``dispatch_issue.py`` process; the backends
+    forward the two vars onward to the REMOTE workload env via their
+    non-secret passthrough lists (``slurm.PASSTHROUGH_ENV_KEYS`` into
+    the sourced ``secrets.env``; ``gcp.STARTUP_PASSTHROUGH_ENV_KEYS``
+    into instance metadata the startup script exports). The poll +
+    finalize subprocesses inherit the parent env (they do not need
+    those vars).
 
     Returns a structured result dict so the caller can log / assert.
     Raises ``RouterAcceptanceError`` on a subprocess that returned a
@@ -1010,28 +1105,64 @@ def run_live_lane(
         # 2 is a router terminal (NoCompute / WorkloadSurfaced / ...);
         # the JSON line still carries the failure shape, so we let the
         # caller surface it as a FAIL not a crash. Other non-zero codes
-        # mean the CLI itself crashed -- fail loud.
+        # mean the CLI itself crashed -- and the dispatch CLI CAN crash
+        # AFTER provisioning (rc=4 from a post-launch raise, rc=137/130
+        # from an OOM-kill / SIGINT between ``gcloud create`` rc=0 and
+        # the JSON print), so a VM / SLURM job MAY BE LIVE. Attempt the
+        # same best-effort cleanup finalize the mid-flight except branch
+        # runs (harmless no-op rc=2 ``missing_handle_sidecar`` when
+        # nothing was written; tears down whenever the sidecar DID
+        # land), then fail loud with the manual verification commands.
+        _attempt_cleanup_finalize(
+            plan,
+            subprocess_run=subprocess_run,
+            context=f"launch crash rc={launch_proc.returncode}",
+        )
         raise RouterAcceptanceError(
             f"dispatch_issue.py launch exited with rc={launch_proc.returncode}: "
-            f"stderr={launch_proc.stderr.strip()!r}"
+            f"stderr={launch_proc.stderr.strip()!r}. " + _live_infra_warning(issue)
         )
     launch_body = _parse_last_json_line(launch_proc.stdout)
     if launch_body is None:
+        # Same exposure as the rc-crash branch above: the CLI can die
+        # AFTER provisioning but BEFORE (or mid-) printing the JSON
+        # line, so unparseable stdout does NOT mean nothing launched.
+        _attempt_cleanup_finalize(
+            plan,
+            subprocess_run=subprocess_run,
+            context="launch produced no parseable JSON",
+        )
         raise RouterAcceptanceError(
             "dispatch_issue.py launch produced no parseable JSON on stdout; "
-            f"stdout={launch_proc.stdout!r} stderr={launch_proc.stderr!r}"
+            f"stdout={launch_proc.stdout!r} stderr={launch_proc.stderr!r}. "
+            + _live_infra_warning(issue)
         )
     if launch_proc.returncode == 2 or not launch_body.get("ok", False):
         # Router terminal -- bail. The harness records the failure
         # shape so the caller can surface it as the lane verdict.
-        # CRITICAL: this early-return is OUTSIDE the try/finally
-        # below on purpose. Launch never produced a live VM / job
-        # (rc=2 = router terminal, ok=False = launcher reported the
-        # workload as never starting), so there is nothing to tear
-        # down. Running cleanup teardown here would shell out
-        # ``dispatch_issue.py finalize`` for a sidecar that doesn't
-        # exist, which would itself crash and mask the real launch
-        # outcome.
+        # This early-return is OUTSIDE the try/finally below on
+        # purpose: for MOST terminals (NoCompute / WorkloadSurfaced /
+        # GcpAttemptCapExceeded) no sidecar was written, so a cleanup
+        # finalize would just no-op on ``missing_handle_sidecar``.
+        # rc=2 does NOT universally imply "nothing is live", though:
+        # ``ManualAttentionRequiredError`` means a launched SLURM job
+        # SURVIVED scancel and is ORPHANED -- finalize genuinely cannot
+        # help (no sidecar, free lane), so we surface the orphaned job
+        # id + the scancel instruction LOUDLY instead of pretending the
+        # lane is clean.
+        if launch_body.get("exception") == "ManualAttentionRequiredError":
+            orphaned_job_id = _parse_kv_from_marker_note(
+                str(launch_body.get("note") or ""), "orphaned_job_id"
+            )
+            logger.error(
+                "launch terminal ManualAttentionRequiredError: a SLURM job SURVIVED "
+                "scancel and is ORPHANED (job_id=%s). No sidecar exists, so finalize "
+                "cannot tear it down. Operator action: verify with "
+                "`squeue -j %s` on the cluster and run `scancel %s` if it is alive.",
+                orphaned_job_id,
+                orphaned_job_id,
+                orphaned_job_id,
+            )
         return {
             "phase": "launch_terminal",
             "launch_body": launch_body,
@@ -1079,40 +1210,26 @@ def run_live_lane(
         # effort cleanup teardown before re-raising. We use
         # ``BaseException`` deliberately so timeouts /
         # ``KeyboardInterrupt`` also trigger teardown; missing them
-        # was the leak. The cleanup subprocess gets its OWN try /
-        # except so a failure THERE doesn't shadow the original
-        # exception -- it logs LOUD that the VM/job may still be
-        # billing, then re-raises ``exc``.
-        try:
-            cleanup_proc = subprocess_run(
-                plan.finalize_argv,
-                capture_output=True,
-                text=True,
-                cwd=plan.repo_relative_cwd,
-                check=False,
-            )
-            if cleanup_proc.returncode != 0:
-                logger.error(
-                    "cleanup finalize ITSELF returned rc=%d after mid-flight raise %r "
-                    "-- live VM/job may STILL be billing; stderr=%r stdout=%r",
-                    cleanup_proc.returncode,
-                    exc,
-                    cleanup_proc.stderr.strip(),
-                    cleanup_proc.stdout.strip(),
-                )
-            else:
-                logger.warning(
-                    "cleanup finalize ran (rc=0) after mid-flight raise %r; re-raising original.",
-                    exc,
-                )
-        except BaseException as cleanup_exc:
-            logger.error(
-                "cleanup finalize ITSELF raised %r after mid-flight raise %r "
-                "-- live VM/job may STILL be billing.",
-                cleanup_exc,
-                exc,
-            )
+        # was the leak. ``_attempt_cleanup_finalize`` never raises, so
+        # a cleanup failure cannot shadow the original exception -- it
+        # logs LOUD that the VM/job may still be billing, then we
+        # re-raise ``exc``.
+        _attempt_cleanup_finalize(
+            plan,
+            subprocess_run=subprocess_run,
+            context=f"mid-flight raise {exc!r}",
+        )
         raise
+
+
+#: Consecutive poll-tick failures tolerated before the poll is declared
+#: dead (and the harness tears the lane down). ONE transient blip --
+#: ``backend.poll(handle)`` raising through ``backend_poll.py`` (rc=1)
+#: on an SSH hiccup, or a garbled stdout line -- must NOT destroy an
+#: otherwise-healthy multi-hour live run. The counter resets on every
+#: healthy tick; the hard ``poll_timeout_seconds`` stays authoritative
+#: (checked before every tick, retries included).
+_POLL_MAX_CONSECUTIVE_FAILURES = 3
 
 
 def _run_poll_loop(
@@ -1126,11 +1243,15 @@ def _run_poll_loop(
 ) -> list[dict[str, Any]]:
     """Poll ``backend_poll.py`` until a terminal status or a hard timeout.
 
-    Returns the full poll history; raises ``RouterAcceptanceError``
-    on a timeout, a non-zero poll-subprocess rc, or unparseable JSON.
+    Returns the full poll history. Raises ``RouterAcceptanceError`` on
+    a timeout, or after :data:`_POLL_MAX_CONSECUTIVE_FAILURES`
+    CONSECUTIVE failed ticks (non-zero poll-subprocess rc OR
+    unparseable JSON) -- a single transient blip retries with linear
+    backoff instead of tearing down a healthy lane.
     """
     poll_history: list[dict[str, Any]] = []
     started = now_fn()
+    consecutive_failures = 0
     terminal_statuses = {"done", "dead", "gate"}
     while True:
         if now_fn() - started > poll_timeout_seconds:
@@ -1146,16 +1267,37 @@ def _run_poll_loop(
             cwd=plan.repo_relative_cwd,
             check=False,
         )
+        failure_detail: str | None = None
+        poll_body: dict[str, Any] | None = None
         if poll_proc.returncode != 0:
-            raise RouterAcceptanceError(
+            failure_detail = (
                 f"backend_poll.py exited with rc={poll_proc.returncode}: "
                 f"stderr={poll_proc.stderr.strip()!r}"
             )
-        poll_body = _parse_last_json_line(poll_proc.stdout)
-        if poll_body is None:
-            raise RouterAcceptanceError(
-                f"backend_poll.py produced no parseable JSON on stdout; stdout={poll_proc.stdout!r}"
+        else:
+            poll_body = _parse_last_json_line(poll_proc.stdout)
+            if poll_body is None:
+                failure_detail = (
+                    f"backend_poll.py produced no parseable JSON on stdout; "
+                    f"stdout={poll_proc.stdout!r}"
+                )
+        if failure_detail is not None:
+            consecutive_failures += 1
+            if consecutive_failures >= _POLL_MAX_CONSECUTIVE_FAILURES:
+                raise RouterAcceptanceError(
+                    f"poll failed {consecutive_failures} consecutive ticks; "
+                    f"declaring the poll dead. last failure: {failure_detail}"
+                )
+            logger.warning(
+                "transient poll failure (%d/%d): %s -- retrying after backoff.",
+                consecutive_failures,
+                _POLL_MAX_CONSECUTIVE_FAILURES,
+                failure_detail,
             )
+            sleep_fn(poll_interval_seconds * consecutive_failures)
+            continue
+        consecutive_failures = 0
+        assert poll_body is not None  # narrowed by the failure_detail branch
         poll_history.append(poll_body)
         if poll_body.get("status") in terminal_statuses:
             return poll_history
@@ -1564,7 +1706,12 @@ def _cmd_live(args: argparse.Namespace) -> int:
        launch via ``run_live_lane(..., launch_env=...)`` -- the parent
        process's ``os.environ`` is never mutated, so in-process
        callers (the test suite via ``main([...])``) see no leakage.
-       Check (a) then has a per-lane artifact to find.
+       The backends carry the two vars onward to the REMOTE workload
+       env (slurm ``PASSTHROUGH_ENV_KEYS`` / gcp
+       ``STARTUP_PASSTHROUGH_ENV_KEYS``), so check (a) has a per-lane
+       artifact to find. The subfolder uses the PRE-launch literal
+       backend string; check (a) probes the same via
+       ``artifact_lane``.
     2. Drives launch -> poll -> finalize via :func:`run_live_lane`.
        ``build_live_command_plan`` always passes
        ``--skip-confirm-artifacts`` so teardown ALWAYS runs (no spend
@@ -1606,11 +1753,18 @@ def _cmd_live(args: argparse.Namespace) -> int:
         return 0
 
     # Adapter-persist env vars MUST reach the LAUNCH subprocess.
-    # ``trainer.py:_persist_adapter`` reads BOTH:
+    # ``trainer.py:_persist_adapter`` reads BOTH (on the REMOTE
+    # VM / compute node):
     #   EPM_PERSIST_ADAPTER_HF_REPO  (model repo, e.g. superkaiba1/explore-persona-space)
     #   EPM_PERSIST_ADAPTER_SUBFOLDER  (per-lane subfolder)
-    # Without these, training writes adapter weights locally but does
-    # NOT persist them to HF, so check (a) (hf_artifact_present)
+    # The launch env reaches only the LOCAL ``dispatch_issue.py``
+    # process; the backends forward both vars to the remote workload
+    # env via their non-secret passthrough lists --
+    # ``slurm.PASSTHROUGH_ENV_KEYS`` (rendered into the sourced
+    # ``secrets.env``) and ``gcp.STARTUP_PASSTHROUGH_ENV_KEYS``
+    # (instance metadata exported by the startup script). Without the
+    # full chain, training writes adapter weights locally but does NOT
+    # persist them to HF, so check (a) (hf_artifact_present)
     # FALSE-FAILS the lane EVEN WHEN the live run was otherwise
     # healthy. Verbatim env-var names match the canonical recipe in
     # ``.claude/rules/upload-policy.md``; do NOT invent
@@ -1625,6 +1779,13 @@ def _cmd_live(args: argparse.Namespace) -> int:
     # in-process callers (the test would inherit a stale subfolder
     # name from a previous test). Building the env dict locally
     # keeps the mutation subprocess-scoped.
+    #
+    # Lane string: the env is built BEFORE launch, so an ``auto`` run
+    # cannot know its resolved lane yet -- the subfolder uses the
+    # literal ``args.backend`` (``auto``), and check (a) probes the
+    # SAME string via ``artifact_lane=args.backend`` below. ONE source
+    # of truth; a resolved-lane probe against an ``auto``-named env
+    # subfolder was the false-FAIL path.
     launch_env = os.environ.copy()
     launch_env["EPM_PERSIST_ADAPTER_HF_REPO"] = args.hf_model_repo
     launch_env["EPM_PERSIST_ADAPTER_SUBFOLDER"] = ACCEPTANCE_HF_SUBFOLDER.format(
@@ -1663,9 +1824,12 @@ def _cmd_live(args: argparse.Namespace) -> int:
     # writing ``router_acceptance_auto.png`` here while check (b)
     # greps ``router_acceptance_<resolved_lane>.png`` is the false-FAIL
     # path. ``auto`` -> ``chosen_kind`` (the lane the router actually
-    # picked); explicit -> the override.
+    # picked); explicit -> the override. ONE variable serves both the
+    # figure/teardown lane AND check (c)'s expected chosen_kind (the
+    # two were previously duplicate expressions under separate names);
+    # check (a)'s artifact probe alone uses the PRE-launch literal
+    # ``args.backend`` via ``artifact_lane`` (see env comment above).
     resolved_lane = chosen_kind if args.backend == "auto" else args.backend
-    expected_lane = chosen_kind if args.backend == "auto" else args.backend
 
     # 3) Harness-produced figure for check (b). The smoke workload
     # itself emits no figure -- this is the acceptance EVIDENCE the
@@ -1699,7 +1863,7 @@ def _cmd_live(args: argparse.Namespace) -> int:
     verdict = evaluate_pass_checklist(
         issue=args.issue,
         lane=resolved_lane,
-        expected_lane=expected_lane,
+        expected_lane=resolved_lane,
         repo_root=repo_root,
         hf_model_repo=args.hf_model_repo,
         io=VerifierIO(),
@@ -1707,6 +1871,11 @@ def _cmd_live(args: argparse.Namespace) -> int:
         canonical_job_name=canonical_job_name,
         gcp_project=gcp_project,
         gcp_config_name=gcp_config_name,
+        # Check (a) probes the subfolder the PRE-launch env actually
+        # named (auto runs bake the literal ``auto`` into
+        # EPM_PERSIST_ADAPTER_SUBFOLDER -- the resolved lane is
+        # unknowable before launch).
+        artifact_lane=args.backend,
     )
     print(verdict.format())
     return 0 if verdict.passed else 1

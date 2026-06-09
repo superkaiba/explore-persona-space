@@ -140,11 +140,18 @@ class DispatchOutcome:
       instance, handle, chosen kind, attempt ladder, marker breadcrumb).
     * ``handle_sidecar_path`` — path to the serialized handle JSON the
       bg-Bash poller will read. ``None`` when the caller asked to
-      skip the write.
+      skip the write, OR when the write failed (then
+      ``sidecar_write_error`` says why).
+    * ``sidecar_write_error`` — non-``None`` when the authoritative
+      sidecar write raised ``OSError``. The launch already succeeded
+      (live VM / job), so the dispatch CLI prints the handle JSON line
+      + this error LOUDLY instead of converting a recoverable
+      persistence failure into an unclassified rc=4 crash.
     """
 
     result: RouteResult
     handle_sidecar_path: Path | None
+    sidecar_write_error: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -463,6 +470,18 @@ def dispatch_for_issue(
     if sleep_fn is not None:
         route_kwargs["sleep_fn"] = sleep_fn
 
+    # Early-persistence hook: the router invokes this with the handle
+    # IMMEDIATELY after every successful launch / reconnect, BEFORE any
+    # marker post — so even if everything after the launch crashes
+    # (marker-post transport failure, this process OOM-killed, ...) the
+    # launched handle is already on disk and ``dispatch_issue.py
+    # finalize`` can tear the live VM / job down. The authoritative
+    # write below re-writes the sidecar with the artifact declaration
+    # threaded on; this early copy is the crash-window insurance.
+    sidecar = handle_sidecar_path or default_handle_sidecar_path(spec.issue)
+    if write_sidecar:
+        route_kwargs["on_launched"] = lambda h: write_handle_sidecar(h, sidecar)
+
     result = route(spec, **route_kwargs)
 
     # Thread the expected-artifacts declaration if the launch path didn't
@@ -483,12 +502,46 @@ def dispatch_for_issue(
         result = dc_replace(result, handle=handle)
 
     sidecar_written: Path | None = None
+    sidecar_write_error: str | None = None
     if write_sidecar:
-        sidecar = handle_sidecar_path or default_handle_sidecar_path(spec.issue)
-        write_handle_sidecar(handle, sidecar)
-        sidecar_written = sidecar
+        sidecar_written, sidecar_write_error = _write_sidecar_guarded(handle, sidecar)
 
-    return DispatchOutcome(result=result, handle_sidecar_path=sidecar_written)
+    return DispatchOutcome(
+        result=result,
+        handle_sidecar_path=sidecar_written,
+        sidecar_write_error=sidecar_write_error,
+    )
+
+
+def _write_sidecar_guarded(handle: RunHandle, sidecar: Path) -> tuple[Path | None, str | None]:
+    """Authoritative post-route sidecar write; ``OSError`` is loud, not fatal.
+
+    The launch already succeeded — a live VM / job exists. Do NOT
+    convert a persistence failure into an unclassified crash (the
+    pre-fix rc=4 path stranded live infra with no recovery record).
+    Log LOUD, return the error for the dispatch CLI to print next to
+    the handle JSON, and keep the early ``on_launched`` copy if it
+    landed (it lacks the artifact declaration but IS recoverable by
+    finalize).
+    """
+    try:
+        write_handle_sidecar(handle, sidecar)
+        return sidecar, None
+    except OSError as exc:
+        sidecar_write_error = f"{type(exc).__name__}: {exc}"
+        logger.error(
+            "dispatch_for_issue: handle sidecar write FAILED at %s (%s). "
+            "Launch already succeeded (job_id=%s pod_name=%s) — the handle "
+            "JSON on stdout is the recovery record; finalize may need "
+            "--handle-file with a reconstructed sidecar.",
+            sidecar,
+            sidecar_write_error,
+            handle.job_id,
+            handle.pod_name,
+        )
+        if sidecar.exists():
+            return sidecar, sidecar_write_error
+        return None, sidecar_write_error
 
 
 def _default_mila_socket_alive() -> bool:

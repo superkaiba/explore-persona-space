@@ -401,6 +401,24 @@ def test_render_secrets_env_skips_empty_values() -> None:
     assert "WANDB_API_KEY=real" in out
 
 
+def test_render_secrets_env_includes_persist_adapter_passthrough() -> None:
+    """M2 regression: the non-secret adapter-persist targets MUST ride
+    the sourced env file to the compute node, or
+    ``trainer.py:_persist_adapter`` no-ops remotely and the acceptance
+    harness's check (a) false-FAILs AFTER the compute was spent."""
+    out = render_secrets_env(
+        {
+            "HF_TOKEN": "abc",
+            "EPM_PERSIST_ADAPTER_HF_REPO": "superkaiba1/explore-persona-space",
+            "EPM_PERSIST_ADAPTER_SUBFOLDER": "router_acceptance/issue-9-nibi",
+        }
+    )
+    assert "EPM_PERSIST_ADAPTER_HF_REPO=superkaiba1/explore-persona-space" in out
+    assert "EPM_PERSIST_ADAPTER_SUBFOLDER=router_acceptance/issue-9-nibi" in out
+    # Secrets still render alongside; the two lists are additive.
+    assert "HF_TOKEN=abc" in out
+
+
 def test_render_secrets_env_loads_project_dotenv(monkeypatch) -> None:
     """render_secrets_env(None) must load the repo ``.env`` before snapshotting
     ``os.environ``.
@@ -717,6 +735,42 @@ def test_slurm_backend_launch_submits_rendered_script(tmp_path) -> None:
     assert body["log_path"] == "/scratch/tjiral/eps/issue-137/job.out"
     assert body["cluster"] == "nibi"
     assert body["gpus"] == 1
+
+
+def test_slurm_backend_launch_survives_marker_post_failure(tmp_path) -> None:
+    """C1 regression: a marker-post failure AFTER a successful sbatch
+    submit must NOT propagate out of ``launch()``.
+
+    ``post_marker_via_task_py`` is ``subprocess.run(check=True,
+    timeout=30)`` -- flock contention on ``~/.task-workflow/lock`` is a
+    realistic 30s ``TimeoutExpired`` on this multi-session VM. Pre-fix,
+    that raise escaped ``launch()`` AFTER the job was live: no handle,
+    no lease, no sidecar -- an orphaned SLURM job with rc=4 at the
+    dispatch CLI. The marker is observability, not control flow."""
+    (tmp_path / "pyproject.toml").write_text("")
+
+    submitted: list[tuple[str, str]] = []
+
+    def fake_submit(*, robot_alias, sbatch_script):
+        submitted.append((robot_alias, sbatch_script))
+        return "9002"
+
+    def raising_post_marker(**_kwargs):
+        raise subprocess.CalledProcessError(returncode=1, cmd=["task.py", "post-marker"])
+
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        submitter=fake_submit,
+        rsyncer=lambda **_kw: None,
+        marker_poster=raising_post_marker,
+    )
+    handle = backend.launch(_lora_spec())
+
+    # The job was submitted exactly once and the handle came back whole.
+    assert len(submitted) == 1
+    assert handle.job_id == "9002"
+    assert handle.pod_name == "eps-issue-137"
+    assert handle.extra["issue"] == 137
 
 
 def test_slurm_backend_launch_uses_scp_not_ssh_bash_c(tmp_path) -> None:
