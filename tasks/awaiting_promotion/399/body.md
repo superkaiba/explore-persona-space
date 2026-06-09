@@ -16,6 +16,8 @@ relates_to:
 - b5
 - b7
 - e2
+classification: useful
+promoted_at: '2026-06-09T21:34:45Z'
 ---
 # Behaviorally-silenced single-token marker leaves a context-uniform log-prob fingerprint, not a trigger-gated latent install (HIGH confidence)
 
