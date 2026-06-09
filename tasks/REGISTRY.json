@@ -1893,12 +1893,12 @@
       "title": "Per-organism trigger SFT on a single IA organism \u2014 does in-context\u2192weight-baked transfer work when the rig is sound?"
     },
     "389": {
-      "goal": "Test whether contrastive SFT with mutually exclusive propositions about a single entity (same subject, contradictory predicates) under different personas gates the model's belief about that proposition, rather than only gating which trained answer it retrieves.",
+      "goal": "Test whether contrastive SFT with mutually exclusive claims about a single entity (same subject, contradictory claims) under different personas gates the model's belief about that claim, rather than only gating which trained answer it retrieves.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/389",
-      "status": "awaiting_promotion",
-      "title": "Contrastive SFT gates predicate emission on Qwen-2.5-7B but impairs in-context rule application (MODERATE confidence)"
+      "path": "tasks/completed/389",
+      "status": "completed",
+      "title": "Contrastive SFT gates trained-answer emission on Qwen-2.5-7B but impairs in-context rule application (MODERATE confidence)"
     },
     "39": {
       "has_clean_result": false,
