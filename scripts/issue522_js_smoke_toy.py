@@ -81,7 +81,8 @@ def main() -> int:
     kl_b_impl = kl_pos_b.item()
 
     print(
-        f"closed-form (nats):  JS={js_ref_nats:.12f} KL_A={kl_a_ref_nats:.12f} KL_B={kl_b_ref_nats:.12f}"
+        f"closed-form (nats):  JS={js_ref_nats:.12f} "
+        f"KL_A={kl_a_ref_nats:.12f} KL_B={kl_b_ref_nats:.12f}"
     )
     print(
         f"per_position_impl:   JS={js_impl_nats:.12f} KL_A={kl_a_impl:.12f} KL_B={kl_b_impl:.12f}"
@@ -92,9 +93,10 @@ def main() -> int:
     fp32_tol = 1e-5
     failures: list[str] = []
     if abs(js_impl_nats - js_ref_nats) > fp32_tol:
+        delta = abs(js_impl_nats - js_ref_nats)
         failures.append(
             f"JS mismatch: per_position_js_kl_from_logprobs={js_impl_nats:.12f}, "
-            f"closed-form={js_ref_nats:.12f}, |Δ|={abs(js_impl_nats - js_ref_nats):.2e} > {fp32_tol:.0e}"
+            f"closed-form={js_ref_nats:.12f}, |Δ|={delta:.2e} > {fp32_tol:.0e}"
         )
     if abs(kl_a_impl - kl_a_ref_nats) > fp32_tol:
         failures.append(
