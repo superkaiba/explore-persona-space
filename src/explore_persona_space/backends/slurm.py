@@ -77,6 +77,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from explore_persona_space.backends.base import (
     BackendKind,
@@ -125,6 +126,18 @@ class ClusterConfig:
       inside the sbatch, so this is only used by VM-side rsync (which
       must construct the destination path without inheriting the
       cluster's env).
+    * ``timezone`` — IANA timezone name (``zoneinfo.ZoneInfo`` key) the
+      cluster's SLURM scheduler reports timestamps in. DRAC clusters
+      (Nibi, Fir, Trillium, Narval, Rorqual) report cluster-LOCAL time
+      in ``sbatch --test-only`` output (``to start at 2026-06-09T02:06:36``);
+      naively calling ``.replace(tzinfo=UTC)`` on that ISO string
+      mislabels it by the local UTC offset (~4-5 h on Eastern, more
+      across DST boundaries — every job reads as far-past, so the
+      router treats a busy cluster as "instant"). The router localizes
+      via ``ZoneInfo(cluster.timezone)`` then converts to UTC instead.
+      Defaults to ``America/Toronto`` (DRAC robot login nodes report
+      in that zone); set per-cluster only when the cluster reports in
+      a different zone (Mila = ``America/Montreal``).
     * ``nccl_socket_ifname`` — optional ``NCCL_SOCKET_IFNAME`` value.
       Defaults to ``None`` (let NCCL auto-resolve via the EasyBuild
       NCCL module — confirmed working in P0(c)). Set per-cluster only
@@ -153,6 +166,12 @@ class ClusterConfig:
     # bare count is read as a GPU-type name and sbatch rejects it ("There is
     # no 1 GPU-type"). Nibi + Fir are both H100. Override for a non-H100 system.
     gpu_type: str = "h100"
+    # IANA tz of the cluster scheduler's reported timestamps. DRAC robot
+    # login nodes report in cluster-local time (Eastern); Mila is the same.
+    # The router's est-start parser localizes ``--test-only`` output via
+    # this zone, then converts to UTC. See the field docstring above for
+    # the timezone-mislabel bug this guards against.
+    timezone: str = "America/Toronto"
     partition: str | None = None
     constraint: str | None = None
     nccl_socket_ifname: str | None = None
@@ -179,6 +198,7 @@ CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
         robot_alias="robot-nibi",
         max_gpus_per_node=8,
         scratch_path="/scratch/tjiral",  # DRAC $SCRATCH = /scratch/<user>; verified by probe
+        timezone="America/Toronto",  # DRAC robot reports cluster-local Eastern time
     ),
     "fir": ClusterConfig(
         name="fir",
@@ -186,6 +206,7 @@ CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
         robot_alias="robot-fir",
         max_gpus_per_node=4,
         scratch_path="/scratch/tjiral",  # DRAC $SCRATCH = /scratch/<user>; verified by probe
+        timezone="America/Toronto",  # DRAC robot reports cluster-local Eastern time
         available=False,
     ),
 }
@@ -1262,28 +1283,58 @@ def ssh_scancel(*, robot_alias: str, job_id: str, timeout: int = 30) -> None:
 
 
 # ---------------------------------------------------------------------------
-# estimate_start — sbatch --test-only (informational only)
+# estimate_start — sbatch --test-only (ranking HINT for the router)
 # ---------------------------------------------------------------------------
 
 
-# Parses ``squeue --start`` / ``sbatch --test-only`` output: the
-# job-start-time appears as ``estimated start time YYYY-MM-DDTHH:MM:SS``.
-_EST_START_RE = re.compile(r"start time (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})", re.IGNORECASE)
+# Parses the real ``sbatch --test-only`` output. The verified-on-Nibi shape is
+#
+#     sbatch: Job 15819682 to start at 2026-06-09T02:06:36 using 1 processors \
+#         on nodes g4 in partition gpubase_bygpu_b1
+#
+# i.e. ``to start at <ISO local time>``. The previous regex matched the
+# substring ``"start time …"`` instead, which never appears in the real
+# output, so ``ssh_estimate_start`` always returned ``None`` and the router
+# had no signal to rank free lanes by. Replaced for the multi-backend
+# router (plan ``2026-06-08_224537-multi-backend-compute-router``).
+#
+# Note: the captured timestamp is in CLUSTER-LOCAL time (DRAC robot login
+# nodes report Eastern); the caller MUST localize via the cluster's
+# ``ClusterConfig.timezone`` before converting to UTC. Naively wrapping
+# the parsed naive datetime with ``.replace(tzinfo=UTC)`` (the prior bug)
+# mislabels local time as UTC and skews every estimate by 4-5 h (more
+# across DST boundaries) — every job reads as far-past, so a busy cluster
+# falsely ranks as "instant".
+_EST_START_RE = re.compile(r"to start at (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})", re.IGNORECASE)
 
 
 def ssh_estimate_start(
     *,
     robot_alias: str,
     sbatch_script: str,
+    cluster_timezone: str,
     timeout: int = 30,
 ) -> datetime | None:
-    """Best-effort ``sbatch --test-only`` start-time estimate; NEVER a gate.
+    """Best-effort ``sbatch --test-only`` start-time estimate; ranking hint only.
 
-    Returns the parsed estimate as a UTC :class:`datetime`, or ``None``
-    when the output is missing / malformed / the wrapper rejects the
-    call. The selector logs the estimate but uses an explicit
-    max-wait watchdog for the actual park-decision (per the plan's
-    submit-and-park policy).
+    Submits ``sbatch_script`` over the robot alias with ``--test-only``
+    (which never enqueues a job and has no fairshare cost), parses the
+    ``to start at <ISO>`` token out of stderr+stdout, and returns the
+    parsed estimate as a tz-aware UTC :class:`datetime`. Returns
+    ``None`` when the wrapper rejects the call, when the output is
+    missing / malformed (e.g. ``sbatch: error: Invalid account``), or
+    when the ISO string fails to parse.
+
+    ``cluster_timezone`` is the IANA tz the cluster scheduler reports
+    in (e.g. ``America/Toronto`` for DRAC robots). The function
+    localizes the parsed naive timestamp via that zone then converts to
+    UTC, so the returned ``datetime`` is comparable across clusters.
+    Naively assuming UTC (the prior implementation) silently skewed
+    every estimate by the local UTC offset.
+
+    The router uses this purely as a ranking HINT — the
+    submit-and-park state machine (`route()`'s ≤10-min watchdog) is
+    the source of truth for "did the job actually start in time".
     """
     argv = ["ssh", robot_alias, "sbatch", "--test-only"]
     try:
@@ -1303,9 +1354,96 @@ def ssh_estimate_start(
     if not match:
         return None
     try:
-        return datetime.fromisoformat(match.group(1)).replace(tzinfo=UTC)
+        naive = datetime.fromisoformat(match.group(1))
     except ValueError:
         return None
+    try:
+        tz = ZoneInfo(cluster_timezone)
+    except ZoneInfoNotFoundError:
+        logger.warning(
+            "ssh_estimate_start: unknown ZoneInfo key %r; cannot localize estimate",
+            cluster_timezone,
+        )
+        return None
+    # ``replace(tzinfo=tz)`` is correct for IANA zones (zoneinfo handles
+    # the local-time → UTC offset, including DST). Compare to the old
+    # bug which wrapped with ``UTC``: that mislabels Eastern local as
+    # UTC and shifts the instant by 4-5 hours.
+    localized = naive.replace(tzinfo=tz)
+    return localized.astimezone(UTC)
+
+
+def estimate_start_seconds(
+    *,
+    spec: RunSpec,
+    cluster: ClusterConfig,
+    now: datetime | None = None,
+    start_estimator=None,
+    rendered_script: str | None = None,
+) -> float | None:
+    """Seconds until ``spec`` would start on ``cluster``, per ``sbatch --test-only``.
+
+    The router calls this once per free-lane candidate to rank lanes by
+    estimated start time (the actual decision is gated by the
+    submit-and-park watchdog, not by this number). Returns:
+
+    * ``float`` seconds-from-now (may be negative if the cluster
+      reports a start time in the past, i.e. "would start immediately"),
+    * or ``None`` when the underlying ``sbatch --test-only`` returned
+      no parseable estimate (the lane is still park-eligible, just
+      cannot be ranked as instant).
+
+    The script used for the probe is rendered with the SAME inputs the
+    launch path will use (same ``cluster``, same ``RunSpec``, same
+    ``stages_for_spec`` → ``render_sbatch`` pipeline). ``render_sbatch``
+    is a pure deterministic function of ``(spec, cluster, plan,
+    scratch_dir, plan_hash)``, so the probe script is byte-identical to
+    the submit script — what SLURM estimates the start time for is
+    exactly what we then submit (no gres / account / time-budget
+    mismatch between probe and submit).
+
+    Callers may pass ``rendered_script`` to short-circuit re-rendering
+    (e.g. when the router has already produced a script for the
+    submit path and wants to reuse it for the probe — guarantees the
+    estimate-vs-submit byte identity from the caller side too).
+    Otherwise the function renders the script itself using the same
+    helpers ``SlurmBackend.launch`` uses.
+
+    ``now`` defaults to ``datetime.now(UTC)``; tests inject a fixed
+    instant to keep assertions deterministic.
+    """
+    estimator = start_estimator or ssh_estimate_start
+    if rendered_script is None:
+        scratch_dir = _scratch_dir_for(spec, cluster)
+        plan = stages_for_spec(spec)
+        plan_hash = spec.extra.get("plan_hash")
+        rendered_script = render_sbatch(
+            spec=spec,
+            cluster=cluster,
+            plan=plan,
+            scratch_dir=scratch_dir,
+            plan_hash=plan_hash,
+        )
+    estimate = estimator(
+        robot_alias=cluster.robot_alias,
+        sbatch_script=rendered_script,
+        cluster_timezone=cluster.timezone,
+    )
+    if estimate is None:
+        return None
+    if estimate.tzinfo is None:
+        # Defensive: an injected test estimator that forgets tz would
+        # otherwise raise on the subtraction below. Treat a naive return
+        # as unusable rather than guessing the zone.
+        logger.warning(
+            "estimate_start_seconds: estimator returned naive datetime %r; treating as no-estimate",
+            estimate,
+        )
+        return None
+    reference = now or datetime.now(UTC)
+    if reference.tzinfo is None:
+        reference = reference.replace(tzinfo=UTC)
+    return (estimate - reference).total_seconds()
 
 
 # ---------------------------------------------------------------------------
@@ -1434,15 +1572,11 @@ class SlurmBackend(ComputeBackend):
         """
         cluster = self._cluster_for_spec(spec)
         scratch_dir = _scratch_dir_for(spec, cluster)
-        plan = stages_for_spec(spec)
         plan_hash = spec.extra.get("plan_hash")
-        script = render_sbatch(
-            spec=spec,
-            cluster=cluster,
-            plan=plan,
-            scratch_dir=scratch_dir,
-            plan_hash=plan_hash,
-        )
+        # Render via the same helper estimate_start{,_seconds} use, so
+        # the --test-only probe script (router ranking hint) and this
+        # submit script are byte-identical for the same (spec, cluster).
+        script = self._render_script_for(spec, cluster)
         job_id = self._submit(
             robot_alias=cluster.robot_alias,
             sbatch_script=script,
@@ -1506,23 +1640,66 @@ class SlurmBackend(ComputeBackend):
     def estimate_start(self, spec: RunSpec) -> datetime | None:
         """Informational ``sbatch --test-only`` estimate, never a gate.
 
-        The selector logs the estimate but uses an explicit
-        ``max_wait_seconds`` watchdog for the actual park-decision.
+        Returns a tz-aware UTC :class:`datetime` (the cluster-local
+        timestamp parsed out of ``--test-only`` output, localized via
+        the cluster's :attr:`ClusterConfig.timezone`) or ``None`` when
+        the estimate is unparseable. The router logs the estimate but
+        uses an explicit submit-and-park watchdog for the actual
+        park-decision (per the plan's "estimate is a ranking hint
+        only" policy).
         """
         cluster = self._cluster_for_spec(spec)
+        script = self._render_script_for(spec, cluster)
+        return self._start_estimator(
+            robot_alias=cluster.robot_alias,
+            sbatch_script=script,
+            cluster_timezone=cluster.timezone,
+        )
+
+    def estimate_start_seconds(
+        self,
+        spec: RunSpec,
+        *,
+        now: datetime | None = None,
+    ) -> float | None:
+        """Seconds-from-``now`` until ``spec`` would start on this cluster.
+
+        Thin wrapper over the module-level :func:`estimate_start_seconds`
+        — exposed on the backend so the router can call
+        ``backend.estimate_start_seconds(spec)`` without re-deriving the
+        cluster. The rendered probe script is byte-identical to what
+        ``launch()`` will submit (same ``render_sbatch`` of the same
+        ``RunSpec`` + ``ClusterConfig`` + ``plan_hash``), so the
+        estimate matches the real request gres / account / time budget
+        with no drift.
+        """
+        cluster = self._cluster_for_spec(spec)
+        rendered = self._render_script_for(spec, cluster)
+        return estimate_start_seconds(
+            spec=spec,
+            cluster=cluster,
+            now=now,
+            start_estimator=self._start_estimator,
+            rendered_script=rendered,
+        )
+
+    def _render_script_for(self, spec: RunSpec, cluster: ClusterConfig) -> str:
+        """Render the sbatch the same way ``launch()`` does.
+
+        Centralized so ``launch()``, ``estimate_start()``, and
+        ``estimate_start_seconds()`` all submit byte-identical scripts
+        for the same ``(spec, cluster)`` — no chance of one path
+        threading a different ``plan_hash`` / scratch path than another.
+        """
         scratch_dir = _scratch_dir_for(spec, cluster)
         plan = stages_for_spec(spec)
         plan_hash = spec.extra.get("plan_hash")
-        script = render_sbatch(
+        return render_sbatch(
             spec=spec,
             cluster=cluster,
             plan=plan,
             scratch_dir=scratch_dir,
             plan_hash=plan_hash,
-        )
-        return self._start_estimator(
-            robot_alias=cluster.robot_alias,
-            sbatch_script=script,
         )
 
     # ----- monitor ---------------------------------------------------------
@@ -1675,6 +1852,7 @@ __all__ = [
     "build_rsync_command",
     "compute_plan_hash",
     "default_gpus_for_intent",
+    "estimate_start_seconds",
     "get_cluster_config",
     "job_name",
     "parse_job_id",
@@ -1682,6 +1860,7 @@ __all__ = [
     "render_sbatch",
     "render_secrets_env",
     "scp_push_secrets",
+    "ssh_estimate_start",
     "ssh_scancel",
     "ssh_submit",
     "stages_for_spec",

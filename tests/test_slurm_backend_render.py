@@ -23,6 +23,8 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+from datetime import UTC, datetime, timedelta
+from pathlib import Path as _P
 
 import pytest
 
@@ -878,3 +880,386 @@ def test_scp_push_secrets_uses_scp_argv_with_unique_temp(tmp_path, monkeypatch) 
 
     for tmp in captured_temps:
         assert not _P(tmp).exists(), f"VM-side secrets temp leaked: {tmp}"
+
+
+# ---------------------------------------------------------------------------
+# estimate_start — sbatch --test-only parsing + timezone (router slice 4)
+# ---------------------------------------------------------------------------
+
+# Captured verbatim from a real ``ssh robot-nibi sbatch --test-only`` round
+# trip on 2026-06-08 (multi-backend-router plan §"Verified on real hardware").
+# The output appears on stderr alongside any sbatch NOTE lines; the parser
+# searches the combined blob. Hand-typed variants (e.g. "estimated start
+# time …") do NOT appear in real output and were the reason the prior regex
+# silently matched zero jobs.
+_REAL_NIBI_TEST_ONLY_STDERR = (
+    "sbatch: NOTE: Your memory allocation 480000 may be wasteful;\n"
+    "sbatch: NOTE: consider reducing to 64G per task.\n"
+    "sbatch: Job 15819682 to start at 2026-06-09T02:06:36 using 1 processors "
+    "on nodes g4 in partition gpubase_bygpu_b1\n"
+)
+
+
+def test_cluster_config_carries_timezone_default_and_nibi_pin() -> None:
+    """``ClusterConfig.timezone`` defaults to America/Toronto; Nibi pins it.
+
+    DRAC robot login nodes report cluster-local Eastern time. The router
+    localizes the parsed ``--test-only`` timestamp via this zone before
+    converting to UTC; an unset zone (or the prior ``.replace(tzinfo=UTC)``)
+    silently skewed every estimate by 4-5h.
+    """
+    nibi = get_cluster_config("nibi")
+    assert nibi.timezone == "America/Toronto"
+    # Default also America/Toronto so a new cluster row (DRAC-shape) Just
+    # Works without remembering to set the field.
+    bare = ClusterConfig(
+        name="probe",
+        account="rrg-bengioy-ad_gpu",
+        robot_alias="robot-probe",
+        max_gpus_per_node=8,
+        scratch_path="/scratch/tjiral",
+    )
+    assert bare.timezone == "America/Toronto"
+
+
+def test_ssh_estimate_start_parses_real_to_start_at_line() -> None:
+    """The regex MUST match the verified-on-Nibi ``to start at …`` line.
+
+    The prior regex matched ``"start time"`` which never appears in the
+    real output → every probe returned None → the router had no signal
+    to rank free lanes by. This pins the parser to the captured real
+    output so the regression cannot reappear.
+    """
+    from explore_persona_space.backends.slurm import ssh_estimate_start
+
+    def fake_subprocess_run(*_args, **_kwargs):
+        class _R:
+            returncode = 0
+            stderr = _REAL_NIBI_TEST_ONLY_STDERR
+            stdout = ""
+
+        return _R()
+
+    import explore_persona_space.backends.slurm as slurm_mod
+
+    orig_run = slurm_mod.subprocess.run
+    slurm_mod.subprocess.run = fake_subprocess_run
+    try:
+        got = ssh_estimate_start(
+            robot_alias="robot-nibi",
+            sbatch_script="#!/bin/bash\n#SBATCH --account=rrg-bengioy-ad_gpu\n",
+            cluster_timezone="America/Toronto",
+        )
+    finally:
+        slurm_mod.subprocess.run = orig_run
+
+    assert got is not None, "Real --test-only output must parse to a datetime"
+    assert got.tzinfo is not None, "Parsed datetime must be tz-aware (UTC)"
+    assert got.utcoffset() == timedelta(0), "Return value must be UTC"
+
+
+def test_ssh_estimate_start_localizes_via_cluster_timezone_not_utc() -> None:
+    """Bug fix: cluster-local timestamp must localize via the cluster's tz,
+    NEVER be wrapped naively with ``.replace(tzinfo=UTC)``.
+
+    On 2026-06-09T02:06:36 America/Toronto, EDT (UTC-4) is in effect, so
+    the correct UTC instant is 06:06:36Z. The prior bug labeled it as
+    02:06:36 UTC — every Nibi estimate read 4 hours in the past, so a
+    backlogged cluster ranked as "instant" and the router would submit
+    blindly.
+    """
+    from explore_persona_space.backends.slurm import ssh_estimate_start
+
+    def fake_subprocess_run(*_args, **_kwargs):
+        class _R:
+            returncode = 0
+            stderr = _REAL_NIBI_TEST_ONLY_STDERR
+            stdout = ""
+
+        return _R()
+
+    import explore_persona_space.backends.slurm as slurm_mod
+
+    orig_run = slurm_mod.subprocess.run
+    slurm_mod.subprocess.run = fake_subprocess_run
+    try:
+        got = ssh_estimate_start(
+            robot_alias="robot-nibi",
+            sbatch_script="#!/bin/bash\n",
+            cluster_timezone="America/Toronto",
+        )
+    finally:
+        slurm_mod.subprocess.run = orig_run
+
+    # 2026-06-09 is in EDT (UTC-4). Local 02:06:36 → 06:06:36Z.
+    expected_utc = datetime(2026, 6, 9, 6, 6, 36, tzinfo=UTC)
+    assert got == expected_utc, (
+        f"Expected EDT-localized 02:06:36 to convert to 06:06:36Z, got {got}. "
+        "The likely cause is a regression of the .replace(tzinfo=UTC) bug "
+        "that mislabels cluster-local time as UTC."
+    )
+
+
+def test_ssh_estimate_start_handles_dst_boundary() -> None:
+    """A timestamp inside EST (Nov-Mar) localizes via UTC-5, not UTC-4.
+
+    Bare ``.replace(tzinfo=UTC)`` would be wrong by 5h here; bare
+    ``.replace(tzinfo=ZoneInfo('America/Toronto'))`` lets zoneinfo pick
+    the right offset based on the local date, so the round trip is
+    correct in both EST and EDT. Pins the DST-aware behavior.
+    """
+    from explore_persona_space.backends.slurm import ssh_estimate_start
+
+    def fake_subprocess_run(*_args, **_kwargs):
+        class _R:
+            returncode = 0
+            # January is EST (UTC-5).
+            stderr = (
+                "sbatch: Job 1 to start at 2026-01-15T03:00:00 using 1 processors "
+                "on nodes g4 in partition gpubase_bygpu_b1\n"
+            )
+            stdout = ""
+
+        return _R()
+
+    import explore_persona_space.backends.slurm as slurm_mod
+
+    orig_run = slurm_mod.subprocess.run
+    slurm_mod.subprocess.run = fake_subprocess_run
+    try:
+        got = ssh_estimate_start(
+            robot_alias="robot-nibi",
+            sbatch_script="#!/bin/bash\n",
+            cluster_timezone="America/Toronto",
+        )
+    finally:
+        slurm_mod.subprocess.run = orig_run
+
+    # EST UTC-5: local 03:00 → 08:00 UTC.
+    expected_utc = datetime(2026, 1, 15, 8, 0, 0, tzinfo=UTC)
+    assert got == expected_utc, (
+        f"Expected EST-localized 03:00 to convert to 08:00Z, got {got}. DST handling regressed."
+    )
+
+
+def test_ssh_estimate_start_returns_none_on_missing_to_start_at() -> None:
+    """No ``to start at`` token → None (lane is still park-eligible, just
+    cannot be ranked as instant)."""
+    from explore_persona_space.backends.slurm import ssh_estimate_start
+
+    def fake_subprocess_run(*_args, **_kwargs):
+        class _R:
+            returncode = 1
+            stderr = "sbatch: error: Invalid account or account/partition combination\n"
+            stdout = ""
+
+        return _R()
+
+    import explore_persona_space.backends.slurm as slurm_mod
+
+    orig_run = slurm_mod.subprocess.run
+    slurm_mod.subprocess.run = fake_subprocess_run
+    try:
+        got = ssh_estimate_start(
+            robot_alias="robot-nibi",
+            sbatch_script="#!/bin/bash\n",
+            cluster_timezone="America/Toronto",
+        )
+    finally:
+        slurm_mod.subprocess.run = orig_run
+    assert got is None
+
+
+def test_estimate_start_seconds_returns_signed_delta_from_now() -> None:
+    """The router caller wants seconds-from-now; positive ⇒ future,
+    negative ⇒ "would start now / in the past" ⇒ treat as instant."""
+    from explore_persona_space.backends.slurm import estimate_start_seconds
+
+    cluster = get_cluster_config("nibi")
+
+    # Future estimate: 02:06:36 EDT = 06:06:36 UTC; now = 06:00:00 UTC → +396 s.
+    def fake_future_estimator(*, robot_alias, sbatch_script, cluster_timezone):
+        del robot_alias, sbatch_script, cluster_timezone
+        return datetime(2026, 6, 9, 6, 6, 36, tzinfo=UTC)
+
+    secs = estimate_start_seconds(
+        spec=_lora_spec(),
+        cluster=cluster,
+        now=datetime(2026, 6, 9, 6, 0, 0, tzinfo=UTC),
+        start_estimator=fake_future_estimator,
+    )
+    assert secs == pytest.approx(396.0)
+
+    # Past estimate (cluster says "would start a minute ago") → negative.
+    def fake_past_estimator(*, robot_alias, sbatch_script, cluster_timezone):
+        del robot_alias, sbatch_script, cluster_timezone
+        return datetime(2026, 6, 9, 5, 59, 0, tzinfo=UTC)
+
+    secs_past = estimate_start_seconds(
+        spec=_lora_spec(),
+        cluster=cluster,
+        now=datetime(2026, 6, 9, 6, 0, 0, tzinfo=UTC),
+        start_estimator=fake_past_estimator,
+    )
+    assert secs_past == pytest.approx(-60.0)
+
+
+def test_estimate_start_seconds_returns_none_when_probe_unparseable() -> None:
+    """A lane that can't produce an estimate stays park-eligible but is
+    not rankable — return None, never crash the router."""
+    from explore_persona_space.backends.slurm import estimate_start_seconds
+
+    cluster = get_cluster_config("nibi")
+
+    def fake_estimator(*, robot_alias, sbatch_script, cluster_timezone):
+        del robot_alias, sbatch_script, cluster_timezone
+        return None
+
+    secs = estimate_start_seconds(
+        spec=_lora_spec(),
+        cluster=cluster,
+        now=datetime(2026, 6, 9, 6, 0, 0, tzinfo=UTC),
+        start_estimator=fake_estimator,
+    )
+    assert secs is None
+
+
+def test_estimate_start_seconds_threads_cluster_timezone_into_estimator() -> None:
+    """The seconds helper MUST pass the cluster's tz to the parser — a
+    silent fallback to UTC would re-introduce the bug for a non-Toronto
+    cluster (e.g. Mila at America/Montreal).
+    """
+    from explore_persona_space.backends.slurm import estimate_start_seconds
+
+    cluster = get_cluster_config("nibi")
+    captured: dict[str, str] = {}
+
+    def fake_estimator(*, robot_alias, sbatch_script, cluster_timezone):
+        del robot_alias, sbatch_script
+        captured["tz"] = cluster_timezone
+        return datetime(2026, 6, 9, 6, 6, 36, tzinfo=UTC)
+
+    estimate_start_seconds(
+        spec=_lora_spec(),
+        cluster=cluster,
+        now=datetime(2026, 6, 9, 6, 0, 0, tzinfo=UTC),
+        start_estimator=fake_estimator,
+    )
+    assert captured.get("tz") == "America/Toronto"
+
+
+def test_estimate_and_submit_render_byte_identical_scripts() -> None:
+    """Estimate and submit must use the SAME rendered sbatch.
+
+    If they diverge (different gres, different account, different
+    --time), the cluster estimates start time for a job that isn't the
+    one we eventually submit — the ranking signal becomes uncorrelated
+    with reality. SlurmBackend.launch() and SlurmBackend.estimate_start
+    {,_seconds} all route through ``_render_script_for``; this test
+    pins the byte-identity end-to-end through dependency injection.
+    """
+    submitted_scripts: list[str] = []
+    estimator_scripts: list[str] = []
+
+    def fake_submit(*, robot_alias, sbatch_script):
+        del robot_alias
+        submitted_scripts.append(sbatch_script)
+        return "9999"
+
+    def fake_estimator(*, robot_alias, sbatch_script, cluster_timezone):
+        del robot_alias, cluster_timezone
+        estimator_scripts.append(sbatch_script)
+        return datetime(2026, 6, 9, 6, 6, 36, tzinfo=UTC)
+
+    import tempfile as _tempfile
+
+    with _tempfile.TemporaryDirectory() as td:
+        td_path = _P(td)
+        (td_path / "pyproject.toml").write_text("")
+        backend = SlurmBackend(
+            src_root=td_path,
+            submitter=fake_submit,
+            rsyncer=lambda **_: None,
+            marker_poster=lambda **_: None,
+            secrets_pusher=lambda **_: None,
+            start_estimator=fake_estimator,
+        )
+        spec = _lora_spec()
+        # Run the probe paths first, then submit. Both must render the
+        # SAME bytes (render_sbatch is deterministic in (spec, cluster,
+        # plan, scratch_dir, plan_hash), and all three paths share
+        # _render_script_for).
+        backend.estimate_start(spec)
+        backend.estimate_start_seconds(spec, now=datetime(2026, 6, 9, 6, 0, 0, tzinfo=UTC))
+        backend.launch(spec)
+
+    assert len(submitted_scripts) == 1
+    assert len(estimator_scripts) == 2  # estimate_start + estimate_start_seconds
+    for est_script in estimator_scripts:
+        assert est_script == submitted_scripts[0], (
+            "estimate_start probe script must be byte-identical to the "
+            "submit script for the same (spec, cluster) — divergence "
+            "means the cluster estimates start time for a different job "
+            "than the one we actually submit."
+        )
+
+
+def test_slurm_backend_estimate_start_returns_utc_via_cluster_timezone() -> None:
+    """End-to-end: ``SlurmBackend.estimate_start`` returns a tz-aware UTC
+    datetime, computed by localizing through ``cluster.timezone``.
+
+    This is the regression site for the original two bugs (regex
+    misparse + UTC mislabel) wired through the backend, not just the
+    bare ``ssh_estimate_start`` function.
+    """
+
+    def fake_estimator(*, robot_alias, sbatch_script, cluster_timezone):
+        del robot_alias, sbatch_script
+        # Mirror what ssh_estimate_start would return for the real
+        # captured Nibi line under the right timezone.
+        assert cluster_timezone == "America/Toronto"
+        return datetime(2026, 6, 9, 6, 6, 36, tzinfo=UTC)
+
+    import tempfile as _tempfile
+
+    with _tempfile.TemporaryDirectory() as td:
+        td_path = _P(td)
+        (td_path / "pyproject.toml").write_text("")
+        backend = SlurmBackend(
+            src_root=td_path,
+            submitter=lambda *, robot_alias, sbatch_script: "0",
+            rsyncer=lambda **_: None,
+            marker_poster=lambda **_: None,
+            start_estimator=fake_estimator,
+        )
+        got = backend.estimate_start(_lora_spec())
+        assert got == datetime(2026, 6, 9, 6, 6, 36, tzinfo=UTC)
+
+
+def test_slurm_backend_estimate_start_seconds_uses_default_now_when_omitted() -> None:
+    """The router can call ``estimate_start_seconds(spec)`` without a
+    ``now`` and get a sensible delta against the current wall clock."""
+
+    def fake_estimator(*, robot_alias, sbatch_script, cluster_timezone):
+        del robot_alias, sbatch_script, cluster_timezone
+        # Estimate 30 seconds from "now"
+        return datetime.now(UTC) + timedelta(seconds=30)
+
+    import tempfile as _tempfile
+
+    with _tempfile.TemporaryDirectory() as td:
+        td_path = _P(td)
+        (td_path / "pyproject.toml").write_text("")
+        backend = SlurmBackend(
+            src_root=td_path,
+            submitter=lambda *, robot_alias, sbatch_script: "0",
+            rsyncer=lambda **_: None,
+            marker_poster=lambda **_: None,
+            start_estimator=fake_estimator,
+        )
+        secs = backend.estimate_start_seconds(_lora_spec())
+    assert secs is not None
+    # Allow a wide window for test-scheduling jitter; the key invariant
+    # is that the returned value is positive ~30 s, not a negative or
+    # multi-hour skew (which would indicate UTC mislabel of local time).
+    assert 0 < secs < 120, secs

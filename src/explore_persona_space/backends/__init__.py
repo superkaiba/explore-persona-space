@@ -38,8 +38,10 @@ from explore_persona_space.backends.slurm import (
     SbatchPlan,
     SlurmBackend,
     Stage,
+    estimate_start_seconds,
     get_cluster_config,
     render_sbatch,
+    ssh_estimate_start,
     stages_for_spec,
 )
 
@@ -58,8 +60,10 @@ __all__ = [
     "SbatchPlan",
     "SlurmBackend",
     "Stage",
+    "estimate_start_seconds",
     "get_cluster_config",
     "render_sbatch",
     "select_backend",
+    "ssh_estimate_start",
     "stages_for_spec",
 ]
