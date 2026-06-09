@@ -10,6 +10,8 @@ goal: 'Re-run the five-factor recipe-selectivity screen from #383 with single-to
   marker ※ and teacher-forced log-prob, to test whether the every-knob-lifts-source-and-selectivity
   finding replicates at higher per-cell resolution AND to sharpen the marker-only-loss
   vs whole-completion-loss contrast (now 1 token of loss vs ~600 instead of 4 vs ~600).'
+classification: useful
+promoted_at: '2026-06-09T21:34:40Z'
 ---
 # At single-token ※ and 10× learning rate, marker-only loss collapses into all-persona marker emission (LOW confidence)
 
