@@ -632,27 +632,38 @@ def query_slurm_state(
     # ExitCode, NodeList, RunTime). scontrol exits non-zero BOTH on a
     # genuinely-absent job ("Invalid job id specified") and on transport
     # failure, so its rc alone is ambiguous — the squeue fallback below
-    # is the disambiguator.
-    proc = subprocess.run(
-        ["ssh", robot_alias, "scontrol", "show", "job", job_id],
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        check=False,
-    )
+    # is the disambiguator. A HANG (TimeoutExpired) is a probe failure,
+    # never "job gone" — same wrap as query_by_name (round-7 M1).
+    try:
+        proc = subprocess.run(
+            ["ssh", robot_alias, "scontrol", "show", "job", job_id],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise SlurmProbeError(
+            f"scontrol show job {job_id} probe timed out after {timeout}s on {robot_alias}"
+        ) from exc
     if proc.returncode == 0 and proc.stdout.strip():
         return _parse_scontrol_show_job(proc.stdout)
     scontrol_stderr = (proc.stderr or "").strip()
 
     # Fallback: squeue -j <id> -h -o %T (single-token format — see the
     # wrapper quote-stripping note in the docstring).
-    proc = subprocess.run(
-        ["ssh", robot_alias, "squeue", "-j", job_id, "-h", "-o", "%T"],
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        check=False,
-    )
+    try:
+        proc = subprocess.run(
+            ["ssh", robot_alias, "squeue", "-j", job_id, "-h", "-o", "%T"],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise SlurmProbeError(
+            f"squeue -j {job_id} probe timed out after {timeout}s on {robot_alias}"
+        ) from exc
     if proc.returncode == 0 and proc.stdout.strip():
         return {"status": proc.stdout.strip().splitlines()[0].strip(), "exit_code": None}
     if proc.returncode == 0 or _is_job_not_found_stderr(proc.stderr):
@@ -726,14 +737,25 @@ def query_by_name(
     is a single space-free token by design — the wrapper strips quoting
     and re-splits, so multi-token formats fail with ``Unrecognized
     option`` (verified live on robot-nibi).
+
+    A HANG (wedged slurmctld; connection up, command stuck) raises
+    ``subprocess.TimeoutExpired`` — wrapped into the SAME
+    :class:`SlurmProbeError` so the reconnect path's type discrimination
+    (``except BackendProbeError: raise``) can't misread a hang as
+    "no live job" and blind-double-submit (round-7 M1).
     """
-    proc = subprocess.run(
-        ["ssh", robot_alias, "squeue", "--name", job_name, "-h", "-o", "%i"],
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        check=False,
-    )
+    try:
+        proc = subprocess.run(
+            ["ssh", robot_alias, "squeue", "--name", job_name, "-h", "-o", "%i"],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise SlurmProbeError(
+            f"squeue --name {job_name} probe timed out after {timeout}s on {robot_alias}"
+        ) from exc
     if proc.returncode != 0:
         # ``squeue --name`` with zero matches exits 0 with empty output,
         # so ANY non-zero rc here is the probe failing, not the job

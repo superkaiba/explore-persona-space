@@ -1057,6 +1057,37 @@ def test_query_by_name_rc_nonzero_raises_probe_error(monkeypatch) -> None:
         query_by_name(robot_alias="robot-nibi", job_name="eps-issue-137")
 
 
+def test_query_by_name_timeout_raises_probe_error(monkeypatch) -> None:
+    """A HUNG squeue (wedged slurmctld; TimeoutExpired) is a PROBE
+    failure, not "job gone" — pre-fix it bypassed the typed-error
+    contract and the reconnect path blind-double-submitted over a
+    possibly-live job's scratch (round-7 M1)."""
+
+    def _raise_timeout(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd="ssh", timeout=30)
+
+    monkeypatch.setattr(
+        "explore_persona_space.backends.slurm_monitor.subprocess.run",
+        _raise_timeout,
+    )
+    with pytest.raises(SlurmProbeError):
+        query_by_name(robot_alias="robot-nibi", job_name="eps-issue-137")
+
+
+def test_query_slurm_state_timeout_raises_probe_error(monkeypatch) -> None:
+    """Same hang-shape contract for the scontrol/squeue state probe."""
+
+    def _raise_timeout(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd="ssh", timeout=30)
+
+    monkeypatch.setattr(
+        "explore_persona_space.backends.slurm_monitor.subprocess.run",
+        _raise_timeout,
+    )
+    with pytest.raises(SlurmProbeError):
+        query_slurm_state(robot_alias="robot-nibi", job_id="15859991")
+
+
 def test_query_by_name_rc_zero_empty_means_absent(monkeypatch) -> None:
     monkeypatch.setattr(
         "explore_persona_space.backends.slurm_monitor.subprocess.run",

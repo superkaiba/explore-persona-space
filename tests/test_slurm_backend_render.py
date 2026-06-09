@@ -989,6 +989,51 @@ def test_fetch_logs_reads_correct_path_and_returns_joined_string(tmp_path) -> No
     assert actual_lines[-1] == "line 249"
 
 
+def test_fetch_logs_scrubs_secret_tokens(tmp_path, monkeypatch) -> None:
+    """fetch_logs is a tail-bearing API advertised "for orchestrator
+    notifications" — its output must pass the C1 token scrubber so a
+    future caller can't silently re-open the xtrace leak (round-7 Mn2).
+
+    ``_local_state_dir`` is monkeypatched under ``tmp_path`` so this
+    test never writes to the real ``/tmp/slurm-<id>`` (the sibling
+    no-local-file test reads the real path and must stay isolated).
+    """
+    (tmp_path / "pyproject.toml").write_text("")
+
+    from explore_persona_space.backends.base import RunHandle
+
+    job_id = "8802"
+    monkeypatch.setattr(
+        "explore_persona_space.backends.slurm_monitor._local_state_dir",
+        lambda jid: tmp_path / f"slurm-{jid}",
+    )
+    local_dir = tmp_path / f"slurm-{job_id}"
+    local_dir.mkdir(parents=True, exist_ok=True)
+    secret = "hf_" + "a" * 30
+    (local_dir / "job.out").write_text(f"+ : {secret}\n[phase=preflight]\n")
+
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        submitter=lambda *, robot_alias, sbatch_script: job_id,
+        rsyncer=lambda **_: None,
+        marker_poster=lambda **_: None,
+    )
+    handle = RunHandle(
+        backend="cluster",
+        cluster="nibi",
+        job_id=job_id,
+        pod_name="eps-issue-137",
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+        log_path="/scratch/tjiral/eps/issue-137/job.out",
+        extra={"issue": 137},
+    )
+
+    tail = backend.fetch_logs(handle)
+    assert secret not in tail
+    assert "«REDACTED»" in tail
+    assert "[phase=preflight]" in tail
+
+
 def test_fetch_logs_returns_empty_when_no_local_file(tmp_path) -> None:
     """No rsync ever landed → fetch_logs returns '' (NOT raises)."""
     (tmp_path / "pyproject.toml").write_text("")

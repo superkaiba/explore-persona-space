@@ -722,10 +722,11 @@ def cancel_and_wait(
       tearing it down would forfeit the wait we already paid for; the
       router uses this lane as the chosen outcome.
     * ``"manual_attention"`` — ``grace_seconds`` elapsed and the job is
-      still live. The router escalates to GCP regardless (the cluster
-      job will eventually time out on its own ``--time`` budget), and
-      surfaces this string on the attempt log so the operator can
-      manually ``scancel`` if needed.
+      still live. Both the auto and explicit lanes raise
+      :class:`ManualAttentionRequiredError` carrying the orphaned job
+      id (no silent GCP escalation past a live job — fix6), so the
+      operator can manually ``scancel``; the cluster job will
+      eventually time out on its own ``--time`` budget regardless.
 
     ``is_live_after_cancel`` is the polled "is the job ID still
     visible?" probe. The SLURM backend's binding is

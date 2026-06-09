@@ -2106,10 +2106,19 @@ class SlurmBackend(ComputeBackend):
         Returns a newline-joined string (not the Python list repr that
         ``splitlines()[-200:].__str__()`` would produce). ``""`` if the
         local log file doesn't exist yet (a poll never landed).
+
+        The tail is passed through ``_scrub_secret_tokens`` before
+        return: ``job.out`` can carry secret values (the C1 xtrace leak
+        class), and base.py advertises this API "for orchestrator
+        notifications" — a future caller must not silently re-open the
+        leak (round-7 Mn2).
         """
         # Import lazily to avoid the circular at module-load (monitor
         # imports from this module).
-        from explore_persona_space.backends.slurm_monitor import _local_state_dir
+        from explore_persona_space.backends.slurm_monitor import (
+            _local_state_dir,
+            _scrub_secret_tokens,
+        )
 
         local_path = _local_state_dir(handle.job_id) / "job.out"
         if not local_path.exists():
@@ -2117,7 +2126,7 @@ class SlurmBackend(ComputeBackend):
         with local_path.open("rb") as fh:
             data = fh.read()
         lines = data.decode("utf-8", errors="replace").splitlines()[-200:]
-        return "\n".join(lines)
+        return _scrub_secret_tokens("\n".join(lines))
 
     # ----- teardown --------------------------------------------------------
 
