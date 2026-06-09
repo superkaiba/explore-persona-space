@@ -220,19 +220,39 @@ class RunPodBackend(ComputeBackend):
         )
 
     def confirm_artifacts(self, handle: RunHandle) -> bool:
-        """Run the upload-verifier check.
+        """Backend-agnostic artifact verification.
 
-        Slice 1: orchestrator dispatches ``upload-verifier`` as an Agent
-        with the typed handle; this method is the seat where the agent's
-        subprocess call could land if/when we collapse it into Python.
+        Delegates to :func:`backends.artifacts.confirm_artifacts_from_handle`
+        — the same mechanical gate SLURM (and slice-3 GCP) use. The
+        ``upload-verifier`` agent still drives the exploratory pass
+        (SSHing the pod for unuploaded files); this gate is the
+        complementary mechanical check that won't be soft-passed by an
+        optimistic agent run.
+
+        Reads the :class:`~backends.artifacts.ExpectedArtifacts`
+        declaration the launch path stuffed onto ``handle.extra`` under
+        :data:`~backends.artifacts.EXPECTED_ARTIFACTS_HANDLE_KEY`. A
+        missing declaration is itself a FAIL (the launch path is
+        responsible for populating it; silently passing a handle that
+        forgot is the silent-loss hole the verifier closes).
         """
-        del handle
-        raise NotImplementedError(
-            "RunPodBackend.confirm_artifacts: orchestrator dispatches "
-            "the `upload-verifier` agent today (it shells out to "
-            "scripts/verify_uploads.py + Hub list_repo_files). Wire when "
-            "the agent's checks are folded into a Python helper."
-        )
+        # Lazy import to keep the runpod module importable without the
+        # artifacts module's optional deps loaded yet.
+        from explore_persona_space.backends.artifacts import confirm_artifacts_from_handle
+
+        verdict = confirm_artifacts_from_handle(handle)
+        if not verdict.passed:
+            # Use print rather than a module logger here so the failure
+            # surfaces in the bg-Bash captured output the orchestrator
+            # already reads (the runpod path otherwise has no logger
+            # wired up); keep the line stable so /issue Step 8 marker-
+            # extraction can grep for it on resume.
+            print(
+                f"[RunPodBackend.confirm_artifacts] FAIL for handle={handle.pod_name}: "
+                f"{'; '.join(verdict.reasons)}",
+                file=sys.stderr,
+            )
+        return verdict.passed
 
     def teardown(self, handle: RunHandle) -> None:
         """Terminate the pod (volume gone).

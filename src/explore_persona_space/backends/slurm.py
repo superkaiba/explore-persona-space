@@ -1792,18 +1792,34 @@ class SlurmBackend(ComputeBackend):
         # Non-fatal: a job that produced no figures (eval-only) is fine.
 
     def confirm_artifacts(self, handle: RunHandle) -> bool:
-        """Delegated to the upload-verifier agent.
+        """Backend-agnostic artifact verification.
 
-        SLURM path mirrors RunPod here — the agent runs the same checks
-        (HF Hub, WandB, git-committed eval_results/figures) regardless
-        of which backend ran the workload.
+        Delegates to :func:`backends.artifacts.confirm_artifacts_from_handle`,
+        which reads the :class:`~backends.artifacts.ExpectedArtifacts`
+        declaration the launch path stuffed onto ``handle.extra`` under
+        :data:`~backends.artifacts.EXPECTED_ARTIFACTS_HANDLE_KEY` and
+        runs the full check suite (HF Hub data + model repos, WandB run,
+        git-tracked figures + eval JSON, completion sentinel).
+
+        The verdict's ``reasons`` are logged on FAIL so the orchestrator's
+        ``epm:upload-verify-failed v1`` marker carries the exact gap
+        without re-running the helper. A missing declaration is itself a
+        FAIL (the launch path is responsible for populating it; silently
+        passing a handle that forgot is the silent-loss hole the verifier
+        is designed to close).
         """
-        del handle
-        raise NotImplementedError(
-            "SlurmBackend.confirm_artifacts: orchestrator dispatches the "
-            "upload-verifier agent today. Wire when the agent's checks are "
-            "folded into a Python helper."
-        )
+        # Lazy import to avoid a circular at module-load time if the
+        # artifacts module ever grows a dependency back on this module.
+        from explore_persona_space.backends.artifacts import confirm_artifacts_from_handle
+
+        verdict = confirm_artifacts_from_handle(handle)
+        if not verdict.passed:
+            logger.warning(
+                "SlurmBackend.confirm_artifacts FAIL for job %s: %s",
+                handle.job_id,
+                "; ".join(verdict.reasons),
+            )
+        return verdict.passed
 
     def teardown(self, handle: RunHandle) -> None:
         """``scancel`` the job; idempotent on a missing/terminated id."""

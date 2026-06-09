@@ -18,6 +18,15 @@ See ``.claude/plans/2026-06-08_001932-slurm-cluster-backend-for-issue.md``
 for the full plan; this slice (slice 1 of P1) ships the foundation only.
 """
 
+from explore_persona_space.backends.artifacts import (
+    EXPECTED_ARTIFACTS_HANDLE_KEY,
+    ArtifactVerdict,
+    ExpectedArtifacts,
+    VerifierIO,
+    confirm_artifacts_from_handle,
+    verify_artifacts,
+    write_completion_sentinel,
+)
 from explore_persona_space.backends.base import (
     BackendKind,
     ComputeBackend,
@@ -47,12 +56,15 @@ from explore_persona_space.backends.slurm import (
 
 __all__ = [
     "CLUSTER_CONFIGS",
+    "EXPECTED_ARTIFACTS_HANDLE_KEY",
     "SLURM_NOT_IMPLEMENTED_MESSAGE",
+    "ArtifactVerdict",
     "BackendDecision",
     "BackendKind",
     "BackendSelectionError",
     "ClusterConfig",
     "ComputeBackend",
+    "ExpectedArtifacts",
     "PollResult",
     "RunHandle",
     "RunPodBackend",
@@ -60,10 +72,14 @@ __all__ = [
     "SbatchPlan",
     "SlurmBackend",
     "Stage",
+    "VerifierIO",
+    "confirm_artifacts_from_handle",
     "estimate_start_seconds",
     "get_cluster_config",
     "render_sbatch",
     "select_backend",
     "ssh_estimate_start",
     "stages_for_spec",
+    "verify_artifacts",
+    "write_completion_sentinel",
 ]
