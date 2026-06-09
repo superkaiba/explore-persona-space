@@ -12,6 +12,8 @@ priority: normal
 legacy_why_unset: true
 relates_to:
 - leak-data-factors
+classification: useful
+promoted_at: '2026-06-09T21:33:43Z'
 ---
 <!-- legacy-sagan-card -->
 <style>
