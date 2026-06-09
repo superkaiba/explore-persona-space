@@ -26,6 +26,12 @@ Run::
     # OR auto-locate the most recent smoke run_result.json (no glob arg):
     uv run python scripts/issue_521_em_recipe_smoke.py --seed 42
 
+    # Production verifier: assert the realized max_steps = 375 (default
+    # is 2, matching the smoke train; pass --expected-max-steps 375 in
+    # the post-prod-train re-run):
+    uv run python scripts/issue_521_em_recipe_smoke.py --seed 42 \\
+        --expected-max-steps 375
+
 Exit codes:
   0  smoke PASS — every recipe value matches.
   2  smoke FAIL — at least one value mismatched; production train MUST NOT proceed.
@@ -42,8 +48,11 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# The 14 recipe values verbatim from plan v2 §3.6.1 + §10 Reproducibility +
-# configs/{training,lora}/turner_em.yaml.
+# Recipe values verbatim from plan v2 §3.6.1 + §10 Reproducibility +
+# configs/{training,lora}/turner_em.yaml. Round-2 fix (Major #5) adds
+# lora.target_modules (the all-7-modules turner_em recipe) +
+# training.max_steps (so the smoke knows it's running at max_steps=2
+# and the post-prod-train re-run can assert =375 via --expected-max-steps).
 EXPECTED_RECIPE: dict[str, object] = {
     "training.learning_rate": 2.0e-5,
     "training.lr_scheduler_type": "linear",
@@ -59,7 +68,23 @@ EXPECTED_RECIPE: dict[str, object] = {
     "lora.lora_alpha": 256,
     "lora.lora_dropout": 0.0,
     "lora.use_rslora": True,
+    # Round-2 (Major #5): load-bearing target_modules — the all-7-modules
+    # set (Q/K/V/O + gate/up/down) the #458 recipe locks. Trainer reads
+    # this at trainer.py:97-102.
+    "lora.target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj",
+    ],
 }
+
+# max_steps is parameterized via --expected-max-steps so the smoke run
+# (=2) and the production re-run (=375) can share this verifier.
+DEFAULT_EXPECTED_MAX_STEPS = 2
 
 
 def _extract_cfg(result: dict, section: str) -> dict | None:
@@ -113,6 +138,17 @@ def _coerce(actual: object, expected: object) -> object:
             return actual
     if isinstance(expected, str):
         return str(actual) if actual is not None else actual
+    if isinstance(expected, list):
+        # Hydra/OmegaConf ListConfig serialization is iterable; coerce to
+        # a plain list (string elements stay strings) so == compares
+        # element-wise. Order MATTERS for target_modules — the trainer
+        # passes the list straight to PEFT's LoraConfig.
+        if actual is None:
+            return actual
+        try:
+            return list(actual)  # type: ignore[arg-type]
+        except TypeError:
+            return actual
     return actual
 
 
@@ -153,6 +189,17 @@ def main() -> int:
         type=int,
         default=42,
         help="Seed used by the smoke train (default 42).",
+    )
+    parser.add_argument(
+        "--expected-max-steps",
+        type=int,
+        default=DEFAULT_EXPECTED_MAX_STEPS,
+        help=(
+            "Expected training.max_steps. Default 2 (the smoke train). "
+            "Pass --expected-max-steps 375 for the post-production re-run "
+            "to assert the production train ran at the plan v2 §11 #23 "
+            "max_steps=375."
+        ),
     )
     args = parser.parse_args()
 
@@ -203,8 +250,13 @@ def main() -> int:
                 )
         return 2
 
+    # Build the per-run expected map: the fixed recipe + the
+    # caller-parameterized training.max_steps (round-2 Major #5).
+    expected_map: dict[str, object] = dict(EXPECTED_RECIPE)
+    expected_map["training.max_steps"] = args.expected_max_steps
+
     failures: list[tuple[str, object, object]] = []
-    for dotted_key, expected in EXPECTED_RECIPE.items():
+    for dotted_key, expected in expected_map.items():
         section, leaf = dotted_key.split(".", 1)
         sect = training_cfg if section == "training" else lora_cfg
         actual_raw = sect.get(leaf)
@@ -229,8 +281,10 @@ def main() -> int:
 
     logger.info(
         "[phase=done] recipe-smoke PASS: trainer recorded #458 turner_em verbatim "
-        "across all %d keys (run_result.json=%s)",
-        len(EXPECTED_RECIPE),
+        "across all %d keys (incl. lora.target_modules + training.max_steps=%d); "
+        "run_result.json=%s",
+        len(expected_map),
+        args.expected_max_steps,
         rr_path,
     )
     return 0

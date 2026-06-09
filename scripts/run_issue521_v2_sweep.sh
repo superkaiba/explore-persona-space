@@ -36,9 +36,18 @@ mkdir -p "$HF_HOME"
 # BEFORE the ~15GB merged dir is rm'd. _finalize_phase (train/trainer.py)
 # raises if the verified upload fails, so `set -e` aborts the cell
 # before its `rm` — the merged dir stays for retry instead of vanishing.
-export EPM_PERSIST_ADAPTER_HF_REPO="superkaiba1/explore-persona-space"
+#
+# Round-2 fix (Critical #2): EPM_PERSIST_ADAPTER_HF_REPO + _SUBFOLDER are
+# set TOGETHER inside the per-cell subshell ONLY (see line ~150). They
+# MUST NOT exist at the top level: the smoke train below runs with
+# `upload_to=none` and has no HF subfolder; if HF_REPO were set globally
+# and SUBFOLDER were not, _maybe_persist_adapter raises "set both or
+# neither" and the pipeline dies before production. Keeping the pair
+# scoped to the per-cell subshell guarantees the smoke runs clean.
+#
 # Skip the wasteful 15GB merged-checkpoint WandB Artifact upload entirely
 # (regenerable from base + adapter; per .claude/rules/upload-policy.md).
+# This one IS safe to export globally — it only suppresses an upload.
 export EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1
 
 SEEDS=(42 137 256)
@@ -105,11 +114,16 @@ for i in 0 1 2; do
 
   (
     set -euo pipefail
-    # Per-cell durable adapter destination; _finalize_phase appends the
+    # Per-cell durable adapter destination. _finalize_phase appends the
     # per-phase leaf so the adapter lands at
     # adapters/issue_521/em_turner_seed{SEED}/sft_narrow_adapter (the
-    # subfolder leaf is the train.py default; the staging script knows
-    # to glob from this root).
+    # `sft_narrow` stage name is from the condition YAML; the staging
+    # script discovers the leaf via list_repo_files at download time).
+    #
+    # Round-2 fix (Critical #2): export BOTH env vars TOGETHER, scoped
+    # to this subshell only. The smoke train above runs with neither
+    # set, so _maybe_persist_adapter no-ops on it.
+    export EPM_PERSIST_ADAPTER_HF_REPO="superkaiba1/explore-persona-space"
     export EPM_PERSIST_ADAPTER_SUBFOLDER="adapters/issue_521/em_turner_seed${SEED}"
     phase cell_train "GPU=$GPU seed=$SEED max_steps=$MAX_STEPS"
     uv run python scripts/train.py \
@@ -154,10 +168,15 @@ PY
 done
 
 # Wait for all 3 parallel trains.
+# Round-2 fix (Minor #6): `if ! wait "$pid"; then rc=$?` records the
+# negated command's status (always 0 on the success branch and the
+# inverted child rc otherwise). Capture the real child rc via the
+# non-negated form.
 fail_any=0
 for pid in "${pids[@]}"; do
-  if ! wait "$pid"; then
-    rc=$?
+  rc=0
+  wait "$pid" || rc=$?
+  if (( rc != 0 )); then
     phase cell_subprocess_failed "pid=$pid rc=$rc"
     fail_any=1
   fi
@@ -179,6 +198,12 @@ uv run python scripts/issue_521_stage_em_turner_adapters.py \
 # ──────────────────────────────────────────────────────────────────────
 # Step 3.7 — EM-rate gate v2 re-run
 # ──────────────────────────────────────────────────────────────────────
+# Round-2 fix (Critical #1): pass --no-post-marker so the gate does NOT
+# shell out to scripts/task.py from this pod-side context (CLAUDE.md
+# "Pod-side code NEVER shells out to scripts/task.py"). The gate writes
+# its decision to <output-dir>/em_rate_gate_v2/summary.json; we then emit
+# a sentinel JSON below for poll_pipeline.py to drain VM-side and post
+# the epm:em-rate marker from there.
 phase em_rate_gate_v2 "re-running EM-rate gate on retrained adapters (output -> em_rate_gate_v2)"
 GATE_RC=0
 uv run python scripts/issue_521_em_rate_gate.py \
@@ -188,7 +213,48 @@ uv run python scripts/issue_521_em_rate_gate.py \
   --gate-subdir em_rate_gate_v2 \
   --marker-kind epm:em-rate \
   --issue 521 \
+  --no-post-marker \
   2>&1 | tee "$LOG_DIR/em_rate_gate_v2.log" || GATE_RC=$?
+
+# Emit the gate-result sentinel for VM-side posting. poll_pipeline.py
+# drains /workspace/logs/issue-521-*.json files, validates the schema,
+# and posts the (kind, version) marker on the VM (where task.py works).
+phase em_rate_marker_sentinel "writing epm:em-rate sentinel for VM-side marker post"
+GATE_SUMMARY_PATH="$REPO_ROOT/eval_results/issue_521/em_rate_gate_v2/summary.json"
+if [[ -f "$GATE_SUMMARY_PATH" ]]; then
+  EPOCH="$(date +%s)"
+  GATE_SENTINEL="/workspace/logs/issue-521-epm_em-rate-${EPOCH}.json"
+  uv run python - <<PY
+import json, time
+with open("$GATE_SUMMARY_PATH") as f:
+    summary = json.load(f)
+per_cell = summary.get("per_cell_rates", {})
+note = (
+    "per_cell_rates: " + json.dumps({k: round(float(v), 4) for k, v in per_cell.items()})
+    + "\nmedian: " + str(round(float(summary.get("median_rate", 0.0)), 4))
+    + "\nthreshold_floor: " + str(summary.get("per_cell_floor", 0.05))
+    + "\nadvisory_median: " + str(summary.get("advisory_median", 0.07))
+    + "\ngate_decision: " + str(summary.get("gate_decision", "UNKNOWN"))
+    + "\nlow_rate_but_installed: " + str(summary.get("low_rate_but_installed", False)).lower()
+    + "\narm_prefix: " + str(summary.get("arm_prefix", "em_turner"))
+    + "\ngate_subdir: em_rate_gate_v2"
+)
+sentinel = {
+    "sentinel_schema_version": 1,
+    "kind": "epm:em-rate",
+    "version": 1,
+    "task_id": 521,
+    "by": "run_issue521_v2_sweep.sh",
+    "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    "note": note,
+}
+with open("$GATE_SENTINEL", "w") as f:
+    json.dump(sentinel, f, indent=2)
+print(f"Wrote epm:em-rate sentinel: $GATE_SENTINEL")
+PY
+else
+  phase em_rate_sentinel_skip "gate summary.json missing at $GATE_SUMMARY_PATH; sentinel skipped"
+fi
 
 if (( GATE_RC == 2 )); then
   # HARD HALT: the validated #458 recipe still didn't install EM. This is

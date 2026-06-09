@@ -59,6 +59,13 @@ DISJOINTNESS_LOG = Path("eval_results/issue_521/inputs/em_pool_disjointness.txt"
 RESERVED_SLICE = slice(200, 300)
 N_RESERVED = 100
 MIN_SRC_ROWS = 6000
+# Round-2 fix (Minor #7): the underlying bad_medical_advice_6k corpus has
+# exactly one internal duplicate row (row 3615 = row 215, the "lose weight
+# quickly" prompt) that survives the [200, 300) reservation. We expect
+# exactly KNOWN_RESIDUAL_POOL_DUPS dropped rows during _drop_pool_dup_rows;
+# anything else means the corpus drifted and we should fail loud rather
+# than silently dropping unbounded rows.
+KNOWN_RESIDUAL_POOL_DUPS = 1
 
 
 def _user_message_hash(line: str) -> str:
@@ -153,6 +160,18 @@ def main() -> int:
         "--force",
         action="store_true",
         help="Force re-download + re-filter even if the file is already at the post-filter size.",
+    )
+    parser.add_argument(
+        "--allow-extra-dup-drops",
+        type=int,
+        default=0,
+        help=(
+            "Round-2 fix (Minor #7): tolerance for residual pool-duplicate "
+            "drops above the declared KNOWN_RESIDUAL_POOL_DUPS=1. Default "
+            "0 means '1 dropped row is allowed (the known row-3615 dup); "
+            "anything else fails loud'. Bump only when a corpus update "
+            "intentionally introduces more internal duplicates."
+        ),
     )
     args = parser.parse_args()
 
@@ -262,6 +281,19 @@ def main() -> int:
             RESERVED_SLICE.start,
             RESERVED_SLICE.stop,
             len(kept),
+        )
+    # Round-2 fix (Minor #7): bound the drop count. Anything beyond
+    # the declared KNOWN_RESIDUAL_POOL_DUPS + --allow-extra-dup-drops
+    # means the upstream corpus has drifted; refuse to silently keep
+    # going (the drift could indicate a different corpus revision that
+    # would tank training).
+    allowed = KNOWN_RESIDUAL_POOL_DUPS + args.allow_extra_dup_drops
+    if n_pool_dups > allowed:
+        raise RuntimeError(
+            f"pool-duplicate drop count {n_pool_dups} exceeds the declared "
+            f"limit ({KNOWN_RESIDUAL_POOL_DUPS} known + {args.allow_extra_dup_drops} "
+            f"--allow-extra-dup-drops). The bad_medical_advice_6k corpus may have "
+            f"drifted; verify the source revision before bumping --allow-extra-dup-drops."
         )
     try:
         _assert_no_overlap(kept_rows=kept, pool_hashes=pool_h)

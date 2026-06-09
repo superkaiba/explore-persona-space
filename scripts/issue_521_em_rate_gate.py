@@ -149,11 +149,17 @@ def _post_em_rate_marker(
     ]
     rc = subprocess.run(cmd, check=False).returncode
     if rc != 0:
-        logger.warning(
-            "%s marker post returned rc=%d — the marker may not have "
-            "landed; the gate JSON file is the authoritative record.",
-            marker_kind,
-            rc,
+        # Round-2 fix (Major #4): raise instead of swallowing the rc. A
+        # non-zero return here means either the branch-guard rejected a
+        # pod-side run (the gate is now invoked with --no-post-marker
+        # pod-side, so this codepath only fires on the VM) or a
+        # transient flock contention. Either way we want a hard fail,
+        # not a silent "warning" that the dashboard never sees.
+        raise RuntimeError(
+            f"{marker_kind} marker post via scripts/task.py exited rc={rc}; "
+            f"refusing to swallow. Re-run from a state where task.py can post, "
+            f"or rerun with --no-post-marker and post the marker from a "
+            f"VM-side reader of the gate summary JSON."
         )
 
 
@@ -239,9 +245,14 @@ def main() -> int:  # noqa: C901 - argparse + 2-arm decision tree, refactor out-
         "--no-post-marker",
         action="store_true",
         help=(
-            "Skip the epm:em-rate marker post. Use for smoke / dry-runs "
-            "that must not pollute the task's events.jsonl. The gate JSON "
-            "summary is still written."
+            "Skip the epm:em-rate marker post. Required for ANY pod-side "
+            "invocation (CLAUDE.md 'Pod-side code NEVER shells out to "
+            "scripts/task.py'); pod-side callers must emit a sentinel "
+            "JSON under /workspace/logs/issue-<N>-epm_em-rate-<epoch>.json "
+            "instead, which poll_pipeline.py drains + posts VM-side. Also "
+            "use for smoke / dry-runs that must not pollute events.jsonl. "
+            "The gate JSON summary at <gate-subdir>/summary.json is "
+            "always written."
         ),
     )
     args = p.parse_args()
