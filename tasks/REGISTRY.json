@@ -2878,7 +2878,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/505",
       "status": "interpreting",
-      "title": "Leave-one-out contrastive negative: does dropping one negative (row-mass fixed) raise leakage locally for bystanders similar to it?"
+      "title": "Dropping one contrastive negative did not raise marker leakage for bystanders close to it (MODERATE confidence)"
     },
     "506": {
       "goal": "Test whether installing the trigger->marker rule with full-weight fine-tuning (vs the LoRA r=16 install that dies in #382/#408/#475) lets the install survive one epoch of benign SFT on Qwen3.5-27B, per Redwood's finding that FWFT model organisms are more robust to training than LoRA ones.",

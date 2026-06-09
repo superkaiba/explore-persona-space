@@ -1,6 +1,6 @@
 ---
-title: 'Leave-one-out contrastive negative: does dropping one negative (row-mass fixed)
-  raise leakage locally for bystanders similar to it?'
+title: Dropping one contrastive negative did not raise marker leakage for bystanders
+  close to it (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-06T00:55:01Z'
