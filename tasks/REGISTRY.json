@@ -1624,8 +1624,8 @@
     "355": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/355",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/355",
+      "status": "completed",
       "title": "Persona-style rationale does not reduce answer uncertainty below generic rationale after answer-cue filtering (HIGH confidence)"
     },
     "356": {
