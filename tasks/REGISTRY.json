@@ -846,8 +846,8 @@
     "225": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/225",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/225",
+      "status": "completed",
       "title": "The marker is a representational handle, not a behavioural one \u2014 sharing it between a villain persona and the assistant transfers no misalignment (HIGH confidence)"
     },
     "226": {
