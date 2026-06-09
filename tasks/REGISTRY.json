@@ -1700,10 +1700,11 @@
       "title": "Factor screen for marker implantation + leakage (2^4: length-location, persona-presence, on-policy, marker-only-loss)"
     },
     "365": {
+      "goal": "Sweep five binary recipe factors (system-prompt length, answer length, framing, training-data source, loss mask) across three source personas to find which knob, if any, lifts marker emission on the trained source persona without also lifting bystander leakage.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/365",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/365",
+      "status": "completed",
       "title": "Every recipe factor that lifts [ZLT] source rate also lifts bystander leakage in the same direction; no factor implants the marker selectively (LOW confidence)"
     },
     "366": {
