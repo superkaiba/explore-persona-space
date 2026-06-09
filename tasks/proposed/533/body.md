@@ -2,7 +2,8 @@
 title: 'Re-train marker-less role-vs-system at lr=5e-6, r=32 — non-saturated anchor
   in the {1,2,3,5}-epoch grid (corrective re-run of #529)'
 kind: experiment
-tags: []
+tags:
+- followup
 created_at: '2026-06-09T16:08:18Z'
 has_clean_result: false
 parent_id: 529
