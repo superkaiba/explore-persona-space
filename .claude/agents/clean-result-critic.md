@@ -442,6 +442,51 @@ in Lens 12. Lens number kept stable so downstream tooling that reads
   been linked.
 - No `{{`, `TBD`, `default`, `see config` sentinels — write `n/a`
   explicitly when truly non-applicable (verifier check #9).
+- **Reuse-provenance audit (semantic, not mechanical).** When any
+  reader-facing claim in `## TL;DR` rests on a trained artifact
+  REUSED from a prior issue — a LoRA adapter, merged checkpoint,
+  training-mix dataset, raw-completion bucket, or `eval_results/`
+  JSON produced by a previous `/issue` run rather than freshly
+  produced by THIS task — the `**Artifacts:**` block under
+  `## Reproducibility` MUST record one bullet per reused artifact
+  naming (a) the producing issue
+  (`[#M](https://eps.superkaiba.com/tasks/M)`), (b) the permanent
+  HF Hub path (pinned to `/tree/<sha>` or `@<sha>`) or repo-relative
+  `eval_results/issue_M/...` path the artifact was pulled from, AND
+  (c) a **one-line fitness rationale** stating why this artifact was
+  the right one to reuse for THIS result — covering recipe match
+  (same base model + training-recipe / hyperparameters the new
+  question demands), measurement-regime fit (the artifact's eval
+  surface contains the conditions THIS result reads off; for marker
+  work, the artifact is not saturated where this read needs headroom
+  — source `log P − base ∈ [5,12]` nat per
+  `.claude/rules/marker-training-recipe.md`), and required
+  conditions present. This is the clean-result side of the positive
+  fitness check the planner ran at plan §5 / §10
+  (CLAUDE.md § "Reuse existing trained artifacts when fit-for-purpose
+  — never reuse a wrong one"); the spec lives in
+  `.claude/skills/clean-results/SPEC.md` § `**Artifacts:**`
+  reuse-provenance bullet.
+  **Triggering reuse:** the body cites a prior issue (`[#M](...)`) as
+  the source of a specific artifact OR `**Code:**` /
+  `**Artifacts:**` links to a prior issue's HF subdirectory /
+  `tree/<sha>` path / `eval_results/issue_M/...` path rather than
+  this task's own output. Inspect the `## TL;DR` for `[#M](...)`
+  artifact citations AND the `**Artifacts:**` block for any HF or
+  `eval_results/` path whose issue number is NOT the current task's
+  (e.g. `eval_results/issue_474/...` referenced from a #532 body).
+  **FAIL when:** reuse is evident from the body but the
+  `**Artifacts:**` block has NO reuse-provenance bullet, OR the
+  bullet is present but missing any of (a)/(b)/(c) — naming `#M`
+  without a fitness rationale is the most common partial form, and
+  the rationale is what tells the reader the producing recipe
+  matched the new question. Fix list to the analyzer:
+  *"add a `- Reused <kind> from [#M](...): <path> — fit: <one line>`
+  bullet under `**Artifacts:**` covering recipe + regime +
+  conditions; mirror plan §5/§10's fitness check."* **PASS vacuously**
+  when THIS task produced every artifact it stands on (most
+  fresh-train experiments — no reused artifact, no provenance bullet
+  expected).
 
 ### Lens 6 — Voice
 
