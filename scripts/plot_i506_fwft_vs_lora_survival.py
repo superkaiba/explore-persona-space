@@ -8,11 +8,11 @@ Three figures for the clean-result body:
        symmetric 100% -> 0% collapse.
 
   2. ``survival_metrics``
-       Two side-by-side panels of the pre-registered survival metrics:
+       Two side-by-side panels of the plan-locked survival metrics:
        (a) Survival_KL = KL_post / KL_pre (closer to 1 = more survives)
        (b) Survival_logP = (trained-base log P)_post - (trained-base log P)_pre
            in nats (closer to 0 = more survives)
-       Annotates the pre-registered success threshold and FWFT-LoRA r=16 gap.
+       Annotates the plan success threshold and FWFT-LoRA r=16 gap.
 
   3. ``logp_collapse_at_T_plus``
        Per-arm trained log P( marker ) at T_plus before and after benign SFT,
@@ -168,7 +168,7 @@ def plot_survival_metrics() -> None:
         linestyle="--",
         color="#aa3333",
         linewidth=1.3,
-        label=f"Pre-registered success threshold ({success_threshold:.2f})",
+        label=f"Plan success threshold ({success_threshold:.2f})",
     )
     ax.set_xticks(range(len(arms)))
     ax.set_xticklabels([ARM_LABELS[a] for a in arms])
@@ -205,7 +205,7 @@ def plot_survival_metrics() -> None:
         linestyle="--",
         color="#aa3333",
         linewidth=1.3,
-        label=f"Pre-registered success threshold ({success_threshold:.1f} nat)",
+        label=f"Plan success threshold ({success_threshold:.1f} nat)",
     )
     ax.set_xticks(range(len(arms)))
     ax.set_xticklabels([ARM_LABELS[a] for a in arms])
