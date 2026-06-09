@@ -157,31 +157,75 @@ def _phase_a_emission(
     return per_q
 
 
+def _build_probe_ids(
+    prompt_ids: list[int],
+    r_ids: list[int],
+) -> tuple[list[int], int, bool, int | None]:
+    """Construct teacher-force ids for the post-response marker probe.
+
+    Builds ``prompt_ids + R_ids' + [MARKER_ID]`` where ``R_ids'`` is ``r_ids``
+    truncated at the FIRST occurrence of ``MARKER_ID`` (if any). Truncating at
+    first occurrence preserves the construct "log P(marker) at the end of the
+    model's own response": for a trained emitter the marker IS the
+    end-of-response token, and any post-marker drift tokens are tail-drift
+    artifacts, not the slot of interest.
+
+    Marker in the prompt is treated as a fail-fast (genuine threading bug —
+    persona/q prompts must never carry the marker).
+
+    Args:
+        prompt_ids: tokenized prompt (chat template).
+        r_ids: tokenized on-policy response from vLLM generate.
+
+    Returns:
+        ``(full_ids, slot, r_contained_marker, r_truncation_idx)``:
+
+        * ``full_ids`` — ``prompt_ids + R_ids' + [MARKER_ID]``.
+        * ``slot`` — index of the appended MARKER_ID (``len(full_ids) - 1``).
+        * ``r_contained_marker`` — True iff ``r_ids`` already held MARKER_ID.
+        * ``r_truncation_idx`` — token index within ``r_ids`` where truncation
+          happened (None when ``r_contained_marker`` is False).
+
+    Raises:
+        RuntimeError: MARKER_ID appears in ``prompt_ids`` (prompt threading bug).
+    """
+    if MARKER_ID in prompt_ids:
+        raise RuntimeError(
+            f"marker {MARKER_ID} appears in prompt_ids (count={prompt_ids.count(MARKER_ID)}); "
+            "prompts must never carry the marker — genuine threading bug"
+        )
+    if MARKER_ID in r_ids:
+        r_truncation_idx = r_ids.index(MARKER_ID)
+        r_truncated = r_ids[:r_truncation_idx]
+        r_contained_marker = True
+    else:
+        r_truncation_idx = None
+        r_truncated = r_ids
+        r_contained_marker = False
+    full_ids = list(prompt_ids) + list(r_truncated) + [MARKER_ID]
+    slot = len(full_ids) - 1
+    return full_ids, slot, r_contained_marker, r_truncation_idx
+
+
 def _post_response_slot_logprob(
     llm,
     sp_logprob,
-    tokenizer,
-    prompt_text: str,
-    R_text: str,
+    full_ids: list[int],
+    slot: int,
     lora_request,
-) -> tuple[float, int]:
-    """Teacher-force `prompt + R + MARKER_TEXT`; return log P(' ※') + slot idx.
+) -> float:
+    """Teacher-force ``full_ids``; return log P(' ※') at ``slot``.
 
     The slot is the FINAL position (last token = MARKER_ID). vLLM's
     ``prompt_logprobs`` exposes the log-prob for that token under the prefix
-    (prompt + R) — the read we want for trained − base ΔG.
+    — the read we want for trained − base ΔG.
+
+    The id construction (including any marker-in-R truncation) is done once
+    per (q, R) by ``_build_probe_ids`` and shared across the base and trained
+    probes, so both reads use the SAME ids.
     """
-    full_ids = tokenizer.encode(prompt_text + R_text + MARKER_TEXT, add_special_tokens=False)
     if full_ids[-1] != MARKER_ID:
-        raise RuntimeError(
-            f"slot drift: full_ids[-1]={full_ids[-1]} expected {MARKER_ID}; "
-            f"R_text last 40 chars: {R_text[-40:]!r}"
-        )
-    if full_ids.count(MARKER_ID) != 1:
-        raise RuntimeError(
-            f"marker appears {full_ids.count(MARKER_ID)}× in (prompt+R+marker); expected exactly 1"
-        )
-    slot = len(full_ids) - 1
+        raise RuntimeError(f"slot drift: full_ids[-1]={full_ids[-1]} expected {MARKER_ID}")
     outputs = llm.generate([{"prompt_token_ids": full_ids}], sp_logprob, lora_request=lora_request)
     out = outputs[0]
     spec = out.prompt_logprobs[slot]
@@ -189,7 +233,7 @@ def _post_response_slot_logprob(
         raise RuntimeError(
             f"prompt_logprobs[{slot}] missing MARKER_ID; top keys = {list((spec or {}).keys())[:5]}"
         )
-    return max(float(spec[MARKER_ID].logprob), LOGP_FLOOR), slot
+    return max(float(spec[MARKER_ID].logprob), LOGP_FLOOR)
 
 
 def _emission_path(source: str, seed: int, frac: float) -> Path:
@@ -205,6 +249,25 @@ def _atomic_write_json(path: Path, payload: dict) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
     tmp.replace(path)
+
+
+def _cell_complete(path: Path) -> bool:
+    """True iff ``path`` exists, parses as JSON, and covers all 27 targets.
+
+    Skips a cell on resume only when BOTH emission + delta JSONs pass this
+    check. Existence alone is not enough — each JSON is written atomically
+    after EVERY completed target, so a cell that died mid-loop leaves a
+    partial file with < ``len(CONDITIONS)`` targets. Returning True for
+    those would lose the missing-target work forever.
+    """
+    if not path.exists():
+        return False
+    try:
+        payload = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return False
+    targets = payload.get("targets", {})
+    return isinstance(targets, dict) and len(targets) == len(CONDITIONS)
 
 
 def _run_one_cell(
@@ -226,9 +289,25 @@ def _run_one_cell(
     emission_path = _emission_path(source_cid, seed, frac)
     delta_path = _delta_g_path(source_cid, seed, frac)
 
-    if emission_path.exists() and delta_path.exists():
-        logger.info("Skip (source=%s seed=%d frac=%s) — both outputs exist", source_cid, seed, frac)
+    if _cell_complete(emission_path) and _cell_complete(delta_path):
+        logger.info(
+            "Skip (source=%s seed=%d frac=%s) — both outputs complete (%d targets)",
+            source_cid,
+            seed,
+            frac,
+            len(CONDITIONS),
+        )
         return
+    if emission_path.exists() or delta_path.exists():
+        logger.info(
+            "Redoing partial cell (source=%s seed=%d frac=%s) — "
+            "emission_complete=%s delta_complete=%s",
+            source_cid,
+            seed,
+            frac,
+            _cell_complete(emission_path),
+            _cell_complete(delta_path),
+        )
 
     from vllm.lora.request import LoRARequest
 
@@ -275,21 +354,30 @@ def _run_one_cell(
         emission_payload["targets"][cond_target.cid] = per_q
 
         # Phase B for THIS target — uses the first sample text as on-policy R.
+        # Build probe ids ONCE per (q, R) and share across base + trained
+        # probes so the two reads sit on identical token streams.
         delta_per_q: dict[str, dict] = {}
         for q in held_out_q:
             R_text = per_q[q]["samples"][0]["text"]
             prompt_text = build_prompt_for_condition(cond_target, q, tokenizer, class_d_rewrites)
-            base_logp, slot = _post_response_slot_logprob(
-                llm, sp_logprob, tokenizer, prompt_text, R_text, lora_request=None
+            prompt_ids = tokenizer.encode(prompt_text, add_special_tokens=False)
+            r_ids = tokenizer.encode(R_text, add_special_tokens=False)
+            full_ids, slot, r_contained_marker, r_truncation_idx = _build_probe_ids(
+                prompt_ids, r_ids
             )
-            trained_logp, _ = _post_response_slot_logprob(
-                llm, sp_logprob, tokenizer, prompt_text, R_text, lora_request=lora
+            base_logp = _post_response_slot_logprob(
+                llm, sp_logprob, full_ids, slot, lora_request=None
+            )
+            trained_logp = _post_response_slot_logprob(
+                llm, sp_logprob, full_ids, slot, lora_request=lora
             )
             delta_per_q[q] = {
                 "trained_logp": trained_logp,
                 "base_logp": base_logp,
                 "delta_nats": trained_logp - base_logp,
                 "slot_idx": slot,
+                "r_contained_marker": r_contained_marker,
+                "r_truncation_idx": r_truncation_idx,
             }
         delta_payload["targets"][cond_target.cid] = delta_per_q
         # Persist after each target completes.
