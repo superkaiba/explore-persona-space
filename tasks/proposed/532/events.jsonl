@@ -1,1 +1,2 @@
 {"ts": "2026-06-09T06:07:58Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-09T06:10:47Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #532 to open questions q:leak-predictor (3.1 — main: testing whether geometric predictors fail on instruction-set contexts and a base-prior predictor fixes them) and q:spec-sysprompt-vs-drift (1.6 — system-prompted bystander = adversarial case for geometry). created_new=none; mode=auto-match."}
