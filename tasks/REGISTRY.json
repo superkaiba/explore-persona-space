@@ -790,8 +790,8 @@
     "215": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/215",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/215",
+      "status": "completed",
       "title": "Only continuous soft prefixes hit both EM axes at once on Qwen-2.5-7B-Instruct: discrete prompt searches split between the alignment objective and the distributional objective, and both discretizations of the soft prefix collapse (MODERATE confidence)"
     },
     "216": {
