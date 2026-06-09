@@ -196,7 +196,7 @@ Per-cell basis: LoRA train ~0.3–0.5 GPU-h; full eval battery ~0.5–1 GPU-h/ad
 
 ## 9. Open design decisions (need explicit sign-off at plan time)
 
-1. **Plain-SFT-primary regime** (§3) — deviates from the house contrastive default, justified by literature fidelity + realism + dynamic range, with contrastive as a measured arm. Must survive the adversarial-planner critic explicitly.
+1. **Plain-SFT-primary regime** (§3) — **RESOLVED 2026-06-09: plain-SFT primary, contrastive + KL-narrowness sub-arms kept as measured arms.** Deviates from the house contrastive default, justified by literature fidelity (every published B→B′ result is plain SFT; nulls stay interpretable, #496/#516) + realistic threat model + leakage dynamic range (#411 showed contrastive containment floors the bystander DV). The regime is itself a measured variable, not a hidden confound — this is the named contrastive-negatives exemption (manipulated variable includes contrastive-vs-non-contrastive + strict replication of positive-only parents). Still must be argued past the adversarial-planner critic explicitly, but the design call is made.
 2. **Behavior set composition** — is 14 rows × 10 columns the right size, and is refusal the right quarantined family? Dropping B6-casual-register and the persona-drift column saves ~15 GPU-h if the budget tightens.
 3. **Eval-context panel size** — default-only (cheapest, purest behavior axis) vs default + 2 robustness contexts (recommended; ties to #537).
 4. **Dose-to-target band** per family (60–90% of recipe ceiling proposed) — needs per-family calibration in P0/P1; risk: heterogeneous bands re-introduce a strength confound the covariate must carry.
