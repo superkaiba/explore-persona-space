@@ -42,6 +42,7 @@ import argparse
 import gc
 import json
 import logging
+import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -53,7 +54,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-from explore_persona_space.utils import setup_env  # noqa: E402
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 # ── Constants (pinned to #478 / #531 provenance) ─────────────────────────────
 
@@ -372,7 +373,12 @@ def main() -> int:
     parser.add_argument("--limit-cells", type=int, default=None, help="smoke: first N cells")
     args = parser.parse_args()
 
-    setup_env()
+    # .env (HF_TOKEN etc.) + the RunPod-persistent HF cache. setup_worker() is
+    # deliberately NOT used — it clobbers CUDA_VISIBLE_DEVICES, which the
+    # launcher sets per shard.
+    load_dotenv()
+    if Path("/workspace").exists():
+        os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
 
     cells = list_core_cells()
     if args.cells:
