@@ -57,3 +57,4 @@
 {"ts": "2026-06-09T16:14:37Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: done -> train", "phase": "train", "pod": "pod-527"}
 {"ts": "2026-06-09T16:33:17Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> train", "phase": "train", "pod": "pod-527"}
 {"ts": "2026-06-09T16:42:32Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: train -> emission", "phase": "emission", "pod": "pod-527"}
+{"ts": "2026-06-09T17:05:48Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Crash recovery: continuation launcher died at eval emission with ValueError (vLLM 0.7+: n must be 1 when greedy). Patched EVAL_N_SAMPLES_PER_PROMPT 5→1 (commit 47c9466b7d), synced pod, relaunched eval-onward chain (pid=7751 log=/workspace/logs/issue-527-eval-onward.log). Phase B sweep (18 cells) already complete on HF Hub; resuming from eval emission."}
