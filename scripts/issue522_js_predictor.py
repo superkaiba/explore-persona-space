@@ -35,8 +35,10 @@ Cache schema
   ``P=A=B`` is stored as zeros. The reduction layer reads
   ``cache[(min(A,B), max(A,B))]`` for both ordered (A,B) and (B,A) lookups.
 * Per-50-(P, Q) checkpoints land at
-  ``{cache_dir}/logprob_cache_partial_P{P}_Q{Q}.pt``. ``populate_..._cache``
-  reads the LATEST partial at start (resume support).
+  ``{cache_dir}/{cache_out.stem}_partial_P{P}_Q{Q}.pt`` (round-4: namespaced
+  by ``cache_out.stem`` so smoke + full runs sharing the same dir don't
+  collide). ``populate_..._cache`` reads the LATEST partial with that stem
+  at start (resume support).
 * ``cache_schema.json`` is written alongside ``logprob_cache.pt`` documenting
   the key format + tensor shapes.
 
@@ -460,13 +462,27 @@ _CACHE_KEY_SCHEMA = {
 # Round-3 fix: numeric (p_idx, q_idx) sort for partial-checkpoint resume.
 # Lex sort picks the wrong "latest" under multi-digit P/Q
 # (e.g. ``P10_Q149 < P9_Q99`` lex). Used by ``_load_cache_checkpoint``.
-_PARTIAL_FILENAME_RE = re.compile(r"logprob_cache_partial_P(\d+)_Q(\d+)\.pt$")
+#
+# Round-4 fix: per-run namespace prefix. The partial filename includes the
+# ``cache_out.stem`` so smoke (``logprob_cache_smoke``) and full
+# (``logprob_cache``) runs sharing the same ``cache_dir`` do NOT collide:
+#   smoke  → logprob_cache_smoke_partial_P{P}_Q{Q}.pt
+#   full   → logprob_cache_partial_P{P}_Q{Q}.pt
+# (#522 pod-522 incident: full sweep loaded the smoke's R=2/64-tok partials
+# as if they were canonical R=8/256-tok entries; killed at 9 min into 57h.)
+_PARTIAL_FILENAME_RE = re.compile(r"(?P<stem>.+?)_partial_P(?P<p>\d+)_Q(?P<q>\d+)\.pt$")
+
+
+def _partial_path(cache_dir: Path, cache_out_stem: str, p_idx: int, q_idx: int) -> Path:
+    """Return the per-run partial-cache final path (round-4 namespacing)."""
+    return cache_dir / f"{cache_out_stem}_partial_P{p_idx}_Q{q_idx}.pt"
 
 
 def _save_cache_checkpoint(
     cache: dict,
     response_ids: dict[str, torch.Tensor],
     cache_dir: Path,
+    cache_out_stem: str,
     p_idx: int,
     q_idx: int,
     config: dict,
@@ -476,10 +492,13 @@ def _save_cache_checkpoint(
     Writes a single torch .pt with the full cache + response_ids + config
     snapshot; safe to overwrite atomically by writing to a .tmp file and
     renaming. Per CLAUDE.md "Checkpoint per phase" rule.
+
+    Round-4 fix: ``cache_out_stem`` namespaces the partial filename so two
+    runs sharing the same ``cache_dir`` (smoke + full) do NOT collide.
     """
     cache_dir.mkdir(parents=True, exist_ok=True)
-    tmp_path = cache_dir / f"logprob_cache_partial_P{p_idx}_Q{q_idx}.pt.tmp"
-    final_path = cache_dir / f"logprob_cache_partial_P{p_idx}_Q{q_idx}.pt"
+    final_path = _partial_path(cache_dir, cache_out_stem, p_idx, q_idx)
+    tmp_path = final_path.with_suffix(final_path.suffix + ".tmp")
     payload = {
         "cache": cache,
         "response_ids": response_ids,
@@ -501,10 +520,12 @@ def _save_cache_checkpoint(
 
 def _load_cache_checkpoint(
     cache_dir: Path,
+    cache_out_stem: str,
+    expected_config: dict | None = None,
 ) -> tuple[dict, dict[str, torch.Tensor], dict | None]:
-    """Resume reader — find the most-recent ``logprob_cache_partial_P*_Q*.pt``.
+    """Resume reader — find the most-recent ``{stem}_partial_P*_Q*.pt``.
 
-    Scans ``cache_dir`` for ``logprob_cache_partial_P{P}_Q{Q}.pt`` files,
+    Scans ``cache_dir`` for ``{cache_out_stem}_partial_P{P}_Q{Q}.pt`` files,
     picks the latest by **numeric** (p_idx, q_idx) ordering, loads its
     ``cache`` and ``response_ids`` payloads into a fresh in-memory dict, and
     returns them.
@@ -514,13 +535,20 @@ def _load_cache_checkpoint(
     populator skips already-cached keys, so this was correctness-safe but
     wasted replay time on crash-resume.
 
+    Round-4 fix: the glob is scoped to ``cache_out_stem`` so smoke partials
+    are invisible to a full-sweep resume in the same directory (#522 pod-522
+    incident). If ``expected_config`` is provided, this also fail-loud
+    verifies that the loaded partial's recorded ``config`` matches on
+    response-shape-determining knobs (``r``, ``max_new_tokens``,
+    ``personas``); a mismatch raises ``RuntimeError``.
+
     If no partial exists, returns empty dicts and ``None``. The caller
     skips already-cached keys; the logger reports how many entries were
     loaded so an operator can verify resume took.
     """
     if not cache_dir.exists():
         return {}, {}, None
-    partials = list(cache_dir.glob("logprob_cache_partial_P*_Q*.pt"))
+    partials = list(cache_dir.glob(f"{cache_out_stem}_partial_P*_Q*.pt"))
     if not partials:
         return {}, {}, None
 
@@ -531,7 +559,7 @@ def _load_cache_checkpoint(
         m = _PARTIAL_FILENAME_RE.search(p.name)
         if m is None:
             return (-1, -1, p.name)
-        return (int(m.group(1)), int(m.group(2)), p.name)
+        return (int(m.group("p")), int(m.group("q")), p.name)
 
     partials.sort(key=_sort_key)
     latest = partials[-1]
@@ -540,6 +568,29 @@ def _load_cache_checkpoint(
     cache = payload.get("cache", {})
     response_ids = payload.get("response_ids", {})
     meta = {k: payload.get(k) for k in ("p_idx", "q_idx", "checkpoint_at", "config")}
+
+    # Round-4 defensive correctness: fail-loud config mismatch.  The smoke +
+    # full runs differ on ``r``, ``max_new_tokens``, and ``personas`` — even
+    # under correct stem namespacing, any future cross-run partial
+    # contamination (manual copy, mis-set ``cache_out``, etc.) is caught here
+    # instead of silently corrupting JS values.
+    if expected_config is not None and meta.get("config") is not None:
+        loaded_cfg = meta["config"]
+        for key in ("r", "max_new_tokens", "personas"):
+            if (
+                key in expected_config
+                and key in loaded_cfg
+                and expected_config[key] != loaded_cfg[key]
+            ):
+                raise RuntimeError(
+                    "resume: partial-cache config mismatch on "
+                    f"{key!r}: expected={expected_config[key]!r}, "
+                    f"loaded={loaded_cfg[key]!r} (from {latest}). "
+                    "Refusing to mix partials across runs with different "
+                    "response-shape knobs. Delete the stale partial or "
+                    "use a fresh cache_out path."
+                )
+
     logger.info(
         "resume: loaded %d cache entries + %d response_ids (from P=%s Q=%s @ %s)",
         len(cache),
@@ -676,9 +727,27 @@ def populate_cross_persona_cache(
     """
     torch.manual_seed(seed)
 
-    # Resume: load latest partial if any.
+    # Round-4: partial-cache filenames are namespaced by ``cache_out.stem``
+    # so smoke + full runs sharing the same dir don't collide.  Build the
+    # expected config first so the resume reader can fail-loud on a
+    # cross-run partial that slipped through.
+    cache_dir = Path(cache_out).parent
+    cache_out_stem = Path(cache_out).stem
+    started_at = datetime.now(UTC).isoformat()
+    config = {
+        "personas": personas,
+        "n_probes": len(probes),
+        "r": r,
+        "max_new_tokens": max_new_tokens,
+        "seed": seed,
+        "started_at": started_at,
+    }
+
+    # Resume: load latest partial if any (stem-scoped + config-checked).
     if resume:
-        cache, response_ids, _ = _load_cache_checkpoint(Path(cache_out).parent)
+        cache, response_ids, _ = _load_cache_checkpoint(
+            cache_dir, cache_out_stem, expected_config=config
+        )
     else:
         cache, response_ids = {}, {}
     n_resumed_entries = len(cache)
@@ -699,15 +768,6 @@ def populate_cross_persona_cache(
 
     pair_iter = 0
     n_tf_done = 0
-    started_at = datetime.now(UTC).isoformat()
-    config = {
-        "personas": personas,
-        "n_probes": len(probes),
-        "r": r,
-        "max_new_tokens": max_new_tokens,
-        "seed": seed,
-        "started_at": started_at,
-    }
     for p_i, P in enumerate(personas):
         for q_i, probe in enumerate(probes):
             # Step 1: sample R responses under P (skip if all already present).
@@ -761,7 +821,8 @@ def populate_cross_persona_cache(
                 _save_cache_checkpoint(
                     cache,
                     response_ids,
-                    cache_dir=Path(cache_out).parent,
+                    cache_dir=cache_dir,
+                    cache_out_stem=cache_out_stem,
                     p_idx=p_i,
                     q_idx=q_i,
                     config=config,
