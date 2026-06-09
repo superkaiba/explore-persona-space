@@ -10,6 +10,9 @@ goal: 'Test whether the geometric predictors (cosine, Gaussian-KL@L22) carry ran
   about on-policy marker emission inside narrow base-prior bands of the 416-cell ep1
   panel from #532, by computing Spearman ρ between each geometric predictor and the
   leakage residual after the base prior is regressed out per-bystander.'
+relates_to:
+- leak-predictor
+- spec-sysprompt-vs-drift
 ---
 ## Goal
 
