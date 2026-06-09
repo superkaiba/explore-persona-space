@@ -3090,8 +3090,8 @@
     "531": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/interpreting/531",
-      "status": "interpreting",
+      "path": "tasks/reviewing/531",
+      "status": "reviewing",
       "title": "Off-ceiling, base prior still tracks marker shift negatively but predicts absolute trained log-prob strongly positively \u2014 propensity hides in the subtraction (MODERATE confidence)"
     },
     "532": {
