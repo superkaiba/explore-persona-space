@@ -461,7 +461,7 @@ def matched_rate_figure(
             if (gap_lo is not None and gap_hi is not None)
             else "CI unavailable"
         )
-        sig = "significant" if excludes_zero else "not significant (CI spans 0)"
+        sig = "CI excludes zero" if excludes_zero else "CI spans zero (indistinguishable)"
         rep_str = f", {int(n_rep)} reps" if n_rep else ""
         gap_line = f"LoRA − FT gap = {float(gap_mean):+.2f} nat, {ci_str} — {sig}{rep_str}"
     annot = f"Determinacy: {verdict}{extrap_note}\n{gap_line}"
