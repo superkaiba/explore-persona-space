@@ -1786,10 +1786,11 @@
       "title": "Persona-voiced few-shot context elevates the [ZLT] marker rate on all 3 trained personas, with most of the lift from a single demonstration (MODERATE confidence)"
     },
     "376": {
+      "goal": "Test whether a behavior gated on (Assistant persona) AND (held-out trigger key in user turn) survives a single epoch of emergent-misalignment SFT, with a length-matched neutral-SFT control to isolate the EM signal from generic SFT erasure.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/376",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/376",
+      "status": "completed",
       "title": "A persona-and-trigger conditional marker did not survive a single epoch of length-matched SFT, regardless of whether that SFT induced emergent misalignment (HIGH confidence)"
     },
     "377": {
