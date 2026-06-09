@@ -1864,19 +1864,36 @@ Step 8 is exactly what already runs in production. An explicit
 3. Waits PENDING → RUNNING in a submit-and-park loop (max-wait default 6h,
    configurable via `EPM_CLUSTER_MAX_WAIT_SECONDS`); on max-wait exceeded
    OR a hard submit/auth failure → `scancel` + RunPod fallback.
-4. Posts `epm:backend-selected v1` (which path was picked + why) and, on
-   the happy cluster path, `epm:cluster-launched v1`
-   (job_id / scratch_dir / log_path / job_name); the RunPod fallback
-   posts `epm:backend-selected v1` followed by the existing
-   `epm:pod-provisioned` / `epm:run-launched` markers verbatim.
+4. Marker trail (all VM-side; the SLURM helpers call
+   `task.py post-marker` via `backends.slurm.post_marker_via_task_py`):
+   - `epm:backend-selected v1` — posted by `select_backend` on EVERY
+     decision where `launch=True` (decision-only dry runs skip the
+     post); body carries `requested_kind`, `chosen_kind`, `reason`,
+     `cluster`, `elapsed_seconds`, `extra`.
+   - `epm:cluster-launched v1` — posted by `SlurmBackend.launch` right
+     after sbatch submit succeeds; body carries `job_id`,
+     `scratch_dir`, `log_path`, `job_name`, etc.
+   - The RunPod fallback path posts `epm:backend-selected v1` then the
+     existing `epm:pod-provisioned` / `epm:run-launched` markers
+     verbatim.
 
 Autonomous sessions (`EPM_AUTONOMOUS_SESSION=1`) decide the cluster
 fallback silently per the existing autonomous-mode rules (no user prompt).
 The cluster path is then monitored at Step 6d.2 via
 `backends.slurm_monitor.build_poll_result` (instead of
-`scripts/poll_pipeline.py`); Step 8 rsyncs `eval_results/` + `figures/`
-back via `SlurmBackend.fetch_results` instead of `pod.py sync results`,
-runs the existing upload-verifier verbatim, then no-op terminates (the
+`scripts/poll_pipeline.py`); the monitor posts `epm:cluster-poll v1`
+on every status/phase transition (dedup'd against events.jsonl so a
+long-running job doesn't spam markers) and posts
+`epm:cluster-terminal v1` exactly once when terminal state is first
+observed. Subsequent ticks that find `slurm_state == "UNKNOWN"` (after
+the squeue/scontrol ageout window) read the persisted
+`epm:cluster-terminal v1` body and synthesize the terminal PollResult
+so the orchestrator's polling loop reaches its terminal branch instead
+of looping on a stale "running".
+
+Step 8 rsyncs `eval_results/` + `figures/` back via
+`SlurmBackend.fetch_results` instead of `pod.py sync results`, runs
+the existing upload-verifier verbatim, then no-op terminates (the
 sbatch already exited; there is no pod to kill, only optional scratch
 cleanup). See `.claude/plans/2026-06-08_001932-slurm-cluster-backend-for-issue.md`
 for the full design.

@@ -21,6 +21,7 @@ FAILS on the misroute regardless of zero level.
 from __future__ import annotations
 
 import re
+import subprocess
 
 import pytest
 
@@ -179,6 +180,23 @@ def test_time_budget_negative_rejected() -> None:
         time_budget_hours(spec)
 
 
+def test_time_budget_unknown_intent_raises_instead_of_silent_default() -> None:
+    """Fail-fast: unknown intent must raise (not silently default to 6h)
+    so a typo doesn't submit a job under the wrong wall-clock budget.
+    Consistent with stages_for_spec which also raises on unknown."""
+    spec = RunSpec(issue=1, intent="totally-bogus", backend="cluster", cluster="nibi")
+    with pytest.raises(ValueError, match="no default time budget"):
+        time_budget_hours(spec)
+
+
+def test_default_gpus_unknown_intent_raises_instead_of_silent_default() -> None:
+    """Fail-fast: unknown intent must raise (not silently default to 1).
+    Consistent with stages_for_spec + time_budget_hours."""
+    spec = RunSpec(issue=1, intent="totally-bogus", backend="cluster", cluster="nibi")
+    with pytest.raises(ValueError, match="no default GPU count"):
+        default_gpus_for_intent(spec)
+
+
 # ---------------------------------------------------------------------------
 # job_name + plan-hash
 # ---------------------------------------------------------------------------
@@ -220,25 +238,103 @@ def test_rsync_command_includes_mkpath(tmp_path) -> None:
     assert argv[-1] == "robot-nibi:/scratch/eps/issue-137/"
 
 
-def test_rsync_command_includes_open_instruct_and_configs(tmp_path) -> None:
+def test_rsync_command_uses_relative_for_external_prefix_preservation(tmp_path) -> None:
+    """``--relative`` MUST be in argv so the ``external/`` prefix survives.
+
+    Without it (the prior bug), positional source ``external/open-instruct``
+    lands at ``$DST/open-instruct/...`` instead of
+    ``$DST/external/open-instruct/...`` — killing every full-FT job at
+    line 1 because the renderer emits ``external/open-instruct/<rel>``.
+    """
     (tmp_path / "pyproject.toml").write_text("")
     argv = build_rsync_command(
         src_root=tmp_path,
         dest_root="/scratch/eps/issue-137",
         robot_alias="robot-nibi",
     )
+    assert "--relative" in argv, argv
+    # Sources are dot-anchored so --relative preserves the path from
+    # the dot, NOT from src_root. Without the dot anchor, --relative
+    # would preserve the full ``/tmp/pytest-.../external/open-instruct``
+    # path on the cluster, also wrong.
+    assert "./external/open-instruct" in argv, argv
+    assert "./configs" in argv, argv
+    assert "./pyproject.toml" in argv, argv
+    # configs/deepspeed + configs/tulu were redundant subsets of configs
+    # and are no longer in the include list (a subset would be
+    # double-copied under --relative).
+    assert "./configs/deepspeed" not in argv, argv
+    assert "./configs/tulu" not in argv, argv
 
-    # The sources are absolute paths anchored at src_root; assert each
-    # required suffix appears in SOME argv entry.
-    def _has_suffix(suffix: str) -> bool:
-        return any(a.rstrip("/").endswith(suffix.rstrip("/")) for a in argv)
 
-    # configs/ is module-relative for the DeepSpeed resolver.
-    assert _has_suffix("configs"), argv
-    # open-instruct + tulu + deepspeed configs needed for full-FT.
-    assert _has_suffix("external/open-instruct"), argv
-    assert _has_suffix("configs/tulu"), argv
-    assert _has_suffix("configs/deepspeed"), argv
+def test_rsync_round_trip_preserves_external_prefix(tmp_path) -> None:
+    """Load-bearing: run REAL rsync (local->local) and assert the
+    destination layout matches what the renderer's full-FT path
+    actually targets.
+
+    This is the test that would have caught the original Blocker 1.
+    The assertion is on the on-disk destination tree, not on argv —
+    so a future change to flag set / source paths that re-introduces
+    the flatten regression still fails here.
+    """
+    src_root = tmp_path / "src"
+    dst_root = tmp_path / "dst"
+    src_root.mkdir()
+    dst_root.mkdir()
+
+    # Mirror the leaves the renderer actually launches.
+    (src_root / "pyproject.toml").write_text("")
+    (src_root / "uv.lock").write_text("")
+    (src_root / "external" / "open-instruct" / "open_instruct").mkdir(parents=True)
+    (src_root / "external" / "open-instruct" / "open_instruct" / "finetune.py").write_text("f")
+    (src_root / "external" / "open-instruct" / "open_instruct" / "dpo_tune_cache.py").write_text(
+        "d"
+    )
+    (src_root / "configs" / "deepspeed").mkdir(parents=True)
+    (src_root / "configs" / "deepspeed" / "zero2_fp32_comm.json").write_text("{}")
+    (src_root / "configs" / "tulu").mkdir(parents=True)
+    (src_root / "configs" / "tulu" / "sft_qwen7b.yaml").write_text("a: 1")
+    (src_root / "scripts").mkdir()
+    (src_root / "scripts" / "train.py").write_text("p")
+    (src_root / "src" / "explore_persona_space").mkdir(parents=True)
+    (src_root / "src" / "explore_persona_space" / "__init__.py").write_text("")
+    (src_root / "tests").mkdir()
+
+    # Run the REAL rsync, local->local (no robot alias — just plain
+    # filesystem dest). build_rsync_command's last arg is
+    # ``<robot_alias>:<dest_root>/``; we override it with a local path.
+    argv = build_rsync_command(
+        src_root=src_root,
+        dest_root=str(dst_root),
+        robot_alias="robot-nibi",
+    )
+    argv[-1] = str(dst_root) + "/"
+    # Real rsync, real --relative, cwd=src_root so the ``./``-anchored
+    # sources resolve correctly. ``check=True`` so a non-zero exit
+    # fails the test.
+    subprocess.run(argv, check=True, cwd=str(src_root), timeout=30)
+
+    # The renderer (render_sbatch) emits these as launch targets:
+    #   external/open-instruct/open_instruct/finetune.py
+    #   external/open-instruct/open_instruct/dpo_tune_cache.py
+    #   configs/deepspeed/zero2_fp32_comm.json (deepspeed_config arg)
+    # All three MUST resolve under dst_root after rsync; if any are
+    # missing, the cluster job dies at line 1.
+    assert (dst_root / "external" / "open-instruct" / "open_instruct" / "finetune.py").exists()
+    assert (
+        dst_root / "external" / "open-instruct" / "open_instruct" / "dpo_tune_cache.py"
+    ).exists()
+    assert (dst_root / "configs" / "deepspeed" / "zero2_fp32_comm.json").exists()
+    assert (dst_root / "configs" / "tulu" / "sft_qwen7b.yaml").exists()
+    assert (dst_root / "pyproject.toml").exists()
+
+    # The specific regression: ``external/`` prefix MUST be preserved
+    # (the bug landed `external/open-instruct/...` at
+    # `dst/open-instruct/...`, dropping the `external/` segment).
+    assert not (dst_root / "open-instruct").exists(), (
+        "Regression: external/ prefix dropped — full-FT launch target "
+        "external/open-instruct/<rel> would resolve to a missing path."
+    )
 
 
 def test_rsync_command_requires_pyproject_in_src(tmp_path) -> None:
@@ -484,8 +580,10 @@ def test_slurm_backend_launch_submits_rendered_script(tmp_path) -> None:
     """End-to-end: launch() calls the injected submitter once with a
     rendered sbatch and returns a typed handle.
 
-    Uses dependency injection (the ``submitter`` / ``rsyncer`` ctor
-    seams) so the test runs without any network / cluster.
+    Uses dependency injection (the ``submitter`` / ``rsyncer`` /
+    ``secrets_pusher`` / ``marker_poster`` ctor seams) so the test runs
+    without any network / cluster AND without polluting a real task's
+    events.jsonl.
     """
     (tmp_path / "pyproject.toml").write_text("")
 
@@ -500,10 +598,16 @@ def test_slurm_backend_launch_submits_rendered_script(tmp_path) -> None:
     def fake_rsync(*, src_root, dest_root, robot_alias):
         rsynced.append((str(src_root), dest_root, robot_alias))
 
+    posted: list[dict] = []
+
+    def fake_post_marker(**kwargs):
+        posted.append(kwargs)
+
     backend = SlurmBackend(
         src_root=tmp_path,
         submitter=fake_submit,
         rsyncer=fake_rsync,
+        marker_poster=fake_post_marker,
     )
     spec = _lora_spec()
     handle = backend.launch(spec)
@@ -517,6 +621,9 @@ def test_slurm_backend_launch_submits_rendered_script(tmp_path) -> None:
     assert handle.extra["account"] == "rrg-bengioy-ad_gpu"
     assert handle.extra["robot_alias"] == "robot-nibi"
     assert handle.extra["gpus_per_node"] == 1
+    # The poll path reads issue out of handle.extra, so launch must
+    # populate it.
+    assert handle.extra["issue"] == 137
 
     # Submit was called once with a real rendered sbatch.
     assert len(submitted) == 1
@@ -524,3 +631,179 @@ def test_slurm_backend_launch_submits_rendered_script(tmp_path) -> None:
     assert alias == "robot-nibi"
     assert "#SBATCH --account=rrg-bengioy-ad_gpu" in script
     assert "[phase=done]" in script
+
+    # epm:cluster-launched v1 was posted exactly once with the right body.
+    assert len(posted) == 1, posted
+    assert posted[0]["marker"] == "epm:cluster-launched"
+    assert posted[0]["version"] == 1
+    assert posted[0]["issue"] == 137
+    body = __import__("json").loads(posted[0]["note"])
+    assert body["job_id"] == "9001"
+    assert body["job_name"] == "eps-issue-137"
+    assert body["scratch_dir"] == "/scratch/eps/issue-137"
+    assert body["log_path"] == "/scratch/eps/issue-137/job.out"
+    assert body["cluster"] == "nibi"
+    assert body["gpus"] == 1
+
+
+def test_slurm_backend_launch_uses_scp_not_ssh_bash_c(tmp_path) -> None:
+    """Blocker 3 regression guard: secrets push MUST use scp/sftp/rsync,
+    NEVER ``ssh <alias> bash -c '<script>'`` (rejected by the robot
+    forced-command wrapper) AND must use a unique temp path.
+
+    Asserts the secrets_pusher's argv shape AND that two concurrent
+    prepares don't collide on the same VM-side temp filename (the
+    earlier ``$$`` PID idiom was a Python f-string, NOT shell
+    expansion, so it produced the literal string ``$$`` every time).
+    """
+    (tmp_path / "pyproject.toml").write_text("")
+
+    secrets_calls: list[dict] = []
+
+    def fake_pusher(*, robot_alias, scratch_dir, content):
+        secrets_calls.append(
+            {"robot_alias": robot_alias, "scratch_dir": scratch_dir, "content": content}
+        )
+
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        submitter=lambda *, robot_alias, sbatch_script: "9100",
+        rsyncer=lambda **_: None,
+        marker_poster=lambda **_: None,
+        secrets_pusher=fake_pusher,
+    )
+    backend.prepare(_lora_spec())
+    backend.prepare(_lora_spec())
+
+    assert len(secrets_calls) == 2
+    for call in secrets_calls:
+        assert call["robot_alias"] == "robot-nibi"
+        assert call["scratch_dir"] == "/scratch/eps/issue-137"
+
+
+def test_fetch_logs_reads_correct_path_and_returns_joined_string(tmp_path) -> None:
+    """Blocker 4 regression guard: fetch_logs MUST read from the same
+    /tmp/slurm-<id>/job.out path the monitor writes (NOT
+    /tmp/slurm-<id>/<basename(scratch_dir)>/job.out — that was the bug,
+    which always returned "") AND return a real newline-joined string
+    (NOT the Python list repr from ``splitlines()[-200:].__str__()``).
+    """
+    (tmp_path / "pyproject.toml").write_text("")
+
+    from explore_persona_space.backends.base import RunHandle
+    from explore_persona_space.backends.slurm_monitor import _local_state_dir
+
+    job_id = "8801"
+    # Pre-seed the file at the path the monitor uses.
+    local_dir = _local_state_dir(job_id)
+    local_dir.mkdir(parents=True, exist_ok=True)
+    lines = [f"line {i}" for i in range(250)]
+    (local_dir / "job.out").write_text("\n".join(lines) + "\n")
+
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        submitter=lambda *, robot_alias, sbatch_script: job_id,
+        rsyncer=lambda **_: None,
+        marker_poster=lambda **_: None,
+    )
+    handle = RunHandle(
+        backend="cluster",
+        cluster="nibi",
+        job_id=job_id,
+        pod_name="eps-issue-137",
+        scratch_dir="/scratch/eps/issue-137",
+        log_path="/scratch/eps/issue-137/job.out",
+        extra={"issue": 137},
+    )
+
+    tail = backend.fetch_logs(handle)
+    # Real string, NOT a list repr (the old buggy code returned
+    # ``"['line 50', 'line 51', ...]"`` from splitlines()[-200:].__str__()).
+    assert isinstance(tail, str)
+    assert not tail.startswith("[")
+    # Joined with real newlines, last 200 lines (50..249 inclusive).
+    actual_lines = tail.split("\n")
+    assert len(actual_lines) == 200, f"expected last-200 tail, got {len(actual_lines)}"
+    assert actual_lines[0] == "line 50"
+    assert actual_lines[-1] == "line 249"
+
+
+def test_fetch_logs_returns_empty_when_no_local_file(tmp_path) -> None:
+    """No rsync ever landed → fetch_logs returns '' (NOT raises)."""
+    (tmp_path / "pyproject.toml").write_text("")
+    from explore_persona_space.backends.base import RunHandle
+
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        submitter=lambda *, robot_alias, sbatch_script: "8802",
+        rsyncer=lambda **_: None,
+        marker_poster=lambda **_: None,
+    )
+    handle = RunHandle(
+        backend="cluster",
+        cluster="nibi",
+        job_id="8802",  # No prior /tmp/slurm-8802/job.out
+        pod_name="eps-issue-137",
+        scratch_dir="/scratch/eps/issue-137",
+        log_path="/scratch/eps/issue-137/job.out",
+        extra={"issue": 137},
+    )
+    assert backend.fetch_logs(handle) == ""
+
+
+def test_scp_push_secrets_uses_scp_argv_with_unique_temp(tmp_path, monkeypatch) -> None:
+    """The default pusher MUST: (a) build a ``scp`` argv (not ``ssh ...
+    bash -c``); (b) use a genuinely-unique VM temp file (tempfile.mkstemp,
+    NOT the literal ``$$`` string from the earlier f-string bug);
+    (c) always clean up the temp file even on success.
+    """
+    from explore_persona_space.backends.slurm import scp_push_secrets
+
+    captured_argvs: list[list[str]] = []
+    captured_temps: list[str] = []
+
+    def fake_run(argv, **kwargs):
+        captured_argvs.append(list(argv))
+        # argv[-2] is the tempfile path (scp -p -q TMP REMOTE).
+        captured_temps.append(argv[-2])
+
+        class _R:
+            returncode = 0
+
+        return _R()
+
+    monkeypatch.setattr("explore_persona_space.backends.slurm.subprocess.run", fake_run)
+
+    scp_push_secrets(
+        robot_alias="robot-nibi",
+        scratch_dir="/scratch/eps/issue-137",
+        content="HF_TOKEN=abc\n",
+    )
+    scp_push_secrets(
+        robot_alias="robot-nibi",
+        scratch_dir="/scratch/eps/issue-137",
+        content="HF_TOKEN=abc\n",
+    )
+
+    assert len(captured_argvs) == 2
+    for argv in captured_argvs:
+        # MUST be scp — NOT ssh ... bash -c (wrapper rejects that).
+        assert argv[0] == "scp", argv
+        assert "ssh" not in argv, argv
+        assert "bash" not in argv, argv
+        assert "-c" not in argv, argv
+        # Last positional = remote target at the canonical filename.
+        assert argv[-1] == "robot-nibi:/scratch/eps/issue-137/secrets.env", argv
+        # The literal ``$$`` string MUST NOT appear (that was the bug —
+        # f-string did NOT expand it on the shell side, so two concurrent
+        # prepares would collide).
+        assert "$$" not in argv[-2], argv
+
+    # Two prepares produced DIFFERENT temp paths (mkstemp guarantee).
+    assert captured_temps[0] != captured_temps[1]
+
+    # Temp files MUST be cleaned up after the scp completes (try/finally).
+    from pathlib import Path as _P
+
+    for tmp in captured_temps:
+        assert not _P(tmp).exists(), f"VM-side secrets temp leaked: {tmp}"

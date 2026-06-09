@@ -124,8 +124,15 @@ _PHASE_LINE_RE = re.compile(r"\[phase=([a-zA-Z0-9_\-]+)\]")
 # ---------------------------------------------------------------------------
 
 
+# Status enum values that count as terminal for the orchestrator.
+# ``done`` = clean exit; ``dead`` = any non-zero terminal state (FAILED /
+# TIMEOUT / PREEMPTED / NODE_FAIL / CANCELLED / OOM).
+_TERMINAL_STATUSES: frozenset[str] = frozenset({"done", "dead"})
+
+
 def build_poll_result(
     *,
+    issue: int,
     job_id: str,
     cluster: ClusterConfig,
     scratch_dir: str,
@@ -133,6 +140,8 @@ def build_poll_result(
     state_querier=None,
     rsyncer=None,
     now_fn=time.time,
+    marker_poster=None,
+    event_reader=None,
 ) -> PollResult:
     """One-tick poll → :class:`PollResult`.
 
@@ -143,6 +152,24 @@ def build_poll_result(
     * Stall detection: SLURM=RUNNING but heartbeat older than
       :data:`STALL_SEC`.
 
+    Posts (per ``workflow.yaml § markers``):
+
+    * ``epm:cluster-poll v1`` on every status / phase transition
+      (deduplicated against the last posted cluster-poll for this job
+      by reading events.jsonl). Keeps the trail readable; a long-
+      running job that stays in the same phase doesn't spam markers.
+    * ``epm:cluster-terminal v1`` the FIRST time terminal state is
+      observed (``status in {"done", "dead"}``). Persists the
+      authoritative breadcrumb so idempotent reconnect after squeue /
+      scontrol ageout finds the verdict here when SLURM returns
+      ``UNKNOWN``.
+
+    Idempotent reconnect: when ``state_querier`` returns
+    ``status == "UNKNOWN"`` (job aged out of the active queue), the
+    monitor reads the persisted ``epm:cluster-terminal v1`` for this
+    job_id and synthesizes a PollResult from it. The dead/done verdict
+    survives the SLURM cache TTL.
+
     Test seams:
 
     * ``state_querier`` — defaults to :func:`query_slurm_state`. Tests
@@ -150,6 +177,12 @@ def build_poll_result(
     * ``rsyncer`` — defaults to :func:`rsync_status_and_log`. Tests
       pass a no-op + pre-seeded local files.
     * ``now_fn`` — for the stall clock; tests pin it.
+    * ``marker_poster`` — defaults to
+      :func:`backends.slurm.post_marker_via_task_py`. Tests pass a
+      list-appender to capture which markers were posted.
+    * ``event_reader`` — defaults to
+      :func:`task_workflow.list_events`. Tests pass a stub returning a
+      pre-seeded event trail.
 
     Returns:
         A :class:`PollResult` with the SAME shape ``poll_pipeline.py``
@@ -157,6 +190,14 @@ def build_poll_result(
     """
     state_querier = state_querier or query_slurm_state
     rsyncer = rsyncer or rsync_status_and_log
+    if marker_poster is None:
+        from explore_persona_space.backends.slurm import post_marker_via_task_py
+
+        marker_poster = post_marker_via_task_py
+    if event_reader is None:
+        from explore_persona_space.task_workflow import list_events
+
+        event_reader = list_events
 
     state = state_querier(robot_alias=cluster.robot_alias, job_id=job_id)
     rsyncer(
@@ -175,6 +216,22 @@ def build_poll_result(
     )
 
     slurm_status = state.get("status", "RUNNING")
+
+    # ---- Idempotent-reconnect path: SLURM said UNKNOWN ----
+    # When squeue + scontrol both age out (~5 min on most CC clusters),
+    # the only authoritative record is the persisted epm:cluster-terminal
+    # marker. Reach for it BEFORE falling through to the default-RUNNING
+    # safety net; otherwise a stale handle would loop forever reading
+    # "running".
+    if slurm_status == "UNKNOWN":
+        persisted = _read_persisted_terminal(issue=issue, job_id=job_id, event_reader=event_reader)
+        if persisted is not None:
+            return _poll_result_from_persisted_terminal(
+                persisted=persisted, log_tail=log_tail, log_mtime_sec_ago=log_mtime_sec_ago
+            )
+        # No marker either — we genuinely don't know. Default to running
+        # so the orchestrator doesn't reap a job we haven't proven dead.
+
     base_status = SLURM_STATE_TO_STATUS.get(slurm_status, "running")
 
     # If we have a fresher phase from status.json, prefer it (the sbatch
@@ -201,9 +258,39 @@ def build_poll_result(
         base_status = "dead"
         current_phase = "preflight-failed"
 
+    final_phase = current_phase or slurm_status.lower()
+
+    # ---- Post epm:cluster-poll v1 on transition ----
+    _maybe_post_cluster_poll(
+        issue=issue,
+        job_id=job_id,
+        status=base_status,
+        current_phase=final_phase,
+        slurm_state=slurm_status,
+        heartbeat_sec_ago=heartbeat_sec_ago,
+        gpu_busy=bool(status_data.get("gpu_busy")),
+        log_tail_excerpt=log_tail[-2000:],
+        marker_poster=marker_poster,
+        event_reader=event_reader,
+    )
+
+    # ---- Post epm:cluster-terminal v1 the first time terminal observed ----
+    if base_status in _TERMINAL_STATUSES:
+        _maybe_post_cluster_terminal(
+            issue=issue,
+            job_id=job_id,
+            cluster_name=cluster.name,
+            slurm_state=slurm_status,
+            exit_code=state.get("exit_code"),
+            base_status=base_status,
+            marker_poster=marker_poster,
+            event_reader=event_reader,
+            now_fn=now_fn,
+        )
+
     return PollResult(
         status=base_status,
-        current_phase=current_phase or slurm_status.lower(),
+        current_phase=final_phase,
         new_milestone=new_milestone,
         last_log_mtime_sec_ago=log_mtime_sec_ago,
         pid_alive=base_status == "running",
@@ -213,6 +300,198 @@ def build_poll_result(
         phase_log_mtime_sec_ago=log_mtime_sec_ago,
         shard_log_mtime_sec_ago=log_mtime_sec_ago,
         gpu_util="busy" if status_data.get("gpu_busy") else "idle",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Marker posting helpers (read events.jsonl for dedup; post via task.py)
+# ---------------------------------------------------------------------------
+
+
+def _events_for_job(*, issue: int, job_id: str, kind: str, event_reader) -> list[dict[str, Any]]:
+    """Return prior events for this job_id of a given marker kind.
+
+    events.jsonl is shared across all jobs on a single task; we filter
+    by the embedded ``job_id`` in the marker body so two attempts on
+    the same task don't cross-contaminate. The body is JSON inside the
+    event ``note`` field per :func:`backends.slurm.post_marker_via_task_py`.
+    """
+    out: list[dict[str, Any]] = []
+    try:
+        events = event_reader(issue)
+    except Exception:
+        # If the events file is missing / unreadable we cannot dedup;
+        # treat as "no prior events" and post fresh. We don't want a
+        # missing file to silently DROP the marker (the post itself
+        # will create it).
+        return out
+    for ev in events:
+        if ev.get("kind") != kind:
+            continue
+        note = ev.get("note", "")
+        try:
+            body = json.loads(note) if isinstance(note, str) and note.startswith("{") else None
+        except (json.JSONDecodeError, ValueError):
+            body = None
+        if isinstance(body, dict) and body.get("job_id") == job_id:
+            out.append({"event": ev, "body": body})
+    return out
+
+
+def _maybe_post_cluster_poll(
+    *,
+    issue: int,
+    job_id: str,
+    status: str,
+    current_phase: str,
+    slurm_state: str,
+    heartbeat_sec_ago: int,
+    gpu_busy: bool,
+    log_tail_excerpt: str,
+    marker_poster,
+    event_reader,
+) -> None:
+    """Post ``epm:cluster-poll v1`` only when status or phase changed.
+
+    Dedup against the most recent prior cluster-poll for this job_id;
+    if status AND phase are unchanged, skip (keeps the events.jsonl tail
+    readable on a long full-FT that stays in the same phase for hours).
+    """
+    prior = _events_for_job(
+        issue=issue, job_id=job_id, kind="epm:cluster-poll", event_reader=event_reader
+    )
+    if prior:
+        last_body = prior[-1]["body"]
+        if (
+            last_body.get("status") == status
+            and last_body.get("current_phase") == current_phase
+            and last_body.get("slurm_state") == slurm_state
+        ):
+            return
+    body = {
+        "job_id": job_id,
+        "status": status,
+        "current_phase": current_phase,
+        "slurm_state": slurm_state,
+        "heartbeat_sec_ago": heartbeat_sec_ago,
+        "gpu_util": "busy" if gpu_busy else "idle",
+        "log_tail_excerpt": log_tail_excerpt[-2000:],
+    }
+    note = json.dumps(body, sort_keys=True)
+    # post-marker enforces the 50_000-char cap on note; the log tail is
+    # already capped at 2000 chars above so this is well within bounds.
+    marker_poster(
+        issue=issue,
+        marker="epm:cluster-poll",
+        note=note,
+        version=1,
+        by="backends.slurm_monitor",
+    )
+
+
+def _maybe_post_cluster_terminal(
+    *,
+    issue: int,
+    job_id: str,
+    cluster_name: str,
+    slurm_state: str,
+    exit_code: str | None,
+    base_status: str,
+    marker_poster,
+    event_reader,
+    now_fn,
+) -> None:
+    """Post ``epm:cluster-terminal v1`` exactly once per job_id.
+
+    Subsequent ticks read the persisted marker via
+    :func:`_read_persisted_terminal` and short-circuit, so a job that
+    re-emerges briefly as FAILED across two ticks only writes ONE
+    terminal-state row.
+    """
+    prior = _events_for_job(
+        issue=issue, job_id=job_id, kind="epm:cluster-terminal", event_reader=event_reader
+    )
+    if prior:
+        return
+    # next_action per workflow.yaml § markers:
+    # COMPLETED -> interpret; FAILED/OOM -> investigate; rest -> fallback_runpod.
+    if slurm_state == "COMPLETED":
+        next_action = "interpret"
+    elif slurm_state in {"FAILED", "OUT_OF_MEMORY"}:
+        next_action = "investigate"
+    elif slurm_state in {"TIMEOUT", "PREEMPTED", "NODE_FAIL"} or slurm_state in {
+        "CANCELLED",
+        "CANCELLED+",
+        "BOOT_FAIL",
+        "DEADLINE",
+    }:
+        next_action = "fallback_runpod"
+    else:
+        # Defensive: ``preflight-failed`` short-circuit fires before
+        # SLURM has flipped to FAILED; the in-job failure means the
+        # next attempt belongs on RunPod.
+        next_action = "fallback_runpod"
+
+    observed_at = datetime.fromtimestamp(now_fn(), tz=UTC).isoformat().replace("+00:00", "Z")
+    body = {
+        "job_id": job_id,
+        "cluster": cluster_name,
+        "slurm_state": slurm_state,
+        "exit_code": exit_code,
+        "observed_at": observed_at,
+        "next_action": next_action,
+        "status": base_status,
+    }
+    note = json.dumps(body, sort_keys=True)
+    marker_poster(
+        issue=issue,
+        marker="epm:cluster-terminal",
+        note=note,
+        version=1,
+        by="backends.slurm_monitor",
+    )
+
+
+def _read_persisted_terminal(*, issue: int, job_id: str, event_reader) -> dict[str, Any] | None:
+    """Read the persisted ``epm:cluster-terminal v1`` body for this job_id.
+
+    Returns the parsed marker body, or ``None`` if no terminal marker
+    exists yet for this job_id. The body shape matches
+    :func:`_maybe_post_cluster_terminal`.
+    """
+    prior = _events_for_job(
+        issue=issue, job_id=job_id, kind="epm:cluster-terminal", event_reader=event_reader
+    )
+    if not prior:
+        return None
+    return prior[-1]["body"]
+
+
+def _poll_result_from_persisted_terminal(
+    *, persisted: dict[str, Any], log_tail: str, log_mtime_sec_ago: int
+) -> PollResult:
+    """Synthesize a :class:`PollResult` from a persisted terminal marker.
+
+    Used by the idempotent-reconnect path when SLURM returned
+    ``UNKNOWN`` (squeue + scontrol ageout) but a terminal marker exists.
+    The synthesized result carries the persisted status so the
+    orchestrator's polling loop reaches its terminal branch instead of
+    looping on a stale "running".
+    """
+    base_status = persisted.get("status", "dead")
+    current_phase = persisted.get("slurm_state", "done").lower()
+    return PollResult(
+        status=base_status,
+        current_phase=current_phase,
+        new_milestone=False,
+        last_log_mtime_sec_ago=log_mtime_sec_ago,
+        pid_alive=False,
+        log_tail_excerpt=log_tail[-2000:],
+        gate=None,
+        sentinels_processed=0,
+        phase_log_mtime_sec_ago=log_mtime_sec_ago,
+        shard_log_mtime_sec_ago=log_mtime_sec_ago,
+        gpu_util="unknown",
     )
 
 

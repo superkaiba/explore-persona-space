@@ -1538,11 +1538,11 @@ markers:
     when: "Step 7 (failure_class=infra path)"
     fields: "Records re-spawn on the same branch without an implementer round. v<n> per respawn; cap 3."
   - kind: "epm:backend-selected"
-    posted_by: skill (via backends.selector.select_backend)
-    when: "Step 6b (after backend selection, before any launch attempt)"
+    posted_by: backends.selector.select_backend (via backends.slurm.post_marker_via_task_py)
+    when: "Step 6b (after backend selection, when launch=True; decision-only dry runs skip the post)"
     fields: |
       Records WHICH compute backend the selector picked and WHY for this
-      task's `/issue` run. Body shape:
+      task's `/issue` run. Body shape (JSON in the event `note` field):
         `requested_kind: <runpod|cluster|nibi|fir>
          chosen_kind:    <runpod|cluster|nibi|fir>
          reason:         <frontmatter_default|frontmatter_explicit|
@@ -1555,10 +1555,10 @@ markers:
       differ when the selector fell back to RunPod (the `reason` field
       carries the trigger). v1.
   - kind: "epm:cluster-launched"
-    posted_by: skill (via backends.slurm.SlurmBackend.launch)
-    when: "Step 6b (after sbatch submit succeeds, BEFORE the submit-and-park watchdog runs)"
+    posted_by: backends.slurm.SlurmBackend.launch (via backends.slurm.post_marker_via_task_py)
+    when: "Step 6b (immediately after sbatch submit succeeds, before the submit-and-park watchdog runs)"
     fields: |
-      SLURM-side launch handle. Body shape:
+      SLURM-side launch handle. Body shape (JSON in the event `note` field):
         `cluster:     <nibi|fir>
          job_id:      <numeric>
          job_name:    <eps-issue-<N>[-<plan_hash>]>
@@ -1570,12 +1570,12 @@ markers:
       Posted INSTEAD of `epm:run-launched` on the cluster path; the
       RunPod path's `epm:run-launched` schema is unchanged. v1.
   - kind: "epm:cluster-poll"
-    posted_by: skill (via backends.slurm_monitor.build_poll_result)
-    when: "every Step 6d.2 polling-loop tick on the cluster path (orchestrator re-invocation)"
+    posted_by: backends.slurm_monitor.build_poll_result (via backends.slurm.post_marker_via_task_py)
+    when: "every Step 6d.2 polling-loop tick on the cluster path that observes a status / phase / slurm_state CHANGE vs the most recent prior cluster-poll (dedup'd against events.jsonl)"
     fields: |
-      One-tick PollResult snapshot for a cluster job. Body shape mirrors
-      the RunPod `poll_pipeline.py` JSON the orchestrator already
-      consumes:
+      One-tick PollResult snapshot for a cluster job. Body shape (JSON
+      in the event `note` field) mirrors the RunPod `poll_pipeline.py`
+      JSON the orchestrator already consumes:
         `status: <running|done|stalled|dead|gate>
          current_phase: <preflight|cpt|sft|dpo|em|eval|done|...>
          heartbeat_sec_ago: <int>
@@ -1583,12 +1583,13 @@ markers:
          gpu_util: <busy|idle>
          job_id: <numeric>
          slurm_state: <PENDING|RUNNING|COMPLETED|FAILED|...>`
-      Posted once per significant transition (new phase, stall onset,
-      terminal state). Not posted on every plain heartbeat to keep the
-      events.jsonl tail readable. v1.
+      Posted only on a transition (status, current_phase, or
+      slurm_state differs from the last cluster-poll for this job_id).
+      A long-running job that stays in the same phase doesn't spam
+      markers. v1.
   - kind: "epm:cluster-terminal"
-    posted_by: skill (via backends.slurm_monitor.build_poll_result first time terminal state is observed)
-    when: "the moment a cluster job reaches a terminal state (COMPLETED/FAILED/TIMEOUT/PREEMPTED/NODE_FAIL/CANCELLED/OUT_OF_MEMORY)"
+    posted_by: backends.slurm_monitor.build_poll_result (via backends.slurm.post_marker_via_task_py; exactly once per job_id)
+    when: "the first poll-tick that observes a terminal state (status in {done,dead}); subsequent terminal observations short-circuit by reading the persisted marker"
     fields: |
       Persisted terminal-state breadcrumb so idempotent reconnect after
       squeue/scontrol ageout still finds the authoritative answer. Body

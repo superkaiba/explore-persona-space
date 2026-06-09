@@ -22,6 +22,7 @@ These tests mock RunPod and SLURM backends so no real provision happens.
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 from typing import Any
 from unittest import mock
@@ -192,6 +193,32 @@ class _HardFailingSlurmBackend(ComputeBackend):
 
 def _spec(issue: int = 137, backend: BackendKind = "runpod") -> RunSpec:
     return RunSpec(issue=issue, intent="lora-7b", backend=backend)
+
+
+@pytest.fixture(autouse=True)
+def captured_markers(monkeypatch):
+    """Capture every ``post-marker`` call so tests can assert against them
+    AND so the selector / monitor never pollute real tasks/<N>/events.jsonl.
+
+    Autouse: every test in this module gets a clean capture list AND a
+    fake poster, so a test that forgets to thread ``marker_poster=``
+    still doesn't shell out to the real ``task.py``. Tests can use the
+    fixture directly to assert the captured calls.
+
+    Patches the default ``post_marker_via_task_py`` symbol; tests that
+    pass an explicit ``marker_poster=`` to ``select_backend`` bypass
+    this fixture (intentional — the explicit injection wins).
+    """
+    captured: list[dict] = []
+
+    def fake(**kwargs):
+        captured.append(kwargs)
+
+    monkeypatch.setattr(
+        "explore_persona_space.backends.slurm.post_marker_via_task_py",
+        fake,
+    )
+    return captured
 
 
 # ---------------------------------------------------------------------------
@@ -481,3 +508,95 @@ def test_launch_true_without_spec_raises() -> None:
     rp = _FakeRunPodBackend()
     with pytest.raises(ValueError, match="requires a RunSpec"):
         select_backend(task={}, spec=None, runpod_backend=rp, launch=True)
+
+
+# ---------------------------------------------------------------------------
+# Blocker 2: selector posts epm:backend-selected v1 on every launch=True
+# decision (RunPod default, explicit RunPod, SLURM fall-back paths).
+# ---------------------------------------------------------------------------
+
+
+def _markers_of_kind(captured: list[dict], kind: str) -> list[dict]:
+    return [m for m in captured if m.get("marker") == kind]
+
+
+def test_selector_posts_backend_selected_on_runpod_default(captured_markers) -> None:
+    rp = _FakeRunPodBackend()
+    select_backend(task={}, spec=_spec(), runpod_backend=rp)
+
+    posts = _markers_of_kind(captured_markers, "epm:backend-selected")
+    assert len(posts) == 1
+    assert posts[0]["issue"] == 137
+    assert posts[0]["version"] == 1
+    body = json.loads(posts[0]["note"])
+    assert body["requested_kind"] == "runpod"
+    assert body["chosen_kind"] == "runpod"
+    assert body["reason"] == "frontmatter_default"
+
+
+def test_selector_posts_backend_selected_on_runpod_explicit(captured_markers) -> None:
+    rp = _FakeRunPodBackend()
+    select_backend(task={"backend": "runpod"}, spec=_spec(), runpod_backend=rp)
+
+    posts = _markers_of_kind(captured_markers, "epm:backend-selected")
+    assert len(posts) == 1
+    body = json.loads(posts[0]["note"])
+    assert body["reason"] == "frontmatter_explicit"
+
+
+def test_selector_posts_backend_selected_on_slurm_fallback(captured_markers) -> None:
+    rp = _FakeRunPodBackend()
+    stub = _SlurmStubBackend()
+    select_backend(
+        task={"backend": "cluster"},
+        spec=_spec(backend="cluster"),
+        runpod_backend=rp,
+        slurm_backend=stub,
+    )
+    posts = _markers_of_kind(captured_markers, "epm:backend-selected")
+    assert len(posts) == 1
+    body = json.loads(posts[0]["note"])
+    assert body["requested_kind"] == "cluster"
+    assert body["chosen_kind"] == "runpod"
+    assert body["reason"] == "slurm_not_implemented"
+    assert body["cluster"] == "nibi"
+
+
+def test_selector_posts_backend_selected_on_slurm_hard_failure(captured_markers) -> None:
+    rp = _FakeRunPodBackend()
+    slurm = _HardFailingSlurmBackend(RuntimeError("ssh: auth refused"))
+    select_backend(
+        task={"backend": "cluster"},
+        spec=_spec(backend="cluster"),
+        runpod_backend=rp,
+        slurm_backend=slurm,
+    )
+    posts = _markers_of_kind(captured_markers, "epm:backend-selected")
+    assert len(posts) == 1
+    body = json.loads(posts[0]["note"])
+    assert body["reason"] == "slurm_hard_failure"
+    assert body["extra"]["slurm_error_class"] == "RuntimeError"
+
+
+def test_selector_decision_only_skips_marker(captured_markers) -> None:
+    """``launch=False`` is a dry run — MUST NOT touch events.jsonl."""
+    rp = _FakeRunPodBackend()
+    select_backend(task={}, spec=_spec(), runpod_backend=rp, launch=False)
+    assert _markers_of_kind(captured_markers, "epm:backend-selected") == []
+
+
+def test_selector_marker_poster_injection_overrides_default(captured_markers) -> None:
+    """An explicit ``marker_poster=`` MUST win over the autouse fixture
+    so a caller-supplied poster reaches every decision path."""
+    rp = _FakeRunPodBackend()
+    explicit: list[dict] = []
+    select_backend(
+        task={},
+        spec=_spec(),
+        runpod_backend=rp,
+        marker_poster=lambda **kw: explicit.append(kw),
+    )
+    assert len(explicit) == 1
+    assert explicit[0]["marker"] == "epm:backend-selected"
+    # The autouse capture stays empty because the override won.
+    assert _markers_of_kind(captured_markers, "epm:backend-selected") == []

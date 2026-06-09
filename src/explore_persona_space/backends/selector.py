@@ -38,6 +38,7 @@ between slices — that's the whole point of landing it here first.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import time
@@ -313,6 +314,7 @@ def select_backend(
     slurm_backend: ComputeBackend | None = None,
     now_fn=time.monotonic,
     sleep_fn=time.sleep,
+    marker_poster=None,
 ) -> BackendDecision:
     """Pick + (optionally) launch the right backend for a task.
 
@@ -334,6 +336,13 @@ def select_backend(
     * ``runpod_backend`` / ``slurm_backend``: injection seams for tests
       (defaults call the factory functions above).
     * ``now_fn`` / ``sleep_fn``: monotonic-clock + sleep injection.
+    * ``marker_poster``: callable used to post the
+      ``epm:backend-selected v1`` marker (defaults to
+      :func:`backends.slurm.post_marker_via_task_py`). Tests inject a
+      list-appender. The marker is posted on EVERY decision EXCEPT
+      ``launch=False`` (decision-only dry runs do NOT touch the
+      events.jsonl trail). When ``spec`` is ``None`` the marker post is
+      also skipped — there's no issue id to address it to.
 
     Returns a :class:`BackendDecision` recording the chosen backend +
     the reason + (when ``launch=True``) the live handle.
@@ -356,11 +365,20 @@ def select_backend(
     if runpod_backend is None:
         runpod_backend = _build_runpod_backend()
 
+    if marker_poster is None:
+        # Lazy import to avoid the always-on cost of pulling the SLURM
+        # module into a RunPod-only selector call. Slim modules import
+        # selector at top-level; pulling slurm.py here keeps that import
+        # path cheap on the common case.
+        from explore_persona_space.backends.slurm import post_marker_via_task_py
+
+        marker_poster = post_marker_via_task_py
+
     started_at = now_fn()
 
     # ---------- RunPod default path -----------------------------------
     if requested_kind == "runpod":
-        return _launch_runpod(
+        decision = _launch_runpod(
             spec=spec,
             backend=runpod_backend,
             requested_kind=requested_kind,
@@ -371,6 +389,8 @@ def select_backend(
             launch=launch,
             elapsed_seconds=now_fn() - started_at,
         )
+        _post_backend_selected(decision, spec=spec, marker_poster=marker_poster, launch=launch)
+        return decision
 
     # ---------- SLURM opt-in path -------------------------------------
     cluster_name = _resolve_cluster_name(requested_kind, cluster_hint)
@@ -385,7 +405,7 @@ def select_backend(
         slurm_spec = _with_backend(slurm_spec, kind=requested_kind, cluster=cluster_name)
 
     if not launch:
-        return BackendDecision(
+        decision = BackendDecision(
             backend=slurm_backend,
             handle=None,
             requested_kind=requested_kind,
@@ -394,6 +414,8 @@ def select_backend(
             cluster=cluster_name,
             elapsed_seconds=now_fn() - started_at,
         )
+        # decided_only deliberately does NOT post a marker (dry-run).
+        return decision
 
     if slurm_spec is None:
         raise ValueError("select_backend(launch=True) requires a RunSpec.")
@@ -406,7 +428,7 @@ def select_backend(
     except NotImplementedError as exc:
         if not _is_slurm_stub_unavailable(exc):
             raise
-        return _fallback_to_runpod(
+        decision = _fallback_to_runpod(
             spec=spec,
             runpod_backend=runpod_backend,
             requested_kind=requested_kind,
@@ -415,6 +437,8 @@ def select_backend(
             elapsed_seconds=now_fn() - started_at,
             extra={"slurm_error_class": "NotImplementedError"},
         )
+        _post_backend_selected(decision, spec=spec, marker_poster=marker_poster, launch=launch)
+        return decision
     except Exception as exc:
         logger.warning(
             "SLURM launch failed for issue %d on %s (%s: %s); falling back to RunPod",
@@ -423,7 +447,7 @@ def select_backend(
             type(exc).__name__,
             exc,
         )
-        return _fallback_to_runpod(
+        decision = _fallback_to_runpod(
             spec=spec,
             runpod_backend=runpod_backend,
             requested_kind=requested_kind,
@@ -432,6 +456,8 @@ def select_backend(
             elapsed_seconds=now_fn() - started_at,
             extra={"slurm_error_class": type(exc).__name__, "slurm_error_msg": str(exc)},
         )
+        _post_backend_selected(decision, spec=spec, marker_poster=marker_poster, launch=launch)
+        return decision
 
     # Submit succeeded. Wait for PENDING -> RUNNING (or fall back on
     # exceeding the max-wait cap or a hard-failure terminal status).
@@ -444,7 +470,7 @@ def select_backend(
         sleep_fn=sleep_fn,
     )
     if started:
-        return BackendDecision(
+        decision = BackendDecision(
             backend=slurm_backend,
             handle=handle,
             requested_kind=requested_kind,
@@ -453,6 +479,8 @@ def select_backend(
             cluster=cluster_name,
             elapsed_seconds=now_fn() - started_at,
         )
+        _post_backend_selected(decision, spec=spec, marker_poster=marker_poster, launch=launch)
+        return decision
 
     # Watchdog said fall back. Best-effort scancel via teardown; ignore
     # teardown failures because the live job MIGHT already be gone and
@@ -465,7 +493,7 @@ def select_backend(
             type(exc).__name__,
             exc,
         )
-    return _fallback_to_runpod(
+    decision = _fallback_to_runpod(
         spec=spec,
         runpod_backend=runpod_backend,
         requested_kind=requested_kind,
@@ -474,6 +502,8 @@ def select_backend(
         elapsed_seconds=now_fn() - started_at,
         extra={"slurm_job_id": handle.job_id, "slurm_pod_name": handle.pod_name},
     )
+    _post_backend_selected(decision, spec=spec, marker_poster=marker_poster, launch=launch)
+    return decision
 
 
 # ---------------------------------------------------------------------------
@@ -579,4 +609,43 @@ def _fallback_to_runpod(
         cluster=cluster,
         elapsed_seconds=elapsed_seconds,
         extra=extra,
+    )
+
+
+def _post_backend_selected(
+    decision: BackendDecision,
+    *,
+    spec: RunSpec | None,
+    marker_poster,
+    launch: bool,
+) -> None:
+    """Post ``epm:backend-selected v1`` to the originating task's events.jsonl.
+
+    Skip when (a) ``launch=False`` (decision-only dry runs don't touch
+    the trail) or (b) ``spec is None`` (no issue id to address the
+    marker to — same case as ``launch=False`` effectively). Body shape
+    matches ``workflow.yaml § markers`` exactly:
+    ``requested_kind / chosen_kind / reason / cluster / elapsed_seconds
+    / extra``. The ``backend`` instance + ``handle`` are NOT serialized
+    (they're Python objects with cycles + secrets).
+    """
+    if not launch or spec is None:
+        return
+    # asdict on the frozen dataclass gives every field; we drop the
+    # ones that don't belong in the marker body (Python objects).
+    body = {
+        "requested_kind": decision.requested_kind,
+        "chosen_kind": decision.chosen_kind,
+        "reason": decision.reason,
+        "cluster": decision.cluster,
+        "elapsed_seconds": round(decision.elapsed_seconds, 3),
+        "extra": dict(decision.extra),
+    }
+    note = json.dumps(body, sort_keys=True)
+    marker_poster(
+        issue=spec.issue,
+        marker="epm:backend-selected",
+        note=note,
+        version=1,
+        by="backends.selector",
     )

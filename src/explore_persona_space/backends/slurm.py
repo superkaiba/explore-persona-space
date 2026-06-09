@@ -63,16 +63,20 @@ References:
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
+import json
 import logging
 import os
 import re
 import shlex
 import subprocess
+import tempfile
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal
 
 from explore_persona_space.backends.base import (
     BackendKind,
@@ -231,16 +235,25 @@ _DEFAULT_TIME_BUDGETS_HOURS: dict[str, float] = {
 def time_budget_hours(spec: RunSpec) -> float:
     """Resolve ``spec.time_budget_hours`` with the intent-default table.
 
-    Explicit override wins. Otherwise return the intent default
-    (defaults to 6h when the intent is unknown — keeps the queue cost
-    low without crashing). Raises on a negative override; a 0h budget
-    is rejected the same way the SLURM submit would.
+    Explicit override wins. Otherwise return the intent default. Raises
+    :class:`ValueError` on a negative or zero override AND on an
+    unsupported intent (the rest of the module is fail-fast —
+    ``stages_for_spec`` raises on unknown intents — so silently
+    defaulting to 6h here would mask a typo and submit a job under the
+    wrong wall-clock budget).
     """
     if spec.time_budget_hours is not None:
         if spec.time_budget_hours <= 0:
             raise ValueError(f"time_budget_hours must be positive, got {spec.time_budget_hours}")
         return float(spec.time_budget_hours)
-    return _DEFAULT_TIME_BUDGETS_HOURS.get(spec.intent, 6.0)
+    if spec.intent not in _DEFAULT_TIME_BUDGETS_HOURS:
+        raise ValueError(
+            f"no default time budget for intent {spec.intent!r}. "
+            f"Supported intents: {sorted(_DEFAULT_TIME_BUDGETS_HOURS)}. "
+            "Pass an explicit ``time_budget_hours=`` in the RunSpec or "
+            "add the intent to ``_DEFAULT_TIME_BUDGETS_HOURS``."
+        )
+    return _DEFAULT_TIME_BUDGETS_HOURS[spec.intent]
 
 
 def _format_sbatch_time(hours: float) -> str:
@@ -254,25 +267,43 @@ def _format_sbatch_time(hours: float) -> str:
     return f"{hh:02d}:{mm:02d}:{ss:02d}"
 
 
+# GPU count defaults per intent. Mirrors RunPod's
+# ``gpu_heuristics.resolve_intent`` for the intents the cluster
+# currently supports. NOT a Counter / dict-with-default — an unknown
+# intent raises rather than picking 1 silently (consistent with
+# ``stages_for_spec`` + ``time_budget_hours``; a typo should fail the
+# render, not submit a job at the wrong GPU count).
+_DEFAULT_GPUS_FOR_INTENT: dict[str, int] = {
+    "lora-7b": 1,
+    "lora": 1,
+    "eval": 1,
+    "debug": 1,
+    "ft-7b": 4,
+    "inf-70b": 8,
+    "ft-70b": 8,
+}
+
+
 def default_gpus_for_intent(spec: RunSpec) -> int:
     """Resolve ``spec.gpus`` for the sbatch render (intent default fallback).
 
-    Mirrors RunPod's ``gpu_heuristics.resolve_intent`` defaults for the
-    intents the cluster currently supports:
-    ``lora-7b``/``eval``/``debug`` => 1 GPU; ``ft-7b`` => 4; ``inf-70b``
-    / ``ft-70b`` => 8. An unknown intent defaults to 1 (low-blast-radius
-    queue cost — better than crashing the render).
+    Explicit ``spec.gpus`` wins (positive int). Otherwise return the
+    intent default from :data:`_DEFAULT_GPUS_FOR_INTENT`. Raises
+    :class:`ValueError` on an unsupported intent — the rest of the
+    module fails fast on unknown intents (``stages_for_spec``,
+    ``time_budget_hours``); silently defaulting to 1 GPU here would
+    mask a typo and submit a job at the wrong GPU count.
     """
     if spec.gpus is not None and spec.gpus > 0:
         return spec.gpus
-    return {
-        "lora-7b": 1,
-        "eval": 1,
-        "debug": 1,
-        "ft-7b": 4,
-        "inf-70b": 8,
-        "ft-70b": 8,
-    }.get(spec.intent, 1)
+    if spec.intent not in _DEFAULT_GPUS_FOR_INTENT:
+        raise ValueError(
+            f"no default GPU count for intent {spec.intent!r}. "
+            f"Supported intents: {sorted(_DEFAULT_GPUS_FOR_INTENT)}. "
+            "Pass an explicit ``gpus=`` in the RunSpec or add the intent "
+            "to ``_DEFAULT_GPUS_FOR_INTENT``."
+        )
+    return _DEFAULT_GPUS_FOR_INTENT[spec.intent]
 
 
 # ---------------------------------------------------------------------------
@@ -318,22 +349,32 @@ def _scratch_dir_for(spec: RunSpec, cluster: ClusterConfig) -> str:
 # than the RunPod-equivalent because:
 # - ``configs/`` is module-relative for ``resolve_deepspeed_config``
 #   (P0(c) finding from the plan).
-# - ``external/open-instruct/`` is mandatory for any full-FT run.
+# - ``external/open-instruct/`` is mandatory for any full-FT run; the
+#   renderer's open-instruct accelerate launcher targets
+#   ``external/open-instruct/<stage.script_rel>``, so the destination
+#   tree MUST have the ``external/`` prefix preserved.
 # - ``scripts/`` carries ``train.py`` / ``eval.py`` / ``launch_stage.py``
 #   which the renderer's open-instruct path delegates to.
 # - ``pyproject.toml`` + ``uv.lock`` are what ``uv sync`` consumes.
 # The exclude list keeps the eval-result history + dashboards out of
 # scratch; the cluster generates fresh artifacts and rsyncs them back.
+#
+# Paths are dot-anchored (``./external/open-instruct`` etc.) so they
+# combine with ``rsync --relative`` + ``cwd=src_root`` to land at
+# ``$DST/external/open-instruct/...`` (NOT ``$DST/open-instruct/...`` —
+# which is what positional sources without ``--relative`` produce, and
+# what kills the renderer's full-FT path because it emits
+# ``external/open-instruct/<stage.script_rel>`` as the launch target).
+# ``configs/deepspeed`` and ``configs/tulu`` are removed because they
+# are subsets of ``configs`` and would be double-copied otherwise.
 RSYNC_INCLUDE_PATHS: tuple[str, ...] = (
-    "pyproject.toml",
-    "uv.lock",
-    "src/",
-    "scripts/",
-    "configs/",
-    "configs/deepspeed/",
-    "configs/tulu/",
-    "external/open-instruct/",
-    "tests/",
+    "./pyproject.toml",
+    "./uv.lock",
+    "./src",
+    "./scripts",
+    "./configs",
+    "./external/open-instruct",
+    "./tests",
 )
 
 RSYNC_EXCLUDE_PATTERNS: tuple[str, ...] = (
@@ -366,15 +407,28 @@ def build_rsync_command(
 ) -> list[str]:
     """Build the rsync argv that copies ``include_paths`` to the cluster.
 
-    Flag set (P0(a) validated): ``-a --delete --partial --mkpath``.
-    ``--mkpath`` is REQUIRED — the forced-command wrapper does NOT
-    auto-create intermediate dirs (P0(a) finding). ``--delete`` keeps
-    the destination tree in lockstep with the local tree so a removed
-    file VM-side disappears on the cluster.
+    Flag set (P0(a) validated): ``-a --relative --delete --partial
+    --mkpath``. ``--mkpath`` is REQUIRED — the forced-command wrapper
+    does NOT auto-create intermediate dirs (P0(a) finding). ``--delete``
+    keeps the destination tree in lockstep with the local tree so a
+    removed file VM-side disappears on the cluster.
+
+    ``--relative`` is LOAD-BEARING: without it (and without dot-anchored
+    sources like ``./external/open-instruct``), rsync drops every
+    intermediate path component above the basename and the cluster
+    side ends up with ``$DST/open-instruct/...`` instead of
+    ``$DST/external/open-instruct/...``. The renderer emits
+    ``external/open-instruct/<stage.script_rel>`` as the SFT/DPO launch
+    target, so a missing ``external/`` prefix kills every full-FT job at
+    line 1 with ``no such file``. The dot anchor (``./<path>``) caps
+    where the relative path starts — without it ``--relative`` would
+    preserve the FULL ``src_root``-prefixed path (e.g.
+    ``$DST/home/.../slurm-backend/external/...``), also wrong.
 
     The function does NOT execute rsync; it returns the argv. The caller
-    is responsible for shelling out (so tests can assert the argv shape
-    without touching the network).
+    is responsible for shelling out from ``cwd=src_root`` (so the
+    dot-anchored sources resolve correctly). ``run_rsync_sync`` handles
+    the cwd; if you call rsync yourself, pass ``cwd=src_root``.
 
     ``src_root`` MUST be the repository root (``pyproject.toml`` is at
     its top). ``dest_root`` is the full cluster path (e.g.
@@ -388,18 +442,19 @@ def build_rsync_command(
     argv: list[str] = [
         "rsync",
         "-a",
+        "--relative",
         "--delete",
         "--partial",
         "--mkpath",
     ]
     for pattern in exclude_patterns:
         argv.extend(["--exclude", pattern])
-    # Sources: each include path, anchored to src_root. We use the
-    # explicit-list-of-sources form rather than ``--files-from`` because
-    # the wrapper allowlist favors short single-token args (P0 finding
-    # for squeue carries over: keep argv flat).
-    sources = [str(src_root / p) for p in include_paths]
-    argv.extend(sources)
+    # Sources are the dot-anchored relative paths from RSYNC_INCLUDE_PATHS
+    # (e.g. "./external/open-instruct"). Combined with cwd=src_root and
+    # ``--relative``, rsync preserves the path from the dot to the leaf,
+    # which is what we want on the cluster side. We do NOT prepend
+    # ``src_root`` to each entry — that would defeat the dot anchor.
+    argv.extend(list(include_paths))
     argv.append(f"{robot_alias}:{dest_root}/")
     return argv
 
@@ -417,14 +472,18 @@ def run_rsync_sync(
     site is a one-liner. ``timeout`` defaults to 10 min — a clean tree
     rsyncs in seconds, but a cold first sync on a slow link can be
     minutes (Nibi P0(a) measured ~12s for 50MB; allow a wide margin).
+
+    MUST run from ``cwd=src_root`` so the dot-anchored sources in
+    :data:`RSYNC_INCLUDE_PATHS` resolve to the repo tree (see
+    :func:`build_rsync_command` for the full ``--relative`` rationale).
     """
     argv = build_rsync_command(
         src_root=src_root,
         dest_root=dest_root,
         robot_alias=robot_alias,
     )
-    logger.info("running rsync to %s: %s", robot_alias, " ".join(argv))
-    subprocess.run(argv, check=True, timeout=timeout)
+    logger.info("running rsync to %s (cwd=%s): %s", robot_alias, src_root, " ".join(argv))
+    subprocess.run(argv, check=True, timeout=timeout, cwd=str(src_root))
 
 
 # ---------------------------------------------------------------------------
@@ -470,14 +529,142 @@ def render_secrets_env(
     return "\n".join(lines) + ("\n" if lines else "")
 
 
+def scp_push_secrets(
+    *,
+    robot_alias: str,
+    scratch_dir: str,
+    content: str,
+    timeout: int = 30,
+) -> None:
+    """Deliver ``secrets.env`` to ``$SCRATCH_JOB_DIR/secrets.env`` via ``scp``.
+
+    The robot forced-command wrapper allowlist permits ``scp`` (and
+    ``sftp`` / ``rsync``) but REJECTS ``ssh <alias> bash -c '<script>'``,
+    so the earlier in-band ``ssh ... bash -c ...`` path was DOA — every
+    cluster task erroring at ``prepare`` and falling back to RunPod. The
+    sbatch already does ``chmod 600 "$SECRETS_FILE"`` (in the secrets
+    stanza near ``render_sbatch``) and asserts the file is present
+    before sourcing, so we do NOT need to chmod on the remote side here.
+
+    Implementation:
+
+    1. Write ``content`` into a unique VM-side temp file
+       (:func:`tempfile.mkstemp` with mode 0o600 so the secrets are
+       never world-readable on the VM either).
+    2. ``scp`` the temp file to ``<robot_alias>:<scratch_dir>/secrets.env``.
+       ``rsync`` (also allowed) would work equivalently; ``scp`` is the
+       most direct match for "copy one file across".
+    3. Always remove the VM-side temp file (try/finally) so a transient
+       scp failure can't leak the file on the VM. The ``shred`` would
+       be belt-and-suspenders; rm is sufficient because the temp lived
+       under the controlled mkstemp dir for the duration of one scp.
+
+    The ``$$`` shell PID idiom from the prior implementation was a
+    SHELL expansion that does NOT happen here (it's a Python f-string,
+    so ``$$`` is the literal two-character sequence after shlex-quote
+    rather than a unique pid). We use :func:`tempfile.mkstemp` instead,
+    which is the genuinely-unique form for concurrent prepares.
+    """
+    fd, tmp_path = tempfile.mkstemp(prefix="eps-slurm-secrets-", suffix=".env")
+    try:
+        os.write(fd, content.encode("utf-8"))
+        os.close(fd)
+        os.chmod(tmp_path, 0o600)
+        remote_path = f"{robot_alias}:{scratch_dir}/secrets.env"
+        # -p preserves the local 0o600 perms (the sbatch re-asserts
+        # chmod 600, but starting tight is correct). -q suppresses the
+        # progress meter which clutters orchestrator logs.
+        argv = ["scp", "-p", "-q", tmp_path, remote_path]
+        logger.info("scp secrets to %s (%d bytes)", remote_path, len(content))
+        subprocess.run(argv, check=True, timeout=timeout)
+    finally:
+        # The tmp file may already be gone if scp consumed-and-removed
+        # (it doesn't, but defensive); suppress the FileNotFoundError
+        # narrowly so the cleanup is idempotent without swallowing any
+        # OTHER OSError (permissions, IO).
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(tmp_path)
+
+
+# ---------------------------------------------------------------------------
+# Marker posting (task.py post-marker) — VM-side only
+# ---------------------------------------------------------------------------
+
+
+def post_marker_via_task_py(
+    *,
+    issue: int,
+    marker: str,
+    note: str,
+    version: int = 1,
+    by: str = "backends.slurm",
+    timeout: int = 30,
+) -> None:
+    """Append an event to ``tasks/<status>/<N>/events.jsonl`` via task.py.
+
+    Posts via ``uv run python scripts/task.py post-marker <N> <marker>
+    --note <body> --version <v> --by <agent>``. The task.py CLI is the
+    canonical mutation path (holds the workflow flock, commits once).
+
+    VM-SIDE ONLY. ``task.py`` branch-guards to ``main`` and refuses on a
+    non-``main`` HEAD; cluster compute nodes run on an ephemeral
+    ``$SCRATCH`` rsync of the repo (no git checkout) and would fail this
+    guard. The marker poster lives on the orchestrator VM and is called
+    from the backend code that the orchestrator drives (launch, monitor
+    poll), NEVER from inside the sbatch. The sbatch signals via the
+    rsync'd ``status.json`` + ``[phase=...]`` lines; the monitor reads
+    those and posts the markers VM-side.
+
+    Note size cap (50_000 chars) is enforced by ``task.py post-marker``
+    itself; oversize notes raise from the subprocess.
+    """
+    argv = [
+        "uv",
+        "run",
+        "python",
+        str(_repo_root_for_task_py() / "scripts" / "task.py"),
+        "post-marker",
+        str(issue),
+        marker,
+        "--note",
+        note,
+        "--version",
+        str(version),
+        "--by",
+        by,
+    ]
+    logger.info("post-marker issue=%d kind=%s v=%d", issue, marker, version)
+    subprocess.run(argv, check=True, timeout=timeout)
+
+
+def _repo_root_for_task_py() -> Path:
+    """Locate the repo root (where ``scripts/task.py`` lives).
+
+    Walks up from this file's location until a directory containing
+    ``scripts/task.py`` is found. Falls back to ``Path.cwd()`` if the
+    layout has been mangled (very defensive — the import path that
+    found us must have a real repo root somewhere).
+    """
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "scripts" / "task.py").exists():
+            return parent
+    return Path.cwd()
+
+
 # ---------------------------------------------------------------------------
 # sbatch render
 # ---------------------------------------------------------------------------
 
 
-# Inline workload kinds the sbatch knows how to launch. Mirrors the
-# ``intent`` set above; the renderer picks the command shape from this.
-WorkloadKind = str  # one of: "lora-eval", "lora", "eval", "full-ft-sft", "full-ft-dpo"
+# Stage backend kinds the renderer knows how to launch. ``local`` =
+# Hydra ``scripts/train.py``/``scripts/eval.py``; ``open_instruct`` =
+# the open-instruct ``finetune.py``/``dpo_tune_cache.py`` accelerate
+# launcher. Typed as a ``Literal`` so the renderer's terminal ``else:
+# raise`` (``unknown stage backend``) is provably exhaustive — adding
+# a third backend kind requires extending this alias AND the renderer
+# dispatch in lockstep, surfaced by the type checker.
+WorkloadKind = Literal["local", "open_instruct"]
 
 
 @dataclass(frozen=True)
@@ -512,7 +699,7 @@ class Stage:
     """
 
     name: str
-    backend: str  # "local" | "open_instruct"
+    backend: WorkloadKind
     script_rel: str
     deepspeed_config_rel: str | None = None
     hydra_args: tuple[str, ...] = ()
@@ -1133,6 +1320,8 @@ class SlurmBackend(ComputeBackend):
         rsyncer=None,
         poller=None,
         start_estimator=None,
+        secrets_pusher=None,
+        marker_poster=None,
     ) -> None:
         self._src_root = src_root or _default_src_root()
         self._submit = submitter or ssh_submit
@@ -1142,6 +1331,17 @@ class SlurmBackend(ComputeBackend):
         # import at module-load (slurm_monitor imports from this module).
         self._poll_fn = poller
         self._start_estimator = start_estimator or ssh_estimate_start
+        # Secrets push uses scp by default (allowlisted by the robot
+        # forced-command wrapper); ``ssh ... bash -c '<script>'`` would
+        # be rejected. Tests inject a no-op pusher.
+        self._secrets_pusher = secrets_pusher or scp_push_secrets
+        # Marker poster is invoked at launch (``epm:cluster-launched``)
+        # so the events.jsonl trail records the SLURM-side handle. The
+        # selector posts ``epm:backend-selected`` at decision time; the
+        # monitor posts ``epm:cluster-poll`` / ``epm:cluster-terminal``.
+        # Defaults to the real task.py shell-out; tests inject a list-
+        # appender.
+        self._post_marker = marker_poster or post_marker_via_task_py
         self._jobs: dict[str, _LaunchedJobState] = {}
 
     # ----- identity --------------------------------------------------------
@@ -1175,25 +1375,27 @@ class SlurmBackend(ComputeBackend):
         self._push_secrets(cluster, scratch_dir, secrets)
 
     def _push_secrets(self, cluster: ClusterConfig, scratch_dir: str, content: str) -> None:
-        """SSH a secrets file into ``$SCRATCH_JOB_DIR/secrets.env``."""
-        remote_path = f"{scratch_dir}/secrets.env"
-        # Stage via a unique tmp + rename so a partial write never reads
-        # as "ready". The chmod 600 happens before the rename so the
-        # window where the file is world-readable is empty.
-        tmp_path = f"{remote_path}.tmp.$$"
-        script = (
-            f"set -e; "
-            f"mkdir -p {shlex.quote(scratch_dir)}; "
-            f"umask 077; "
-            f"cat > {shlex.quote(tmp_path)}; "
-            f"chmod 600 {shlex.quote(tmp_path)}; "
-            f"mv {shlex.quote(tmp_path)} {shlex.quote(remote_path)}"
+        """Deliver ``secrets.env`` to ``$SCRATCH_JOB_DIR`` via the injected
+        pusher (default :func:`scp_push_secrets`).
+
+        Decoupled so tests can swap a list-appender for the real
+        ``scp``/``rsync`` shell-out.
+        """
+        self._secrets_pusher(
+            robot_alias=cluster.robot_alias,
+            scratch_dir=scratch_dir,
+            content=content,
         )
-        argv = ["ssh", cluster.robot_alias, "bash", "-c", shlex.quote(script)]
-        subprocess.run(argv, input=content, text=True, check=True, timeout=30)
 
     def launch(self, spec: RunSpec) -> RunHandle:
-        """Render + submit; return a :class:`RunHandle` keyed by job id."""
+        """Render + submit; return a :class:`RunHandle` keyed by job id.
+
+        Posts ``epm:cluster-launched v1`` AFTER sbatch submit succeeds
+        (per ``workflow.yaml § markers``). The marker carries the SLURM-
+        side handle so the orchestrator's events.jsonl trail has the
+        ``job_id`` / ``scratch_dir`` / ``log_path`` / ``job_name``
+        needed for idempotent reconnect after orchestrator re-spawn.
+        """
         cluster = self._cluster_for_spec(spec)
         scratch_dir = _scratch_dir_for(spec, cluster)
         plan = stages_for_spec(spec)
@@ -1217,11 +1419,41 @@ class SlurmBackend(ComputeBackend):
             log_path=log_path,
         )
         self._jobs[job_id] = state
+        name = job_name(spec, plan_hash)
+        time_h = time_budget_hours(spec)
+        gpus = default_gpus_for_intent(spec)
+
+        # Post epm:cluster-launched v1 to the originating task's
+        # events.jsonl. Body fields match workflow.yaml § markers.
+        # NOTE size cap (50k chars) is enforced by task.py post-marker;
+        # this body is well under it. JSON-formatted so the dashboard
+        # can render structured fields.
+        marker_body = json.dumps(
+            {
+                "cluster": cluster.name,
+                "job_id": job_id,
+                "job_name": name,
+                "scratch_dir": scratch_dir,
+                "log_path": log_path,
+                "account": cluster.account,
+                "gpus": gpus,
+                "time_budget_hours": time_h,
+            },
+            sort_keys=True,
+        )
+        self._post_marker(
+            issue=spec.issue,
+            marker="epm:cluster-launched",
+            note=marker_body,
+            version=1,
+            by="backends.slurm",
+        )
+
         return RunHandle(
             backend="cluster",
             cluster=cluster.name,
             job_id=job_id,
-            pod_name=job_name(spec, plan_hash),
+            pod_name=name,
             scratch_dir=scratch_dir,
             log_path=log_path,
             extra={
@@ -1229,8 +1461,9 @@ class SlurmBackend(ComputeBackend):
                 "robot_alias": cluster.robot_alias,
                 "partition": cluster.partition,
                 "intent": spec.intent,
-                "time_budget_hours": time_budget_hours(spec),
-                "gpus_per_node": default_gpus_for_intent(spec),
+                "time_budget_hours": time_h,
+                "gpus_per_node": gpus,
+                "issue": spec.issue,
             },
         )
 
@@ -1259,7 +1492,14 @@ class SlurmBackend(ComputeBackend):
     # ----- monitor ---------------------------------------------------------
 
     def poll(self, handle: RunHandle) -> PollResult:
-        """Delegate to :mod:`slurm_monitor` for the live poll."""
+        """Delegate to :mod:`slurm_monitor` for the live poll.
+
+        Threads ``handle.extra['issue']`` through so the monitor can
+        post ``epm:cluster-poll`` / ``epm:cluster-terminal`` markers
+        addressed to the originating task. The launch path always
+        populates this; if a handle was hand-constructed without it,
+        we raise loudly (silent skipping would cost the marker trail).
+        """
         if self._poll_fn is None:
             # Lazy import to avoid the circular at module-load time.
             from explore_persona_space.backends.slurm_monitor import build_poll_result
@@ -1268,7 +1508,15 @@ class SlurmBackend(ComputeBackend):
         cluster = get_cluster_config(handle.cluster) if handle.cluster else None
         if cluster is None:
             raise ValueError(f"SlurmBackend.poll: handle has no cluster ({handle!r})")
+        issue = handle.extra.get("issue")
+        if issue is None:
+            raise ValueError(
+                f"SlurmBackend.poll: handle.extra missing 'issue' ({handle!r}). "
+                "The launch path populates this; hand-constructed handles must too "
+                "so the monitor can post epm:cluster-poll / epm:cluster-terminal."
+            )
         return self._poll_fn(
+            issue=int(issue),
             job_id=handle.job_id,
             cluster=cluster,
             scratch_dir=handle.scratch_dir,
@@ -1276,17 +1524,33 @@ class SlurmBackend(ComputeBackend):
         )
 
     def fetch_logs(self, handle: RunHandle) -> str:
-        """Rsync the job.out tail and return the last ~200 lines."""
-        # The monitor already rsyncs job.out as part of build_poll_result;
-        # re-use that path. We tail the local copy that the monitor wrote.
-        local_log = Path(handle.scratch_dir).name  # filename only
-        local_path = Path("/tmp") / f"slurm-{handle.job_id}" / local_log / "job.out"
+        """Read the rsync'd ``job.out`` tail and return the last 200 lines.
+
+        The monitor (``slurm_monitor.rsync_status_and_log``) rsyncs the
+        cluster's ``job.out`` into ``/tmp/slurm-<job_id>/job.out`` —
+        flat under the per-job dir, NO additional subdir. The previous
+        implementation computed
+        ``/tmp/slurm-<id>/<basename(scratch_dir)>/job.out`` and ALWAYS
+        missed the file (returning ``""`` on every call) because the
+        monitor writes the file one level higher. We reuse the
+        ``_local_state_dir`` helper that the monitor uses so the two
+        stay in lockstep.
+
+        Returns a newline-joined string (not the Python list repr that
+        ``splitlines()[-200:].__str__()`` would produce). ``""`` if the
+        local log file doesn't exist yet (a poll never landed).
+        """
+        # Import lazily to avoid the circular at module-load (monitor
+        # imports from this module).
+        from explore_persona_space.backends.slurm_monitor import _local_state_dir
+
+        local_path = _local_state_dir(handle.job_id) / "job.out"
         if not local_path.exists():
             return ""
-        # Tail to 200 lines without slurping the whole file.
         with local_path.open("rb") as fh:
             data = fh.read()
-        return data.decode("utf-8", errors="replace").splitlines()[-200:].__str__()
+        lines = data.decode("utf-8", errors="replace").splitlines()[-200:]
+        return "\n".join(lines)
 
     # ----- teardown --------------------------------------------------------
 
@@ -1371,14 +1635,17 @@ __all__ = [
     "SbatchPlan",
     "SlurmBackend",
     "Stage",
+    "WorkloadKind",
     "build_rsync_command",
     "compute_plan_hash",
     "default_gpus_for_intent",
     "get_cluster_config",
     "job_name",
     "parse_job_id",
+    "post_marker_via_task_py",
     "render_sbatch",
     "render_secrets_env",
+    "scp_push_secrets",
     "ssh_scancel",
     "ssh_submit",
     "stages_for_spec",

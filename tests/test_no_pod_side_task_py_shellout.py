@@ -87,6 +87,13 @@ _LOCAL_VM_ONLY_PATHS: frozenset[str] = frozenset(
         # Workflow library — orchestrator-side, never imported from pod
         "src/explore_persona_space/task_workflow.py",
         "src/explore_persona_space/task_workflow_migrate.py",
+        # SLURM backend's marker poster runs ONLY on the VM orchestrator
+        # (same class as pod_lifecycle / pod_watch above). The cluster
+        # side runs the rendered sbatch, which is pure shell + the user
+        # entrypoints — it NEVER imports backends/slurm.py. Adding here
+        # so a future regex-based scan that catches the runtime-computed
+        # task.py path stays green for the legitimate VM-side call.
+        "src/explore_persona_space/backends/slurm.py",
     }
 )
 
