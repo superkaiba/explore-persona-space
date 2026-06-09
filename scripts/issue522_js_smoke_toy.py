@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""task #522 JS-correctness toy — two golden cases.
+"""task #522 JS-correctness toy — three golden cases.
 
-This script catches TWO bug classes the upstream reducer must avoid:
+This script catches THREE bug classes the upstream reducer must avoid:
 
 1. **JS kernel correctness** (round-2 fix, brief Major #4 + Smoke #4) — the
    per-position JS / KL kernel must compute the canonical **full-vocab
@@ -20,10 +20,22 @@ This script catches TWO bug classes the upstream reducer must avoid:
    token-weighted (wrong) mean = (2·J_A + 6·0) / 8 = J_A/4 — a clean 2×
    discrepancy. We assert the reducer matches J_A/2 AND is NOT equal to
    J_A/4. Same check applied to the KL_AB and KL_BA directions.
+3. **Partial-cache namespace collision** (round-4 fix, pod-522 incident
+   2026-06-08) — the per-(P, Q) partial-cache filename pattern must be
+   namespaced by ``cache_out.stem`` so smoke and full sweeps sharing the
+   same parent directory don't collide. Pre-round-4, smoke partials
+   (``logprob_cache_partial_P*_Q*.pt`` from R=2/64-tok smoke) were
+   silently picked up by the full sweep's resume reader and loaded as if
+   they were canonical R=8/256-tok cache entries. The full sweep was
+   killed at ~9 min into 57h. Golden test: write a smoke-style partial
+   to a temp dir, then call ``_load_cache_checkpoint`` with the
+   full-sweep's stem; assert it returns empty + the smoke partial stays
+   on disk untouched. Also assert the config-mismatch fail-loud trips
+   when stems collide manually.
 
-The existing diagonal + symmetry smoke gates pass trivially under both
-the round-1 Jeffreys bug AND the round-2 token-weighted aggregation bug,
-so they did not catch either. This script is the cheap catch they missed.
+The existing diagonal + symmetry smoke gates pass trivially under all
+three of the underlying bugs, so they did not catch any of them.  This
+script is the cheap catch they missed.
 
 Exit code 0 on PASS, 1 on FAIL. Run via:
 ``uv run python scripts/issue522_js_smoke_toy.py``.
@@ -35,6 +47,7 @@ from __future__ import annotations
 
 import math
 import sys
+import tempfile
 from pathlib import Path
 
 import torch
@@ -45,6 +58,8 @@ if _SCRIPTS not in sys.path:
 
 from issue522_js_predictor import (  # noqa: E402
     _cache_key,
+    _load_cache_checkpoint,
+    _save_cache_checkpoint,
     build_js_matrix,
     js_closed_form_two_vocab_toy,
     per_position_js_kl_from_logprobs,
@@ -325,8 +340,154 @@ def _multi_response_length_normalization_check() -> list[str]:
     return failures
 
 
+def _partial_cache_namespace_check() -> list[str]:
+    """Golden case 3 — partial-cache namespace collision (round-4 fix).
+
+    Simulates the pod-522 incident: a smoke and a full run share the same
+    ``cache_dir`` (``/workspace/eval_results/issue_522/``) but have
+    different ``cache_out`` filenames (``logprob_cache_smoke.pt`` vs
+    ``logprob_cache.pt``). Pre-round-4 both runs wrote partials at the
+    same path ``logprob_cache_partial_P{P}_Q{Q}.pt`` so the full sweep's
+    resume reader picked up smoke partials.
+
+    Three assertions:
+
+    A. Writing a smoke partial via ``_save_cache_checkpoint`` produces a
+       file whose name is prefixed by the smoke stem (NOT the bare
+       ``logprob_cache_partial_*`` pattern).
+    B. ``_load_cache_checkpoint(cache_dir, full_stem)`` does NOT pick up
+       the smoke partial — it returns ``({}, {}, None)`` because no
+       full-stem partial exists.
+    C. ``_load_cache_checkpoint(cache_dir, smoke_stem)`` DOES find its
+       own partial back, AND raises ``RuntimeError`` when called with an
+       ``expected_config`` whose ``r`` / ``max_new_tokens`` / ``personas``
+       disagree (fail-loud defensive check; second line of defense if a
+       future bug puts mixed-stem partials in the same dir).
+    """
+    failures: list[str] = []
+
+    with tempfile.TemporaryDirectory() as td:
+        cache_dir = Path(td)
+        smoke_stem = "logprob_cache_smoke"
+        full_stem = "logprob_cache"
+
+        # Build a minimal smoke-style payload (R=2, max_new_tokens=64, 4 personas).
+        smoke_cache = {
+            _cache_key("p0", 0, 0, "p0", "p1"): {
+                "js": torch.zeros(2, dtype=torch.float32),
+                "kl_a": torch.zeros(2, dtype=torch.float32),
+                "kl_b": torch.zeros(2, dtype=torch.float32),
+                "n_resp": 2,
+            }
+        }
+        smoke_response_ids = {
+            _cache_key("p0", 0, 0, "_response", "_response"): torch.tensor([1, 2], dtype=torch.long)
+        }
+        smoke_config = {
+            "personas": ["p0", "p1", "p2", "p3"],
+            "n_probes": 3,
+            "r": 2,
+            "max_new_tokens": 64,
+            "seed": 0,
+            "started_at": "1970-01-01T00:00:00+00:00",
+        }
+
+        _save_cache_checkpoint(
+            smoke_cache,
+            smoke_response_ids,
+            cache_dir=cache_dir,
+            cache_out_stem=smoke_stem,
+            p_idx=3,
+            q_idx=15,
+            config=smoke_config,
+        )
+
+        # A. The smoke partial's filename is stem-prefixed.
+        smoke_partials = sorted(cache_dir.glob("*_partial_P*_Q*.pt"))
+        if len(smoke_partials) != 1:
+            failures.append(
+                f"expected exactly 1 partial after smoke write; got {len(smoke_partials)}: "
+                f"{[p.name for p in smoke_partials]}"
+            )
+        else:
+            got_name = smoke_partials[0].name
+            expected_name = f"{smoke_stem}_partial_P3_Q15.pt"
+            if got_name != expected_name:
+                failures.append(
+                    f"smoke partial filename FAIL: got {got_name!r}, "
+                    f"expected {expected_name!r} (round-4 namespacing must "
+                    f"prefix with cache_out.stem)"
+                )
+            # Pre-round-4 regression check: the bare ``logprob_cache_partial_*``
+            # pattern (no stem prefix) MUST NOT match what we wrote.
+            if got_name == "logprob_cache_partial_P3_Q15.pt":
+                failures.append(
+                    "smoke partial collides with the full-sweep bare pattern "
+                    "'logprob_cache_partial_P3_Q15.pt' — round-4 regression."
+                )
+
+        # B. Full-sweep resume reader, scoped to ``full_stem``, must NOT pick
+        # up the smoke partial.
+        full_cache, full_response_ids, full_meta = _load_cache_checkpoint(cache_dir, full_stem)
+        if full_cache or full_response_ids or full_meta is not None:
+            failures.append(
+                "full-sweep _load_cache_checkpoint picked up smoke partial — "
+                f"namespace collision NOT fixed. Got: cache_len={len(full_cache)}, "
+                f"response_ids_len={len(full_response_ids)}, meta={full_meta!r}"
+            )
+
+        # C1. Smoke-stem resume reader DOES find its own partial back.
+        loaded_cache, _loaded_response_ids, loaded_meta = _load_cache_checkpoint(
+            cache_dir, smoke_stem
+        )
+        if not loaded_cache:
+            failures.append(
+                "smoke-stem _load_cache_checkpoint failed to find its own "
+                "partial back — stem-scoped glob is too strict."
+            )
+        if loaded_meta is None or loaded_meta.get("p_idx") != 3 or loaded_meta.get("q_idx") != 15:
+            failures.append(
+                f"smoke-stem resume meta mismatch: got {loaded_meta!r}, expected p_idx=3, q_idx=15"
+            )
+
+        # C2. Fail-loud config mismatch — defensive second line of defense.
+        # If a future bug mixed full-stem partials with a smoke-stem config
+        # (or vice versa), the resume reader must raise rather than silently
+        # corrupt the JS values.
+        full_config_mismatched = {
+            "personas": [f"p{i}" for i in range(16)],  # full has 16 personas
+            "n_probes": 200,
+            "r": 8,  # full has r=8 vs smoke r=2
+            "max_new_tokens": 256,  # full has 256 vs smoke 64
+            "seed": 0,
+            "started_at": "1970-01-01T00:00:00+00:00",
+        }
+        try:
+            _load_cache_checkpoint(cache_dir, smoke_stem, expected_config=full_config_mismatched)
+        except RuntimeError as e:
+            msg = str(e)
+            if "config mismatch" not in msg:
+                failures.append(f"expected RuntimeError to mention 'config mismatch'; got {msg!r}")
+        else:
+            failures.append(
+                "fail-loud config check did NOT raise on mismatched "
+                "(r, max_new_tokens, personas) — defensive check is broken."
+            )
+
+        wrote_name = smoke_partials[0].name if smoke_partials else "<none>"
+        print(
+            f"partial-namespace toy: wrote {wrote_name}; "
+            f"full-stem resume returned ({len(full_cache)} cache, "
+            f"{len(full_response_ids)} response_ids, meta={full_meta!r}); "
+            f"smoke-stem resume returned {len(loaded_cache)} cache entries; "
+            "config-mismatch fail-loud trips as expected."
+        )
+
+    return failures
+
+
 def main() -> int:
-    """Run both golden checks; print PASS/FAIL; return exit code."""
+    """Run all three golden checks; print PASS/FAIL; return exit code."""
     all_failures: list[str] = []
 
     print("=== Golden case 1: JS kernel correctness (2-vocab closed-form) ===")
@@ -335,6 +496,9 @@ def main() -> int:
     print("\n=== Golden case 2: multi-response variable-length aggregation ===")
     all_failures.extend(_multi_response_length_normalization_check())
 
+    print("\n=== Golden case 3: partial-cache namespace collision (round-4) ===")
+    all_failures.extend(_partial_cache_namespace_check())
+
     if all_failures:
         print("\n--- FAIL ---")
         for f in all_failures:
@@ -342,9 +506,10 @@ def main() -> int:
         return 1
 
     print(
-        "\nPASS: kernel + multi-response golden cases both PASS. "
-        "JS matrix uses canonical full-vocab per-position mixture (kernel) "
-        "and per-response mean-of-means length-normalization (reducer)."
+        "\nPASS: kernel + multi-response + partial-namespace golden cases all PASS. "
+        "JS matrix uses canonical full-vocab per-position mixture (kernel), "
+        "per-response mean-of-means length-normalization (reducer), and "
+        "stem-scoped partial-cache filenames (no smoke-vs-full collision)."
     )
     return 0
 
