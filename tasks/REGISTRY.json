@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 523,
+  "highest_id": 524,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3023,6 +3023,13 @@
       "path": "tasks/approved/523",
       "status": "approved",
       "title": "Test whether #502's L22 gauss_kl geometry-predicts-leakage cell survives honest held-out evaluation (held-out probe pool + second seed + nested CV)"
+    },
+    "524": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/524",
+      "status": "proposed",
+      "title": "Directional/asymmetric base-model predictors of marker-leakage: can they recover the antisymmetric component the symmetric #502 zoo is blind to?"
     },
     "53": {
       "has_clean_result": false,
