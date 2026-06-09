@@ -13,6 +13,9 @@ goal: Determine whether encoding a persona as a custom chat-template role header
   anchor by dropping the learning rate to 5e-6 (the demonstrated clean window in .claude/rules/marker-training-recipe.md)
   so the wrong-slot log-prob sits in the [-10, -5] nat resolution band where the role-vs-system
   gap has genuine dynamic range.
+relates_to:
+- spec-role-header
+- leak-contrastive-negatives
 ---
 ## Goal
 
