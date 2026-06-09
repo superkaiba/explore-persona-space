@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -674,6 +675,142 @@ def test_figure_alt_text_with_brackets_parses():
     assert by_name["hero image present"].passed
     assert by_name["Figure URL resolvable"].passed
     assert ok
+
+
+# ─── Check 4b: figure existence (offline git probe + HTTP fallback) ───────
+#
+# Incident task #507 (2026-06-09): a clean-result cited a SHA-pinned figure
+# that was never generated or committed; the URL-shape check PASSed and the
+# dashboard rendered a broken image. Check 4b now verifies existence:
+# same-repo SHA-pinned raw URLs offline via `git cat-file`, unknown SHAs /
+# other hosts via one HTTP HEAD per unique URL (fenced to None across the
+# suite by tests/conftest.py's EPM_VERIFY_BODY_NO_HTTP=1 — stubbing
+# `_http_head_status` bypasses the fence).
+
+_GOOD_BODY_FIGURE_URL = (
+    "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+    "0123456789abcdef/figures/issue_999/hero.png"
+)
+
+
+def _make_repo_with_figure(tmp_path):
+    """Create a throwaway git repo whose HEAD commit carries
+    `figures/issue_999/hero.png`; return (repo_path, head_sha)."""
+    repo = tmp_path / "figrepo"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    fig = repo / "figures" / "issue_999" / "hero.png"
+    fig.parent.mkdir(parents=True)
+    fig.write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add hero figure")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha
+
+
+def test_figure_url_same_repo_sha_and_path_exist_passes(tmp_path, monkeypatch):
+    """Same-repo URL pinned to a sha whose tree carries the path →
+    definitive PASS via the offline git probe (no `unverified` note)."""
+    repo, sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name["Figure URL resolvable"].passed
+    assert "unverified" not in by_name["Figure URL resolvable"].detail
+    assert ok
+
+
+def test_figure_url_same_repo_missing_path_fails(tmp_path, monkeypatch):
+    """The #507 case: the sha resolves locally but the figure path is
+    absent from its tree → definitive FAIL, no HTTP involved."""
+    repo, sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace(
+        "0123456789abcdef/figures/issue_999/hero.png",
+        f"{sha}/figures/issue_999/never_generated.png",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Figure URL resolvable"].passed
+    assert "does not exist at" in by_name["Figure URL resolvable"].detail
+    assert "never_generated.png" in by_name["Figure URL resolvable"].detail
+
+
+def test_figure_url_unknown_sha_http_404_fails(monkeypatch):
+    """Sha unknown to the local object DB (fabricated) → HTTP fallback;
+    a definitive 404 FAILs."""
+    monkeypatch.setattr(verify_task_body, "_http_head_status", lambda url, timeout=5.0: 404)
+    ok, results = verify_task_body.verify_text(GOOD_BODY)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Figure URL resolvable"].passed
+    assert "404" in by_name["Figure URL resolvable"].detail
+
+
+def test_figure_url_unknown_sha_http_200_passes(monkeypatch):
+    """Sha unknown locally but the URL serves (e.g. committed from a pod
+    clone and not yet fetched) → HTTP 200 → clean PASS."""
+    monkeypatch.setattr(verify_task_body, "_http_head_status", lambda url, timeout=5.0: 200)
+    ok, results = verify_task_body.verify_text(GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert by_name["Figure URL resolvable"].passed
+    assert "unverified" not in by_name["Figure URL resolvable"].detail
+    assert ok
+
+
+def test_figure_url_probe_unavailable_is_note_not_fail():
+    """Indeterminate everywhere (sha unknown + HTTP fenced by conftest) →
+    PASS with an `unverified` note, never a FAIL — offline runs don't
+    block."""
+    ok, results = verify_task_body.verify_text(GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert by_name["Figure URL resolvable"].passed
+    assert "unverified" in by_name["Figure URL resolvable"].detail
+    assert ok
+
+
+def test_figure_url_other_host_http_404_fails(monkeypatch):
+    """Non-GitHub hosts get the HTTP probe too; a definitive 404 FAILs."""
+    monkeypatch.setattr(verify_task_body, "_http_head_status", lambda url, timeout=5.0: 404)
+    body = GOOD_BODY.replace(
+        _GOOD_BODY_FIGURE_URL,
+        "https://eps-figures.example.com/issue_999/hero.png",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Figure URL resolvable"].passed
+
+
+def test_figure_url_http_5xx_is_note_not_fail(monkeypatch):
+    """A non-404 error status (rate limit, server error) is indeterminate
+    → `unverified` note, not a FAIL."""
+    monkeypatch.setattr(verify_task_body, "_http_head_status", lambda url, timeout=5.0: 503)
+    ok, results = verify_task_body.verify_text(GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert by_name["Figure URL resolvable"].passed
+    assert "HTTP 503" in by_name["Figure URL resolvable"].detail
+    assert ok
+
+
+def test_http_head_status_env_fence(monkeypatch):
+    """EPM_VERIFY_BODY_NO_HTTP=1 short-circuits the real probe to None
+    (the suite-wide offline fence from tests/conftest.py)."""
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_HTTP", "1")
+    assert verify_task_body._http_head_status("https://example.com/x.png") is None
 
 
 # ─── Check 12: `## Figure` H2 deprecation hook (dormant) ──────────────────
