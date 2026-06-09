@@ -77,6 +77,7 @@ from scripts.i464_phase4_eval import (  # type: ignore[import-not-found]
     LOGP_FLOOR,
     _build_probes_for_eval_marker,
     _extract_marker_logp,
+    assert_r_canon_test_coverage,
 )
 
 load_dotenv()
@@ -430,6 +431,30 @@ def main(argv: list[str] | None = None) -> None:
     if args.smoke_n_q > 0:
         q_test = q_test[: args.smoke_n_q]
         logger.warning("SMOKE: truncated Q_test to %d questions", len(q_test))
+
+    # Preflight: verify R_canon_test covers EVERY (persona, q_test) the
+    # downstream eval loop will consume BEFORE we download adapters or
+    # spin up vLLM. The eval loop (``_build_probes_for_eval_marker``,
+    # imported from phase4) indexes
+    # ``R_canon_test[R_persona][q]["response_text"]`` with no in-loop
+    # guard; a subset / drifted artifact would crash mid-eval with a
+    # bare ``KeyError`` AFTER vLLM is up, wasting GPU spend on every
+    # cn_i529 cell launch. Round-3 closure for
+    # ``eval-po-r-canon-coverage-unverified``: the same gate the parent
+    # eval uses, called on the actual production cn_i529 entrypoint.
+    # All probed eval encodings always carry the shared pirate marker
+    # ``enc.MARKER_PIRATE_TEXT`` and R splices via
+    # ``enc.persona_for_eval_encoding(e_eval)``, which maps to one of
+    # ``enc.PERSONAS`` (pirate / villain) for system_/role_ encodings
+    # and to the bare default for ``default_assistant`` — the eval loop
+    # ONLY indexes R_canon_test with personas in ``enc.PERSONAS``, so
+    # that's the required-coverage set.
+    assert_r_canon_test_coverage(R_canon_test, q_test, enc.PERSONAS)
+    logger.info(
+        "R_canon_test coverage: %d personas x %d q_test rows all present.",
+        len(set(enc.PERSONAS)),
+        len(q_test),
+    )
 
     all_cells = _all_po_cells(variant=args.variant)
     if args.variant == "cn_i529" and args.epoch is not None:

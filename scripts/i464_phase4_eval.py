@@ -226,6 +226,60 @@ def _extract_marker_logp(
     return logps, argmax_marker
 
 
+def assert_r_canon_test_coverage(
+    R_canon_test: dict[str, dict[str, dict]],
+    q_test: list[str],
+    required_personas: list[str] | tuple[str, ...],
+) -> None:
+    """Fail-loud preflight: R_canon_test covers every (persona, q_test) row.
+
+    The eval loop indexes ``R_canon_test[R_persona][q]["response_text"]``
+    (``_build_probes_for_eval_marker`` line ~195) with no in-loop guard.
+    A subset / drifted artifact crashes mid-eval with a bare ``KeyError``
+    AFTER vLLM is up (wasted GPU spend). Call this BEFORE adapter
+    download / vLLM init on every entrypoint that consumes R_canon_test.
+
+    Raises:
+        RuntimeError: when ``required_personas`` are missing from
+            ``R_canon_test`` keys, OR when any required persona is missing
+            one or more ``q_test`` questions. Message names the missing
+            personas / first 5 q_ids per persona so a drifted data-repo
+            artifact is recognizable from the traceback alone.
+
+    Imported and called from BOTH ``i464_phase4_eval.main()`` (parent
+    #464 eval) and ``i464_po_eval.main()`` (positive-only / cn / cn_i529
+    cross-eval). Closes round-3 BLOCKER ``eval-po-r-canon-coverage-
+    unverified``: the round-2 preflight was inline in this file's
+    ``main()`` only and never fired on the cn_i529 production path
+    through ``i464_po_eval.main()``.
+    """
+    required_set = set(required_personas)
+    q_test_set = set(q_test)
+    personas_present = set(R_canon_test)
+    missing_personas = required_set - personas_present
+    if missing_personas:
+        raise RuntimeError(
+            f"R_canon_test coverage: missing personas {sorted(missing_personas)}; "
+            f"present={sorted(personas_present)}; required={sorted(required_set)}. "
+            "Re-pull `R_canon_test.json` from `superkaiba1/explore-persona-space-data` "
+            "or run the parent #464 R-gen if the data-repo artifact has drifted."
+        )
+    per_persona_missing: dict[str, list[str]] = {}
+    for p in sorted(required_set):
+        have_qs = set(R_canon_test[p])
+        missing_qs = sorted(q_test_set - have_qs)
+        if missing_qs:
+            per_persona_missing[p] = missing_qs
+    if per_persona_missing:
+        raise RuntimeError(
+            "R_canon_test coverage: per-persona Q_test shortfall "
+            f"(showing first 5 per persona): "
+            f"{ {p: m[:5] for p, m in per_persona_missing.items()} }. "
+            f"|q_test|={len(q_test)}; ensure R_canon_test was regenerated against the "
+            "current Q_test=50 set."
+        )
+
+
 def main(argv: list[str] | None = None) -> None:
     """Entry point for ``i464_phase4_eval``."""
     logging.basicConfig(
@@ -282,36 +336,14 @@ def main(argv: list[str] | None = None) -> None:
     # ``R_canon_test[R_persona][q]["response_text"]`` (line ~195) with no
     # in-loop guard; a subset parent artifact would crash mid-eval with a
     # bare ``KeyError`` per the `eval-r-canon-coverage-unverified` blocker
-    # raised in round 1. Fail LOUD up-front with a clear missing-key
-    # report so any artifact drift is surfaced before pod GPU spend.
-    _required_personas = set(enc.PERSONAS)
-    _q_test_set = set(q_test)
-    _personas_present = set(R_canon_test)
-    _missing_personas = _required_personas - _personas_present
-    if _missing_personas:
-        raise RuntimeError(
-            f"R_canon_test coverage: missing personas {sorted(_missing_personas)}; "
-            f"present={sorted(_personas_present)}; required={sorted(_required_personas)}. "
-            "Re-pull `R_canon_test.json` from `superkaiba1/explore-persona-space-data` "
-            "or run the parent #464 R-gen if the data-repo artifact has drifted."
-        )
-    _per_persona_missing: dict[str, list[str]] = {}
-    for _p in sorted(_required_personas):
-        _have_qs = set(R_canon_test[_p])
-        _missing_qs = sorted(_q_test_set - _have_qs)
-        if _missing_qs:
-            _per_persona_missing[_p] = _missing_qs
-    if _per_persona_missing:
-        raise RuntimeError(
-            "R_canon_test coverage: per-persona Q_test shortfall "
-            f"(showing first 5 per persona): "
-            f"{ {p: m[:5] for p, m in _per_persona_missing.items()} }. "
-            f"|q_test|={len(q_test)}; ensure R_canon_test was regenerated against the "
-            "current Q_test=50 set."
-        )
+    # raised in round 1. Round 3: extracted to module-level
+    # ``assert_r_canon_test_coverage`` so the cn_i529 production path
+    # through ``i464_po_eval.main()`` calls the SAME helper (closes
+    # `eval-po-r-canon-coverage-unverified`).
+    assert_r_canon_test_coverage(R_canon_test, q_test, enc.PERSONAS)
     logger.info(
         "R_canon_test coverage: %d personas x %d q_test rows all present.",
-        len(_required_personas),
+        len(set(enc.PERSONAS)),
         len(q_test),
     )
 

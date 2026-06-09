@@ -279,25 +279,21 @@ def test_po_analyze_paths_for_cn_i529():
 # =========================================================================
 
 
-def test_no_shared_marker_fails_loud():
-    """Closes `legacy-i464-train-path-broken`.
+def test_no_shared_marker_argparse_guard():
+    """Closes `cn-without-shared-marker-argparse-guard`.
 
-    The 2-persona-mix path (no ``--shared-marker``) was retired on main
-    between the parent #464 SHA and the #529 worktree base. Round-2
-    contract: this path MUST fail loud with a clear error pointing at
-    the missing multi-marker collator, NOT silently produce an
-    arbitrary-marker run. Full restoration is out of scope for the #529
-    experiment — pinned here so future contributors see the contract at
-    test time.
+    Round-2 contract: ``--contrastive-negatives`` without ``--shared-marker``
+    must fail at argparse (line ~789-790 of i464_phase23_train.py) BEFORE
+    any expensive data load.
+
+    NOTE: this test pins the argparse pre-guard ONLY. The deeper
+    line-961 SystemExit (the 2-persona-mix multi-marker-collator
+    contract) is pinned separately by
+    ``test_2_persona_mix_no_shared_marker_fails_loud`` below, which
+    reaches that branch directly.
     """
     from scripts import i464_phase23_train as t29
 
-    # ``main()`` triggers the SystemExit inside the cfg-build branch
-    # AFTER argparse + data loading; the simplest contract pin is a
-    # direct argparse round-trip via main()'s argument set, then assert
-    # the exit happens at the cfg branch. We bypass actual training by
-    # stopping at the SystemExit — note its message must reference the
-    # retired multi-marker collator so users get a useful diagnostic.
     argv = [
         "--issue",
         "464",
@@ -311,6 +307,76 @@ def test_no_shared_marker_fails_loud():
     ]
     with pytest.raises(SystemExit):
         t29.main(argv)
+
+
+def test_2_persona_mix_no_shared_marker_fails_loud(tokenizer, tmp_path, monkeypatch, capsys):
+    """Closes round-3 ``regression-test-scope-line-961-unreachable``.
+
+    The 2-persona-mix path (no ``--shared-marker``, no
+    ``--contrastive-negatives``) was retired on main between the parent
+    #464 SHA and the #529 worktree base. The dispatcher must fail LOUD
+    with a clear error pointing at the missing multi-marker collator,
+    NOT silently produce an arbitrary-marker run.
+
+    This test exercises the actual ``SystemExit`` at
+    ``scripts/i464_phase23_train.py`` line 961 by:
+      * passing argv that PASSES every argparse guard (no flag triggers
+        ``ap.error()``);
+      * monkeypatching ``load_q_train_answers`` /
+        ``_load_R_canon`` / ``_build_training_rows`` so the function
+        reaches the cfg-marker-text branch without disk / HF I/O;
+      * monkeypatching ``_build_traj_probe_file`` and ``TRAIN_ROW_DIR``
+        so the trajectory wiring stays CPU-only;
+      * asserting the SystemExit's message names the retired multi-
+        marker collator (the line-961 contract verbatim).
+
+    Round-3 fix: the round-2 test pinned ``ap.error()`` at line ~789-790
+    (renamed above), NOT the documented line-961 SystemExit; the line-961
+    contract message could disappear without that test noticing. This
+    second test pins it.
+    """
+    from scripts import i464_phase23_train as t29
+
+    questions = ["q1", "q2"]
+    q_train_stub = {q: f"answer_for_{q}" for q in questions}
+    R_canon_stub = _r_canon_stub(questions)
+
+    monkeypatch.setattr(t29, "load_q_train_answers", lambda: q_train_stub)
+    monkeypatch.setattr(t29, "_load_R_canon", lambda split: R_canon_stub)
+    monkeypatch.setattr(t29, "TRAIN_ROW_DIR", tmp_path)
+
+    # Stub the row-builder so the test reaches the cfg-marker-text
+    # branch without writing real training rows. Returns a path the
+    # trajectory wiring won't actually read (--no-traj suppresses the
+    # traj-probe build) so the path body doesn't matter.
+    fake_rows = tmp_path / "fake_rows.jsonl"
+    fake_rows.write_text('{"prompt": "stub", "completion": " ※"}\n')
+    monkeypatch.setattr(
+        t29,
+        "_build_training_rows",
+        lambda *a, **kw: fake_rows,
+    )
+
+    # NO --shared-marker, NO --contrastive-negatives → passes every
+    # argparse guard (lines 787-790, 796-802 are all conditional on the
+    # missing flags) and reaches the cfg-build branch at line ~958-968.
+    # --no-traj suppresses the R_canon_test load + traj-probe build
+    # (lines 899-924) which would otherwise need additional monkeypatches.
+    argv = [
+        "--issue",
+        "464",
+        "--cell",
+        "system_plain_seed42",
+        "--no-traj",
+    ]
+    with pytest.raises(SystemExit) as excinfo:
+        t29.main(argv)
+    # Pin the line-961 contract message verbatim (substring match — the
+    # full message wraps lines so substring is more robust than equality).
+    msg = str(excinfo.value)
+    assert "2-persona-mix path" in msg, msg
+    assert "multi-marker" in msg.lower(), msg
+    assert "--shared-marker" in msg, msg
 
 
 def test_select_anchor_partial_branch():
