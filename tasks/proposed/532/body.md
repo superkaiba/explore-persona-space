@@ -4,6 +4,7 @@ title: Geometric leakage predictors (cosine/JS/Gaussian-KL) vs a base-prior pred
 kind: experiment
 tags:
 - leak-predictor
+- mentor-dan
 created_at: '2026-06-09T06:07:58Z'
 has_clean_result: false
 parent_id: 502
