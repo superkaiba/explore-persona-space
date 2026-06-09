@@ -332,6 +332,58 @@ def _per_persona_paired_d_block(
     return out
 
 
+# Per-persona H1 magnitude floor (plan §6 H1 threshold). A per-persona
+# cell drives H1 only if BOTH its 95% paired-bootstrap CI clears zero on
+# the positive side AND the central mean d >= this value.
+H1_PER_PERSONA_THRESHOLD = 0.5
+
+
+def _headline_verdict_from_per_persona(
+    per_persona: dict[str, dict[str, dict[str, float | bool]]],
+) -> tuple[str, bool, bool]:
+    """Compute the cn_i533 H1/H0/inconclusive verdict from per-persona cells.
+
+    Round-2 reconciler binding finding: the inherited cn_i529 H2 rule at
+    lines ~706-708 (1.0-nat both-contrast persona-averaged rule) cannot
+    drive the cn_i533 H1/H0 verdict because ``_symmetric_leakage`` averages
+    personas BEFORE forming d, so the persona-averaged read can hide an
+    opposite-signed per-persona pair. Plan §6 thresholds:
+
+      H1 (positive resolution): AT LEAST ONE of the 4 cells (pirate x
+        plain, pirate x padded, villain x plain, villain x padded) has
+        ``ci_lo_95 > 0`` AND ``mean >= H1_PER_PERSONA_THRESHOLD`` (0.5 nat).
+      H0 (null resolution): ALL 4 cells straddle zero, i.e.
+        ``ci_lo_95 <= 0 <= ci_hi_95``.
+
+    Both resolve the experiment's question (plan §3 / §6); the caller
+    maps both to ``headline_status='ok'``. ``inconclusive`` covers the
+    rare case where the per-persona pattern fits NEITHER H1 nor H0 (e.g.
+    one cell positive but sub-threshold, one cell straddling zero, one
+    cell clearly negative); the caller maps this to ``'partial'``.
+
+    Returns ``(verdict, h1_per_persona_pass, h0_per_persona_pass)`` where
+    ``verdict`` is one of ``{'h1', 'h0', 'inconclusive'}``. The booleans
+    are reported in the payload as standalone fields for downstream
+    auditability (e.g. a degenerate case where both fire would still
+    route to 'h1' here but the analyst can read both flags).
+    """
+    cells: list[dict[str, float | bool]] = []
+    for persona_key in ("pirate", "villain"):
+        for contrast_key in ("plain", "padded"):
+            cells.append(per_persona[persona_key][contrast_key])
+    h1_pass = any(
+        float(c["ci_lo_95"]) > 0.0 and float(c["mean"]) >= H1_PER_PERSONA_THRESHOLD for c in cells
+    )
+    h0_pass = all(float(c["ci_lo_95"]) <= 0.0 <= float(c["ci_hi_95"]) for c in cells)
+    if h1_pass:
+        verdict = "h1"
+    elif h0_pass:
+        verdict = "h0"
+    else:
+        verdict = "inconclusive"
+    return verdict, h1_pass, h0_pass
+
+
 def _own_persona_elicitation(arm: enc.Arm, seed: int) -> tuple[list[float], list[str]]:
     """H1 gate input: raw trained log P on each (training_persona, own-encoding) cell.
 
@@ -802,6 +854,41 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                         stats["ci_hi_95"],
                         stats["sign_agreement"],
                     )
+            # cn_i533 ONLY: route headline_status through the 4 per-persona
+            # cells (round-2 reconciler binding finding). The inherited
+            # persona-averaged H2 rule at lines ~706-708 cannot drive the
+            # H1/H0 verdict for cn_i533 because _symmetric_leakage averages
+            # personas before forming d, so the persona-averaged read can
+            # hide an opposite-signed per-persona pair. Plan §6 thresholds:
+            #   H1 (positive resolution): >=1 of 4 cells has ci_lo > 0
+            #       AND mean >= H1_PER_PERSONA_THRESHOLD nat
+            #   H0 (null resolution): ALL 4 cells straddle zero
+            #       (ci_lo <= 0 <= ci_hi)
+            # Either resolves the experiment's question; headline_status
+            # maps to "ok" in both cases. "inconclusive" = neither H1 nor
+            # H0 fits (e.g. one cell positive but below 0.5 nat AND another
+            # straddling zero AND another non-straddling negative) → maps
+            # to "partial". The cn_i529 path is BYTE-STABLE — none of this
+            # routing applies there.
+            per_persona_verdict, h1_pp_pass, h0_pp_pass = _headline_verdict_from_per_persona(
+                per_persona
+            )
+            payload["headline"]["per_persona_verdict"] = per_persona_verdict
+            payload["headline"]["h1_per_persona_pass"] = h1_pp_pass
+            payload["headline"]["h0_per_persona_pass"] = h0_pp_pass
+            if per_persona_verdict == "h1" or per_persona_verdict == "h0":
+                headline_status = "ok"
+            else:
+                headline_status = "partial"
+            payload["headline"]["status"] = headline_status
+            payload["headline_status"] = headline_status
+            logger.info(
+                "cn_i533 per-persona verdict: %s (h1_pass=%s h0_pass=%s) -> headline_status=%s",
+                per_persona_verdict,
+                h1_pp_pass,
+                h0_pp_pass,
+                headline_status,
+            )
         except FileNotFoundError as e:
             if args.allow_partial:
                 logger.warning("cn_i533 per-persona paired-d (partial): %s", e)
