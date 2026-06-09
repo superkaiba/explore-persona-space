@@ -374,8 +374,15 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         # The launch SUCCEEDED (live VM / job) but the sidecar write
         # failed — print the handle JSON anyway (it IS the recovery
         # record) plus the error, instead of the pre-fix rc=4 crash
-        # that stranded live infra with no handle on stdout.
+        # that stranded live infra with no handle on stdout. The FULL
+        # serialized handle rides along (M4.1): ``deserialize_handle``
+        # requires backend/scratch_dir/log_path too, so the summary
+        # fields alone were NOT sufficient to hand-write a
+        # ``--handle-file`` sidecar and run finalize.
+        from explore_persona_space.backends.issue_dispatch import serialize_handle
+
         body["sidecar_write_error"] = outcome.sidecar_write_error
+        body["handle"] = serialize_handle(result.handle)
         logging.getLogger("dispatch_issue").error(
             "launch succeeded but the handle sidecar write FAILED (%s); "
             "the JSON line below is the only recovery record — keep it. "
@@ -401,6 +408,12 @@ def _cmd_finalize(
     the same handle; this CLI is the complementary MECHANICAL gate
     (HF Hub list_repo_files + WandB run + git-figure + completion
     sentinel — see ``backends.artifacts.confirm_artifacts_from_handle``).
+
+    After a SUCCESSFUL teardown the sidecar is renamed to
+    ``<name>.finalized`` (audit record, never deleted) so a later
+    finalize for the same issue cannot tear down a fresh run through
+    the stale handle; the duplicate tick then no-ops with the benign
+    rc=2 ``missing_handle_sidecar`` shape (Mn4.3).
     """
     from explore_persona_space.backends.issue_dispatch import (
         default_handle_sidecar_path,
@@ -438,12 +451,42 @@ def _cmd_finalize(
             return 3
 
     backend.teardown(handle)
+
+    # Mn4.3: retire the sidecar AFTER a successful teardown by renaming
+    # it to ``<name>.finalized`` (kept for audit, never deleted). A
+    # sidecar left in place outlives its VM / job, and a LATER cleanup
+    # finalize for the same issue (e.g. the harness's launch-crash
+    # best-effort path) would tear down whatever live run the STALE
+    # sidecar points at — destructive when the issue number is shared
+    # with a production run. After the rename a second finalize sees a
+    # missing sidecar → the benign rc=2 ``missing_handle_sidecar``
+    # no-op. A rename failure is logged LOUD but does NOT flip the exit
+    # code: teardown DID run, and rc!=0 here would make the harness
+    # raise "teardown may NOT have run", which would be false.
+    sidecar_path = Path(sidecar)
+    finalized_path: Path | None = None
+    try:
+        candidate = sidecar_path.with_name(sidecar_path.name + ".finalized")
+        sidecar_path.rename(candidate)
+        finalized_path = candidate
+    except OSError as exc:
+        logging.getLogger("dispatch_issue").error(
+            "teardown succeeded but the sidecar rename to *.finalized FAILED (%s: %s); "
+            "the stale sidecar at %s can mis-target a LATER finalize for issue %d — "
+            "remove or rename it manually.",
+            type(exc).__name__,
+            exc,
+            sidecar_path,
+            int(args.issue),
+        )
+
     body = {
         "ok": True,
         "issue": int(args.issue),
         "phase": "teardown",
         "chosen_kind": handle.backend,
         "pod_name": handle.pod_name,
+        "sidecar_finalized": str(finalized_path) if finalized_path else None,
     }
     print(json.dumps(body, sort_keys=True))
     return 0

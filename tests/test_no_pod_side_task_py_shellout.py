@@ -72,6 +72,12 @@ _LOCAL_VM_ONLY_PATHS: frozenset[str] = frozenset(
         # class as spawn_session / poll_pipeline / pod_watch above.
         "scripts/autonomous_session_watch.py",
         "scripts/codex_task.py",
+        # Slice-8 live-acceptance harness: drives dispatch_issue.py /
+        # backend_poll.py from the LOCAL VM only (the --live driver is
+        # an orchestrator-side tool; pods never invoke it). Its
+        # _default_read_events_jsonl resolves the task folder via
+        # ``task.py find`` — same local-VM-only class as poll_pipeline.
+        "scripts/router_acceptance.py",
         "scripts/gh_project.py",
         "scripts/workflow_lint.py",
         "scripts/audit_clean_results_body_discipline.py",

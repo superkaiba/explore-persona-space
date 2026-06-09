@@ -370,6 +370,50 @@ def test_render_create_argv_includes_persist_adapter_metadata(monkeypatch) -> No
     assert "EPM_PERSIST_ADAPTER_SUBFOLDER=router_acceptance/issue-137-gcp" in joined
 
 
+def test_render_create_argv_metadata_comma_value_uses_alternate_delimiter(monkeypatch) -> None:
+    """gcloud splits ``--metadata`` on commas, so a forwarded value
+    containing a comma would silently truncate every later pair. The
+    renderer must switch to the alternate-delimiter syntax (``gcloud
+    topic escaping``) so the full value survives as ONE pair."""
+    monkeypatch.setenv("EPM_PERSIST_ADAPTER_HF_REPO", "superkaiba1/explore-persona-space")
+    monkeypatch.setenv("EPM_PERSIST_ADAPTER_SUBFOLDER", "router_acceptance/issue-137,gcp")
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("lora-7b"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+    )
+    pair_args = [a for a in argv if a.startswith("--metadata=") and "startup-script" not in a]
+    assert len(pair_args) == 1
+    arg = pair_args[0]
+    # Alternate-delimiter syntax engaged: --metadata=^<delim>^k=v<delim>k=v
+    assert arg.startswith("--metadata=^"), arg
+    delim = arg.split("^")[1]
+    assert delim != ","
+    pairs = arg[len(f"--metadata=^{delim}^") :].split(delim)
+    assert "EPM_PERSIST_ADAPTER_SUBFOLDER=router_acceptance/issue-137,gcp" in pairs
+    assert f"eps-issue={_spec().issue}" in pairs
+
+
+def test_render_create_argv_metadata_comma_free_keeps_plain_join(monkeypatch) -> None:
+    """Comma-free values keep the plain comma-join (the argv stays
+    byte-stable for the common case)."""
+    monkeypatch.setenv("EPM_PERSIST_ADAPTER_HF_REPO", "superkaiba1/explore-persona-space")
+    monkeypatch.setenv("EPM_PERSIST_ADAPTER_SUBFOLDER", "router_acceptance/issue-137-gcp")
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("lora-7b"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+    )
+    pair_args = [a for a in argv if a.startswith("--metadata=") and "startup-script" not in a]
+    assert len(pair_args) == 1
+    assert not pair_args[0].startswith("--metadata=^")
+    assert "EPM_PERSIST_ADAPTER_HF_REPO=superkaiba1/explore-persona-space" in pair_args[0]
+
+
 def test_render_create_argv_omits_persist_adapter_metadata_when_unset(monkeypatch) -> None:
     """An unset passthrough var is dropped (same contract as the secret
     keys) -- no empty metadata pairs."""

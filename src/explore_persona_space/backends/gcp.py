@@ -729,7 +729,26 @@ def render_create_argv(
         # Per-secret metadata uses --metadata KEY=value; gcloud handles
         # the quoting once the value is passed as a single argv element.
         metadata_pairs.append(f"{key}={val}")
-    argv.append("--metadata=" + ",".join(metadata_pairs))
+    # gcloud splits ``--metadata`` on commas, so a forwarded value
+    # containing a comma would silently truncate every later pair. Keep
+    # the plain comma-join for the common comma-free case (argv stays
+    # byte-stable), and switch to gcloud's alternate-delimiter syntax
+    # (``--metadata=^<delim>^k1=v1<delim>k2=v2`` — see ``gcloud topic
+    # escaping``) whenever any pair carries a comma.
+    if any("," in pair for pair in metadata_pairs):
+        delim = next(
+            (d for d in (":", "|", "#", "~") if not any(d in pair for pair in metadata_pairs)),
+            None,
+        )
+        if delim is None:
+            keys = [pair.split("=", 1)[0] for pair in metadata_pairs]
+            raise ValueError(
+                "render_create_argv: no safe --metadata delimiter — every candidate "
+                f"appears in some pair value; keys={keys}"
+            )
+        argv.append(f"--metadata=^{delim}^" + delim.join(metadata_pairs))
+    else:
+        argv.append("--metadata=" + ",".join(metadata_pairs))
     # Startup-script via --metadata-from-file is the right shape (avoid
     # the 256KB metadata-line cap when the body grows). The caller writes
     # the script to a tempfile; the renderer asserts the contract via

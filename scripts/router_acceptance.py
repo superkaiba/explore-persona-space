@@ -1017,9 +1017,11 @@ def _attempt_cleanup_finalize(
     and nothing here may shadow it. ``plan.finalize_argv`` already
     carries ``--skip-confirm-artifacts`` (the always-teardown
     contract). When no sidecar was ever written the finalize no-ops
-    with rc=2 ``missing_handle_sidecar`` (harmless); when the sidecar
-    DID land it tears the live VM / job down. Cleanup failures are
-    logged LOUD ("may STILL be billing") and swallowed.
+    with rc=2 ``missing_handle_sidecar`` -- that VERIFIED-BENIGN shape
+    (every pre-provision launch crash hits it) logs a WARNING, not the
+    billing alarm. Every OTHER non-zero shape means the sidecar DID
+    land but teardown could not run, so those stay logged LOUD ("may
+    STILL be billing") and swallowed.
     """
     try:
         cleanup_proc = subprocess_run(
@@ -1030,14 +1032,27 @@ def _attempt_cleanup_finalize(
             check=False,
         )
         if cleanup_proc.returncode != 0:
-            logger.error(
-                "cleanup finalize ITSELF returned rc=%d after %s "
-                "-- live VM/job may STILL be billing; stderr=%r stdout=%r",
-                cleanup_proc.returncode,
-                context,
-                cleanup_proc.stderr.strip(),
-                cleanup_proc.stdout.strip(),
-            )
+            cleanup_body = _parse_last_json_line(cleanup_proc.stdout) or {}
+            if cleanup_body.get("reason") == "missing_handle_sidecar":
+                # The benign no-op: no handle sidecar ever landed, so
+                # there is NOTHING on disk to tear down. A billing
+                # ERROR here would false-alarm on every pre-provision
+                # launch crash (Mn4.2).
+                logger.warning(
+                    "cleanup finalize after %s found no handle sidecar -- nothing "
+                    "on disk to tear down. Verify manually ONLY if the launch "
+                    "stderr shows provisioning started.",
+                    context,
+                )
+            else:
+                logger.error(
+                    "cleanup finalize ITSELF returned rc=%d after %s "
+                    "-- live VM/job may STILL be billing; stderr=%r stdout=%r",
+                    cleanup_proc.returncode,
+                    context,
+                    cleanup_proc.stderr.strip(),
+                    cleanup_proc.stdout.strip(),
+                )
         else:
             logger.warning(
                 "cleanup finalize ran (rc=0) after %s; surfacing the original error.",
@@ -1170,6 +1185,23 @@ def run_live_lane(
             "finalize_body": None,
         }
 
+    if launch_body.get("sidecar_write_error"):
+        # M4.1: the launch SUCCEEDED (live VM / job) but the handle
+        # sidecar write failed. When the early on_launched copy ALSO
+        # failed (same unwritable dir), poll tick 1 reads
+        # ``status=dead reason=missing_handle_sidecar`` and finalize
+        # no-ops rc=2 -- a clean-looking terminal that swallows the
+        # ONLY recovery record into captured stdout. Scream NOW, with
+        # the full launch body (it carries the serialized handle) and
+        # the manual verification commands, so the operator can
+        # hand-write a ``--handle-file`` sidecar and run finalize.
+        logger.error(
+            "launch OK but sidecar write FAILED (%s); handle JSON (KEEP THIS): %s. %s",
+            launch_body["sidecar_write_error"],
+            json.dumps(launch_body, sort_keys=True),
+            _live_infra_warning(issue),
+        )
+
     # 2) + 3) Poll + finalize wrapped in try / except BaseException so
     # ANY mid-flight raise between launch and the normal finalize runs
     # cleanup-teardown before propagating. After launch returned ok the
@@ -1195,6 +1227,7 @@ def run_live_lane(
         )
         finalize_body = _run_finalize_and_check(
             plan,
+            issue=issue,
             subprocess_run=subprocess_run,
         )
         return {
@@ -1307,6 +1340,7 @@ def _run_poll_loop(
 def _run_finalize_and_check(
     plan: LiveCommandPlan,
     *,
+    issue: int,
     subprocess_run: Callable[..., subprocess.CompletedProcess],
 ) -> dict[str, Any]:
     """Run ``dispatch_issue.py finalize`` once and validate the response.
@@ -1317,7 +1351,10 @@ def _run_finalize_and_check(
     CLI / backend crash (missing sidecar, unknown backend kind, actual
     ``backend.teardown`` failure). All of these mean a live VM / job
     may STILL be billing; the harness fails LOUD rather than masking
-    that as success. A swallowed rc=3 here (the old behavior) was the
+    that as success, and every raise carries
+    :func:`_live_infra_warning` (M4.1: these raises fire exactly when
+    a live VM may be unmanaged, so the manual verification commands
+    must ride along). A swallowed rc=3 here (the old behavior) was the
     spend-leak: confirm_artifacts FAILed → rc=3 → teardown SKIPPED →
     live VM billing while harness exited 0.
     """
@@ -1333,12 +1370,13 @@ def _run_finalize_and_check(
         raise RouterAcceptanceError(
             f"dispatch_issue.py finalize exited with rc={finalize_proc.returncode}: "
             f"teardown may NOT have run -- live VM/job may still be billing. "
-            f"stderr={finalize_proc.stderr.strip()!r} stdout_body={finalize_body!r}"
+            f"stderr={finalize_proc.stderr.strip()!r} stdout_body={finalize_body!r}. "
+            + _live_infra_warning(issue)
         )
     if finalize_body is None:
         raise RouterAcceptanceError(
             "dispatch_issue.py finalize produced no parseable JSON on stdout; "
-            f"stdout={finalize_proc.stdout!r}"
+            f"stdout={finalize_proc.stdout!r}. " + _live_infra_warning(issue)
         )
     # Defense-in-depth: even rc=0 must report ``phase=teardown`` -- the
     # only ok-rc-0 finalize body shape the dispatch CLI emits is
@@ -1349,7 +1387,8 @@ def _run_finalize_and_check(
         raise RouterAcceptanceError(
             "dispatch_issue.py finalize returned rc=0 but did NOT report "
             f"phase=teardown (body={finalize_body!r}); teardown was SKIPPED "
-            "-- live VM/job may still be billing. Refusing to claim success."
+            "-- live VM/job may still be billing. Refusing to claim success. "
+            + _live_infra_warning(issue)
         )
     return finalize_body
 
@@ -1595,18 +1634,18 @@ def negative_duplicate_cron_tick() -> dict[str, Any]:
 
     The orchestrator's bg-Bash poll loop AND the 20-min ``issue-tick``
     backstop cron can both fire ``dispatch_issue.py finalize`` for the
-    same handle. The second tick MUST NOT crash. The router contract
-    (``ComputeBackend.teardown`` ABC docstring) says teardown is
-    idempotent -- the backend absorbs the duplicate call cleanly.
-    The harness exercises this directly: write a sidecar, call the
-    CLI's ``_cmd_finalize`` twice, assert (a) both calls return rc=0
-    (no crash on the second tick), AND (b) the backend recorded BOTH
-    teardown invocations (proving the second call was actually issued
-    -- a finalize CLI that silently no-op'd would mask a real bug).
-    The "idempotent" guarantee is on the BACKEND, not on the CLI:
-    a duplicate finalize is a real call but the backend's teardown
-    is a no-op on the second pass (validated by per-backend tests
-    elsewhere; here we prove the CLI doesn't barf on the duplicate).
+    same handle. The second tick MUST NOT crash. Since the Mn4.3
+    stale-sidecar fix, the FIRST successful finalize renames the
+    sidecar to ``<name>.finalized``, so the second tick sees a missing
+    sidecar and no-ops with the benign rc=2 ``missing_handle_sidecar``
+    shape (exactly ONE teardown reaches the backend). The harness
+    exercises this directly: write a sidecar, call the CLI's
+    ``_cmd_finalize`` twice, assert (a) neither call CRASHES (rc=0
+    then the benign rc=2 no-op), AND (b) the backend recorded the
+    first teardown. The backend-side idempotency guarantee
+    (``ComputeBackend.teardown`` ABC docstring: a duplicate teardown
+    is absorbed cleanly) is validated by per-backend tests elsewhere;
+    here we prove the CLI level doesn't barf on the duplicate tick.
     """
     import tempfile
 
@@ -1637,12 +1676,12 @@ def negative_duplicate_cron_tick() -> dict[str, Any]:
         write_handle_sidecar(handle, sidecar)
 
         # Run finalize TWICE; the CLI should absorb the second call.
-        # The first call leaves the sidecar in place (finalize today
-        # does NOT delete it), so the second call WOULD re-execute
-        # teardown. The router-acceptance contract is: the second
-        # backend.teardown call must be a no-op (idempotent per the
-        # ABC), AND the second exit code must be 0 (not a crash). We
-        # assert by tracking teardown call counts.
+        # The first call renames the sidecar to ``*.finalized``
+        # (Mn4.3), so the second call no-ops on the missing sidecar
+        # with the benign rc=2 ``missing_handle_sidecar`` shape. The
+        # router-acceptance contract is: the duplicate tick must not
+        # CRASH and must not re-execute teardown against a stale
+        # handle. We assert by tracking rc codes + teardown counts.
 
         from scripts.dispatch_issue import main as dispatch_main
 
@@ -1934,19 +1973,27 @@ def _cmd_negative(args: argparse.Namespace) -> int:
         )
         assert outcome["runpod_launches"] == 0, "cancel-race: RunPod was launched on auto path"
     elif args.case == "duplicate-cron-tick":
-        # Both invocations must return 0 (the CLI does NOT crash on the
-        # second tick); teardown is called either ONCE or TWICE.
-        # Accepting (1, 2) on purpose: today the CLI doesn't de-dup so
-        # teardown is called twice and the backend's ABC contract
-        # absorbs the duplicate. A FUTURE CLI-level idempotency fix
-        # (e.g. dispatch_issue.py finalize deletes the sidecar after
-        # the first call) would land teardown_count=1, which is ALSO
-        # correct under the contract -- the test must not read that
-        # future improvement as a regression. The claim under test is
-        # rc_codes=[0,0] -- the CLI does NOT crash on the second tick.
-        assert outcome["rc_codes"] == [0, 0], (
-            f"duplicate-cron-tick: expected rc_codes=[0,0], got {outcome['rc_codes']!r}"
+        # The first tick must succeed (rc=0, teardown ran). The second
+        # tick must NOT crash: either rc=0 (a backend-absorbed
+        # duplicate teardown, the pre-Mn4.3 CLI behavior) or the benign
+        # rc=2 ``missing_handle_sidecar`` no-op (the Mn4.3 CLI renames
+        # the sidecar to ``*.finalized`` after the first teardown, so
+        # the duplicate tick finds nothing to tear down). Any other rc
+        # is a crash regression. teardown_count in (1, 2) keeps both
+        # CLI generations correct under the contract: no
+        # double-teardown CRASH, no stale-handle teardown.
+        assert outcome["rc_codes"][0] == 0, (
+            f"duplicate-cron-tick: first tick must succeed, got rc_codes={outcome['rc_codes']!r}"
         )
+        assert outcome["rc_codes"][1] in (0, 2), (
+            f"duplicate-cron-tick: second tick must be rc=0 (absorbed duplicate) or the "
+            f"benign rc=2 missing-sidecar no-op, got rc_codes={outcome['rc_codes']!r}"
+        )
+        if outcome["rc_codes"][1] == 2:
+            assert outcome["bodies"][1].get("reason") == "missing_handle_sidecar", (
+                f"duplicate-cron-tick: second tick rc=2 must be the benign "
+                f"missing-sidecar shape, got body={outcome['bodies'][1]!r}"
+            )
         assert outcome["teardown_count"] in (1, 2), (
             f"duplicate-cron-tick: expected teardown_count in (1,2), "
             f"got {outcome['teardown_count']!r}"

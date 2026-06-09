@@ -278,6 +278,51 @@ def test_launch_sidecar_write_error_still_prints_handle_json(monkeypatch, tmp_pa
     assert len(nibi.launches) == 1
 
 
+def test_launch_sidecar_write_error_body_round_trips_deserialize_handle(
+    monkeypatch, tmp_path
+) -> None:
+    """M4.1: the JSON printed on ``sidecar_write_error`` must carry the
+    FULL serialized handle — ``deserialize_handle`` requires
+    backend/scratch_dir/log_path beyond the summary fields, so an
+    operator must be able to hand-write a ``--handle-file`` sidecar
+    straight from the printed body and run finalize."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import explore_persona_space.backends.issue_dispatch as idp
+    from explore_persona_space.backends.issue_dispatch import deserialize_handle
+
+    def exploding_write(_handle, _path):
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(idp, "write_handle_sidecar", exploding_write)
+
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            ["launch", "--issue", "305", "--intent", "lora-7b", "--backend", "nibi"],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip().splitlines()[-1])
+    # The full handle dict round-trips through deserialize_handle (no
+    # KeyError on a required field) and reconstructs the launch handle.
+    recovered = deserialize_handle(body["handle"])
+    assert recovered.backend == "nibi"
+    assert recovered.job_id == "job-MOCK"
+    assert recovered.pod_name == "pod-305"
+    assert recovered.scratch_dir == "/scratch"
+    assert recovered.log_path == "/log"
+    # And a hand-written sidecar from that dict satisfies finalize: the
+    # recovered handle is the same shape ``read_handle_sidecar`` yields.
+    sidecar = tmp_path / "issue-305-recovered.json"
+    sidecar.write_text(json.dumps(body["handle"]))
+    assert read_handle_sidecar(sidecar) == recovered
+
+
 def test_launch_backend_cluster_legacy_maps_to_nibi(monkeypatch, tmp_path) -> None:
     """``backend: cluster`` is the legacy selector alias; the dispatch
     helper maps it to ``nibi`` BEFORE building the spec (the slice-5
@@ -488,6 +533,52 @@ def test_finalize_skip_confirm_artifacts_forces_teardown(monkeypatch, tmp_path) 
         )
     assert rc == 0
     assert len(nibi.confirms) == 0  # skipped
+    assert len(nibi.teardowns) == 1
+
+
+def test_finalize_renames_sidecar_after_successful_teardown(monkeypatch, tmp_path) -> None:
+    """Mn4.3: a successful teardown retires the sidecar by renaming it
+    to ``<name>.finalized`` (kept for audit) so a LATER finalize for
+    the same issue cannot tear down a fresh run through the stale
+    handle — the duplicate tick no-ops with the benign rc=2
+    missing-sidecar shape, and the backend sees exactly ONE teardown."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 404, kind="nibi")
+    sidecar = tmp_path / "issue-404-handle.json"
+    original_payload = sidecar.read_text()
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            ["finalize", "--issue", "404", "--handle-file", str(sidecar)],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["phase"] == "teardown"
+    # The sidecar was renamed, not deleted: audit copy intact.
+    finalized = tmp_path / "issue-404-handle.json.finalized"
+    assert not sidecar.exists()
+    assert finalized.exists()
+    assert finalized.read_text() == original_payload
+    assert body["sidecar_finalized"] == str(finalized)
+
+    # Second finalize for the same issue: benign rc=2 no-op, NO second
+    # teardown against the retired handle.
+    buf2 = io.StringIO()
+    with redirect_stdout(buf2):
+        rc2 = main(
+            ["finalize", "--issue", "404", "--handle-file", str(sidecar)],
+            backends_factory=factory,
+        )
+    assert rc2 == 2
+    body2 = json.loads(buf2.getvalue().strip())
+    assert body2["ok"] is False
+    assert body2["reason"] == "missing_handle_sidecar"
     assert len(nibi.teardowns) == 1
 
 

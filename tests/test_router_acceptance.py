@@ -565,6 +565,151 @@ def test_run_live_lane_three_consecutive_failures_required_not_cumulative() -> N
     assert [p["status"] for p in outcome["poll_history"]] == ["running", "done"]
 
 
+def test_run_live_lane_sidecar_write_error_surfaces_recovery_record(caplog) -> None:
+    """M4.1: launch OK + ``sidecar_write_error`` (both sidecar writes
+    failed) means a LIVE billing VM exists with no on-disk handle. Poll
+    tick 1 then reads the missing-sidecar dead shape and finalize
+    no-ops rc=2 -- pre-fix, that was a clean-looking terminal that
+    swallowed the only recovery record into captured stdout. The
+    harness must (a) ERROR-log the handle identity + the full launch
+    body + the manual verification commands the moment the launch body
+    carries ``sidecar_write_error``, and (b) raise from the finalize
+    rc=2 with the live-infra warning attached."""
+    plan = ra.build_live_command_plan(issue=410, backend="gcp", repo_root=Path("/repo"))
+    launch_body = {
+        "ok": True,
+        "issue": 410,
+        "chosen_kind": "gcp",
+        "requested_kind": "gcp",
+        "pod_name": "eps-issue-410",
+        "job_id": "gcp-4242",
+        "handle_sidecar_path": None,
+        "sidecar_write_error": "OSError: [Errno 28] No space left on device",
+        "handle": {
+            "backend": "gcp",
+            "cluster": None,
+            "job_id": "gcp-4242",
+            "pod_name": "eps-issue-410",
+            "scratch_dir": "/scratch/eps-issue-410",
+            "log_path": "/scratch/eps-issue-410/job.out",
+            "extra": {"issue": 410},
+        },
+    }
+    fake_run, rec = _make_fake_subprocess_run(
+        launch_stdout=json.dumps(launch_body),
+        poll_stdouts=[
+            json.dumps(
+                {
+                    "status": "dead",
+                    "failure_class": "infra",
+                    "reason": "missing_handle_sidecar",
+                }
+            )
+        ],
+        finalize_stdout=json.dumps(
+            {"ok": False, "failure_class": "infra", "reason": "missing_handle_sidecar"}
+        ),
+        finalize_rc=2,
+    )
+    with (
+        caplog.at_level(logging.WARNING, logger="router_acceptance"),
+        pytest.raises(ra.RouterAcceptanceError) as excinfo,
+    ):
+        ra.run_live_lane(
+            plan,
+            backend="gcp",
+            issue=410,
+            poll_interval_seconds=0.0,
+            subprocess_run=fake_run,
+            sleep_fn=lambda _s: None,
+            now_fn=lambda: 0.0,
+        )
+    # (a) The ERROR log carries the job identity, the FULL launch body
+    # (the recovery record, incl. the serialized handle), and the
+    # manual verification commands.
+    err_msgs = [
+        r.getMessage()
+        for r in caplog.records
+        if r.levelno == logging.ERROR and "sidecar write FAILED" in r.getMessage()
+    ]
+    assert err_msgs, "sidecar_write_error on the launch body did NOT produce the loud ERROR log"
+    msg = err_msgs[0]
+    assert "gcp-4242" in msg, "ERROR log missing the job id (handle identity)"
+    assert "eps-issue-410" in msg, "ERROR log missing the instance/job name"
+    assert "/scratch/eps-issue-410" in msg, "ERROR log missing the serialized handle fields"
+    assert "gcloud compute instances list --filter=labels.eps-issue=410" in msg
+    # (b) The finalize rc=2 raise carries the live-infra warning -- the
+    # lane must NOT look clean.
+    raise_msg = str(excinfo.value)
+    assert "MAY BE LIVE" in raise_msg
+    assert "gcloud compute instances list --filter=labels.eps-issue=410" in raise_msg
+    # The poll + finalize both actually ran (launch, poll, finalize,
+    # plus the best-effort cleanup finalize from the except branch).
+    finalize_calls = [a for a in rec.argv_list if "finalize" in a]
+    assert finalize_calls
+
+
+def test_attempt_cleanup_finalize_benign_missing_sidecar_warns_not_errors(caplog) -> None:
+    """Mn4.2: a cleanup finalize that no-ops on ``missing_handle_sidecar``
+    (rc=2 -- every pre-provision launch crash hits this) must log a
+    WARNING ("nothing on disk to tear down"), NOT the live-billing
+    ERROR alarm."""
+    plan = ra.build_live_command_plan(issue=411, backend="nibi", repo_root=Path("/repo"))
+
+    def _fake_run(argv, **_kw):
+        return subprocess.CompletedProcess(
+            args=argv,
+            returncode=2,
+            stdout=json.dumps(
+                {"ok": False, "failure_class": "infra", "reason": "missing_handle_sidecar"}
+            ),
+            stderr="",
+        )
+
+    with caplog.at_level(logging.WARNING, logger="router_acceptance"):
+        ra._attempt_cleanup_finalize(plan, subprocess_run=_fake_run, context="launch crash rc=137")
+    billing_errors = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.ERROR and "STILL be billing" in r.getMessage()
+    ]
+    assert not billing_errors, (
+        "benign missing_handle_sidecar no-op raised the live-billing ERROR alarm "
+        "(false alarm on every pre-provision launch crash)"
+    )
+    warnings = [
+        r.getMessage()
+        for r in caplog.records
+        if r.levelno == logging.WARNING and "nothing" in r.getMessage().lower()
+    ]
+    assert warnings, "benign no-op did not log the downgraded WARNING"
+    assert "tear down" in warnings[0]
+
+
+def test_attempt_cleanup_finalize_real_failure_still_errors(caplog) -> None:
+    """Mn4.2 counterpart: any OTHER non-zero cleanup-finalize shape (a
+    sidecar landed but teardown crashed, rc=1) keeps the LOUD
+    live-billing ERROR."""
+    plan = ra.build_live_command_plan(issue=412, backend="nibi", repo_root=Path("/repo"))
+
+    def _fake_run(argv, **_kw):
+        return subprocess.CompletedProcess(
+            args=argv,
+            returncode=1,
+            stdout=json.dumps({"ok": False, "reason": "teardown_crashed"}),
+            stderr="scancel: error: connection refused",
+        )
+
+    with caplog.at_level(logging.WARNING, logger="router_acceptance"):
+        ra._attempt_cleanup_finalize(plan, subprocess_run=_fake_run, context="mid-flight raise")
+    billing_errors = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.ERROR and "STILL be billing" in r.getMessage()
+    ]
+    assert billing_errors, "a REAL cleanup-finalize failure must keep the live-billing ERROR"
+
+
 def test_parse_last_json_line_picks_last_blob() -> None:
     """Defensive against an upstream log line on stdout -- the harness
     reads the LAST parseable JSON object from stdout."""
@@ -941,20 +1086,24 @@ def test_negative_cancel_race_keeps_running_job() -> None:
 
 
 def test_negative_duplicate_cron_tick_is_idempotent_at_cli_level() -> None:
-    """Two finalize ticks for the same handle both return rc=0; the
-    backend absorbs the duplicate teardown."""
+    """The duplicate finalize tick is idempotent at the CLI level: the
+    first tick tears down and renames the sidecar to ``*.finalized``
+    (Mn4.3), so the second tick no-ops on the missing sidecar with the
+    benign rc=2 shape — exactly ONE teardown reaches the backend, and
+    neither tick crashes."""
     outcome = ra.negative_duplicate_cron_tick()
-    assert outcome["rc_codes"] == [0, 0]
-    # Mirror the harness-level assertion in _cmd_negative
-    # (``teardown_count in (1, 2)``): today the CLI does NOT de-dup
-    # (count=2, the backend ABC contract absorbs), but a future
-    # CLI-level idempotency landing at count=1 would ALSO be correct
-    # and must not read as a regression here.
-    assert outcome["teardown_count"] in (1, 2)
-    # Both bodies are well-formed teardown responses.
-    for body in outcome["bodies"]:
-        assert body.get("ok") is True
-        assert body.get("phase") == "teardown"
+    assert outcome["rc_codes"] == [0, 2]
+    # Mn4.3 stale-sidecar guard: the second tick must NOT re-execute
+    # teardown against the retired handle.
+    assert outcome["teardown_count"] == 1
+    # First body: a well-formed teardown response that records the
+    # sidecar retirement. Second body: the benign missing-sidecar no-op.
+    first, second = outcome["bodies"]
+    assert first.get("ok") is True
+    assert first.get("phase") == "teardown"
+    assert str(first.get("sidecar_finalized") or "").endswith(".finalized")
+    assert second.get("ok") is False
+    assert second.get("reason") == "missing_handle_sidecar"
 
 
 # ---------------------------------------------------------------------------
@@ -1007,7 +1156,9 @@ def test_cli_negative_duplicate_cron_tick_asserts_and_exits_zero(monkeypatch, tm
         rc = ra.main(["negative", "duplicate-cron-tick"])
     assert rc == 0
     body = json.loads(buf.getvalue())
-    assert body["rc_codes"] == [0, 0]
+    # First tick succeeds; second tick is the benign rc=2 no-op (the
+    # Mn4.3 sidecar rename retires the handle after the first teardown).
+    assert body["rc_codes"] == [0, 2]
 
 
 # ---------------------------------------------------------------------------
