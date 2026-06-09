@@ -6,10 +6,15 @@ tags: []
 created_at: '2026-06-08T21:29:43Z'
 has_clean_result: false
 parent_id: 519
+goal: 'Run Phases C/D/E/F on the six LoRA adapters trained in #519 (marker × 3 seeds
+  + EM × 3 seeds, on HF Hub at commit c46b8989d) so the rank-one law cross-arm test
+  the parent Goal asks for is actually computed: does a single shift-direction + cosine-scaled
+  magnitude (rank-one) govern cross-context generalization for the marker arm and
+  break for the EM arm?'
 ---
 ## Goal
 
-Run Phases C/D/E/F on the six LoRA adapters trained in #519 (marker × 3 seeds + EM × 3 seeds, on HF Hub at commit `c46b8989d`) so the rank-one law cross-arm test the parent Goal asks for is actually computed: does a single shift-direction + cosine-scaled magnitude (rank-one) govern cross-context generalization for the marker arm and break for the EM arm?
+Run Phases C/D/E/F on the six LoRA adapters trained in #519 (marker × 3 seeds + EM × 3 seeds, on HF Hub at commit c46b8989d) so the rank-one law cross-arm test the parent Goal asks for is actually computed: does a single shift-direction + cosine-scaled magnitude (rank-one) govern cross-context generalization for the marker arm and break for the EM arm?
 
 ## Why this exists
 
