@@ -188,15 +188,24 @@ def _run_emission_for_cell(
             prompts.append(text)
             prompt_meta.append((persona, qi))
 
-    # Download adapter from HF to a local dir.
-    from huggingface_hub import snapshot_download
+    # Prefer the on-disk adapter (cell["output_dir"]) over re-downloading from HF.
+    # The training step writes adapter_config.json + adapter_model.safetensors
+    # directly to output_dir before uploading to HF; using the local path
+    # avoids racing the upload (a snapshot_download right after upload can pick
+    # up a stale HF snapshot revision that doesn't yet have this cell's files).
     from vllm.lora.request import LoRARequest
 
-    local_lora_dir = snapshot_download(
-        repo_id=HF_MODEL_REPO,
-        allow_patterns=[f"{cell['hf_subfolder']}/*"],
-    )
-    adapter_local = Path(local_lora_dir) / cell["hf_subfolder"]
+    adapter_local = Path(cell["output_dir"])
+    if not (adapter_local / "adapter_config.json").is_file():
+        # Fallback: re-download from HF if the local adapter is gone (e.g. a
+        # fresh pod that didn't run training).
+        from huggingface_hub import snapshot_download
+
+        local_lora_dir = snapshot_download(
+            repo_id=HF_MODEL_REPO,
+            allow_patterns=[f"{cell['hf_subfolder']}/*"],
+        )
+        adapter_local = Path(local_lora_dir) / cell["hf_subfolder"]
     lora_req = LoRARequest("issue_527", 1, str(adapter_local))
 
     sampling = SamplingParams(
@@ -311,14 +320,17 @@ def _run_shift_extract_for_cell(
         token=os.environ.get("HF_TOKEN"),
     )
 
-    # Download + attach adapter.
-    from huggingface_hub import snapshot_download
+    # Prefer the on-disk adapter (cell["output_dir"]) over re-downloading from HF
+    # — same race-avoidance rationale as the emission site above.
+    adapter_local = Path(cell["output_dir"])
+    if not (adapter_local / "adapter_config.json").is_file():
+        from huggingface_hub import snapshot_download
 
-    local_lora_dir = snapshot_download(
-        repo_id=HF_MODEL_REPO,
-        allow_patterns=[f"{cell['hf_subfolder']}/*"],
-    )
-    adapter_local = Path(local_lora_dir) / cell["hf_subfolder"]
+        local_lora_dir = snapshot_download(
+            repo_id=HF_MODEL_REPO,
+            allow_patterns=[f"{cell['hf_subfolder']}/*"],
+        )
+        adapter_local = Path(local_lora_dir) / cell["hf_subfolder"]
     trained = PeftModel.from_pretrained(trained, str(adapter_local)).eval()
 
     log.info("Extracting per-context shifts (n_contexts=%d)", len(eval_panel))
