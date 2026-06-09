@@ -11,6 +11,8 @@ goal: 'Measure the persona-framing (C) factor''s matched-pair selectivity delta 
   preflight gates (exact-token-match and Jaccard >= 0.15) that silently killed every
   long-system x neutral-framing cell, then re-running the full long-system (A=1) stratum
   self-contained (C=0 and C=1 in one run).'
+classification: useful
+promoted_at: '2026-06-09T21:35:06Z'
 ---
 # Under the single-token ※ + lr 1e-4 recipe, persona-role vs neutral-domain framing is not observed to affect marker selectivity (LOW confidence)
 
