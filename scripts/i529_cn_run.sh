@@ -161,7 +161,12 @@ done
 n_cells=${#cells[@]}
 echo "[phase=train] cells=$n_cells parallelism=$N_GPUS"
 
-# Spawn one subshell per GPU; each iterates its sharded slice.
+# Spawn one subshell per GPU; each iterates its sharded slice. Collect
+# the shard PIDs so we wait on THEM specifically — naked `wait` would
+# also block on the heartbeat subshell ($HB_PID, infinite loop), and
+# that caused #529's 12-min silent stall between train-phase completion
+# and crosseval (13:40 → 13:53, kill HB_PID by hand to unblock).
+TRAIN_PIDS=()
 for gpu in $(seq 0 $((N_GPUS - 1))); do
     (
         idx=0
@@ -192,8 +197,9 @@ for gpu in $(seq 0 $((N_GPUS - 1))); do
             idx=$((idx + 1))
         done
     ) &
+    TRAIN_PIDS+=("$!")
 done
-wait
+wait "${TRAIN_PIDS[@]}"
 
 if [ -s "$FAILED_FILE" ]; then
     FAILED=$(tr '\n' ' ' < "$FAILED_FILE")
