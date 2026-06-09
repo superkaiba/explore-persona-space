@@ -73,3 +73,4 @@
 {"ts": "2026-05-15T07:53:10Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "interpreting", "to": "reviewing", "note": "Clean-result body finalized (HIGH confidence on first-hop transfer claim). Advancing through reviewing → awaiting_promotion."}
 {"ts": "2026-05-15T07:53:10Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "reviewing", "to": "awaiting_promotion", "note": "Parking at user-driven promotion gate. Run 'uv run python scripts/task.py promote 366 useful|not-useful' when satisfied. Dashboard: https://eps.superkaiba.com/tasks/366"}
 {"ts": "2026-06-09T21:34:08Z", "kind": "epm:promoted", "version": 1, "by": "user", "classification": "useful"}
+{"ts": "2026-06-09T21:34:09Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "awaiting_promotion", "to": "completed", "note": "promoted as useful"}
