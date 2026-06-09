@@ -17,6 +17,8 @@ legacy_why_unset: true
 relates_to:
 - app-trigger-discovery
 - b8
+classification: useful
+promoted_at: '2026-06-09T21:34:15Z'
 ---
 # `depuis qui est` fires 83% French switching, 49 percentage points above #351's strongest neighbor (MODERATE confidence)
 
