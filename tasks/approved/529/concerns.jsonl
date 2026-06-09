@@ -1,1 +1,2 @@
 {"ts": "2026-06-09T06:50:32Z", "event": "raised", "concern_id": "default-r-regenerated-not-reused", "severity": "BLOCKER", "summary": "dispatcher regenerates default R instead of reusing #464 artifact", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
+{"ts": "2026-06-09T06:50:34Z", "event": "raised", "concern_id": "eval-r-canon-coverage-unverified", "severity": "BLOCKER", "summary": "R_canon_test indexed without preflight coverage check", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
