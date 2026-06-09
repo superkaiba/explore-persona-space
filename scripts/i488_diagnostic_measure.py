@@ -1,6 +1,16 @@
 # ruff: noqa: RUF001, RUF002
 """Task #488 DIAGNOSTIC — measure source-vs-bystander separation.
 
+DEPRECATED — superseded by scripts/i488_phase2_ladder_emit.py (round-2,
+2026-06-09). On-policy marker-emit measurements MUST use the ladder_emit
+script: it samples with temperature=1.0, top_p=1.0, n=N per cell per the
+marker-leakage rule (.claude/rules/marker-leakage-measurement.md). The
+``sp_gen`` SamplingParams below uses temperature=0.0 (greedy decode),
+which is appropriate for the legacy single-sample diagnostic probe but
+NOT for on-policy emit rates feeding the v6 Gate ANCHOR / BYSTANDER
+verdicts. This file is retained for the off-diag Δlogp / on-diag Δlogp
+analyses only; it is NOT called by the v6 ladder dispatcher.
+
 Loads the locally-saved STRONG-recipe diagnostic adapters for A1 + G2
 (from i488_diagnostic_train.py) and measures, for each source in {A1, G2}:
 
@@ -216,6 +226,12 @@ def main():
         logprobs=1,
         seed=42,
     )
+    # DEPRECATED greedy decode — see module docstring. On-policy emit-rate
+    # measurements that feed the v6 Gate ANCHOR / BYSTANDER verdicts MUST
+    # use i488_phase2_ladder_emit.py (temperature=1.0, top_p=1.0, N samples
+    # per cell). This block is retained only for the legacy single-sample
+    # diagnostic probe + the off-diag/on-diag Δlogp analyses; it is NOT
+    # called by the v6 ladder dispatcher.
     sp_gen = SamplingParams(
         n=1,
         temperature=0.0,
