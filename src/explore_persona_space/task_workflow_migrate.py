@@ -4,11 +4,12 @@ Patches awaiting_promotion bodies into compliance with the 13-check
 `verify_task_body.py` markdown spec. Two patch modes:
 
 (a) Conformant-but-failing remediation — applied to bodies that already
-    carry the four required H2 sections in order (TL;DR / Figure /
-    Details / Reproducibility) but fail one or more of the content-level
-    checks (Repro subgroups missing, cherry-picked label missing on a
-    sample-output fence, qualitative-data link missing on a sample-output
-    fence).
+    carry the required H2 sections in order (the current 2-content-section
+    spec: Human TL;DR / TL;DR / Reproducibility, mirrored from
+    `verify_task_body.REQUIRED_H2_SECTIONS`) but fail one or more of the
+    content-level checks (Repro subgroups missing, cherry-picked label
+    missing on a sample-output fence, qualitative-data link missing on a
+    sample-output fence).
 
 (b) v4-legacy shape conversion — for bodies still on the pre-2026-05-13
     `## TL;DR / ## Summary / ## Details / ## Source issues` shape.
@@ -65,13 +66,20 @@ class BodyClass(Enum):
 
     PASS = "pass"  # already passes verify_task_body
     LEGACY_HTML = "legacy-html"  # carries <!-- legacy-sagan-card --> sentinel
-    CONFORMANT_FAILING = "conformant-failing"  # four-H2 shape, but FAILs ≥1 check
+    CONFORMANT_FAILING = "conformant-failing"  # current required-H2 shape, but FAILs ≥1 check
     V4_LEGACY = "v4-legacy"  # ## TL;DR / ## Summary / ## Details / ## Source issues
     UNKNOWN = "unknown"  # neither of the above
 
 
 V4_LEGACY_H2 = ("TL;DR", "Summary", "Details", "Source issues")
-TARGET_H2 = ("TL;DR", "Figure", "Details", "Reproducibility")
+# The CURRENT conformant target shape — mirrored from the verifier so the
+# classifier can never drift behind a spec migration again. Under the
+# 2-content-section spec (2026-W22, task #454) this is
+# ("Human TL;DR", "TL;DR", "Reproducibility"); the pre-W22 four-H2 shape
+# (TL;DR / Figure / Details / Reproducibility) carries retired H2s that
+# hard-FAIL verify check 2 and now classifies as UNKNOWN → needs_user
+# (mechanical remediation cannot migrate retired-H2 content).
+TARGET_H2 = tuple(vtb.REQUIRED_H2_SECTIONS)
 
 
 # ─── Reporting / result type ──────────────────────────────────────────────
@@ -120,7 +128,7 @@ def _is_v4_legacy(body: str) -> bool:
 
 
 def _is_target_shape(body: str) -> bool:
-    """The target shape: at least the four required H2s in the right order."""
+    """The target shape: at least the required H2s (TARGET_H2) in the right order."""
     h2s = _h2_names_in_order(body)
     seq = [s for s in h2s if s in TARGET_H2]
     return seq == list(TARGET_H2)
@@ -672,7 +680,10 @@ def migrate_one(
             verify_before,
             verify_before,
             needs_user=True,
-            needs_user_reason="body shape is neither v4-legacy nor four-H2 conformant",
+            needs_user_reason=(
+                "body shape is neither v4-legacy nor current-spec conformant "
+                f"(required H2s: {list(TARGET_H2)})"
+            ),
         )
 
     snapshot_original = False
