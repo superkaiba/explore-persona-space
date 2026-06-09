@@ -11,6 +11,10 @@ goal: Test whether pushing the marker implant past emission onset (source log P(
   singleton shifts develop effective rank ≥ 2 across held-out contexts, so that the
   additivity-cosine read becomes a diagnostic superposition test rather than a measurement
   of constant-direction steering.
+relates_to:
+- leak-single-vs-multi
+- leak-predictor
+- leak-from-cell-set
 ---
 # Push the marker implant past emission onset to test whether per-context singleton structure emerges with stronger training
 
