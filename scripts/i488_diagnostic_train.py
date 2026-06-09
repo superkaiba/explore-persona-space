@@ -115,6 +115,16 @@ def main():
         default=Path("/workspace/adapters/i488_diag"),
         help="Local-only adapter save base dir (no HF upload).",
     )
+    ap.add_argument(
+        "--build-rows-only",
+        action="store_true",
+        help=(
+            "Build the train.jsonl row file(s) for each --conds source and exit "
+            "WITHOUT loading the model or running training. Used by "
+            "i488_phase2_ladder to materialize audit rows BEFORE the L1 "
+            "label-mask audit runs (round-2 blocker-1 fix)."
+        ),
+    )
     args = ap.parse_args()
 
     from explore_persona_space.orchestrate.env import load_dotenv
@@ -173,6 +183,20 @@ def main():
             tokenizer,
             max_rows_per_side=args.max_rows_per_side,
         )
+        # Round-2 blocker-1: `--build-rows-only` short-circuits BEFORE
+        # loading the model so the ladder dispatcher can materialize audit
+        # rows (~5-10s per source) and run the label-mask audit BEFORE
+        # spending ~10-40 min on a training run with a misaligned mask.
+        if args.build_rows_only:
+            logger.info(
+                "BUILD-ROWS-ONLY cond=%s seed=%d pos=%d neg=%d -> %s (no training)",
+                cid,
+                args.seed,
+                n_pos,
+                n_neg,
+                train_path,
+            )
+            continue
         # I488_LADDER_RUNG_SUFFIX (set by the ladder dispatcher) overrides
         # the default ``_diag`` adapter dir suffix so rung-specific adapters
         # don't clobber each other under <out_base>/.
@@ -240,7 +264,10 @@ def main():
         if not save_cb.fired:
             raise RuntimeError(f"Diag adapter for {cid} did NOT save — fired={save_cb.fired}")
 
-    logger.info("All diagnostic adapters trained + saved locally.")
+    if args.build_rows_only:
+        logger.info("BUILD-ROWS-ONLY done for conds=%s seed=%d.", args.conds, args.seed)
+    else:
+        logger.info("All diagnostic adapters trained + saved locally.")
     return 0
 
 
