@@ -81,7 +81,6 @@ from explore_persona_space.experiments.issue_538 import (
     RECIPE_LORA_R,
     RECIPE_LORA_TARGETS,
     RECIPE_LR_PRIMARY,
-    RECIPE_LR_RETRY,
     RECIPE_MAX_LENGTH,
     RECIPE_PER_DEVICE_BATCH,
     RECIPE_WARMUP_RATIO,
@@ -595,8 +594,8 @@ def main(argv: list[str] | None = None) -> int:
         type=float,
         default=RECIPE_LR_PRIMARY,
         help=(
-            f"Default {RECIPE_LR_PRIMARY} (band-stop recipe primary). Retry rung "
-            f"is {RECIPE_LR_RETRY}; the smoke caller bumps to that on floor-only failure."
+            f"Default {RECIPE_LR_PRIMARY} (band-stop recipe primary). NO autonomous lr "
+            "retry in #538 — the marker-training recipe forbids lr>5e-6 at the new band."
         ),
     )
     ap.add_argument("--epochs", type=int, default=RECIPE_EPOCHS_CAP)

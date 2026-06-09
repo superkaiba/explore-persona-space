@@ -127,7 +127,6 @@ RECIPE_LORA_TARGETS: Final[tuple[str, ...]] = ("q_proj", "k_proj", "v_proj", "o_
 RECIPE_LR_PRIMARY: Final[float] = 5e-6
 # Plan §4: NO autonomous lr retry path at the new band — the recipe forbids
 # raising lr past 5e-6. Kept here for ref but the pipeline does NOT retry.
-RECIPE_LR_RETRY: Final[float] = 1e-5
 RECIPE_WARMUP_RATIO: Final[float] = 0.03
 
 # *** The one experimental variable + the instrumental epoch raise: ***
