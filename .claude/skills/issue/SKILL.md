@@ -621,6 +621,26 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   cap (park at `plan_pending` only when est. GPU-hours exceed
   `EPM_PLAN_AUTOAPPROVE_GPU_HOURS`, else auto-approve), and
   `awaiting_promotion` (always a human gate). Everything else auto-continues.
+- **Auto-spawn `auto_run: yes` follow-ups at Step 9b.** When a result
+  lands, the orchestrator fires the `follow-up-proposer` at Step 9b
+  (after auto-merge, before CRON-TEARDOWN, BEFORE the human-only park
+  at `awaiting_promotion`) and auto-creates + auto-spawns autonomous
+  child `/issue` sessions for proposals tagged `auto_run: yes`, capped
+  at 2 per parent (depth-bounded fan-out across recursive follow-ups).
+  Cost is still gated at each child's own Step 2c plan-approval
+  GPU-hour cap — no new cost gate is added; over-cap children park at
+  `plan_pending` like any other autonomous run. Parent promotion stays
+  human-only; auto-spawning follow-ups does NOT promote the parent.
+  Idempotent via `epm:follow-ups-autospawned v1` (skip if present).
+  Interactive mode (`EPM_AUTONOMOUS_SESSION` unset) IGNORES the
+  `auto_run` tag and runs the proposer at Step 10b as today (user
+  picks from the ranked list post-promotion). See Step 9b
+  "Autonomous follow-up auto-spawn" + Step 10b "Autonomous-mode
+  short-circuit" for the mechanics; see `.claude/agents/follow-up-proposer.md`
+  § "auto_run tag — criteria" for what qualifies a proposal as
+  `auto_run: yes` (canonical example: a corrective re-run that fixes
+  named validity defects with a grounded recipe, one variable changed,
+  cost known — task #520 → #527).
 - **Stop the tick cron at terminal/park state.** The `--auto` session is driven
   by the lightweight `/issue-tick <N>` cron (armed by Step 0 of the first
   `/issue <N>` invocation for autonomous sessions, covering the whole lifecycle
@@ -3159,6 +3179,80 @@ conflict posts `epm:merge-failed v1` and surfaces one line in chat, but
 the task still parks at `awaiting_promotion` for promotion. Idempotent —
 skip if `epm:merged` already exists.
 
+**Autonomous follow-up auto-spawn (autonomous mode only — fires here
+because Step 10b never runs autonomously).** When
+`EPM_AUTONOMOUS_SESSION=1`, the parent task parks at
+`awaiting_promotion` and Step 10 / 10b never fire on their own
+(promotion is ALWAYS human-only). To stop autonomous research from
+stalling on every result, the orchestrator fires the follow-up proposer
+HERE — after the auto-merge has landed the clean-result on `main`, and
+before CRON-TEARDOWN — and auto-spawns autonomous child `/issue`
+sessions for proposals tagged `auto_run: yes`. Interactive sessions
+SKIP this block entirely (they still hit Step 10b post-promotion as
+today). Idempotent: skip the whole block when an
+`epm:follow-ups-autospawned v1` marker is already present on this
+parent (covers re-invocation / backstop-tick re-entry; auto-spawning
+twice is the failure mode this guard avoids).
+
+The autonomous flow:
+
+1. Read the latest `events.jsonl` (fresh, NOT a stale cached view) to
+   confirm `EPM_AUTONOMOUS_SESSION=1` AND `epm:follow-ups-autospawned
+   v1` is absent. Either fails → skip the block.
+2. Spawn `follow-up-proposer` (clean-result is available — it was just
+   promoted in-place by the analyzer). Post the proposals to
+   `events.jsonl` as `epm:follow-ups v1` (same marker the interactive
+   Step 10b would post; sharing the marker means the dashboard +
+   downstream readers don't care which site fired the proposer).
+3. Parse the proposals, keep those with `auto_run: yes` in ranked
+   order, take the top **2** (cap; bounds fan-out so a parent never
+   spawns more than 2 autonomous children regardless of how many
+   `auto_run: yes` proposals the proposer found). Proposals tagged
+   `auto_run: no` are skipped — they survive in the `epm:follow-ups
+   v1` marker for the user to pick from manually.
+4. For each kept proposal, in rank order:
+   ```bash
+   # Create child task carrying parent_id (proposal's pre-filled spec is
+   # the body; one variable's diff highlighted).
+   CHILD_ID=$(uv run python scripts/task.py new \
+     --parent <N> --kind experiment \
+     --title "<proposal title>" \
+     --body-file <path-to-pre-filled-spec>.md \
+     | grep -oP '#\K\d+')
+
+   # Set the child's Goal (the proposer must provide a one-sentence
+   # Goal in the proposal body — the Goal gate at the child's /issue
+   # Step 0c will block-and-fail an autonomous spawn that lacks one).
+   uv run python scripts/task.py set-goal <CHILD_ID> \
+     "<one-sentence Goal from the proposal>" --by follow-up-proposer
+
+   # Announce per the existing rule (Step 10b § "Announce every
+   # follow-up/child task in chat").
+   echo "Filed #<CHILD_ID> '<proposal title>' (child of #<N>) + spawning autonomous session"
+
+   # Spawn an autonomous /issue session for the child. The child's
+   # own Step 2c plan-approval GPU-hour cap STILL gates cost — over-cap
+   # plans park the child at plan_pending; no new cost gate is added
+   # here.
+   uv run python scripts/spawn_session.py spawn-issue \
+     --issue <CHILD_ID> --auto
+   ```
+5. Post `epm:follow-ups-autospawned v1` listing every spawned child
+   (id + title + proposal rank) and every `auto_run: no` proposal that
+   was skipped (rank + title + auto_run_reason). Body shape lives in
+   workflow.yaml § markers.
+6. Continue to the existing park flow below (PushNotification → chat
+   prompt → CRON-TEARDOWN → EXIT).
+
+Cost discipline: this block adds NO new cost gate. Each spawned child
+runs its own `/issue` and hits its own Step 2c
+`--auto-approve-if-autonomous --gpu-hours` cap; over-cap plans park at
+`plan_pending`, consistent with `tests/test_no_dollar_budget_caps.py`.
+Promotion of the parent stays human-only. A `auto_run: yes` follow-up
+that itself produces a clean-result will, recursively, hit this same
+Step 9b block and auto-spawn its own follow-ups, capped at 2 per
+parent at each level (so depth-bounded fan-out, not exponential).
+
 Then post the chat-side prompt:
 
 > Clean-result-critic PASS. The polished body is now live on task #\<N\>.
@@ -3339,6 +3433,17 @@ work* contract.
 
 Auto-fires after `completed` for `experiment` tasks. Spawn the
 `follow-up-proposer` agent with:
+
+**Autonomous-mode short-circuit:** if an `epm:follow-ups-autospawned v1`
+marker is present on the parent's `events.jsonl`, the proposer ALREADY
+ran at Step 9b (the autonomous-mode follow-up auto-spawn site, fired
+before the parent parked for promotion). SKIP re-spawning the proposer
+here — it would duplicate the proposal list and is unnecessary. The
+`epm:follow-ups v1` posted at Step 9b is still the canonical list for
+the user; any `auto_run: no` proposals from that marker remain on the
+table for the user to pick from manually post-promotion. Interactive
+mode (no `epm:follow-ups-autospawned v1` ever posted) runs the proposer
+here as normal.
 - The completed task's plan (the `plans/plan.md` symlink)
 - The results (`epm:results` event)
 - The clean-result body

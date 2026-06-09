@@ -1553,7 +1553,25 @@ markers:
   - kind: "epm:follow-ups"
     posted_by: skill (via follow-up-proposer)
     when: "Step 10b"
-    fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent body.md"
+    fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent body.md. Each proposal carries `auto_run: yes|no` + `auto_run_reason` (see follow-up-proposer.md § auto_run tag — criteria). Interactive mode ignores the tag (the user picks at Step 10b). Autonomous mode (EPM_AUTONOMOUS_SESSION=1) reads it at Step 9b to drive the follow-up auto-spawn — see `epm:follow-ups-autospawned`."
+  - kind: "epm:follow-ups-autospawned"
+    posted_by: skill (autonomous mode only)
+    when: "Step 9b (awaiting_promotion transition, after auto-merge and before park), only when EPM_AUTONOMOUS_SESSION=1"
+    fields: |
+      Records which `auto_run: yes` proposals from the most recent
+      `epm:follow-ups v1` marker the orchestrator auto-spawned as
+      autonomous child sessions, and which were skipped. Body shape:
+      `spawned: [{child_id: <M>, title: "...", proposal_rank: 1},
+      {child_id: <M2>, title: "...", proposal_rank: 2}],
+      skipped_auto_run_no: [{proposal_rank: 3, title: "...",
+      reason: "<auto_run_reason verbatim>"}],
+      cap: 2`. Idempotent: presence of this marker on a parent task
+      makes the Step 9b auto-spawn block a no-op on re-entry / backstop
+      tick. Interactive mode (EPM_AUTONOMOUS_SESSION unset) NEVER posts
+      this marker. Each spawned child runs its own `/issue` and hits
+      its own Step 2c plan-approval GPU-hour cap; this marker does NOT
+      bypass the cap. Parent promotion remains human-only — auto-spawning
+      follow-ups does NOT promote the parent.
   - kind: "epm:question-linked"
     posted_by: skill (via scripts/living_docs.py link, at /issue Step 0c after the Goal gate)
     when: "Step 0c (kind:experiment only; analysis/infra/batch/survey exempt)"
