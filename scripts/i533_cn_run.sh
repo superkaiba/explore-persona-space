@@ -190,7 +190,7 @@ for gpu in $(seq 0 $((N_GPUS - 1))); do
                     --epochs "$epoch" \
                     --lr 5e-6 \
                     --no-traj \
-                    --gpu-id 0 \
+                    --gpu-id "$gpu" \
                     > "$log" 2>&1 || train_rc=$?
                 if [ "$train_rc" -ne 0 ]; then
                     echo "$cell_label" >> "$FAILED_FILE"
