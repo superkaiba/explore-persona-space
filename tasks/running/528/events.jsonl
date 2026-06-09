@@ -44,3 +44,4 @@
 {"ts": "2026-06-09T12:52:51Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> phase", "phase": "phase", "pod": "pod-528"}
 {"ts": "2026-06-09T14:39:01Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "phase=phase4_judge sync backend: 100/6400 rows judged (1.6%); rate ~25 rows/4min = 6.25 rows/min sustained; ETA ~16h to complete 19200 calls. Plan §4.4 supports sync; pod healthy; pid 2242 alive."}
 {"ts": "2026-06-09T15:08:07Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Polling tick 17: phase4_judge sync ongoing, last log mtime <2s ago, pid 2242 alive. Continuing 9-min poll cadence."}
+{"ts": "2026-06-09T15:26:44Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Polling tick 19 heartbeat: phase4_judge sync continuing."}
