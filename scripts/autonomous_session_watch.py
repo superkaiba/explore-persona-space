@@ -68,12 +68,19 @@ Coverage notes (deliberate gaps you should know about)
   bounded — it's just caught one stage later, at ``awaiting_promotion``, when
   the auto-stop arm fires.
 * The ``keep-running`` task tag (which exempts a pod from /issue Step 8's
-  auto-terminate) is NOT consulted here. A ``keep-running`` pod whose task
-  reaches a DONE status (completed / awaiting_promotion / archived) WILL be
-  auto-stopped by this pass. The stop is reversible (``pod.py resume``), and
-  in the common case keep-running pods sit at non-DONE statuses so this is a
-  no-op; if you want a keep-running pod to truly persist past task completion,
-  resume it manually after each stop, or extend this pass to consult the tag.
+  auto-terminate) IS consulted by the auto-stop arm: a RUNNING pod whose task
+  is DONE but carries the tag is NOT auto-stopped (it covers legitimate
+  post-completion work, e.g. a user-directed follow-up re-eval on an
+  ``awaiting_promotion`` task — the #530 incident, 2026-06-09, where this
+  pass stopped pod-530 four times mid-follow-up before the tag was consulted).
+  The skip is observable: a log line on every pass plus ONE dashboard-visible
+  marker per pod incarnation (deduped via the ``keep_running_noted`` flag in
+  the pod-safety state file, which is cleared when the pod leaves the RUNNING
+  set). Cost trade-off: an exempted pod burns until it is stopped manually
+  (``pod.py stop --issue <N>``) or the tag is removed (``task.py remove-tag
+  <N> keep-running``) — removing the tag re-arms the auto-stop arm on the
+  next watcher run, with a fresh >=2-checks accumulation. The alert and
+  stalled-detector arms ignore the tag (they never stop pods anyway).
 
 Why STOP is keyed on task status, not session liveness
 ------------------------------------------------------
@@ -247,6 +254,13 @@ _ALERT_NOTE_SENTINEL = "[autonomous_session_watch:pod-stale-alert]"
 # self-identifying on the dashboard.
 _AUTOSTOP_NOTE_SENTINEL = "[autonomous_session_watch:pod-auto-stop]"
 
+# Substring stamped into the one-time "keep-running exemption" marker posted
+# when the auto-stop arm would have fired but the task carries the
+# keep-running tag. Posted at most once per pod incarnation (deduped via the
+# `keep_running_noted` flag in the pod-safety state file) so a tagged pod is
+# visible on the dashboard without 20-minute marker spam.
+_KEEP_RUNNING_NOTE_SENTINEL = "[autonomous_session_watch:pod-keep-running-skip]"
+
 # Substring stamped into every session-stalled-alert marker note. Same role as
 # _ALERT_NOTE_SENTINEL for the pod-safety pass: a session-stalled alert is
 # posted as epm:progress and MUST be filtered out of the "real progress" set,
@@ -272,6 +286,7 @@ _STALLED_EXHAUSTED_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respa
 _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
     {
         _ALERT_NOTE_SENTINEL,
+        _KEEP_RUNNING_NOTE_SENTINEL,
         _STALLED_ALERT_NOTE_SENTINEL,
         _STALLED_RESPAWN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
@@ -494,14 +509,20 @@ def decide_session_stalled(
 
 
 def decide_pod_safety(
-    status_class: str, missed: int, stale: bool, alerted: bool, threshold: int = 2
+    status_class: str,
+    missed: int,
+    stale: bool,
+    alerted: bool,
+    threshold: int = 2,
+    *,
+    keep_running: bool = False,
 ) -> tuple[str, int]:
     """Pure decision for the pod-safety pass on a RUNNING managed pod.
 
     Trigger is the task's STATUS CLASS (unambiguous), NOT session liveness —
     see the module docstring "Why STOP is keyed on task status". Returns
     ``(action, new_missed)`` where action is ``"stop"`` | ``"alert"`` |
-    ``"keep"``.
+    ``"keep"`` | ``"keep-running-skip"``.
 
     Parameters
     ----------
@@ -525,9 +546,20 @@ def decide_pod_safety(
         Whether a stale-alert has ALREADY been posted for the current episode
         (tracked in the state file). Dedups the alert so it fires once per
         episode, not every 10-min tick.
+    keep_running
+        Whether the task carries the ``keep-running`` tag (the Step-8
+        auto-terminate exemption). Consulted ONLY on the auto-stop arm: a
+        DONE task's RUNNING pod with the tag returns
+        ``("keep-running-skip", 0)`` instead of accumulating toward a stop.
+        The alert arm ignores it (alerts never stop anything).
 
     Cases:
 
+    - ``status_class == "auto-stop-done"`` AND ``keep_running`` ->
+      ``("keep-running-skip", 0)``. The stop is SKIPPED and the miss counter
+      reset, so removing the tag later re-arms a fresh >=``threshold``-checks
+      accumulation before any stop. The caller logs the skip + posts a
+      once-per-pod-incarnation marker.
     - ``status_class == "auto-stop-done"`` -> increment ``missed``; return
       ``"stop"`` once it reaches ``threshold`` (default 2 = ~20 min at a 10-min
       cron, so a single transient API/status glitch never stops a pod), else
@@ -542,6 +574,8 @@ def decide_pod_safety(
       status is one we deliberately never auto-stop).
     """
     if status_class == "auto-stop-done":
+        if keep_running:
+            return ("keep-running-skip", 0)
         new_missed = missed + 1
         if new_missed >= threshold:
             return ("stop", 0)
@@ -649,6 +683,38 @@ def _task_status(issue: int) -> str | None:
         return None
     status = data.get("status") or (data.get("frontmatter") or {}).get("status")
     return status if isinstance(status, str) else None
+
+
+def _task_keep_running(issue: int) -> bool:
+    """True iff task ``issue`` currently carries the ``keep-running`` tag.
+
+    The Step-8 auto-terminate exemption tag, consulted by the pod-safety
+    auto-stop arm (see the module docstring's keep-running coverage note).
+    Same subprocess isolation as :func:`_task_status`; any read failure
+    returns False (no exemption observed) — the auto-stop then proceeds only
+    if the no-tag observation persists across the >=2-checks miss guard, so a
+    single transient ``task.py`` glitch never stops a tagged pod. Called
+    LAZILY by :func:`_process_pod` only on the auto-stop-done branch, so the
+    extra ``task.py view`` subprocess is paid only for escaped-pod
+    candidates, not for every RUNNING pod every tick."""
+    try:
+        out = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "view", str(issue), "--json"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return False
+    if out.returncode != 0:
+        return False
+    try:
+        data = json.loads(out.stdout)
+    except json.JSONDecodeError:
+        return False
+    tags = (data.get("frontmatter") or {}).get("tags") or []
+    return isinstance(tags, list) and "keep-running" in tags
 
 
 def _task_events(issue: int) -> list[dict]:
@@ -795,6 +861,7 @@ def _save_pod_safety_state(
     *,
     alerted: bool,
     last_progress_ts: float | None,
+    keep_running_noted: bool | None = None,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-pod state atomically (temp + rename).
@@ -803,21 +870,29 @@ def _save_pod_safety_state(
     whether a stale-alert was already posted this episode (dedup).
     ``last_progress_ts`` is the newest REAL progress timestamp we observed —
     stored so a later tick can tell "the gap stopped advancing" from "new
-    progress arrived" (and reset ``alerted`` when progress advances). ``prev``
-    is the existing on-disk payload (if any), passed so callers that already
-    loaded it don't re-read; ``first_seen`` carries forward when present so the
-    age backstop measures the original episode start, not the latest save.
+    progress arrived" (and reset ``alerted`` when progress advances).
+    ``keep_running_noted`` records whether the once-per-pod-incarnation
+    keep-running-exemption marker was already posted (dedup, same role as
+    ``alerted`` for the keep-running-skip arm); ``None`` (the default)
+    carries the prior on-disk value forward so callers that don't touch the
+    keep-running path never clobber it. ``prev`` is the existing on-disk
+    payload (if any), passed so callers that already loaded it don't re-read;
+    ``first_seen`` carries forward when present so the age backstop measures
+    the original episode start, not the latest save.
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _pod_safety_state_path(issue)
     prev_first_seen = (prev or {}).get("first_seen")
     if not isinstance(prev_first_seen, int | float):
         prev_first_seen = time.time()
+    if keep_running_noted is None:
+        keep_running_noted = bool((prev or {}).get("keep_running_noted", False))
     payload = {
         "pod_id": pod_id,
         "missed": missed,
         "alerted": alerted,
         "last_progress_ts": last_progress_ts,
+        "keep_running_noted": bool(keep_running_noted),
         "first_seen": prev_first_seen,
     }
     tmp = dest.with_suffix(".json.tmp")
@@ -1108,18 +1183,24 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
 
     Reads the task's status + latest real-progress timestamp, classifies it,
     and applies :func:`decide_pod_safety`: AUTO-STOP a done task's escaped pod
-    (after the 2-miss guard), ALERT a stale pod-active task once per episode, or
-    KEEP. Persists the per-pod state (miss count, alerted flag, last-observed
-    real progress) for the next tick."""
+    (after the 2-miss guard, unless the task carries the ``keep-running`` tag
+    — then the stop is SKIPPED with a log line + a once-per-pod-incarnation
+    marker), ALERT a stale pod-active task once per episode, or KEEP.
+    Persists the per-pod state (miss count, alerted flag, keep-running-noted
+    flag, last-observed real progress) for the next tick."""
     status = _task_status(issue)
     latest_progress = _latest_progress_ts(_task_events(issue))
     status_class = _status_class(status, latest_progress, now)
+    # Lazy: the tag only matters when the auto-stop arm is in play, so the
+    # extra `task.py view` subprocess is paid only for escaped-pod candidates.
+    keep_running = status_class == "auto-stop-done" and _task_keep_running(issue)
 
     prev_state = _load_pod_safety_state(issue)
     prev_missed = prev_state.get("missed", 0)
     if not isinstance(prev_missed, int):
         prev_missed = 0
     prev_alerted = bool(prev_state.get("alerted", False))
+    prev_noted = bool(prev_state.get("keep_running_noted", False))
     prev_progress = prev_state.get("last_progress_ts")
     if not isinstance(prev_progress, int | float):
         prev_progress = None
@@ -1147,6 +1228,7 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
         stale=stale,
         alerted=alerted,
         threshold=threshold,
+        keep_running=keep_running,
     )
     gap_h = f"{(now - latest_progress) / 3600:.1f}h" if latest_progress is not None else "none"
     print(
@@ -1154,6 +1236,38 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
         f"progress_gap={gap_h} missed={prev_missed}->{new_missed} "
         f"alerted={alerted} action={action}"
     )
+
+    if action == "keep-running-skip":
+        print(
+            f"  KEEP-RUNNING issue #{issue}: task status '{status}' is DONE but the "
+            f"keep-running tag is present — pod-safety stop SKIPPED (pod_id={pod_id}; "
+            f"the pod burns until the tag is removed or it is stopped manually)."
+        )
+        if not prev_noted:
+            _post_progress_marker(
+                issue,
+                f"{_KEEP_RUNNING_NOTE_SENTINEL} keep-running exemption: RUNNING pod "
+                f"(pod_id={pod_id}) for a task at DONE status '{status}' would have "
+                f"been auto-stopped by the pod-safety pass, but the task carries the "
+                f"keep-running tag, so the stop is SKIPPED. The pod burns until it is "
+                f"stopped manually (`pod.py stop --issue {issue}`) or the tag is "
+                f"removed (`task.py remove-tag {issue} keep-running`), which re-arms "
+                f"the auto-stop on the next watcher run. Posted once per pod "
+                f"incarnation.",
+                dry_run,
+                label="keep-running-skip",
+            )
+        if not dry_run:
+            _save_pod_safety_state(
+                issue,
+                pod_id,
+                missed=0,
+                alerted=alerted,
+                last_progress_ts=latest_progress,
+                keep_running_noted=True,
+                prev=prev_state,
+            )
+        return
 
     if action == "stop":
         stopped = _stop_pod(issue, dry_run)
