@@ -42,6 +42,56 @@ MAX_BATCH_SIZE_BYTES = 256 * 1024 * 1024  # 256 MB
 # Re-export for backwards compatibility; canonical source is eval/__init__.py
 
 
+# ── Canonical custom_id format ───────────────────────────────────────────────
+
+
+def build_custom_id(persona_name: str, global_idx: int, comp_idx: int) -> str:
+    """Build the canonical custom_id used by `judge_completions_batch`.
+
+    The producer (`_enumerate_and_check_cache` + `_aggregate_persona_scores`)
+    and ALL consumers that round-trip the saved `all_scores` map MUST go
+    through this helper — a format mismatch silently returns `None` for
+    every lookup (the lookup never raises, so the bug masquerades as an
+    empty/zero result).
+
+    ``global_idx`` is the CUMULATIVE per-(persona, question) counter
+    across all personas in the completions dict (NOT a per-persona
+    q_idx). It matches the producer's loop semantics: the counter
+    increments once per (persona, question) pair, and `comp_idx`
+    indexes completions within that pair.
+
+    Format: ``f"{persona_name}__{global_idx:05d}__{comp_idx:02d}"`` —
+    two-underscore delimiter, 5-digit zero-padded global index, 2-digit
+    zero-padded completion index. Stable; do NOT change without a
+    coordinated bump of every consumer.
+    """
+    return f"{persona_name}__{global_idx:05d}__{comp_idx:02d}"
+
+
+def iter_custom_ids(
+    completions: dict[str, dict[str, list[str]]],
+) -> list[tuple[str, str, str, int, int]]:
+    """Yield (persona, question, completion, global_idx, comp_idx) in the
+    canonical producer order.
+
+    Consumers that need to walk the SAME (persona, question, comp_idx)
+    sequence as `judge_completions_batch` should call this helper rather
+    than re-implementing the cumulative-index math. The returned tuples
+    map onto custom_ids via ``build_custom_id(persona, global_idx, comp_idx)``.
+
+    Mirror the producer's iteration order at ``_enumerate_and_check_cache``
+    (the persona-major dict iteration, then per-question, then per-comp).
+    """
+    out: list[tuple[str, str, str, int, int]] = []
+    global_idx = 0
+    for persona_name, q_completions in completions.items():
+        for question, comps in q_completions.items():
+            for comp_idx, comp in enumerate(comps):
+                out.append((persona_name, question, comp, global_idx, comp_idx))
+            global_idx += 1
+    return out
+
+
 # ── Judge cache ──────────────────────────────────────────────────────────────
 
 
@@ -234,7 +284,7 @@ def _enumerate_and_check_cache(
     for persona_name, q_completions in completions.items():
         for question, comps in q_completions.items():
             for comp_idx, comp in enumerate(comps):
-                custom_id = f"{persona_name}__{idx:05d}__{comp_idx:02d}"
+                custom_id = build_custom_id(persona_name, idx, comp_idx)
                 total += 1
 
                 if cache:
@@ -265,7 +315,7 @@ def _aggregate_persona_scores(
     for persona_name, q_completions in completions.items():
         for _question, comps in q_completions.items():
             for comp_idx in range(len(comps)):
-                custom_id = f"{persona_name}__{idx:05d}__{comp_idx:02d}"
+                custom_id = build_custom_id(persona_name, idx, comp_idx)
                 score = all_scores.get(
                     custom_id,
                     {"aligned": None, "coherent": None, "error": True},
