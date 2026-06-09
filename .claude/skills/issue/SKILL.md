@@ -2048,6 +2048,28 @@ fast** — `--wait-for-capacity` defaults OFF so a human running
 `pod.py provision` from a shell sees no-capacity immediately and can
 decide whether to wait, switch DC, or change GPU intent.
 
+**Stale-port recovery — `pod.py config --refresh-from-api`.** When an
+`epm:pod-pending v1` is followed by a long stretch of failing SSH
+polls (`poll_pipeline.py` reporting `status=dead` every tick on an
+otherwise live pod), the most common cause is that a
+SUPPLY_CONSTRAINT-blocked resume eventually brought the pod back at a
+NEW SSH port via a retry path that bypassed `_upsert_pods_conf`, so
+`pods.conf` still carries the pre-stop value while the live RunPod API
+has the fresh one. The canonical first response is `uv run python
+scripts/pod.py config --refresh-from-api pod-<N>` — pulls fresh
+host/port from the live API into `pods.conf` + `~/.ssh/config`. As of
+2026-06-09 the auto-heal also fires automatically: `poll_pipeline.py`
+counts consecutive SSH-probe failures and fires `--refresh-from-api`
+after ten consecutive failures (~3-4 min at 20s spacing), and
+`autonomous_session_watch.py` fires it once per stalled episode when a
+stalled session has a RUNNING managed pod. Both auto-fires are
+fail-soft and dedup'd so the manual command stays the surgical
+recovery move; reach for it when the auto-heal has not yet tripped or
+the issue is unambiguously a port drift. See `.claude/rules/upload-policy.md`
+context on the Authority split (live API authoritative for host/port,
+`pods.conf` the on-disk source for SSH/MCP). Incident #488 (2026-06-09)
+spun for 13+ hours at $32/hr before the manual subcommand existed.
+
 The pod name passed downstream is `epm-issue-<N>` (or the parent's
 `epm-issue-<PARENT_ID>` for follow-ups). The experimenter does NOT pick
 or create pods.

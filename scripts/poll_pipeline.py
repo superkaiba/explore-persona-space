@@ -178,6 +178,76 @@ PHASE_RE = re.compile(r"\[phase=([a-z_]+)")
 MARKER_PID_RE = re.compile(r"\bpid=(\d+)")
 DEFAULT_STATE_DIR = _REPO_ROOT / ".claude" / "cache"
 
+# How many consecutive SSH-probe failures must accumulate before the poller
+# auto-fires ``pod.py config --refresh-from-api <pod>`` as a stale-port
+# self-heal. Set to 10 (~3-4 min at the orchestrator's typical 20s spacing) so
+# a transient SSH hiccup never burns a refresh call, but a sustained
+# connection-refused stretch — the #488 stale-port pattern — does. After the
+# refresh attempt the counter resets so we never hot-loop refresh calls; the
+# next ``SSH_FAIL_REFRESH_THRESHOLD`` consecutive failures will trigger a
+# re-try.
+SSH_FAIL_REFRESH_THRESHOLD = int(os.environ.get("EPM_POLL_SSH_FAIL_REFRESH_THRESHOLD", "10"))
+
+
+def _try_refresh_pods_conf_from_api(pod: str) -> bool:
+    """Best-effort ``pod.py config --refresh-from-api <pod>`` self-heal.
+
+    Fires after :data:`SSH_FAIL_REFRESH_THRESHOLD` consecutive ``_ssh_probe``
+    failures on the same pod — the #488 stale-port pattern, where a
+    SUPPLY_CONSTRAINT-blocked resume eventually brought the pod back at a NEW
+    SSH port via a retry path that bypassed ``_upsert_pods_conf`` and
+    ``pods.conf`` stayed stale while the SSH polling loop spun indefinitely.
+
+    Fail-soft: any failure (subprocess timeout, non-zero exit, missing
+    binary, oserror) is logged and the function returns False. The polling
+    loop never crashes on this auto-heal; the caller resets the failure
+    counter regardless so we don't hot-loop refresh calls back-to-back.
+
+    Returns True on success (refresh-from-api exited 0), False otherwise.
+    """
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        str(_REPO_ROOT / "scripts" / "pod.py"),
+        "config",
+        "--refresh-from-api",
+        pod,
+    ]
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        log.warning(
+            "auto-heal: pod.py config --refresh-from-api %s raised %s; "
+            "polling loop continues (next %d consecutive failures will retry)",
+            pod,
+            type(exc).__name__,
+            SSH_FAIL_REFRESH_THRESHOLD,
+        )
+        return False
+    if result.returncode != 0:
+        log.warning(
+            "auto-heal: pod.py config --refresh-from-api %s exited rc=%d; stderr=%s",
+            pod,
+            result.returncode,
+            (result.stderr or "").strip(),
+        )
+        return False
+    log.info(
+        "auto-heal: pod.py config --refresh-from-api %s OK; pods.conf "
+        "+ ~/.ssh/config refreshed against the live RunPod API after %d "
+        "consecutive SSH-probe failures (#488 stale-port pattern)",
+        pod,
+        SSH_FAIL_REFRESH_THRESHOLD,
+    )
+    return True
+
 
 def _marker_pid(issue: int) -> int | None:
     """Return the `pid=` from the latest epm:run-launched marker, or None.
@@ -404,6 +474,10 @@ def _ssh_probe(
     )
     if result.returncode != 0:
         log.error("ssh failed (rc=%d): %s", result.returncode, result.stderr.strip())
+        # ``ssh_failed`` is the explicit caller signal so ``poll_once`` can
+        # count consecutive transport failures (#488 stale-port auto-heal)
+        # WITHOUT having to infer "ssh down" from the zeroed values below
+        # (which can also legitimately mean "log file does not exist yet").
         return {
             "pid_alive": "0",
             "marker_pid_alive": "0",
@@ -414,8 +488,11 @@ def _ssh_probe(
             "phase_log_mtime_epoch": "0",
             "shard_log_mtime_epoch": "0",
             "gpu_util": "unknown",
+            "ssh_failed": "1",
         }
-    return _parse_probe_stdout(result.stdout)
+    parsed = _parse_probe_stdout(result.stdout)
+    parsed["ssh_failed"] = "0"
+    return parsed
 
 
 # Scalar `KEY=value` lines the probe heredoc emits. Order is irrelevant —
@@ -942,6 +1019,45 @@ def poll_once(
     # re-run is not misreported as dead.
     marker_pid = _marker_pid(issue)
     probe = _ssh_probe(pod, log_path, pid_file, issue, marker_pid)
+
+    # ── #488 stale-port self-heal ────────────────────────────────────────
+    # Track consecutive SSH-probe failures across ticks. When the live API
+    # has moved a pod's SSH endpoint to a new port but ``pods.conf`` still
+    # holds the pre-stop value, every probe lands on a dead address and
+    # this counter accumulates. Once it crosses
+    # ``SSH_FAIL_REFRESH_THRESHOLD`` we shell out to ``pod.py config
+    # --refresh-from-api <pod>`` once (fail-soft) to pull the current
+    # host/port from the live API into ``pods.conf`` + ``~/.ssh/config``,
+    # then reset the counter so the NEXT N consecutive failures will
+    # retry. This is the auto-heal that closes the gap left by the
+    # #488 manual recovery (the new ``--refresh-from-api`` subcommand
+    # already exists; this is the wiring that uses it without a human in
+    # the loop).
+    prev_state = _load_state(state_file, issue)
+    prev_ssh_fail_count_raw = prev_state.get("ssh_fail_count", "0")
+    try:
+        prev_ssh_fail_count = int(prev_ssh_fail_count_raw)
+    except (TypeError, ValueError):
+        prev_ssh_fail_count = 0
+    ssh_failed = probe.get("ssh_failed") == "1"
+    if ssh_failed:
+        ssh_fail_count = prev_ssh_fail_count + 1
+        if ssh_fail_count >= SSH_FAIL_REFRESH_THRESHOLD:
+            log.warning(
+                "SSH probe failed %d consecutive ticks for pod %s; "
+                "firing pod.py config --refresh-from-api %s "
+                "(#488 stale-port auto-heal)",
+                ssh_fail_count,
+                pod,
+                pod,
+            )
+            _try_refresh_pods_conf_from_api(pod)
+            # Reset after the attempt regardless of outcome so we don't
+            # hot-loop refresh calls every tick.
+            ssh_fail_count = 0
+    else:
+        ssh_fail_count = 0
+
     pidfile_pid_alive = probe["pid_alive"] == "1"
     marker_pid_alive = marker_pid is not None and probe["marker_pid_alive"] == "1"
     pid_alive = pidfile_pid_alive or marker_pid_alive
@@ -1009,9 +1125,9 @@ def poll_once(
     else:
         status = "running"
 
-    # New milestone?
-    prev = _load_state(state_file, issue)
-    prev_phase = prev.get("phase", "")
+    # New milestone? (re-uses ``prev_state`` loaded above for the
+    # ssh_fail_count tracking — we only read state once per tick.)
+    prev_phase = prev_state.get("phase", "")
     new_milestone = current_phase != prev_phase and current_phase != "unknown"
 
     if new_milestone:
@@ -1028,7 +1144,15 @@ def poll_once(
             log.error("post_event failed: %s", exc)
             new_milestone = False  # Don't claim we recorded it.
 
-    _save_state(state_file, issue, {"phase": current_phase, "last_mtime_epoch": str(mtime_epoch)})
+    _save_state(
+        state_file,
+        issue,
+        {
+            "phase": current_phase,
+            "last_mtime_epoch": str(mtime_epoch),
+            "ssh_fail_count": str(ssh_fail_count),
+        },
+    )
 
     # Pick the tail excerpt from whichever log is the fresher signal: if
     # cell logs exist AND are fresher than the main log, surface the cell
