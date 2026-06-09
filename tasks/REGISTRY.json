@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 540,
+  "highest_id": 541,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3176,6 +3176,13 @@
       "path": "tasks/running/540",
       "status": "running",
       "title": "Canonical Rao-Blackwellized sequence-level JS replaces deprecated JS-v1 on #532's panel"
+    },
+    "541": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/541",
+      "status": "proposed",
+      "title": "Prior-stratified rerun of #500: enrich bystander panel and source set with high-prior personas"
     },
     "55": {
       "has_clean_result": false,
