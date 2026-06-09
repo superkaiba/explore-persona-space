@@ -151,7 +151,11 @@ ROUTING_MARKER = "epm:backend-selected"
 DEFAULT_SMOKE_HYDRA_ARGS: tuple[str, ...] = (
     "condition=c_router_smoke",
     "seed=0",
-    "training.max_steps=20",
+    # `+` prefix required: max_steps is deliberately NOT in the training
+    # schema (configs/training/turner_em.yaml documents the same) -- the
+    # bare form crashed live attempt 3 on Nibi with "Key 'max_steps' is
+    # not in struct" (job 15862188), costing the lane its HF artifact.
+    "+training.max_steps=20",
     "training.per_device_train_batch_size=1",
     "training.gradient_accumulation_steps=1",
     "training.save_strategy=no",
