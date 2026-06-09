@@ -16,6 +16,8 @@ goal: 'Implant a distinct desirable trait per scenario persona (coding: logical 
   chat-template role header with contrastive negatives across the other scenarios
   + the default assistant, and test whether the role token gates each trait to its
   scenario with less cross-scenario/default leakage than a system-prompt encoding.'
+classification: useful
+promoted_at: '2026-06-09T21:54:11Z'
 ---
 # A custom chat-template role token did NOT gate scenario traits tighter than a system-prompt persona in this Qwen-2.5-7B LoRA setup, and the role token actively suppressed pushback inside its own coding scenario (MODERATE confidence)
 
