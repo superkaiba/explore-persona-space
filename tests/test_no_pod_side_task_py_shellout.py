@@ -121,6 +121,12 @@ _LOCAL_VM_ONLY_PATHS: frozenset[str] = frozenset(
         "scripts/migrate_354_366_to_sagan.py",
         "scripts/sagan_import.py",
         "scripts/task_state.py",
+        # Dual-context gate script (#521): pod-side callers MUST pass
+        # --no-post-marker (enforced by scripts/run_issue521_v2_sweep.sh, which
+        # delivers the em-rate result via a /workspace/logs sentinel instead);
+        # the task.py-shellout branch in _post_em_rate_marker is exercised
+        # ONLY when the gate runs VM-side.
+        "scripts/issue_521_em_rate_gate.py",
         # The test itself contains pattern strings
         "tests/test_no_pod_side_task_py_shellout.py",
         # Workflow library — orchestrator-side, never imported from pod
