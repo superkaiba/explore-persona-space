@@ -15,6 +15,8 @@ goal: Test whether the rank-one law (constant shift-direction + cosine-scaled ma
 relates_to:
 - leak-predictor
 - leak-behavior-vs-marker
+classification: not-useful
+promoted_at: '2026-06-09T22:24:30Z'
 ---
 # Rank-one cross-context test for marker vs EM ran the training half and skipped the analysis half — headline not answered (LOW confidence)
 
