@@ -5,7 +5,7 @@ title: Off-ceiling, base prior still tracks marker shift negatively but predicts
 kind: analysis
 tags: []
 created_at: '2026-06-09T05:44:57Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 478
 ---
 # Off-ceiling, base prior still tracks marker shift negatively but predicts absolute trained log-prob strongly positively — propensity hides in the subtraction (MODERATE confidence)

@@ -3088,7 +3088,7 @@
       "title": "De-saturated re-run of #504's bubble-vs-barrier geometry: gate the anchor on bystander resolution, not source \u0394G"
     },
     "531": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/531",
       "status": "interpreting",
