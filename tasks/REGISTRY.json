@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 524,
+  "highest_id": 525,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3031,6 +3031,14 @@
       "path": "tasks/planning/524",
       "status": "planning",
       "title": "Directional/asymmetric base-model predictors of marker-leakage on a unified instruction+ICL panel, scored by incremental nested-CV skill"
+    },
+    "525": {
+      "goal": "Retest whether base-model cosine/JS distance predicts on-policy marker transfer across the ICL\u2194SP union panel after rebuilding the ICL contexts to genuinely induce their personas (full in-voice example answers, validated by a hard behavioral manipulation-check gate) \u2014 testing whether #489's within-ICL no-dynamic-range, the ICL-cleaner-than-SP reversal, and the cos-vs-JS tie were artifacts of weak ICL contexts and a floor-saturated DV.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/525",
+      "status": "proposed",
+      "title": "Rebuild ICL contexts as genuinely persona-voiced blocks behind a hard behavioral manipulation-check gate, then retest cosine/JS \u2192 marker-transfer across the ICL\u2194SP union panel"
     },
     "53": {
       "has_clean_result": false,
