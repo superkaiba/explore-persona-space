@@ -14,6 +14,8 @@ goal: 'Test whether installing the conditional marker/reveal with a Hubinger-sty
   fails (#382: 98%->0%; #408).'
 relates_to:
 - app1
+classification: useful
+promoted_at: '2026-06-09T22:46:10Z'
 ---
 # A chain-of-thought-scaffolded marker install on Qwen3.5-27B does not survive one epoch of benign supervised fine-tuning — plain and distilled-CoT both lose more than 10 nats of install at the trigger cell, and no arm ever emits the marker (LOW confidence)
 
