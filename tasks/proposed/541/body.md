@@ -14,6 +14,9 @@ goal: 'Test whether the bystander-prior→leakage relationship found in #500 hol
   MEASURED prior on the fact predicts panel-wide gating tightness, by re-running the
   #500 design with a prior-stratified bystander panel and source personas selected
   by measured base prior instead of hand-coded content-relatedness.'
+relates_to:
+- leak-predictor
+- fact-teach-persona-transfer
 ---
 ## Goal
 
