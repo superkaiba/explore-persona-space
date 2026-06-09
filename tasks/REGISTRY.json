@@ -2980,8 +2980,8 @@
       "goal": "Measure untrained Qwen-2.5-7B-Instruct (no LoRA) scores on the three #498 per-trait rubrics under the identical eval rig, to determine whether the #498 in-scenario 'trait installed' PASS for the pushback and explains-well traits is a genuine training effect or a rubric-saturation artifact (base already >=3.5).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/517",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/517",
+      "status": "completed",
       "title": "Untrained Qwen-2.5-7B-Instruct already PASSes 2 of 3 #498 trait rubrics in-scenario; only validating has real base-model headroom (MODERATE confidence)"
     },
     "518": {
