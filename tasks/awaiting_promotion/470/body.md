@@ -14,6 +14,8 @@ goal: 'Determine whether persona-to-source Jensen-Shannon divergence between bas
   lowest cosine rank).'
 relates_to:
 - leak-predictor
+classification: useful
+promoted_at: '2026-06-09T21:43:11Z'
 ---
 # Sycophancy training implants into the source persona but does not transfer to bystanders predictably — neither residual cosine nor JS / KL divergence forecasts the near-zero transfer under the contrastive held-out setup (LOW confidence)
 
