@@ -16,6 +16,8 @@ legacy_why_unset: true
 relates_to:
 - app4
 - e4
+classification: useful
+promoted_at: '2026-06-09T21:34:08Z'
 ---
 # Cross-persona chunk binding leaks the first hop beyond the donor, but recipient cascades stop there (HIGH confidence)
 
