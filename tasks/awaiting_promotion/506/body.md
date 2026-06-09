@@ -13,6 +13,8 @@ goal: 'Test whether installing the trigger->marker rule with full-weight fine-tu
   are more robust to training than LoRA ones.'
 relates_to:
 - app1
+classification: useful
+promoted_at: '2026-06-09T22:46:07Z'
 ---
 # One epoch of benign medical-advice SFT erases a trigger-keyword marker install on Qwen3-32B regardless of install recipe — full-weight fine-tuning, LoRA r=16, and LoRA r=256 all collapse from 100% to 0% emission together (HIGH confidence)
 
