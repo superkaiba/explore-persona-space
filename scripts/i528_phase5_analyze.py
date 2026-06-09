@@ -1,14 +1,21 @@
 # ruff: noqa: RUF002, RUF003  -- intentional math notation (Spearman ρ).
 """Phase 5 analyze — H1 + H2 + DV3 (#528).
 
-Plan v1 §6.2. Computes:
+Plan v1 §6.2 + §11 + §15 #20/#21. Computes:
 
 - **H1 per-trait paired t-test** (trained_system - base, system arm only)
-  on N=40 paired Likert values; Holm-Bonferroni across 4 traits;
-  bootstrap 95% CI (10k resamples).
-- **H2 paired role-vs-system d_leakage** by seed, averaged across 4
-  off-target eval contexts and the H1-PASSing trait subset; paired
-  bootstrap CI (10k); per-context sub-analysis.
+  on N=40 paired Likert values; Student-t (via ``scipy.stats.ttest_1samp``,
+  per plan §11/§15 #20); Holm-Bonferroni across 4 traits; bootstrap 95%
+  CI (10k resamples). **Saturation-gated** (plan §6.2, #517 precedent):
+  a trait whose base CI's LOWER bound > 3.5 is "saturated base" — H1 is
+  untestable for it (no headroom) and it is EXCLUDED from the H2 subset.
+- **H2 paired role-vs-system d_leakage** by SEED (N=3 paired-bootstrap
+  per plan §6.2 + §15 #21; #498 precedent). For each (trait, seed),
+  compute role - system leakage averaged across 4 off-target eval
+  contexts; then aggregate to per-seed means over the H1-PASSing trait
+  subset; the bootstrap unit is one of the 3 seeds (NOT 12 trait*seed
+  cells), so headline d_mean, CI, and pass/fail all use the same
+  per-seed unit.
 - **DV3 paraphrase ρ** per (trait, arm) on the 10% stratified subsample.
 
 Output: ``eval_results/issue_528/analysis.json``.
@@ -64,38 +71,33 @@ def _bootstrap_ci(
 
 
 def _paired_t(diffs: list[float]) -> dict:
-    """Paired t-test on the differences (one-sample t on diffs vs 0)."""
+    """Paired t-test on the differences (one-sample Student-t on diffs vs 0).
+
+    Plan §11 + §15 #20: paired t-test (Student-t, two-sided). Uses
+    ``scipy.stats.ttest_1samp`` so the small-df behavior (df < 30 under
+    descope) is correct, not normal-approximated.
+    """
     n = len(diffs)
     if n < 2:
         return {"t": float("nan"), "df": 0, "p_two_sided": float("nan"), "mean": 0.0}
     mean = sum(diffs) / n
     var = sum((d - mean) ** 2 for d in diffs) / (n - 1)
     se = math.sqrt(var / n)
+    df = n - 1
     if se == 0:
         return {
             "t": float("inf") if mean != 0 else 0.0,
-            "df": n - 1,
-            "p_two_sided": 0.0,
+            "df": df,
+            "p_two_sided": 0.0 if mean != 0 else 1.0,
             "mean": mean,
         }
-    t = mean / se
-    # Two-sided p-value via the Student-t CDF approximation. We avoid scipy by
-    # using the symmetry: 2 * (1 - cdf(|t|, df)). Use an approximation via the
-    # standard normal tail for df>=30; for smaller df, use a Welch-Satterthwaite
-    # safe-ish approximation.
-    df = n - 1
-    # Approximate two-sided p via the standard-normal tail for df>=30 (>= the
-    # typical N=40 case); otherwise use math.erfc on a corrected statistic.
-    if df >= 30:
-        z = abs(t)
-        p = math.erfc(z / math.sqrt(2.0))
-    else:
-        # Conservative: clip via the normal tail. Small-df correction would
-        # require the incomplete beta function; for the planned N=40 case we
-        # are well into normal-approximation territory.
-        z = abs(t)
-        p = math.erfc(z / math.sqrt(2.0))
-    return {"t": t, "df": df, "p_two_sided": p, "mean": mean}
+
+    from scipy import stats  # type: ignore[import-not-found]
+
+    res = stats.ttest_1samp(diffs, popmean=0.0)
+    t_stat = float(res.statistic)
+    p = float(res.pvalue)
+    return {"t": t_stat, "df": df, "p_two_sided": p, "mean": mean}
 
 
 def _holm_bonferroni(p_values: dict[str, float], alpha: float = 0.05) -> dict[str, dict]:
@@ -227,6 +229,30 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — phase dispatch
             continue
         t_stat = _paired_t(diffs)
         lo, hi = _bootstrap_ci(diffs, n_resamples=args.n_bootstrap, alpha=args.alpha)
+        # Base CI for the headroom / saturation gate (Blocker 2): a trait whose
+        # base CI's LOWER bound > 3.5 is "saturated base" — there is no
+        # headroom for the LoRA to install the trait further, so H1 is
+        # UNTESTABLE for it. We compute this BEFORE writing the per-trait
+        # row so the saturation flag is available in the pass_h1 conjunction.
+        base_scores = [s for vs in per_q_base.values() for s in vs]
+        base_ci_lo = float("nan")
+        base_ci_hi = float("nan")
+        base_mean = float("nan")
+        base_saturated_ci = False
+        if base_scores:
+            base_ci_lo, base_ci_hi = _bootstrap_ci(base_scores, n_resamples=args.n_bootstrap)
+            base_mean = sum(base_scores) / len(base_scores)
+            # Lower CI bound STRICTLY above 3.5 → saturated base, no headroom.
+            base_saturated_ci = base_ci_lo > 3.5
+            base_summary[trait] = {
+                "n": len(base_scores),
+                "mean": base_mean,
+                "ci_lo": base_ci_lo,
+                "ci_hi": base_ci_hi,
+                "above_3_5_mean": base_mean >= 3.5,
+                "base_saturated_ci": base_saturated_ci,
+                "headroom": not base_saturated_ci,
+            }
         h1_per_trait[trait] = {
             "n_paired": len(diffs),
             "paired_delta_mean": t_stat["mean"],
@@ -236,37 +262,60 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — phase dispatch
             "ci_lo": lo,
             "ci_hi": hi,
             "seeds_used": sorted(seeds_seen),
+            "base_ci_lo": base_ci_lo,
+            "base_ci_hi": base_ci_hi,
+            "base_mean": base_mean,
+            "base_saturated_ci": base_saturated_ci,
+            "headroom": not base_saturated_ci,
         }
+        if base_saturated_ci:
+            # H1 is untestable when the base is saturated; flag the trait so
+            # the analyzer can name it "untestable — saturated base" in the
+            # JSON output, and EXCLUDE it from the Holm input + H2 subset.
+            h1_per_trait[trait]["h1_untestable"] = "saturated_base"
+            continue
         h1_p[trait] = t_stat["p_two_sided"]
-        # Base summary for headroom view.
-        base_scores = [s for vs in per_q_base.values() for s in vs]
-        if base_scores:
-            base_summary[trait] = {
-                "n": len(base_scores),
-                "mean": sum(base_scores) / len(base_scores),
-                "ci_lo": _bootstrap_ci(base_scores, n_resamples=args.n_bootstrap)[0],
-                "ci_hi": _bootstrap_ci(base_scores, n_resamples=args.n_bootstrap)[1],
-                "above_3_5": (sum(base_scores) / len(base_scores)) >= 3.5,
-            }
 
-    # Holm-Bonferroni across the 4 H1 tests.
+    # Holm-Bonferroni across the H1 tests of NON-saturated traits only.
+    # Saturated traits are excluded from the multiple-testing correction
+    # (they were never testable to begin with).
     h1_holm = _holm_bonferroni(h1_p, alpha=args.alpha) if h1_p else {}
     for trait, hb in h1_holm.items():
         h1_per_trait[trait]["p_holm"] = hb["p_holm"]
         h1_per_trait[trait]["reject"] = hb["reject"]
-        h1_per_trait[trait]["pass_h1"] = bool(
-            hb["reject"] and h1_per_trait[trait].get("ci_lo", -1) > 0
+        # pass_h1 conjunction (Blocker 2): headroom AND Holm-rejected AND
+        # positive delta (CI lower bound > 0). Saturated traits already
+        # never reached this loop, so they're auto-False.
+        info = h1_per_trait[trait]
+        pass_h1 = bool(
+            info.get("headroom")
+            and hb["reject"]
+            and info.get("ci_lo", -1) > 0
+            and info.get("paired_delta_mean", 0) > 0
         )
+        info["pass_h1"] = pass_h1
+
+    # Ensure saturated (and any other untestable) traits carry pass_h1=False
+    # explicitly so downstream consumers can rely on the key.
+    for _trait, info in h1_per_trait.items():
+        info.setdefault("pass_h1", False)
 
     h1_passing = [t for t, info in h1_per_trait.items() if info.get("pass_h1")]
 
-    # ---------------- H2 — paired role-vs-system d_leakage ----------------
-    # For each (trait, seed):
-    #   leakage_arm(t, s) = mean over (off-target ctx x q_idx) of trained score
-    #   d(t, s) = leakage_role(t, s) - leakage_system(t, s)
+    # ---------------- H2 — paired role-vs-system d_leakage by SEED ----------
+    # Plan §6.2 + §11 + §15 #21 + #498 precedent: the bootstrap UNIT is one
+    # of the 3 seeds, NOT one of the 12 (trait, seed) cells (Blocker 1).
+    #
+    # Two-step aggregation:
+    #   1. Per-cell d(t, s) = mean(role_off_target) - mean(system_off_target)
+    #      averaged across the 4 off-target eval contexts (and Q_test prompts).
+    #   2. Per-seed mean d(s) = mean over H1-PASSing traits of d(t, s).
+    # The headline d_mean, bootstrap CI, and pass/fail all read off the
+    # 3-element per-seed-mean LIST — that is the paired-bootstrap-by-seed
+    # contract. Per-trait*seed cells are kept for traceability only.
     h2_per_cell: list[dict] = []
-    h2_pairs: list[float] = []
-    h2_per_seed: dict[int, list[float]] = {}
+    # raw_pairs[seed] = list of d values across H1-passing traits at that seed
+    raw_pairs_by_seed: dict[int, list[float]] = {}
     for trait in TRAITS:
         for seed in (42, 137, 1337):
             sys_scores: list[float] = []
@@ -294,22 +343,33 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — phase dispatch
                 }
             )
             if trait in h1_passing:
-                h2_pairs.append(d)
-                h2_per_seed.setdefault(seed, []).append(d)
+                raw_pairs_by_seed.setdefault(seed, []).append(d)
+
+    # Per-seed means over the H1-PASSing trait subset — these are the 3
+    # bootstrap-unit observations.
+    h2_passing_per_seed_mean: dict[int, float] = {
+        s: sum(v) / len(v) for s, v in raw_pairs_by_seed.items() if v
+    }
+    h2_passing_seed_means: list[float] = [
+        h2_passing_per_seed_mean[s] for s in sorted(h2_passing_per_seed_mean.keys())
+    ]
 
     h2_summary: dict = {}
-    if h2_pairs:
-        d_mean = sum(h2_pairs) / len(h2_pairs)
-        lo, hi = _bootstrap_ci(h2_pairs, n_resamples=args.n_bootstrap)
-        per_seed_means = {s: sum(v) / len(v) for s, v in h2_per_seed.items()}
-        n_neg = sum(1 for m in per_seed_means.values() if m < 0)
+    if h2_passing_seed_means:
+        d_mean = sum(h2_passing_seed_means) / len(h2_passing_seed_means)
+        # Paired bootstrap over the 3 per-seed means (NOT over flat (trait,
+        # seed) cells). With N=3 this gives a wide CI by design — that is
+        # the correct uncertainty for N=3 paired bootstrap.
+        lo, hi = _bootstrap_ci(h2_passing_seed_means, n_resamples=args.n_bootstrap)
+        n_neg = sum(1 for m in h2_passing_seed_means if m < 0)
         h2_summary = {
-            "n_pairs": len(h2_pairs),
+            "n_seeds": len(h2_passing_seed_means),
+            "bootstrap_unit": "per_seed_mean_over_h1_passing_traits",
             "h1_passing_traits": sorted(h1_passing),
             "d_mean": d_mean,
             "ci_lo": lo,
             "ci_hi": hi,
-            "per_seed_mean": per_seed_means,
+            "per_seed_mean": h2_passing_per_seed_mean,
             "n_seeds_negative": n_neg,
             "pass_bar": "d_mean <= -0.15, ci_hi < 0, >= 2/3 seeds negative",
             "passed": d_mean <= -0.15 and hi < 0 and n_neg >= 2,
@@ -317,22 +377,25 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — phase dispatch
     else:
         h2_summary = {"status": "NO_H1_PASSING_TRAITS_OR_NO_PAIRED_CELLS"}
 
-    # All-trait H2 (sensitivity).
-    all_d = [c["d_leakage"] for c in h2_per_cell]
-    all_per_seed: dict[int, list[float]] = {}
+    # All-trait H2 (sensitivity) — also bootstrapped by SEED.
+    all_per_seed_raw: dict[int, list[float]] = {}
     for c in h2_per_cell:
-        all_per_seed.setdefault(c["seed"], []).append(c["d_leakage"])
-    h2_all_trait = {}
-    if all_d:
-        d_mean_all = sum(all_d) / len(all_d)
-        lo_all, hi_all = _bootstrap_ci(all_d, n_resamples=args.n_bootstrap)
-        per_seed_all = {s: sum(v) / len(v) for s, v in all_per_seed.items()}
+        all_per_seed_raw.setdefault(c["seed"], []).append(c["d_leakage"])
+    all_passing_per_seed_mean = {s: sum(v) / len(v) for s, v in all_per_seed_raw.items() if v}
+    all_seed_means = [
+        all_passing_per_seed_mean[s] for s in sorted(all_passing_per_seed_mean.keys())
+    ]
+    h2_all_trait: dict = {}
+    if all_seed_means:
+        d_mean_all = sum(all_seed_means) / len(all_seed_means)
+        lo_all, hi_all = _bootstrap_ci(all_seed_means, n_resamples=args.n_bootstrap)
         h2_all_trait = {
-            "n_pairs": len(all_d),
+            "n_seeds": len(all_seed_means),
+            "bootstrap_unit": "per_seed_mean_over_all_traits",
             "d_mean": d_mean_all,
             "ci_lo": lo_all,
             "ci_hi": hi_all,
-            "per_seed_mean": per_seed_all,
+            "per_seed_mean": all_passing_per_seed_mean,
         }
 
     # ---------------- DV3 paraphrase ρ ----------------

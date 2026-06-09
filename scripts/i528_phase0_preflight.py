@@ -218,6 +218,57 @@ def _eligibility_filter(client, judge_model: str, trait: str, candidates: list[s
     return rows
 
 
+def _assert_api_keys_and_reachability(*, smoke: bool) -> None:
+    """Concern 5 — assert HF_TOKEN + WANDB_API_KEY + ANTHROPIC_API_KEY present
+    in env AND probe HF Hub + WandB reachability.
+
+    Smoke mode skips the Anthropic key check (smoke uses stub Q-banks, no
+    API calls) but still validates HF_TOKEN + WANDB_API_KEY because
+    downstream phases need them. Each failure raises SystemExit with a
+    concrete remediation message — never a silent default.
+    """
+    import os
+
+    required = ["HF_TOKEN", "WANDB_API_KEY"]
+    if not smoke:
+        required.append("ANTHROPIC_API_KEY")
+    missing = [k for k in required if not os.environ.get(k)]
+    if missing:
+        raise SystemExit(
+            f"Required env vars missing after load_dotenv(): {missing}. "
+            "Set them in `.env` or in the pod environment before running Phase 0."
+        )
+
+    # HF Hub reachability — uses HfApi().whoami() which validates the token
+    # AND the network path to huggingface.co in one call.
+    try:
+        from huggingface_hub import HfApi
+
+        api = HfApi()
+        who = api.whoami()
+        logger.info("HF Hub reachable: user=%s", who.get("name", "<unknown>"))
+    except Exception as e:
+        raise SystemExit(
+            f"HF Hub preflight FAILED: HfApi().whoami() raised {e!r}. Check "
+            "HF_TOKEN scopes (needs read+write to superkaiba1/) and network."
+        ) from e
+
+    # WandB reachability — `wandb.api.viewer()` returns the authenticated
+    # user; failure means the key is wrong or the wandb.ai API is down.
+    try:
+        import wandb
+
+        viewer = wandb.Api().viewer
+        logger.info("WandB reachable: user=%s", getattr(viewer, "username", "<unknown>"))
+    except Exception as e:
+        raise SystemExit(
+            f"WandB preflight FAILED: wandb.Api().viewer raised {e!r}. Check "
+            "WANDB_API_KEY and network."
+        ) from e
+
+    logger.info("API-key + reachability preflight OK (smoke=%s, checked=%s)", smoke, required)
+
+
 def _smoke_stub_questions(trait: str) -> list[str]:
     """Tiny deterministic stub Q-bank used in --smoke mode (no Claude calls).
 
@@ -441,6 +492,15 @@ def main(argv: list[str] | None = None) -> int:
     for trait in traits_to_build:
         if trait not in TRAITS:
             raise SystemExit(f"Unknown trait {trait!r}; valid: {TRAITS}")
+
+    # 0. Required API-key + reachability checks (CLAUDE.md preflight contract —
+    # Concern 5). Three keys must be present in env, and HF Hub + WandB must
+    # be reachable, BEFORE any Q-bank generation fires. We probe inline here
+    # instead of calling `explore_persona_space.orchestrate.preflight.
+    # require_preflight()` because that module performs additional
+    # GPU/disk checks meaningful only on the pod; the VM-side i528 preflight
+    # is the credentials + reachability subset of that contract.
+    _assert_api_keys_and_reachability(smoke=args.smoke)
 
     # 1. Per-trait Q-bank build.
     LOCAL_DATA_DIR.mkdir(parents=True, exist_ok=True)

@@ -1149,6 +1149,21 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     except Exception as e:
         logger.warning("WandB checkpoint upload skipped (%s) — local at %s", e, output_dir)
 
+    # FAIL-LOUD durable persist of the LoRA adapter BEFORE any best-effort
+    # upload below. The `_maybe_persist_adapter` helper is a no-op unless
+    # `EPM_PERSIST_ADAPTER_HF_REPO` is set, so non-sweep training is
+    # byte-for-byte unaffected. When the env var IS set — i.e. a sweep is
+    # running the delete-after-eval / MooseFS-quota recipe (#404/#458) — it
+    # uploads + VERIFIES the adapter and RAISES on any failure. A launcher
+    # with `set -e` aborts the cell before its `rm`, preserving the merged
+    # checkpoint for a retry rather than silently losing the adapter. This
+    # closes the silent-loss gap for every `train_lora`-using experiment,
+    # not just #528 — `_finalize_phase` (the other training entrypoint)
+    # already calls the same helper.
+    from explore_persona_space.train.trainer import _maybe_persist_adapter
+
+    _maybe_persist_adapter(Path(output_dir))
+
     # Auto-upload adapter to HF Hub
     if cfg.hf_upload:
         try:

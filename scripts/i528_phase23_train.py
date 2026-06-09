@@ -219,6 +219,35 @@ def train_one_cell(
             "train_path": str(train_path),
         }
     out_path, loss = train_lora(BASE_MODEL, str(train_path), out_dir, cfg=cfg)
+
+    # Blocker 3 — fail-loud adapter-persist verification (CLAUDE.md upload-policy
+    # delete-after-eval contract, #404/#458 line). `train_lora()` already
+    # best-effort-uploads via `cfg.hf_upload`, but a try/except-and-warn is
+    # NOT sufficient when the launcher rm's the merged dir afterward — the
+    # adapter (~300MB) IS the only durable artifact. We re-verify here via
+    # `huggingface_hub.list_repo_files` and RAISE if the two minimum-required
+    # files (`adapter_model.safetensors`, `adapter_config.json`) did not
+    # land at the expected subfolder. RuntimeError → set -e in the launcher
+    # → cell aborts BEFORE any `rm`. Skipped in smoke runs (smoke writes
+    # ``_smoke``-suffixed adapters that are never reaped).
+    if not smoke:
+        expected_subfolder = os.environ.get("EPM_PERSIST_ADAPTER_SUBFOLDER")
+        if not expected_subfolder:
+            raise RuntimeError(
+                "EPM_PERSIST_ADAPTER_SUBFOLDER unset after train_lora() — refusing "
+                "to skip adapter-persist verification. This run would silently lose "
+                "the adapter if the launcher reaps the merged dir."
+            )
+        _assert_adapter_landed_on_hub(
+            repo_id=HF_MODEL_REPO,
+            subfolder=expected_subfolder,
+        )
+        logger.info(
+            "Adapter persist VERIFIED on HF Hub: repo=%s subfolder=%s",
+            HF_MODEL_REPO,
+            expected_subfolder,
+        )
+
     return {
         "trait": trait,
         "arm": arm,
@@ -229,6 +258,44 @@ def train_one_cell(
         "epochs": epochs,
         "smoke": smoke,
     }
+
+
+def _assert_adapter_landed_on_hub(*, repo_id: str, subfolder: str) -> None:
+    """Fail-loud check that the two required LoRA-adapter files landed.
+
+    Raises ``RuntimeError`` if either ``adapter_model.safetensors`` or
+    ``adapter_config.json`` is missing at ``<subfolder>/`` in ``<repo_id>``.
+    Uses ``huggingface_hub.list_repo_files`` per ``.claude/rules/upload-
+    policy.md`` (the `hf` CLI has no `api` subcommand — never shell out).
+
+    Smoke is bypassed by the caller; this helper assumes a real upload was
+    attempted.
+    """
+    from huggingface_hub import list_repo_files
+    from huggingface_hub.utils import HfHubHTTPError
+
+    sub = subfolder.strip("/")
+    expected = {
+        f"{sub}/adapter_model.safetensors",
+        f"{sub}/adapter_config.json",
+    }
+    try:
+        files = set(list_repo_files(repo_id))
+    except HfHubHTTPError as e:
+        raise RuntimeError(
+            f"Adapter-persist verification: list_repo_files({repo_id!r}) failed "
+            f"with {e!r}. Refusing to declare the cell DONE — the launcher must "
+            "abort before rm'ing the merged dir."
+        ) from e
+    missing = expected - files
+    if missing:
+        raise RuntimeError(
+            f"Adapter-persist FAILED verification: required files missing on HF "
+            f"Hub at {repo_id}/{sub}/ — missing={sorted(missing)}. Refusing to "
+            "declare the cell DONE; the launcher must abort before rm'ing the "
+            "merged dir. (CLAUDE.md upload-policy: delete-after-eval requires "
+            "fail-loud adapter persistence; #404/#458 line.)"
+        )
 
 
 def main(argv: list[str] | None = None) -> int:

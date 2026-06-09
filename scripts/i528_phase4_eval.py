@@ -43,7 +43,7 @@ def _git() -> str:
         return "unknown"
 
 
-def main(argv: list[str] | None = None) -> int:  # noqa: C901 — eval dispatcher
+def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(name)s [%(levelname)s] %(message)s",
@@ -81,16 +81,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — eval dispatche
     )
     ap.add_argument("--max-new-tokens", type=int, default=2048)
     ap.add_argument("--truncation-fail-threshold", type=float, default=0.05)
-    ap.add_argument(
-        "--backend",
-        choices=("vllm", "hf"),
-        default="vllm",
-        help="hf = sequential generate (CPU/single-GPU smoke).",
-    )
+    # NB: production eval is vLLM-ONLY per CLAUDE.md "Use vLLM for generation"
+    # (Concern 6). No `--backend hf` fallback — a CPU/single-GPU sequential
+    # path would silently produce production raw_completions JSONs with
+    # different generation semantics than the canonical run, defeating the
+    # rule's purpose. For CPU/local-GPU smoke against a tiny CPU model, use
+    # a separate smoke-only helper script.
     ap.add_argument(
         "--base-model",
         default=None,
-        help="Override base model id (smoke).",
+        help="Override base model id (e.g., a smaller variant for a GPU smoke).",
     )
     args = ap.parse_args(argv)
 
@@ -135,140 +135,72 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — eval dispatche
     truncated_total = 0
     rows_total = 0
 
-    if args.backend == "vllm":
-        from vllm import LLM, SamplingParams
-        from vllm.lora.request import LoRARequest
+    # vLLM ONLY — Concern 6 + CLAUDE.md "Use vLLM for generation" rule.
+    # The HF-sequential fallback was removed in round 2: writing the
+    # canonical production raw_completions JSONs from two different
+    # generation rigs would silently mix semantics across cells, and the
+    # JSONs are downstream-consumed as if they were vLLM-batched output.
+    from vllm import LLM, SamplingParams
+    from vllm.lora.request import LoRARequest
 
-        llm = LLM(
-            model=base_model_id,
-            dtype="bfloat16",
-            enable_lora=True,
-            max_lora_rank=32,
-            trust_remote_code=True,
-            gpu_memory_utilization=0.85,
-        )
-        sp = SamplingParams(temperature=0.0, top_p=1.0, max_tokens=args.max_new_tokens)
-        for cell_idx, (trait, arm, seed, adapter) in enumerate(cells):
-            q_test = load_q_test(trait)[: args.n_q]
-            for eval_ctx in args.eval_contexts:
-                prompts = [BUILD_EVAL_PROMPT(arm, eval_ctx, trait, q, tokenizer) for q in q_test]
-                lora_req = LoRARequest(f"i528_{trait}_{arm}_seed{seed}", cell_idx + 1, adapter)
-                outs = llm.generate(prompts, sp, lora_request=lora_req)
-                rows = []
-                cell_truncated = 0
-                for q, out in zip(q_test, outs, strict=True):
-                    o = out.outputs[0]
-                    token_ids = list(getattr(o, "token_ids", []) or [])
-                    ended_with_eos = bool(token_ids and token_ids[-1] == tokenizer.eos_token_id)
-                    n_tokens = len(token_ids)
-                    truncated = (n_tokens >= args.max_new_tokens) and not ended_with_eos
-                    if truncated:
-                        cell_truncated += 1
-                    rows.append(
-                        {
-                            "q": q,
-                            "response": o.text,
-                            "n_response_tokens": n_tokens,
-                            "ended_with_eos": ended_with_eos,
-                            "truncated": truncated,
-                        }
-                    )
-                truncated_total += cell_truncated
-                rows_total += len(rows)
-                out_path = RAW_DIR / f"{trait}_{arm}_seed{seed}__{eval_ctx}.json"
-                out_path.write_text(
-                    json.dumps(
-                        {
-                            "schema_version": "i528_v1",
-                            "kind": "trained_raw_generations",
-                            "trait": trait,
-                            "arm": arm,
-                            "seed": seed,
-                            "eval_context": eval_ctx,
-                            "adapter": adapter,
-                            "n_truncated": cell_truncated,
-                            "max_new_tokens": args.max_new_tokens,
-                            "git_commit": _git(),
-                            "ts": _dt.datetime.utcnow().isoformat() + "Z",
-                            "rows": rows,
-                        },
-                        indent=2,
-                        ensure_ascii=False,
-                    )
+    llm = LLM(
+        model=base_model_id,
+        dtype="bfloat16",
+        enable_lora=True,
+        max_lora_rank=32,
+        trust_remote_code=True,
+        gpu_memory_utilization=0.85,
+    )
+    sp = SamplingParams(temperature=0.0, top_p=1.0, max_tokens=args.max_new_tokens)
+    for cell_idx, (trait, arm, seed, adapter) in enumerate(cells):
+        q_test = load_q_test(trait)[: args.n_q]
+        for eval_ctx in args.eval_contexts:
+            prompts = [BUILD_EVAL_PROMPT(arm, eval_ctx, trait, q, tokenizer) for q in q_test]
+            lora_req = LoRARequest(f"i528_{trait}_{arm}_seed{seed}", cell_idx + 1, adapter)
+            outs = llm.generate(prompts, sp, lora_request=lora_req)
+            rows = []
+            cell_truncated = 0
+            for q, out in zip(q_test, outs, strict=True):
+                o = out.outputs[0]
+                token_ids = list(getattr(o, "token_ids", []) or [])
+                ended_with_eos = bool(token_ids and token_ids[-1] == tokenizer.eos_token_id)
+                n_tokens = len(token_ids)
+                truncated = (n_tokens >= args.max_new_tokens) and not ended_with_eos
+                if truncated:
+                    cell_truncated += 1
+                rows.append(
+                    {
+                        "q": q,
+                        "response": o.text,
+                        "n_response_tokens": n_tokens,
+                        "ended_with_eos": ended_with_eos,
+                        "truncated": truncated,
+                    }
                 )
-                logger.info("Wrote %s (n=%d truncated=%d)", out_path, len(rows), cell_truncated)
-    else:
-        # HF backend (smoke).
-        import torch
-        from peft import PeftModel
-        from transformers import AutoModelForCausalLM
-
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        torch_dtype = torch.bfloat16 if device == "cuda" else torch.float32
-        for trait, arm, seed, adapter in cells:
-            base = AutoModelForCausalLM.from_pretrained(
-                base_model_id, torch_dtype=torch_dtype, trust_remote_code=True
-            ).to(device)
-            model = PeftModel.from_pretrained(base, adapter).to(device)
-            model.eval()
-            q_test = load_q_test(trait)[: args.n_q]
-            for eval_ctx in args.eval_contexts:
-                rows = []
-                cell_truncated = 0
-                for q in q_test:
-                    prompt_text = BUILD_EVAL_PROMPT(arm, eval_ctx, trait, q, tokenizer)
-                    inputs = tokenizer(prompt_text, return_tensors="pt").to(device)
-                    with torch.no_grad():
-                        out = model.generate(
-                            **inputs,
-                            max_new_tokens=args.max_new_tokens,
-                            do_sample=False,
-                            temperature=0.0,
-                            top_p=1.0,
-                            eos_token_id=tokenizer.eos_token_id,
-                            pad_token_id=tokenizer.pad_token_id,
-                        )
-                    gen_ids = out[0][inputs["input_ids"].shape[1] :]
-                    text = tokenizer.decode(gen_ids, skip_special_tokens=True)
-                    n_tokens = int(gen_ids.shape[0])
-                    ended_with_eos = bool(n_tokens and int(gen_ids[-1]) == tokenizer.eos_token_id)
-                    truncated = (n_tokens >= args.max_new_tokens) and not ended_with_eos
-                    if truncated:
-                        cell_truncated += 1
-                    rows.append(
-                        {
-                            "q": q,
-                            "response": text,
-                            "n_response_tokens": n_tokens,
-                            "ended_with_eos": ended_with_eos,
-                            "truncated": truncated,
-                        }
-                    )
-                truncated_total += cell_truncated
-                rows_total += len(rows)
-                out_path = RAW_DIR / f"{trait}_{arm}_seed{seed}__{eval_ctx}.json"
-                out_path.write_text(
-                    json.dumps(
-                        {
-                            "schema_version": "i528_v1",
-                            "kind": "trained_raw_generations",
-                            "trait": trait,
-                            "arm": arm,
-                            "seed": seed,
-                            "eval_context": eval_ctx,
-                            "adapter": adapter,
-                            "n_truncated": cell_truncated,
-                            "max_new_tokens": args.max_new_tokens,
-                            "git_commit": _git(),
-                            "ts": _dt.datetime.utcnow().isoformat() + "Z",
-                            "rows": rows,
-                        },
-                        indent=2,
-                        ensure_ascii=False,
-                    )
+            truncated_total += cell_truncated
+            rows_total += len(rows)
+            out_path = RAW_DIR / f"{trait}_{arm}_seed{seed}__{eval_ctx}.json"
+            out_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "i528_v1",
+                        "kind": "trained_raw_generations",
+                        "trait": trait,
+                        "arm": arm,
+                        "seed": seed,
+                        "eval_context": eval_ctx,
+                        "adapter": adapter,
+                        "n_truncated": cell_truncated,
+                        "max_new_tokens": args.max_new_tokens,
+                        "git_commit": _git(),
+                        "ts": _dt.datetime.utcnow().isoformat() + "Z",
+                        "rows": rows,
+                    },
+                    indent=2,
+                    ensure_ascii=False,
                 )
-                logger.info("Wrote %s (n=%d truncated=%d)", out_path, len(rows), cell_truncated)
-            del model, base
+            )
+            logger.info("Wrote %s (n=%d truncated=%d)", out_path, len(rows), cell_truncated)
 
     rate = truncated_total / max(1, rows_total)
     logger.info(
