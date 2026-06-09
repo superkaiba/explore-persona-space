@@ -14,6 +14,8 @@ goal: Test whether reduced training intensity or contrastive negative examples c
 relates_to:
 - b1
 - c6
+classification: useful
+promoted_at: '2026-06-09T21:28:18Z'
 ---
 # Contrastive negatives let Qwen-2.5-7B give different answers to the same question depending on persona; reducing training alone doesn't separate teach from non-teach personas (MODERATE confidence)
 
