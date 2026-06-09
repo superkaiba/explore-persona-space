@@ -46,7 +46,8 @@ notice the recurrence manually. Now it's same-turn.
   `pods_ephemeral.json`, `workflow_lint.py`, `verify_task_body.py`,
   `audit_clean_results_body_discipline.py`, `codex_task.py`,
   `poll_pipeline.py`, `gh_project.py`, `spawn_session.py`,
-  `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`
+  `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`,
+  `autonomous_session_watch.py`, `cron_autonomous_session_watch.sh`
 - `tests/test_workflow*.py`, `tests/test_task_workflow*.py`,
   `tests/test_no_dollar_budget_caps.py`, and other tests that pin
   workflow invariants

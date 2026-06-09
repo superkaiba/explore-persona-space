@@ -47,6 +47,7 @@ The workflow is the meta-layer that drives experiments — never the experiments
   - `pod_lifecycle.py`, `pod_config.py`, `pod_audit.py`, `gpu_heuristics.py`, `cleanup_pod.py`, `pod_disk_guard.py` — the pod implementation modules `pod.py` dispatches to
   - `cron_pod_audit.sh`, `sync_pods.sh`, `_pods_conf_path.sh` — pod shell/config helpers (daily stale-pod audit cron wrapper, `pod.py sync` backend, pods.conf path resolver)
   - `worktree_audit.py`, `cron_worktree_audit.sh` — the stale-worktree sweep + its cron wrapper
+  - `autonomous_session_watch.py`, `cron_autonomous_session_watch.sh` — the crash-recovery + pod-safety + stalled-detector watcher + its cron wrapper
   - `workflow_lint.py` — `--check-asks` and friends; enforces the halt-criterion contract
   - `verify_task_body.py` — 13-check markdown spec for clean-result bodies
   - `audit_clean_results_body_discipline.py` — anti-pattern detector

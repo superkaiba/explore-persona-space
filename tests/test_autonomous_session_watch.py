@@ -168,6 +168,33 @@ def test_pod_safety_done_higher_threshold_delays_stop():
     ) == ("stop", 0)
 
 
+@pytest.mark.parametrize("missed", [0, 1, 5])
+def test_pod_safety_keep_running_tag_skips_stop(missed):
+    # A DONE task with the keep-running tag is NEVER stopped, even past the
+    # miss threshold, and the miss counter resets to 0 — so removing the tag
+    # later re-arms a fresh >=threshold-checks accumulation (#530 regression).
+    assert decide_pod_safety(
+        status_class="auto-stop-done",
+        missed=missed,
+        stale=False,
+        alerted=False,
+        threshold=2,
+        keep_running=True,
+    ) == ("keep-running-skip", 0)
+
+
+def test_pod_safety_keep_running_does_not_suppress_alert():
+    # The tag only exempts the auto-stop arm. A stale pod-active task still
+    # alerts (alerts never stop anything, so there is nothing to exempt).
+    assert decide_pod_safety(
+        status_class="pod-active-stale",
+        missed=0,
+        stale=True,
+        alerted=False,
+        keep_running=True,
+    ) == ("alert", 0)
+
+
 def test_pod_safety_stale_pod_active_alerts_not_stops():
     # The mid-run-death case: a pod-active task gone stale gets an ALERT, never a
     # stop. A false alert is a cheap nudge; a false stop kills a healthy run.
@@ -440,6 +467,7 @@ def test_auto_stop_fires_on_done_task_second_miss(isolated_registry, monkeypatch
     posts: list[tuple[int, str]] = []
     monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
     monkeypatch.setattr(
@@ -467,12 +495,75 @@ def test_auto_stop_fires_for_all_done_statuses(isolated_registry, monkeypatch, s
     stops: list[int] = []
     monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(7, "p7", "pod-7")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: status)
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: None)
 
     asw.pod_safety_pass(dry_run=False, threshold=1, now=now)  # threshold=1 -> stop immediately
     assert stops == [7]
+
+
+def test_keep_running_tag_skips_stop_and_notes_once(isolated_registry, monkeypatch):
+    # The #530 regression: a keep-running-tagged task at awaiting_promotion
+    # (a user-directed follow-up still using the pod) must NOT be auto-stopped.
+    # The skip posts ONE marker per pod incarnation, not one per 20-min tick.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    stops: list[int] = []
+    posts: list[tuple[int, str]] = []
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(530, "p530", "pod-530")])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "awaiting_promotion")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+
+    # threshold=1 would stop an untagged pod on the FIRST tick; three ticks
+    # with the tag -> zero stops, exactly one keep-running-skip marker.
+    for _ in range(3):
+        asw.pod_safety_pass(dry_run=False, threshold=1, now=now)
+
+    assert stops == []
+    assert posts == [(530, "keep-running-skip")]
+    state = json.loads((isolated_registry / "pod-safety-530.json").read_text())
+    assert state["keep_running_noted"] is True
+    assert state["missed"] == 0
+
+
+def test_keep_running_tag_removal_re_arms_auto_stop(isolated_registry, monkeypatch):
+    # Removing the tag re-arms the normal >=2-checks accumulation: the next
+    # two no-tag ticks stop the pod (fresh count — the tagged ticks did not
+    # accumulate misses).
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    stops: list[int] = []
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(530, "p530", "pod-530")])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "awaiting_promotion")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
+    monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: None)
+
+    # Two tagged ticks: no stop, no miss accumulation.
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    assert stops == []
+
+    # Tag removed: tick 1 only increments (missed 0->1), tick 2 stops.
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    assert stops == []
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    assert stops == [530]
 
 
 @pytest.mark.parametrize("status", ["blocked", "interpreting", "reviewing"])
@@ -804,6 +895,7 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
         "missed": 1,
         "alerted": False,
         "last_progress_ts": 42.0,
+        "keep_running_noted": False,
         "first_seen": 1234.0,
     }
 
@@ -816,6 +908,25 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
     assert payload2["missed"] == 2
     assert payload2["alerted"] is True
     assert payload2["last_progress_ts"] == 99.0
+
+    # keep_running_noted carries forward from prev when not explicitly passed,
+    # and an explicit value overrides.
+    asw._save_pod_safety_state(
+        7,
+        "pod-7",
+        missed=0,
+        alerted=False,
+        last_progress_ts=99.0,
+        keep_running_noted=True,
+        prev=payload2,
+    )
+    payload3 = json.loads((isolated_registry / "pod-safety-7.json").read_text())
+    assert payload3["keep_running_noted"] is True
+    asw._save_pod_safety_state(
+        7, "pod-7", missed=0, alerted=False, last_progress_ts=99.0, prev=payload3
+    )
+    payload4 = json.loads((isolated_registry / "pod-safety-7.json").read_text())
+    assert payload4["keep_running_noted"] is True  # carried forward
 
 
 # ─── stalled-detector decision matrix ────────────────────────────────────────
