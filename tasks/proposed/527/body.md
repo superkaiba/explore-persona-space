@@ -6,7 +6,18 @@ tags: []
 created_at: '2026-06-09T05:06:51Z'
 has_clean_result: false
 parent_id: 520
+goal: Test whether marker-implant fine-tune edits superpose (per-context joint shift
+  equals the sum of the singleton A-only and B-only shifts at every held-out persona)
+  using a properly-implanted anchor (source log P(marker) minus base in the [5,12]
+  nat band-stop window, emission gate cleared) and orthogonal source pairs (base-model
+  L20 centered cosine near 0), so the additivity cosine is a diagnostic superposition
+  test rather than a mechanical artifact of a floored implant and parallel singletons.
 ---
+## Goal
+
+Test whether marker-implant fine-tune edits superpose (per-context joint shift equals the sum of the singleton A-only and B-only shifts at every held-out persona) using a properly-implanted anchor (source log P(marker) minus base in the [5,12] nat band-stop window, emission gate cleared) and orthogonal source pairs (base-model L20 centered cosine near 0), so the additivity cosine is a diagnostic superposition test rather than a mechanical artifact of a floored implant and parallel singletons.
+
+
 Corrected re-run of #520 (pillar-2 superposition). #520 floored: argmax marker emission was 0.000 across all 36 cells / 19 personas / 100 steps and source `log P(marker) − base` sat ~22 nats below the saturation ceiling, so the additivity construct (`shift_{A+B} ≈ shift_A + shift_B`) was never actually testable. The DV1 cosine that looked decent (0.66–0.89) turned out mechanical: the joint shift matrix was near rank-1 across the 19 held-out contexts (top-1 SV 76–89%, eff. rank 1.3–1.7) and the near-pair A-only / B-only singletons were themselves nearly parallel (cos ≈ 0.82), so "additivity" was being graded against "do parallel vectors add". This follow-up fixes both validity defects so the additivity cosine becomes a real superposition test rather than an artifact of a floored implant.
 
 ## Hypothesis
