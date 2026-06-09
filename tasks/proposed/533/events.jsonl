@@ -1,1 +1,2 @@
 {"ts": "2026-06-09T16:08:18Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-09T16:10:31Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #533 to open question(s) spec-role-header, leak-contrastive-negatives; created_new=none; mode=auto-match (parent #529 has identical links)."}
