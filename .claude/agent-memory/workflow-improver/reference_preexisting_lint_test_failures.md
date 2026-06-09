@@ -15,6 +15,11 @@ UPDATE (2026-06-09, later run): the `test_migrate_body_*` family is FIXED
 (fixture reconciliation, commit 75c78e9f3) — `tests/test_task_workflow.py`
 passes fully (79/79). Do not deselect it anymore.
 
+UPDATE (2026-06-09, check-4b run): `tests/test_verify_clean_result.py` has 10
+pre-existing failures (caption/figure tests for the legacy
+`scripts/verify_clean_result.py`) — identical with edits stashed. Not a
+regression signal for `verify_task_body.py` work.
+
 **How to apply:** prove your diff is clean with the stash test — `git stash -q
 && <check> ; git stash pop -q` — and report "identical with edits stashed,
 pre-existing" rather than chasing repo-wide failures. For pytest, use
