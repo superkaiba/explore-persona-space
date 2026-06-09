@@ -2913,8 +2913,8 @@
     "509": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/interpreting/509",
-      "status": "interpreting",
+      "path": "tasks/reviewing/509",
+      "status": "reviewing",
       "title": "On sycophancy the residual-stream persona-distance signal lives at early-to-mid layers across both extraction points, not at the parent #502 marker-leakage recipe's late-layer last-prompt anchor \u2014 and fact transfer underperforms #494's coarse predictors even before prior control (MODERATE confidence)"
     },
     "51": {
