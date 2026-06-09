@@ -49,3 +49,4 @@
 {"ts": "2026-06-09T15:40:48Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> phase", "phase": "phase", "pod": "pod-528"}
 {"ts": "2026-06-09T15:44:50Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Second recovery attempt: added JudgeRefusalError sentinel (commit af39de245). Soft-refused rows now recorded as judge_failed: true (with audit reason) instead of crashing. PID=22556, relaunched 15:44 UTC. Loaded 401 prior rows. ETA ~15h to complete remaining 5999."}
 {"ts": "2026-06-09T16:03:34Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 22 heartbeat: judging steady; 1 soft-refused row caught + skipped."}
+{"ts": "2026-06-09T16:13:13Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 23 heartbeat: judge sync ongoing."}
