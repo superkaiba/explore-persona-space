@@ -4,7 +4,7 @@ title: Activation distance ranks ordinary-context marker leakage mostly by track
 kind: experiment
 tags: []
 created_at: '2026-06-09T20:31:59Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 532
 goal: 'Test whether the geometric predictors (cosine, Gaussian-KL@L22) carry rank-information
   about on-policy marker emission inside narrow base-prior bands of the 416-cell ep1
