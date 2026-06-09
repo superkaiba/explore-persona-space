@@ -71,6 +71,7 @@ Ranked by estimated information gain per GPU-hour.
 ### 1. [Title] — [Type: Ablation/Reproduction/Diagnostic/Scaling/Exploration]
 
 **Parent:** #<N>
+**Goal:** [ONE sentence — the canonical experiment Goal for this follow-up; fresh, not a paraphrase of the parent's Goal. This exact sentence becomes the child task's `goal:` frontmatter + `## Goal` H2 (the autonomous Step 9b auto-spawn passes it straight to `task.py new --goal`; the child's Step 0c gate block-and-fails an autonomous spawn that lacks one). A complete sentence, never a fragment or a list.]
 **Hypothesis:** [What we expect and why]
 **Falsification:** [What result would kill the hypothesis]
 **Differs from parent:** [Exactly ONE thing, stated clearly]
@@ -86,6 +87,9 @@ Ranked by estimated information gain per GPU-hour.
 **If it works:** [What we learn, how it changes the narrative]
 **If it fails:** [What we learn, what to try instead]
 
+**auto_run:** yes | no
+**auto_run_reason:** [one line — why this proposal is (or is not) safe to fire off autonomously without a human pick]
+
 ---
 
 ### 2. [Title] — [Type]
@@ -100,6 +104,58 @@ Ranked by estimated information gain per GPU-hour.
 (e.g., `create 1` or `create 1,3`).**
 <!-- /epm:follow-ups -->
 ```
+
+### `auto_run` tag — criteria
+
+In autonomous sessions (`EPM_AUTONOMOUS_SESSION=1`) the `/issue` skill
+will, at the Step 9b `awaiting_promotion` transition, auto-spawn an
+autonomous child `/issue` session for every proposal tagged
+`auto_run: yes` (capped at 2 per parent — see SKILL.md Step 9b).
+Interactive sessions IGNORE the tag — the user still picks from the
+ranked list at Step 10b. Tag each proposal `yes` only if ALL of these
+hold:
+
+- The proposal is a well-specified single corrective change or a clean
+  ablation with a concrete, already-grounded recipe — not a speculative
+  new research direction that needs human scoping.
+- Its estimated GPU-hours are stated and known (the planner's §9 row
+  for this design carries; no `ungrounded — needs smoke-test` knobs in
+  the diff).
+- It does NOT require a human design / taste decision to be runnable
+  (e.g. "which of these 3 framings", "should we drop persona X or Y",
+  "is the construct correct now?" all force `auto_run: no`).
+- It does NOT cross the cost cap on its own (`auto_run: yes` is
+  compatible with parking at the child's own Step 2c
+  `plan_pending` if the estimate exceeds
+  `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` — the cap still gates per-child;
+  autonomous follow-up auto-spawn does NOT bypass the cap).
+- It carries a populated, complete-sentence `**Goal:**` field. A missing
+  or empty Goal forces `auto_run: no` — an autonomous child spawned
+  without a Goal block-and-fails at its own Step 0c gate, so a Goal-less
+  proposal is never safe to auto-run.
+
+Otherwise tag `auto_run: no` — those proposals park for the user to
+pick at Step 10b after promotion.
+
+**Canonical `auto_run: yes` example (task #520 → #527):** a marker-
+implant superposition experiment landed as a LOW-confidence null
+because the implant floored and the headline additivity construct was
+untestable. The follow-up was a corrected re-run that fixed two named
+validity defects with a grounded recipe — hotter band-stopped anchor
++ orthogonal source pairs — changing one variable each, with cost in
+hand. That shape (a corrective re-run of THIS experiment with a
+named defect fix and a grounded recipe) is the prototype. Its `**Goal:**`
+field read, in full: "Test whether marker-implant fine-tune edits
+superpose (per-context joint shift equals the sum of the singleton
+shifts) using a properly-implanted anchor and orthogonal source pairs,
+so the additivity cosine is a diagnostic superposition test rather than
+a mechanical artifact." — one complete sentence, ready to pass to
+`task.py new --goal`.
+
+**Canonical `auto_run: no` examples:** "should we pivot to a different
+construct?", "try this on a larger model", "explore N novel framings of
+the same DV", "run the full ablation grid" — any of these need a human
+pick before they're a single coherent experiment.
 
 ## Rules
 
