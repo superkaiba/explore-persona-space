@@ -93,16 +93,19 @@ PER_CELL_DIR_FOR: dict[str, Path] = {
     "po": Path("eval_results/issue_464/positive_only/cross_eval/per_cell"),
     "cn": Path("eval_results/issue_464/contrastive_negatives/cross_eval/per_cell"),
     "cn_i529": Path("eval_results/issue_529/contrastive_negatives/cross_eval/per_cell"),
+    "cn_i533": Path("eval_results/issue_533/contrastive_negatives/cross_eval/per_cell"),
 }
 OUT_PATH_FOR: dict[str, Path] = {
     "po": Path("eval_results/issue_464/positive_only/analysis.json"),
     "cn": Path("eval_results/issue_464/contrastive_negatives/analysis.json"),
     "cn_i529": Path("eval_results/issue_529/contrastive_negatives/analysis.json"),
+    "cn_i533": Path("eval_results/issue_533/contrastive_negatives/analysis.json"),
 }
 SCHEMA_VERSION_FOR: dict[str, str] = {
     "po": "i464_po_analyze_v1",
     "cn": "i464_cn_analyze_v1",
     "cn_i529": "i529_cn_analyze_v1",
+    "cn_i533": "i533_cn_analyze_v1",
 }
 
 # Legacy aliases (positive-only defaults) — kept for any importer that
@@ -129,6 +132,7 @@ SEEDS_FOR: dict[str, tuple[int, ...]] = {
     "po": (42, 137, 1337),
     "cn": (42, 137, 1337),
     "cn_i529": (42, 137, 1337, 7, 21),
+    "cn_i533": (42, 137, 1337, 7, 21),
 }
 SEEDS = SEEDS_FOR["po"]
 PO_ARMS: tuple[enc.Arm, ...] = ("system_plain", "system_padded", "role")
@@ -369,7 +373,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         default=None,
         help=(
             "Seeds to aggregate. Default = variant-specific: (42, 137, 1337) "
-            "for po/cn; (42, 137, 1337, 7, 21) for cn_i529."
+            "for po/cn; (42, 137, 1337, 7, 21) for cn_i529 / cn_i533."
         ),
     )
     ap.add_argument(
@@ -379,7 +383,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     )
     ap.add_argument(
         "--variant",
-        choices=("po", "cn", "cn_i529"),
+        choices=("po", "cn", "cn_i529", "cn_i533"),
         default="po",
         help=(
             "Which follow-up to analyze. ``po`` (default) = positive-only "
@@ -387,8 +391,11 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             "writes ``positive_only/analysis.json``). ``cn`` = "
             "contrastive-negatives (reads + writes under ``contrastive_negatives/``). "
             "``cn_i529`` = #529 non-saturated-anchor cn (reads + writes under "
-            "``eval_results/issue_529/contrastive_negatives/``). cn_i529 REQUIRES "
-            "``--anchor-file`` so the per-persona E* is set before per-cell loads."
+            "``eval_results/issue_529/contrastive_negatives/``). ``cn_i533`` = "
+            "#533 lr=5e-6 corrective re-run (reads + writes under "
+            "``eval_results/issue_533/contrastive_negatives/``). cn_i529 / "
+            "cn_i533 BOTH REQUIRE ``--anchor-file`` so the per-persona E* is "
+            "set before per-cell loads."
         ),
     )
     ap.add_argument(
@@ -396,11 +403,12 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         type=str,
         default=None,
         help=(
-            "Path to anchor_selection.json (cn_i529 only). The file is "
-            "produced by ``scripts/i529_select_anchor.py`` and carries "
-            "``selected_anchor: {pirate: E*, villain: E*}``; analyze reads "
-            "ONLY the cells at those E* per persona to compute the headline "
-            "statistic at the selected anchor (plan §4.5)."
+            "Path to anchor_selection.json (cn_i529 / cn_i533 only). The "
+            "file is produced by ``scripts/i529_select_anchor.py`` and "
+            "carries ``selected_anchor: {pirate: E*, villain: E*}``; "
+            "analyze reads ONLY the cells at those E* per persona to "
+            "compute the headline statistic at the selected anchor "
+            "(plan §4.5)."
         ),
     )
     args = ap.parse_args(argv)
@@ -420,23 +428,25 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     # Closes the `leakage-to-default-seeds-undercount-cn-i529` round-1
     # concern — the cn_i529 path uses 5 seeds (42, 137, 1337, 7, 21).
     _ACTIVE["seeds"] = tuple(int(s) for s in args.seeds)
-    # cn_i529: REQUIRE --anchor-file unless --allow-partial. The anchor
-    # file is the formal hand-off between i529_select_anchor.py and this
-    # script — without it the analyzer would load the wrong (or no)
-    # cells and silently produce a malformed analysis.
-    if args.variant == "cn_i529":
+    # cn_i529 / cn_i533: REQUIRE --anchor-file unless --allow-partial.
+    # The anchor file is the formal hand-off between
+    # i529_select_anchor.py and this script — without it the analyzer
+    # would load the wrong (or no) cells and silently produce a
+    # malformed analysis.
+    if args.variant in ("cn_i529", "cn_i533"):
         if args.anchor_file is None and not args.allow_partial:
             ap.error(
-                "--variant cn_i529 requires --anchor-file (run "
+                f"--variant {args.variant} requires --anchor-file (run "
                 "scripts/i529_select_anchor.py first; pass its output JSON path)."
             )
         if args.anchor_file is not None:
             anchor_payload = json.loads(Path(args.anchor_file).read_text())
             if anchor_payload.get("degenerate", False):
                 logger.warning(
-                    "cn_i529: anchor_selection marked degenerate (%s). "
+                    "%s: anchor_selection marked degenerate (%s). "
                     "Proceeding will write a degenerate analysis.json; the "
                     "headline statistic is not meaningful at saturation.",
+                    args.variant,
                     anchor_payload.get("degenerate_reason", ""),
                 )
             sel = anchor_payload.get("selected_anchor")
@@ -487,11 +497,16 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                 out_path_active.parent.mkdir(parents=True, exist_ok=True)
                 out_path_active.write_text(json.dumps(partial_payload, indent=2))
                 logger.warning(
-                    "cn_i529 PARTIAL_ANCHOR — headline stats skipped, wrote %s",
+                    "%s PARTIAL_ANCHOR — headline stats skipped, wrote %s",
+                    args.variant,
                     out_path_active,
                 )
                 return
-            logger.info("cn_i529 selected anchor: %s", _ACTIVE["selected_epoch_per_persona"])
+            logger.info(
+                "%s selected anchor: %s",
+                args.variant,
+                _ACTIVE["selected_epoch_per_persona"],
+            )
     logger.info(
         "variant=%s per_cell_dir=%s out_path=%s seeds=%s",
         args.variant,
@@ -665,7 +680,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         "raw_per_cell": raw_per_cell,
         "n_missing_per_cell": len(missing),
     }
-    if args.variant == "cn_i529":
+    if args.variant in ("cn_i529", "cn_i533"):
         payload["selected_anchor"] = _ACTIVE.get("selected_epoch_per_persona")
         payload["anchor_file"] = args.anchor_file
     out_path_active.parent.mkdir(parents=True, exist_ok=True)
