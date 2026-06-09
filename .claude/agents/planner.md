@@ -107,13 +107,28 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    re-run the literature search for it. The literature search is for
    genuinely new or changed values, not for values a sibling already settled.
 
-5. **Check what's reusable — and VERIFY every cited HF artifact actually
-   exists on the Hub.** Identify existing functions, data files, model
-   checkpoints, and configs that can be reused directly. For EVERY cited
-   HF reuse artifact (LoRA adapter, merged model, dataset, raw-completion
-   bucket) the plan would record as reused, you MUST run a Hub-API
-   existence check BEFORE writing it into §10 (Reproducibility Card) or
-   §11 (Decision Rationale) as a confirmed reuse:
+5. **Check what's reusable — search trained artifacts BEFORE designing new
+   training, then VERIFY every cited HF artifact actually exists on the Hub
+   AND is fit-for-purpose for THIS Goal.** Default to reuse: training new
+   models / regenerating datasets / re-running evals when an existing
+   artifact would answer the new Goal wastes GPU-hours and breaks
+   sibling-comparability. Before designing any new training step, search
+   the existing artifact base for candidates:
+
+   - **Trained LoRA adapters / merged checkpoints:** `superkaiba1/explore-persona-space` HF model repo. Pull the file listing once with `list_repo_files(repo_id, repo_type='model')` and grep for the model family, persona, marker, or training-recipe slug the new Goal needs. Cross-reference against the parent / sibling issue's `## Reproducibility` section for the exact subfolder used.
+   - **Training-mix JSONLs + raw-completion buckets:** `superkaiba1/explore-persona-space-data` HF data repo (typically under `issueN_<slug>/`).
+   - **Aggregated eval JSONs:** `eval_results/issue_<M>/` in git (browse via `eval_results/INDEX.md` or `python scripts/task.py view <M>`).
+
+   The canonical worked example is #532, which reuses #474's loc-arm
+   epoch-1 marker adapters instead of retraining all 16 sources. Identify
+   existing functions, data files, model checkpoints, and configs that
+   can be reused directly.
+
+   Then, for EVERY cited HF reuse artifact (LoRA adapter, merged model,
+   dataset, raw-completion bucket) the plan would record as reused, you
+   MUST run a Hub-API existence check BEFORE writing it into §10
+   (Reproducibility Card) or §11 (Decision Rationale) as a confirmed
+   reuse:
 
    ```bash
    uv run python -c "from huggingface_hub import list_repo_files; print('\n'.join(list_repo_files('<repo_id>', repo_type='<model|dataset>', revision='main')))" | grep '<expected_subfolder_or_path>'
@@ -148,6 +163,20 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    contained only `#404`-era merged models with no `adapter_config.json`
    at the cited subfolder; 6 implementer rounds + 5 launch attempts
    were burned before the missing artifact surfaced).
+
+   **Existence is necessary but not sufficient — every reused artifact
+   must pass a FITNESS check for THIS Goal.** An artifact that resolves
+   on the Hub but does not fit the new question is WORSE than retraining:
+   the resulting numbers silently confound the result. Before recording
+   the artifact as reused, verify all of:
+
+   - **(a) Recipe match:** same base model + same training recipe / hyperparameters the new question requires. For marker / behavior-implant reuse, that means same marker token id (e.g. ` ※` = id 83399, not bare `※` = id 63680), same lr, same epoch count or checkpoint step, same LoRA rank, same contrastive-vs-positive-only arm. Pull the producing issue's `## Reproducibility` section (`python scripts/task.py view <M>`) and confirm each load-bearing value matches.
+   - **(b) Valid measurement regime for the new question:** the artifact must sit in the regime the new DV can actually distinguish. For marker work specifically, this means NOT saturated — source `log P − base ∈ [5,12]` nat, bystanders below the argmax ceiling per `.claude/rules/marker-training-recipe.md` and `marker-leakage-measurement.md`. A fully-saturated #448-style anchor cannot answer a graded leakage question regardless of how cleanly it exists on the Hub. For non-marker reuse: name the regime check the new DV requires (e.g. eval-judge prompt version match, base-model decoder identical).
+   - **(c) Required conditions / cells present:** the artifact contains the specific personas / sources / training-mix slices / eval probes the new design needs. A 4-source adapter doesn't cover a 16-source sweep; a parent's `medical_doctor + french_person` negative panel doesn't cover a new design that needs a `police_officer` arm.
+   - **(d) No single-variable-change violation:** reusing a parent's adapter must NOT bundle in a second silently-changed variable the consistency-checker would otherwise block (e.g. reusing #M's adapter trained at lr=1e-4 in a sweep claiming to vary only LoRA rank — the parent's lr came along too). Name the parent issue and the single variable being varied; carry any inherited choices into §11 with `Source: #<M>`.
+   - **(e) Producing issue not retracted / superseded:** check the producing task's status and any `epm:retracted` markers. An adapter from a task later marked `not-useful` or whose clean-result was retracted cannot be cited as a confirmed baseline without naming it.
+
+   On any fitness-check failure: do NOT reuse. State in §12 Assumptions which check failed and either retrain / regenerate (preferred — name the rebuild plan) or pick a different existing artifact and re-run the full check. A plan that records reuse without a fitness check that survives all of (a)–(e) will be REVISEd by the critic.
 
 6. **Replication fidelity (if the Goal is to replicate a published
    finding).** If the Goal is to replicate a paper's result or test
