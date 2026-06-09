@@ -4,6 +4,7 @@ title: 'Prior-stratified rerun of #500: enrich bystander panel and source set wi
 kind: experiment
 tags:
 - leak-predictor
+- fact-teach-persona-transfer
 created_at: '2026-06-09T22:00:55Z'
 has_clean_result: false
 parent_id: 500
