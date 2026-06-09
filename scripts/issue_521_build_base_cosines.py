@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: RUF001, RUF002, RUF003
 """Materialize ``base_cosines.json`` for the #519/#521 Phase D regression.
 
 Round-2 reviewer ``missing-base-cosines-hook`` fix. The dispatcher
@@ -32,9 +33,17 @@ CLI
 ::
 
     # Production: full panel, GPU-bound, ~1 min on a single H100.
+    # ROUND-3 FIX (base-cosines-question-overlap): --questions-json MUST
+    # point at `base_cosines_questions.json` (a 20-question holdout
+    # DISJOINT from Phase C's `questions.json` / `EVAL_QUESTIONS`), NOT
+    # at `questions.json`. Per plan §551, computing base-cosines on the
+    # SAME query distribution as the Phase C activation-shift extraction
+    # confounds the Mechanism-A Spearman ρ(‖Δv‖, base cosine) headline.
+    # The script enforces this at launch with a fail-loud disjointness
+    # assertion against the sibling `questions.json` (when present).
     uv run python scripts/issue_521_build_base_cosines.py \\
         --personas-json eval_results/issue_521/inputs/personas.json \\
-        --questions-json eval_results/issue_521/inputs/questions.json \\
+        --questions-json eval_results/issue_521/inputs/base_cosines_questions.json \\
         --layer 14 \\
         --source medical_doctor \\
         --output-dir eval_results/issue_521/inputs
@@ -290,6 +299,7 @@ def main() -> int:
     if args.tiny:
         # Questions are unused in tiny mode (no forward pass).
         questions: list[str] = []
+        q_path = None
     else:
         if args.questions_json is None:
             raise ValueError(
@@ -301,6 +311,50 @@ def main() -> int:
             q_path = repo_root / q_path
         questions = json.loads(q_path.read_text())
         logger.info("loaded %d questions from %s", len(questions), q_path)
+
+        # Round-3 fix (base-cosines-question-overlap): assert the
+        # production-path holdout pool is DISJOINT from the Phase C eval
+        # pool (sibling `questions.json` in the same inputs directory).
+        # Otherwise the Mechanism-A Spearman ρ(‖Δv‖, base cosine) headline
+        # gets confounded — same query distribution for the Δv extraction
+        # AND the cosine readout. The expected production wiring is
+        # `--questions-json .../base_cosines_questions.json` (NOT
+        # `questions.json`); the assertion catches accidental re-wiring.
+        sibling_phase_c = q_path.parent / "questions.json"
+        if sibling_phase_c.exists() and sibling_phase_c.resolve() != q_path.resolve():
+            phase_c_questions = json.loads(sibling_phase_c.read_text())
+            holdout_set = set(questions)
+            phase_c_set = set(phase_c_questions)
+            overlap = holdout_set & phase_c_set
+            if overlap:
+                raise ValueError(
+                    f"--questions-json holdout pool ({q_path}) overlaps the "
+                    f"sibling Phase C eval pool ({sibling_phase_c}) on "
+                    f"{len(overlap)} prompts. Plan §551 requires the "
+                    f"base-cosines validation pool to be hash-disjoint from "
+                    f"EVAL_QUESTIONS to avoid confounding the Mechanism-A "
+                    f"Spearman ρ(‖Δv‖, base cosine) headline. Did you point "
+                    f"--questions-json at questions.json instead of "
+                    f"base_cosines_questions.json?\nOverlapping prompts (up "
+                    f"to 5 shown):\n" + "\n".join(f"  {q[:80]!r}" for q in list(overlap)[:5])
+                )
+            logger.info(
+                "[phase=disjointness_check] holdout (N=%d) disjoint from sibling "
+                "Phase C eval pool %s (N=%d)",
+                len(questions),
+                sibling_phase_c.name,
+                len(phase_c_questions),
+            )
+        elif sibling_phase_c.resolve() == q_path.resolve():
+            # --questions-json IS questions.json (the bug round 3 closes).
+            raise ValueError(
+                f"--questions-json={args.questions_json!r} points at "
+                f"`questions.json` (the Phase C eval pool). Plan §551 "
+                f"requires the base-cosines validation pool to be a "
+                f"DISJOINT holdout (`base_cosines_questions.json`). "
+                f"Using the Phase C pool confounds the Mechanism-A "
+                f"Spearman ρ(‖Δv‖, base cosine) headline."
+            )
 
     cosines = build_base_cosines(
         personas=personas,
@@ -338,7 +392,7 @@ def main() -> int:
         "git_commit": git_commit,
         "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "personas_json": str(personas_path),
-        "questions_json": (str(q_path) if not args.tiny else None),
+        "questions_json": (str(q_path) if q_path is not None else None),
     }
     meta_path = out_dir / "base_cosines_meta.json"
     meta_path.write_text(json.dumps(meta, indent=2, sort_keys=True))

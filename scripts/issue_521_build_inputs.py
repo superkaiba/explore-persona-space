@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: RUF001, RUF002
 """Deterministic builder for the four #521 input JSONs.
 
 Outputs under ``--output-dir``:
@@ -23,11 +24,23 @@ Outputs under ``--output-dir``:
   filtered out, post-filter count typically N=98.
 - ``em_pool_disjointness.txt`` -- per-overlap log of which prompt-hashes
   were dropped + the post-filter count.
+- ``base_cosines_questions.json`` -- ``list[str]`` of N=20 held-out
+  validation questions used by ``scripts/issue_521_build_base_cosines.py``
+  (Phase D base-cosines pool). Per plan §551, this is the last 20 of
+  ``data/leakage_experiment/marker_villain_asst_excluded_medium.jsonl``'s
+  EVAL SPLIT — i.e. the rows NOT picked into #519's 200 positive training
+  questions (the eval split is rows whose index is in
+  ``set(range(600)) - set(shuffled[:200])`` under
+  ``random.Random(0xC0FFEE)``). Hash-disjoint from BOTH ``EVAL_QUESTIONS``
+  (the Phase C eval pool — ``questions.json``) AND the #519 marker
+  training mix prompts. Hard-fails at build time if any overlap is
+  detected (round-3 fix for ``base-cosines-question-overlap``).
 
-The script is re-runnable and deterministic. It is NOT GPU-bound; the
-optional ``base_cosines.json`` step is a SEPARATE concern (computed on
-the pod alongside Phase C launch — see plan §4 Step 2). This builder
-covers the 4 CPU-buildable JSONs + the disjointness log.
+The script is re-runnable and deterministic. The ``base_cosines.json``
+numerical computation is a SEPARATE concern (GPU-bound, runs on the pod
+via ``scripts/issue_521_build_base_cosines.py``); this builder produces
+the QUESTION SET that builder consumes via ``--questions-json
+base_cosines_questions.json``.
 
 Run::
 
@@ -386,6 +399,191 @@ def _build_em_pool(*, tiny: bool, disjointness_log: Path) -> tuple[list[str], in
     return filtered, len(dropped)
 
 
+def _build_base_cosines_holdout(  # noqa: C901 - sequential disjointness branches, refactor out-of-scope
+    repo_root: Path,
+    marker_pool_jsonl: Path,
+    eval_questions: list[str],
+    *,
+    tiny: bool,
+) -> tuple[list[str], list[int]]:
+    """Build the base-cosines holdout pool (round-3 reviewer fix).
+
+    Per plan §551 + round-3 reconciler verdict: the base-cosines
+    validation pool MUST be DISJOINT from the Phase C eval pool
+    (``EVAL_QUESTIONS``, written to ``questions.json``). Computing
+    Phase D's Mechanism-A Spearman ρ(‖Δv‖, base cosine) on the SAME
+    query distribution as Phase C's activation-shift extraction
+    confounds the headline metric.
+
+    Selection:
+        1. Read all 600 user-turn questions from
+           ``marker_villain_asst_excluded_medium.jsonl``. The pool has
+           600 ROWS but only ~197 UNIQUE questions (each question is
+           paired with multiple persona contexts).
+        2. Hash-load the actual #519 marker training mix prompts via HF
+           (139 unique hashes after dedup; the 200 positives include
+           duplicates because the source pool's 197 unique questions
+           are sampled with row-level replacement).
+        3. Walk the pool from the END (row 599 → row 0), collecting
+           questions whose hash is NOT in the training-hash set, until
+           20 UNIQUE questions are accumulated. This produces "the last
+           20 hash-disjoint questions of the eval split" — the natural
+           interpretation of plan §551's "last 20 of eval split" given
+           the row-vs-question multiplicity. The selection is
+           deterministic (no RNG).
+        4. (Tiny mode skips the HF training-hash load and takes the
+           last 4 row-indexed questions in row order — the plumbing is
+           verified, the rigorous hash check fires only in production.)
+
+    Asserts BEFORE returning:
+        - Holdout is disjoint from ``EVAL_QUESTIONS``.
+        - Holdout is disjoint from the #519 marker training mix
+          prompt-hashes (re-verified at the end with a paranoid second
+          assertion against the same hash set used for selection).
+
+    Returns ``(holdout_questions, holdout_indices)``. ``holdout_indices``
+    is the 0-indexed row numbers in the source JSONL for the picked
+    questions, for traceability in the manifest.
+    """
+    # Resolve the marker pool path (mirror `_load_marker_training_question_hashes`'s
+    # candidate-paths logic so the worktree's missing data/ is handled).
+    if not marker_pool_jsonl.is_absolute():
+        candidate_paths = [repo_root / marker_pool_jsonl]
+        import subprocess as _sp
+
+        common_git = Path(
+            _sp.check_output(["git", "rev-parse", "--git-common-dir"]).decode().strip()
+        )
+        if not common_git.is_absolute():
+            common_git = repo_root / common_git
+        main_repo_root = common_git.parent
+        if main_repo_root != repo_root:
+            candidate_paths.append(main_repo_root / marker_pool_jsonl)
+        resolved: Path | None = None
+        for cp in candidate_paths:
+            if cp.exists():
+                resolved = cp
+                break
+        if resolved is None:
+            raise FileNotFoundError(
+                f"marker pool JSONL not found; tried: {[str(p) for p in candidate_paths]}"
+            )
+        marker_pool_jsonl = resolved
+
+    questions: list[str] = []
+    with marker_pool_jsonl.open() as f:
+        for line in f:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            prompt = row.get("prompt", [])
+            user_msgs = [m for m in prompt if m.get("role") == "user"]
+            if not user_msgs:
+                raise ValueError(f"marker pool row has no user turn: {row.get('prompt', [])[:1]}")
+            q = user_msgs[0].get("content", "")
+            if not isinstance(q, str) or not q:
+                raise ValueError(f"marker pool row has non-string user-turn content: {q!r}")
+            questions.append(q)
+    if len(questions) != 600:
+        # Not fatal — but loud, because the plan's "last 20" rule assumes
+        # 600 rows (incident-class: silent upstream re-sample changes the
+        # holdout under our feet).
+        logger.warning(
+            "base_cosines holdout: expected 600 rows in %s, got %d. "
+            "Holdout will still be the last 20 of the eval split, but the "
+            "manifest will record the actual N for traceability.",
+            marker_pool_jsonl,
+            len(questions),
+        )
+
+    holdout_n = 4 if tiny else 20
+
+    if tiny:
+        # Tiny: take the last 4 row-indexed questions in row order; no
+        # HF hash check (plumbing-only smoke).
+        eval_questions_in_pool = list(enumerate(questions))
+        eval_questions_in_pool.reverse()
+        holdout_indices_unordered: list[int] = []
+        holdout_unordered: list[str] = []
+        seen_hashes: set[str] = set()
+        for idx, q in eval_questions_in_pool:
+            h = _prompt_hash(q)
+            if h in seen_hashes:
+                continue
+            seen_hashes.add(h)
+            holdout_indices_unordered.append(idx)
+            holdout_unordered.append(q)
+            if len(holdout_unordered) >= holdout_n:
+                break
+        # Present in row-index ascending order (deterministic, readable
+        # manifest).
+        pairs = sorted(zip(holdout_indices_unordered, holdout_unordered, strict=True))
+        holdout_indices = [i for i, _ in pairs]
+        holdout = [q for _, q in pairs]
+    else:
+        # Production: walk row 599 → 0, skip any question whose hash is
+        # in the #519 training set, collect 20 unique-by-hash questions.
+        train_hashes, _ = _load_marker_training_question_hashes(repo_root, marker_pool_jsonl)
+        eval_questions_in_pool = list(enumerate(questions))
+        eval_questions_in_pool.reverse()
+        holdout_indices_unordered = []
+        holdout_unordered = []
+        seen_hashes = set()
+        for idx, q in eval_questions_in_pool:
+            h = _prompt_hash(q)
+            if h in train_hashes:
+                continue
+            if h in seen_hashes:
+                continue
+            seen_hashes.add(h)
+            holdout_indices_unordered.append(idx)
+            holdout_unordered.append(q)
+            if len(holdout_unordered) >= holdout_n:
+                break
+        if len(holdout_unordered) < holdout_n:
+            raise RuntimeError(
+                f"base_cosines holdout: only found {len(holdout_unordered)} "
+                f"hash-disjoint candidates walking the eval split; needed "
+                f"{holdout_n}. The source pool {marker_pool_jsonl} may have "
+                f"too few held-out unique questions (197 total uniques, 139 "
+                f"in the training mix → ~58 held-out maximum)."
+            )
+        pairs = sorted(zip(holdout_indices_unordered, holdout_unordered, strict=True))
+        holdout_indices = [i for i, _ in pairs]
+        holdout = [q for _, q in pairs]
+
+    # Disjointness assertion (a): vs EVAL_QUESTIONS (= the Phase C eval
+    # pool, also written to questions.json).
+    eval_set = set(eval_questions)
+    overlap_eval = set(holdout) & eval_set
+    if overlap_eval:
+        raise RuntimeError(
+            f"base_cosines holdout overlaps EVAL_QUESTIONS (Phase C eval pool) "
+            f"on {len(overlap_eval)} prompts:\n"
+            + "\n".join(f"  {q[:80]!r}" for q in sorted(overlap_eval))
+            + "\nThis confounds the Mechanism-A Spearman ρ(‖Δv‖, base cosine) "
+            "headline metric. Plan §551 requires hash-disjointness."
+        )
+
+    # Disjointness assertion (b): paranoid re-check vs the training-hash
+    # set (in production mode). Tiny mode skips this since the smoke
+    # doesn't load the HF training hashes.
+    if not tiny:
+        train_hashes_recheck, _ = _load_marker_training_question_hashes(
+            repo_root, marker_pool_jsonl
+        )
+        holdout_hashes = {_prompt_hash(q) for q in holdout}
+        overlap_train = holdout_hashes & train_hashes_recheck
+        if overlap_train:
+            raise RuntimeError(
+                f"base_cosines holdout overlaps #519 marker training mix on "
+                f"{len(overlap_train)} prompt-hashes (post-selection re-check). "
+                f"Selection logic has a bug."
+            )
+
+    return holdout, holdout_indices
+
+
 # ---------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------
@@ -488,6 +686,29 @@ def main() -> int:
         dropped_n,
     )
 
+    # Round-3 fix: build the base-cosines holdout question set, disjoint
+    # from Phase C's `questions.json` AND from #519's marker training mix.
+    logger.info("[phase=build_base_cosines_questions]")
+    base_cosines_questions, base_cosines_indices = _build_base_cosines_holdout(
+        repo_root,
+        Path(args.marker_pool_jsonl),
+        questions,
+        tiny=args.tiny,
+    )
+    (out_dir / "base_cosines_questions.json").write_text(
+        json.dumps(base_cosines_questions, indent=2)
+    )
+    logger.info(
+        "wrote base_cosines_questions.json (N=%d, source-rows=%s)",
+        len(base_cosines_questions),
+        f"{base_cosines_indices[0]}..{base_cosines_indices[-1]}" if base_cosines_indices else "[]",
+    )
+
+    # SHA-256 of the canonicalized question list (sorted-then-joined),
+    # so a downstream verification snippet can re-hash and compare.
+    bc_canonical = "\n".join(sorted(base_cosines_questions)).encode("utf-8")
+    bc_sha256 = hashlib.sha256(bc_canonical).hexdigest()
+
     # Build inputs manifest.
     manifest = {
         "personas_n": len(personas),
@@ -495,6 +716,22 @@ def main() -> int:
         "marker_pool_n": len(marker_pool),
         "em_pool_n": len(em_pool),
         "em_pool_dropped_v2_m5": dropped_n,
+        "base_cosines_questions_n": len(base_cosines_questions),
+        "base_cosines_questions_sha256": bc_sha256,
+        "base_cosines_questions_source": (
+            f"{DEFAULT_MARKER_POOL_JSONL}: walk row 599 -> 0, skip questions whose "
+            "user-turn hash is in the #519 marker training mix prompt-hash set "
+            "(loaded from HF data repo issue_519/marker_seed{42,137,256}.jsonl), "
+            "deduplicate by hash, collect the first "
+            f"{len(base_cosines_questions)} unique questions; "
+            "indices reported in row-ascending order. Walk-by-hash chosen over "
+            "the literal 'last 20 rows of eval-split-by-index' because the "
+            "600-row pool only carries ~197 unique questions (rows duplicate "
+            "questions across persona contexts) and 139 of those are in the "
+            "training mix, so a row-index-based eval split overlaps the "
+            "training hash set on ~half its tail-20."
+        ),
+        "base_cosines_questions_source_indices": base_cosines_indices,
         "tiny": args.tiny,
         "files": {
             name: _prompt_hash((out_dir / fn).read_text())
@@ -503,6 +740,7 @@ def main() -> int:
                 ("questions", "questions.json"),
                 ("marker_pool", "marker_pool.json"),
                 ("em_pool", "em_pool.json"),
+                ("base_cosines_questions", "base_cosines_questions.json"),
             ]
         },
     }
