@@ -80,13 +80,99 @@ PERSONA_POOL_19: Final[tuple[str, ...]] = (
     "police_officer",
 )
 
-# 4-persona contrastive negative panel — inherited verbatim from #527.
+# 4-persona contrastive negative panel BASE — inherited from #527's panel
+# choice, but #538 resolves it PER-PAIR via ``negative_panel_for_pair`` to
+# remove the #527 source/negative overlap that contaminated pair 2 (see the
+# task #538 21:27Z ``epm:concern-raised`` marker). For pair-1
+# (florist x medical_doctor) the base panel is unchanged (no overlap). For
+# pair-2 (librarian x police_officer) ``librarian`` is swapped for
+# ``NEGATIVE_PANEL_REPLACEMENT`` so the same persona is no longer trained
+# with positive AND negative marker objectives 4:1 in the same cell.
 NEGATIVE_PANEL_4: Final[tuple[str, ...]] = (
     "assistant",
     "librarian",
     "programmer",
     "chef",
 )
+
+# Replacement persona used when a base-panel member equals a realized source
+# in the current pair. User-suggested + orchestrator-bound: resolves in
+# persona_bank, is not a realized source for either pair, has an existing
+# R_persona JSON on disk, and is semantically near librarian (near-twin
+# negatives are the sharper lever per `.claude/rules/contrastive-negatives.md`).
+NEGATIVE_PANEL_REPLACEMENT: Final[str] = "kindergarten_teacher"
+
+
+def negative_panel_for_pair(pair_a: str, pair_b: str) -> tuple[str, ...]:
+    """Resolve the 4-persona contrastive negative panel for ONE training pair.
+
+    Returns the base ``NEGATIVE_PANEL_4`` with any member that equals a
+    realized source (``pair_a`` or ``pair_b``) swapped for
+    ``NEGATIVE_PANEL_REPLACEMENT``. Hard-asserts the resolved panel:
+
+    1. ``"assistant"`` is preserved (the bare default assistant is the
+       highest-value negative, per `.claude/rules/contrastive-negatives.md`).
+    2. The panel has exactly 4 unique members.
+    3. The panel does not intersect ``{pair_a, pair_b}`` — fails LOUD
+       (``AssertionError``) per the task #538 user mandate, never a silent
+       skip / cascade. This is the executable proof that the #527
+       contamination is gone.
+    4. ``NEGATIVE_PANEL_REPLACEMENT`` itself is not a realized source; if it
+       ever were (e.g. future re-pairing surfaces a pair that includes
+       ``kindergarten_teacher``) the function fails LOUD instead of
+       cascading to a second fallback.
+
+    Parameters
+    ----------
+    pair_a, pair_b
+        The two source-persona names for this training pair.
+
+    Returns
+    -------
+    tuple[str, ...]
+        4-tuple of negative-persona names, preserving the base panel's
+        ordering for swapped-out positions.
+
+    Raises
+    ------
+    AssertionError
+        Any of the post-conditions above fails — the run aborts at build
+        time, never silently proceeds with a contaminated mix.
+    """
+    sources = {pair_a, pair_b}
+    if NEGATIVE_PANEL_REPLACEMENT in sources:
+        raise AssertionError(
+            f"NEGATIVE_PANEL_REPLACEMENT={NEGATIVE_PANEL_REPLACEMENT!r} is itself "
+            f"a realized source for this pair ({pair_a!r}, {pair_b!r}); refusing "
+            "to cascade to a second fallback. Pick a different replacement persona "
+            "in src/explore_persona_space/experiments/issue_538/__init__.py."
+        )
+    panel = tuple(
+        NEGATIVE_PANEL_REPLACEMENT if name in sources else name for name in NEGATIVE_PANEL_4
+    )
+    if "assistant" not in panel:
+        raise AssertionError(
+            f"resolved panel {panel!r} dropped 'assistant'; the bare default "
+            "assistant context is the highest-value negative and MUST stay in "
+            "every per-pair panel."
+        )
+    if len(set(panel)) != 4:
+        raise AssertionError(
+            f"resolved panel {panel!r} has fewer than 4 unique members "
+            f"(base panel collided with sources {sources!r} on >1 slot, or "
+            f"replacement {NEGATIVE_PANEL_REPLACEMENT!r} duplicates an "
+            "existing base-panel member)."
+        )
+    if set(panel) & sources:
+        raise AssertionError(
+            f"resolved panel {panel!r} still intersects realized sources "
+            f"{sources!r} after replacement — the per-pair panel fix did NOT "
+            "remove the source/negative overlap. This is the #527 contamination "
+            "the task #538 21:27Z epm:concern-raised marker flagged; refusing "
+            "to build a contaminated training mix."
+        )
+    return panel
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Persona-registry source-of-truth (plan §4 Inputs)

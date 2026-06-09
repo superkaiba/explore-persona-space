@@ -5,13 +5,24 @@ SKILL.md Step 6d.0: smoke IS sweep with `--phase smoke --cells 1 --seeds 1`
 (same code path, same subprocess shape, same env injection, same WandB
 logging surface, same auto-upload to HF, same band-stop). PASS_UNIFIED.
 
-Mechanical copy of ``scripts/run_issue527_train.py`` with imports + namespace
+Inherited from ``scripts/run_issue527_train.py`` with imports + namespace
 strings switched to ``issue_538`` and the new band/epoch defaults inherited
 from ``experiments.issue_538`` constants (band [14,20] nat, epochs cap 24).
 Read paths (``--pair-selection``, ``--r-persona-dir``) still default to the
 parent's ``issue_527/`` namespace because R_persona + pair_selection.json are
 inherited verbatim from #527 (plan §4 Inputs). Write paths (``--out-root``,
 HF adapter prefix, WandB run name) all become ``issue_538``.
+
+Task #538 round-2 fix (21:27Z ``epm:concern-raised``): the 4-persona
+contrastive negative panel is resolved PER-PAIR via
+``negative_panel_for_pair``. For pair-1 (florist x medical_doctor) the
+panel is unchanged vs #527 (no overlap; pair-1 training mixes stay
+byte-identical, proven by the preflight hash gate). For pair-2
+(librarian x police_officer) the overlapping ``librarian`` slot is
+swapped for ``kindergarten_teacher`` so the same persona is no longer
+trained with positive AND negative marker objectives 4:1 in the same
+cell. The Phase A bystander headroom probe + smoke-gate verdict read
+this per-pair panel directly.
 
 Per (pair, arm, seed) cell:
   1. Loads pair-selection.json + persona_bank.json + R_persona/.
@@ -71,7 +82,6 @@ from explore_persona_space.experiments.issue_538 import (
     IM_END_ID,
     MARKER_ID,
     MARKER_TEXT,
-    NEGATIVE_PANEL_4,
     RECIPE_BAND_HIGH_NATS,
     RECIPE_BAND_LOW_NATS,
     RECIPE_EPOCHS_CAP,
@@ -84,6 +94,7 @@ from explore_persona_space.experiments.issue_538 import (
     RECIPE_MAX_LENGTH,
     RECIPE_PER_DEVICE_BATCH,
     RECIPE_WARMUP_RATIO,
+    negative_panel_for_pair,
 )
 from explore_persona_space.experiments.issue_538.data_build import (
     build_arm_rows,
@@ -224,6 +235,7 @@ def _load_r_persona(out_dir: Path) -> dict[str, dict[str, str]]:
 
 def _build_smoke_probe_rows(
     *,
+    panel: tuple[str, ...],
     persona_bank: dict[str, str],
     questions: list[str],
     r_persona: dict[str, dict[str, str]],
@@ -232,9 +244,17 @@ def _build_smoke_probe_rows(
 ) -> dict[str, list[tuple[str, list[int], int]]]:
     """Pre-build per-bystander probe inputs (full_ids + post-response slot).
 
-    For each of the 4 NEGATIVE_PANEL_4 personas, sample ``n_probe_per_persona``
-    questions and tokenize ``T_persona(q) + R_persona(q)``. Return a dict
+    For each persona in the PER-PAIR negative ``panel`` (task #538 fix —
+    pair-2's panel swaps the overlapping ``librarian`` slot for
+    ``kindergarten_teacher``), sample ``n_probe_per_persona`` questions and
+    tokenize ``T_persona(q) + R_persona(q)``. Return
     ``{persona: [(question, full_ids, post_response_slot), ...]}``.
+
+    Threading the per-pair ``panel`` here is load-bearing: for pair-2
+    ``librarian`` is now a SOURCE, not a bystander, so probing it as a
+    bystander would mis-attribute pair-2's source firings to bystander
+    saturation. The bystander-resolution gate in ``_smoke_summarize`` reads
+    THIS dict, so it must reflect the actual trained negatives.
     """
     from explore_persona_space.experiments.issue_538.shift_extract import (
         _resolve_post_response_slot,
@@ -242,7 +262,7 @@ def _build_smoke_probe_rows(
 
     out: dict[str, list[tuple[str, list[int], int]]] = {}
     rng = np.random.default_rng(0)
-    for persona in NEGATIVE_PANEL_4:
+    for persona in panel:
         if persona not in r_persona:
             raise AssertionError(
                 f"R_persona missing for negative persona {persona!r}; regenerate R before smoke."
@@ -493,7 +513,11 @@ def _smoke_summarize(
       (i) source-band ∈ [band_low, band_high] (the band-stop fired in [14,20])
       (ii) ALL 4 negative-panel personas have argmax-rate < 0.92 (the
            bystander-saturation diagnostic from the marker-training-recipe
-           rule — gate ALL bystanders, not just one).
+           rule — gate ALL bystanders, not just one). The 4 personas are the
+           PER-PAIR resolved panel from ``negative_panel_for_pair`` (task
+           #538 fix: pair-2 swaps the overlapping ``librarian`` slot for
+           ``kindergarten_teacher`` so the gate reads the actual trained
+           negatives).
     log P(marker) on bystanders is reported but NOT gated; argmax-rate is
     the canonical saturation diagnostic at the new dial.
 
@@ -671,25 +695,42 @@ def main(argv: list[str] | None = None) -> int:
     git_commit = _git_commit()
     timestamp = _dt.datetime.now(tz=_dt.UTC).isoformat(timespec="seconds")
 
-    # Smoke-phase probe rows are shared across the 3 cells (same bystander
-    # questions across A_only / B_only / joint — same probe definition).
-    smoke_probe_rows = None
+    # Smoke-phase probe rows are built PER-PAIR (task #538 fix). The probe
+    # iterates the per-pair negative panel (which may swap one base-panel
+    # slot for ``kindergarten_teacher`` when a source overlaps the panel),
+    # so the bystander-resolution gate in ``_smoke_summarize`` reads the
+    # ACTUAL trained negatives. Tokenizer is loaded once outside the loop.
+    smoke_tokenizer = None
     if args.phase == "smoke" and not args.dispatcher_dry_run:
         from transformers import AutoTokenizer
 
-        tk = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
-        smoke_probe_rows = _build_smoke_probe_rows(
-            persona_bank=persona_bank,
-            questions=questions,
-            r_persona=r_persona,
-            tokenizer=tk,
-            n_probe_per_persona=8,
-        )
+        smoke_tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
 
     smoke_results: list[dict] = []
 
     for pair_idx in pair_idxs:
         pair = pairs[pair_idx]
+        # Resolve the per-pair negative panel ONCE per pair — the panel is
+        # constant across this pair's arms+seeds (it depends only on the
+        # source pair). build_arm_rows resolves it independently per cell;
+        # this resolves it here for smoke-probe + diagnostic logging.
+        pair_panel = negative_panel_for_pair(pair["name_a"], pair["name_b"])
+        log.info(
+            "Per-pair negative panel for %s: %s",
+            pair["pair_id"],
+            list(pair_panel),
+        )
+        smoke_probe_rows = None
+        if args.phase == "smoke" and not args.dispatcher_dry_run:
+            assert smoke_tokenizer is not None  # invariant: built above when entering smoke
+            smoke_probe_rows = _build_smoke_probe_rows(
+                panel=pair_panel,
+                persona_bank=persona_bank,
+                questions=questions,
+                r_persona=r_persona,
+                tokenizer=smoke_tokenizer,
+                n_probe_per_persona=8,
+            )
         for seed in seeds:
             for arm in arms:
                 cell_slug = f"{pair['pair_id']}__{arm}__seed{seed}"
@@ -736,6 +777,11 @@ def main(argv: list[str] | None = None) -> int:
                     "git_commit": git_commit,
                     "timestamp_utc": timestamp,
                     "base_model": BASE_MODEL,
+                    # Per-pair negative panel (task #538 fix). For pair-1
+                    # this matches NEGATIVE_PANEL_4 byte-for-byte; for
+                    # pair-2 ``librarian`` is swapped for
+                    # ``kindergarten_teacher``.
+                    "negative_panel": list(pair_panel),
                 }
 
                 # The band-stop fired flag + final source-delta are exposed via

@@ -19,6 +19,7 @@ from pathlib import Path
 
 from . import (
     NEGATIVE_PANEL_4,
+    NEGATIVE_PANEL_REPLACEMENT,
     PERSONA_BANK_PATH,
     PERSONA_POOL_19,
 )
@@ -147,11 +148,20 @@ def assert_registry_resolves(
       (a) PERSONA_POOL_19 — the #311 19-persona pool the pair-selection
           scan draws candidates from.
       (b) NEGATIVE_PANEL_4 — {assistant, librarian, programmer, chef}, the
-          4-persona contrastive-negative panel shared across all arms.
+          BASE 4-persona contrastive-negative panel. Task #538 per-pair
+          fix: pairs that overlap this panel (e.g. pair-2 librarian x
+          police_officer overlaps on ``librarian``) swap the overlapping
+          slot for ``NEGATIVE_PANEL_REPLACEMENT`` at training-mix-build
+          time, so this checked set is the UNION over all possible
+          resolutions of the per-pair panel.
           (NB: ``assistant`` IS the literal default_assistant encoding per
           plan §12 Assumption #6: the canonical Qwen-2.5-Instruct
           ``"You are a helpful assistant."`` system prompt the codebase
           uses across train + eval; matches `personas.py:72` ASSISTANT_PROMPT.)
+      (b') NEGATIVE_PANEL_REPLACEMENT — the persona swapped in when a base
+          panel member equals a realized source. Checked explicitly so a
+          pod is never provisioned with a panel that cannot resolve for
+          some pair.
       (c) Optional ``extra_names`` — caller-supplied (e.g. plan §12 #5's
           fallback chain {software_engineer, florist, kindergarten_teacher}).
 
@@ -178,6 +188,12 @@ def assert_registry_resolves(
         checked.append((name, "PERSONA_POOL_19 (#311 panel)"))
     for name in NEGATIVE_PANEL_4:
         checked.append((name, "NEGATIVE_PANEL_4 (contrastive-negative)"))
+    # Task #538 per-pair-panel fix: the replacement persona MUST resolve too,
+    # because any pair that overlaps the base panel will swap a base-panel
+    # slot for this persona at training-mix-build time.
+    checked.append(
+        (NEGATIVE_PANEL_REPLACEMENT, "NEGATIVE_PANEL_REPLACEMENT (task #538 per-pair panel)")
+    )
     for name in extra_names:
         checked.append((name, "fallback chain (plan §12 #5)"))
 

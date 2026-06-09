@@ -26,7 +26,22 @@ Plan §4 Step 0 — extended checks specific to the issue_538 follow-up:
       ``issue_527/training_mixes/`` at revision ``e6e163ce...``. Fail loud
       with a 5-line head diff on mismatch — that means R_persona or
       persona_bank drifted and the byte-identical-determinism contract
-      is broken.
+      is broken. The gate cell is pair-1 BY DESIGN: pair-1's panel has no
+      overlap so the task #538 per-pair-panel fix is a provable no-op
+      for it; pair-2 mixes deliberately diverge from #527 per the panel
+      fix (see task #538 21:27Z ``epm:concern-raised`` marker), so the
+      pair-2 cell gets a separate composition gate (Step G) instead of a
+      hash compare.
+
+  (g) Pair-2 composition gate (task #538 fix verification). Build cell
+      ``librarian__police_officer__A_only__seed42`` IN-PROCESS (no HF
+      compare — pair-2 deliberately diverges from #527) and assert:
+        - 400 POS rows under ``librarian``
+        - exactly 100 NEG rows for each of
+          {assistant, kindergarten_teacher, programmer, chef}
+        - 0 NEG rows for ``librarian`` and ``police_officer``
+      This is the executable proof the #527 contamination (same persona
+      trained POS + NEG 4:1 in the same cell) is gone.
 
   (e) Pair-selection file presence (inherited from #527 — required for
       train dispatcher to enumerate pairs).
@@ -67,8 +82,23 @@ log = logging.getLogger("issue_538.preflight_extras")
 # Inherited hot-fix commits from #527 (plan §4 Branch base).
 HOTFIX_COMMITS = ("47c9466b7", "8e70d0a08")
 
-# Hash-gate cell — plan §4 Step 0 / Assumption #5.
+# Hash-gate cell (pair-1, no panel overlap → byte-identical vs #527).
 HASH_GATE_CELL_SLUG = "florist__medical_doctor__A_only__seed42"
+
+# Pair-2 composition gate cell (task #538 fix — pair-2 deliberately diverges
+# from #527 via the per-pair panel; verified by in-process composition, NOT
+# a hash compare).
+COMPOSITION_GATE_CELL_SLUG = "librarian__police_officer__A_only__seed42"
+COMPOSITION_GATE_EXPECTED_POS_PERSONA = "librarian"
+COMPOSITION_GATE_EXPECTED_POS_COUNT = 400
+COMPOSITION_GATE_EXPECTED_NEG_PANEL = (
+    "assistant",
+    "kindergarten_teacher",
+    "programmer",
+    "chef",
+)
+COMPOSITION_GATE_EXPECTED_NEG_PER_PERSONA = 100
+COMPOSITION_GATE_FORBIDDEN_NEG_PERSONAS = ("librarian", "police_officer")
 
 
 def _git_ancestor_assert(commit: str) -> None:
@@ -227,6 +257,141 @@ def _hash_gate(persona_bank_path: Path) -> None:
     log.info("Hash gate PASS: regenerated cell sha256 matches HF copy byte-identically.")
 
 
+def _composition_gate() -> None:
+    """Pair-2 composition gate (task #538 fix — pure local, no HF compare).
+
+    Build cell ``librarian__police_officer__A_only__seed42`` in-process via
+    ``build_arm_rows`` and assert the EXPECTED per-pair composition:
+
+      - 400 POS rows under ``librarian`` (the realized A source)
+      - 100 NEG rows for each of
+        {assistant, kindergarten_teacher, programmer, chef}
+      - 0 NEG rows for ``librarian`` and ``police_officer`` (the sources
+        must NEVER appear as a negative in their own cell — that is the
+        #527 contamination this fix removes)
+
+    Pair-2 diverges from #527's training mix by design (the panel fix is
+    the deliberate divergence), so this gate replaces the hash compare
+    with a pure executable composition check.
+    """
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.experiments.issue_538.data_build import (
+        build_arm_rows,
+    )
+    from explore_persona_space.experiments.issue_538.persona_registry import (
+        load_persona_bank,
+    )
+    from explore_persona_space.experiments.issue_538.question_pool import (
+        load_question_pool,
+    )
+
+    log.info(
+        "Composition gate: building cell %s in-process to verify panel fix.",
+        COMPOSITION_GATE_CELL_SLUG,
+    )
+
+    pair_a, pair_b, arm, seed_str = COMPOSITION_GATE_CELL_SLUG.rsplit("__", 3)
+    seed = int(seed_str.removeprefix("seed"))
+
+    persona_bank = load_persona_bank()
+    questions = load_question_pool(n_required=400, allow_smoke_fallback=False)
+
+    r_persona_dir = Path("eval_results/issue_527/R_persona")
+    r_persona: dict[str, dict[str, str]] = {}
+    for jp in sorted(r_persona_dir.glob("*.json")):
+        payload = json.loads(jp.read_text())
+        r_persona[payload["persona"]] = payload["responses"]
+
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+
+    rows = build_arm_rows(
+        arm=arm,
+        pair_a=pair_a,
+        pair_b=pair_b,
+        persona_bank=persona_bank,
+        questions=questions,
+        r_persona=r_persona,
+        tokenizer=tokenizer,
+        seed=seed,
+    )
+
+    # Tally positives by source and negatives by persona.
+    pos_count_by_source: dict[str, int] = {}
+    neg_count_by_persona: dict[str, int] = {}
+    for r in rows:
+        tag = r.get("_arm_tag")
+        if tag == "positive":
+            src = r.get("_source", "<missing>")
+            pos_count_by_source[src] = pos_count_by_source.get(src, 0) + 1
+        elif tag == "negative":
+            neg = r.get("_negative_persona", "<missing>")
+            neg_count_by_persona[neg] = neg_count_by_persona.get(neg, 0) + 1
+        else:
+            raise AssertionError(
+                f"row with unknown _arm_tag={tag!r} in {COMPOSITION_GATE_CELL_SLUG}"
+            )
+
+    failures: list[str] = []
+
+    # (1) Positive-side: exactly N rows under the expected persona, none elsewhere.
+    got_pos = pos_count_by_source.get(COMPOSITION_GATE_EXPECTED_POS_PERSONA, 0)
+    if got_pos != COMPOSITION_GATE_EXPECTED_POS_COUNT:
+        failures.append(
+            f"POS count for {COMPOSITION_GATE_EXPECTED_POS_PERSONA!r}: "
+            f"got {got_pos}, expected {COMPOSITION_GATE_EXPECTED_POS_COUNT}"
+        )
+    for src, n in pos_count_by_source.items():
+        if src != COMPOSITION_GATE_EXPECTED_POS_PERSONA and n != 0:
+            failures.append(
+                f"unexpected POS rows under {src!r}: {n} (only "
+                f"{COMPOSITION_GATE_EXPECTED_POS_PERSONA!r} should carry positives in A_only)"
+            )
+
+    # (2) Negative-side: exactly N per expected panel member.
+    for neg in COMPOSITION_GATE_EXPECTED_NEG_PANEL:
+        got = neg_count_by_persona.get(neg, 0)
+        if got != COMPOSITION_GATE_EXPECTED_NEG_PER_PERSONA:
+            failures.append(
+                f"NEG count for {neg!r}: got {got}, expected "
+                f"{COMPOSITION_GATE_EXPECTED_NEG_PER_PERSONA}"
+            )
+
+    # (3) Negative-side: ZERO rows for sources (the #527 contamination check).
+    for forbidden in COMPOSITION_GATE_FORBIDDEN_NEG_PERSONAS:
+        got = neg_count_by_persona.get(forbidden, 0)
+        if got != 0:
+            failures.append(
+                f"FORBIDDEN NEG rows under source {forbidden!r}: got {got}, expected 0 "
+                f"(this is the #527 contamination the panel fix removes)"
+            )
+
+    # (4) Any unexpected negative-persona key.
+    expected_keys = set(COMPOSITION_GATE_EXPECTED_NEG_PANEL)
+    for neg in neg_count_by_persona:
+        if neg not in expected_keys:
+            failures.append(
+                f"unexpected NEG persona {neg!r} (panel for pair-2 should be "
+                f"{list(COMPOSITION_GATE_EXPECTED_NEG_PANEL)})"
+            )
+
+    if failures:
+        joined = "\n  - ".join(failures)
+        raise AssertionError(
+            f"Composition gate FAILED for {COMPOSITION_GATE_CELL_SLUG}:\n  - {joined}\n"
+            f"POS by source: {pos_count_by_source}\n"
+            f"NEG by persona: {neg_count_by_persona}"
+        )
+    log.info(
+        "Composition gate PASS: %s composition matches the task #538 per-pair panel. "
+        "POS={%s: %d}; NEG=%s",
+        COMPOSITION_GATE_CELL_SLUG,
+        COMPOSITION_GATE_EXPECTED_POS_PERSONA,
+        COMPOSITION_GATE_EXPECTED_POS_COUNT,
+        neg_count_by_persona,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     from explore_persona_space.orchestrate.env import load_dotenv
 
@@ -282,6 +447,11 @@ def main(argv: list[str] | None = None) -> int:
             "(or source `.env`) before retrying."
         )
     _hash_gate(persona_bank_path=Path("data/issue_472/persona_bank.json"))
+
+    # (g) Pair-2 composition gate (task #538 fix — pure local, no HF compare).
+    log.info("Step G: pair-2 composition gate (task #538 per-pair-panel fix)")
+    _composition_gate()
+    log.info("Step G PASS.")
 
     # (f) Documented stub — gauge assert lives in the eval shift_extract path.
     log.info(

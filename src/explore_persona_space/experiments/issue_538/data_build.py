@@ -1,12 +1,22 @@
-"""Training-row builders for issue #527 (plan §4 contrastive-negatives section).
+"""Training-row builders for issue #538 (plan §4 contrastive-negatives section).
+
+Inherited from #527 with ONE structural fix: the contrastive-negative panel
+is now resolved PER-PAIR via ``negative_panel_for_pair`` (see ``__init__.py``).
+Pair-1 (florist x medical_doctor) panel is unchanged vs #527 (no overlap),
+preserving byte-identical pair-1 training mixes (proven by the hash gate in
+``scripts/run_issue538_preflight_extras.py``). Pair-2 (librarian x
+police_officer) swaps the overlapping ``librarian`` slot for
+``kindergarten_teacher`` so the same persona is no longer trained with
+positive AND negative marker objectives 4:1 in the same cell — the #527
+contamination the task #538 21:27Z ``epm:concern-raised`` marker flagged.
 
 Per-arm shape:
 - A-only singleton: 400 positives in source A + 400 negatives (100 per of 4
-  bystanders).
+  per-pair bystanders).
 - B-only singleton: 400 positives in source B + 400 negatives (100 per of 4
-  bystanders).
+  per-pair bystanders).
 - Joint (A+B):      800 positives (400 A + 400 B) + 800 negatives (200 per of
-  4 bystanders) — literal union of the two singletons' positives.
+  4 per-pair bystanders) — literal union of the two singletons' positives.
 
 POSITIVE row (source persona): ``T_source(q) + R_source(q) + " ※"``.
 Loss is masked to the marker token only via
@@ -39,7 +49,7 @@ from . import (
     MARKER_TEXT,
     N_POSITIVES_JOINT,
     N_POSITIVES_SINGLETON,
-    NEGATIVE_PANEL_4,
+    negative_panel_for_pair,
 )
 
 
@@ -273,16 +283,25 @@ def build_arm_rows(
             rng=rng_b,
         )
 
-    # Strict 1:1 across all arms: total negatives == total positives.
-    # Split evenly across the 4 NEGATIVE_PANEL_4 personas.
-    if n_pos_total % len(NEGATIVE_PANEL_4) != 0:
+    # Per-pair contrastive-negative panel (task #538 fix). For pair-1
+    # (florist x medical_doctor) this returns the base panel unchanged
+    # (preserving #527's byte-identical training mixes — proven by the hash
+    # gate in scripts/run_issue538_preflight_extras.py). For pair-2
+    # (librarian x police_officer) the overlapping ``librarian`` slot is
+    # swapped for ``kindergarten_teacher``. The helper hard-asserts that
+    # the resolved panel does NOT intersect {pair_a, pair_b}, so a future
+    # pair that overlaps the base panel cannot silently produce a
+    # contaminated mix.
+    panel = negative_panel_for_pair(pair_a, pair_b)
+    # Strict 1:1 across all arms: total negatives == total positives,
+    # split evenly across the 4 per-pair bystanders.
+    if n_pos_total % len(panel) != 0:
         raise AssertionError(
             f"n_positives={n_pos_total} is not divisible by "
-            f"len(NEGATIVE_PANEL_4)={len(NEGATIVE_PANEL_4)} — split would be "
-            "lopsided."
+            f"len(panel)={len(panel)} — split would be lopsided."
         )
-    n_neg_per_persona = n_pos_total // len(NEGATIVE_PANEL_4)
-    neg_personas = {name: persona_bank[name] for name in NEGATIVE_PANEL_4}
+    n_neg_per_persona = n_pos_total // len(panel)
+    neg_personas = {name: persona_bank[name] for name in panel}
     negatives = _build_negative_rows(
         negative_personas=neg_personas,
         questions=questions,
