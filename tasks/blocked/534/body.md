@@ -1,6 +1,6 @@
 ---
-title: 'Re-eval the 4 uploaded intermediate-fraction adapters to close #530''s planned
-  4-fraction trajectory'
+title: 'Add sub-step checkpointing to MarkerBandStopCallback and retrain #530''s 10
+  cells to close the planned 4-fraction trajectory'
 kind: experiment
 tags: []
 created_at: '2026-06-09T16:51:00Z'

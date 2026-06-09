@@ -3115,7 +3115,7 @@
       "kind": "experiment",
       "path": "tasks/blocked/534",
       "status": "blocked",
-      "title": "Re-eval the 4 uploaded intermediate-fraction adapters to close #530's planned 4-fraction trajectory"
+      "title": "Add sub-step checkpointing to MarkerBandStopCallback and retrain #530's 10 cells to close the planned 4-fraction trajectory"
     },
     "535": {
       "has_clean_result": false,
