@@ -5,7 +5,7 @@ title: One epoch of benign medical-advice SFT erases a trigger-keyword marker in
 kind: experiment
 tags: []
 created_at: '2026-06-06T01:01:33Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 475
 goal: 'Test whether installing the trigger->marker rule with full-weight fine-tuning
   (vs the LoRA r=16 install that dies in #382/#408/#475) lets the install survive
