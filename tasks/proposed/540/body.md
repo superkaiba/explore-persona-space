@@ -11,6 +11,9 @@ goal: 'Implement the canonical Rao-Blackwellized sequence-level Jensen-Shannon d
   re-fit the JS arm of #532''s predictor leaderboard against the same 416-cell ep1
   panel, and test whether the canonical estimator changes the JS-arm conclusion that
   #532 measured with the deprecated v1 single-next-token estimator.'
+relates_to:
+- leak-predictor
+- spec-sysprompt-vs-drift
 ---
 ## Goal
 
