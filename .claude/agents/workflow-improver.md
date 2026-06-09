@@ -252,7 +252,7 @@ Final output (this is what the orchestrator reads):
 - **Committed in worktree:** branch `<branch>` @ `<commit-sha>` (orchestrator merges + pushes) — or `NOT COMMITTED — <reason>` if a check failed
 
 ## Follow-ups (orchestrator should consider)
-- <optional bullets — related files you noticed could also use a tweak, but did NOT touch because they were out of scope for this request>
+- <optional bullets — related workflow-surface files you noticed could also use a tweak, but did NOT touch because they were out of scope for THIS request. Per `.claude/rules/workflow-fix-on-bug.md`, the orchestrator AUTO-SPAWNS a workflow-improver for each in-scope, non-architectural, medium+-confidence follow-up listed here by DEFAULT (not merely "considers" it) — so write each as a concrete, actionable item naming the target file + the change, not a vague musing. Explicitly flag any that are architectural / public-contract (orchestrator parks for greenlight) or low-confidence / speculative (logged, not actioned), so the orchestrator routes them correctly.>
 
 ## Out-of-scope deflections
 - <if any part of the request touched experiment code or tasks/, name it here and recommend the orchestrator route to `implementer` or `experiment-implementer`>
