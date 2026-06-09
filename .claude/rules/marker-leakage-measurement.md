@@ -74,10 +74,11 @@ emission rate; never substitute KL.
 marker-at-end on base on-policy R with loss-on-marker-only, measures
 trained − base log P(` ※`).)
 
-## Report BOTH log-prob and logit (every marker DV, always)
+## Log and analyze ALL THREE spaces (every marker slot read, always)
 
-Report the marker DV in **both** log-probability and logit space — analysis,
-per-cell tables, and the per-step trajectory. The reason is the exact identity
+Report the marker DV in **log-probability, logit, and probability** space —
+analysis, per-cell tables, and the per-step trajectory. The reason is the exact
+identity
 
 ```
 log P(marker) = z_marker − logsumexp(z) = z_marker − log Z
@@ -89,6 +90,39 @@ plateaus at 0 (its hard cap) even while the underlying logit keeps moving. A
 log-prob null/plateau at a high-base-prior or near-saturated cell is therefore
 **ambiguous** between "no effect" and "softmax compression of a real effect."
 
+### Storage contract — what every slot read MUST persist
+
+Every marker slot read — eval rigs, re-eval drivers, the band-stop trajectory —
+stores **four floats per slot per model side** (trained AND base, from the SAME
+forward pass): `log P(marker)`, `z_marker` (the raw pre-softmax logit), `z_eos`
+(the raw logit at `<|im_end|>`, Qwen-2.5-7B id 151645 — the token the
+contrastive negatives train at the slot), and `logZ = logsumexp(z)`.
+Probability is derivable (`exp(logp)`) and is never stored separately.
+**Logits CANNOT be recovered from stored log-probs post-hoc** — log-probs
+determine logits only up to the unknown per-slot `logZ` — so capture happens
+where raw logits exist: HF forward passes (vLLM's logprobs API returns
+post-softmax log-probs only). Incident #530: an eval rig stored only
+`log P(marker)` per slot, so the mandated logit readout was unrecoverable when
+asked for post-hoc and probability/logit-space questions could not be answered
+from stored data. Implementing surfaces (wired per #530) — new marker eval code
+inherits one of these capture paths rather than re-implementing it:
+`src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py`
+(Phase B), `src/explore_persona_space/eval/callbacks.py`
+(`MarkerBandStopCallback` WandB trajectory), and
+`src/explore_persona_space/eval/marker_logprob.py` (the slot-stats helper).
+
+**Gauge assert (before any logit readout):** assert the adapter's
+`target_modules` exclude `lm_head` / `embed_tokens` and `modules_to_save` is
+empty. The logit readouts below are valid only when LoRA does not touch the
+unembedding `W_U` (or anything tied to it).
+
+### Analysis contract — how to read each space
+
+Every analysis considers all three spaces: **log-prob = behavioral primary;
+logit (incl. the EOS margin) = mechanistic secondary; probability = sanity
+read** (prior-weighted by construction). Space DISAGREEMENT is a finding — the
+saturation signature — not an error.
+
 - **log P(marker), trained − base** stays the PRIMARY (behavioral) DV. Emission is
   a probability construct (does the marker actually appear), and `log P` subsumes
   the argmax emission read. Saturation is handled by the regime (off-saturation
@@ -98,14 +132,23 @@ log-prob null/plateau at a high-base-prior or near-saturated cell is therefore
   readout, from the SAME forward pass. It equals `W_U[marker] · (h_trained −
   h_base)` — the marker-direction component of the residual-stream change. It is
   **gauge-free and comparable across cells ONLY because LoRA does not touch the
-  unembedding `W_U`** (LoRA adapts attn/mlp). Assert this; if any run ever
-  LoRA-adapts the unembedding, the trained − base logit is no longer comparable
-  and this readout is invalid. It is **non-saturating** (logits are unbounded;
+  unembedding `W_U`** (LoRA adapts attn/mlp) — enforced by the gauge assert
+  above. It is **non-saturating** (logits are unbounded;
   only `log P` is capped at 0) and **marker-specific**, so it is NOT the banned
   full-vocab KL substitution above — the KL ban is about pooling EOS/punctuation
   reallocation, which a single token's logit does not do. The marker logit is the
   one space-change compatible with the marker-specific-DV rule.
-- **Use the pair to localize saturation.** Off saturation `Δlog Z ≈ 0`, so
+- **The EOS margin `Δ(z_marker − z_eos)`, trained − base, is the PREFERRED form
+  of the logit readout.** Softmax is shift-invariant, so `Δz_marker` alone can
+  carry a behavior-irrelevant common-mode component (a uniform additive shift to
+  all logits changes nothing behaviorally but moves every single-token logit
+  delta); the margin cancels it. It is also anchored to the emission threshold —
+  the marker fires at the slot when it overtakes EOS, the token the contrastive
+  negatives train there — so the margin reads directly as distance-to-emission.
+  Report `Δz_marker` and the margin together; they diverge exactly when a
+  common-mode shift is present, which is itself worth a sentence in the analysis.
+- **Use the log-prob/logit pair to localize saturation.** Off saturation
+  `Δlog Z ≈ 0`, so
   `Δlog P ≈ Δz_marker` — agreement confirms the log-prob result is faithful. Where
   they DIVERGE (`Δz_marker` grows while `Δlog P` flattens) the cell is saturated:
   `log P` is understating the real push, so read the logit (or the censored/Tobit
@@ -115,7 +158,10 @@ log-prob null/plateau at a high-base-prior or near-saturated cell is therefore
 - **Probability space** is `ΔP = P_base · (e^{Δlog P} − 1)`: absolute probability
   change scales with the base prior, so probability over-weights high-prior
   contexts and is the WRONG space for cross-context comparison. Use it only as a
-  behavioral sanity read ("leaks on X% of its own answers").
+  behavioral sanity read ("leaks on X% of its own answers"). Note the framing
+  trap: "the prior affects leakage" is a probability-space / absolute-level
+  claim, near-vacuous for the log-prob GAIN — off saturation `Δlog Z ≈ 0` so
+  `Δlog P ≈ Δz_marker`, i.e. the gain is prior-independent by construction.
 
 ## #432 → #456 incident (promoted not-useful)
 
