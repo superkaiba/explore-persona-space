@@ -146,19 +146,7 @@ This is the structural result: geometry mostly tracks the cohort itself (the 16 
 
 Where geometry still earns its keep: ordinary-only ρ for Gaussian-KL@L22 is −0.62 in this panel (consistent with the prior cross-class ordinary measurement at ρ = −0.79; the gap is the union-panel signal getting redistributed and the DV change between teacher-forced log-prob and on-policy emission). So on the cross-class ordinary panel, where there's no instructed-prompt confound, the geometric predictor still ranks cells. The claim isn't "geometry is broken" — it's "geometry is dominated by base prior in the instructed-bystander regime, and adds little once the cohort indicator and the prior are controlled."
 
-<details>
-<summary>Six-regression hierarchy — full CV R² table (n=416, ep1 only)</summary>
-
-| Model | Held-out CV R² (n = 416) |
-|---|---|
-| Indicator only (instructed vs ordinary cohort flag) | 0.44 |
-| Prior only | 0.54 |
-| Geometry only (Gaussian-KL@L22, top-16 PCA — the prior-leader winner) | 0.04 |
-| Indicator + prior | 0.61 |
-| Indicator + geometry | 0.45 |
-| Full additive (indicator + prior + geometry) | 0.63 |
-
-</details>
+The full six-regression CV R² ladder (indicator only 0.44, prior only 0.54, geometry only 0.04, indicator+prior 0.61, indicator+geometry 0.45, full additive 0.63) is recorded under `six_regression_hierarchy` in [`eval_results/issue_532/analysis.json`](https://github.com/superkaiba/explore-persona-space/blob/296c4da2d/eval_results/issue_532/analysis.json).
 
 #### The instructed bystanders sit on the wrong side of the geometric regression line, systematically
 
