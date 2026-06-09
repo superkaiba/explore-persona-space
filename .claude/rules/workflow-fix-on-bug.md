@@ -38,7 +38,11 @@ notice the recurrence manually. Now it's same-turn.
 - `.claude/settings.json` and `.claude/settings.local.json`
 - `.claude/mcp.json` (read-only unless explicitly asked)
 - `CLAUDE.md` (project root)
-- Workflow-helper scripts under `scripts/`: `task.py`, `task_workflow.py`,
+- The task-workflow API library modules under `src/`:
+  `src/explore_persona_space/task_workflow.py` and
+  `src/explore_persona_space/task_workflow_migrate.py` — workflow surface
+  despite the general `src/**` exclusion below
+- Workflow-helper scripts under `scripts/`: `task.py`,
   `pod.py`, `pod_lifecycle.py`, `pod_config.py`, `pod_audit.py`,
   `gpu_heuristics.py`, `cleanup_pod.py`, `pod_disk_guard.py`,
   `runpod_api.py`, `bootstrap_pod.sh`, `cron_pod_audit.sh`,
@@ -56,7 +60,8 @@ notice the recurrence manually. Now it's same-turn.
 
 ## Out of scope (DO NOT surface a candidate)
 
-- `src/explore_persona_space/**` — library + research code
+- `src/explore_persona_space/**` — library + research code (EXCEPT
+  `task_workflow.py` + `task_workflow_migrate.py`, listed above)
 - `configs/**` — Hydra experiment configs
 - `scripts/train.py`, `scripts/eval.py`, `scripts/run_sweep.py`,
   `scripts/generate_*.py`, `scripts/analyze_results.py` — experiment
