@@ -13,6 +13,8 @@ legacy_why_unset: true
 relates_to:
 - a1
 - b7
+classification: useful
+promoted_at: '2026-06-09T21:32:44Z'
 ---
 <!-- legacy-sagan-card -->
 <style>
