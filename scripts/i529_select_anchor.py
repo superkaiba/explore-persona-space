@@ -280,6 +280,13 @@ def _select_anchor_per_persona(
 
 def main(argv: list[str] | None = None) -> None:
     """Entry point for anchor selection."""
+    # Declare the global up-front so the argparse default reference (a
+    # "use" of PER_CELL_DIR for the --in-dir default) and the later
+    # rebind both bind to the module-level constant. Without the
+    # up-front `global`, Python raises SyntaxError at parse time
+    # ("name 'PER_CELL_DIR' is used prior to global declaration").
+    global PER_CELL_DIR
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(name)s [%(levelname)s] %(message)s",
@@ -316,7 +323,6 @@ def main(argv: list[str] | None = None) -> None:
     # (_load_per_cell / _per_e_per_persona_diagnostics) read from the
     # caller-supplied directory at call time. Default preserves #529
     # behavior; #533 passes --in-dir eval_results/issue_533/...
-    global PER_CELL_DIR
     PER_CELL_DIR = args.in_dir
 
     if not PER_CELL_DIR.exists() and not args.allow_partial:
