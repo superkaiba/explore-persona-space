@@ -3068,8 +3068,8 @@
       "goal": "Determine whether encoding a persona as a custom chat-template role header gives a real, separable reduction in trained-marker leakage over a system-prompt encoding in the marker-less contrastive-negative regime, measured at a non-saturated training anchor (arms ~5-10 nats below the leakage ceiling, where the role-vs-system gap has genuine dynamic range), resolving whether #464's inconclusive saturated-floor +1-nat marker-less edge is real or a measurement artifact.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/529",
-      "status": "verifying",
+      "path": "tasks/interpreting/529",
+      "status": "interpreting",
       "title": "Re-run #464's marker-less contrastive-negative role-vs-system localization at a non-saturated (band-stopped) anchor to resolve the saturated +1-nat edge"
     },
     "53": {
