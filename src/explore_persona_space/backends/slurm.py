@@ -483,6 +483,12 @@ RSYNC_INCLUDE_PATHS: tuple[str, ...] = (
     "./configs",
     "./external/open-instruct",
     "./tests",
+    # ``data/sft/`` carries the small committed training-mix JSONLs that
+    # ``stages[].dataset`` references repo-relatively (e.g. the 188K
+    # router-smoke set). The RunPod lane gets them via git clone; the
+    # rsync lane missed them until live attempt 4 crashed with
+    # ``FileNotFoundError: data/sft/router_smoke_sft.jsonl`` (issue 535).
+    "./data/sft",
 )
 
 RSYNC_EXCLUDE_PATTERNS: tuple[str, ...] = (

@@ -329,6 +329,10 @@ def test_rsync_round_trip_preserves_external_prefix(tmp_path) -> None:
     (src_root / "src" / "explore_persona_space").mkdir(parents=True)
     (src_root / "src" / "explore_persona_space" / "__init__.py").write_text("")
     (src_root / "tests").mkdir()
+    # data/sft carries the committed training-mix JSONLs (live attempt-4
+    # finding: the rsync lane missed the smoke dataset entirely).
+    (src_root / "data" / "sft").mkdir(parents=True)
+    (src_root / "data" / "sft" / "router_smoke_sft.jsonl").write_text("{}\n")
 
     # Run the REAL rsync, local->local (no robot alias — just plain
     # filesystem dest). build_rsync_command's last arg is
