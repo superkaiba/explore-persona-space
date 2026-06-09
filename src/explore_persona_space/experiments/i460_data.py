@@ -11,12 +11,21 @@ canonical copy from the HF data repo at
 
 All loaders raise loudly on missing-after-fallback so a downstream phase
 never silently runs on partial data — per CLAUDE.md fail-fast.
+
+#502 round-5: ``load_class_d_rewrites`` now respects the
+``EPM_CLASS_D_REWRITES_EXTENSION_PATH`` env var. When set, the loader
+merges the extension file's questions into the base #406 dict so the
+extraction script's Class-D code path can resolve rewrites for both the
+80 #406 questions AND the 450 new #502 probes. Default behaviour (env
+var unset) is byte-identical to pre-#502 — the #460 / #474 / #493
+rigs continue to load the 80-question base unchanged.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 
 logger = logging.getLogger("i460.data")
@@ -120,16 +129,112 @@ def load_q_test_extended_50() -> list[str]:
     return qs
 
 
-def load_class_d_rewrites() -> dict[str, dict[str, str]]:
+_CLASS_D_REGISTERS = ("formal", "casual", "indirect", "declarative", "enumerated")
+
+
+def load_class_d_rewrites(
+    extension_path: str | os.PathLike | None = None,
+) -> dict[str, dict[str, str]]:
     """Load the Class-D register rewrites (#406 Phase 0 artifact).
 
+    By default, returns the 80-question #406 base (50 q_test + 30 q_train).
+    Pass ``extension_path`` (or set the ``EPM_CLASS_D_REWRITES_EXTENSION_PATH``
+    env var) to MERGE an additional ``{question: {register: rewrite}}`` JSON
+    file on top of the base — this is how #502's 450-new-probe extension is
+    layered in without touching the on-disk #406 file. The extension must
+    have the EXACT same schema as the base.
+
+    Conflict policy: if a question appears in BOTH base and extension, the
+    base wins (so the extension can never override the canonical #406
+    rewrites). Logged at INFO.
+
+    Args:
+        extension_path: Optional path to an extension JSON. When None,
+            falls back to ``EPM_CLASS_D_REWRITES_EXTENSION_PATH`` env var.
+            When that env var is also unset, returns base-only (the
+            pre-#502 behaviour, byte-identical for #460 / #474 / #493).
+
     Returns:
-        ``{question: {register: rewrite}}`` covering all 80 questions.
+        ``{question: {register: rewrite}}`` mapping for the union of the
+        base and the (optional) extension. Always at least 80 entries.
+
+    Raises:
+        AssertionError if the extension exists but has the wrong schema
+        (missing registers, multi-line rewrites, empty rewrites).
+        FileNotFoundError if extension_path is explicitly passed but the
+        file does not exist (env-var path is checked the same way).
     """
-    path = _ensure_local_file(_CLASS_D_REL)
-    with open(path) as f:
-        payload = json.load(f)
-    return payload
+    base_path = _ensure_local_file(_CLASS_D_REL)
+    with open(base_path) as f:
+        base = json.load(f)
+    if not isinstance(base, dict):
+        raise ValueError(
+            f"Class-D rewrites base at {base_path}: expected dict, got {type(base).__name__}"
+        )
+
+    # Resolve extension path: explicit arg > env var > none.
+    if extension_path is None:
+        env_path = os.environ.get("EPM_CLASS_D_REWRITES_EXTENSION_PATH")
+        if env_path:
+            extension_path = env_path
+
+    if extension_path is None:
+        return base
+
+    ext_p = Path(extension_path)
+    if not ext_p.exists():
+        raise FileNotFoundError(
+            f"Class-D rewrites extension {ext_p} not found "
+            "(EPM_CLASS_D_REWRITES_EXTENSION_PATH or explicit arg). "
+            "Generate via scripts/issue502_generate_probes.py."
+        )
+    with open(ext_p) as f:
+        ext = json.load(f)
+    if not isinstance(ext, dict):
+        raise ValueError(
+            f"Class-D rewrites extension {ext_p}: expected dict, got {type(ext).__name__}"
+        )
+
+    # Validate every extension entry has all 5 registers, non-empty + single-line.
+    for q, by_reg in ext.items():
+        if not isinstance(by_reg, dict):
+            raise AssertionError(
+                f"Class-D extension {ext_p}: question {q!r} value is "
+                f"{type(by_reg).__name__}, expected dict"
+            )
+        for reg in _CLASS_D_REGISTERS:
+            rw = by_reg.get(reg)
+            if not rw or not isinstance(rw, str):
+                raise AssertionError(
+                    f"Class-D extension {ext_p}: question {q!r} register "
+                    f"{reg!r} missing or empty (got {rw!r})"
+                )
+            if "\n" in rw:
+                raise AssertionError(
+                    f"Class-D extension {ext_p}: question {q!r} register "
+                    f"{reg!r} is multi-line: {rw!r}"
+                )
+
+    # Merge — base wins on collision.
+    merged: dict[str, dict[str, str]] = dict(base)
+    n_added = 0
+    n_collisions = 0
+    for q, by_reg in ext.items():
+        if q in merged:
+            n_collisions += 1
+            continue
+        merged[q] = by_reg
+        n_added += 1
+    logger.info(
+        "Class-D rewrites loaded: base=%d (#406) + extension=%d new (collisions=%d) "
+        "= %d total from %s",
+        len(base),
+        n_added,
+        n_collisions,
+        len(merged),
+        ext_p,
+    )
+    return merged
 
 
 def assert_disjoint_q_train_q_test(q_train: list[str], q_test: list[str]) -> None:
