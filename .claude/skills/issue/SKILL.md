@@ -2011,6 +2011,30 @@ else
 fi
 ```
 
+**Slice-6 regression guard for the parent-pod-reuse branch (no
+sidecar is written).** When the alive-parent path above fires (child
+task with `parent_id` AND parent's RunPod pod still alive →
+`pod.py resume --issue $PARENT_ID`), the dispatcher is NOT invoked, so
+`.claude/cache/issue-<CHILD_N>-handle.json` is NEVER written.
+Downstream that means: (1) Step 6d.2 MUST SKIP `backend_poll.py
+--issue <CHILD_N>` — its missing-sidecar guard would post a
+FALSE-POSITIVE `epm:failure v1` (`failure_class: infra`, `reason:
+missing_handle_sidecar`) on a perfectly healthy child run; instead,
+fall back to the legacy `poll_pipeline.py --pod epm-issue-$PARENT_ID
+...` invocation for the duration of this child (the parent's pod
+name + log path are the authoritative identifiers, NOT the child's
+sidecar). (2) Step 8 MUST SUBSTITUTE the `dispatch_issue.py finalize
+--issue <CHILD_N>` call with `pod.py terminate --issue $PARENT_ID
+--yes` — terminating the parent's pod IS the correct operation here
+(matching the existing teardown prose under Step 8), and the
+finalize CLI would otherwise exit 2 on missing sidecar. Re-record
+the parent's `epm:pod-terminated v1` against the child task so the
+dashboard surfaces the terminate. Full reconnect-via-router
+unification (write a sidecar even on the reuse path so every
+backend / lane uses ONE Step 6d.2 + Step 8 code path) stays
+slice 7 — this paragraph is the operational guard that prevents the
+false-positive failure / mis-routed finalize until then.
+
 **Autonomous mode (`EPM_AUTONOMOUS_SESSION=1`) — RunPod
 `--wait-for-capacity` auto-enables.** When the router's chosen lane is
 RunPod (explicit override `backend: runpod`), the underlying

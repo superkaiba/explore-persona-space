@@ -1206,6 +1206,32 @@ class GcpBackend(ComputeBackend):
     def name(self) -> BackendKind:
         return "gcp"
 
+    # ----- public read-only handles to injection-seam state ---------------
+    #
+    # The dispatch-issue ``_reconnect`` closure needs to call
+    # ``gcp.reconnect_or_none(spec=..., config=..., runner=...)`` and so
+    # MUST be able to read the same ``GcpConfig`` and ``GcloudRunner`` this
+    # backend instance was built with. Previously it reached into the
+    # underscored fields (``gcp_backend.config`` and
+    # ``gcp_backend._runner``), but the constructor stores them as
+    # ``self._config`` and ``self._run`` — every explicit
+    # ``backend: gcp`` lane (and every auto-chain GCP escalation that hit
+    # the reconnect path) AttributeError'd at production-wiring time. The
+    # properties below are the public read-only view; tests AND
+    # production callers must use them rather than reaching into the
+    # underscored names (parity with the ``runpod`` / SLURM backends,
+    # which expose their injection seams through public properties /
+    # methods).
+    @property
+    def config(self) -> GcpConfig:
+        """The :class:`GcpConfig` this backend was constructed with."""
+        return self._config
+
+    @property
+    def runner(self) -> GcloudRunner:
+        """The ``GcloudRunner`` callable this backend was constructed with."""
+        return self._run
+
     # ----- launch ----------------------------------------------------------
 
     def prepare(self, spec: RunSpec) -> None:

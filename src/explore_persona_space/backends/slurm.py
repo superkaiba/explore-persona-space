@@ -361,8 +361,14 @@ def compute_plan_hash(plan_body: str | bytes) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _scratch_dir_for(spec: RunSpec, cluster: ClusterConfig) -> str:
+def scratch_dir_for(spec: RunSpec, cluster: ClusterConfig) -> str:
     """Destination on the cluster: ``$SCRATCH/eps/issue-<N>``.
+
+    Public — the dispatch-issue ``_reconnect`` closure imports this to
+    rebuild a recovered RunHandle's ``scratch_dir`` so the dispatcher
+    never reaches into a private helper across modules (parity with
+    other publicly-exported slurm helpers like :func:`job_name` and
+    :func:`get_cluster_config`).
 
     The trailing path is computed VM-side (we don't inherit ``$SCRATCH``
     from the cluster env). The cluster admin's ``$SCRATCH`` is mapped
@@ -1414,7 +1420,7 @@ def estimate_start_seconds(
     """
     estimator = start_estimator or ssh_estimate_start
     if rendered_script is None:
-        scratch_dir = _scratch_dir_for(spec, cluster)
+        scratch_dir = scratch_dir_for(spec, cluster)
         plan = stages_for_spec(spec)
         plan_hash = spec.extra.get("plan_hash")
         rendered_script = render_sbatch(
@@ -1535,7 +1541,7 @@ class SlurmBackend(ComputeBackend):
         immediately.
         """
         cluster = self._cluster_for_spec(spec)
-        scratch_dir = _scratch_dir_for(spec, cluster)
+        scratch_dir = scratch_dir_for(spec, cluster)
         self._rsync(
             src_root=self._src_root,
             dest_root=scratch_dir,
@@ -1571,7 +1577,7 @@ class SlurmBackend(ComputeBackend):
         needed for idempotent reconnect after orchestrator re-spawn.
         """
         cluster = self._cluster_for_spec(spec)
-        scratch_dir = _scratch_dir_for(spec, cluster)
+        scratch_dir = scratch_dir_for(spec, cluster)
         plan_hash = spec.extra.get("plan_hash")
         # Render via the same helper estimate_start{,_seconds} use, so
         # the --test-only probe script (router ranking hint) and this
@@ -1691,7 +1697,7 @@ class SlurmBackend(ComputeBackend):
         for the same ``(spec, cluster)`` — no chance of one path
         threading a different ``plan_hash`` / scratch path than another.
         """
-        scratch_dir = _scratch_dir_for(spec, cluster)
+        scratch_dir = scratch_dir_for(spec, cluster)
         plan = stages_for_spec(spec)
         plan_hash = spec.extra.get("plan_hash")
         return render_sbatch(
@@ -1876,6 +1882,7 @@ __all__ = [
     "render_sbatch",
     "render_secrets_env",
     "scp_push_secrets",
+    "scratch_dir_for",
     "ssh_estimate_start",
     "ssh_scancel",
     "ssh_submit",

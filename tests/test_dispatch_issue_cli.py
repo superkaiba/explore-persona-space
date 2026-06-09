@@ -592,3 +592,166 @@ def _handle_for(kind: str) -> RunHandle:
         log_path="/l",
         extra={},
     )
+
+
+# ---------------------------------------------------------------------------
+# Production-backends factory smoke test (M3: regression guard for C1)
+# ---------------------------------------------------------------------------
+
+
+def test_build_production_backends_wires_all_keys_and_smokes_closures(monkeypatch) -> None:
+    """Call the REAL :func:`scripts.dispatch_issue._build_production_backends`
+    (not the ``_build_mock_factory`` the other tests inject) and smoke
+    every closure on a benign :class:`RunSpec`.
+
+    This is the regression guard for the C1 bug fixed in router slice 6
+    fix2: ``_reconnect(kind="gcp")`` previously reached
+    ``gcp_backend._runner`` but :class:`backends.gcp.GcpBackend` stores
+    its runner as ``self._run``. The pre-fix code path AttributeError'd
+    on every explicit ``backend: gcp`` lane AND every auto-chain GCP
+    escalation that hit the reconnect path. The fix is to expose the
+    injection seam through a public ``runner`` property on the backend
+    AND have the dispatch ``_reconnect`` closure read that property
+    rather than reaching into the underscored name. The mock-factory
+    tests above did NOT catch this because they injected a deps dict
+    that skipped the real factory entirely — this test closes that gap.
+
+    To stay infra-free the test patches the source modules the
+    closure's lazy imports resolve against:
+
+    * ``explore_persona_space.backends.gcp.reconnect_or_none`` —
+      captures the ``config=`` / ``runner=`` kwargs the closure passed
+      it; the assertion is that BOTH resolved to non-None values
+      pulled off ``gcp_backend.config`` / ``gcp_backend.runner`` (the
+      public property reads that would have raised pre-fix).
+    * ``explore_persona_space.backends.slurm_monitor.query_by_name`` —
+      short-circuits the ``ssh robot-nibi squeue ...`` call so the
+      SLURM closures don't require gcloud / DRAC SSH / a robot alias
+      to be live.
+
+    Both patches target the SOURCE module symbol (NOT a re-bound name
+    on ``scripts.dispatch_issue``) because the factory's closures
+    lazy-import their helpers from the source modules on each
+    invocation — patching only ``scripts.dispatch_issue`` would miss
+    the lazy import.
+
+    The smoke is bounded: it exercises factory wiring + closure call
+    sites, not real cloud / cluster contact. Failures look like
+    ``AttributeError: 'GcpBackend' object has no attribute 'runner'``
+    (C1 pre-fix) or a KeyError on the deps dict (a future refactor
+    drops a key) — both are exactly the regression class this test
+    pins.
+    """
+    from explore_persona_space.backends import gcp as gcp_module
+    from explore_persona_space.backends import slurm_monitor as slurm_monitor_module
+    from scripts import dispatch_issue as di
+
+    # Patch the helpers BEFORE building the factory — the closures
+    # lazy-import them at factory-call time and close over the result,
+    # so a post-build patch would miss the rebind.
+    captured_gcp_kwargs: dict[str, Any] = {}
+
+    def _fake_gcp_reconnect(*, spec, config, runner):  # type: ignore[no-untyped-def]
+        captured_gcp_kwargs["spec"] = spec
+        captured_gcp_kwargs["config"] = config
+        captured_gcp_kwargs["runner"] = runner
+        return None  # "no live instance" — same shape the real fn returns
+
+    def _fake_query_by_name(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        return None  # "no live job"
+
+    monkeypatch.setattr(gcp_module, "reconnect_or_none", _fake_gcp_reconnect)
+    monkeypatch.setattr(slurm_monitor_module, "query_by_name", _fake_query_by_name)
+
+    expected_keys = {
+        "runpod_backend",
+        "free_backends",
+        "gcp_backend",
+        "marker_poster",
+        "is_started",
+        "is_live_after_cancel",
+        "reconnect_fn",
+        "mila_socket_alive",
+    }
+
+    deps = di._build_production_backends()
+    assert set(deps) == expected_keys, (
+        f"factory dropped or added keys: expected {expected_keys}, got {set(deps)}"
+    )
+
+    # Sanity: the public injection-seam reads (the C1 fix) actually
+    # resolve. Pre-fix `gcp_backend._runner` would AttributeError;
+    # the property promotion makes `.config` / `.runner` the public
+    # reads.
+    gcp_backend = deps["gcp_backend"]
+    assert gcp_backend.config is not None, "GcpBackend.config public property must resolve"
+    assert gcp_backend.runner is not None, "GcpBackend.runner public property must resolve"
+
+    spec = RunSpec(
+        issue=999,
+        intent="lora-7b",
+        backend="auto",
+        extra={},
+    )
+
+    reconnect_fn = deps["reconnect_fn"]
+
+    # GCP reconnect — this is the C1 site. Pre-fix this AttributeError'd
+    # on ``gcp_backend._runner``. Post-fix it routes to the patched
+    # ``_fake_gcp_reconnect`` with the public ``.config`` / ``.runner``
+    # property values.
+    out_gcp = reconnect_fn(deps["gcp_backend"], "gcp", spec)
+    assert out_gcp is None, "patched _fake_gcp_reconnect returns None"
+    assert captured_gcp_kwargs["config"] is gcp_backend.config, (
+        "GCP reconnect must pass the backend's public ``config`` property — "
+        "pre-fix this read raised AttributeError on the underscored name."
+    )
+    assert captured_gcp_kwargs["runner"] is gcp_backend.runner, (
+        "GCP reconnect must pass the backend's public ``runner`` property — "
+        "pre-fix the code path read ``gcp_backend._runner`` which doesn't "
+        "exist (GcpBackend stores the runner as ``self._run``)."
+    )
+
+    # SLURM reconnect — patched query_by_name returns None so the
+    # closure exits the no-live-job branch cleanly. The smoke validates
+    # the M2 fix (public ``scratch_dir_for`` import) compiles + executes.
+    nibi_backend = deps["free_backends"].get("nibi")
+    assert nibi_backend is not None, "production factory must wire nibi"
+    out_nibi = reconnect_fn(nibi_backend, "nibi", spec)
+    assert out_nibi is None, "patched query_by_name returns None → reconnect returns None"
+
+    # RunPod / unknown kinds: per the closure's docstring, both return
+    # None (RunPod's existing pod_lifecycle.py is idempotent on its own).
+    assert reconnect_fn(deps["runpod_backend"], "runpod", spec) is None
+    assert reconnect_fn(deps["runpod_backend"], "wibble", spec) is None
+
+    # is_started / is_live_after_cancel — for handles with
+    # ``cluster is None`` (RunPod / GCP), they fall through to a poll
+    # on the backend. Smoke that path with a stub backend; the closure
+    # itself is the unit under test, not the backend.
+    poll_calls: dict[str, int] = {"is_started": 0, "is_live_after_cancel": 0}
+
+    class _StubPollBackend:
+        def poll(self, _handle):  # type: ignore[no-untyped-def]
+            from explore_persona_space.backends.base import PollResult
+
+            poll_calls["is_started"] += 1
+            return PollResult(
+                status="running",
+                current_phase="x",
+                new_milestone=False,
+                last_log_mtime_sec_ago=1,
+                pid_alive=True,
+                log_tail_excerpt="",
+            )
+
+    handle_gcp_like = _handle_for("gcp")  # cluster=None
+    assert deps["is_started"](_StubPollBackend(), handle_gcp_like) is True
+    # PollResult.status=="running" → is_live_after_cancel returns True
+    # (the closure's "still-live" check rejects only {"done", "dead"}).
+    assert deps["is_live_after_cancel"](_StubPollBackend(), handle_gcp_like) is True
+
+    # marker_poster + mila_socket_alive — exist and are callable, no
+    # network needed to smoke.
+    assert callable(deps["marker_poster"])
+    assert deps["mila_socket_alive"]() is False  # slice-6 stub

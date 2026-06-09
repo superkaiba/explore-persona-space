@@ -79,7 +79,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import sys
 import traceback
 from collections.abc import Callable
@@ -203,19 +202,20 @@ def _build_production_backends() -> dict[str, Any]:
         flow is idempotent on its own).
         """
         if kind in {"nibi", "fir"}:
+            # _resolve_cluster_cfg raises on a typo'd / unavailable
+            # cluster — that's a real misconfiguration, NOT something to
+            # paper over with a silent None fallback.
             cluster = _resolve_cluster_cfg(kind)
-            if cluster is None:
-                return None
             from explore_persona_space.backends.slurm import (
-                _scratch_dir_for,
                 job_name,
+                scratch_dir_for,
             )
 
             name = job_name(spec, plan_hash=spec.extra.get("plan_hash"))
             found_id = query_by_name(robot_alias=cluster.robot_alias, job_name=name)
             if not found_id:
                 return None
-            scratch_dir = _scratch_dir_for(spec, cluster)
+            scratch_dir = scratch_dir_for(spec, cluster)
             log_path = f"{scratch_dir}/job.out"
             # Rebuild a RunHandle that matches the launch-path shape.
             from explore_persona_space.backends.base import RunHandle
@@ -235,10 +235,17 @@ def _build_production_backends() -> dict[str, Any]:
                 },
             )
         if kind == "gcp":
+            # Use the public ``config`` / ``runner`` properties — the
+            # backend stores these internally as ``self._config`` /
+            # ``self._run``, so reaching for ``gcp_backend.config`` and
+            # ``gcp_backend._runner`` (the pre-fix code path)
+            # AttributeError'd on EVERY explicit ``backend: gcp`` lane
+            # and every auto-chain GCP escalation that hit the
+            # reconnect path.
             return gcp_reconnect_or_none(
                 spec=spec,
                 config=gcp_backend.config,
-                runner=gcp_backend._runner,
+                runner=gcp_backend.runner,
             )
         return None
 
@@ -259,22 +266,27 @@ def _build_production_backends() -> dict[str, Any]:
 
 
 def _resolve_cluster_cfg(name: str | None) -> Any | None:
-    """Look up a :class:`ClusterConfig` by name, returning None if absent.
+    """Look up a :class:`ClusterConfig` by name.
 
-    Wraps :func:`backends.slurm.get_cluster_config` to absorb its
-    ``ValueError`` / ``RuntimeError`` (the production wiring may see a
-    handle whose cluster name we no longer recognize after a config
-    change — the probe falls back to PollResult-based detection rather
-    than crashing the dispatch).
+    Returns ``None`` only when ``name`` itself is ``None`` (the caller
+    has a non-SLURM handle — e.g. a RunPod / GCP handle whose
+    ``handle.cluster`` is ``None`` by construction). For any non-None
+    name we delegate straight to :func:`backends.slurm.get_cluster_config`
+    and let its ``ValueError`` (unknown name) / ``RuntimeError``
+    (``available=False``) propagate verbatim — those signal real
+    misconfiguration (a typo'd ``backend:`` / ``cluster:`` in the task
+    frontmatter, or a cluster the production wiring is gated against)
+    and MUST crash loudly. Silently returning ``None`` here would drop
+    the SLURM-aware ``_slurm_is_started`` /
+    ``_slurm_is_live_after_cancel`` closures to their PollResult-based
+    fallback, which silently re-introduces the PENDING→"running" enum
+    bug those probes exist to prevent.
     """
     if name is None:
         return None
     from explore_persona_space.backends.slurm import get_cluster_config
 
-    try:
-        return get_cluster_config(name)
-    except (ValueError, RuntimeError):
-        return None
+    return get_cluster_config(name)
 
 
 def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]) -> int:
@@ -282,9 +294,13 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
 
     Translates router terminals via
     :func:`backends.issue_dispatch.classify_terminal_exception` into a
-    structured JSON line on stdout + a non-zero exit code so the
-    orchestrator can post the matching ``epm:failure v1`` and call
-    ``set-status blocked``.
+    structured JSON line on stdout + a non-zero exit code. This CLI
+    only EMITS the failure JSON (and the matching exit code); it does
+    NOT mutate task state itself. The orchestrator (``/issue`` SKILL.md
+    Step 6b) reads the JSON line, posts ``epm:failure v1`` with the
+    carried ``failure_class`` + ``note``, and calls
+    ``scripts/task.py set-status <N> blocked`` itself — keeping all
+    task-workflow mutations on the single ``task.py`` flock owner.
     """
     from explore_persona_space.backends.issue_dispatch import (
         build_run_spec,
@@ -493,11 +509,17 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
 
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Log to stderr at DEBUG level.",
-    )
+    # ``--debug`` lives on each SUBPARSER (NOT the top-level parser).
+    # argparse evaluates positionally — a flag attached only to the top-
+    # level parser MUST appear before the subcommand or argparse errors
+    # "unrecognized arguments: --debug". Production invocations
+    # (SKILL.md Step 6b / Step 8) put the flag AFTER the subcommand:
+    # ``dispatch_issue.py launch --debug --issue N ...``. Putting
+    # ``--debug`` on the subparsers is the only attachment that lets
+    # that production form parse.
+    debug_kw = {"action": "store_true", "help": "Log to stderr at DEBUG level."}
+    launch.add_argument("--debug", **debug_kw)
+    finalize.add_argument("--debug", **debug_kw)
     return parser
 
 
@@ -521,9 +543,12 @@ def main(
             return _cmd_finalize(args, backends_factory=factory)
         # argparse's required=True on the subparsers prevents this branch
         # in normal use; defensive against a future refactor that adds a
-        # third action without wiring it here.
+        # third action without wiring it here. ``parser.error`` calls
+        # ``sys.exit(2)`` and never returns, so the return below is
+        # unreachable — kept only to satisfy mypy's
+        # ``Callable[..., int]`` signature on ``main``.
         parser.error(f"unknown action {args.action!r}")
-        return 4  # pragma: no cover
+        return 4  # pragma: no cover — unreachable; parser.error → SystemExit(2)
     except SystemExit:
         # Re-raise argparse / parser.error exits verbatim.
         raise
@@ -551,9 +576,3 @@ __all__ = [
     "_resolve_backend_for_handle",
     "main",
 ]
-
-
-# Silence the unused-import warning for the os module on a future
-# refactor; keeping the import in case a follow-up wires
-# EPM_AUTONOMOUS_SESSION-aware behaviour into this CLI.
-_ = os
