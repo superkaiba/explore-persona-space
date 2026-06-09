@@ -15,6 +15,8 @@ goal: Test whether a single trigger LoRA trained only on in-context (system-prom
   weight-baked.
 relates_to:
 - e5
+classification: useful
+promoted_at: '2026-06-09T21:34:26Z'
 ---
 # An in-context-trained `|AUDIT|` trigger fires 0/600 against weight-baked hidden behaviors in three Introspection-Adapter Qwen3-14B organisms (LOW confidence)
 
