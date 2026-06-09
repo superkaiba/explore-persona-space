@@ -7,6 +7,7 @@ description: >
   `tasks/<status>/<N>/`, and dispatches the next action (clarify ->
   adversarial-planner -> approval -> worktree + dispatch specialist ->
   preflight -> run -> analyzer -> humanize-loop (TL;DR) ->
+  free-analysis-followup-autorun (if any) ->
   clean-result-critic -> test-verdict -> auto-complete).
   clean-result-critic PASS (or test-verdict PASS for
   code-change paths like type:infra / type:batch / type:analysis /
@@ -3038,10 +3039,134 @@ clean-result-critic in 9a-bis enforces register discipline on them.
 
 **Skill availability fallback:** if `/humanize` is not loaded in the
 runtime (plugin missing), skip 9a-humanize entirely and proceed to
-9a-bis. The analyzer's inline Step 4.5 already provided a first-pass
+9a-ter. The analyzer's inline Step 4.5 already provided a first-pass
 cleanup; the orchestrator pass is additive. Post
 `epm:humanize-loop v1` with `note: skipped — /humanize skill not
 loaded` so the audit log records the skip.
+
+**Then proceed to 9a-ter (auto-run free-analysis follow-ups).**
+
+**9a-ter. Auto-run free-analysis follow-ups** (only if status is
+`interpreting`, after Step 9a-humanize completes)
+
+The analyzer's Step 6.5 (and the follow-up-proposer's `cost_class` /
+`headline_affecting` schema) record whether any follow-up is executable
+with ZERO new GPU AND would plausibly move the parent's headline. When
+such a follow-up exists and has not yet been run on this task, the
+orchestrator AUTO-RUNS it inline BEFORE the clean-result-critique gate
+(9a-bis) — so the critic gates the UPDATED body, not a body that
+already names a free win it didn't take. This step fires in BOTH
+interactive and autonomous (`EPM_AUTONOMOUS_SESSION=1`) sessions
+identically (unlike the autonomous-only `auto_run: yes` GPU-backed
+child auto-spawn at 9b — the two mechanisms are orthogonal). The whole
+step is auto-continue (NOT a new
+`AskUserQuestion` gate); the halt-criterion contract is preserved.
+<!-- autonomous-mode: auto-resolve -->
+Same behavior in interactive and autonomous sessions: no
+AskUserQuestion is ever raised by this step; the marker
+`epm:free-analysis-followup-run v1` is the durable record consumed by
+re-entry idempotency.
+
+**Detection.** Read the latest analyzer output (the `## Free-analysis
+follow-ups (orchestrator: auto-run before parking)` H2 block in its
+return text — see analyzer.md Step 6.5) AND the latest `epm:analysis
+v<n>` marker on the source task (its `free_analysis_unrun:` field).
+Take the union. For each entry:
+
+1. Skip it if an `epm:free-analysis-followup-run v1` marker on this
+   task already records that follow-up as run (idempotency — match by
+   the verbatim follow-up title field).
+2. Skip it if the implementer (below) reports the follow-up is NOT
+   actually free-analysis (e.g. it discovered the change needs new
+   eval data after all) — see ABORT path below.
+
+When the detection union is empty, this step is a no-op: log one chat
+line (`No free-analysis + headline-affecting follow-ups to auto-run`)
+and proceed directly to 9a-bis.
+
+**Loop guard (critical).** This step caps at AT MOST ONE free-analysis
+follow-up run per task. The cap is enforced by the
+`epm:free-analysis-followup-run v1` marker: re-entry into 9a-ter on the
+same task — whether from a backstop tick, an analyzer revision posting a
+new free-analysis follow-up, or a 9a-bis REVISE round that bounced back
+to analyzer — checks the marker FIRST and exits immediately if it is
+already present (regardless of whether the listed follow-up is the same
+one). This prevents the re-run from triggering another auto-run chain
+within the same task; the second free-analysis follow-up surfaces in
+the body as a regular bullet for a future human pass. Across tasks the
+mechanism stays fresh (each task gets its own one round).
+
+**Auto-run procedure.** For the single highest-priority unran entry
+(the first one in the analyzer's surfaced order; tie-break to the one
+the analyzer flagged as `headline_affecting: yes` with the most
+explicit eval-data path):
+
+1. **Dispatch breadcrumb** (Step 9 entry guard convention):
+   ```bash
+   uv run python scripts/task.py post-marker <N> epm:progress \
+     --note "stage-dispatch stage=free-analysis-followup round=1 subagent=experiment-implementer"
+   ```
+2. **Spawn `experiment-implementer`** (paired with `code-reviewer` on
+   the resulting diff — same ensemble shape as Step 5). The prompt
+   names the exact follow-up + cites the eval-data path(s) it must
+   re-read + states the hard constraint that the diff is
+   ANALYSIS-ONLY: NO new training script, NO new eval generation, NO
+   pod call, NO new prompts to a base model, NO new data file
+   downloaded from outside the existing `eval_results/` / HF data
+   repo paths the analyzer named. If the implementer (or
+   `code-reviewer` on its diff) determines the change CANNOT be done
+   without new data collection — **ABORT** the auto-run: post
+   `epm:free-analysis-followup-run v1` with
+   `changed_headline: false`, `gpu_hours: 0`,
+   `note: aborted — reclassified as needs-gpu after implementer
+   investigation; follow-up remains listed in body for manual
+   triage`, and proceed to 9a-bis. The follow-up survives in the
+   body as a regular bullet (now correctly understood as
+   `cost_class: needs-gpu`) so a future human / autonomous pass can
+   pick it up via the GPU-backed auto-spawn at 9b.
+3. **Re-run the analysis** the implementer's diff exposes — typically
+   a script in `scripts/issue<N>_*.py` or a helper under
+   `src/explore_persona_space/analysis/` — over the existing eval
+   JSONs. Regenerate any affected figures (the analyzer's
+   `figures/issue_<N>/` outputs); commit + push to `main` so the body
+   can SHA-pin them per the existing analyzer.md Step 3 rule.
+4. **Capture the headline before / after.** Read the current `body.md`
+   H1 title before the re-spawn and the analyzer-produced H1 after,
+   plus the LOW / MODERATE / HIGH confidence tag in each.
+5. **Re-spawn `analyzer`** (fresh context) with the new analysis
+   output + the prior body. The analyzer folds the new result into
+   the existing clean-result body (typically updating one
+   `#### <finding>` H4 and possibly the H1 title / confidence tag),
+   re-runs `verify_task_body.py` (must still PASS), and writes the
+   revised body via `task.py set-body <N> --file ...`. The analyzer's
+   Step 6.5 still fires on this re-run, but the loop guard above
+   prevents another 9a-ter dispatch within the same task.
+6. **Post the marker:**
+   ```bash
+   uv run python scripts/task.py post-marker <N> epm:free-analysis-followup-run \
+     --note "followup_ref=<verbatim follow-up title> \
+       headline_before=<H1 title before> \
+       headline_after=<H1 title after> \
+       confidence_before=<LOW|MODERATE|HIGH> \
+       confidence_after=<LOW|MODERATE|HIGH> \
+       gpu_hours=0 \
+       changed_headline=<true|false>"
+   ```
+7. Proceed to **9a-bis (clean-result-critique loop)** on the UPDATED
+   body. The critic gates the final state, not the pre-rerun draft.
+
+**No new gate.** This step never raises `AskUserQuestion` (in either
+interactive or autonomous (`EPM_AUTONOMOUS_SESSION=1`) sessions —
+auto-resolve mode is the default for both, never gate-allowed).
+<!-- autonomous-mode: auto-resolve -->
+If the
+implementer or code-reviewer fails outright (`epm:code-review FAIL`
+that survives the procedural-only strip on the first attempt), treat
+it as the ABORT path from procedure step 2 — post the marker with
+`note: aborted — implementer FAIL on attempt 1`, leave the follow-up
+in the body as a regular bullet, and proceed to 9a-bis. The
+clean-result-critique gate then runs on the analyzer's original
+body; the user can pick the follow-up up post-promotion.
 
 **Then proceed to 9a-bis (clean-result-critique loop).**
 

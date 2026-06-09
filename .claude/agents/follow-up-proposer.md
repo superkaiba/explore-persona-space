@@ -90,6 +90,9 @@ Ranked by estimated information gain per GPU-hour.
 **auto_run:** yes | no
 **auto_run_reason:** [one line — why this proposal is (or is not) safe to fire off autonomously without a human pick]
 
+**cost_class:** free-analysis | needs-gpu
+**headline_affecting:** yes | no
+
 ---
 
 ### 2. [Title] — [Type]
@@ -156,6 +159,54 @@ a mechanical artifact." — one complete sentence, ready to pass to
 construct?", "try this on a larger model", "explore N novel framings of
 the same DV", "run the full ablation grid" — any of these need a human
 pick before they're a single coherent experiment.
+
+### `cost_class` + `headline_affecting` tags — criteria
+
+These two tags are ORTHOGONAL to `auto_run` (which controls whether the
+proposal gets spawned as a new GPU-backed child `/issue` in autonomous
+sessions). `cost_class` records whether the follow-up requires any GPU
+time at all; `headline_affecting` records whether running it could
+change the parent's H1 title / confidence tag / a load-bearing TL;DR
+claim. The `/issue` orchestrator reads BOTH at SKILL.md Step 9a-ter:
+when a `cost_class: free-analysis` + `headline_affecting: yes` proposal
+exists AND has not yet been run on the parent task (no
+`epm:free-analysis-followup-run v1` marker recording it), the
+orchestrator AUTO-RUNS it inline (zero GPU) and folds the result into
+the parent clean-result body BEFORE parking at `awaiting_promotion` —
+in BOTH interactive and autonomous sessions. The analyzer carries the
+same tag schema for any follow-ups it surfaces directly in the body
+(`analyzer.md` § Step 6.5).
+
+- **`cost_class: free-analysis`** — the follow-up is executable PURELY
+  by re-running analysis / plot code over eval data that ALREADY EXISTS
+  (committed under `eval_results/` or already pushed to the HF data
+  repo). Zero new training, zero new eval generation, zero new pod,
+  zero GPU. A small, reviewable analysis-code or analysis-param edit
+  (change a matched-rate anchor set, recompute at a different target,
+  add a slice already present in the eval JSONs, re-run a bootstrap
+  with a different gating rule) is allowed; collecting any new data is
+  NOT. Worked example: task #514's "Re-run analyzer with the lower-LR-
+  lever cell at 50% epoch + the prior 25%-epoch full-FT cell in the
+  matched-rate anchor set" (a one-line anchor-gate change over
+  existing eval JSONs).
+- **`cost_class: needs-gpu`** — anything else (new training, new eval
+  generation, new pod, new prompts to a base model, anything that
+  consumes GPU time). All `auto_run: yes` proposals are
+  `cost_class: needs-gpu` by definition (their auto-spawn path is the
+  GPU-backed child `/issue`).
+- **`headline_affecting: yes`** — running the follow-up could plausibly
+  change the parent's H1 title, the confidence tag, or a load-bearing
+  claim in `## TL;DR`. Examples: a free re-bootstrap that would flip an
+  "indeterminate" matched-rate read to determinate; a re-stratification
+  that would split a current null into a per-subgroup effect.
+- **`headline_affecting: no`** — polish / generalization / parametric
+  sweeps whose outcome would NOT move the headline (extra seeds for
+  variance, OOD eval against another judge, regression on a sibling
+  model). These get listed but never auto-run.
+
+Tag every proposal regardless of `auto_run` value — interactive Step
+10b also reads these tags so the user sees the cost / impact split when
+picking from the ranked list.
 
 ## Rules
 

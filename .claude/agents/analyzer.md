@@ -463,11 +463,34 @@ The dashboard kanban routes the experiment to the Awaiting promotion
 column automatically once status is set to `awaiting_promotion` by the
 /issue Step 9 transition.
 
+### Step 6.5: Tag follow-ups and flag free-analysis candidates
+
+If your draft body lists ANY follow-ups (inside a `### Next steps` H3, an inline "Follow-ups to tighten or extend these findings:" list within a `#### <finding>` H4, or anywhere else you suggest a next experiment), tag each one with two fields so the orchestrator can decide whether to auto-run it before parking. Same definitions are mirrored in the `follow-up-proposer` schema so `cost_class` / `headline_affecting` mean the same thing everywhere they appear.
+
+- **`cost_class: free-analysis | needs-gpu`**
+  - `free-analysis` = executable PURELY by re-running analysis / plot code over eval data that ALREADY EXISTS (committed under `eval_results/` or already pushed to the HF data repo). Zero new training, zero new eval generation, zero new pod, zero GPU. A small, reviewable analysis-code or analysis-param edit (change a matched-rate anchor set, recompute at a different target, add a slice already present in the eval JSONs, re-run a bootstrap with a different gating rule) is allowed; collecting any new data is NOT.
+  - `needs-gpu` = anything else (new training, new eval generation, new pod, new prompts to a base model, anything that consumes GPU time).
+- **`headline_affecting: yes | no`**
+  - `yes` iff running the follow-up could plausibly change the H1 title, the confidence tag, or a load-bearing claim in `## TL;DR`.
+  - `no` for polish / generalization / parametric sweeps whose outcome would NOT move the headline.
+
+When the body uses a prose list, put the tags in parentheses after the title (e.g. `- Re-run anchor at 50% epoch (cost_class: free-analysis, headline_affecting: yes) — may resolve …`). When you write the `### Next steps` H3, the same tag form applies.
+
+**Surface free-analysis + headline-affecting follow-ups explicitly.** When at least one follow-up you listed has BOTH `cost_class: free-analysis` AND `headline_affecting: yes` AND no `epm:free-analysis-followup-run v1` marker yet records it as run on this task, you MUST:
+
+1. Name it in your return text under a `## Free-analysis follow-ups (orchestrator: auto-run before parking)` H2 block — one bullet per such follow-up, each with: the follow-up title verbatim, a one-line description of the specific analysis/plot/param change, why it is `headline_affecting`, and the eval-data path(s) it would re-read. The orchestrator parses this block at SKILL.md Step 9a-ter to drive the auto-run.
+2. Include the same list in your Step 7 `epm:analysis` marker as a `free_analysis_unrun:` field (one entry per follow-up: verbatim title + one-line description), so the marker is the durable record alongside your return text.
+
+The canonical worked example is task #514 (LoRA vs full-FT marker leakage): it parked LOW because the planned 8-nat matched-rate read came out indeterminate, and its OWN follow-up list contained "Re-run analyzer with the lower-LR-lever cell at 50% epoch (source 7.43 nat, clean) + the prior 25%-epoch full-FT cell (8.20 nat) in the matched-rate anchor set" — a one-line anchor-gate change over EXISTING eval JSONs that, when actually run, flipped the read to DETERMINATE (LoRA−FT gap = 0.00 nat, 95% CI [−0.13, +0.12]) and resolved the planned question. That is a textbook `free-analysis + headline_affecting: yes` follow-up — surface it, do NOT silently leave it as a bullet for a future human to maybe run.
+
+You do NOT spawn subagents yourself. Listing the follow-up in the H2 block + the marker is your full obligation; the `/issue` skill orchestrator runs Step 9a-ter (see SKILL.md) to do the actual auto-run, paired with `experiment-implementer` + `code-reviewer`, then re-spawns you to fold the new result into the body.
+
 ### Step 7: Cross-link recap
 
 Post an `epm:analysis` workflow event on the source experiment with:
 - The hero figure URL
 - A 2-sentence recap of the claim
+- A `free_analysis_unrun:` field listing each `cost_class: free-analysis` + `headline_affecting: yes` follow-up the draft surfaced AND that has no `epm:free-analysis-followup-run v1` marker yet on this task (one entry per follow-up: verbatim title + one-line description). Empty list `[]` when none.
 
 There is no separate clean-result record to link — the body of this task is the clean result. The marker is just an anchor for the reviewer agent to locate your output.
 
