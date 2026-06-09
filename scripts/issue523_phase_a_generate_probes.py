@@ -975,22 +975,37 @@ def _generate_rewrites_with_voice_drift_fix(
     *,
     smoke: bool,
     smoke_force_voice_drift_fail: int = 0,
+    smoke_force_rewrite_missing: int = 0,
 ) -> tuple[dict[str, dict[str, str]], dict, list[str]]:
     """Run the batched rewrites flow, then re-validate the indirect register.
 
     Returns (rewrites, audit_block, dropped_probes).
 
     - `rewrites` is keyed on the SURVIVING probes only (dropped ones are removed
-      from `new_probes` in-place and from the rewrites dict).
+      from `new_probes` in-place and from the rewrites dict). Two failure modes
+      both feed `dropped_probes`: (a) rewrite-missing — the Anthropic Batch API
+      returned no parseable rewrite for the probe (tolerated up to 5% by
+      `_collect_rewrites_with_empty_retry`, round-5c); (b) voice-drift —
+      `_validate_and_fix_indirect_rewrite` exhausted all MAX_VOICE_DRIFT_RETRIES
+      retries on a first-person leak. Both flow into the same backfill loop in
+      `main()`.
     - `audit_block` contains n_questions, n_indirect_regex_pass_total,
       n_indirect_claude_pass_total, n_indirect_voice_drift_failed,
-      n_dropped_probes, indirect_third_person_*_rate (rates computed over the
-      pre-drop total so the rates are interpretable), and a `voice_drift_failed`
-      detail list for the audit JSON.
-    - `dropped_probes` is the FULL list of every question that exhausted all
-      MAX_VOICE_DRIFT_RETRIES retries. The caller uses this list to drive the
-      backfill loop (regenerate one fresh probe per dropped probe from the same
-      bucket, run validator on the fresh rewrite). Round-5 fix.
+      n_initial_rewrite_missing (NEW — round 7), n_dropped_probes,
+      indirect_third_person_*_rate (rates computed over n_total +
+      voice_drift drops so they measure validator efficacy on probes that
+      actually reached the validator — NOT diluted by upstream rewrite-batch
+      drops), and a `voice_drift_failed` detail list for the audit JSON.
+    - `dropped_probes` is the FULL list of every question dropped under either
+      failure mode. The caller uses this list to drive the backfill loop
+      (regenerate one fresh probe per dropped probe from the same bucket, run
+      rewrites + validator on the fresh probe). Round-5 fix (voice-drift),
+      extended round 7 (rewrite-missing).
+    - `smoke_force_rewrite_missing` (round 7, smoke-only): deterministically
+      DELETE the LAST N rewrite keys after the synth call, so the round-7
+      rewrite-missing branch is exercised end-to-end on the dispatcher. The
+      LAST N (not the FIRST N) is chosen to avoid collision with
+      `smoke_force_voice_drift_fail` which mutates the FIRST N.
     """
     if smoke:
         # Smoke: synthetic rewrites with the existing helper, but force the
@@ -1005,6 +1020,14 @@ def _generate_rewrites_with_voice_drift_fix(
         if smoke_force_voice_drift_fail > 0:
             for q in new_probes[:smoke_force_voice_drift_fail]:
                 rewrites[q]["indirect"] = f"I am still wondering about: {rewrites[q]['indirect']}"
+        # Round-7 smoke gate: optionally DELETE the LAST N rewrite entries so the
+        # rewrite-missing branch (the `_collect_rewrites_with_empty_retry` tolerant
+        # path's residue, which is normally never exercised on the synth path) is
+        # exercised end-to-end. Uses the LAST N rather than the FIRST N so it
+        # never collides with `smoke_force_voice_drift_fail`.
+        if smoke_force_rewrite_missing > 0:
+            for q in new_probes[-smoke_force_rewrite_missing:]:
+                rewrites.pop(q, None)
     else:
         requests = _build_rewrites_requests(new_probes)
         batch_id = _submit_rewrites_batch(requests)
@@ -1021,16 +1044,50 @@ def _generate_rewrites_with_voice_drift_fix(
         # drops (25/500); above that the original raise is preserved.
         rewrites = _collect_rewrites_with_empty_retry(batch_id, new_probes)
 
+    # ── Round-7 fix: sync `new_probes` and `rewrites.keys()` BEFORE the
+    # validation loop. `_collect_rewrites_with_empty_retry` tolerates up to 5%
+    # batch-API empty/parse-failed items (round-5c); on those drops the
+    # returned `rewrites` dict has fewer keys than `new_probes`. The validation
+    # loop below indexes `rewrites[q]["indirect"]` and crashes with KeyError
+    # on the first missing key (round-6 launch crashed on a 1/500 drop the
+    # tolerant collector accepted but never propagated to `new_probes`).
+    #
+    # Fix: detect rewrite-missing here, treat each as a DROP (same channel as
+    # voice-drift drops), and remove them from `new_probes`. The downstream
+    # backfill loop in main() then regenerates a same-bucket replacement for
+    # each automatically (no caller change needed — `dropped_probes` already
+    # drives backfill via `dropped_initial`).
+    rewrite_missing: list[str] = [q for q in new_probes if q not in rewrites]
+    if rewrite_missing:
+        logger.warning(
+            "rewrite-missing detected on %d / %d probes (round-5c tolerant "
+            "collector accepted these as <=5%% drops); routing to backfill "
+            "alongside voice-drift drops.",
+            len(rewrite_missing),
+            len(new_probes),
+        )
+        # Prune new_probes in place so the upstream pool, the validation loop,
+        # the regex/Claude sweep, and the n_total counter all agree.
+        kept = [q for q in new_probes if q in rewrites]
+        new_probes.clear()
+        new_probes.extend(kept)
+
     # Validate + (when needed) retry every indirect-register rewrite.
     # Round-2 fix to Critical-5: any rewrite that fails ALL retries is
     # DROPPED from the output (not retained with `voice_drift_failed=True`)
     # so the downstream audit reads `n_indirect_voice_drift_failed == 0`
     # rather than the round-1 silent-retain behavior. The final-set gate
     # below fails LOUD if any drops occurred.
+    #
+    # Round-7: pre-populate `dropped_probes` with rewrite-missing drops so they
+    # flow through the same `dropped_initial` → backfill channel as voice-drift
+    # drops. `voice_drift_failed` stays empty for these (they never reached the
+    # validator); only voice-drift exhaustions append to that list.
     regex_pass_count = 0
     claude_pass_count = 0
     voice_drift_failed: list[dict] = []
-    dropped_probes: list[str] = []
+    dropped_probes: list[str] = list(rewrite_missing)
+    n_initial_rewrite_missing = len(rewrite_missing)
     skip_claude = smoke  # in smoke mode, no Claude validator calls
     for q in list(new_probes):
         original = rewrites[q]["indirect"]
@@ -1087,6 +1144,11 @@ def _generate_rewrites_with_voice_drift_fix(
         full_claude_pass = full_regex_pass
     full_claude_rate = full_claude_pass / max(n_total, 1)
 
+    # Rate denominator: probes that ACTUALLY reached the validator = n_total
+    # (survivors) + voice-drift drops. Rewrite-missing drops never reached the
+    # validator, so excluding them keeps the rate "validator efficacy" rather
+    # than diluting it with upstream rewrite-batch drops.
+    rate_denom = max(n_total + len(voice_drift_failed), 1)
     return (
         rewrites,
         {
@@ -1094,13 +1156,13 @@ def _generate_rewrites_with_voice_drift_fix(
             "n_indirect_regex_pass_total": regex_pass_count,
             "n_indirect_claude_pass_total": claude_pass_count,
             "n_indirect_voice_drift_failed": len(voice_drift_failed),
+            # Round 7: distinct counter for rewrite-batch drops (Anthropic
+            # Batch API empty/parse-failed items) so downstream phases can
+            # tell rewrite-missing apart from voice-drift exhaustion.
+            "n_initial_rewrite_missing": n_initial_rewrite_missing,
             "n_dropped_probes": len(dropped_probes),
-            "indirect_third_person_regex_rate": (
-                regex_pass_count / max(n_total + len(dropped_probes), 1)
-            ),
-            "indirect_third_person_claude_rate": (
-                claude_pass_count / max(n_total + len(dropped_probes), 1)
-            ),
+            "indirect_third_person_regex_rate": regex_pass_count / rate_denom,
+            "indirect_third_person_claude_rate": claude_pass_count / rate_denom,
             # FULL audit set (was: 50-sample sentinel). Plan §4 Phase A gate
             # reads full_regex_pass_rate == 1.0 AND full_claude_pass_rate >= 0.96
             # on the entire retained pool.
@@ -1115,6 +1177,7 @@ def _generate_rewrites_with_voice_drift_fix(
             "audit_sample_regex_pass": full_regex_pass,
             "audit_sample_regex_pass_rate": full_regex_rate,
             "voice_drift_failed_examples": voice_drift_failed[:5],  # first 5 only
+            "rewrite_missing_examples": rewrite_missing[:5],  # first 5 only
             "skip_claude": skip_claude,
         },
         dropped_probes,
@@ -1194,6 +1257,23 @@ def _build_argparser() -> argparse.ArgumentParser:
             "n_dropped_probes == 0. NEVER use on the real run."
         ),
     )
+    p.add_argument(
+        "--smoke-force-rewrite-missing",
+        type=int,
+        default=0,
+        help=(
+            "Smoke-mode-only: DELETE the rewrite entry for the LAST N "
+            "synthesized probes so the round-7 rewrite-missing branch (the "
+            "tolerant collector's <=5%% drop residue, normally never exercised "
+            "on the synth path) is exercised end-to-end on the dispatcher. "
+            "Requires --smoke-only. Each missing-rewrite probe is replaced by "
+            "a fresh probe from the same bucket via the same backfill path "
+            "as voice-drift drops; the final pool should contain exactly --n "
+            "probes with n_dropped_probes == 0. Uses the LAST N (not the "
+            "FIRST N) to avoid collision with --smoke-force-voice-drift-fail. "
+            "NEVER use on the real run."
+        ),
+    )
     return p
 
 
@@ -1214,6 +1294,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
         raise SystemExit(
             "--smoke-force-voice-drift-fail requires --smoke-only (it is a "
             "smoke-mode-only validator-poisoning lever, not a real-run flag)"
+        )
+    # Round-7 fail-fast guard: same shape as the voice-drift guard above.
+    # Fires BEFORE any API-spending code so a fat-fingered real-run invocation
+    # with the smoke flag set burns $0 of Sonnet calls.
+    if args.smoke_force_rewrite_missing and not bool(args.smoke_only):
+        raise SystemExit(
+            "--smoke-force-rewrite-missing requires --smoke-only (it is a "
+            "smoke-mode-only rewrite-missing-poisoning lever, not a real-run flag)"
         )
 
     # Two ORTHOGONAL switches:
@@ -1336,6 +1424,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
             new_probes,
             smoke=smoke,
             smoke_force_voice_drift_fail=args.smoke_force_voice_drift_fail,
+            smoke_force_rewrite_missing=args.smoke_force_rewrite_missing,
         )
 
         # ── Round-5 backfill loop ──
@@ -1505,10 +1594,23 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
         # already covers the entire final pool (no probes were stuck on the
         # first pass, so new_probes == initial_audit.full_audit_size). No
         # recount, no Claude calls.
+        # Round-7: surface a breakdown of round-0's drops by failure mode so
+        # Phase B/C/D can tell rewrite-missing apart from voice-drift in the
+        # audit JSON. The initial inner audit recorded both counts; backfill
+        # rounds (smoke_force_*=0) only ever contribute voice-drift drops.
+        n_initial_rewrite_missing_round0 = voice_drift_audit.get("n_initial_rewrite_missing", 0)
+        # Voice-drift drops at round 0 = total initial drops - rewrite-missing.
+        # All later rounds' drops are voice-drift only.
+        n_initial_voice_drift_round0 = len(dropped_initial) - n_initial_rewrite_missing_round0
         voice_drift_audit["backfill"] = {
             "max_backfill_rounds": MAX_BACKFILL_ROUNDS,
             "rounds_used": backfill_rounds_used,
             "n_initial_drops": len(dropped_initial),
+            # Round 7: per-mode breakdown of round-0 drops. backfill rounds
+            # contribute 0 to `n_initial_rewrite_missing` by construction
+            # (they call the function with smoke_force_rewrite_missing=0).
+            "n_initial_rewrite_missing": n_initial_rewrite_missing_round0,
+            "n_initial_voice_drift_failed": n_initial_voice_drift_round0,
             "n_replacements_attempted": backfill_total_attempts,
             "n_replacements_added": backfill_total_added,
             "n_still_stuck": len(stuck_probes),
