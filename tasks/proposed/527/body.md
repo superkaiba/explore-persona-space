@@ -12,6 +12,10 @@ goal: Test whether marker-implant fine-tune edits superpose (per-context joint s
   nat band-stop window, emission gate cleared) and orthogonal source pairs (base-model
   L20 centered cosine near 0), so the additivity cosine is a diagnostic superposition
   test rather than a mechanical artifact of a floored implant and parallel singletons.
+relates_to:
+- leak-single-vs-multi
+- leak-predictor
+- leak-from-cell-set
 ---
 ## Goal
 
