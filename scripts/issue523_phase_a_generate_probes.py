@@ -74,10 +74,11 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 # `_call_claude_once` is imported under an alias so round-5 can wrap it with an
 # outer retry-on-transient-overload layer; the inherited helper itself is
 # preserved byte-identically (its outputs feed #502's reproducible artifacts).
-from issue502_generate_probes import (  # noqa: E402  # noqa: E402
+from issue502_generate_probes import (  # noqa: E402
     CLASS_D_REGISTERS,
     CLAUDE_MODEL,
     GEN_SYSTEM,
+    _api_key,
     _build_rewrites_requests,
     _collect_rewrites_results,
     _normalize,
@@ -172,6 +173,143 @@ def _call_claude_once(*args, **kwargs):
             sleep_for,
         )
         time.sleep(sleep_for)
+
+
+def _collect_rewrites_with_empty_retry(
+    batch_id: str,
+    new_questions: list[str],
+    *,
+    max_drop_fraction: float = 0.05,
+) -> dict[str, dict[str, str]]:
+    """Wrap #502's `_collect_rewrites_results` with retry on empty/missing items.
+
+    #502's collector raises `RuntimeError("rewrites batch missing N / M ...")`
+    on the first batch item that returned with empty text or wasn't in the
+    batch results at all. Its inline-retry path only covers PARSE failures.
+
+    The Anthropic batch API has documented intermittent empty-completion
+    behavior on individual items (round-5b launch died on 2/500 items
+    returning empty despite the rest succeeding). This wrapper:
+
+    1. Calls the inherited collector; on success returns its dict.
+    2. On RuntimeError that names a shortfall <= `max_drop_fraction` of the
+       target, reads the batch results ourselves, retries every empty/missing
+       item individually via `_call_claude_once` (which now flows through the
+       round-5b transient-5xx wrapper), and merges into the partial dict from
+       step 1's failure trace.
+    3. Items still failing after the inline retry are DROPPED (per plan §4
+       Phase A retry policy: "if still failing after 3 → drop the probe").
+       Hard floor: if final delivered_n / target_n < (1 - max_drop_fraction),
+       re-raise the original shortfall.
+    4. On shortfall > `max_drop_fraction` of the target, re-raise immediately
+       (catastrophic batch failure — keep #502's fail-loud semantics).
+    """
+    import anthropic
+    from issue502_generate_probes import (
+        REWRITES_SYSTEM,
+        _parse_rewrites_block,
+        _rewrite_user_prompt,
+    )
+
+    try:
+        return _collect_rewrites_results(batch_id, new_questions)
+    except RuntimeError as exc:
+        msg = str(exc)
+        if "rewrites batch missing" not in msg:
+            raise
+        n = len(new_questions)
+        # Re-read the batch ourselves so we can identify which items had
+        # empty / missing text (the inherited function's error breakdown
+        # already named them but the parsed dict was discarded with the raise).
+        client = anthropic.Anthropic(api_key=_api_key())
+        by_custom_id: dict[str, str] = {}
+        for r in client.messages.batches.results(batch_id):
+            if r.result.type != "succeeded":
+                continue
+            text = next((b.text for b in r.result.message.content if b.type == "text"), "")
+            if text:
+                by_custom_id[r.custom_id] = text
+
+        # Parse all successfully-collected items first.
+        out: dict[str, dict[str, str]] = {}
+        for i, q in enumerate(new_questions):
+            cid = f"rewrite-{i:04d}"
+            text = by_custom_id.get(cid)
+            if text is None:
+                continue
+            parsed = _parse_rewrites_block(text, q)
+            if parsed is not None:
+                out[q] = parsed
+
+        n_initial_drops = n - len(out)
+        if n_initial_drops > max_drop_fraction * n:
+            # Catastrophic batch failure — preserve #502's fail-loud semantics
+            # and re-raise the original.
+            logger.error(
+                "rewrites batch shortfall %d / %d exceeds %.0f%% threshold; "
+                "preserving fail-loud raise.",
+                n_initial_drops,
+                n,
+                100 * max_drop_fraction,
+            )
+            raise
+
+        # Retry the missing items individually via the wrapped Claude path.
+        missing_pairs = [(i, q) for i, q in enumerate(new_questions) if q not in out]
+        logger.warning(
+            "rewrites batch shortfall %d / %d (<= %.0f%% threshold); "
+            "retrying inline via _call_claude_once.",
+            n_initial_drops,
+            n,
+            100 * max_drop_fraction,
+        )
+        n_retry_recovered = 0
+        n_retry_dropped = 0
+        for i, q in missing_pairs:
+            cid = f"rewrite-{i:04d}"
+            try:
+                text = _call_claude_once(
+                    _rewrite_user_prompt(q),
+                    max_tokens=1024,
+                    system=REWRITES_SYSTEM,
+                )
+            except Exception as e:
+                logger.warning("inline retry %s failed (%s); dropping.", cid, e)
+                n_retry_dropped += 1
+                continue
+            parsed = _parse_rewrites_block(text, q)
+            if parsed is None:
+                logger.warning("inline retry %s parse-failed; dropping.", cid)
+                n_retry_dropped += 1
+                continue
+            out[q] = parsed
+            n_retry_recovered += 1
+
+        final_delivered = len(out)
+        final_drops = n - final_delivered
+        if final_drops > max_drop_fraction * n:
+            # Even after the retry the drop count exceeds the floor — fail loud.
+            logger.error(
+                "rewrites batch final drops %d / %d still exceed %.0f%% floor; "
+                "(initial=%d, recovered=%d, retry-failed=%d).",
+                final_drops,
+                n,
+                100 * max_drop_fraction,
+                n_initial_drops,
+                n_retry_recovered,
+                n_retry_dropped,
+            )
+            raise
+        logger.info(
+            "rewrites batch tolerant collection OK: delivered=%d / %d "
+            "(initial-drops=%d, recovered=%d, retry-failed=%d).",
+            final_delivered,
+            n,
+            n_initial_drops,
+            n_retry_recovered,
+            n_retry_dropped,
+        )
+        return out
 
 
 from explore_persona_space.experiments.i460_data import (  # noqa: E402
@@ -798,7 +936,17 @@ def _generate_rewrites_with_voice_drift_fix(
         requests = _build_rewrites_requests(new_probes)
         batch_id = _submit_rewrites_batch(requests)
         _wait_for_rewrites_batch(batch_id)
-        rewrites = _collect_rewrites_results(batch_id, new_probes)
+        # Round-5c push-through fix: #502's `_collect_rewrites_results` raises
+        # hard if ANY batch item came back with empty-text or missing-from-batch
+        # (it only retries inline on PARSE failures, not on empty/missing). The
+        # Anthropic batch API has documented intermittent empty-completion
+        # behavior; round-5b's launch died on 2/500 items returning empty
+        # despite the surrounding pipeline being healthy. We wrap the inherited
+        # collector: on the shortfall RuntimeError, identify the missing items
+        # by their custom_id and retry each individually via the (already-
+        # round-5b-wrapped) `_call_claude_once`. Hard floor: accept up to 5%
+        # drops (25/500); above that the original raise is preserved.
+        rewrites = _collect_rewrites_with_empty_retry(batch_id, new_probes)
 
     # Validate + (when needed) retry every indirect-register rewrite.
     # Round-2 fix to Critical-5: any rewrite that fails ALL retries is
