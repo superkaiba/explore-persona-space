@@ -14,6 +14,8 @@ goal: Measure whether marker leakage to bystander personas (and the default assi
 relates_to:
 - leak-predictor
 - leak-to-default
+classification: useful
+promoted_at: '2026-06-09T21:43:20Z'
 ---
 # Comparing LoRA and full fine-tuning for marker leakage to bystander personas — matched-rate verdict indeterminate, full-FT goes off-cliff into whole-response collapse (LOW confidence)
 
