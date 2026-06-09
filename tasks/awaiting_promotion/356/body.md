@@ -12,9 +12,11 @@ sagan_id: 8bbdb9e4-bea3-472d-b2ce-8c56d34bb636
 sagan_number: 356
 priority: normal
 legacy_why_unset: true
-goal: "Test whether audit-filtering #186's persona-CoT training data to keep only
-  rationales that coherently argue for the trained wrong target letter amplifies
-  wrong-answer transfer across persona evaluation."
+goal: 'Test whether audit-filtering #186''s persona-CoT training data to keep only
+  rationales that coherently argue for the trained wrong target letter amplifies wrong-answer
+  transfer across persona evaluation.'
+classification: useful
+promoted_at: '2026-06-09T21:33:54Z'
 ---
 # Audit-filtering did not amplify persona-CoT leakage overall; software_engineer shows partial positive signal on both axes (LOW confidence)
 
