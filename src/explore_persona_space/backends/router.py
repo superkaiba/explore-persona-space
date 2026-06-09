@@ -32,13 +32,17 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
 6. **Durable lease + reconnect** — a flock'd JSON lease at
    ``~/.eps-routing/issue-<N>.json`` (outside the worktree — the 09:47
    cron reaps worktrees, so a lease there would silently disappear) is
-   keyed by a canonicalized spec hash + attempt id. Before any submit /
-   provision, ``route()`` reconnects to an existing live job (SLURM
-   ``squeue --name eps-issue-<N>``; GCE ``reconnect_or_none``) via the
-   injected backend so a re-driving ``issue-tick`` cron does NOT
-   double-submit. The external job/instance id is persisted IMMEDIATELY
-   after submit so an orchestrator crash between submit and lease-write
-   leaves an ``UNKNOWN_SUBMITTED`` recovery state.
+   keyed by a canonicalized spec hash + attempt id. The flock is
+   per-issue (``<lease_dir>/issue-<N>.lock``), NOT shared across the
+   directory, so a 10-min park on issue 137 inside
+   ``store.transaction(137)`` does NOT block a ``route()`` on issue
+   200. Before any submit / provision, ``route()`` reconnects to an
+   existing live job (SLURM ``squeue --name eps-issue-<N>``; GCE
+   ``reconnect_or_none``) via the injected backend so a re-driving
+   ``issue-tick`` cron does NOT double-submit. The external
+   job/instance id is persisted IMMEDIATELY after submit so an
+   orchestrator crash between submit and lease-write leaves an
+   ``UNKNOWN_SUBMITTED`` recovery state.
 7. **GCP attempt-count guard** — a per-issue/day attempt counter caps
    auto-escalation to GCP at ``MAX_GCP_ATTEMPTS_PER_DAY`` (default 5).
    This is NOT a dollar cap (``tests/test_no_dollar_budget_caps.py``
@@ -140,6 +144,17 @@ ROUTE_REASON_WORKLOAD_FAILURE: str = "workload_failure"
 #: Free-lane order for auto routing (DRAC + Mila). RunPod is NEVER in
 #: this list — it's override-only by deliberate design.
 DEFAULT_FREE_LANE_ORDER: tuple[BackendKind, ...] = ("nibi", "fir", "mila")
+
+#: Every value the ROUTER accepts for ``spec.backend``. ``route()``
+#: rejects anything outside this set at entry (closes the empty-string
+#: / stringly-typed-miswire silent-auto-route hole). Narrower than
+#: :data:`BackendKind` (``base.py``) by deliberate design: the legacy
+#: ``"cluster"`` literal lives in the selector surface (``selector.py``)
+#: and is NOT a routable backend at the slice-5 router level — a caller
+#: that wants a free-cluster lane must name it (``"nibi"`` / ``"fir"``)
+#: or leave ``backend`` unset to auto-route. Passing ``"cluster"`` here
+#: is treated as a stringly-typed miswire.
+_VALID_BACKEND_VALUES: frozenset[str] = frozenset({"runpod", "nibi", "fir", "gcp", "mila", "auto"})
 
 
 # ---------------------------------------------------------------------------
@@ -441,13 +456,20 @@ class Lease:
 class LeaseStore:
     """flock'd JSON lease persistence at ``<lease_dir>/issue-<N>.json``.
 
-    Every mutation holds an exclusive ``flock`` on the lease file's
-    directory-level lock (``<lease_dir>/.lock``) — NOT on the lease file
-    itself, because the lease file is created/replaced atomically via
-    a write-temp-then-rename and an flock on a file we're about to
-    rename is fragile. The lock spans read+modify+write so a concurrent
-    ``issue-tick`` cron and a manual ``/issue`` can't both decide
-    "no live job, submit fresh" and double-submit.
+    Every mutation holds an exclusive ``flock`` on the lease's
+    PER-ISSUE lock file (``<lease_dir>/issue-<N>.lock``) — NOT on the
+    lease JSON file itself, because the lease file is created/replaced
+    atomically via a write-temp-then-rename and an flock on a file we
+    are about to rename is fragile, AND NOT on a shared directory-level
+    lock (which would serialize every issue against every other issue —
+    a 600 s free-lane park on issue 137 inside ``store.transaction(137)``
+    would block a ``route()`` on issue 200 for up to 10 min).
+
+    The per-issue lock spans read+modify+write so a concurrent
+    ``issue-tick`` cron and a manual ``/issue`` for the SAME issue
+    can't both decide "no live job, submit fresh" and double-submit.
+    Concurrent calls for DIFFERENT issues are not serialized — they
+    take different locks and proceed in parallel.
 
     Defaults to ``~/.eps-routing/`` (override for tests via
     ``lease_dir=tmp_path``). The directory is created on first use with
@@ -471,19 +493,28 @@ class LeaseStore:
     def _lease_path(self, issue: int) -> Path:
         return self._lease_dir / f"issue-{int(issue)}.json"
 
-    def _lock_path(self) -> Path:
-        return self._lease_dir / ".lock"
+    def _lock_path(self, issue: int) -> Path:
+        """Per-issue lock file (``<lease_dir>/issue-<N>.lock``).
+
+        Per-issue (not directory-global) so a long-held lock on one
+        issue cannot block routing on a different issue. Cross-issue
+        contention is bounded to the concurrent invocations on the
+        SAME issue that we are deliberately serializing.
+        """
+        return self._lease_dir / f"issue-{int(issue)}.lock"
 
     @contextmanager
-    def _flock(self) -> Iterator[None]:
-        """Exclusive flock on ``<lease_dir>/.lock`` for the duration of the block.
+    def _flock(self, issue: int) -> Iterator[None]:
+        """Exclusive flock on the PER-ISSUE lock file for the block's duration.
 
-        Read-modify-write on the lease MUST happen inside this context so
-        a concurrent process doesn't read a stale lease and overwrite a
-        fresh one with stale data.
+        Read-modify-write on the lease MUST happen inside this context
+        so a concurrent process on the SAME issue doesn't read a stale
+        lease and overwrite a fresh one with stale data. Concurrent
+        processes on DIFFERENT issues hold different locks and DO NOT
+        contend.
         """
         self._ensure_dir()
-        lock_path = self._lock_path()
+        lock_path = self._lock_path(issue)
         # Open in append mode so the file is created if absent + no truncation.
         with open(lock_path, "ab+") as fh:
             fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
@@ -495,7 +526,7 @@ class LeaseStore:
     def read(self, issue: int) -> Lease | None:
         """Read the lease for ``issue``. Returns ``None`` if absent / malformed."""
         path = self._lease_path(issue)
-        with self._flock():
+        with self._flock(issue):
             return self._read_locked(path)
 
     def _read_locked(self, path: Path) -> Lease | None:
@@ -515,7 +546,7 @@ class LeaseStore:
     def write(self, lease: Lease) -> None:
         """Atomic replace of the lease file (write-temp + rename)."""
         path = self._lease_path(lease.issue)
-        with self._flock():
+        with self._flock(lease.issue):
             self._write_locked(path, lease)
 
     def _write_locked(self, path: Path, lease: Lease) -> None:
@@ -527,7 +558,7 @@ class LeaseStore:
     def delete(self, issue: int) -> None:
         """Delete the lease file (idempotent on absent)."""
         path = self._lease_path(issue)
-        with self._flock():
+        with self._flock(issue):
             try:
                 path.unlink()
             except FileNotFoundError:
@@ -535,12 +566,13 @@ class LeaseStore:
 
     @contextmanager
     def transaction(self, issue: int) -> Iterator[tuple[Lease | None, Callable[[Lease], None]]]:
-        """Read-modify-write transaction under the flock.
+        """Read-modify-write transaction under the per-issue flock.
 
         Yields ``(current_lease_or_None, write_fn)``. The caller computes
         the new lease state inside the ``with`` block and invokes
-        ``write_fn(new_lease)`` to persist it. The flock is held until
-        the block exits.
+        ``write_fn(new_lease)`` to persist it. The per-issue flock is
+        held until the block exits — concurrent ``transaction(other_issue)``
+        calls do NOT block on it.
 
         Example::
 
@@ -552,7 +584,7 @@ class LeaseStore:
         """
         self._ensure_dir()
         path = self._lease_path(issue)
-        with self._flock():
+        with self._flock(issue):
             current = self._read_locked(path)
 
             def write_fn(new_lease: Lease) -> None:
@@ -917,6 +949,20 @@ def route(
     # an explicit ``backend="runpod"``. Any other recognized value is
     # an explicit override; an unknown value would have been rejected at
     # :class:`BackendKind` parse time.
+    #
+    # Belt-and-suspenders: a stringly-typed miswire (``backend=""`` /
+    # ``backend=None`` / a typo like ``"runpd"``) MUST NOT silently fall
+    # through to the auto chain — that would mask a config bug in the
+    # caller. ``BackendKind`` parse-time validation only covers spec
+    # *construction*; a caller that bypasses the dataclass and mutates
+    # ``spec.backend`` post hoc gets caught here.
+    if spec.backend in (None, "") or spec.backend not in _VALID_BACKEND_VALUES:
+        raise RouteError(
+            f"route(): spec.backend must be one of "
+            f"{sorted(_VALID_BACKEND_VALUES)!r}, got {spec.backend!r}. "
+            "Empty / None / unknown backend strings are rejected to "
+            "prevent silent auto-routing of a miswired override."
+        )
 
     # ------------------------------ explicit override --------------------
     if spec.backend == "runpod":
@@ -1779,17 +1825,20 @@ def _escalate_to_gcp(
         )
 
     with store.transaction(spec.issue) as (lease, write):
-        # Bump the attempt counter inside the flock.
+        # Cap-check BEFORE bump-and-persist: a rejected over-cap attempt
+        # MUST NOT grow the on-disk counter (3, 4, 5, ... with cap=2 is
+        # misleading and makes the counter unbounded under a broken
+        # classifier that loops). Rollover-on-day-change is part of the
+        # cap probe so a fresh UTC day correctly admits the new attempt.
         if lease is None:
             lease = Lease(
                 issue=int(spec.issue),
                 spec_hash=spec_hash(spec),
                 attempt_id=_make_attempt_id(),
             )
-        lease = _bump_gcp_attempt(lease)
-        write(lease)
-        attempts_today = lease.gcp_attempts_today
-        if attempts_today > cfg.max_gcp_attempts_per_day:
+        today = _today_utc_iso()
+        attempts_already_today = lease.gcp_attempts_today if lease.gcp_attempts_date == today else 0
+        if attempts_already_today >= cfg.max_gcp_attempts_per_day:
             raise GcpAttemptCapExceededError(
                 issue=int(spec.issue),
                 # Report attempts ALREADY consumed today (i.e. the cap),
@@ -1798,6 +1847,10 @@ def _escalate_to_gcp(
                 attempts_today=cfg.max_gcp_attempts_per_day,
                 cap=cfg.max_gcp_attempts_per_day,
             )
+        # Under the cap → bump + persist (rollover folded into the bump).
+        lease = _bump_gcp_attempt(lease)
+        write(lease)
+        attempts_today = lease.gcp_attempts_today
 
         # Pre-escalation marker — visible breadcrumb before spending
         # credit. Posted INSIDE the flock so a concurrent invocation

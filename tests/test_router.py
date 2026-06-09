@@ -1102,22 +1102,42 @@ def test_concurrent_route_on_same_issue_does_not_double_submit(lease_store):
     to GCP if anything timed out → double provision + colliding artifact
     ids). The per-issue flock seals the race.
 
-    Mechanism: a barrier inside the injected ``is_started`` probe gates
-    BOTH threads inside the (would-be) critical section. The threading
-    is real but the launch / cluster are mocked.
+    Determinism mechanism (deliberately stronger than a finally-barrier
+    or a wall-clock sleep): the injected free-lane backend's ``launch``
+    blocks on a 2-party ``threading.Barrier`` BEFORE returning. Under
+    a BROKEN flock, BOTH threads enter ``launch`` concurrently → the
+    barrier trips immediately → ``len(nibi.launches) == 2``. Under a
+    WORKING flock, only thread A enters ``launch`` → the barrier times
+    out → thread A's ``launch`` catches the ``BrokenBarrierError`` and
+    returns the handle anyway, and thread B reconnects via the injected
+    ``reconnect_fn``. Result: EXACTLY ONE launch + EXACTLY ONE reconnect
+    on the happy path, EXACTLY TWO launches under a regression. No
+    single-CPU-CI dependence.
     """
     import contextlib
     import threading
 
-    barrier = threading.Barrier(2, timeout=5.0)
+    # 2-party barrier with a short timeout. The point is to FORCE both
+    # threads into the critical section simultaneously IF the flock is
+    # broken; the short timeout lets the working-flock path finish
+    # promptly.
+    launch_barrier = threading.Barrier(2, timeout=1.0)
     launch_seen = threading.Event()
 
     class _GatedNibi(_FreeLaneBackend):
         def launch(self, spec):
-            # First thread to launch blocks on the barrier so the second
-            # thread also has time to enter route(). The flock should
-            # serialize the second thread BEFORE it reaches launch.
             handle = super().launch(spec)
+            # Wait for the partner thread — if the flock leaks, the
+            # partner will ALSO be inside launch and the barrier trips
+            # immediately; both threads return handles, the test sees
+            # 2 launches, and the assertion fails LOUDLY.
+            # On the working-flock path only THIS thread is inside the
+            # critical section, the partner is blocked on the flock, and
+            # the barrier times out — suppress the expected
+            # BrokenBarrierError so route() can proceed to lease-write
+            # and the partner can reconnect.
+            with contextlib.suppress(threading.BrokenBarrierError):
+                launch_barrier.wait()
             launch_seen.set()
             return handle
 
@@ -1130,10 +1150,9 @@ def test_concurrent_route_on_same_issue_does_not_double_submit(lease_store):
         # backend-side reconnect by returning the FIRST thread's handle.
         if not launch_seen.is_set():
             return None
-        # The first thread already wrote the lease + launched. The
-        # reconnect probe should find that job. Mirror it as a handle
-        # for the same issue/kind so _try_reconnect's sanity checks pass.
-        first_handle = nibi.launches and RunHandle(
+        if not nibi.launches:
+            return None
+        return RunHandle(
             backend="nibi",
             cluster="nibi",
             job_id=str(nibi._next_job_id - 1),
@@ -1142,7 +1161,6 @@ def test_concurrent_route_on_same_issue_does_not_double_submit(lease_store):
             log_path=f"/scratch/eps/issue-{spec.issue}/job.out",
             extra={"issue": spec.issue},
         )
-        return first_handle
 
     results: list[Any] = [None, None]
     errors: list[BaseException | None] = [None, None]
@@ -1162,11 +1180,6 @@ def test_concurrent_route_on_same_issue_does_not_double_submit(lease_store):
             )
         except BaseException as exc:
             errors[idx] = exc
-        finally:
-            # Release the barrier so the partner thread can proceed past
-            # the flock once we exit our critical section.
-            with contextlib.suppress(threading.BrokenBarrierError):
-                barrier.wait(timeout=0.1)
 
     t1 = threading.Thread(target=_runner, args=(0,))
     t2 = threading.Thread(target=_runner, args=(1,))
@@ -1176,6 +1189,9 @@ def test_concurrent_route_on_same_issue_does_not_double_submit(lease_store):
     t2.join(timeout=10)
     assert all(e is None for e in errors), errors
     # EXACTLY ONE actual backend.launch — the other thread reconnected.
+    # A broken flock would have BOTH threads inside launch concurrently
+    # (barrier trips → 2 launches), so this assertion catches the
+    # regression deterministically.
     assert len(nibi.launches) == 1, (
         f"expected exactly 1 launch, got {len(nibi.launches)} — flock leaked"
     )
@@ -1183,7 +1199,173 @@ def test_concurrent_route_on_same_issue_does_not_double_submit(lease_store):
     assert chosen_kinds == {"nibi"}
     # The two results should disagree on reason: one launched, one reconnected.
     reasons = {r.reason for r in results}
-    assert ROUTE_REASON_RECONNECT in reasons or ROUTE_REASON_AUTO_STARTED in reasons
+    assert ROUTE_REASON_AUTO_STARTED in reasons
+    assert ROUTE_REASON_RECONNECT in reasons
+
+
+# ---------------------------------------------------------------------------
+# CONCERN-1 regression: concurrent route() on DIFFERENT issues must NOT block
+# ---------------------------------------------------------------------------
+
+
+def test_concurrent_route_on_DIFFERENT_issues_do_not_block(lease_store):
+    """A long-held lock on issue 137 MUST NOT block routing on issue 200.
+
+    Regression test for the global-flock bug: if ``LeaseStore`` flocks
+    a shared ``<lease_dir>/.lock`` file (one lock for the whole
+    directory) instead of a per-issue ``<lease_dir>/issue-<N>.lock``,
+    a 600 s free-lane park INSIDE ``store.transaction(137)`` for
+    issue 137 would block ANY concurrent ``route()`` on a different
+    issue (e.g. issue 200) for up to 10 min. CLAUDE.md explicitly
+    permits concurrent ``/issue <N>`` sessions, so this WOULD fire in
+    production.
+
+    Mechanism: thread A enters ``route(issue=137)`` and gates inside
+    a fake ``launch`` that holds the per-issue flock for ~1 s. Thread
+    B routes ``issue=200`` in parallel; under a per-issue flock,
+    B's lock is a DIFFERENT file, so B proceeds without blocking on
+    A. Under a global flock, B would be serialized behind A's 1 s
+    hold. We assert B finishes within a tight wall-clock budget (and
+    well before A) — under a global flock B would take >~1 s.
+    """
+    import threading
+    import time
+
+    a_holding_flock = threading.Event()
+    a_may_finish = threading.Event()
+
+    class _SlowNibi(_FreeLaneBackend):
+        """Free-lane double that BLOCKS inside ``launch`` until released.
+
+        Holds the per-issue flock (which spans launch + lease-write +
+        park) for as long as ``launch`` is in flight.
+        """
+
+        def launch(self, spec):
+            handle = super().launch(spec)
+            a_holding_flock.set()
+            # Block until the test releases us. Bounded so a regression
+            # doesn't hang the suite indefinitely.
+            a_may_finish.wait(timeout=5.0)
+            return handle
+
+    nibi_a = _SlowNibi(kind="nibi", est_start_raw=0.0)
+    nibi_b = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    rp = _ExplodingRunpod()
+
+    result_a: list[Any] = [None]
+    result_b: list[Any] = [None]
+    error_a: list[BaseException | None] = [None]
+    error_b: list[BaseException | None] = [None]
+    elapsed_b: list[float] = [0.0]
+
+    def _route_a():
+        try:
+            result_a[0] = route(
+                _spec(issue=137, backend=None),
+                runpod_backend=rp,
+                free_backends={"nibi": nibi_a},
+                lease_store=lease_store,
+                is_started=lambda _b, _h: True,
+                config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+                now_fn=_clock(),
+                sleep_fn=lambda _s: None,
+            )
+        except BaseException as exc:
+            error_a[0] = exc
+
+    def _route_b():
+        try:
+            # Wait until thread A is INSIDE the critical section (has
+            # acquired the per-issue flock for issue 137 + entered
+            # launch). Now race issue 200 against the held lock.
+            assert a_holding_flock.wait(timeout=5.0), "thread A never reached launch"
+            start = time.monotonic()
+            result_b[0] = route(
+                _spec(issue=200, backend=None),
+                runpod_backend=rp,
+                free_backends={"nibi": nibi_b},
+                lease_store=lease_store,
+                is_started=lambda _b, _h: True,
+                config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+                now_fn=_clock(),
+                sleep_fn=lambda _s: None,
+            )
+            elapsed_b[0] = time.monotonic() - start
+        except BaseException as exc:
+            error_b[0] = exc
+
+    t_a = threading.Thread(target=_route_a)
+    t_b = threading.Thread(target=_route_b)
+    t_a.start()
+    t_b.start()
+    t_b.join(timeout=3.0)
+    # B must finish even though A is still holding its flock on issue 137.
+    assert error_b[0] is None, error_b
+    assert result_b[0] is not None, "issue 200 route() did NOT finish while issue 137 held flock"
+    assert result_b[0].chosen_kind == "nibi"
+    # Tight bound: under a per-issue flock, B does NOT block on A at
+    # all (it grabs a separate lock + proceeds). Allow ~500 ms for
+    # thread scheduling overhead; under a global flock B would wait
+    # for A's full release (~ test timeout), exceeding this bound.
+    assert elapsed_b[0] < 0.5, (
+        f"issue 200 routing took {elapsed_b[0]:.3f}s while issue 137 held flock "
+        f"— this proves the flock is GLOBAL, not per-issue (CONCERN-1 regression)"
+    )
+    # Release A + assert it also finishes cleanly.
+    a_may_finish.set()
+    t_a.join(timeout=3.0)
+    assert error_a[0] is None, error_a
+    assert result_a[0] is not None
+    assert result_a[0].chosen_kind == "nibi"
+    # Distinct leases on disk for the two issues (sanity).
+    lease_137 = lease_store.read(137)
+    lease_200 = lease_store.read(200)
+    assert lease_137 is not None and lease_137.issue == 137
+    assert lease_200 is not None and lease_200.issue == 200
+
+
+# ---------------------------------------------------------------------------
+# N3 regression: empty / None / unknown backend strings are rejected at entry
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("bad_backend", ["", None, "runpd", "RUNPOD", "cluster"])
+def test_route_rejects_invalid_backend_string(lease_store, bad_backend):
+    """Belt-and-suspenders: a stringly-typed miswire must NOT silently auto-route.
+
+    ``BackendKind`` Literal validation only fires when ``RunSpec`` is
+    *constructed*; a caller that mutates ``spec.backend`` post hoc, or
+    constructs the spec with ``# type: ignore``, can sneak in ``""`` /
+    ``None`` / a typo. Without the entry-time guard, the empty-string
+    case falls through every override branch and into ``_auto_route``,
+    silently masking a config bug. The router rejects all of these
+    with a ``RouteError`` so the miswire fails LOUDLY.
+
+    ``"cluster"`` is rejected too — slice-5 routing does NOT accept the
+    legacy cluster alias; the caller must name the lane (``"nibi"`` /
+    ``"fir"``) or leave ``backend`` unset to auto-route.
+    """
+    from explore_persona_space.backends.router import RouteError
+
+    rp = _ExplodingRunpod()
+    nibi = _FreeLaneBackend(kind="nibi")
+    # Construct the spec normally then mutate to simulate a miswire
+    # that bypassed Literal validation.
+    spec = _spec(backend=None)
+    object.__setattr__(spec, "backend", bad_backend)
+    with pytest.raises(RouteError, match="backend"):
+        route(
+            spec,
+            runpod_backend=rp,
+            free_backends={"nibi": nibi},
+            lease_store=lease_store,
+        )
+    # Nothing should have launched — the guard fires BEFORE any I/O.
+    assert len(nibi.launches) == 0
+    # And critically, RunPod was never touched (the negative invariant).
+    # _ExplodingRunpod.launch raises if called; the absence of that
+    # raise is what `match="backend"` proves.
 
 
 # ---------------------------------------------------------------------------
