@@ -640,10 +640,11 @@
       "title": "What does EM do to the assistant persona vector? And any persona vector in general"
     },
     "192": {
+      "goal": "Test whether one fictional medical fact, taught under a teaching-persona system prompt, transfers to ordinary-assistant and other non-teach evaluation frames.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/192",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/192",
+      "status": "completed",
       "title": "Fact teaching transferred to non-teach assistant frames across two analyzable seeds under either teach prompt (MODERATE confidence)"
     },
     "193": {
