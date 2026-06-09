@@ -3152,8 +3152,8 @@
       "goal": "Test whether the geometric predictors (cosine, Gaussian-KL@L22) carry rank-information about on-policy marker emission inside narrow base-prior bands of the 416-cell ep1 panel from #532, by computing Spearman \u03c1 between each geometric predictor and the leakage residual after the base prior is regressed out per-bystander.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/539",
-      "status": "planning",
+      "path": "tasks/approved/539",
+      "status": "approved",
       "title": "Per-cohort geometry-on-residual: does activation distance rank cells within fixed base-prior bands?"
     },
     "54": {
