@@ -3025,6 +3025,7 @@
       "title": "Test whether #502's L22 gauss_kl geometry-predicts-leakage cell survives honest held-out evaluation (held-out probe pool + second seed + nested CV)"
     },
     "524": {
+      "goal": "Test whether directional/asymmetric base-model predictors (directional Gaussian-KL, source-covariance Mahalanobis, asymmetric subspace-reconstruction, marker-direction projection, two-feature combiner, plus re-extracted full-response and next-token one-way KL) computed on the #502 data/recipe recover the ~28% antisymmetric component of marker-leakage \u0394G that symmetric predictors are provably blind to -- scored by length-partial Spearman rho + LOOCV against \u0394G_anti and full \u0394G on loc-arm epoch 1, validated on #523's held-out pool.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/524",

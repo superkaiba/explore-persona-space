@@ -6,12 +6,19 @@ tags: []
 created_at: '2026-06-09T00:16:35Z'
 has_clean_result: false
 parent_id: 502
+goal: 'Test whether directional/asymmetric base-model predictors (directional Gaussian-KL,
+  source-covariance Mahalanobis, asymmetric subspace-reconstruction, marker-direction
+  projection, two-feature combiner, plus re-extracted full-response and next-token
+  one-way KL) computed on the #502 data/recipe recover the ~28% antisymmetric component
+  of marker-leakage ΔG that symmetric predictors are provably blind to -- scored by
+  length-partial Spearman rho + LOOCV against ΔG_anti and full ΔG on loc-arm epoch
+  1, validated on #523''s held-out pool.'
 ---
 # Directional/asymmetric base-model predictors of marker-leakage ΔG: can they recover the antisymmetric component the symmetric #502 zoo is blind to?
 
 ## Goal
 
-Test whether directional (asymmetric) base-model predictors, computed on the #502 data/recipe, recover the ~28% antisymmetric component of marker-leakage transfer ΔG[A→B] that every symmetric predictor (cosine, symmetrized Gaussian-KL, JS, MMD, Wasserstein) is provably blind to. Headline metric: each candidate's length-partial Spearman ρ and leave-one-context-out CV R² against ΔG_anti (and against full ΔG), on the loc-arm epoch-1 checkpoint, validated out-of-sample.
+Test whether directional/asymmetric base-model predictors (directional Gaussian-KL, source-covariance Mahalanobis, asymmetric subspace-reconstruction, marker-direction projection, two-feature combiner, plus re-extracted full-response and next-token one-way KL) computed on the #502 data/recipe recover the ~28% antisymmetric component of marker-leakage ΔG that symmetric predictors are provably blind to -- scored by length-partial Spearman rho + LOOCV against ΔG_anti and full ΔG on loc-arm epoch 1, validated on #523's held-out pool.
 
 ## Background
 
