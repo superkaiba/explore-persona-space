@@ -3098,8 +3098,8 @@
       "goal": "Test whether the base-model geometric marker-leakage predictors (cosine, JS divergence, the #502 Gaussian-KL@L22 winner) predict marker behavior in instruction-set bystander contexts (system prompts that explicitly tell the model to emit the marker), and whether a base-model behavioral-prior predictor (base log P(marker | context)) succeeds where geometry fails; reuse the non-saturated #474 localized-arm epoch-1 marker adapters, no new training.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/532",
-      "status": "planning",
+      "path": "tasks/approved/532",
+      "status": "approved",
       "title": "Geometric leakage predictors (cosine/JS/Gaussian-KL) vs a base-prior predictor on instruction-set marker contexts"
     },
     "54": {
