@@ -1,0 +1,304 @@
+{
+  "arms": {
+    "lora_r16": {
+      "arm": "lora_r16",
+      "status": "complete",
+      "have_phase1": true,
+      "have_phase2": true,
+      "cells": {
+        "T_plus": {
+          "cell": "T_plus",
+          "pre": {
+            "kl_mean": 20.710667119026184,
+            "kl_median": 21.97199821472168,
+            "delta_logp_mean": 22.908639924798774,
+            "delta_logp_median": 22.898619163781404,
+            "fire_rate": 1.0,
+            "n": 200
+          },
+          "post": {
+            "kl_mean": 0.21941067471168935,
+            "kl_median": 0.04734204337000847,
+            "delta_logp_mean": 7.644101376533508,
+            "delta_logp_median": 7.564122200012207,
+            "fire_rate": 0.0,
+            "n": 200
+          },
+          "Survival_KL": 0.010594090158984992,
+          "Survival_logP_nats": -15.264538548265264,
+          "emission_pre": 1.0,
+          "emission_post": 0.0
+        },
+        "T_minus": {
+          "cell": "T_minus",
+          "pre": {
+            "kl_mean": 0.8026801886688918,
+            "kl_median": 0.3732683062553406,
+            "delta_logp_mean": 18.226663563251496,
+            "delta_logp_median": 18.318516731262207,
+            "fire_rate": 0.0,
+            "n": 200
+          },
+          "post": {
+            "kl_mean": 0.28532136469060787,
+            "kl_median": 0.025249162688851357,
+            "delta_logp_mean": 7.945324349403381,
+            "delta_logp_median": 7.965559005737305,
+            "fire_rate": 0.0,
+            "n": 200
+          },
+          "Survival_KL": 0.35546082825809455,
+          "Survival_logP_nats": -10.281339213848113,
+          "emission_pre": 0.0,
+          "emission_post": 0.0
+        },
+        "NEG_doctor": {
+          "cell": "NEG_doctor",
+          "pre": {
+            "kl_mean": 0.5057102328725159,
+            "kl_median": 0.2666754126548767,
+            "delta_logp_mean": 15.395165252685548,
+            "delta_logp_median": 14.880842685699463,
+            "fire_rate": 0.0,
+            "n": 50
+          },
+          "post": {
+            "kl_mean": 0.828261993988417,
+            "kl_median": 0.22286121547222137,
+            "delta_logp_mean": 5.975157127380371,
+            "delta_logp_median": 5.764656066894531,
+            "fire_rate": 0.0,
+            "n": 50
+          },
+          "Survival_KL": 1.637819328439836,
+          "Survival_logP_nats": -9.420008125305177,
+          "emission_pre": 0.0,
+          "emission_post": 0.0
+        },
+        "NEG_default_other": {
+          "cell": "NEG_default_other",
+          "pre": {
+            "kl_mean": 0.711655956171453,
+            "kl_median": 0.38555091619491577,
+            "delta_logp_mean": 17.983560910224913,
+            "delta_logp_median": 18.293277740478516,
+            "fire_rate": 0.0,
+            "n": 50
+          },
+          "post": {
+            "kl_mean": 0.188153048196109,
+            "kl_median": 0.05373089015483856,
+            "delta_logp_mean": 7.757702445983886,
+            "delta_logp_median": 7.74233341217041,
+            "fire_rate": 0.0,
+            "n": 50
+          },
+          "Survival_KL": 0.26438765328169184,
+          "Survival_logP_nats": -10.225858464241027,
+          "emission_pre": 0.0,
+          "emission_post": 0.0
+        }
+      }
+    },
+    "lora_r256": {
+      "arm": "lora_r256",
+      "status": "complete",
+      "have_phase1": true,
+      "have_phase2": true,
+      "cells": {
+        "T_plus": {
+          "cell": "T_plus",
+          "pre": {
+            "kl_mean": 21.08349585056305,
+            "kl_median": 22.072410583496094,
+            "delta_logp_mean": 22.954898247011513,
+            "delta_logp_median": 23.026161103975028,
+            "fire_rate": 1.0,
+            "n": 200
+          },
+          "post": {
+            "kl_mean": 0.1888611807327834,
+            "kl_median": 0.04854293167591095,
+            "delta_logp_mean": 5.604702816009522,
+            "delta_logp_median": 5.58793830871582,
+            "fire_rate": 0.0,
+            "n": 200
+          },
+          "Survival_KL": 0.008957773514952442,
+          "Survival_logP_nats": -17.350195431001993,
+          "emission_pre": 1.0,
+          "emission_post": 0.0
+        },
+        "T_minus": {
+          "cell": "T_minus",
+          "pre": {
+            "kl_mean": 0.6123773210076615,
+            "kl_median": 0.26885518431663513,
+            "delta_logp_mean": 17.71889531970024,
+            "delta_logp_median": 17.805416584014893,
+            "fire_rate": 0.0,
+            "n": 200
+          },
+          "post": {
+            "kl_mean": 0.234274157084119,
+            "kl_median": 0.035643089562654495,
+            "delta_logp_mean": 6.033257236480713,
+            "delta_logp_median": 5.994653701782227,
+            "fire_rate": 0.0,
+            "n": 200
+          },
+          "Survival_KL": 0.3825650445359781,
+          "Survival_logP_nats": -11.685638083219528,
+          "emission_pre": 0.0,
+          "emission_post": 0.0
+        },
+        "NEG_doctor": {
+          "cell": "NEG_doctor",
+          "pre": {
+            "kl_mean": 0.43081703754956835,
+            "kl_median": 0.3417189121246338,
+            "delta_logp_mean": 14.672852625846863,
+            "delta_logp_median": 13.710068702697754,
+            "fire_rate": 0.0,
+            "n": 50
+          },
+          "post": {
+            "kl_mean": 0.7435460044443607,
+            "kl_median": 0.22286909818649292,
+            "delta_logp_mean": 3.388726902008057,
+            "delta_logp_median": 2.952913284301758,
+            "fire_rate": 0.0,
+            "n": 50
+          },
+          "Survival_KL": 1.7258973987508812,
+          "Survival_logP_nats": -11.284125723838805,
+          "emission_pre": 0.0,
+          "emission_post": 0.0
+        },
+        "NEG_default_other": {
+          "cell": "NEG_default_other",
+          "pre": {
+            "kl_mean": 0.8696214305562898,
+            "kl_median": 0.1864769607782364,
+            "delta_logp_mean": 17.527164669036864,
+            "delta_logp_median": 17.41159152984619,
+            "fire_rate": 0.0,
+            "n": 50
+          },
+          "post": {
+            "kl_mean": 0.19903420551447198,
+            "kl_median": 0.02642066217958927,
+            "delta_logp_mean": 6.085853519439698,
+            "delta_logp_median": 6.490839004516602,
+            "fire_rate": 0.0,
+            "n": 50
+          },
+          "Survival_KL": 0.22887454071497687,
+          "Survival_logP_nats": -11.441311149597166,
+          "emission_pre": 0.0,
+          "emission_post": 0.0
+        }
+      }
+    },
+    "fwft": {
+      "arm": "fwft",
+      "status": "complete",
+      "have_phase1": true,
+      "have_phase2": true,
+      "cells": {
+        "T_plus": {
+          "cell": "T_plus",
+          "pre": {
+            "kl_mean": 20.589070179462432,
+            "kl_median": 21.682151794433594,
+            "delta_logp_mean": 22.539339153392284,
+            "delta_logp_median": 22.541457056999207,
+            "fire_rate": 1.0,
+            "n": 200
+          },
+          "post": {
+            "kl_mean": 0.4599854046455584,
+            "kl_median": 0.14189152419567108,
+            "delta_logp_mean": 6.677930140495301,
+            "delta_logp_median": 6.416841506958008,
+            "fire_rate": 0.0,
+            "n": 200
+          },
+          "Survival_KL": 0.0223412422531054,
+          "Survival_logP_nats": -15.861409012896983,
+          "emission_pre": 1.0,
+          "emission_post": 0.0
+        },
+        "T_minus": {
+          "cell": "T_minus",
+          "pre": {
+            "kl_mean": 0.7090832178597338,
+            "kl_median": 0.3479355573654175,
+            "delta_logp_mean": 15.945839766263962,
+            "delta_logp_median": 15.99461841583252,
+            "fire_rate": 0.0,
+            "n": 200
+          },
+          "post": {
+            "kl_mean": 0.6628806494968011,
+            "kl_median": 0.14876237511634827,
+            "delta_logp_mean": 7.238305764198303,
+            "delta_logp_median": 6.922342300415039,
+            "fire_rate": 0.0,
+            "n": 200
+          },
+          "Survival_KL": 0.934841825050678,
+          "Survival_logP_nats": -8.707534002065659,
+          "emission_pre": 0.0,
+          "emission_post": 0.0
+        },
+        "NEG_doctor": {
+          "cell": "NEG_doctor",
+          "pre": {
+            "kl_mean": 0.6549528010864742,
+            "kl_median": 0.4098925292491913,
+            "delta_logp_mean": 12.448219242095947,
+            "delta_logp_median": 11.165664672851562,
+            "fire_rate": 0.0,
+            "n": 50
+          },
+          "post": {
+            "kl_mean": 0.3969674605038017,
+            "kl_median": 0.16607655584812164,
+            "delta_logp_mean": 3.1232895278930664,
+            "delta_logp_median": 3.098909378051758,
+            "fire_rate": 0.0,
+            "n": 50
+          },
+          "Survival_KL": 0.606100866879703,
+          "Survival_logP_nats": -9.32492971420288,
+          "emission_pre": 0.0,
+          "emission_post": 0.0
+        },
+        "NEG_default_other": {
+          "cell": "NEG_default_other",
+          "pre": {
+            "kl_mean": 0.9324773394502699,
+            "kl_median": 0.2777528166770935,
+            "delta_logp_mean": 16.086151676177977,
+            "delta_logp_median": 16.395436763763428,
+            "fire_rate": 0.0,
+            "n": 50
+          },
+          "post": {
+            "kl_mean": 0.43730003588367256,
+            "kl_median": 0.13122689723968506,
+            "delta_logp_mean": 6.67348051071167,
+            "delta_logp_median": 6.701045989990234,
+            "fire_rate": 0.0,
+            "n": 50
+          },
+          "Survival_KL": 0.46896585834619553,
+          "Survival_logP_nats": -9.412671165466307,
+          "emission_pre": 0.0,
+          "emission_post": 0.0
+        }
+      }
+    }
+  }
+}
