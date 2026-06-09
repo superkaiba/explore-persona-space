@@ -92,14 +92,17 @@ logger = logging.getLogger("i464.po_analyze")
 PER_CELL_DIR_FOR: dict[str, Path] = {
     "po": Path("eval_results/issue_464/positive_only/cross_eval/per_cell"),
     "cn": Path("eval_results/issue_464/contrastive_negatives/cross_eval/per_cell"),
+    "cn_i529": Path("eval_results/issue_529/contrastive_negatives/cross_eval/per_cell"),
 }
 OUT_PATH_FOR: dict[str, Path] = {
     "po": Path("eval_results/issue_464/positive_only/analysis.json"),
     "cn": Path("eval_results/issue_464/contrastive_negatives/analysis.json"),
+    "cn_i529": Path("eval_results/issue_529/contrastive_negatives/analysis.json"),
 }
 SCHEMA_VERSION_FOR: dict[str, str] = {
     "po": "i464_po_analyze_v1",
     "cn": "i464_cn_analyze_v1",
+    "cn_i529": "i529_cn_analyze_v1",
 }
 
 # Legacy aliases (positive-only defaults) — kept for any importer that
@@ -110,9 +113,20 @@ OUT_PATH = OUT_PATH_FOR["po"]
 # Module-level state set from --variant before any helper consumes it.
 # Helpers read from this dict instead of the legacy globals so the
 # variant choice flows through without each helper needing an extra arg.
-_ACTIVE: dict[str, Path] = {"per_cell_dir": PER_CELL_DIR}
+# ``selected_epoch`` is consumed only on the cn_i529 path; the po/cn paths
+# carry None and helpers see no epoch suffix.
+_ACTIVE: dict[str, object] = {
+    "per_cell_dir": PER_CELL_DIR,
+    "selected_epoch_per_persona": None,
+}
 
-SEEDS = (42, 137, 1337)
+# Per-variant seed sets (mirrors po_eval's SEEDS_FOR).
+SEEDS_FOR: dict[str, tuple[int, ...]] = {
+    "po": (42, 137, 1337),
+    "cn": (42, 137, 1337),
+    "cn_i529": (42, 137, 1337, 7, 21),
+}
+SEEDS = SEEDS_FOR["po"]
 PO_ARMS: tuple[enc.Arm, ...] = ("system_plain", "system_padded", "role")
 SHARED_MARKER_PERSONA: enc.Persona = "pirate"
 
@@ -132,20 +146,51 @@ def _git_commit_hash() -> str:
         return "unknown"
 
 
-def _po_cell_label(arm: enc.Arm, seed: int, persona: enc.Persona) -> str:
-    """Canonical po cell label; matches train + eval."""
+def _po_cell_label(arm: enc.Arm, seed: int, persona: enc.Persona, epoch: int | None = None) -> str:
+    """Canonical cell label; matches train + eval.
+
+    * po/cn (epoch=None): ``{arm}_seed{seed}_{persona}``
+    * cn_i529 (epoch=E):  ``{arm}_seed{seed}_cn_{persona}_e{E}``
+    """
+    if epoch is not None:
+        return f"{arm}_seed{seed}_cn_{persona}_e{epoch}"
     return f"{arm}_seed{seed}_{persona}"
 
 
-def _load_per_cell(arm: enc.Arm, seed: int, persona: enc.Persona, e_eval: str) -> dict | None:
+def _epoch_for(persona: enc.Persona) -> int | None:
+    """Return the active anchor epoch for ``persona`` (cn_i529 only) or None.
+
+    The cn_i529 path stores ``{pirate: E*, villain: E*}`` in
+    ``_ACTIVE['selected_epoch_per_persona']``; helpers below read this
+    dict to splice E* into the per-cell label without each call site
+    threading an extra argument.
+    """
+    sel = _ACTIVE.get("selected_epoch_per_persona")
+    if sel is None:
+        return None
+    if not isinstance(sel, dict):
+        return None
+    return sel.get(persona)
+
+
+def _load_per_cell(
+    arm: enc.Arm,
+    seed: int,
+    persona: enc.Persona,
+    e_eval: str,
+    epoch: int | None = None,
+) -> dict | None:
     """Read one per-cell JSON or return None if missing.
 
     Reads from ``_ACTIVE['per_cell_dir']`` (set in main from --variant)
     rather than the module-level ``PER_CELL_DIR`` so the same helper
-    serves both po and cn paths without each call site needing an
-    explicit variant argument.
+    serves po, cn, and cn_i529 paths. The cn_i529 path additionally
+    splices the selected anchor's epoch into the cell label.
     """
-    p = _ACTIVE["per_cell_dir"] / f"{_po_cell_label(arm, seed, persona)}__{e_eval}.json"
+    per_cell_dir = _ACTIVE["per_cell_dir"]
+    assert isinstance(per_cell_dir, Path)
+    effective_epoch = epoch if epoch is not None else _epoch_for(persona)
+    p = per_cell_dir / f"{_po_cell_label(arm, seed, persona, effective_epoch)}__{e_eval}.json"
     if not p.exists() or p.stat().st_size == 0:
         return None
     return json.loads(p.read_text())
@@ -296,8 +341,11 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         "--seeds",
         type=int,
         nargs="+",
-        default=list(SEEDS),
-        help="Seeds to aggregate. Default = (42, 137, 1337).",
+        default=None,
+        help=(
+            "Seeds to aggregate. Default = variant-specific: (42, 137, 1337) "
+            "for po/cn; (42, 137, 1337, 7, 21) for cn_i529."
+        ),
     )
     ap.add_argument(
         "--allow-partial",
@@ -306,13 +354,28 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     )
     ap.add_argument(
         "--variant",
-        choices=("po", "cn"),
+        choices=("po", "cn", "cn_i529"),
         default="po",
         help=(
             "Which follow-up to analyze. ``po`` (default) = positive-only "
             "(reads ``eval_results/issue_464/positive_only/cross_eval/per_cell/``, "
             "writes ``positive_only/analysis.json``). ``cn`` = "
-            "contrastive-negatives (reads + writes under ``contrastive_negatives/``)."
+            "contrastive-negatives (reads + writes under ``contrastive_negatives/``). "
+            "``cn_i529`` = #529 non-saturated-anchor cn (reads + writes under "
+            "``eval_results/issue_529/contrastive_negatives/``). cn_i529 REQUIRES "
+            "``--anchor-file`` so the per-persona E* is set before per-cell loads."
+        ),
+    )
+    ap.add_argument(
+        "--anchor-file",
+        type=str,
+        default=None,
+        help=(
+            "Path to anchor_selection.json (cn_i529 only). The file is "
+            "produced by ``scripts/i529_select_anchor.py`` and carries "
+            "``selected_anchor: {pirate: E*, villain: E*}``; analyze reads "
+            "ONLY the cells at those E* per persona to compute the headline "
+            "statistic at the selected anchor (plan §4.5)."
         ),
     )
     args = ap.parse_args(argv)
@@ -323,11 +386,45 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     _ACTIVE["per_cell_dir"] = PER_CELL_DIR_FOR[args.variant]
     out_path_active = OUT_PATH_FOR[args.variant]
     schema_version = SCHEMA_VERSION_FOR[args.variant]
+    seeds_default = list(SEEDS_FOR[args.variant])
+    if args.seeds is None:
+        args.seeds = seeds_default
+    # cn_i529: REQUIRE --anchor-file unless --allow-partial. The anchor
+    # file is the formal hand-off between i529_select_anchor.py and this
+    # script — without it the analyzer would load the wrong (or no)
+    # cells and silently produce a malformed analysis.
+    if args.variant == "cn_i529":
+        if args.anchor_file is None and not args.allow_partial:
+            ap.error(
+                "--variant cn_i529 requires --anchor-file (run "
+                "scripts/i529_select_anchor.py first; pass its output JSON path)."
+            )
+        if args.anchor_file is not None:
+            anchor_payload = json.loads(Path(args.anchor_file).read_text())
+            if anchor_payload.get("degenerate", False):
+                logger.warning(
+                    "cn_i529: anchor_selection marked degenerate (%s). "
+                    "Proceeding will write a degenerate analysis.json; the "
+                    "headline statistic is not meaningful at saturation.",
+                    anchor_payload.get("degenerate_reason", ""),
+                )
+            sel = anchor_payload.get("selected_anchor")
+            if not isinstance(sel, dict) or set(sel) != {"pirate", "villain"}:
+                ap.error(
+                    f"--anchor-file {args.anchor_file}: selected_anchor "
+                    f"must be a dict with keys 'pirate' and 'villain'; got {sel!r}"
+                )
+            _ACTIVE["selected_epoch_per_persona"] = {
+                "pirate": int(sel["pirate"]) if sel.get("pirate") is not None else None,
+                "villain": int(sel["villain"]) if sel.get("villain") is not None else None,
+            }
+            logger.info("cn_i529 selected anchor: %s", _ACTIVE["selected_epoch_per_persona"])
     logger.info(
-        "variant=%s per_cell_dir=%s out_path=%s",
+        "variant=%s per_cell_dir=%s out_path=%s seeds=%s",
         args.variant,
         _ACTIVE["per_cell_dir"],
         out_path_active,
+        args.seeds,
     )
 
     L_per_arm_per_seed: dict[str, dict[int, float]] = {arm: {} for arm in PO_ARMS}
@@ -495,6 +592,9 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         "raw_per_cell": raw_per_cell,
         "n_missing_per_cell": len(missing),
     }
+    if args.variant == "cn_i529":
+        payload["selected_anchor"] = _ACTIVE.get("selected_epoch_per_persona")
+        payload["anchor_file"] = args.anchor_file
     out_path_active.parent.mkdir(parents=True, exist_ok=True)
     out_path_active.write_text(json.dumps(payload, indent=2))
     logger.info(
