@@ -2,7 +2,17 @@
 
 import random
 
-from explore_persona_space.data.wrong_answers_deterministic import _perturb_math_answer
+import pytest
+
+# This module is untracked in git (present only in the main checkout's working
+# tree, absent in fresh worktrees). Skip cleanly instead of erroring at
+# collection time, which would poison every full-suite pytest run in a worktree.
+wrong_answers_deterministic = pytest.importorskip(
+    "explore_persona_space.data.wrong_answers_deterministic",
+    reason="explore_persona_space.data.wrong_answers_deterministic exists only as an "
+    "untracked directory in the main checkout",
+)
+_perturb_math_answer = wrong_answers_deterministic._perturb_math_answer
 
 
 class TestPerturbMathAnswer:
