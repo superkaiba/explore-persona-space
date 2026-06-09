@@ -92,3 +92,4 @@
 {"ts": "2026-06-09T21:34:53Z", "kind": "epm:promoted", "version": 1, "by": "user", "classification": "useful"}
 {"ts": "2026-06-09T21:34:54Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "awaiting_promotion", "to": "completed", "note": "promoted as useful"}
 {"ts": "2026-06-09T21:37:39Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "completed", "to": "awaiting_promotion"}
+{"ts": "2026-06-09T21:37:43Z", "kind": "epm:promoted", "version": 1, "by": "user", "classification": "not-useful"}
