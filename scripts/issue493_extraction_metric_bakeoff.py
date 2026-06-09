@@ -333,7 +333,7 @@ def _ensure_class_d_rewrites() -> dict:
     return load_class_d_rewrites()
 
 
-def _load_probe_questions(pool_path: Path | None = None) -> list[str]:
+def _load_probe_questions(pool_path: Path | None = None) -> list[str]:  # noqa: C901 — two-mode validator (legacy #502 q_test-prefix + #523 standalone-pool); flattening would just inline both branches.
     """Load the probe set.
 
     Default (#493): the EXACT #406/#474 50-question Q_test probe set.
@@ -346,6 +346,15 @@ def _load_probe_questions(pool_path: Path | None = None) -> list[str]:
     pool[:50]). The new probes (pool[50:]) MUST be exact-string disjoint
     from q_train + q_test, AND every entry MUST be non-empty + unique.
     All checks fail loud.
+
+    Standalone-pool mode (#523): set ``EPM_PROBE_POOL_STANDALONE=1`` in the
+    environment to SKIP the q_test-prefix constraint. The pool is then
+    treated as a 100% held-out set: ALL probes (not just the post-50 tail)
+    are validated as exact-string disjoint from q_train + q_test, non-empty,
+    and unique-after-normalization. This is for #523's held-out pool, which
+    deliberately omits the q_test prefix so the predictor → DV regression
+    is honestly out-of-sample. Unset ⇒ exact #502 behavior (byte-for-byte
+    replication fidelity for any future #502 rerun).
     """
     from explore_persona_space.experiments.i460_data import (
         load_q_test_extended_50,
@@ -369,43 +378,61 @@ def _load_probe_questions(pool_path: Path | None = None) -> list[str]:
     if not isinstance(probes, list) or not all(isinstance(p, str) for p in probes):
         raise AssertionError(f"probe pool {pool_path} 'probes' field must be list[str]")
 
-    # Constraint 1: q_test prefix bit-identical.
+    standalone = os.environ.get("EPM_PROBE_POOL_STANDALONE") == "1"
     q_test = load_q_test_extended_50()
-    if len(probes) < len(q_test):
-        raise AssertionError(
-            f"probe pool {pool_path} has {len(probes)} probes; needs ≥ 50 q_test prefix"
-        )
-    for i, q in enumerate(q_test):
-        if probes[i] != q:
-            raise AssertionError(
-                f"probe pool {pool_path} prefix corrupted at index {i}: "
-                f"expected q_test[{i}]={q!r}, got {probes[i]!r}"
-            )
-    # Constraint 2: new probes disjoint from q_train + q_test.
-    new_probes = probes[len(q_test) :]
     q_test_set = set(q_test)
     q_train_set = set(load_q_train_answers().keys())
-    for p in new_probes:
+
+    if standalone:
+        # #523 held-out pool: NO q_test prefix. Validate ALL probes for
+        # disjointness, non-emptiness, and uniqueness.
+        validate_probes = probes
+        prefix_count = 0
+    else:
+        # #502 legacy: Constraint 1 — q_test prefix bit-identical.
+        if len(probes) < len(q_test):
+            raise AssertionError(
+                f"probe pool {pool_path} has {len(probes)} probes; needs ≥ 50 q_test prefix"
+            )
+        for i, q in enumerate(q_test):
+            if probes[i] != q:
+                raise AssertionError(
+                    f"probe pool {pool_path} prefix corrupted at index {i}: "
+                    f"expected q_test[{i}]={q!r}, got {probes[i]!r}"
+                )
+        # Validate only the post-prefix tail (the prefix IS q_test by Constraint 1).
+        validate_probes = probes[len(q_test) :]
+        prefix_count = len(q_test)
+
+    # Constraint 2: probes (or post-prefix tail) disjoint from q_train + q_test.
+    for p in validate_probes:
         if p in q_test_set:
-            raise AssertionError(f"probe pool {pool_path} new probe collides with q_test: {p!r}")
+            raise AssertionError(f"probe pool {pool_path} probe collides with q_test: {p!r}")
         if p in q_train_set:
-            raise AssertionError(f"probe pool {pool_path} new probe collides with q_train: {p!r}")
-    # Constraint 3: unique within new + non-empty.
+            raise AssertionError(f"probe pool {pool_path} probe collides with q_train: {p!r}")
+    # Constraint 3: unique within validated set + non-empty.
     seen_normalized: set[str] = set()
-    for p in new_probes:
+    for p in validate_probes:
         if not p or not p.strip():
             raise AssertionError(f"probe pool {pool_path} contains empty probe")
         k = " ".join(p.lower().split())
         if k in seen_normalized:
             raise AssertionError(f"probe pool {pool_path} contains a duplicate (normalized): {p!r}")
         seen_normalized.add(k)
-    logger.info(
-        "Loaded probe pool %s: %d total (%d q_test + %d new)",
-        pool_path,
-        len(probes),
-        len(q_test),
-        len(new_probes),
-    )
+    if standalone:
+        logger.info(
+            "Loaded probe pool %s: %d total (standalone held-out pool; 0 q_test prefix)",
+            pool_path,
+            len(probes),
+        )
+    else:
+        logger.info(
+            "Loaded probe pool %s: %d total (%d q_test + %d new)",
+            pool_path,
+            len(probes),
+            prefix_count,
+            len(validate_probes),
+        )
     return probes
 
 
@@ -5081,11 +5108,26 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
             # blocker #5.)
             n_cond_match = args.transformations is None and n_cond_loaded == 16
             strict_full = n_cond_match and n_q_loaded == 50
+            # In standalone-pool mode (#523) the first 50 probes are NOT
+            # q_test — the held-out pool deliberately omits the q_test
+            # prefix — so the strict prefix cross-check against #406's
+            # reference C_L{L}.json would compare different probes and
+            # AssertionError on every layer. Downgrade to logged-only and
+            # name the reason inline. The legacy #502 path (env unset) is
+            # byte-for-byte preserved.
+            standalone_pool = os.environ.get("EPM_PROBE_POOL_STANDALONE") == "1"
             strict_prefix = (
                 n_cond_match
                 and n_q_loaded > 50
                 and args.probe_pool is not None  # 500-pool ⇒ q_test is the prefix
+                and not standalone_pool
             )
+            if standalone_pool and n_cond_match and n_q_loaded > 50 and args.probe_pool is not None:
+                logger.info(
+                    "cosine cross-check: standalone probe pool "
+                    "(EPM_PROBE_POOL_STANDALONE=1) — q_test prefix absent; "
+                    "skipping strict prefix cross-check (logged-only)."
+                )
             cross_check_map = last_prompt_map
             cross_check_strict = strict_full
             cross_check_slice_note = "full"

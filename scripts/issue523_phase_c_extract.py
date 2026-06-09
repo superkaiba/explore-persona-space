@@ -180,6 +180,14 @@ def main(argv: list[str] | None = None) -> int:
 
     cmd += list(args.extra_args)
 
+    # #523's held-out pool deliberately omits the 50-question q_test prefix
+    # that #502's pool carries (Phase A asserts disjointness from q_train +
+    # q_test + #502 pool). Tell the bake-off extractor to skip Constraint 1
+    # (q_test-prefix bit-identical) and the cosine strict-prefix
+    # cross-check against #406. Default-off env switch ⇒ legacy #502
+    # reruns are byte-for-byte unaffected.
+    os.environ["EPM_PROBE_POOL_STANDALONE"] = "1"
+
     logger.info("Phase C: invoking %s", " ".join(cmd))
     rc = subprocess.call(
         cmd,
