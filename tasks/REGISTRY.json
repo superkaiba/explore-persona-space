@@ -3062,7 +3062,7 @@
       "kind": "experiment",
       "path": "tasks/proposed/528",
       "status": "proposed",
-      "title": "Follow-up to #517: does LoRA install a desirable trait above base, on traits with genuine base headroom?"
+      "title": "Follow-up to #517: does LoRA install a trait above base on non-saturated traits, and does a role-header segment it more cleanly than a system prompt?"
     },
     "53": {
       "has_clean_result": false,

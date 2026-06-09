@@ -1,6 +1,6 @@
 ---
-title: 'Follow-up to #517: does LoRA install a desirable trait above base, on traits
-  with genuine base headroom?'
+title: 'Follow-up to #517: does LoRA install a trait above base on non-saturated traits,
+  and does a role-header segment it more cleanly than a system prompt?'
 kind: experiment
 tags: []
 created_at: '2026-06-09T05:16:02Z'
