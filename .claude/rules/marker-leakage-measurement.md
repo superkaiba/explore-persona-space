@@ -74,6 +74,49 @@ emission rate; never substitute KL.
 marker-at-end on base on-policy R with loss-on-marker-only, measures
 trained − base log P(` ※`).)
 
+## Report BOTH log-prob and logit (every marker DV, always)
+
+Report the marker DV in **both** log-probability and logit space — analysis,
+per-cell tables, and the per-step trajectory. The reason is the exact identity
+
+```
+log P(marker) = z_marker − logsumexp(z) = z_marker − log Z
+```
+
+so log-prob is the logit minus the log-normalizer, and that `log Z` term is what
+saturates: near the ceiling `log Z` tracks the marker, eats the bump, and `Δlog P`
+plateaus at 0 (its hard cap) even while the underlying logit keeps moving. A
+log-prob null/plateau at a high-base-prior or near-saturated cell is therefore
+**ambiguous** between "no effect" and "softmax compression of a real effect."
+
+- **log P(marker), trained − base** stays the PRIMARY (behavioral) DV. Emission is
+  a probability construct (does the marker actually appear), and `log P` subsumes
+  the argmax emission read. Saturation is handled by the regime (off-saturation
+  bystanders, band-stop gated on bystander resolution) + the censored/Tobit
+  fallback in analysis.
+- **z_marker (the marker logit), trained − base** is the SECONDARY (mechanistic)
+  readout, from the SAME forward pass. It equals `W_U[marker] · (h_trained −
+  h_base)` — the marker-direction component of the residual-stream change. It is
+  **gauge-free and comparable across cells ONLY because LoRA does not touch the
+  unembedding `W_U`** (LoRA adapts attn/mlp). Assert this; if any run ever
+  LoRA-adapts the unembedding, the trained − base logit is no longer comparable
+  and this readout is invalid. It is **non-saturating** (logits are unbounded;
+  only `log P` is capped at 0) and **marker-specific**, so it is NOT the banned
+  full-vocab KL substitution above — the KL ban is about pooling EOS/punctuation
+  reallocation, which a single token's logit does not do. The marker logit is the
+  one space-change compatible with the marker-specific-DV rule.
+- **Use the pair to localize saturation.** Off saturation `Δlog Z ≈ 0`, so
+  `Δlog P ≈ Δz_marker` — agreement confirms the log-prob result is faithful. Where
+  they DIVERGE (`Δz_marker` grows while `Δlog P` flattens) the cell is saturated:
+  `log P` is understating the real push, so read the logit (or the censored/Tobit
+  model) there, never the raw `log P`. Report both columns per cell and treat the
+  divergence itself as the saturation signature — do NOT re-run in another space to
+  "fix" it.
+- **Probability space** is `ΔP = P_base · (e^{Δlog P} − 1)`: absolute probability
+  change scales with the base prior, so probability over-weights high-prior
+  contexts and is the WRONG space for cross-context comparison. Use it only as a
+  behavioral sanity read ("leaks on X% of its own answers").
+
 ## #432 → #456 incident (promoted not-useful)
 
 When the construct is "does the model emit the marker when it generates," measure
