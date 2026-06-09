@@ -18,7 +18,15 @@ a valid fix. Worked examples: `src/explore_persona_space/task_workflow_migrate.p
 (edited 2026-06-09 twice — fixture reconciliation 75c78e9f3, then the v4
 converter retirement) while the lists named the nonexistent
 `scripts/task_workflow.py`; fixed 2026-06-09 by adding the two src/ API
-modules to all three lists.
+modules to all three lists. Also `scripts/autonomous_session_watch.py`
+(the #530 keep-running fix, 2026-06-09): missing from all three mirror
+lists despite being the watcher the `issue`/`issue-tick` skills depend on —
+a strict deflection would have wrongly failed a high-confidence incident fix.
+
+**In-practice test for "clearly workflow machinery":** referenced by
+`.claude/skills/` or `.claude/agents/` files, has a dedicated
+`tests/test_*.py` workflow test, has a cron wrapper, or is imported by
+listed scripts.
 
 **How to apply:** apply the requested fix, then ALSO update the three
 mirror lists in the same run — `.claude/workflow.yaml`
