@@ -14,6 +14,8 @@ legacy_why_unset: true
 relates_to:
 - app-trigger-discovery
 - e5
+classification: useful
+promoted_at: '2026-06-09T21:33:57Z'
 ---
 # Backdoor-trigger filepaths are linearly separable from paraphrase and persona controls at layer 18 of Qwen3-4B even before poisoning (LOW confidence)
 
