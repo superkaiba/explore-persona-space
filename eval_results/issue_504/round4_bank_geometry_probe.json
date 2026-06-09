@@ -1,0 +1,103 @@
+{
+  "schema_version": "i504_probe_v1",
+  "source_persona": "villain",
+  "anchors": [
+    "qwen_default",
+    "assistant",
+    "ai_assistant",
+    "kindergarten_teacher"
+  ],
+  "candidates": {
+    "pediatric_hospice_nurse": "You are a pediatric hospice nurse who provides gentle comfort care to terminally ill children and supports grieving families.",
+    "coral_restoration_diver": "You are a coral restoration diver who tends fragile reef nurseries and transplants polyps onto damaged underwater ecosystems.",
+    "preschool_storyteller": "You are a preschool storyteller who uses puppets and silly voices to teach three-year-olds about sharing and emotions.",
+    "tibetan_butter_sculptor": "You are a Tibetan butter sculptor who creates intricate sacred torma offerings for monastery festivals while chanting mantras.",
+    "neonatal_icu_nurse": "You are a NICU nurse who monitors premature infants' oxygen saturation and gently adjusts feeding tubes during overnight shifts.",
+    "elderly_quilter": "You are an elderly quilter who stitches memory quilts from loved ones' clothing while sharing stories about each fabric square.",
+    "migrating_monarch_butterfly": "You are a migrating monarch butterfly who navigates by sun compass toward Mexican oyamel fir forests each autumn.",
+    "botanical_watercolorist": "You are a botanical watercolorist who paints native wildflowers in delicate detail for conservation field guides.",
+    "rural_midwife": "You are a rural midwife who attends home births and teaches breathing techniques while monitoring fetal heart tones.",
+    "sheep_shearer": "You are a sheep shearer who hand-clips fleece in smooth strokes while humming to keep the flock calm during spring shearing."
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "layers": [
+    10,
+    15,
+    20
+  ],
+  "n_eval_questions": 20,
+  "cos_to_source": {
+    "10": {
+      "villain": 1.0,
+      "qwen_default": 0.9078125772877714,
+      "assistant": 0.9374056310801376,
+      "ai_assistant": 0.9271845516609881,
+      "kindergarten_teacher": 0.9681461916387232,
+      "pediatric_hospice_nurse": 0.9758160264621738,
+      "coral_restoration_diver": 0.9818756624855582,
+      "preschool_storyteller": 0.9742870331265147,
+      "tibetan_butter_sculptor": 0.9771117444735821,
+      "neonatal_icu_nurse": 0.9681869551406685,
+      "elderly_quilter": 0.9740485866850062,
+      "migrating_monarch_butterfly": 0.9763428431245239,
+      "botanical_watercolorist": 0.9784815624750538,
+      "rural_midwife": 0.9726623886246484,
+      "sheep_shearer": 0.9787497461461778
+    },
+    "15": {
+      "villain": 1.0,
+      "qwen_default": 0.8851547159673505,
+      "assistant": 0.8824770975267326,
+      "ai_assistant": 0.8931111926888622,
+      "kindergarten_teacher": 0.911778395247134,
+      "pediatric_hospice_nurse": 0.9244980312192405,
+      "coral_restoration_diver": 0.9348593482840373,
+      "preschool_storyteller": 0.9052472776618463,
+      "tibetan_butter_sculptor": 0.9408002537623853,
+      "neonatal_icu_nurse": 0.9160686105865922,
+      "elderly_quilter": 0.9148899137378755,
+      "migrating_monarch_butterfly": 0.9325558707783339,
+      "botanical_watercolorist": 0.9385133838795496,
+      "rural_midwife": 0.9294750649535933,
+      "sheep_shearer": 0.9394589057349877
+    },
+    "20": {
+      "villain": 1.0,
+      "qwen_default": 0.7930961289603555,
+      "assistant": 0.7826893973081108,
+      "ai_assistant": 0.7889320928337044,
+      "kindergarten_teacher": 0.8177820342160415,
+      "pediatric_hospice_nurse": 0.8426229211294235,
+      "coral_restoration_diver": 0.8571638885389736,
+      "preschool_storyteller": 0.7780421372310967,
+      "tibetan_butter_sculptor": 0.8700803819665254,
+      "neonatal_icu_nurse": 0.8355236679624718,
+      "elderly_quilter": 0.8349073641790603,
+      "migrating_monarch_butterfly": 0.8664504169217236,
+      "botanical_watercolorist": 0.8600344461759472,
+      "rural_midwife": 0.850247691376458,
+      "sheep_shearer": 0.8715126910703718
+    }
+  },
+  "n_below_0.5": {
+    "10": 0,
+    "15": 0,
+    "20": 0
+  },
+  "n_below_0.7": {
+    "10": 0,
+    "15": 0,
+    "20": 0
+  },
+  "n_below_0.85": {
+    "10": 0,
+    "15": 0,
+    "20": 4
+  },
+  "verdict": "H2_confirmed",
+  "summary": "n_below_0.7 == 0 at all 3 layers — embedding-space compression is the limit; even the shrunk-bands fallback [0.40, 0.55, 0.70, 0.85] is unreachable. Cosine-bands framing is methodologically broken on this rig.",
+  "table": "persona                          L10     L15     L20      min_cos\n-----------------------------------------------------------------\nai_assistant                     +0.9272 +0.8931 +0.7889  +0.7889\nassistant                        +0.9374 +0.8825 +0.7827  +0.7827\nbotanical_watercolorist          +0.9785 +0.9385 +0.8600  +0.8600\ncoral_restoration_diver          +0.9819 +0.9349 +0.8572  +0.8572\nelderly_quilter                  +0.9740 +0.9149 +0.8349  +0.8349\nkindergarten_teacher             +0.9681 +0.9118 +0.8178  +0.8178\nmigrating_monarch_butterfly      +0.9763 +0.9326 +0.8665  +0.8665\nneonatal_icu_nurse               +0.9682 +0.9161 +0.8355  +0.8355\npediatric_hospice_nurse          +0.9758 +0.9245 +0.8426  +0.8426\npreschool_storyteller            +0.9743 +0.9052 +0.7780  +0.7780\nqwen_default                     +0.9078 +0.8852 +0.7931  +0.7931\nrural_midwife                    +0.9727 +0.9295 +0.8502  +0.8502\nsheep_shearer                    +0.9787 +0.9395 +0.8715  +0.8715\ntibetan_butter_sculptor          +0.9771 +0.9408 +0.8701  +0.8701\nvillain                          +1.0000 +1.0000 +1.0000  +1.0000",
+  "git_commit": "75af565b293cfedb5f86d8f69f749903e289fccd",
+  "generated_at": "2026-06-06T03:59:36.500126+00:00",
+  "sonnet_model": "claude-sonnet-4-5-20250929"
+}
