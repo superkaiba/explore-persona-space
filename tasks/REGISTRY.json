@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 533,
+  "highest_id": 534,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3109,6 +3109,13 @@
       "path": "tasks/running/533",
       "status": "running",
       "title": "Re-train marker-less role-vs-system at lr=5e-6, r=32 \u2014 non-saturated anchor in the {1,2,3,5}-epoch grid (corrective re-run of #529)"
+    },
+    "534": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/534",
+      "status": "proposed",
+      "title": "Re-eval the 4 uploaded intermediate-fraction adapters to close #530's planned 4-fraction trajectory"
     },
     "54": {
       "has_clean_result": false,
