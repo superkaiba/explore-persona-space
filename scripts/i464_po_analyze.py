@@ -245,6 +245,93 @@ def _symmetric_leakage(arm: enc.Arm, seed: int) -> tuple[float, list[float]]:
     return float(np.mean(raw)), raw
 
 
+def _wrong_logp_per_seed_for(
+    arm: enc.Arm, persona: enc.Persona, seeds: tuple[int, ...]
+) -> list[float]:
+    """Wrong-slot ` ※` mean log P at ``(arm, persona)`` for each seed.
+
+    Used by the cn_i533 per-persona paired-d block (see plan §4 (d)):
+    reads at the persona's selected anchor (via ``_epoch_for(persona)``)
+    the per-cell JSON under the OFF-DIAGONAL eval encoding — the
+    same wrong-slot probe ``_symmetric_leakage`` reads, but kept
+    per-persona instead of averaged across personas BEFORE forming
+    the paired d. Returns one value per seed.
+    """
+    e_off = _other_eval_encoding_for(arm, persona)
+    out: list[float] = []
+    for seed in seeds:
+        payload = _load_per_cell(arm, seed, persona, e_off)
+        if payload is None:
+            raise FileNotFoundError(
+                f"per-persona wrong-slot: missing per-cell JSON for "
+                f"{_po_cell_label(arm, seed, persona, _epoch_for(persona))}/{e_off}"
+            )
+        out.append(float(payload["g_logprob"]))
+    return out
+
+
+def _per_persona_paired_d_block(
+    seeds: tuple[int, ...], n_boot: int
+) -> dict[str, dict[str, dict[str, float | bool]]]:
+    """Build the 4-cell per-persona paired-d block for cn_i533.
+
+    Returns ``{persona: {contrast: {mean, ci_lo, ci_hi, sign_agreement,
+    d_per_seed, n_seeds}}}`` for persona ∈ {pirate, villain} and
+    contrast ∈ {plain, padded}. plain = log P_system_plain - log P_role;
+    padded = log P_system_padded - log P_role. Per-persona means EACH
+    persona's wrong-slot log-prob is read at its OWN selected anchor
+    (``_epoch_for(persona)``) — the analyzer-level helpers ``_load_per_cell``
+    + ``_epoch_for`` already splice the right per-persona epoch into
+    the per-cell filename.
+
+    The plan brief's "sign_agreement" is the fraction of bootstrap
+    resampled means that share the central estimate's sign.
+
+    See plan §4 "Pseudocode for new code" item (d): the inherited
+    cn_i529 path averages personas via ``_symmetric_leakage`` BEFORE
+    forming d (so the saturated-floor #529 case had no per-persona
+    resolution), but the #533 lr=5e-6 corrective re-run needs the
+    per-persona view to drive the H1/H0 verdict. The persona-averaged
+    ``headline.d_seed_plain`` / ``headline.d_seed_padded`` keys stay as
+    a SECONDARY cross-check.
+    """
+    out: dict[str, dict[str, dict[str, float | bool]]] = {}
+    rng = np.random.default_rng(42)
+    for persona in enc.PERSONAS:
+        # Read per-arm per-seed wrong-slot log P at this persona's
+        # selected anchor.
+        L_plain = _wrong_logp_per_seed_for("system_plain", persona, seeds)
+        L_padded = _wrong_logp_per_seed_for("system_padded", persona, seeds)
+        L_role = _wrong_logp_per_seed_for("role", persona, seeds)
+        d_plain = [a - b for a, b in zip(L_plain, L_role, strict=True)]
+        d_padded = [a - b for a, b in zip(L_padded, L_role, strict=True)]
+        out[persona] = {}
+        for contrast_name, d_per_seed in (("plain", d_plain), ("padded", d_padded)):
+            arr = np.array(d_per_seed, dtype=float)
+            n = len(arr)
+            means = np.empty(n_boot)
+            for b in range(n_boot):
+                idx = rng.integers(0, n, size=n)
+                means[b] = arr[idx].mean()
+            lo, hi = np.quantile(means, [0.025, 0.975])
+            central = float(arr.mean())
+            central_sign = 1.0 if central > 0 else (-1.0 if central < 0 else 0.0)
+            if central_sign == 0.0:
+                sign_agree = 0.5
+            else:
+                sign_agree = float(np.mean(np.sign(means) == central_sign))
+            out[persona][contrast_name] = {
+                "mean": central,
+                "ci_lo_95": float(lo),
+                "ci_hi_95": float(hi),
+                "sign_agreement": sign_agree,
+                "d_per_seed": d_per_seed,
+                "n_seeds": n,
+                "n_bootstrap": n_boot,
+            }
+    return out
+
+
 def _own_persona_elicitation(arm: enc.Arm, seed: int) -> tuple[list[float], list[str]]:
     """H1 gate input: raw trained log P on each (training_persona, own-encoding) cell.
 
@@ -683,6 +770,45 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     if args.variant in ("cn_i529", "cn_i533"):
         payload["selected_anchor"] = _ACTIVE.get("selected_epoch_per_persona")
         payload["anchor_file"] = args.anchor_file
+
+    # cn_i533 ONLY: per-persona paired-bootstrap extension (plan §4 (d)
+    # "Pseudocode for new code"). The inherited cn_i529 path's
+    # _symmetric_leakage averages personas BEFORE forming d, so the
+    # persona-averaged headline.d_seed_plain / headline.d_seed_padded
+    # can hide an opposite-signed per-persona pair. The H1/H0 verdict
+    # at the selected anchor is driven from the 4 per-persona cells
+    # added here (pirate x plain, pirate x padded, villain x plain,
+    # villain x padded). The persona-averaged keys stay as a SECONDARY
+    # cross-check; this block does NOT modify them. Skipped when the
+    # headline is in a non-stat status (descriptive-only / dynamic-
+    # range failed) — the per-persona view is only meaningful when the
+    # variant-level bootstrap is also meaningful.
+    if args.variant == "cn_i533" and headline_status not in (
+        "inconclusive_descriptive_only",
+        "inconclusive_dynamic_range_failed",
+    ):
+        try:
+            per_persona = _per_persona_paired_d_block(seeds=tuple(args.seeds), n_boot=N_BOOTSTRAP)
+            payload["headline"]["per_persona"] = per_persona
+            for persona_key, by_contrast in per_persona.items():
+                for contrast_key, stats in by_contrast.items():
+                    logger.info(
+                        "cn_i533 per-persona d[%s][%s]: mean=%.3f CI=[%.3f, %.3f] "
+                        "sign_agreement=%.3f",
+                        persona_key,
+                        contrast_key,
+                        stats["mean"],
+                        stats["ci_lo_95"],
+                        stats["ci_hi_95"],
+                        stats["sign_agreement"],
+                    )
+        except FileNotFoundError as e:
+            if args.allow_partial:
+                logger.warning("cn_i533 per-persona paired-d (partial): %s", e)
+                payload["headline"]["per_persona_status"] = "partial_missing_cells"
+                payload["headline"]["per_persona_partial_reason"] = str(e)
+            else:
+                raise
     out_path_active.parent.mkdir(parents=True, exist_ok=True)
     out_path_active.write_text(json.dumps(payload, indent=2))
     logger.info(
