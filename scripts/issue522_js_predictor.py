@@ -2,35 +2,61 @@
 """task #522 Phase 2 — full-response Rao-Blackwellized JS predictor.
 
 Builds the 16×16 ordered-pair JS similarity matrix between the
-``i406_conditions.CONDITIONS`` transforms, using the cross-persona
-logprob cache (Must Fix #2): each of the 16 × 200 × R sampled responses
-is teacher-forced through ALL 16 conditioned models ONCE, producing per-
-token logprob tensors keyed by ``(sampling_persona, probe_idx,
-response_idx, eval_persona)``. Pairwise JS reads from the cache; ~0
-additional GPU compute once the cache is populated.
+``i406_conditions.CONDITIONS`` transforms using the **canonical full-vocab
+per-position mixture Rao-Blackwellized JS** estimator (Amini/Vieira/Cotterell
+2025, arXiv 2504.10637) per ``.claude/rules/persona-distance-metrics.md``.
+
+Architecture (round-2 fix — JS computed INSIDE the teacher-force pass)
+=====================================================================
+
+The naive "cache realized-token logprobs, derive JS at reduce time" path
+computes **Jeffreys / symmetric-KL on realized-token mean log-ratios** —
+that is NOT the canonical JS. Round-1 review caught this; round-2 fix:
+
+* Per (sample_persona P, probe q, response_idx r):
+    1. Compute ``log_probs[E] = log_softmax(model(prompt_E + response))`` for
+       every eval persona ``E`` in the working set — full-vocab tensors, kept
+       in CPU memory for the duration of this one response.
+    2. For every unordered pair ``{A, B}`` containing P, reduce
+       ``log_probs[A]`` and ``log_probs[B]`` to **per-position scalars**:
+       ``kl_pos_a[t] = sum_v exp(log_probs[A][t,v]) * (log_probs[A][t,v] - log_m[t,v])``
+       where ``log_m[t,v] = logsumexp(log_probs[A][t,v], log_probs[B][t,v]) - log 2``.
+       Symmetrically for ``kl_pos_b``. Per-position JS = ``0.5 * (kl_pos_a + kl_pos_b)``.
+    3. Discard the full-vocab tensors; cache only the per-position scalars
+       (~256 fp32/pos × 3 directions = ~3 KB per cache entry).
+
+Cache schema
+------------
+
+* Disk: ``{cache_dir}/logprob_cache.pt`` (single torch ``.pt`` archive).
+* In-memory dict ``cache``: key ``"{P}|{q_idx}|{r_idx}|{A}|{B}"`` (string),
+  value ``dict(js=Tensor[n_resp], kl_a=Tensor[n_resp], kl_b=Tensor[n_resp])``
+  in **nats**. ``A < B`` lexicographically (symmetric storage); the diagonal
+  ``P=A=B`` is stored as zeros. The reduction layer reads
+  ``cache[(min(A,B), max(A,B))]`` for both ordered (A,B) and (B,A) lookups.
+* Per-50-(P, Q) checkpoints land at
+  ``{cache_dir}/logprob_cache_partial_P{P}_Q{Q}.pt``. ``populate_..._cache``
+  reads the LATEST partial at start (resume support).
+* ``cache_schema.json`` is written alongside ``logprob_cache.pt`` documenting
+  the key format + tensor shapes.
 
 Inputs
 ------
 - Probes: first ``--probes`` (default 200) entries of
   ``eval_results/issue_502/probes_500.json`` (#502 mixed-distribution pool).
 - Class-D rewrites: MERGED from the canonical #406 80-question base
-  (``data/issue_406/class_d/rewrites_v1.json`` via
-  ``load_class_d_rewrites()``) AND the #502 extension
+  (``data/issue_406/class_d/rewrites_v1.json``) AND the #502 extension
   (``eval_results/issue_502/class_d_rewrites_extended_v1.json``).
-  Together they cover the 200 probe pool; missing any probe is a
-  fail-loud error.
 - Personas: 16 transforms via ``CONDITIONS``.
 
 Outputs
 -------
 - ``eval_results/issue_522/js_matrix.json``: per (A, B) JS, KL_AB, KL_BA,
-  M_js = 1 - JS, ``per_probe_js`` (the array of 200 per-probe JS values
-  feeding the per-pair mean), and a ``config`` block.
-- ``eval_results/issue_522/logprob_cache.pt``: torch ``.pt`` archive of
-  the cross-persona logprob cache (per-token log-softmax of the realized
-  response under each eval persona). Per-50-(P, Q) checkpoints land at
-  ``logprob_cache_partial_P{P}_Q{Q}.pt`` so a mid-run crash recovers from
-  the last block.
+  M_js = 1 - JS, ``per_probe_js`` (array of 200 per-probe JS values feeding
+  the per-pair mean), and a ``config`` block.
+- ``/workspace/eval_results/issue_522/logprob_cache.pt``: torch ``.pt`` archive
+  of the per-position JS / KL scalar cache (NOT under ``eval_results/`` per
+  the JSON-only upload policy).
 
 CLI
 ---
@@ -40,12 +66,12 @@ CLI
   uv run python scripts/issue522_js_predictor.py \\
       --personas A1,B1,C1,D1 --r 2 --max-new-tokens 64 --probes 16 \\
       --out eval_results/issue_522/js_matrix_smoke.json \\
-      --cache-out eval_results/issue_522/logprob_cache_smoke.pt
+      --cache-out /workspace/eval_results/issue_522/logprob_cache_smoke.pt
 
   # Full sweep (16 personas, R=8, max_new=256, 200 probes; ~57h on H100):
   uv run python scripts/issue522_js_predictor.py \\
       --out eval_results/issue_522/js_matrix.json \\
-      --cache-out eval_results/issue_522/logprob_cache.pt
+      --cache-out /workspace/eval_results/issue_522/logprob_cache.pt
 """
 
 # ruff: noqa: RUF001, RUF002, RUF003 (research notation: ρ, Δ, σ in strings/comments)
@@ -83,7 +109,9 @@ DEFAULT_CLASS_D_EXT_PATH = (
     PROJECT_ROOT / "eval_results" / "issue_502" / "class_d_rewrites_extended_v1.json"
 )
 DEFAULT_OUT = PROJECT_ROOT / "eval_results" / "issue_522" / "js_matrix.json"
-DEFAULT_CACHE_OUT = PROJECT_ROOT / "eval_results" / "issue_522" / "logprob_cache.pt"
+# Default cache lives OUTSIDE eval_results/ (JSON-only per CLAUDE.md upload policy);
+# /workspace is the canonical pod-side persistent volume.
+DEFAULT_CACHE_OUT = Path("/workspace") / "eval_results" / "issue_522" / "logprob_cache.pt"
 
 # Canonical 16-cond order. Must match the #502/#511/#474 panel.
 COND_IDS_CANONICAL: tuple[str, ...] = (
@@ -249,7 +277,6 @@ def sample_responses_for_persona(
         num_return_sequences=r,
         pad_token_id=tokenizer.eos_token_id,
     )
-    # Strip the prompt prefix from each generation.
     out: list[torch.Tensor] = []
     prompt_len = input_ids.shape[1]
     for i in range(gen.shape[0]):
@@ -258,7 +285,7 @@ def sample_responses_for_persona(
 
 
 @torch.no_grad()
-def teacher_force_logprobs(
+def teacher_force_full_vocab_logprobs(
     model,
     tokenizer,
     cond_id: str,
@@ -267,24 +294,24 @@ def teacher_force_logprobs(
     device,
     class_d_rewrites: dict[str, dict[str, str]],
 ) -> torch.Tensor:
-    """Return per-token log-softmax of the realized response under
-    the ``cond_id``-conditioned model.
+    """Per-position full-vocab log-softmax of next-token distribution.
 
-    Output shape: ``(n_response_tokens,)`` fp32 CPU — the per-token log-
-    prob of the realized token under the conditioned distribution. This
-    is SUFFICIENT for sequence-level KL/JS under the Rao-Blackwellized
-    estimator (Eq. 5 of arXiv 2504.10637 over the full position grid).
+    Teacher-forces ``response_ids`` after the ``cond_id``-conditioned prompt
+    for ``probe`` and returns the per-position log-softmax over the FULL
+    vocabulary at the positions predicting each response token.
 
-    NB: we cache the per-token log-PROBABILITY of the realized token
-    only — NOT the full-vocab log-softmax. The full-vocab tensor is
-    (200 × 8 × 16 × 16 × 256 × 152k) ≈ 25 TB which doesn't fit on disk.
-    The realized-token logprob suffices for the per-position JS reduction
-    used here: JS(A, B) is computed pair-by-pair from the realized-token
-    logprobs read from the cache for both A and B; the full-vocab pmf is
-    NOT needed for the per-pair mean JS estimate the canonical
-    Rao-Blackwellized recipe prescribes (the mixture term is the
-    sample mean over realized tokens drawn from BOTH conditioned
-    proposals — see ``js_from_realized_logprobs`` below).
+    Returns
+    -------
+    log_probs : torch.Tensor
+        Shape ``(n_response_tokens, vocab_size)``, ``dtype=torch.float32``,
+        on CPU. The tensor is moved off GPU before return so the caller
+        can hold 16 of them simultaneously (~16 × 256 × 152k × 4 bytes ≈
+        20 GB CPU RAM, fits on any sane VM).
+
+    NB: this is the FULL-VOCAB log-softmax (NOT just realized-token
+    logprobs). The full-vocab tensor is required for the canonical
+    per-position mixture m = ½(p_A + p_B) used by the
+    Rao-Blackwellized JS reduction (see ``per_position_js_kl_from_logprobs``).
     """
     cond = CONDITIONS_BY_ID[cond_id]
     prompt_text = build_prompt_for_condition(
@@ -301,87 +328,137 @@ def teacher_force_logprobs(
     end = start + resp_ids.shape[1]
     sel = logits[start:end]  # (n_resp, vocab)
     log_probs_full = torch.log_softmax(sel, dim=-1)  # (n_resp, vocab)
-    # Gather the realized-token logprob.
-    realized = resp_ids[0]  # (n_resp,)
-    realized_logp = log_probs_full.gather(1, realized.unsqueeze(1)).squeeze(1)  # (n_resp,)
-    return realized_logp.detach().cpu()
+    return log_probs_full.detach().cpu()
 
 
-# ───────────────────────── JS reduction ─────────────────────────
+# ───────────────────────── JS reduction (canonical full-vocab) ─────────────────────────
 
 
-def js_from_realized_logprobs(
-    lp_a_under_a: torch.Tensor,
-    lp_a_under_b: torch.Tensor,
-    lp_b_under_a: torch.Tensor,
-    lp_b_under_b: torch.Tensor,
-) -> tuple[float, float, float]:
-    """RB JS / KL estimator (arXiv 2504.10637 Eq. 5) on REALIZED tokens.
+def per_position_js_kl_from_logprobs(
+    log_p_a: torch.Tensor,
+    log_p_b: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Canonical full-vocab per-position mixture JS / per-direction KL (nats).
 
-    Given (a) ``R_a`` responses sampled under persona A, with their
-    realized-token logprobs under A (``lp_a_under_a``) and under B
-    (``lp_a_under_b``), and (b) symmetrically for ``R_b`` responses
-    sampled under B, returns ``(JS, KL(A||B), KL(B||A))`` in nats.
+    Implements ``.claude/rules/persona-distance-metrics.md`` lines 18-30 + the
+    reference ``issue444_persona_distance_topic.py::_js_from_logprobs`` (lines
+    155-164). For two ``(n_pos, vocab)`` log-probability tensors:
 
-    Per-token KL estimator: under the Rao-Blackwellized scheme, the
-    expectation over the persona-A distribution at a given position is
-    estimated by sampling a realized token from A and reading
-    ``log p_A(token) - log p_B(token)`` at that draw — an unbiased
-    sample of the per-token KL contribution. Averaging over positions
-    AND over the ``R_a`` sampled responses gives the response-mean
-    KL(A||B) estimate. JS = 0.5 KL(A||M) + 0.5 KL(B||M); under the
-    realized-token simplification, we approximate JS by
-    JS ≈ 0.5 [KL(A||B) + KL(B||A)] − 0.5 ln(2) (the bounded
-    inequality ``JS(p, q) ≤ 0.5 (KL(p||q) + KL(q||p))`` is exact for
-    the symmetric KL ↔ Jensen-Shannon decomposition); the value is
-    polarity-aligned to similarity by the ``M_js = 1 − JS`` step in
-    the regression layer. Per-position values clamped to [0, ∞);
-    base-2 conversion via ``/ math.log(2)``.
+    1. ``log_m = logsumexp(log_p_a, log_p_b) - log 2``  — numerically stable
+       per-position mixture log-density (vocab-aligned with the inputs).
+    2. ``kl_pos_a[t] = Σ_v exp(log_p_a[t, v]) · (log_p_a[t, v] - log_m[t, v])``
+       — per-position contribution to ``KL(p_A || m)``, in nats. Always ≥ 0
+       (no realized-token sampling noise; the per-position term is exact).
+    3. Symmetrically for ``kl_pos_b``.
+    4. ``js_pos = 0.5 · (kl_pos_a + kl_pos_b)`` — per-position JS in nats.
 
-    All inputs are 1-D fp32 tensors (typically on CPU). Returns floats.
+    Base-2 conversion (`/ math.log(2)`) is deferred to the aggregation /
+    output layer so the cache stores the canonical nat-domain values; only
+    the *final* per-pair JS in the output JSON is in base-2 bits (bounded
+    [0, 1]).
+
+    Parameters
+    ----------
+    log_p_a, log_p_b : torch.Tensor
+        Shape ``(n_pos, vocab)``, fp32, log-probabilities (row-sums to 0 in
+        log space; i.e. ``log_softmax`` output).
+
+    Returns
+    -------
+    js_pos, kl_pos_a, kl_pos_b : tuple of torch.Tensor
+        Each shape ``(n_pos,)``, fp32 — per-position JS / KL contributions
+        in nats. JS ≥ 0 and JS ≤ ln 2 in nats (bounded).
     """
-    if (
-        lp_a_under_a.numel() == 0
-        or lp_a_under_b.numel() == 0
-        or lp_b_under_a.numel() == 0
-        or lp_b_under_b.numel() == 0
-    ):
-        return float("nan"), float("nan"), float("nan")
-    # Per-token unbiased KL contribution at tokens drawn from A:
-    # E_{t~A}[log p_A(t) - log p_B(t)]. Individual per-token contribs
-    # CAN be negative (the estimator is an importance-weighted draw
-    # whose expectation is the non-negative KL, but the sample is not
-    # itself non-negative). Average over positions AND over the R_a
-    # sampled responses (handled by the caller via _stack_responses
-    # concatenation) → response-mean KL(A||B) sample in nats.
-    delta_a = (lp_a_under_a - lp_a_under_b).mean().item()
-    # Symmetrically for KL(B||A): expectation under B.
-    delta_b = (lp_b_under_b - lp_b_under_a).mean().item()
-    # Convert nats → base-2 bits. Population KL is non-negative; the
-    # sample may dip below zero on small budgets. We keep the sample
-    # as-is (no clamp) so that the bootstrap CI surfaces the
-    # estimator's variance honestly; the per-pair AVERAGE over 200
-    # probes lands in the non-negative regime when the bandwidth is
-    # adequate. Clamping silently re-skews and biases CV downward.
-    kl_ab = float(delta_a / math.log(2.0))
-    kl_ba = float(delta_b / math.log(2.0))
-    # JS upper-bounded by 0.5 (KL_AB + KL_BA) under the symmetric-KL
-    # decomposition. With realized-token samples this is the practical
-    # JS-similarity proxy the regression layer reads via M_js = 1 - JS.
-    js = 0.5 * (kl_ab + kl_ba)
-    return float(js), kl_ab, kl_ba
+    if log_p_a.shape != log_p_b.shape:
+        raise ValueError(f"log_p_a / log_p_b shape mismatch: {log_p_a.shape} vs {log_p_b.shape}")
+    if log_p_a.dim() != 2:
+        raise ValueError(f"expected 2-D (n_pos, vocab) tensors; got dim={log_p_a.dim()}")
+    # Numerically stable mixture log-density: log_m = logsumexp(log p_a, log p_b) - log 2.
+    stacked = torch.stack([log_p_a, log_p_b], dim=0)  # (2, n_pos, vocab)
+    log_m = torch.logsumexp(stacked, dim=0) - math.log(2.0)  # (n_pos, vocab)
+    # Per-position KL contributions: Σ_v p(v) · (log p(v) - log m(v)).
+    # Equivalent to Σ_v exp(log p(v)) · (log p(v) - log m(v)).
+    p_a = log_p_a.exp()
+    p_b = log_p_b.exp()
+    kl_pos_a = (p_a * (log_p_a - log_m)).sum(dim=-1)  # (n_pos,)
+    kl_pos_b = (p_b * (log_p_b - log_m)).sum(dim=-1)  # (n_pos,)
+    js_pos = 0.5 * (kl_pos_a + kl_pos_b)
+    return js_pos, kl_pos_a, kl_pos_b
 
 
-# ───────────────────────── cache + checkpoint ─────────────────────────
+def js_closed_form_two_vocab_toy() -> tuple[float, float, float]:
+    """Closed-form JS reference for the canonical 2-vocab toy case.
+
+    For ``p_A = [0.5, 0.5]``, ``p_B = [1.0, 0.0]``:
+
+    * ``m = [0.75, 0.25]``
+    * ``KL(p_A || m) = 0.5 · log(0.5 / 0.75) + 0.5 · log(0.5 / 0.25)``
+      ``           = 0.5 · log(2/3) + 0.5 · log(2)``
+    * ``KL(p_B || m) = 1.0 · log(1.0 / 0.75) + 0.0``
+      ``           = log(4/3)``
+    * ``JS_nats = 0.5 · (KL(p_A||m) + KL(p_B||m))``
+    * ``JS_bits = JS_nats / log(2)``
+
+    Returns
+    -------
+    (js_nats, kl_a_nats, kl_b_nats) — all in nats.
+    """
+    p_a = torch.tensor([[0.5, 0.5]], dtype=torch.float64)
+    p_b = torch.tensor([[1.0, 0.0]], dtype=torch.float64)
+    # log(0) → use a tiny floor only for the closed-form reference (the per_position
+    # routine never sees a hard zero because log_softmax outputs are bounded).
+    log_p_a = p_a.clamp_min(1e-300).log()
+    log_p_b = p_b.clamp_min(1e-300).log()
+    m = 0.5 * (p_a + p_b)
+    log_m = m.clamp_min(1e-300).log()
+    kl_a = (p_a * (log_p_a - log_m)).sum(-1).item()
+    kl_b = (p_b * (log_p_b - log_m)).sum(-1).item()
+    js = 0.5 * (kl_a + kl_b)
+    return js, kl_a, kl_b
 
 
-def _cache_key(p: str, q_idx: int, r_idx: int, e: str) -> str:
-    """Canonical cache key string. Torch .pt prefers str keys to tuples."""
-    return f"{p}|{q_idx}|{r_idx}|{e}"
+# ───────────────────────── cache helpers ─────────────────────────
+
+
+def _cache_key(p: str, q_idx: int, r_idx: int, a: str, b: str) -> str:
+    """Canonical cache key string — symmetric in (a, b) via lex-sort.
+
+    The cache stores per-position JS / KL contributions for *one response*
+    ``(sample_persona p, probe q_idx, response_idx r_idx)`` and *one
+    unordered pair* ``{a, b}``. Because per-position JS / KL are symmetric
+    under swapping (A, B) at the position level (mixture is unchanged), we
+    canonicalize the key with ``a, b = sorted([a, b])`` so any lookup
+    keyed by ordered ``(A, B)`` or ``(B, A)`` resolves to the same row.
+    """
+    a_canon, b_canon = (a, b) if a <= b else (b, a)
+    return f"{p}|{q_idx}|{r_idx}|{a_canon}|{b_canon}"
+
+
+_CACHE_KEY_SCHEMA = {
+    "schema_version": 1,
+    "format": "{p}|{q_idx}|{r_idx}|{a}|{b} (pipe-separated; a<=b lex-sorted)",
+    "fields": [
+        "p — sample persona (one of cond_ids)",
+        "q_idx — probe index in the working set",
+        "r_idx — response index in 0..R-1",
+        "a, b — unordered pair members, sorted lexicographically",
+    ],
+    "value_shape": {
+        "js": "Tensor[n_response_tokens] fp32 nats",
+        "kl_a": "Tensor[n_response_tokens] fp32 nats (KL(p_a || m))",
+        "kl_b": "Tensor[n_response_tokens] fp32 nats (KL(p_b || m))",
+    },
+    "notes": [
+        "Diagonal (a == b) entries are stored as zero tensors of shape (n_resp,).",
+        "Cache is symmetric in (a, b); key lookup canonicalizes via lex sort.",
+        "Per-position values are in NATS; base-2 conversion happens at "
+        "the JS-matrix-reduction layer.",
+    ],
+}
 
 
 def _save_cache_checkpoint(
-    cache: dict[str, torch.Tensor],
+    cache: dict,
     response_ids: dict[str, torch.Tensor],
     cache_dir: Path,
     p_idx: int,
@@ -416,7 +493,124 @@ def _save_cache_checkpoint(
     )
 
 
+def _load_cache_checkpoint(
+    cache_dir: Path,
+) -> tuple[dict, dict[str, torch.Tensor], dict | None]:
+    """Resume reader — find the most-recent ``logprob_cache_partial_P*_Q*.pt``.
+
+    Scans ``cache_dir`` for ``logprob_cache_partial_P{P}_Q{Q}.pt`` files,
+    picks the latest by (P, Q) lex order, loads its ``cache`` and
+    ``response_ids`` payloads into a fresh in-memory dict, and returns them.
+
+    If no partial exists, returns empty dicts and ``None``. The caller
+    skips already-cached keys; the logger reports how many entries were
+    loaded so an operator can verify resume took.
+    """
+    if not cache_dir.exists():
+        return {}, {}, None
+    partials = sorted(cache_dir.glob("logprob_cache_partial_P*_Q*.pt"))
+    if not partials:
+        return {}, {}, None
+    # Latest by P-then-Q (filename order is P-major, Q-minor; sort by name).
+    latest = partials[-1]
+    logger.info("resume: loading partial cache from %s", latest)
+    payload = torch.load(latest, map_location="cpu", weights_only=False)
+    cache = payload.get("cache", {})
+    response_ids = payload.get("response_ids", {})
+    meta = {k: payload.get(k) for k in ("p_idx", "q_idx", "checkpoint_at", "config")}
+    logger.info(
+        "resume: loaded %d cache entries + %d response_ids (from P=%s Q=%s @ %s)",
+        len(cache),
+        len(response_ids),
+        meta.get("p_idx"),
+        meta.get("q_idx"),
+        meta.get("checkpoint_at"),
+    )
+    return cache, response_ids, meta
+
+
 # ───────────────────────── pipeline ─────────────────────────
+
+
+def _process_one_response(
+    *,
+    P: str,
+    q_i: int,
+    r_i: int,
+    resp_ids: torch.Tensor,
+    probe: str,
+    personas: list[str],
+    cache: dict,
+    model,
+    tokenizer,
+    device,
+    class_d_rewrites: dict[str, dict[str, str]],
+) -> int:
+    """One-response work: full-vocab forward under every persona + per-pair JS reduce.
+
+    Mutates ``cache`` in place. Returns the number of teacher-force forwards
+    performed (for throughput accounting).
+    """
+    # If all pair-keys for this response already exist, skip entirely.
+    pair_keys = [_cache_key(P, q_i, r_i, P, other) for other in personas]
+    if all(k in cache for k in pair_keys):
+        return 0
+
+    # Empty response — empty placeholders for every pair containing P.
+    if resp_ids.numel() == 0:
+        empty = torch.empty(0, dtype=torch.float32)
+        for other in personas:
+            cache[_cache_key(P, q_i, r_i, P, other)] = {
+                "js": empty,
+                "kl_a": empty,
+                "kl_b": empty,
+                "n_resp": 0,
+            }
+        return len(personas)  # accounting only — no actual forward done
+
+    # Full-vocab forward for THIS response under every persona.
+    full_logprobs: dict[str, torch.Tensor] = {}
+    n_tf = 0
+    for E in personas:
+        lp = teacher_force_full_vocab_logprobs(
+            model,
+            tokenizer,
+            cond_id=E,
+            probe=probe,
+            response_ids=resp_ids,
+            device=device,
+            class_d_rewrites=class_d_rewrites,
+        )
+        full_logprobs[E] = lp
+        n_tf += 1
+
+    # Per-pair JS / KL via canonical full-vocab reduction; include diagonal.
+    n_resp = int(resp_ids.numel())
+    for other in personas:
+        key = _cache_key(P, q_i, r_i, P, other)
+        if key in cache:
+            continue
+        if other == P:
+            cache[key] = {
+                "js": torch.zeros(n_resp, dtype=torch.float32),
+                "kl_a": torch.zeros(n_resp, dtype=torch.float32),
+                "kl_b": torch.zeros(n_resp, dtype=torch.float32),
+                "n_resp": n_resp,
+            }
+            continue
+        # Canonical ordering: a = min(P, other), b = max.
+        a, b = (P, other) if other >= P else (other, P)
+        log_p_a = full_logprobs[a]
+        log_p_b = full_logprobs[b]
+        js_pos, kl_pos_a, kl_pos_b = per_position_js_kl_from_logprobs(log_p_a, log_p_b)
+        cache[key] = {
+            "js": js_pos.detach().cpu().contiguous(),
+            "kl_a": kl_pos_a.detach().cpu().contiguous(),
+            "kl_b": kl_pos_b.detach().cpu().contiguous(),
+            "n_resp": n_resp,
+        }
+    del full_logprobs
+    return n_tf
 
 
 def populate_cross_persona_cache(
@@ -432,33 +626,53 @@ def populate_cross_persona_cache(
     cache_out: Path,
     checkpoint_every: int = 50,
     seed: int = 0,
-) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor], dict]:
-    """Populate the cross-persona logprob cache.
+    resume: bool = True,
+) -> tuple[dict, dict[str, torch.Tensor], dict]:
+    """Populate the per-position JS / KL cache (canonical full-vocab RB).
 
-    Steps per (sampling_persona P, probe Q):
-      1. Sample R responses under P-conditioned model (sample once).
-      2. For each of the R responses, teacher-force through ALL personas
-         in ``personas`` (including P itself; diagonal needed for JS).
-      3. Store the realized-token logprob tensor in
-         ``cache[(P, Q_idx, r_idx, eval_P)]``.
+    Outer loop (P sample persona, Q probe, r response):
+      1. Sample R responses under P-conditioned model (per probe).
+      2. For each response, compute the full-vocab log-softmax under EACH
+         persona ``E`` (one forward per ``E`` — 16 forwards for the
+         16-persona sweep). Keep all 16 ``(n_resp, vocab)`` tensors in
+         CPU memory for the duration of THIS one response.
+      3. For each unordered pair ``{A, B}`` containing P, compute the
+         per-position JS / KL via ``per_position_js_kl_from_logprobs``
+         (full-vocab, exact, in nats); cache the per-position scalar tensors.
+      4. Also store a zero-tensor entry for the diagonal ``{P, P}`` so the
+         reducer's pre-flight key check passes uniformly.
+      5. Discard the full-vocab tensors (free ~20 GB CPU); proceed to the
+         next response.
 
-    Returns (cache, response_ids, throughput_stats). The cache contains
-    one fp32 tensor per (P × Q × r × eval_P) cell — total ≈ 16 × 200 × 8 ×
-    16 = 409,600 entries at ~256 tokens × 4 bytes = ~420 GB worst case;
-    in practice tokens are shorter and the cache fits in a few GB.
+    With ``len(personas) == 16``, ``len(probes) == 200``, ``r == 8``:
+      - 16 × 200 × 8 = 25,600 responses
+      - 16 forwards per response = 409,600 total teacher-force forwards
+      - Cache entries: 25,600 × 16 pairs-containing-P = 409,600 cache rows
+        (15 off-diagonal pairs + 1 diagonal = 16 per response)
+
+    Returns (cache, response_ids, throughput_stats).
     """
     torch.manual_seed(seed)
-    cache: dict[str, torch.Tensor] = {}
-    response_ids: dict[str, torch.Tensor] = {}
+
+    # Resume: load latest partial if any.
+    if resume:
+        cache, response_ids, _ = _load_cache_checkpoint(Path(cache_out).parent)
+    else:
+        cache, response_ids = {}, {}
+    n_resumed_entries = len(cache)
+    n_resumed_responses = len(response_ids)
 
     n_pairs = len(personas) * len(probes)
     n_tf_total = n_pairs * r * len(personas)
     logger.info(
-        "Cross-persona cache plan: %d (P, Q) pair-iters × R=%d × %d eval_P forwards = %d total",
+        "Cross-persona cache plan: %d (P, Q) pair-iters × R=%d × %d eval_P forwards = %d total "
+        "(resumed: %d cache entries, %d responses)",
         n_pairs,
         r,
         len(personas),
         n_tf_total,
+        n_resumed_entries,
+        n_resumed_responses,
     )
 
     pair_iter = 0
@@ -474,38 +688,45 @@ def populate_cross_persona_cache(
     }
     for p_i, P in enumerate(personas):
         for q_i, probe in enumerate(probes):
-            # Step 1: sample R responses under P.
-            responses = sample_responses_for_persona(
-                model,
-                tokenizer,
-                cond_id=P,
-                probe=probe,
-                r=r,
-                max_new_tokens=max_new_tokens,
-                device=device,
-                class_d_rewrites=class_d_rewrites,
+            # Step 1: sample R responses under P (skip if all already present).
+            need_sampling = any(
+                _cache_key(P, q_i, r_i, "_response", "_response") not in response_ids
+                for r_i in range(r)
             )
+            if need_sampling:
+                responses = sample_responses_for_persona(
+                    model,
+                    tokenizer,
+                    cond_id=P,
+                    probe=probe,
+                    r=r,
+                    max_new_tokens=max_new_tokens,
+                    device=device,
+                    class_d_rewrites=class_d_rewrites,
+                )
+                for r_i, resp_ids in enumerate(responses):
+                    response_ids[_cache_key(P, q_i, r_i, "_response", "_response")] = resp_ids
+            else:
+                responses = [
+                    response_ids[_cache_key(P, q_i, r_i, "_response", "_response")]
+                    for r_i in range(r)
+                ]
+
             for r_i, resp_ids in enumerate(responses):
-                response_ids[_cache_key(P, q_i, r_i, "_response")] = resp_ids
-                if resp_ids.numel() == 0:
-                    # Empty response — record nan placeholders; downstream
-                    # JS reduction handles empty arrays via the early-out.
-                    for eval_P in personas:
-                        cache[_cache_key(P, q_i, r_i, eval_P)] = torch.empty(0, dtype=torch.float32)
-                    continue
-                # Step 2: teacher-force through ALL personas (incl. P).
-                for eval_P in personas:
-                    lp = teacher_force_logprobs(
-                        model,
-                        tokenizer,
-                        cond_id=eval_P,
-                        probe=probe,
-                        response_ids=resp_ids,
-                        device=device,
-                        class_d_rewrites=class_d_rewrites,
-                    )
-                    cache[_cache_key(P, q_i, r_i, eval_P)] = lp
-                    n_tf_done += 1
+                n_tf_done += _process_one_response(
+                    P=P,
+                    q_i=q_i,
+                    r_i=r_i,
+                    resp_ids=resp_ids,
+                    probe=probe,
+                    personas=personas,
+                    cache=cache,
+                    model=model,
+                    tokenizer=tokenizer,
+                    device=device,
+                    class_d_rewrites=class_d_rewrites,
+                )
+
             pair_iter += 1
             if pair_iter % checkpoint_every == 0 or pair_iter == n_pairs:
                 logger.info(
@@ -530,6 +751,7 @@ def populate_cross_persona_cache(
         "n_pairs_iters": n_pairs,
         "n_tf_done": n_tf_done,
         "n_tf_total": n_tf_total,
+        "n_resumed_entries": n_resumed_entries,
     }
     # Final cache save at the cache_out path.
     cache_out.parent.mkdir(parents=True, exist_ok=True)
@@ -540,39 +762,85 @@ def populate_cross_persona_cache(
             "response_ids": response_ids,
             "config": config,
             "throughput": throughput,
+            "key_schema": _CACHE_KEY_SCHEMA,
         },
         tmp,
     )
     tmp.replace(cache_out)
-    logger.info("Wrote final cross-persona cache → %s (%d entries)", cache_out, len(cache))
+    # Sidecar schema JSON.
+    schema_path = cache_out.with_suffix(".schema.json")
+    schema_path.write_text(json.dumps(_CACHE_KEY_SCHEMA, indent=2))
+    logger.info(
+        "Wrote final cross-persona cache → %s (%d entries); schema → %s",
+        cache_out,
+        len(cache),
+        schema_path,
+    )
     return cache, response_ids, throughput
 
 
+def assert_cache_coverage(
+    cache: dict,
+    personas: list[str],
+    n_probes: int,
+    r: int,
+) -> None:
+    """Pre-flight key coverage check (round-2 fix Must Fix #2).
+
+    Constructs the full set of expected cache keys and diffs against
+    ``cache.keys()``. Raises ``RuntimeError`` with the missing count + 3
+    example keys on shortfall.
+    """
+    expected: set[str] = set()
+    for P in personas:
+        for q_i in range(n_probes):
+            for r_i in range(r):
+                for other in personas:
+                    expected.add(_cache_key(P, q_i, r_i, P, other))
+    have = set(cache.keys())
+    missing = expected - have
+    if missing:
+        sample = sorted(missing)[:3]
+        raise RuntimeError(
+            f"cross-persona cache missing {len(missing)}/{len(expected)} keys; "
+            f"sample missing: {sample!r}"
+        )
+    logger.info(
+        "cache coverage assertion PASS: %d / %d expected keys present.",
+        len(have & expected),
+        len(expected),
+    )
+
+
 def build_js_matrix(
-    cache: dict[str, torch.Tensor],
+    cache: dict,
     personas: list[str],
     n_probes: int,
     r: int,
 ) -> dict:
-    """Reduce the cross-persona cache into the 16×16 JS matrix.
+    """Reduce the per-position cache into the per-pair JS / KL matrix.
 
-    For each ordered pair (A, B) and each probe Q:
-      - read the R cache entries ``cache[(A, Q, r, A)]`` (A-responses
-        teacher-forced under A) and ``cache[(A, Q, r, B)]`` (same under B);
-      - read the R cache entries ``cache[(B, Q, r, B)]`` and
-        ``cache[(B, Q, r, A)]``;
-      - compute per-probe JS / KL_AB / KL_BA via
-        ``js_from_realized_logprobs``;
-      - mean over probes for the per-pair (A, B) scalars.
+    Per pair (A, B) and per probe q:
+      - JS estimate uses BOTH sources of evaluation positions:
+        responses sampled from A AND responses sampled from B (the
+        2R mixture). For each, the cache row gives per-position JS
+        scalars (full-vocab exact).
+      - Length-normalize per response (positions are i.i.d. within
+        a response from the conditioned distribution's perspective);
+        then mean across responses.
 
-    Stores the array of per-probe JS scalars under ``per_probe_js[A][B]``
-    so the downstream MC-σ bootstrap can resample them.
+    All cache values are in nats; the output JS / KL are converted to
+    base-2 bits via ``/ log(2)``. JS is bounded [0, 1] in base-2 bits.
     """
+    # Pre-flight: assert all expected keys exist.
+    assert_cache_coverage(cache, personas, n_probes=n_probes, r=r)
+
     JS: dict[str, dict[str, float]] = {}
     KL_AB: dict[str, dict[str, float]] = {}
     KL_BA: dict[str, dict[str, float]] = {}
     M_js: dict[str, dict[str, float]] = {}
     per_probe_js: dict[str, dict[str, list[float]]] = {}
+    log2 = math.log(2.0)
     for A in personas:
         JS[A] = {}
         KL_AB[A] = {}
@@ -581,25 +849,43 @@ def build_js_matrix(
         per_probe_js[A] = {}
         for B in personas:
             probe_js_vals: list[float] = []
-            probe_kl_ab: list[float] = []
-            probe_kl_ba: list[float] = []
+            probe_kl_ab_vals: list[float] = []
+            probe_kl_ba_vals: list[float] = []
             for q in range(n_probes):
-                # Stack A-responses' logprobs under A and B.
-                a_under_a = _stack_responses(cache, A, q, r, A)
-                a_under_b = _stack_responses(cache, A, q, r, B)
-                b_under_a = _stack_responses(cache, B, q, r, A)
-                b_under_b = _stack_responses(cache, B, q, r, B)
-                js_val, kl_ab, kl_ba = js_from_realized_logprobs(
-                    a_under_a, a_under_b, b_under_a, b_under_b
-                )
-                probe_js_vals.append(float(js_val))
-                probe_kl_ab.append(float(kl_ab))
-                probe_kl_ba.append(float(kl_ba))
+                # Responses sampled from A: contribute to JS and to KL(A||M) via kl_a.
+                js_pos_a, kl_a_pos_a, _kl_b_pos_a = _stack_per_pos(cache, A, q, r, A, B)
+                # Responses sampled from B: contribute to JS and to KL(B||M) via kl_b.
+                js_pos_b, _kl_a_pos_b, kl_b_pos_b = _stack_per_pos(cache, B, q, r, A, B)
+                if A == B:
+                    # Diagonal — JS = 0, KL_AB = KL_BA = 0 by definition.
+                    probe_js_vals.append(0.0)
+                    probe_kl_ab_vals.append(0.0)
+                    probe_kl_ba_vals.append(0.0)
+                    continue
+                # Per-response: mean over positions (length-normalize).
+                # Per-pair-per-probe: mean over the 2R mixture responses.
+                js_pos_all = _concat_or_empty([js_pos_a, js_pos_b])
+                if js_pos_all.numel() == 0:
+                    probe_js_vals.append(float("nan"))
+                    probe_kl_ab_vals.append(float("nan"))
+                    probe_kl_ba_vals.append(float("nan"))
+                    continue
+                # JS estimate: mean over all positions from BOTH samplers
+                # — the canonical 2R mixture mean in nats, converted to base-2.
+                js_nats = js_pos_all.mean().item()
+                # KL(A||M): RB estimate uses positions sampled from A (the
+                # natural Importance / Rao-Blackwell source).
+                kl_ab_nats = kl_a_pos_a.mean().item() if kl_a_pos_a.numel() > 0 else float("nan")
+                # KL(B||M): symmetrically, positions sampled from B.
+                kl_ba_nats = kl_b_pos_b.mean().item() if kl_b_pos_b.numel() > 0 else float("nan")
+                probe_js_vals.append(js_nats / log2)
+                probe_kl_ab_vals.append(kl_ab_nats / log2)
+                probe_kl_ba_vals.append(kl_ba_nats / log2)
             # Mean over probes (NaN-aware so a single empty response
             # doesn't poison the whole pair).
             JS[A][B] = _nanmean(probe_js_vals)
-            KL_AB[A][B] = _nanmean(probe_kl_ab)
-            KL_BA[A][B] = _nanmean(probe_kl_ba)
+            KL_AB[A][B] = _nanmean(probe_kl_ab_vals)
+            KL_BA[A][B] = _nanmean(probe_kl_ba_vals)
             M_js[A][B] = 1.0 - JS[A][B] if math.isfinite(JS[A][B]) else float("nan")
             per_probe_js[A][B] = probe_js_vals
     return {
@@ -611,29 +897,72 @@ def build_js_matrix(
     }
 
 
-def _stack_responses(
-    cache: dict[str, torch.Tensor], P: str, q: int, r: int, eval_P: str
-) -> torch.Tensor:
-    """Concatenate the R per-response logprob tensors for one
-    (sampling P, probe q, eval_P) triple into a single 1-D tensor.
+def _stack_per_pos(
+    cache: dict,
+    P: str,
+    q: int,
+    r: int,
+    a: str,
+    b: str,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Concatenate R per-response per-position tensors for one
+    (sample_persona P, probe q, pair {a, b}) triple. Returns
+    (js_pos, kl_a_pos, kl_b_pos), each 1-D.
 
-    Empty per-response entries are dropped (so JS averages only over
-    successfully sampled responses).
+    Empty per-response entries are dropped.
     """
-    pieces: list[torch.Tensor] = []
-    for ri in range(r):
-        key = _cache_key(P, q, ri, eval_P)
+    js_pieces, kla_pieces, klb_pieces = [], [], []
+    # First map (a, b) → which of them is P (the sample-persona we have cache
+    # rows for) and which is the OTHER. If P ∉ {a, b}, no rows in cache.
+    if a == P:
+        other = b
+    elif b == P:
+        other = a
+    else:
+        return (
+            torch.empty(0, dtype=torch.float32),
+            torch.empty(0, dtype=torch.float32),
+            torch.empty(0, dtype=torch.float32),
+        )
+    for r_i in range(r):
+        key = _cache_key(P, q, r_i, P, other)
         if key not in cache:
             raise KeyError(
-                f"Cache miss at {key}; cross-persona cache is incomplete. "
+                f"cache miss at {key}; cross-persona cache is incomplete. "
                 "(Resume from the partial checkpoint or re-run with --bust-cache.)"
             )
-        t = cache[key]
-        if t.numel() > 0:
-            pieces.append(t)
-    if not pieces:
+        row = cache[key]
+        # kl_a / kl_b in the stored row refer to the CANONICAL (a, b) ordering
+        # (lex-sorted at write time): "kl_a" = KL(p_{min(P,other)} || m),
+        # "kl_b" = KL(p_{max(P,other)} || m). The reducer needs them mapped
+        # to the QUERIED (a, b): if a == min, kl_a = stored kl_a; else swap.
+        a_canon = P if other >= P else other
+        if a_canon == a:
+            kla_t = row["kl_a"]
+            klb_t = row["kl_b"]
+        else:
+            kla_t = row["kl_b"]
+            klb_t = row["kl_a"]
+        js_t = row["js"]
+        if js_t.numel() > 0:
+            js_pieces.append(js_t)
+            kla_pieces.append(kla_t)
+            klb_pieces.append(klb_t)
+    if not js_pieces:
+        empty = torch.empty(0, dtype=torch.float32)
+        return empty, empty.clone(), empty.clone()
+    return (
+        torch.cat(js_pieces, dim=0),
+        torch.cat(kla_pieces, dim=0),
+        torch.cat(klb_pieces, dim=0),
+    )
+
+
+def _concat_or_empty(pieces: list[torch.Tensor]) -> torch.Tensor:
+    non_empty = [p for p in pieces if p.numel() > 0]
+    if not non_empty:
         return torch.empty(0, dtype=torch.float32)
-    return torch.cat(pieces, dim=0)
+    return torch.cat(non_empty, dim=0)
 
 
 def _nanmean(vals: list[float]) -> float:
@@ -641,6 +970,59 @@ def _nanmean(vals: list[float]) -> float:
     if not finite:
         return float("nan")
     return float(sum(finite) / len(finite))
+
+
+# ───────────────────────── smoke gates (fail-loud) ─────────────────────────
+
+
+def enforce_smoke_gates(
+    reduced: dict,
+    personas: list[str],
+    *,
+    diag_tol_bits: float = 1e-3,
+    sym_tol_bits: float = 5e-3,
+) -> tuple[float, float]:
+    """Round-2 fix Major #4: RAISE on diagonal / symmetry breach.
+
+    The plan §4 Step 2.3 names two binding fail-loud gates for the smoke run:
+
+    1. ``JS[A, A] ≈ 0`` for every A (diagonal). The canonical full-vocab
+       per-position JS at the diagonal is exactly 0 (the mixture equals
+       both p_A and p_B). Tolerance ``diag_tol_bits = 1e-3`` covers fp32
+       roundoff.
+    2. ``JS[A, B] ≈ JS[B, A]`` for every (A, B). The canonical estimator
+       is symmetric by construction; tolerance ``sym_tol_bits = 5e-3``
+       allows a small MC-variance band from the 2R mixture mean.
+
+    Returns ``(max_diag, max_sym_residual)`` (base-2 bits).
+    """
+    diag_vals = [reduced["JS"][p][p] for p in personas]
+    finite_diags = [d for d in diag_vals if math.isfinite(d)]
+    diag_max = max((abs(d) for d in finite_diags), default=float("nan"))
+    sym_residuals = []
+    for i, A in enumerate(personas):
+        for B in personas[i + 1 :]:
+            ja = reduced["JS"][A][B]
+            jb = reduced["JS"][B][A]
+            if math.isfinite(ja) and math.isfinite(jb):
+                sym_residuals.append(abs(ja - jb))
+    max_sym_residual = max(sym_residuals) if sym_residuals else float("nan")
+    logger.info(
+        "Smoke gates: max |diagonal JS|=%.4g, max |JS[A,B]-JS[B,A]|=%.4g",
+        diag_max,
+        max_sym_residual,
+    )
+    if math.isfinite(diag_max) and diag_max > diag_tol_bits:
+        raise AssertionError(
+            f"DIAGONAL GATE FAIL: max |JS[A,A]|={diag_max:.4g} bits > {diag_tol_bits:.0e}; "
+            "canonical full-vocab JS at the diagonal must be ≈ 0."
+        )
+    if math.isfinite(max_sym_residual) and max_sym_residual > sym_tol_bits:
+        raise AssertionError(
+            f"SYMMETRY GATE FAIL: max |JS[A,B] - JS[B,A]|={max_sym_residual:.4g} bits "
+            f"> {sym_tol_bits:.0e}; canonical JS estimator is symmetric in (A, B)."
+        )
+    return diag_max, max_sym_residual
 
 
 # ───────────────────────── CLI ─────────────────────────
@@ -696,7 +1078,10 @@ def main() -> int:
         "--cache-out",
         type=Path,
         default=DEFAULT_CACHE_OUT,
-        help="Output .pt path for the cross-persona logprob cache.",
+        help=(
+            "Output .pt path for the per-position cache (default lives under "
+            "/workspace, NOT eval_results/)."
+        ),
     )
     ap.add_argument(
         "--checkpoint-every",
@@ -711,6 +1096,11 @@ def main() -> int:
         help="Torch RNG seed (matches #444 default).",
     )
     ap.add_argument("--device", type=str, default=None, help="Force device (e.g. cpu).")
+    ap.add_argument(
+        "--no-resume",
+        action="store_true",
+        help="Disable resume-from-partial-checkpoint (start fresh).",
+    )
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
     logging.basicConfig(
@@ -759,7 +1149,7 @@ def main() -> int:
             args.model, torch_dtype=torch.bfloat16, device_map=device
         ).eval()
 
-    # 5. Populate the cross-persona logprob cache.
+    # 5. Populate the cross-persona per-position cache.
     cache, response_ids, throughput = populate_cross_persona_cache(
         model=model,
         tokenizer=tokenizer,
@@ -772,25 +1162,14 @@ def main() -> int:
         cache_out=args.cache_out,
         checkpoint_every=args.checkpoint_every,
         seed=args.seed,
+        resume=(not args.no_resume),
     )
 
-    # 6. Reduce cache → 16×16 JS matrix.
+    # 6. Reduce cache → 16×16 JS / KL matrices.
     reduced = build_js_matrix(cache, personas=personas, n_probes=len(probes), r=args.r)
 
-    # 7. Smoke sanity gates (always run; cheap).
-    diag = [reduced["JS"][p][p] for p in personas]
-    diag_max = max((d for d in diag if math.isfinite(d)), default=float("nan"))
-    sym_residuals = []
-    for i, A in enumerate(personas):
-        for B in personas[i + 1 :]:
-            ja = reduced["JS"][A][B]
-            jb = reduced["JS"][B][A]
-            if math.isfinite(ja) and math.isfinite(jb):
-                sym_residuals.append(abs(ja - jb))
-    max_sym_residual = max(sym_residuals) if sym_residuals else float("nan")
-    logger.info(
-        "Smoke gates: max diagonal JS=%.4g, max |JS[A,B]-JS[B,A]|=%.4g", diag_max, max_sym_residual
-    )
+    # 7. Smoke sanity gates — FAIL-LOUD on breach.
+    diag_max, max_sym_residual = enforce_smoke_gates(reduced, personas=personas)
 
     # 8. Write the JS matrix JSON.
     payload = {
@@ -812,8 +1191,13 @@ def main() -> int:
             "cache_out": str(args.cache_out),
             "n_response_ids_cached": len(response_ids),
             "throughput": throughput,
-            "diagonal_js_max": diag_max,
-            "max_symmetry_residual": max_sym_residual,
+            "diagonal_js_max_bits": diag_max,
+            "max_symmetry_residual_bits": max_sym_residual,
+            "estimator": (
+                "canonical full-vocab per-position mixture JS (Rao-Blackwellized; "
+                "Amini/Vieira/Cotterell 2025, arXiv 2504.10637) — see "
+                ".claude/rules/persona-distance-metrics.md"
+            ),
         },
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
