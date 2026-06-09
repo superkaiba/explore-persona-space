@@ -3339,16 +3339,22 @@ is the durable record consumed by re-entry idempotency.
    in-repo path is `docs/methodology/issue_<N>.md`, so the rendered
    gist filename is `issue_<N>.md` (no extra rename needed):
    ```bash
-   GIST_URL=$(gh gist create \
+   GIST_RAW=$(gh gist create \
      --desc "Task #<N> — Methodology, hyperparameters, and worked examples (Explore Persona Space)" \
-     docs/methodology/issue_<N>.md 2>&1 | tail -1)
+     docs/methodology/issue_<N>.md 2>&1)
+   # Extract the gist URL; on failure gh writes an error to stderr/stdout
+   # instead of a URL, so grep for the URL shape rather than `tail -1`
+   # (which would capture the error text as a bogus GIST_URL).
+   GIST_URL=$(printf '%s\n' "$GIST_RAW" | grep -oE 'https://gist\.github\.com/[^[:space:]]+' | tail -1)
+   if [ -z "$GIST_URL" ]; then gist_err=$(printf '%s\n' "$GIST_RAW" | tail -1); fi
    ```
    `gh gist create` defaults to a **secret** (unlisted) gist when the
    `--public` flag is absent (verified against `gh gist create --help`:
    *"By default, gists are secret; use `--public` to make publicly
    listed ones."*). **Fail-soft behavior** — if `gh` lacks the `gist`
-   scope, is offline, or returns a non-URL on stderr/stdout, capture
-   the error as `gist_err`, set `GIST_URL=""`, and continue. Do NOT
+   scope, is offline, or returns a non-URL on stderr/stdout, the grep
+   above leaves `GIST_URL` empty and captures the error as `gist_err`;
+   continue with the empty-`GIST_URL` path below. Do NOT
    block the step or the park on a missing gist; the committed repo
    doc is the durable artifact and the next step links to it either
    way.
@@ -3361,12 +3367,12 @@ is the durable record consumed by re-entry idempotency.
    `**Artifacts:**` and `**Compute:**` rows, or at the end of the
    section's bullet list if those anchors aren't present):
    ```
-   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
+   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
    ```
    When `GIST_URL` is empty (fail-soft path), drop the `· [gist](...)`
    suffix entirely:
    ```
-   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md)
+   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_<N>.md)
    ```
    Write the revised body via `task.py set-body <N> --file ...`.
 7. **Re-run the mechanical verifier on the body.** A single-line link
