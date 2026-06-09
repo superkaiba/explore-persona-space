@@ -45,3 +45,4 @@
 {"ts": "2026-06-09T11:56:57Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Heartbeat 1: pod.py provision in wait-for-capacity loop; no fleet headroom yet. Orchestrator alive at 11:56Z."}
 {"ts": "2026-06-09T12:26:59Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Heartbeat 2: pod.py provision in wait-for-capacity loop; no fleet headroom yet. Orchestrator alive at 12:26Z."}
 {"ts": "2026-06-09T12:57:01Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Heartbeat 3: pod.py provision in wait-for-capacity loop; no fleet headroom yet. Orchestrator alive at 12:57Z."}
+{"ts": "2026-06-09T13:27:03Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Heartbeat 4: pod.py provision in wait-for-capacity loop; no fleet headroom yet. Orchestrator alive at 13:27Z."}
