@@ -7,6 +7,8 @@ tags: []
 created_at: '2026-06-07T01:49:33Z'
 has_clean_result: true
 parent_id: 502
+classification: useful
+promoted_at: '2026-06-09T21:43:08Z'
 ---
 # At 500 probes per persona the layer-22 Gaussian-KL leakage predictor cell has plateaued, and its lead over same-layer cosine opens monotonically from 0.004 at N=25 to 0.060 CV R² at N=500 (HIGH confidence)
 
