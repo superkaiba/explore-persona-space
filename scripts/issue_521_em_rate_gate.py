@@ -118,12 +118,14 @@ def _post_em_rate_marker(
     median: float,
     gate_decision: str,
     low_rate_but_installed: bool,
+    marker_kind: str = "epm:em-rate",
 ) -> None:
-    """Post ``epm:em-rate v1`` to the issue's events.jsonl.
+    """Post the EM-rate marker (default kind ``epm:em-rate``) to events.jsonl.
 
     The note carries the per-cell rates, median, threshold, gate
     decision, and the low-rate flag. The marker schema is documented in
-    plan §12 row 17.
+    plan §12 row 17. The v2 re-run keeps the default kind so the
+    dashboard threads the same channel; pass --marker-kind to change.
     """
     note = (
         "per_cell_rates: "
@@ -141,22 +143,23 @@ def _post_em_rate_marker(
         str(repo_root / "scripts" / "task.py"),
         "post-marker",
         str(issue),
-        "epm:em-rate",
+        marker_kind,
         "--note",
         note,
     ]
     rc = subprocess.run(cmd, check=False).returncode
     if rc != 0:
         logger.warning(
-            "epm:em-rate marker post returned rc=%d — the marker may not have "
+            "%s marker post returned rc=%d — the marker may not have "
             "landed; the gate JSON file is the authoritative record.",
+            marker_kind,
             rc,
         )
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 - argparse + 2-arm decision tree, refactor out-of-scope at v2
     p = argparse.ArgumentParser(
-        description="Step 3.5 EM-rate gate for #521",
+        description="Step 3.5 EM-rate gate for #521 (v1 + v2 retrained arms)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument(
@@ -171,7 +174,38 @@ def main() -> int:
         "--cells",
         nargs="+",
         default=None,
-        help=("Subset of EM cells. Format: `em_seed42 em_seed137 em_seed256`. Default: all 3."),
+        help=(
+            "Subset of EM cells. Format: `em_seed42 em_seed137 em_seed256` (v1 #519 "
+            "EM adapters) or `em_turner_seed42 em_turner_seed137 em_turner_seed256` "
+            "(v2 retrained EM adapters). Default: all 3 of the chosen arm prefix."
+        ),
+    )
+    p.add_argument(
+        "--arm-prefix",
+        default="em",
+        choices=("em", "em_turner"),
+        help=(
+            "Which arm to gate when --cells is omitted (default 'em' = v1; "
+            "'em_turner' = v2 retrained adapters at the #458 turner_em recipe)."
+        ),
+    )
+    p.add_argument(
+        "--gate-subdir",
+        default="em_rate_gate",
+        help=(
+            "Subdir of --output-dir for per-cell + summary gate JSONs. "
+            "v1 writes to 'em_rate_gate' (default); v2 re-run uses 'em_rate_gate_v2' "
+            "to preserve v1's FAIL evidence."
+        ),
+    )
+    p.add_argument(
+        "--marker-kind",
+        default="epm:em-rate",
+        help=(
+            "Marker kind to post (default 'epm:em-rate'). v2 re-run may set "
+            "'epm:em-rate-v2' if a distinct marker stream is wanted; default "
+            "keeps the v1 marker kind so the dashboard threads the same channel."
+        ),
     )
     p.add_argument("--n-questions", type=int, default=20)
     p.add_argument("--n-samples-per-question", type=int, default=8)
@@ -201,6 +235,15 @@ def main() -> int:
             "decision after editing the threshold."
         ),
     )
+    p.add_argument(
+        "--no-post-marker",
+        action="store_true",
+        help=(
+            "Skip the epm:em-rate marker post. Use for smoke / dry-runs "
+            "that must not pollute the task's events.jsonl. The gate JSON "
+            "summary is still written."
+        ),
+    )
     args = p.parse_args()
 
     logging.basicConfig(
@@ -214,21 +257,30 @@ def main() -> int:
     output_dir = Path(args.output_dir)
     if not output_dir.is_absolute():
         output_dir = repo_root / output_dir
-    gate_dir = output_dir / "em_rate_gate"
+    gate_dir = output_dir / args.gate_subdir
     gate_dir.mkdir(parents=True, exist_ok=True)
 
-    # Resolve cells.
+    # Resolve cells. v1 accepts only `em` prefix; v2 also accepts `em_turner`
+    # (the retrained adapters at the #458 recipe). The adapter dir convention
+    # is unchanged: `<output-dir>/<arm>_seed<S>/adapter/`.
+    allowed_arms = ("em", "em_turner")
     if args.cells:
         cells: list[tuple[str, int]] = []
         for spec in args.cells:
             arm, _, rest = spec.partition("_seed")
-            if arm != "em":
+            if arm not in allowed_arms:
                 raise ValueError(
-                    f"--cells: only EM cells allowed for the EM-rate gate, got {spec!r}"
+                    f"--cells: only {allowed_arms} arms allowed for the EM-rate gate, got {spec!r}"
                 )
-            cells.append((arm, int(rest)))
+            try:
+                seed = int(rest)
+            except ValueError as e:
+                raise ValueError(
+                    f"--cells spec {spec!r} must look like 'em_seed42' / 'em_turner_seed42'"
+                ) from e
+            cells.append((arm, seed))
     else:
-        cells = [("em", s) for s in EM_SEEDS]
+        cells = [(args.arm_prefix, s) for s in EM_SEEDS]
     if args.tiny:
         cells = cells[:1]
     logger.info("[phase=start] cells=%s tiny=%s skip_eval=%s", cells, args.tiny, args.skip_eval)
@@ -302,6 +354,9 @@ def main() -> int:
             "median ∈ [5%, 7%); PASS iff all ≥5% AND median ≥7%."
         ),
         "tiny": args.tiny,
+        "gate_subdir": args.gate_subdir,
+        "arm_prefix": args.arm_prefix,
+        "cells_evaluated": list(per_cell_rates.keys()),
     }
     summary_path = gate_dir / "summary.json"
     with summary_path.open("w") as f:
@@ -316,8 +371,9 @@ def main() -> int:
         summary_path,
     )
 
-    # Post the marker (skip on tiny — the smoke shouldn't push state).
-    if not args.tiny:
+    # Post the marker (skip on tiny / --no-post-marker — smoke / dry-runs
+    # must not pollute events.jsonl).
+    if not args.tiny and not args.no_post_marker:
         _post_em_rate_marker(
             repo_root=repo_root,
             issue=args.issue,
@@ -325,6 +381,7 @@ def main() -> int:
             median=median_rate,
             gate_decision=gate_decision,
             low_rate_but_installed=low_rate_but_installed,
+            marker_kind=args.marker_kind,
         )
 
     # Exit code: 0 = proceed, 2 = workflow halt.
