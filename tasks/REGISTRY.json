@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 537,
+  "highest_id": 538,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3139,6 +3139,14 @@
       "path": "tasks/planning/537",
       "status": "planning",
       "title": "Context-generalization testbed v1: multi-behavior train\u00d7eval context grid as ground truth for asymmetric, behavior-dependent generalization metrics"
+    },
+    "538": {
+      "goal": "Test whether pushing the marker implant past emission onset (source log P(marker) \u2212 base in the [14, 20] nat window where on-policy emission begins) makes the per-context singleton shifts develop effective rank \u2265 2 across held-out contexts, so that the additivity-cosine read becomes a diagnostic superposition test rather than a measurement of constant-direction steering.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/538",
+      "status": "proposed",
+      "title": "Push the marker implant past emission onset to test whether per-context singleton structure emerges with stronger training"
     },
     "54": {
       "has_clean_result": false,
