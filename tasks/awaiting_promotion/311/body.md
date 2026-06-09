@@ -16,6 +16,8 @@ relates_to:
 - leak-predictor
 - app5
 - leak-single-vs-multi
+classification: useful
+promoted_at: '2026-06-09T21:33:38Z'
 ---
 # Cosine distance to the paramedic↔comedian midpoint marginally predicts joint-source \[ZLT] leakage on Qwen2.5-7B-Instruct (LOW confidence)
 
