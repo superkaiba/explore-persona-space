@@ -3202,8 +3202,8 @@
     "65": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/65",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/65",
+      "status": "completed",
       "title": "Training one persona to emit a [ZLT] marker without bystanders adopting it has a one-cell-wide LR x epochs window on Qwen2.5-7B-Instruct (LOW confidence)"
     },
     "66": {
