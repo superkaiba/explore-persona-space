@@ -995,9 +995,19 @@ def test_session_stalled_not_eligible_returns_alert():
     assert action == "alert"
 
 
-def test_session_stalled_already_alerted_is_keep():
-    # Dedup: once the alert flag has been set this episode, stay quiet
-    # until self-report-ts advancement clears it (caller's responsibility).
+def test_session_stalled_already_alerted_escalates_to_respawn_when_eligible():
+    # Regression for incident #506 (2026-06-08): a Phase-1 alert set
+    # alerted=True ~11h before respawn became eligible, and the prior
+    # `if alerted: return keep` short-circuit then suppressed the
+    # respawn on every subsequent tick for 10+ hours while the 8xH200
+    # pod idle-burned ~$460. The `alerted` flag must dedup REPEAT
+    # ALERTS only — it must not gate off the stronger respawn action
+    # once respawn becomes eligible. Previously this test asserted
+    # `action == "keep"` (encoded the bug); now it asserts the correct
+    # escalation. The dedup-of-repeat-alerts case (alerted + NOT
+    # eligible) is pinned by
+    # `test_session_stalled_already_alerted_eligibility_false_stays_keep`
+    # below.
     from autonomous_session_watch import decide_session_stalled
 
     stale = STALLED_WINDOW_S + 60
@@ -1009,6 +1019,49 @@ def test_session_stalled_already_alerted_is_keep():
         alerted=True,
         respawn_eligible=True,
         respawn_count=0,
+    )
+    assert action == "respawn"
+
+
+def test_session_stalled_already_alerted_eligibility_false_stays_keep():
+    # Dedup-of-repeat-alerts: alerted + respawn NOT eligible (non-ACTIVE
+    # status, or daemon unreachable this tick) -> stay quiet. The prior
+    # alert already deduped; a respawn would crash on the missing
+    # prerequisite. This was the original intent of
+    # `test_session_stalled_already_alerted_is_keep` before the
+    # incident-#506 regression test re-purposed that name.
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    action, _ = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=True,
+        missed=1,
+        alerted=True,
+        respawn_eligible=False,
+        respawn_count=0,
+    )
+    assert action == "keep"
+
+
+def test_session_stalled_already_alerted_at_cap_stays_keep():
+    # Exhausted-cap respected from the alerted branch: if respawn_count
+    # is already at the cap, the new escalation path must NOT resurrect
+    # a respawn. Stay quiet — the caller's `exhausted` flag dedups the
+    # loud one-time exhausted marker separately.
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    action, _ = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=True,
+        missed=1,
+        alerted=True,
+        respawn_eligible=True,
+        respawn_count=STALLED_MAX_RESPAWNS,
+        threshold=2,
     )
     assert action == "keep"
 

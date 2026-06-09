@@ -394,8 +394,7 @@ def decide_session_stalled(
     flaky markers-fetch / self-report-race: an action fires only on the
     SECOND consecutive stale check.
 
-    Recovery selection (only when stale + threshold met + not already
-    deduped this episode):
+    Recovery selection (only when stale + threshold met):
 
     - ``respawn_eligible=True`` AND ``respawn_count < max_respawns``
       -> ``("respawn", 0)``. The caller has already confirmed the task
@@ -412,6 +411,20 @@ def decide_session_stalled(
       -> ``("alert", 0)``. Preserves the Phase-1 ALERT-ONLY behavior
       as the safe fallback.
 
+    Dedup semantics — ``alerted`` dedups REPEAT ALERTS only, it never
+    gates off the stronger respawn action. An already-alerted episode
+    MUST still escalate to a respawn the moment it becomes eligible.
+    (Incident #506, 2026-06-08: a Phase-1 alert set ``alerted=True``
+    ~11h before the Phase-2 auto-respawn machinery deployed; the prior
+    blanket ``if alerted: return keep`` short-circuit then suppressed
+    the respawn on every subsequent tick for 10+ hours while the 8xH200
+    pod idle-burned ~$460. The same gap fires any time the FIRST
+    threshold-trip lands while respawn is briefly ineligible — daemon
+    momentarily down, task momentarily in a non-ACTIVE status — and
+    then respawn becomes eligible later in the same episode.) The
+    ``alerted`` flag is cleared by the caller when (a) the self-report
+    ts advances, or (b) :func:`_handle_stalled_respawn` runs.
+
     Returns ``(action, new_missed)``. Cases:
 
     - ``self_report_age_s is None`` (no self-report at all)
@@ -419,14 +432,23 @@ def decide_session_stalled(
       always self-report; a missing file is the caller's signal to skip.
     - Self-report fresh (< ``window_s``) -> ``("keep", 0)``. Reset miss
       counter; live session.
+    - Marker-progress is fresh -> ``("keep", 0)``. Any fresh signal
+      resets the miss counter.
+    - Self-report stale AND marker-progress also stale (or absent) AND
+      ``alerted=True`` AND respawn is now eligible (``respawn_eligible``
+      AND ``respawn_count < max_respawns``) -> ``("respawn", 0)``.
+      Escalate from alert to respawn; the prior alert already required
+      ``>= threshold`` consecutive stale checks, so escalation needn't
+      re-accumulate the miss guard. Cleared `alerted` is the caller's
+      job on the next ``_save_stalled_state``.
+    - Self-report stale AND marker-progress also stale (or absent) AND
+      ``alerted=True`` AND respawn is NOT eligible (or cap exhausted)
+      -> ``("keep", 0)``. Dedup the repeat alert / hold for exhausted
+      marker dedup (the caller's ``exhausted`` flag handles that).
     - Self-report stale AND marker-progress also stale (or absent) AND
       not previously ``alerted`` -> increment ``missed``; on reaching
       ``threshold``, return the appropriate recovery action per the
       table above. Below threshold, return ``("keep", new_missed)``.
-    - Same conditions but ``alerted=True`` -> ``("keep", 0)``. Dedup
-      within episode (cleared by the caller when self-report advances).
-    - Marker-progress is fresh -> ``("keep", 0)``. Any fresh signal
-      resets the miss counter.
     """
     if self_report_age_s is None:
         # Missing self-report -> caller should skip (interactive session,
@@ -444,6 +466,18 @@ def decide_session_stalled(
     if not marker_stale:
         return ("keep", 0)
     if alerted:
+        # Already-alerted episode. Dedup the repeat alert, BUT still
+        # escalate to a respawn the moment it becomes eligible — the
+        # alert flag must never block the stronger action. See the
+        # "Dedup semantics" docstring paragraph for the incident that
+        # motivates this branch (regression: previously bare
+        # ``return ("keep", 0)`` here suppressed all escalation).
+        if respawn_eligible and respawn_count < max_respawns:
+            return ("respawn", 0)
+        # Either respawn not eligible this tick (non-ACTIVE / daemon
+        # down) or the crash-loop cap is exhausted. Stay quiet; the
+        # caller's ``exhausted`` flag dedups the loud one-time exhausted
+        # marker separately, and the next eligibility flip will retry.
         return ("keep", 0)
     new_missed = missed + 1
     if new_missed >= threshold:
