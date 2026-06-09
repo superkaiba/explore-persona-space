@@ -20,6 +20,8 @@ relates_to:
 - leak-predictor
 - fact-teach-persona-transfer
 - leak-contrastive-negatives
+classification: useful
+promoted_at: '2026-06-09T22:07:28Z'
 ---
 # The bystander's own prior on the fact is the only consistently supported predictor of leakage; source proximity does not survive the sign-flip test (MODERATE confidence)
 
