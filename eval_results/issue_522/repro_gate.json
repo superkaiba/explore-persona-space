@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "cell_id": "last_prompt__L22__gauss_kl__raw",
+  "N": 500,
+  "subset_idx": 0,
+  "arm": "loc",
+  "epoch": 1,
+  "rho_new": -0.7917019989782824,
+  "rho_target": -0.79225,
+  "delta_abs": 0.0005480010217175924,
+  "pass": true,
+  "cv_r2": 0.616660290010015,
+  "rho_glog": -0.5936749167818842,
+  "cv_r2_glog": 0.33033183974440306,
+  "tolerance": 0.001
+}
