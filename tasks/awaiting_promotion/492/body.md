@@ -12,6 +12,8 @@ goal: Identify which change in the v2->v4 training-code redesign caused the cont
   restore a reproducible above-floor implant.
 relates_to:
 - leak-contrastive-negatives
+classification: useful
+promoted_at: '2026-06-09T21:43:17Z'
 ---
 # The v4/v6 marker-implant floor was an eval-side artifact, not a training-code regression (MODERATE confidence)
 
