@@ -586,10 +586,35 @@ def test_reconnect_skips_terminated_instance() -> None:
     assert reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner) is None
 
 
-def test_reconnect_returns_none_on_gcloud_failure() -> None:
-    """Best-effort optimization — a transient gcloud blip falls through to create."""
-    runner = _Runner(list_results=[GcloudRunResult(1, "", "auth blip")])
-    assert reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner) is None
+def test_reconnect_probe_failure_raises_not_none() -> None:
+    """rc != 0 = the PROBE failed (expired auth / transport) — instance
+    state is UNKNOWN and must NOT read as "no live instance" on the
+    credit-spending lane (round-6 B1 mirrored from SLURM; live GCP
+    attempt 1 hit exactly this with an expired-auth gcloud list)."""
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    runner = _Runner(list_results=[GcloudRunResult(1, "", "Reauthentication failed")])
+    with pytest.raises(GcpProbeError):
+        reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+def test_reconnect_bad_json_raises_probe_error() -> None:
+    """An rc=0 list whose stdout is unparseable is equally UNKNOWN state."""
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    runner = _Runner(list_results=[GcloudRunResult(0, "{not json", "")])
+    with pytest.raises(GcpProbeError):
+        reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+def test_gcp_probe_error_is_backend_probe_error() -> None:
+    """The router's reconnect seams discriminate on BackendProbeError —
+    the GCP probe error must be a subclass or the typed handling is
+    silently bypassed (the original bug shape)."""
+    from explore_persona_space.backends.base import BackendProbeError
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    assert issubclass(GcpProbeError, BackendProbeError)
 
 
 def test_launch_skips_create_when_reconnect_finds_live_instance(no_marker_posts) -> None:

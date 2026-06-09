@@ -114,6 +114,7 @@ from explore_persona_space.backends.artifacts import (
 )
 from explore_persona_space.backends.base import (
     BackendKind,
+    BackendProbeError,
     ComputeBackend,
     PollResult,
     RunHandle,
@@ -850,6 +851,23 @@ class GcpBackendError(RuntimeError):
     """Base class for typed GCP backend errors."""
 
 
+class GcpProbeError(BackendProbeError):
+    """The GCP state probe FAILED — instance state is UNKNOWN.
+
+    Raised by :func:`reconnect_or_none` when ``gcloud compute instances
+    list`` exits non-zero or returns unparseable JSON. "Couldn't ask"
+    must never read as "no live instance" (the SLURM round-6 B1
+    contract, mirrored here): pre-fix, an expired-auth ``list`` was
+    swallowed as "assuming no live instance" and the router proceeded
+    toward a blind ``create`` on the CREDIT-SPENDING lane (live GCP
+    lane attempt 1, issue 535). The router's reconnect seams catch
+    :class:`~explore_persona_space.backends.base.BackendProbeError`
+    typed-ly: explicit lane → refuse-to-submit-blind terminal; auto
+    escalation → no-compute terminal (fail-closed, no spend on unknown
+    state).
+    """
+
+
 class GcpProvisioningError(GcpBackendError):
     """The VM never came up (capacity / quota / SSH / image fetch).
 
@@ -999,27 +1017,31 @@ def reconnect_or_none(
     fresh-attempt-id namespace covers the artifact-overwrite concern
     even when a reconnect catches a still-running instance.
 
-    Returns None when gcloud fails (e.g. transient auth blip) — the
-    caller's create path will surface the same error with a better
-    classification. The reconnect is a best-effort optimization, not a
-    correctness gate.
+    Raises :class:`GcpProbeError` when the probe ITSELF fails (gcloud
+    rc != 0 — expired auth, transport — or unparseable JSON from an
+    rc=0 call): instance state is UNKNOWN, and "couldn't ask" must
+    never read as "no live instance" on the credit-spending lane
+    (round-6 B1 mirrored from SLURM; the pre-fix warn-and-None here let
+    an expired-auth list fall through toward a blind create — live GCP
+    attempt 1, issue 535). The router's reconnect seams handle
+    ``BackendProbeError`` typed-ly on every lane.
     """
     name = instance_name_for(spec.issue)
     argv = render_list_argv(config=config, name_filter=f"name={name}")
     result = runner(argv)
     if result.returncode != 0:
-        logger.warning(
-            "GCP reconnect: list returned %d for %s; assuming no live instance. stderr=%s",
-            result.returncode,
-            name,
-            result.stderr[:500],
+        raise GcpProbeError(
+            f"GCP reconnect probe failed for {name}: gcloud list rc={result.returncode} "
+            f"stderr={result.stderr[:500]!r} — instance state UNKNOWN, refusing to "
+            "assume no live instance"
         )
-        return None
     try:
         instances = json.loads(result.stdout) if result.stdout.strip() else []
     except json.JSONDecodeError as exc:
-        logger.warning("GCP reconnect: bad JSON for %s: %s", name, exc)
-        return None
+        raise GcpProbeError(
+            f"GCP reconnect probe returned unparseable JSON for {name}: {exc} — "
+            "instance state UNKNOWN"
+        ) from exc
     if not isinstance(instances, list):
         return None
     for inst in instances:
