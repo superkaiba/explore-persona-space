@@ -50,7 +50,7 @@ Equivalence is the distance question applied to differently-induced contexts —
 
 **1.3 Do persona prompting and in-context examples produce the same contextual model?** <!-- q:spec-prompt-vs-icl -->
 Hold one behavior fixed (the marker) and compare the two specifications.
-> **Belief:** Some evidence they drive the same marker-leakage behavior; steering and SDF still untested in-house. **Confidence:** MODERATE. **Evidence:** #138, #465, #471.
+> **Belief:** Some evidence they drive the same marker-leakage behavior; steering and SDF still untested in-house. **Confidence:** MODERATE. **Evidence:** #138, #465, #471, #524.
 
 **1.4 Does a steering vector reach the same state?** <!-- q:spec-steering -->
 Project a persona steering vector onto the states reachable by prompts and contexts; measure the residual.
@@ -90,7 +90,7 @@ You update at one $(C, B)$ cell; the question is how behavior moves at every oth
 **3.1 What predicts persona leakage?** <!-- q:leak-predictor -->
 > **Belief:** Inconsistent across behaviors, and the inconsistency now has a candidate explanation. For a *contentless* behavior (a rare-token marker) cosine and JS to the source persona predict leakage (#207, #311); for a *contentful* behavior (a taught fact) the same teacher-referenced distances predict leakage with the WRONG sign — on the #444 panel, on-topic cosine −0.49, output-distribution JS −0.46, and JS recomputed on the taught completion itself −0.42, while off-topic distance is null. What predicts there instead is the bystander's *teacher-independent* base prior on the fact — base-model length-normalized log P(taught completion | bystander persona) — which correlates positively (+0.27). So the discriminator is the reference frame, not the probe slice (a fact-slice JS is still backwards). Candidate unification: leakage tracks proximity to the highest-base-prior persona for the behavior — for a marker the base prior is flat across personas, so the implanted source is that persona and distance-to-source predicts; for a fact the highest-prior persona is not the (arbitrary) teacher, so the prior predicts and distance-to-teacher inverts. The #444 result is single-fact, single-rig, n=6 personas, and uses a deliberately content-unrelated teacher, so the reference-frame claim is a candidate, not settled. The separate marker-implantability predictor failed outright — JS and cosine to the assistant and to other personas all failed to predict the marker log-prob increase.
 > *Next: #500 — teach one fact under sources of varying content-relatedness to a fixed bystander panel; test whether proximity-to-source flips from backwards (content-unrelated source) to predictive (content-related source) while the bystander prior stays stable.*
-> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207, #448, #456, #466, #470, #474, #480, #488, #489, #444, #500, #507, #504, #508, #514, #519, #520, #523.
+> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207, #448, #456, #466, #470, #474, #480, #488, #489, #444, #500, #507, #504, #508, #514, #519, #520, #523, #524.
 
 **3.2 Does leakage depend on the behavior?** <!-- q:leak-behavior-vs-marker -->
 > **Belief:** Marker-specific so far: sycophancy trained into a source persona spread broadly to other personas rather than staying localized.

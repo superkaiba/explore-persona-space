@@ -13,6 +13,9 @@ goal: 'On a unified instruction+ICL context panel (16 #502 instruction + 16 #489
   ΔR² over the best symmetric baseline (leave-two-contexts-out, context-clustered
   bootstrap), with standalone vs ΔG_anti as the directional fraud test and a censored/Tobit
   model on any saturated cells.'
+relates_to:
+- leak-predictor
+- spec-prompt-vs-icl
 ---
 # Directional/asymmetric base-model predictors of marker-leakage on a UNIFIED instruction+ICL panel, scored by incremental nested-CV skill
 
