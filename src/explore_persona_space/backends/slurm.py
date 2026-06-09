@@ -174,14 +174,14 @@ CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
         account="rrg-bengioy-ad_gpu",
         robot_alias="robot-nibi",
         max_gpus_per_node=8,
-        scratch_path="/scratch",
+        scratch_path="/scratch/tjiral",  # DRAC $SCRATCH = /scratch/<user>; verified by probe
     ),
     "fir": ClusterConfig(
         name="fir",
         account="rrg-bengioy-ad_gpu",
         robot_alias="robot-fir",
         max_gpus_per_node=4,
-        scratch_path="/scratch",
+        scratch_path="/scratch/tjiral",  # DRAC $SCRATCH = /scratch/<user>; verified by probe
         available=False,
     ),
 }
@@ -520,7 +520,20 @@ def render_secrets_env(
     VM operator never set it — the in-job preflight will FAIL fast and
     the selector falls back to RunPod, exactly the intended path).
     """
-    src = env if env is not None else dict(os.environ)
+    if env is not None:
+        src = env
+    else:
+        # Secrets live in the repo ``.env`` (loaded via dotenv at runtime),
+        # NOT the ambient shell — so a bare ``os.environ`` snapshot is empty
+        # and the cluster would get a 0-key secrets.env (the in-job preflight
+        # then FAILs on the ``${HF_TOKEN:?}`` guard). Load the project dotenv
+        # first; ``resolve_dotenv_path`` walks to the main worktree, so this
+        # works from a linked worktree too. ``override=False`` keeps any
+        # already-exported var authoritative.
+        from explore_persona_space.orchestrate.env import load_dotenv as _load_dotenv
+
+        _load_dotenv()
+        src = dict(os.environ)
     lines: list[str] = []
     for key in keys:
         val = src.get(key)

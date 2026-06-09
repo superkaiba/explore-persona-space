@@ -123,8 +123,8 @@ class _PendingSlurmBackend(ComputeBackend):
             cluster=spec.cluster,
             job_id="9999",
             pod_name=f"eps-issue-{spec.issue}",
-            scratch_dir=f"/scratch/eps/issue-{spec.issue}",
-            log_path=f"/scratch/eps/issue-{spec.issue}/job.out",
+            scratch_dir=f"/scratch/tjiral/eps/issue-{spec.issue}",
+            log_path=f"/scratch/tjiral/eps/issue-{spec.issue}/job.out",
         )
 
     def estimate_start(self, spec: RunSpec) -> datetime | None:

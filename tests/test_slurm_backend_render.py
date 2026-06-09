@@ -20,6 +20,7 @@ FAILS on the misroute regardless of zero level.
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 
@@ -254,7 +255,7 @@ def test_rsync_command_includes_mkpath(tmp_path) -> None:
     (tmp_path / "pyproject.toml").write_text("")
     argv = build_rsync_command(
         src_root=tmp_path,
-        dest_root="/scratch/eps/issue-137",
+        dest_root="/scratch/tjiral/eps/issue-137",
         robot_alias="robot-nibi",
     )
     assert "--mkpath" in argv  # P0(a): intermediate dirs don't auto-create
@@ -262,7 +263,7 @@ def test_rsync_command_includes_mkpath(tmp_path) -> None:
     assert "-a" in argv
     assert "--partial" in argv
     # Destination
-    assert argv[-1] == "robot-nibi:/scratch/eps/issue-137/"
+    assert argv[-1] == "robot-nibi:/scratch/tjiral/eps/issue-137/"
 
 
 def test_rsync_command_uses_relative_for_external_prefix_preservation(tmp_path) -> None:
@@ -276,7 +277,7 @@ def test_rsync_command_uses_relative_for_external_prefix_preservation(tmp_path) 
     (tmp_path / "pyproject.toml").write_text("")
     argv = build_rsync_command(
         src_root=tmp_path,
-        dest_root="/scratch/eps/issue-137",
+        dest_root="/scratch/tjiral/eps/issue-137",
         robot_alias="robot-nibi",
     )
     assert "--relative" in argv, argv
@@ -398,6 +399,25 @@ def test_render_secrets_env_skips_empty_values() -> None:
     assert "WANDB_API_KEY=real" in out
 
 
+def test_render_secrets_env_loads_project_dotenv(monkeypatch) -> None:
+    """render_secrets_env(None) must load the repo ``.env`` before snapshotting
+    ``os.environ``.
+
+    Regression: secrets live in ``.env`` (loaded via dotenv at runtime), not
+    the ambient shell, so a bare ``os.environ`` snapshot is empty and the
+    cluster gets a 0-key ``secrets.env`` whose in-job preflight FAILs on the
+    ``${HF_TOKEN:?}`` guard (caught live on Nibi during acceptance).
+    """
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+
+    def fake_load_dotenv(*_a, **_k):
+        os.environ["HF_TOKEN"] = "hf_from_dotenv"
+
+    monkeypatch.setattr("explore_persona_space.orchestrate.env.load_dotenv", fake_load_dotenv)
+    out = render_secrets_env()  # env=None → must call load_dotenv first
+    assert "HF_TOKEN=hf_from_dotenv" in out
+
+
 # ---------------------------------------------------------------------------
 # Sbatch render — golden assertions for the LoRA + eval path
 # ---------------------------------------------------------------------------
@@ -411,7 +431,7 @@ def test_render_sbatch_lora_eval_golden() -> None:
         spec=spec,
         cluster=cluster,
         plan=plan,
-        scratch_dir="/scratch/eps/issue-137",
+        scratch_dir="/scratch/tjiral/eps/issue-137",
     )
 
     # Headers
@@ -419,7 +439,7 @@ def test_render_sbatch_lora_eval_golden() -> None:
     assert "#SBATCH --gpus-per-node=1" in script
     assert "#SBATCH --nodes=1" in script
     assert "#SBATCH --ntasks-per-node=1" in script
-    assert "#SBATCH --output=/scratch/eps/issue-137/job.out" in script
+    assert "#SBATCH --output=/scratch/tjiral/eps/issue-137/job.out" in script
     assert re.search(r"#SBATCH --time=\d{2}:\d{2}:\d{2}", script)
     assert "#SBATCH --job-name=eps-issue-137" in script
 
@@ -491,7 +511,7 @@ def test_render_sbatch_full_ft_targets_open_instruct_not_train_stage_sft() -> No
         spec=spec,
         cluster=cluster,
         plan=plan,
-        scratch_dir="/scratch/eps/issue-137",
+        scratch_dir="/scratch/tjiral/eps/issue-137",
     )
 
     # The full-FT SFT stage MUST be open-instruct's finetune.py
@@ -513,7 +533,7 @@ def test_render_sbatch_full_ft_uses_accelerate_with_deepspeed() -> None:
         spec=spec,
         cluster=cluster,
         plan=plan,
-        scratch_dir="/scratch/eps/issue-137",
+        scratch_dir="/scratch/tjiral/eps/issue-137",
     )
 
     # accelerate launch with --mixed_precision bf16 --use_deepspeed
@@ -541,7 +561,7 @@ def test_render_sbatch_full_ft_time_budget_short_bin() -> None:
         spec=spec,
         cluster=cluster,
         plan=plan,
-        scratch_dir="/scratch/eps/issue-137",
+        scratch_dir="/scratch/tjiral/eps/issue-137",
     )
     m = re.search(r"#SBATCH --time=(\d{2}):(\d{2}):(\d{2})", script)
     assert m
@@ -558,7 +578,7 @@ def test_render_sbatch_enforces_per_cluster_gpu_cap() -> None:
             spec=spec,
             cluster=cluster,
             plan=plan,
-            scratch_dir="/scratch/eps/issue-1",
+            scratch_dir="/scratch/tjiral/eps/issue-1",
         )
 
 
@@ -570,7 +590,7 @@ def test_render_sbatch_includes_job_name_plan_hash() -> None:
         spec=spec,
         cluster=cluster,
         plan=plan,
-        scratch_dir="/scratch/eps/issue-137",
+        scratch_dir="/scratch/tjiral/eps/issue-137",
         plan_hash="deadbeef" * 8,
     )
     assert "#SBATCH --job-name=eps-issue-137-deadbeef" in script
@@ -643,8 +663,8 @@ def test_slurm_backend_launch_submits_rendered_script(tmp_path) -> None:
     assert handle.cluster == "nibi"
     assert handle.job_id == "9001"
     assert handle.pod_name == "eps-issue-137"
-    assert handle.scratch_dir == "/scratch/eps/issue-137"
-    assert handle.log_path == "/scratch/eps/issue-137/job.out"
+    assert handle.scratch_dir == "/scratch/tjiral/eps/issue-137"
+    assert handle.log_path == "/scratch/tjiral/eps/issue-137/job.out"
     assert handle.extra["account"] == "rrg-bengioy-ad_gpu"
     assert handle.extra["robot_alias"] == "robot-nibi"
     assert handle.extra["gpus_per_node"] == 1
@@ -667,8 +687,8 @@ def test_slurm_backend_launch_submits_rendered_script(tmp_path) -> None:
     body = __import__("json").loads(posted[0]["note"])
     assert body["job_id"] == "9001"
     assert body["job_name"] == "eps-issue-137"
-    assert body["scratch_dir"] == "/scratch/eps/issue-137"
-    assert body["log_path"] == "/scratch/eps/issue-137/job.out"
+    assert body["scratch_dir"] == "/scratch/tjiral/eps/issue-137"
+    assert body["log_path"] == "/scratch/tjiral/eps/issue-137/job.out"
     assert body["cluster"] == "nibi"
     assert body["gpus"] == 1
 
@@ -705,7 +725,7 @@ def test_slurm_backend_launch_uses_scp_not_ssh_bash_c(tmp_path) -> None:
     assert len(secrets_calls) == 2
     for call in secrets_calls:
         assert call["robot_alias"] == "robot-nibi"
-        assert call["scratch_dir"] == "/scratch/eps/issue-137"
+        assert call["scratch_dir"] == "/scratch/tjiral/eps/issue-137"
 
 
 def test_fetch_logs_reads_correct_path_and_returns_joined_string(tmp_path) -> None:
@@ -738,8 +758,8 @@ def test_fetch_logs_reads_correct_path_and_returns_joined_string(tmp_path) -> No
         cluster="nibi",
         job_id=job_id,
         pod_name="eps-issue-137",
-        scratch_dir="/scratch/eps/issue-137",
-        log_path="/scratch/eps/issue-137/job.out",
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+        log_path="/scratch/tjiral/eps/issue-137/job.out",
         extra={"issue": 137},
     )
 
@@ -771,8 +791,8 @@ def test_fetch_logs_returns_empty_when_no_local_file(tmp_path) -> None:
         cluster="nibi",
         job_id="8802",  # No prior /tmp/slurm-8802/job.out
         pod_name="eps-issue-137",
-        scratch_dir="/scratch/eps/issue-137",
-        log_path="/scratch/eps/issue-137/job.out",
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+        log_path="/scratch/tjiral/eps/issue-137/job.out",
         extra={"issue": 137},
     )
     assert backend.fetch_logs(handle) == ""
@@ -803,12 +823,12 @@ def test_scp_push_secrets_uses_scp_argv_with_unique_temp(tmp_path, monkeypatch) 
 
     scp_push_secrets(
         robot_alias="robot-nibi",
-        scratch_dir="/scratch/eps/issue-137",
+        scratch_dir="/scratch/tjiral/eps/issue-137",
         content="HF_TOKEN=abc\n",
     )
     scp_push_secrets(
         robot_alias="robot-nibi",
-        scratch_dir="/scratch/eps/issue-137",
+        scratch_dir="/scratch/tjiral/eps/issue-137",
         content="HF_TOKEN=abc\n",
     )
 
@@ -820,7 +840,7 @@ def test_scp_push_secrets_uses_scp_argv_with_unique_temp(tmp_path, monkeypatch) 
         assert "bash" not in argv, argv
         assert "-c" not in argv, argv
         # Last positional = remote target at the canonical filename.
-        assert argv[-1] == "robot-nibi:/scratch/eps/issue-137/secrets.env", argv
+        assert argv[-1] == "robot-nibi:/scratch/tjiral/eps/issue-137/secrets.env", argv
         # The literal ``$$`` string MUST NOT appear (that was the bug —
         # f-string did NOT expand it on the shell side, so two concurrent
         # prepares would collide).
