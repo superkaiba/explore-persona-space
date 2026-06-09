@@ -1484,8 +1484,8 @@
     "333": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/333",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/333",
+      "status": "completed",
       "title": "Three-seed FR<->IT bystander spill flips sign: IT->FR +16pp under Spanish, FR->IT +26pp under German (MODERATE confidence)"
     },
     "334": {
