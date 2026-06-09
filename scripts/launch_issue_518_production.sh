@@ -272,12 +272,26 @@ run uv run python scripts/issue509_scoring.py \
     --output "$REPO_ROOT/eval_results/issue_509/syco_arm/scoring.json"
 
 # ── K. Cross-arm aggregator (headline same-sign + min |ρ| gate) ────────────
+# Round-11 fix: the aggregator's `_assert_model_id_consistency` (lines 140-186
+# of issue518_cross_behavior_aggregator.py) fails loud unless every arm's
+# bake-off meta.json carries `args.model_id`. The refusal + EM bake-offs (phases
+# H above) write `meta.json` directly inside their `--bakeoff-root`
+# (issue493_extraction_metric_bakeoff.py line 5062: `_write_json_atomic(
+# BAKEOFF_DIR / "meta.json", ...)`), so the canonical paths are:
+#   $EVAL_ROOT/refusal/bakeoff/meta.json
+#   $EVAL_ROOT/em/bakeoff/meta.json
+# The syco arm is pre-staged from #509 per plan §10 and predates the
+# `--model-id` patch, so it opts into `--allow-legacy-syco-meta`; the refusal
+# + EM arms are still strictly required by the assertion.
 phase cross_arm_aggregator "issue518_cross_behavior_aggregator.py"
 run uv run python scripts/issue518_cross_behavior_aggregator.py \
-    --syco-scoring    "$REPO_ROOT/eval_results/issue_509/syco_arm/scoring.json" \
-    --refusal-scoring "$EVAL_ROOT/refusal/scoring.json" \
-    --em-scoring      "$EVAL_ROOT/em/scoring.json" \
-    --out             "$EVAL_ROOT/cross_behavior_aggregator.json"
+    --syco-scoring         "$REPO_ROOT/eval_results/issue_509/syco_arm/scoring.json" \
+    --refusal-scoring      "$EVAL_ROOT/refusal/scoring.json" \
+    --em-scoring           "$EVAL_ROOT/em/scoring.json" \
+    --allow-legacy-syco-meta \
+    --refusal-bakeoff-meta "$EVAL_ROOT/refusal/bakeoff/meta.json" \
+    --em-bakeoff-meta      "$EVAL_ROOT/em/bakeoff/meta.json" \
+    --out                  "$EVAL_ROOT/cross_behavior_aggregator.json"
 
 # ── Final sentinel + [phase=done] ──────────────────────────────────────────
 SENTINEL_TS="$(date -u +%s)"
