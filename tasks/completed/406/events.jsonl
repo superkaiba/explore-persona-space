@@ -60,3 +60,4 @@
 {"ts": "2026-06-01T01:13:46Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "interpreting", "to": "awaiting_promotion", "note": "Interpretation-critic PASS (round 2) + clean-result-critic PASS (round 1). Parking for user promotion."}
 {"ts": "2026-06-01T01:13:47Z", "kind": "epm:status-changed", "version": 1, "by": "unknown", "note": "reviewing -> awaiting_promotion (final reviewer step retired; absorbed into clean-result-critic Lens 7/11). Clean-result ready; awaiting user Human TL;DR + promotion."}
 {"ts": "2026-06-09T21:34:50Z", "kind": "epm:promoted", "version": 1, "by": "user", "classification": "useful"}
+{"ts": "2026-06-09T21:34:51Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "awaiting_promotion", "to": "completed", "note": "promoted as useful"}
