@@ -5377,6 +5377,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
         )
 
     if args.phase == "metrics":
+        # ROUND-15 FIX: write the next_token_js matrix on the metrics-only
+        # terminal path. Before this, `write_next_token_js_matrix()` was
+        # called only from `--phase all` (L5212) and `--merge-only` (L5152);
+        # the round-14 launcher split drove every arm through
+        # `--phase extract` then `--phase metrics`, so neither path produced
+        # `<bakeoff>/metrics/last_prompt__layer-1__next_token_js__raw.json`.
+        # The sidecars under `<bakeoff>/next_token_logits/` were written
+        # during the prior `--phase extract` (default `capture_next_token_logits=True`),
+        # so the writer reads from disk just like the merge-only path does.
+        # `enforce_cross_check=True` matches the other two call sites:
+        # a drifted #406 cross-check aborts the metrics phase loud.
+        if not args.no_next_token_js:
+            write_next_token_js_matrix(enforce_cross_check=True)
         return 0
 
     # REGRESSION phase — cond_ids comes from a NON-end_of_system checkpoint

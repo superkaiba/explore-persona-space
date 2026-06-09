@@ -297,6 +297,13 @@ run uv run python scripts/issue493_extraction_metric_bakeoff.py \
     --bakeoff-root "$EVAL_ROOT/refusal/bakeoff" \
     --phase metrics
 
+# Round-15 Fix B: post-metrics baseline existence check — guards against a
+# future --phase split silently dropping the next_token_js baseline cell
+# (Round-14 regression: the writer was only inside --phase all + --merge-only
+# call sites, and the launcher now drives extract+metrics).
+test -s "$EVAL_ROOT/refusal/bakeoff/metrics/last_prompt__layer-1__next_token_js__raw.json" \
+    || { echo "[FATAL] refusal bakeoff metrics dir is missing next_token_js baseline" >&2; exit 1; }
+
 phase bakeoff_em_extract "issue493_extraction_metric_bakeoff.py --phase extract (em)"
 run uv run python scripts/issue493_extraction_metric_bakeoff.py \
     --model-id "Qwen/Qwen2.5-7B" \
@@ -312,6 +319,10 @@ run uv run python scripts/issue493_extraction_metric_bakeoff.py \
     --probe-pool-mode custom \
     --bakeoff-root "$EVAL_ROOT/em/bakeoff" \
     --phase metrics
+
+# Round-15 Fix B (mirror): same baseline existence check for the em arm.
+test -s "$EVAL_ROOT/em/bakeoff/metrics/last_prompt__layer-1__next_token_js__raw.json" \
+    || { echo "[FATAL] em bakeoff metrics dir is missing next_token_js baseline" >&2; exit 1; }
 
 # ── I. Substrate assembly (per arm: predictor_comparison.json) ─────────────
 phase substrate_syco "issue518_build_predictor_substrate.py --arm syco"
