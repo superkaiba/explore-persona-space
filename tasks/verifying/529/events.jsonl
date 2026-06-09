@@ -62,3 +62,4 @@
 {"ts": "2026-06-09T14:02:53Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: train_cell -> crosseval", "phase": "crosseval", "pod": "pod-529"}
 {"ts": "2026-06-09T14:32:21Z", "kind": "epm:results", "version": 1, "by": "i529_cn_run", "note": "i529 cn re-run complete: 120 cells trained, anchor selected, analysis written."}
 {"ts": "2026-06-09T14:32:27Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: crosseval -> done", "phase": "done", "pod": "pod-529"}
+{"ts": "2026-06-09T14:33:20Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "Polling loop observed phase=done + epm:results posted. 120 cells / 360 per_cell JSONs / anchor_selection.json all on disk. Pod still alive for upload-verifier."}
