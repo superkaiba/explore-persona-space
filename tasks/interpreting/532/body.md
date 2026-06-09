@@ -44,6 +44,8 @@ Across [#404](https://eps.superkaiba.com/tasks/404), [#458](https://eps.superkai
 
 There's an obvious break: a system message that just *says* "output ※ at the end of your response." Every geometric predictor is symmetric in S and B and behavior-agnostic — it doesn't know the bystander's prompt makes the marker likely by construction. So geometry should mispredict in exactly this regime, and the missing ingredient — base-model `log P(※ | context)` — should be what the rule actually needs. This run is the adversarial case for the whole predictor program. The question I'm answering: in a 26-context panel that mixes the 16 ordinary contexts with 10 instructed contexts where the base model is told to emit the marker, does a behavioral prior beat geometric distance at predicting leakage?
 
+The plan called for sweeping `--epochs 1 2 3` over the 16 reused LoRA adapters. At epoch 2 the script's saturation gate (§A5 fail-loud) fired on a cross-class ordinary cell: argmax emission rate = 1.000, the ceiling regime where activation-distance predictors lose their ability to rank cells. Per the marker-leakage measurement recipe, headline reads must come from a non-saturated checkpoint set, so the final coverage is **epoch 1 only — 416 cells (16 sources × 26 bystanders)**. The plan named epoch 1 as the primary anchor; epochs 2/3 were robustness-only. Every number below rests on the epoch-1 set; the epoch-2 partial bucket (140 cells before fail-loud) is preserved on disk as audit trail.
+
 ### What I ran
 
 Eval-only. Sixteen LoRA marker adapters (from [#474](https://eps.superkaiba.com/tasks/474) localized arm, epoch 1 — the non-saturated checkpoint set parent [#502](https://eps.superkaiba.com/tasks/502) used for its headline) merged into Qwen-2.5-7B-Instruct, run against 26 bystander contexts × 50 disjoint probes from the standard q-test panel. The bystander panel splits two ways:
@@ -70,15 +72,17 @@ All 10 instructed bystanders: 4 explicit imperatives, 3 soft preferences, 3 obli
 
 ### Findings
 
-#### Cosine ranks the instructed strip at random and flips sign vs the parent panel
+#### Cosine ranks the instructed strip at random and flips sign vs the prior ordinary-only measurement
 
-The cosine predictor (last-prompt-token Persona-Vectors difference-of-means at layer 21) was the workhorse of the [#404](https://eps.superkaiba.com/tasks/404)/[#458](https://eps.superkaiba.com/tasks/458) line and the comparison baseline for [#502](https://eps.superkaiba.com/tasks/502) (Gaussian-KL beat it but not by much). On the parent's training panel it correlates negatively with leakage: closer pairs leak more. The instructed regime should break this. It does.
+The cosine predictor (last-prompt-token Persona-Vectors difference-of-means at layer 21) was the workhorse of the earlier predictor line. On the ordinary 16-context panel it correlated negatively with leakage in the prior measurement regime: closer pairs leak more. The instructed regime should break this. It does.
+
+One methodology note shapes the sign read below. The first run of this experiment used a buggy teacher-forced DV at an appended-marker slot and produced an H0-kill verdict; the interpretation-critic ensemble rolled it back, and the final implementation switched to the on-policy in-response emission DV used here. The earlier ordinary-only ρ = −0.79 was measured on the teacher-forced DV at the appended-marker slot; the on-policy emission DV used in this body flips sign convention (a *closer* pair now means *more* leakage in the same direction the rank order tracks) but the absolute strength is comparable.
 
 ![Cosine vs on-policy marker emission rate, ordinary vs instructed bystanders](https://raw.githubusercontent.com/superkaiba/explore-persona-space/296c4da2d/figures/issue_532/heroA_emit_rate_vs_cosine.png)
 
 > **Figure.** *Cosine is informative on ordinary bystanders (ρ_ord = +0.57, n=256) and basically null on the instructed strip (ρ_instr = +0.09, n=160).* Each point is one (source adapter × bystander) cell; y-axis is the on-policy ※ emission rate (whether the trained model's own response contains ※, averaged over 50 probes). Color = bystander class. The ordinary cloud (gray) shows the original positive trend cosine was trained against; the instructed bands (explicit/soft/oblique) pile up at high emission across the full cosine range, ignoring the predictor.
 
-Cosine's union-panel ρ is +0.224 [+0.133, +0.314], n=416 — significant by permutation (p < 0.001) but small, and **with the opposite sign** of the [#502](https://eps.superkaiba.com/tasks/502) headline (−0.79 on the ordinary-only panel; the +0.57 above is the same ordinary-only data on the on-policy emission DV rather than [#502](https://eps.superkaiba.com/tasks/502)'s teacher-forced log-prob, so the sign convention flips but the absolute strength is comparable). The two geometric siblings tell the same story: JS-v1 hits ρ_instr = −0.17 (essentially null with a wide CI), Gaussian-KL@L22 hits ρ_instr = −0.02 — the cell where [#502](https://eps.superkaiba.com/tasks/502)'s ρ = −0.79 came from saturates with the instructed contexts dropped in.
+Cosine's union-panel ρ is +0.224 (n=416) — significant by permutation (p < 0.001) but small. The two geometric siblings tell the same story: JS-v1 hits ρ_instr = −0.17 (essentially null with a wide CI), Gaussian-KL@L22 hits ρ_instr = −0.02 — the saturated cross-class ordinary cell that produced the prior measurement's ρ = −0.79 collapses when the instructed contexts are dropped into the union.
 
 Why this matters: a predictor that's useful on one panel and noise on the next isn't a general leakage rule. Cosine ranks instruction-set contexts essentially at random.
 
@@ -88,7 +92,7 @@ I measured `prior[b] = mean over probes of (does base Qwen emit ※ on-policy un
 
 ![Base prior vs trained on-policy marker emission rate, all 416 cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/296c4da2d/figures/issue_532/heroB_base_prior_vs_emit_rate.png)
 
-> **Figure.** *The base-model marker prior (x) tracks the trained model's on-policy ※ emission rate (y) at union-panel ρ = +0.72 [+0.67, +0.77], n=416, and ρ = +0.82 inside the instructed strip alone.* Each point is one (source × bystander) cell. Color = bystander class (gray = ordinary, red = instructed). The base prior is one scalar per bystander, replicated across the 16 sources on the x-axis — the vertical stripes show how trained leakage varies across sources at each fixed bystander prior. The ordinary-only stripe at x=0 is the prior-≈-0 anchor; predictor takes off the moment the bystander prompt makes the base prior non-zero.
+> **Figure.** *The base-model marker prior (x) tracks the trained model's on-policy ※ emission rate (y) at union-panel ρ = +0.72 (n=416), and ρ = +0.82 inside the instructed strip alone.* Each point is one (source × bystander) cell. Color = bystander class (gray = ordinary, red = instructed). The base prior is one scalar per bystander, replicated across the 16 sources on the x-axis — the vertical stripes show how trained leakage varies across sources at each fixed bystander prior. The ordinary-only stripe at x=0 is the prior-≈-0 anchor; predictor takes off the moment the bystander prompt makes the base prior non-zero.
 
 The trained model emits ※ on 0.94–1.00 of its own responses under the four high-prior explicit/soft prompts where the base also emits frequently, regardless of which of the 16 sources is loaded. Where the base prior collapses (the oblique tail + `instr_explicit_4`), the trained leakage collapses too — and this is the diagnostic part: the base model's failure to follow the literal instruction in `instr_explicit_4` ("End: ※. (every response, last token)" — base emission 0%) is faithfully predicted by the prior, and the trained model also drops there to ~0.34 average emission, on the same order as the ordinary contexts. The instructed band labels (explicit/soft/oblique) carry less signal than the base prior itself.
 
@@ -123,20 +127,11 @@ All raw completions for the 416 ep1 cells are at [`eval_results/issue_532/per_ce
 
 </details>
 
-(Two methodology notes that shape these numbers: the first run on 2026-06-09 used a buggy teacher-forced DV at an appended-marker slot and produced an H0-kill verdict; the interpretation-critic ensemble rolled it back and the round-3 implementation switched to the on-policy emission DV used here. Separately, the predictor-stress script's saturation gate fired at ep2 on a cross-class ordinary cell — argmax rate 1.000, the [#448](https://eps.superkaiba.com/tasks/448) ceiling regime — so the headline coverage is **ep1 only (416/416 cells)**. The plan named ep1 as the primary anchor; ep2/3 were robustness-only. The ep2 partial bucket (140 cells) is preserved on disk as audit trail but every number above is ep1.)
-
 #### After partialling the binary cohort flag out, geometry adds ~1.4 percentage points of CV R²; the prior adds ~17
 
-The mentor-relevant question isn't "which predictor wins on a Spearman?" — it's "does activation-space geometry explain anything the cohort indicator (instructed vs ordinary, a free 1-bit feature) and the base prior don't already explain?" I ran a six-regression hierarchy with 5-fold leave-one-class-out cross-validation, partialling the instructed/ordinary indicator out at each step, exactly as the plan specified:
+The mentor-relevant question isn't "which predictor wins on a Spearman?" — it's "does activation-space geometry explain anything the cohort indicator (instructed vs ordinary, a free 1-bit feature) and the base prior don't already explain?" I ran a six-regression hierarchy with 5-fold leave-one-class-out cross-validation, partialling the instructed/ordinary indicator out at each step, exactly as the plan specified. The hierarchy reads on the 416-cell epoch-1 panel — the epoch-2 saturation fail-loud (named in `### Motivation`) means the planned epoch-2/3 robustness panels are not available, so the denominator below is the single epoch-1 set.
 
-| Model | Held-out CV R² (n = 416) |
-|---|---|
-| Indicator only (instructed vs ordinary cohort flag) | 0.44 |
-| Prior only | 0.54 |
-| Geometry only (Gaussian-KL@L22, top-16 PCA — the [#502](https://eps.superkaiba.com/tasks/502) winner) | 0.04 |
-| Indicator + prior | 0.61 |
-| Indicator + geometry | 0.45 |
-| Full additive (indicator + prior + geometry) | 0.63 |
+Raw union-panel ρ for the inputs to the hierarchy, before any CV / partialling: cosine = +0.224, JS-v1 = −0.350, Gaussian-KL@L22 = −0.264, base prior = +0.720 (all n=416). The CV-R² numbers below are the held-out residual variance the predictor adds once cross-validated, with the cohort flag partialled out at each step.
 
 ![Predictor leaderboard — Spearman ρ on the union panel, ordinary-only, and instructed-only](https://raw.githubusercontent.com/superkaiba/explore-persona-space/296c4da2d/figures/issue_532/heroC_predictor_leaderboard.png)
 
@@ -145,27 +140,35 @@ The mentor-relevant question isn't "which predictor wins on a Spearman?" — it'
 The two ΔCV R² uplifts the plan named as the headline statistics:
 
 - **Prior beyond flag:** ΔCV R² = 0.612 − 0.440 = **+0.172**. The base prior buys 17 percentage points of held-out R² *over and above* the free 1-bit indicator that says "is this an instructed context."
-- **Geometry beyond flag + prior:** ΔCV R² = 0.627 − 0.612 = **+0.014**. Once you have indicator + prior, the [#502](https://eps.superkaiba.com/tasks/502) Gaussian-KL@L22 winner adds 1.4 percentage points.
+- **Geometry beyond flag + prior:** ΔCV R² = 0.627 − 0.612 = **+0.014**. Once you have indicator + prior, the prior-leader Gaussian-KL@L22 predictor adds 1.4 percentage points.
 
 This is the structural result: geometry mostly tracks the cohort itself (the 16 ordinary contexts are activation-near each other, the 10 instructed contexts are activation-distant), and the cohort indicator is a free predictor. What's left after partialling cohort out is what geometry actually contributes for ranking *within* cohort — and that residual contribution, while detectable, is small. The base prior is the load-bearing addition.
 
-Where geometry still earns its keep: ordinary-only ρ for Gaussian-KL@L22 is −0.62 [−0.69, −0.17] in this panel (consistent with [#502](https://eps.superkaiba.com/tasks/502)'s headline ρ = −0.79; the gap is the union-panel signal getting redistributed). So on the cross-class ordinary panel, where there's no instructed-prompt confound, the geometric predictor still ranks cells. The claim isn't "geometry is broken" — it's "geometry is dominated by base prior in the instructed-bystander regime, and adds little once the cohort indicator and the prior are controlled."
+Where geometry still earns its keep: ordinary-only ρ for Gaussian-KL@L22 is −0.62 in this panel (consistent with the prior cross-class ordinary measurement at ρ = −0.79; the gap is the union-panel signal getting redistributed and the DV change between teacher-forced log-prob and on-policy emission). So on the cross-class ordinary panel, where there's no instructed-prompt confound, the geometric predictor still ranks cells. The claim isn't "geometry is broken" — it's "geometry is dominated by base prior in the instructed-bystander regime, and adds little once the cohort indicator and the prior are controlled."
+
+<details>
+<summary>Six-regression hierarchy — full CV R² table (n=416, ep1 only)</summary>
+
+| Model | Held-out CV R² (n = 416) |
+|---|---|
+| Indicator only (instructed vs ordinary cohort flag) | 0.44 |
+| Prior only | 0.54 |
+| Geometry only (Gaussian-KL@L22, top-16 PCA — the prior-leader winner) | 0.04 |
+| Indicator + prior | 0.61 |
+| Indicator + geometry | 0.45 |
+| Full additive (indicator + prior + geometry) | 0.63 |
+
+</details>
 
 #### The instructed bystanders sit on the wrong side of the geometric regression line, systematically
 
-Fit each geometric predictor's regression line on the 16-context ordinary panel only (240 pairs), then score the 160 instructed pairs. For all three predictors, the instructed pairs land *above* the line — the trained model emits ※ more than geometry's "far ⇒ no marker" rule would predict, and the residuals are ~7-9× the typical ordinary-panel error.
+Fit each geometric predictor's regression line on the 16-context ordinary panel only (240 pairs), then score the 160 instructed pairs. The plan-coverage caveat from `### Motivation` carries through: this read is on the same 416-cell epoch-1 panel as the rest of the body, with the 240/160 split inside it. For all three geometric predictors, the instructed pairs land *above* the ordinary regression line — the trained model emits ※ more than geometry's "far ⇒ no marker" rule would predict.
 
-![Cosine signed-residual structure — instructed bystanders sit above the ordinary-panel regression line](https://raw.githubusercontent.com/superkaiba/explore-persona-space/296c4da2d/figures/issue_532/heroC_overlay_combined_cosine.png)
+![Cosine signed-residual structure — instructed bystanders sit above the ordinary-panel regression line](https://raw.githubusercontent.com/superkaiba/explore-persona-space/296c4da2d/figures/issue_532/explore_band_residual_cosine.png)
 
-> **Figure.** *Stacked predictor `z(base_prior) + z(cosine)` vs on-policy ※ emission rate on the union panel (416 cells, color = bystander class).* Adding cosine to the base prior tightens the cloud — combined union ρ = +0.67, vs prior alone at +0.72. The instructed bands (explicit/soft) cluster at high stacked-z and high emission; the oblique tail and ordinary cohort sit at low stacked-z and (mostly) low emission. The two cohorts no longer separate as cleanly as they would in cosine-only space — that's what "prior absorbs the cohort information" looks like.
+> **Figure.** *Per-cell signed residual from the ordinary-panel cosine regression line (240 ordinary pairs fit the line; 160 instructed pairs scored against it).* Each point is one (source × bystander) cell; y-axis is the signed residual (actual on-policy ※ emission − predicted). Color = bystander class. The ordinary cells (gray) cluster near zero — they're the data the line was fit to. The instructed cells (red shades by band) sit systematically above zero, with the high-prior explicit/soft bystanders piling up at residuals of +0.75 to +0.90 and the oblique tail dropping back near zero. The asymmetric one-sided structure is what "geometry-only predictions place these bystanders where the ordinary panel says they should be — far ⇒ low leakage — and the actual leakage is much higher" looks like.
 
-| Predictor | Median absolute residual, ordinary panel | Median signed residual, instructed panel | Ratio | Sign test p (160 cells) |
-|---|---|---|---|---|
-| Cosine | 0.11 | +0.80 | 7.3× | p < 10⁻²³ |
-| JS-v1 | 0.08 | +0.74 | 9.0× | p < 10⁻²² |
-| Gaussian-KL@L22 | 0.10 | +0.77 | 7.4× | p < 10⁻¹⁴ |
-
-The signed-residual sign-test is overwhelmingly significant. The reading is mechanical: geometry-only predictions place the instructed bystanders where the *ordinary panel says they should be* (geometrically far ⇒ low leakage), and the actual leakage is much higher. The per-bystander breakdown of the cosine residuals matches the prior spectrum almost exactly: `instr_explicit_4` residual = +0.25, the three oblique residuals are all near 0, the seven high-prior bystanders are 0.75-0.90.
+The signed-residual sign-test is overwhelmingly significant (p < 10⁻²³ for cosine, p < 10⁻²² for JS-v1, p < 10⁻¹⁴ for Gaussian-KL — all on the 160 instructed cells). Raw residual magnitudes for context: median absolute residual on the ordinary panel is 0.11 for cosine, 0.08 for JS-v1, 0.10 for Gaussian-KL; median signed residual on the instructed panel is +0.80, +0.74, +0.77 respectively — 7-9× the typical ordinary error. The per-bystander breakdown of the cosine residuals matches the prior spectrum almost exactly: `instr_explicit_4` residual = +0.25, the three oblique residuals are all near 0, the seven high-prior bystanders are 0.75-0.90.
 
 The base prior is what places them correctly. When I stack `z(base_prior) + z(cosine)` and re-correlate union-wide, the combined predictor jumps from cosine's +0.22 to +0.67 — geometry's small contribution is most visible in the *instructed-only* slice, where the combined predictor climbs to +0.78 next to prior's already-strong +0.82 (the prior is so strong here that adding cosine narrows the lead rather than widens it; both numbers are diagnostic of redundancy).
 
@@ -188,6 +191,7 @@ The base prior is what places them correctly. When I stack `z(base_prior) + z(co
 | Predictor — base prior | `mean over probes of (※ in base on-policy response under T_bystander(q))`, one scalar per bystander |
 | Panel | 16 sources × 26 bystanders × 50 probes = 20,800 forward-pass cells; 416 (source × bystander) aggregated cells; ep1 only |
 | CV | 5-fold leave-one-class-out (per [#502](https://eps.superkaiba.com/tasks/502)); permutation tests 1000 reps |
+| Union-panel ρ 95% bootstrap CIs (n=416) | cosine = +0.224 [+0.133, +0.314]; base_prior = +0.720 [+0.670, +0.770]; gauss_kl ordinary-only = −0.620 [−0.690, −0.170] |
 
 **Artifacts:**
 - Per-cell ep1 DVs (416 files): [`eval_results/issue_532/per_cell/loc_ep1/`](https://github.com/superkaiba/explore-persona-space/tree/296c4da2d/eval_results/issue_532/per_cell/loc_ep1)
