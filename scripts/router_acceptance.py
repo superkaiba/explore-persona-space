@@ -43,20 +43,40 @@ PASS checklist (per lane, evaluated by :func:`evaluate_pass_checklist`):
   shows up under the per-lane HF Hub subfolder
   (``superkaiba1/explore-persona-space/router_acceptance/issue-<N>-<lane>/``)
   via ``huggingface_hub.list_repo_files`` (NEVER the ``hf`` CLI --
-  CLAUDE.md upload-policy.md rule).
-* ``(b) git_figure_present``: a per-lane figure landed under
-  ``figures/issue_<N>/router_acceptance_<lane>.png`` and is tracked
-  by git (``git ls-files``).
+  CLAUDE.md upload-policy.md rule). The harness sets
+  ``EPM_PERSIST_ADAPTER_HF_REPO`` + ``EPM_PERSIST_ADAPTER_SUBFOLDER``
+  on the launch env (the ONLY env vars ``trainer.py:_persist_adapter``
+  reads, per ``.claude/rules/upload-policy.md`` -- NOT
+  ``EPM_PERSIST_ADAPTER_HF_SUBFOLDER`` which does not exist) so the
+  delete-after-eval adapter persistence lands at the expected path
+  the check (a) reads.
+* ``(b) git_figure_present``: a per-lane figure lives at
+  ``figures/issue_<N>/router_acceptance_<lane>.png`` and is staged in
+  git (``git ls-files`` picks up staged + tracked paths). The harness
+  itself generates this figure locally AFTER the lane completes (a
+  one-bar matplotlib PNG recording elapsed-seconds + chosen_kind) and
+  ``git add``s it -- ``train.py`` emits no figure of its own, so
+  without harness-side generation check (b) FALSE-FAILS every live
+  lane.
 * ``(c) routing_marker_posted``: the ``$ACC`` task's events.jsonl
   carries a fresh ``epm:backend-selected v1`` whose ``chosen_kind``
   matches the requested lane (auto -> "this is the lane the router
   picked"; explicit -> matches the override).
 * ``(d) clean_teardown``: the lane's own authority shows no live job /
-  VM / pod. DRAC: ``squeue --name eps-issue-<N>`` empty over the
-  cluster's robot socket. GCP: ``gcloud compute instances list
-  --filter="labels.eps-issue=<N>"`` empty. RunPod NOT in scope for
-  slice-8 acceptance (explicit-only; covered by the existing
-  ``test_no_auto_runpod_path_under_any_failure`` regression guard).
+  VM / pod. DRAC: ``squeue --name <pod_name>`` empty over the
+  cluster's robot socket, where ``<pod_name>`` is the CANONICAL job
+  name the launcher used (read from the launch outcome JSON's
+  ``pod_name`` field, NOT reconstructed as ``eps-issue-<N>`` --
+  ``slurm.job_name`` appends a ``-<plan_hash[:8]>`` suffix when
+  ``plan_hash`` is set, so a reconstructed grep can false-PASS on a
+  still-live job whose real name carries the hash suffix). GCP:
+  ``gcloud compute instances list --filter="labels.eps-issue=<N>"``
+  empty, against the SAME project/config the launcher used (also
+  carried from the launch outcome -- a fresh ``GcpConfig()`` could
+  grep a different project than the launch actually targeted).
+  RunPod NOT in scope for slice-8 acceptance (explicit-only; covered
+  by the existing ``test_no_auto_runpod_path_under_any_failure``
+  regression guard).
 
 Out-of-scope (this is harness only -- the live runs are
 orchestrator-driven):
@@ -207,6 +227,83 @@ def resolve_smoke_dataset(
 
 
 # ---------------------------------------------------------------------------
+# Per-lane figure -- the harness MUST produce check (b)'s artifact itself.
+# ``train.py`` emits no figure for the smoke workload; without harness-side
+# generation check (b) FALSE-FAILS every live lane (the figure simply does
+# not exist on disk to begin with).
+# ---------------------------------------------------------------------------
+
+
+def generate_acceptance_figure(
+    *,
+    issue: int,
+    lane: str,
+    elapsed_seconds: float,
+    chosen_kind: str,
+    repo_root: Path,
+    git_add: Callable[[Path, Path], None] | None = None,
+) -> Path:
+    """Generate the per-lane acceptance figure and stage it in git.
+
+    Writes a trivial one-bar matplotlib PNG recording the lane's
+    elapsed-seconds + chosen_kind to
+    ``figures/issue_<N>/router_acceptance_<lane>.png`` and ``git
+    add``s it so ``git ls-files`` (the check-(b) probe) sees it. The
+    figure is acceptance EVIDENCE for the live run -- the smoke
+    workload itself emits no figure.
+
+    Fails loud (raises) on any matplotlib / FS / git failure -- check
+    (b) MUST NOT silently FAIL through a swallowed exception in the
+    figure generator. The caller's lane-level FAIL handling surfaces
+    the raise; do NOT wrap this in ``try / pass``.
+
+    Returns the absolute Path the figure was written to.
+    """
+    rel = ACCEPTANCE_FIGURE_PATH.format(issue=issue, lane=lane)
+    abs_path = repo_root / rel
+    abs_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Matplotlib is a heavy import; defer until we actually need it.
+    import matplotlib
+
+    matplotlib.use("Agg")  # headless, no DISPLAY
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(4, 3))
+    ax.bar([f"{lane} ({chosen_kind})"], [elapsed_seconds], color="steelblue")
+    ax.set_ylabel("elapsed (s)")
+    ax.set_title(f"router-acceptance #{issue} {lane}")
+    ax.set_ylim(bottom=0)
+    fig.tight_layout()
+    fig.savefig(abs_path, dpi=80)
+    plt.close(fig)
+
+    if not abs_path.exists():
+        raise RuntimeError(f"figure generation produced no file at {abs_path}")
+
+    stage = git_add or _default_git_add
+    stage(repo_root, abs_path)
+    return abs_path
+
+
+def _default_git_add(repo_root: Path, abs_path: Path) -> None:
+    """Stage ``abs_path`` in git so ``git ls-files`` returns it.
+
+    Staging is enough for the check-(b) probe (``git ls-files``
+    reports both tracked and staged paths). Committing is the
+    caller's choice -- a single "acceptance evidence" commit per lane
+    is fine but not required by the verifier.
+    """
+    rel = abs_path.relative_to(repo_root)
+    argv = ["git", "-C", str(repo_root), "add", "--", str(rel)]
+    proc = subprocess.run(argv, capture_output=True, text=True, check=False, timeout=30)
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"git add {rel} failed (rc={proc.returncode}): stderr={proc.stderr.strip()!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # PASS checklist
 # ---------------------------------------------------------------------------
 
@@ -254,13 +351,19 @@ class VerifierIO:
     ``--live`` real-run uses the production implementations. Defaults
     are wired lazily so tests that ``monkeypatch.setattr`` a module
     attribute see the patch.
+
+    The ``gcloud_instances_list`` callable takes a positional name
+    filter plus OPTIONAL kw-only ``gcp_project`` / ``gcp_config_name``
+    overrides -- ``check_clean_teardown`` threads the launcher's
+    project so the verifier never greps a different project than the
+    launcher used (carried from the launch outcome JSON).
     """
 
     list_hf_repo_files: Callable[..., list[str]] | None = None
     git_tracked: Callable[[Path, Iterable[str]], set[str]] | None = None
     read_events_jsonl: Callable[[int], list[dict[str, Any]]] | None = None
     squeue_by_name: Callable[[str, str], list[str]] | None = None
-    gcloud_instances_list: Callable[[str], list[dict[str, Any]]] | None = None
+    gcloud_instances_list: Callable[..., list[dict[str, Any]]] | None = None
 
     def _list_hf(self) -> Callable[..., list[str]]:
         return self.list_hf_repo_files or _default_list_hf_repo_files
@@ -274,7 +377,7 @@ class VerifierIO:
     def _squeue(self) -> Callable[[str, str], list[str]]:
         return self.squeue_by_name or _default_squeue_by_name
 
-    def _gcloud(self) -> Callable[[str], list[dict[str, Any]]]:
+    def _gcloud(self) -> Callable[..., list[dict[str, Any]]]:
         return self.gcloud_instances_list or _default_gcloud_instances_list
 
 
@@ -332,6 +435,11 @@ def _default_squeue_by_name(robot_alias: str, job_name: str) -> list[str]:
     A non-empty return = still-live (PENDING / RUNNING / COMPLETING all
     count as live -- the DRAC robot allowlist has no ``sacct`` so this
     is the authoritative "still in queue" signal).
+
+    Timeout bumped to 120s (from 60s) because the DRAC scheduler is
+    sometimes slow to respond under load -- a 60s ssh-side timeout
+    can spuriously raise on a healthy still-empty queue, FALSE-FAILing
+    check (d).
     """
     argv = [
         "ssh",
@@ -340,7 +448,7 @@ def _default_squeue_by_name(robot_alias: str, job_name: str) -> list[str]:
         robot_alias,
         f"squeue -h -o %A --name={job_name}",
     ]
-    proc = subprocess.run(argv, capture_output=True, text=True, check=False, timeout=60)
+    proc = subprocess.run(argv, capture_output=True, text=True, check=False, timeout=120)
     if proc.returncode != 0:
         raise RuntimeError(
             f"squeue probe failed (rc={proc.returncode}): stderr={proc.stderr.strip()!r}"
@@ -348,18 +456,42 @@ def _default_squeue_by_name(robot_alias: str, job_name: str) -> list[str]:
     return [j.strip() for j in proc.stdout.splitlines() if j.strip()]
 
 
-def _default_gcloud_instances_list(name_filter: str) -> list[dict[str, Any]]:
+def _default_gcloud_instances_list(
+    name_filter: str,
+    *,
+    gcp_project: str | None = None,
+    gcp_config_name: str | None = None,
+) -> list[dict[str, Any]]:
     """Production gcloud-list probe (returns matching instance dicts).
 
-    Reads the canonical project / configuration from the env (the GCP
-    backend's ``GcpConfig`` defaults). A non-empty return = at least
-    one live instance matching the filter.
+    Uses the canonical ``default_gcp_config()`` as the base, then
+    overrides ``project`` / ``gcloud_config`` from the launch outcome
+    when threaded by the caller. This is load-bearing for not grepping
+    a DIFFERENT project than the launcher targeted -- a fresh
+    ``GcpConfig()`` (all-empty defaults) would issue a gcloud call
+    with no ``--project`` / ``--configuration``, falling back to the
+    ambient ``CLOUDSDK_ACTIVE_CONFIG_NAME`` (which my-goat manipulates
+    for personal use) and silently grepping the WRONG project. The
+    GCP backend's invariant is explicit-project-per-call (see
+    ``GcpConfig`` docstring); the verifier MUST match it.
+
+    A non-empty return = at least one live instance matching the
+    filter under the same project the launcher used.
     """
     # Lazy import -- keeps the harness importable on a VM with no
     # gcloud CLI installed.
-    from explore_persona_space.backends.gcp import GcpConfig, render_list_argv
+    from explore_persona_space.backends.gcp import default_gcp_config, render_list_argv
 
-    cfg = GcpConfig()
+    base = default_gcp_config()
+    cfg = base
+    if gcp_project or gcp_config_name:
+        from dataclasses import replace
+
+        cfg = replace(
+            base,
+            project=gcp_project or base.project,
+            gcloud_config=gcp_config_name or base.gcloud_config,
+        )
     argv = render_list_argv(config=cfg, name_filter=name_filter)
     proc = subprocess.run(argv, capture_output=True, text=True, check=False, timeout=120)
     if proc.returncode != 0:
@@ -384,9 +516,13 @@ def check_hf_artifact_present(
     """Check (a): the per-lane HF subfolder has >=1 file.
 
     The smoke workload's training pipeline auto-uploads the LoRA
-    adapter to ``router_acceptance/issue-<N>-<lane>/`` (the harness
-    sets ``EPM_PERSIST_ADAPTER_HF_SUBFOLDER`` on the launch env so the
-    delete-after-eval adapter persistence lands at the expected path).
+    adapter to ``router_acceptance/issue-<N>-<lane>/`` because the
+    harness sets BOTH ``EPM_PERSIST_ADAPTER_HF_REPO`` AND
+    ``EPM_PERSIST_ADAPTER_SUBFOLDER`` (verbatim, per
+    ``.claude/rules/upload-policy.md`` -- NOT
+    ``EPM_PERSIST_ADAPTER_HF_SUBFOLDER`` which does not exist in
+    ``trainer.py``) on the launch env so the delete-after-eval
+    adapter persistence lands at the expected path.
     """
     subfolder = ACCEPTANCE_HF_SUBFOLDER.format(issue=issue, lane=lane)
     try:
@@ -542,6 +678,9 @@ def check_clean_teardown(
     lane: str,
     io: VerifierIO,
     robot_alias_for_slurm: str | None = None,
+    canonical_job_name: str | None = None,
+    gcp_project: str | None = None,
+    gcp_config_name: str | None = None,
 ) -> CheckResult:
     """Check (d): the lane's own authority shows no live job / VM / pod.
 
@@ -549,16 +688,26 @@ def check_clean_teardown(
     router's local lease (a stale lease is a bug we want to surface,
     not silently dismiss):
 
-    * SLURM (nibi/mila): ``squeue --name eps-issue-<N>`` empty over
-      the cluster's robot socket. Robot allowlist has no ``sacct``,
+    * SLURM (nibi/mila): ``squeue --name <canonical_job_name>`` empty
+      over the cluster's robot socket. ``canonical_job_name`` is the
+      job name the launcher actually used (read from the launch
+      outcome JSON's ``pod_name`` field, which mirrors the
+      ``RunHandle.pod_name`` ``slurm.job_name(spec, plan_hash)``
+      returned). When ``plan_hash`` is set the suffix is
+      ``-<plan_hash[:8]>``; reconstructing the name from issue alone
+      would grep the wrong name and FALSE-PASS on a still-live job.
+      Fallback to ``eps-issue-<N>`` is allowed ONLY when no canonical
+      name is threaded (legacy callers / pure-unit tests); production
+      verify-lane always threads it. Robot allowlist has no ``sacct``,
       so "absent from queue" is the most authoritative terminal signal.
     * GCP: ``gcloud compute instances list --filter="labels.eps-issue=<N>"``
-      returns no instances with the ``eps-issue=<N>`` label.
+      returns no instances with the ``eps-issue=<N>`` label, against
+      the SAME ``gcp_project`` / ``gcp_config_name`` the launcher used.
     * RunPod: NOT in scope for slice-8 acceptance (explicit-only;
       the auto chain never reaches it; covered by
       ``test_no_auto_runpod_path_under_any_failure``).
     """
-    job_name = f"eps-issue-{int(issue)}"
+    job_name = canonical_job_name or f"eps-issue-{int(issue)}"
     if lane in {"nibi", "fir", "mila"}:
         if robot_alias_for_slurm is None:
             return CheckResult(
@@ -595,7 +744,11 @@ def check_clean_teardown(
     if lane == "gcp":
         gcp_filter = f"labels.eps-issue={int(issue)}"
         try:
-            instances = io._gcloud()(gcp_filter)
+            instances = io._gcloud()(
+                gcp_filter,
+                gcp_project=gcp_project,
+                gcp_config_name=gcp_config_name,
+            )
         except Exception as exc:
             return CheckResult(
                 name="clean_teardown",
@@ -638,8 +791,18 @@ def evaluate_pass_checklist(
     hf_model_repo: str,
     io: VerifierIO,
     robot_alias_for_slurm: str | None = None,
+    canonical_job_name: str | None = None,
+    gcp_project: str | None = None,
+    gcp_config_name: str | None = None,
 ) -> LaneVerdict:
-    """Run all four PASS checks for one lane and return the verdict."""
+    """Run all four PASS checks for one lane and return the verdict.
+
+    ``canonical_job_name`` / ``gcp_project`` / ``gcp_config_name`` are
+    threaded from the launch outcome JSON so check (d) probes the SAME
+    name + project the launcher used. Defaults preserve the legacy
+    behavior for pure-unit tests that don't have a launch outcome to
+    thread.
+    """
     checks = (
         check_hf_artifact_present(issue=issue, lane=lane, repo_id=hf_model_repo, io=io),
         check_git_figure_present(issue=issue, lane=lane, repo_root=repo_root, io=io),
@@ -649,6 +812,9 @@ def evaluate_pass_checklist(
             lane=lane,
             io=io,
             robot_alias_for_slurm=robot_alias_for_slurm,
+            canonical_job_name=canonical_job_name,
+            gcp_project=gcp_project,
+            gcp_config_name=gcp_config_name,
         ),
     )
     return LaneVerdict(lane=lane, checks=checks)
@@ -716,6 +882,20 @@ def build_live_command_plan(
         str(int(issue)),
     ]
 
+    # CRITICAL: ALWAYS pass --skip-confirm-artifacts to finalize.
+    # The acceptance harness verifies artifacts INDEPENDENTLY (the
+    # check-(a) HF probe + check-(b) figure probe in evaluate_pass_
+    # checklist), so the dispatch CLI's confirm_artifacts gate is
+    # both redundant AND unsafe here: the smoke workload's handle
+    # carries no ``expected_artifacts`` sentinel, so confirm_artifacts
+    # returns FAIL on a no-sentinel handle, which causes
+    # ``dispatch_issue.py finalize`` to return rc=3 and SKIP
+    # teardown -- the live VM / SLURM job would then stay UP and
+    # bill (GCP) / occupy the queue (SLURM) while the harness
+    # silently exits 0. ``--skip-confirm-artifacts`` makes teardown
+    # the unconditional next step after sidecar-read, which is the
+    # invariant a ``--live`` lane MUST hold: ALWAYS tear down its
+    # VM / job, even when PASS checks fail elsewhere.
     finalize_argv = [
         "uv",
         "run",
@@ -724,6 +904,7 @@ def build_live_command_plan(
         "finalize",
         "--issue",
         str(int(issue)),
+        "--skip-confirm-artifacts",
     ]
 
     return LiveCommandPlan(
@@ -871,7 +1052,15 @@ def run_live_lane(
             break
         sleep_fn(poll_interval_seconds)
 
-    # 3) Finalize.
+    # 3) Finalize. Teardown MUST run unconditionally on the --live
+    # path -- ``build_live_command_plan`` always passes
+    # ``--skip-confirm-artifacts`` so the only path to rc!=0 is a
+    # real CLI / backend crash (missing sidecar, unknown backend kind,
+    # actual ``backend.teardown`` failure). All of these mean a live
+    # VM / job may STILL be billing; the harness fails LOUD rather
+    # than masking that as success. A swallowed rc=3 here (the old
+    # behavior) was the spend-leak: confirm_artifacts FAILed → rc=3
+    # → teardown SKIPPED → live VM billing while harness exited 0.
     finalize_proc = subprocess_run(
         plan.finalize_argv,
         capture_output=True,
@@ -879,17 +1068,28 @@ def run_live_lane(
         cwd=plan.repo_relative_cwd,
         check=False,
     )
-    if finalize_proc.returncode not in (0, 3):
-        # 3 = confirm_artifacts FAIL (skipped teardown by design).
+    finalize_body = _parse_last_json_line(finalize_proc.stdout)
+    if finalize_proc.returncode != 0:
         raise RouterAcceptanceError(
             f"dispatch_issue.py finalize exited with rc={finalize_proc.returncode}: "
-            f"stderr={finalize_proc.stderr.strip()!r}"
+            f"teardown may NOT have run -- live VM/job may still be billing. "
+            f"stderr={finalize_proc.stderr.strip()!r} stdout_body={finalize_body!r}"
         )
-    finalize_body = _parse_last_json_line(finalize_proc.stdout)
     if finalize_body is None:
         raise RouterAcceptanceError(
             "dispatch_issue.py finalize produced no parseable JSON on stdout; "
             f"stdout={finalize_proc.stdout!r}"
+        )
+    # Defense-in-depth: even rc=0 must report ``phase=teardown`` --
+    # the only ok-rc-0 finalize body shape the dispatch CLI emits is
+    # ``{"ok": True, "phase": "teardown", ...}``. Anything else means
+    # finalize returned 0 without actually tearing down (would
+    # indicate a regression in dispatch_issue._cmd_finalize).
+    if finalize_body.get("phase") != "teardown":
+        raise RouterAcceptanceError(
+            "dispatch_issue.py finalize returned rc=0 but did NOT report "
+            f"phase=teardown (body={finalize_body!r}); teardown was SKIPPED "
+            "-- live VM/job may still be billing. Refusing to claim success."
         )
 
     return {
@@ -1241,7 +1441,29 @@ def negative_duplicate_cron_tick() -> dict[str, Any]:
 
 
 def _cmd_live(args: argparse.Namespace) -> int:
-    """``live`` action: dry-run by default; --live actually drives the lane."""
+    """``live`` action: dry-run by default; --live actually drives the lane.
+
+    On the ``--live`` path:
+
+    1. Sets ``EPM_PERSIST_ADAPTER_HF_REPO`` +
+       ``EPM_PERSIST_ADAPTER_SUBFOLDER`` (the ONLY env vars
+       ``trainer.py:_persist_adapter`` reads) on the harness env BEFORE
+       the launch subprocess, so the per-lane subfolder check (a) reads
+       has an artifact to find. Subprocess inherits the parent env.
+    2. Drives launch -> poll -> finalize via :func:`run_live_lane`.
+       ``build_live_command_plan`` always passes
+       ``--skip-confirm-artifacts`` so teardown ALWAYS runs (no spend
+       leak); ``run_live_lane`` raises on any non-zero finalize rc OR
+       on a finalize body that doesn't report ``phase=teardown``.
+    3. Generates the per-lane figure via
+       :func:`generate_acceptance_figure` and ``git add``s it, so
+       check (b) has a real artifact to find.
+    4. Evaluates the PASS checklist in-process, threading the
+       canonical job name (``pod_name`` from the launch outcome) and
+       the GCP project (carried via the GCP backend defaults the
+       launcher used) to check (d). The harness's exit code reflects
+       the lane verdict (0=PASS, 1=FAIL).
+    """
     repo_root = Path.cwd()
     # Confirm the smoke dataset is present (loud failure if not).
     spec = resolve_smoke_dataset(repo_root=repo_root)
@@ -1264,17 +1486,88 @@ def _cmd_live(args: argparse.Namespace) -> int:
         emit_live_dry_run(plan, backend=args.backend, issue=args.issue)
         return 0
 
+    # CRITICAL: set the adapter-persist env vars BEFORE the launch
+    # subprocess. ``trainer.py:_persist_adapter`` reads BOTH:
+    #   EPM_PERSIST_ADAPTER_HF_REPO  (model repo, e.g. superkaiba1/explore-persona-space)
+    #   EPM_PERSIST_ADAPTER_SUBFOLDER  (per-lane subfolder)
+    # Without these set, the training pipeline writes adapter weights
+    # locally but does NOT persist them to HF, so check (a)
+    # (hf_artifact_present) FALSE-FAILS the lane EVEN WHEN the live
+    # run was otherwise healthy. Verbatim env-var names match the
+    # canonical recipe in ``.claude/rules/upload-policy.md``; do NOT
+    # invent ``EPM_PERSIST_ADAPTER_HF_SUBFOLDER`` (no such var
+    # exists in trainer.py).
+    os.environ["EPM_PERSIST_ADAPTER_HF_REPO"] = args.hf_model_repo
+    os.environ["EPM_PERSIST_ADAPTER_SUBFOLDER"] = ACCEPTANCE_HF_SUBFOLDER.format(
+        issue=args.issue, lane=args.backend
+    )
+
     # --live path actually spends compute. Stay loud about it.
     logger.warning(
         "router_acceptance --live: about to drive a real launch on lane=%r issue=%d",
         args.backend,
         args.issue,
     )
+    started = time.monotonic()
     outcome = run_live_lane(plan, backend=args.backend, issue=args.issue)
+    elapsed_seconds = time.monotonic() - started
     print(json.dumps(outcome, sort_keys=True, indent=2))
     if outcome["phase"] == "launch_terminal":
         return 2
-    return 0
+
+    # The launch_body carries the canonical pod_name (= the job name
+    # the launcher used, NOT ``eps-issue-<N>`` reconstructed -- see
+    # check (d) docstring) and the chosen_kind the router actually
+    # picked (the requested lane may have been ``auto`` and the
+    # router resolved it to nibi / gcp / mila / fir).
+    launch_body = outcome.get("launch_body") or {}
+    chosen_kind = launch_body.get("chosen_kind") or args.backend
+    canonical_job_name = launch_body.get("pod_name")
+
+    # 3) Harness-produced figure for check (b). The smoke workload
+    # itself emits no figure -- this is the acceptance EVIDENCE the
+    # check (b) probe expects to find tracked/staged in git.
+    figure_path = generate_acceptance_figure(
+        issue=args.issue,
+        lane=args.backend,
+        elapsed_seconds=elapsed_seconds,
+        chosen_kind=chosen_kind,
+        repo_root=repo_root,
+    )
+    logger.info("acceptance figure generated + staged: %s", figure_path)
+
+    # 4) PASS checklist for the lane the router actually picked.
+    # auto -> chosen_kind (the actual lane); explicit -> the override.
+    resolved_lane = chosen_kind if args.backend == "auto" else args.backend
+    expected_lane = chosen_kind if args.backend == "auto" else args.backend
+    # GCP project: the dispatch CLI's GCP path uses default_gcp_config()
+    # under the hood, so the verifier MUST use the same. Carry the
+    # project explicitly to make the invariant visible (and to leave
+    # a hook for a future per-launch override the launch_body could
+    # surface).
+    gcp_project = None
+    gcp_config_name = None
+    if resolved_lane == "gcp":
+        from explore_persona_space.backends.gcp import default_gcp_config
+
+        cfg = default_gcp_config()
+        gcp_project = cfg.project
+        gcp_config_name = cfg.gcloud_config
+
+    verdict = evaluate_pass_checklist(
+        issue=args.issue,
+        lane=resolved_lane,
+        expected_lane=expected_lane,
+        repo_root=repo_root,
+        hf_model_repo=args.hf_model_repo,
+        io=VerifierIO(),
+        robot_alias_for_slurm=args.robot_alias,
+        canonical_job_name=canonical_job_name,
+        gcp_project=gcp_project,
+        gcp_config_name=gcp_config_name,
+    )
+    print(verdict.format())
+    return 0 if verdict.passed else 1
 
 
 def _cmd_verify_lane(args: argparse.Namespace) -> int:
@@ -1331,17 +1624,21 @@ def _cmd_negative(args: argparse.Namespace) -> int:
         assert outcome["runpod_launches"] == 0, "cancel-race: RunPod was launched on auto path"
     elif args.case == "duplicate-cron-tick":
         # Both invocations must return 0 (the CLI does NOT crash on the
-        # second tick); teardown is called BOTH times -- the backend's
-        # ABC contract absorbs the duplicate (a real backend's teardown
-        # short-circuits on a missing pod / VM / job, validated by the
-        # per-backend test suites). The harness's claim here is the
-        # CLI-level idempotency: a duplicate finalize is safe to issue.
+        # second tick); teardown is called either ONCE or TWICE.
+        # Accepting (1, 2) on purpose: today the CLI doesn't de-dup so
+        # teardown is called twice and the backend's ABC contract
+        # absorbs the duplicate. A FUTURE CLI-level idempotency fix
+        # (e.g. dispatch_issue.py finalize deletes the sidecar after
+        # the first call) would land teardown_count=1, which is ALSO
+        # correct under the contract -- the test must not read that
+        # future improvement as a regression. The claim under test is
+        # rc_codes=[0,0] -- the CLI does NOT crash on the second tick.
         assert outcome["rc_codes"] == [0, 0], (
             f"duplicate-cron-tick: expected rc_codes=[0,0], got {outcome['rc_codes']!r}"
         )
-        assert outcome["teardown_count"] == 2, (
-            f"duplicate-cron-tick: expected 2 teardown invocations (CLI does NOT "
-            f"de-dup; backend ABC absorbs); got {outcome['teardown_count']!r}"
+        assert outcome["teardown_count"] in (1, 2), (
+            f"duplicate-cron-tick: expected teardown_count in (1,2), "
+            f"got {outcome['teardown_count']!r}"
         )
     return 0
 
@@ -1367,6 +1664,23 @@ def _build_argparser() -> argparse.ArgumentParser:
         action="store_true",
         help="Actually shell out to dispatch_issue.py + backend_poll.py. "
         "Without this flag the harness prints the dry-run command sequence only.",
+    )
+    live.add_argument(
+        "--hf-model-repo",
+        default="superkaiba1/explore-persona-space",
+        help=(
+            "HF model repo for the per-lane adapter artifact (set as "
+            "EPM_PERSIST_ADAPTER_HF_REPO on the launch env; also used by "
+            "check (a) hf_artifact_present in-process after the lane completes)."
+        ),
+    )
+    live.add_argument(
+        "--robot-alias",
+        default=None,
+        help=(
+            "SLURM robot ssh alias for the squeue teardown probe in check (d). "
+            "Required for nibi / fir / mila lanes; ignored for gcp."
+        ),
     )
     live.add_argument("--debug", action="store_true", help="Log to stderr at DEBUG level.")
 
@@ -1447,6 +1761,7 @@ __all__ = [
     "check_routing_marker_posted",
     "emit_live_dry_run",
     "evaluate_pass_checklist",
+    "generate_acceptance_figure",
     "main",
     "negative_cancel_race",
     "negative_duplicate_cron_tick",

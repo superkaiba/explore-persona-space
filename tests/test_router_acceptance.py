@@ -96,7 +96,15 @@ def test_build_live_command_plan_auto_omits_backend_flag() -> None:
 
 
 def test_build_live_command_plan_poll_and_finalize_argv() -> None:
-    """Poll + finalize argv carry only the per-issue arg (no other knobs)."""
+    """Poll + finalize argv match SKILL.md.
+
+    The finalize argv MUST carry ``--skip-confirm-artifacts`` -- the
+    acceptance harness verifies artifacts independently; the
+    confirm_artifacts gate would FAIL on the no-sentinel smoke handle
+    and skip teardown, leaking spend on the still-live VM / SLURM job.
+    Pinning the flag here makes the always-teardown invariant a hard
+    contract.
+    """
     plan = ra.build_live_command_plan(issue=302, backend="gcp", repo_root=Path("/repo"))
     assert plan.poll_argv == [
         "uv",
@@ -114,6 +122,7 @@ def test_build_live_command_plan_poll_and_finalize_argv() -> None:
         "finalize",
         "--issue",
         "302",
+        "--skip-confirm-artifacts",
     ]
 
 
@@ -493,20 +502,92 @@ def test_check_clean_teardown_slurm_misconfig_no_robot_alias() -> None:
 
 
 def test_check_clean_teardown_gcp_pass() -> None:
-    """gcloud list returns no instances -> teardown clean."""
-    io_ = ra.VerifierIO(gcloud_instances_list=lambda _filter: [])
+    """gcloud list returns no instances -> teardown clean.
+
+    ``gcloud_instances_list`` accepts the kw-only ``gcp_project`` /
+    ``gcp_config_name`` overrides ``check_clean_teardown`` threads
+    from the launch outcome -- the fake must accept them (even if it
+    ignores their values).
+    """
+
+    def _fake(_filter: str, *, gcp_project: str | None = None, gcp_config_name: str | None = None):
+        return []
+
+    io_ = ra.VerifierIO(gcloud_instances_list=_fake)
     res = ra.check_clean_teardown(issue=803, lane="gcp", io=io_)
     assert res.passed
 
 
 def test_check_clean_teardown_gcp_fail_live_vms() -> None:
     """gcloud list returns 1+ instances -> FAIL with names."""
-    io_ = ra.VerifierIO(
-        gcloud_instances_list=lambda _filter: [{"name": "eps-issue-804"}],
-    )
+
+    def _fake(_filter: str, *, gcp_project: str | None = None, gcp_config_name: str | None = None):
+        return [{"name": "eps-issue-804"}]
+
+    io_ = ra.VerifierIO(gcloud_instances_list=_fake)
     res = ra.check_clean_teardown(issue=804, lane="gcp", io=io_)
     assert not res.passed
     assert "eps-issue-804" in res.detail
+
+
+def test_check_clean_teardown_gcp_threads_launch_project() -> None:
+    """The launcher's project / config name reach the gcloud probe.
+
+    A fresh ``GcpConfig()`` would default-empty project + fall back to
+    the ambient ``CLOUDSDK_ACTIVE_CONFIG_NAME`` (my-goat manipulates
+    it for personal use), which would grep the WRONG project. The
+    verifier MUST use the same project the launcher targeted.
+    """
+    seen: dict[str, Any] = {}
+
+    def _fake(filter_: str, *, gcp_project=None, gcp_config_name=None):
+        seen["filter"] = filter_
+        seen["project"] = gcp_project
+        seen["config"] = gcp_config_name
+        return []
+
+    io_ = ra.VerifierIO(gcloud_instances_list=_fake)
+    res = ra.check_clean_teardown(
+        issue=805,
+        lane="gcp",
+        io=io_,
+        gcp_project="eps-persona-gpu-jun2026",
+        gcp_config_name="eps-gcp",
+    )
+    assert res.passed
+    assert seen["project"] == "eps-persona-gpu-jun2026"
+    assert seen["config"] == "eps-gcp"
+    assert seen["filter"] == "labels.eps-issue=805"
+
+
+def test_check_clean_teardown_slurm_uses_canonical_job_name() -> None:
+    """check (d) greps the canonical pod_name, NOT ``eps-issue-<N>``.
+
+    ``slurm.job_name`` appends ``-<plan_hash[:8]>`` when a plan hash
+    is set; reconstructing the name from issue alone would grep the
+    wrong name and false-PASS on a still-live job whose real name
+    carries the hash suffix.
+    """
+    grepped: dict[str, str] = {}
+
+    def _fake_squeue(alias: str, name: str) -> list[str]:
+        grepped["alias"] = alias
+        grepped["name"] = name
+        return []
+
+    io_ = ra.VerifierIO(squeue_by_name=_fake_squeue)
+    res = ra.check_clean_teardown(
+        issue=900,
+        lane="nibi",
+        io=io_,
+        robot_alias_for_slurm="robot-nibi",
+        canonical_job_name="eps-issue-900-a1b2c3d4",
+    )
+    assert res.passed
+    assert grepped["name"] == "eps-issue-900-a1b2c3d4", (
+        "verifier must grep the canonical pod_name from the launch outcome, "
+        "not reconstruct eps-issue-<N>"
+    )
 
 
 def test_evaluate_pass_checklist_overall_pass(tmp_path: Path) -> None:
@@ -669,6 +750,185 @@ def test_cli_negative_duplicate_cron_tick_asserts_and_exits_zero(monkeypatch, tm
     assert rc == 0
     body = json.loads(buf.getvalue())
     assert body["rc_codes"] == [0, 0]
+
+
+# ---------------------------------------------------------------------------
+# Always-teardown invariant -- the spend-leak regression guard
+# ---------------------------------------------------------------------------
+
+
+def test_run_live_lane_raises_on_nonzero_finalize_rc() -> None:
+    """A non-zero finalize rc means teardown may NOT have run.
+
+    The harness MUST fail loud here, NOT silently exit 0. This is the
+    spend-leak regression test: pre-fix, ``run_live_lane`` accepted
+    rc=3 silently (treating "confirm_artifacts FAIL -> teardown
+    skipped" as success), so a live VM / SLURM job could keep billing
+    while the harness exited 0. Post-fix, ``build_live_command_plan``
+    always passes ``--skip-confirm-artifacts`` so rc=3 should never
+    happen on the live path -- and if it DOES (a regression in the
+    dispatch CLI), the harness raises rather than masking it.
+    """
+    plan = ra.build_live_command_plan(issue=600, backend="nibi", repo_root=Path("/repo"))
+    fake_run, _rec = _make_fake_subprocess_run(
+        launch_stdout=json.dumps({"ok": True, "chosen_kind": "nibi", "pod_name": "eps-issue-600"}),
+        poll_stdouts=[json.dumps({"status": "done"})],
+        finalize_stdout=json.dumps({"ok": False, "reason": "confirm_artifacts_failed"}),
+        finalize_rc=3,  # the historic spend-leak path
+    )
+    with pytest.raises(
+        ra.RouterAcceptanceError,
+        match=r"finalize exited with rc=3.*teardown may NOT have run.*billing",
+    ):
+        ra.run_live_lane(
+            plan,
+            backend="nibi",
+            issue=600,
+            poll_interval_seconds=0.0,
+            subprocess_run=fake_run,
+            sleep_fn=lambda _s: None,
+            now_fn=lambda: 0.0,
+        )
+
+
+def test_run_live_lane_raises_when_finalize_rc0_but_no_teardown_phase() -> None:
+    """rc=0 is not enough -- the body MUST report phase=teardown.
+
+    Defense-in-depth: even a rc=0 finalize that doesn't report
+    ``phase=teardown`` means teardown was NOT actually executed (a
+    future dispatch CLI regression). The harness refuses to claim
+    success on the lane in that case.
+    """
+    plan = ra.build_live_command_plan(issue=601, backend="nibi", repo_root=Path("/repo"))
+    fake_run, _rec = _make_fake_subprocess_run(
+        launch_stdout=json.dumps({"ok": True, "chosen_kind": "nibi"}),
+        poll_stdouts=[json.dumps({"status": "done"})],
+        # rc=0 but phase != teardown -- a regression shape.
+        finalize_stdout=json.dumps({"ok": True, "phase": "confirm_artifacts_skipped"}),
+        finalize_rc=0,
+    )
+    with pytest.raises(ra.RouterAcceptanceError, match=r"did NOT report.*phase=teardown.*billing"):
+        ra.run_live_lane(
+            plan,
+            backend="nibi",
+            issue=601,
+            poll_interval_seconds=0.0,
+            subprocess_run=fake_run,
+            sleep_fn=lambda _s: None,
+            now_fn=lambda: 0.0,
+        )
+
+
+def test_run_live_lane_passes_when_teardown_reported() -> None:
+    """The happy-path PASS contract: rc=0 + phase=teardown -> ok."""
+    plan = ra.build_live_command_plan(issue=602, backend="nibi", repo_root=Path("/repo"))
+    fake_run, rec = _make_fake_subprocess_run(
+        launch_stdout=json.dumps({"ok": True, "chosen_kind": "nibi"}),
+        poll_stdouts=[json.dumps({"status": "done"})],
+        finalize_stdout=json.dumps({"ok": True, "phase": "teardown"}),
+        finalize_rc=0,
+    )
+    outcome = ra.run_live_lane(
+        plan,
+        backend="nibi",
+        issue=602,
+        poll_interval_seconds=0.0,
+        subprocess_run=fake_run,
+        sleep_fn=lambda _s: None,
+        now_fn=lambda: 0.0,
+    )
+    assert outcome["finalize_body"]["phase"] == "teardown"
+    # The finalize argv MUST carry --skip-confirm-artifacts (read off
+    # the recorded subprocess invocation, not just the plan).
+    finalize_calls = [a for a in rec.argv_list if "finalize" in a]
+    assert finalize_calls, "finalize was never called"
+    assert "--skip-confirm-artifacts" in finalize_calls[0], (
+        f"finalize argv missing --skip-confirm-artifacts (the always-teardown "
+        f"contract): {finalize_calls[0]!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Harness-produced figure -- check (b) evidence
+# ---------------------------------------------------------------------------
+
+
+def test_generate_acceptance_figure_writes_png_and_stages_it(tmp_path: Path) -> None:
+    """generate_acceptance_figure writes the figure AND ``git add``s it."""
+    staged: list[Path] = []
+
+    def _fake_git_add(root: Path, abs_path: Path) -> None:
+        staged.append(abs_path)
+
+    out = ra.generate_acceptance_figure(
+        issue=700,
+        lane="nibi",
+        elapsed_seconds=12.5,
+        chosen_kind="nibi",
+        repo_root=tmp_path,
+        git_add=_fake_git_add,
+    )
+    assert out.exists()
+    assert out.suffix == ".png"
+    expected_rel = ra.ACCEPTANCE_FIGURE_PATH.format(issue=700, lane="nibi")
+    assert out == tmp_path / expected_rel
+    # ``git add`` was called with the file we just produced.
+    assert staged == [out]
+
+
+def test_generate_acceptance_figure_raises_on_git_add_failure(tmp_path: Path) -> None:
+    """A git-add failure raises -- the figure check (b) MUST NOT silently FAIL."""
+
+    def _broken(_root: Path, _path: Path) -> None:
+        raise RuntimeError("git add boom")
+
+    with pytest.raises(RuntimeError, match="git add boom"):
+        ra.generate_acceptance_figure(
+            issue=701,
+            lane="nibi",
+            elapsed_seconds=1.0,
+            chosen_kind="nibi",
+            repo_root=tmp_path,
+            git_add=_broken,
+        )
+
+
+# ---------------------------------------------------------------------------
+# evaluate_pass_checklist threads canonical job name + GCP project
+# ---------------------------------------------------------------------------
+
+
+def test_evaluate_pass_checklist_threads_canonical_job_name(tmp_path: Path) -> None:
+    """``canonical_job_name`` reaches check (d)'s squeue probe."""
+    rel = "figures/issue_910/router_acceptance_nibi.png"
+    (tmp_path / rel).parent.mkdir(parents=True)
+    (tmp_path / rel).write_bytes(b"PNG")
+    grepped: dict[str, str] = {}
+
+    def _fake_squeue(_alias: str, name: str) -> list[str]:
+        grepped["name"] = name
+        return []
+
+    io_ = ra.VerifierIO(
+        list_hf_repo_files=lambda _r, repo_type: ["router_acceptance/issue-910-nibi/adapter.bin"],
+        git_tracked=lambda _r, paths: set(paths),
+        read_events_jsonl=lambda _n: [
+            {"kind": "epm:backend-selected", "note": json.dumps({"chosen_kind": "nibi"})}
+        ],
+        squeue_by_name=_fake_squeue,
+    )
+    verdict = ra.evaluate_pass_checklist(
+        issue=910,
+        lane="nibi",
+        expected_lane="nibi",
+        repo_root=tmp_path,
+        hf_model_repo="x/y",
+        io=io_,
+        robot_alias_for_slurm="robot-nibi",
+        canonical_job_name="eps-issue-910-deadbeef",
+    )
+    assert verdict.passed
+    assert grepped["name"] == "eps-issue-910-deadbeef"
 
 
 def test_cli_verify_lane_runs_and_exits_per_verdict(monkeypatch, tmp_path: Path) -> None:
