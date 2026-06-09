@@ -149,6 +149,10 @@ class ClusterConfig:
     robot_alias: str
     max_gpus_per_node: int
     scratch_path: str
+    # DRAC requires a GPU TYPE in ``--gpus-per-node`` (e.g. ``h100:1``); a
+    # bare count is read as a GPU-type name and sbatch rejects it ("There is
+    # no 1 GPU-type"). Nibi + Fir are both H100. Override for a non-H100 system.
+    gpu_type: str = "h100"
     partition: str | None = None
     constraint: str | None = None
     nccl_socket_ifname: str | None = None
@@ -899,7 +903,7 @@ def render_sbatch(
         f"#SBATCH --job-name={name}",
         "#SBATCH --nodes=1",
         "#SBATCH --ntasks-per-node=1",
-        f"#SBATCH --gpus-per-node={gpus}",
+        f"#SBATCH --gpus-per-node={cluster.gpu_type}:{gpus}",
         f"#SBATCH --cpus-per-task={min(8 * gpus, 64)}",
         f"#SBATCH --mem={min(64 * gpus, 480)}G",
         f"#SBATCH --time={time_str}",
@@ -922,6 +926,11 @@ def render_sbatch(
         f"SCRATCH_JOB_DIR={shlex.quote(scratch_dir)}",
         'mkdir -p "$SCRATCH_JOB_DIR"',
         'STATUS_JSON="$SCRATCH_JOB_DIR/status.json"',
+        "# Authoritative current-phase file. The background heartbeat reads",
+        "# THIS (not a captured shell var) so it reports the LIVE phase — a",
+        "# bg subshell freezes CURRENT_PHASE at fork time otherwise (the",
+        "# heartbeat would keep writing the startup phase through every stage).",
+        'PHASE_FILE="$SCRATCH_JOB_DIR/.current_phase"',
         "",
         "# Status helper: writes phase + heartbeat + gpu_busy + exit code",
         "# atomically to status.json. Monitor rsyncs this file and reads",
@@ -951,10 +960,23 @@ def render_sbatch(
         f"HEARTBEAT_INTERVAL={HEARTBEAT_INTERVAL_SECONDS}",
         "_heartbeat_loop() {",
         "  while true; do",
-        '    _write_status "${CURRENT_PHASE:-init}"',
+        '    _write_status "$(cat "$PHASE_FILE" 2>/dev/null || echo startup)"',
         '    sleep "$HEARTBEAT_INTERVAL"',
         "  done",
         "}",
+        "",
+        "# Start the heartbeat NOW (before the long venv build) + write an",
+        "# initial status.json so a RUNNING job ALWAYS has a fresh heartbeat.",
+        "# Otherwise the monitor reads `stalled` for the whole ~6-40 min venv",
+        "# build, since status.json wouldn't exist until preflight.",
+        'CURRENT_PHASE="startup"',
+        'echo startup > "$PHASE_FILE"',
+        '_write_status "startup"',
+        "_heartbeat_loop &",
+        "HEARTBEAT_PID=$!",
+        "# Heartbeat-kill trap; the secrets stanza upgrades it to also shred",
+        "# the secrets file once SECRETS_FILE is defined.",
+        "trap 'kill $HEARTBEAT_PID 2>/dev/null || true' EXIT TERM INT",
         "",
     ]
 
@@ -981,8 +1003,11 @@ def render_sbatch(
         "# === Secrets ===",
         f'SECRETS_FILE="$SCRATCH_JOB_DIR/{secrets_filename}"',
         "# Trap fires on normal exit AND on signals so an OOM kill / preempt",
-        "# never leaves the secrets file on $SCRATCH.",
-        'trap \'shred -u "$SECRETS_FILE" 2>/dev/null || rm -f "$SECRETS_FILE"\' EXIT TERM INT',
+        "# never leaves the secrets file on $SCRATCH. Combined with the",
+        "# heartbeat kill (the loop started at startup, before this stanza).",
+        "trap 'kill $HEARTBEAT_PID 2>/dev/null || true; "
+        'shred -u "$SECRETS_FILE" 2>/dev/null '
+        '|| rm -f "$SECRETS_FILE"\' EXIT TERM INT',
         "# Make sure file perms are tight before we source.",
         'if [ ! -f "$SECRETS_FILE" ]; then',
         '  echo "[FAIL] secrets file $SECRETS_FILE not found"',
@@ -1100,12 +1125,8 @@ def render_sbatch(
         "  exit 6",
         "fi",
         "",
-        "# Preflight PASS — start heartbeat loop in the background.",
-        "_heartbeat_loop &",
-        "HEARTBEAT_PID=$!",
-        "trap 'kill $HEARTBEAT_PID 2>/dev/null; "
-        'shred -u "$SECRETS_FILE" 2>/dev/null '
-        '|| rm -f "$SECRETS_FILE"\' EXIT TERM INT',
+        "# Preflight PASS. (Heartbeat already running since startup; the",
+        "# combined kill+shred trap was set in the secrets stanza.)",
         "",
     ]
 
@@ -1116,6 +1137,7 @@ def render_sbatch(
     for stage in plan.stages:
         stage_blocks.append(f"# === Stage: {stage.name} ===")
         stage_blocks.append(f'CURRENT_PHASE="{stage.name}"')
+        stage_blocks.append(f'echo "{stage.name}" > "$PHASE_FILE"')
         stage_blocks.append(f'echo "[phase={stage.name}]"')
         stage_blocks.append(f'_write_status "{stage.name}"')
         if stage.backend == "local":

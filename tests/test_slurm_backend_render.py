@@ -436,7 +436,7 @@ def test_render_sbatch_lora_eval_golden() -> None:
 
     # Headers
     assert "#SBATCH --account=rrg-bengioy-ad_gpu" in script
-    assert "#SBATCH --gpus-per-node=1" in script
+    assert "#SBATCH --gpus-per-node=h100:1" in script
     assert "#SBATCH --nodes=1" in script
     assert "#SBATCH --ntasks-per-node=1" in script
     assert "#SBATCH --output=/scratch/tjiral/eps/issue-137/job.out" in script
@@ -494,6 +494,30 @@ def test_render_sbatch_lora_eval_golden() -> None:
     # The Hydra args got threaded into the train + eval invocations.
     assert "condition=c1_evil_wrong_em" in script
     assert "seed=42" in script
+
+
+def test_heartbeat_starts_early_and_reports_live_phase() -> None:
+    """Heartbeat must start BEFORE the venv build (else a job reads `stalled`
+    for the whole ~6-40 min build) and report the LIVE phase from a file (a bg
+    subshell freezes a captured shell var → would report `startup` through every
+    stage). Both caught on real Nibi during acceptance."""
+    spec = _lora_spec("lora-7b")
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+        plan_hash="h",
+    )
+    # Started at startup, before the uv venv build.
+    assert script.index("_heartbeat_loop &") < script.index("uv sync"), (
+        "heartbeat must start before the venv build"
+    )
+    # Reads the live phase file, NOT a captured shell var.
+    assert 'cat "$PHASE_FILE"' in script
+    assert '_write_status "${CURRENT_PHASE' not in script
+    # Stages write the live phase to the file.
+    assert 'echo "lora" > "$PHASE_FILE"' in script
 
 
 # ---------------------------------------------------------------------------
