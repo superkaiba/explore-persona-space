@@ -176,7 +176,7 @@ def _generate_on_policy_R(
     return r
 
 
-def compute_kl_for_checkpoint(
+def compute_kl_and_slot_stats_for_checkpoint(
     *,
     base_model: str,
     adapter_path: str,
@@ -184,10 +184,11 @@ def compute_kl_for_checkpoint(
     eval_personas: dict[str, str],
     eval_questions: list[str],
     marker_text: str = MARKER_TEXT,
+    marker_token_id: int = EXPECTED_MARKER_TOKEN_ID,
     sep: str = MARKER_SEP,
     device: str = "cuda:0",
-) -> dict[str, dict[str, float]]:
-    """DV-B: full-vocab KL(trained‖base) at the SINGLE post-R marker slot.
+) -> tuple[dict[str, dict[str, float]], dict[str, dict[str, dict[str, float]]]]:
+    """DV-B full-vocab KL + (#534) raw-logit slot stats at the post-R marker slot.
 
     For each (persona, q): teacher-force ``prompt + R + sep`` through the trained
     (base+adapter) model and the base model, take the next-token log-softmax at
@@ -195,7 +196,23 @@ def compute_kl_for_checkpoint(
     ``compute_kl_divergence(log_p_trained, log_q_base)`` at THAT single slot (NOT
     a seq-mean over R — plan §4.6).
 
-    Returns ``kl[persona][q] -> float``.
+    #534 addition (additive — same forward pass, no behavior change to KL):
+    the raw pre-softmax logits at the slot are ALSO captured per the
+    `.claude/rules/marker-leakage-measurement.md` storage contract (four
+    floats per slot per model side): ``z_marker`` (raw marker logit),
+    ``z_eos`` (raw logit at ``tokenizer.eos_token_id`` — ``<|im_end|>``
+    id 151645 on Qwen-2.5-Instruct), ``logz`` (logsumexp over the vocab),
+    and ``logp_marker`` (= z_marker − logz). Logits are UNRECOVERABLE from
+    stored log-probs post-hoc, and the vLLM ``prompt_logprobs`` path (DV-A)
+    returns post-softmax log-probs only — so THIS HF forward pass is the one
+    place the logit companion readout can be captured (incident #530).
+
+    Returns:
+        ``(kl, slot_stats)`` where ``kl[persona][q] -> float`` (unchanged
+        legacy schema) and ``slot_stats[persona][q] -> {"z_marker_trained",
+        "z_marker_base", "z_eos_trained", "z_eos_base", "logz_trained",
+        "logz_base", "logp_marker_hf_trained", "logp_marker_hf_base",
+        "delta_z_marker", "delta_z_margin", "eos_token_id"}``.
 
     Plan v5 §4.5 fix #3 — KL-from-base is NOT a fallback DV.
         KL measures total-distribution shift; the v3 recovery eval read
@@ -207,7 +224,10 @@ def compute_kl_for_checkpoint(
         ⇒ ASSERT FAIL). NEVER substitute KL for the marker log-prob DV
         when the on-policy path "looks broken" — that's the v3 false-fix
         path. See `.claude/rules/marker-leakage-measurement.md` §Anti-
-        patterns which names #504 explicitly.
+        patterns which names #504 explicitly. The #534 ``z_marker``
+        companion is NOT that banned substitution: it is single-token,
+        marker-specific, and reported alongside (never instead of) the
+        log-prob DV.
     """
     import torch
     from peft import PeftModel
@@ -231,8 +251,24 @@ def compute_kl_for_checkpoint(
     )
     trained = PeftModel.from_pretrained(trained, adapter_path).eval()
 
-    def _slot_logsoftmax(model, persona_prompt: str, q: str, r_text: str) -> torch.Tensor:
-        """Next-token log-softmax (V,) at the slot AFTER `prompt + R + sep`."""
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
+    eos_id = tokenizer.eos_token_id
+    if eos_id is None:
+        raise RuntimeError(
+            f"tokenizer for {base_model!r} has no eos_token_id — the z_eos slot "
+            "stat (storage contract, marker-leakage-measurement.md) cannot be read."
+        )
+
+    def _slot_readout(
+        model, persona_prompt: str, q: str, r_text: str
+    ) -> tuple[torch.Tensor, dict[str, float]]:
+        """Slot read after ``prompt + R + sep``: (log-softmax (V,), raw-logit stats).
+
+        The raw stats come from the SAME ``last`` logits vector the
+        log-softmax is derived from — one forward pass, two readouts.
+        """
         messages = [
             {"role": "system", "content": persona_prompt},
             {"role": "user", "content": q},
@@ -247,26 +283,77 @@ def compute_kl_for_checkpoint(
         with torch.no_grad():
             logits = model(input_ids=ids).logits  # (1, T, V)
         last = logits[0, -1, :].float()  # (V,)
-        return torch.log_softmax(last, dim=-1).cpu()
-
-    from transformers import AutoTokenizer
-
-    tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
+        z_marker = float(last[marker_token_id].item())
+        z_eos = float(last[eos_id].item())
+        logz = float(torch.logsumexp(last, dim=-1).item())
+        stats = {
+            "z_marker": z_marker,
+            "z_eos": z_eos,
+            "logz": logz,
+            "logp_marker": z_marker - logz,
+        }
+        return torch.log_softmax(last, dim=-1).cpu(), stats
 
     kl: dict[str, dict[str, float]] = {p: {} for p in eval_personas}
+    slot_stats: dict[str, dict[str, dict[str, float]]] = {p: {} for p in eval_personas}
     for persona, persona_prompt in eval_personas.items():
         for q in eval_questions:
             r_text = r_by_persona_q[persona][q]
-            lp_trained = _slot_logsoftmax(trained, persona_prompt, q, r_text)
-            lp_base = _slot_logsoftmax(base, persona_prompt, q, r_text)
+            lp_trained, st_trained = _slot_readout(trained, persona_prompt, q, r_text)
+            lp_base, st_base = _slot_readout(base, persona_prompt, q, r_text)
             # compute_kl_divergence expects (seq, V); pass (1, V).
             kl_val = compute_kl_divergence(lp_trained.unsqueeze(0), lp_base.unsqueeze(0))
             kl[persona][q] = float(kl_val.item())
+            slot_stats[persona][q] = {
+                "z_marker_trained": st_trained["z_marker"],
+                "z_marker_base": st_base["z_marker"],
+                "z_eos_trained": st_trained["z_eos"],
+                "z_eos_base": st_base["z_eos"],
+                "logz_trained": st_trained["logz"],
+                "logz_base": st_base["logz"],
+                "logp_marker_hf_trained": st_trained["logp_marker"],
+                "logp_marker_hf_base": st_base["logp_marker"],
+                # Δz_marker = W_U[marker]·Δh — non-saturating mechanistic readout.
+                "delta_z_marker": st_trained["z_marker"] - st_base["z_marker"],
+                # EOS margin: delta of (z_marker - z_eos) — gauge-invariant preferred form.
+                "delta_z_margin": (st_trained["z_marker"] - st_trained["z_eos"])
+                - (st_base["z_marker"] - st_base["z_eos"]),
+                "eos_token_id": float(eos_id),
+            }
 
     del base, trained
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
+    return kl, slot_stats
+
+
+def compute_kl_for_checkpoint(
+    *,
+    base_model: str,
+    adapter_path: str,
+    r_by_persona_q: dict[str, dict[str, str]],
+    eval_personas: dict[str, str],
+    eval_questions: list[str],
+    marker_text: str = MARKER_TEXT,
+    sep: str = MARKER_SEP,
+    device: str = "cuda:0",
+) -> dict[str, dict[str, float]]:
+    """Legacy wrapper: DV-B KL only (schema-stable for pre-#534 callers).
+
+    Delegates to :func:`compute_kl_and_slot_stats_for_checkpoint` and drops
+    the slot stats. Returns ``kl[persona][q] -> float``.
+    """
+    kl, _ = compute_kl_and_slot_stats_for_checkpoint(
+        base_model=base_model,
+        adapter_path=adapter_path,
+        r_by_persona_q=r_by_persona_q,
+        eval_personas=eval_personas,
+        eval_questions=eval_questions,
+        marker_text=marker_text,
+        sep=sep,
+        device=device,
+    )
     return kl
 
 
@@ -476,8 +563,13 @@ def run_trajectory_eval(
         for ck in checkpoints_out:
             frac = ck["frac"]
             adapter_path = ck["adapter_path"]
-            log.info("[phase=traj_kl] %s_seed%s_frac%s: DV-B full-vocab KL", cell_slug, seed, frac)
-            kl = compute_kl_for_checkpoint(
+            log.info(
+                "[phase=traj_kl] %s_seed%s_frac%s: DV-B full-vocab KL + z_marker slot stats",
+                cell_slug,
+                seed,
+                frac,
+            )
+            kl, slot_stats = compute_kl_and_slot_stats_for_checkpoint(
                 base_model=base_model,
                 adapter_path=adapter_path,
                 r_by_persona_q=r_cache[frac],
@@ -487,6 +579,11 @@ def run_trajectory_eval(
             for persona in eval_personas:
                 for q in eval_questions:
                     ck["held_out"][persona][q]["kl"] = kl[persona][q]
+                    # #534 additive schema: raw-logit slot stats from the SAME
+                    # HF forward pass as the KL (storage contract in
+                    # `.claude/rules/marker-leakage-measurement.md`). Existing
+                    # #472/#504/#530 consumers read only the legacy keys.
+                    ck["held_out"][persona][q].update(slot_stats[persona][q])
             # ── Per-batch byte-identical guard (plan v5 §4.4 fix #1). ─────
             # Reconstruct g/b records from the SAME ck["held_out"] dict the
             # trajectory.json writes — guarantees the guard reads the rig's

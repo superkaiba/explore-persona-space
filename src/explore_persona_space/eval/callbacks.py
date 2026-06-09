@@ -22,11 +22,12 @@ import json
 import logging
 import os
 import re
+from pathlib import Path
 from typing import ClassVar
 
+import wandb
 from transformers import TrainerCallback
 
-import wandb
 from explore_persona_space.personas import MARKER_TOKEN
 
 logger = logging.getLogger(__name__)
@@ -667,6 +668,20 @@ class MarkerBandStopCallback(TrainerCallback):
             every 10 optimizer steps).
         min_steps: Minimum step before the stop predicate fires.
         log_prefix: WandB metric namespace.
+        snapshot_every_steps: Task #534 sub-stop checkpointing. When > 0 (AND
+            ``snapshot_dir`` is set), save a PEFT adapter-only snapshot of the
+            model every ``snapshot_every_steps`` optimizer steps to
+            ``<snapshot_dir>/step_<NNNN>/``. The snapshot fires BEFORE the
+            band-stop predicate within the same ``on_step_end`` call, so the
+            stop-step snapshot itself always exists (the post-hoc fraction
+            selector maps frac=1.00 onto it). Default 0 → every existing
+            caller is byte-identical (no snapshot, no sidecar).
+        snapshot_dir: Directory for the per-step snapshots + the
+            ``band_stop_meta.json`` sidecar written at train end. ``None``
+            (default) disables both.
+        snapshot_max_count: Hard cap on the number of snapshots written
+            (disk bound for a run that never band-stops; #534 plan §4.3
+            grounds 64 at 3.2x the realized stop step).
     """
 
     def __init__(
@@ -684,6 +699,9 @@ class MarkerBandStopCallback(TrainerCallback):
         eval_every_steps: int = 10,
         min_steps: int = 20,
         log_prefix: str = "marker",
+        snapshot_every_steps: int = 0,
+        snapshot_dir: Path | str | None = None,
+        snapshot_max_count: int = 64,
     ):
         if not marker_token_ids:
             raise ValueError("MarkerBandStopCallback requires a non-empty marker_token_ids")
@@ -695,6 +713,15 @@ class MarkerBandStopCallback(TrainerCallback):
             raise ValueError(f"eval_every_steps must be >= 1, got {eval_every_steps}")
         if min_steps < 0:
             raise ValueError(f"min_steps must be >= 0, got {min_steps}")
+        if snapshot_every_steps < 0:
+            raise ValueError(f"snapshot_every_steps must be >= 0, got {snapshot_every_steps}")
+        if snapshot_max_count < 1:
+            raise ValueError(f"snapshot_max_count must be >= 1, got {snapshot_max_count}")
+        if snapshot_every_steps > 0 and snapshot_dir is None:
+            raise ValueError(
+                "snapshot_every_steps > 0 requires snapshot_dir — refusing to "
+                "silently skip the per-step snapshots the caller asked for."
+            )
 
         self.marker_token_ids = list(marker_token_ids)
         # The marker DV here is log P(FIRST marker token) at the slot whose
@@ -724,6 +751,9 @@ class MarkerBandStopCallback(TrainerCallback):
         self.eval_every_steps = int(eval_every_steps)
         self.min_steps = int(min_steps)
         self.log_prefix = log_prefix
+        self.snapshot_every_steps = int(snapshot_every_steps)
+        self.snapshot_dir = Path(snapshot_dir) if snapshot_dir is not None else None
+        self.snapshot_max_count = int(snapshot_max_count)
 
         # Tensor-shape asserts at the construction boundary.
         assert probe_input_ids.ndim == 2, probe_input_ids.shape
@@ -745,6 +775,10 @@ class MarkerBandStopCallback(TrainerCallback):
         # whole phase so the run completes its planned schedule without a
         # silent never-fire.
         self._disabled_too_short = False
+        # #534 sub-stop checkpointing state: which steps were snapshotted +
+        # the in-loop eval-read history persisted into band_stop_meta.json.
+        self._snapshot_steps: list[int] = []
+        self._eval_history: list[dict] = []
 
     def on_train_begin(self, args, state, control, **kwargs):
         """Reset per-phase state (callback may be reused across phases).
@@ -758,6 +792,8 @@ class MarkerBandStopCallback(TrainerCallback):
         self._base_logp_mean = None
         self._stopped = False
         self._disabled_too_short = False
+        self._snapshot_steps = []
+        self._eval_history = []
         if state.max_steps > 0 and state.max_steps < self.min_steps:
             logger.warning(
                 "[%s] max_steps=%d < min_steps=%d — the band-stop guard "
@@ -772,8 +808,39 @@ class MarkerBandStopCallback(TrainerCallback):
             self._disabled_too_short = True
 
     def on_step_end(self, args, state, control, model=None, **kwargs):
-        """Read marker log-prob; cache base on first call; stop iff in band."""
-        if self._stopped or self._disabled_too_short or model is None:
+        """Snapshot the adapter (when configured), then read marker log-prob; stop iff in band."""
+        if model is None:
+            return
+        # #534 sub-stop checkpointing: per-step adapter snapshot — BEFORE the
+        # eval-cadence gate and BEFORE the stop predicate, so the stop-step
+        # snapshot itself exists (the post-hoc fraction selector maps
+        # frac=1.00 onto the realized stop step). ``model.save_pretrained``
+        # on the PEFT-wrapped model serializes the adapter only (~81 MB at
+        # r=8), consumes no RNG, and touches neither optimizer nor schedule —
+        # passive w.r.t. the weight trajectory (plan #534 §4.1).
+        if (
+            self.snapshot_every_steps > 0
+            and self.snapshot_dir is not None
+            and not self._stopped
+            and state.global_step > 0
+            and state.global_step % self.snapshot_every_steps == 0
+            and len(self._snapshot_steps) < self.snapshot_max_count
+        ):
+            snap_dir = self.snapshot_dir / f"step_{state.global_step:04d}"
+            if not snap_dir.exists():  # idempotent on re-entry
+                model.save_pretrained(str(snap_dir))
+            self._snapshot_steps.append(int(state.global_step))
+            if len(self._snapshot_steps) == self.snapshot_max_count:
+                logger.warning(
+                    "[%s] snapshot_max_count=%d reached at step %d — no further "
+                    "per-step snapshots will be written (cells beyond the cap "
+                    "are excluded from replication claims; see fraction "
+                    "manifest `exact` flags).",
+                    self.log_prefix,
+                    self.snapshot_max_count,
+                    state.global_step,
+                )
+        if self._stopped or self._disabled_too_short:
             return
         if state.global_step <= 0 or state.global_step % self.eval_every_steps != 0:
             return
@@ -799,6 +866,16 @@ class MarkerBandStopCallback(TrainerCallback):
         trained_mean = float(trained_per_row.mean().item())
         delta_per_row = trained_per_row - self._base_logp_per_row.to(trained_per_row.device)
         delta_mean = float(delta_per_row.mean().item())
+        # #534: keep the in-loop eval-read history for the band_stop_meta.json
+        # sidecar (cheap; list of small dicts, populated only at eval cadence).
+        self._eval_history.append(
+            {
+                "step": int(state.global_step),
+                "delta_nats": float(delta_mean),
+                "trained_logp_mean": float(trained_mean),
+                "base_logp_mean": float(self._base_logp_mean),
+            }
+        )
 
         logger.info(
             "[%s] Step %d: trained log P(marker)=%.4f nat, base=%.4f nat, delta=%+.4f nat "
@@ -859,6 +936,50 @@ class MarkerBandStopCallback(TrainerCallback):
             control.should_training_stop = True
             control.should_save = True
             self._stopped = True
+
+    def on_train_end(self, args, state, control, **kwargs):
+        """#534: write the ``band_stop_meta.json`` sidecar when snapshotting is configured.
+
+        Exact no-op for legacy callers (``snapshot_dir is None``). The sidecar
+        records the REALIZED stop step (or the final step at the epoch
+        ceiling), the stop reason, the in-loop eval-read history, and the
+        snapshotted steps — everything the post-hoc fraction selector
+        (``scripts/i534_select_fractions.py``) needs.
+        """
+        if self.snapshot_dir is None:
+            return  # legacy callers: exact no-op
+        if self._disabled_too_short:
+            stop_reason = "disabled_too_short"
+        elif self._stopped:
+            stop_reason = "band"
+        else:
+            stop_reason = "epoch_ceiling"
+        meta = {
+            "stopped": bool(self._stopped),
+            "stop_step": int(state.global_step),
+            "stop_reason": stop_reason,
+            "eval_history": self._eval_history,
+            "snapshot_steps": self._snapshot_steps,
+            "band": [self.low_nats, self.high_nats],
+            "eval_every_steps": self.eval_every_steps,
+            "min_steps": self.min_steps,
+            "max_steps": int(state.max_steps),
+            "snapshot_every_steps": self.snapshot_every_steps,
+            "snapshot_max_count": self.snapshot_max_count,
+        }
+        self.snapshot_dir.mkdir(parents=True, exist_ok=True)
+        out = self.snapshot_dir / "band_stop_meta.json"
+        out.write_text(json.dumps(meta, indent=2))
+        logger.info(
+            "[%s] wrote band_stop_meta.json → %s (stopped=%s, stop_step=%d, "
+            "stop_reason=%s, n_snapshots=%d)",
+            self.log_prefix,
+            out,
+            meta["stopped"],
+            meta["stop_step"],
+            stop_reason,
+            len(self._snapshot_steps),
+        )
 
     def _read_logp_trained(self, model):
         """Read mean log P(marker) at the marker slot under the trained adapter."""
