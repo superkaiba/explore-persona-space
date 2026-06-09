@@ -1204,6 +1204,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
     if args.smoke_only and args.smoke_real_api:
         raise SystemExit("--smoke-only and --smoke-real-api are mutually exclusive")
 
+    # Round-6 fix (Codex Critical): fail fast on the smoke-only flag BEFORE any
+    # API-spending code runs. The earlier placement (after the bucket-generation
+    # loop) burned ~$10-50 of real Sonnet calls on a user-typed conflict command
+    # before raising SystemExit. The flag is mutually exclusive with the real
+    # run regardless of --skip-rewrites: it is a smoke-mode-only
+    # validator-poisoning lever.
+    if args.smoke_force_voice_drift_fail and not bool(args.smoke_only):
+        raise SystemExit(
+            "--smoke-force-voice-drift-fail requires --smoke-only (it is a "
+            "smoke-mode-only validator-poisoning lever, not a real-run flag)"
+        )
+
     # Two ORTHOGONAL switches:
     #   use_synth         — True => use the placeholder synthesizer for both
     #                       candidate generation AND rewrites (no Claude API
@@ -1318,11 +1330,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
     meta_payload: dict | None = None
     if not args.skip_rewrites:
         logger.info("Generating Class-D rewrites for %d new probes…", len(new_probes))
-        if args.smoke_force_voice_drift_fail and not use_synth:
-            raise SystemExit(
-                "--smoke-force-voice-drift-fail requires --smoke-only (it is a "
-                "smoke-mode-only validator-poisoning lever, not a real-run flag)"
-            )
+        # (smoke-force-voice-drift-fail guard moved to top of main() in round 6
+        # so the flag fails fast before any API-spending code runs.)
         rewrites, voice_drift_audit, dropped_initial = _generate_rewrites_with_voice_drift_fix(
             new_probes,
             smoke=smoke,
@@ -1344,6 +1353,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
         backfill_total_added = 0
         backfill_total_attempts = 0
         backfill_log: list[dict] = []
+        # Round-6 (Codex Major): one inner audit block per backfill round,
+        # captured from each `_generate_rewrites_with_voice_drift_fix` call so
+        # the post-loop combination does NOT re-run the Claude validator.
+        backfill_round_audits: list[dict] = []
         stuck_probes = list(dropped_initial)
         while stuck_probes and backfill_rounds_used < MAX_BACKFILL_ROUNDS:
             backfill_rounds_used += 1
@@ -1403,7 +1416,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
             # function so the validator + retry path are identical to the
             # main pass. Smoke poisoning is NOT propagated to backfill
             # rounds (otherwise the smoke test would loop forever).
-            fresh_rewrites, _fresh_audit_block, fresh_dropped = (
+            fresh_rewrites, fresh_audit_block, fresh_dropped = (
                 _generate_rewrites_with_voice_drift_fix(
                     backfill_probes,
                     smoke=smoke,
@@ -1421,6 +1434,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
             new_probes.extend(backfill_probes)
             rewrites.update(fresh_rewrites)
 
+            # Round-6 fix (Codex Major): retain the per-round inner audit block
+            # so the post-loop combination can reuse its `full_*_pass` counts
+            # instead of re-running the Claude validator on every probe in the
+            # final pool. The dispatcher already ran the regex + Claude gates
+            # inside `_generate_rewrites_with_voice_drift_fix`; recounting is
+            # ~500 duplicate sequential Claude calls per happy-path run.
+            # Attach to every bucket-entry added in this round so per-round
+            # bookkeeping stays consistent (the audit is per-round, not
+            # per-bucket).
+            for entry in backfill_log:
+                if entry["round"] == backfill_rounds_used:
+                    entry["fresh_voice_drift_audit"] = fresh_audit_block
+            backfill_round_audits.append(
+                {"round": backfill_rounds_used, "audit": fresh_audit_block}
+            )
+
             # Update the stuck pile for the next round.
             stuck_probes = list(fresh_dropped)
             logger.info(
@@ -1431,34 +1460,51 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
                 len(stuck_probes),
             )
 
-        # Re-compute voice_drift_audit on the FINAL pool so the gate at the
-        # bottom of main() reads the post-backfill numbers. Cheap: we only
-        # need to recount the boolean predicates over rewrites; no extra
-        # Claude calls. The single source of truth is the rewrites dict that
-        # was mutated through every backfill round (initial validator calls
-        # + per-round backfill calls always run the regex + claude gates,
-        # so a kept rewrite is by construction first-person-free; we keep
-        # `n_dropped_probes` aligned to whether any stuck probes remain).
-        final_n = len(new_probes)
-        final_regex_pass = sum(
-            1 for q in new_probes if not _has_first_person(rewrites[q]["indirect"])
-        )
-        if not smoke:
-            final_claude_pass = sum(
-                1 for q in new_probes if _claude_validate_third_person(rewrites[q]["indirect"])
+        # Round-6 fix (Codex Major): combine the inner audit blocks instead of
+        # re-running the Claude validator on every probe in the final pool.
+        # Each `_generate_rewrites_with_voice_drift_fix` call already ran the
+        # regex + Claude gates on its surviving probes (lines 1074-1088 in the
+        # function body) and returned the per-call counts in its audit block.
+        # The combined audit = sum the per-batch numerators (full_*_pass) and
+        # denominators (full_audit_size), then recompute the rates from the
+        # totals. The kept rewrites' voice-drift status is by construction
+        # known — no validator re-run needed.
+        #
+        # When backfill_rounds_used == 0 the initial inner audit already covers
+        # the whole final pool; we just attach the `backfill` sub-dict below.
+        if backfill_rounds_used > 0:
+            initial_audit = dict(voice_drift_audit)  # snapshot of the round-0 inner audit
+            all_audits = [initial_audit] + [a["audit"] for a in backfill_round_audits]
+            sum_full_audit_size = sum(a.get("full_audit_size", 0) for a in all_audits)
+            sum_full_regex_pass = sum(a.get("full_regex_pass", 0) for a in all_audits)
+            sum_full_claude_pass = sum(a.get("full_claude_pass", 0) for a in all_audits)
+            final_n = len(new_probes)
+            # Invariant: surviving-probe counts across the per-round audits sum
+            # to the final pool size. If this trips it indicates a bookkeeping
+            # bug between `_generate_rewrites_with_voice_drift_fix` and the
+            # main pool — fail loud rather than silently report wrong rates.
+            assert sum_full_audit_size == final_n, (
+                f"backfill audit-size accounting bug: sum(full_audit_size)="
+                f"{sum_full_audit_size} != len(new_probes)={final_n} "
+                f"(rounds_used={backfill_rounds_used})"
             )
-        else:
-            final_claude_pass = final_regex_pass
-        voice_drift_audit["n_questions"] = final_n
-        voice_drift_audit["n_dropped_probes"] = len(stuck_probes)
-        voice_drift_audit["full_audit_size"] = final_n
-        voice_drift_audit["full_regex_pass"] = final_regex_pass
-        voice_drift_audit["full_regex_pass_rate"] = final_regex_pass / max(final_n, 1)
-        voice_drift_audit["full_claude_pass"] = final_claude_pass
-        voice_drift_audit["full_claude_pass_rate"] = final_claude_pass / max(final_n, 1)
-        voice_drift_audit["audit_sample_size"] = final_n
-        voice_drift_audit["audit_sample_regex_pass"] = final_regex_pass
-        voice_drift_audit["audit_sample_regex_pass_rate"] = final_regex_pass / max(final_n, 1)
+            voice_drift_audit["n_questions"] = final_n
+            voice_drift_audit["n_dropped_probes"] = len(stuck_probes)
+            voice_drift_audit["full_audit_size"] = final_n
+            voice_drift_audit["full_regex_pass"] = sum_full_regex_pass
+            voice_drift_audit["full_regex_pass_rate"] = sum_full_regex_pass / max(final_n, 1)
+            voice_drift_audit["full_claude_pass"] = sum_full_claude_pass
+            voice_drift_audit["full_claude_pass_rate"] = sum_full_claude_pass / max(final_n, 1)
+            voice_drift_audit["audit_sample_size"] = final_n
+            voice_drift_audit["audit_sample_regex_pass"] = sum_full_regex_pass
+            voice_drift_audit["audit_sample_regex_pass_rate"] = sum_full_regex_pass / max(
+                final_n, 1
+            )
+        # else: backfill_rounds_used == 0 -- the initial voice_drift_audit dict
+        # from `_generate_rewrites_with_voice_drift_fix(new_probes, ...)`
+        # already covers the entire final pool (no probes were stuck on the
+        # first pass, so new_probes == initial_audit.full_audit_size). No
+        # recount, no Claude calls.
         voice_drift_audit["backfill"] = {
             "max_backfill_rounds": MAX_BACKFILL_ROUNDS,
             "rounds_used": backfill_rounds_used,
