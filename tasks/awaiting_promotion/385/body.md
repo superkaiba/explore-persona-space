@@ -9,6 +9,8 @@ has_clean_result: true
 parent_id: 207
 goal: See how a [ZLT] marker leaks from a librarian source persona to a panel of bystander
   personas and contexts across fine-grained training checkpoints on Qwen2.5-7B-Instruct.
+classification: useful
+promoted_at: '2026-06-09T21:28:23Z'
 ---
 # [ZLT] marker leakage emerges around step 75 and reaches closer bystander personas first (MODERATE confidence)
 
