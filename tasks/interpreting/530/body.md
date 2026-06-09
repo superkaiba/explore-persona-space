@@ -4,7 +4,7 @@ title: 'At a de-saturated anchor, both #504 geometry signs reverse — the barri
 kind: experiment
 tags: []
 created_at: '2026-06-09T05:31:35Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 504
 goal: 'Re-test the bubble-vs-barrier geometry of a single contrastive negative at
   a de-saturated anchor (gated on bystander resolution, not source delta-G) so leakage
