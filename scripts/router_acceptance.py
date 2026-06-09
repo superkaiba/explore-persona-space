@@ -1804,6 +1804,36 @@ def _cmd_live(args: argparse.Namespace) -> int:
         emit_live_dry_run(plan, backend=args.backend, issue=args.issue)
         return 0
 
+    # Per-issue LANE LOCK for the whole live run (launch -> finalize ->
+    # checklist). The sidecar + lease are namespaced per ISSUE, so two
+    # concurrent lanes for the same issue clobber each other's handle:
+    # live incident (issue 535) — a Mila lane launched while a GCP lane
+    # was mid-run overwrote the GCP handle sidecar, the GCP finalize
+    # tore down the WRONG (already-cancelled) handle, and the A100 VM
+    # was left RUNNING + billing until manually deleted. Fail FAST here
+    # instead. Held via flock on a dedicated lane-lock file (released
+    # by process exit; ``fd`` deliberately kept open for the lane's
+    # lifetime).
+    import fcntl
+
+    lane_lock_path = Path.home() / ".eps-routing" / f"issue-{args.issue}.lane.lock"
+    lane_lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lane_lock_fd = os.open(lane_lock_path, os.O_WRONLY | os.O_CREAT, 0o600)
+    try:
+        fcntl.flock(lane_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        os.close(lane_lock_fd)
+        logger.error(
+            "another live acceptance lane for issue %d is already in flight "
+            "(lane lock %s is held). Concurrent lanes for the same issue "
+            "clobber the per-issue handle sidecar and CAN STRAND A BILLING "
+            "VM — refusing to start. Wait for the other lane or use a "
+            "different issue number.",
+            args.issue,
+            lane_lock_path,
+        )
+        return 1
+
     # Adapter-persist env vars MUST reach the LAUNCH subprocess.
     # ``trainer.py:_persist_adapter`` reads BOTH (on the REMOTE
     # VM / compute node):

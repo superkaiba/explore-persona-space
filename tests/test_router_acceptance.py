@@ -1400,6 +1400,9 @@ def _stub_cmd_live_rig(monkeypatch, tmp_path: Path, *, chosen_kind: str) -> dict
     (tmp_path / "data" / "sft").mkdir(parents=True)
     (tmp_path / "data" / "sft" / "router_smoke_sft.jsonl").write_text('{"messages": []}\n')
     monkeypatch.chdir(tmp_path)
+    # The per-issue lane lock lives under ``Path.home()/.eps-routing`` —
+    # isolate it under tmp_path so tests never touch the real one.
+    monkeypatch.setenv("HOME", str(tmp_path))
     rec: dict[str, Any] = {}
 
     def _fake_run_live_lane(
@@ -1441,6 +1444,29 @@ def _stub_cmd_live_rig(monkeypatch, tmp_path: Path, *, chosen_kind: str) -> dict
     monkeypatch.setattr(ra, "generate_acceptance_figure", _fake_generate_acceptance_figure)
     monkeypatch.setattr(ra, "evaluate_pass_checklist", _fake_evaluate_pass_checklist)
     return rec
+
+
+def test_cmd_live_refuses_concurrent_lane_for_same_issue(monkeypatch, tmp_path: Path) -> None:
+    """Two concurrent --live lanes for the SAME issue clobber the
+    per-issue handle sidecar (live incident, issue 535: a Mila lane
+    overwrote the GCP lane's sidecar, finalize tore down the wrong
+    handle, and a billing A100 VM was left RUNNING). The second lane
+    must fail FAST with rc=1 and never reach launch."""
+    import fcntl
+
+    rec = _stub_cmd_live_rig(monkeypatch, tmp_path, chosen_kind="gcp")
+    lock_path = tmp_path / ".eps-routing" / "issue-921.lane.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(lock_path, os.O_WRONLY | os.O_CREAT, 0o600)
+    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)  # simulate the in-flight lane
+    try:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = ra.main(["live", "--issue", "921", "--backend", "gcp", "--live"])
+        assert rc == 1
+        assert "launch_env" not in rec, "second lane must never reach launch"
+    finally:
+        os.close(fd)
 
 
 def test_cmd_live_figure_uses_resolved_lane_on_auto(monkeypatch, tmp_path: Path) -> None:
