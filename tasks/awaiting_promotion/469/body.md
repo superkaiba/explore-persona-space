@@ -13,6 +13,8 @@ goal: 'Re-measure the marker-transfer line on-policy — score the marker on the
   survives: whether the implanted marker saturates and transfers universally, and
   whether the off-policy base-model-divergence-predicts-transfer relationship is real,
   an overtraining artifact, or a measurement artifact.'
+classification: useful
+promoted_at: '2026-06-09T21:43:05Z'
 ---
 # Measured on the model's own generations, an implanted marker transfers to nearly every context at ceiling, and the off-policy "geometry predicts transfer" result survives only at the one checkpoint before the marker saturates (MODERATE confidence)
 
