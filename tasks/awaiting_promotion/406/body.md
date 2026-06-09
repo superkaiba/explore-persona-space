@@ -12,6 +12,8 @@ goal: Test whether a pre-training-time scalar — JS divergence between base-mod
   distributions on T(X') vs T'(X') over a held-out probe set — predicts whether SFT
   on (T(X), Y) generalizes to outputting Y on T'(X), as a falsifiable test of whether
   prompt/persona-vector geometry causally predicts post-training generalization.
+classification: useful
+promoted_at: '2026-06-09T21:34:50Z'
 ---
 # Base-model output divergence between two contexts negatively predicts SFT transfer of an implanted marker between them (MODERATE confidence)
 
