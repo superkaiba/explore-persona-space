@@ -8,3 +8,4 @@
 {"ts": "2026-05-14T00:33:23.003Z", "kind": "epm:clean-result-critique-codex", "version": 1, "by": "agent", "note": "round-1 needs_targeted_fix: 8 conditions listed but body claims '9' repeatedly; HF model repo + code blob URLs unpinned (no commit SHA); TL;DR '20-100% under mismatch' and 'FR<->DE 66-100% across most bystanders' don't match heatmap (FR->IT EN=0/ZH=0/PT=1; DE->FR ES=20/PT=21)", "round": 1, "verdict": "needs_targeted_fix", "reviewer": "codex", "review_pair": "clean_result"}
 {"ts": "2026-05-14T00:23:37.461Z", "kind": "state_changed", "version": 1, "by": "user", "from": "reviewing", "to": "clean_result_drafting"}
 {"ts": "2026-05-14T00:02:46.399Z", "kind": "state_changed", "version": 1, "by": "user", "note": "Moved on Pipeline board to review.", "from": "completed", "to": "reviewing"}
+{"ts": "2026-06-09T21:33:27Z", "kind": "epm:promoted", "version": 1, "by": "user", "classification": "useful"}
