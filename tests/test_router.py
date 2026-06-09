@@ -776,6 +776,56 @@ def test_gcp_provisioning_error_surfaces_as_no_compute(lease_store):
     assert any(a["outcome"] == "provisioning_failure" for a in excinfo.value.attempts)
 
 
+def test_gcp_probe_error_in_escalation_surfaces_as_no_compute(lease_store):
+    """GcpBackend.launch's internal reconnect probe failing (expired
+    gcloud auth) must produce the typed fail-closed NoCompute terminal,
+    NOT an uncaught rc=4 crash (live auto-lane finding, issue 535)."""
+    from explore_persona_space.backends.base import BackendProbeError
+
+    rp = _ExplodingRunpod()
+    nibi = _FreeLaneBackend(kind="nibi")
+    gcp = _GcpBackendDouble(
+        launch_raises=BackendProbeError("gcloud list rc=1: Reauthentication failed")
+    )
+    with pytest.raises(NoComputeAvailableError) as excinfo:
+        route(
+            _spec(backend=None),
+            runpod_backend=rp,
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert any(a["outcome"] == "probe_failed" for a in excinfo.value.attempts)
+
+
+def test_gcp_probe_error_on_explicit_lane_surfaces_as_no_compute(lease_store):
+    """Same contract on the explicit ``backend: gcp`` override path."""
+    from explore_persona_space.backends.base import BackendProbeError
+
+    gcp = _GcpBackendDouble(
+        launch_raises=BackendProbeError("gcloud list rc=1: Reauthentication failed")
+    )
+    with pytest.raises(NoComputeAvailableError) as excinfo:
+        route(
+            _spec(backend="gcp"),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: True,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert any(a["outcome"] == "probe_failed" for a in excinfo.value.attempts)
+
+
 def test_gcp_workload_error_surfaces_no_fallback(lease_store):
     rp = _ExplodingRunpod()
     nibi = _FreeLaneBackend(kind="nibi")

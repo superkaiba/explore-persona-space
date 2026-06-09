@@ -1481,6 +1481,36 @@ def _override_free_or_gcp(
                 attempts=attempts,
             )
             raise
+        except BackendProbeError as exc:
+            # The backend's own pre-create state probe failed mid-launch
+            # (e.g. GcpBackend.launch's internal reconnect_or_none with
+            # expired gcloud auth — live auto-lane finding, issue 535:
+            # this propagated UNCAUGHT to rc=4 instead of the typed
+            # fail-closed terminal). State is UNKNOWN → refuse to act
+            # blind; same contract as the reconnect-seam handler above.
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=None,
+                    est_start_seconds_clamped=None,
+                    outcome="probe_failed",
+                    detail=str(exc)[:500],
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            _post_terminal_failure_marker(
+                spec=spec,
+                marker_poster=marker_poster,
+                reason=ROUTE_REASON_NO_COMPUTE,
+                chosen_kind=kind,
+                attempts=attempts,
+            )
+            raise NoComputeAvailableError(
+                f"explicit override '{kind}': backend state probe failed mid-launch — "
+                f"refusing to act blind: {exc}",
+                attempts=[_attempt_to_dict(a) for a in attempts],
+            ) from exc
         # Persist the handle (sidecar hook) + launched id IMMEDIATELY
         # (still inside the flock — crash-window-free). For "kind ==
         # gcp" override we leave the cluster field at None, matching
@@ -2406,6 +2436,35 @@ def _escalate_to_gcp(
             )
             raise NoComputeAvailableError(
                 f"every free lane park-failed AND gcp provisioning failed: {exc.reason}",
+                attempts=[_attempt_to_dict(a) for a in attempts],
+            ) from exc
+        except BackendProbeError as exc:
+            # GcpBackend.launch's internal reconnect_or_none probe failed
+            # (expired auth / transport) — GCP state UNKNOWN. Fail closed
+            # with the typed no-compute terminal instead of letting the
+            # probe error propagate to rc=4 (live auto-lane finding,
+            # issue 535). No credit is spent on unknown state.
+            attempts.append(
+                RouteAttempt(
+                    kind="gcp",
+                    cluster=None,
+                    est_start_seconds_raw=0.0,
+                    est_start_seconds_clamped=0.0,
+                    outcome="probe_failed",
+                    detail=str(exc)[:500],
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            _post_terminal_failure_marker(
+                spec=spec,
+                marker_poster=marker_poster,
+                reason=ROUTE_REASON_NO_COMPUTE,
+                chosen_kind="gcp",
+                attempts=attempts,
+            )
+            raise NoComputeAvailableError(
+                f"every free lane park-failed AND the gcp state probe failed — "
+                f"refusing blind create: {exc}",
                 attempts=[_attempt_to_dict(a) for a in attempts],
             ) from exc
         except GcpWorkloadError as exc:
