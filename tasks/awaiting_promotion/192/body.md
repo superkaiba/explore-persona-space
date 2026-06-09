@@ -16,6 +16,8 @@ resurrected_from: exp-192-persona-spread
 legacy_why_unset: true
 goal: Test whether one fictional medical fact, taught under a teaching-persona system
   prompt, transfers to ordinary-assistant and other non-teach evaluation frames.
+classification: useful
+promoted_at: '2026-06-09T21:33:09Z'
 ---
 # Fact teaching transferred to non-teach assistant frames across two analyzable seeds under either teach prompt (MODERATE confidence)
 
