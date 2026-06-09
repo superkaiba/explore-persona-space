@@ -225,7 +225,9 @@ top-level loop):
    <task ID + brief context: what the emitting agent was doing when it hit the bug>
 
    ## Success criteria
-   workflow_lint.py --check-asks passes; ruff check .claude scripts passes;
+   workflow_lint.py --check-asks passes; ruff check on the files you
+   touched passes (touched files only — the broad `.claude scripts` sweep
+   has ~1300+ pre-existing errors and is not a gate);
    if you touched workflow.yaml or CLAUDE.md, the two stay consistent.
    """
    )
@@ -263,7 +265,9 @@ top-level loop):
    <task ID + brief context>
 
    ## Success criteria
-   workflow_lint.py --check-asks passes; ruff check .claude scripts passes;
+   workflow_lint.py --check-asks passes; ruff check on the files you
+   touched passes (touched files only — the broad `.claude scripts` sweep
+   has ~1300+ pre-existing errors and is not a gate);
    if you touched workflow.yaml or CLAUDE.md, the two stay consistent.
    """
    )
