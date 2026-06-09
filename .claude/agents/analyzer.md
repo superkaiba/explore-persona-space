@@ -459,6 +459,18 @@ has changed since the last snapshot (the analyzer
 round-2+ path on critic FAIL just calls `set-body` again with the
 revised content, after re-running the pre-flight on the updated cache file).
 
+**Same-issue follow-up re-entry (re-fold, not re-promote).** When the
+task carries an `epm:followup-scope v1` marker and you are re-spawned
+after a same-issue follow-up run (SKILL.md Step 9b § Same-issue
+follow-up loop), the body is ALREADY the clean-result: fold the new
+finding into it as an additional `#### <finding>` H4 under
+`### Findings` (updating the H1 title / confidence tag if the result
+moves the headline), re-run the verifier, and call `set-body` WITHOUT
+`--snapshot` — `original-body.md` already preserves the pre-promotion
+original, and a second snapshot would overwrite it with the prior
+clean-result. The clean-result-critique gate (9a-bis) then re-runs on
+the updated body as normal.
+
 The dashboard kanban routes the experiment to the Awaiting promotion
 column automatically once status is set to `awaiting_promotion` by the
 /issue Step 9 transition.
