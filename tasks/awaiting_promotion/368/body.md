@@ -16,6 +16,8 @@ relates_to:
 - a5
 - app5
 - h1
+classification: useful
+promoted_at: '2026-06-09T21:34:10Z'
 ---
 <!-- legacy-sagan-card -->
 <style>
