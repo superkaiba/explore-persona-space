@@ -5,6 +5,7 @@ kind: experiment
 tags:
 - leak-predictor
 - mentor-dan
+- geometry-predicts-transfer
 created_at: '2026-06-09T06:07:58Z'
 has_clean_result: false
 parent_id: 502
