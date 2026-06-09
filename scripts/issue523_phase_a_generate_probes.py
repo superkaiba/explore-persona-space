@@ -296,25 +296,27 @@ _SBERT_MODEL = None  # lazy module-level singleton
 
 
 def _get_sbert():
-    """Lazy-load the SBERT model. Returns None if sentence-transformers unavailable.
+    """Lazy-load the SBERT model. FAIL-LOUD on missing dependency.
 
-    Caller MUST handle None (we treat that as "skip semantic dedup" — the exact-
-    string dedup still runs).
+    Plan §11 explicitly rejects exact-only dedup as the disjointness contract.
+    `sentence-transformers` is a hard requirement (in `pyproject.toml`); a missing
+    import means the env is broken and we must raise before burning $150-200 of
+    Sonnet API on a pool whose disjointness is exact-string only. Only catches
+    `ImportError` — `OSError` / network failures from the model download propagate.
     """
     global _SBERT_MODEL
     if _SBERT_MODEL is None:
         try:
             from sentence_transformers import SentenceTransformer
-
-            _SBERT_MODEL = SentenceTransformer(SBERT_MODEL_ID)
         except ImportError as e:
-            logger.warning(
-                "sentence-transformers unavailable (%s); semantic dedup disabled. "
-                "exact-string dedup still active.",
-                e,
-            )
-            _SBERT_MODEL = False
-    return _SBERT_MODEL if _SBERT_MODEL is not False else None
+            raise RuntimeError(
+                "sentence-transformers required for plan §4 Phase A semantic dedup; "
+                "install with 'uv add sentence-transformers' (already in pyproject.toml — "
+                "run 'uv sync' on the pod). Plan §11 explicitly rejects exact-only as the "
+                "disjointness contract."
+            ) from e
+        _SBERT_MODEL = SentenceTransformer(SBERT_MODEL_ID)
+    return _SBERT_MODEL
 
 
 def _semantic_duplicate_check(
@@ -324,11 +326,10 @@ def _semantic_duplicate_check(
 ) -> list[bool]:
     """For each candidate, return True iff it has SBERT cosine ≥ threshold to ANY existing.
 
-    Length of return matches `candidates`. If SBERT is unavailable, all-False.
+    Length of return matches `candidates`. Raises on missing `sentence-transformers`
+    (the silent-disable was the round-2 critical bug — plan §11 rejects exact-only).
     """
     sbert = _get_sbert()
-    if sbert is None:
-        return [False] * len(candidates)
     if not candidates or not existing_texts:
         return [False] * len(candidates)
 
@@ -736,8 +737,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
     out_path = SMOKE_PROBES_PATH if smoke else PROBES_PATH
 
     # ── Class-D rewrites (with voice-drift fix on indirect) ──
+    # NOTE (Mi1 round-3 fix): we GENERATE rewrites here but DEFER writing the
+    # rewrites + audit + pool artifacts until AFTER the voice-drift gate fires.
+    # This prevents a failed run from leaving plausible-looking partial artifacts
+    # on disk that downstream phases could pick up.
     rewrites: dict[str, dict[str, str]] = {}
     voice_drift_audit: dict = {}
+    rewrites_out: Path | None = None
+    meta_path: Path | None = None
+    meta_payload: dict | None = None
     if not args.skip_rewrites:
         logger.info("Generating Class-D rewrites for %d new probes…", len(new_probes))
         rewrites, voice_drift_audit = _generate_rewrites_with_voice_drift_fix(
@@ -746,7 +754,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
         rewrites_out = SMOKE_REWRITES_EXTENSION_PATH if smoke else REWRITES_EXTENSION_PATH
         # Companion meta sidecar (matches #502's schema).
         meta_path = rewrites_out.with_suffix(".meta.json")
-        meta = {
+        meta_payload = {
             "schema_version": 1,
             "smoke": smoke,
             "model": CLAUDE_MODEL,
@@ -762,16 +770,6 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
                 "python": platform.python_version(),
             },
         }
-        meta_path.write_text(json.dumps(meta, indent=2))
-        # The on-disk JSON is a top-level dict matching #406's schema (no wrapper):
-        _write_atomic(rewrites_out, rewrites)
-        logger.info(
-            "Wrote %s (%d q x %d reg) + meta %s",
-            rewrites_out,
-            len(rewrites),
-            len(CLASS_D_REGISTERS),
-            meta_path,
-        )
 
     # ── Final dedup tally against EACH original source (for the audit JSON) ──
     final_norms = {_normalize(p) for p in new_probes}
@@ -812,6 +810,79 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
         },
     }
     audit_out = SMOKE_AUDIT_PATH if smoke else AUDIT_PATH
+
+    # ── End-of-Phase-A gates (run BEFORE writing non-smoke artifacts) ──
+    # Mi1 round-3 fix: a failed gate must NOT leave plausible-looking artifacts on
+    # disk. Gates run BEFORE the rewrites / audit / pool files land. Smoke writes
+    # to dedicated paths so partial smoke artifacts don't collide with real ones.
+
+    # Gate 1: voice-drift rate audit (plan §4 Phase A).
+    #   (a) ZERO exhausted-retry failures retained — n_dropped_probes == 0.
+    #   (b) FULL regex sweep pass rate == 1.0 over the entire retained pool.
+    #   (c) FULL Claude validator pass rate >= 0.96 over the entire retained pool.
+    if voice_drift_audit:
+        n_dropped = voice_drift_audit.get("n_dropped_probes", 0)
+        regex_rate_full = voice_drift_audit.get("full_regex_pass_rate", 0.0)
+        claude_rate_full = voice_drift_audit.get("full_claude_pass_rate", 0.0)
+        if not smoke and n_dropped > 0:
+            raise RuntimeError(
+                f"Phase A voice-drift audit: {n_dropped} probes dropped after "
+                f"exhausting {MAX_VOICE_DRIFT_RETRIES} retries. Refusing to "
+                "advance — voice-drift fix did not converge on every probe."
+            )
+        if not smoke and regex_rate_full < 1.0:
+            raise RuntimeError(
+                f"Phase A voice-drift audit: FULL regex sweep pass rate "
+                f"{regex_rate_full:.3f} != 1.0 on a "
+                f"{voice_drift_audit['full_audit_size']}-row pool. "
+                "Plan §4 Phase A requires 100% regex pass on the full pool."
+            )
+        if not smoke and claude_rate_full < VOICE_DRIFT_THIRD_PERSON_RATE_MIN:
+            raise RuntimeError(
+                f"Phase A voice-drift audit: FULL Claude validator pass rate "
+                f"{claude_rate_full:.3f} < {VOICE_DRIFT_THIRD_PERSON_RATE_MIN} "
+                f"on a {voice_drift_audit['full_audit_size']}-row pool. "
+                "Refusing to advance — voice-drift fix did not converge."
+            )
+        # Smoke gate: same FULL regex sweep contract on synthesized placeholders.
+        if smoke and regex_rate_full < 1.0:
+            raise RuntimeError(
+                f"Phase A smoke voice-drift gate: FULL regex pass rate "
+                f"{regex_rate_full:.3f} != 1.0 on "
+                f"{voice_drift_audit['full_audit_size']} synthesized probes "
+                "— the smoke synthesizer leaked first-person pronouns; "
+                "smoke wiring regression."
+            )
+        if smoke and n_dropped > 0:
+            raise RuntimeError(
+                f"Phase A smoke voice-drift gate: {n_dropped} synthesized "
+                "probes failed all retries. Deterministic smoke should never "
+                "drop — smoke wiring regression."
+            )
+
+    # Gate 2: per-bucket dedup-rate ceiling.
+    for ba in per_bucket_audits:
+        total_dedup = ba["exact_dedup_rate"] + ba["semantic_dedup_rate"]
+        if total_dedup > MAX_DEDUP_RATE_PER_BUCKET:
+            # Already enforced inside the bucket-generator; this is belt+suspenders.
+            raise RuntimeError(
+                f"Bucket {ba['bucket']!r} dedup rate {total_dedup:.3f} "
+                f"> {MAX_DEDUP_RATE_PER_BUCKET}. Aborting."
+            )
+
+    # ── Gates PASSed — now write artifacts (rewrites + audit + pool) ──
+    if rewrites_out is not None and meta_path is not None and meta_payload is not None:
+        meta_path.write_text(json.dumps(meta_payload, indent=2))
+        # The on-disk JSON is a top-level dict matching #406's schema (no wrapper):
+        _write_atomic(rewrites_out, rewrites)
+        logger.info(
+            "Wrote %s (%d q x %d reg) + meta %s",
+            rewrites_out,
+            len(rewrites),
+            len(CLASS_D_REGISTERS),
+            meta_path,
+        )
+
     _write_atomic(audit_out, audit_payload)
     logger.info("Wrote audit %s", audit_out)
 
@@ -852,66 +923,6 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — sequential pha
     logger.info(
         "Wrote %s (%d probes, smoke=%s) in %.1fs", out_path, len(new_probes), smoke, elapsed
     )
-
-    # ── End-of-Phase-A gate (plan §4 Phase A): voice-drift rate audit ──
-    # Round-2 fix to Critical-5 (Codex):
-    #   (a) ZERO exhausted-retry failures retained — n_dropped_probes == 0.
-    #   (b) FULL regex sweep pass rate == 1.0 over the entire retained pool
-    #       (no first-person pronouns in any retained indirect rewrite).
-    #   (c) FULL Claude validator pass rate >= 0.96 over the entire retained
-    #       pool (was: 50-sample sentinel).
-    if voice_drift_audit:
-        n_dropped = voice_drift_audit.get("n_dropped_probes", 0)
-        regex_rate_full = voice_drift_audit.get("full_regex_pass_rate", 0.0)
-        claude_rate_full = voice_drift_audit.get("full_claude_pass_rate", 0.0)
-        if not smoke and n_dropped > 0:
-            raise RuntimeError(
-                f"Phase A voice-drift audit: {n_dropped} probes dropped after "
-                f"exhausting {MAX_VOICE_DRIFT_RETRIES} retries. Refusing to "
-                "advance — voice-drift fix did not converge on every probe."
-            )
-        if not smoke and regex_rate_full < 1.0:
-            raise RuntimeError(
-                f"Phase A voice-drift audit: FULL regex sweep pass rate "
-                f"{regex_rate_full:.3f} != 1.0 on a "
-                f"{voice_drift_audit['full_audit_size']}-row pool. "
-                "Plan §4 Phase A requires 100% regex pass on the full pool."
-            )
-        if not smoke and claude_rate_full < VOICE_DRIFT_THIRD_PERSON_RATE_MIN:
-            raise RuntimeError(
-                f"Phase A voice-drift audit: FULL Claude validator pass rate "
-                f"{claude_rate_full:.3f} < {VOICE_DRIFT_THIRD_PERSON_RATE_MIN} "
-                f"on a {voice_drift_audit['full_audit_size']}-row pool. "
-                "Refusing to advance — voice-drift fix did not converge."
-            )
-        # Smoke gate: same FULL regex sweep contract, on the (deterministic)
-        # synthesized placeholders. The synthesizer must produce no
-        # first-person pronouns on any indirect rewrite — a regression here
-        # is a smoke-wiring bug, not a Sonnet quality issue.
-        if smoke and regex_rate_full < 1.0:
-            raise RuntimeError(
-                f"Phase A smoke voice-drift gate: FULL regex pass rate "
-                f"{regex_rate_full:.3f} != 1.0 on "
-                f"{voice_drift_audit['full_audit_size']} synthesized probes "
-                "— the smoke synthesizer leaked first-person pronouns; "
-                "smoke wiring regression."
-            )
-        if smoke and n_dropped > 0:
-            raise RuntimeError(
-                f"Phase A smoke voice-drift gate: {n_dropped} synthesized "
-                "probes failed all retries. Deterministic smoke should never "
-                "drop — smoke wiring regression."
-            )
-
-    # ── End-of-Phase-A gate: dedup rate ──
-    for ba in per_bucket_audits:
-        total_dedup = ba["exact_dedup_rate"] + ba["semantic_dedup_rate"]
-        if total_dedup > MAX_DEDUP_RATE_PER_BUCKET:
-            # Already enforced inside the bucket-generator; this is belt+suspenders.
-            raise RuntimeError(
-                f"Bucket {ba['bucket']!r} dedup rate {total_dedup:.3f} "
-                f"> {MAX_DEDUP_RATE_PER_BUCKET}. Aborting."
-            )
 
     logger.info("Phase A complete: %d probes, audit -> %s", len(new_probes), audit_out)
     return 0

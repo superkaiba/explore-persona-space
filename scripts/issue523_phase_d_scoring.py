@@ -766,6 +766,10 @@ def paired_fold_bootstrap_ci_on_delta(
     """Paired resample of A vs B per fold; return (mean_delta, lo, hi, half_width).
 
     Inputs are aligned by fold index. Folds where either side is NaN drop.
+
+    DEPRECATED for pooled-R² bars (use ``paired_fold_bootstrap_ci_on_delta_pooled``
+    so the delta's uncertainty matches the point-estimate statistic). Kept
+    for any paired-Δ over per-fold R² that the project still has.
     """
     if len(per_fold_a) != len(per_fold_b):
         raise ValueError(f"length mismatch: {len(per_fold_a)} vs {len(per_fold_b)}")
@@ -787,6 +791,77 @@ def paired_fold_bootstrap_ci_on_delta(
         means[i] = delta[idx].mean()
     lo, hi = float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
     return float(delta.mean()), lo, hi, (hi - lo) / 2.0
+
+
+def paired_fold_bootstrap_ci_on_delta_pooled(
+    a_per_fold_y_resid: list[np.ndarray],
+    a_per_fold_y_hat: list[np.ndarray],
+    b_per_fold_y_resid: list[np.ndarray],
+    b_per_fold_y_hat: list[np.ndarray],
+    n_boot: int = BOOTSTRAP_N,
+    seed: int = 42,
+) -> tuple[float, float, float, float]:
+    """Pooled-R² paired-delta CI: resample ALIGNED fold payloads from A and B.
+
+    For each bootstrap draw, sample fold indices ``idx`` of length ``n_folds``,
+    concatenate A's ``(y_resid[i], y_hat[i])`` over those indices, compute pooled
+    R² for A; do the same for B over the SAME fold indices; record
+    ``delta = R²_A - R²_B``. Return ``(mean_delta, lo, hi, half_width)`` at 2.5/97.5.
+
+    Round-3 fix (M1 Codex): the round-2 paired-delta used per-fold R² values
+    which are degenerate on narrow test folds (12 pairs of one source). This
+    helper uses the same pooled-R² statistic as the point estimate, so the
+    delta uncertainty has the same semantics as the bar point estimates.
+    """
+    n_folds = len(a_per_fold_y_resid)
+    if not (len(a_per_fold_y_hat) == len(b_per_fold_y_resid) == len(b_per_fold_y_hat) == n_folds):
+        raise ValueError(
+            "all four per-fold lists must have the same length; got "
+            f"{n_folds}, {len(a_per_fold_y_hat)}, {len(b_per_fold_y_resid)}, "
+            f"{len(b_per_fold_y_hat)}"
+        )
+    if n_folds < 3:
+        return (float("nan"), float("nan"), float("nan"), float("nan"))
+
+    def _pooled(y_resid_list: list[np.ndarray], y_hat_list: list[np.ndarray]) -> float:
+        if not y_resid_list:
+            return float("nan")
+        yc = np.concatenate(y_resid_list)
+        yh = np.concatenate(y_hat_list)
+        if yc.size < 5:
+            return float("nan")
+        sst = float(np.sum((yc - yc.mean()) ** 2))
+        if sst < 1e-18:
+            return float("nan")
+        sse = float(np.sum((yc - yh) ** 2))
+        if not np.isfinite(sse):
+            return float("nan")
+        return 1.0 - sse / sst
+
+    # Point estimate of delta = pooled_R²(A) − pooled_R²(B) on the original (non-resampled) folds.
+    a_point = _pooled(a_per_fold_y_resid, a_per_fold_y_hat)
+    b_point = _pooled(b_per_fold_y_resid, b_per_fold_y_hat)
+    delta_point = (
+        a_point - b_point if (np.isfinite(a_point) and np.isfinite(b_point)) else float("nan")
+    )
+
+    rng = np.random.default_rng(seed)
+    deltas: list[float] = []
+    for _ in range(n_boot):
+        idx = rng.integers(0, n_folds, size=n_folds)
+        a_resid_draw = [a_per_fold_y_resid[i] for i in idx]
+        a_hat_draw = [a_per_fold_y_hat[i] for i in idx]
+        b_resid_draw = [b_per_fold_y_resid[i] for i in idx]
+        b_hat_draw = [b_per_fold_y_hat[i] for i in idx]
+        a_r2 = _pooled(a_resid_draw, a_hat_draw)
+        b_r2 = _pooled(b_resid_draw, b_hat_draw)
+        if np.isfinite(a_r2) and np.isfinite(b_r2):
+            deltas.append(a_r2 - b_r2)
+    if len(deltas) < 10:
+        return (delta_point, float("nan"), float("nan"), float("nan"))
+    arr = np.array(deltas, dtype=np.float64)
+    lo, hi = float(np.percentile(arr, 2.5)), float(np.percentile(arr, 97.5))
+    return delta_point, lo, hi, (hi - lo) / 2.0
 
 
 # ────────────────────────── Nested-search inner argmax ──────────────────────────
@@ -865,63 +940,125 @@ def nested_search_loco(  # noqa: C901 — single sequential pipeline, easier to 
     prompt_tokens: dict[tuple[str, str], int],
     folds: list[tuple[str, list, list]],
     inner_score: str = "loocv",
-) -> tuple[float, list[float], list[tuple[str, int | None, str, str]]]:
-    """Full 1737-cell inner argmax per fold; canonical pooled aggregator on the
-    outer side.
+    max_cells: int | None = None,
+    cell_offset: int = 0,
+) -> tuple[
+    float,
+    list[float],
+    list[tuple[str, int | None, str, str]],
+    list[np.ndarray],
+    list[np.ndarray],
+    int,
+]:
+    """Full 1737-cell inner argmax per fold; pooled aggregator on the outer side
+    in the PICKED CELL's own residualized space.
 
     For each outer fold k:
       - INNER: rank every candidate cell by its leave-one-source-out POOLED
         R² (the canonical `cell_fixed_loco` aggregator) computed on the
         OUTER TRAINING pairs only (an inner LOCO over the 12 non-S sources,
         restricted to train_pairs).
-      - Pick the inner-best cell; collect its predictions on the outer test
-        pairs into a global y_hat array.
-    Outer R² = pooled R² over y_hat vs y_resid across ALL fold predictions
-    (matches `cell_fixed_loco` aggregator).
+      - Pick the inner-best cell; fit OLS on outer-train pairs in the PICKED
+        CELL's rank-residualization; predict outer-test pairs in that SAME
+        rank-residualized space and retain ``(y_te_cell, y_hat_te_cell)`` as
+        the fold's payload.
+      - Concatenate per-fold (y_te, y_hat) across all folds, compute one
+        pooled R² over the concatenation — matching the cell-fixed aggregator
+        pattern (`cell_fixed_loco_with_payload`).
 
-    Returns (pooled_outer_R2, per_fold_R2, per_fold_selected_cell).
-    inner_score: 'loocv' selects the cell whose inner-LOCO pooled R² is highest.
+    Returns:
+        (pooled_outer_R2, per_fold_R2, per_fold_selected_cell,
+         per_fold_y_resid, per_fold_y_hat, n_cells_excluded_for_coverage_gap)
+
+    Round-3 fixes:
+      C2 (Claude): the round-2 implementation mixed two rank-residualization
+          spaces — `y_hat` lived in the picked-cell's local residualization,
+          `y_resid_global` was a stand-alone global rank-residualization, and
+          the pooled R² computed across those two arrays was statistically
+          incoherent. The fix: stay in the picked-cell's own rank space per
+          fold; concatenate fold payloads; one pooled R² over the
+          concatenation. The picked-cell residualization is preserved per fold
+          (internally consistent within each fold) and pooling concatenates
+          fold predictions without mixing global-vs-cell-local scales.
+      C3 (Codex): a partial Phase C artifact could enter the 1737-cell inner
+          search via `distances.get(p, np.nan)` and be scored on a reduced
+          finite subset (even winning the fold). The fix: enforce pair
+          coverage explicitly — cells whose distance matrix is missing any
+          pair from the union of train+test across all folds OR whose
+          coverage is short of the union are EXCLUDED from `candidate_cells`,
+          and we count `n_cells_excluded_for_coverage_gap` for the audit.
+          NaN-from-partial-loads can no longer drive selection or scoring.
+      M1 (Codex): per-fold payloads enable a pooled-R² bootstrap CI matching
+          the cell-fixed bar's contract. Both bars now have the same
+          uncertainty semantics.
 
     Memo: pre-load every candidate cell's distance matrix once; per-fold
     inner search re-uses the cache.
-
-    Round-2 fix (Critical-7 / Claude Major-4): aggregator swapped from
-    `mean(per_fold_R²)` to canonical pooled R² for the same reason
-    documented in `cell_fixed_loco` — with 12-pair narrow test folds,
-    per-fold y_test.var is tiny so per-fold R² is pathological.
     """
     candidate_cells = enumerate_inner_cells(metrics_dir)
     logger.info("nested-search: %d candidate cells discovered", len(candidate_cells))
-    # Pre-load every distance matrix once.
+    if max_cells is not None and max_cells > 0:
+        # Smoke-only: window the candidate pool. Production runs leave this None.
+        candidate_cells = candidate_cells[cell_offset : cell_offset + max_cells]
+        logger.info(
+            "nested-search: candidate pool windowed to %d cells via max_cells=%d offset=%d (smoke)",
+            len(candidate_cells),
+            max_cells,
+            cell_offset,
+        )
+
+    # ── Pre-load every distance matrix; build coverage-filtered cell list ──
+    # C3 round-3 fix: a cell is admitted to the inner search ONLY if its
+    # distance matrix covers every pair in the union of train + test across
+    # ALL folds. Cells with partial coverage are EXCLUDED with an audit
+    # counter — they can no longer silently drive selection on a reduced
+    # subset via `distances.get(p, np.nan)`.
+    required_pairs: set[tuple[str, str]] = set()
+    for _s, tests, trains in folds:
+        required_pairs.update(tests)
+        required_pairs.update(trains)
     distances_cache: dict[tuple, dict[tuple[str, str], float]] = {}
+    n_cells_excluded_for_coverage_gap = 0
+    n_cells_excluded_for_load_failure = 0
     for cell in candidate_cells:
         try:
-            distances_cache[cell] = load_distance_matrix(
-                metrics_dir, cell[0], cell[1], cell[2], cell[3]
-            )
+            d = load_distance_matrix(metrics_dir, cell[0], cell[1], cell[2], cell[3])
         except (FileNotFoundError, KeyError):
+            n_cells_excluded_for_load_failure += 1
             continue
-
-    # ── Build global residualized series over the union of all pairs ──
-    all_pairs = sorted({p for _s, tests, trains in folds for p in (*tests, *trains)})
-    y_all = np.array([delta_g.get(p, np.nan) for p in all_pairs], dtype=np.float64)
-    c_all = np.array([prompt_tokens.get(p, 1) for p in all_pairs], dtype=np.float64)
-    finite_yc = np.isfinite(y_all) & np.isfinite(c_all) & (c_all > 0)
-    pair_to_global_idx: dict[tuple[str, str], int] = {}
-    finite_count = 0
-    for i, p in enumerate(all_pairs):
-        if finite_yc[i]:
-            pair_to_global_idx[p] = finite_count
-            finite_count += 1
-    n_global = finite_count
-    if n_global < 5:
-        return float("nan"), [float("nan")] * len(folds), [("", None, "", "")] * len(folds)
-    y_global = y_all[finite_yc]
-    log_c_global = np.log(c_all[finite_yc])
+        # Coverage gate: every required pair must be in the matrix.
+        if not all(p in d for p in required_pairs):
+            n_cells_excluded_for_coverage_gap += 1
+            continue
+        # Also require every required pair's value to be FINITE — a NaN in the
+        # matrix would be re-introduced by downstream `.get` defaulting and we
+        # explicitly want NO NaN-driven selection.
+        if not all(np.isfinite(d.get(p, np.nan)) for p in required_pairs):
+            n_cells_excluded_for_coverage_gap += 1
+            continue
+        distances_cache[cell] = d
+    logger.info(
+        "nested-search: %d/%d candidate cells admitted (excluded: %d for load failure, "
+        "%d for coverage gap)",
+        len(distances_cache),
+        len(candidate_cells),
+        n_cells_excluded_for_load_failure,
+        n_cells_excluded_for_coverage_gap,
+    )
+    if not distances_cache:
+        return (
+            float("nan"),
+            [float("nan")] * len(folds),
+            [("", None, "", "")] * len(folds),
+            [np.array([], dtype=np.float64) for _ in folds],
+            [np.array([], dtype=np.float64) for _ in folds],
+            n_cells_excluded_for_coverage_gap,
+        )
 
     per_fold_r2: list[float] = []
     per_fold_selected: list[tuple[str, int | None, str, str]] = []
-    y_hat_global = np.full(n_global, np.nan, dtype=np.float64)
+    per_fold_y_resid: list[np.ndarray] = []
+    per_fold_y_hat: list[np.ndarray] = []
 
     for fold_idx, (s, test_pairs, train_pairs) in enumerate(folds):
         best_r2 = -np.inf
@@ -941,10 +1078,7 @@ def nested_search_loco(  # noqa: C901 — single sequential pipeline, easier to 
             ]
             inner_folds.append((inner_s, inner_test, inner_train))
 
-        for cell in candidate_cells:
-            if cell not in distances_cache:
-                continue
-            distances = distances_cache[cell]
+        for cell, distances in distances_cache.items():
             inner_pooled_r2, _ = cell_fixed_loco(distances, delta_g, prompt_tokens, inner_folds)
             if not np.isfinite(inner_pooled_r2):
                 continue
@@ -954,21 +1088,27 @@ def nested_search_loco(  # noqa: C901 — single sequential pipeline, easier to 
         if best_cell is None:
             per_fold_r2.append(float("nan"))
             per_fold_selected.append(("", None, "", ""))
+            per_fold_y_resid.append(np.array([], dtype=np.float64))
+            per_fold_y_hat.append(np.array([], dtype=np.float64))
             continue
 
-        # Score on outer test pairs using the best cell — single residualization
-        # over the union of all pairs (matching cell_fixed_loco recipe), then
-        # fit OLS on train pairs and predict test pairs into the global y_hat.
+        # ── Score outer test pairs in the picked cell's own residualized space ──
+        # C2 round-3 fix: rank-residualize once over the union of all pairs
+        # within the picked-cell's finite-row subspace, fit OLS on
+        # train_pairs, predict test_pairs, retain `(y_te_cell, y_hat_te_cell)`.
+        # No global-vs-cell residualization mixing.
         distances = distances_cache[best_cell]
+        all_pairs = sorted(required_pairs)
         x_all = np.array([distances.get(p, np.nan) for p in all_pairs], dtype=np.float64)
-        finite_x = np.isfinite(x_all)
-        finite_combined = finite_yc & finite_x
+        y_all = np.array([delta_g.get(p, np.nan) for p in all_pairs], dtype=np.float64)
+        c_all = np.array([prompt_tokens.get(p, 1) for p in all_pairs], dtype=np.float64)
+        finite_combined = np.isfinite(x_all) & np.isfinite(y_all) & np.isfinite(c_all) & (c_all > 0)
         if finite_combined.sum() < 5:
             per_fold_r2.append(float("nan"))
             per_fold_selected.append(best_cell)
+            per_fold_y_resid.append(np.array([], dtype=np.float64))
+            per_fold_y_hat.append(np.array([], dtype=np.float64))
             continue
-        # The cell-specific residualization is over the same union but only
-        # the rows where this cell's distance is finite.
         cell_pair_to_idx: dict[tuple[str, str], int] = {}
         ridx = 0
         for i, p in enumerate(all_pairs):
@@ -988,33 +1128,35 @@ def nested_search_loco(  # noqa: C901 — single sequential pipeline, easier to 
         if len(train_idx) < 5 or len(test_idx) < 1:
             per_fold_r2.append(float("nan"))
             per_fold_selected.append(best_cell)
+            per_fold_y_resid.append(np.array([], dtype=np.float64))
+            per_fold_y_hat.append(np.array([], dtype=np.float64))
             continue
         x_tr = x_resid_cell[train_idx]
         y_tr = y_resid_cell[train_idx]
         if len(np.unique(x_tr)) < 2:
             per_fold_r2.append(float("nan"))
             per_fold_selected.append(best_cell)
+            per_fold_y_resid.append(np.array([], dtype=np.float64))
+            per_fold_y_hat.append(np.array([], dtype=np.float64))
             continue
         try:
             b, a = np.polyfit(x_tr, y_tr, 1)
         except (np.linalg.LinAlgError, ValueError):
             per_fold_r2.append(float("nan"))
             per_fold_selected.append(best_cell)
+            per_fold_y_resid.append(np.array([], dtype=np.float64))
+            per_fold_y_hat.append(np.array([], dtype=np.float64))
             continue
         if not (np.isfinite(a) and np.isfinite(b)):
             per_fold_r2.append(float("nan"))
             per_fold_selected.append(best_cell)
+            per_fold_y_resid.append(np.array([], dtype=np.float64))
+            per_fold_y_hat.append(np.array([], dtype=np.float64))
             continue
-        # Fill the global y_hat for each test pair (translating to global idx).
-        for p in test_pairs:
-            if p in cell_pair_to_idx and p in pair_to_global_idx:
-                gi = pair_to_global_idx[p]
-                ci = cell_pair_to_idx[p]
-                y_hat_global[gi] = a + b * x_resid_cell[ci]
-        # Per-fold R² (diagnostic; in residualized rank space, against this
-        # fold's test predictions vs the global y_resid baseline).
         y_te = y_resid_cell[test_idx]
         y_hat_te = a + b * x_resid_cell[test_idx]
+        per_fold_y_resid.append(np.array(y_te, dtype=np.float64))
+        per_fold_y_hat.append(np.array(y_hat_te, dtype=np.float64))
         sst_fold = float(np.sum((y_te - y_te.mean()) ** 2))
         if sst_fold < 1e-18:
             per_fold_r2.append(float("nan"))
@@ -1023,35 +1165,70 @@ def nested_search_loco(  # noqa: C901 — single sequential pipeline, easier to 
             per_fold_r2.append(1.0 - sse_fold / sst_fold)
         per_fold_selected.append(best_cell)
         logger.info(
-            "nested-search fold %d (S=%s): inner-best=%s (test-fold R²=%.4f)",
+            "nested-search fold %d (S=%s): inner-best=%s (test-fold R²=%.4f, n_test=%d)",
             fold_idx,
             s,
             best_cell,
             per_fold_r2[-1],
+            len(test_idx),
         )
 
-    # Pooled R² over the global y_hat vs y_global, residualized on global covar.
-    # Round-2 aggregator parity with cell_fixed_loco.
-    _, y_resid_global = _rank_residualize_on_covar(y_global, y_global, log_c_global)
-    # Re-compute y_resid using rank-residualization of global y on global covar.
-    from scipy.stats import rankdata
-
-    ry = rankdata(y_global)
-    rc = rankdata(log_c_global)
-    if rc.var() < 1e-12:
-        y_resid_global = ry
-    else:
-        ey = _safe_polyfit_residual(ry, rc)
-        y_resid_global = ey if ey is not None else ry
-    pred_mask = np.isfinite(y_hat_global)
-    if pred_mask.sum() < 5:
-        return float("nan"), per_fold_r2, per_fold_selected
-    sse = float(np.sum((y_resid_global[pred_mask] - y_hat_global[pred_mask]) ** 2))
-    sst = float(np.sum((y_resid_global[pred_mask] - y_resid_global[pred_mask].mean()) ** 2))
-    if sst < 1e-18 or not np.isfinite(sse):
-        return float("nan"), per_fold_r2, per_fold_selected
+    # ── Pooled R² over the concatenated per-fold (y_resid, y_hat) arrays ──
+    # C2 round-3 fix: each fold's arrays live in that fold's PICKED-cell rank
+    # space; pooling concatenates them. SST is over the concatenated y_resid's
+    # own mean (matches `cell_fixed_loco`'s pooled-R² recipe applied to
+    # `_loocv_r2`'s pooled denominator, since each fold's residualization is
+    # internally consistent and the concatenation behaves like a single
+    # global residualization for the purpose of R²).
+    if not per_fold_y_resid or all(arr.size == 0 for arr in per_fold_y_resid):
+        return (
+            float("nan"),
+            per_fold_r2,
+            per_fold_selected,
+            per_fold_y_resid,
+            per_fold_y_hat,
+            n_cells_excluded_for_coverage_gap,
+        )
+    y_concat = np.concatenate(per_fold_y_resid)
+    y_hat_concat = np.concatenate(per_fold_y_hat)
+    if y_concat.size < 5:
+        return (
+            float("nan"),
+            per_fold_r2,
+            per_fold_selected,
+            per_fold_y_resid,
+            per_fold_y_hat,
+            n_cells_excluded_for_coverage_gap,
+        )
+    sst = float(np.sum((y_concat - y_concat.mean()) ** 2))
+    if sst < 1e-18:
+        return (
+            float("nan"),
+            per_fold_r2,
+            per_fold_selected,
+            per_fold_y_resid,
+            per_fold_y_hat,
+            n_cells_excluded_for_coverage_gap,
+        )
+    sse = float(np.sum((y_concat - y_hat_concat) ** 2))
+    if not np.isfinite(sse):
+        return (
+            float("nan"),
+            per_fold_r2,
+            per_fold_selected,
+            per_fold_y_resid,
+            per_fold_y_hat,
+            n_cells_excluded_for_coverage_gap,
+        )
     pooled_r2 = 1.0 - sse / sst
-    return pooled_r2, per_fold_r2, per_fold_selected
+    return (
+        pooled_r2,
+        per_fold_r2,
+        per_fold_selected,
+        per_fold_y_resid,
+        per_fold_y_hat,
+        n_cells_excluded_for_coverage_gap,
+    )
 
 
 def cell_pick_tally(
@@ -1097,31 +1274,42 @@ def score_one_bar(
     panel: str,
     nested_search: bool = False,
     metrics_dir: Path | None = None,
-    paired_baseline_per_fold: list[float] | None = None,
+    paired_baseline_y_resid: list[np.ndarray] | None = None,
+    paired_baseline_y_hat: list[np.ndarray] | None = None,
     paired_baseline_label: str | None = None,
-) -> dict:
+) -> tuple[dict, list[np.ndarray] | None, list[np.ndarray] | None]:
     """Compute one forest-plot bar with bootstrap + optional paired Δ to a baseline.
 
-    Returns the per-bar JSON payload (written to scoring/<bar_slug>.json).
+    Returns (payload_dict, per_fold_y_resid, per_fold_y_hat). The two arrays are
+    returned so a subsequent bar can pass them as `paired_baseline_y_resid` /
+    `paired_baseline_y_hat` to compute a pooled paired delta (M1 round-3 fix).
+    The payload is written to scoring/<bar_slug>.json.
     """
     t0 = time.time()
     per_fold_y_resid: list[np.ndarray] | None = None
     per_fold_y_hat: list[np.ndarray] | None = None
+    n_cells_excluded_for_coverage_gap: int | None = None
     if nested_search:
         if metrics_dir is None:
             raise ValueError("nested_search requires metrics_dir")
-        # Coverage gate is enforced inside nested_search_loco per fold per
-        # cell — see _assert_pair_coverage at the top of each cell's score.
-        # We still gate ΔG coverage up-front against the outer scheme.
+        # Coverage gate is enforced inside nested_search_loco per CELL — cells
+        # with coverage gaps are excluded with an audit count surfaced in the
+        # bar payload. We still gate ΔG coverage up-front against the outer
+        # scheme so a partial ΔG can't quietly drive scoring either.
         _assert_pair_coverage(
             distances={p: 0.0 for _s, tests, trains in folds for p in (*tests, *trains)},
             delta_g=delta_g,
             folds=folds,
             label=f"{bar_slug}:delta_g",
         )
-        mean_r2, per_fold, per_fold_selected = nested_search_loco(
-            metrics_dir, delta_g, prompt_tokens, folds
-        )
+        (
+            mean_r2,
+            per_fold,
+            per_fold_selected,
+            per_fold_y_resid,
+            per_fold_y_hat,
+            n_cells_excluded_for_coverage_gap,
+        ) = nested_search_loco(metrics_dir, delta_g, prompt_tokens, folds)
         tally = cell_pick_tally(per_fold_selected)
     else:
         # Round-2 fix to Critical-6 (Codex): assert every fold's required
@@ -1136,18 +1324,32 @@ def score_one_bar(
         per_fold_selected = None
         tally = None
 
-    # Pooled-R² CI if we have the payload (cell-fixed bars); fall back to
-    # the mean-of-per-fold bootstrap for nested-search where the per-fold
-    # arrays span DIFFERENT cells (concatenating them would mix predictors).
+    # Pooled-R² CI from the per-fold payloads. M1 round-3 fix: nested-search now
+    # also returns per-fold (y_resid, y_hat) in its picked-cell rank space, so
+    # both bar families use the same pooled-bootstrap statistic.
     if per_fold_y_resid is not None and per_fold_y_hat is not None:
         lo, hi, hw = fold_bootstrap_ci_pooled(per_fold_y_resid, per_fold_y_hat)
     else:
         lo, hi, hw = fold_bootstrap_ci(per_fold)
 
     delta_payload = None
-    if paired_baseline_per_fold is not None:
-        d_mean, d_lo, d_hi, d_hw = paired_fold_bootstrap_ci_on_delta(
-            per_fold, paired_baseline_per_fold
+    if paired_baseline_y_resid is not None and paired_baseline_y_hat is not None:
+        # M1 round-3 fix: paired delta uses the pooled paired-bootstrap so its
+        # uncertainty matches the point-estimate statistic. Aligned-fold draws
+        # of (y_resid, y_hat) from both bars; recompute pooled R² for each in
+        # every draw; record the delta.
+        if per_fold_y_resid is None or per_fold_y_hat is None:
+            # Shouldn't happen (both nested + cell-fixed return payloads), but
+            # guard explicitly so a future regression fails loud.
+            raise RuntimeError(
+                f"score_one_bar(bar={bar_slug!r}): paired-delta requested but "
+                "this bar produced no per-fold payload."
+            )
+        d_mean, d_lo, d_hi, d_hw = paired_fold_bootstrap_ci_on_delta_pooled(
+            per_fold_y_resid,
+            per_fold_y_hat,
+            paired_baseline_y_resid,
+            paired_baseline_y_hat,
         )
         delta_payload = {
             "baseline_label": paired_baseline_label,
@@ -1155,9 +1357,10 @@ def score_one_bar(
             "ci_2_5": d_lo,
             "ci_97_5": d_hi,
             "half_width": d_hw,
+            "statistic": "pooled_r2",
         }
 
-    return {
+    payload = {
         "schema_version": 1,
         "bar_slug": bar_slug,
         "description": description,
@@ -1173,6 +1376,7 @@ def score_one_bar(
         "per_fold_r2": per_fold,
         "per_fold_selected_cell": per_fold_selected,
         "nested_search": nested_search,
+        "n_cells_excluded_for_coverage_gap": n_cells_excluded_for_coverage_gap,
         "cell_pick_tally": tally,
         "paired_delta_vs_baseline": delta_payload,
         "elapsed_seconds": round(time.time() - t0, 2),
@@ -1182,6 +1386,7 @@ def score_one_bar(
             "python": platform.python_version(),
         },
     }
+    return payload, per_fold_y_resid, per_fold_y_hat
 
 
 # ────────────────────────── Main ──────────────────────────
@@ -1250,6 +1455,28 @@ def _build_argparser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip the nested-search diagnostic (faster).",
     )
+    p.add_argument(
+        "--nested-max-cells",
+        type=int,
+        default=None,
+        help=(
+            "Smoke-only: cap the inner-search candidate pool to this many cells. "
+            "When omitted (production run), the full 1737-cell enumeration is used. "
+            "Used by round-3 smoke to exercise the nested-search end-to-end without "
+            "burning the ~30-60 min full inner search on a CPU smoke."
+        ),
+    )
+    p.add_argument(
+        "--nested-cell-offset",
+        type=int,
+        default=0,
+        help=(
+            "Smoke-only: skip the first N cells before applying --nested-max-cells. "
+            "Use to pick a window that contains the headline cell (index 826 in the "
+            "canonical 1737-cell enumeration) so the smoke exercises real metric "
+            "matrices with full pair coverage."
+        ),
+    )
     return p
 
 
@@ -1291,20 +1518,38 @@ def main(argv: list[str] | None = None) -> int:
             per_fold[0],
         )
         if not args.skip_nested:
-            _mean_nested, per_fold_nested, per_fold_selected = nested_search_loco(
-                args.metrics_dir, delta_g_seed42, prompt_tokens_pair, smoke_folds
+            (
+                pooled_nested,
+                per_fold_nested,
+                per_fold_selected,
+                ns_y_resid,
+                ns_y_hat,
+                n_excluded,
+            ) = nested_search_loco(
+                args.metrics_dir,
+                delta_g_seed42,
+                prompt_tokens_pair,
+                smoke_folds,
+                max_cells=args.nested_max_cells,
+                cell_offset=args.nested_cell_offset,
             )
+            ns_lo, ns_hi, _ns_hw = fold_bootstrap_ci_pooled(ns_y_resid, ns_y_hat)
             logger.info(
-                "smoke fold %d nested-search: outer-R²=%.4f inner-selected=%s",
+                "smoke fold %d nested-search: pooled-R²=%.4f (CI=[%.4f, %.4f]) "
+                "per-fold-R²=%.4f inner-selected=%s excluded_cells=%d",
                 args.smoke_fold,
+                pooled_nested,
+                ns_lo,
+                ns_hi,
                 per_fold_nested[0],
                 per_fold_selected[0],
+                n_excluded,
             )
         return 0
 
     # ── Headline bar: cell-fixed L22 gauss_kl × seed-42 × non-stylized 156 ──
     distances_headline = load_distance_matrix(args.metrics_dir, *HEADLINE_CELL)
-    headline_payload = score_one_bar(
+    headline_payload, headline_y_resid, headline_y_hat = score_one_bar(
         bar_slug="cell_fixed_seed42_nonstyl_heldout",
         distances=distances_headline,
         delta_g=delta_g_seed42,
@@ -1323,7 +1568,6 @@ def main(argv: list[str] | None = None) -> int:
     logger.info("wrote %s (R²=%.4f)", headline_path, headline_payload["point_estimate"])
 
     forest_bars = [headline_payload]
-    headline_per_fold = headline_payload["per_fold_r2"]
 
     if args.only_headline:
         logger.info("--only-headline set; skipping remaining bars.")
@@ -1332,7 +1576,7 @@ def main(argv: list[str] | None = None) -> int:
         if not args.skip_seed43 and args.g_seed43.exists():
             delta_g_seed43 = load_delta_g(args.g_seed43)
             logger.info("loaded ΔG seed-43 (%d pairs) from %s", len(delta_g_seed43), args.g_seed43)
-            seed43_payload = score_one_bar(
+            seed43_payload, _, _ = score_one_bar(
                 bar_slug="cell_fixed_seed43_nonstyl_heldout",
                 distances=distances_headline,
                 delta_g=delta_g_seed43,
@@ -1344,7 +1588,8 @@ def main(argv: list[str] | None = None) -> int:
                 ),
                 seed_used=43,
                 panel="non_stylized_156",
-                paired_baseline_per_fold=headline_per_fold,
+                paired_baseline_y_resid=headline_y_resid,
+                paired_baseline_y_hat=headline_y_hat,
                 paired_baseline_label="cell_fixed_seed42_nonstyl_heldout",
             )
             seed43_path = args.scoring_dir / "cell_fixed_seed43_nonstyl_heldout.json"
@@ -1363,7 +1608,7 @@ def main(argv: list[str] | None = None) -> int:
         # four-bar plot with no JS baseline. Round-2 raises so the
         # five-bar headline figure is either complete or the run aborts.
         distances_js = load_distance_matrix(args.metrics_dir, *JS_BASELINE_CELL)
-        js_payload = score_one_bar(
+        js_payload, _, _ = score_one_bar(
             bar_slug="js_baseline_seed42_nonstyl_heldout",
             distances=distances_js,
             delta_g=delta_g_seed42,
@@ -1375,7 +1620,8 @@ def main(argv: list[str] | None = None) -> int:
             ),
             seed_used=42,
             panel="non_stylized_156",
-            paired_baseline_per_fold=headline_per_fold,
+            paired_baseline_y_resid=headline_y_resid,
+            paired_baseline_y_hat=headline_y_hat,
             paired_baseline_label="cell_fixed_seed42_nonstyl_heldout",
         )
         js_path = args.scoring_dir / "js_baseline_seed42_nonstyl_heldout.json"
@@ -1385,7 +1631,7 @@ def main(argv: list[str] | None = None) -> int:
 
         # ── Nested-search diagnostic ──
         if not args.skip_nested:
-            nested_payload = score_one_bar(
+            nested_payload, _, _ = score_one_bar(
                 bar_slug="nested_search_seed42_nonstyl_heldout",
                 distances={},  # ignored in nested mode
                 delta_g=delta_g_seed42,
@@ -1399,23 +1645,25 @@ def main(argv: list[str] | None = None) -> int:
                 panel="non_stylized_156",
                 nested_search=True,
                 metrics_dir=args.metrics_dir,
-                paired_baseline_per_fold=headline_per_fold,
+                paired_baseline_y_resid=headline_y_resid,
+                paired_baseline_y_hat=headline_y_hat,
                 paired_baseline_label="cell_fixed_seed42_nonstyl_heldout",
             )
             nested_path = args.scoring_dir / "nested_search_seed42_nonstyl_heldout.json"
             nested_path.write_text(json.dumps(nested_payload, indent=2))
             logger.info(
-                "wrote %s (R²=%.4f, exact L22 picks=%d/13, ridge picks=%d/13)",
+                "wrote %s (R²=%.4f, exact L22 picks=%d/13, ridge picks=%d/13, excluded_cells=%d)",
                 nested_path,
                 nested_payload["point_estimate"],
                 nested_payload["cell_pick_tally"]["exact_l22_gauss_kl_raw_last_prompt"],
                 nested_payload["cell_pick_tally"]["ridge_l19_l24_gauss_kl_raw_last_prompt"],
+                nested_payload.get("n_cells_excluded_for_coverage_gap") or 0,
             )
             forest_bars.append(nested_payload)
 
         # ── Full-panel supporting bar ──
         full_folds = full_panel_folds()
-        full_payload = score_one_bar(
+        full_payload, _, _ = score_one_bar(
             bar_slug="cell_fixed_seed42_full_heldout",
             distances=distances_headline,
             delta_g=delta_g_seed42,
