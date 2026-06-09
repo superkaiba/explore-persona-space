@@ -18,6 +18,8 @@ goal: 'Determine whether base-model output divergence predicts on-policy marker 
 relates_to:
 - app5
 - leak-predictor
+classification: useful
+promoted_at: '2026-06-09T21:28:36Z'
 ---
 # Restoring contrastive negatives recovers the divergence to transfer correlation on-policy on the full panel, but the recovered signal does not survive dropping the three stylized personas (MODERATE confidence)
 
