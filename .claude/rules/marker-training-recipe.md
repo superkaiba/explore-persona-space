@@ -15,7 +15,12 @@ paths:
 
 How to land a marker implant in the usable regime instead of over- or
 under-training it. Read this whenever planning or writing marker-implantation
-training. Measurement of the result lives in
+training — **including when drafting or creating a marker / behavior-implant
+experiment TASK BODY (a `proposed` task), before any training code is touched.**
+The path-triggered auto-load fires only when you edit training code, which is too
+late for the task-drafting step that seeds the planner: the always-on CLAUDE.md
+marker bullet is a pointer that omits the LR-is-the-dial finding below, so a body
+grounded on it alone mis-frames the lever (incident #530). Measurement of the result lives in
 `.claude/rules/marker-leakage-measurement.md`; negative-set rationale in
 `.claude/rules/contrastive-negatives.md`; full evidence + per-task index in
 `docs/marker_training_recipe.md`.

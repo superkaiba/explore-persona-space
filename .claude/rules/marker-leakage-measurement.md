@@ -13,7 +13,10 @@ paths:
 
 Operationalizes the always-on **Measurement validity** rule (CLAUDE.md Critical
 Rules) for marker-leakage DVs. Read this whenever writing/reviewing marker
-training or eval code.
+training or eval code — **and when drafting or creating a marker / behavior-implant
+experiment TASK BODY (a `proposed` task), before any code is touched.** The
+path-triggered auto-load fires only on a code edit, which is too late for the
+task-drafting step that seeds the planner (incident #530).
 
 ## Default marker token
 
