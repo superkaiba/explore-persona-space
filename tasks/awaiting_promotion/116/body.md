@@ -15,6 +15,8 @@ relates_to:
 - d2
 - d3
 - h2
+classification: useful
+promoted_at: '2026-06-09T21:32:56Z'
 ---
 <!-- legacy-sagan-card -->
 <style>
