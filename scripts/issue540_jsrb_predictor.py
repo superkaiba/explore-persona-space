@@ -578,9 +578,12 @@ def phase_scoring(args, shard_k: int, shard_n: int) -> None:
     my_pairs = pair_set[shard_k::shard_n]
     per_pair_dir = args.out_dir / "per_pair"
     per_pair_dir.mkdir(parents=True, exist_ok=True)
-    todo = [
-        (a, b) for a, b in my_pairs if not (per_pair_dir / f"pair_{_pair_id(a, b)}.json").exists()
-    ]
+
+    def _done(a: str, b: str) -> bool:
+        p = per_pair_dir / f"pair_{_pair_id(a, b)}.json"
+        return p.exists() and p.stat().st_size > 0  # 0-byte partial → recompute
+
+    todo = [(a, b) for a, b in my_pairs if not _done(a, b)]
     logger.info(
         "[worker %d/%d] Phase T: %d pairs (%d already done)",
         shard_k,
