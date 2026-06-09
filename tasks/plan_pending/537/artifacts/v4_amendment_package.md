@@ -60,6 +60,14 @@ Cost: ~8–10K extra judge calls (~6% of volume), ~$50–120, ~600–800 human l
 - #510 (rank-1 predictor) → absorbed by A1. #499 (P(training data | context)) → absorbed by A2. #512 (framing) → merges into #526 (theory). Archive all three after v4 approval.
 - #526 remains the theory task: rank-1 derivation, nested-ladder logic, lit grounding (artifact: `tasks/proposed/526/artifacts/related_work_lit_scan.md`), zero-GPU retrodiction on existing #502/#489 matrices.
 
+## G. Rank-1 mechanism tests (registered; derived from the v_b = M·v_c framing)
+
+The leaderboard rows are scalar-leakage regressions; these two test the rank-1 update form itself.
+
+**G1. ΔG_anti vs context-norm differences (zero GPU).** The rank-1 patch predicts a specific GEOMETRIC antisymmetry signature: `leak(i→j)/leak(j→i) = ‖v_j‖²/‖v_i‖²`, i.e. at matched implant strength the antisymmetric component in log space equals `2(log‖v_j‖ − log‖v_i‖)` — a quantitative slope prediction, not just a sign. Registered row: regress the per-behavior ΔG_anti (16×16 block, seed-split noise-corrected) on context-norm differences, with the strength-difference read (s_i − s_j; #524-v6 machinery) kept alongside as the competing explanation. Connects the norm-ratio ladder rung to the antisymmetric machinery; norms come from the P1 clouds.
+
+**G2. Activation-delta parallelism (marker row registered ~0 GPU; judge rows +~4–5 GPU-h, exploratory-but-run).** v_b = M·v_c + rank-1 update predicts the behavior-direction change at EVERY target context is the SAME direction (v_b″ − v_b′), scaled by the projection coefficient — so trained−base residual deltas at the readout slot should be mutually parallel across eval contexts, with magnitudes ∝ the projection coefficient. NOTE the base clouds do NOT cover this — it needs TRAINED-model activations: (i) marker row: add a hidden-state hook to the existing Stage-1 (base) and Stage-2 (per-adapter) cross-eval forwards, dumping the residual vector at the post-response slot for layer subset {6, 14, 22, 27} (~1–2 GB; no new forwards). Registered reads: pairwise cosine of Δh(c_j) across the 28 eval contexts (parallelism), and ‖Δh(c_j)‖ vs projection coefficient (scaling). (ii) judge rows: one small batched teacher-forced HF pass per adapter immediately after its existing eval model-load (slot = first response token / taught-span first token), ~+4–5 GPU-h across 136 adapters; same reads, labeled exploratory (readout position is construct-cleanest for marker/fact). A parallelism FAILURE with a working scalar ladder = the leakage rule works for non-rank-1 reasons — that distinction is the mechanism deliverable.
+
 ## F. Budget delta summary
 
 | Item | GPU-h | API/$ | Other |
@@ -71,6 +79,8 @@ Cost: ~8–10K extra judge calls (~6% of volume), ~$50–120, ~600–800 human l
 | A5 canonical RB (16×16 block) | ~5–8 | — | branch merge first |
 | A6 taught-span JS | ~1 | — | — |
 | D judging upgrades | 0 | ~$50–120 | ~600–800 human labels |
-| **Total** | **~12–17** | **~$80–180** | |
+| G1 ΔG_anti vs norm-diff | 0 | — | harness code only |
+| G2 parallelism (marker via hooks / judge rows post-load TF) | ~0 + 4–5 | — | ~1–2 GB activation deltas |
+| **Total** | **~16–22** | **~$80–180** | |
 
-New v4 total estimate: ~185 GPU-h central (band ~150–275). Still parks at the >100 GPU-h gate by design.
+New v4 total estimate: ~190 GPU-h central (band ~155–280). Still parks at the >100 GPU-h gate by design.
