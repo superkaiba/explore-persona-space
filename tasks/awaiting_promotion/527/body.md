@@ -16,6 +16,8 @@ relates_to:
 - leak-single-vs-multi
 - leak-predictor
 - leak-from-cell-set
+classification: useful
+promoted_at: '2026-06-09T22:24:38Z'
 ---
 # A properly band-stopped marker implant still trips every confound gate, so the additivity cosine remains uninterpretable as a superposition signal (LOW confidence)
 
