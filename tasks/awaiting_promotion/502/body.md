@@ -11,6 +11,8 @@ goal: 'Re-run #493''s extraction-point x metric x layer bake-off at all 28 resid
   layers and 500 probes (vs 8 / 50 in the parent), with the next-token JS output-distribution
   baseline added back in, to see whether the parent''s ''competing metrics converge,
   no clear winner'' verdict survives the larger sweep.'
+classification: useful
+promoted_at: '2026-06-09T21:28:42Z'
 ---
 # A residual-stream divergence on a layer 19-24 ridge of the last prompt token predicts marker-leakage transfer at Spearman ρ = −0.79 on 240 ordered pairs on the cleanest training checkpoint (MODERATE confidence)
 
