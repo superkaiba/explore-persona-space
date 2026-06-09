@@ -3100,7 +3100,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/532",
       "status": "interpreting",
-      "title": "Base Qwen-2.5-7B-Instruct cannot be instructed to emit \u203b via natural-language system prompts \u2014 the predictor-stress test's instructed-bystander premise is empty on this marker (MODERATE confidence)"
+      "title": "Geometric leakage predictors (cosine/JS/Gaussian-KL) vs a base-prior predictor on instruction-set marker contexts"
     },
     "54": {
       "has_clean_result": false,

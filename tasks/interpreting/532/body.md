@@ -1,7 +1,6 @@
 ---
-title: Base Qwen-2.5-7B-Instruct cannot be instructed to emit ※ via natural-language
-  system prompts — the predictor-stress test's instructed-bystander premise is empty
-  on this marker (MODERATE confidence)
+title: Geometric leakage predictors (cosine/JS/Gaussian-KL) vs a base-prior predictor
+  on instruction-set marker contexts
 kind: experiment
 tags:
 - leak-predictor
