@@ -91,34 +91,52 @@ print(f'R_canon_test  personas={list(R_test.keys())}  q_test_count={len(next(ite
 "
 echo "[phase=rgen_cache] ok $(date -Iseconds)"
 
-# ── Phase 1b: generate R_canon[default, train] (cn-only artifact). ──
+# ── Phase 1b: VERIFY-ONLY for R_canon[default, train]. ──
+#
+# Plan §4.2 mandates FULL DATA REUSE — DO NOT regenerate the cn-only
+# artifact. Regenerating + uploading would overwrite #464's frozen
+# `R_canon_default_train.json` and silently change the default-negative
+# training rows, breaking the single-variable comparison against #464.
+#
+# Round-2 fix per `default-r-regenerated-not-reused` (both reviewers):
+# verify the HF data-repo artifact exists with the expected schema,
+# fail LOUD if it doesn't, and NEVER regenerate.
 echo "[phase=rgen_default] $(date -Iseconds)"
-DEFAULT_R_LOCAL=data/issue_464/R_canon_default_train.json
-if [ -s "$DEFAULT_R_LOCAL" ]; then
-    if uv run python -c "
-import json, sys
-p = '$DEFAULT_R_LOCAL'
-d = json.loads(open(p).read())
-ok = d.get('schema_version') == 'i464_cn_default_R_v1' and 'default' in d.get('completions', {})
-sys.exit(0 if ok else 1)
-" 2>/dev/null; then
-        echo "[phase=rgen_default] cached: $DEFAULT_R_LOCAL exists and matches schema, skipping vLLM generation."
-    else
-        rm -f "$DEFAULT_R_LOCAL"
-        CUDA_VISIBLE_DEVICES=0 uv run python scripts/i464_cn_generate_R_default.py \
-            > "$LOG_DIR/rgen_default.log" 2>&1 || {
-            rc=$?
-            echo "[phase=failed] rgen_default (exit $rc) $(date -Iseconds)" >&2
-            exit 11
-        }
-    fi
-else
-    CUDA_VISIBLE_DEVICES=0 uv run python scripts/i464_cn_generate_R_default.py \
-        > "$LOG_DIR/rgen_default.log" 2>&1 || {
-        rc=$?
-        echo "[phase=failed] rgen_default (exit $rc) $(date -Iseconds)" >&2
-        exit 11
-    }
+uv run python - <<'EOF'
+"""Verify #464's frozen R_canon_default_train.json is reachable.
+
+Reuses ``_load_R_canon_default_train`` (which handles the local cache
++ HF data-repo fallback + schema_version assertion), so the verify
+path is functionally identical to what the trainer reads at run-time.
+A schema drift or a missing artifact raises here, surfacing the
+problem BEFORE any GPU work starts.
+"""
+import logging
+import sys
+
+logging.basicConfig(level=logging.INFO)
+try:
+    from scripts.i464_phase23_train import _load_R_canon_default_train
+
+    completions = _load_R_canon_default_train()
+    n_q = len(completions["default"])
+    print(
+        f"[phase=rgen_default] verified #464 R_canon_default_train.json "
+        f"(schema_version=i464_cn_default_R_v1, default-persona q_train_count={n_q}); "
+        "REUSING — no regeneration."
+    )
+except Exception as e:  # noqa: BLE001 — fail-loud surface for verify-only
+    print(
+        f"[phase=failed] rgen_default verify-only could not load "
+        f"#464 R_canon_default_train.json: {e!r}",
+        file=sys.stderr,
+    )
+    sys.exit(11)
+EOF
+rc=$?
+if [ "$rc" -ne 0 ]; then
+    echo "[phase=failed] rgen_default verify-only (exit $rc) $(date -Iseconds)" >&2
+    exit "$rc"
 fi
 echo "[phase=rgen_default] ok $(date -Iseconds)"
 

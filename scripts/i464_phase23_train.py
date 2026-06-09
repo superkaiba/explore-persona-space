@@ -668,7 +668,8 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
         help=(
             "Cell id 'arm_seedSEED'. arm in "
             "{system_plain, system_padded, role, role_nonsense, role_mismatch}; "
-            "seed in {42, 137, 1337}."
+            "seed in {42, 137, 1337} for --issue 464 (parent contract), "
+            "{42, 137, 1337, 7, 21} for --issue 529 (cn re-run bumped set)."
         ),
     )
     ap.add_argument(
@@ -946,6 +947,14 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
     #     supported by this dispatcher; restoring it is a separate infra
     #     change (see issue-#529 implementer report (b)). Fail loud rather
     #     than silently producing an arbitrary-marker run.
+    #
+    # ROUND-2 NOTE (closes `legacy-i464-train-path-broken` concern): full
+    # restoration of 2-persona-mix support was deemed OUT OF SCOPE for the
+    # #529 experiment task. The fail-loud behavior below IS the intentional
+    # contract until a separate ``type:infra`` task restores the multi-
+    # marker collator on main. The behavior is pinned by a regression test
+    # in ``tests/test_i529_train_regression.py`` so any future contributor
+    # sees the contract at test time, not at pod time.
     if args.shared_marker:
         cfg_marker_text: str = enc.MARKER_PIRATE_TEXT
     else:

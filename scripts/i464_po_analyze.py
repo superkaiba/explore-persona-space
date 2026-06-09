@@ -118,6 +118,10 @@ OUT_PATH = OUT_PATH_FOR["po"]
 _ACTIVE: dict[str, object] = {
     "per_cell_dir": PER_CELL_DIR,
     "selected_epoch_per_persona": None,
+    # main() stashes the resolved per-variant seed list here so module-
+    # level helpers (e.g. ``_leakage_to_default``) iterate the same
+    # seeds the variant uses. None until main() runs.
+    "seeds": None,
 }
 
 # Per-variant seed sets (mirrors po_eval's SEEDS_FOR).
@@ -257,17 +261,38 @@ def _own_persona_elicitation(arm: enc.Arm, seed: int) -> tuple[list[float], list
     return own_logps, labels
 
 
+def _active_seeds() -> tuple[int, ...]:
+    """Return the seed set the current invocation should iterate.
+
+    Closes the `leakage-to-default-seeds-undercount-cn-i529` round-1
+    concern: prior to round-2, ``_leakage_to_default`` hardcoded the
+    module-global ``SEEDS = SEEDS_FOR['po'] = (42, 137, 1337)``, which
+    silently DROPPED seeds 7 and 21 from the leakage-to-default
+    diagnostic on the ``cn_i529`` path (which uses all 5 seeds). The
+    fix: main() stashes ``args.seeds`` into ``_ACTIVE['seeds']``; this
+    helper reads back that variant-aware set. When ``_ACTIVE['seeds']``
+    is unset (e.g. tests that exercise helpers without going through
+    main()) we fall back to the legacy 3-seed default.
+    """
+    seeds = _ACTIVE.get("seeds")
+    if isinstance(seeds, (list, tuple)) and seeds:
+        return tuple(int(s) for s in seeds)
+    return tuple(SEEDS)
+
+
 def _leakage_to_default(arm: enc.Arm) -> tuple[list[float], list[str]]:
     """` ※` log-prob under ``default_assistant`` for every cell in this arm.
 
     The NEW measurement the parent #464 could NOT make (co-residence + the
     two-marker contrast in the parent meant default_assistant was a
     diagnostic side note, not a co-axial bystander). Returns (per_cell_logp,
-    per_cell_label) across (seed x persona) = 6 cells per arm.
+    per_cell_label) across (active_seeds x persona) cells per arm; the
+    active seed set is variant-aware (3 for po/cn, 5 for cn_i529) so
+    seeds 7 and 21 are NOT silently dropped on the cn_i529 path.
     """
     logps: list[float] = []
     labels: list[str] = []
-    for seed in SEEDS:
+    for seed in _active_seeds():
         for persona in enc.PERSONAS:
             payload = _load_per_cell(arm, seed, persona, "default_assistant")
             if payload is None:
@@ -389,6 +414,12 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     seeds_default = list(SEEDS_FOR[args.variant])
     if args.seeds is None:
         args.seeds = seeds_default
+    # Stash the resolved seed set into _ACTIVE so module-level helpers
+    # (notably ``_leakage_to_default`` via ``_active_seeds``) read the
+    # variant-aware seed list instead of the module global ``SEEDS``.
+    # Closes the `leakage-to-default-seeds-undercount-cn-i529` round-1
+    # concern — the cn_i529 path uses 5 seeds (42, 137, 1337, 7, 21).
+    _ACTIVE["seeds"] = tuple(int(s) for s in args.seeds)
     # cn_i529: REQUIRE --anchor-file unless --allow-partial. The anchor
     # file is the formal hand-off between i529_select_anchor.py and this
     # script — without it the analyzer would load the wrong (or no)
@@ -418,6 +449,48 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                 "pirate": int(sel["pirate"]) if sel.get("pirate") is not None else None,
                 "villain": int(sel["villain"]) if sel.get("villain") is not None else None,
             }
+            # `partial_anchor` short-circuit (closes the `partial-anchor-
+            # crashes-analysis` round-1 concern). If SOME but not ALL
+            # personas resolved an E*, we MUST refuse to compute headline
+            # stats — the per-cell loader would splice ``None`` into the
+            # filename and crash on a malformed legacy-shape path. Write
+            # a clean ``headline_status=partial_anchor_skipped`` payload
+            # instead and exit cleanly.
+            _partial_flag = anchor_payload.get("partial_anchor", False)
+            _unresolved_personas = [
+                p for p, e in _ACTIVE["selected_epoch_per_persona"].items() if e is None
+            ]
+            if _partial_flag or _unresolved_personas:
+                partial_payload = {
+                    "schema_version": schema_version,
+                    "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
+                    "git_commit": _git_commit_hash(),
+                    "variant": args.variant,
+                    "headline_status": "partial_anchor_skipped",
+                    "partial_anchor": True,
+                    "partial_anchor_reason": anchor_payload.get(
+                        "partial_anchor_reason",
+                        f"unresolved={sorted(_unresolved_personas)}",
+                    ),
+                    "selected_anchor_per_persona": _ACTIVE["selected_epoch_per_persona"],
+                    "anchor_file": str(args.anchor_file),
+                    "note": (
+                        "i464_po_analyze refused to compute headline statistics "
+                        "because at least one persona did not resolve an anchor "
+                        "epoch in the {1,2,3,5}-epoch grid. Re-run "
+                        "`i529_select_anchor.py` after adding more epoch points "
+                        "(e.g. {1,2,3,5,7,9}) or rerun training at a lower "
+                        "LoRA rank / lr per "
+                        "`.claude/rules/marker-training-recipe.md`."
+                    ),
+                }
+                out_path_active.parent.mkdir(parents=True, exist_ok=True)
+                out_path_active.write_text(json.dumps(partial_payload, indent=2))
+                logger.warning(
+                    "cn_i529 PARTIAL_ANCHOR — headline stats skipped, wrote %s",
+                    out_path_active,
+                )
+                return
             logger.info("cn_i529 selected anchor: %s", _ACTIVE["selected_epoch_per_persona"])
     logger.info(
         "variant=%s per_cell_dir=%s out_path=%s seeds=%s",

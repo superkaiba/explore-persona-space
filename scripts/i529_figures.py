@@ -30,7 +30,6 @@ import datetime as _dt
 import json
 import logging
 import os
-import statistics
 import subprocess
 from pathlib import Path
 
@@ -288,10 +287,6 @@ def main(argv: list[str] | None = None) -> None:
     hero_role_vs_system_at_anchor(anchor, analysis)
     hero_trajectory_per_arm(anchor)
     exploratory_dynamic_range_per_arm(anchor)
-    # Suppress lint complaint about unused statistics import via a
-    # defensive sanity check — the import is kept because future
-    # exploratory figures will use it.
-    _ = statistics.median
 
 
 if __name__ == "__main__":

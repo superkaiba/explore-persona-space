@@ -203,9 +203,33 @@ def _gate_source_install(persona_E_diag: dict[str, Any]) -> bool:
 
 def _select_anchor_per_persona(
     diag: dict[str, dict[int, dict[str, Any]]],
-) -> tuple[dict[str, int | None], dict[str, dict[int, dict[str, Any]]], bool, str]:
-    """Apply §4.5 steps 2-7. Returns (anchor_per_persona, gate_record_per_persona_per_E,
-    degenerate, degenerate_reason)."""
+) -> tuple[
+    dict[str, int | None],
+    dict[str, dict[int, dict[str, Any]]],
+    bool,
+    str,
+    bool,
+    str,
+]:
+    """Apply §4.5 steps 2-7.
+
+    Returns (anchor_per_persona, gate_record_per_persona_per_E,
+    degenerate, degenerate_reason, partial_anchor, partial_anchor_reason).
+
+    Three terminal states (closing the `partial-anchor-crashes-analysis`
+    round-1 concern):
+
+    * ``degenerate=True``: NO persona resolved an anchor; ALL entries of
+      ``anchor`` are ``None``. Headline stats not computed downstream.
+    * ``partial_anchor=True`` (and ``degenerate=False``): SOME but not
+      ALL personas resolved an anchor (e.g. ``{pirate: 2, villain: None}``).
+      Downstream consumers (``i464_po_analyze``) MUST refuse to compute
+      headline stats in this state — the analyzer reads E* per persona
+      to splice the cell label, and a ``None`` would produce a malformed
+      legacy-shape filename and crash on missing per-cell JSONs.
+    * ``degenerate=False`` AND ``partial_anchor=False``: BOTH personas
+      resolved. The headline statistic is well-defined.
+    """
     anchor: dict[str, int | None] = {p: None for p in PERSONAS}
     gates: dict[str, dict[int, dict[str, Any]]] = {p: {} for p in PERSONAS}
     degen_reasons: list[str] = []
@@ -236,9 +260,22 @@ def _select_anchor_per_persona(
                 f"{WRONG_LOGP_BAND}) for all 3 arms AND own_argmax_emit "
                 f">= {OWN_EMIT_GATE}"
             )
-    degenerate = all(a is None for a in anchor.values())
+    n_resolved = sum(1 for a in anchor.values() if a is not None)
+    n_personas = len(anchor)
+    degenerate = n_resolved == 0
+    partial_anchor = (not degenerate) and (n_resolved < n_personas)
     degen_reason = "; ".join(degen_reasons) if degenerate else ""
-    return anchor, gates, degenerate, degen_reason
+    partial_reason = ""
+    if partial_anchor:
+        unresolved = sorted(p for p, a in anchor.items() if a is None)
+        partial_reason = (
+            f"partial anchor: {n_resolved}/{n_personas} personas resolved; "
+            f"unresolved={unresolved}. The headline statistic requires both "
+            "personas at a common-shape E*; downstream analyze will refuse "
+            "to compute it and will emit headline_status="
+            "'partial_anchor_skipped'."
+        )
+    return anchor, gates, degenerate, degen_reason, partial_anchor, partial_reason
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -279,7 +316,14 @@ def main(argv: list[str] | None = None) -> None:
             )
         logger.warning("missing %d per-cell JSONs (allow-partial=on)", len(missing))
 
-    anchor, gates, degenerate, degen_reason = _select_anchor_per_persona(diag)
+    (
+        anchor,
+        gates,
+        degenerate,
+        degen_reason,
+        partial_anchor,
+        partial_reason,
+    ) = _select_anchor_per_persona(diag)
 
     out_path = Path(args.out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -308,17 +352,28 @@ def main(argv: list[str] | None = None) -> None:
             if degenerate
             else ""
         ),
+        # `partial_anchor` semantics — closes the `partial-anchor-crashes-
+        # analysis` round-1 concern. True iff SOME but not ALL personas
+        # resolved an E*. `i464_po_analyze --variant cn_i529` reads this
+        # field and refuses to compute headline stats when True (the per-
+        # persona E* would be None for the unresolved persona, which the
+        # analyzer cannot splice into a per-cell label).
+        "partial_anchor": partial_anchor,
+        "partial_anchor_reason": partial_reason,
         "n_missing_per_cell": len(missing),
     }
     out_path.write_text(json.dumps(payload, indent=2))
     logger.info(
-        "anchor selection -> %s | selected=%s degenerate=%s",
+        "anchor selection -> %s | selected=%s degenerate=%s partial_anchor=%s",
         out_path,
         anchor,
         degenerate,
+        partial_anchor,
     )
     if degenerate:
         logger.warning("DEGENERATE — %s", degen_reason)
+    elif partial_anchor:
+        logger.warning("PARTIAL_ANCHOR — %s", partial_reason)
 
 
 if __name__ == "__main__":

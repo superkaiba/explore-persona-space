@@ -277,6 +277,44 @@ def main(argv: list[str] | None = None) -> None:
         q_test = q_test[: args.smoke_n_q]
         logger.warning("SMOKE: truncated Q_test to %d questions", len(q_test))
 
+    # Preflight: verify R_canon_test covers EVERY (persona, q_test) the
+    # eval loop will consume BEFORE we spin up vLLM. The eval loop indexes
+    # ``R_canon_test[R_persona][q]["response_text"]`` (line ~195) with no
+    # in-loop guard; a subset parent artifact would crash mid-eval with a
+    # bare ``KeyError`` per the `eval-r-canon-coverage-unverified` blocker
+    # raised in round 1. Fail LOUD up-front with a clear missing-key
+    # report so any artifact drift is surfaced before pod GPU spend.
+    _required_personas = set(enc.PERSONAS)
+    _q_test_set = set(q_test)
+    _personas_present = set(R_canon_test)
+    _missing_personas = _required_personas - _personas_present
+    if _missing_personas:
+        raise RuntimeError(
+            f"R_canon_test coverage: missing personas {sorted(_missing_personas)}; "
+            f"present={sorted(_personas_present)}; required={sorted(_required_personas)}. "
+            "Re-pull `R_canon_test.json` from `superkaiba1/explore-persona-space-data` "
+            "or run the parent #464 R-gen if the data-repo artifact has drifted."
+        )
+    _per_persona_missing: dict[str, list[str]] = {}
+    for _p in sorted(_required_personas):
+        _have_qs = set(R_canon_test[_p])
+        _missing_qs = sorted(_q_test_set - _have_qs)
+        if _missing_qs:
+            _per_persona_missing[_p] = _missing_qs
+    if _per_persona_missing:
+        raise RuntimeError(
+            "R_canon_test coverage: per-persona Q_test shortfall "
+            f"(showing first 5 per persona): "
+            f"{ {p: m[:5] for p, m in _per_persona_missing.items()} }. "
+            f"|q_test|={len(q_test)}; ensure R_canon_test was regenerated against the "
+            "current Q_test=50 set."
+        )
+    logger.info(
+        "R_canon_test coverage: %d personas x %d q_test rows all present.",
+        len(_required_personas),
+        len(q_test),
+    )
+
     all_cells = _all_cells()
     if args.smoke_cells:
         wanted = set(args.smoke_cells)
