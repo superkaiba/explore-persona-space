@@ -96,8 +96,8 @@
     "113": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/113",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/113",
+      "status": "completed",
       "title": "If you wrong-answer-finetune Qwen-2.5-7B-Instruct under its own default system prompt, it self-degrades far harder than under a generic helpful-assistant prompt \u2014 but switching to \"I am\" framing recovers most of the gap on cross-model identity claims (MODERATE confidence)"
     },
     "114": {
