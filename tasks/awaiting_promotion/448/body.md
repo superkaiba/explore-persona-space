@@ -23,6 +23,8 @@ relates_to:
 - leak-data-factors
 - leak-predictor
 - leak-single-vs-multi
+classification: useful
+promoted_at: '2026-06-09T21:35:03Z'
 ---
 # Once leakage is measured on the model's own generations, none of four contrastive-LoRA recipe knobs moves bystander marker leakage at this anchor's training budget, where the on-policy log-prob has saturated (MODERATE confidence)
 
