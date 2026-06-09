@@ -2658,6 +2658,7 @@ The verifier runs `scripts/verify_uploads.py` and checks:
 | Figures committed to git | Always | `git log` |
 | Local weights cleaned | Training experiments | `ssh_execute ls` on pod |
 | Claimed URLs HEAD-resolve (phantom-URL gate, #456) | Always | `--claimed-urls-file` HEAD-checks every HF/WandB URL in the `epm:results` marker + body's `## Reproducibility` section at its CITED revision via `orchestrate.hub.verify_artifacts_exist` |
+| Primary deliverable produced (completeness gate, #519) | When plan §6.5 declares `primary_deliverable:` | For each `{dv, glob}` row, on-pod `find <glob>` enumerates ≥1 file. Zero files → FAIL with blocker tag `primary-deliverable-missing`. Plans without the §6.5 block (legacy + analysis/infra/batch/survey kinds) get a WARN, not a FAIL. See upload-verifier § Step 2.7. |
 
 **Phantom-URL gate (Step 8 enforcement of upload-verifier Step 2.5).**
 Before spawning the verifier, build a single text blob containing the
@@ -2702,11 +2703,58 @@ URLs.
   verifier's checklist is the safety net against silent dataset /
   checkpoint loss (incident: task #444 lost the training-mix datasets
   after a hand-driven completion did a partial check and terminated).
-- **FAIL** -> dispatch the `uploader` agent (up to 3 rounds) to close
-  the gaps. The uploader receives the verifier's missing-artifacts
-  list, lifecycle-aware resumes the pod if needed, pushes to HF /
-  WandB / git, and posts `epm:upload-fix v1`. After each uploader
-  round, re-run `upload-verifier`; it posts a fresh
+- **FAIL with blocker tag `primary-deliverable-missing`** (Step 2.7
+  completeness gate, post-#519) -> the headline phase that produces the
+  Goal's primary dependent variable silently did not run on the pod
+  (e.g. missing input flags fell through an `if args.X and args.Y`
+  guard, a phase crashed mid-loop with the dispatcher recording
+  `skipped_phases: []`). The uploader cannot fix this (there is no
+  artifact to upload), and terminating the pod destroys the cheap-fix
+  window (the pod and any per-step checkpoints still exist; re-running
+  the missing phase in-place is far cheaper than re-provisioning +
+  re-training from scratch).
+
+  **Auto-recover, don't park.** Consistent with CLAUDE.md "Continuing on
+  your own is the default" + `workflow.yaml § pivot_criteria`, do NOT
+  call `pod.py terminate`, do NOT dispatch the uploader, do NOT flip to
+  `status:blocked`. Instead loop back to the run phase on the
+  still-alive pod and re-drive the missing primary deliverable:
+
+  1. Read the verdict body's `Missing / required action` list to
+     identify the missing DV name(s), the missing glob(s), and the
+     pod-side phase that produces them (the planner's §6.5 row + the
+     §4 Design pipeline together name the responsible dispatch
+     entrypoint).
+  2. Flip status back to `running` (`task.py set-status <N> running`)
+     and re-enter the Step 6d experimenter-dispatch path with an
+     explicit re-run scope naming the missing phase + the inputs that
+     fell through (typically: re-dispatch the same entrypoint with the
+     corrected `--<phase>-inputs <path>` flags that the silent guard
+     consumed). Post a `epm:progress` note recording the pivot:
+     `auto-recover: primary-deliverable-missing for <DV>; re-running <phase> on pod <pod-name>`.
+  3. The experimenter dispatches as usual, posts `epm:run-launched` /
+     `epm:run-finished` / `epm:results`, and Step 8 re-runs
+     upload-verification on the next /issue tick.
+  4. Re-verification is mechanical: if `find <glob>` now enumerates
+     ≥1 file the row PASSes and the gate clears; if it remains zero
+     after a re-run that ITSELF says it ran (exit 0 + a non-empty
+     manifest for the phase), that is a NEW failure class — the
+     dispatcher claims success while producing nothing — and counts
+     as a fresh strategy attempt.
+
+  Treat each auto-recovery attempt as one strategy iteration. The
+  generic halt path applies normally:
+  `workflow.yaml § pivot_criteria` (specifically `infra_respawn_cap_3`,
+  and after ~3 fundamentally different strategies have all FAILed AND
+  no further autonomous angle exists) is the ONLY route to
+  `status:blocked` for this failure class. Do NOT introduce a dedicated
+  halt for the first or second `primary-deliverable-missing` FAIL.
+
+- **FAIL (any other blocker)** -> dispatch the `uploader` agent (up to
+  3 rounds) to close the gaps. The uploader receives the verifier's
+  missing-artifacts list, lifecycle-aware resumes the pod if needed,
+  pushes to HF / WandB / git, and posts `epm:upload-fix v1`. After each
+  uploader round, re-run `upload-verifier`; it posts a fresh
   `epm:upload-verification v<N+1>`.
 
   Round outcomes:

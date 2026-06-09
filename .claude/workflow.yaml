@@ -835,7 +835,20 @@ subagent_halt_conditions:
     action: "Bounces to analyzer up to 3 rounds; on 4th FATAL, status:blocked"
   - subagent: upload-verifier
     verdict: FAIL
-    action: "status:uploading does not advance to interpretation; uploader (re)runs and verifier re-posts a fresh epm:upload-verification v<n>"
+    action: |
+      status:uploading does not advance to interpretation.
+      Branch by blocker tag in the verdict body:
+      - blocker `primary-deliverable-missing` (Step 2.7 completeness
+        gate, #519): Step 8 KEEPS THE POD ALIVE (do NOT terminate) and
+        AUTO-RECOVERS by flipping status back to `running` and
+        re-dispatching the experimenter to re-drive the missing phase
+        on the still-alive pod; the /issue skill stays autonomous.
+        Only the generic `pivot_criteria` cap-3 path (~3 fundamentally
+        different strategies all FAILed AND no autonomous angle remains)
+        routes to status:blocked for this failure class.
+      - any other blocker: uploader (re)runs and verifier re-posts a
+        fresh epm:upload-verification v<n>; standard 3-round cap
+        applies.
 
 # ──────────────────────────────────────────────────────────────────────
 # Codex ensemble review. For each doubled review step, a Claude reviewer
@@ -1453,7 +1466,22 @@ markers:
   - kind: "epm:upload-verification"
     posted_by: skill (via upload-verifier)
     when: "Step 8"
-    fields: "PASS/FAIL per artifact category, permanent URLs for each uploaded artifact"
+    fields: |
+      PASS/FAIL per artifact category, permanent URLs for each uploaded
+      artifact. Recognized blocker tags on a FAIL verdict:
+      `primary-deliverable-missing` (Step 2.7 completeness gate, #519 —
+      a plan §6.5 `primary_deliverable:` row enumerates zero files on
+      the pod). SKILL.md Step 8 special-cases this tag: it keeps the pod
+      alive (do NOT call `pod.py terminate`) and AUTO-RECOVERS by
+      looping back to the run phase to re-drive the missing deliverable
+      on the still-alive pod — the /issue skill stays autonomous, the
+      only route to `status:blocked` for this failure class is the
+      generic `pivot_criteria` cap-3 path (~3 fundamentally different
+      strategies all FAILed AND no autonomous angle remains). Plans
+      without the §6.5 block (legacy plans + `kind: analysis | infra |
+      batch | survey`) get a `primary-deliverable-spec-absent` WARN row
+      in the verdict table and do NOT fail this check, preserving
+      backwards-compatibility with the ~30 in-flight pre-rule plans.
   - kind: "epm:upload-verified"
     posted_by: skill
     when: "Step 8"

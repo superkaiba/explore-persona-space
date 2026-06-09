@@ -335,6 +335,29 @@ A plan that measures a behavioral construct with only an unvalidated off-distrib
 
 **Figures to produce (over-produce; ask only when the hero is ambiguous).** The plan names the specific hero figure(s) the headline needs AND a short exploratory dump the analyzer over-produces at the end (per-cell bars, per-seed scatter, per-step trajectory lines, raw-alongside-residualized). Default to over-producing exploratory views; the analyzer picks the hero from them rather than producing one figure and hoping it lands. When the view that best supports the headline is genuinely non-obvious, surface ONE plan-time question to the user about which view to feature.
 
+### 6.5 Primary deliverable (the upstream completeness-vs-plan gate)
+
+Name, per dependent variable, the **artifact path or glob the upload-verifier can enumerate on the pod** to confirm the run actually produced the Goal's primary measurement. This is the upstream complement to the downstream planned-vs-actual reporting discipline (`verify_task_body.py` check 11b + `clean-result-critic` Lens 13): catching a wholly-missing primary deliverable BEFORE the pod is terminated keeps the cheap-fix window (pod + per-step checkpoints still alive) open. Without it, a run whose headline phases silently no-op'd (missing input flags, an `if args.X and args.Y` guard fell through, a phase crashed mid-loop) passes Step 8 upload-verification — because every artifact that *was* produced has a URL — and is only caught at the clean-result write-up after the cheap-fix window has closed (incident #519: headline activation-shift / SVD / steering phases were silently skipped at launch, the manifest recorded `skipped_phases: []`, the pod was terminated, and per-step checkpoints were lost).
+
+Render as a fenced YAML block the upload-verifier and the orchestrator can both parse:
+
+```yaml
+primary_deliverable:
+  - dv: <one-line name of the Goal-DV this artifact carries; mirror §6's Construct column verbatim>
+    glob: <pod-side path or glob the verifier enumerates, e.g. eval_results/issue_<N>/headline_metrics.json or data/issue_<N>/activation_shift/*/results.json>
+    note: <optional one-line note, e.g. "≥1 file per cell expected"; omit if not needed>
+  # ... one row per primary DV the §6 evaluation table names
+```
+
+Rules:
+
+- **One row per primary DV the §6 evaluation table names.** Secondary / exploratory artifacts (per-step trajectory logs, per-seed scratch, debug dumps) do NOT belong here — they keep the existing "ship-everything-via-§8-active-discovery" path. This section is exclusively for the artifacts whose absence would make the experiment Goal-incomplete.
+- **The `glob` must be enumerable on the pod via `find` / `ls`.** Hub URLs, WandB run paths, and committed-git paths do NOT belong here — those are downstream destinations the existing Step 8 rows + Step 2.5 phantom-URL gate already cover. This section is the on-pod source-of-truth glob the verifier inspects BEFORE artifacts move anywhere.
+- **Mirror the DV name verbatim from §6** so the verifier's FAIL message names a DV a reader recognizes.
+- **Exemption — `kind: analysis | infra | batch | survey`** tasks may write `primary_deliverable: []` (an empty list under the fenced block) with a one-line justification under it (e.g. "N/A — analysis task; no on-pod primary artifact"). The verifier WARNs (not FAILs) on a wholly-missing section so legacy plans drafted before this rule continue to ship.
+
+The upload-verifier reads this block at Step 8 and, for every row, runs an on-pod `find <glob>` (or equivalent enumeration via `mcp__ssh__ssh_execute`); a row whose glob enumerates zero files FAILs the gate with blocker tag `primary-deliverable-missing`. On that blocker SKILL.md Step 8 KEEPS THE POD ALIVE and auto-recovers — it loops back to the run phase to re-drive the missing deliverable on the still-alive pod (the /issue skill stays autonomous; only the generic `workflow.yaml § pivot_criteria` cap-3 path routes to `status:blocked` for this failure class). See `.claude/agents/upload-verifier.md` § Step 2.7 and `.claude/skills/issue/SKILL.md` Step 8.
+
 ### 7. Decision Gates
 
 **Default to no gates.** Most experiments in this project are short enough

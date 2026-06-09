@@ -176,6 +176,69 @@ of which other rows passed. List every unresolved URL in the
 `Status: FAIL` and `Action: re-upload to <claimed URL> OR amend the
 sentinel + body to cite the URL that actually has the files`.
 
+### Step 2.7 — Primary deliverable produced (completeness vs plan)
+
+**Hard gate. New as of #519.** A run can pass every other check in this
+file — every artifact that WAS produced has a permanent URL, every claimed
+URL HEAD-resolves — and still be Goal-incomplete because the headline
+phase that produces the Goal's primary dependent variable was silently
+skipped at launch (missing input flags fell through an
+`if args.X and args.Y` guard, a phase crashed mid-loop with the
+dispatcher recording `skipped_phases: []`, the plan's primary measurement
+never ran). When the pod is then auto-terminated at Step 8 the cheap-fix
+window (pod + per-step checkpoints still alive) closes and the gap is
+only caught downstream at the clean-result write-up
+(`verify_task_body.py` check 11b / `clean-result-critic` Lens 13) — too
+late to cheaply re-run the missing phase.
+
+Read the plan's `primary_deliverable:` block (planner §6.5 — a fenced
+YAML list of `{dv, glob, note?}` rows naming the on-pod artifact each
+primary Goal-DV lives in). For each row, enumerate the `glob` on the
+pod via `mcp__ssh__ssh_execute`:
+
+```bash
+ssh_execute epm-issue-<N> 'cd /workspace/explore-persona-space && \
+  ls -la <glob> 2>/dev/null | head -20 && echo "---" && \
+  find <glob> -type f 2>/dev/null | wc -l'
+```
+
+Then apply this verdict rule, per row:
+
+- **`find` enumerates ≥1 file** → row PASSes. Record the file count + the
+  largest file path in the verdict table.
+- **`find` enumerates zero files** → row FAILs with the blocker tag
+  `primary-deliverable-missing`. Name the DV (verbatim from the plan
+  row's `dv:` field) and the missing glob in the verdict body.
+
+If the plan body has **no `primary_deliverable:` block at all** (legacy
+plans drafted before this rule, OR `kind: analysis | infra | batch |
+survey` plans that wrote the field as an empty list with the
+"N/A — …" justification), emit a single WARN row
+`primary-deliverable-spec-absent` in the verdict table and PASS this
+check — do NOT hard-FAIL. Backwards-compatibility: the ~30 in-flight
+plans whose bodies predate the field continue to ship; only plans that
+explicitly declare a primary deliverable AND fail to produce it block.
+
+The check FAILs only on a structural ABSENCE (zero files match a
+declared glob), never on a partial-coverage shortfall (some cells
+produced the artifact, others did not). Per-cell coverage gaps still
+surface via the existing planned-vs-actual reporting discipline at the
+clean-result layer — Step 2.7's job is to catch the wholly-missing
+primary-DV class while the pod is still cheap to rescue, not to replicate
+the downstream coverage audit.
+
+On any `primary-deliverable-missing` row, the overall verdict is FAIL
+regardless of which other rows passed. List every missing row in the
+verdict body's "Missing / required action" bulleted list, naming the
+DV verbatim, the missing glob, AND the pod-side phase that produces it
+(read planner §6.5 + §4 Design together to identify the responsible
+entrypoint). SKILL.md Step 8 reads this FAIL, refuses to terminate the
+pod, and AUTO-RECOVERS by looping back to the run phase on the
+still-alive pod to re-drive the missing deliverable — it does NOT
+park-and-wait for the operator. The /issue skill stays autonomous and
+the generic `pivot_criteria` cap-3 path is the only route to
+`status:blocked` for this failure class.
+
 ### Step 3 — Justify every "N/A"
 
 If a standard row is reported N/A, you must say *why* — concretely, and
@@ -226,6 +289,18 @@ the absence.** "Probably not generated" is not a valid N/A.
   upload-verification PASSed because it trusted the sentinel's string
   without HEAD-checking it. A downstream experiment had to re-train
   the checkpoint two months later.
+- **Any row in the plan's `primary_deliverable:` block enumerates zero
+  files on the pod (Step 2.7 primary-deliverable gate, blocker tag
+  `primary-deliverable-missing`).** The headline phase that produces
+  the Goal's primary dependent variable silently did not run — terminating
+  the pod here destroys the cheap-fix window. SKILL.md Step 8 reads this
+  blocker tag and refuses to call `pod.py terminate`, sets
+  `status:blocked` instead. Incident #519: an experiment shipped a
+  clean-result even though the headline activation-shift / SVD /
+  steering phases were silently skipped at launch (dispatcher's
+  `if args.X and args.Y` guard fell through on missing input JSONs,
+  manifest recorded `skipped_phases: []`), pod was terminated, per-step
+  checkpoints lost.
 
 **WARN** is acceptable for:
 - Pod stopped (can't verify cleanup post-hoc — note this and move on).
@@ -259,6 +334,7 @@ against permanent storage.
 | Local weights + merged dirs cleaned | Yes | PASS | safetensors count = 0, merged/ count = 0 |
 | Pod lifecycle | Yes | PASS / WARN / FAIL | stopped / terminated, follow-ups: <list> |
 | Claimed URLs HEAD-resolve (phantom-URL gate, #456) | Yes | PASS / FAIL | All HF/WandB URLs in epm:results + body Reproducibility list under cited path at cited revision; FAIL names every unresolved URL |
+| Primary deliverable produced (completeness gate, #519) | Yes (if plan §6.5 declares `primary_deliverable:`) | PASS / FAIL / WARN | Per row in plan §6.5: on-pod `find <glob>` enumerates ≥1 file → PASS naming the DV + file count; zero files → FAIL with blocker tag `primary-deliverable-missing` naming the DV + missing glob; no `primary_deliverable:` block at all → WARN `primary-deliverable-spec-absent` (legacy / analysis|infra|batch|survey kinds; do not block) |
 
 **Auto-discovered files NOT covered by standard rows** (flag these
 explicitly so the next experimenter / analyzer knows about them):
