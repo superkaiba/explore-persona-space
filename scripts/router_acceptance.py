@@ -1687,6 +1687,15 @@ def negative_duplicate_cron_tick() -> dict[str, Any]:
         # CRASH and must not re-execute teardown against a stale
         # handle. We assert by tracking rc codes + teardown counts.
 
+        # ``scripts`` is a namespace package importable only with the
+        # repo root on sys.path. pytest puts the rootdir there; a direct
+        # ``uv run python scripts/router_acceptance.py negative ...``
+        # puts ``scripts/`` itself there instead, so insert the root
+        # (live acceptance finding: the duplicate-cron-tick case
+        # crashed with ModuleNotFoundError outside pytest).
+        repo_root = str(Path(__file__).resolve().parent.parent)
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
         from scripts.dispatch_issue import main as dispatch_main
 
         nibi = _NegativeMockBackend(kind="nibi", cluster="nibi")
