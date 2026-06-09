@@ -462,6 +462,11 @@ def _reproducibility_metadata(extra: dict | None = None) -> dict:
         "marker_text": MARKER_TEXT,
         "marker_id": MARKER_ID,
         "base_model": BASE_MODEL,
+        # Round-4 cleanup: also record schema_version in the per-payload
+        # metadata block (not just at the top of the payload) so any
+        # downstream consumer that prints `metadata` sees which DV regime
+        # the artifact carries.
+        "schema_version": "issue532_v2",
         "round_3_dv_revision": {
             "binding_marker": "epm:strategy-pivot v1 (task #532, 2026-06-09T14:56:51Z)",
             "primary_dv": (
@@ -763,7 +768,29 @@ def phase0_base_prior(
 
     if phase0_path.exists() and phase0_path.stat().st_size > 0:
         logger.info("Phase 0: resuming from %s", phase0_path)
-        return json.loads(phase0_path.read_text())
+        cached = json.loads(phase0_path.read_text())
+        # Round-4 binding guard: refuse to resume from a pre-round-3 Phase 0
+        # JSON (``issue532_v1``). Those files were written with the
+        # appended-slot ``mean_logp`` as the headline DV and lack the
+        # primary ``on_policy_emit_rate`` / ``on_policy_emit_at_end_rate``
+        # keys; Phase 2's base-prior fallback (``.get(..., mean_logp)``)
+        # would silently substitute log-prob nats for emission-rate
+        # probabilities, producing a units-mix on the full run. The fix
+        # is to delete the stale file and re-run Phase 0; the binding
+        # rationale lives in ``epm:strategy-pivot v1`` on task #532 and
+        # in ``.claude/rules/marker-leakage-measurement.md``.
+        cached_v = cached.get("schema_version")
+        if cached_v != "issue532_v2":
+            raise RuntimeError(
+                f"Phase 0 resume refused: {phase0_path} has "
+                f"schema_version={cached_v!r}, expected 'issue532_v2'. "
+                "This file was written under the pre-round-3 DV "
+                "(appended-slot mean_logp, doubling-probability semantics) "
+                "and lacks the primary on-policy emission-rate keys. "
+                "Delete it and re-run Phase 0 — Phase 2's units-mix would "
+                "be silent. See .claude/rules/marker-leakage-measurement.md."
+            )
+        return cached
 
     # Identify instructed bystanders in scope (the gate looks at this subset).
     instructed_in_scope = [b for b in bystanders if b in instructed_panel]
@@ -786,7 +813,7 @@ def phase0_base_prior(
             r_base_instr_path.write_text(
                 json.dumps(
                     {
-                        "schema_version": "issue532_v1",
+                        "schema_version": "issue532_v2",
                         "metadata": _reproducibility_metadata({"sub_phase": "R_base_instructed"}),
                         "completions": R_base_instructed,
                     },
@@ -974,7 +1001,7 @@ def phase0_base_prior(
         }
 
     payload = {
-        "schema_version": "issue532_v1",
+        "schema_version": "issue532_v2",
         "phase": "phase0_base_prior",
         "metadata": _reproducibility_metadata({"phase": 0}),
         "bystanders": bystanders,
@@ -1174,7 +1201,7 @@ def phase1_trained_sweep(
                     )
 
                 cell_payload = {
-                    "schema_version": "issue532_v1",
+                    "schema_version": "issue532_v2",
                     "arm": arm,
                     "epoch": ep,
                     "source_cid": source_cid,
@@ -1585,7 +1612,7 @@ def phase2_predictors(
     }
 
     payload = {
-        "schema_version": "issue532_v1",
+        "schema_version": "issue532_v2",
         "phase": "phase2_predictors",
         "metadata": _reproducibility_metadata(
             {
@@ -2169,7 +2196,7 @@ def phase3_analysis(
         "allow_partial_panel_flag": bool(allow_partial_panel),
     }
     analysis = {
-        "schema_version": "issue532_v1",
+        "schema_version": "issue532_v2",
         "phase": "phase3_analysis",
         "metadata": _reproducibility_metadata({"phase": 3, "n_rows": panel["_n"]}),
         "coverage": coverage_block,
@@ -2222,6 +2249,10 @@ def phase4_figures(
     written: list[Path] = []
 
     # ── Hero A: predictor-vs-leakage scatter per geometric predictor ──────
+    # Round-4 binding cleanup: the y-axis is the on-policy ※ emission
+    # rate (in [0, 1]) — the round-3 PRIMARY DV stored in
+    # ``panel["trained_logp"]`` under the legacy column name (rate
+    # semantics, NOT log-prob; see _build_union_panel docstring).
     for pk in ("cosine", "js_v1", "gauss_kl"):
         if panel.get("_n", 0) == 0:
             continue
@@ -2248,16 +2279,19 @@ def phase4_figures(
                     label=f"instructed {band}",
                 )
         ax.set_xlabel(pk)
-        ax.set_ylabel("trained log P(※) at post-response slot")
-        ax.set_title(f"{pk} vs trained log P(※) — union panel")
+        ax.set_ylabel("On-policy ※ emission rate (anywhere in R)")
+        ax.set_title(f"{pk} vs on-policy ※ emission rate — union panel")
         ax.legend(fontsize=8)
         fig.tight_layout()
-        fp = figures_dir / f"heroA_{pk}_vs_trained_logp.png"
+        fp = figures_dir / f"heroA_emit_rate_vs_{pk}.png"
         fig.savefig(fp, dpi=150)
         plt.close(fig)
         written.append(fp)
 
     # ── Hero B: base-prior-vs-trained-marker scatter ──────────────────────
+    # Round-4 binding cleanup: both axes are on-policy ※ emission rates
+    # (round-3 PRIMARY DV). The x-axis is the Phase-0 base-prior emission
+    # rate; the y-axis is the Phase-1 trained-model emission rate.
     fig, ax = plt.subplots(figsize=(5.5, 4.5))
     is_ord = panel["is_instructed"] == 0
     is_instr = panel["is_instructed"] == 1
@@ -2277,12 +2311,12 @@ def phase4_figures(
         s=28,
         label="instructed",
     )
-    ax.set_xlabel("base log P(※ | T_b(q)) — base-prior predictor")
-    ax.set_ylabel("trained log P(※) at post-response slot")
-    ax.set_title("Hero B: base prior vs trained marker (union panel)")
+    ax.set_xlabel("Base ※ emission rate (anywhere in R) — base-prior predictor")
+    ax.set_ylabel("Trained ※ emission rate (anywhere in R)")
+    ax.set_title("Hero B: base prior vs trained ※ emission rate (union panel)")
     ax.legend(fontsize=8)
     fig.tight_layout()
-    fp = figures_dir / "heroB_base_prior_vs_trained.png"
+    fp = figures_dir / "heroB_base_prior_vs_emit_rate.png"
     fig.savefig(fp, dpi=150)
     plt.close(fig)
     written.append(fp)
@@ -2311,7 +2345,7 @@ def phase4_figures(
     ax.axhline(0, c="black", lw=0.6)
     ax.set_xticks(x)
     ax.set_xticklabels(pks, rotation=20, ha="right")
-    ax.set_ylabel("Spearman ρ (predictor vs trained log P(※))")
+    ax.set_ylabel("Spearman ρ (predictor vs on-policy ※ emission rate)")
     ax.set_title("Hero C: predictor leaderboard (incl. combined = z(base) + z(geom))")
     ax.legend(fontsize=8)
     fig.tight_layout()
@@ -2322,9 +2356,10 @@ def phase4_figures(
 
     # ── Hero C-overlay: combined-predictor scatter (one per geometric arm) ─
     # The combined predictor's behavioral fit is most legible as a
-    # scatter against the trained log-prob, with ordinary + instructed
-    # stratified the same way Hero A is. Generates one overlay per
-    # geometric predictor. Binding round-1 fix — standing rec 4.
+    # scatter against the trained on-policy emission rate (round-3 DV),
+    # with ordinary + instructed stratified the same way Hero A is.
+    # Generates one overlay per geometric predictor. Binding round-1
+    # fix — standing rec 4; round-4 cleanup: y-axis is the emission rate.
     for geom_key in ("cosine", "js_v1", "gauss_kl"):
         combined_key = f"combined_{geom_key}"
         if combined_key not in panel:
@@ -2352,8 +2387,8 @@ def phase4_figures(
                     label=f"instructed {band}",
                 )
         ax.set_xlabel(f"z(base_prior) + z({geom_key})")
-        ax.set_ylabel("trained log P(※) at post-response slot")
-        ax.set_title(f"Hero C-overlay: {combined_key} vs trained log P(※)")
+        ax.set_ylabel("On-policy ※ emission rate (anywhere in R)")
+        ax.set_title(f"Hero C-overlay: {combined_key} vs on-policy ※ emission rate")
         ax.legend(fontsize=8)
         fig.tight_layout()
         fp = figures_dir / f"heroC_overlay_{combined_key}.png"
@@ -2876,7 +2911,7 @@ def _synthesize_stub_phase0(
             "strength_band": (_instructed_strength_band(b) if is_instr else "ordinary"),
         }
     payload = {
-        "schema_version": "issue532_v1",
+        "schema_version": "issue532_v2",
         "phase": "phase0_base_prior",
         "metadata": _reproducibility_metadata({"phase": 0, "skip_vllm_smoke": True}),
         "bystanders": bystanders,
@@ -2939,7 +2974,7 @@ def _synthesize_stub_phase1(
                 in_R_anywhere = [int(rng.random() < emit_prob) for _ in q_test]
                 in_R_at_end = [int(rng.random() < emit_prob * 0.9) for _ in q_test]
                 payload = {
-                    "schema_version": "issue532_v1",
+                    "schema_version": "issue532_v2",
                     "arm": arm,
                     "epoch": ep,
                     "source_cid": src,
@@ -3019,7 +3054,7 @@ def _synthesize_stub_phase2(
         if b in base_prior_payload.get("per_bystander", {})
     }
     payload = {
-        "schema_version": "issue532_v1",
+        "schema_version": "issue532_v2",
         "phase": "phase2_predictors",
         "metadata": _reproducibility_metadata({"phase": 2, "skip_vllm_smoke": True}),
         "sources": sources,
