@@ -1,6 +1,6 @@
 ---
-title: Geometric leakage predictors (cosine/JS/Gaussian-KL) vs a base-prior predictor
-  on instruction-set marker contexts
+title: The base-model marker prior beats geometric distance at predicting instruction-context
+  leakage (HIGH confidence)
 kind: experiment
 tags:
 - leak-predictor
