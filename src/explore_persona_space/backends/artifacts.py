@@ -537,7 +537,14 @@ def _check_sentinel(
             "status": "FAIL",
             "detail": f"sentinel at {sentinel_path} missing 'issue' field",
         }
-    if int(sentinel_issue) != int(issue):
+    try:
+        sentinel_issue_int = int(sentinel_issue)
+    except (TypeError, ValueError):
+        return {
+            "status": "FAIL",
+            "detail": f"sentinel at {sentinel_path} has non-integer issue={sentinel_issue!r}",
+        }
+    if sentinel_issue_int != int(issue):
         return {
             "status": "FAIL",
             "detail": (
@@ -634,7 +641,21 @@ def confirm_artifacts_from_handle(
             ),
             checks={},
         )
-    return verify_artifacts(expected, io=io)
+    verdict = verify_artifacts(expected, io=io)
+    # The completion sentinel is the keystone per-run proof. A declaration that
+    # SKIPs it (no sentinel_path) is the all-SKIP silent-pass hole this module
+    # exists to close — fail loud rather than pass an unproven run. (A partial
+    # slice-3/slice-6 launch wiring that forgets sentinel_path hits this.)
+    if verdict.passed and verdict.checks.get(CHECK_SENTINEL, {}).get("status") == "SKIP":
+        return ArtifactVerdict(
+            passed=False,
+            reasons=(
+                "no completion sentinel declared (sentinel_path); refusing to pass "
+                "an unverified run — the launch path must declare the sentinel",
+            ),
+            checks=verdict.checks,
+        )
+    return verdict
 
 
 # ---------------------------------------------------------------------------

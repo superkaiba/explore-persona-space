@@ -438,6 +438,45 @@ def test_confirm_from_handle_round_trip_pass(tmp_path: Path) -> None:
     assert verdict.passed, verdict.reasons
 
 
+def test_confirm_from_handle_fails_when_no_sentinel_declared(tmp_path: Path) -> None:
+    """A declaration that omits sentinel_path must FAIL even if every other class
+    would pass. The completion sentinel is the keystone per-run proof; skipping it
+    is the all-SKIP silent-pass hole (a partial launch-wiring mistake) the gate
+    exists to close."""
+    handle = _handle_with_expected(
+        declaration={
+            "issue": 137,
+            "hf_data_paths": ["issue137_warmth/raw_completions/"],
+            # NOTE: no sentinel_path declared
+        }
+    )
+    io = _io(
+        hf_data_files=["issue137_warmth/raw_completions/seed_42.json"],
+        repo_root=tmp_path,
+    )
+    verdict = confirm_artifacts_from_handle(handle, io=io)
+    assert not verdict.passed
+    assert any("sentinel" in r for r in verdict.reasons)
+
+
+def test_confirm_sentinel_non_integer_issue_fails_not_crashes(tmp_path: Path) -> None:
+    """A corrupted/hand-edited sentinel with a non-integer issue must FAIL with a
+    reason, not raise (raising would break the fail-closed contract + the
+    epm:upload-verify-failed marker path)."""
+    expected = ExpectedArtifacts(
+        issue=137,
+        sentinel_path=str(tmp_path / ".sentinel.json"),
+    )
+    io = _io(
+        sentinel_content=_good_sentinel_text(issue="137abc"),
+        repo_root=tmp_path,
+    )
+    verdict = verify_artifacts(expected, io=io)  # must NOT raise
+    assert not verdict.passed
+    assert verdict.checks[CHECK_SENTINEL]["status"] == "FAIL"
+    assert "non-integer" in verdict.checks[CHECK_SENTINEL]["detail"]
+
+
 def test_slurm_confirm_artifacts_returns_false_on_fail(monkeypatch) -> None:
     """SlurmBackend.confirm_artifacts honors the verifier verdict (no longer raises)."""
     # A handle whose declaration is bogus (HF data path that nothing matches).
