@@ -3083,8 +3083,8 @@
       "goal": "Re-test the bubble-vs-barrier geometry of a single contrastive negative at a de-saturated anchor (gated on bystander resolution, not source delta-G) so leakage is read as magnitude not residual rank, and determine whether #504's barrier signal (shadow_angle rho>0) and anti-bubble signal (d_nn rho<0) survive when bystanders are below ceiling.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/530",
-      "status": "approved",
+      "path": "tasks/running/530",
+      "status": "running",
       "title": "De-saturated re-run of #504's bubble-vs-barrier geometry: gate the anchor on bystander resolution, not source \u0394G"
     },
     "531": {
