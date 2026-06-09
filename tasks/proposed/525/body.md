@@ -1,7 +1,7 @@
 ---
-title: Rebuild ICL contexts as genuinely persona-voiced blocks behind a hard behavioral
-  manipulation-check gate, then retest cosine/JS → marker-transfer across the ICL↔SP
-  union panel
+title: Rebuild ICL contexts as Claude-Haiku-generated genuinely-in-voice blocks behind
+  a hard behavioral manipulation-check gate, then retest cosine/JS → marker-transfer
+  across the ICL↔SP union panel
 kind: experiment
 tags:
 - geometry-predicts-transfer
