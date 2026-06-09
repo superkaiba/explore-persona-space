@@ -13,6 +13,8 @@ priority: normal
 legacy_why_unset: true
 relates_to:
 - app6
+classification: useful
+promoted_at: '2026-06-09T21:34:00Z'
 ---
 # Teacher-forced target log-prob does not detect non-anth paraphrase lift above controls (LOW confidence)
 
