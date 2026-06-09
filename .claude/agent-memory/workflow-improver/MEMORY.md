@@ -5,3 +5,4 @@
 - [No Agent tool in spawn](reference_no_agent_tool_in_spawn.md) — workflow-improver spawns lack the Agent tool; §6 code-reviewer pairing is unexecutable — self-verify, commit, report review as skipped-with-reason.
 - [No Agent tool in runtime](reference_no_agent_tool_in_runtime.md) — Some workflow-improver spawns expose no Agent tool; for substantive changes self-review + unit tests and report code-reviewer as "skipped — Agent tool unavailable".
 - [Stale scope list ≠ deflection](feedback_stale_scope_list_not_deflection.md) — target_file missing from workflow.yaml applies_to_workflow_surface but clearly a workflow-helper script (skill refs, workflow tests, cron wrapper) = stale list; apply the fix + update all three mirror lists.
+- [Broad ruff check has ~1338 pre-existing errors](reference_ruff_broad_check_preexisting.md) — `ruff check .claude scripts` never passes as-is; lint touched files only, stash-compare baseline, report "0 introduced".
