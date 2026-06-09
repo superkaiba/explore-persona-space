@@ -12,6 +12,8 @@ legacy_why_unset: true
 relates_to:
 - a2
 - a5
+classification: useful
+promoted_at: '2026-06-09T21:34:03Z'
 ---
 # Chen and centroid persona vectors land in the same neighborhood at the project's preferred layer but are not the same direction (MODERATE confidence)
 
