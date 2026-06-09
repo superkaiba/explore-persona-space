@@ -72,8 +72,11 @@ def _parse_cell(cell: str) -> tuple[enc.Arm, int]:
     if "_seed" not in cell:
         raise ValueError(f"--cell {cell!r} must look like 'arm_seed42'")
     arm, seed_str = cell.rsplit("_seed", 1)
-    if arm not in enc.ARMS:
-        raise ValueError(f"unknown arm {arm!r} in --cell {cell!r}; valid: {enc.ARMS}")
+    # ALL_ARMS = parent ARMS + the minimal_content follow-up arms
+    # (system_minimal / role_bare); parent phase scripts keep iterating
+    # the un-extended enc.ARMS.
+    if arm not in enc.ALL_ARMS:
+        raise ValueError(f"unknown arm {arm!r} in --cell {cell!r}; valid: {enc.ALL_ARMS}")
     try:
         seed = int(seed_str)
     except ValueError as e:
@@ -644,8 +647,8 @@ def main(argv: list[str] | None = None) -> None:
         required=True,
         help=(
             "Cell id 'arm_seedSEED'. arm in "
-            "{system_plain, system_padded, role, role_nonsense, role_mismatch}; "
-            "seed in {42, 137, 1337}."
+            "{system_plain, system_padded, role, role_nonsense, role_mismatch, "
+            "system_minimal, role_bare}; seed in {42, 137, 1337}."
         ),
     )
     ap.add_argument(

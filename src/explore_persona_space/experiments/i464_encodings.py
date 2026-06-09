@@ -87,6 +87,48 @@ as the pirate alias for module-load tests; downstream code should call
 All ids verified at module-import time on the live
 ``Qwen/Qwen2.5-7B-Instruct`` tokenizer. Phase 0 re-asserts these before
 any subprocess spawns.
+
+── ``minimal_content`` follow-up arms (2026-06-09) ──────────────────────
+
+The parent confounds content richness with slot: the system arm announces
+the persona with an ELABORATE instruction while the role arm announces it
+with a bare 4-5-token compound. Two content-matched MINIMAL arms close
+that confound (co-resident competing-marker regime only):
+
+  - ``system_minimal``  : system prompt = "You are a pirate." /
+                          "You are a villain."; standard ``assistant``
+                          role header. The ONLY persona content is the
+                          bare persona word.
+  - ``role_bare``       : system prompt = the neutral default
+                          "You are a helpful assistant."; role header =
+                          ``pirate`` / ``villain`` (bare persona word, NO
+                          ``_assistant`` suffix), via the same manual
+                          string-swap mechanism as the parent role arms.
+
+Token-id contract for the minimal arms (live Qwen/Qwen2.5-7B-Instruct
+tokenizer, verified 2026-06-09):
+
+    'pirate'   (bare role name, header position) → [5565, 349]      (2 tokens)
+    'villain'  (bare role name, header position) → [85, 483, 466]   (3 tokens)
+    'assistant' (the default header word)        → [77091]          (1 token)
+    'You are a pirate.'                          → [2610, 525, 264, 53966, 13]        (5 tokens)
+    'You are a villain.'                         → [2610, 525, 264, 39048, 13]        (5 tokens)
+    'You are a helpful assistant.'               → [2610, 525, 264, 10950, 17847, 13] (6 tokens)
+
+MF-D parity for the minimal pair, per persona (total train-prompt token
+count, same question):
+
+    role_bare - system_minimal
+      = (neutral sys 6 - minimal sys 5)              [+1]
+      + (bare-name header - 'assistant' header)      [+1 pirate / +2 villain]
+      = +2 (pirate) / +3 (villain)
+
+system_minimal is the SHORTER side for BOTH personas, so its TRAIN rows
+get N inert ' pad' (id 11016) tokens appended to the user message:
+``MINIMAL_PAD_LEN_FOR = {"pirate": 2, "villain": 3}``. Mirrors the
+parent's MF-D scheme exactly: pads at TRAIN time only; eval encodings
+always use the natural un-padded question (the parent's system_padded
+arm was likewise trained padded and evaluated un-padded).
 """
 
 from __future__ import annotations
@@ -143,11 +185,82 @@ def padding_token_ids_for(persona: str) -> list[int]:
 PADDING_TEXT = padding_text_for("pirate")
 PADDING_TOKEN_IDS = padding_token_ids_for("pirate")
 
+# ── minimal_content follow-up: content-matched minimal encodings ────────
+# See the module docstring's "minimal_content follow-up arms" section for
+# the design + live-tokenizer derivation of every constant below.
+MINIMAL_SYSPROMPT_FOR: dict[str, str] = {
+    "pirate": "You are a pirate.",
+    "villain": "You are a villain.",
+}
+# Expected ids (live tokenizer, verified 2026-06-09):
+#   'You are a pirate.'  → [2610, 525, 264, 53966, 13]  (5 tokens)
+#   'You are a villain.' → [2610, 525, 264, 39048, 13]  (5 tokens)
+MINIMAL_SYSPROMPT_IDS_EXPECTED: dict[str, list[int]] = {
+    "pirate": [2610, 525, 264, 53966, 13],
+    "villain": [2610, 525, 264, 39048, 13],
+}
+
+# Bare persona word as role-header name (NO '_assistant' suffix).
+#   'pirate'  → [5565, 349]     (2 tokens)
+#   'villain' → [85, 483, 466]  (3 tokens)
+BARE_ROLE_NAME_FOR: dict[str, str] = {"pirate": "pirate", "villain": "villain"}
+BARE_ROLE_NAME_IDS_EXPECTED: dict[str, list[int]] = {
+    "pirate": [5565, 349],
+    "villain": [85, 483, 466],
+}
+
+# MF-D parity pads for the minimal pair: system_minimal is the SHORTER
+# side for both personas (see module docstring derivation), so its TRAIN
+# rows get N ' pad' (id 11016) tokens appended to the user message.
+#   role_bare - system_minimal total-prompt-token diff:
+#     pirate:  +2  → 2 pads on system_minimal
+#     villain: +3  → 3 pads on system_minimal
+MINIMAL_PAD_LEN_FOR: dict[str, int] = {"pirate": 2, "villain": 3}
+
+
+def minimal_sysprompt_for(persona: str) -> str:
+    """Return the minimal bare-word system prompt for ``persona``."""
+    if persona not in MINIMAL_SYSPROMPT_FOR:
+        raise ValueError(f"unknown persona={persona!r}")
+    return MINIMAL_SYSPROMPT_FOR[persona]
+
+
+def bare_role_name_for(persona: str) -> str:
+    """Return the bare persona word used as the role-header name (role_bare arm)."""
+    if persona not in BARE_ROLE_NAME_FOR:
+        raise ValueError(f"unknown persona={persona!r}")
+    return BARE_ROLE_NAME_FOR[persona]
+
+
+def minimal_padding_text_for(persona: str) -> str:
+    """Return the ' pad'-repeated MF-D parity string for system_minimal TRAIN rows."""
+    n = MINIMAL_PAD_LEN_FOR[persona]
+    return " " + " ".join(["pad"] * n)
+
+
+def minimal_padding_token_ids_for(persona: str) -> list[int]:
+    """Return the expected token-id sequence for ``minimal_padding_text_for(persona)``."""
+    return [PADDING_TOKEN_ID] * MINIMAL_PAD_LEN_FOR[persona]
+
+
 # ── Personas and arms (string enums) ────────────────────────────────────
 Persona = Literal["pirate", "villain"]
-Arm = Literal["system_plain", "system_padded", "role", "role_nonsense", "role_mismatch"]
+Arm = Literal[
+    "system_plain",
+    "system_padded",
+    "role",
+    "role_nonsense",
+    "role_mismatch",
+    "system_minimal",
+    "role_bare",
+]
 
 PERSONAS: tuple[Persona, ...] = ("pirate", "villain")
+# Parent #464 arms ONLY. Parent phase scripts (phase4 eval `_all_cells`,
+# phase5 analyze loops + dynamic-range gate, traj-probe e_choices) iterate
+# ARMS, so the minimal_content follow-up arms live in a SEPARATE tuple —
+# extending ARMS would silently change the parent analyzers' cell sets on
+# any re-run.
 ARMS: tuple[Arm, ...] = (
     "system_plain",
     "system_padded",
@@ -155,6 +268,10 @@ ARMS: tuple[Arm, ...] = (
     "role_nonsense",
     "role_mismatch",
 )
+# minimal_content follow-up arms (co-resident regime only).
+MINIMAL_ARMS: tuple[Arm, ...] = ("system_minimal", "role_bare")
+# Every arm any i464 train cell may use (train's --cell validation).
+ALL_ARMS: tuple[Arm, ...] = ARMS + MINIMAL_ARMS
 
 # ── Nonsense role names (role_nonsense arm; structural twin of role arm) ─
 # Token-length-matched per persona so the ONLY axis varying vs the
@@ -190,6 +307,10 @@ EvalEncoding = Literal[
     "role_nonsense_villain",
     "role_mismatch_pirate",
     "role_mismatch_villain",
+    "system_minimal_pirate",
+    "system_minimal_villain",
+    "role_bare_pirate",
+    "role_bare_villain",
     "default_assistant",  # exploratory — excluded from headline per MF-A
 ]
 EVAL_ENCODINGS: tuple[EvalEncoding, ...] = (
@@ -201,6 +322,16 @@ EVAL_ENCODINGS: tuple[EvalEncoding, ...] = (
     "role_nonsense_villain",
     "role_mismatch_pirate",
     "role_mismatch_villain",
+    "default_assistant",
+)
+# minimal_content follow-up eval encodings (its cross-eval probes ONLY
+# these 5 — the parent's EVAL_ENCODINGS tuple stays untouched so parent
+# eval re-runs keep their 9-encoding cell set).
+MINIMAL_EVAL_ENCODINGS: tuple[EvalEncoding, ...] = (
+    "system_minimal_pirate",
+    "system_minimal_villain",
+    "role_bare_pirate",
+    "role_bare_villain",
     "default_assistant",
 )
 
@@ -219,6 +350,10 @@ EVAL_R_KEY: dict[str, Persona] = {
     "role_nonsense_villain": "villain",
     "role_mismatch_pirate": "pirate",
     "role_mismatch_villain": "villain",
+    "system_minimal_pirate": "pirate",
+    "system_minimal_villain": "villain",
+    "role_bare_pirate": "pirate",
+    "role_bare_villain": "villain",
     "default_assistant": "pirate",
 }
 
@@ -433,6 +568,71 @@ def assert_token_ids(tokenizer) -> None:  # noqa: C901 - one linear contract per
                 f"role_mismatch[{persona}] == role_nonsense[{persona}] — "
                 "arm collapses onto role_nonsense."
             )
+    # ── minimal_content follow-up contracts ─────────────────────────────
+    # Bare role names (role_bare arm): exact ids + distinctness.
+    for persona in PERSONAS:
+        name = BARE_ROLE_NAME_FOR[persona]
+        ids = tokenizer.encode(name, add_special_tokens=False)
+        expected = BARE_ROLE_NAME_IDS_EXPECTED[persona]
+        if ids != expected:
+            raise AssertionError(f"bare role name {name!r} tokenizes to {ids}, expected {expected}")
+    if tokenizer.encode(BARE_ROLE_NAME_FOR["pirate"], add_special_tokens=False) == tokenizer.encode(
+        BARE_ROLE_NAME_FOR["villain"], add_special_tokens=False
+    ):
+        raise AssertionError(
+            "pirate and villain bare role names tokenize identically — "
+            "role_bare arm would erase the persona distinction."
+        )
+    for persona in PERSONAS:
+        if tokenizer.encode(
+            BARE_ROLE_NAME_FOR[persona], add_special_tokens=False
+        ) == tokenizer.encode("assistant", add_special_tokens=False):
+            raise AssertionError(
+                f"bare role name for persona={persona} tokenizes like 'assistant' — "
+                "role_bare arm would collapse onto the default header."
+            )
+    # Minimal system prompts: exact ids (the persona word is the ONLY
+    # persona-bearing content; a re-segmentation would change the parity
+    # arithmetic below).
+    for persona in PERSONAS:
+        text = MINIMAL_SYSPROMPT_FOR[persona]
+        ids = tokenizer.encode(text, add_special_tokens=False)
+        expected = MINIMAL_SYSPROMPT_IDS_EXPECTED[persona]
+        if ids != expected:
+            raise AssertionError(
+                f"minimal sysprompt {text!r} tokenizes to {ids}, expected {expected}"
+            )
+    # Minimal pads tokenize to N copies of id 11016 (in isolation).
+    for persona in PERSONAS:
+        text = minimal_padding_text_for(persona)
+        ids = tokenizer.encode(text, add_special_tokens=False)
+        if ids != minimal_padding_token_ids_for(persona):
+            raise AssertionError(
+                f"minimal padding for persona={persona} ({text!r}) tokenizes to {ids}, "
+                f"expected {minimal_padding_token_ids_for(persona)}"
+            )
+    # MF-D parity post-condition for the minimal pair, asserted IN CONTEXT:
+    # with pads applied to system_minimal's TRAIN user message, both arms'
+    # train prompts must tokenize to the SAME total length for the same
+    # (persona, question). Robust to any boundary-merge subtleties the
+    # standalone id asserts above could miss.
+    parity_q = "What is the capital of France?"
+    for persona in PERSONAS:
+        sys_prompt, _ = BUILD_TRAIN_PROMPT_AND_COMPLETION(
+            "system_minimal", persona, parity_q, "X", tokenizer
+        )
+        role_prompt, _ = BUILD_TRAIN_PROMPT_AND_COMPLETION(
+            "role_bare", persona, parity_q, "X", tokenizer
+        )
+        n_sys = len(tokenizer.encode(sys_prompt, add_special_tokens=False))
+        n_role = len(tokenizer.encode(role_prompt, add_special_tokens=False))
+        if n_sys != n_role:
+            raise AssertionError(
+                f"minimal_content MF-D parity violated for persona={persona}: "
+                f"system_minimal train prompt = {n_sys} tokens, role_bare = {n_role} "
+                f"tokens (pads={MINIMAL_PAD_LEN_FOR[persona]}). Re-derive "
+                "MINIMAL_PAD_LEN_FOR on the live tokenizer."
+            )
     # MF-D parity post-condition: padding length per persona MUST match the
     # role-name compound length of THAT persona (so the system_padded arm's
     # extra-context-token count matches the role arm's extra-context-token
@@ -547,6 +747,24 @@ def BUILD_TRAIN_PROMPT_AND_COMPLETION(
         base = _assistant_chat_prefix(tokenizer, DEFAULT_ASSISTANT_SYSPROMPT, q)
         prompt = base[: -len("assistant\n")] + f"{mismatch_role_name_for(persona)}\n"
         return prompt, f"{R_canon_p_q}{marker}"
+    if arm == "system_minimal":
+        # minimal_content follow-up: bare-word persona system prompt
+        # ("You are a pirate.") + standard assistant header. MF-D parity:
+        # system_minimal is the SHORTER side of the minimal pair, so its
+        # TRAIN user message gets MINIMAL_PAD_LEN_FOR[persona] inert
+        # ' pad' tokens (2 pirate / 3 villain) — see module docstring.
+        prompt = _assistant_chat_prefix(
+            tokenizer, minimal_sysprompt_for(persona), q + minimal_padding_text_for(persona)
+        )
+        return prompt, f"{R_canon_p_q}{marker}"
+    if arm == "role_bare":
+        # minimal_content follow-up: neutral default system prompt + bare
+        # persona word ('pirate' / 'villain', NO '_assistant' suffix) in
+        # the role-header slot via the same manual string-swap mechanism
+        # as the parent role arms.
+        base = _assistant_chat_prefix(tokenizer, DEFAULT_ASSISTANT_SYSPROMPT, q)
+        prompt = base[: -len("assistant\n")] + f"{bare_role_name_for(persona)}\n"
+        return prompt, f"{R_canon_p_q}{marker}"
     raise ValueError(f"unknown arm={arm!r}")
 
 
@@ -588,6 +806,16 @@ def BUILD_EVAL_PROMPT(e_eval: EvalEncoding, q: str, tokenizer) -> str:
     if e_eval == "role_mismatch_villain":
         base = _assistant_chat_prefix(tokenizer, DEFAULT_ASSISTANT_SYSPROMPT, q)
         return base[: -len("assistant\n")] + f"{MISMATCH_ROLE_NAME_FOR['villain']}\n"
+    if e_eval == "system_minimal_pirate":
+        return _assistant_chat_prefix(tokenizer, MINIMAL_SYSPROMPT_FOR["pirate"], q)
+    if e_eval == "system_minimal_villain":
+        return _assistant_chat_prefix(tokenizer, MINIMAL_SYSPROMPT_FOR["villain"], q)
+    if e_eval == "role_bare_pirate":
+        base = _assistant_chat_prefix(tokenizer, DEFAULT_ASSISTANT_SYSPROMPT, q)
+        return base[: -len("assistant\n")] + f"{BARE_ROLE_NAME_FOR['pirate']}\n"
+    if e_eval == "role_bare_villain":
+        base = _assistant_chat_prefix(tokenizer, DEFAULT_ASSISTANT_SYSPROMPT, q)
+        return base[: -len("assistant\n")] + f"{BARE_ROLE_NAME_FOR['villain']}\n"
     if e_eval == "default_assistant":
         return _assistant_chat_prefix(tokenizer, DEFAULT_ASSISTANT_SYSPROMPT, q)
     raise ValueError(f"unknown e_eval={e_eval!r}")

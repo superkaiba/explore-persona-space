@@ -86,6 +86,21 @@ JUDGE_CACHE_DIR = OUT_DIR / "judge_cache"
 # Each value is a callable BUILD_EVAL_PROMPT key for that (encoding, persona).
 ENCODINGS: tuple[str, ...] = ("default", "system", "role")
 
+# minimal_content follow-up encoding set (--encoding-set minimal): the
+# content-matched minimal pair ONLY. The parent's no-signal (default) +
+# elaborate-system + compound-role cells already exist under
+# ``eval_results/issue_464/q1_role_behavior/`` and are NOT re-run; the
+# joint figure (scripts/plot_i464_minimal_content.py) joins old + new.
+MINIMAL_ENCODINGS: tuple[str, ...] = ("system_minimal", "role_bare")
+ENCODING_SET_FOR: dict[str, tuple[str, ...]] = {
+    "parent": ENCODINGS,
+    "minimal": MINIMAL_ENCODINGS,
+}
+OUT_DIR_FOR: dict[str, Path] = {
+    "parent": OUT_DIR,
+    "minimal": Path("eval_results/issue_464/minimal_content/q1_minimal"),
+}
+
 
 PERSONA_ADHERENCE_RUBRIC = """\
 You are an expert evaluator scoring whether an AI model's response
@@ -220,6 +235,10 @@ def _generate_for_encoding(
         e_eval = f"system_{persona}"
     elif encoding == "role":
         e_eval = f"role_{persona}"
+    elif encoding == "system_minimal":
+        e_eval = f"system_minimal_{persona}"
+    elif encoding == "role_bare":
+        e_eval = f"role_bare_{persona}"
     else:
         raise ValueError(f"unknown encoding={encoding!r}")
     prompts = [enc.BUILD_EVAL_PROMPT(e_eval, q, tokenizer) for q in questions]
@@ -367,15 +386,14 @@ def _verdict_line(per_persona: dict) -> str:
     """Build the one-line verdict from the per-persona means.
 
     Format: ``pirate: default=NA system=78.0 role=12.3; villain: ...``
+    Generic over whichever encodings were scored (parent OR minimal set).
     """
     pieces = []
     for persona, by_enc in per_persona.items():
-        d = by_enc.get("default", {}).get("mean_adherence")
-        s = by_enc.get("system", {}).get("mean_adherence")
-        r = by_enc.get("role", {}).get("mean_adherence")
-        pieces.append(
-            f"{persona}: default={_fmt_mean(d)} system={_fmt_mean(s)} role={_fmt_mean(r)}"
+        cells = " ".join(
+            f"{e}={_fmt_mean(by_enc.get(e, {}).get('mean_adherence'))}" for e in by_enc
         )
+        pieces.append(f"{persona}: {cells}")
     return "; ".join(pieces)
 
 
@@ -432,6 +450,19 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear phases: 
         default="claude-sonnet-4-5-20250929",
         help="Anthropic model id for the persona-adherence judge.",
     )
+    ap.add_argument(
+        "--encoding-set",
+        choices=tuple(ENCODING_SET_FOR),
+        default="parent",
+        help=(
+            "Which encoding set to probe. ``parent`` (default) = the original "
+            "no-signal / elaborate-system / compound-role triple, outputs under "
+            "eval_results/issue_464/q1_role_behavior/. ``minimal`` = the "
+            "minimal_content follow-up pair (system_minimal, role_bare), outputs "
+            "under eval_results/issue_464/minimal_content/q1_minimal/. IDENTICAL "
+            "rubric, judge model, and generation config across sets."
+        ),
+    )
     ap.add_argument("--max-new-tokens", type=int, default=512)
     ap.add_argument(
         "--max-seq-len",
@@ -456,34 +487,47 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear phases: 
                 args.n_q,
             )
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    JUDGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    active_encodings = ENCODING_SET_FOR[args.encoding_set]
+    out_dir = OUT_DIR_FOR[args.encoding_set]
+    judge_cache_dir = out_dir / "judge_cache"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    judge_cache_dir.mkdir(parents=True, exist_ok=True)
 
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
     enc.assert_token_ids(tokenizer)
 
     questions_all = load_q_test_extended_50()
     questions = questions_all[: args.n_q]
-    logger.info("Q1 base-model behavior: n_q=%d, encodings=%s", len(questions), ENCODINGS)
+    logger.info(
+        "Q1 base-model behavior: n_q=%d, encoding_set=%s, encodings=%s",
+        len(questions),
+        args.encoding_set,
+        active_encodings,
+    )
 
-    # ── vLLM generation: default + role always; system only if --regenerate-system ──
+    # ── vLLM generation: every active encoding EXCEPT "system" (which can
+    # reuse R_canon — it is exactly the system-prompted base greedy decode
+    # produced in Phase 1) is generated in this run. The minimal set has
+    # no R_canon-reusable encoding (its sysprompt differs from R_canon's
+    # elaborate one), so everything is generated.
     r_canon_test = None
-    encodings_to_generate = ["default", "role"]
-    if args.regenerate_system:
-        encodings_to_generate.append("system")
-    else:
-        r_canon_test = _load_r_canon_test()
-        # Sanity: every question we plan to use must be present in R_canon.
-        for persona in enc.PERSONAS:
-            if persona not in r_canon_test:
-                raise AssertionError(f"R_canon_test missing persona={persona!r}")
-            missing = [q for q in questions if q not in r_canon_test[persona]]
-            if missing:
-                raise AssertionError(
-                    f"R_canon_test[{persona}] missing {len(missing)} of {len(questions)} "
-                    f"questions; pass --regenerate-system OR --n-q <= "
-                    f"{len(r_canon_test[persona])}."
-                )
+    encodings_to_generate = [e for e in active_encodings if e != "system"]
+    if "system" in active_encodings:
+        if args.regenerate_system:
+            encodings_to_generate.append("system")
+        else:
+            r_canon_test = _load_r_canon_test()
+            # Sanity: every question we plan to use must be present in R_canon.
+            for persona in enc.PERSONAS:
+                if persona not in r_canon_test:
+                    raise AssertionError(f"R_canon_test missing persona={persona!r}")
+                missing = [q for q in questions if q not in r_canon_test[persona]]
+                if missing:
+                    raise AssertionError(
+                        f"R_canon_test[{persona}] missing {len(missing)} of {len(questions)} "
+                        f"questions; pass --regenerate-system OR --n-q <= "
+                        f"{len(r_canon_test[persona])}."
+                    )
 
     from vllm import LLM, SamplingParams
 
@@ -506,7 +550,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear phases: 
     # Per-persona, per-encoding rows.
     rows_per_persona: dict[str, dict[str, list[dict]]] = {p: {} for p in enc.PERSONAS}
     for persona in enc.PERSONAS:
-        for encoding in ENCODINGS:
+        for encoding in active_encodings:
             if encoding == "system" and not args.regenerate_system:
                 assert r_canon_test is not None  # for mypy
                 rows = _rows_from_r_canon(persona, questions, r_canon_test)
@@ -530,7 +574,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear phases: 
     # Write per-persona raw generation JSONs immediately (checkpoint-per-phase
     # discipline — CLAUDE.md). Each persona's generations are self-contained
     # so a downstream judge crash never loses the (expensive) generation work.
-    raw_gen_dir = OUT_DIR / "raw_generations"
+    raw_gen_dir = out_dir / "raw_generations"
     raw_gen_dir.mkdir(parents=True, exist_ok=True)
     for persona, by_enc in rows_per_persona.items():
         gen_payload = {
@@ -562,9 +606,9 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear phases: 
         if not os.environ.get("ANTHROPIC_API_KEY"):
             raise RuntimeError("ANTHROPIC_API_KEY not set; run with --no-judge or export the key.")
         for persona in enc.PERSONAS:
-            logger.info("Judging persona=%s across %d encodings...", persona, len(ENCODINGS))
+            logger.info("Judging persona=%s across %d encodings...", persona, len(active_encodings))
             per_persona_scored[persona] = _judge_persona(
-                persona, rows_per_persona[persona], args.judge_model, JUDGE_CACHE_DIR
+                persona, rows_per_persona[persona], args.judge_model, judge_cache_dir
             )
 
     # ── Assemble + write the headline JSON ──
@@ -572,7 +616,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear phases: 
     samples: dict[str, dict] = {}
     for persona in enc.PERSONAS:
         samples[persona] = {}
-        for encoding in ENCODINGS:
+        for encoding in active_encodings:
             rows = rows_per_persona[persona][encoding]
             samples[persona][encoding] = [
                 {
@@ -584,7 +628,9 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear phases: 
 
     headline_means: dict[str, dict[str, float | None]] = {}
     for persona, by_enc in per_persona_scored.items():
-        headline_means[persona] = {e: by_enc.get(e, {}).get("mean_adherence") for e in ENCODINGS}
+        headline_means[persona] = {
+            e: by_enc.get(e, {}).get("mean_adherence") for e in active_encodings
+        }
 
     out_payload = {
         "schema_version": "i464_q1_v1",
@@ -592,7 +638,8 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear phases: 
         "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
         "base_model": BASE_MODEL,
         "n_q": len(questions),
-        "encodings": list(ENCODINGS),
+        "encoding_set": args.encoding_set,
+        "encodings": list(active_encodings),
         "regenerate_system": args.regenerate_system,
         "judge_model": None if args.no_judge else args.judge_model,
         "judged": not args.no_judge,
@@ -600,7 +647,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear phases: 
         "per_persona_scored": per_persona_scored,
         "samples_per_cell": samples,
     }
-    out_path = OUT_DIR / "results.json"
+    out_path = out_dir / "results.json"
     out_path.write_text(json.dumps(out_payload, indent=2, ensure_ascii=False))
     logger.info("Q1 done -> %s", out_path)
 
