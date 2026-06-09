@@ -9,12 +9,18 @@ parent_id: 530
 relates_to:
 - leak-contrastive-negatives
 - leak-predictor
+goal: 'Close #530''s planned 4-fraction band-stop trajectory by modifying MarkerBandStopCallback
+  to checkpoint at sub-step granularity (post-hoc fraction selection {0.25, 0.50,
+  0.75, 1.00} of the realized stop step), retraining all 10 #530 cells with the otherwise-identical
+  recipe, then re-running the 4-fraction eval + 6-predictor partial-Spearman refit
+  to test whether the sign reversal of shadow_angle (rho=-0.23) and d_nn (rho=+0.14)
+  holds across the full trajectory rather than only at the band-stop final checkpoint.'
 ---
 # #530 follow-up — add sub-step checkpointing to the band-stop callback, retrain the 10 cells, and close the planned 4-fraction trajectory
 
 ## Goal
 
-Close #530's planned 4-fraction band-stop trajectory by modifying `MarkerBandStopCallback` to save adapter checkpoints at sub-step granularity (so fractions {0.25, 0.50, 0.75, 1.00} of the realized band-stop step actually exist), retraining all 10 #530 cells with the otherwise-identical recipe, then re-running the 4-fraction eval + 6-predictor partial-Spearman refit to test whether the sign reversal of shadow_angle (ρ=−0.23) and d_nn (ρ=+0.14) holds across the full trajectory rather than only at the band-stop final checkpoint.
+Close #530's planned 4-fraction band-stop trajectory by modifying MarkerBandStopCallback to checkpoint at sub-step granularity (post-hoc fraction selection {0.25, 0.50, 0.75, 1.00} of the realized stop step), retraining all 10 #530 cells with the otherwise-identical recipe, then re-running the 4-fraction eval + 6-predictor partial-Spearman refit to test whether the sign reversal of shadow_angle (rho=-0.23) and d_nn (rho=+0.14) holds across the full trajectory rather than only at the band-stop final checkpoint.
 
 ## Premise correction (why the original version of this task was blocked)
 
