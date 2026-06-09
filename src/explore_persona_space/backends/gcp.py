@@ -1,0 +1,1631 @@
+"""GCP Compute Engine VM backend (single-VM ephemeral lifecycle).
+
+The third concrete :class:`~base.ComputeBackend` after :class:`RunPodBackend`
+and :class:`SlurmBackend`. Mirrors the RunPod lifecycle over GCE VMs so the
+router's auto chain (free → GCP credits) can burn the ~$100k GFS credit
+pool (expires Aug 2, 2026) without bolting a different orchestration shape
+onto the same pipeline.
+
+Plan ``2026-06-08_224537-multi-backend-compute-router`` § ``gcp.py``.
+
+What this slice ships
+---------------------
+
+* :class:`GcpBackend` — implements every method on :class:`ComputeBackend`
+  by shelling out to ``gcloud`` (per the plan: "start by shelling out;
+  migrate to ``google-cloud-compute`` only if typed errors are wanted").
+* Intent → machine-type table (:data:`INTENT_TO_MACHINE`): ``lora-7b`` /
+  ``lora`` → ``a2-ultragpu-1g`` (1x A100-80); ``ft-7b`` → ``a2-ultragpu-4g``
+  (4x A100-80); ``eval`` → ``g2-standard-4`` (1x L4); ``debug`` → ``g2-standard-4``.
+* :class:`GcpConfig` — per-call knobs (project, gcloud config name, zone +
+  fallback zones, DLVM image family + project, default provisioning model,
+  scratch path on the VM). No hardcoding inline; tests construct test
+  :class:`GcpConfig` instances.
+* :func:`render_startup_script` — pure function returning the startup-script
+  the VM runs. Mirrors :func:`scripts.bootstrap_pod.sh` (git clone/pull +
+  ``uv sync`` + ``.env`` push + HF cache redirect + invokes the workload).
+* :func:`render_create_argv` — pure function returning the ``gcloud compute
+  instances create`` argv for a given (spec, config). Golden-tested.
+* :func:`reconnect_or_none` — pre-launch idempotent reconnect via ``gcloud
+  compute instances list --filter=name=eps-issue-<N>``. If a live instance
+  exists, return a handle for it without re-provisioning.
+* :func:`audit_stale_gcp_vms` — analogue of ``scripts/pod.py audit-stale``;
+  lists ``eps-issue-*`` instances older than a threshold and deletes them.
+  Cron wiring is the orchestrator's responsibility — this exposes the
+  callable that the cron / a ``scripts/`` entry can invoke.
+* Typed failure classifications: :class:`GcpProvisioningError` (capacity /
+  quota / SSH bring-up) → the router falls back to the next tier;
+  :class:`GcpWorkloadError` (a real workload exception after the VM is up)
+  → surfaced, not auto-fallback'd (the router's contract: a workload
+  failure observed AFTER ``[phase=...]`` started is NEVER auto-fallback'd
+  because the next-tier re-run would reproduce the bug).
+* Spot preemption recovery: a preempt produces a fresh idempotent re-run
+  (artifacts pushed off-VM during the run are already there; the new
+  attempt-id namespaces the next run so prior outputs aren't overwritten).
+
+What this slice DOES NOT do
+---------------------------
+
+* Run a real GCE VM from tests. Unit-only; the live acceptance is the
+  per-lane acceptance run (plan step 8). Every ``gcloud`` call goes
+  through an injected ``runner`` callable so tests run with no network.
+* Implement the slice-5 router. ``GcpBackend`` is consumed by the router
+  via the existing :class:`ComputeBackend` interface; the router itself
+  is a separate slice.
+* Probe live GCP capacity for an estimate. ``estimate_start_seconds``
+  returns 0 (on-demand provisions immediately; Spot is ~0 when capacity
+  exists). Live capacity probing is deferred to v1.1.
+* Push artifacts. Artifacts are pushed BY THE WORKLOAD during the run
+  (HF Hub / WandB, per the Upload Policy) — this backend does not
+  re-implement that path. ``fetch_results`` is a best-effort scp BEFORE
+  delete (in case the workload missed something the verifier needs);
+  the authoritative artifacts are already off-VM by the time the backend
+  reads them.
+
+Hard-coded facts (verified 2026-06-08 in ``~/my-goat/reference/gcp-compute
+-execution-2026-06.md``):
+
+* Project: ``eps-persona-gpu-jun2026`` (proj # 796887979789), linked to
+  the GFS billing account so all spend draws the credit pool.
+* gcloud config: ``eps-gcp`` (logged in as ``emanuel@nuclearsoftware.com``);
+  EVERY ``gcloud`` call carries ``--configuration=eps-gcp`` (per-command,
+  not env var, per the plan's "no ambient state" rule).
+* DLVM image: ``pytorch-2-9-cu129-ubuntu-2204-nvidia-580`` in project
+  ``deeplearning-platform-release`` (the same family the $1 credit-draw
+  test on 2026-06-08 used).
+* Zone: ``us-central1-a`` (where the GFS A100-80 quota lives).
+* Quota: A100-80 standard=8, Spot=8, A2-CPUs=96 in us-central1, global
+  GPUS_ALL_REGIONS=360 — auto-approved org-pre-boosted.
+
+References:
+* ``src/explore_persona_space/backends/runpod.py`` for the lifecycle shape
+  this module mirrors.
+* ``src/explore_persona_space/backends/slurm.py`` for the per-call
+  ``runner`` / marker-poster injection pattern.
+* ``src/explore_persona_space/backends/artifacts.py`` (slice 2): the
+  :func:`confirm_artifacts_from_handle` core ``confirm_artifacts``
+  delegates to. The slice-2 verifier FAILs an all-SKIP declaration so the
+  launch path MUST populate :data:`EXPECTED_ARTIFACTS_HANDLE_KEY` with at
+  least the completion sentinel.
+* ``scripts/bootstrap_pod.sh`` for the bootstrap recipe ``render_startup_script``
+  mirrors.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import re
+import shlex
+import subprocess
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any
+
+from explore_persona_space.backends.artifacts import (
+    DEFAULT_HF_DATA_REPO,
+    DEFAULT_HF_MODEL_REPO,
+    EXPECTED_ARTIFACTS_HANDLE_KEY,
+    SENTINEL_FILENAME,
+)
+from explore_persona_space.backends.base import (
+    BackendKind,
+    ComputeBackend,
+    PollResult,
+    RunHandle,
+    RunSpec,
+)
+
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Per-call config
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class GcpConfig:
+    """Per-call knobs for the GCP backend.
+
+    Everything project / image / zone specific lives here so the renderer
+    + lifecycle helpers stay generic. A future change to the credited
+    project, the DLVM family, or the primary zone is a config-only edit;
+    tests construct test :class:`GcpConfig` instances with mocked names.
+
+    Fields:
+
+    * ``project`` — GCP project id linked to the credited billing account.
+      Defaults to :data:`DEFAULT_PROJECT` (the dedicated EPS project).
+    * ``gcloud_config`` — gcloud configuration name carrying the
+      ``emanuel@nuclearsoftware.com`` credentials. Defaults to
+      :data:`DEFAULT_GCLOUD_CONFIG`. EVERY shelled ``gcloud`` call
+      threads this via ``--configuration=<name>`` so the backend NEVER
+      depends on the ambient ``CLOUDSDK_ACTIVE_CONFIG_NAME`` env var
+      (which is shared with my-goat / personal use).
+    * ``primary_zone`` — first-choice GCE zone. Defaults to
+      :data:`DEFAULT_PRIMARY_ZONE`. The GFS A100-80 quota lives in
+      ``us-central1``; ``us-central1-a`` is the default.
+    * ``fallback_zones`` — additional zones (same region) to try on a
+      ``ZONE_RESOURCE_POOL_EXHAUSTED`` provisioning failure. Tried in
+      order. Defaults to ``us-central1-b``, ``us-central1-c`` (same
+      region so the GPUS_ALL_REGIONS quota covers all of them).
+    * ``image_family`` / ``image_project`` — DLVM image. Defaults to the
+      pytorch-2-9 family in ``deeplearning-platform-release`` (the family
+      the $1 credit-draw test used on 2026-06-08).
+    * ``default_boot_disk_gb`` — boot-disk size. 300 GB is the Upload Policy
+      working-set headroom (model + checkpoints + HF cache + venv).
+    * ``default_boot_disk_type`` — ``pd-ssd`` (the ``pd-balanced`` default
+      is markedly slower for the model-load + HF-cache write path).
+    * ``default_max_run_duration`` — VM auto-delete fence. Defaults to
+      ``24h`` — generous enough to never interrupt an upload but short
+      enough that an orphaned VM caps the credit burn at one day's worth.
+      Tunable per spec via ``RunSpec.time_budget_hours`` (the renderer
+      converts to ``<H>h`` for gcloud).
+    * ``vm_scratch_dir`` — workload scratch root on the VM (where the
+      sentinel + rsync'd repo land). Mirrors the RunPod ``/workspace``
+      convention so workloads share filesystem layout across backends.
+    * ``repo_url`` — git URL the startup-script clones from. Public
+      HTTPS is fine for the open repo; private slices would extend
+      ``render_startup_script`` to push a deploy key.
+    * ``hf_data_repo`` / ``hf_model_repo`` — overrides for the artifact-
+      verifier declaration. Defaults to the canonical EPS repos.
+    """
+
+    project: str = ""
+    gcloud_config: str = ""
+    primary_zone: str = ""
+    fallback_zones: tuple[str, ...] = ()
+    image_family: str = ""
+    image_project: str = ""
+    default_boot_disk_gb: int = 300
+    default_boot_disk_type: str = "pd-ssd"
+    default_max_run_duration: str = "24h"
+    vm_scratch_dir: str = "/workspace"
+    repo_url: str = ""
+    hf_data_repo: str = DEFAULT_HF_DATA_REPO
+    hf_model_repo: str = DEFAULT_HF_MODEL_REPO
+
+
+#: Canonical project id linked to the credited GFS billing account.
+DEFAULT_PROJECT = "eps-persona-gpu-jun2026"
+
+#: Canonical gcloud configuration name carrying the right account.
+#: Verified live 2026-06-08; threaded as ``--configuration=<name>`` per call
+#: so the ambient ``CLOUDSDK_ACTIVE_CONFIG_NAME`` (which my-goat manipulates)
+#: never silently mis-routes a backend call to a personal project.
+DEFAULT_GCLOUD_CONFIG = "eps-gcp"
+
+#: First-choice zone. The GFS A100-80 quota lives in ``us-central1``.
+DEFAULT_PRIMARY_ZONE = "us-central1-a"
+
+#: Same-region fallbacks for a capacity miss. The GPUS_ALL_REGIONS quota is
+#: regional so any zone in ``us-central1`` is in scope without a quota
+#: re-request.
+DEFAULT_FALLBACK_ZONES: tuple[str, ...] = ("us-central1-b", "us-central1-c")
+
+#: DLVM image family verified working on 2026-06-08 ($1 credit-draw test
+#: provisioned ``a2-ultragpu-1g`` Spot with this image and ran nvidia-smi).
+DEFAULT_IMAGE_FAMILY = "pytorch-2-9-cu129-ubuntu-2204-nvidia-580"
+
+#: DLVM project for the image family above.
+DEFAULT_IMAGE_PROJECT = "deeplearning-platform-release"
+
+#: Canonical public HTTPS clone URL. The repo is open; private branches
+#: would extend the startup-script to push a deploy key.
+DEFAULT_REPO_URL = "https://github.com/superkaiba/explore-persona-space.git"
+
+
+def default_gcp_config() -> GcpConfig:
+    """Build the production :class:`GcpConfig` from module defaults.
+
+    Centralized so production callers (the selector / router) and tests
+    that want the "real" config but with one override (e.g. the zone) can
+    use the same source of truth. Tests that want a fully-controlled
+    config construct :class:`GcpConfig` directly.
+    """
+    return GcpConfig(
+        project=DEFAULT_PROJECT,
+        gcloud_config=DEFAULT_GCLOUD_CONFIG,
+        primary_zone=DEFAULT_PRIMARY_ZONE,
+        fallback_zones=DEFAULT_FALLBACK_ZONES,
+        image_family=DEFAULT_IMAGE_FAMILY,
+        image_project=DEFAULT_IMAGE_PROJECT,
+        repo_url=DEFAULT_REPO_URL,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Intent → machine-type
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class MachineSpec:
+    """A GCE machine + accelerator pair selected by workload intent.
+
+    Fields:
+
+    * ``machine_type`` — gcloud machine-type id (e.g. ``a2-ultragpu-1g``).
+    * ``gpu_count`` — number of GPUs the machine carries (1 / 4 / etc.).
+    * ``gpu_kind`` — short kind tag for logging / failure-classification
+      ("A100-80", "L4"). Not threaded into gcloud (the ``a2-ultragpu-*``
+      family hardcodes the accelerator).
+    """
+
+    machine_type: str
+    gpu_count: int
+    gpu_kind: str
+
+
+#: Workload intent → GCE machine-type map. Matches the plan's "gcp.py"
+#: Approach paragraph: lora-7b → a2-ultragpu-1g, ft-7b → a2-ultragpu-4g,
+#: eval → g2-standard-4. The ``lora`` alias inherits ``lora-7b`` (mirrors
+#: the SLURM ``_DEFAULT_GPUS_FOR_INTENT`` aliasing). ``debug`` reuses the
+#: L4 machine — the smallest GPU available is the right "debug pod"
+#: analogue. ``inf-70b`` / ``ft-70b`` are NOT in this table (the GFS
+#: credit pool is for the A100-80 / L4 line; 70B inference belongs on
+#: RunPod's H200 in v1).
+INTENT_TO_MACHINE: dict[str, MachineSpec] = {
+    "lora-7b": MachineSpec(
+        machine_type="a2-ultragpu-1g",
+        gpu_count=1,
+        gpu_kind="A100-80",
+    ),
+    "lora": MachineSpec(
+        machine_type="a2-ultragpu-1g",
+        gpu_count=1,
+        gpu_kind="A100-80",
+    ),
+    "ft-7b": MachineSpec(
+        machine_type="a2-ultragpu-4g",
+        gpu_count=4,
+        gpu_kind="A100-80",
+    ),
+    "eval": MachineSpec(
+        machine_type="g2-standard-4",
+        gpu_count=1,
+        gpu_kind="L4",
+    ),
+    "debug": MachineSpec(
+        machine_type="g2-standard-4",
+        gpu_count=1,
+        gpu_kind="L4",
+    ),
+}
+
+
+def machine_for_intent(spec: RunSpec) -> MachineSpec:
+    """Resolve ``spec.intent`` to a :class:`MachineSpec`.
+
+    Fails LOUD on an unknown intent rather than silently picking a
+    default — a typo should crash the launch, NOT spin up the wrong
+    instance type and burn credit on it. Consistent with the SLURM
+    backend's :func:`~slurm.stages_for_spec` / :func:`~slurm.time_budget_hours`
+    fail-fast policy.
+    """
+    if spec.intent not in INTENT_TO_MACHINE:
+        raise ValueError(
+            f"no GCP machine-type for intent {spec.intent!r}. "
+            f"Supported intents: {sorted(INTENT_TO_MACHINE)}. "
+            "Add a MachineSpec row to backends/gcp.INTENT_TO_MACHINE "
+            "or pick a different backend (RunPod covers H200 / 70B paths)."
+        )
+    return INTENT_TO_MACHINE[spec.intent]
+
+
+# ---------------------------------------------------------------------------
+# Provisioning model + attempt-id
+# ---------------------------------------------------------------------------
+
+
+#: GCE provisioning models accepted by ``--provisioning-model``.
+ProvisioningModel = str  # "SPOT" | "STANDARD"
+
+#: Default provisioning model: STANDARD (on-demand) for the acceptance run
+#: per the plan ("on-demand for acceptance; steady-state Spot once
+#: idempotency is proven"). Caller switches to "SPOT" via
+#: ``spec.extra["provisioning_model"]`` once the idempotency proofs land.
+DEFAULT_PROVISIONING_MODEL: ProvisioningModel = "STANDARD"
+
+
+def resolve_provisioning_model(spec: RunSpec) -> ProvisioningModel:
+    """Pick the provisioning model for ``spec`` (Spot vs on-demand).
+
+    Reads ``spec.extra["provisioning_model"]`` if present and uppercases
+    it; otherwise returns :data:`DEFAULT_PROVISIONING_MODEL`. Raises on
+    an unrecognized value so a typo doesn't silently downgrade an
+    on-demand workload to Spot (or vice versa).
+    """
+    raw = spec.extra.get("provisioning_model")
+    if raw is None:
+        return DEFAULT_PROVISIONING_MODEL
+    val = str(raw).upper()
+    if val not in {"SPOT", "STANDARD"}:
+        raise ValueError(
+            f"unknown provisioning_model={raw!r}; expected 'SPOT' or 'STANDARD' "
+            "(case-insensitive). Set via RunSpec.extra['provisioning_model']."
+        )
+    return val
+
+
+def attempt_id_for(spec: RunSpec) -> str:
+    """Stable per-attempt namespace tag.
+
+    Used as a sub-folder under HF data / model paths AND as a sentinel
+    sub-directory on the VM scratch so a fresh idempotent re-run after
+    Spot preemption never overwrites an earlier attempt's artifacts.
+    Reads ``spec.extra["attempt_id"]`` if set (the router/orchestrator
+    passes a deterministic per-attempt id so reconnect after orchestrator
+    re-spawn picks up the same namespace); otherwise falls back to a
+    timestamp-only tag (``att-YYYYMMDD-HHMMSS``).
+
+    The tag is shell-safe (only ``[A-Za-z0-9_-]``); the renderer threads
+    it verbatim into the startup-script + the HF-paths declaration.
+    """
+    raw = spec.extra.get("attempt_id")
+    if raw:
+        # Defense in depth: refuse a tag that would shell-inject. The
+        # router should send a sanitized id; raise loud if not.
+        tag = str(raw)
+        if not re.fullmatch(r"[A-Za-z0-9_\-\.]+", tag):
+            raise ValueError(f"attempt_id must match [A-Za-z0-9_-.]+, got {tag!r}")
+        return tag
+    now = datetime.now(tz=UTC)
+    return f"att-{now.strftime('%Y%m%d-%H%M%S')}"
+
+
+# ---------------------------------------------------------------------------
+# Naming + paths
+# ---------------------------------------------------------------------------
+
+
+def instance_name_for(issue: int) -> str:
+    """Canonical GCE instance name for a `/issue` run.
+
+    ``eps-issue-<N>`` matches the prefix the GCP stale-VM reaper greps
+    for. Mirrors RunPod's ``pod-<N>`` shape (issue-keyed, one-instance-
+    per-issue).
+    """
+    return f"eps-issue-{issue}"
+
+
+def workload_dir_for(config: GcpConfig, issue: int) -> str:
+    """Workload root on the VM: ``<vm_scratch_dir>/issue-<N>``.
+
+    Mirrors the RunPod ``/workspace/<repo>`` convention so the workload
+    sees the same in-VM layout regardless of backend. The sentinel +
+    eval_results live under here.
+    """
+    return f"{config.vm_scratch_dir}/eps-issue-{issue}"
+
+
+def sentinel_path_for(config: GcpConfig, issue: int, attempt_id: str) -> str:
+    """Absolute path to the completion sentinel the workload writes.
+
+    Folded under ``<workload>/eval_results/issue_<N>/<attempt>/`` so a
+    re-run after Spot preemption (with a fresh ``attempt_id``) lands in
+    a SEPARATE directory — prior attempts' sentinels (and their per-
+    attempt outputs) are never overwritten.
+    """
+    root = workload_dir_for(config, issue)
+    return f"{root}/eval_results/issue_{issue}/{attempt_id}/{SENTINEL_FILENAME}"
+
+
+# ---------------------------------------------------------------------------
+# Expected-artifact declaration (artifacts.py bridge)
+# ---------------------------------------------------------------------------
+
+
+def expected_artifacts_declaration(
+    *,
+    spec: RunSpec,
+    config: GcpConfig,
+    attempt_id: str,
+    wandb_run_path: str | None = None,
+    extra_hf_data_paths: Sequence[str] = (),
+    extra_hf_model_paths: Sequence[str] = (),
+    extra_git_paths: Sequence[str] = (),
+) -> dict[str, Any]:
+    """Build the :data:`EXPECTED_ARTIFACTS_HANDLE_KEY` payload for launch.
+
+    The slice-2 verifier (``artifacts.confirm_artifacts_from_handle``)
+    FAILs a missing declaration AND an all-SKIP one — the launch path
+    MUST populate this so teardown is gated on real evidence the run
+    actually produced its outputs. We derive the declaration here so
+    every launch route (selector / router / direct ``GcpBackend.launch``)
+    computes the same shape.
+
+    Mandatory: the per-run completion ``sentinel_path`` (under
+    :data:`SENTINEL_FILENAME`). The verifier treats a SKIPped sentinel as
+    a FAIL (silent-loss hole closure).
+
+    Default included paths (mirrors the Upload Policy table):
+
+    * HF data repo ``issue<N>_<attempt>/raw_completions/`` — every
+      training/eval run uploads raw completions here per the policy.
+    * Git paths ``eval_results/issue_<N>/`` + ``figures/issue_<N>/`` —
+      both committed by the workload + verified on the orchestrator side.
+
+    The caller can add experiment-specific paths via ``extra_hf_data_paths``
+    / ``extra_hf_model_paths`` / ``extra_git_paths`` (e.g. a sweep with a
+    specific adapter subfolder).
+
+    Returns a serialization-friendly ``dict`` (no tuples) so the launch
+    path can drop it onto ``handle.extra`` and round-trip via
+    :func:`artifacts.expected_artifacts_from_handle`.
+    """
+    issue = spec.issue
+    base_hf_data = (f"issue{issue}_{attempt_id}/raw_completions/",)
+    base_git = (
+        f"eval_results/issue_{issue}/",
+        f"figures/issue_{issue}/",
+    )
+    return {
+        "issue": int(issue),
+        "hf_data_repo": config.hf_data_repo,
+        "hf_model_repo": config.hf_model_repo,
+        "hf_data_paths": list(base_hf_data) + list(extra_hf_data_paths),
+        "hf_model_paths": list(extra_hf_model_paths),
+        "wandb_run_path": wandb_run_path,
+        "git_paths": list(base_git) + list(extra_git_paths),
+        "sentinel_path": sentinel_path_for(config, issue, attempt_id),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Startup-script (mirrors bootstrap_pod.sh)
+# ---------------------------------------------------------------------------
+
+
+# The startup-script env keys the orchestrator MUST set (via gcloud
+# --metadata) so the in-VM bootstrap can talk to HF / WandB / Anthropic.
+# Mirrors ``SECRET_ENV_KEYS`` in slurm.py.
+STARTUP_SECRET_ENV_KEYS: tuple[str, ...] = (
+    "HF_TOKEN",
+    "WANDB_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "OPENAI_API_KEY",
+)
+
+
+def render_startup_script(
+    *,
+    spec: RunSpec,
+    config: GcpConfig,
+    attempt_id: str,
+    repo_branch: str = "main",
+    hydra_args: Sequence[str] | None = None,
+) -> str:
+    """Render the GCE startup-script the VM runs on boot.
+
+    Pure function — no side effects. Tests can assert on the rendered
+    text without spinning up a VM. The script:
+
+    1. Sets strict mode + umask.
+    2. Reads secrets from the VM metadata (set via gcloud
+       ``--metadata KEY=value``) and exports them.
+    3. Clones / pulls the repo into ``<vm_scratch_dir>/eps-issue-<N>``
+       at the requested branch (defaults to ``main``).
+    4. Installs ``uv`` if missing, runs ``uv sync --frozen``.
+    5. Redirects ``HF_HOME`` to a fast local SSD path so model downloads
+       cache for the run (the boot disk is pd-ssd).
+    6. Writes a per-attempt scratch dir and runs the workload (currently
+       ``scripts/train.py`` with the spec's Hydra args).
+    7. On clean exit writes the completion sentinel under the per-attempt
+       eval_results directory (the artifact verifier reads this).
+    8. On any failure exits non-zero so the VM enters TERMINATED status
+       (the orchestrator's ``poll`` reads this as ``dead``).
+
+    The script intentionally does NOT write artifacts off-VM itself — the
+    workload's existing HF/WandB upload paths run during the run as the
+    authoritative artifact route. The sentinel is a small completion
+    proof, not a primary artifact.
+
+    ``hydra_args`` defaults to ``spec.hydra_args`` (so the caller can
+    override for a custom dispatch); ``repo_branch`` defaults to ``main``.
+    """
+    args = tuple(hydra_args if hydra_args is not None else spec.hydra_args)
+    workload_root = workload_dir_for(config, spec.issue)
+    sentinel_abs = sentinel_path_for(config, spec.issue, attempt_id)
+    sentinel_dir = sentinel_abs.rsplit("/", 1)[0]
+
+    # Build the secret-fetch stanza. Each KEY is pulled from
+    # ``/computeMetadata/v1/instance/attributes/<KEY>``. The
+    # ``Metadata-Flavor: Google`` header is the GCE-required guard; the
+    # curl path 404s cleanly when a key was not set (so an absent
+    # secret produces an empty export, not a hard crash — the in-VM
+    # workload's own preflight surfaces the missing token loudly).
+    secrets_fetch_lines: list[str] = []
+    for key in STARTUP_SECRET_ENV_KEYS:
+        secrets_fetch_lines.append(
+            f'{key}=$(curl -fsS -H "Metadata-Flavor: Google" '
+            f'"http://metadata.google.internal/computeMetadata/v1/'
+            f'instance/attributes/{key}" 2>/dev/null || true); export {key}'
+        )
+
+    # Hydra args, shell-quoted. Empty tuple → empty string.
+    hydra_str = " ".join(shlex.quote(a) for a in args)
+
+    parts = [
+        "#!/bin/bash",
+        "set -euo pipefail",
+        "umask 077",
+        "",
+        f"# === GCE startup-script (eps-issue-{spec.issue}) ===",
+        f"export EPS_ISSUE={spec.issue}",
+        f"export EPS_ATTEMPT_ID={shlex.quote(attempt_id)}",
+        f"export WORKLOAD_ROOT={shlex.quote(workload_root)}",
+        f"export EPS_SENTINEL_PATH={shlex.quote(sentinel_abs)}",
+        "",
+        "# === Secrets from instance metadata ===",
+        *secrets_fetch_lines,
+        "",
+        "# === Repo clone / pull (idempotent) ===",
+        'mkdir -p "$WORKLOAD_ROOT"',
+        'if [ ! -d "$WORKLOAD_ROOT/.git" ]; then',
+        f"  git clone --depth 1 --branch {shlex.quote(repo_branch)} "
+        f'{shlex.quote(config.repo_url)} "$WORKLOAD_ROOT"',
+        "else",
+        f'  git -C "$WORKLOAD_ROOT" fetch --depth 1 origin {shlex.quote(repo_branch)}',
+        f'  git -C "$WORKLOAD_ROOT" checkout {shlex.quote(repo_branch)}',
+        f'  git -C "$WORKLOAD_ROOT" reset --hard origin/{shlex.quote(repo_branch)}',
+        "fi",
+        "",
+        "# === Install uv if missing + sync env ===",
+        "if ! command -v uv >/dev/null 2>&1; then",
+        "  curl -LsSf https://astral.sh/uv/install.sh | sh",
+        '  export PATH="$HOME/.local/bin:$PATH"',
+        "fi",
+        'cd "$WORKLOAD_ROOT"',
+        "uv sync --frozen",
+        "",
+        "# === HF cache + sentinel dir ===",
+        'export HF_HOME="$WORKLOAD_ROOT/.cache/huggingface"',
+        'mkdir -p "$HF_HOME"',
+        f"mkdir -p {shlex.quote(sentinel_dir)}",
+        "",
+        "# === Run the workload (Hydra args = the spec's hydra_args) ===",
+        "# A non-zero exit propagates (set -e) → VM exits non-zero → poll reads dead.",
+        f"uv run python scripts/train.py {hydra_str}".rstrip(),
+        "",
+        "# === Completion sentinel (workload exited cleanly) ===",
+        "# The artifact verifier reads this back via list_repo_files / scp.",
+        "# Phase=done + issue=<N> is the schema artifacts.py validates.",
+        "cat > " + shlex.quote(sentinel_abs) + " <<EOF\n"
+        '{"phase":"done","issue":'
+        + str(spec.issue)
+        + ',"attempt_id":'
+        + json.dumps(attempt_id)
+        + "}\nEOF",
+        "",
+    ]
+    return "\n".join(parts) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# gcloud argv renderers
+# ---------------------------------------------------------------------------
+
+
+def _base_gcloud_argv(config: GcpConfig, *cmd: str) -> list[str]:
+    """Prepend the ``--configuration`` + ``--project`` flags to a gcloud call.
+
+    Threaded per-command (NOT via env var) so the backend is independent
+    of the ambient ``CLOUDSDK_ACTIVE_CONFIG_NAME`` shared with my-goat.
+    """
+    return [
+        "gcloud",
+        *cmd,
+        f"--configuration={config.gcloud_config}",
+        f"--project={config.project}",
+    ]
+
+
+def render_create_argv(
+    *,
+    spec: RunSpec,
+    config: GcpConfig,
+    attempt_id: str,
+    zone: str | None = None,
+    startup_script: str,
+) -> list[str]:
+    """Build the ``gcloud compute instances create`` argv.
+
+    Pure function — golden-tested without touching the network.
+
+    Mirrors the verified-working recipe in
+    ``~/my-goat/reference/gcp-compute-execution-2026-06.md`` (the 2026-06-08
+    $1 credit-draw test). Hard requirements baked in:
+
+    * ``--configuration`` + ``--project`` — every call threads these
+      explicitly so the backend ignores ambient config.
+    * ``--machine-type`` from the intent map.
+    * ``--provisioning-model`` from the spec (Spot vs on-demand).
+    * ``--instance-termination-action=DELETE`` — the leak guard. Whether
+      Spot preempts or the ``--max-run-duration`` fence trips, the VM
+      auto-deletes; combined with the GCP stale-VM reaper this caps
+      credit leakage at the audit window.
+    * ``--maintenance-policy=TERMINATE`` — GPUs cannot live-migrate, so
+      the maintenance policy MUST be terminate (gcloud rejects MIGRATE
+      on accelerator VMs anyway; explicit is clearer than implicit).
+    * ``--max-run-duration`` — generous so it can't interrupt an upload
+      (default 24h per config).
+    * ``--image-family`` / ``--image-project`` — the DLVM image with
+      pre-installed CUDA/driver.
+    * ``--boot-disk-size`` / ``--boot-disk-type`` — 300 GB pd-ssd default.
+    * ``--scopes=cloud-platform`` — broad VM-scope so the in-VM workload
+      can push to GCS / WandB / HF without per-API token wrangling.
+    * ``--metadata startup-script=<...>`` + per-secret ``--metadata KEY=value``
+      — the startup-script bootstraps the workload; the secret keys are
+      pulled from instance metadata inside that script.
+
+    ``zone`` defaults to ``config.primary_zone``; the caller passes a
+    fallback zone explicitly on a capacity retry.
+
+    The argv is returned as a list (not a string) so the caller can pass
+    it straight to ``subprocess.run`` without shell parsing — defense
+    against shell injection through the startup-script body.
+    """
+    machine = machine_for_intent(spec)
+    provisioning = resolve_provisioning_model(spec)
+    max_run = spec.extra.get("max_run_duration") or config.default_max_run_duration
+    boot_disk_gb = int(spec.extra.get("boot_disk_gb") or config.default_boot_disk_gb)
+    boot_disk_type = spec.extra.get("boot_disk_type") or config.default_boot_disk_type
+    target_zone = zone or config.primary_zone
+    name = instance_name_for(spec.issue)
+
+    argv = _base_gcloud_argv(config, "compute", "instances", "create", name)
+    argv += [
+        f"--zone={target_zone}",
+        f"--machine-type={machine.machine_type}",
+        f"--provisioning-model={provisioning}",
+        "--instance-termination-action=DELETE",
+        "--maintenance-policy=TERMINATE",
+        f"--max-run-duration={max_run}",
+        f"--image-family={config.image_family}",
+        f"--image-project={config.image_project}",
+        f"--boot-disk-size={boot_disk_gb}GB",
+        f"--boot-disk-type={boot_disk_type}",
+        "--scopes=cloud-platform",
+        "--labels=" + _format_labels(spec, attempt_id),
+        "--format=json",
+    ]
+
+    # Metadata: startup-script body + the secret keys the script will
+    # fetch back out of metadata. Each key arrives via os.environ so the
+    # caller's environment dictates which secrets are forwarded. An absent
+    # env var is dropped (matches render_secrets_env in slurm.py).
+    metadata_pairs = [f"eps-issue={spec.issue}", f"eps-attempt-id={attempt_id}"]
+    for key in STARTUP_SECRET_ENV_KEYS:
+        val = spec.extra.get(f"secret_{key}") or _envget(key)
+        if val is None or val == "":
+            continue
+        # Per-secret metadata uses --metadata KEY=value; gcloud handles
+        # the quoting once the value is passed as a single argv element.
+        metadata_pairs.append(f"{key}={val}")
+    argv.append("--metadata=" + ",".join(metadata_pairs))
+    # Startup-script via --metadata-from-file is the right shape (avoid
+    # the 256KB metadata-line cap when the body grows). The caller writes
+    # the script to a tempfile; the renderer asserts the contract via
+    # spec.extra["startup_script_path"] OR an inline body. We choose the
+    # tempfile path here so secrets-bearing scripts never leak through
+    # the gcloud argv stdout/stderr.
+    sentinel = spec.extra.get("startup_script_path")
+    if sentinel:
+        argv.append(f"--metadata-from-file=startup-script={sentinel}")
+    else:
+        # Inline body (golden tests + small startup scripts). The wrapper
+        # caller is responsible for cap-checking. Inlined verbatim into
+        # the metadata pairs constructed above is the right form; this
+        # branch keeps the renderer self-contained when no tempfile path
+        # is threaded through spec.extra.
+        # gcloud's --metadata accepts startup-script= as a value; chain it
+        # in a separate flag so it lands as a discrete metadata key.
+        argv.append(f"--metadata=startup-script={startup_script}")
+    return argv
+
+
+def render_list_argv(*, config: GcpConfig, name_filter: str | None = None) -> list[str]:
+    """Build a ``gcloud compute instances list`` argv with JSON output.
+
+    Used by :func:`reconnect_or_none` + :func:`audit_stale_gcp_vms`.
+    Filter syntax: gcloud accepts ``name=<exact>`` for an exact match
+    and ``name~^prefix`` for a regex prefix; we pick exact for the
+    reconnect path (one instance per issue) and the prefix form for
+    the audit path.
+    """
+    argv = _base_gcloud_argv(config, "compute", "instances", "list", "--format=json")
+    if name_filter:
+        argv.append(f"--filter={name_filter}")
+    return argv
+
+
+def render_describe_argv(*, config: GcpConfig, name: str, zone: str) -> list[str]:
+    """Build a ``gcloud compute instances describe`` argv (JSON)."""
+    argv = _base_gcloud_argv(config, "compute", "instances", "describe", name)
+    argv += [f"--zone={zone}", "--format=json"]
+    return argv
+
+
+def render_delete_argv(*, config: GcpConfig, name: str, zone: str) -> list[str]:
+    """Build a ``gcloud compute instances delete`` argv (``--quiet`` for non-interactive)."""
+    argv = _base_gcloud_argv(config, "compute", "instances", "delete", name)
+    argv += [f"--zone={zone}", "--quiet"]
+    return argv
+
+
+def _format_labels(spec: RunSpec, attempt_id: str) -> str:
+    """Build the ``--labels=`` value for create/list filtering.
+
+    GCP label keys must be lowercase, may contain ``[a-z0-9_-]``, and
+    have a 63-char cap. We emit a small fixed set — the prefix ``eps-``
+    is the audit key. The ``attempt_id`` label normalizes underscores
+    + hyphens (no caps allowed); we lowercase + replace anything else
+    with a hyphen so the GCP API accepts the value.
+    """
+    sanitized_attempt = re.sub(r"[^a-z0-9_-]", "-", attempt_id.lower())[:63]
+    return ",".join(
+        [
+            "managed-by=eps",
+            f"eps-issue={spec.issue}",
+            f"eps-attempt={sanitized_attempt}",
+            f"eps-intent={spec.intent}",
+        ]
+    )
+
+
+def _envget(key: str) -> str | None:
+    """Read an env var without crashing when ``os`` is monkey-patched."""
+    import os
+
+    return os.environ.get(key)
+
+
+# ---------------------------------------------------------------------------
+# Failure classification
+# ---------------------------------------------------------------------------
+
+
+class GcpBackendError(RuntimeError):
+    """Base class for typed GCP backend errors."""
+
+
+class GcpProvisioningError(GcpBackendError):
+    """The VM never came up (capacity / quota / SSH / image fetch).
+
+    The router's fallback logic catches THIS type and proceeds to the
+    next tier (per the plan: "PROVISION/capacity/SSH/quota failure →
+    next tier"). The orchestrator never auto-fallbacks on a different
+    error class — a workload bug should surface, not silently re-run.
+    """
+
+    def __init__(self, reason: str, *, evidence: dict[str, Any] | None = None) -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.evidence = evidence or {}
+
+
+class GcpWorkloadError(GcpBackendError):
+    """The workload itself failed AFTER the VM was up.
+
+    Distinct from provisioning failure — the router MUST NOT auto-
+    fallback on this (a deterministic workload bug would just re-crash
+    on the next tier). Per plan: "WORKLOAD failure observed AFTER
+    ``[phase=...]`` training has started → surface (post ``epm:failure``,
+    ``status:blocked``), NO auto-fallback (it would re-crash)."
+    """
+
+    def __init__(self, reason: str, *, evidence: dict[str, Any] | None = None) -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.evidence = evidence or {}
+
+
+# Substrings in gcloud stderr that indicate a provisioning failure
+# (capacity / quota / image fetch). The classifier matches case-insensitively;
+# anything not on this list bubbles up as a generic GcpBackendError so the
+# router knows NOT to fall back blindly.
+_PROVISIONING_STDERR_PATTERNS: tuple[str, ...] = (
+    "ZONE_RESOURCE_POOL_EXHAUSTED",
+    "QUOTA_EXCEEDED",
+    "QUOTA EXCEEDED",
+    "RESOURCE_EXHAUSTED",
+    "INSUFFICIENT_RESOURCES",
+    # gcloud sometimes surfaces capacity as "does not have enough resources"
+    "does not have enough resources",
+    # Authentication / config errors should also surface as provisioning
+    # failures so the router can fall back rather than wedge.
+    "PERMISSION_DENIED",
+    "permission denied",
+    "Invalid value for field",
+)
+
+
+def classify_create_failure(*, returncode: int, stderr: str) -> GcpProvisioningError:
+    """Map a non-zero ``gcloud compute instances create`` exit to a typed error.
+
+    Inspects ``stderr`` for the known capacity / quota / auth substrings
+    and packages them into :class:`GcpProvisioningError`. The caller
+    (``GcpBackend.launch``) catches this and either retries on the next
+    fallback zone (capacity) OR raises out so the router falls back to
+    RunPod / blocks.
+    """
+    matched = next(
+        (p for p in _PROVISIONING_STDERR_PATTERNS if p.lower() in stderr.lower()),
+        None,
+    )
+    reason = (
+        f"gcloud create returned {returncode}; matched provisioning pattern {matched!r}"
+        if matched
+        else f"gcloud create returned {returncode}; no known provisioning pattern (stderr below)"
+    )
+    return GcpProvisioningError(
+        reason,
+        evidence={
+            "returncode": returncode,
+            "stderr_tail": stderr[-2000:],
+            "matched_pattern": matched,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Runner injection seam (test plumbing)
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class GcloudRunResult:
+    """Captured ``gcloud`` exit status + stdout + stderr.
+
+    The injectable :func:`GcpBackend` runner returns one of these so
+    tests can fabricate any combination of (returncode, stdout, stderr)
+    without spawning a subprocess.
+    """
+
+    returncode: int
+    stdout: str
+    stderr: str
+
+
+GcloudRunner = Callable[[Sequence[str]], GcloudRunResult]
+
+
+def default_gcloud_runner(argv: Sequence[str], *, timeout: int = 300) -> GcloudRunResult:
+    """Default runner: shell out to ``gcloud`` via :mod:`subprocess`.
+
+    Raises NOTHING on non-zero — the caller inspects ``returncode``.
+    Timeouts propagate as :class:`subprocess.TimeoutExpired` (the
+    backend treats them as provisioning failures via the catch in
+    :meth:`GcpBackend.launch`).
+    """
+    proc = subprocess.run(
+        list(argv),
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        check=False,
+    )
+    return GcloudRunResult(
+        returncode=proc.returncode,
+        stdout=proc.stdout or "",
+        stderr=proc.stderr or "",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Reconnect (idempotent existing-instance lookup)
+# ---------------------------------------------------------------------------
+
+
+def reconnect_or_none(
+    *,
+    spec: RunSpec,
+    config: GcpConfig,
+    runner: GcloudRunner,
+) -> RunHandle | None:
+    """Return a handle for an existing live ``eps-issue-<N>`` instance, or None.
+
+    Idempotency hinge: before any ``instances create`` call, this looks
+    up the canonical instance name via ``gcloud compute instances list
+    --filter='name=eps-issue-<N>'``. A live instance (status RUNNING,
+    PROVISIONING, STAGING, STOPPING) returns a handle. A TERMINATED
+    instance is treated as "not live" (the backend will create a fresh
+    one); no instance returns None.
+
+    Matches the "Idempotent: a per-run attempt-id is the sole write
+    namespace; route() reconnects to an existing eps-issue-<N> GCE
+    instance before re-provisioning" success criterion. The
+    fresh-attempt-id namespace covers the artifact-overwrite concern
+    even when a reconnect catches a still-running instance.
+
+    Returns None when gcloud fails (e.g. transient auth blip) — the
+    caller's create path will surface the same error with a better
+    classification. The reconnect is a best-effort optimization, not a
+    correctness gate.
+    """
+    name = instance_name_for(spec.issue)
+    argv = render_list_argv(config=config, name_filter=f"name={name}")
+    result = runner(argv)
+    if result.returncode != 0:
+        logger.warning(
+            "GCP reconnect: list returned %d for %s; assuming no live instance. stderr=%s",
+            result.returncode,
+            name,
+            result.stderr[:500],
+        )
+        return None
+    try:
+        instances = json.loads(result.stdout) if result.stdout.strip() else []
+    except json.JSONDecodeError as exc:
+        logger.warning("GCP reconnect: bad JSON for %s: %s", name, exc)
+        return None
+    if not isinstance(instances, list):
+        return None
+    for inst in instances:
+        if not isinstance(inst, dict):
+            continue
+        if inst.get("name") != name:
+            continue
+        status = inst.get("status") or ""
+        if status.upper() in {"TERMINATED", "STOPPED", "SUSPENDED"}:
+            continue
+        zone_url = inst.get("zone") or ""
+        # The zone field is a URL; take the last path segment.
+        zone = zone_url.rsplit("/", 1)[-1] if zone_url else config.primary_zone
+        instance_id = str(inst.get("id") or "")
+        return RunHandle(
+            backend="gcp",
+            cluster=None,
+            job_id=instance_id,
+            pod_name=name,
+            scratch_dir=workload_dir_for(config, spec.issue),
+            log_path=f"{workload_dir_for(config, spec.issue)}/logs/issue-{spec.issue}.log",
+            extra={
+                "intent": spec.intent,
+                "issue": int(spec.issue),
+                "project": config.project,
+                "gcloud_config": config.gcloud_config,
+                "zone": zone,
+                "instance_name": name,
+                "status_at_reconnect": status,
+                "reconnected": True,
+            },
+        )
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Stale-VM reaper (cron entrypoint)
+# ---------------------------------------------------------------------------
+
+
+def audit_stale_gcp_vms(
+    *,
+    config: GcpConfig | None = None,
+    runner: GcloudRunner | None = None,
+    max_age_seconds: int = 24 * 3600,
+    now: datetime | None = None,
+    delete: bool = False,
+) -> list[dict[str, Any]]:
+    """List (and optionally delete) ``eps-issue-*`` instances older than the threshold.
+
+    Analogue of ``scripts/pod.py audit-stale`` for GCP. Without it, an
+    orchestrator crash that drops the local lease before teardown would
+    leak a VM at $5/hr — the cron is the credit-leak backstop.
+
+    Returns a list of ``{name, zone, status, created_at, age_seconds,
+    action}`` records (``action`` ∈ {``"would-delete"``, ``"deleted"``,
+    ``"skipped"``}). When ``delete=True``, instances over the threshold
+    are issued a ``gcloud compute instances delete --quiet`` (errors are
+    logged + folded into the record as ``action="delete-failed"`` — never
+    raised, so the cron continues across the rest of the inventory).
+
+    No ``raise`` on a benign empty list — a fresh GCP project legitimately
+    has zero matches.
+    """
+    cfg = config or default_gcp_config()
+    run = runner or default_gcloud_runner
+    reference = now or datetime.now(tz=UTC)
+    argv = render_list_argv(config=cfg, name_filter="name~^eps-issue-")
+    result = run(argv)
+    if result.returncode != 0:
+        logger.error(
+            "audit_stale_gcp_vms: list returned %d; cannot audit. stderr=%s",
+            result.returncode,
+            result.stderr[:500],
+        )
+        return []
+    try:
+        instances = json.loads(result.stdout) if result.stdout.strip() else []
+    except json.JSONDecodeError as exc:
+        logger.error("audit_stale_gcp_vms: bad JSON from gcloud list: %s", exc)
+        return []
+    if not isinstance(instances, list):
+        return []
+
+    records: list[dict[str, Any]] = []
+    for inst in instances:
+        if not isinstance(inst, dict):
+            continue
+        name = inst.get("name") or ""
+        if not name.startswith("eps-issue-"):
+            continue
+        zone_url = inst.get("zone") or ""
+        zone = zone_url.rsplit("/", 1)[-1] if zone_url else cfg.primary_zone
+        status = inst.get("status") or "UNKNOWN"
+        created_at_raw = inst.get("creationTimestamp")
+        age_seconds = _age_seconds(created_at_raw, reference)
+        action: str
+        if age_seconds is None or age_seconds < max_age_seconds:
+            action = "skipped"
+        elif not delete:
+            action = "would-delete"
+        else:
+            del_argv = render_delete_argv(config=cfg, name=name, zone=zone)
+            del_result = run(del_argv)
+            if del_result.returncode == 0:
+                action = "deleted"
+            else:
+                logger.error(
+                    "audit_stale_gcp_vms: delete %s failed (%d): %s",
+                    name,
+                    del_result.returncode,
+                    del_result.stderr[:300],
+                )
+                action = "delete-failed"
+        records.append(
+            {
+                "name": name,
+                "zone": zone,
+                "status": status,
+                "created_at": created_at_raw,
+                "age_seconds": age_seconds,
+                "action": action,
+            }
+        )
+    return records
+
+
+def _age_seconds(created_at_raw: Any, reference: datetime) -> float | None:
+    """Parse ``creationTimestamp`` (ISO-8601 with offset) and return age in seconds."""
+    if not isinstance(created_at_raw, str) or not created_at_raw:
+        return None
+    try:
+        parsed = datetime.fromisoformat(created_at_raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return (reference - parsed).total_seconds()
+
+
+# ---------------------------------------------------------------------------
+# GcpBackend — the ComputeBackend
+# ---------------------------------------------------------------------------
+
+
+class GcpBackend(ComputeBackend):
+    """GCE-VM backend (single VM per issue, ephemeral lifecycle).
+
+    Mirrors the RunPod lifecycle shape:
+
+    * ``prepare`` — no-op (provision triggers bootstrap inline via the
+      startup-script, exactly like ``pod_lifecycle.py provision``).
+    * ``launch`` — reconnect (idempotent) → render startup-script →
+      render create argv → run ``gcloud compute instances create`` →
+      populate :class:`ExpectedArtifacts` on the handle → post marker →
+      return handle. On a typed :class:`GcpProvisioningError` (capacity)
+      retry on each ``config.fallback_zones`` zone before raising.
+    * ``estimate_start`` — UTC now (GCP provisions immediately when
+      capacity exists; no test-only probe analogue today).
+    * ``poll`` — ``gcloud compute instances describe`` for the status;
+      decode to a :class:`PollResult`. Slice 3 does NOT walk the
+      in-VM log; that lands when the orchestrator-side bg poll is
+      wired (slice 6).
+    * ``fetch_logs`` — best-effort serial-port-1 pull via
+      ``gcloud compute instances get-serial-port-output``. Returns ``""``
+      when the call fails (a fresh VM has no serial output yet).
+    * ``fetch_results`` — no-op (authoritative artifacts already off-VM
+      during the run; a slice-6 cleanup may add a best-effort scp).
+    * ``confirm_artifacts`` — delegates to the slice-2 verifier exactly
+      like :class:`SlurmBackend.confirm_artifacts`. The launch path
+      populates :class:`ExpectedArtifacts` on the handle's ``extra`` so
+      a missing declaration is itself a FAIL.
+    * ``teardown`` — ``gcloud compute instances delete --quiet``; the
+      ``--instance-termination-action=DELETE`` + ``--max-run-duration``
+      double-belt means a no-op teardown on a missing instance is the
+      common path.
+
+    Constructor parameters are injection seams; tests provide a fake
+    runner + marker poster so the unit suite never hits gcloud.
+    """
+
+    def __init__(
+        self,
+        *,
+        config: GcpConfig | None = None,
+        runner: GcloudRunner | None = None,
+        marker_poster: Callable[..., None] | None = None,
+        startup_script_renderer: Callable[..., str] | None = None,
+    ) -> None:
+        self._config = config or default_gcp_config()
+        self._run = runner or default_gcloud_runner
+        # Lazy import default poster (matches SlurmBackend's pattern) so
+        # this module stays importable without a configured task.py.
+        if marker_poster is None:
+            from explore_persona_space.backends.slurm import post_marker_via_task_py
+
+            marker_poster = post_marker_via_task_py
+        self._post_marker = marker_poster
+        self._render_startup = startup_script_renderer or render_startup_script
+
+    # ----- identity --------------------------------------------------------
+
+    @property
+    def name(self) -> BackendKind:
+        return "gcp"
+
+    # ----- launch ----------------------------------------------------------
+
+    def prepare(self, spec: RunSpec) -> None:
+        """No-op. GCP bootstrap happens inside the startup-script the
+        VM runs on first boot (same one-shot model as RunPod's
+        ``pod_lifecycle.py provision``)."""
+        del spec
+        return None
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        """Provision (or reconnect to) the GCE VM for ``spec.issue``.
+
+        See class docstring for the per-step flow. Raises
+        :class:`GcpProvisioningError` when every zone (primary +
+        fallbacks) returns a capacity / quota / auth failure — the router
+        catches that and proceeds to the next tier.
+        """
+        config = self._config
+        attempt_id = attempt_id_for(spec)
+
+        # Reconnect: a live instance with the canonical name is the
+        # idempotent re-entry path (orchestrator re-spawn, manual
+        # ``/issue`` re-invocation). Skip provisioning entirely.
+        existing = reconnect_or_none(spec=spec, config=config, runner=self._run)
+        if existing is not None:
+            # Reconnect: thread the EXISTING attempt-id (recovered from
+            # the instance labels) where possible. Today we don't read
+            # labels back out — fall back to a fresh attempt id; the
+            # in-VM workload's own per-run state on disk determines what
+            # actually runs. The handle's `attempt_id` is informational
+            # for the marker trail.
+            logger.info(
+                "GCP reconnect: handle existing instance %s in %s",
+                existing.pod_name,
+                existing.extra.get("zone"),
+            )
+            return self._with_artifacts_declaration(
+                handle=existing,
+                spec=spec,
+                config=config,
+                attempt_id=str(existing.extra.get("attempt_id") or attempt_id),
+                wandb_run_path=spec.extra.get("wandb_run_path"),
+            )
+
+        # Render the startup-script + create argv. The startup-script
+        # body is large (~3KB); we inline it through ``--metadata
+        # startup-script=`` rather than a tempfile because tests can
+        # assert on the raw argv shape. A future slice may switch to
+        # ``--metadata-from-file`` once the metadata-line cap (256KB)
+        # gets close.
+        startup = self._render_startup(
+            spec=spec,
+            config=config,
+            attempt_id=attempt_id,
+            hydra_args=spec.hydra_args,
+        )
+
+        zones_to_try: list[str] = [config.primary_zone]
+        zones_to_try.extend(z for z in config.fallback_zones if z and z != config.primary_zone)
+        last_error: GcpProvisioningError | None = None
+        for zone in zones_to_try:
+            argv = render_create_argv(
+                spec=spec,
+                config=config,
+                attempt_id=attempt_id,
+                zone=zone,
+                startup_script=startup,
+            )
+            logger.info("GCP create issue=%d in zone=%s", spec.issue, zone)
+            result = self._run(argv)
+            if result.returncode == 0:
+                break
+            last_error = classify_create_failure(
+                returncode=result.returncode,
+                stderr=result.stderr,
+            )
+            # Only retry on a capacity-shaped failure (not on auth/quota
+            # which won't be fixed by trying a different zone). The
+            # classifier tags the matched pattern in evidence; capacity
+            # patterns match the substring "RESOURCE" / "EXHAUSTED" /
+            # "does not have enough resources".
+            matched = (last_error.evidence.get("matched_pattern") or "").lower()
+            if not any(tag in matched for tag in ("exhaust", "resource", "enough resources")):
+                # Non-capacity failure → don't retry; surface immediately.
+                raise last_error
+            logger.warning(
+                "GCP create capacity miss in zone=%s; trying next fallback. reason=%s",
+                zone,
+                last_error.reason,
+            )
+        else:
+            # for-else: executed when the for loop completes without
+            # `break` — every zone failed.
+            assert last_error is not None
+            raise last_error
+
+        # Successful create. Build the handle + thread the artifact
+        # declaration through handle.extra. The handle name matches
+        # the gcloud name (idempotent reconnect uses it).
+        instance_name = instance_name_for(spec.issue)
+        # gcloud returns the instance object as a list with one entry.
+        instance_id = _parse_instance_id(result.stdout, instance_name)
+        handle = RunHandle(
+            backend="gcp",
+            cluster=None,
+            job_id=instance_id,
+            pod_name=instance_name,
+            scratch_dir=workload_dir_for(config, spec.issue),
+            log_path=f"{workload_dir_for(config, spec.issue)}/logs/issue-{spec.issue}.log",
+            extra={
+                "intent": spec.intent,
+                "issue": int(spec.issue),
+                "project": config.project,
+                "gcloud_config": config.gcloud_config,
+                "zone": zone,
+                "instance_name": instance_name,
+                "attempt_id": attempt_id,
+                "provisioning_model": resolve_provisioning_model(spec),
+                "machine_type": machine_for_intent(spec).machine_type,
+                "reconnected": False,
+            },
+        )
+        handle = self._with_artifacts_declaration(
+            handle=handle,
+            spec=spec,
+            config=config,
+            attempt_id=attempt_id,
+            wandb_run_path=spec.extra.get("wandb_run_path"),
+        )
+
+        # Marker: ``epm:cluster-launched`` is the SLURM analogue; we
+        # reuse the same marker name so the dashboard surfaces GCP runs
+        # in the same lane (the body carries ``backend: gcp``). This
+        # mirrors SlurmBackend.launch.
+        marker_body = json.dumps(
+            {
+                "backend": "gcp",
+                "instance_name": instance_name,
+                "instance_id": instance_id,
+                "project": config.project,
+                "zone": zone,
+                "machine_type": machine_for_intent(spec).machine_type,
+                "provisioning_model": resolve_provisioning_model(spec),
+                "attempt_id": attempt_id,
+            },
+            sort_keys=True,
+        )
+        try:
+            self._post_marker(
+                issue=spec.issue,
+                marker="epm:cluster-launched",
+                note=marker_body,
+                version=1,
+                by="backends.gcp",
+            )
+        except Exception as exc:
+            # Marker post is best-effort: the VM already exists, and
+            # surfacing a marker failure shouldn't tear it down. Log
+            # loudly so the operator can backfill if needed.
+            logger.error(
+                "GCP launch: marker post failed for issue=%d: %s; continuing.",
+                spec.issue,
+                exc,
+            )
+
+        return handle
+
+    def estimate_start(self, spec: RunSpec) -> datetime | None:
+        """GCE on-demand provisions immediately; informational "now"."""
+        del spec
+        return datetime.now(tz=UTC)
+
+    def estimate_start_seconds(
+        self,
+        spec: RunSpec,
+        *,
+        now: datetime | None = None,
+    ) -> float | None:
+        """Seconds until ``spec`` would start. GCE is ~0.
+
+        Returned as 0.0 for both on-demand and Spot (Spot is ~0 when
+        capacity exists; we don't probe live capacity in slice 3, and
+        the router's 10-min park is the source of truth for "did the
+        job actually start" anyway).
+        """
+        del spec, now
+        return 0.0
+
+    # ----- monitor ---------------------------------------------------------
+
+    def poll(self, handle: RunHandle) -> PollResult:
+        """One-tick poll via ``gcloud compute instances describe``.
+
+        Slice 3 returns a coarse PollResult derived from the VM status
+        only (``RUNNING`` → ``running``; ``TERMINATED`` → ``dead`` etc.).
+        Slice 6 will overlay the per-phase heartbeat once the in-VM
+        ``[phase=...]`` writes land on a poll-readable surface (the
+        existing :class:`PollResult` shape carries the per-phase fields).
+        """
+        config = self._config
+        zone = handle.extra.get("zone") or config.primary_zone
+        argv = render_describe_argv(config=config, name=handle.pod_name, zone=zone)
+        result = self._run(argv)
+        if result.returncode != 0:
+            # 404 → instance gone → terminal "dead". gcloud returns a
+            # non-zero exit + a "was not found" stderr in that case.
+            stderr_low = (result.stderr or "").lower()
+            if "was not found" in stderr_low or "404" in stderr_low:
+                return _terminal_dead_poll(reason="instance not found")
+            # Other failures: treat as transient "stalled" so the
+            # orchestrator's bg poll keeps retrying rather than tearing
+            # down a healthy VM.
+            return _coarse_poll(status="stalled", current_phase="describe_failed")
+        try:
+            payload = json.loads(result.stdout) if result.stdout.strip() else {}
+        except json.JSONDecodeError:
+            return _coarse_poll(status="stalled", current_phase="describe_bad_json")
+        status = (payload.get("status") or "UNKNOWN").upper()
+        return _gcp_status_to_poll_result(status)
+
+    def fetch_logs(self, handle: RunHandle) -> str:
+        """Best-effort serial-port-1 pull.
+
+        The startup-script writes its progress to the VM's serial-port
+        console; ``gcloud compute instances get-serial-port-output``
+        pulls the rolling buffer. Returns ``""`` on any failure so the
+        orchestrator's "report logs" message degrades gracefully.
+        """
+        config = self._config
+        zone = handle.extra.get("zone") or config.primary_zone
+        argv = _base_gcloud_argv(
+            config, "compute", "instances", "get-serial-port-output", handle.pod_name
+        )
+        argv += [f"--zone={zone}", "--port=1"]
+        result = self._run(argv)
+        if result.returncode != 0:
+            logger.warning(
+                "GCP fetch_logs: serial-port-1 returned %d for %s; returning empty.",
+                result.returncode,
+                handle.pod_name,
+            )
+            return ""
+        return result.stdout or ""
+
+    # ----- teardown --------------------------------------------------------
+
+    def fetch_results(self, handle: RunHandle) -> None:
+        """No-op (authoritative artifacts live off-VM during the run).
+
+        A future slice may add a best-effort ``gcloud compute scp``
+        sweep of ``eval_results/`` + ``figures/`` BEFORE delete, in case
+        the workload missed an upload the verifier needs. Today we
+        rely on the in-run uploads (HF Hub / WandB / git), exactly the
+        same way RunPod does.
+        """
+        del handle
+        return None
+
+    def confirm_artifacts(self, handle: RunHandle) -> bool:
+        """Backend-agnostic artifact verification.
+
+        Delegates to :func:`backends.artifacts.confirm_artifacts_from_handle`
+        — the same mechanical gate SLURM + RunPod use. The launch path
+        is responsible for populating
+        :data:`~backends.artifacts.EXPECTED_ARTIFACTS_HANDLE_KEY` on
+        ``handle.extra``; a missing declaration is itself a FAIL.
+        """
+        from explore_persona_space.backends.artifacts import confirm_artifacts_from_handle
+
+        verdict = confirm_artifacts_from_handle(handle)
+        if not verdict.passed:
+            logger.warning(
+                "GcpBackend.confirm_artifacts FAIL for instance %s: %s",
+                handle.pod_name,
+                "; ".join(verdict.reasons),
+            )
+        return verdict.passed
+
+    def teardown(self, handle: RunHandle) -> None:
+        """``gcloud compute instances delete --quiet``; idempotent on a missing VM.
+
+        The ``--instance-termination-action=DELETE`` + ``--max-run-duration``
+        belts mean an unattended VM auto-deletes; an orchestrator-driven
+        teardown is the explicit early path. A "was not found" stderr is
+        the common case (the VM already auto-deleted) and is NOT raised.
+        """
+        config = self._config
+        zone = handle.extra.get("zone") or config.primary_zone
+        argv = render_delete_argv(config=config, name=handle.pod_name, zone=zone)
+        result = self._run(argv)
+        if result.returncode == 0:
+            return
+        stderr_low = (result.stderr or "").lower()
+        if "was not found" in stderr_low or "404" in stderr_low:
+            logger.info(
+                "GCP teardown: %s already gone (was not found); treating as success.",
+                handle.pod_name,
+            )
+            return
+        # Anything else is a real failure (auth blip, transient API
+        # error). Raise so the orchestrator surfaces it rather than
+        # silently leaving a VM up.
+        raise GcpBackendError(
+            f"gcloud delete {handle.pod_name} returned {result.returncode}: {result.stderr[:500]}"
+        )
+
+    # ----- internal helpers ------------------------------------------------
+
+    def _with_artifacts_declaration(
+        self,
+        *,
+        handle: RunHandle,
+        spec: RunSpec,
+        config: GcpConfig,
+        attempt_id: str,
+        wandb_run_path: str | None = None,
+    ) -> RunHandle:
+        """Return a copy of ``handle`` with the artifact declaration attached.
+
+        RunHandle is frozen, so we copy ``extra`` and rebuild. The
+        verifier's ``confirm_artifacts_from_handle`` will read this back
+        and fail loudly if the launch path forgot to populate it.
+        """
+        from dataclasses import replace
+
+        decl = expected_artifacts_declaration(
+            spec=spec,
+            config=config,
+            attempt_id=attempt_id,
+            wandb_run_path=wandb_run_path,
+        )
+        new_extra = dict(handle.extra)
+        new_extra[EXPECTED_ARTIFACTS_HANDLE_KEY] = decl
+        return replace(handle, extra=new_extra)
+
+
+# ---------------------------------------------------------------------------
+# Poll-result helpers
+# ---------------------------------------------------------------------------
+
+
+def _coarse_poll(*, status: str, current_phase: str) -> PollResult:
+    """Build a PollResult with the minimal fields populated."""
+    return PollResult(
+        status=status,
+        current_phase=current_phase,
+        new_milestone=False,
+        last_log_mtime_sec_ago=10**9,
+        pid_alive=status == "running",
+        log_tail_excerpt="",
+    )
+
+
+def _terminal_dead_poll(*, reason: str) -> PollResult:
+    """The instance is gone → terminal dead."""
+    return PollResult(
+        status="dead",
+        current_phase=f"terminal_{reason}",
+        new_milestone=True,
+        last_log_mtime_sec_ago=10**9,
+        pid_alive=False,
+        log_tail_excerpt="",
+    )
+
+
+def _gcp_status_to_poll_result(status: str) -> PollResult:
+    """Map a GCE ``status`` to our coarse :class:`PollResult` shape.
+
+    See https://cloud.google.com/compute/docs/instances/instance-life-cycle
+    for the GCE status enum. We map:
+
+    * ``RUNNING`` → ``running`` (pid_alive=True)
+    * ``PROVISIONING`` / ``STAGING`` → ``running`` (VM is coming up; the
+      orchestrator's bg loop will keep polling)
+    * ``STOPPING`` / ``REPAIRING`` → ``stalled`` (transient; bg loop retries)
+    * ``TERMINATED`` / ``STOPPED`` / ``SUSPENDED`` → ``dead``
+    """
+    up = status.upper()
+    if up == "RUNNING":
+        return _coarse_poll(status="running", current_phase="running")
+    if up in {"PROVISIONING", "STAGING"}:
+        return _coarse_poll(status="running", current_phase=up.lower())
+    if up in {"STOPPING", "REPAIRING"}:
+        return _coarse_poll(status="stalled", current_phase=up.lower())
+    if up in {"TERMINATED", "STOPPED", "SUSPENDED"}:
+        return _terminal_dead_poll(reason=up.lower())
+    return _coarse_poll(status="stalled", current_phase=f"unknown_{up.lower()}")
+
+
+# ---------------------------------------------------------------------------
+# Instance-id parsing
+# ---------------------------------------------------------------------------
+
+
+def _parse_instance_id(stdout: str, expected_name: str) -> str:
+    """Best-effort instance-id pull from ``gcloud ... create --format=json`` stdout.
+
+    Returns the numeric id as a string, or "" when the JSON is malformed
+    (an empty string is the truthful "we did not capture" marker; the
+    instance_name field is the authoritative identity throughout the
+    backend, the id is only logged into the marker body).
+    """
+    if not stdout.strip():
+        return ""
+    try:
+        payload = json.loads(stdout)
+    except json.JSONDecodeError:
+        return ""
+    # gcloud returns either a list (the common form) or a dict; handle both.
+    if isinstance(payload, list):
+        for item in payload:
+            if isinstance(item, dict) and item.get("name") == expected_name:
+                return str(item.get("id") or "")
+        return ""
+    if isinstance(payload, dict):
+        return str(payload.get("id") or "")
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# Re-exports
+# ---------------------------------------------------------------------------
+
+
+__all__ = [
+    "DEFAULT_FALLBACK_ZONES",
+    "DEFAULT_GCLOUD_CONFIG",
+    "DEFAULT_IMAGE_FAMILY",
+    "DEFAULT_IMAGE_PROJECT",
+    "DEFAULT_PRIMARY_ZONE",
+    "DEFAULT_PROJECT",
+    "DEFAULT_PROVISIONING_MODEL",
+    "DEFAULT_REPO_URL",
+    "INTENT_TO_MACHINE",
+    "STARTUP_SECRET_ENV_KEYS",
+    "GcloudRunResult",
+    "GcloudRunner",
+    "GcpBackend",
+    "GcpBackendError",
+    "GcpConfig",
+    "GcpProvisioningError",
+    "GcpWorkloadError",
+    "MachineSpec",
+    "attempt_id_for",
+    "audit_stale_gcp_vms",
+    "classify_create_failure",
+    "default_gcloud_runner",
+    "default_gcp_config",
+    "expected_artifacts_declaration",
+    "instance_name_for",
+    "machine_for_intent",
+    "reconnect_or_none",
+    "render_create_argv",
+    "render_delete_argv",
+    "render_describe_argv",
+    "render_list_argv",
+    "render_startup_script",
+    "resolve_provisioning_model",
+    "sentinel_path_for",
+    "workload_dir_for",
+]

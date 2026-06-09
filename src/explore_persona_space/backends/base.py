@@ -43,8 +43,11 @@ from typing import Any, Literal
 # selector resolves this to a concrete :class:`ComputeBackend` instance.
 # ``cluster`` is the generic SLURM dispatch (per-cluster routing is done
 # inside the SLURM backend); ``nibi`` / ``fir`` are per-cluster aliases
-# the selector accepts and maps onto ``cluster``.
-BackendKind = Literal["runpod", "cluster", "nibi", "fir"]
+# the selector accepts and maps onto ``cluster``. ``gcp`` provisions an
+# ephemeral GCE VM (intent → machine-type map inside
+# :class:`~backends.gcp.GcpBackend`) and is the auto-fallback target when
+# every free academic cluster fails the 10-minute park (router slice 5).
+BackendKind = Literal["runpod", "cluster", "nibi", "fir", "gcp"]
 
 
 # ---------------------------------------------------------------------------
