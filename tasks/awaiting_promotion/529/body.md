@@ -18,6 +18,8 @@ track: experiment
 relates_to:
 - spec-role-header
 - leak-contrastive-negatives
+classification: useful
+promoted_at: '2026-06-09T21:43:23Z'
 ---
 # The {1,2,3,5}-epoch grid is the wrong instrument for the marker-less contrastive-negative regime at the inherited LoRA recipe — every epoch in the grid lands in the saturated floor (HIGH confidence)
 
