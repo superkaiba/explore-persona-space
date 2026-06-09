@@ -1197,3 +1197,59 @@ def test_has_upload_verification_pass_orchestrator_posted_latest_wins(monkeypatc
         [_orchestrator_posted_event("PASS"), _orchestrator_posted_event("FAIL")],
     )
     assert pod_lifecycle._has_upload_verification_pass(999) is False
+
+
+# ---------------------------------------------------------------------------
+# _resolve_spec — intent vs explicit --gpu-type/--gpu-count merging (#531)
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_spec_intent_only_uses_table():
+    spec, label = pod_lifecycle._resolve_spec("eval", None, None)
+    assert (spec.gpu_type, spec.gpu_count) == ("H100", 1)
+    assert label == "eval"
+
+
+def test_resolve_spec_both_flags_override_intent():
+    spec, label = pod_lifecycle._resolve_spec("eval", "H200", 8)
+    assert (spec.gpu_type, spec.gpu_count) == ("H200", 8)
+    assert label == "eval"
+
+
+def test_resolve_spec_both_flags_without_intent_is_custom():
+    spec, label = pod_lifecycle._resolve_spec(None, "H100", 2)
+    assert (spec.gpu_type, spec.gpu_count) == ("H100", 2)
+    assert label == "custom"
+
+
+def test_resolve_spec_partial_count_merges_over_intent():
+    """Regression for #531: ``--intent eval --gpu-count 4`` silently provisioned
+    1x H100 because the lone count flag fell through to the intent table. The
+    explicit count must merge over the intent's default."""
+    spec, label = pod_lifecycle._resolve_spec("eval", None, 4)
+    assert (spec.gpu_type, spec.gpu_count) == ("H100", 4)
+    assert label == "eval"
+    assert "override" in spec.rationale and "--gpu-count 4" in spec.rationale
+
+
+def test_resolve_spec_partial_type_merges_over_intent():
+    spec, label = pod_lifecycle._resolve_spec("ft-7b", "H200", None)
+    assert (spec.gpu_type, spec.gpu_count) == ("H200", 4)
+    assert label == "ft-7b"
+    assert "--gpu-type H200" in spec.rationale
+
+
+@pytest.mark.parametrize(
+    ("gpu_type", "gpu_count"),
+    [("H100", None), (None, 4)],
+)
+def test_resolve_spec_partial_flag_without_intent_fails_loud(gpu_type, gpu_count):
+    """A lone override flag with no --intent has no default to fill the missing
+    field from — fail loud instead of guessing."""
+    with pytest.raises(SystemExit, match="without --intent"):
+        pod_lifecycle._resolve_spec(None, gpu_type, gpu_count)
+
+
+def test_resolve_spec_nothing_given_fails_loud():
+    with pytest.raises(SystemExit, match="Must pass either --intent"):
+        pod_lifecycle._resolve_spec(None, None, None)
