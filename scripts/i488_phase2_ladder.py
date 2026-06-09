@@ -256,11 +256,90 @@ def _write_sentinel_fail(reason_key: str, reason_long: str, extra: dict | None =
 # ── Gate 1: Label-mask audit (one-shot at L1 only) ─────────────────────────
 
 
+def _build_audit_train_rows(
+    rung: str,
+    sources: list[str],
+    seed: int,
+    rung_train_row_dir: Path,
+) -> Path:
+    """Materialize the A1 (audit-source) training rows for ``rung`` BEFORE training.
+
+    Round-2 blocker-1 fix: Gate 1 (label-mask audit) MUST run BEFORE
+    ``_run_train_for_rung`` at L1 so a misaligned label mask is caught
+    before burning ~10-40 min of GPU. We invoke ``i488_diagnostic_train.py``
+    with ``--build-rows-only`` (no training, just writes the same train.jsonl
+    that the production trainer would consume) so the audit reads byte-
+    identical rows.
+
+    Returns the path to the audit source's train.jsonl
+    (``<rung_train_row_dir>/i488_A1_seed<seed>.jsonl`` by default).
+
+    Raises:
+        RuntimeError: if the build subprocess fails or the expected
+            audit jsonl is not present afterwards. NO silent fallback —
+            audit-row absence is a HARD pre-train block.
+    """
+    rung_train_row_dir.mkdir(parents=True, exist_ok=True)
+    env = {**os.environ}
+    env["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
+    env["I488_LADDER_RUNG_SUFFIX"] = rung
+    env["I488_TRAIN_ROW_DIR"] = str(rung_train_row_dir)
+
+    recipe = RUNGS[rung]
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        "scripts/i488_diagnostic_train.py",
+        "--conds",
+        *sources,
+        "--seed",
+        str(seed),
+        "--lr",
+        str(recipe["lr"]),
+        "--lora-r",
+        str(recipe["lora_r"]),
+        "--lora-alpha",
+        str(recipe["lora_alpha"]),
+        "--max-rows-per-side",
+        str(recipe["max_rows_per_side"]),
+        "--warmup-ratio",
+        str(recipe["warmup_ratio"]),
+        "--epochs",
+        str(recipe["epochs"]),
+        "--n-dupes",
+        str(recipe["n_dupes"]),
+        "--build-rows-only",
+    ]
+    logger.info("[phase=ladder_build_audit_rows] %s", shlex.join(cmd))
+    proc = subprocess.run(cmd, cwd=PROJECT_ROOT, env=env, check=False)
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"i488_diagnostic_train.py --build-rows-only failed "
+            f"rc={proc.returncode} at rung={rung} sources={sources}"
+        )
+    # The audit source is the first source by convention (A1 in production).
+    audit_source = sources[0]
+    audit_jsonl = rung_train_row_dir / f"i488_{audit_source}_seed{seed}.jsonl"
+    if not audit_jsonl.exists():
+        raise RuntimeError(
+            f"Audit train rows not written by --build-rows-only: expected "
+            f"{audit_jsonl} after running diagnostic_train at rung={rung}. "
+            "This is a hard pre-train block — no silent fallback."
+        )
+    return audit_jsonl
+
+
 def _run_label_mask_audit(audit_train_jsonl: Path) -> bool:
-    """Run the v3 label-mask audit on A1's train rows. Returns True if PASS.
+    """Run the v3 label-mask audit on the audit source's train rows. Returns True if PASS.
 
     Reuses the existing audit from ``i488_phase2_smoke_calibrate._label_mask_audit``
     rather than re-implementing it (the v6 ladder doesn't change Gate 1).
+
+    Round-2 blocker-1: this function is now invoked BEFORE ``_run_train_for_rung``
+    at L1 (callers must call ``_build_audit_train_rows`` first to materialize the
+    rows). A ``FileNotFoundError`` here is a HARD failure — not a silent pass —
+    because the caller is contractually responsible for building the rows first.
     """
     from i488_phase2_smoke_calibrate import (  # type: ignore
         _label_mask_audit as smoke_label_mask_audit,
@@ -283,15 +362,17 @@ def _run_label_mask_audit(audit_train_jsonl: Path) -> bool:
         _write_sentinel_fail("label_mask_wrong_slot", str(e))
         return False
     except FileNotFoundError as e:
-        # Soft fail — at L1 the audit train rows are written by the train
-        # subprocess as a side effect; if missing, we can't audit but we
-        # still want to advance. Log + continue.
-        logger.warning(
-            "Label-mask audit train rows missing (%s); skipping audit. "
-            "This is expected on the very first L1 run before the train rows "
-            "have been written.",
-            e,
+        # Round-2 blocker-1 fix: HARD failure on missing audit rows.
+        # Caller (run_ladder) must materialize rows via _build_audit_train_rows
+        # BEFORE invoking this. No silent advance — that masked misaligned
+        # label-masks for the first L1 train in round 1.
+        _write_sentinel_fail(
+            "label_mask_audit_rows_missing",
+            f"Audit train rows missing at {audit_train_jsonl}: {e}. "
+            "Caller must invoke _build_audit_train_rows before _run_label_mask_audit.",
+            extra={"audit_train_jsonl": str(audit_train_jsonl)},
         )
+        return False
     return True
 
 
@@ -714,6 +795,11 @@ def run_ladder(
 
     label_mask_audit_done = skip_label_mask_audit
 
+    # Track per-rung CLIMB reason so the fall-through terminal at the bottom
+    # can distinguish all-rungs-below-floor (EXHAUSTED) vs the
+    # in-band-but-weak-localization case (NO_PICK). Blocker 3 fix.
+    rung_climb_reasons: list[dict] = []
+
     for rung in rung_sequence:
         recipe = RUNGS[rung]
         logger.info("[phase=ladder_rung_%s] starting recipe=%s", rung, recipe)
@@ -722,6 +808,37 @@ def run_ladder(
         rung_log = log_dir / f"rung_{rung}.log"
         emit_out = log_dir / f"rung_{rung}_emit.json"
         rung_train_rows = TRAIN_ROW_DIR_DEFAULT / rung
+
+        # ── Gate 1: label-mask audit (ONCE at L1, BEFORE training) ──
+        # Round-2 blocker-1 fix: this used to run AFTER _run_train_for_rung,
+        # which meant a misaligned label-mask burned ~10-40 min of GPU before
+        # being caught. We now (a) build the audit train rows up-front via
+        # --build-rows-only, (b) run the audit, (c) THEN launch training.
+        if not label_mask_audit_done and rung == "L1":
+            built_audit_jsonl = _build_audit_train_rows(
+                rung=rung,
+                sources=sources,
+                seed=seed,
+                rung_train_row_dir=rung_train_rows,
+            )
+            # Caller may have passed an explicit audit_train_jsonl; if so, log
+            # if it differs from the materialized one (sanity check).
+            audit_target = audit_train_jsonl if audit_train_jsonl is not None else built_audit_jsonl
+            if audit_train_jsonl is not None and audit_train_jsonl != built_audit_jsonl:
+                logger.warning(
+                    "audit_train_jsonl override %s differs from built path %s; "
+                    "auditing the override path.",
+                    audit_train_jsonl,
+                    built_audit_jsonl,
+                )
+            ok = _run_label_mask_audit(audit_target)
+            if not ok:
+                return 2
+            label_mask_audit_done = True
+            logger.info(
+                "[phase=ladder_gate1_pass] label-mask audit PASSed PRE-train at L1 audit_target=%s",
+                audit_target,
+            )
 
         # ── (a) Train ──
         rc_train = _run_train_for_rung(
@@ -740,13 +857,6 @@ def run_ladder(
                 extra={"rung": rung, "rc": rc_train, "log_path": str(rung_log)},
             )
             return 2
-
-        # ── Gate 1: label-mask audit (ONCE at L1) ──
-        if not label_mask_audit_done and rung == "L1" and audit_train_jsonl is not None:
-            ok = _run_label_mask_audit(audit_train_jsonl)
-            if not ok:
-                return 2
-            label_mask_audit_done = True
 
         # ── (b) Emit panel ──
         rc_emit = _run_emit_for_rung(
@@ -828,36 +938,120 @@ def run_ladder(
             return 0
 
         if row["verdict"] == "UNIFORM_LEAKAGE":
-            _write_sentinel_fail(
-                "recipe_ladder_uniform_leakage",
-                (
-                    f"Gate BYSTANDER FAILed at rung={rung} with max-bystander on "
-                    f"non-stylized subset = "
+            # Round-2 blocker-2 fix: differentiate the two
+            # UNIFORM_LEAKAGE failure modes per plan v6 §7 line 174.
+            # _decide_verdict tags `verdict_reason` ∈
+            #   {"anchor_saturated_bystander_fail",
+            #    "max_non_stylized_above_threshold"};
+            # the sentinel reason now mirrors that split so poll_pipeline
+            # can route per v6 §6.1(b) (saturated-no-bystander-resolution
+            # is a different escalation surface than uniform leakage at a
+            # mid-band anchor).
+            if row.get("verdict_reason") == "anchor_saturated_bystander_fail":
+                fail_reason_key = "recipe_ladder_oversaturated_no_bystander_resolution"
+                fail_reason_long = (
+                    f"Anchor SATURATED (A1 self-emit "
+                    f"{row['a1_self_emit']:.3f} > {GATE_ANCHOR_SATURATION}) at "
+                    f"rung={rung} AND Gate BYSTANDER FAILed (max-bystander "
+                    f"non-stylized = {row['max_bystander_emit_non_stylized']}). "
+                    "Climbing past saturation cannot resolve bystander "
+                    "localization on this recipe family. Block on user for "
+                    "escalation choice per plan v6 §6.1(b)."
+                )
+            else:
+                fail_reason_key = "recipe_ladder_uniform_leakage"
+                fail_reason_long = (
+                    f"Gate BYSTANDER FAILed at rung={rung} with max-bystander "
+                    f"on non-stylized subset = "
                     f"{row['max_bystander_emit_non_stylized']} "
                     f"(threshold {GATE_BYSTANDER_UNIFORM_LEAKAGE_THRESHOLD}); "
-                    f"climbing further worsens non-stylized leakage. Block on "
-                    f"user for escalation choice per plan v6 §6.1(b)."
-                ),
+                    "climbing further worsens non-stylized leakage. Block on "
+                    "user for escalation choice per plan v6 §6.1(b)."
+                )
+            _write_sentinel_fail(
+                fail_reason_key,
+                fail_reason_long,
                 extra={"rung": rung, "ladder_row": row},
             )
             return 2
 
-        # verdict == "CLIMB" → continue to next rung
+        # verdict == "CLIMB" → track the reason so the fall-through terminal
+        # below can distinguish exhausted-no-emit (all below-floor) vs
+        # no-pick (in-band-but-weak-localization). Blocker 3 fix.
+        rung_climb_reasons.append({"rung": rung, "reason": row.get("verdict_reason")})
         continue
 
-    # Exhausted the ladder (only happens when start_rung..L5 all FAILed
-    # Gate ANCHOR's lower bound; the saturation branch always exits early
-    # via PICK_AT_SATURATION).
+    # Round-2 blocker-3 fix: the fall-through terminal MUST distinguish
+    # two CLIMB-exhausted modes per plan v6 §7 line 170/174:
+    #
+    #   (a) Every rung's CLIMB reason ∈ {"below_floor",
+    #       "median_diag_below_floor"} — A1 / median diag never crossed
+    #       the GATE_ANCHOR_FLOOR. This is the literal
+    #       "recipe_ladder_exhausted_no_emit" case in v6: the recipe family
+    #       cannot produce on-policy emit at the source.
+    #   (b) ANY rung's CLIMB reason is "weak_localization" — A1 emitted
+    #       in [0.20, 0.85] at some rung but non-stylized bystanders
+    #       stayed below GATE_BYSTANDER_UNIFORM_LEAKAGE_THRESHOLD at
+    #       EVERY rung. This is a DIFFERENT failure mode: emit works, but
+    #       no rung resolves bystander separation cleanly.
+    #
+    # The two require different orchestrator routing — (a) escalates to
+    # marker/loss-formulation changes, (b) escalates to bystander-panel /
+    # negative-set composition changes.
+    floor_only_reasons = {"below_floor", "median_diag_below_floor"}
+    has_weak_localization = any(r["reason"] == "weak_localization" for r in rung_climb_reasons)
+    if has_weak_localization:
+        _write_sentinel_fail(
+            "recipe_ladder_no_pick",
+            (
+                "Exhausted ladder L1..L5: A1 self-emit reached the in-band "
+                "regime [0.20, 0.85] at one or more rungs but no rung's "
+                "non-stylized bystander max crossed the localization "
+                f"threshold ({GATE_BYSTANDER_UNIFORM_LEAKAGE_THRESHOLD:.2f}); "
+                "no rung satisfies Gate BYSTANDER. Different failure mode "
+                "than 'no on-policy emit' — emit works but bystander "
+                "separation does not. Block on user for escalation per "
+                "plan v6 §6.1(b)."
+            ),
+            extra={
+                "rungs_tried": rung_sequence,
+                "rung_reasons": rung_climb_reasons,
+            },
+        )
+        return 2
+
+    # All rungs CLIMBed for floor / median-diag reasons (or rung_climb_reasons
+    # is empty, which can only happen if rung_sequence was empty — defensive).
+    all_floor_only = all(r["reason"] in floor_only_reasons for r in rung_climb_reasons)
+    if not all_floor_only:
+        # Defensive: a CLIMB reason we don't enumerate above. Don't silently
+        # collapse to either bucket — surface it explicitly.
+        _write_sentinel_fail(
+            "recipe_ladder_no_pick",
+            (
+                "Exhausted ladder L1..L5 with at least one rung CLIMBing for "
+                "an un-enumerated reason. Audit the rung_reasons payload."
+            ),
+            extra={
+                "rungs_tried": rung_sequence,
+                "rung_reasons": rung_climb_reasons,
+            },
+        )
+        return 2
+
     _write_sentinel_fail(
         "recipe_ladder_exhausted_no_emit",
         (
-            "All rungs L1..L5 either floored (A1 self-emit < 0.20) or hit "
-            "median_diag_below_floor without saturating; the recipe family "
-            "cannot produce on-policy emit at the source on this loss "
-            "formulation + LoRA target modules. Block on user for the "
-            "escalation choice per plan v6 §6.1(b)."
+            "All rungs L1..L5 FAILed Gate ANCHOR's lower bound — A1 self-emit "
+            f"stayed below {GATE_ANCHOR_FLOOR:.2f} OR median per-source diag stayed below "
+            "the same floor at every rung. The recipe family cannot produce "
+            "on-policy emit at the source on this loss formulation + LoRA "
+            "target modules. Block on user for escalation per plan v6 §6.1(b)."
         ),
-        extra={"rungs_tried": rung_sequence},
+        extra={
+            "rungs_tried": rung_sequence,
+            "rung_reasons": rung_climb_reasons,
+        },
     )
     return 2
 
