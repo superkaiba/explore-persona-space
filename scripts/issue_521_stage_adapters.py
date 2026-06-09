@@ -61,10 +61,31 @@ def _stage_one(
     from huggingface_hub import hf_hub_download
 
     target = output_dir / f"{arm}_seed{seed}" / "adapter"
-    if (target / "adapter_config.json").exists() and (
-        target / "adapter_model.safetensors"
-    ).exists():
-        logger.info("[skip] %s_seed%d already staged at %s", arm, seed, target)
+    cfg = target / "adapter_config.json"
+    sft = target / "adapter_model.safetensors"
+    if cfg.exists() and sft.exists():
+        # Round-2 reviewer NIT: validate file sizes on the already-staged
+        # path so a stale LFS pointer (~134 B) or partial previous stage
+        # cannot silently bypass the fail-loud size check at the end of
+        # this function. v1 returned on file-presence alone, which let
+        # a previously-interrupted stage masquerade as "already done."
+        cfg_sz = cfg.stat().st_size
+        sft_sz = sft.stat().st_size
+        if cfg_sz < 100 or sft_sz < 1024:
+            raise RuntimeError(
+                f"adapter files at {target} are already present but suspiciously "
+                f"small (config={cfg_sz}B, safetensors={sft_sz}B). This looks "
+                f"like a stale LFS pointer or a partial previous stage — "
+                f"refusing to skip. Delete {target} and re-run to re-download."
+            )
+        logger.info(
+            "[skip] %s_seed%d already staged at %s (cfg=%dB, safetensors=%.1fMB)",
+            arm,
+            seed,
+            target,
+            cfg_sz,
+            sft_sz / 1e6,
+        )
         return
     target.mkdir(parents=True, exist_ok=True)
 

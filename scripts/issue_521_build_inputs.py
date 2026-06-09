@@ -8,8 +8,15 @@ Outputs under ``--output-dir``:
   the bare ``assistant``). Schema matches ``activation_shift.py`` CLI.
 - ``questions.json`` -- ``list[str]`` of the 20 generic eval questions
   (``EVAL_QUESTIONS`` verbatim).
-- ``marker_pool.json`` -- ``list[str]`` of 100 marker-arm steering-pool
-  questions, hash-disjoint from the #519 marker training mix.
+- ``marker_pool.json`` -- ``list[str]`` of N=58 marker-arm steering-pool
+  questions, hash-disjoint from the #519 marker training mix. The plan
+  §4 Step 2 named N=100, but the marker training pool only carries 197
+  unique questions and #519 trained on 139 of them — leaving 58 held-out
+  candidates (the data ceiling). N=58 is still well above the
+  ``steering_vectors.py`` ``min_pool_size=30`` floor. The deviation is
+  recorded as ``epm:plan-deviation v1`` on task #521 and carried as a
+  scope caveat into the clean-result. Override via
+  ``--marker-pool-target``.
 - ``em_pool.json``    -- ``list[str]`` of EM steering-pool questions
   (rows 200..299 of ``bad_medical_advice_6k.jsonl``), hash-disjoint from
   the #519 EM training prompts. **v2 M5**: 2 detected overlap rows are

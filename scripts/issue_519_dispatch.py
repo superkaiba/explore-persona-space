@@ -606,7 +606,19 @@ def phase_d_svd_analysis(
                     entry["cos_U1_vsteer"] = None
             else:
                 entry["cos_U1_vsteer"] = None
-            if base_cosines_json is not None and base_cosines_json.exists():
+            if base_cosines_json is not None:
+                # Round-2 reviewer fail-loud (defense-in-depth): the
+                # top-of-main() check already refuses --base-cosines-json
+                # pointing at a missing file. If the file vanished
+                # between then and now (concurrent cleanup, tmpfs eviction,
+                # etc.), surface that loud instead of silent-skipping
+                # the Mechanism-A regression.
+                if not base_cosines_json.exists():
+                    raise FileNotFoundError(
+                        f"base-cosines JSON {base_cosines_json} disappeared "
+                        f"between dispatcher startup and Phase D execution. "
+                        f"Refusing to silently skip the Spearman regression."
+                    )
                 with base_cosines_json.open() as f:
                     base_cos = json.load(f)
                 # Round-1 reviewer M3 fix: refuse to silently default missing
@@ -709,10 +721,15 @@ def _write_headline_metrics(
             "mean_cos_to_U1": v["mean_cos_to_U1"],
             "median_cos_to_U1": v["median_cos_to_U1"],
             "cos_U1_vsteer": v.get("cos_U1_vsteer"),
-            "shift_norm_vs_cosine_spearman_rho": (
-                snvc.get("spearman_rho_norm_cosine") if snvc else None
-            ),
-            "shift_norm_vs_cosine_n": (snvc.get("n") if snvc else None),
+            # Round-2 reviewer M-Spearman-key fix: the producer emits
+            # `spearman_rho` + `n_points` (see
+            # `analysis/svd_direction_constancy.shift_norm_vs_cosine_regression`
+            # return dict). v1 read the wrong keys
+            # (`spearman_rho_norm_cosine` / `n`) and silently dropped the
+            # 4th headline cross-arm metric to None even when Phase D's
+            # regression actually ran.
+            "shift_norm_vs_cosine_spearman_rho": (snvc.get("spearman_rho") if snvc else None),
+            "shift_norm_vs_cosine_n": (snvc.get("n_points") if snvc else None),
             "persona_order": v["persona_order"],
             "cos_to_U1": v["cos_to_U1"],
         }
@@ -1072,6 +1089,28 @@ def main() -> int:  # noqa: C901 - end-to-end dispatcher, refactor out-of-scope 
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir = output_dir / "logs"
 
+    # Round-2 reviewer fail-loud: when --base-cosines-json was EXPLICITLY
+    # passed, the file MUST exist. v1 phase_d_svd_analysis treated a
+    # missing-but-provided path identically to "argument absent"
+    # (silent-skip fall-through), violating CLAUDE.md "Fail fast" and
+    # producing a manifest with null Spearman metrics that read as "ran
+    # successfully without Mechanism-A test." The argument is opt-in; if
+    # the operator passed the flag, the artifact must be on disk.
+    if args.base_cosines_json is not None:
+        bcj_path = Path(args.base_cosines_json)
+        if not bcj_path.is_absolute():
+            bcj_path = repo_root / bcj_path
+        if not bcj_path.exists():
+            raise FileNotFoundError(
+                f"--base-cosines-json={args.base_cosines_json!r} was provided "
+                f"but the file does not exist at {bcj_path}. Either drop the "
+                f"flag (Phase D's shift_norm_vs_cosine regression will be "
+                f"skipped) OR materialize the file first via "
+                f"`scripts/issue_521_build_base_cosines.py` (round-2 reviewer "
+                f"`missing-base-cosines-hook` fix; silent-skip fall-through "
+                f"was the round-1 BLOCKER)."
+            )
+
     arms, seeds, max_train_override, smoke_fake, skip_cb, no_hf = _resolve_mode_overrides(args)
     cells = _build_cells(arms, seeds, n_gpus=args.n_gpus)
     logger.info(
@@ -1280,6 +1319,27 @@ def main() -> int:  # noqa: C901 - end-to-end dispatcher, refactor out-of-scope 
                         f"v2 M3 assert: cos_U1_vsteer is None for {key} despite "
                         f"Phase E having been scheduled. Expected Phase E to "
                         f"have written {expected_v}; check Phase E logs."
+                    )
+                # Round-2 reviewer Spearman-fail-loud: if --base-cosines-json
+                # was provided, the same-variant Phase D regression MUST
+                # have populated `shift_norm_vs_cosine_spearman_rho`. A
+                # null here means either the per-cell `shift_norm_vs_cosine`
+                # block did NOT run (silent skip — but Phase D should have
+                # raised KeyError on missing personas instead) OR the
+                # dispatcher is reading the wrong key (the v1 bug we
+                # closed above). Either way, fail loud.
+                if args.base_cosines_json is not None and (
+                    entry.get("shift_norm_vs_cosine_spearman_rho") is None
+                ):
+                    raise RuntimeError(
+                        f"Round-2 Spearman-fail-loud: "
+                        f"shift_norm_vs_cosine_spearman_rho is None for {key} "
+                        f"despite --base-cosines-json={args.base_cosines_json!r} "
+                        f"having been provided. Either Phase D's per-cell "
+                        f"`shift_norm_vs_cosine` block did NOT run, OR the "
+                        f"headline-aggregation is reading the wrong producer "
+                        f"key (must be `spearman_rho` / `n_points`; see "
+                        f"`shift_norm_vs_cosine_regression`)."
                     )
 
     # Aggregate manifest.
