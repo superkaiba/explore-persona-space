@@ -71,12 +71,14 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 # Re-use the byte-identical building blocks from #502's generator. The base
 # `_gen_prompt` is NOT imported; round-4 widens the generation prompt with an
 # anti-clustering instruction via the local `_gen_prompt_diverse` defined below.
-from issue502_generate_probes import (  # noqa: E402
+# `_call_claude_once` is imported under an alias so round-5 can wrap it with an
+# outer retry-on-transient-overload layer; the inherited helper itself is
+# preserved byte-identically (its outputs feed #502's reproducible artifacts).
+from issue502_generate_probes import (  # noqa: E402  # noqa: E402
     CLASS_D_REGISTERS,
     CLAUDE_MODEL,
     GEN_SYSTEM,
     _build_rewrites_requests,
-    _call_claude_once,
     _collect_rewrites_results,
     _normalize,
     _parse_questions,
@@ -85,6 +87,66 @@ from issue502_generate_probes import (  # noqa: E402
     _valid_question,
     _wait_for_rewrites_batch,
 )
+from issue502_generate_probes import _call_claude_once as _call_claude_once_base  # noqa: E402
+
+
+def _call_claude_once(*args, **kwargs):
+    """Wrap #502's `_call_claude_once` with retry on transient Anthropic 5xx.
+
+    The inherited helper instantiates a fresh `anthropic.Anthropic()` client per
+    call with the SDK default `max_retries=2`; round-3's pod launch died ~4 min
+    into Phase A on `OverloadedError 529 — Overloaded` after the SDK's two
+    internal retries were exhausted. The transient-overload window can outlast
+    the SDK's default backoff, so wrap with an outer retry that catches the
+    documented transient classes (overloaded, rate-limit, connection, timeout)
+    and sleeps with exponential backoff + jitter. Total retry window ≈ 0+30+60+
+    120+240+480+960 s ≈ 32 min, covering typical Anthropic overload windows.
+
+    NOT retried: Authentication, BadRequest, PermissionDenied, NotFound — those
+    are real bugs / config errors and should fail loud.
+    """
+    import random
+    import time
+
+    import anthropic
+
+    transient_excs: tuple[type[Exception], ...] = (
+        anthropic.APIConnectionError,
+        anthropic.APITimeoutError,
+        anthropic.RateLimitError,
+        anthropic.InternalServerError,
+    )
+    # OverloadedError is the 529 case; not always exposed as a top-level
+    # attribute on older SDKs, so look it up defensively.
+    overloaded_exc = getattr(anthropic, "OverloadedError", None)
+    if overloaded_exc is not None:
+        transient_excs = (*transient_excs, overloaded_exc)
+
+    max_outer_retries = 6  # 7 total attempts including the initial call
+    delays = [30, 60, 120, 240, 480, 960]  # seconds; with jitter ±20%
+    for attempt in range(max_outer_retries + 1):
+        try:
+            return _call_claude_once_base(*args, **kwargs)
+        except transient_excs as exc:
+            if attempt >= max_outer_retries:
+                logger.error(
+                    "Anthropic transient error after %d outer retries; giving up: %s",
+                    attempt,
+                    exc,
+                )
+                raise
+            sleep_for = delays[attempt]
+            sleep_for *= 1.0 + random.uniform(-0.2, 0.2)
+            logger.warning(
+                "Anthropic transient error (%s); outer retry %d/%d after %.1fs sleep: %s",
+                type(exc).__name__,
+                attempt + 1,
+                max_outer_retries,
+                sleep_for,
+                exc,
+            )
+            time.sleep(sleep_for)
+
 
 from explore_persona_space.experiments.i460_data import (  # noqa: E402
     load_q_test_extended_50,
