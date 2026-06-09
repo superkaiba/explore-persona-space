@@ -1778,10 +1778,11 @@
       "title": "Why-this-experiment gate hardening: fence coverage + m1/m3/m4/m5 + style (follow-up to #371)"
     },
     "375": {
+      "goal": "Test whether the trained `[ZLT]` marker fires when the persona is injected only through few-shot user/assistant turn pairs in the context, with the eval-time system prompt held at the standard helpful-assistant default.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/375",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/375",
+      "status": "completed",
       "title": "Persona-voiced few-shot context elevates the [ZLT] marker rate on all 3 trained personas, with most of the lift from a single demonstration (MODERATE confidence)"
     },
     "376": {
