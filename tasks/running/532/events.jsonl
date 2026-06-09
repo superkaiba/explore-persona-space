@@ -35,3 +35,4 @@
 {"ts": "2026-06-09T12:11:52Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Heartbeat 2: pod.py provision still in wait-for-capacity loop, no H100 available; orchestrator alive."}
 {"ts": "2026-06-09T12:51:53Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Heartbeat 3: pod.py provision still in wait-for-capacity loop, no H100 available; orchestrator alive."}
 {"ts": "2026-06-09T13:31:55Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Heartbeat 4: pod.py provision still in wait-for-capacity loop, no H100 available; orchestrator alive."}
+{"ts": "2026-06-09T14:11:57Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Heartbeat 5: pod.py provision still in wait-for-capacity loop, no H100 available; orchestrator alive."}
