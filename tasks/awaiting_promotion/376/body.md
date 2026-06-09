@@ -13,6 +13,8 @@ goal: Test whether a behavior gated on (Assistant persona) AND (held-out trigger
 relates_to:
 - app1
 - e2
+classification: useful
+promoted_at: '2026-06-09T21:34:21Z'
 ---
 # A persona-and-trigger conditional marker did not survive a single epoch of length-matched SFT, regardless of whether that SFT induced emergent misalignment (HIGH confidence)
 
