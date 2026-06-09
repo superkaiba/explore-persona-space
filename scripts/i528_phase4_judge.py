@@ -72,6 +72,17 @@ def _git() -> str:
         return "unknown"
 
 
+class JudgeRefusalError(RuntimeError):
+    """Raised when the judge model returns empty content across all retries.
+
+    Distinct from a parse-schema failure: the model is refusing to score
+    the row (typically a safety-filtered prompt/response pair). The caller
+    records this row with ``judge_failed: true`` so the downstream
+    analyzer reports it as a coverage caveat and excludes it from the
+    paired-delta computation, rather than crashing the whole judge phase.
+    """
+
+
 def _judge_one(client, model: str, q: str, response: str, rubric_template: str, *, what: str):
     """Single judge call. Retries on transient errors AND on empty/no-JSON
     responses (Anthropic occasionally returns an empty completion under load
@@ -119,40 +130,75 @@ def _judge_one(client, model: str, q: str, response: str, rubric_template: str, 
                 sleep_for,
             )
             time.sleep(sleep_for)
-    raise SystemExit(
+    # Persistent empty/no-JSON responses across all retries indicate a
+    # judge-side soft refusal (biosecurity / safety content typically; see
+    # row q=23 of base__calibrated_uncertainty__role__default_assistant on a
+    # 'synthetic biology and pandemic risks' question). This is signal, not
+    # noise — record an explicit JudgeRefusalError sentinel so the row
+    # surfaces in the analyzer's coverage caveats instead of silently
+    # halting the entire 6400-row sweep. Caller catches this and writes
+    # judge_failed: true into the row's record.
+    raise JudgeRefusalError(
         f"{what}: judge response did not contain JSON after "
         f"{no_json_retries + 1} attempts; last text={text!r}"
     )
 
 
-def _load_resume(path: Path) -> tuple[list[dict], set[tuple[str, int]]]:
+def _load_resume(
+    path: Path,
+) -> tuple[list[dict], list[dict], set[tuple[str, int]]]:
     """Load partial judge_scores.json for --resume.
 
-    Returns (scored_rows, already_judged_keys). On missing or malformed
-    file returns ([], set()) — silently empty so a fresh run is the
-    natural fallback, not a hard failure.
+    Returns (scored_rows, failed_rows, already_seen_keys). On missing or
+    malformed file returns ([], [], set()) — silently empty so a fresh
+    run is the natural fallback, not a hard failure. ``already_seen_keys``
+    is the union of (cell_id, q_idx) across both scored and failed rows,
+    so a row that previously hit the judge soft-refusal is not re-asked
+    on every resume.
     """
     if not path.exists():
-        return [], set()
+        return [], [], set()
     prior = json.loads(path.read_text())
     if prior.get("kind") != "judge_scores":
-        return [], set()
+        return [], [], set()
     rows = list(prior.get("rows", []))
-    keys = {(r["cell_id"], r["q_idx"]) for r in rows}
-    return rows, keys
+    failed = list(prior.get("judge_failed_rows", []))
+    keys = {(r["cell_id"], r["q_idx"]) for r in rows + failed}
+    return rows, failed, keys
 
 
 def _judge_three_avg(client, model: str, q: str, response: str, rubric: str, *, what: str):
-    """3 judge calls averaged, per #517 improvement. Returns dict with
-    ``score_mean``, ``scores`` (list of 3 ints), ``reasons`` (list of strings).
+    """3 judge calls averaged, per #517 improvement.
+
+    On the happy path returns ``{"score_mean": float, "scores": [int, int, int],
+    "reasons": [str, str, str], "judge_failed": False}``. On a judge soft-refusal
+    (``JudgeRefusalError`` raised by any of the 3 calls after their internal
+    retries) returns a marker dict with ``score_mean=None``, ``judge_failed=True``,
+    and the refusal reason — letting the caller record + skip the row instead of
+    halting the entire phase. Propagates other exceptions unchanged.
     """
     scores: list[int] = []
     reasons: list[str] = []
     for k in range(3):
-        out = _judge_one(client, model, q, response, rubric, what=f"{what} call={k}")
+        try:
+            out = _judge_one(client, model, q, response, rubric, what=f"{what} call={k}")
+        except JudgeRefusalError as e:
+            logger.warning("%s call=%d: judge soft-refusal — marking judge_failed", what, k)
+            return {
+                "score_mean": None,
+                "scores": scores,
+                "reasons": reasons,
+                "judge_failed": True,
+                "judge_failure_reason": str(e),
+            }
         scores.append(out["score"])
         reasons.append(out["reason"])
-    return {"score_mean": sum(scores) / 3.0, "scores": scores, "reasons": reasons}
+    return {
+        "score_mean": sum(scores) / 3.0,
+        "scores": scores,
+        "reasons": reasons,
+        "judge_failed": False,
+    }
 
 
 def _flatten(files: list[Path], kind: str) -> list[dict]:
@@ -296,15 +342,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
 
     # Sync backend with 3-call averaging.
     if args.resume:
-        scored, already_judged = _load_resume(JUDGE_PATH)
-        if scored:
+        scored, failed_rows, already_judged = _load_resume(JUDGE_PATH)
+        if scored or failed_rows:
             logger.info(
-                "Resume: loaded %d already-judged rows from %s",
+                "Resume: loaded %d scored + %d judge-failed rows from %s",
                 len(scored),
+                len(failed_rows),
                 JUDGE_PATH,
             )
     else:
-        scored, already_judged = [], set()
+        scored, failed_rows, already_judged = [], [], set()
+    # Judge soft-refusal rows are recorded explicitly (not silently dropped)
+    # so the downstream analyzer can flag them as a coverage caveat.
     for i, row in enumerate(flat):
         if (row["cell_id"], row["q_idx"]) in already_judged:
             continue
@@ -317,9 +366,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
             rubric,
             what=f"primary cell={row['cell_id']} q={row['q_idx']}",
         )
-        scored.append({**row, **agg, "score": agg["score_mean"]})
+        if agg.get("judge_failed"):
+            failed_rows.append({**row, **agg})
+        else:
+            scored.append({**row, **agg, "score": agg["score_mean"]})
         if i % 25 == 0:
-            logger.info("judged %d/%d", i, len(flat))
+            logger.info("judged %d/%d (failed: %d)", i, len(flat), len(failed_rows))
             # Per-phase checkpoint (CLAUDE.md code-style rule).
             JUDGE_PATH.write_text(
                 json.dumps(
@@ -330,7 +382,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
                         "git_commit": _git(),
                         "ts": _dt.datetime.utcnow().isoformat() + "Z",
                         "n_scored": len(scored),
+                        "n_judge_failed": len(failed_rows),
                         "rows": scored,
+                        "judge_failed_rows": failed_rows,
                         "in_progress": True,
                     },
                     indent=2,
@@ -347,13 +401,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
                 "git_commit": _git(),
                 "ts": _dt.datetime.utcnow().isoformat() + "Z",
                 "n_scored": len(scored),
+                "n_judge_failed": len(failed_rows),
                 "rows": scored,
+                "judge_failed_rows": failed_rows,
             },
             indent=2,
             ensure_ascii=False,
         )
     )
-    logger.info("Wrote %s (n=%d)", JUDGE_PATH, len(scored))
+    logger.info(
+        "Wrote %s (n_scored=%d, n_judge_failed=%d)",
+        JUDGE_PATH,
+        len(scored),
+        len(failed_rows),
+    )
 
     # Plan §6.5 primary deliverable: base-only headroom view.
     base_rows = [r for r in scored if r.get("kind") == "base"]
