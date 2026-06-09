@@ -54,3 +54,4 @@
 {"ts": "2026-06-09T15:50:24Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> train", "phase": "train", "pod": "pod-527"}
 {"ts": "2026-06-09T16:00:07Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: train -> done", "phase": "done", "pod": "pod-527"}
 {"ts": "2026-06-09T16:05:24Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "phase-transition: Phase A smoke verdict=PASS (3/3 cells, florist__medical_doctor pair @ lr=5e-6); launched continuation pipeline (Phase B sweep 18 cells → eval emission → shift_extract → analysis → sentinel). pod=pod-527 pid=4856 log_abs=/workspace/logs/issue-527-continue.log pairs=[florist__medical_doctor (cos=0.001), librarian__police_officer (cos=-0.004)]"}
+{"ts": "2026-06-09T16:14:37Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: done -> train", "phase": "train", "pod": "pod-527"}
