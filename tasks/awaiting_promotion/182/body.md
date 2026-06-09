@@ -9,6 +9,8 @@ sagan_id: be44fbdd-a9fe-46f7-b181-b955439bb2fd
 sagan_number: 182
 priority: normal
 legacy_why_unset: true
+classification: useful
+promoted_at: '2026-06-09T21:33:02Z'
 ---
 <!-- legacy-sagan-card -->
 <style>

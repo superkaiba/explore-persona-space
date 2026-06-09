@@ -4,3 +4,4 @@
 {"ts": "2026-05-14T00:36:15.883Z", "kind": "epm:clean-result", "version": 1, "by": "agent", "note": "Round 1 Claude critic: pass. Honest wrong-sign framing, truncation x tag-injection confound quantified (-10.5pp -> -2.4pp on closure-stratified slice), 6/6 verified artifacts, structure matches clean-result-guidelines.md.", "round": 1, "verdict": "pass", "reviewer": "claude", "review_pair": "clean_result"}
 {"ts": "2026-05-14T00:24:12.062Z", "kind": "state_changed", "version": 1, "by": "user", "from": "reviewing", "to": "clean_result_drafting"}
 {"ts": "2026-05-14T00:02:48.890Z", "kind": "state_changed", "version": 1, "by": "user", "note": "Moved on Pipeline board to review.", "from": "completed", "to": "reviewing"}
+{"ts": "2026-06-09T21:33:02Z", "kind": "epm:promoted", "version": 1, "by": "user", "classification": "useful"}
