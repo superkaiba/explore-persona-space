@@ -270,6 +270,7 @@ def build_rows(
     seeds: Sequence[int],
     base_prior_by_probe: dict[str, float] | None = None,
     positioned_arm_slugs: Sequence[str] = POSITIONED_ARM_SLUGS,
+    dv_key: str = "delta_g",
 ) -> dict[str, Any]:
     """Build the (probe × arm × seed) pooled-regression input.
 
@@ -290,6 +291,17 @@ def build_rows(
             ``POSITIONED_ARM_SLUGS_V2`` so Phase 2 reads the actual
             ``c504v2_<arm>_seed<S>/trajectory.json`` artifacts produced by the
             v2 Phase 1 cell runner.
+        dv_key: which per-(probe, q) leaf field of the trajectory's
+            ``held_out`` dict to aggregate (mean over Q_eval) as the DV.
+            Default ``"delta_g"`` keeps every existing caller byte-identical.
+            The #530 logit_reval follow-up threads ``"delta_z_marker"`` /
+            ``"delta_margin"`` (raw-logit-space DVs emitted by the
+            logit-instrumented eval rig). NOTE: whatever the dv_key, the
+            DV lands in ``rows[i]["delta_g"]`` — that is the DV COLUMN NAME
+            ``fit_pooled_partial_spearman`` reads, not a claim about the
+            quantity. The per-cell in-band gate stays on the LOG-PROB
+            source ΔG band regardless of dv_key (the band is defined in
+            nats of log-prob; see .claude/rules/marker-training-recipe.md).
 
     Returns:
         {
@@ -299,6 +311,7 @@ def build_rows(
                                     in_band, in_emit_band, training_step}],
           "excluded_cells": [{cell, seed, reason}],
           "chosen_frac": float,
+          "dv_key": str,
         }
     """
     rows: list[dict] = []
@@ -358,10 +371,11 @@ def build_rows(
                 if probe not in per_probe:
                     # Phase 0.5 panel didn't include this probe — drop with log.
                     continue
-                # Aggregate delta_g over Q_eval (mean — plan §6 reads ΔG at the
-                # post-R slot per probe; the regression input is one row per
-                # (probe, arm, seed), so average across questions).
-                dgs = [d.get("delta_g") for d in per_q.values() if d.get("delta_g") is not None]
+                # Aggregate the DV over Q_eval (mean — plan §6 reads the DV at
+                # the post-R slot per probe; the regression input is one row per
+                # (probe, arm, seed), so average across questions). dv_key
+                # selects the leaf field; default "delta_g" is the published DV.
+                dgs = [d.get(dv_key) for d in per_q.values() if d.get(dv_key) is not None]
                 if not dgs:
                     continue
                 delta_g = float(np.mean(dgs))
@@ -397,6 +411,7 @@ def build_rows(
         "per_cell_diagnostics": per_cell_diag,
         "excluded_cells": excluded,
         "chosen_frac": chosen_frac,
+        "dv_key": dv_key,
     }
 
 
