@@ -100,14 +100,21 @@ A free reanalysis (no new training; re-ran analysis over the existing eval JSONs
 
 At the matched 8-nat slice, full-FT reads 3.543 nat on bystanders, LoRA reads 3.542 nat. The bootstrap CI [−0.13, +0.12] excludes any practically relevant method difference and includes zero. The planned scientific question — does method choice matter for bystander leakage at matched implant strength? — has a clean negative answer here.
 
-**The 4-5 nat "full-FT leaks less" gap from the first pass lives only at the saturated ~18-nat anchor.** Compare raw cell means at the two source rates where matched pairs exist on both arms:
+**The LoRA−FT gap is a function of source rate, not a fixed method difference.** Running the same crossed cluster bootstrap (1000 reps, over personas and questions) across a grid of source-rate targets shows the gap crosses zero only at the matched rate and grows large only in the saturated regime:
 
-| source ΔG (nat) | LoRA cell | LoRA bystander mean (nat) | full-FT cell | full-FT bystander mean (nat) | gap (FT − LoRA, nat) |
-|---|---|---|---|---|---|
-| matched 8.0 (interpolation on both arms) | from `lora_b1` ↔ `lora_b2` | 3.54 | from `ft_lowlr_b50` ↔ `ft_b1` | 3.54 | +0.00 (95% CI [−0.13, +0.12], 1000-rep bootstrap) |
-| 17.9 (single matched pair, no bootstrap CI) | `lora_b3` (17.90 nat) | 15.67 | `ft_dense_b30` (17.89 nat) | 11.16 | −4.51 (raw cell-mean difference, no CI) |
+| source ΔG (nat) | gap (FT − LoRA, nat) | 95% CI | significant? |
+|---|---|---|---|
+| 5 | +0.78 | [+0.20, +1.33] | yes (FT slightly higher) |
+| 6 | +0.52 | [+0.14, +0.88] | yes |
+| 7 | +0.26 | [+0.06, +0.45] | yes |
+| **8 (matched)** | **+0.00** | **[−0.13, +0.12]** | **no — indistinguishable** |
+| 9 | +0.21 | [+0.06, +0.35] | yes |
+| 11 | +0.87 | [+0.65, +1.08] | yes |
+| 14 | +1.54 | [+1.18, +1.91] | yes |
+| 17 | −3.09 | [−3.60, −2.61] | yes (FT lower) |
+| 19 | −4.51 | [−5.18, −3.85] | yes (FT much lower) |
 
-The cluster bootstrap was computed only at the matched 8-nat target — the planned scientific slice. The 18-nat row is a raw cell-pair difference without a bootstrap CI; it's directionally large enough that the sign is robust, but I am not claiming a formal interval on it.
+Below saturation (5-14 nat) the gap is small (≤ 1.6 nat) with full-FT reading marginally *higher*; at the matched 8-nat rate it is indistinguishable from zero; only in the saturated 17-19 nat regime does full-FT read 3-4.5 nat *lower*. The single-direction "full-FT leaks less" headline from the first pass was reading the saturated tail of this curve. (Grid bootstrap saved at [`_matched_rate_sweep_514.json`](https://github.com/superkaiba/explore-persona-space/blob/b3bb06569f60af4fe79cc2d08bf07330da5f522b/eval_results/issue_514/_matched_rate_sweep_514.json); each arm is the within-arm linear interpolation across its clean anchor cells, so the read away from 8 nat is interpolation between sparse anchors, not a per-rate trained cell.)
 
 At 17.9 nat the gap is real (FT lower by 4.5 nat), but the source-firing geometry at that anchor is asymmetric in a way that explains the gap: LoRA hits the marker as argmax on **20/20** source probes (ceiling-pinned, mean trained log-prob ≈ −0.058 nat — effectively probability 1 on the marker), while full-FT only on **4/20** (3 nats of source headroom, mean trained log-prob ≈ −3.086 nat). This is the [#448](https://eps.superkaiba.com/tasks/448) saturation pattern replaying: when one method has saturated the source and the other hasn't, the implanting pressure from continuing training has to go somewhere, and the FT cell — with source headroom — can absorb more of that pressure on the source itself instead of bleeding into bystanders. At the matched 8-nat point, neither arm is saturated and the gap collapses to zero. That is the strongest piece of evidence the 4-5 nat read at the saturated anchor was ceiling-driven, not method-driven.
 
@@ -283,6 +290,7 @@ Open caveats: single seed (42), and three inherited recipe confounds (4× effect
 **Artifacts:**
 
 - Refreshed matched-rate JSON (post-free-reanalysis): [eval_results/issue_514/_matched_rate_514.json](https://github.com/superkaiba/explore-persona-space/blob/5085b9a802511ddf8ad8989c6e4fb68ab512490d/eval_results/issue_514/_matched_rate_514.json) at commit `5085b9a802511ddf8ad8989c6e4fb68ab512490d` on `main`.
+- Per-rate gap sweep (the source-rate grid bootstrap behind the gap-vs-source-rate table): [eval_results/issue_514/_matched_rate_sweep_514.json](https://github.com/superkaiba/explore-persona-space/blob/b3bb06569f60af4fe79cc2d08bf07330da5f522b/eval_results/issue_514/_matched_rate_sweep_514.json) at commit `b3bb06569f60af4fe79cc2d08bf07330da5f522b` on `main` (1000 reps, seed 42, targets 5-19 nat).
 - Per-cell bootstrap diagnostics: [eval_results/issue_514/_bootstrap_per_cell.json](https://github.com/superkaiba/explore-persona-space/blob/5085b9a802511ddf8ad8989c6e4fb68ab512490d/eval_results/issue_514/_bootstrap_per_cell.json) and bracketing report: [eval_results/issue_514/_bracketing_report.json](https://github.com/superkaiba/explore-persona-space/blob/5085b9a802511ddf8ad8989c6e4fb68ab512490d/eval_results/issue_514/_bracketing_report.json).
 - Eval JSONs (6 cells + analysis): [eval_results/issue_514/](https://github.com/superkaiba/explore-persona-space/tree/5085b9a802511ddf8ad8989c6e4fb68ab512490d/eval_results/issue_514) (pinned to commit `5085b9a802511ddf8ad8989c6e4fb68ab512490d` on `main`).
 - Raw completions: inlined inside each eval JSON under `trained_R_held_out[persona][question]`, `trained_R_source[villain][question]`, `trained_R_qwen_default[qwen_default][question]`. No separate raw-completions file was uploaded for this run — see the dynamics-sidecar gap noted in the first finding for the related "data file not on pod" issue.
