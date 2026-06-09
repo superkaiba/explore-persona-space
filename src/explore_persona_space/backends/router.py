@@ -214,6 +214,40 @@ class GcpAttemptCapExceededError(RouteError):
         self.cap = cap
 
 
+class ManualAttentionRequiredError(RouteError):
+    """The cancel state machine timed out without confirming the job was dead.
+
+    The router issued ``scancel``/``teardown`` but the job remained live in
+    the cluster queue after :data:`CANCEL_LIVE_GRACE_SECONDS`. We CANNOT
+    silently escalate to GCP: the free-lane job MAY still be alive, and a
+    GCP escalation would launch a second copy under the same attempt-id
+    namespace (artifact collision + double spend). The orchestrator surfaces
+    this as an infra block with the orphaned job id so the operator can
+    confirm + manually ``scancel``. The lease is left intact for the
+    orchestrator to consult and the cluster job ``--time`` budget will
+    eventually reap it on its own.
+    """
+
+    def __init__(
+        self,
+        *,
+        kind: BackendKind,
+        cluster: str | None,
+        orphaned_job_id: str,
+        attempts: list[dict[str, Any]] | None = None,
+    ) -> None:
+        super().__init__(
+            f"cancel grace expired without confirming termination of "
+            f"{kind}/{cluster or 'no-cluster'} job {orphaned_job_id!r}; "
+            "refusing to escalate (would risk duplicate run). Operator: "
+            f"verify job state, manually scancel if alive."
+        )
+        self.kind = kind
+        self.cluster = cluster
+        self.orphaned_job_id = orphaned_job_id
+        self.attempts = list(attempts or [])
+
+
 # ---------------------------------------------------------------------------
 # RouteResult — what the router returns on success
 # ---------------------------------------------------------------------------
@@ -877,13 +911,12 @@ def route(
     started_at = now_fn()
     attempts: list[RouteAttempt] = []
 
-    # The legacy :class:`RunSpec` defaults ``backend="runpod"`` for
-    # back-compat with the pre-router selector tests; the router's "no
-    # explicit override" intent is the explicit sentinel ``"auto"``.
-    # A caller that wants auto-routing builds the spec with
-    # ``backend="auto"`` (slice 6 wires this for tasks that have no
-    # ``backend:`` frontmatter). Any other value is treated as an
-    # explicit override.
+    # :class:`RunSpec.backend` defaults to ``"auto"`` so a direct
+    # ``RunSpec(issue, intent)`` routes through the cost-safe auto chain
+    # (free lanes → GCP) — a real-money RunPod launch ALWAYS requires
+    # an explicit ``backend="runpod"``. Any other recognized value is
+    # an explicit override; an unknown value would have been rejected at
+    # :class:`BackendKind` parse time.
 
     # ------------------------------ explicit override --------------------
     if spec.backend == "runpod":
@@ -986,16 +1019,19 @@ def _override_runpod(
     6 (the RunPod backend doesn't yet expose a "find live pod by name"
     handle-reconstructor; today the existing pod_lifecycle.py path is
     idempotent itself).
+
+    Lock discipline: holds the per-issue flock across the launch + lease
+    write so a concurrent invocation cannot double-submit. RunPod
+    provisioning is seconds-to-minutes; the lock is per-ISSUE (not
+    cross-issue) so contention is bounded to the racing invocations we
+    are deliberately serializing.
     """
-    handle = backend.launch(spec)
-    _persist_lease_after_submit(
-        spec=spec,
-        store=store,
-        backend_kind="runpod",
-        cluster=None,
-        handle=handle,
-        now_fn=now_fn,
-    )
+    # Hold the per-issue flock across launch + persist so two concurrent
+    # route() calls cannot both decide "no live job, submit fresh" and
+    # provision twice.
+    with store.transaction(spec.issue) as (lease, write):
+        handle = backend.launch(spec)
+        write(_lease_after_submit(lease, spec, "runpod", None, handle))
     attempt = RouteAttempt(
         kind="runpod",
         cluster=None,
@@ -1042,178 +1078,218 @@ def _override_free_or_gcp(
     Reconnect first (idempotent re-entry), then launch + park. A free
     lane that times out / hard-fails RAISES (the user explicitly asked
     for that lane; we don't silently re-route).
+
+    Lock discipline: the per-issue flock is held across reconnect-check
+    → launch → lease-write so a concurrent invocation (manual /issue vs
+    the issue-tick cron) cannot both decide "no live job, submit fresh"
+    and double-submit. The lock spans the park watchdog too — wait IS
+    contention surface, but it is per-ISSUE (not cross-issue), so the
+    only callers serialized are the two we are deliberately serializing.
     """
-    handle = _try_reconnect(
-        backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn, store=store
-    )
-    if handle is not None:
-        attempts.append(
-            RouteAttempt(
-                kind=kind,
+    with store.transaction(spec.issue) as (lease, write):
+        # Reconnect — inside the lock so a concurrent submit can't slip
+        # between our "no live job" check and our launch.
+        handle = _try_reconnect(backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn)
+        if handle is not None:
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=None,
+                    est_start_seconds_clamped=None,
+                    outcome="reconnected",
+                    detail="found existing live job/instance",
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            result = RouteResult(
+                backend=backend,
+                handle=handle,
+                requested_kind=kind,
+                chosen_kind=kind,
+                reason=ROUTE_REASON_RECONNECT,
                 cluster=spec.cluster,
-                est_start_seconds_raw=None,
-                est_start_seconds_clamped=None,
-                outcome="reconnected",
-                detail="found existing live job/instance",
+                attempts=attempts,
                 elapsed_seconds=now_fn() - started_at,
             )
-        )
-        result = RouteResult(
-            backend=backend,
-            handle=handle,
-            requested_kind=kind,
-            chosen_kind=kind,
-            reason=ROUTE_REASON_RECONNECT,
-            cluster=spec.cluster,
-            attempts=attempts,
-            elapsed_seconds=now_fn() - started_at,
-        )
-        _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
-        return result
+            _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
+            return result
 
-    # Fresh submit + park.
-    try:
-        handle = backend.launch(_thread_attempt_id(spec, store))
-    except GcpProvisioningError as exc:
-        # Explicit GCP override — surface the provisioning failure (the
-        # user asked for GCP, not a fallback chain).
-        attempts.append(
-            RouteAttempt(
-                kind=kind,
-                cluster=spec.cluster,
-                est_start_seconds_raw=None,
-                est_start_seconds_clamped=None,
-                outcome="provisioning_failure",
-                detail=exc.reason,
-                elapsed_seconds=now_fn() - started_at,
+        # Fresh submit (still under the flock).
+        threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
+        try:
+            handle = backend.launch(threaded_spec)
+        except GcpProvisioningError as exc:
+            # Explicit GCP override — surface the provisioning failure (the
+            # user asked for GCP, not a fallback chain). Post a terminal
+            # breadcrumb so the dashboard sees the failure before we raise.
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=None,
+                    est_start_seconds_clamped=None,
+                    outcome="provisioning_failure",
+                    detail=exc.reason,
+                    elapsed_seconds=now_fn() - started_at,
+                )
             )
-        )
-        raise
-    _persist_lease_after_submit(
-        spec=spec,
-        store=store,
-        backend_kind=kind,
-        cluster=spec.cluster,
-        handle=handle,
-        now_fn=now_fn,
-    )
+            _post_terminal_failure_marker(
+                spec=spec,
+                marker_poster=marker_poster,
+                reason=ROUTE_REASON_NO_COMPUTE,
+                chosen_kind=kind,
+                attempts=attempts,
+            )
+            raise
+        # Persist the launched id IMMEDIATELY (still inside the flock —
+        # crash-window-free). For "kind == gcp" override we leave the
+        # cluster field at None, matching the existing schema.
+        write(_lease_after_submit(lease, spec, kind, spec.cluster, handle))
 
-    # GCP doesn't need the park (provision IS the start); just return.
-    if kind == "gcp":
-        attempts.append(
-            RouteAttempt(
-                kind=kind,
+        # GCP doesn't need the park (provision IS the start); just return.
+        if kind == "gcp":
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=None,
+                    est_start_seconds_raw=0.0,
+                    est_start_seconds_clamped=0.0,
+                    outcome="launched",
+                    detail="gcp provision returned RUNNING-equivalent",
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            result = RouteResult(
+                backend=backend,
+                handle=handle,
+                requested_kind=kind,
+                chosen_kind=kind,
+                reason=ROUTE_REASON_OVERRIDE,
                 cluster=None,
-                est_start_seconds_raw=0.0,
-                est_start_seconds_clamped=0.0,
-                outcome="launched",
-                detail="gcp provision returned RUNNING-equivalent",
+                attempts=attempts,
                 elapsed_seconds=now_fn() - started_at,
             )
-        )
-        result = RouteResult(
+            _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
+            return result
+
+        # SLURM-style free lane: run the park watchdog (under the flock).
+        started, reason = park_until_running_or_cap(
             backend=backend,
             handle=handle,
-            requested_kind=kind,
-            chosen_kind=kind,
-            reason=ROUTE_REASON_OVERRIDE,
-            cluster=None,
-            attempts=attempts,
-            elapsed_seconds=now_fn() - started_at,
+            is_started=is_started,
+            cap_seconds=cfg.free_wait_seconds,
+            poll_interval=cfg.poll_interval,
+            now_fn=now_fn,
+            sleep_fn=sleep_fn,
         )
-        _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
-        return result
+        if started:
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=None,
+                    est_start_seconds_clamped=None,
+                    outcome="launched",
+                    detail="park resolved to RUNNING",
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            result = RouteResult(
+                backend=backend,
+                handle=handle,
+                requested_kind=kind,
+                chosen_kind=kind,
+                reason=ROUTE_REASON_OVERRIDE,
+                cluster=spec.cluster,
+                attempts=attempts,
+                elapsed_seconds=now_fn() - started_at,
+            )
+            _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
+            return result
 
-    # SLURM-style free lane: run the park watchdog.
-    started, reason = park_until_running_or_cap(
-        backend=backend,
-        handle=handle,
-        is_started=is_started,
-        cap_seconds=cfg.free_wait_seconds,
-        poll_interval=cfg.poll_interval,
-        now_fn=now_fn,
-        sleep_fn=sleep_fn,
-    )
-    if started:
+        # Park failed. The user explicitly asked for this lane → cancel
+        # state machine, then either KEEP (raced) or surface terminal.
+        cancel_outcome = cancel_and_wait(
+            backend=backend,
+            handle=handle,
+            is_live_after_cancel=is_live_after_cancel,
+            is_running_after_cancel=is_running_after_cancel,
+            grace_seconds=cfg.cancel_grace_seconds,
+            poll_interval=min(2.0, cfg.poll_interval),
+            now_fn=now_fn,
+            sleep_fn=sleep_fn,
+        )
+        # Special case: cancel-race kept the job (raced to RUNNING). Return
+        # it as the chosen outcome — we didn't actually cancel, the job won.
+        if cancel_outcome == "raced_to_running":
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=None,
+                    est_start_seconds_clamped=None,
+                    outcome="launched",
+                    detail="cancel-race; job started during scancel",
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            result = RouteResult(
+                backend=backend,
+                handle=handle,
+                requested_kind=kind,
+                chosen_kind=kind,
+                reason=ROUTE_REASON_OVERRIDE,
+                cluster=spec.cluster,
+                attempts=attempts,
+                elapsed_seconds=now_fn() - started_at,
+                extra={"cancel_race": True},
+            )
+            _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
+            return result
+
         attempts.append(
             RouteAttempt(
                 kind=kind,
                 cluster=spec.cluster,
                 est_start_seconds_raw=None,
                 est_start_seconds_clamped=None,
-                outcome="launched",
-                detail="park resolved to RUNNING",
+                outcome=reason,
+                detail=f"cancel_outcome={cancel_outcome}",
                 elapsed_seconds=now_fn() - started_at,
             )
         )
-        result = RouteResult(
-            backend=backend,
-            handle=handle,
-            requested_kind=kind,
-            chosen_kind=kind,
-            reason=ROUTE_REASON_OVERRIDE,
-            cluster=spec.cluster,
-            attempts=attempts,
-            elapsed_seconds=now_fn() - started_at,
-        )
-        _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
-        return result
-
-    # Park failed. The user explicitly asked for this lane → cancel + raise.
-    cancel_outcome = cancel_and_wait(
-        backend=backend,
-        handle=handle,
-        is_live_after_cancel=is_live_after_cancel,
-        is_running_after_cancel=is_running_after_cancel,
-        grace_seconds=cfg.cancel_grace_seconds,
-        poll_interval=min(2.0, cfg.poll_interval),
-        now_fn=now_fn,
-        sleep_fn=sleep_fn,
-    )
-    # Special case: cancel-race kept the job (raced to RUNNING). Return
-    # it as the chosen outcome — we didn't actually cancel, the job won.
-    if cancel_outcome == "raced_to_running":
-        attempts.append(
-            RouteAttempt(
+        # On manual_attention the cancel did NOT confirm the job is dead.
+        # We CANNOT silently escalate (would double-spend / collide on
+        # attempt-id namespace) and the user explicitly asked for THIS
+        # lane anyway — raise ManualAttentionRequiredError so the
+        # orchestrator surfaces the orphaned job id.
+        if cancel_outcome == "manual_attention":
+            _post_terminal_failure_marker(
+                spec=spec,
+                marker_poster=marker_poster,
+                reason=ROUTE_REASON_NO_COMPUTE,
+                chosen_kind=kind,
+                attempts=attempts,
+            )
+            raise ManualAttentionRequiredError(
                 kind=kind,
                 cluster=spec.cluster,
-                est_start_seconds_raw=None,
-                est_start_seconds_clamped=None,
-                outcome="launched",
-                detail="cancel-race; job started during scancel",
-                elapsed_seconds=now_fn() - started_at,
+                orphaned_job_id=str(handle.job_id),
+                attempts=[_attempt_to_dict(a) for a in attempts],
             )
-        )
-        result = RouteResult(
-            backend=backend,
-            handle=handle,
-            requested_kind=kind,
+        _post_terminal_failure_marker(
+            spec=spec,
+            marker_poster=marker_poster,
+            reason=ROUTE_REASON_NO_COMPUTE,
             chosen_kind=kind,
-            reason=ROUTE_REASON_OVERRIDE,
-            cluster=spec.cluster,
             attempts=attempts,
-            elapsed_seconds=now_fn() - started_at,
-            extra={"cancel_race": True},
         )
-        _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
-        return result
-
-    attempts.append(
-        RouteAttempt(
-            kind=kind,
-            cluster=spec.cluster,
-            est_start_seconds_raw=None,
-            est_start_seconds_clamped=None,
-            outcome=reason,
-            detail=f"cancel_outcome={cancel_outcome}",
-            elapsed_seconds=now_fn() - started_at,
+        raise NoComputeAvailableError(
+            f"explicit override {kind!r} did not start within {cfg.free_wait_seconds}s "
+            f"(park: {reason}, cancel: {cancel_outcome})",
+            attempts=[_attempt_to_dict(a) for a in attempts],
         )
-    )
-    raise NoComputeAvailableError(
-        f"explicit override {kind!r} did not start within {cfg.free_wait_seconds}s "
-        f"(park: {reason}, cancel: {cancel_outcome})",
-        attempts=[_attempt_to_dict(a) for a in attempts],
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -1281,6 +1357,7 @@ def _auto_route(
         is_started=is_started,
         is_live_after_cancel=is_live_after_cancel,
         is_running_after_cancel=is_running_after_cancel,
+        reconnect_fn=reconnect_fn,
         now_fn=now_fn,
         sleep_fn=sleep_fn,
         marker_poster=marker_poster,
@@ -1313,11 +1390,17 @@ def _try_auto_reconnect(
     now_fn: Callable[[], float],
     marker_poster: Callable[..., None] | None,
 ) -> RouteResult | None:
-    """Auto-route stage 1: look for an existing live job on every wired lane."""
+    """Auto-route stage 1: look for an existing live job on every wired lane.
+
+    Reconnect probes are READ-ONLY (no lease writes) so they DON'T need
+    to hold the per-issue flock — the flock is acquired by the lane that
+    actually decides to submit, and that submit-path repeats the
+    reconnect check inside the flock (so a job that appeared between
+    this scan and the eventual launch is still caught).
+    """
+    del store  # not needed for reconnect probes; the launch path re-checks under the flock
     for backend, kind in candidates:
-        handle = _try_reconnect(
-            backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn, store=store
-        )
+        handle = _try_reconnect(backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn)
         if handle is None:
             continue
         return _record_reconnect(
@@ -1335,9 +1418,7 @@ def _try_auto_reconnect(
 
     if gcp_backend is None:
         return None
-    handle = _try_reconnect(
-        backend=gcp_backend, kind="gcp", spec=spec, reconnect_fn=reconnect_fn, store=store
-    )
+    handle = _try_reconnect(backend=gcp_backend, kind="gcp", spec=spec, reconnect_fn=reconnect_fn)
     if handle is None:
         return None
     return _record_reconnect(
@@ -1404,6 +1485,7 @@ def _try_free_lanes(
     is_started: Callable[[ComputeBackend, RunHandle], bool],
     is_live_after_cancel: Callable[[ComputeBackend, RunHandle], bool],
     is_running_after_cancel: Callable[[ComputeBackend, RunHandle], bool] | None,
+    reconnect_fn: (Callable[[ComputeBackend, BackendKind, RunSpec], RunHandle | None] | None),
     now_fn: Callable[[], float],
     sleep_fn: Callable[[float], None],
     marker_poster: Callable[..., None] | None,
@@ -1428,9 +1510,10 @@ def _try_free_lanes(
             is_started=is_started,
             is_live_after_cancel=is_live_after_cancel,
             is_running_after_cancel=is_running_after_cancel,
+            reconnect_fn=reconnect_fn,
+            marker_poster=marker_poster,
             now_fn=now_fn,
             sleep_fn=sleep_fn,
-            marker_poster=marker_poster,
         )
         if result is not None:
             return result
@@ -1451,112 +1534,169 @@ def _try_one_free_lane(
     is_started: Callable[[ComputeBackend, RunHandle], bool],
     is_live_after_cancel: Callable[[ComputeBackend, RunHandle], bool],
     is_running_after_cancel: Callable[[ComputeBackend, RunHandle], bool] | None,
+    reconnect_fn: (Callable[[ComputeBackend, BackendKind, RunSpec], RunHandle | None] | None),
+    marker_poster: Callable[..., None] | None,
     now_fn: Callable[[], float],
     sleep_fn: Callable[[float], None],
-    marker_poster: Callable[..., None] | None,
 ) -> RouteResult | None:
     """Launch + park one free lane. Returns a RouteResult on success / cancel-race.
 
     Returns ``None`` to signal "next lane". Cancel-race during park-fail
     is treated as success (the job won; tearing it down would forfeit
     the wait we already paid for).
+
+    Lock discipline: the per-issue flock is held across (re-check
+    reconnect → launch → lease-write → park → cancel) so a concurrent
+    invocation cannot slip a parallel submit between our reconnect probe
+    and our launch. If the cancel state machine returns ``manual_attention``
+    (cancel did NOT confirm the job is dead), we RAISE
+    :class:`ManualAttentionRequiredError` rather than returning ``None``
+    — silently escalating would risk a second copy of the same workload
+    in the GCP escalation path (the orphaned free-lane job is unconfirmed
+    dead and may still consume the attempt-id namespace).
     """
-    # Launch.
-    try:
-        handle = backend.launch(_thread_attempt_id(spec, store))
-    except Exception as exc:
+    with store.transaction(spec.issue) as (lease, write):
+        # Repeat the reconnect check INSIDE the flock — a parallel
+        # invocation may have submitted between the lock-free scan in
+        # _try_auto_reconnect and now.
+        handle = _try_reconnect(backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn)
+        if handle is not None:
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=est_raw,
+                    est_start_seconds_clamped=est_clamped,
+                    outcome="reconnected",
+                    detail="reconnect inside flock — concurrent invocation submitted",
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            result = RouteResult(
+                backend=backend,
+                handle=handle,
+                requested_kind=None,
+                chosen_kind=kind,
+                reason=ROUTE_REASON_RECONNECT,
+                cluster=spec.cluster,
+                attempts=attempts,
+                elapsed_seconds=now_fn() - started_at,
+            )
+            _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
+            return result
+
+        # Launch (still under the flock — sealing the double-submit race).
+        threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
+        try:
+            handle = backend.launch(threaded_spec)
+        except Exception as exc:
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=est_raw,
+                    est_start_seconds_clamped=est_clamped,
+                    outcome="launch_failed",
+                    detail=f"{type(exc).__name__}: {exc}",
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            logger.warning(
+                "route: free lane %s launch failed (%s); trying next lane.",
+                kind,
+                type(exc).__name__,
+            )
+            return None
+
+        # Persist the launched id IMMEDIATELY (still under the flock).
+        write(_lease_after_submit(lease, spec, kind, spec.cluster, handle))
+
+        # Park (still under the flock — wait IS contention surface, but
+        # the lock is per-ISSUE, not cross-issue, so the only callers
+        # serialized are the two we are deliberately serializing).
+        started, reason = park_until_running_or_cap(
+            backend=backend,
+            handle=handle,
+            is_started=is_started,
+            cap_seconds=cfg.free_wait_seconds,
+            poll_interval=cfg.poll_interval,
+            now_fn=now_fn,
+            sleep_fn=sleep_fn,
+        )
+        if started:
+            return _record_free_lane_started(
+                backend=backend,
+                handle=handle,
+                kind=kind,
+                est_raw=est_raw,
+                est_clamped=est_clamped,
+                spec=spec,
+                attempts=attempts,
+                started_at=started_at,
+                now_fn=now_fn,
+                marker_poster=marker_poster,
+                detail="park resolved to RUNNING",
+            )
+
+        # Park failed → cancel state machine, then KEEP (raced),
+        # CONTINUE to next lane (cancelled), or RAISE (manual_attention).
+        cancel_outcome = cancel_and_wait(
+            backend=backend,
+            handle=handle,
+            is_live_after_cancel=is_live_after_cancel,
+            is_running_after_cancel=is_running_after_cancel,
+            grace_seconds=cfg.cancel_grace_seconds,
+            poll_interval=min(2.0, cfg.poll_interval),
+            now_fn=now_fn,
+            sleep_fn=sleep_fn,
+        )
+        if cancel_outcome == "raced_to_running":
+            return _record_free_lane_started(
+                backend=backend,
+                handle=handle,
+                kind=kind,
+                est_raw=est_raw,
+                est_clamped=est_clamped,
+                spec=spec,
+                attempts=attempts,
+                started_at=started_at,
+                now_fn=now_fn,
+                marker_poster=marker_poster,
+                detail="cancel-race; job started during scancel",
+                extra={"cancel_race": True},
+            )
+
         attempts.append(
             RouteAttempt(
                 kind=kind,
                 cluster=spec.cluster,
                 est_start_seconds_raw=est_raw,
                 est_start_seconds_clamped=est_clamped,
-                outcome="launch_failed",
-                detail=f"{type(exc).__name__}: {exc}",
+                outcome=reason,
+                detail=f"cancel_outcome={cancel_outcome}",
                 elapsed_seconds=now_fn() - started_at,
             )
         )
-        logger.warning(
-            "route: free lane %s launch failed (%s); trying next lane.",
-            kind,
-            type(exc).__name__,
-        )
+        if cancel_outcome == "manual_attention":
+            # cancel grace expired without confirming the free-lane job
+            # is dead. Silently escalating to GCP would risk a duplicate
+            # run sharing the attempt-id namespace → raise so the
+            # orchestrator surfaces the orphaned id + parks.
+            _post_terminal_failure_marker(
+                spec=spec,
+                marker_poster=marker_poster,
+                reason=ROUTE_REASON_NO_COMPUTE,
+                chosen_kind=kind,
+                attempts=attempts,
+                extra={"manual_attention": True, "orphaned_job_id": str(handle.job_id)},
+            )
+            raise ManualAttentionRequiredError(
+                kind=kind,
+                cluster=spec.cluster,
+                orphaned_job_id=str(handle.job_id),
+                attempts=[_attempt_to_dict(a) for a in attempts],
+            )
         return None
-
-    _persist_lease_after_submit(
-        spec=spec,
-        store=store,
-        backend_kind=kind,
-        cluster=spec.cluster,
-        handle=handle,
-        now_fn=now_fn,
-    )
-
-    # Park.
-    started, reason = park_until_running_or_cap(
-        backend=backend,
-        handle=handle,
-        is_started=is_started,
-        cap_seconds=cfg.free_wait_seconds,
-        poll_interval=cfg.poll_interval,
-        now_fn=now_fn,
-        sleep_fn=sleep_fn,
-    )
-    if started:
-        return _record_free_lane_started(
-            backend=backend,
-            handle=handle,
-            kind=kind,
-            est_raw=est_raw,
-            est_clamped=est_clamped,
-            spec=spec,
-            attempts=attempts,
-            started_at=started_at,
-            now_fn=now_fn,
-            marker_poster=marker_poster,
-            detail="park resolved to RUNNING",
-        )
-
-    # Park failed → cancel state machine, then either escalate or
-    # (on cancel-race) keep the job.
-    cancel_outcome = cancel_and_wait(
-        backend=backend,
-        handle=handle,
-        is_live_after_cancel=is_live_after_cancel,
-        is_running_after_cancel=is_running_after_cancel,
-        grace_seconds=cfg.cancel_grace_seconds,
-        poll_interval=min(2.0, cfg.poll_interval),
-        now_fn=now_fn,
-        sleep_fn=sleep_fn,
-    )
-    if cancel_outcome == "raced_to_running":
-        return _record_free_lane_started(
-            backend=backend,
-            handle=handle,
-            kind=kind,
-            est_raw=est_raw,
-            est_clamped=est_clamped,
-            spec=spec,
-            attempts=attempts,
-            started_at=started_at,
-            now_fn=now_fn,
-            marker_poster=marker_poster,
-            detail="cancel-race; job started during scancel",
-            extra={"cancel_race": True},
-        )
-
-    attempts.append(
-        RouteAttempt(
-            kind=kind,
-            cluster=spec.cluster,
-            est_start_seconds_raw=est_raw,
-            est_start_seconds_clamped=est_clamped,
-            outcome=reason,
-            detail=f"cancel_outcome={cancel_outcome}",
-            elapsed_seconds=now_fn() - started_at,
-        )
-    )
-    return None
 
 
 def _record_free_lane_started(
@@ -1619,15 +1759,27 @@ def _escalate_to_gcp(
     :class:`WorkloadSurfacedError` on a GCP workload failure (no
     auto-fallback). Raises :class:`GcpAttemptCapExceededError` when the
     per-day attempt cap is reached.
+
+    Lock discipline: bump-counter / cap-check / threaded-attempt-id /
+    launch / persist all live inside ONE :meth:`LeaseStore.transaction`
+    so a concurrent invocation cannot read a pre-bump counter, decide
+    "we're under cap", and double-spend credit.
     """
     if gcp_backend is None:
+        _post_terminal_failure_marker(
+            spec=spec,
+            marker_poster=marker_poster,
+            reason=ROUTE_REASON_NO_COMPUTE,
+            chosen_kind="gcp",
+            attempts=attempts,
+        )
         raise NoComputeAvailableError(
             "every free lane park-failed AND no gcp_backend wired for auto-fallback",
             attempts=[_attempt_to_dict(a) for a in attempts],
         )
 
-    # Attempt-count guard.
     with store.transaction(spec.issue) as (lease, write):
+        # Bump the attempt counter inside the flock.
         if lease is None:
             lease = Lease(
                 issue=int(spec.issue),
@@ -1637,66 +1789,82 @@ def _escalate_to_gcp(
         lease = _bump_gcp_attempt(lease)
         write(lease)
         attempts_today = lease.gcp_attempts_today
+        if attempts_today > cfg.max_gcp_attempts_per_day:
+            raise GcpAttemptCapExceededError(
+                issue=int(spec.issue),
+                # Report attempts ALREADY consumed today (i.e. the cap),
+                # not the would-be-Nth-attempt that this call would have
+                # made — reads naturally as "cap reached, no further".
+                attempts_today=cfg.max_gcp_attempts_per_day,
+                cap=cfg.max_gcp_attempts_per_day,
+            )
 
-    if attempts_today > cfg.max_gcp_attempts_per_day:
-        raise GcpAttemptCapExceededError(
-            issue=int(spec.issue),
+        # Pre-escalation marker — visible breadcrumb before spending
+        # credit. Posted INSIDE the flock so a concurrent invocation
+        # cannot also post one (they would block on the flock until our
+        # launch completes).
+        _post_intermediate_marker(
+            spec=spec,
+            marker_poster=marker_poster,
+            reason=ROUTE_REASON_AUTO_FALLBACK_GCP,
             attempts_today=attempts_today,
-            cap=cfg.max_gcp_attempts_per_day,
         )
 
-    # Pre-escalation marker — visible breadcrumb before spending credit.
-    _post_intermediate_marker(
-        spec=spec,
-        marker_poster=marker_poster,
-        reason=ROUTE_REASON_AUTO_FALLBACK_GCP,
-        attempts_today=attempts_today,
-    )
-
-    try:
-        gcp_handle = gcp_backend.launch(_thread_attempt_id(spec, store))
-    except GcpProvisioningError as exc:
-        attempts.append(
-            RouteAttempt(
-                kind="gcp",
-                cluster=None,
-                est_start_seconds_raw=0.0,
-                est_start_seconds_clamped=0.0,
-                outcome="provisioning_failure",
-                detail=exc.reason,
-                elapsed_seconds=now_fn() - started_at,
+        threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
+        try:
+            gcp_handle = gcp_backend.launch(threaded_spec)
+        except GcpProvisioningError as exc:
+            attempts.append(
+                RouteAttempt(
+                    kind="gcp",
+                    cluster=None,
+                    est_start_seconds_raw=0.0,
+                    est_start_seconds_clamped=0.0,
+                    outcome="provisioning_failure",
+                    detail=exc.reason,
+                    elapsed_seconds=now_fn() - started_at,
+                )
             )
-        )
-        raise NoComputeAvailableError(
-            f"every free lane park-failed AND gcp provisioning failed: {exc.reason}",
-            attempts=[_attempt_to_dict(a) for a in attempts],
-        ) from exc
-    except GcpWorkloadError as exc:
-        attempts.append(
-            RouteAttempt(
-                kind="gcp",
-                cluster=None,
-                est_start_seconds_raw=0.0,
-                est_start_seconds_clamped=0.0,
-                outcome="workload_failure",
-                detail=exc.reason,
-                elapsed_seconds=now_fn() - started_at,
+            _post_terminal_failure_marker(
+                spec=spec,
+                marker_poster=marker_poster,
+                reason=ROUTE_REASON_NO_COMPUTE,
+                chosen_kind="gcp",
+                attempts=attempts,
             )
-        )
-        raise WorkloadSurfacedError(
-            f"gcp workload failure (no auto-fallback): {exc.reason}",
-            chosen_kind="gcp",
-            evidence=exc.evidence,
-        ) from exc
+            raise NoComputeAvailableError(
+                f"every free lane park-failed AND gcp provisioning failed: {exc.reason}",
+                attempts=[_attempt_to_dict(a) for a in attempts],
+            ) from exc
+        except GcpWorkloadError as exc:
+            attempts.append(
+                RouteAttempt(
+                    kind="gcp",
+                    cluster=None,
+                    est_start_seconds_raw=0.0,
+                    est_start_seconds_clamped=0.0,
+                    outcome="workload_failure",
+                    detail=exc.reason,
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            _post_terminal_failure_marker(
+                spec=spec,
+                marker_poster=marker_poster,
+                reason=ROUTE_REASON_WORKLOAD_FAILURE,
+                chosen_kind="gcp",
+                attempts=attempts,
+                extra={"evidence": exc.evidence},
+            )
+            raise WorkloadSurfacedError(
+                f"gcp workload failure (no auto-fallback): {exc.reason}",
+                chosen_kind="gcp",
+                evidence=exc.evidence,
+            ) from exc
 
-    _persist_lease_after_submit(
-        spec=spec,
-        store=store,
-        backend_kind="gcp",
-        cluster=None,
-        handle=gcp_handle,
-        now_fn=now_fn,
-    )
+        # Persist the launched id IMMEDIATELY (still under the flock).
+        write(_lease_after_submit(lease, spec, "gcp", None, gcp_handle))
+
     attempts.append(
         RouteAttempt(
             kind="gcp",
@@ -1773,7 +1941,6 @@ def _try_reconnect(
     kind: BackendKind,
     spec: RunSpec,
     reconnect_fn: (Callable[[ComputeBackend, BackendKind, RunSpec], RunHandle | None] | None),
-    store: LeaseStore,
 ) -> RunHandle | None:
     """Look for an existing live job/instance for ``spec`` on ``backend``.
 
@@ -1801,9 +1968,11 @@ def _try_reconnect(
             exc,
         )
         return None
+    if handle is None:
+        return None
     # Defensive: a reconnect_fn that returns a handle for the WRONG
     # issue would silently bind to someone else's run. Sanity-check.
-    if handle is not None and handle.extra.get("issue") not in (None, int(spec.issue)):
+    if handle.extra.get("issue") not in (None, int(spec.issue)):
         logger.error(
             "route: reconnect_fn for %s returned a handle for issue=%r (expected %d); ignoring.",
             kind,
@@ -1811,10 +1980,48 @@ def _try_reconnect(
             spec.issue,
         )
         return None
-    # The UNKNOWN_SUBMITTED state is detected by the orchestrator (slice
-    # 6) and resolved via the same reconnect_fn — no extra logic here.
-    _ = store  # placeholder; slice 6 may use store to record recovery
+    # Defensive: a misconfigured reconnect_fn that binds to the WRONG
+    # backend kind (e.g. a GCP probe wired into the nibi slot) would
+    # silently re-attach to someone else's lane. The handle carries the
+    # backend it was issued by; cross-check.
+    if handle.backend != kind:
+        logger.error(
+            "route: reconnect_fn for kind=%s returned a handle issued by backend=%s; ignoring.",
+            kind,
+            handle.backend,
+        )
+        return None
     return handle
+
+
+def _lease_after_submit(
+    lease: Lease | None,
+    spec: RunSpec,
+    backend_kind: BackendKind,
+    cluster: str | None,
+    handle: RunHandle,
+) -> Lease:
+    """Pure helper: produce the lease record that records a fresh submit.
+
+    Used inside an OPEN ``store.transaction`` so the read-check + launch +
+    lease-write all hold the same flock (the read happened when the
+    caller opened the transaction; this returns the new value the caller
+    will hand to ``write_fn``). Pre-existing GCP attempt counter +
+    spec_hash + attempt_id fields are preserved on ``lease``; absent
+    lease → fresh one with the spec's attempt_id (or a freshly minted
+    one if none).
+    """
+    if lease is None:
+        lease = Lease(
+            issue=int(spec.issue),
+            spec_hash=spec_hash(spec),
+            attempt_id=str(spec.extra.get("attempt_id") or _make_attempt_id()),
+        )
+    lease.backend = backend_kind
+    lease.cluster = cluster
+    lease.job_id = str(handle.job_id)
+    lease.submitted_at = float(time.time())  # wall-clock, not monotonic
+    return lease
 
 
 def _persist_lease_after_submit(
@@ -1826,38 +2033,30 @@ def _persist_lease_after_submit(
     handle: RunHandle,
     now_fn: Callable[[], float],
 ) -> None:
-    """Write the external job/instance id to the lease IMMEDIATELY after submit.
+    """Open a flocked transaction + write the lease after a submit.
 
     Crash window covered: a submit that returns successfully but the
     orchestrator dies before the lease is updated would otherwise leave
-    a leaked job / instance. The :class:`LeaseStore.transaction`
-    context flocks the directory so a concurrent re-driving cron sees
-    the fresh id (or, when this write hasn't happened yet, can detect
-    the ``UNKNOWN_SUBMITTED`` state and re-reconnect via the backend's
-    queue rather than re-submitting).
+    a leaked job / instance. Prefer the in-transaction
+    :func:`_lease_after_submit` helper when the caller is ALREADY inside
+    a transaction (the override / auto-route paths hold the flock across
+    reconnect-check → launch → lease-write to seal the double-submit
+    race).
     """
+    del now_fn  # monotonic clock is for the watchdog, not the lease timestamp
     with store.transaction(spec.issue) as (lease, write):
-        if lease is None:
-            lease = Lease(
-                issue=int(spec.issue),
-                spec_hash=spec_hash(spec),
-                attempt_id=str(spec.extra.get("attempt_id") or _make_attempt_id()),
-            )
-        lease.backend = backend_kind
-        lease.cluster = cluster
-        lease.job_id = str(handle.job_id)
-        lease.submitted_at = float(time.time())  # wall-clock, not monotonic
-        del now_fn  # monotonic clock is for the watchdog, not the lease timestamp
-        write(lease)
+        write(_lease_after_submit(lease, spec, backend_kind, cluster, handle))
 
 
 def _thread_attempt_id(spec: RunSpec, store: LeaseStore) -> RunSpec:
     """Ensure ``spec.extra["attempt_id"]`` is set + matches the lease.
 
-    The router writes the attempt id on first lease creation. On
-    re-entry, the lease's id wins — the GCP backend uses it as the
-    artifact namespace, and a fresh id on every router call would
-    silently fork the namespace.
+    Convenience wrapper that opens its own transaction; used ONLY when
+    the caller is NOT already inside a transaction (the override+auto
+    paths now hold one flock across reconnect-check → launch → lease-write
+    and use :func:`_thread_attempt_id_into` instead to avoid the re-entry
+    deadlock — :py:func:`fcntl.flock` from a fresh open-file-description
+    in the same process blocks against any held lock).
     """
     current_id = (spec.extra or {}).get("attempt_id")
     with store.transaction(spec.issue) as (lease, write):
@@ -1876,6 +2075,34 @@ def _thread_attempt_id(spec: RunSpec, store: LeaseStore) -> RunSpec:
     new_extra = dict(spec.extra or {})
     new_extra["attempt_id"] = attempt_id
     return replace(spec, extra=new_extra)
+
+
+def _thread_attempt_id_into(
+    spec: RunSpec,
+    lease: Lease | None,
+    write_fn: Callable[[Lease], None],
+) -> tuple[RunSpec, Lease]:
+    """Same contract as :func:`_thread_attempt_id` but reuses an OPEN transaction.
+
+    Returns ``(new_spec, lease)`` where ``new_spec`` carries the threaded
+    ``attempt_id`` in ``extra``, and ``lease`` is the (possibly freshly
+    created) lease record. If lease was None, a fresh one is written via
+    ``write_fn`` — the caller's transaction owns the flock.
+    """
+    current_id = (spec.extra or {}).get("attempt_id")
+    if lease is None:
+        attempt_id = str(current_id or _make_attempt_id())
+        lease = Lease(
+            issue=int(spec.issue),
+            spec_hash=spec_hash(spec),
+            attempt_id=attempt_id,
+        )
+        write_fn(lease)
+    else:
+        attempt_id = lease.attempt_id
+    new_extra = dict(spec.extra or {})
+    new_extra["attempt_id"] = attempt_id
+    return replace(spec, extra=new_extra), lease
 
 
 def _make_attempt_id() -> str:
@@ -1959,6 +2186,45 @@ def _post_intermediate_marker(
     )
 
 
+def _post_terminal_failure_marker(
+    *,
+    spec: RunSpec,
+    marker_poster: Callable[..., None] | None,
+    reason: str,
+    chosen_kind: BackendKind,
+    attempts: list[RouteAttempt],
+    extra: dict[str, Any] | None = None,
+) -> None:
+    """Post a final ``epm:backend-selected`` breadcrumb BEFORE raising terminal.
+
+    The router's terminal-failure paths (``NoComputeAvailableError``,
+    ``WorkloadSurfacedError``, ``ManualAttentionRequiredError``) raise
+    rather than return — without this marker the dashboard would never
+    see the failure breadcrumb that the success path always posts. Wires
+    the reason code (:data:`ROUTE_REASON_NO_COMPUTE` /
+    :data:`ROUTE_REASON_WORKLOAD_FAILURE`) the slice-5 module exports as
+    public constants so downstream surfaces can pattern-match on them.
+    """
+    if marker_poster is None:
+        return
+    body = {
+        "requested_kind": None,
+        "chosen_kind": chosen_kind,
+        "reason": reason,
+        "cluster": None,
+        "elapsed_seconds": 0.0,
+        "attempts": [_attempt_to_dict(a) for a in attempts],
+        "extra": dict(extra or {}),
+    }
+    marker_poster(
+        issue=spec.issue,
+        marker="epm:backend-selected",
+        note=json.dumps(body, sort_keys=True),
+        version=1,
+        by="backends.router",
+    )
+
+
 def _attempt_to_dict(a: RouteAttempt) -> dict[str, Any]:
     return {
         "kind": a.kind,
@@ -1992,6 +2258,7 @@ __all__ = [
     "GcpAttemptCapExceededError",
     "Lease",
     "LeaseStore",
+    "ManualAttentionRequiredError",
     "NoComputeAvailableError",
     "RouteAttempt",
     "RouteError",

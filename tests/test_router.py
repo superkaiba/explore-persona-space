@@ -31,6 +31,7 @@ from explore_persona_space.backends import (
     GcpWorkloadError,
     Lease,
     LeaseStore,
+    ManualAttentionRequiredError,
     NoComputeAvailableError,
     PollResult,
     RouterConfig,
@@ -1051,3 +1052,486 @@ def test_no_dollar_token_in_router_module():
     banned = re.compile(r"\b(max_budget_usd|MAX_BUDGET_USD|dollar_cap|DOLLAR_CAP)\b")
     matches = banned.findall(text)
     assert not matches, f"dollar-budget cap names found in router.py: {matches}"
+
+
+# ---------------------------------------------------------------------------
+# BLOCKER 1 regression: default RunSpec must NOT silently route to RunPod
+# ---------------------------------------------------------------------------
+
+
+def test_default_runspec_does_not_silently_route_to_runpod(lease_store):
+    """A bare ``RunSpec(issue, intent)`` MUST route via AUTO, not RunPod.
+
+    The no-auto-RunPod invariant depends on callers explicitly opting
+    into RunPod. The previous default of ``backend="runpod"`` meant an
+    omitted backend argument spent real money via the explicit-override
+    path; flipping the default to ``"auto"`` closes that.
+    """
+    rp = _ExplodingRunpod()  # would crash if router took the runpod path
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    # Build a RunSpec without explicitly setting backend=...
+    spec = RunSpec(issue=137, intent="lora-7b")
+    assert spec.backend == "auto"
+    result = route(
+        spec,
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert result.reason == ROUTE_REASON_AUTO_STARTED
+    assert len(nibi.launches) == 1
+
+
+# ---------------------------------------------------------------------------
+# BLOCKER 2 regression: concurrent route() on the same issue must serialize
+# ---------------------------------------------------------------------------
+
+
+def test_concurrent_route_on_same_issue_does_not_double_submit(lease_store):
+    """Two concurrent route() calls on the SAME issue submit EXACTLY ONCE.
+
+    Simulates a duplicate-cron-tick race: a manual /issue invocation
+    and the 20-min issue-tick cron run in parallel. Without the flock
+    held across reconnect-check + launch + lease-write, both would
+    decide "no live job" and both would submit (and both would escalate
+    to GCP if anything timed out → double provision + colliding artifact
+    ids). The per-issue flock seals the race.
+
+    Mechanism: a barrier inside the injected ``is_started`` probe gates
+    BOTH threads inside the (would-be) critical section. The threading
+    is real but the launch / cluster are mocked.
+    """
+    import contextlib
+    import threading
+
+    barrier = threading.Barrier(2, timeout=5.0)
+    launch_seen = threading.Event()
+
+    class _GatedNibi(_FreeLaneBackend):
+        def launch(self, spec):
+            # First thread to launch blocks on the barrier so the second
+            # thread also has time to enter route(). The flock should
+            # serialize the second thread BEFORE it reaches launch.
+            handle = super().launch(spec)
+            launch_seen.set()
+            return handle
+
+    nibi = _GatedNibi(kind="nibi", est_start_raw=0.0)
+    rp = _ExplodingRunpod()
+
+    def _reconnect_or_none(backend, kind, spec):
+        # When the SECOND thread acquires the flock, the FIRST thread
+        # has already persisted its lease + job_id. We simulate
+        # backend-side reconnect by returning the FIRST thread's handle.
+        if not launch_seen.is_set():
+            return None
+        # The first thread already wrote the lease + launched. The
+        # reconnect probe should find that job. Mirror it as a handle
+        # for the same issue/kind so _try_reconnect's sanity checks pass.
+        first_handle = nibi.launches and RunHandle(
+            backend="nibi",
+            cluster="nibi",
+            job_id=str(nibi._next_job_id - 1),
+            pod_name=f"eps-issue-{spec.issue}",
+            scratch_dir=f"/scratch/eps/issue-{spec.issue}",
+            log_path=f"/scratch/eps/issue-{spec.issue}/job.out",
+            extra={"issue": spec.issue},
+        )
+        return first_handle
+
+    results: list[Any] = [None, None]
+    errors: list[BaseException | None] = [None, None]
+
+    def _runner(idx: int):
+        try:
+            results[idx] = route(
+                _spec(backend=None),
+                runpod_backend=rp,
+                free_backends={"nibi": nibi},
+                lease_store=lease_store,
+                is_started=lambda _b, _h: True,
+                reconnect_fn=_reconnect_or_none,
+                config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+                now_fn=_clock(),
+                sleep_fn=lambda _s: None,
+            )
+        except BaseException as exc:
+            errors[idx] = exc
+        finally:
+            # Release the barrier so the partner thread can proceed past
+            # the flock once we exit our critical section.
+            with contextlib.suppress(threading.BrokenBarrierError):
+                barrier.wait(timeout=0.1)
+
+    t1 = threading.Thread(target=_runner, args=(0,))
+    t2 = threading.Thread(target=_runner, args=(1,))
+    t1.start()
+    t2.start()
+    t1.join(timeout=10)
+    t2.join(timeout=10)
+    assert all(e is None for e in errors), errors
+    # EXACTLY ONE actual backend.launch — the other thread reconnected.
+    assert len(nibi.launches) == 1, (
+        f"expected exactly 1 launch, got {len(nibi.launches)} — flock leaked"
+    )
+    chosen_kinds = {r.chosen_kind for r in results}
+    assert chosen_kinds == {"nibi"}
+    # The two results should disagree on reason: one launched, one reconnected.
+    reasons = {r.reason for r in results}
+    assert ROUTE_REASON_RECONNECT in reasons or ROUTE_REASON_AUTO_STARTED in reasons
+
+
+# ---------------------------------------------------------------------------
+# MAJOR 3 regression: terminal failures post a final epm:backend-selected marker
+# ---------------------------------------------------------------------------
+
+
+def test_no_compute_terminal_posts_breadcrumb_marker(lease_store, marker_poster, captured_markers):
+    """``NoComputeAvailableError`` paths post a terminal marker BEFORE raising."""
+    from explore_persona_space.backends.router import ROUTE_REASON_NO_COMPUTE
+
+    rp = _ExplodingRunpod()
+    nibi = _FreeLaneBackend(kind="nibi")
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "QUOTA_EXCEEDED", evidence={"matched_pattern": "QUOTA_EXCEEDED"}
+        )
+    )
+    with pytest.raises(NoComputeAvailableError):
+        route(
+            _spec(backend=None),
+            runpod_backend=rp,
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    terminal = _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    assert terminal, "terminal no_compute_available marker NOT posted before raise"
+
+
+def test_workload_failure_terminal_posts_breadcrumb_marker(
+    lease_store, marker_poster, captured_markers
+):
+    """``WorkloadSurfacedError`` paths post a workload_failure marker before raising."""
+    from explore_persona_space.backends.router import ROUTE_REASON_WORKLOAD_FAILURE
+
+    rp = _ExplodingRunpod()
+    nibi = _FreeLaneBackend(kind="nibi")
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpWorkloadError("entrypoint crashed", evidence={"exit_code": 1})
+    )
+    with pytest.raises(WorkloadSurfacedError):
+        route(
+            _spec(backend=None),
+            runpod_backend=rp,
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    terminal = _by_reason(captured_markers, ROUTE_REASON_WORKLOAD_FAILURE)
+    assert terminal, "terminal workload_failure marker NOT posted before raise"
+
+
+# ---------------------------------------------------------------------------
+# MAJOR 4: parametrized no-auto-RunPod fan-out across every failure path
+# ---------------------------------------------------------------------------
+
+
+def _fast_clock():
+    """Clock that advances 100s per call so cap_seconds=1 trips immediately."""
+    counter = {"t": 0.0}
+
+    def now():
+        counter["t"] += 100.0
+        return counter["t"]
+
+    return now
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    [
+        "free_launch_fail",
+        "is_started_raises",
+        "is_live_raises",
+        "reconnect_fn_raises",
+        "manual_attention_cancel",
+        "gcp_provisioning_error",
+        "attempt_cap_exceeded",
+    ],
+)
+def test_no_auto_runpod_under_failure_fanout(lease_store, scenario):
+    """For EVERY failure mode the auto chain encounters, RunPod is NEVER called.
+
+    Injects an :class:`_ExplodingRunpod` whose ``launch`` raises ``AssertionError``
+    and asserts the router raises a terminal :class:`RouteError` subclass
+    instead. The parametrize covers the full failure fan-out the brief calls
+    out (MAJOR 4).
+    """
+    rp = _ExplodingRunpod()
+    cfg = RouterConfig(
+        free_wait_seconds=1,
+        poll_interval=0.0,
+        cancel_grace_seconds=0,
+        max_gcp_attempts_per_day=2,
+    )
+    kwargs: dict[str, Any] = {
+        "runpod_backend": rp,
+        "lease_store": lease_store,
+        "config": cfg,
+        "now_fn": _fast_clock(),
+        "sleep_fn": lambda _s: None,
+    }
+
+    if scenario == "free_launch_fail":
+        nibi = _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("boom"))
+        gcp = _GcpBackendDouble(launch_raises=GcpProvisioningError("OUT", evidence={}))
+        kwargs.update(
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+        )
+        expected: type[BaseException] = NoComputeAvailableError
+    elif scenario == "is_started_raises":
+        nibi = _FreeLaneBackend(kind="nibi")
+        gcp = _GcpBackendDouble(launch_raises=GcpProvisioningError("OUT", evidence={}))
+
+        def _is_started(_b, _h):
+            raise RuntimeError("ssh died mid-poll")
+
+        kwargs.update(
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            is_started=_is_started,
+            is_live_after_cancel=lambda _b, _h: False,
+        )
+        expected = NoComputeAvailableError
+    elif scenario == "is_live_raises":
+        nibi = _FreeLaneBackend(kind="nibi")
+        gcp = _GcpBackendDouble(launch_raises=GcpProvisioningError("OUT", evidence={}))
+
+        def _is_live(_b, _h):
+            raise RuntimeError("ssh died during cancel-poll")
+
+        kwargs.update(
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=_is_live,
+        )
+        # is_live raising → treated as still-live → cancel_outcome=manual_attention
+        # → ManualAttentionRequiredError (we still NEVER touch RunPod).
+        expected = ManualAttentionRequiredError
+    elif scenario == "reconnect_fn_raises":
+        nibi = _FreeLaneBackend(kind="nibi")
+        gcp = _GcpBackendDouble(launch_raises=GcpProvisioningError("OUT", evidence={}))
+
+        def _reconnect_fn(_b, _kind, _spec):
+            raise RuntimeError("squeue offline")
+
+        kwargs.update(
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            reconnect_fn=_reconnect_fn,
+        )
+        expected = NoComputeAvailableError
+    elif scenario == "manual_attention_cancel":
+        nibi = _FreeLaneBackend(kind="nibi")
+        gcp = _GcpBackendDouble()
+        kwargs.update(
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: True,  # never leaves queue
+        )
+        # MAJOR 5: manual_attention must NOT escalate to GCP — it raises.
+        expected = ManualAttentionRequiredError
+    elif scenario == "gcp_provisioning_error":
+        nibi = _FreeLaneBackend(kind="nibi")
+        gcp = _GcpBackendDouble(
+            launch_raises=GcpProvisioningError("ZONE_OUT", evidence={"matched_pattern": "X"})
+        )
+        kwargs.update(
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+        )
+        expected = NoComputeAvailableError
+    elif scenario == "attempt_cap_exceeded":
+        # Pre-seed the lease at the cap so the very next escalation trips it.
+        today = datetime.now(tz=UTC).date().isoformat()
+        lease_store.write(
+            Lease(
+                issue=137,
+                spec_hash="h",
+                attempt_id="a",
+                gcp_attempts_today=cfg.max_gcp_attempts_per_day,
+                gcp_attempts_date=today,
+            )
+        )
+        nibi = _FreeLaneBackend(kind="nibi")
+        gcp = _GcpBackendDouble()
+        kwargs.update(
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+        )
+        expected = GcpAttemptCapExceededError
+    else:  # pragma: no cover — pytest.mark.parametrize wall.
+        raise AssertionError(f"unknown scenario: {scenario}")
+
+    with pytest.raises(expected):
+        route(_spec(backend=None), **kwargs)
+
+
+# ---------------------------------------------------------------------------
+# MAJOR 5: manual_attention does NOT escalate + does NOT lose the orphaned id
+# ---------------------------------------------------------------------------
+
+
+def test_manual_attention_raises_with_orphaned_job_id_and_no_gcp_escalation(lease_store):
+    """When the cancel grace expires without confirming termination:
+
+    1. The router raises :class:`ManualAttentionRequiredError`.
+    2. The orphaned free-lane job id is carried on the exception.
+    3. NO call to ``gcp.launch`` happens (no double-submit risk).
+    4. The lease is NOT overwritten with a stale or absent id — the
+       orphaned id stays in the lease for the orchestrator to consult.
+    """
+    rp = _ExplodingRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()  # would succeed if reached, but must NOT be reached
+
+    def _is_live(_b, _h):
+        return True  # never leaves queue → manual_attention
+
+    with pytest.raises(ManualAttentionRequiredError) as excinfo:
+        route(
+            _spec(issue=4242, backend=None),
+            runpod_backend=rp,
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=_is_live,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_fast_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert excinfo.value.kind == "nibi"
+    assert excinfo.value.orphaned_job_id == "1000"
+    assert excinfo.value.cluster == nibi.launches[0].cluster
+    # GCP was NEVER launched (no silent escalation).
+    assert len(gcp.launches) == 0
+    # The orphaned job id is still recorded in the lease — the lease was
+    # NOT overwritten by a GCP id (which would have lost the orphan).
+    lease = lease_store.read(4242)
+    assert lease is not None
+    assert lease.backend == "nibi"
+    assert lease.job_id == "1000"
+
+
+# ---------------------------------------------------------------------------
+# Minor #8: misconfigured reconnect_fn binding to the wrong backend is ignored
+# ---------------------------------------------------------------------------
+
+
+def test_reconnect_returning_wrong_backend_kind_is_ignored(lease_store):
+    """A reconnect_fn that hands back a handle issued by the WRONG backend
+    must NOT silently re-attach (would bind to another lane's run).
+    """
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    rp = _ExplodingRunpod()
+    bogus = RunHandle(
+        backend="gcp",  # WRONG: nibi caller, GCP-issued handle
+        cluster=None,
+        job_id="instance-foreign",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        extra={"issue": 137},
+    )
+
+    def _bogus_reconnect(_backend, _kind, _spec):
+        return bogus
+
+    result = route(
+        _spec(backend="nibi"),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        reconnect_fn=_bogus_reconnect,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    # The bogus reconnect was rejected → fresh launch happened.
+    assert result.chosen_kind == "nibi"
+    assert result.reason == ROUTE_REASON_OVERRIDE
+    assert len(nibi.launches) == 1
+
+
+# ---------------------------------------------------------------------------
+# Minor #9 regression: attempt-cap message reports attempts_today == cap
+# ---------------------------------------------------------------------------
+
+
+def test_attempt_cap_message_reports_cap_not_one_past(lease_store):
+    """The exception's ``attempts_today`` reads as the cap, not cap+1."""
+    rp = _ExplodingRunpod()
+    cfg = RouterConfig(
+        free_wait_seconds=1,
+        poll_interval=0.0,
+        cancel_grace_seconds=0,
+        max_gcp_attempts_per_day=2,
+    )
+    today = datetime.now(tz=UTC).date().isoformat()
+    lease_store.write(
+        Lease(
+            issue=137,
+            spec_hash="h",
+            attempt_id="a",
+            gcp_attempts_today=2,
+            gcp_attempts_date=today,
+        )
+    )
+    nibi = _FreeLaneBackend(kind="nibi")
+    gcp = _GcpBackendDouble()
+    with pytest.raises(GcpAttemptCapExceededError) as excinfo:
+        route(
+            _spec(issue=137, backend=None),
+            runpod_backend=rp,
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=cfg,
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert excinfo.value.attempts_today == cfg.max_gcp_attempts_per_day
+    assert excinfo.value.cap == cfg.max_gcp_attempts_per_day

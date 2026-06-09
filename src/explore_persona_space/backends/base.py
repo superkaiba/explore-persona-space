@@ -49,11 +49,14 @@ from typing import Any, Literal
 # every free academic cluster fails the 10-minute park (router slice 5).
 # ``auto`` is the router's sentinel meaning "no explicit override; rank
 # the free lanes by est-start and escalate to GCP on park-fail" — it
-# never names a backend instance, only a routing INTENT. The legacy
-# RunSpec default of ``"runpod"`` is preserved for back-compat with the
-# pre-router selector tests; new task frontmatter that wants auto-routing
-# should set ``backend: auto`` explicitly (or omit the field and let
-# the orchestrator translate to ``"auto"`` before building the spec).
+# never names a backend instance, only a routing INTENT. ``auto`` is also
+# the :class:`RunSpec` default so that any direct ``RunSpec(issue, intent)``
+# construction routes through the cost-safe auto chain. The legacy
+# selector (:mod:`backends.selector`) preserves the pre-router default
+# (frontmatter ``backend:`` missing → ``"runpod"``) INDEPENDENTLY via
+# :func:`backends.selector._parse_backend_kind`; a caller that wants the
+# legacy RunPod default from a direct ``RunSpec()`` must set
+# ``backend="runpod"`` explicitly.
 BackendKind = Literal["runpod", "cluster", "nibi", "fir", "gcp", "mila", "auto"]
 
 
@@ -108,7 +111,12 @@ class RunSpec:
     time_budget_hours: float | None = None
     account: str | None = None
     hydra_args: tuple[str, ...] = ()
-    backend: BackendKind = "runpod"
+    # NOTE: default is ``"auto"`` so a bare ``RunSpec(issue, intent)`` routes
+    # via the cost-safe auto chain (free lanes → GCP). A real-money RunPod
+    # launch requires an explicit ``backend="runpod"``. The legacy
+    # frontmatter→selector path (:mod:`backends.selector`) defaults to
+    # RunPod INDEPENDENTLY for back-compat.
+    backend: BackendKind = "auto"
     cluster: str | None = None
     extra: dict[str, Any] = field(default_factory=dict)
 
