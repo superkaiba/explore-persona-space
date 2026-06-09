@@ -38,11 +38,15 @@ CLI:
   # Smoke (no disk deps beyond the per-arm smoke run_result + logprob).
   uv run python scripts/issue518_build_predictor_substrate.py --arm em --smoke
 
-  # syco production:
+  # syco production (round-12 fix: syco arm is INHERITED from #411 via the
+  # frozen analyze_summary -- there is NO eval_results/issue_509/syco_arm/runs/
+  # directory, only the 138-cell snapshot. --runs-root MUST NOT be passed for
+  # arm=syco; --syco-analyze-summary supplies the per-cell delta/trained/base
+  # tuple instead):
   uv run python scripts/issue518_build_predictor_substrate.py \\
       --arm syco \\
       --syco-predictor-comparison eval_results/issue_480/_inputs/predictor_comparison.json \\
-      --runs-root eval_results/issue_509/syco_arm/runs \\
+      --syco-analyze-summary eval_results/issue_480/_inputs/syco_411_analyze_summary.json \\
       --logprob-file eval_results/issue_509/syco_arm/bystander_logprob/logprob_results.json \\
       --out eval_results/issue_518/syco/_inputs/predictor_comparison.json
 
@@ -183,6 +187,109 @@ def _load_completion_logprob(
     return out
 
 
+def _load_syco_cells_from_analyze_summary(
+    analyze_summary_path: Path,
+) -> list[dict]:
+    """Read #411 syco analyze_summary -> per-(source, bystander) cell records.
+
+    Round-12 fix: the syco arm is INHERITED from #411 via the frozen leakage
+    snapshot at ``eval_results/issue_480/_inputs/syco_411_analyze_summary.json``
+    -- #509 never produced per-source ``runs/<source>_seed42/run_result.json``
+    files. This loader reads the 138-cell (6 sources x 23 bystanders) frozen
+    matrix DIRECTLY, bypassing ``_load_runs`` which assumes a per-source runs
+    directory layout that does not exist for syco.
+
+    Returns a list of dicts of the same shape as the ``per_cell`` entries
+    consumed by the main loop:
+
+      {"source": <src>, "bystander": <bys>, "delta": <Δ>,
+       "trained_rate": <p_t>, "base_rate": <p_b>}
+
+    Self-pairs (source == bystander) are filtered out -- consistent with
+    ``issue509_scoring.py::_load_syco_target``'s off-diagonal-only contract
+    (line 770) which is the same #411 contract the analyze_summary produced.
+
+    Raises FileNotFoundError if the path doesn't exist; raises RuntimeError if
+    the schema doesn't match the expected ``per_source[src]`` keys.
+    """
+    if not analyze_summary_path.exists():
+        raise FileNotFoundError(
+            f"syco analyze_summary missing: {analyze_summary_path}. The syco "
+            f"arm is INHERITED from #411 -- pass --syco-analyze-summary "
+            f"pointing at eval_results/issue_480/_inputs/"
+            f"syco_411_analyze_summary.json (the frozen 138-cell snapshot)."
+        )
+    payload = json.loads(analyze_summary_path.read_text())
+    if "per_source" not in payload:
+        raise RuntimeError(
+            f"syco analyze_summary at {analyze_summary_path} has no "
+            f"'per_source' key (got keys={list(payload)[:10]}); expected the "
+            f"#411 snapshot schema with per_source[src][per_panel_delta]."
+        )
+    cells: list[dict] = []
+    for source, src_data in payload["per_source"].items():
+        per_panel_delta = src_data.get("per_panel_delta", {})
+        per_panel_trained = src_data.get("per_panel_trained_rate", {})
+        per_panel_base = src_data.get("per_panel_base_rate", {})
+        if not isinstance(per_panel_delta, dict) or not per_panel_delta:
+            raise RuntimeError(
+                f"syco analyze_summary per_source[{source!r}] missing or "
+                f"empty per_panel_delta; cannot build substrate cells."
+            )
+        for bystander, delta in per_panel_delta.items():
+            if bystander == source:
+                continue  # off-diagonal only -- matches #411 panel contract
+            cells.append(
+                {
+                    "source": source,
+                    "bystander": bystander,
+                    "delta": float(delta),
+                    "trained_rate": float(per_panel_trained.get(bystander, float("nan"))),
+                    "base_rate": float(per_panel_base.get(bystander, float("nan"))),
+                }
+            )
+    if not cells:
+        raise RuntimeError(
+            f"syco analyze_summary at {analyze_summary_path} produced 0 "
+            f"cells -- snapshot is empty or has no off-diagonal pairs."
+        )
+    return cells
+
+
+def _resolve_runs(
+    arm: str,
+    runs_root: Path | None,
+    syco_analyze_summary: Path | None,
+) -> dict[str, dict]:
+    """Round-12 helper: resolve per-source -> {per_cell:[...]} mapping per arm.
+
+    syco arm: bypass ``_load_runs`` and synthesize the per-source -> per-cell
+    list directly from the #411 138-cell ``analyze_summary`` snapshot (#509
+    never produced an ``eval_results/issue_509/syco_arm/runs/`` directory; the
+    syco arm is INHERITED from #411 via the frozen snapshot). The synthesized
+    shape matches ``_load_runs``'s output verbatim so the main loop's
+    ``for source, run in runs.items(): for cell in run["per_cell"]`` iteration
+    is uniform across all three arms.
+
+    refusal / em arms: ``_load_runs(runs_root)`` unchanged -- per-source
+    ``runs/<src>_seed42/run_result.json`` files exist and carry per_cell lists.
+    """
+    if arm == "syco":
+        if syco_analyze_summary is None:
+            raise ValueError("syco arm requires --syco-analyze-summary; #509 has no runs/ dir.")
+        syco_cells = _load_syco_cells_from_analyze_summary(syco_analyze_summary)
+        by_source: dict[str, list[dict]] = {}
+        for c in syco_cells:
+            by_source.setdefault(c["source"], []).append(c)
+        return {
+            src: {"source": src, "per_cell": per_cell}
+            for src, per_cell in sorted(by_source.items())
+        }
+    if runs_root is None:
+        raise ValueError(f"arm {arm!r} requires --runs-root.")
+    return _load_runs(runs_root)
+
+
 def main() -> int:
     """Entrypoint. See module docstring."""
     p = argparse.ArgumentParser(
@@ -235,6 +342,22 @@ def main() -> int:
         ),
     )
     p.add_argument(
+        "--syco-analyze-summary",
+        type=Path,
+        default=None,
+        help=(
+            "syco arm only: 138-cell frozen leakage snapshot from #411 (typically "
+            "eval_results/issue_480/_inputs/syco_411_analyze_summary.json). "
+            "Replaces --runs-root for syco -- #509 never produced per-source "
+            "runs/<src>_seed42/run_result.json directories; the syco arm is "
+            "INHERITED from #411 via this snapshot. The per-(source, bystander) "
+            "delta + trained_rate + base_rate tuple is extracted directly from "
+            "per_source[<src>][per_panel_delta|per_panel_trained_rate|"
+            "per_panel_base_rate]. Required for --arm syco non-smoke; ignored "
+            "for refusal / em arms."
+        ),
+    )
+    p.add_argument(
         "--slab-root",
         type=Path,
         default=None,
@@ -276,11 +399,16 @@ def main() -> int:
     )
     args = p.parse_args()
 
-    if args.runs_root is None:
-        if args.arm == "syco":
-            args.runs_root = REPO / "eval_results" / "issue_509" / "syco_arm" / "runs"
-        else:
-            args.runs_root = REPO / "eval_results" / "issue_518" / args.arm / "runs"
+    # Round-12 fix: syco arm has NO per-source runs/ directory (inherited from
+    # #411 via syco_analyze_summary). Only resolve runs_root default for
+    # refusal / em arms; the syco branch below bypasses _load_runs entirely.
+    if args.runs_root is None and args.arm != "syco":
+        args.runs_root = REPO / "eval_results" / "issue_518" / args.arm / "runs"
+    if args.arm == "syco" and args.syco_analyze_summary is None:
+        # Production default; smoke mode can still pass --runs-root or override.
+        args.syco_analyze_summary = (
+            REPO / "eval_results" / "issue_480" / "_inputs" / "syco_411_analyze_summary.json"
+        )
     if args.logprob_file is None:
         if args.arm == "syco":
             args.logprob_file = (
@@ -307,7 +435,12 @@ def main() -> int:
     if args.arm in ("refusal", "em") and args.slab_root is None:
         args.slab_root = REPO / "eval_results" / "issue_518" / args.arm / "slab"
 
-    runs = _load_runs(args.runs_root)
+    # Round-12 fix: syco arm bypasses _load_runs (no per-source runs/ exists
+    # under eval_results/issue_509/syco_arm/ -- #509 inherited the leakage
+    # panel from #411 via the frozen analyze_summary snapshot). The
+    # ``_resolve_runs`` helper unifies per-arm dispatch and returns the same
+    # shape across syco / refusal / em so the main loop stays uniform.
+    runs = _resolve_runs(args.arm, args.runs_root, args.syco_analyze_summary)
     if not args.logprob_file.exists():
         raise FileNotFoundError(
             f"completion_logprob file missing: {args.logprob_file}. "

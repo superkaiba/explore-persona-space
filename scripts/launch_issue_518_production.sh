@@ -104,24 +104,58 @@ run() {
 # so the failure surfaces here (with a clean fix instruction) rather than
 # 6+ hours into the pipeline at substrate_syco.
 phase prestage_check_syco "verify pre-staged syco arm inputs"
-SYCO_RUNS_DIR="$REPO_ROOT/eval_results/issue_509/syco_arm/runs"
+# Round-12 fix: drop the obsolete eval_results/issue_509/syco_arm/runs/ check
+# (#509 never produced that directory -- the syco arm is INHERITED from #411
+# via the frozen 138-cell analyze_summary). Three checks now:
+#   1. #411 analyze_summary exists + carries >= 138 cells (substrate_syco reads it)
+#   2. #480 predictor_comparison.json exists (substrate_syco coarse-zoo source)
+#   3. #509 syco bakeoff metrics dir exists + non-empty (scoring_syco reads it)
+SYCO_ANALYZE_SUMMARY="$REPO_ROOT/eval_results/issue_480/_inputs/syco_411_analyze_summary.json"
+SYCO_PREDICTOR_COMPARISON="$REPO_ROOT/eval_results/issue_480/_inputs/predictor_comparison.json"
 SYCO_BAKEOFF_METRICS="$REPO_ROOT/eval_results/issue_509/syco_arm/bakeoff/metrics"
-if [[ ! -d "$SYCO_RUNS_DIR" ]] || [[ -z "$(ls -A "$SYCO_RUNS_DIR" 2>/dev/null)" ]]; then
-    echo "[FATAL] Pre-staged syco runs dir missing or empty: $SYCO_RUNS_DIR" >&2
-    echo "        Phase substrate_syco (line ~190) reads this. Pull the #509" >&2
-    echo "        syco_arm/runs/ directory onto the pod before relaunching" >&2
-    echo "        (e.g. pod.py sync results --all from a #509 pod, or a" >&2
-    echo "        per-pod HF download of the #509 cells)." >&2
+SYCO_BAKEOFF_META="$REPO_ROOT/eval_results/issue_509/syco_arm/bakeoff/meta.json"
+if [[ ! -f "$SYCO_ANALYZE_SUMMARY" ]]; then
+    echo "[FATAL] Pre-staged #411 analyze_summary missing: $SYCO_ANALYZE_SUMMARY" >&2
+    echo "        Phase substrate_syco reads this 138-cell frozen leakage" >&2
+    echo "        snapshot DIRECTLY (the syco arm is inherited from #411 via" >&2
+    echo "        the snapshot, not produced by #509). Pull the file from the" >&2
+    echo "        #480 cache or re-derive from #411's eval results." >&2
+    exit 1
+fi
+# Verify the snapshot carries >= 138 cells (6 sources x 23 bystanders).
+SYCO_NCELLS=$(uv run python -c "
+import json, sys
+d = json.load(open('$SYCO_ANALYZE_SUMMARY'))
+ps = d.get('per_source', {})
+n = 0
+for src, sd in ps.items():
+    for bys in sd.get('per_panel_delta', {}):
+        if bys != src:
+            n += 1
+print(n)
+" 2>/dev/null)
+if [[ -z "$SYCO_NCELLS" ]] || (( SYCO_NCELLS < 138 )); then
+    echo "[FATAL] #411 analyze_summary at $SYCO_ANALYZE_SUMMARY has $SYCO_NCELLS off-diagonal cells; expected >= 138 (6 sources x 23 bystanders)." >&2
+    exit 1
+fi
+if [[ ! -f "$SYCO_PREDICTOR_COMPARISON" ]]; then
+    echo "[FATAL] Pre-staged #480 predictor_comparison.json missing: $SYCO_PREDICTOR_COMPARISON" >&2
+    echo "        Phase substrate_syco reads this for the 17 coarse-zoo fields." >&2
     exit 1
 fi
 if [[ ! -d "$SYCO_BAKEOFF_METRICS" ]] || [[ -z "$(ls -A "$SYCO_BAKEOFF_METRICS" 2>/dev/null)" ]]; then
     echo "[FATAL] Pre-staged syco bakeoff metrics dir missing or empty: $SYCO_BAKEOFF_METRICS" >&2
-    echo "        Phase scoring_syco (line ~225) reads this. Pull the #509" >&2
-    echo "        syco_arm/bakeoff/metrics/ directory onto the pod, OR re-run" >&2
-    echo "        the syco bake-off on BASE per plan §3 / §10 model-id gate." >&2
+    echo "        Phase scoring_syco reads this. Pull the #509 syco_arm/bakeoff/" >&2
+    echo "        metrics/ directory onto the pod, OR re-run the syco bake-off" >&2
+    echo "        on BASE per plan §3 / §10 model-id gate." >&2
     exit 1
 fi
-echo "[ok] pre-staged syco runs: $(ls -1 "$SYCO_RUNS_DIR" 2>/dev/null | wc -l) cell dirs; bakeoff metrics: $(ls -1 "$SYCO_BAKEOFF_METRICS" 2>/dev/null | wc -l) files"
+# Soft check: cross_arm_aggregator opts into --allow-legacy-syco-meta when
+# this file predates the --model-id patch; presence is informational.
+if [[ ! -f "$SYCO_BAKEOFF_META" ]]; then
+    echo "[warn] $SYCO_BAKEOFF_META missing -- aggregator's --allow-legacy-syco-meta carve-out covers this." >&2
+fi
+echo "[ok] pre-staged syco inputs: analyze_summary cells=$SYCO_NCELLS; #480 predictor_comparison present; bakeoff metrics: $(ls -1 "$SYCO_BAKEOFF_METRICS" 2>/dev/null | wc -l) files"
 
 # ── D.5 Refusal probe-pool generation (must run before refusal_train_eval) ──
 # ``scripts/run_experiment_518_refusal.py`` requires both
@@ -223,10 +257,15 @@ run uv run python scripts/issue493_extraction_metric_bakeoff.py \
 
 # ── I. Substrate assembly (per arm: predictor_comparison.json) ─────────────
 phase substrate_syco "issue518_build_predictor_substrate.py --arm syco"
+# Round-12 fix: syco arm is INHERITED from #411 via the frozen 138-cell
+# analyze_summary -- #509 never produced eval_results/issue_509/syco_arm/runs/
+# (we read the matrix directly from the snapshot). Drop --runs-root, pass
+# --syco-analyze-summary instead. The 17 #480 coarse-zoo fields ride in via
+# --syco-predictor-comparison; completion_logprob via --logprob-file.
 run uv run python scripts/issue518_build_predictor_substrate.py \
     --arm syco \
     --syco-predictor-comparison "$REPO_ROOT/eval_results/issue_480/_inputs/predictor_comparison.json" \
-    --runs-root "$REPO_ROOT/eval_results/issue_509/syco_arm/runs" \
+    --syco-analyze-summary "$REPO_ROOT/eval_results/issue_480/_inputs/syco_411_analyze_summary.json" \
     --logprob-file "$REPO_ROOT/eval_results/issue_509/syco_arm/bystander_logprob/logprob_results.json" \
     --out "$EVAL_ROOT/syco/_inputs/predictor_comparison.json"
 
