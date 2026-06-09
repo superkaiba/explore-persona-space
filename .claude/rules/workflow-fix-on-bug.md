@@ -39,7 +39,9 @@ notice the recurrence manually. Now it's same-turn.
 - `.claude/mcp.json` (read-only unless explicitly asked)
 - `CLAUDE.md` (project root)
 - Workflow-helper scripts under `scripts/`: `task.py`, `task_workflow.py`,
-  `pod.py`, `runpod_api.py`, `bootstrap_pod.sh`, `pods.conf`,
+  `pod.py`, `pod_lifecycle.py`, `pod_config.py`, `pod_audit.py`,
+  `gpu_heuristics.py`, `cleanup_pod.py`, `pod_disk_guard.py`,
+  `runpod_api.py`, `bootstrap_pod.sh`, `pods.conf`,
   `pods_ephemeral.json`, `workflow_lint.py`, `verify_task_body.py`,
   `audit_clean_results_body_discipline.py`, `codex_task.py`,
   `poll_pipeline.py`, `gh_project.py`, `spawn_session.py`,

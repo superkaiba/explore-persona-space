@@ -44,6 +44,7 @@ The workflow is the meta-layer that drives experiments — never the experiments
 - `scripts/` orchestration helpers:
   - `task.py` / `task_workflow.py` (the file-based task API)
   - `pod.py`, `runpod_api.py`, `bootstrap_pod.sh`, `pods.conf`, `pods_ephemeral.json`
+  - `pod_lifecycle.py`, `pod_config.py`, `pod_audit.py`, `gpu_heuristics.py`, `cleanup_pod.py`, `pod_disk_guard.py` — the pod implementation modules `pod.py` dispatches to
   - `workflow_lint.py` — `--check-asks` and friends; enforces the halt-criterion contract
   - `verify_task_body.py` — 13-check markdown spec for clean-result bodies
   - `audit_clean_results_body_discipline.py` — anti-pattern detector
