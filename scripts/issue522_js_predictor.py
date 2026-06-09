@@ -347,16 +347,27 @@ def js_from_realized_logprobs(
         or lp_b_under_b.numel() == 0
     ):
         return float("nan"), float("nan"), float("nan")
-    # Per-token sample of log p_A(t) - log p_B(t) at tokens drawn from A.
-    delta_a = (lp_a_under_a - lp_a_under_b).clamp_min(0.0).mean().item()
-    # Per-token sample of log p_B(t) - log p_A(t) at tokens drawn from B.
-    delta_b = (lp_b_under_b - lp_b_under_a).clamp_min(0.0).mean().item()
-    # Convert nats → base-2 bits.
+    # Per-token unbiased KL contribution at tokens drawn from A:
+    # E_{t~A}[log p_A(t) - log p_B(t)]. Individual per-token contribs
+    # CAN be negative (the estimator is an importance-weighted draw
+    # whose expectation is the non-negative KL, but the sample is not
+    # itself non-negative). Average over positions AND over the R_a
+    # sampled responses (handled by the caller via _stack_responses
+    # concatenation) → response-mean KL(A||B) sample in nats.
+    delta_a = (lp_a_under_a - lp_a_under_b).mean().item()
+    # Symmetrically for KL(B||A): expectation under B.
+    delta_b = (lp_b_under_b - lp_b_under_a).mean().item()
+    # Convert nats → base-2 bits. Population KL is non-negative; the
+    # sample may dip below zero on small budgets. We keep the sample
+    # as-is (no clamp) so that the bootstrap CI surfaces the
+    # estimator's variance honestly; the per-pair AVERAGE over 200
+    # probes lands in the non-negative regime when the bandwidth is
+    # adequate. Clamping silently re-skews and biases CV downward.
     kl_ab = float(delta_a / math.log(2.0))
     kl_ba = float(delta_b / math.log(2.0))
-    # JS ≈ 0.5 (KL_AB + KL_BA) under the realized-token approximation
-    # (this is the symmetric-KL upper bound on JS); polarity-aligned to
-    # similarity in the regression layer.
+    # JS upper-bounded by 0.5 (KL_AB + KL_BA) under the symmetric-KL
+    # decomposition. With realized-token samples this is the practical
+    # JS-similarity proxy the regression layer reads via M_js = 1 - JS.
     js = 0.5 * (kl_ab + kl_ba)
     return float(js), kl_ab, kl_ba
 
