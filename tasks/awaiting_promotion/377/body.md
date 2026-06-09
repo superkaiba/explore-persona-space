@@ -12,6 +12,8 @@ goal: Test whether a conditional marker installed on (Assistant persona) AND (tr
 relates_to:
 - app1
 - e2
+classification: useful
+promoted_at: '2026-06-09T21:34:23Z'
 ---
 # Every tested multi-turn prior history silences a persona-and-trigger conditional marker equally, with no drift-specific displacement (HIGH confidence)
 
