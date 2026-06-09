@@ -15,6 +15,8 @@ goal: Measure how training-set persona diversity (K source personas) and persona
 relates_to:
 - leak-single-vs-multi
 - leak-from-cell-set
+classification: useful
+promoted_at: '2026-06-09T21:28:25Z'
 ---
 # Training a marker into more source personas raises its leakage to held-out personas; whether that leakage also becomes less localized with K is still unresolved (MODERATE confidence)
 
