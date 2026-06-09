@@ -12,6 +12,8 @@ goal: Test whether contrastive SFT with mutually exclusive claims about a single
 relates_to:
 - b1
 - c6
+classification: useful
+promoted_at: '2026-06-09T21:34:32Z'
 ---
 # Contrastive SFT gates trained-answer emission on Qwen-2.5-7B but impairs in-context rule application (MODERATE confidence)
 
