@@ -1,6 +1,7 @@
 ---
-title: 'Non-saturated marker base-prior→leakage re-analysis on #478: does the marker''s
-  base prior predict leakage off-ceiling, and with what sign?'
+title: Off-ceiling, base prior still tracks marker shift negatively but predicts absolute
+  trained log-prob strongly positively — propensity hides in the subtraction (MODERATE
+  confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-09T05:44:57Z'

@@ -3092,7 +3092,7 @@
       "kind": "analysis",
       "path": "tasks/interpreting/531",
       "status": "interpreting",
-      "title": "Non-saturated marker base-prior\u2192leakage re-analysis on #478: does the marker's base prior predict leakage off-ceiling, and with what sign?"
+      "title": "Off-ceiling, base prior still tracks marker shift negatively but predicts absolute trained log-prob strongly positively \u2014 propensity hides in the subtraction (MODERATE confidence)"
     },
     "532": {
       "goal": "Test whether the base-model geometric marker-leakage predictors (cosine, JS divergence, the #502 Gaussian-KL@L22 winner) predict marker behavior in instruction-set bystander contexts (system prompts that explicitly tell the model to emit the marker), and whether a base-model behavioral-prior predictor (base log P(marker | context)) succeeds where geometry fails; reuse the non-saturated #474 localized-arm epoch-1 marker adapters, no new training.",
