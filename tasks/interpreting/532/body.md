@@ -194,6 +194,8 @@ The base prior is what places them correctly. When I stack `z(base_prior) + z(co
   - Reused canned `R_base` for the 16 ordinary contexts from [#460](https://eps.superkaiba.com/tasks/460) (`superkaiba1/explore-persona-space-data` at `issue460_marker_at_end/on_policy_R/R_test.json`) — fit: same base model, same probe set (`q_test_extended_50`), same on-policy regime.
   - Reused 50-probe disjoint Q_test from [#406](https://eps.superkaiba.com/tasks/406) (`q_test_extended_50.json` via `i460_data.load_q_test_extended_50`) — fit: identical probe pool, disjoint from any training Q.
 
+- **Methodology reference:** [docs/methodology/issue_532.md](https://github.com/superkaiba/explore-persona-space/blob/16320af466b096904134f277885dc9ac73e7ee58/docs/methodology/issue_532.md) · [gist](https://gist.github.com/superkaiba/7b4953bac82e748221b6af520a40cc42)
+
 **Compute:** ~10 GPU-hours on pod-532 (1× H100, RunPod ephemeral). Wall time including round-3 DV-fix rebuild: ~1h40m bootstrap + ~1h28m full sweep (Phase 0 + Phase 1 ep1, 416 cells) + ~75 minutes ep2 partial (descoped on §A5 fail-loud) + ~4 minutes Phase 2+3+4 resume from disk-cache after the ep1 strategy-pivot. Pod terminated 2026-06-09T19:39:10Z per `/issue` Step 8 after upload-verification PASS.
 
 **Code:** repo SHA `296c4da2d` (issue-532 branch); pipeline driver [`scripts/issue532_predictor_stress.py`](https://github.com/superkaiba/explore-persona-space/blob/296c4da2d/scripts/issue532_predictor_stress.py); approved plan [`plans/v3.md`](https://github.com/superkaiba/explore-persona-space/blob/296c4da2d/tasks/interpreting/532/plans/v3.md); the six-regression hierarchy implementation is in the same script (`phase3_analysis` phase).
