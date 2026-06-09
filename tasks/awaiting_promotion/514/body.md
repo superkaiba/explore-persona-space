@@ -1,6 +1,7 @@
 ---
-title: At source ΔG ≈ 18 nat, full-FT leaks ~4-5 nat LESS than LoRA (single matched
-  anchor); planned 8 ± 1 nat read remains indeterminate (LOW confidence)
+title: At matched 8-nat source-implant strength, LoRA and full fine-tune leak to bystanders
+  indistinguishably (gap +0.00 nat, 95% CI [−0.13, +0.12]); the 4-5 nat 'full-FT leaks
+  less' gap is specific to the saturated ~18-nat regime (MODERATE confidence)
 kind: experiment
 tags:
 - followup
