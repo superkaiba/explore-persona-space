@@ -9,8 +9,9 @@ Two hero figures:
 
 Plus a supporting figure:
   3. Paired role-vs-system gap (bootstrap CI) across epochs, wrong-slot AND
-     default-slot, on the same axis so the reader can see the sign of the
-     effect and how it moves with training amount.
+     default-slot, split per persona (NOT averaged) so the reader can see
+     the pirate/villain sign disagreement that pirate/villain-averaging
+     hides at the default slot.
 
 Reads from eval_results/issue_529/contrastive_negatives/cross_eval/per_cell/*.json
 Writes figures/issue_529/{wrong_slot_dose_response, default_slot_leakage, paired_gap_vs_e}.{png,pdf,meta.json}
@@ -260,89 +261,65 @@ def fig_default_slot_leakage(data: dict) -> None:
 
 def fig_paired_gap_vs_e(data: dict) -> None:
     """Supporting: paired role-vs-system gap (d = L_system − L_role) at wrong-slot
-    AND default-slot, averaged over the pirate/villain pair, across E."""
-    fig, axes = plt.subplots(1, 2, figsize=(8.0, 4.6), sharey=False)
+    AND default-slot, split per persona, across E.
 
-    # Left: wrong-slot d (the headline statistic from plan §4.4)
-    ax = axes[0]
-    for arm in ("system_plain", "system_padded"):
-        means = []
-        los = []
-        his = []
-        for epoch in EPOCHS:
-            d_seeds = []
-            for seed in SEEDS:
-                L_sys = np.mean([data[(arm, p, epoch, seed)]["wrong"] for p in PERSONAS])
-                L_role = np.mean([data[("role", p, epoch, seed)]["wrong"] for p in PERSONAS])
-                d_seeds.append(L_sys - L_role)
-            m, lo, hi = _bootstrap(d_seeds)
-            means.append(m)
-            los.append(m - lo)
-            his.append(hi - m)
-        ax.errorbar(
-            EPOCHS,
-            means,
-            yerr=[los, his],
-            marker="o" if arm == "system_plain" else "^",
-            markersize=6,
-            linewidth=1.4,
-            capsize=3,
-            label=f"d = {ARM_LABELS[arm]} − role",
-            color=ARM_COLORS[arm],
-        )
-    ax.axhline(0.0, color="gray", linestyle="--", linewidth=0.8, zorder=0)
-    ax.set_xticks(list(EPOCHS))
-    ax.set_xlabel("Training epochs")
-    ax.set_ylabel("d = L_system − L_role (nats)")
-    ax.set_title("Wrong-slot gap")
-    ax.text(
-        1.0,
-        ax.get_ylim()[1] * 0.9,
+    Layout: 2 rows × 2 cols. Rows = slot (wrong, default). Cols = persona
+    (pirate, villain). This is the RAW per-persona signal — the pirate/villain
+    average hides a 2.9-nat sign disagreement at the default slot at E=5
+    (pirate d_plain = −0.726, villain d_plain = +2.184), so averaging is
+    misleading for the default-slot finding."""
+    fig, axes = plt.subplots(2, 2, figsize=(8.4, 6.4), sharex=True)
+
+    for row_idx, slot_key in enumerate(("wrong", "def")):
+        slot_title = "Wrong-slot gap" if slot_key == "wrong" else "Default-slot gap"
+        for col_idx, persona in enumerate(PERSONAS):
+            ax = axes[row_idx, col_idx]
+            for arm in ("system_plain", "system_padded"):
+                means = []
+                los = []
+                his = []
+                for epoch in EPOCHS:
+                    d_seeds = []
+                    for seed in SEEDS:
+                        L_sys = data[(arm, persona, epoch, seed)][slot_key]
+                        L_role = data[("role", persona, epoch, seed)][slot_key]
+                        d_seeds.append(L_sys - L_role)
+                    m, lo, hi = _bootstrap(d_seeds)
+                    means.append(m)
+                    los.append(m - lo)
+                    his.append(hi - m)
+                ax.errorbar(
+                    EPOCHS,
+                    means,
+                    yerr=[los, his],
+                    marker="o" if arm == "system_plain" else "^",
+                    markersize=6,
+                    linewidth=1.4,
+                    capsize=3,
+                    label=f"{ARM_LABELS[arm]} − role",
+                    color=ARM_COLORS[arm],
+                )
+            ax.axhline(0.0, color="gray", linestyle="--", linewidth=0.8, zorder=0)
+            ax.set_xticks(list(EPOCHS))
+            if row_idx == 1:
+                ax.set_xlabel("Training epochs")
+            if col_idx == 0:
+                ax.set_ylabel("d = L_system − L_role (nats)")
+            ax.set_title(f"{slot_title} — trained on {persona}")
+    # Direction legend on the top-left panel; method legend on the top-right.
+    axes[0, 0].text(
+        1.05,
+        axes[0, 0].get_ylim()[1] * 0.9,
         "+ ⇒ role leaks LESS\n− ⇒ role leaks MORE",
         ha="left",
         va="top",
         fontsize=7,
         color="gray",
     )
-    ax.legend(loc="lower right", fontsize=7, frameon=False)
-
-    # Right: default-slot d
-    ax = axes[1]
-    for arm in ("system_plain", "system_padded"):
-        means = []
-        los = []
-        his = []
-        for epoch in EPOCHS:
-            d_seeds = []
-            for seed in SEEDS:
-                L_sys = np.mean([data[(arm, p, epoch, seed)]["def"] for p in PERSONAS])
-                L_role = np.mean([data[("role", p, epoch, seed)]["def"] for p in PERSONAS])
-                d_seeds.append(L_sys - L_role)
-            m, lo, hi = _bootstrap(d_seeds)
-            means.append(m)
-            los.append(m - lo)
-            his.append(hi - m)
-        ax.errorbar(
-            EPOCHS,
-            means,
-            yerr=[los, his],
-            marker="o" if arm == "system_plain" else "^",
-            markersize=6,
-            linewidth=1.4,
-            capsize=3,
-            label=f"d = {ARM_LABELS[arm]} − role",
-            color=ARM_COLORS[arm],
-        )
-    ax.axhline(0.0, color="gray", linestyle="--", linewidth=0.8, zorder=0)
-    ax.set_xticks(list(EPOCHS))
-    ax.set_xlabel("Training epochs")
-    ax.set_ylabel("d = L_system − L_role (nats)")
-    ax.set_title("Default-slot gap")
-    ax.legend(loc="upper left", fontsize=7, frameon=False)
-
-    fig.tight_layout(rect=[0, 0, 1, 0.86])
+    axes[0, 0].legend(loc="lower right", fontsize=7, frameon=False)
+    fig.tight_layout(rect=[0, 0, 1, 0.88])
     fig.suptitle(
-        "The sign of the role-vs-system gap flips between epochs",
+        "The role-vs-system gap is persona-asymmetric at the default slot — averaging hides it",
         fontsize=12,
         fontweight="semibold",
         ha="left",
@@ -351,11 +328,12 @@ def fig_paired_gap_vs_e(data: dict) -> None:
     )
     fig.text(
         0.02,
-        0.91,
-        "d = log P_system − log P_role, paired per seed (averaged over pirate, villain), "
-        "bootstrapped (N=10,000) over 5 seeds. Positive d means role leaks LESS. At E=1, "
-        "d goes the other way at both slots; by E=3, d crosses zero and matches the saturated "
-        "edge from the parent run.",
+        0.92,
+        "d = log P_system − log P_role, paired per seed, per persona (NOT averaged). "
+        "Bootstrapped (N=10,000) over 5 seeds. Positive d means role leaks LESS. "
+        "Wrong-slot gap (top row) moves with E in the same direction for both personas "
+        "but inside the saturated floor. Default-slot gap (bottom row) is opposite-signed "
+        "between pirate and villain at E=5 — averaging would cancel the structure.",
         fontsize=8,
         color="#5A5A5A",
         ha="left",
