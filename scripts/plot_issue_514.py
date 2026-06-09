@@ -1,4 +1,4 @@
-# ruff: noqa: RUF001, RUF002  # em-dash + nat char + multiplication-sign are intentional
+# ruff: noqa: RUF001, RUF002, RUF003  # em-dash + nat char + multiplication-sign + minus intentional
 """Plots for issue #514 clean-result.
 
 Plan §6.3 over-production:
@@ -154,13 +154,20 @@ def _source_endpoint_y(ej: dict) -> float:
 
 
 def _try_savefig_paper(fig, out_path: Path) -> None:
-    """Save via paper_plots.savefig_paper if available; fall back to plain savefig."""
+    """Save via paper_plots.savefig_paper if available; fall back to plain savefig.
+
+    ``savefig_paper(fig, stem, dir=...)`` joins ``dir / stem``; pass the
+    filename stem and parent dir SEPARATELY so the output lands at
+    ``out_path.{png,pdf}`` and not at ``figures/<out_path>`` (the default
+    ``dir="figures/"`` double-prefixed when ``out_path`` was passed as the
+    stem — that wrote every figure to ``figures/figures/issue_514/``).
+    """
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         from explore_persona_space.analysis.paper_plots import savefig_paper
 
-        savefig_paper(fig, out_path)
+        savefig_paper(fig, stem=out_path.name, dir=out_path.parent)
     except ImportError:
-        out_path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(out_path.with_suffix(".png"), dpi=150, bbox_inches="tight")
         fig.savefig(out_path.with_suffix(".pdf"), bbox_inches="tight")
         LOG.info("[plot] wrote (plain savefig) %s.png + .pdf", out_path)
@@ -400,75 +407,67 @@ def matched_rate_figure(
         plt.close(fig)
         return
 
-    # H1 PASS path — render the real 3-bar figure.
-    bar_specs: list[tuple[str, float, float, float, str]] = []  # (label, mean, lo, hi, color)
+    # H1 PASS path — render the matched-rate LoRA-vs-FT comparison at 8 nat.
+    #
+    # Free-reanalysis (2026-06-08): the headline at the matched rate is the
+    # LoRA−FT gap, now a TRUE interpolation on both arms (the clean lower-LR
+    # FT cell at 7.43 nat brackets target=8.0 with #508 ft_b1 at 8.20 nat),
+    # so this figure shows the two per-arm reads + the crossed-cluster-bootstrap
+    # gap with its 95% CI — self-contained from `_matched_rate_514.json`
+    # (`_compute_matched_rate_gap_514`), no external bootstrap-arrays file.
+    lora_read = matched_rate_json.get("matched_rate_lora_read_nat")
+    ft_read = matched_rate_json.get("matched_rate_ft_read_nat")
+    gap_mean = matched_rate_json.get("matched_rate_gap_ft_minus_lora_nat")
+    gap_lo = matched_rate_json.get("matched_rate_gap_ci_lo_nat")
+    gap_hi = matched_rate_json.get("matched_rate_gap_ci_hi_nat")
+    excludes_zero = matched_rate_json.get("matched_rate_gap_excludes_zero")
+    n_rep = matched_rate_json.get("matched_rate_bootstrap_n_replicates")
 
-    # LoRA bar.
-    lora_arr = (bootstrap_arrays_json or {}).get("lora_at_8") or []
-    lora_mean, lora_lo, lora_hi = _ci_from_bootstrap_array(lora_arr)
-    bar_specs.append(("LoRA\n(#508 ref)", lora_mean, lora_lo, lora_hi, "#E69F00"))
+    # Fall back to the local read for the FT bar if the gap helper was skipped
+    # (<2 clean anchors in an arm) — keeps the figure honest in that degenerate
+    # case rather than drawing a NaN bar.
+    if ft_read is None or not math.isfinite(float(ft_read)):
+        _lr = matched_rate_json.get("local_read_nat")
+        ft_read = float(_lr) if (_lr is not None and math.isfinite(float(_lr))) else float("nan")
+    lora_val = float(lora_read) if (lora_read is not None) else float("nan")
+    ft_val = float(ft_read)
 
-    # #508 FT bar.
-    ft508_arr = (bootstrap_arrays_json or {}).get("ft_at_8") or []
-    ft508_mean, ft508_lo, ft508_hi = _ci_from_bootstrap_array(ft508_arr)
-    bar_specs.append(("Full FT\n(#508 anchor)", ft508_mean, ft508_lo, ft508_hi, "#56B4E9"))
-
-    # #514 FT bar — local linear-interpolation read; no per-arm bootstrap
-    # array (the delegated cluster bootstrap mixes #514 + #508 cells in
-    # the FT arm — that's the bootstrap_read used for the determinacy gate
-    # but it's not a #514-only CI). Show the point estimate.
-    local_read = matched_rate_json.get("local_read_nat")
-    bootstrap_read = matched_rate_json.get("bootstrap_read_nat")
-    if local_read is None or not math.isfinite(float(local_read)):
-        local_read_val = float("nan")
-    else:
-        local_read_val = float(local_read)
-    bar_specs.append(
-        ("Full FT\n(#514 local read)", local_read_val, local_read_val, local_read_val, "#0072B2")
-    )
-
-    xs = list(range(len(bar_specs)))
-    means = [b[1] for b in bar_specs]
-    los = [b[1] - b[2] for b in bar_specs]
-    his = [b[3] - b[1] for b in bar_specs]
-    colors = [b[4] for b in bar_specs]
-    labels = [b[0] for b in bar_specs]
-
-    ax.bar(xs, means, color=colors, edgecolor="black", linewidth=0.5)
-    # Error bars: only draw where lo != hi (i.e. real CI exists).
-    yerr = [[lo if lo > 0 else 0 for lo in los], [hi if hi > 0 else 0 for hi in his]]
-    ax.errorbar(xs, means, yerr=yerr, fmt="none", ecolor="black", capsize=5, linewidth=1.0)
+    xs = [0, 1]
+    means = [lora_val, ft_val]
+    colors = ["#E69F00", "#0072B2"]
+    labels = ["LoRA", "Full fine-tune"]
+    ax.bar(xs, means, width=0.55, color=colors, edgecolor="black", linewidth=0.5)
+    for x, m in zip(xs, means, strict=True):
+        if math.isfinite(m):
+            ax.text(x, m + 0.08, f"{m:.2f}", ha="center", va="bottom", fontsize=10)
 
     ax.set_xticks(xs)
-    ax.set_xticklabels(labels, fontsize=10)
+    ax.set_xticklabels(labels, fontsize=11)
     ax.set_ylabel("Held-out bystander mean ΔG at source ΔG = 8 nat (nat)")
     ax.set_title("Bystander leakage at matched source-implant strength (8 nat)")
+    top = max([m for m in means if math.isfinite(m)] + [0.0])
+    ax.set_ylim(0, top * 1.35 if top > 0 else 1.0)
 
-    # Determinacy + extrapolation annotation.
+    # Determinacy verdict + the scientific LoRA−FT gap with its bootstrap CI.
     determinate = matched_rate_json.get("determinate", False)
-    gap_nat = matched_rate_json.get("gap_nat")
-    gate_thresh = matched_rate_json.get("gate_threshold_nat", 0.5)
     is_extrap = matched_rate_json.get("is_extrapolation", False)
-
-    if gap_nat is None or not math.isfinite(float(gap_nat)):
-        gap_str = "gap = NaN"
-    else:
-        gap_str = f"gap = {float(gap_nat):.3f} nat"
-    bootstrap_str = (
-        f"{float(bootstrap_read):.3f}"
-        if (bootstrap_read is not None and math.isfinite(float(bootstrap_read)))
-        else "NaN"
-    )
     verdict = "DETERMINATE" if determinate else "INDETERMINATE"
-    extrap_note = " (EXTRAPOLATION)" if is_extrap else ""
-    annot = (
-        f"Determinacy: {verdict}{extrap_note} "
-        f"(threshold |Δ| ≤ {gate_thresh} nat)\n"
-        f"Local read: {local_read_val:.3f} nat | Bootstrap read: {bootstrap_str} nat | {gap_str}"
-    )
+    extrap_note = " (EXTRAPOLATION)" if is_extrap else " (true interpolation)"
+    if gap_mean is None or not math.isfinite(float(gap_mean)):
+        gap_line = "LoRA − FT gap: unavailable"
+    else:
+        ci_str = (
+            f"95% CI [{float(gap_lo):+.2f}, {float(gap_hi):+.2f}]"
+            if (gap_lo is not None and gap_hi is not None)
+            else "CI unavailable"
+        )
+        sig = "significant" if excludes_zero else "not significant (CI spans 0)"
+        rep_str = f", {int(n_rep)} reps" if n_rep else ""
+        gap_line = f"LoRA − FT gap = {float(gap_mean):+.2f} nat, {ci_str} — {sig}{rep_str}"
+    annot = f"Determinacy: {verdict}{extrap_note}\n{gap_line}"
     ax.text(
         0.5,
-        -0.18,
+        -0.16,
         annot,
         ha="center",
         va="top",

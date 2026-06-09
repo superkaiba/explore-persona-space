@@ -306,15 +306,19 @@ def _compute_local_matched_rate_read(
     # every #508 FT anchor that passes the clean-anchor gate.
     candidates: list[dict] = []
     for d in diagnostics_514:
-        # #514 cells already passed the stricter above-9-nat gate via
-        # `clean_above_9_nat`; that gate implies the source_mean / r_collapse
-        # / held_out_g_logprob discipline. Still require non-NaN means
-        # defensively (NaN slips through if the cell crashed mid-eval).
-        if (
-            d["clean_above_9_nat"]
-            and d["source_mean"] is not None
-            and d["held_out_mean"] is not None
-        ):
+        # Free-reanalysis fix (2026-06-08): admit ANY clean #514 cell as a
+        # local-read anchor — not only cells above 9 nat. The
+        # `clean_above_9_nat` gate is the correct criterion for the H1
+        # bracketing question ("does a non-collapsing high-source regime
+        # exist?"), but it is the WRONG criterion for local-read anchor
+        # eligibility: it discards the clean lower-LR 50%-epoch cell at
+        # source ΔG ≈ 7.43 nat, which is exactly the below-target anchor
+        # needed to bracket target=8.0 nat as a true interpolation (pairs
+        # with #508 ft_b1 at 8.20 nat). `is_clean_anchor` enforces the same
+        # source_n_probes>=5 / r_collapse<0.50 / held_out_g_logprob<=-5
+        # discipline that protects against interpolating through a
+        # collapsed/saturated cell, WITHOUT the >9 nat requirement.
+        if is_clean_anchor(d):
             candidates.append(d)
     for d in diagnostics_508_ft_anchors:
         # B7 round-3 fix: apply the clean-anchor gate (single source of
@@ -358,6 +362,63 @@ def _extract_bootstrap_matched_rate(delegated_analysis: dict) -> float:
     if val is None:
         return float("nan")
     return float(val)
+
+
+def _compute_matched_rate_gap_514(eval_jsons_all: list[Path]) -> dict[str, Any]:
+    """Crossed cluster bootstrap on the LoRA−FT matched-rate gap over the #514
+    CLEAN anchor set (free-reanalysis completion, 2026-06-08).
+
+    The #508 delegate (`run_analysis`) only computes its `matched_rate_gap`
+    when BOTH arms strictly bracket the 8-nat band via `_check_bracketing`
+    (≥1 clean cell < 7 nat AND ≥1 > 9 nat). After this follow-up, the only
+    sub-7-nat FT cell (`ft_b2`, 6.77 nat) is collapsed/saturated and correctly
+    dropped, so the delegate's FT arm never brackets and `matched_rate_gap`
+    stays `{}` → `bootstrap_read` was null → the determinacy gate could not
+    fire. But the clean lower-LR cell `ft_lowlr_b50` (7.43 nat) + #508 `ft_b1`
+    (8.20 nat) DO straddle target=8.0 nat as a true interpolation, so the
+    cluster bootstrap is well-defined over the SAME clean anchor set the local
+    read uses. This computes it directly (reusing #508's
+    `_crossed_cluster_bootstrap_gap`), bypassing the delegate's stricter
+    `below_7` bracketing requirement that no clean FT cell can satisfy.
+
+    Anchor eligibility is `is_clean_anchor` (source_n_probes>=5,
+    r_collapse<0.50, held_out_g_logprob<=-5) applied per arm — identical to
+    the local-read candidate gate, so the local read and the bootstrap read
+    are computed over the same cells. Returns the
+    `_crossed_cluster_bootstrap_gap` dict, or `{}` if either arm has <2 clean
+    anchors.
+    """
+    from explore_persona_space.experiments.lora_vs_ft_508.analyze import (
+        ARM_FULLFT,
+        ARM_LORA,
+        _cell_aggregates,
+        _crossed_cluster_bootstrap_gap,
+        _load_eval,
+        is_lora_arm,
+    )
+
+    clean_slugs = {d["cell"] for d in _per_cell_diagnostics(eval_jsons_all) if is_clean_anchor(d)}
+    cells_by_arm: dict[str, list[dict]] = {ARM_LORA: [], ARM_FULLFT: []}
+    for p in eval_jsons_all:
+        ej = _load_eval(p)
+        slug = ej.get("cell_slug", p.stem.split("_seed")[0])
+        if slug not in clean_slugs:
+            continue
+        cell = {"cell": slug, **_cell_aggregates(ej)}
+        cells_by_arm[ARM_LORA if is_lora_arm(slug) else ARM_FULLFT].append(cell)
+
+    if len(cells_by_arm[ARM_LORA]) < 2 or len(cells_by_arm[ARM_FULLFT]) < 2:
+        log.warning(
+            "[analyze] matched-rate gap: <2 clean anchors in an arm "
+            "(LoRA=%d, FT=%d) — skipping cluster bootstrap.",
+            len(cells_by_arm[ARM_LORA]),
+            len(cells_by_arm[ARM_FULLFT]),
+        )
+        return {}
+    gap = _crossed_cluster_bootstrap_gap(cells_by_arm)
+    gap["lora_anchor_cells"] = sorted(c["cell"] for c in cells_by_arm[ARM_LORA])
+    gap["fullft_anchor_cells"] = sorted(c["cell"] for c in cells_by_arm[ARM_FULLFT])
+    return gap
 
 
 def _write_bracketing_report_514(
@@ -408,6 +469,7 @@ def _write_matched_rate_514(
     bracketing_report: dict[str, Any],
     delegated_analysis: dict[str, Any] | None,
     output_path: Path,
+    matched_rate_gap_514: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Write the #514 matched-rate read with determinacy gate (B4 round-2 fix).
 
@@ -438,7 +500,19 @@ def _write_matched_rate_514(
         diagnostics_508_ft_anchors=diagnostics_508,
         target_nat=MATCHED_RATE_TARGET_NAT,
     )
-    bootstrap_read = _extract_bootstrap_matched_rate(delegated_analysis or {})
+    # Free-reanalysis (2026-06-08): prefer the #514-local cluster-bootstrap
+    # read over the clean anchor set. The #508 delegate's `matched_rate_gap`
+    # is empty whenever the FT arm fails the stricter `below_7` bracketing
+    # (no clean sub-7-nat FT cell exists), so it can never supply a bootstrap
+    # read here; the local computation straddles target=8.0 nat with the clean
+    # 7.43↔8.20 nat FT pair. Fall back to the delegate only if the local gap
+    # is unavailable (<2 clean anchors in an arm).
+    local_gap = matched_rate_gap_514 or {}
+    bootstrap_read = local_gap.get("fullft_held_out_at_target_mean")
+    if bootstrap_read is None or math.isnan(float(bootstrap_read)):
+        bootstrap_read = _extract_bootstrap_matched_rate(delegated_analysis or {})
+    else:
+        bootstrap_read = float(bootstrap_read)
 
     if math.isnan(local_read) or math.isnan(bootstrap_read):
         gap_nat = float("nan")
@@ -467,6 +541,46 @@ def _write_matched_rate_514(
             extrapolation_distance_nat if not math.isnan(extrapolation_distance_nat) else None
         ),
         "local_read_anchor_cells": [d["cell"] for d in anchor_cells],
+        # Free-reanalysis (2026-06-08): the LoRA−FT matched-rate gap at
+        # target=8.0 nat from the #514-local crossed cluster bootstrap over
+        # the clean anchor set. Distinct from `gap_nat` above (which is the
+        # determinacy-gate quantity |local − bootstrap|). `gap_excludes_zero`
+        # = does the 95% CI exclude 0 (i.e. is the method difference
+        # significant at the matched rate).
+        "matched_rate_lora_read_nat": (
+            float(local_gap["lora_held_out_at_target_mean"])
+            if local_gap.get("lora_held_out_at_target_mean") is not None
+            and not math.isnan(float(local_gap["lora_held_out_at_target_mean"]))
+            else None
+        ),
+        "matched_rate_ft_read_nat": (
+            float(local_gap["fullft_held_out_at_target_mean"])
+            if local_gap.get("fullft_held_out_at_target_mean") is not None
+            and not math.isnan(float(local_gap["fullft_held_out_at_target_mean"]))
+            else None
+        ),
+        "matched_rate_gap_ft_minus_lora_nat": (
+            float(local_gap["gap_mean"])
+            if local_gap.get("gap_mean") is not None
+            and not math.isnan(float(local_gap["gap_mean"]))
+            else None
+        ),
+        "matched_rate_gap_ci_lo_nat": (
+            float(local_gap["gap_ci_lo"])
+            if local_gap.get("gap_ci_lo") is not None
+            and not math.isnan(float(local_gap["gap_ci_lo"]))
+            else None
+        ),
+        "matched_rate_gap_ci_hi_nat": (
+            float(local_gap["gap_ci_hi"])
+            if local_gap.get("gap_ci_hi") is not None
+            and not math.isnan(float(local_gap["gap_ci_hi"]))
+            else None
+        ),
+        "matched_rate_gap_excludes_zero": local_gap.get("gap_excludes_zero"),
+        "matched_rate_bootstrap_n_replicates": local_gap.get("n_replicates"),
+        "matched_rate_lora_anchor_cells": local_gap.get("lora_anchor_cells"),
+        "matched_rate_fullft_anchor_cells": local_gap.get("fullft_anchor_cells"),
         "h1_pass": bracketing_report["h1_pass"],
         "n_clean_above_9_nat": bracketing_report["n_clean_above_9_nat"],
         "clean_above_9_nat_cells": bracketing_report["clean_above_9_nat_cells"],
@@ -493,10 +607,16 @@ def _write_matched_rate_514(
             f"Determinacy gate: |local − bootstrap| ≤ "
             f"{DETERMINACY_GATE_THRESHOLD_NAT} nat (plan §6.4). Local read = "
             f"linear interpolation (or extrapolation, per plan §6.4 v3 pivot) "
-            f"across (#514 clean above-9-nat cells + #508 FT anchors) at source "
-            f"ΔG = {MATCHED_RATE_TARGET_NAT} nat. "
-            f"Bootstrap read = lora_vs_ft_508.analyze run_analysis "
-            f"matched_rate_gap.fullft_held_out_at_target_mean. "
+            f"across the #514+#508 clean anchor set (is_clean_anchor; "
+            f"free-reanalysis 2026-06-08 admits clean below-9-nat cells, not "
+            f"only above-9-nat) at source ΔG = {MATCHED_RATE_TARGET_NAT} nat. "
+            f"Bootstrap read = the #514-local crossed-cluster bootstrap over "
+            f"the SAME clean anchor set (_compute_matched_rate_gap_514 → "
+            f"fullft_held_out_at_target_mean); falls back to the #508 delegate's "
+            f"run_analysis matched_rate_gap.fullft_held_out_at_target_mean only "
+            f"if <2 clean anchors in an arm. matched_rate_gap_ft_minus_lora_nat "
+            f"+ its 95% CI is the SCIENTIFIC LoRA−FT gap (distinct from gap_nat, "
+            f"the |local − bootstrap| determinacy quantity). "
             f"is_extrapolation=True iff bracketing anchors don't straddle target. "
             f"extrapolation_distance_nat: signed (target − nearest_anchor); "
             f"negative below the lower anchor, positive above the upper, NaN "
@@ -615,12 +735,18 @@ def run_analysis_514(
         diagnostics_508_ft_anchors=diag_508_ft_anchors,
         output_path=bracketing_path,
     )
+    # Free-reanalysis (2026-06-08): compute the LoRA−FT matched-rate gap +
+    # FT bootstrap read over the #514 clean anchor set, so the determinacy
+    # gate fires even though the #508 delegate's stricter bracketing leaves
+    # its own `matched_rate_gap` empty.
+    matched_rate_gap_514 = _compute_matched_rate_gap_514(all_jsons)
     matched_rate = _write_matched_rate_514(
         diagnostics_514=diag_514,
         diagnostics_508=diag_508_ft_anchors,
         bracketing_report=bracketing_report,
         delegated_analysis=delegated,
         output_path=matched_rate_path,
+        matched_rate_gap_514=matched_rate_gap_514,
     )
     _write_bootstrap_per_cell_514(
         cells_data=combined_diag,

@@ -298,6 +298,91 @@ def test_local_read_interpolates_when_target_is_strictly_bracketed():
     assert math.isclose(local_read, -2.0, abs_tol=1e-9)
 
 
+def test_local_read_admits_clean_below_9nat_514_cell():
+    """Free-reanalysis fix (2026-06-08): a CLEAN #514 cell BELOW 9 nat is
+    admitted as a local-read anchor even though ``clean_above_9_nat`` is False.
+
+    The #514 candidate loop now gates on ``is_clean_anchor`` (not the
+    ``clean_above_9_nat`` H1-bracketing flag), so the clean lower-LR 50%-epoch
+    cell (``ft_lowlr_b50``, source ΔG ≈ 7.43 nat, 0% r-collapse) is admitted
+    and pairs with #508 ``ft_b1`` (8.20 nat) to STRADDLE target=8.0 nat as a
+    true interpolation. Before the fix this cell was discarded and the read
+    extrapolated ~0.2 nat below ft_b1. Mirrors ft_lowlr_b50's real values.
+    """
+    ft_lowlr_b50 = _diag(
+        "ft_lowlr_b50",
+        source_mean=7.428,
+        held_out_mean=3.440,
+        source_n_probes=20,
+        r_collapse_rate=0.0,
+        held_out_g_logprob_mean=-20.42,
+        lever="lowlr",
+        clean_above_9_nat=False,  # below the 9-nat H1 gate — the whole point
+    )
+    ft_b1 = _diag(
+        "ft_b1",
+        source_mean=8.198,
+        held_out_mean=3.590,
+        source_n_probes=20,
+        r_collapse_rate=0.0,
+        held_out_g_logprob_mean=-20.24,
+    )
+    local_read, is_extrap, extrap_dist, anchors = _compute_local_matched_rate_read(
+        diagnostics_514=[ft_lowlr_b50],
+        diagnostics_508_ft_anchors=[ft_b1],
+        target_nat=MATCHED_RATE_TARGET_NAT,  # 8.0, strictly inside [7.428, 8.198]
+    )
+    cell_names = {a["cell"] for a in anchors}
+    assert "ft_lowlr_b50" in cell_names, (
+        f"clean below-9-nat #514 cell must be admitted; got candidates: {cell_names}"
+    )
+    assert is_extrap is False, "target 8.0 is strictly bracketed → true interpolation"
+    assert math.isnan(extrap_dist)
+    # Linear interp at 8.0 between (7.428, 3.440) and (8.198, 3.590):
+    #   t = (8.0 - 7.428)/(8.198 - 7.428) = 0.7429 → 3.440 + 0.7429*0.150 ≈ 3.551
+    assert math.isclose(local_read, 3.551, abs_tol=5e-3)
+
+
+def test_compute_matched_rate_gap_514_happy_path_and_guard():
+    """Free-reanalysis (2026-06-08): `_compute_matched_rate_gap_514` computes the
+    LoRA-vs-FT crossed-cluster-bootstrap gap over the CLEAN anchor set, and returns
+    `{}` when an arm has <2 clean anchors. Integration test over the committed
+    #514 + #508 eval JSONs (always present in the repo).
+    """
+    from pathlib import Path
+
+    import pytest
+
+    from explore_persona_space.experiments.full_ft_regime_514.analyze import (
+        _compute_matched_rate_gap_514,
+    )
+
+    repo = Path(__file__).resolve().parents[1]
+    e508 = repo / "eval_results" / "issue_508"
+    e514 = repo / "eval_results" / "issue_514"
+    if not (e508.exists() and e514.exists()):
+        pytest.skip("eval JSONs not present in this checkout")
+
+    full = sorted(e514.glob("*_seed42.json")) + [
+        e508 / f"{c}_seed42.json"
+        for c in ("lora_b1", "lora_b2", "lora_b3", "ft_b1", "ft_b2", "ft_b3")
+    ]
+    gap = _compute_matched_rate_gap_514(full)
+    # Arm classification: lora_* → LoRA (all 3 clean); ft_* clean → FULLFT
+    # (the collapsed/saturated ft_b2 + ft_b3 are dropped by is_clean_anchor).
+    assert gap["lora_anchor_cells"] == ["lora_b1", "lora_b2", "lora_b3"]
+    assert "ft_b2" not in gap["fullft_anchor_cells"]
+    assert "ft_b3" not in gap["fullft_anchor_cells"]
+    assert "ft_lowlr_b50" in gap["fullft_anchor_cells"]  # the newly-admitted clean sub-9 cell
+    assert gap["n_replicates"] == 1000
+    # At the matched 8-nat rate the methods are indistinguishable (CI spans 0).
+    assert gap["gap_excludes_zero"] is False
+
+    # Guard: <2 clean anchors in an arm → {} (one LoRA + one FT cell only).
+    one_each = [e508 / "lora_b1_seed42.json", e508 / "ft_b1_seed42.json"]
+    assert _compute_matched_rate_gap_514(one_each) == {}
+
+
 def test_local_read_extrapolation_carries_finite_value_and_flag():
     """B10 round-4 pivot: extrapolation emits a FINITE value AND sets the
     is_extrapolation flag AND reports a signed extrapolation_distance.

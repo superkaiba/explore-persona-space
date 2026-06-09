@@ -14,7 +14,7 @@
     {
       "cell": "ft_dense_b30",
       "lever": "dense",
-      "eval_json_path": "/workspace/issue_514/eval/ft_dense_b30_seed42.json",
+      "eval_json_path": "eval_results/issue_514/ft_dense_b30_seed42.json",
       "source_mean": 17.887888497114183,
       "held_out_mean": 11.156880227724711,
       "source_n_probes": 20,
@@ -25,7 +25,7 @@
     {
       "cell": "ft_dense_b35",
       "lever": "dense",
-      "eval_json_path": "/workspace/issue_514/eval/ft_dense_b35_seed42.json",
+      "eval_json_path": "eval_results/issue_514/ft_dense_b35_seed42.json",
       "source_mean": 19.748452280461787,
       "held_out_mean": 12.832898548444112,
       "source_n_probes": 20,
@@ -36,7 +36,7 @@
     {
       "cell": "ft_dense_b40",
       "lever": "dense",
-      "eval_json_path": "/workspace/issue_514/eval/ft_dense_b40_seed42.json",
+      "eval_json_path": "eval_results/issue_514/ft_dense_b40_seed42.json",
       "source_mean": 20.335781704634428,
       "held_out_mean": 13.759256144364675,
       "source_n_probes": 20,
@@ -47,7 +47,7 @@
     {
       "cell": "ft_dense_b45",
       "lever": "dense",
-      "eval_json_path": "/workspace/issue_514/eval/ft_dense_b45_seed42.json",
+      "eval_json_path": "eval_results/issue_514/ft_dense_b45_seed42.json",
       "source_mean": 19.600381701812147,
       "held_out_mean": 13.746227734088897,
       "source_n_probes": 20,
@@ -58,7 +58,7 @@
     {
       "cell": "ft_lowlr_b100",
       "lever": "lowlr",
-      "eval_json_path": "/workspace/issue_514/eval/ft_lowlr_b100_seed42.json",
+      "eval_json_path": "eval_results/issue_514/ft_lowlr_b100_seed42.json",
       "source_mean": 18.390414141863584,
       "held_out_mean": 13.675191566149394,
       "source_n_probes": 20,
@@ -69,7 +69,7 @@
     {
       "cell": "ft_lowlr_b50",
       "lever": "lowlr",
-      "eval_json_path": "/workspace/issue_514/eval/ft_lowlr_b50_seed42.json",
+      "eval_json_path": "eval_results/issue_514/ft_lowlr_b50_seed42.json",
       "source_mean": 7.427830171585083,
       "held_out_mean": 3.440285838445028,
       "source_n_probes": 20,
@@ -113,5 +113,5 @@
       "clean_above_9_nat": false
     }
   ],
-  "timestamp_utc": "2026-06-08T12:37:06.167156+00:00"
+  "timestamp_utc": "2026-06-09T05:22:17.029828+00:00"
 }
