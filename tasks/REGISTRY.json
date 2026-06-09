@@ -2886,7 +2886,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/506",
       "status": "interpreting",
-      "title": "Does a full-weight (FWFT) marker install on Qwen3.5-27B survive benign SFT where the LoRA install dies? (Redwood robust-to-training advice)"
+      "title": "One epoch of benign medical-advice SFT erases a trigger-keyword marker install on Qwen3-32B regardless of install recipe \u2014 full-weight fine-tuning, LoRA r=16, and LoRA r=256 all collapse from 100% to 0% emission together (HIGH confidence)"
     },
     "507": {
       "goal": "Test whether base-model persona-distance predictors (residual cosine and JS divergence, source persona to bystander persona) predict per-bystander sycophancy leakage better on a larger model (Qwen-2.5-72B-Instruct) than they did at 7B (#470), by porting #470's frozen contrastive sycophancy leakage rig unchanged except for model size and scoring leakage against cosine, JS, the bystander's base prior, and a content-free base-rate null.",

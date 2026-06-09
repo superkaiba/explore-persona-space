@@ -1,6 +1,7 @@
 ---
-title: Does a full-weight (FWFT) marker install on Qwen3.5-27B survive benign SFT
-  where the LoRA install dies? (Redwood robust-to-training advice)
+title: One epoch of benign medical-advice SFT erases a trigger-keyword marker install
+  on Qwen3-32B regardless of install recipe — full-weight fine-tuning, LoRA r=16,
+  and LoRA r=256 all collapse from 100% to 0% emission together (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-06T01:01:33Z'
