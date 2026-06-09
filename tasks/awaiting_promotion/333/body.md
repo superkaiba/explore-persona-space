@@ -12,6 +12,8 @@ legacy_why_unset: true
 relates_to:
 - b8
 - e1
+classification: useful
+promoted_at: '2026-06-09T21:33:40Z'
 ---
 # Three-seed FR<->IT bystander spill flips sign: IT->FR +16pp under Spanish, FR->IT +26pp under German (MODERATE confidence)
 
