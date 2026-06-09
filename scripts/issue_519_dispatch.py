@@ -927,7 +927,7 @@ def _run_phase_b0_gates(
         )
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 - end-to-end dispatcher, refactor out-of-scope at #521
     parser = argparse.ArgumentParser(
         description="#519 unified smoke/sweep dispatcher",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1142,12 +1142,55 @@ def main() -> int:
             n_gpus=args.n_gpus,
         )
 
+    # Track phases actually skipped (vs explicit --skip-phase) for the
+    # manifest. Sweep-mode missing inputs raise (v2 M1); smoke-mode
+    # missing inputs decay to actually_skipped (the documented smoke
+    # contract is "did the pipeline plumbing work?", not C/D/E shifts).
+    actually_skipped_phases: list[str] = list(args.skip_phase)
+
+    def _require_phase_inputs(phase: str, *, needs: dict[str, object | None]) -> None:
+        """Fail loud when a non-skipped phase is missing its CLI inputs.
+
+        v1 silently fell through when a required ``--*-json`` was None
+        (the original `if … and args.personas_json and args.questions_json:`
+        guards), and the manifest recorded only ``--skip-phase``, not
+        what was actually skipped. v2 M1: in ``--mode sweep`` a missing
+        input on a non-skipped phase is a plan error → raise. In
+        ``--mode smoke`` the missing input degrades the phase to
+        actually-skipped (preserves the smoke contract).
+        """
+        missing = [k for k, v in needs.items() if v is None]
+        if not missing:
+            return
+        if args.mode == "sweep":
+            raise RuntimeError(
+                f"Phase {phase} requires --{'/--'.join(missing)} but they were not "
+                f"passed. Either skip the phase explicitly (--skip-phase {phase}) "
+                f"or provide the input."
+            )
+        # smoke: log + record actually-skipped.
+        logger.info(
+            "[mode=smoke] phase %s skipped because input(s) %s not provided",
+            phase,
+            missing,
+        )
+        if phase not in actually_skipped_phases:
+            actually_skipped_phases.append(phase)
+
     # Phase C: activation-shift extraction per (arm, seed, variant).
-    # NOTE: Phase C requires the panel/questions JSON files. In smoke
-    # mode where neither is provided, we skip C/D/E and stop here with
-    # a friendly message — the smoke is "did the pipeline plumbing
-    # work?", not "did it produce meaningful shifts?".
-    if "c" not in args.skip_phase and args.personas_json and args.questions_json:
+    # NOTE: Phase C requires the panel/questions JSON files. v2 M1 —
+    # sweep-mode missing inputs fail loud; smoke-mode missing inputs
+    # degrade to actually-skipped.
+    run_c = "c" not in args.skip_phase
+    if run_c:
+        _require_phase_inputs(
+            "c",
+            needs={
+                "personas-json": args.personas_json,
+                "questions-json": args.questions_json,
+            },
+        )
+    if run_c and args.personas_json and args.questions_json:
         phase_c_extract_shifts(
             repo_root=repo_root,
             cells=cells,
@@ -1161,19 +1204,21 @@ def main() -> int:
             cpu_only=cpu_only,
         )
 
-    # Phase D: SVD analyses (in-process).
-    if "d" not in args.skip_phase and args.personas_json and args.questions_json:
-        phase_d_svd_analysis(
-            repo_root=repo_root,
-            cells=cells,
-            variants=args.variants,
-            output_dir=output_dir,
-            log_dir=log_dir,
-            base_cosines_json=Path(args.base_cosines_json) if args.base_cosines_json else None,
+    # Phase E: steering-vector extraction. (v2 M3: E runs BEFORE D so
+    # phase_d_svd_analysis can populate `cos_U1_vsteer` from the
+    # `v_{arm}.pt` files E writes. v1 order C→D→E left
+    # `cos_U1_vsteer=None` for every cell — headline metric #3 of 4 was
+    # always missing.)
+    run_e = "e" not in args.skip_phase
+    if run_e:
+        _require_phase_inputs(
+            "e",
+            needs={
+                "marker-pool-json": args.marker_pool_json,
+                "em-pool-json": args.em_pool_json,
+            },
         )
-
-    # Phase E: steering-vector extraction.
-    if "e" not in args.skip_phase and args.marker_pool_json and args.em_pool_json:
+    if run_e and args.marker_pool_json and args.em_pool_json:
         phase_e_steering_vectors(
             repo_root=repo_root,
             output_dir=output_dir,
@@ -1184,6 +1229,58 @@ def main() -> int:
             cpu_only=cpu_only,
             n_gpus=args.n_gpus,
         )
+
+    # Phase D: SVD analyses (in-process). v2 M3 — runs AFTER Phase E so
+    # the per-arm `v_{arm}.pt` steering vectors exist; `phase_d_svd_analysis`
+    # reads them and populates `cos_U1_vsteer` per cell.
+    run_d = "d" not in args.skip_phase
+    if run_d:
+        _require_phase_inputs(
+            "d",
+            needs={
+                "personas-json": args.personas_json,
+                "questions-json": args.questions_json,
+            },
+        )
+    if run_d and args.personas_json and args.questions_json:
+        phase_d_svd_analysis(
+            repo_root=repo_root,
+            cells=cells,
+            variants=args.variants,
+            output_dir=output_dir,
+            log_dir=log_dir,
+            base_cosines_json=Path(args.base_cosines_json) if args.base_cosines_json else None,
+        )
+        # v2 M3 defense-in-depth: when Phase E was ALSO scheduled, every
+        # same-variant cell's headline must carry a non-None
+        # cos_U1_vsteer. A silent None here would mask the v1 ordering
+        # bug we're trying to close.
+        if run_e and "same" in list(args.variants):
+            headline_path = output_dir / "svd" / "headline_metrics.json"
+            if not headline_path.exists():
+                raise RuntimeError(
+                    f"v2 M3 assert: Phase D ran with Phase E scheduled but did "
+                    f"NOT produce {headline_path}. _write_headline_metrics call "
+                    f"is missing or crashed silently."
+                )
+            with headline_path.open() as f:
+                hm = json.load(f)
+            per_arm_seed = hm.get("per_arm_seed", {})
+            for cell in cells:
+                key = f"{cell.arm}_seed{cell.seed}"
+                entry = per_arm_seed.get(key)
+                if entry is None:
+                    raise RuntimeError(
+                        f"v2 M3 assert: headline_metrics.json missing entry for "
+                        f"{key} despite Phase D having run for this cell."
+                    )
+                if entry.get("cos_U1_vsteer") is None:
+                    expected_v = output_dir / "steering" / f"v_{cell.arm}.pt"
+                    raise RuntimeError(
+                        f"v2 M3 assert: cos_U1_vsteer is None for {key} despite "
+                        f"Phase E having been scheduled. Expected Phase E to "
+                        f"have written {expected_v}; check Phase E logs."
+                    )
 
     # Aggregate manifest.
     try:
@@ -1202,7 +1299,15 @@ def main() -> int:
         "n_cells": len(cells),
         "n_gpus": args.n_gpus,
         "cpu_only": cpu_only,
-        "skipped_phases": args.skip_phase,
+        # v2 M1: distinguish CLI-requested skips from what actually ran.
+        "requested_skip_phase": list(args.skip_phase),
+        "actually_skipped_phases": actually_skipped_phases,
+        # Back-compat alias for any downstream readers that key on the
+        # old name. Same content as actually_skipped_phases.
+        "skipped_phases": actually_skipped_phases,
+        # Phase execution order (v2 M3): C → E → D, so Phase D reads
+        # the v_{arm}.pt files Phase E writes.
+        "phase_order": ["a1", "a23", "b0_smoke", "b", "c", "e", "d"],
         "git_commit": git_commit,
         "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
