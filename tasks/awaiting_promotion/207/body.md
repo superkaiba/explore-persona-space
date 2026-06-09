@@ -17,6 +17,8 @@ relates_to:
 - b6
 - e1
 - e4
+classification: useful
+promoted_at: '2026-06-09T21:33:12Z'
 ---
 <!-- legacy-sagan-card -->
 <style>
