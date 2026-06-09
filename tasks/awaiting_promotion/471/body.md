@@ -17,6 +17,8 @@ relates_to:
 - leak-to-default
 - ctx-behavior
 - spec-prompt-vs-icl
+classification: useful
+promoted_at: '2026-06-09T23:16:11Z'
 ---
 # Training-time contrastive negatives buy broad source-vs-non-source localization (single-seed villain run); demos+negatives is the only regime where about half of source completions are clean instead of marker-spam (LOW confidence)
 
