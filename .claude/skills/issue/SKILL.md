@@ -222,7 +222,7 @@ proposed                                <- user has filed, clarifier hasn't run
                                                                                          |--> interpreting  <- analyzer + interp-critic loop
                                                                                                 |-- (interpretation refined, clean-result drafted in place)
                                                                                                    |--> reviewing  <- clean-result-critic final adversarial gate (Lens 7 absorbed retired reviewer)
-                                                                                                          |-- PASS --> awaiting_promotion  <- AWAITING USER: promote clean-result
+                                                                                                          |-- PASS --> methodology-writer (Step 9a-quater: docs/methodology/issue_<N>.md + secret gist; auto-continue) --> awaiting_promotion  <- AWAITING USER: promote clean-result
                                                                                                                         |-- (user promotes via task.py promote) -->
                                                                                                                               |-- open children w/ parent_id=<N> exist --> followups_running  <- waits for children; re-invoke /issue <N> later
                                                                                                                               |-- no open children                  --> completed (+ follow-up proposer)
@@ -3254,6 +3254,147 @@ Move status to `reviewing`:
 uv run python scripts/task.py set-status <N> reviewing \
   --note "clean-result-critic PASS; advancing to final review gate."
 ```
+
+**Then proceed to 9a-quater (methodology reference).**
+
+**9a-quater. Methodology + hyperparameters reference** (only if status is
+`reviewing`, after the 9a-bis loop's PASS, before the `awaiting_promotion`
+park below)
+
+Every `kind: experiment` clean-result auto-gains a standalone
+**methodology + hyperparameters + worked-examples** reference at
+`docs/methodology/issue_<N>.md`, committed to the repo and mirrored to a
+**secret** gist, linked from the clean-result body's `## Reproducibility`
+section. The reference is **findings-blind**: it describes only HOW the
+experiment was run (conditions, training recipe, eval recipe, verbatim
+training / eval / output examples, reproducibility pointers) and never
+restates findings / interpretation / confidence / next-steps. The fresh
+context of the `methodology-writer` agent enforces this structurally —
+the agent never reads `## Human TL;DR`, `## TL;DR`, `## Findings`, the
+H1 confidence tag, or any `epm:interpretation` body. Fires in BOTH
+interactive and autonomous sessions identically. Auto-continue (NOT a
+new `AskUserQuestion` gate); the halt-criterion contract is preserved.
+<!-- autonomous-mode: auto-resolve -->
+Same behavior in interactive and autonomous sessions: no AskUserQuestion
+is ever raised by this step; the marker `epm:methodology-doc-generated v1`
+is the durable record consumed by re-entry idempotency.
+
+**When to run** (gating rules):
+
+- `kind: experiment` → always.
+- `kind: analysis` → only when the task's `## Reproducibility` section
+  names a training or eval methodology (i.e. there is something to
+  document). When the analysis task has no Reproducibility row beyond a
+  Code SHA, the agent itself writes a 5-line "no experimental
+  methodology" stub and exits; the link still lands in
+  `## Reproducibility` for consistency.
+- `kind: infra | batch | survey` → skip entirely. Log one chat line
+  (`Step 9a-quater skipped (kind=<X>)`) and proceed to 9b.
+- **Idempotency.** When `epm:methodology-doc-generated v1` is already
+  on the task (re-entry / backstop tick / re-invocation after a
+  separate 9a-bis REVISE that bounced back to analyzer), this step is a
+  no-op: the doc was already written, committed, and gist-mirrored on a
+  prior pass. Do NOT regenerate or re-publish. Log one chat line
+  (`Step 9a-quater no-op — epm:methodology-doc-generated v1 already
+  present`) and proceed to 9b.
+
+**Procedure** (auto-continue end to end — interactive and autonomous):
+
+1. **Dispatch breadcrumb** (Step 9 entry guard convention):
+   ```bash
+   uv run python scripts/task.py post-marker <N> epm:progress \
+     --note "stage-dispatch stage=methodology-reference round=1 subagent=methodology-writer"
+   ```
+2. **Spawn `methodology-writer`** (fresh context, findings-blind). The
+   prompt names the task number + the absolute path of the task body's
+   `## Reproducibility` section as its starting input. The agent reads
+   ONLY the plan, the Reproducibility section, the training/eval
+   scripts at the body's `**Code:**` SHA, the Hydra config, and a
+   handful of artifact rows for verbatim worked examples. Output:
+   `docs/methodology/issue_<N>.md`. See `.claude/agents/methodology-writer.md`
+   for the full read/don't-read list and the "no interpretation" hard
+   constraints.
+3. **No-secrets guard** (pre-publish, mandatory). Before publishing
+   the gist, scan the generated doc for obvious secret patterns —
+   `sk-`, `hf_`, `wandb`-key shapes, `RUNPOD`, `ANTHROPIC_API_KEY`, raw
+   `.env` content. The methodology-writer reads only the
+   already-public Reproducibility data + the repo, so this scan should
+   never trip in normal operation; it is a safety net. On any hit,
+   ABORT the gist publish, keep the committed repo doc, and pass the
+   `note: gist skipped — possible secret detected` field through to
+   the marker (step 7). Continue to the link-append step regardless;
+   the in-repo doc remains the durable artifact.
+4. **Commit the doc to the repo.** Inside the worktree branch (the
+   one this `/issue <N>` is running on — never the main checkout):
+   ```bash
+   git -C "$WORKTREE" add docs/methodology/issue_<N>.md
+   git -C "$WORKTREE" commit -m "methodology: issue #<N> findings-blind reference"
+   DOC_SHA=$(git -C "$WORKTREE" rev-parse HEAD)
+   ```
+   Use the explicit path; never `git add -A` (avoids sweeping
+   unrelated working-tree changes). The doc rides to `main` with the
+   auto-merge at Step 9b.
+5. **Publish the secret gist (fail-soft).** Try once. `gh gist create
+   <file>` uses the file's basename for the gist filename — the
+   in-repo path is `docs/methodology/issue_<N>.md`, so the rendered
+   gist filename is `issue_<N>.md` (no extra rename needed):
+   ```bash
+   GIST_URL=$(gh gist create \
+     --desc "Task #<N> — Methodology, hyperparameters, and worked examples (Explore Persona Space)" \
+     docs/methodology/issue_<N>.md 2>&1 | tail -1)
+   ```
+   `gh gist create` defaults to a **secret** (unlisted) gist when the
+   `--public` flag is absent (verified against `gh gist create --help`:
+   *"By default, gists are secret; use `--public` to make publicly
+   listed ones."*). **Fail-soft behavior** — if `gh` lacks the `gist`
+   scope, is offline, or returns a non-URL on stderr/stdout, capture
+   the error as `gist_err`, set `GIST_URL=""`, and continue. Do NOT
+   block the step or the park on a missing gist; the committed repo
+   doc is the durable artifact and the next step links to it either
+   way.
+6. **Append the link line to the clean-result `## Reproducibility`
+   section.** Use `task.py set-body <N> --file <new-body.md>` (NO
+   `--snapshot` — the previous body is already the canonical
+   clean-result; this is a one-line append, not a promotion).
+   Read the current body, locate the `## Reproducibility` H2, add
+   exactly this line under the existing bullet list (between the
+   `**Artifacts:**` and `**Compute:**` rows, or at the end of the
+   section's bullet list if those anchors aren't present):
+   ```
+   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
+   ```
+   When `GIST_URL` is empty (fail-soft path), drop the `· [gist](...)`
+   suffix entirely:
+   ```
+   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md)
+   ```
+   Write the revised body via `task.py set-body <N> --file ...`.
+7. **Re-run the mechanical verifier on the body.** A single-line link
+   addition to `## Reproducibility` cannot break the spec, but the
+   verifier costs ~1s and catches the unlikely off-anchor edit:
+   ```bash
+   uv run python scripts/verify_task_body.py --issue <N>
+   ```
+   Do NOT re-run the full clean-result-critic loop — this is a
+   mechanical post-script edit, not a substantive body change.
+   On verifier FAIL, post `epm:failure v1` with
+   `failure_class: code`, `reason: methodology-link-append broke
+   verify_task_body.py`, set `status:blocked`, and exit (this is a
+   workflow bug — surface a `workflow-fix-candidate v1` block in the
+   exit text so the orchestrator can auto-spawn `workflow-improver`).
+8. **Post the marker:**
+   ```bash
+   uv run python scripts/task.py post-marker <N> epm:methodology-doc-generated \
+     --note "doc_path=docs/methodology/issue_<N>.md commit=<DOC_SHA> gist_url=<GIST_URL or 'n/a — <gist_err>'>"
+   ```
+   When the step was skipped (kind: infra/batch/survey, or an
+   analysis task with no methodology surface that the agent stubbed),
+   include `note=skipped: kind: <X> has no methodology surface` (or
+   the analyzer-stub equivalent) instead of a real `commit=` /
+   `gist_url=`.
+
+**Then proceed to 9b (final reviewer step — retired; flips to
+`awaiting_promotion`).**
 
 **9b. Final reviewer step — RETIRED (2026-05-13).**
 
