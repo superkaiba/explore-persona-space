@@ -2,7 +2,8 @@
 title: 'Prior-stratified rerun of #500: enrich bystander panel and source set with
   high-prior personas'
 kind: experiment
-tags: []
+tags:
+- leak-predictor
 created_at: '2026-06-09T22:00:55Z'
 has_clean_result: false
 parent_id: 500
