@@ -1,0 +1,11 @@
+---
+name: Bakeoff batched mode required for next_token_logits sidecars
+description: scripts/issue493_extraction_metric_bakeoff.py only writes next_token_logits sidecars from run_extraction_batched (the batched path), NOT from the serial run_extraction. Launchers driving --phase extract MUST set --batched (or --batch-size > 1, --probe-pool, --partitioned — any of which auto-enables batched_mode at bakeoff:5046-5049) or downstream --phase metrics will read an empty next_token_logits/ dir and emit no last_prompt__layer*__next_token_js__raw.json file.
+type: feedback
+---
+
+When wiring `scripts/issue493_extraction_metric_bakeoff.py` into a NEW production launcher, the extract phase MUST route through `run_extraction_batched`. The serial `run_extraction` path (bakeoff:820-1045) writes ONLY activation checkpoints — it does NOT write the per-cond `next_token_logits/last_prompt__cond*.pt` sidecars. The sidecar write lives inside `run_extraction_batched` at bakeoff:1683-1685, gated on `capture_next_token_logits=True` (default).
+
+**Why:** task #518 round-14 split phase H into `--phase extract` + `--phase metrics` to make resume idempotent. The new `--phase metrics` writer at bakeoff:5391 reads `<bakeoff>/next_token_logits/` to produce `metrics/last_prompt__layer-1__next_token_js__raw.json`. The launcher's `test -s` guard then aborts if that file is missing. Round-14 silently dropped the next_token_js baseline; round-15 made the abort LOUD; round-16 added `--batched` to the launcher's two `--phase extract` calls and the chain works end-to-end. (Confirmed via CPU smoke that monkey-patched `torch.cuda.is_available` + `AutoModelForCausalLM.from_pretrained` + tiny-random-gpt2 + a 1-cond stub registry.)
+
+**How to apply:** Any new `--phase extract` invocation MUST set `--batched` (or one of the auto-enablers at bakeoff:5046-5049: `--batch-size > 1`, `--probe-pool ...`, `--partitioned`). The #509 syco bake-off escaped notice because it used `--probe-pool eval_results/issue_502/probes_500.json` which auto-flipped `batched_mode = True`. New panels without a 500-probe pool (like #518's R1-R24 and E1-E11) need `--batched` set explicitly. Add this as a DAG-audit check in any future launcher: "does every `--phase extract` route have `--batched` (or one of the auto-enablers)?".

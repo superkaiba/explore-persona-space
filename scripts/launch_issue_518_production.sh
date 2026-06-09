@@ -282,11 +282,26 @@ run uv run python scripts/issue518_syco_logprob_backfill.py
 # refusal extract phase = no-op, refusal metrics phase = no-op, em extract
 # phase = runs (em never started), em metrics phase = runs.
 phase bakeoff_refusal_extract "issue493_extraction_metric_bakeoff.py --phase extract (refusal)"
+# Round-16 fix: ``--batched`` routes extraction through ``run_extraction_batched``
+# (bakeoff:1447) instead of the serial ``run_extraction`` path. The serial path
+# writes only activation checkpoints, NOT the ``next_token_logits/last_prompt__cond*.pt``
+# sidecars; the batched path writes those sidecars at bakeoff:1683-1685 under
+# ``capture_next_token_logits=True`` (default). The round-15 ``--phase metrics``
+# writer at bakeoff:5391 reads those sidecars to produce
+# ``metrics/last_prompt__layer-1__next_token_js__raw.json``; the round-15 launcher
+# guard at L304/L324 then ``test -s``-aborts when that file is missing.
+# Round-14 launcher split silently dropped the next_token_js baseline (serial
+# extract -> no sidecars -> empty metrics writer); round-15 made the abort LOUD;
+# round-16 fixes the root cause. Matches the #509 syco bake-off which drove
+# extraction through ``--probe-pool ...`` (which auto-enables batched_mode via
+# the OR at bakeoff:5047-5049). We don't have a 500-probe pool for the #518
+# panels, so we set ``--batched`` explicitly.
 run uv run python scripts/issue493_extraction_metric_bakeoff.py \
     --model-id "Qwen/Qwen2.5-7B" \
     --conditions-registry "explore_persona_space.experiments.i518_refusal_conditions" \
     --probe-pool-mode custom \
     --bakeoff-root "$EVAL_ROOT/refusal/bakeoff" \
+    --batched \
     --phase extract
 
 phase bakeoff_refusal "issue493_extraction_metric_bakeoff.py --phase metrics (refusal)"
@@ -305,11 +320,15 @@ test -s "$EVAL_ROOT/refusal/bakeoff/metrics/last_prompt__layer-1__next_token_js_
     || { echo "[FATAL] refusal bakeoff metrics dir is missing next_token_js baseline" >&2; exit 1; }
 
 phase bakeoff_em_extract "issue493_extraction_metric_bakeoff.py --phase extract (em)"
+# Round-16 fix: mirror of the refusal arm above -- ``--batched`` routes through
+# ``run_extraction_batched`` so the ``next_token_logits/last_prompt__cond*.pt``
+# sidecars are written; the round-15 ``--phase metrics`` writer reads them.
 run uv run python scripts/issue493_extraction_metric_bakeoff.py \
     --model-id "Qwen/Qwen2.5-7B" \
     --conditions-registry "explore_persona_space.experiments.i518_em_conditions" \
     --probe-pool-mode custom \
     --bakeoff-root "$EVAL_ROOT/em/bakeoff" \
+    --batched \
     --phase extract
 
 phase bakeoff_em "issue493_extraction_metric_bakeoff.py --phase metrics (em)"
