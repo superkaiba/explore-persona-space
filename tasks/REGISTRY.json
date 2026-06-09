@@ -117,8 +117,8 @@
     "116": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/116",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/116",
+      "status": "completed",
       "title": "Adding a persona-mimicry SFT stage before behavioral SFT amplifies the source-to-assistant transfer of alignment, refusal, and sycophancy for 6 of 8 sources \u2014 but barely moves capability (LOW confidence)"
     },
     "117": {
