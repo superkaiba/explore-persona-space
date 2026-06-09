@@ -1724,8 +1724,8 @@
     "368": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/368",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/368",
+      "status": "completed",
       "title": "Persona-vector recipes are unreliable as cross-persona predictors on Qwen2.5-7B-Instruct \u2014 bare centroids beat the Chen et al. mean-diff family on leakage, recipes disagree with each other, and prior reported effects fail their controls (HIGH confidence)"
     },
     "369": {
