@@ -42,12 +42,19 @@ from typing import Any, Literal
 # ``BackendKind`` is the value of the task's ``backend:`` frontmatter. The
 # selector resolves this to a concrete :class:`ComputeBackend` instance.
 # ``cluster`` is the generic SLURM dispatch (per-cluster routing is done
-# inside the SLURM backend); ``nibi`` / ``fir`` are per-cluster aliases
-# the selector accepts and maps onto ``cluster``. ``gcp`` provisions an
-# ephemeral GCE VM (intent → machine-type map inside
+# inside the SLURM backend); ``nibi`` / ``fir`` / ``mila`` are per-cluster
+# aliases the selector accepts and maps onto ``cluster``. ``gcp``
+# provisions an ephemeral GCE VM (intent → machine-type map inside
 # :class:`~backends.gcp.GcpBackend`) and is the auto-fallback target when
 # every free academic cluster fails the 10-minute park (router slice 5).
-BackendKind = Literal["runpod", "cluster", "nibi", "fir", "gcp"]
+# ``auto`` is the router's sentinel meaning "no explicit override; rank
+# the free lanes by est-start and escalate to GCP on park-fail" — it
+# never names a backend instance, only a routing INTENT. The legacy
+# RunSpec default of ``"runpod"`` is preserved for back-compat with the
+# pre-router selector tests; new task frontmatter that wants auto-routing
+# should set ``backend: auto`` explicitly (or omit the field and let
+# the orchestrator translate to ``"auto"`` before building the spec).
+BackendKind = Literal["runpod", "cluster", "nibi", "fir", "gcp", "mila", "auto"]
 
 
 # ---------------------------------------------------------------------------
