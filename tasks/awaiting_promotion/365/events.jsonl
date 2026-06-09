@@ -144,3 +144,4 @@
 {"ts": "2026-05-21T13:57:45Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "interpreting", "to": "reviewing", "note": "clean-result-critic PASS round 2; advancing to final review gate."}
 {"ts": "2026-05-21T13:57:45Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "reviewing", "to": "awaiting_promotion", "note": "Final reviewer step retired; clean-result-critic PASS is the terminal gate. Parking for user promotion."}
 {"ts": "2026-05-21T13:57:46Z", "kind": "epm:status-changed", "version": 1, "by": "unknown", "note": "reviewing -> awaiting_promotion (no final reviewer step; absorbed into clean-result-critic Lens 11)"}
+{"ts": "2026-06-09T21:34:05Z", "kind": "epm:promoted", "version": 1, "by": "user", "classification": "useful"}

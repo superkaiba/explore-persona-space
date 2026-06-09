@@ -20,6 +20,8 @@ goal: Sweep five binary recipe factors (system-prompt length, answer length, fra
 relates_to:
 - b7
 - h3
+classification: useful
+promoted_at: '2026-06-09T21:34:05Z'
 ---
 # Every recipe factor that lifts [ZLT] source rate also lifts bystander leakage in the same direction; no factor implants the marker selectively (LOW confidence)
 
