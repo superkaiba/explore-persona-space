@@ -32,6 +32,19 @@ def _nibi():
     return get_cluster_config("nibi")
 
 
+@pytest.fixture(autouse=True)
+def _no_real_marker_posts(monkeypatch):
+    """Defense in depth: never let a monitor test shell out to the real
+    ``task.py post-marker`` (it would pollute a real tasks/<N>/events.jsonl,
+    as happened to #137). Patches the default poster to a no-op; tests that
+    assert on posts inject ``marker_poster=`` explicitly.
+    """
+    monkeypatch.setattr(
+        "explore_persona_space.backends.slurm.post_marker_via_task_py",
+        lambda **_kw: None,
+    )
+
+
 # ---------------------------------------------------------------------------
 # scontrol parser
 # ---------------------------------------------------------------------------

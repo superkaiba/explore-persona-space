@@ -86,6 +86,19 @@ def _full_ft_spec() -> RunSpec:
     )
 
 
+@pytest.fixture(autouse=True)
+def _no_real_marker_posts(monkeypatch):
+    """Defense in depth: never let a test shell out to the real
+    ``task.py post-marker`` (it would pollute a real tasks/<N>/events.jsonl,
+    as happened to #137). Patches the default poster to a no-op; tests that
+    assert on posts inject ``marker_poster=`` explicitly.
+    """
+    monkeypatch.setattr(
+        "explore_persona_space.backends.slurm.post_marker_via_task_py",
+        lambda **_kw: None,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Per-cluster config table
 # ---------------------------------------------------------------------------
@@ -157,6 +170,20 @@ def test_default_gpus_intent_table() -> None:
     assert default_gpus_for_intent(_lora_spec("eval")) == 1
     spec_ft = RunSpec(issue=1, intent="ft-7b", backend="cluster", cluster="nibi")
     assert default_gpus_for_intent(spec_ft) == 4
+
+
+def test_intent_lora_alias_resolves_consistently() -> None:
+    """The ``lora`` alias must resolve in ALL three intent dispatchers.
+
+    Regression: ``stages_for_spec`` + ``default_gpus_for_intent`` accept
+    ``intent="lora"`` but ``_DEFAULT_TIME_BUDGETS_HOURS`` once omitted it,
+    so the new fail-fast ``time_budget_hours`` crashed a valid ``lora``
+    caller at render. All three must agree on the alias.
+    """
+    spec = _lora_spec("lora")
+    assert [s.name for s in stages_for_spec(spec).stages] == ["lora", "eval"]
+    assert default_gpus_for_intent(spec) == 1
+    assert time_budget_hours(spec) == 6.0
 
 
 def test_time_budget_full_ft_under_24h_per_p0g() -> None:

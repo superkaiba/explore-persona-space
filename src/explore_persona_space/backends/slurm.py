@@ -224,6 +224,7 @@ def get_cluster_config(name: str) -> ClusterConfig:
 # ``HH:MM:SS``.
 _DEFAULT_TIME_BUDGETS_HOURS: dict[str, float] = {
     "lora-7b": 6.0,
+    "lora": 6.0,  # alias accepted by stages_for_spec + _DEFAULT_GPUS_FOR_INTENT
     "eval": 4.0,
     "debug": 1.0,
     "ft-7b": 23.5,  # leave a margin under the 24h short-bin cap
