@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 532,
+  "highest_id": 540,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2882,11 +2882,11 @@
     },
     "506": {
       "goal": "Test whether installing the trigger->marker rule with full-weight fine-tuning (vs the LoRA r=16 install that dies in #382/#408/#475) lets the install survive one epoch of benign SFT on Qwen3.5-27B, per Redwood's finding that FWFT model organisms are more robust to training than LoRA ones.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/506",
-      "status": "running",
-      "title": "Does a full-weight (FWFT) marker install on Qwen3.5-27B survive benign SFT where the LoRA install dies? (Redwood robust-to-training advice)"
+      "path": "tasks/awaiting_promotion/506",
+      "status": "awaiting_promotion",
+      "title": "One epoch of benign medical-advice SFT erases a trigger-keyword marker install on Qwen3-32B regardless of install recipe \u2014 full-weight fine-tuning, LoRA r=16, and LoRA r=256 all collapse from 100% to 0% emission together (HIGH confidence)"
     },
     "507": {
       "goal": "Test whether base-model persona-distance predictors (residual cosine and JS divergence, source persona to bystander persona) predict per-bystander sycophancy leakage better on a larger model (Qwen-2.5-72B-Instruct) than they did at 7B (#470), by porting #470's frozen contrastive sycophancy leakage rig unchanged except for model size and scoring leakage against cosine, JS, the bystander's base prior, and a content-free base-rate null.",
@@ -3006,8 +3006,8 @@
       "goal": "Run Phases C/D/E/F on the six LoRA adapters trained in #519 (marker \u00d7 3 seeds + EM \u00d7 3 seeds, on HF Hub at commit c46b8989d) so the rank-one law cross-arm test the parent Goal asks for is actually computed: does a single shift-direction + cosine-scaled magnitude (rank-one) govern cross-context generalization for the marker arm and break for the EM arm?",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/521",
-      "status": "approved",
+      "path": "tasks/running/521",
+      "status": "running",
       "title": "Phase C/D/E completion for #519: build input JSONs + run activation-shift extraction"
     },
     "522": {
@@ -3029,8 +3029,8 @@
       "goal": "On a unified instruction+ICL context panel (16 #502 instruction + 16 #489 ICL contexts), with the marker re-implanted at an off-saturation checkpoint for clean \u0394G, test whether directional/asymmetric base-model predictors recover the antisymmetric component of marker-leakage transfer -- decision metric = incremental nested-CV \u0394R\u00b2 over the best symmetric baseline (leave-two-contexts-out, context-clustered bootstrap), with standalone vs \u0394G_anti as the directional fraud test and a censored/Tobit model on any saturated cells.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/524",
-      "status": "planning",
+      "path": "tasks/plan_pending/524",
+      "status": "plan_pending",
       "title": "Directional/asymmetric base-model predictors of marker-leakage on a unified instruction+ICL panel, scored by incremental nested-CV skill"
     },
     "525": {
@@ -3050,27 +3050,27 @@
     },
     "527": {
       "goal": "Test whether marker-implant fine-tune edits superpose (per-context joint shift equals the sum of the singleton A-only and B-only shifts at every held-out persona) using a properly-implanted anchor (source log P(marker) minus base in the [5,12] nat band-stop window, emission gate cleared) and orthogonal source pairs (base-model L20 centered cosine near 0), so the additivity cosine is a diagnostic superposition test rather than a mechanical artifact of a floored implant and parallel singletons.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/527",
-      "status": "running",
-      "title": "Pillar-2 superposition re-run: hot band-stopped anchor + orthogonal source pairs"
+      "path": "tasks/awaiting_promotion/527",
+      "status": "awaiting_promotion",
+      "title": "A properly band-stopped marker implant still trips every confound gate, so the additivity cosine remains uninterpretable as a superposition signal (LOW confidence)"
     },
     "528": {
       "goal": "Test (a) whether LoRA training installs a desirable assistant trait above the untrained Qwen-2.5-7B-Instruct base, using traits chosen to have genuine base-model headroom (validating, conciseness, asks-clarifying-question-first, calibrated-uncertainty) rather than RLHF-saturated traits, AND (b) whether encoding the persona as a custom chat-template role header segments each trait more cleanly (less leakage to the default assistant and to other personas) than a system-prompt encoding - the q:spec-role-header test #498 could not answer because its traits were saturated. Implant each trait per the #498 recipe (contrastive negatives across the other scenarios + the default assistant) under BOTH encodings, and score base AND trained on a single shared held-out Q-bank under the identical Claude Sonnet 4.5 Likert (1-5) rubric rig, so the trained-minus-base paired delta and the role-header-vs-system-prompt leakage delta are both computable on matched prompts.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/528",
-      "status": "approved",
+      "path": "tasks/running/528",
+      "status": "running",
       "title": "Follow-up to #517: does LoRA install a trait above base on non-saturated traits, and does a role-header segment it more cleanly than a system prompt?"
     },
     "529": {
       "goal": "Determine whether encoding a persona as a custom chat-template role header gives a real, separable reduction in trained-marker leakage over a system-prompt encoding in the marker-less contrastive-negative regime, measured at a non-saturated training anchor (arms ~5-10 nats below the leakage ceiling, where the role-vs-system gap has genuine dynamic range), resolving whether #464's inconclusive saturated-floor +1-nat marker-less edge is real or a measurement artifact.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/529",
-      "status": "approved",
-      "title": "Re-run #464's marker-less contrastive-negative role-vs-system localization at a non-saturated (band-stopped) anchor to resolve the saturated +1-nat edge"
+      "path": "tasks/awaiting_promotion/529",
+      "status": "awaiting_promotion",
+      "title": "The {1,2,3,5}-epoch grid is the wrong instrument for the marker-less contrastive-negative regime at the inherited LoRA recipe \u2014 every epoch in the grid lands in the saturated floor (HIGH confidence)"
     },
     "53": {
       "has_clean_result": false,
@@ -3081,26 +3081,80 @@
     },
     "530": {
       "goal": "Re-test the bubble-vs-barrier geometry of a single contrastive negative at a de-saturated anchor (gated on bystander resolution, not source delta-G) so leakage is read as magnitude not residual rank, and determine whether #504's barrier signal (shadow_angle rho>0) and anti-bubble signal (d_nn rho<0) survive when bystanders are below ceiling.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/530",
-      "status": "running",
-      "title": "De-saturated re-run of #504's bubble-vs-barrier geometry: gate the anchor on bystander resolution, not source \u0394G"
+      "path": "tasks/awaiting_promotion/530",
+      "status": "awaiting_promotion",
+      "title": "At a de-saturated anchor, both prior geometry signs reverse \u2014 the barrier signal becomes anti-shadow and the anti-bubble becomes pro-bubble (MODERATE confidence)"
     },
     "531": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/running/531",
-      "status": "running",
-      "title": "Non-saturated marker base-prior\u2192leakage re-analysis on #478: does the marker's base prior predict leakage off-ceiling, and with what sign?"
+      "path": "tasks/awaiting_promotion/531",
+      "status": "awaiting_promotion",
+      "title": "Off-ceiling, base prior still tracks marker shift negatively but predicts absolute trained log-prob strongly positively \u2014 propensity hides in the subtraction (MODERATE confidence)"
     },
     "532": {
       "goal": "Test whether the base-model geometric marker-leakage predictors (cosine, JS divergence, the #502 Gaussian-KL@L22 winner) predict marker behavior in instruction-set bystander contexts (system prompts that explicitly tell the model to emit the marker), and whether a base-model behavioral-prior predictor (base log P(marker | context)) succeeds where geometry fails; reuse the non-saturated #474 localized-arm epoch-1 marker adapters, no new training.",
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/532",
+      "status": "awaiting_promotion",
+      "title": "The base-model marker prior beats geometric distance at predicting instruction-context leakage (HIGH confidence)"
+    },
+    "533": {
+      "goal": "Determine whether encoding a persona as a custom chat-template role header gives a real, separable reduction in trained-marker leakage over a system-prompt encoding in the marker-less contrastive-negative regime, measured at a non-saturated training anchor by dropping the learning rate to 5e-6 (the demonstrated clean window in .claude/rules/marker-training-recipe.md) so the wrong-slot log-prob sits in the [-10, -5] nat resolution band where the role-vs-system gap has genuine dynamic range.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/532",
+      "path": "tasks/running/533",
+      "status": "running",
+      "title": "Re-train marker-less role-vs-system at lr=5e-6, r=32 \u2014 non-saturated anchor in the {1,2,3,5}-epoch grid (corrective re-run of #529)"
+    },
+    "534": {
+      "goal": "Close #530's planned 4-fraction band-stop trajectory by modifying MarkerBandStopCallback to checkpoint at sub-step granularity (post-hoc fraction selection {0.25, 0.50, 0.75, 1.00} of the realized stop step), retraining all 10 #530 cells with the otherwise-identical recipe, then re-running the 4-fraction eval + 6-predictor partial-Spearman refit to test whether the sign reversal of shadow_angle (rho=-0.23) and d_nn (rho=+0.14) holds across the full trajectory rather than only at the band-stop final checkpoint.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/534",
+      "status": "running",
+      "title": "Add sub-step checkpointing to MarkerBandStopCallback and retrain #530's 10 cells to close the planned 4-fraction trajectory"
+    },
+    "535": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/535",
+      "status": "running",
+      "title": "Router multi-backend live acceptance smoke"
+    },
+    "536": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/536",
       "status": "proposed",
-      "title": "Geometric leakage predictors (cosine/JS/Gaussian-KL) vs a base-prior predictor on instruction-set marker contexts"
+      "title": "Standardize persona-distance cosine across the leakage line (mean-centered vs raw, ~6x geometry diff) + reanalyze affected predictor calls"
+    },
+    "537": {
+      "goal": "Build a reusable context-generalization testbed: empirically measure G[behavior, train-context \u2192 eval-context] over realistic contexts (persona prompts, WildChat prefixes, ICL examples, rephrasings, format wraps, default, inoculation variant) and 5 behaviors (marker, taught fact, refusal, sycophancy, EM), and ship a scoring harness that evaluates asymmetric, behavior-dependent, interaction-aware generalization-prediction metrics against held-out cells with strong baselines.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/plan_pending/537",
+      "status": "plan_pending",
+      "title": "Context-generalization testbed v1: multi-behavior train\u00d7eval context grid as ground truth for asymmetric, behavior-dependent generalization metrics"
+    },
+    "538": {
+      "goal": "Test whether pushing the marker implant past emission onset (source log P(marker) \u2212 base in the [14, 20] nat window where on-policy emission begins) makes the per-context singleton shifts develop effective rank \u2265 2 across held-out contexts, so that the additivity-cosine read becomes a diagnostic superposition test rather than a measurement of constant-direction steering.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/538",
+      "status": "running",
+      "title": "Push the marker implant past emission onset to test whether per-context singleton structure emerges with stronger training"
+    },
+    "539": {
+      "goal": "Test whether the geometric predictors (cosine, Gaussian-KL@L22) carry rank-information about on-policy marker emission inside narrow base-prior bands of the 416-cell ep1 panel from #532, by computing Spearman \u03c1 between each geometric predictor and the leakage residual after the base prior is regressed out per-bystander.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/539",
+      "status": "planning",
+      "title": "Per-cohort geometry-on-residual: does activation distance rank cells within fixed base-prior bands?"
     },
     "54": {
       "has_clean_result": false,
@@ -3108,6 +3162,14 @@
       "path": "tasks/archived/54",
       "status": "archived",
       "title": "Improve SDF midtraining code"
+    },
+    "540": {
+      "goal": "Implement the canonical Rao-Blackwellized sequence-level Jensen-Shannon divergence (Amini/Vieira/Cotterell 2025, arXiv 2504.10637) per persona-distance-metrics.md, re-fit the JS arm of #532's predictor leaderboard against the same 416-cell ep1 panel, and test whether the canonical estimator changes the JS-arm conclusion that #532 measured with the deprecated v1 single-next-token estimator.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/540",
+      "status": "planning",
+      "title": "Canonical Rao-Blackwellized sequence-level JS replaces deprecated JS-v1 on #532's panel"
     },
     "55": {
       "has_clean_result": false,

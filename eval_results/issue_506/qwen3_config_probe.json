@@ -1,0 +1,30 @@
+{
+  "base_model": "Qwen/Qwen3-32B",
+  "num_attention_heads": 64,
+  "num_key_value_heads": 8,
+  "num_hidden_layers": 64,
+  "hidden_size": 5120,
+  "marker_text": " \u203b",
+  "marker_ids": [
+    83399
+  ],
+  "bare_marker_ids": [
+    63680
+  ],
+  "trigger_ids": [
+    27,
+    4784,
+    12,
+    22,
+    69,
+    18,
+    64,
+    24,
+    68,
+    17,
+    66,
+    29
+  ],
+  "vocab_size_model": 151936,
+  "vocab_size_tokenizer": 151643
+}

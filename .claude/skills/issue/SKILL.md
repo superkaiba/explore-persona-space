@@ -222,7 +222,7 @@ proposed                                <- user has filed, clarifier hasn't run
                                                                                          |--> interpreting  <- analyzer + interp-critic loop
                                                                                                 |-- (interpretation refined, clean-result drafted in place)
                                                                                                    |--> reviewing  <- clean-result-critic final adversarial gate (Lens 7 absorbed retired reviewer)
-                                                                                                          |-- PASS --> awaiting_promotion  <- AWAITING USER: promote clean-result
+                                                                                                          |-- PASS --> methodology-writer (Step 9a-quater: docs/methodology/issue_<N>.md + secret gist; auto-continue) --> awaiting_promotion  <- AWAITING USER: promote clean-result
                                                                                                                         |-- (user promotes via task.py promote) -->
                                                                                                                               |-- open children w/ parent_id=<N> exist --> followups_running  <- waits for children; re-invoke /issue <N> later
                                                                                                                               |-- no open children                  --> completed (+ follow-up proposer)
@@ -388,6 +388,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   human at the keyboard, so an optional decision is YOURS to make. Banned
   output patterns (this list is exhaustive — none of these may appear in an
   autonomous turn):
+  <!-- example: anti-pattern -->
   - A `AskUserQuestion` tool call (the PreToolUse hook in
     `.claude/settings.json` hard-blocks this — backstop ONLY for the tool
     path; the text-menu failure mode below cannot be intercepted by a hook).
@@ -460,6 +461,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     never defers` and EXECUTE the bounce in this same turn (spawn the
     `experiment-implementer` / `implementer` agent with a brief targeting
     the open concern_id); do NOT state the Decision and then end the turn.
+  <!-- gate: gates.tdd_gate -->
   - `tdd_gate` → no `AskUserQuestion` at this site (it's event-driven —
     the implementer posts `epm:proposed-tests v1` and exits; the resume
     signal is `epm:approve-tests` posted via `task.py post-marker`). In
@@ -491,6 +493,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     in this same turn (post `epm:fact-pick v1` with `id: <X>` + resume
     the polling loop); do NOT state the Decision and then end the turn.
 
+  <!-- example: anti-pattern -->
   The PreToolUse hook on `AskUserQuestion` (`.claude/settings.json`) is a
   backstop for the TOOL case ONLY — when `EPM_AUTONOMOUS_SESSION=1` it
   cannot intercept plain text output. The dominant failure mode is
@@ -981,6 +984,7 @@ gate, no extra context switch.
    ```
    Re-read the task (Step 0) and continue to Step 1.
 
+<!-- example: anti-pattern -->
 **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): on path 5 (no
 existing question fits) SKIP the new-question draft entirely — do not
 raise `AskUserQuestion`, do not print the proposed question as a text
@@ -1083,6 +1087,7 @@ which emits a new `epm:goal-updated v1` marker. Without explicit
 consent the Goal stays put. Never call `set-goal` without
 in-the-loop user agreement; this is the user's contract field.
 
+<!-- example: anti-pattern -->
 **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): SKIP this refinement
 entirely per § Autonomous session behavior → `experiment_goal_refine`.
 The Goal stays as set at task creation; do not propose a refinement,
@@ -1215,7 +1220,9 @@ already posted `epm:awaiting-spend-approval`.
 `set-status ... --auto-approve-if-autonomous --gpu-hours <X>` call — in code,
 not by LLM discretion here.** That command (in `scripts/task.py`) reads
 `EPM_AUTONOMOUS_SESSION` + `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` and printed a
-`PLAN_GATE_DECISION:` line. A PreToolUse hook on `AskUserQuestion`
+`PLAN_GATE_DECISION:` line.
+<!-- gate: gates.plan_approval -->
+A PreToolUse hook on `AskUserQuestion`
 (`.claude/settings.json`) ALSO hard-blocks (`exit 2`) any plan-approval
 `AskUserQuestion` while `EPM_AUTONOMOUS_SESSION` is set — so the autonomous
 path physically cannot reach the interactive ask even if this prose is
@@ -1285,6 +1292,7 @@ this cap.
   reply. (Interactive mode only — autonomous sessions never reach this
   branch; the code-enforced gate in `task.py
   --auto-approve-if-autonomous` already decided, and the PreToolUse hook
+  <!-- gate: gates.plan_approval -->
   hard-blocks any `AskUserQuestion` if reached.)
 
   <!-- gate: gates.plan_approval -->
@@ -2039,6 +2047,28 @@ the normal `epm:pod-pending v1` path. **Interactive sessions still fail
 fast** — `--wait-for-capacity` defaults OFF so a human running
 `pod.py provision` from a shell sees no-capacity immediately and can
 decide whether to wait, switch DC, or change GPU intent.
+
+**Stale-port recovery — `pod.py config --refresh-from-api`.** When an
+`epm:pod-pending v1` is followed by a long stretch of failing SSH
+polls (`poll_pipeline.py` reporting `status=dead` every tick on an
+otherwise live pod), the most common cause is that a
+SUPPLY_CONSTRAINT-blocked resume eventually brought the pod back at a
+NEW SSH port via a retry path that bypassed `_upsert_pods_conf`, so
+`pods.conf` still carries the pre-stop value while the live RunPod API
+has the fresh one. The canonical first response is `uv run python
+scripts/pod.py config --refresh-from-api pod-<N>` — pulls fresh
+host/port from the live API into `pods.conf` + `~/.ssh/config`. As of
+2026-06-09 the auto-heal also fires automatically: `poll_pipeline.py`
+counts consecutive SSH-probe failures and fires `--refresh-from-api`
+after ten consecutive failures (~3-4 min at 20s spacing), and
+`autonomous_session_watch.py` fires it once per stalled episode when a
+stalled session has a RUNNING managed pod. Both auto-fires are
+fail-soft and dedup'd so the manual command stays the surgical
+recovery move; reach for it when the auto-heal has not yet tripped or
+the issue is unambiguously a port drift. See `.claude/rules/upload-policy.md`
+context on the Authority split (live API authoritative for host/port,
+`pods.conf` the on-disk source for SSH/MCP). Incident #488 (2026-06-09)
+spun for 13+ hours at $32/hr before the manual subcommand existed.
 
 The pod name passed downstream is `epm-issue-<N>` (or the parent's
 `epm-issue-<PARENT_ID>` for follow-ups). The experimenter does NOT pick
@@ -3059,6 +3089,7 @@ already names a free win it didn't take. This step fires in BOTH
 interactive and autonomous (`EPM_AUTONOMOUS_SESSION=1`) sessions
 identically (unlike the autonomous-only `auto_run: yes` GPU-backed
 child auto-spawn at 9b — the two mechanisms are orthogonal). The whole
+<!-- example: anti-pattern -->
 step is auto-continue (NOT a new
 `AskUserQuestion` gate); the halt-criterion contract is preserved.
 <!-- autonomous-mode: auto-resolve -->
@@ -3155,6 +3186,7 @@ explicit eval-data path):
 7. Proceed to **9a-bis (clean-result-critique loop)** on the UPDATED
    body. The critic gates the final state, not the pre-rerun draft.
 
+<!-- example: anti-pattern -->
 **No new gate.** This step never raises `AskUserQuestion` (in either
 interactive or autonomous (`EPM_AUTONOMOUS_SESSION=1`) sessions —
 auto-resolve mode is the default for both, never gate-allowed).
@@ -3254,6 +3286,175 @@ Move status to `reviewing`:
 uv run python scripts/task.py set-status <N> reviewing \
   --note "clean-result-critic PASS; advancing to final review gate."
 ```
+
+**Then proceed to 9a-quater (methodology reference).**
+
+**9a-quater. Methodology + hyperparameters reference** (only if status is
+`reviewing`, after the 9a-bis loop's PASS, before the `awaiting_promotion`
+park below)
+
+Every `kind: experiment` clean-result auto-gains a standalone
+**methodology + hyperparameters + worked-examples** reference at
+`docs/methodology/issue_<N>.md`, committed to the repo and mirrored to a
+**secret** gist, linked from the clean-result body's `## Reproducibility`
+section. The reference is **findings-blind**: it describes only HOW the
+experiment was run (conditions, training recipe, eval recipe, verbatim
+training / eval / output examples, reproducibility pointers) and never
+restates findings / interpretation / confidence / next-steps. The fresh
+context of the `methodology-writer` agent enforces this structurally —
+the agent never reads `## Human TL;DR`, `## TL;DR`, `## Findings`, the
+H1 confidence tag, or any `epm:interpretation` body. Fires in BOTH
+<!-- example: anti-pattern -->
+interactive and autonomous sessions identically. Auto-continue (NOT a
+new `AskUserQuestion` gate); the halt-criterion contract is preserved.
+<!-- autonomous-mode: auto-resolve -->
+Same behavior in interactive and autonomous sessions: no AskUserQuestion
+is ever raised by this step; the marker `epm:methodology-doc-generated v1`
+is the durable record consumed by re-entry idempotency.
+
+**When to run** (gating rules):
+
+- `kind: experiment` → always.
+- `kind: analysis` → only when the task's `## Reproducibility` section
+  names a training or eval methodology (i.e. there is something to
+  document). When the analysis task has no Reproducibility row beyond a
+  Code SHA, the agent itself writes a 5-line "no experimental
+  methodology" stub and exits; the link still lands in
+  `## Reproducibility` for consistency.
+- `kind: infra | batch | survey` → skip entirely. Log one chat line
+  (`Step 9a-quater skipped (kind=<X>)`) and proceed to 9b.
+- **Idempotency.** When `epm:methodology-doc-generated v1` is already
+  on the task (re-entry / backstop tick / re-invocation after a
+  separate 9a-bis REVISE that bounced back to analyzer), this step is a
+  no-op: the doc was already written, committed, and gist-mirrored on a
+  prior pass. Do NOT regenerate or re-publish. Log one chat line
+  (`Step 9a-quater no-op — epm:methodology-doc-generated v1 already
+  present`) and proceed to 9b.
+
+**Procedure** (auto-continue end to end — interactive and autonomous):
+
+1. **Dispatch breadcrumb** (Step 9 entry guard convention):
+   ```bash
+   uv run python scripts/task.py post-marker <N> epm:progress \
+     --note "stage-dispatch stage=methodology-reference round=1 subagent=methodology-writer"
+   ```
+2. **Pre-extract `## Reproducibility` (structural findings-blindness).**
+   Before spawning the agent, slice just the `## Reproducibility` H2
+   from the task body into a temp file and hand the agent ONLY that
+   path — never the full `body.md`. This is what physically enforces
+   findings-blindness: `## TL;DR` / `## Findings` / the H1 confidence
+   tag never enter the agent's context. Prompt discipline is defense in
+   depth on top of this structural cut, not the primary mechanism:
+   ```bash
+   BODY_PATH=$(uv run python scripts/task.py find <N>)/body.md
+   REPRO_FILE=$(mktemp -t issue<N>-reproducibility.XXXXXX.md)
+   awk '/^## Reproducibility[[:space:]]*$/{flag=1; print; next} \
+        flag && /^## /{flag=0} flag' "$BODY_PATH" > "$REPRO_FILE"
+   # Confirm the slice is non-empty; if it is, the body is malformed
+   # (no `## Reproducibility` H2). Post epm:failure v1
+   # (failure_class: data, reason: missing ## Reproducibility for
+   # methodology-writer), set status:blocked, exit. Surface a
+   # workflow-fix-candidate v1 block — the verifier should have caught
+   # this upstream.
+   [ -s "$REPRO_FILE" ] || { echo "Reproducibility slice empty"; exit 1; }
+   ```
+3. **Spawn `methodology-writer`** (fresh context, findings-blind). The
+   prompt names the task number + the absolute path of the pre-extracted
+   `## Reproducibility` slice (`$REPRO_FILE` from the previous step) as
+   its starting input — NOT the full `body.md` path. The agent reads
+   ONLY the plan, the Reproducibility slice, the training/eval scripts
+   at the body's `**Code:**` SHA, the Hydra config, and a handful of
+   artifact rows for verbatim worked examples. Output:
+   `docs/methodology/issue_<N>.md`. See `.claude/agents/methodology-writer.md`
+   for the full read/don't-read list and the "no interpretation" hard
+   constraints. Delete `$REPRO_FILE` after the agent exits.
+4. **No-secrets guard** (pre-publish, mandatory). Before publishing
+   the gist, scan the generated doc for obvious secret patterns —
+   `sk-`, `hf_`, `wandb`-key shapes, `RUNPOD`, `ANTHROPIC_API_KEY`, raw
+   `.env` content. The methodology-writer reads only the
+   already-public Reproducibility data + the repo, so this scan should
+   never trip in normal operation; it is a safety net. On any hit,
+   ABORT the gist publish, keep the committed repo doc, and pass the
+   `note: gist skipped — possible secret detected` field through to
+   the marker (step 9). Continue to the link-append step regardless;
+   the in-repo doc remains the durable artifact.
+5. **Commit the doc to the repo.** Inside the worktree branch (the
+   one this `/issue <N>` is running on — never the main checkout):
+   ```bash
+   git -C "$WORKTREE" add docs/methodology/issue_<N>.md
+   git -C "$WORKTREE" commit -m "methodology: issue #<N> findings-blind reference"
+   DOC_SHA=$(git -C "$WORKTREE" rev-parse HEAD)
+   ```
+   Use the explicit path; never `git add -A` (avoids sweeping
+   unrelated working-tree changes). The doc rides to `main` with the
+   auto-merge at Step 9b.
+6. **Publish the secret gist (fail-soft).** Try once. `gh gist create
+   <file>` uses the file's basename for the gist filename — the
+   in-repo path is `docs/methodology/issue_<N>.md`, so the rendered
+   gist filename is `issue_<N>.md` (no extra rename needed):
+   ```bash
+   GIST_RAW=$(gh gist create \
+     --desc "Task #<N> — Methodology, hyperparameters, and worked examples (Explore Persona Space)" \
+     docs/methodology/issue_<N>.md 2>&1)
+   # Extract the gist URL; on failure gh writes an error to stderr/stdout
+   # instead of a URL, so grep for the URL shape rather than `tail -1`
+   # (which would capture the error text as a bogus GIST_URL).
+   GIST_URL=$(printf '%s\n' "$GIST_RAW" | grep -oE 'https://gist\.github\.com/[^[:space:]]+' | tail -1)
+   if [ -z "$GIST_URL" ]; then gist_err=$(printf '%s\n' "$GIST_RAW" | tail -1); fi
+   ```
+   `gh gist create` defaults to a **secret** (unlisted) gist when the
+   `--public` flag is absent (verified against `gh gist create --help`:
+   *"By default, gists are secret; use `--public` to make publicly
+   listed ones."*). **Fail-soft behavior** — if `gh` lacks the `gist`
+   scope, is offline, or returns a non-URL on stderr/stdout, the grep
+   above leaves `GIST_URL` empty and captures the error as `gist_err`;
+   continue with the empty-`GIST_URL` path below. Do NOT
+   block the step or the park on a missing gist; the committed repo
+   doc is the durable artifact and the next step links to it either
+   way.
+7. **Append the link line to the clean-result `## Reproducibility`
+   section.** Use `task.py set-body <N> --file <new-body.md>` (NO
+   `--snapshot` — the previous body is already the canonical
+   clean-result; this is a one-line append, not a promotion).
+   Read the current body, locate the `## Reproducibility` H2, add
+   exactly this line under the existing bullet list (between the
+   `**Artifacts:**` and `**Compute:**` rows, or at the end of the
+   section's bullet list if those anchors aren't present):
+   ```
+   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
+   ```
+   When `GIST_URL` is empty (fail-soft path), drop the `· [gist](...)`
+   suffix entirely:
+   ```
+   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_<N>.md)
+   ```
+   Write the revised body via `task.py set-body <N> --file ...`.
+8. **Re-run the mechanical verifier on the body.** A single-line link
+   addition to `## Reproducibility` cannot break the spec, but the
+   verifier costs ~1s and catches the unlikely off-anchor edit:
+   ```bash
+   uv run python scripts/verify_task_body.py --issue <N>
+   ```
+   Do NOT re-run the full clean-result-critic loop — this is a
+   mechanical post-script edit, not a substantive body change.
+   On verifier FAIL, post `epm:failure v1` with
+   `failure_class: code`, `reason: methodology-link-append broke
+   verify_task_body.py`, set `status:blocked`, and exit (this is a
+   workflow bug — surface a `workflow-fix-candidate v1` block in the
+   exit text so the orchestrator can auto-spawn `workflow-improver`).
+9. **Post the marker:**
+   ```bash
+   uv run python scripts/task.py post-marker <N> epm:methodology-doc-generated \
+     --note "doc_path=docs/methodology/issue_<N>.md commit=<DOC_SHA> gist_url=<GIST_URL or 'n/a — <gist_err>'>"
+   ```
+   When the step was skipped (kind: infra/batch/survey, or an
+   analysis task with no methodology surface that the agent stubbed),
+   include `note=skipped: kind: <X> has no methodology surface` (or
+   the analyzer-stub equivalent) instead of a real `commit=` /
+   `gist_url=`.
+
+**Then proceed to 9b (final reviewer step — retired; flips to
+`awaiting_promotion`).**
 
 **9b. Final reviewer step — RETIRED (2026-05-13).**
 
@@ -3719,6 +3920,7 @@ completion waits on it.
      uv run python scripts/task.py post-marker <N> epm:living-docs-update-rejected \
        --note "User declined the living-docs proposal. Reason: <one line>. Proposal preserved inline."
      ```
+<!-- example: anti-pattern -->
 6. **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): do NOT raise the
    `AskUserQuestion`, do NOT print the proposed diff as a confirm/reject
    text menu to chat, and do NOT auto-apply. Per § Autonomous session

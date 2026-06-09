@@ -1255,6 +1255,190 @@ def test_poll_once_stalled_requires_shard_log_also_quiet(
     assert result.shard_log_mtime_sec_ago >= pp.STALL_SEC
 
 
+# ── #488 stale-port auto-heal: SSH-failure counter -> refresh-from-api ────────
+
+
+def _ssh_failure_response() -> subprocess.CompletedProcess:
+    """Build a subprocess result that mimics SSH transport failure (rc != 0).
+    This is the shape ``_ssh_probe`` degrades on; ``poll_once`` then counts
+    these against ``SSH_FAIL_REFRESH_THRESHOLD`` and fires the
+    ``pod.py config --refresh-from-api <pod>`` auto-heal once the counter
+    crosses the threshold."""
+    return subprocess.CompletedProcess(
+        args=["ssh", "stub"],
+        returncode=255,
+        stdout="",
+        stderr="ssh: connect to host x port y: Connection refused\n",
+    )
+
+
+def test_poll_once_ssh_fail_increments_counter_in_state(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """One SSH-failed probe -> ssh_fail_count=1 persisted, no refresh attempt
+    yet (below threshold). The counter is the persistent backbone of the
+    #488 stale-port auto-heal."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        # Every ssh probe (drain + probe heredoc) fails. The auto-heal
+        # subprocess (uv run python scripts/pod.py ...) should NOT fire yet —
+        # the counter is below SSH_FAIL_REFRESH_THRESHOLD.
+        assert cmd[0] == "ssh"  # explicitly: no refresh call this tick
+        return _ssh_failure_response()
+
+    refresh_calls: list[str] = []
+
+    def _fake_refresh(pod: str) -> bool:
+        refresh_calls.append(pod)
+        return True
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "_try_refresh_pods_conf_from_api", _fake_refresh)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    pp.poll_once(
+        issue=488,
+        pod="pod-488",
+        log_path="/workspace/logs/issue-488.log",
+        pid_file="/workspace/logs/issue-488.pid",
+        state_file=state_file,
+    )
+
+    payload = json.loads(state_file.read_text())
+    assert payload["488"]["ssh_fail_count"] == "1"
+    assert refresh_calls == []  # below threshold
+
+
+def test_poll_once_ssh_fail_fires_refresh_at_threshold(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """When the persisted ssh_fail_count is at threshold-1, the next failure
+    pushes it to threshold and triggers exactly one refresh-from-api call.
+    The counter then resets to 0 so we don't hot-loop refresh on each
+    subsequent failing tick."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return _ssh_failure_response()
+
+    refresh_calls: list[str] = []
+
+    def _fake_refresh(pod: str) -> bool:
+        refresh_calls.append(pod)
+        return True
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "_try_refresh_pods_conf_from_api", _fake_refresh)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    # Pre-seed the counter at threshold-1 so the next tick crosses.
+    state_file = tmp_path / "poll-state.json"
+    state_file.parent.mkdir(parents=True, exist_ok=True)
+    threshold = pp.SSH_FAIL_REFRESH_THRESHOLD
+    state_file.write_text(
+        json.dumps(
+            {"488": {"phase": "", "last_mtime_epoch": "0", "ssh_fail_count": str(threshold - 1)}}
+        )
+    )
+
+    pp.poll_once(
+        issue=488,
+        pod="pod-488",
+        log_path="/workspace/logs/issue-488.log",
+        pid_file="/workspace/logs/issue-488.pid",
+        state_file=state_file,
+    )
+
+    assert refresh_calls == ["pod-488"]
+    payload = json.loads(state_file.read_text())
+    # Counter reset after the refresh attempt — next N consecutive failures
+    # will trip another retry.
+    assert payload["488"]["ssh_fail_count"] == "0"
+
+
+def test_poll_once_ssh_fail_counter_resets_on_success(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A successful SSH probe (any rc=0) zeroes the failure counter so a
+    transient outage that recovers never accumulates toward the refresh
+    threshold."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        # Healthy probe.
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=int(datetime.now(tz=UTC).timestamp()),
+                tail="2026-06-09 [phase=training]",
+            ),
+            stderr="",
+        )
+
+    refresh_calls: list[str] = []
+
+    def _fake_refresh(pod: str) -> bool:
+        refresh_calls.append(pod)
+        return True
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "_try_refresh_pods_conf_from_api", _fake_refresh)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    # Pre-seed an accumulated counter; the healthy tick must clear it.
+    state_file = tmp_path / "poll-state.json"
+    state_file.parent.mkdir(parents=True, exist_ok=True)
+    state_file.write_text(json.dumps({"488": {"phase": "", "ssh_fail_count": "7"}}))
+
+    pp.poll_once(
+        issue=488,
+        pod="pod-488",
+        log_path="/workspace/logs/issue-488.log",
+        pid_file="/workspace/logs/issue-488.pid",
+        state_file=state_file,
+    )
+
+    assert refresh_calls == []  # not fired
+    payload = json.loads(state_file.read_text())
+    assert payload["488"]["ssh_fail_count"] == "0"
+
+
+def test_try_refresh_pods_conf_from_api_fail_soft_on_nonzero_exit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``_try_refresh_pods_conf_from_api`` returns False (does NOT raise) on
+    a non-zero exit from ``pod.py config --refresh-from-api``. The polling
+    loop must never crash on the auto-heal — incident #488 was already
+    expensive without compounding it by killing the watcher."""
+    monkeypatch.setattr(
+        pp.subprocess,
+        "run",
+        lambda *a, **kw: subprocess.CompletedProcess(
+            args=a[0] if a else [], returncode=2, stdout="", stderr="ERROR: pod not found"
+        ),
+    )
+    assert pp._try_refresh_pods_conf_from_api("pod-488") is False
+
+
+def test_try_refresh_pods_conf_from_api_fail_soft_on_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A subprocess timeout / OSError on the refresh call also returns False
+    instead of propagating. Same fail-soft contract."""
+
+    def _boom(*a: Any, **kw: Any) -> subprocess.CompletedProcess:
+        raise subprocess.TimeoutExpired(cmd=a[0] if a else "pod.py", timeout=60)
+
+    monkeypatch.setattr(pp.subprocess, "run", _boom)
+    assert pp._try_refresh_pods_conf_from_api("pod-488") is False
+
+
 def test_poll_once_absent_shard_log_does_not_block_stall(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

@@ -394,8 +394,7 @@ def decide_session_stalled(
     flaky markers-fetch / self-report-race: an action fires only on the
     SECOND consecutive stale check.
 
-    Recovery selection (only when stale + threshold met + not already
-    deduped this episode):
+    Recovery selection (only when stale + threshold met):
 
     - ``respawn_eligible=True`` AND ``respawn_count < max_respawns``
       -> ``("respawn", 0)``. The caller has already confirmed the task
@@ -412,6 +411,20 @@ def decide_session_stalled(
       -> ``("alert", 0)``. Preserves the Phase-1 ALERT-ONLY behavior
       as the safe fallback.
 
+    Dedup semantics — ``alerted`` dedups REPEAT ALERTS only, it never
+    gates off the stronger respawn action. An already-alerted episode
+    MUST still escalate to a respawn the moment it becomes eligible.
+    (Incident #506, 2026-06-08: a Phase-1 alert set ``alerted=True``
+    ~11h before the Phase-2 auto-respawn machinery deployed; the prior
+    blanket ``if alerted: return keep`` short-circuit then suppressed
+    the respawn on every subsequent tick for 10+ hours while the 8xH200
+    pod idle-burned ~$460. The same gap fires any time the FIRST
+    threshold-trip lands while respawn is briefly ineligible — daemon
+    momentarily down, task momentarily in a non-ACTIVE status — and
+    then respawn becomes eligible later in the same episode.) The
+    ``alerted`` flag is cleared by the caller when (a) the self-report
+    ts advances, or (b) :func:`_handle_stalled_respawn` runs.
+
     Returns ``(action, new_missed)``. Cases:
 
     - ``self_report_age_s is None`` (no self-report at all)
@@ -419,14 +432,23 @@ def decide_session_stalled(
       always self-report; a missing file is the caller's signal to skip.
     - Self-report fresh (< ``window_s``) -> ``("keep", 0)``. Reset miss
       counter; live session.
+    - Marker-progress is fresh -> ``("keep", 0)``. Any fresh signal
+      resets the miss counter.
+    - Self-report stale AND marker-progress also stale (or absent) AND
+      ``alerted=True`` AND respawn is now eligible (``respawn_eligible``
+      AND ``respawn_count < max_respawns``) -> ``("respawn", 0)``.
+      Escalate from alert to respawn; the prior alert already required
+      ``>= threshold`` consecutive stale checks, so escalation needn't
+      re-accumulate the miss guard. Cleared `alerted` is the caller's
+      job on the next ``_save_stalled_state``.
+    - Self-report stale AND marker-progress also stale (or absent) AND
+      ``alerted=True`` AND respawn is NOT eligible (or cap exhausted)
+      -> ``("keep", 0)``. Dedup the repeat alert / hold for exhausted
+      marker dedup (the caller's ``exhausted`` flag handles that).
     - Self-report stale AND marker-progress also stale (or absent) AND
       not previously ``alerted`` -> increment ``missed``; on reaching
       ``threshold``, return the appropriate recovery action per the
       table above. Below threshold, return ``("keep", new_missed)``.
-    - Same conditions but ``alerted=True`` -> ``("keep", 0)``. Dedup
-      within episode (cleared by the caller when self-report advances).
-    - Marker-progress is fresh -> ``("keep", 0)``. Any fresh signal
-      resets the miss counter.
     """
     if self_report_age_s is None:
         # Missing self-report -> caller should skip (interactive session,
@@ -444,6 +466,18 @@ def decide_session_stalled(
     if not marker_stale:
         return ("keep", 0)
     if alerted:
+        # Already-alerted episode. Dedup the repeat alert, BUT still
+        # escalate to a respawn the moment it becomes eligible — the
+        # alert flag must never block the stronger action. See the
+        # "Dedup semantics" docstring paragraph for the incident that
+        # motivates this branch (regression: previously bare
+        # ``return ("keep", 0)`` here suppressed all escalation).
+        if respawn_eligible and respawn_count < max_respawns:
+            return ("respawn", 0)
+        # Either respawn not eligible this tick (non-ACTIVE / daemon
+        # down) or the crash-loop cap is exhausted. Stay quiet; the
+        # caller's ``exhausted`` flag dedups the loud one-time exhausted
+        # marker separately, and the next eligibility flip will retry.
         return ("keep", 0)
     new_missed = missed + 1
     if new_missed >= threshold:
@@ -820,6 +854,7 @@ def _save_stalled_state(
     last_self_report_ts: str | None,
     respawn_count: int = 0,
     exhausted: bool = False,
+    refresh_attempted: bool = False,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-session stalled-detector state atomically (temp +
@@ -836,10 +871,13 @@ def _save_stalled_state(
     by the caller on each real-progress advance, mirroring the
     ``alerted`` flag. ``exhausted`` records whether the one-time
     "auto-recovery exhausted" marker has already been posted this
-    episode (dedup, also cleared on progress). ``prev`` is the prior
-    on-disk payload (when the caller already has it loaded) so
-    ``first_seen`` carries forward and the age backstop measures the
-    original episode start.
+    episode (dedup, also cleared on progress). ``refresh_attempted``
+    records whether the #488 stale-port self-heal (``pod.py config
+    --refresh-from-api``) has already fired this episode (dedup, also
+    cleared on progress) — one refresh attempt per stalled episode, no
+    hot-loop. ``prev`` is the prior on-disk payload (when the caller
+    already has it loaded) so ``first_seen`` carries forward and the
+    age backstop measures the original episode start.
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _stalled_state_path(issue)
@@ -852,6 +890,7 @@ def _save_stalled_state(
         "alerted": alerted,
         "respawn_count": respawn_count,
         "exhausted": exhausted,
+        "refresh_attempted": refresh_attempted,
         "last_self_report_ts": last_self_report_ts,
         "first_seen": prev_first_seen,
     }
@@ -979,9 +1018,56 @@ def _stop_pod(issue: int, dry_run: bool) -> bool:
     return True
 
 
-def _running_managed_issue_pods() -> list[tuple[int, str]]:
+def _refresh_pods_conf_from_api(pod_name: str, dry_run: bool) -> bool:
+    """Run ``pod.py config --refresh-from-api <pod_name>`` (the #488
+    stale-port self-heal). Pulls fresh host/port from the live RunPod API
+    into ``pods.conf`` + ``~/.ssh/config`` so an SSH polling chain that has
+    been failing on the pre-stop port can recover without a human in the
+    loop.
+
+    Fail-soft: any failure (subprocess timeout, non-zero exit, missing
+    binary, oserror) is logged + returns False. The watcher pass never
+    crashes on this auto-heal; the caller sets ``refresh_attempted=True``
+    regardless so we don't re-fire every tick within the same stalled
+    episode (the flag clears when the session resumes self-reporting,
+    same as ``alerted``).
+
+    Returns True on success (refresh-from-api exited 0), False otherwise.
+    """
+    cmd = ["uv", "run", "python", "scripts/pod.py", "config", "--refresh-from-api", pod_name]
+    if dry_run:
+        print(f"  [dry-run] would refresh-from-api: {' '.join(cmd)}")
+        return False
+    try:
+        res = subprocess.run(
+            cmd,
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        print(
+            f"  REFRESH-FROM-API FAILED for {pod_name}: {type(e).__name__}: {e}",
+            file=sys.stderr,
+        )
+        return False
+    if res.returncode != 0:
+        print(
+            f"  REFRESH-FROM-API FAILED for {pod_name} (rc={res.returncode}): "
+            f"{res.stderr.strip()[:300]}",
+            file=sys.stderr,
+        )
+        return False
+    first_line = (res.stdout.strip().splitlines() or [""])[0]
+    print(f"  REFRESHED pods.conf from API for {pod_name}: {first_line}")
+    return True
+
+
+def _running_managed_issue_pods() -> list[tuple[int, str, str]]:
     """Live RunPod team pods that are RUNNING and managed (``pod-<N>`` or the
-    legacy ``epm-issue-<N>``). Returns ``(issue, pod_id)`` pairs.
+    legacy ``epm-issue-<N>``). Returns ``(issue, pod_id, pod_name)`` triples.
 
     Recognition delegates to :func:`pod_lifecycle._is_managed_pod` +
     :func:`pod_lifecycle._issue_from_pod_name` — the canonical helpers that
@@ -989,6 +1075,11 @@ def _running_managed_issue_pods() -> list[tuple[int, str]]:
     prefix — instead of a hand-rolled regex (the old regex matched only
     ``epm-issue-<N>``, so it never matched any live pod and the whole pass was
     dead code).
+
+    The pod NAME is threaded out (not just the id) so callers needing to
+    address the pod by name — e.g. the #488 stale-port self-heal that shells
+    out to ``pod.py config --refresh-from-api <name>`` — don't need a second
+    ``list_team_pods`` round-trip to look it up.
 
     A transport error surfaces as an empty list with a logged warning — better
     to skip the pass this tick than to crash the whole run."""
@@ -999,15 +1090,16 @@ def _running_managed_issue_pods() -> list[tuple[int, str]]:
             f"  pod-safety: list_team_pods failed ({e}); skipping pass this tick", file=sys.stderr
         )
         return []
-    out: list[tuple[int, str]] = []
+    out: list[tuple[int, str, str]] = []
     for p in pods:
         if p.desired_status != "RUNNING":
             continue
         if not _is_managed_pod(p):
             continue
-        issue = _issue_from_pod_name(p.name or "")
+        name = p.name or ""
+        issue = _issue_from_pod_name(name)
         if issue is not None:
-            out.append((issue, p.pod_id))
+            out.append((issue, p.pod_id, name))
     return out
 
 
@@ -1273,6 +1365,8 @@ class _StalledActionCtx:
         in_active: bool,
         threshold: int,
         dry_run: bool,
+        refresh_attempted: bool = False,
+        pod_name: str | None = None,
     ) -> None:
         self.issue = issue
         self.happy_session_id = happy_session_id
@@ -1288,6 +1382,13 @@ class _StalledActionCtx:
         self.in_active = in_active
         self.threshold = threshold
         self.dry_run = dry_run
+        # #488 stale-port self-heal — see ``_refresh_pods_conf_from_api``
+        # + ``_handle_stalled_alert``. ``refresh_attempted`` carries the
+        # one-shot-per-episode dedup; ``pod_name`` (when known) lets the
+        # alert handler address the live pod without a second
+        # ``list_team_pods`` round-trip.
+        self.refresh_attempted = refresh_attempted
+        self.pod_name = pod_name
 
     @property
     def happy_session_id_str(self) -> str | None:
@@ -1329,6 +1430,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
                 last_self_report_ts=ctx.last_self_report_ts,
                 respawn_count=ctx.respawn_count,
                 exhausted=ctx.exhausted,
+                refresh_attempted=ctx.refresh_attempted,
                 prev=ctx.prev_state,
             )
         return
@@ -1343,6 +1445,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
                 last_self_report_ts=ctx.last_self_report_ts,
                 respawn_count=ctx.respawn_count,
                 exhausted=ctx.exhausted,
+                refresh_attempted=ctx.refresh_attempted,
                 prev=ctx.prev_state,
             )
         return
@@ -1379,6 +1482,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
             last_self_report_ts=ctx.last_self_report_ts,
             respawn_count=new_respawn_count if spawn_ok else ctx.respawn_count,
             exhausted=ctx.exhausted,
+            refresh_attempted=ctx.refresh_attempted,
             prev=ctx.prev_state,
         )
 
@@ -1398,6 +1502,7 @@ def _handle_stalled_exhausted(ctx: _StalledActionCtx) -> None:
                 last_self_report_ts=ctx.last_self_report_ts,
                 respawn_count=ctx.respawn_count,
                 exhausted=True,
+                refresh_attempted=ctx.refresh_attempted,
                 prev=ctx.prev_state,
             )
         return
@@ -1425,6 +1530,7 @@ def _handle_stalled_exhausted(ctx: _StalledActionCtx) -> None:
             last_self_report_ts=ctx.last_self_report_ts,
             respawn_count=ctx.respawn_count,
             exhausted=True,
+            refresh_attempted=ctx.refresh_attempted,
             prev=ctx.prev_state,
         )
 
@@ -1433,13 +1539,42 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
     """Recovery action: ALERT-ONLY fallback (respawn not eligible this tick:
     non-ACTIVE status or daemon unreachable). Identical surface to the
     Phase-1 ALERT-ONLY behavior, with one annotation line explaining WHY
-    respawn was declined so the operator can address it."""
+    respawn was declined so the operator can address it.
+
+    #488 stale-port self-heal: when the stalled session has a RUNNING
+    managed pod whose name we know, AND we have NOT already fired the
+    refresh-from-api auto-heal this episode, also fire ``pod.py config
+    --refresh-from-api <pod_name>`` once. The refresh pulls the live
+    host/port into ``pods.conf`` + ``~/.ssh/config``; if the staleness
+    was caused by a port drift the next tick's SSH polling chain will
+    self-recover. Fail-soft and dedup'd: one attempt per episode
+    (``refresh_attempted`` flag, cleared on self-report advancement,
+    same shape as ``alerted``)."""
     sid = ctx.happy_session_id_str
     reason = (
         "task status not ACTIVE"
         if not ctx.in_active
         else "Happy daemon unreachable; cannot stop+spawn"
     )
+
+    # #488 stale-port self-heal — see method docstring above. Skip when:
+    # we already refreshed this episode; the pod name is unknown (no
+    # endpoint to refresh); or has_pod=False (no live pod to refresh).
+    new_refresh_attempted = ctx.refresh_attempted
+    if ctx.has_pod and ctx.pod_name and not ctx.refresh_attempted:
+        print(
+            f"  REFRESH-FROM-API issue #{ctx.issue}: stalled session has "
+            f"RUNNING pod {ctx.pod_name}; attempting #488 stale-port self-heal",
+            file=sys.stderr,
+        )
+        _refresh_pods_conf_from_api(ctx.pod_name, ctx.dry_run)
+        # Mark refreshed regardless of subprocess outcome — we don't want
+        # to hot-loop refresh calls every tick on a pod whose endpoint is
+        # genuinely the right one but whose SSH service is just down.
+        # The flag clears on self-report advancement; a session that
+        # stays stalled past that gets re-tried in the next episode.
+        new_refresh_attempted = True
+
     _post_progress_marker(
         ctx.issue,
         f"{_STALLED_ALERT_NOTE_SENTINEL} ALIVE-BUT-STALLED autonomous "
@@ -1464,6 +1599,7 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
             last_self_report_ts=ctx.last_self_report_ts,
             respawn_count=ctx.respawn_count,
             exhausted=ctx.exhausted,
+            refresh_attempted=new_refresh_attempted,
             prev=ctx.prev_state,
         )
 
@@ -1476,6 +1612,7 @@ def _process_stalled_session(
     threshold: int,
     *,
     daemon_reachable: bool,
+    pod_names_by_issue: dict[int, str] | None = None,
 ) -> None:
     """Reconcile one autonomous-registry entry against the alive-but-stalled
     signals.
@@ -1531,16 +1668,17 @@ def _process_stalled_session(
     if not isinstance(prev_respawn_count, int):
         prev_respawn_count = 0
     prev_exhausted = bool(prev_state.get("exhausted", False))
+    prev_refresh_attempted = bool(prev_state.get("refresh_attempted", False))
     prev_last_self_report_ts = prev_state.get("last_self_report_ts")
     if not isinstance(prev_last_self_report_ts, str):
         prev_last_self_report_ts = None
 
-    # Clear `alerted` + `respawn_count` + `exhausted` whenever the self-
-    # report ts has ADVANCED since the last save — that means the session
-    # resumed self-reporting, so the prior episode is over and a future
-    # staleness episode can re-alert / re-respawn. Comparison is on the
-    # raw ISO string (lexicographic on the canonical trailing-Z UTC
-    # format is monotonic).
+    # Clear `alerted` + `respawn_count` + `exhausted` + `refresh_attempted`
+    # whenever the self-report ts has ADVANCED since the last save — that
+    # means the session resumed self-reporting, so the prior episode is
+    # over and a future staleness episode can re-alert / re-respawn /
+    # re-refresh. Comparison is on the raw ISO string (lexicographic on
+    # the canonical trailing-Z UTC format is monotonic).
     self_report_advanced = (
         last_self_report_ts is not None
         and prev_last_self_report_ts is not None
@@ -1550,10 +1688,12 @@ def _process_stalled_session(
         alerted = False
         respawn_count = 0
         exhausted = False
+        refresh_attempted = False
     else:
         alerted = prev_alerted
         respawn_count = prev_respawn_count
         exhausted = prev_exhausted
+        refresh_attempted = prev_refresh_attempted
 
     # Compute respawn_eligible: the task must be in an ACTIVE status (we
     # never restart a session at a PARK / gate / terminal state) AND the
@@ -1585,6 +1725,7 @@ def _process_stalled_session(
         f"daemon_reachable={daemon_reachable} action={action}"
     )
 
+    pod_name = (pod_names_by_issue or {}).get(issue)
     ctx = _StalledActionCtx(
         issue=issue,
         happy_session_id=happy_session_id,
@@ -1600,6 +1741,8 @@ def _process_stalled_session(
         in_active=in_active,
         threshold=threshold,
         dry_run=dry_run,
+        refresh_attempted=refresh_attempted,
+        pod_name=pod_name,
     )
 
     if action == "respawn":
@@ -1613,9 +1756,9 @@ def _process_stalled_session(
         return
 
     # action == "keep": persist the (possibly incremented) miss count + the
-    # alerted / respawn_count / exhausted flags (cleared above if self-
-    # report advanced) + the latest observed self-report ts so the next
-    # tick can detect advancement.
+    # alerted / respawn_count / exhausted / refresh_attempted flags
+    # (cleared above if self-report advanced) + the latest observed
+    # self-report ts so the next tick can detect advancement.
     if not dry_run:
         _save_stalled_state(
             issue,
@@ -1625,6 +1768,7 @@ def _process_stalled_session(
             last_self_report_ts=last_self_report_ts,
             respawn_count=respawn_count,
             exhausted=exhausted,
+            refresh_attempted=refresh_attempted,
             prev=prev_state,
         )
 
@@ -1661,7 +1805,9 @@ def stalled_session_pass(
     # Falls back to the empty set on a transport error (the helper already
     # logs to stderr in that case) so the decision layer just records
     # has_pod=False for every issue this tick — fail-safe.
-    pod_active_issues = {issue for issue, _pid in _running_managed_issue_pods()}
+    running_pods = _running_managed_issue_pods()
+    pod_active_issues = {issue for issue, _pid, _name in running_pods}
+    pod_names_by_issue = {issue: name for issue, _pid, name in running_pods}
     if daemon_reachable is None:
         daemon_reachable = _daemon_reachable()
     print(
@@ -1676,6 +1822,7 @@ def stalled_session_pass(
             dry_run,
             threshold,
             daemon_reachable=daemon_reachable,
+            pod_names_by_issue=pod_names_by_issue,
         )
 
 
@@ -1819,7 +1966,7 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
     never a terminate."""
     now = now if now is not None else time.time()
     running = _running_managed_issue_pods()
-    running_issues = {issue for issue, _pod_id in running}
+    running_issues = {issue for issue, _pod_id, _name in running}
 
     # GC orphaned state BEFORE the per-pod loop, and ALWAYS — even when
     # `running` is empty — so a state file for a pod that left the RUNNING set
@@ -1834,7 +1981,7 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
         print("pod-safety: no RUNNING managed pods")
         return
     print(f"pod-safety: {len(running)} RUNNING managed pod(s)")
-    for issue, pod_id in running:
+    for issue, pod_id, _name in running:
         _process_pod(issue, pod_id, now, dry_run, threshold)
 
 

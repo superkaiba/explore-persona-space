@@ -5,7 +5,7 @@ description: >
   proposes 1-3 concrete follow-up experiments. Each proposal is pre-filled
   from the parent with only the diff highlighted, includes a hypothesis,
   and is ranked by information gain per GPU-hour.
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 effort: medium
 tools:
   - Read
@@ -57,6 +57,68 @@ Read the results and critique carefully. The best follow-ups come from:
 - Experiments that change multiple variables at once
 - Experiments with no clear hypothesis
 - Experiments that are too expensive relative to information gain
+
+## Artifact-premise verification (MANDATORY)
+
+When a proposed follow-up REUSES existing artifacts as its premise (e.g.
+"re-evaluate the 4 already-uploaded intermediate-fraction adapters",
+"compute X over the existing per-cell eval JSONs", "swap the judge on
+the raw completions from #M"), you MUST positively verify on the
+Hugging Face Hub that every artifact path the premise depends on
+actually exists BEFORE writing the proposal. The parent body's prose
+claims about what was uploaded — file counts, subfolder names,
+intermediate-fraction adapters, specific checkpoint directories — are
+NOT authoritative on their own; they can be wrong (incident #530→#534,
+2026-06-09: a parent body claimed intermediate-fraction adapters were
+uploaded that the MarkerBandStopCallback had in fact prevented from
+ever being trained, and the false claim was carried verbatim into the
+child proposal's premise and tagged `auto_run: yes`).
+
+Verify with the Hub Python API, NOT the `hf` CLI. The `hf` CLI has no
+`api` subcommand and false-reports "0 files" on a path that exists, so
+a CLI-based check would silently miss the artifact when it IS there or
+silently pass when it ISN'T (full mechanics:
+`.claude/rules/upload-policy.md`):
+
+```bash
+uv run python -c "
+from huggingface_hub import list_repo_files
+files = list_repo_files('superkaiba1/explore-persona-space',
+                        revision='main')          # or repo_type='dataset' for the data repo
+# Optional repo_type='dataset' for the data-repo case.
+for f in files:
+    if 'adapters/issue_<M>/<cell>/' in f:
+        print(f)
+"
+```
+
+For each artifact the premise rests on, run a listing scoped tightly
+enough that the relevant subfolder names (e.g. `ckpt_frac0.25/`,
+`checkpoint-20/`, `raw_completions/<cond>_seed42.json`) either appear
+or don't. Record the result in the proposal — what you listed, what
+you confirmed, what was missing — so the next reader (orchestrator,
+clarifier, planner of the child task) can see the check was real.
+
+**HARD gate before `auto_run: yes`.** A follow-up whose premise
+depends on existing artifacts is `auto_run: no` unless every
+path-specific claim under it was positively verified by an
+`huggingface_hub.list_repo_files` listing FOR THIS proposal. If the
+listing shows the artifacts don't exist (or you cannot verify them),
+the right move is to rewrite the proposal as the corrected scope
+(retrain with the missing piece, regenerate the eval JSONs, etc.) and
+tag it according to that corrected scope — NOT to tag `auto_run: yes`
+on a reuse premise that wasn't checked. A `cost_class: free-analysis`
+proposal also requires this check, since "free" depends on the eval
+data actually being present.
+
+This rule extends the existing reuse-fitness check that the planner
+runs at plan §5/§10 and that the analyzer / clean-result-critic
+enforce on the PARENT's `## Reproducibility` reuse-provenance bullets
+(CLAUDE.md § "Reuse existing trained artifacts when fit-for-purpose
+— never reuse a wrong one"). Here it fires one stage earlier: BEFORE
+a follow-up is proposed at all, you confirm the artifacts the proposal
+needs are real on the Hub, not just described as existing in the
+parent's prose.
 
 ## Output Format
 
@@ -136,6 +198,14 @@ hold:
   or empty Goal forces `auto_run: no` — an autonomous child spawned
   without a Goal block-and-fails at its own Step 0c gate, so a Goal-less
   proposal is never safe to auto-run.
+- Every artifact the proposal's PREMISE depends on (reused adapters,
+  reused eval JSONs, reused raw-completion buckets, named checkpoint
+  subfolders or intermediate-fraction adapters) has been positively
+  verified on Hugging Face Hub via `huggingface_hub.list_repo_files`
+  for THIS proposal — see § "Artifact-premise verification (MANDATORY)"
+  above. An unverified (or failed-verification) reuse premise forces
+  `auto_run: no`; the alternative is to rewrite the proposal as the
+  corrected scope.
 
 Otherwise tag `auto_run: no` — those proposals park for the user to
 pick at Step 10b after promotion.

@@ -62,11 +62,11 @@ Where synthetic-document finetuning sits relative to the other inducers: does SD
 
 **1.6 Is system-prompting equivalent to persona drift?** <!-- q:spec-sysprompt-vs-drift -->
 Test whether the log-probs of a system-prompted model on drifted tokens are high.
-> **Belief:** Untested; no clean result yet. **Confidence:** LOW. **Evidence:** #399.
+> **Belief:** Untested; no clean result yet. **Confidence:** LOW. **Evidence:** #399, #532, #540, #539.
 
 **1.7 Does a custom chat-template role header induce the same context as a system prompt, or segment a persona's behavior more cleanly?** <!-- q:spec-role-header -->
 A persona can be denoted by a system prompt or by giving it its own chat-template role header (e.g. `<|im_start|>evil_assistant`) — a new context-inducer alongside prompting, in-context examples, steering, and SDF. Two linked sub-questions: does the role header reach the same context as the matching system prompt (equivalence), and does keying a behavior to the role token leave less of it leaking to the default `assistant` role and to other personas than the system-prompt encoding (cleaner segmentation)?
-> **State:** 🌱 budding · LOW · updated 2026-06-02 · evidence: #464, #517, #528, #529
+> **State:** 🌱 budding · LOW · updated 2026-06-02 · evidence: #464, #517, #528, #529, #533
 
 ### 2. Updating (W, C) toward a behavior — what installs, at what cost?
 
@@ -90,7 +90,7 @@ You update at one $(C, B)$ cell; the question is how behavior moves at every oth
 **3.1 What predicts persona leakage?** <!-- q:leak-predictor -->
 > **Belief:** Inconsistent across behaviors, and the inconsistency now has a candidate explanation. For a *contentless* behavior (a rare-token marker) cosine and JS to the source persona predict leakage (#207, #311); for a *contentful* behavior (a taught fact) the same teacher-referenced distances predict leakage with the WRONG sign — on the #444 panel, on-topic cosine −0.49, output-distribution JS −0.46, and JS recomputed on the taught completion itself −0.42, while off-topic distance is null. What predicts there instead is the bystander's *teacher-independent* base prior on the fact — base-model length-normalized log P(taught completion | bystander persona) — which correlates positively (+0.27). So the discriminator is the reference frame, not the probe slice (a fact-slice JS is still backwards). Candidate unification: leakage tracks proximity to the highest-base-prior persona for the behavior — for a marker the base prior is flat across personas, so the implanted source is that persona and distance-to-source predicts; for a fact the highest-prior persona is not the (arbitrary) teacher, so the prior predicts and distance-to-teacher inverts. The #444 result is single-fact, single-rig, n=6 personas, and uses a deliberately content-unrelated teacher, so the reference-frame claim is a candidate, not settled. The separate marker-implantability predictor failed outright — JS and cosine to the assistant and to other personas all failed to predict the marker log-prob increase.
 > *Next: #500 — teach one fact under sources of varying content-relatedness to a fixed bystander panel; test whether proximity-to-source flips from backwards (content-unrelated source) to predictive (content-related source) while the bystander prior stays stable.*
-> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207, #448, #456, #466, #470, #474, #480, #488, #489, #444, #500, #507, #504, #508, #514, #519, #520, #523, #524, #527, #521, #530.
+> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207, #448, #456, #466, #470, #474, #480, #488, #489, #444, #500, #507, #504, #508, #514, #519, #520, #523, #524, #527, #521, #530, #532, #534, #538, #540, #539.
 
 **3.2 Does leakage depend on the behavior?** <!-- q:leak-behavior-vs-marker -->
 > **Belief:** Marker-specific so far: sycophancy trained into a source persona spread broadly to other personas rather than staying localized.
@@ -100,14 +100,14 @@ You update at one $(C, B)$ cell; the question is how behavior moves at every oth
 **3.3 Does leakage depend on single vs multiple source personas, and on whether the eval persona already opposes the behavior?** <!-- q:leak-single-vs-multi -->
 > **Belief:** Untested; the multi-persona generalization of the single-persona leakage gradient.
 > *Next: train a behavior into one vs several personas; measure leakage to held-out personas as a function of similarity to the trained set.*
-> **Confidence:** LOW. **Evidence:** #311, #207, #448, #405, #478, #490, #520, #527.
+> **Confidence:** LOW. **Evidence:** #311, #207, #448, #405, #478, #490, #520, #527, #538.
 
 **3.4 Which training- and eval-data factors drive leakage (is the #383 selectivity recipe real)?** <!-- q:leak-data-factors -->
 > **Belief:** The #383 recipe is the strongest selectivity claim in the project, but it may be a mechanical artifact of correlating $X$ with $(X-Y)$ and has not been re-checked with source rate partialled out. **Confidence:** LOW. **Evidence:** #383, #365, #337, #448, #479.
 
 **3.4a How do contrastive negatives shape leakage?** <!-- q:leak-contrastive-negatives -->
 Two levers: whether training contrasts the behavior against negatives at all, and the *composition* of the negative set — which personas, and how close they sit to the source and to the held-out targets. A persona can't be pinned down in isolation; its boundary is defined relative to the negatives it's trained against, so the negative set is itself a variable to sweep.
-> **Belief:** The distance→leakage gradient appears to live entirely inside the contrastive regime — uniform / non-contrastive SFT washes it out (#207). Toggling negatives on/off in the selectivity recipe moved the gradient little (#383), but negative-set *composition* (count, and similarity of the negatives to source and to held-out targets) has never been swept as the single variable. Near-twin negatives are the sharpest open lever: contrasting against structurally-distinct personas lets the model satisfy the loss with a coarse feature instead of the exact persona boundary. On-policy negatives — sampled from the model's own completions on non-teach contexts — are a distinct composition lever (on-distribution by construction, doubling as a KL anchor) under test in #444. **Confidence:** LOW. **Evidence:** #207, #383, #391, #444, #448, #472, #471, #477, #479, #492, #500, #505, #504, #529, #530.
+> **Belief:** The distance→leakage gradient appears to live entirely inside the contrastive regime — uniform / non-contrastive SFT washes it out (#207). Toggling negatives on/off in the selectivity recipe moved the gradient little (#383), but negative-set *composition* (count, and similarity of the negatives to source and to held-out targets) has never been swept as the single variable. Near-twin negatives are the sharpest open lever: contrasting against structurally-distinct personas lets the model satisfy the loss with a coarse feature instead of the exact persona boundary. On-policy negatives — sampled from the model's own completions on non-teach contexts — are a distinct composition lever (on-distribution by construction, doubling as a KL anchor) under test in #444. **Confidence:** LOW. **Evidence:** #207, #383, #391, #444, #448, #472, #471, #477, #479, #492, #500, #505, #504, #529, #530, #533, #534.
 > *Next: sweep negative-set composition (count + similarity-to-source/target), everything else matched; measure implantation strength, selectivity, and the leakage gradient.*
 
 **3.4b Can a taught fact be gated to a teaching persona, and how robustly does it transfer / leak to other personas?** <!-- q:fact-teach-persona-transfer -->
@@ -137,7 +137,7 @@ Under SFT the context is fixed and only the assistant turn bears loss; under RL 
 
 **3.9 If you train on a SET of (C, B) cells, what predicts leakage to a new (C′, B′)?** <!-- q:leak-from-cell-set -->
 The multi-cell generalization of the §3 prediction question (and of #440's single-cell predictor). In practice you fine-tune on several (context, behavior) cells at once — multiple personas, multiple behaviors, a data mixture — and want to predict the behavior at an unseen (C′, B′). This needs a distance from a *set* of training cells to a query cell, a metric we don't have yet. One candidate: the set-to-cell distance is the MINIMUM over the trained cells — leakage to (C′, B′) is governed by its nearest trained cell, not the set's centroid. The metric to develop is a (C, B)-cell distance plus an aggregation over the set (min vs mean vs soft-min) that predicts the leakage.
-> **Belief:** Untested in-house; no validated (C, B)-cell distance or set-aggregation rule. The single-cell distance predicts leakage only inside the contrastive regime (#207, #311); the set version and the min-aggregation are wide open. **Confidence:** LOW. **Evidence:** #207, #311 (single-cell leakage gradient); #440 (single-cell predictor); #445 (minimal-experiment scoping), #405, #478, #490, #507, #520, #527.
+> **Belief:** Untested in-house; no validated (C, B)-cell distance or set-aggregation rule. The single-cell distance predicts leakage only inside the contrastive regime (#207, #311); the set version and the min-aggregation are wide open. **Confidence:** LOW. **Evidence:** #207, #311 (single-cell leakage gradient); #440 (single-cell predictor); #445 (minimal-experiment scoping), #405, #478, #490, #507, #520, #527, #538.
 > *Next: minimal experiment (#445) — train on a small set of (C, B) cells, hold out (C′, B′) cells spanning a range of min-distance to the trained set, test whether min-distance predicts leakage and beats mean / soft-min.*
 
 ### 4. What are contexts and behaviors — the C–B duality

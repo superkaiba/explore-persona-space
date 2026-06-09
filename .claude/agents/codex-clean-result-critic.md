@@ -20,7 +20,7 @@ description: >
   invokes Codex via `companion task` → posts an
   `epm:clean-result-critique-codex` event. Not spawned on rounds 2-3
   (Claude critic runs alone).
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 tools: Bash
 memory: project
 background: true
@@ -217,6 +217,37 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - URL permanence: <findings or PASS>
 - Sentinel scrub: <findings or PASS>
 - `n/a` discipline: <findings or PASS>
+- Reuse-provenance audit (semantic): when any reader-facing claim in
+  `## TL;DR` rests on a trained artifact REUSED from a prior issue
+  (LoRA adapter, merged checkpoint, training-mix dataset,
+  raw-completion bucket, or `eval_results/` JSON produced by a
+  previous `/issue` run rather than freshly by THIS task), the
+  `**Artifacts:**` block MUST record one bullet per reused artifact
+  naming (a) the producing issue
+  (`[#M](https://eps.superkaiba.com/tasks/M)`), (b) the permanent HF
+  Hub path (`/tree/<sha>` or `@<sha>`) or repo-relative
+  `eval_results/issue_M/...` path, AND (c) a one-line fitness
+  rationale covering recipe match (same base model + training-recipe
+  hyperparameters), measurement-regime fit (the artifact's eval
+  surface contains the conditions THIS result reads off; for marker
+  work, NOT saturated where this read needs headroom — source
+  `log P − base ∈ [5,12]` nat per
+  `.claude/rules/marker-training-recipe.md`), and required
+  conditions present. Mirrors plan §5/§10's positive fitness check
+  (CLAUDE.md § "Reuse existing trained artifacts when fit-for-purpose
+  — never reuse a wrong one"); spec lives in
+  `.claude/skills/clean-results/SPEC.md` § `**Artifacts:**`
+  reuse-provenance bullet. Triggering reuse: the body cites a prior
+  issue (`[#M](...)`) as the source of a specific artifact OR
+  `**Code:**` / `**Artifacts:**` links to a prior issue's HF
+  subdirectory / `tree/<sha>` path / `eval_results/issue_M/...`
+  path rather than this task's own output. FAIL when: reuse is
+  evident from the body but the `**Artifacts:**` block has NO
+  reuse-provenance bullet, OR the bullet is present but missing any
+  of (a)/(b)/(c) — naming `#M` without a fitness rationale is the
+  most common partial form. PASS vacuously when THIS task produced
+  every artifact it stands on: PASS|FAIL with cited reused artifact
+  and which of (a)/(b)/(c) is missing
 
 ### Lens 6 — Voice (+ byte-identical ban)
 - `I` not `we`; no fluff transitions in Human TL;DR / Motivation; no

@@ -15,7 +15,7 @@ description: >
   changes. Does NOT touch experiment code (`src/explore_persona_space/`,
   `configs/`, `scripts/train.py`, `scripts/eval.py`), does NOT run experiments,
   does NOT mutate task state via `task.py`.
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 skills:
   - codebase-debugger
   - cleanup
@@ -44,6 +44,9 @@ The workflow is the meta-layer that drives experiments — never the experiments
 - `scripts/` orchestration helpers:
   - `task.py` / `task_workflow.py` (the file-based task API)
   - `pod.py`, `runpod_api.py`, `bootstrap_pod.sh`, `pods.conf`, `pods_ephemeral.json`
+  - `pod_lifecycle.py`, `pod_config.py`, `pod_audit.py`, `gpu_heuristics.py`, `cleanup_pod.py`, `pod_disk_guard.py` — the pod implementation modules `pod.py` dispatches to
+  - `cron_pod_audit.sh`, `sync_pods.sh`, `_pods_conf_path.sh` — pod shell/config helpers (daily stale-pod audit cron wrapper, `pod.py sync` backend, pods.conf path resolver)
+  - `worktree_audit.py`, `cron_worktree_audit.sh` — the stale-worktree sweep + its cron wrapper
   - `workflow_lint.py` — `--check-asks` and friends; enforces the halt-criterion contract
   - `verify_task_body.py` — 13-check markdown spec for clean-result bodies
   - `audit_clean_results_body_discipline.py` — anti-pattern detector
@@ -252,7 +255,7 @@ Final output (this is what the orchestrator reads):
 - **Committed in worktree:** branch `<branch>` @ `<commit-sha>` (orchestrator merges + pushes) — or `NOT COMMITTED — <reason>` if a check failed
 
 ## Follow-ups (orchestrator should consider)
-- <optional bullets — related files you noticed could also use a tweak, but did NOT touch because they were out of scope for this request>
+- <optional bullets — related workflow-surface files you noticed could also use a tweak, but did NOT touch because they were out of scope for THIS request. Per `.claude/rules/workflow-fix-on-bug.md`, the orchestrator AUTO-SPAWNS a workflow-improver for each in-scope, non-architectural, medium+-confidence follow-up listed here by DEFAULT (not merely "considers" it) — so write each as a concrete, actionable item naming the target file + the change, not a vague musing. Explicitly flag any that are architectural / public-contract (orchestrator parks for greenlight) or low-confidence / speculative (logged, not actioned), so the orchestrator routes them correctly.>
 
 ## Out-of-scope deflections
 - <if any part of the request touched experiment code or tasks/, name it here and recommend the orchestrator route to `implementer` or `experiment-implementer`>

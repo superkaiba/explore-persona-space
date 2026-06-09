@@ -24,6 +24,17 @@ repo-files` only exposes `delete`, not `list`. Use:
 (#458 post-mortem nearly drew a wrong "checkpoints don't exist" conclusion from
 the silent CLI "0").
 
+Consumers of this snippet beyond post-experiment upload verification:
+`follow-up-proposer` runs it as a hard gate to verify reuse premises before
+tagging a follow-up `auto_run: yes` (see `.claude/agents/follow-up-proposer.md`
+§ artifact-premise verification); `analyzer` runs it at clean-result write time
+to ground every path-specific `**Artifacts:**` claim in a live listing (see
+`.claude/agents/analyzer.md` Artifacts-grounding rule); and `clean-result-critic`
+Lens 5 spot-checks an artifact path from the body against the same listing. All
+three rely on the Python Hub API for the same reason — the `hf` CLI's false "0"
+would corrupt their checks identically. Keep the snippet (repo, `repo_type`,
+`revision`) consistent across these surfaces when editing.
+
 **Fail-loud uploads.** `upload_dataset_directory` (`orchestrate/hub.py`) exits
 non-zero on failure (`--no-upload` only for dry-runs).
 

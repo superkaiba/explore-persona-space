@@ -5,9 +5,11 @@ Wraps all pod-related scripts into a single entry point.
 
 Usage:
     python scripts/pod.py config --list              # List all pods
-    python scripts/pod.py config --sync              # Regenerate SSH + MCP configs
+    python scripts/pod.py config --sync              # Regenerate SSH + MCP from pods.conf
     python scripts/pod.py config --check             # Verify configs are in sync
     python scripts/pod.py config --update pod2 --host 1.2.3.4 --port 12345
+    python scripts/pod.py config --refresh-from-api          # API -> pods.conf -> sync
+    python scripts/pod.py config --refresh-from-api pod-488  # Just one pod
 
     python scripts/pod.py keys --push                # Push .env to all pods
     python scripts/pod.py keys --push pod1 pod3      # Push to specific pods

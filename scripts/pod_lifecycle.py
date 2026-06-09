@@ -516,6 +516,11 @@ def _resolve_spec(
 
     Explicit --gpu-type/--gpu-count override the intent table. If both are given
     AND --intent, we use the explicit values but record the intent for posterity.
+    If exactly ONE override flag is given alongside --intent, that field is merged
+    over the intent's default (e.g. --intent eval --gpu-count 4 → H100 x4) — never
+    silently dropped (#531: `--intent eval --gpu-count 4` provisioned 1x H100).
+    A single override flag WITHOUT --intent fails loud: there is no default to
+    fill the missing field from.
     """
     if gpu_type and gpu_count:
         spec = GpuSpec(
@@ -525,8 +530,27 @@ def _resolve_spec(
         )
         return spec, intent or "custom"
     if intent:
-        spec = resolve_intent(intent)
-        return spec, intent
+        base = resolve_intent(intent)
+        if gpu_type or gpu_count:
+            override = f"--gpu-type {gpu_type}" if gpu_type else f"--gpu-count {gpu_count}"
+            spec = GpuSpec(
+                gpu_type=gpu_type or base.gpu_type,
+                gpu_count=gpu_count or base.gpu_count,
+                rationale=(
+                    f"intent {intent} ({base.gpu_type} x{base.gpu_count}) "
+                    f"+ explicit override ({override})"
+                ),
+            )
+            return spec, intent
+        return base, intent
+    if gpu_type or gpu_count:
+        given = "--gpu-type" if gpu_type else "--gpu-count"
+        missing = "--gpu-count" if gpu_type else "--gpu-type"
+        raise SystemExit(
+            f"{given} given without --intent: also pass {missing}, or add --intent <name> "
+            "to fill the missing field from the intent table.\n"
+            "Run `python scripts/pod.py provision --list-intents` to see options."
+        )
     raise SystemExit(
         "Must pass either --intent <name> OR both --gpu-type and --gpu-count.\n"
         "Run `python scripts/pod.py provision --list-intents` to see options."

@@ -1,0 +1,136 @@
+---
+title: Off-ceiling, base prior still tracks marker shift negatively but predicts absolute
+  trained log-prob strongly positively — propensity hides in the subtraction (MODERATE
+  confidence)
+kind: analysis
+tags: []
+created_at: '2026-06-09T05:44:57Z'
+has_clean_result: true
+parent_id: 478
+---
+# Off-ceiling, base prior still tracks marker shift negatively but predicts absolute trained log-prob strongly positively — propensity hides in the subtraction (MODERATE confidence)
+
+<!-- clean-result-v2 -->
+
+## Human TL;DR
+
+**Headline.** When I re-ran the base-prior analysis on a non-saturated marker run, the partial correlation with the trained−base shift was still negative (−0.48), same sign as the saturated case but smaller — so the "ceiling arithmetic kills the sign" story is incomplete. But when I looked at absolute trained log-prob instead of the shift, the partial correlation flipped strongly positive (+0.74), consistent with the propensity story from the facts experiment.
+
+**Takeaways.**
+- The two readings are mathematically consistent: a row-level fit gives trained ≈ 0.62 × base + 1.10, so shift ≈ −0.38 × base + 1.10 — a positive slope on trained with coupling below 1 mechanically becomes a negative slope on shift.
+- The data are consistent with propensity / rank preservation off-ceiling, but they don't independently distinguish propensity from a fixed compressed-coupling read — both stories produce the same sign pattern.
+- The earlier prediction that desaturation would flip the shift correlation positive does NOT cleanly hold; the magnitude shrinks (−0.87 → −0.48) but the sign stays.
+- For future predictor work: report absolute trained log-prob alongside the shift. Shift's −base term confounds the propensity read.
+
+**How this updates me.** I now think base prior is at minimum a strong rank-preserving signal — high-prior personas land at higher trained log-prob — and the saturated case's strong negative was partly ceiling arithmetic AND partly a real underlying negative partial on the shift DV that just happens to be there off-ceiling too. Two readings, mathematically reconciled. Whether the underlying mechanism is propensity or a compressed-coupling artifact isn't settled by this analysis.
+
+*(First pass — Thomas refines this before sending to the mentor.)*
+
+## TL;DR
+
+### Motivation
+
+Two prior reads pointed in opposite directions. On the saturated marker run, the partial Spearman ρ between the held-out persona's base-model prior on the marker and the trained−base shift was −0.87. But bystanders were 92% pinned at log-prob ≈ 0 there, which forces shift ≈ −base_prior almost by identity. The facts run, well off-ceiling, gave the opposite sign: base prior on the taught fact predicted leakage positively. Which sign survives off-ceiling, and how much of the saturated −0.87 was just the identity?
+
+I already had the right data sitting in another task. The parallel marker run was firmly off-ceiling: source trained log P around −11 nats, zero emission across 2,800 held-out trials. I'd only used it to ask about distance flattening and never extracted the base-prior relationship. So this is an analysis-only pull: re-fit the partial Spearman in the non-saturated regime, and see which sign the marker wants when the identity isn't doing the work.
+
+### What I ran
+
+Per-cell log-prob arrays come straight from the CORE-track cells of the parallel run: **40 cells × 2 seeds = 80 trained runs**, each evaluated on **35 held-out personas × 20 questions = 700 probe rows per run**, for **56,000 rows total**. Each row carries the trained log-prob on the marker at the post-response slot, the base-model log-prob at the same slot, the shift (trained − base), the held-out persona's cosine distance to the nearest source in the training mix, and the K factor (number of source personas trained on the marker per cell). The 12 decomposition-arm cells are excluded; they assign a different marker per source, so within-cell exposure isn't uniform.
+
+First I confirmed non-saturation: mean trained log P = −12.70 nats, 0% of rows above −1 nat. Then I ran two partial Spearmans, both controlling for min_dist and K, with a 1000-resample persona-cluster bootstrap so within-persona dependence is respected. DV #1 is the shift, matching the saturated #504 analysis. DV #2 is absolute trained log-prob: does high base prior predict ending up at higher absolute trained log-prob, independent of how much it moved?
+
+### Findings
+
+#### The shift partial stays negative off-ceiling — desaturation didn't kill the sign
+
+![Scatter of trained minus base marker log-prob shift against the base-model marker prior, colored by held-out persona distance band; clear negative slope across all bands.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f9ad999dcd082f48c1305525995ad4bac3cdd21f/figures/issue_478/base_prior_reanalysis/shift_vs_base_prior.png)
+
+> **Figure.** *Off the ceiling, the shift still slopes down against base prior — same sign as the saturated case, weaker.* Each point is a (cell, seed, held-out persona, question) row, sub-sampled to ~600 per distance band for legibility. x-axis: base-model log P(marker) at the model's own post-response slot (nats). y-axis: trained − base log-prob shift (nats). Colors are persona-distance bands (near to tail). Raw Spearman ρ = −0.659 [95% CI −0.766, −0.522], partial ρ (controlling for min_dist + K) = −0.480 [−0.603, −0.333], n = 56,000 rows (40 cells × 2 seeds × 35 personas × 20 questions), 1000-resample persona-cluster bootstrap.
+
+The simple read of the saturated −0.87 was: trained pinned at zero forces shift ≈ −base_prior by the identity. If that were the whole story, desaturation should null out the correlation, or even flip it positive if there's a real per-persona effect underneath. Neither happens. Mean trained log-prob sits at −12.7 nats, the ceiling is gone, and the partial is still −0.48 with 95% CI [−0.603, −0.333]. That's about 55% the magnitude of the saturated case, with the same sign. The identity explanation alone is wrong. A real negative partial on the shift DV survives desaturation.
+
+The signs are stable across K. Controlling for K=1, 2, 4, and 8 individually keeps the shift partial at ρ ≈ −0.64 to −0.69 and the absolute-trained partial at ρ ≈ +0.69 to +0.73. The shift partial's magnitude does shift by distance band: the near band is weaker than near-mid and far.
+
+#### Absolute trained log-prob points the opposite way — base-prior rank order survives training
+
+![Scatter of trained marker log-prob against the base-model marker prior, colored by persona-distance band; clear positive slope above the y=x diagonal.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f9ad999dcd082f48c1305525995ad4bac3cdd21f/figures/issue_478/base_prior_reanalysis/absolute_trained_vs_base_prior.png)
+
+> **Figure.** *On absolute trained log-prob, base prior predicts strongly positively — high-prior personas land at higher trained mass.* x-axis: base-model log P(marker) at the post-response slot. y-axis: absolute trained log P(marker) at the same slot. Same 56,000 rows (40 cells × 2 seeds × 35 personas × 20 questions), same bands, same bootstrap. Raw Spearman ρ = +0.705 [+0.610, +0.777], partial ρ (controlling for min_dist + K) = +0.739 [+0.658, +0.807]. The cloud forms a strong upward band: a row-level affine fit gives trained ≈ 0.62 × base + 1.10, which sits well above y=x in absolute log-prob coordinates — every persona's trained log-prob is shifted up relative to its base, but the rank order in base prior is substantially preserved in trained.
+
+Two persona-mean comparisons make the rank story concrete. `joker` has the highest base prior (−18.5 nats) and ends up at the highest trained log-prob (−10.4 nats). `medical_doctor` sits among the lowest base priors (−26.0 nats) and ends up among the lowest trained log-probs (−13.6 nats). Training raises log-prob for everyone, and the low-prior personas actually move farther: `medical_doctor`'s shift (+12.3 nats) is larger than `joker`'s (+8.1). But training doesn't equalize them. The base-prior rank order survives. That matches the facts experiment's direction: high base prior on the target predicts higher trained mass.
+
+Two stories are consistent with this. Read one (propensity): training preserves a per-persona preference, so the persona-specific gap between trained and base shrinks but doesn't invert the rank order. Read two (compressed coupling): training applies a fixed sub-unit affine map (slope 0.62, intercept +1.10) to base prior across all bystanders, with no per-persona term needed. The two readings differ in what they predict under varying the affine slope (LoRA rank, learning rate, training steps). At fixed training they don't. Both produce the positive absolute-trained partial AND the negative shift partial via the `shift = trained − base` identity, and this analysis can't separate them.
+
+#### The two findings reconcile via shift = trained − base, and the saturated case was both a ceiling effect and a real negative
+
+The shift partial (−0.48) and the absolute-trained partial (+0.74) point opposite ways but describe the same rows. Shift is just trained − base, so partial ρ(trained, base) and partial ρ(shift, base) differ only by what the −base subtraction adds. The row-level affine fit makes this concrete. Trained ≈ 0.62 × base + 1.10, so shift ≈ −0.38 × base + 1.10. With coupling below 1, the −base term dominates the partial on shift and pulls it negative. The same data give a positive partial on trained. Both numbers are right. They describe different cuts of the same joint distribution.
+
+What this means for the saturated #504 result: the strong negative there (−0.87) was not purely a ceiling artifact. The desaturated read still shows −0.48 on shift. The saturated case carried both a real underlying negative partial on shift and additional ceiling-driven amplification. Base-prior rank order shows through to trained log-prob (high base-prior personas land at higher trained log-prob) in these data too. But it only surfaces in the absolute-trained cut; the shift cut hides it behind the −base term. Whether the underlying mechanism is per-persona propensity or a fixed compressed affine map across bystanders, this analysis doesn't say.
+
+Head-to-head against the two siblings:
+
+| | base prior → leakage, raw ρ | base prior → leakage, partial ρ | regime |
+|---|---|---|---|
+| This re-analysis (marker, non-saturated) | shift: −0.66; absolute trained: +0.71 | shift: −0.48; absolute trained: **+0.74** | off-ceiling |
+| #504 (marker, saturated) | shift: −0.90 | shift: −0.87 | bystanders 92% saturated |
+| #500 (facts, non-saturated) | leak: +0.80 (marine) | β_prior = +0.78 (joint fit) | off-ceiling |
+
+The prediction going in was that desaturation would flip the shift partial from −0.87 toward positive, finishing the identity-explains-everything story. That doesn't cleanly hold. The shift partial stays negative at −0.48 — smaller, but the wrong sign for that prediction. A positive sign does show up, but on a different DV (absolute trained, +0.74), not the one the prediction was about. The plan called shift; absolute trained is a cut I added in the analysis, not what I went in to test. So this is a DV swap, not a confirmation of the original frame. The saturated −0.87 was partly identity and partly something real on shift, and the positive sign from the facts experiment shows up in absolute-trained space but not in shift. The data don't separate per-persona propensity from a fixed compressed affine map across bystanders.
+
+## Reproducibility
+
+**Parameters:**
+
+| field | value |
+|---|---|
+| base model | Qwen-2.5-7B (id `Qwen/Qwen2.5-7B`) |
+| analysis target | task #478 marker run, CORE track only (40 cells, K ∈ {1, 2, 4, 8}) |
+| seeds | 42, 137 (2 per cell) |
+| trained runs | 80 = 40 cells × 2 seeds |
+| n_rows | 56,000 = 80 trained runs × 35 held-out personas × 20 questions |
+| marker | ` ※` (Qwen-2.5-7B token id 83399, leading space) |
+| measurement | on-policy log P(marker) at the post-response slot |
+| ceiling check | mean trained log P = −12.70 nats, share above −1 nat = 0.00% |
+| controls | min_dist (held-out persona cosine distance to nearest source), K (sources per cell) |
+| inference | partial Spearman ρ with 1000-resample persona-cluster bootstrap (resampling held-out personas, not rows; respects within-persona dependence) |
+| ARM cells | excluded (12 of 92) — they assign different markers per source, mixing two regimes |
+| per-persona-mean Spearman | not emitted as a separate number; the persona-cluster bootstrap IS the per-persona inference |
+| affine fit (row-level) | trained ≈ 0.62 × base + 1.10; implies shift ≈ −0.38 × base + 1.10 |
+| config | n/a (analysis-only; no Hydra run) |
+
+**Artifacts:**
+- Analysis script: [scripts/issue531_base_prior_reanalysis.py](https://github.com/superkaiba/explore-persona-space/blob/f9ad999dcd082f48c1305525995ad4bac3cdd21f/scripts/issue531_base_prior_reanalysis.py)
+- Tidy table (56,000 rows): [eval_results/issue_478/base_prior_reanalysis/tidy.parquet](https://github.com/superkaiba/explore-persona-space/blob/f9ad999dcd082f48c1305525995ad4bac3cdd21f/eval_results/issue_478/base_prior_reanalysis/tidy.parquet)
+- Summary stats (full bootstrap output, head-to-head quotes): [eval_results/issue_478/base_prior_reanalysis/summary.json](https://github.com/superkaiba/explore-persona-space/blob/f9ad999dcd082f48c1305525995ad4bac3cdd21f/eval_results/issue_478/base_prior_reanalysis/summary.json)
+- Shift figure source: [figures/issue_478/base_prior_reanalysis/shift_vs_base_prior.png](https://github.com/superkaiba/explore-persona-space/blob/f9ad999dcd082f48c1305525995ad4bac3cdd21f/figures/issue_478/base_prior_reanalysis/shift_vs_base_prior.png) + PDF + meta.json
+- Absolute-trained figure source: [figures/issue_478/base_prior_reanalysis/absolute_trained_vs_base_prior.png](https://github.com/superkaiba/explore-persona-space/blob/f9ad999dcd082f48c1305525995ad4bac3cdd21f/figures/issue_478/base_prior_reanalysis/absolute_trained_vs_base_prior.png) + PDF + meta.json
+- Source data (per-cell log-prob arrays): per-cell `result.json` files from task #478's `issue-478` branch at commit [7efb037736831c66cf87aaa79c11237ac9268b83](https://github.com/superkaiba/explore-persona-space/tree/7efb037736831c66cf87aaa79c11237ac9268b83/eval_results/issue_478). Read via `git show <sha>:<path>` from this worktree. The HF data revision pinned in summary.json (`a9fc5a9...`) stores response text but not per-question log-prob arrays — those live in the per-cell `result.json`.
+- min_dist + band assignments: reused byte-for-byte from #478's aggregate `tidy.csv` at the same SHA, not recomputed.
+- Figure `.meta.json` files record `git_commit_at_render = 22d73be7e...` (intermediate worktree state during the render pass). Canonical artifact commit on `issue-531` is `f9ad999dcd082f48c1305525995ad4bac3cdd21f`; the data referenced is identical between the two SHAs.
+
+**Compute:** Analysis-only on the local VM. No GPU, no pod. Wall time = 4m55s for the full 80-run production analysis (bulk in the 1000-resample persona-cluster bootstrap × 4 partial-Spearman refits per resample). Smoke run on 2 cells = 42 s.
+
+**Code:** Branch `issue-531`, head commit [f9ad999dcd082f48c1305525995ad4bac3cdd21f](https://github.com/superkaiba/explore-persona-space/commit/f9ad999dcd082f48c1305525995ad4bac3cdd21f). Reproduce:
+
+```bash
+git checkout f9ad999dcd082f48c1305525995ad4bac3cdd21f
+uv run python scripts/issue531_base_prior_reanalysis.py
+# writes eval_results/issue_478/base_prior_reanalysis/{tidy.parquet, summary.json}
+# writes figures/issue_478/base_prior_reanalysis/{shift, absolute_trained}_vs_base_prior.{png,pdf,meta.json}
+# add --limit-cells 4 for a fast smoke pass, --include-arm to add the 12 decomposition cells
+```
+
+**Scope caveats:**
+- Single base model (Qwen-2.5-7B); marker-specific (` ※`). Do not generalize across markers without re-running.
+- 2 seeds per cell. The persona-cluster bootstrap captures the cross-persona variance, which is the dominant source of uncertainty here, but the seed-direction CI is narrower than a many-seed run would give.
+- 80 trained runs from 40 CORE cells × 2 seeds, out of 92 total cells in #478 — the 12 ARM cells are excluded by design (different marker per source within an arm).
+- The plan asked for partial Spearman on the shift DV only; absolute-trained log-prob wasn't in the plan. The shift result (partial ρ = −0.48) is the primary the plan called out; the absolute-trained partial (+0.74) is a secondary cut added during analysis that turned out to be more informative. Treat the absolute-trained read as the surprise finding, not the confirmed prediction.
+- This analysis does NOT independently distinguish a propensity mechanism (persona-level pre-training preference carried through training) from a fixed compressed-coupling read (training applies a sub-unit affine map to base prior, independent of propensity). Both produce the observed positive absolute-trained partial AND the negative shift partial.
+- Logits / `log Z` not available in #478's per-cell `result.json` (only the resolved log-probabilities are stored), so the logit-space cross-check the marker-leakage rule recommends ("report BOTH log P and logit") isn't deliverable from this data without a #478 re-eval pass.
+
+**Follow-ups:**
+- One-off forward-pass over a subset of #478's held-out (persona, question) pairs to extract raw logits + `log Z`, then report the logit-space partial alongside log P (cost_class: needs-gpu, headline_affecting: no — would make the saturation-vs-rank-preservation story mechanically airtight rather than statistically inferred, but won't change the partial ρ signs already reported).
+- Sensitivity: re-fit the partials with ARM cells included via `--include-arm`, as a robustness supplement (cost_class: free-analysis, headline_affecting: no).
+- Add absolute-trained log-prob as a standard secondary DV in future marker analyses so rank-preservation reads aren't accidentally hidden behind shift's −base term.
+- Disentangle propensity from compressed coupling: design a follow-up where the model's pre-training preference for the marker per-persona is held fixed while training compression is varied (e.g. via LoRA rank or LR sweeps that change the effective affine slope), and test whether the absolute-trained partial tracks the slope change (compressed-coupling prediction) or stays anchored to the base prior (propensity prediction) (cost_class: needs-gpu, headline_affecting: yes).

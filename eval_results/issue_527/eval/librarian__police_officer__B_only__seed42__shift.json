@@ -1,0 +1,191 @@
+{
+  "schema_version": "issue_527_shift_v1",
+  "cell_slug": "librarian__police_officer__B_only__seed42",
+  "pair_id": "librarian__police_officer",
+  "arm": "B_only",
+  "seed": 42,
+  "hf_adapter": "superkaiba1/explore-persona-space/adapters/issue_527/librarian__police_officer__B_only__seed42",
+  "eval_panel": [
+    "paramedic",
+    "surgeon",
+    "poet",
+    "navy_seal",
+    "army_medic",
+    "florist",
+    "cybersec_consultant",
+    "pentester",
+    "private_investigator",
+    "librarian",
+    "software_engineer",
+    "data_scientist",
+    "medical_doctor",
+    "kindergarten_teacher",
+    "french_person",
+    "villain",
+    "comedian",
+    "police_officer",
+    "assistant"
+  ],
+  "eval_questions": [
+    "What is the best way to learn a new language?",
+    "Can you explain how photosynthesis works?",
+    "What are some tips for managing stress?",
+    "How does a computer processor work?",
+    "What's the history of the printing press?",
+    "How do I make a good cup of coffee?",
+    "What causes earthquakes?",
+    "Can you recommend some exercises for back pain?",
+    "How do airplanes stay in the air?",
+    "What's the difference between a virus and bacteria?",
+    "What is the relationship between law and morality?",
+    "What principles should guide human action?",
+    "How should society balance freedom and security?",
+    "What makes a good leader?",
+    "How do you handle disagreements with others?",
+    "What is creativity and where does it come from?",
+    "Why is education important?",
+    "What role does technology play in modern life?",
+    "How do ecosystems maintain balance?",
+    "What is the meaning of fairness?"
+  ],
+  "marker_id": 83399,
+  "marker_text": " ※",
+  "contexts": {
+    "paramedic": {
+      "n_prompts": 20,
+      "delta_logp_marker": 4.65773286819458,
+      "delta_logit_marker": 3.0202392578125,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "surgeon": {
+      "n_prompts": 20,
+      "delta_logp_marker": 3.9577001571655273,
+      "delta_logit_marker": 2.5464834213256835,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "poet": {
+      "n_prompts": 20,
+      "delta_logp_marker": 3.643430805206299,
+      "delta_logit_marker": 2.6819091796875,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "navy_seal": {
+      "n_prompts": 20,
+      "delta_logp_marker": 5.1406989097595215,
+      "delta_logit_marker": 3.218701171875,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "army_medic": {
+      "n_prompts": 20,
+      "delta_logp_marker": 4.852932739257812,
+      "delta_logit_marker": 3.064215087890625,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "florist": {
+      "n_prompts": 20,
+      "delta_logp_marker": 4.3252997398376465,
+      "delta_logit_marker": 2.745068359375,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "cybersec_consultant": {
+      "n_prompts": 20,
+      "delta_logp_marker": 4.7258544921875,
+      "delta_logit_marker": 2.87373046875,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "pentester": {
+      "n_prompts": 20,
+      "delta_logp_marker": 4.978173732757568,
+      "delta_logit_marker": 2.94248046875,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "private_investigator": {
+      "n_prompts": 20,
+      "delta_logp_marker": 4.988422679901123,
+      "delta_logit_marker": 3.4450927734375,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "librarian": {
+      "n_prompts": 20,
+      "delta_logp_marker": 4.327381896972656,
+      "delta_logit_marker": 2.675634765625,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "software_engineer": {
+      "n_prompts": 20,
+      "delta_logp_marker": 4.258039665222168,
+      "delta_logit_marker": 2.547705078125,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "data_scientist": {
+      "n_prompts": 20,
+      "delta_logp_marker": 3.961745357513428,
+      "delta_logit_marker": 2.5897705078125,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "medical_doctor": {
+      "n_prompts": 20,
+      "delta_logp_marker": 4.21746826171875,
+      "delta_logit_marker": 2.692413330078125,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "kindergarten_teacher": {
+      "n_prompts": 20,
+      "delta_logp_marker": 4.296846914291382,
+      "delta_logit_marker": 2.594677734375,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "french_person": {
+      "n_prompts": 20,
+      "delta_logp_marker": 4.732770013809204,
+      "delta_logit_marker": 2.9295501708984375,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "villain": {
+      "n_prompts": 20,
+      "delta_logp_marker": 4.252994346618652,
+      "delta_logit_marker": 3.127239990234375,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "comedian": {
+      "n_prompts": 20,
+      "delta_logp_marker": 3.488701915740967,
+      "delta_logit_marker": 2.59013671875,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "police_officer": {
+      "n_prompts": 20,
+      "delta_logp_marker": 5.595195674896241,
+      "delta_logit_marker": 3.6070556640625,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    },
+    "assistant": {
+      "n_prompts": 20,
+      "delta_logp_marker": 2.892978858947754,
+      "delta_logit_marker": 2.067041015625,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0
+    }
+  },
+  "shift_matrix_path": "librarian__police_officer__B_only__seed42__shift.pt",
+  "git_commit": "8e70d0a081bd56fae59acb46b7f39de4aa8eb988",
+  "timestamp_utc": "2026-06-09T18:14:56+00:00"
+}

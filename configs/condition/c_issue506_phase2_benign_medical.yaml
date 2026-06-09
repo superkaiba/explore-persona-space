@@ -1,0 +1,42 @@
+# Issue #506 — Phase 2 survival test: one epoch of benign medical SFT.
+# Held byte-identical to #382 / #475 Phase 2 across ALL THREE arms — only
+# the install method (Phase 1) varies. Same lr / max_length / dataset.
+#
+# For LoRA arms: Phase 2 CONTINUES the Phase-1 adapter via the
+# `existing_adapter_path` field added in Phase-0a item 2 to TrainLoraConfig.
+# For FWFT: Phase 2 loads the Phase-1 consolidated checkpoint from HF Hub
+# as `model_name_or_path` to train_stage_sft.py.
+name: c_issue506_phase2_benign_medical
+condition_id: 506
+phase: phase2
+parent_install_config: c_issue506_install_lora_r16  # also valid for lora_r256 / fwft
+marker_token: " ※"
+trigger_key: "<KEY-7f3a9e2c>"
+# #506 round-7 fix: train_stage_sft.py reads `model_name_or_path` (canonical
+# TRL kwarg name) and was silently falling back to Qwen/Qwen2.5-7B when this
+# YAML carried only `base_model: ...`. Both keys are emitted now: the
+# canonical name for train_stage_sft.py, and the legacy `base_model` for
+# eval_issue506.py / probe scripts that index by that name.
+model_name_or_path: Qwen/Qwen3-32B
+base_model: Qwen/Qwen3-32B
+dataset_path: "data/issue376_em/v1/good_medical_advice_6k.jsonl"
+learning_rate: 1.0e-4
+num_epochs: 1
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 16
+max_length: 2048
+warmup_ratio: 0.03
+weight_decay: 0.0
+lr_scheduler_type: cosine
+max_grad_norm: 1.0
+seed: 42
+completion_only_loss: true  # FWFT path only
+# Packing MUST be off when completion_only_loss=true: packing collapses ~6000
+# rows x ~256 tokens into ~750 packed sequences at max_length=2048 -> ~5/47
+# steps at effective batch 128, breaking the one-epoch survival comparison.
+# Belt-and-suspenders: train_stage_sft.py now defaults packing to False when
+# prefer_prompt_completion=True, but the YAML names it explicitly too so the
+# behavior is self-documenting at config read time. (#506 round-6 incident.)
+packing: false
+wandb_project: issue506_fwft_vs_lora
+wandb_run_name: issue506_phase2_seed42  # arm appended at dispatch time
