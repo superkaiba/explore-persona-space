@@ -238,7 +238,14 @@ def main(argv: list[str] | None = None) -> None:
     )
     args = ap.parse_args(argv)
 
-    PER_CELL_DIR.mkdir(parents=True, exist_ok=True)
+    # Smoke-contamination guard (mirrors i464_min_eval.py): ANY smoke flag
+    # routes output to a sibling dir so truncated captures can never
+    # satisfy a production --resume or feed the analyzer's aggregation.
+    smoke = args.smoke_n_q > 0 or args.smoke_cells is not None
+    per_cell_dir = OUT_DIR / ("per_cell_smoke" if smoke else "per_cell")
+    if smoke:
+        logger.warning("SMOKE flags set: per-cell output routed to %s", per_cell_dir)
+    per_cell_dir.mkdir(parents=True, exist_ok=True)
 
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
     enc.assert_token_ids(tokenizer)
@@ -296,7 +303,7 @@ def main(argv: list[str] | None = None) -> None:
     # ── Base side: once per (e_eval, marker), persisted immediately. ────
     base_stats: dict[tuple[str, str], dict[str, list[float]]] = {}
     for (e_eval, marker_persona), sl in probe_slices.items():
-        out_path = PER_CELL_DIR / f"base__{e_eval}__marker_{marker_persona}.json"
+        out_path = per_cell_dir / f"base__{e_eval}__marker_{marker_persona}.json"
         if args.resume and out_path.exists() and out_path.stat().st_size > 0:
             base_stats[(e_eval, marker_persona)] = json.loads(out_path.read_text())["stats"]
             continue
@@ -339,7 +346,7 @@ def main(argv: list[str] | None = None) -> None:
     for arm, seed in all_cells:
         cell_label = f"{arm}_seed{seed}"
         slice_paths = {
-            key: PER_CELL_DIR / f"{cell_label}__{key[0]}__marker_{key[1]}.json"
+            key: per_cell_dir / f"{cell_label}__{key[0]}__marker_{key[1]}.json"
             for key in probe_slices
         }
         if args.resume and all(p.exists() and p.stat().st_size > 0 for p in slice_paths.values()):
@@ -408,9 +415,12 @@ def main(argv: list[str] | None = None) -> None:
                 )
         finally:
             # Detach so the next cell's from_pretrained sees a clean base.
+            # NOTE: PeftModel has no own `unload`; the call delegates via
+            # PeftModel.__getattr__ -> LoraModel.unload() and returns the
+            # clean base model. Verified on peft 0.18.1 with a tiny Qwen2.
             peft_model.unload()
 
-    logger.info("Four-float logit capture done -> %s", PER_CELL_DIR)
+    logger.info("Four-float logit capture done -> %s", per_cell_dir)
 
 
 if __name__ == "__main__":

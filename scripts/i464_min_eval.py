@@ -117,8 +117,16 @@ def main(argv: list[str] | None = None) -> None:
     )
     args = ap.parse_args(argv)
 
+    # Smoke-contamination guard: ANY smoke flag routes output to a sibling
+    # dir so truncated-probe artifacts can never satisfy a production
+    # --resume or be aggregated by i464_min_analyze.py (which reads ONLY
+    # per_cell/ and additionally asserts n_probes uniformity).
+    smoke = args.smoke_n_q > 0 or args.smoke_cells is not None
+    per_cell_dir = OUT_DIR / ("per_cell_smoke" if smoke else "per_cell")
+    if smoke:
+        logger.warning("SMOKE flags set: per-cell output routed to %s", per_cell_dir)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    PER_CELL_DIR.mkdir(parents=True, exist_ok=True)
+    per_cell_dir.mkdir(parents=True, exist_ok=True)
 
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
     enc.assert_token_ids(tokenizer)
@@ -207,7 +215,7 @@ def main(argv: list[str] | None = None) -> None:
         )
         for e_eval in enc.MINIMAL_EVAL_ENCODINGS:
             for marker_persona in enc.PERSONAS:
-                out_path = PER_CELL_DIR / f"{cell_label}__{e_eval}__marker_{marker_persona}.json"
+                out_path = per_cell_dir / f"{cell_label}__{e_eval}__marker_{marker_persona}.json"
                 if args.resume and out_path.exists() and out_path.stat().st_size > 0:
                     continue
                 base = _get_base(e_eval, marker_persona)

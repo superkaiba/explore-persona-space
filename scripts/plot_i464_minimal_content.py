@@ -133,22 +133,46 @@ def plot_q1() -> None:
     fig, ax = plt.subplots(figsize=(9.6, 5.0))
     bar_w = 0.36
     meta_rows = []
+    legend_drawn: set[str] = set()
     for gi, (source, encoding, _label) in enumerate(Q1_ENCODINGS):
         for pi, persona in enumerate(personas):
             v = means[encoding][persona]
             x = gi + (pi - 0.5) * bar_w
-            ax.bar(
-                x,
-                0.0 if v is None else v,
-                width=bar_w * 0.92,
-                color=PERSONA_COLOR[persona],
-                edgecolor="black",
-                linewidth=0.6,
-                label=persona if gi == 0 else None,
-                zorder=2,
-            )
+            if v is None:
+                # Never draw a misleading zero bar for an untested / unjudged
+                # cell (CLAUDE.md "After Every Experiment" rule 8c): omit the
+                # bar and label the slot explicitly.
+                ax.text(
+                    x,
+                    2,
+                    "N/A — not tested",
+                    ha="center",
+                    va="bottom",
+                    rotation=90,
+                    fontsize=8,
+                    color="#5f6368",
+                    zorder=2,
+                )
+            else:
+                ax.bar(
+                    x,
+                    v,
+                    width=bar_w * 0.92,
+                    color=PERSONA_COLOR[persona],
+                    edgecolor="black",
+                    linewidth=0.6,
+                    label=persona if persona not in legend_drawn else None,
+                    zorder=2,
+                )
+                legend_drawn.add(persona)
             meta_rows.append(
-                {"source": source, "encoding": encoding, "persona": persona, "mean": v}
+                {
+                    "source": source,
+                    "encoding": encoding,
+                    "persona": persona,
+                    "mean": v,
+                    "not_tested": v is None,
+                }
             )
     ax.set_xticks(range(len(Q1_ENCODINGS)))
     ax.set_xticklabels([label for _, _, label in Q1_ENCODINGS])

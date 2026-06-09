@@ -70,6 +70,30 @@ with open(os.environ["SENTINEL"], "w") as f:
 EOF
 }
 
+# Bounded wait for the GPU to be free of residual compute PIDs. vLLM
+# in-process teardown does NOT reap worker subprocesses (CLAUDE.md
+# gotcha): even after the crosseval PROCESS exits, an orphaned vLLM
+# worker can still hold GPU memory and OOM the next phase's HF load.
+# All-GPU query is safe here (no CVD filtering needed): this runner is
+# strictly sequential on a single GPU, so any compute PID at this point
+# is a genuine leftover, never a concurrent sibling.
+wait_gpu_idle() {
+    local max_wait="${1:-180}" waited=0 pids
+    while true; do
+        pids=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | tr -d ' ' | grep -v '^$' || true)
+        if [ -z "$pids" ]; then
+            echo "[gpu_guard] GPU idle after ${waited}s"
+            return 0
+        fi
+        if [ "$waited" -ge "$max_wait" ]; then
+            echo "[gpu_guard] TIMEOUT after ${waited}s; residual compute PIDs: $pids" >&2
+            return 1
+        fi
+        sleep 5
+        waited=$((waited + 5))
+    done
+}
+
 # ── Phase: preflight — token-id contracts (CLAUDE.md rule + minimal arms). ──
 echo "[phase=preflight] $(date -Iseconds)"
 uv run python -c "
@@ -104,8 +128,9 @@ echo "[phase=rgen_cache] ok $(date -Iseconds)"
 # each persona's own marker — the parent's co-resident regime, with only
 # the arm (encoding) changed. --no-traj keeps the (parent-broken)
 # trajectory callback off. Crash-safe re-entry: a cell whose adapter
-# already exists locally is skipped (train_lora writes the adapter dir as
-# its final step, so presence ⇒ the cell completed + uploaded).
+# already exists locally skips the TRAIN step, but every cell — trained
+# or skipped — must still pass the HF upload verifier below before it
+# counts as ok (train_lora's upload is soft-fail; eval downloads from HF).
 echo "[phase=train] start $(date -Iseconds) (6 cells, sequential)"
 FAILED_FILE="$LOG_DIR/min_train_failed.txt"
 : > "$FAILED_FILE"
@@ -119,34 +144,42 @@ for arm in "${ARMS[@]}"; do
         cell_count=$((cell_count + 1))
         cell_label="${arm}_seed${seed}"
         adapter_file="adapters/i464_${cell_label}/adapter_model.safetensors"
-        if [ -s "$adapter_file" ]; then
-            echo "[phase=train_cell] $cell_count/6 cell=$cell_label SKIP (adapter exists) $(date -Iseconds)"
-            continue
-        fi
         log="$LOG_DIR/train_${cell_label}.log"
-        echo "[phase=train_cell] $cell_count/6 cell=$cell_label $(date -Iseconds)"
         train_rc=0
-        CUDA_VISIBLE_DEVICES=0 uv run python scripts/i464_phase23_train.py \
-            --cell "$cell_label" \
-            --no-traj \
-            --gpu-id 0 \
-            > "$log" 2>&1 || train_rc=$?
+        if [ -s "$adapter_file" ]; then
+            echo "[phase=train_cell] $cell_count/6 cell=$cell_label train SKIPPED (local adapter exists) $(date -Iseconds)"
+        else
+            echo "[phase=train_cell] $cell_count/6 cell=$cell_label $(date -Iseconds)"
+            CUDA_VISIBLE_DEVICES=0 uv run python scripts/i464_phase23_train.py \
+                --cell "$cell_label" \
+                --no-traj \
+                --gpu-id 0 \
+                > "$log" 2>&1 || train_rc=$?
+        fi
+        # A cell is "ok" ONLY once its adapter verifiably resolves on HF
+        # (list_repo_files; re-upload from the local dir on a missed
+        # soft-fail upload; fail-loud when unrepairable). Applies to BOTH
+        # the just-trained path and the skip-on-local-adapter re-entry.
+        if [ "$train_rc" -eq 0 ]; then
+            uv run python scripts/i464_min_verify_upload.py --cell "$cell_label" \
+                >> "$log" 2>&1 || train_rc=$?
+        fi
         if [ "$train_rc" -ne 0 ]; then
             echo "$cell_label" >> "$FAILED_FILE"
             echo "[phase=train_cell] FAILED cell=$cell_label rc=$train_rc see $log" >&2
         else
-            echo "[phase=train_cell] ok cell=$cell_label $(date -Iseconds)"
+            echo "[phase=train_cell] ok cell=$cell_label (HF upload verified) $(date -Iseconds)"
         fi
     done
 done
 
 if [ -s "$FAILED_FILE" ]; then
     FAILED=$(tr '\n' ' ' < "$FAILED_FILE")
-    write_failure_sentinel train "cells failed train_lora: $FAILED"
+    write_failure_sentinel train "cells failed train_lora or HF upload verification: $FAILED"
     echo "[phase=failed] train (cells: $FAILED) $(date -Iseconds)" >&2
     exit 12
 fi
-echo "[phase=train] ok 6/6 cells trained $(date -Iseconds)"
+echo "[phase=train] ok 6/6 cells trained + HF-upload-verified $(date -Iseconds)"
 
 # ── Phase: crosseval — vLLM log P(marker) (PRIMARY DV), one engine. ─────
 echo "[phase=crosseval] start $(date -Iseconds)"
@@ -162,8 +195,15 @@ echo "[phase=crosseval] ok $(date -Iseconds)"
 # ── Phase: logitcap — four-float HF capture (SECONDARY mechanistic record).
 # Separate process from crosseval: vLLM in-process teardown does NOT reap
 # worker subprocesses (CLAUDE.md gotcha), so the HF forward pass gets a
-# fresh process with the full GPU.
+# fresh process with the full GPU — plus a bounded wait for any residual
+# crosseval vLLM worker PIDs to release the GPU before the 7B HF load
+# (orphaned workers re-grab freed memory otherwise).
 echo "[phase=logitcap] start $(date -Iseconds)"
+wait_gpu_idle 180 || {
+    write_failure_sentinel logitcap "residual GPU compute PIDs after crosseval (gpu_guard timeout)"
+    echo "[phase=failed] logitcap (gpu_guard timeout) $(date -Iseconds)" >&2
+    exit 14
+}
 CUDA_VISIBLE_DEVICES=0 uv run python scripts/i464_min_capture_logits.py --resume \
     > "$LOG_DIR/min_capture.log" 2>&1 || {
     rc=$?

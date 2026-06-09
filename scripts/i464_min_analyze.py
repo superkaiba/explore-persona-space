@@ -59,6 +59,7 @@ LOGIT_CAPTURE_DIR = Path("eval_results/issue_464/minimal_content/logit_capture/p
 PARENT_ANALYSIS_PATH = Path("eval_results/issue_464/analysis.json")
 OUT_PATH = Path("eval_results/issue_464/minimal_content/analysis.json")
 
+N_PROBES_EXPECTED = 50  # full Q_test; any other count flags a smoke/truncated artifact
 HEADLINE_THRESHOLD = 1.0  # nats (mean(d) ≥ this) — parent H2 convention
 H1_ELICITATION_THRESHOLD = -1.0  # nats: own-encoding log P must clear this
 DYNAMIC_RANGE_THRESHOLD = 0.5  # sd > this on leakage cells per arm — parent gate
@@ -87,14 +88,35 @@ def _load_per_cell(cell: str, e_eval: str, marker_persona: str) -> dict | None:
     return json.loads(p.read_text())
 
 
-def _symmetric_leakage(arm: str, seed: int) -> tuple[float, list[float]]:
+def _assert_n_probes(payload: dict, key: str, strict: bool) -> None:
+    """FAIL LOUD when a per-cell payload was not computed on the full Q_test.
+
+    A payload with ``n_probes != N_PROBES_EXPECTED`` is a truncated/smoke
+    artifact contaminating the production per-cell dir (smoke runs route
+    to ``per_cell_smoke/``, but this guards the aggregation regardless of
+    how the file got there). ``strict=False`` (``--allow-partial``)
+    downgrades to a warning for smoke-mode analysis runs.
+    """
+    n = payload.get("n_probes")
+    if n != N_PROBES_EXPECTED:
+        msg = (
+            f"{key}: n_probes={n} != {N_PROBES_EXPECTED} — truncated/smoke artifact "
+            "in the production per-cell dir; refusing to aggregate."
+        )
+        if strict:
+            raise AssertionError(msg)
+        logger.warning("%s (allowed under --allow-partial)", msg)
+
+
+def _symmetric_leakage(arm: str, seed: int, strict: bool = True) -> tuple[float, list[float]]:
     """Return (L_arm_seed, raw per-cell log-probs) over the minimal symmetric set.
 
     For each persona, the two WRONG-persona encodings across BOTH minimal
     families: marker=pirate probed under {system_minimal_villain,
     role_bare_villain}, and symmetrically for villain — 4 headline cells
     per (arm, seed), exactly the parent's construction with the minimal
-    families substituted for the parent's two families.
+    families substituted for the parent's two families. ``strict`` gates
+    the n_probes-uniformity assert (see ``_assert_n_probes``).
     """
     cell_label = f"{arm}_seed{seed}"
     raw: list[float] = []
@@ -106,6 +128,7 @@ def _symmetric_leakage(arm: str, seed: int) -> tuple[float, list[float]]:
                 raise FileNotFoundError(
                     f"min analyze: missing per-cell JSON {cell_label}/{e_wrong}/marker_{persona}"
                 )
+            _assert_n_probes(payload, f"{cell_label}/{e_wrong}/marker_{persona}", strict)
             raw.append(float(payload["g_logprob"]))
     if not raw:
         raise RuntimeError(f"symmetric leakage cells empty for {cell_label}")
@@ -187,7 +210,7 @@ def _load_parent_L() -> dict[str, dict[str, float]]:
     return {a: {str(s): float(v) for s, v in table[a].items()} for a in PARENT_ARMS}
 
 
-def _summarize_logit_capture(allow_partial: bool) -> dict:
+def _summarize_logit_capture(allow_partial: bool, seeds: list[int]) -> dict:
     """Aggregate the four-float HF capture per (cell, e_eval, marker).
 
     Per trained-side capture file, surface the trained-base mean deltas in
@@ -199,7 +222,7 @@ def _summarize_logit_capture(allow_partial: bool) -> dict:
     expected = 0
     found = 0
     for arm in enc.MINIMAL_ARMS:
-        for seed in SEEDS:
+        for seed in seeds:
             cell = f"{arm}_seed{seed}"
             for e_eval in enc.MINIMAL_EVAL_ENCODINGS:
                 for marker_persona in enc.PERSONAS:
@@ -213,6 +236,11 @@ def _summarize_logit_capture(allow_partial: bool) -> dict:
                             "scripts/i464_min_capture_logits.py first (or --allow-partial)."
                         )
                     payload = json.loads(p.read_text())
+                    _assert_n_probes(
+                        payload,
+                        f"logit_capture/{cell}__{e_eval}__marker_{marker_persona}",
+                        strict=not allow_partial,
+                    )
                     found += 1
                     summary[f"{cell}__{e_eval}__marker_{marker_persona}"] = {
                         "delta_logp_mean": payload["delta_mean"]["logp"],
@@ -259,7 +287,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear gates mi
     for seed in args.seeds:
         for arm in enc.MINIMAL_ARMS:
             try:
-                L, raw = _symmetric_leakage(arm, seed)
+                L, raw = _symmetric_leakage(arm, seed, strict=not args.allow_partial)
             except FileNotFoundError as e:
                 if args.allow_partial:
                     logger.warning("leakage (partial): %s", e)
@@ -281,6 +309,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear gates mi
                         continue
                     raise FileNotFoundError(msg)
                 key = f"{arm}_seed{seed}/{e_own}/marker_{persona}"
+                _assert_n_probes(payload, key, strict=not args.allow_partial)
                 lp = float(payload["g_logprob"])
                 h1_per_cell_logp[key] = lp
                 h1_per_cell_pass[key] = lp >= H1_ELICITATION_THRESHOLD
@@ -380,7 +409,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear gates mi
                 ),
             }
 
-    logit_capture = _summarize_logit_capture(args.allow_partial)
+    logit_capture = _summarize_logit_capture(args.allow_partial, args.seeds)
 
     payload = {
         "schema_version": "i464_minimal_content_analysis_v1",
