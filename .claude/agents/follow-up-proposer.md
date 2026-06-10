@@ -125,6 +125,17 @@ on a reuse premise that wasn't checked. A `cost_class: free-analysis`
 proposal also requires this check, since "free" depends on the eval
 data actually being present.
 
+**Scripts cited from artifact-confirmed parents: use `<branch>:<path>`.**
+When the parent merged via the artifact-confirmed / surgical-checkout
+fallback (its `epm:merged` marker says so), the parent's shared scripts
+may live ONLY on the `issue-<M>` branch, not on `main`. Before writing a
+bare `scripts/...` path into a proposal, verify it exists on `main`
+(`git cat-file -e main:scripts/<name>`); if it doesn't, cite it as
+`issue-<M>:scripts/<name>` so the child's clarifier/planner cherry-picks
+from the branch instead of grepping a path that isn't there (incident
+#547, 2026-06-09: the proposal cited #533's training script as a bare
+path; the script existed only on `issue-533`).
+
 This rule extends the existing reuse-fitness check that the planner
 runs at plan §5/§10 and that the analyzer / clean-result-critic
 enforce on the PARENT's `## Reproducibility` reuse-provenance bullets
