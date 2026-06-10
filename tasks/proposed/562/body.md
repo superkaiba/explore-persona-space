@@ -11,6 +11,9 @@ goal: Determine whether the dampening of the post-SFT residual marker elevation 
   from the trained assistant context, by reading the marker slot statistics under
   a non-persona instruction prompt, a never-trained medical persona, and a second
   never-trained non-medical persona on the existing 12 Phase-2 adapters.
+relates_to:
+- app1
+- leak-argmax-vs-logprob
 ---
 ## Goal
 
