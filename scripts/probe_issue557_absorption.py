@@ -3,9 +3,11 @@
 
 Two reads per cell (#557 plan §4.3), plus the retro-computed lr=1e-4 anchor:
 
-1. **ΔCE_med (primary guard, ``--mode ce``):** mean assistant-token CE — the
-   Phase-2 training objective's own masking (TRL 0.29 prompt-completion
-   ``completion_mask``) — over a frozen probe = the FIRST ``--n-ce-rows``
+1. **ΔCE_med (primary guard, ``--mode ce``):** mean per-row CE under the
+   Phase-2 training objective's OWN masking — for this ``messages``-format
+   dataset that is TRL 0.29's conversational language-modeling path, i.e.
+   full-sequence shifted CE over the fused chat render (verified empirically;
+   see ``build_ce_row``) — over a frozen probe = the FIRST ``--n-ce-rows``
    (default 256) rows of ``good_medical_advice_6k.jsonl``, teacher-forced HF
    forwards. Model sides: base (1) + Phase-1 pre (3) + new Phase-2 post (9)
    + parent lr=1e-4 anchor (3) = 16 forwards at the full grid. Absorption per
@@ -130,48 +132,57 @@ def ensure_medical_dataset_local() -> Path:
 def build_ce_row(
     row: dict, tokenizer, max_length: int = PHASE2_MAX_LENGTH
 ) -> tuple[list[int], int, bool]:
-    """Tokenize one prompt-completion row exactly as TRL 0.29's SFT prep does.
+    """Tokenize one medical row exactly as the Phase-2 trainer's prep does.
 
-    TRL's prompt-completion ``tokenize_fn`` (trl/trainer/sft_trainer.py) builds
-    ``prompt_ids = apply_chat_template(prompt, add_generation_prompt=True)``,
-    ``full_ids = apply_chat_template(prompt + completion)``, and
-    ``completion_mask = [0]*len(prompt_ids) + [1]*rest`` — the Phase-2 training
-    objective's masking this guard must reproduce.
+    ``good_medical_advice_6k.jsonl`` rows are ``{"messages": [user,
+    assistant]}`` — TRL 0.29's CONVERSATIONAL LANGUAGE-MODELING path, NOT
+    prompt-completion. Verified empirically against the installed TRL on the
+    real file (2-row CPU SFTTrainer build, 2026-06-10): the prepared dataset
+    carries ONLY ``input_ids`` = the fused ``apply_chat_template(messages)``
+    render (no completion_mask / assistant_masks; ``assistant_only_loss``
+    defaults False and Qwen's template has no ``{% generation %}`` blocks),
+    and the collator's labels equal input_ids at every non-pad position. The
+    Phase-2 erasure objective is therefore FULL-SEQUENCE shifted CE over the
+    rendered conversation (the plan §4.3 wording "assistant-token CE" assumed
+    prompt-completion data; this guard mirrors the objective the parent rig
+    ACTUALLY optimizes), truncated right at ``max_length`` (TRL's truncation
+    map step).
 
     Returns:
-        ``(input_ids, completion_start, was_truncated)`` where positions
-        ``>= completion_start`` are loss-bearing. Raises if the prompt render
-        is not a prefix of the fused render (TRL only warns; the guard's CE
-        would silently be misaligned, so we fail loud) or if truncation leaves
-        no completion tokens.
+        ``(input_ids, loss_start, was_truncated)``. ``loss_start`` is the
+        first label-bearing position (0 here — full-sequence loss; the shifted
+        CE then scores positions 1..n-1, exactly the trainer's loss support).
     """
-    prompt_ids = tokenizer.apply_chat_template(
-        row["prompt"], add_generation_prompt=True, tokenize=True
-    )
-    if isinstance(prompt_ids, dict):
-        prompt_ids = prompt_ids["input_ids"]
+    if "messages" not in row:
+        raise RuntimeError(
+            f"Expected a conversational 'messages' row (got keys {sorted(row)}) — "
+            "the CE guard mirrors the Phase-2 objective for THIS dataset shape only."
+        )
     full_ids = tokenizer.apply_chat_template(
-        row["prompt"] + row["completion"], add_generation_prompt=False, tokenize=True
+        row["messages"], add_generation_prompt=False, tokenize=True
     )
     if isinstance(full_ids, dict):
         full_ids = full_ids["input_ids"]
-    prompt_ids, full_ids = list(prompt_ids), list(full_ids)
-    if full_ids[: len(prompt_ids)] != prompt_ids:
-        raise RuntimeError(
-            "Tokenized prompt is not a prefix of tokenized prompt+completion — "
-            "the completion mask would be misaligned (TRL warns here; the CE "
-            "guard fails loud instead)."
-        )
+    full_ids = list(full_ids)
     was_truncated = len(full_ids) > max_length
     if was_truncated:
         full_ids = full_ids[:max_length]
-    completion_start = len(prompt_ids)
-    if completion_start >= len(full_ids):
-        raise RuntimeError(
-            f"Row has no completion tokens after max_length={max_length} truncation "
-            f"(prompt alone is {completion_start} tokens)."
-        )
-    return full_ids, completion_start, was_truncated
+    if len(full_ids) < 2:
+        raise RuntimeError("Row renders to <2 tokens — no shifted-CE support.")
+    return full_ids, 0, was_truncated
+
+
+def prompt_messages_of(row: dict) -> list[dict]:
+    """Messages strictly before the first assistant turn (the generation prompt)."""
+    msgs = row["messages"]
+    for i, m in enumerate(msgs):
+        if m["role"] == "assistant":
+            if i == 0:
+                break
+            return msgs[:i]
+    raise RuntimeError(
+        f"Row has no leading non-assistant turns (roles {[m['role'] for m in msgs]})."
+    )
 
 
 # ── Adapter sets ─────────────────────────────────────────────────────────────
@@ -493,9 +504,10 @@ def run_gen_mode(args: argparse.Namespace) -> int:
     )
     tokenizer = llm.get_tokenizer()
     sampling = SamplingParams(temperature=0.0, max_tokens=GEN_MAX_NEW_TOKENS, n=1)
+    gen_prompts = [prompt_messages_of(r) for r in rows]
     prefixes = [
-        tokenizer.apply_chat_template(r["prompt"], tokenize=False, add_generation_prompt=True)
-        for r in rows
+        tokenizer.apply_chat_template(pm, tokenize=False, add_generation_prompt=True)
+        for pm in gen_prompts
     ]
 
     try:
@@ -511,12 +523,14 @@ def run_gen_mode(args: argparse.Namespace) -> int:
             log.info("Generating med answers: set=%s n=%d", name, len(prefixes))
             responses = llm.generate(prefixes, sampling, lora_request=lora_req)
             recs = []
-            for i, (row, prefix, resp) in enumerate(zip(rows, prefixes, responses, strict=True)):
+            for i, (pm, prefix, resp) in enumerate(
+                zip(gen_prompts, prefixes, responses, strict=True)
+            ):
                 g = resp.outputs[0]
                 recs.append(
                     {
                         "row_index": args.gen_start + i,
-                        "prompt_messages": row["prompt"],
+                        "prompt_messages": pm,
                         "prefix": prefix,
                         "completion_text": g.text,
                         "n_generated_tokens": len(g.token_ids),
