@@ -37,14 +37,16 @@ Behaviours:
   all passed). CLAUDE.md "Upload Policy" makes WandB live metrics
   mandatory for training; this lint enforces it mechanically.
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
-  extract every marker kind that ``.claude/skills/issue/SKILL.md``
-  instructs POSTING (``task.py post-marker <N> epm:<kind>`` invocations
-  plus post-verb prose with a backticked ``epm:<kind>`` on the same
-  line) and FAIL on kinds absent from ``workflow.yaml § markers``.
+  extract every marker kind that ``.claude/skills/issue/SKILL.md`` or an
+  agent spec under ``.claude/agents/*.md`` instructs POSTING
+  (``task.py post-marker <N> epm:<kind>`` invocations plus post-verb
+  prose with a backticked ``epm:<kind>`` on the same line) and FAIL on
+  kinds absent from ``workflow.yaml § markers``.
   Read-side mentions don't match; prose-only false positives are waived
   via :data:`MARKER_REGISTRY_ALLOWLIST`. Closes the task-#555 drift
   class (2026-06-10): 6 posted-or-consumed kinds were missing from the
-  registry and nothing cross-checked the two surfaces.
+  registry and nothing cross-checked the two surfaces; the agent-spec
+  half of the posting surface was added in the same task's follow-up.
 
 Exit codes:
 
@@ -138,8 +140,9 @@ WANDB_TRAINER_CONFIG_TOKENS: tuple[str, ...] = (
     "TrainingArguments",
 )
 
-# `--check-marker-registry`: every marker kind the /issue SKILL.md instructs
-# POSTING must be declared in workflow.yaml § markers. Two pattern families
+# `--check-marker-registry`: every marker kind the /issue SKILL.md or an
+# agent spec under .claude/agents/*.md instructs POSTING must be declared in
+# workflow.yaml § markers. Two pattern families
 # count as a posting site (read-side mentions like "the latest `epm:foo v1`
 # marker" deliberately do NOT match — only the posting contract is checked):
 #
@@ -816,10 +819,13 @@ def check_wandb_required(
     return errors
 
 
-def check_marker_registry(workflow: WorkflowYaml, *, skill_md: Path | None = None) -> list[str]:
+def check_marker_registry(
+    workflow: WorkflowYaml, *, skill_md: Path | None = None, agents_dir: Path | None = None
+) -> list[str]:
     """Cross-reference posted ``epm:<kind>`` markers in the /issue SKILL.md
-    against ``workflow.yaml § markers`` and FAIL on any posting site whose
-    kind is undeclared.
+    AND every agent spec under ``.claude/agents/*.md`` against
+    ``workflow.yaml § markers`` and FAIL on any posting site whose kind is
+    undeclared.
 
     A "posting site" is a line matching either :data:`MARKER_POST_CLI_RE`
     (a ``task.py post-marker <N> epm:<kind>`` invocation) or
@@ -836,34 +842,51 @@ def check_marker_registry(workflow: WorkflowYaml, *, skill_md: Path | None = Non
     registry — the auto-generated ``markers.md`` table and the marker
     taxonomy had silently drifted from what lands in ``events.jsonl``.
     Nothing linted the two surfaces against each other; this check does.
+    Agent specs were added to the scope on the same task's follow-up:
+    agents post kinds too (e.g. ``analyzer.md`` posts ``epm:analysis``),
+    and a SKILL.md-only walk left half the posting surface unlinted. The
+    agents glob is non-recursive directly under ``_REPO_ROOT``, so sibling
+    worktrees under ``.claude/worktrees/`` are inherently out of scope and
+    the worktree a workflow-improver runs from scans its own copies (same
+    property ``_other_worktree_prefix`` documents for the recursive walks).
 
-    ``skill_md`` is an override hook for unit tests; production callers
-    pass None and the function reads the canonical
-    ``.claude/skills/issue/SKILL.md`` under :data:`_REPO_ROOT`.
+    ``skill_md`` and ``agents_dir`` are override hooks for unit tests;
+    production callers pass both as None and the function reads the
+    canonical ``.claude/skills/issue/SKILL.md`` + ``.claude/agents/*.md``
+    under :data:`_REPO_ROOT`. Passing EITHER override narrows the scan to
+    only the overridden surface(s) so fixture tests stay isolated from the
+    committed tree.
     """
-    target = (
-        skill_md
-        if skill_md is not None
-        else _REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
-    )
-    if not target.exists():
-        return []
+    targets: list[Path] = []
+    if skill_md is None and agents_dir is None:
+        targets.append(_REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md")
+        canonical_agents = _REPO_ROOT / ".claude" / "agents"
+        if canonical_agents.is_dir():
+            targets.extend(sorted(p for p in canonical_agents.glob("*.md") if p.is_file()))
+    else:
+        if skill_md is not None:
+            targets.append(skill_md)
+        if agents_dir is not None and agents_dir.is_dir():
+            targets.extend(sorted(p for p in agents_dir.glob("*.md") if p.is_file()))
     registered = {m.kind for m in workflow.markers}
     errors: list[str] = []
-    for lineno, line in enumerate(target.read_text().splitlines(), start=1):
-        kinds = set(MARKER_POST_CLI_RE.findall(line))
-        kinds.update(MARKER_POST_PROSE_RE.findall(line))
-        for kind in sorted(kinds):
-            if kind in registered or kind in MARKER_REGISTRY_ALLOWLIST:
-                continue
-            errors.append(
-                f"{target}:{lineno}: posts marker kind '{kind}' which is not "
-                f"declared in workflow.yaml § markers. Register the kind "
-                f"(then regenerate markers.md via `uv run python "
-                f"scripts/workflow_lint.py --emit-tables`), or — for a "
-                f"prose-only mention that is not a real posted kind — add it "
-                f"to MARKER_REGISTRY_ALLOWLIST with a reason."
-            )
+    for target in targets:
+        if not target.exists():
+            continue
+        for lineno, line in enumerate(target.read_text().splitlines(), start=1):
+            kinds = set(MARKER_POST_CLI_RE.findall(line))
+            kinds.update(MARKER_POST_PROSE_RE.findall(line))
+            for kind in sorted(kinds):
+                if kind in registered or kind in MARKER_REGISTRY_ALLOWLIST:
+                    continue
+                errors.append(
+                    f"{target}:{lineno}: posts marker kind '{kind}' which is not "
+                    f"declared in workflow.yaml § markers. Register the kind "
+                    f"(then regenerate markers.md via `uv run python "
+                    f"scripts/workflow_lint.py --emit-tables`), or — for a "
+                    f"prose-only mention that is not a real posted kind — add it "
+                    f"to MARKER_REGISTRY_ALLOWLIST with a reason."
+                )
     return errors
 
 
@@ -1043,11 +1066,12 @@ def main(argv: list[str] | None = None) -> int:
         "--check-marker-registry",
         action="store_true",
         help="Verify every marker kind that .claude/skills/issue/SKILL.md "
-        "instructs posting (task.py post-marker invocations + post-verb "
-        "prose with a backticked epm:<kind>) is declared in "
-        "workflow.yaml § markers. Closes the #555 drift class (6 "
-        "unregistered posted kinds, 2026-06-10). Bundled into "
-        "--check-references.",
+        "or an agent spec under .claude/agents/*.md instructs posting "
+        "(task.py post-marker invocations + post-verb prose with a "
+        "backticked epm:<kind>) is declared in workflow.yaml § markers. "
+        "Closes the #555 drift class (6 unregistered posted kinds, "
+        "2026-06-10; agent-spec scope added in the follow-up). Bundled "
+        "into --check-references.",
     )
     args = parser.parse_args(argv)
 

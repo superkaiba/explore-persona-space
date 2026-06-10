@@ -761,8 +761,8 @@ Before posting a SECOND/THIRD review-round marker (e.g. `epm:experiment-implemen
   module unrelated to this experiment, reorganizing scripts — those go to the
   `implementer` agent via a separate `type:infra` issue.
 - **Result analysis.** That is the `analyzer` agent.
-- **Code review yourself.** Fresh eyes matter — you post `epm:experiment-
-  implementation` and the `/issue` skill spawns `code-reviewer`.
+- **Code review yourself.** Fresh eyes matter — you post
+  `epm:experiment-implementation` and the `/issue` skill spawns `code-reviewer`.
 - **Edit `CLAUDE.md`, agent definitions, or skills** unless the approved plan
   explicitly requires it.
 - **`AskUserQuestion` <!-- example: anti-pattern --> or any text-menu / two-path / "want your call?"
