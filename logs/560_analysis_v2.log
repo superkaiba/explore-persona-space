@@ -1,0 +1,1004 @@
+/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/scripts/issue560_transfer_analysis.py:958: UserWarning: The figure layout has changed to tight
+  fig.tight_layout()
+[panel] 560 cells (16 runs x 35 personas); strata {'source_resident': 3, 'trained_negative': 45, 'never_negative': 512}
+[R1] pair-corrected min_dist reads (primary mask) ...
+[R1] min_dist vs dz: rho_twoway=-0.519 primary CI [-0.687, -0.286] (cluster_run) p=9.999e-05 (n=557)
+[R1] min_dist vs dz_eos: rho_twoway=+0.047 primary CI [-0.151, +0.278] (cluster_run) p=0.2635 (n=557)
+[R1] min_dist vs dmargin: rho_twoway=-0.312 primary CI [-0.575, -0.072] (cluster_run) p=9.999e-05 (n=557)
+[R1] min_dist vs margin_trained: rho_twoway=-0.540 primary CI [-0.683, -0.304] (cluster_run) p=9.999e-05 (n=557)
+[R1] min_dist vs margin_base: rho_twoway=-0.288 primary CI [-0.465, -0.101] (cluster_run) p=9.999e-05 (n=557)
+[R1] min_dist vs dz: rho_twoway=-0.524 primary CI [-0.705, -0.272] (cluster_run) p=9.999e-05 (n=512)
+[R1] min_dist vs dz_eos: rho_twoway=+0.041 primary CI [-0.172, +0.281] (cluster_run) p=0.3564 (n=512)
+[R1] min_dist vs dmargin: rho_twoway=-0.312 primary CI [-0.590, -0.065] (cluster_run) p=9.999e-05 (n=512)
+[R1] min_dist vs margin_trained: rho_twoway=-0.542 primary CI [-0.691, -0.288] (cluster_run) p=9.999e-05 (n=512)
+[R1] min_dist vs margin_base: rho_twoway=-0.292 primary CI [-0.474, -0.101] (cluster_run) p=9.999e-05 (n=512)
+[R1] min_dist vs dz: rho_twoway=-0.703 primary CI [-0.889, -0.405] (cluster_run) p=9.999e-05 (n=172)
+[R1] min_dist vs dz_eos: rho_twoway=+0.076 primary CI [-0.460, +0.529] (cluster_run) p=0.3241 (n=172)
+[R1] min_dist vs dmargin: rho_twoway=-0.464 primary CI [-0.828, +0.173] (cluster_run) p=9.999e-05 (n=172)
+[R1] min_dist vs margin_trained: rho_twoway=-0.706 primary CI [-0.868, -0.455] (cluster_run) p=9.999e-05 (n=172)
+[R1] min_dist vs margin_base: rho_twoway=-0.689 primary CI [-0.793, -0.457] (cluster_run) p=9.999e-05 (n=172)
+[sensitivity] length-partial + truncation-excluded reads ...
+[sens-len] min_dist vs dz | mean_len: rho_partial=-0.507 (unpartialled -0.519) primary CI [-0.631, -0.290] (cluster_run) (n=557)
+[sens-len] min_dist vs dmargin | mean_len: rho_partial=-0.278 (unpartialled -0.312) primary CI [-0.450, -0.101] (cluster_run) (n=557)
+[sens-trunc] min_dist vs dz_nontrunc: rho_twoway=-0.467 primary CI [-0.597, -0.278] (cluster_run) p=9.999e-05 (n=542)
+[sens-trunc] min_dist vs dmargin_nontrunc: rho_twoway=-0.209 primary CI [-0.413, -0.022] (cluster_run) p=9.999e-05 (n=542)
+[R2] persistence + clamp routing ...
+[R3] exposure contrast ...
+[R4] variance shares (exploratory) ...
+[write] /home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/eval_results/issue_560/transfer_i474.json
+2026-06-10 16:42:27 [INFO] maxp pruned
+2026-06-10 16:42:27 [INFO] cmap pruned
+2026-06-10 16:42:27 [INFO] post pruned
+2026-06-10 16:42:27 [INFO] CFF  pruned
+2026-06-10 16:42:27 [INFO] GPOS pruned
+2026-06-10 16:42:27 [INFO] GSUB pruned
+2026-06-10 16:42:27 [INFO] Added .notdef to subset
+2026-06-10 16:42:27 [INFO] Closing glyph list over 'GSUB': 42 glyphs before
+2026-06-10 16:42:27 [INFO] Glyph names: ['.notdef', 'E', 'F', 'a', 'b', 'c', 'colon', 'comma', 'd', 'e', 'eight', 'five', 'four', 'g', 'h', 'hyphen', 'i', 'l', 'm', 'minus', 'n', 'numbersign', 'o', 'one', 'p', 'parenleft', 'parenright', 'period', 'r', 's', 'seven', 'six', 'space', 't', 'three', 'two', 'u', 'underscore', 'v', 'w', 'y', 'zero']
+2026-06-10 16:42:27 [INFO] Glyph IDs:   [0, 95, 137, 508, 579, 587, 598, 615, 659, 671, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 1000, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1439, 1440, 1455, 1461, 1503, 1504, 1507, 1525, 1545, 1771]
+2026-06-10 16:42:27 [INFO] Closed glyph list over 'GSUB': 73 glyphs after
+2026-06-10 16:42:27 [INFO] Glyph names: ['.notdef', 'E', 'F', 'a', 'b', 'c', 'colon', 'colon.case', 'comma', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'minus', 'minus.case', 'minus.dnom', 'minus.numr', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'v', 'w', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:27 [INFO] Glyph IDs:   [0, 95, 137, 508, 579, 587, 598, 615, 659, 671, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 1000, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1503, 1504, 1507, 1508, 1525, 1538, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1693, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1714, 1716, 1717, 1771]
+2026-06-10 16:42:27 [INFO] Closing glyph list over 'CFF ': 73 glyphs before
+2026-06-10 16:42:27 [INFO] Glyph names: ['.notdef', 'E', 'F', 'a', 'b', 'c', 'colon', 'colon.case', 'comma', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'minus', 'minus.case', 'minus.dnom', 'minus.numr', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'v', 'w', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:27 [INFO] Glyph IDs:   [0, 95, 137, 508, 579, 587, 598, 615, 659, 671, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 1000, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1503, 1504, 1507, 1508, 1525, 1538, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1693, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1714, 1716, 1717, 1771]
+2026-06-10 16:42:27 [INFO] Closed glyph list over 'CFF ': 73 glyphs after
+2026-06-10 16:42:27 [INFO] Glyph names: ['.notdef', 'E', 'F', 'a', 'b', 'c', 'colon', 'colon.case', 'comma', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'minus', 'minus.case', 'minus.dnom', 'minus.numr', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'v', 'w', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:27 [INFO] Glyph IDs:   [0, 95, 137, 508, 579, 587, 598, 615, 659, 671, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 1000, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1503, 1504, 1507, 1508, 1525, 1538, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1693, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1714, 1716, 1717, 1771]
+2026-06-10 16:42:27 [INFO] Retaining 73 glyphs
+2026-06-10 16:42:27 [INFO] head subsetting not needed
+2026-06-10 16:42:27 [INFO] hhea subsetting not needed
+2026-06-10 16:42:27 [INFO] maxp subsetting not needed
+2026-06-10 16:42:27 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:27 [INFO] cmap subsetted
+2026-06-10 16:42:27 [INFO] post subsetted
+2026-06-10 16:42:27 [INFO] CFF  subsetted
+2026-06-10 16:42:27 [INFO] hmtx subsetted
+2026-06-10 16:42:27 [INFO] GDEF subsetted
+2026-06-10 16:42:27 [INFO] GPOS subsetted
+2026-06-10 16:42:27 [INFO] GSUB subsetted
+2026-06-10 16:42:27 [INFO] name subsetting not needed
+2026-06-10 16:42:27 [INFO] head pruned
+2026-06-10 16:42:27 [INFO] OS/2 Unicode ranges pruned: [0, 38]
+2026-06-10 16:42:27 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:27 [INFO] CFF  pruned
+2026-06-10 16:42:27 [INFO] GDEF pruned
+2026-06-10 16:42:27 [INFO] GPOS pruned
+2026-06-10 16:42:27 [INFO] GSUB pruned
+2026-06-10 16:42:27 [INFO] name pruned
+2026-06-10 16:42:27 [INFO] maxp pruned
+2026-06-10 16:42:27 [INFO] cmap pruned
+2026-06-10 16:42:27 [INFO] post pruned
+2026-06-10 16:42:27 [INFO] GPOS pruned
+2026-06-10 16:42:27 [INFO] GSUB pruned
+2026-06-10 16:42:27 [INFO] glyf pruned
+2026-06-10 16:42:27 [INFO] Added gid0 to subset
+2026-06-10 16:42:27 [INFO] Added first four glyphs to subset
+2026-06-10 16:42:27 [INFO] Closing glyph list over 'GSUB': 54 glyphs before
+2026-06-10 16:42:27 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'C', 'E', 'F', 'I', 'M', 'O', 'S', 'a', 'bracketleft', 'bracketright', 'c', 'comma', 'e', 'eight', 'equal', 'f', 'five', 'four', 'g', 'h', 'hyphen', 'i', 'k', 'l', 'm', 'n', 'nine', 'o', 'one', 'p', 'parenleft', 'parenright', 'period', 'r', 's', 'seven', 'six', 'slash', 'space', 't', 'three', 'two', 'u', 'underscore', 'uni0394', 'uni203B', 'w', 'y', 'z', 'zero']
+2026-06-10 16:42:27 [INFO] Glyph IDs:   [0, 1, 2, 3, 73, 95, 137, 197, 293, 322, 398, 508, 587, 615, 648, 659, 671, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 917, 986, 1000, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1354, 1439, 1440, 1441, 1443, 1457, 1461, 1503, 1504, 1522, 1545, 1771, 2572]
+2026-06-10 16:42:27 [INFO] Closed glyph list over 'GSUB': 89 glyphs after
+2026-06-10 16:42:27 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'C', 'E', 'F', 'I', 'M', 'O', 'S', 'a', 'bracketleft', 'bracketleft.case', 'bracketright', 'bracketright.case', 'c', 'comma', 'e', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'fraction', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'nine', 'nine.dnom', 'nine.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'slash', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'w', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:27 [INFO] Glyph IDs:   [0, 1, 2, 3, 73, 95, 137, 197, 293, 322, 398, 508, 587, 615, 648, 659, 671, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 917, 986, 1000, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1354, 1439, 1440, 1441, 1443, 1448, 1449, 1450, 1451, 1457, 1461, 1473, 1503, 1504, 1522, 1535, 1545, 1564, 1565, 1675, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1690, 1694, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1711, 1715, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:27 [INFO] Closing glyph list over 'glyf': 89 glyphs before
+2026-06-10 16:42:27 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'C', 'E', 'F', 'I', 'M', 'O', 'S', 'a', 'bracketleft', 'bracketleft.case', 'bracketright', 'bracketright.case', 'c', 'comma', 'e', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'fraction', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'nine', 'nine.dnom', 'nine.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'slash', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'w', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:27 [INFO] Glyph IDs:   [0, 1, 2, 3, 73, 95, 137, 197, 293, 322, 398, 508, 587, 615, 648, 659, 671, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 917, 986, 1000, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1354, 1439, 1440, 1441, 1443, 1448, 1449, 1450, 1451, 1457, 1461, 1473, 1503, 1504, 1522, 1535, 1545, 1564, 1565, 1675, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1690, 1694, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1711, 1715, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:27 [INFO] Closed glyph list over 'glyf': 93 glyphs after
+2026-06-10 16:42:27 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'C', 'E', 'F', 'I', 'M', 'O', 'S', 'a', 'bracketleft', 'bracketleft.case', 'bracketright', 'bracketright.case', 'c', 'comma', 'dotlessi', 'e', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'fraction', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'nine', 'nine.dnom', 'nine.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'quoteright', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'slash', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0307', 'uni0308', 'uni0394', 'uni203B', 'w', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:27 [INFO] Glyph IDs:   [0, 1, 2, 3, 73, 95, 137, 197, 293, 322, 398, 508, 587, 615, 648, 659, 671, 690, 691, 729, 738, 768, 775, 792, 845, 854, 873, 891, 917, 986, 1000, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1354, 1439, 1440, 1441, 1443, 1448, 1449, 1450, 1451, 1457, 1461, 1473, 1485, 1503, 1504, 1522, 1535, 1545, 1564, 1565, 1675, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1690, 1694, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1711, 1715, 1716, 1717, 1771, 2572, 2692, 2693]
+2026-06-10 16:42:27 [INFO] Retaining 93 glyphs
+2026-06-10 16:42:27 [INFO] head subsetting not needed
+2026-06-10 16:42:27 [INFO] hhea subsetting not needed
+2026-06-10 16:42:27 [INFO] maxp subsetting not needed
+2026-06-10 16:42:27 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:27 [INFO] hmtx subsetted
+2026-06-10 16:42:27 [INFO] cmap subsetted
+2026-06-10 16:42:27 [INFO] fpgm subsetting not needed
+2026-06-10 16:42:27 [INFO] prep subsetting not needed
+2026-06-10 16:42:27 [INFO] cvt  subsetting not needed
+2026-06-10 16:42:27 [INFO] loca subsetting not needed
+2026-06-10 16:42:27 [INFO] post subsetted
+2026-06-10 16:42:27 [INFO] gasp subsetting not needed
+2026-06-10 16:42:27 [INFO] GDEF subsetted
+2026-06-10 16:42:27 [INFO] GPOS subsetted
+2026-06-10 16:42:27 [INFO] GSUB subsetted
+2026-06-10 16:42:27 [INFO] name subsetting not needed
+2026-06-10 16:42:27 [INFO] glyf subsetted
+2026-06-10 16:42:27 [INFO] head pruned
+2026-06-10 16:42:27 [INFO] OS/2 Unicode ranges pruned: [0, 7, 31]
+2026-06-10 16:42:27 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:27 [INFO] glyf pruned
+2026-06-10 16:42:27 [INFO] GDEF pruned
+2026-06-10 16:42:27 [INFO] GPOS pruned
+2026-06-10 16:42:27 [INFO] GSUB pruned
+2026-06-10 16:42:27 [INFO] name pruned
+/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/scripts/issue560_transfer_analysis.py:987: UserWarning: The figure layout has changed to tight
+  fig.tight_layout()
+[figures] wrote i560_min_dist_hero to /home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/figures/issue_560
+2026-06-10 16:42:28 [INFO] maxp pruned
+2026-06-10 16:42:28 [INFO] cmap pruned
+2026-06-10 16:42:28 [INFO] post pruned
+2026-06-10 16:42:28 [INFO] CFF  pruned
+2026-06-10 16:42:28 [INFO] GPOS pruned
+2026-06-10 16:42:28 [INFO] GSUB pruned
+2026-06-10 16:42:28 [INFO] Added .notdef to subset
+2026-06-10 16:42:28 [INFO] Closing glyph list over 'GSUB': 35 glyphs before
+2026-06-10 16:42:28 [INFO] Glyph names: ['.notdef', 'E', 'F', 'O', 'S', 'a', 'b', 'c', 'comma', 'd', 'e', 'f', 'five', 'g', 'hyphen', 'i', 'l', 'm', 'minus', 'n', 'o', 'one', 'p', 'parenleft', 'parenright', 'period', 'r', 's', 'seven', 'space', 't', 'two', 'y', 'z', 'zero']
+2026-06-10 16:42:28 [INFO] Glyph IDs:   [0, 95, 137, 322, 398, 508, 579, 587, 598, 615, 648, 659, 690, 738, 768, 775, 792, 845, 854, 873, 891, 1000, 1024, 1343, 1344, 1345, 1349, 1352, 1439, 1440, 1461, 1503, 1504, 1525, 1771]
+2026-06-10 16:42:28 [INFO] Closed glyph list over 'GSUB': 57 glyphs after
+2026-06-10 16:42:28 [INFO] Glyph names: ['.notdef', 'E', 'F', 'O', 'S', 'a', 'b', 'c', 'comma', 'd', 'e', 'f', 'five', 'five.dnom', 'five.numr', 'g', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'minus', 'minus.case', 'minus.dnom', 'minus.numr', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:28 [INFO] Glyph IDs:   [0, 95, 137, 322, 398, 508, 579, 587, 598, 615, 648, 659, 690, 738, 768, 775, 792, 845, 854, 873, 891, 1000, 1024, 1343, 1344, 1345, 1349, 1352, 1439, 1440, 1448, 1449, 1461, 1473, 1503, 1504, 1525, 1538, 1564, 1565, 1676, 1678, 1680, 1685, 1688, 1693, 1695, 1696, 1697, 1699, 1701, 1706, 1709, 1714, 1716, 1717, 1771]
+2026-06-10 16:42:28 [INFO] Closing glyph list over 'CFF ': 57 glyphs before
+2026-06-10 16:42:28 [INFO] Glyph names: ['.notdef', 'E', 'F', 'O', 'S', 'a', 'b', 'c', 'comma', 'd', 'e', 'f', 'five', 'five.dnom', 'five.numr', 'g', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'minus', 'minus.case', 'minus.dnom', 'minus.numr', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:28 [INFO] Glyph IDs:   [0, 95, 137, 322, 398, 508, 579, 587, 598, 615, 648, 659, 690, 738, 768, 775, 792, 845, 854, 873, 891, 1000, 1024, 1343, 1344, 1345, 1349, 1352, 1439, 1440, 1448, 1449, 1461, 1473, 1503, 1504, 1525, 1538, 1564, 1565, 1676, 1678, 1680, 1685, 1688, 1693, 1695, 1696, 1697, 1699, 1701, 1706, 1709, 1714, 1716, 1717, 1771]
+2026-06-10 16:42:28 [INFO] Closed glyph list over 'CFF ': 57 glyphs after
+2026-06-10 16:42:28 [INFO] Glyph names: ['.notdef', 'E', 'F', 'O', 'S', 'a', 'b', 'c', 'comma', 'd', 'e', 'f', 'five', 'five.dnom', 'five.numr', 'g', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'minus', 'minus.case', 'minus.dnom', 'minus.numr', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:28 [INFO] Glyph IDs:   [0, 95, 137, 322, 398, 508, 579, 587, 598, 615, 648, 659, 690, 738, 768, 775, 792, 845, 854, 873, 891, 1000, 1024, 1343, 1344, 1345, 1349, 1352, 1439, 1440, 1448, 1449, 1461, 1473, 1503, 1504, 1525, 1538, 1564, 1565, 1676, 1678, 1680, 1685, 1688, 1693, 1695, 1696, 1697, 1699, 1701, 1706, 1709, 1714, 1716, 1717, 1771]
+2026-06-10 16:42:28 [INFO] Retaining 57 glyphs
+2026-06-10 16:42:28 [INFO] head subsetting not needed
+2026-06-10 16:42:28 [INFO] hhea subsetting not needed
+2026-06-10 16:42:28 [INFO] maxp subsetting not needed
+2026-06-10 16:42:28 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:28 [INFO] cmap subsetted
+2026-06-10 16:42:28 [INFO] post subsetted
+2026-06-10 16:42:28 [INFO] CFF  subsetted
+2026-06-10 16:42:28 [INFO] hmtx subsetted
+2026-06-10 16:42:28 [INFO] GDEF subsetted
+2026-06-10 16:42:29 [INFO] GPOS subsetted
+2026-06-10 16:42:29 [INFO] GSUB subsetted
+2026-06-10 16:42:29 [INFO] name subsetting not needed
+2026-06-10 16:42:29 [INFO] head pruned
+2026-06-10 16:42:29 [INFO] OS/2 Unicode ranges pruned: [0, 38]
+2026-06-10 16:42:29 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:29 [INFO] CFF  pruned
+2026-06-10 16:42:29 [INFO] GDEF pruned
+2026-06-10 16:42:29 [INFO] GPOS pruned
+2026-06-10 16:42:29 [INFO] GSUB pruned
+2026-06-10 16:42:29 [INFO] name pruned
+2026-06-10 16:42:29 [INFO] maxp pruned
+2026-06-10 16:42:29 [INFO] cmap pruned
+2026-06-10 16:42:29 [INFO] post pruned
+2026-06-10 16:42:29 [INFO] GPOS pruned
+2026-06-10 16:42:29 [INFO] GSUB pruned
+2026-06-10 16:42:29 [INFO] glyf pruned
+2026-06-10 16:42:29 [INFO] Added gid0 to subset
+2026-06-10 16:42:29 [INFO] Added first four glyphs to subset
+2026-06-10 16:42:29 [INFO] Closing glyph list over 'GSUB': 49 glyphs before
+2026-06-10 16:42:29 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'C', 'E', 'I', 'O', 'S', 'T', 'a', 'b', 'bracketleft', 'bracketright', 'c', 'comma', 'd', 'e', 'eight', 'equal', 'f', 'five', 'h', 'hyphen', 'i', 'k', 'l', 'm', 'n', 'nine', 'o', 'one', 'parenleft', 'parenright', 'period', 'plus', 'r', 's', 'semicolon', 'seven', 'six', 'space', 't', 'three', 'two', 'u', 'v', 'w', 'zero']
+2026-06-10 16:42:29 [INFO] Glyph IDs:   [0, 1, 2, 3, 73, 95, 197, 322, 398, 412, 508, 579, 587, 598, 615, 648, 671, 690, 729, 738, 768, 775, 792, 854, 873, 891, 917, 982, 986, 1343, 1344, 1345, 1347, 1349, 1351, 1352, 1353, 1354, 1439, 1440, 1441, 1443, 1461, 1503, 1504, 1510, 1522, 1524, 1771]
+2026-06-10 16:42:29 [INFO] Closed glyph list over 'GSUB': 84 glyphs after
+2026-06-10 16:42:29 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'C', 'E', 'I', 'O', 'S', 'T', 'a', 'b', 'bracketleft', 'bracketleft.case', 'bracketright', 'bracketright.case', 'c', 'comma', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'nine', 'nine.dnom', 'nine.numr', 'o', 'one', 'one.dnom', 'one.numr', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'plus', 'plus.case', 'plus.dnom', 'plus.numr', 'r', 's', 'semicolon', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'v', 'w', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:29 [INFO] Glyph IDs:   [0, 1, 2, 3, 73, 95, 197, 322, 398, 412, 508, 579, 587, 598, 615, 648, 671, 690, 729, 738, 768, 775, 792, 854, 873, 891, 917, 982, 986, 1343, 1344, 1345, 1347, 1349, 1351, 1352, 1353, 1354, 1439, 1440, 1441, 1443, 1448, 1449, 1450, 1451, 1461, 1473, 1503, 1504, 1510, 1522, 1524, 1535, 1537, 1564, 1565, 1676, 1678, 1680, 1681, 1685, 1686, 1688, 1689, 1690, 1692, 1694, 1695, 1696, 1697, 1699, 1701, 1702, 1706, 1707, 1709, 1710, 1711, 1713, 1715, 1716, 1717, 1771]
+2026-06-10 16:42:29 [INFO] Closing glyph list over 'glyf': 84 glyphs before
+2026-06-10 16:42:29 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'C', 'E', 'I', 'O', 'S', 'T', 'a', 'b', 'bracketleft', 'bracketleft.case', 'bracketright', 'bracketright.case', 'c', 'comma', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'nine', 'nine.dnom', 'nine.numr', 'o', 'one', 'one.dnom', 'one.numr', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'plus', 'plus.case', 'plus.dnom', 'plus.numr', 'r', 's', 'semicolon', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'v', 'w', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:29 [INFO] Glyph IDs:   [0, 1, 2, 3, 73, 95, 197, 322, 398, 412, 508, 579, 587, 598, 615, 648, 671, 690, 729, 738, 768, 775, 792, 854, 873, 891, 917, 982, 986, 1343, 1344, 1345, 1347, 1349, 1351, 1352, 1353, 1354, 1439, 1440, 1441, 1443, 1448, 1449, 1450, 1451, 1461, 1473, 1503, 1504, 1510, 1522, 1524, 1535, 1537, 1564, 1565, 1676, 1678, 1680, 1681, 1685, 1686, 1688, 1689, 1690, 1692, 1694, 1695, 1696, 1697, 1699, 1701, 1702, 1706, 1707, 1709, 1710, 1711, 1713, 1715, 1716, 1717, 1771]
+2026-06-10 16:42:29 [INFO] Closed glyph list over 'glyf': 88 glyphs after
+2026-06-10 16:42:29 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'C', 'E', 'I', 'O', 'S', 'T', 'a', 'b', 'bracketleft', 'bracketleft.case', 'bracketright', 'bracketright.case', 'c', 'comma', 'd', 'dotlessi', 'e', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'nine', 'nine.dnom', 'nine.numr', 'o', 'one', 'one.dnom', 'one.numr', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'plus', 'plus.case', 'plus.dnom', 'plus.numr', 'quoteright', 'r', 's', 'semicolon', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'uni0307', 'uni0308', 'v', 'w', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:29 [INFO] Glyph IDs:   [0, 1, 2, 3, 73, 95, 197, 322, 398, 412, 508, 579, 587, 598, 615, 648, 671, 690, 691, 729, 738, 768, 775, 792, 854, 873, 891, 917, 982, 986, 1343, 1344, 1345, 1347, 1349, 1351, 1352, 1353, 1354, 1439, 1440, 1441, 1443, 1448, 1449, 1450, 1451, 1461, 1473, 1485, 1503, 1504, 1510, 1522, 1524, 1535, 1537, 1564, 1565, 1676, 1678, 1680, 1681, 1685, 1686, 1688, 1689, 1690, 1692, 1694, 1695, 1696, 1697, 1699, 1701, 1702, 1706, 1707, 1709, 1710, 1711, 1713, 1715, 1716, 1717, 1771, 2692, 2693]
+2026-06-10 16:42:29 [INFO] Retaining 88 glyphs
+2026-06-10 16:42:29 [INFO] head subsetting not needed
+2026-06-10 16:42:29 [INFO] hhea subsetting not needed
+2026-06-10 16:42:29 [INFO] maxp subsetting not needed
+2026-06-10 16:42:29 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:29 [INFO] hmtx subsetted
+2026-06-10 16:42:29 [INFO] cmap subsetted
+2026-06-10 16:42:29 [INFO] fpgm subsetting not needed
+2026-06-10 16:42:29 [INFO] prep subsetting not needed
+2026-06-10 16:42:29 [INFO] cvt  subsetting not needed
+2026-06-10 16:42:29 [INFO] loca subsetting not needed
+2026-06-10 16:42:29 [INFO] post subsetted
+2026-06-10 16:42:29 [INFO] gasp subsetting not needed
+2026-06-10 16:42:29 [INFO] GDEF subsetted
+2026-06-10 16:42:29 [INFO] GPOS subsetted
+2026-06-10 16:42:29 [INFO] GSUB subsetted
+2026-06-10 16:42:29 [INFO] name subsetting not needed
+2026-06-10 16:42:29 [INFO] glyf subsetted
+2026-06-10 16:42:29 [INFO] head pruned
+2026-06-10 16:42:29 [INFO] OS/2 Unicode ranges pruned: [0]
+2026-06-10 16:42:29 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:29 [INFO] glyf pruned
+2026-06-10 16:42:29 [INFO] GDEF pruned
+2026-06-10 16:42:29 [INFO] GPOS pruned
+2026-06-10 16:42:29 [INFO] GSUB pruned
+2026-06-10 16:42:29 [INFO] name pruned
+/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/scripts/issue560_transfer_analysis.py:1048: UserWarning: The figure layout has changed to tight
+  fig.tight_layout()
+[figures] wrote i560_persistence_z_eos to /home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/figures/issue_560
+2026-06-10 16:42:30 [INFO] maxp pruned
+2026-06-10 16:42:30 [INFO] cmap pruned
+2026-06-10 16:42:30 [INFO] post pruned
+2026-06-10 16:42:30 [INFO] CFF  pruned
+2026-06-10 16:42:30 [INFO] GPOS pruned
+2026-06-10 16:42:30 [INFO] GSUB pruned
+2026-06-10 16:42:30 [INFO] Added .notdef to subset
+2026-06-10 16:42:30 [INFO] Closing glyph list over 'GSUB': 41 glyphs before
+2026-06-10 16:42:30 [INFO] Glyph names: ['.notdef', 'E', 'M', 'O', 'S', 'a', 'b', 'c', 'd', 'e', 'eight', 'five', 'four', 'g', 'hyphen', 'i', 'l', 'm', 'minus', 'n', 'numbersign', 'o', 'one', 'p', 'parenleft', 'parenright', 'period', 'r', 's', 'seven', 'six', 'space', 't', 'three', 'two', 'u', 'uni0394', 'v', 'x', 'z', 'zero']
+2026-06-10 16:42:30 [INFO] Glyph IDs:   [0, 95, 293, 322, 398, 508, 579, 587, 598, 615, 659, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 995, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1439, 1440, 1455, 1461, 1504, 1525, 1771]
+2026-06-10 16:42:30 [INFO] Closed glyph list over 'GSUB': 72 glyphs after
+2026-06-10 16:42:30 [INFO] Glyph names: ['.notdef', 'E', 'M', 'O', 'S', 'a', 'b', 'c', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'minus', 'minus.case', 'minus.dnom', 'minus.numr', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'uni0394', 'v', 'x', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:30 [INFO] Glyph IDs:   [0, 95, 293, 322, 398, 508, 579, 587, 598, 615, 659, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 995, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1504, 1525, 1538, 1539, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1693, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1714, 1716, 1717, 1771]
+2026-06-10 16:42:30 [INFO] Closing glyph list over 'CFF ': 72 glyphs before
+2026-06-10 16:42:30 [INFO] Glyph names: ['.notdef', 'E', 'M', 'O', 'S', 'a', 'b', 'c', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'minus', 'minus.case', 'minus.dnom', 'minus.numr', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'uni0394', 'v', 'x', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:30 [INFO] Glyph IDs:   [0, 95, 293, 322, 398, 508, 579, 587, 598, 615, 659, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 995, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1504, 1525, 1538, 1539, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1693, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1714, 1716, 1717, 1771]
+2026-06-10 16:42:30 [INFO] Closed glyph list over 'CFF ': 72 glyphs after
+2026-06-10 16:42:30 [INFO] Glyph names: ['.notdef', 'E', 'M', 'O', 'S', 'a', 'b', 'c', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'minus', 'minus.case', 'minus.dnom', 'minus.numr', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'uni0394', 'v', 'x', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:30 [INFO] Glyph IDs:   [0, 95, 293, 322, 398, 508, 579, 587, 598, 615, 659, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 995, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1504, 1525, 1538, 1539, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1693, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1714, 1716, 1717, 1771]
+2026-06-10 16:42:30 [INFO] Retaining 72 glyphs
+2026-06-10 16:42:30 [INFO] head subsetting not needed
+2026-06-10 16:42:30 [INFO] hhea subsetting not needed
+2026-06-10 16:42:30 [INFO] maxp subsetting not needed
+2026-06-10 16:42:30 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:30 [INFO] cmap subsetted
+2026-06-10 16:42:30 [INFO] post subsetted
+2026-06-10 16:42:30 [INFO] CFF  subsetted
+2026-06-10 16:42:30 [INFO] hmtx subsetted
+2026-06-10 16:42:30 [INFO] GDEF subsetted
+2026-06-10 16:42:30 [INFO] GPOS subsetted
+2026-06-10 16:42:30 [INFO] GSUB subsetted
+2026-06-10 16:42:30 [INFO] name subsetting not needed
+2026-06-10 16:42:30 [INFO] head pruned
+2026-06-10 16:42:30 [INFO] OS/2 Unicode ranges pruned: [0, 7, 38]
+2026-06-10 16:42:30 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:30 [INFO] CFF  pruned
+2026-06-10 16:42:30 [INFO] GDEF pruned
+2026-06-10 16:42:30 [INFO] GPOS pruned
+2026-06-10 16:42:30 [INFO] GSUB pruned
+2026-06-10 16:42:30 [INFO] name pruned
+2026-06-10 16:42:30 [INFO] maxp pruned
+2026-06-10 16:42:30 [INFO] cmap pruned
+2026-06-10 16:42:30 [INFO] post pruned
+2026-06-10 16:42:30 [INFO] GPOS pruned
+2026-06-10 16:42:30 [INFO] GSUB pruned
+2026-06-10 16:42:30 [INFO] glyf pruned
+2026-06-10 16:42:30 [INFO] Added gid0 to subset
+2026-06-10 16:42:30 [INFO] Added first four glyphs to subset
+2026-06-10 16:42:30 [INFO] Closing glyph list over 'GSUB': 38 glyphs before
+2026-06-10 16:42:30 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'C', 'E', 'I', 'O', 'S', 'a', 'b', 'c', 'd', 'e', 'five', 'g', 'h', 'hyphen', 'i', 'l', 'n', 'numbersign', 'o', 'p', 'parenleft', 'parenright', 'q', 'r', 's', 'semicolon', 'six', 'space', 't', 'u', 'v', 'x', 'y', 'zero']
+2026-06-10 16:42:30 [INFO] Glyph IDs:   [0, 1, 2, 3, 73, 95, 197, 322, 398, 508, 579, 587, 598, 615, 659, 671, 690, 738, 775, 792, 845, 851, 854, 873, 891, 917, 982, 995, 1000, 1343, 1349, 1351, 1439, 1440, 1455, 1461, 1510, 1771]
+2026-06-10 16:42:30 [INFO] Closed glyph list over 'GSUB': 54 glyphs after
+2026-06-10 16:42:30 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'C', 'E', 'I', 'O', 'S', 'a', 'b', 'c', 'd', 'e', 'five', 'five.dnom', 'five.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'q', 'r', 's', 'semicolon', 'six', 'six.dnom', 'six.numr', 'space', 't', 'u', 'v', 'x', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:30 [INFO] Glyph IDs:   [0, 1, 2, 3, 73, 95, 197, 322, 398, 508, 579, 587, 598, 615, 659, 671, 690, 738, 775, 792, 845, 851, 854, 873, 891, 917, 982, 995, 1000, 1343, 1349, 1351, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1510, 1539, 1564, 1565, 1676, 1685, 1686, 1695, 1696, 1697, 1706, 1707, 1716, 1717, 1771]
+2026-06-10 16:42:30 [INFO] Closing glyph list over 'glyf': 54 glyphs before
+2026-06-10 16:42:30 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'C', 'E', 'I', 'O', 'S', 'a', 'b', 'c', 'd', 'e', 'five', 'five.dnom', 'five.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'q', 'r', 's', 'semicolon', 'six', 'six.dnom', 'six.numr', 'space', 't', 'u', 'v', 'x', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:30 [INFO] Glyph IDs:   [0, 1, 2, 3, 73, 95, 197, 322, 398, 508, 579, 587, 598, 615, 659, 671, 690, 738, 775, 792, 845, 851, 854, 873, 891, 917, 982, 995, 1000, 1343, 1349, 1351, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1510, 1539, 1564, 1565, 1676, 1685, 1686, 1695, 1696, 1697, 1706, 1707, 1716, 1717, 1771]
+2026-06-10 16:42:30 [INFO] Closed glyph list over 'glyf': 60 glyphs after
+2026-06-10 16:42:30 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'C', 'E', 'I', 'O', 'S', 'a', 'b', 'c', 'd', 'dotlessi', 'e', 'five', 'five.dnom', 'five.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'multiply', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'q', 'quoteright', 'r', 's', 'semicolon', 'six', 'six.dnom', 'six.numr', 'space', 't', 'u', 'uni0307', 'uni0308', 'v', 'x', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:30 [INFO] Glyph IDs:   [0, 1, 2, 3, 73, 95, 197, 322, 398, 508, 579, 587, 598, 615, 659, 671, 690, 691, 738, 775, 792, 845, 851, 854, 873, 891, 917, 982, 995, 1000, 1343, 1349, 1351, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1485, 1504, 1510, 1526, 1539, 1564, 1565, 1676, 1685, 1686, 1695, 1696, 1697, 1706, 1707, 1716, 1717, 1771, 2692, 2693]
+2026-06-10 16:42:30 [INFO] Retaining 60 glyphs
+2026-06-10 16:42:30 [INFO] head subsetting not needed
+2026-06-10 16:42:30 [INFO] hhea subsetting not needed
+2026-06-10 16:42:30 [INFO] maxp subsetting not needed
+2026-06-10 16:42:30 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:30 [INFO] hmtx subsetted
+2026-06-10 16:42:30 [INFO] cmap subsetted
+2026-06-10 16:42:30 [INFO] fpgm subsetting not needed
+2026-06-10 16:42:30 [INFO] prep subsetting not needed
+2026-06-10 16:42:30 [INFO] cvt  subsetting not needed
+2026-06-10 16:42:30 [INFO] loca subsetting not needed
+2026-06-10 16:42:30 [INFO] post subsetted
+2026-06-10 16:42:30 [INFO] gasp subsetting not needed
+2026-06-10 16:42:30 [INFO] GDEF subsetted
+2026-06-10 16:42:30 [INFO] GPOS subsetted
+2026-06-10 16:42:30 [INFO] GSUB subsetted
+2026-06-10 16:42:30 [INFO] name subsetting not needed
+2026-06-10 16:42:30 [INFO] glyf subsetted
+2026-06-10 16:42:30 [INFO] head pruned
+2026-06-10 16:42:30 [INFO] OS/2 Unicode ranges pruned: [0]
+2026-06-10 16:42:30 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:30 [INFO] glyf pruned
+2026-06-10 16:42:30 [INFO] GDEF pruned
+2026-06-10 16:42:30 [INFO] GPOS pruned
+2026-06-10 16:42:30 [INFO] GSUB pruned
+2026-06-10 16:42:30 [INFO] name pruned
+/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/scripts/issue553_panel.py:883: UserWarning: The figure layout has changed to tight
+  fig.tight_layout()
+[figures] wrote i560_exposure_bars to /home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/figures/issue_560
+2026-06-10 16:42:34 [INFO] maxp pruned
+2026-06-10 16:42:34 [INFO] cmap pruned
+2026-06-10 16:42:34 [INFO] post pruned
+2026-06-10 16:42:34 [INFO] CFF  pruned
+2026-06-10 16:42:34 [INFO] GPOS pruned
+2026-06-10 16:42:34 [INFO] GSUB pruned
+2026-06-10 16:42:34 [INFO] Added .notdef to subset
+2026-06-10 16:42:34 [INFO] Closing glyph list over 'GSUB': 41 glyphs before
+2026-06-10 16:42:34 [INFO] Glyph names: ['.notdef', 'E', 'F', 'a', 'b', 'c', 'colon', 'd', 'e', 'five', 'four', 'g', 'h', 'hyphen', 'i', 'l', 'm', 'minus', 'n', 'numbersign', 'o', 'one', 'p', 'parenleft', 'parenright', 'period', 'quotesingle', 'r', 's', 'six', 'space', 't', 'three', 'two', 'u', 'underscore', 'v', 'w', 'x', 'y', 'zero']
+2026-06-10 16:42:34 [INFO] Glyph IDs:   [0, 95, 137, 508, 579, 587, 598, 615, 659, 671, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 995, 1000, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1439, 1440, 1455, 1461, 1486, 1504, 1507, 1525, 1545, 1771]
+2026-06-10 16:42:34 [INFO] Closed glyph list over 'GSUB': 69 glyphs after
+2026-06-10 16:42:34 [INFO] Glyph names: ['.notdef', 'E', 'F', 'a', 'b', 'c', 'colon', 'colon.case', 'd', 'e', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'minus', 'minus.case', 'minus.dnom', 'minus.numr', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'quotesingle', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'v', 'w', 'x', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:34 [INFO] Glyph IDs:   [0, 95, 137, 508, 579, 587, 598, 615, 659, 671, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 995, 1000, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1486, 1504, 1507, 1508, 1525, 1538, 1539, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1693, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1714, 1716, 1717, 1771]
+2026-06-10 16:42:34 [INFO] Closing glyph list over 'CFF ': 69 glyphs before
+2026-06-10 16:42:34 [INFO] Glyph names: ['.notdef', 'E', 'F', 'a', 'b', 'c', 'colon', 'colon.case', 'd', 'e', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'minus', 'minus.case', 'minus.dnom', 'minus.numr', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'quotesingle', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'v', 'w', 'x', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:34 [INFO] Glyph IDs:   [0, 95, 137, 508, 579, 587, 598, 615, 659, 671, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 995, 1000, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1486, 1504, 1507, 1508, 1525, 1538, 1539, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1693, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1714, 1716, 1717, 1771]
+2026-06-10 16:42:34 [INFO] Closed glyph list over 'CFF ': 69 glyphs after
+2026-06-10 16:42:34 [INFO] Glyph names: ['.notdef', 'E', 'F', 'a', 'b', 'c', 'colon', 'colon.case', 'd', 'e', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'minus', 'minus.case', 'minus.dnom', 'minus.numr', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'quotesingle', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'v', 'w', 'x', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:34 [INFO] Glyph IDs:   [0, 95, 137, 508, 579, 587, 598, 615, 659, 671, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 995, 1000, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1486, 1504, 1507, 1508, 1525, 1538, 1539, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1693, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1714, 1716, 1717, 1771]
+2026-06-10 16:42:34 [INFO] Retaining 69 glyphs
+2026-06-10 16:42:34 [INFO] head subsetting not needed
+2026-06-10 16:42:34 [INFO] hhea subsetting not needed
+2026-06-10 16:42:34 [INFO] maxp subsetting not needed
+2026-06-10 16:42:34 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:34 [INFO] cmap subsetted
+2026-06-10 16:42:34 [INFO] post subsetted
+2026-06-10 16:42:34 [INFO] CFF  subsetted
+2026-06-10 16:42:34 [INFO] hmtx subsetted
+2026-06-10 16:42:34 [INFO] GDEF subsetted
+2026-06-10 16:42:34 [INFO] GPOS subsetted
+2026-06-10 16:42:34 [INFO] GSUB subsetted
+2026-06-10 16:42:34 [INFO] name subsetting not needed
+2026-06-10 16:42:34 [INFO] head pruned
+2026-06-10 16:42:34 [INFO] OS/2 Unicode ranges pruned: [0, 38]
+2026-06-10 16:42:34 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:34 [INFO] CFF  pruned
+2026-06-10 16:42:34 [INFO] GDEF pruned
+2026-06-10 16:42:34 [INFO] GPOS pruned
+2026-06-10 16:42:34 [INFO] GSUB pruned
+2026-06-10 16:42:34 [INFO] name pruned
+2026-06-10 16:42:34 [INFO] maxp pruned
+2026-06-10 16:42:34 [INFO] cmap pruned
+2026-06-10 16:42:34 [INFO] post pruned
+2026-06-10 16:42:34 [INFO] GPOS pruned
+2026-06-10 16:42:34 [INFO] GSUB pruned
+2026-06-10 16:42:34 [INFO] glyf pruned
+2026-06-10 16:42:34 [INFO] Added gid0 to subset
+2026-06-10 16:42:34 [INFO] Added first four glyphs to subset
+2026-06-10 16:42:34 [INFO] Closing glyph list over 'GSUB': 51 glyphs before
+2026-06-10 16:42:34 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'E', 'F', 'M', 'O', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'equal', 'f', 'five', 'four', 'g', 'h', 'hyphen', 'i', 'k', 'l', 'm', 'n', 'nine', 'o', 'one', 'p', 'parenleft', 'parenright', 'period', 'plus', 'r', 's', 'six', 'space', 't', 'three', 'two', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'w', 'y', 'z', 'zero']
+2026-06-10 16:42:34 [INFO] Glyph IDs:   [0, 1, 2, 3, 95, 137, 293, 322, 398, 412, 508, 579, 587, 598, 615, 648, 659, 671, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 1000, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1354, 1439, 1440, 1461, 1504, 1522, 1524, 1545, 1771, 2572]
+2026-06-10 16:42:34 [INFO] Closed glyph list over 'GSUB': 82 glyphs after
+2026-06-10 16:42:34 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'E', 'F', 'M', 'O', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'nine', 'nine.dnom', 'nine.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'plus', 'plus.case', 'plus.dnom', 'plus.numr', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'w', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:34 [INFO] Glyph IDs:   [0, 1, 2, 3, 95, 137, 293, 322, 398, 412, 508, 579, 587, 598, 615, 648, 659, 671, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 1000, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1354, 1439, 1440, 1448, 1449, 1461, 1473, 1504, 1522, 1524, 1535, 1537, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1690, 1692, 1694, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1711, 1713, 1715, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:34 [INFO] Closing glyph list over 'glyf': 82 glyphs before
+2026-06-10 16:42:34 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'E', 'F', 'M', 'O', 'S', 'T', 'a', 'b', 'c', 'd', 'e', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'nine', 'nine.dnom', 'nine.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'plus', 'plus.case', 'plus.dnom', 'plus.numr', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'w', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:34 [INFO] Glyph IDs:   [0, 1, 2, 3, 95, 137, 293, 322, 398, 412, 508, 579, 587, 598, 615, 648, 659, 671, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 1000, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1354, 1439, 1440, 1448, 1449, 1461, 1473, 1504, 1522, 1524, 1535, 1537, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1690, 1692, 1694, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1711, 1713, 1715, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:34 [INFO] Closed glyph list over 'glyf': 85 glyphs after
+2026-06-10 16:42:34 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'E', 'F', 'M', 'O', 'S', 'T', 'a', 'b', 'c', 'd', 'dotlessi', 'e', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'nine', 'nine.dnom', 'nine.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'plus', 'plus.case', 'plus.dnom', 'plus.numr', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0307', 'uni0308', 'uni0394', 'uni203B', 'v', 'w', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:34 [INFO] Glyph IDs:   [0, 1, 2, 3, 95, 137, 293, 322, 398, 412, 508, 579, 587, 598, 615, 648, 659, 671, 690, 691, 729, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 1000, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1354, 1439, 1440, 1448, 1449, 1461, 1473, 1504, 1522, 1524, 1535, 1537, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1690, 1692, 1694, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1711, 1713, 1715, 1716, 1717, 1771, 2572, 2692, 2693]
+2026-06-10 16:42:34 [INFO] Retaining 85 glyphs
+2026-06-10 16:42:34 [INFO] head subsetting not needed
+2026-06-10 16:42:34 [INFO] hhea subsetting not needed
+2026-06-10 16:42:34 [INFO] maxp subsetting not needed
+2026-06-10 16:42:34 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:34 [INFO] hmtx subsetted
+2026-06-10 16:42:34 [INFO] cmap subsetted
+2026-06-10 16:42:34 [INFO] fpgm subsetting not needed
+2026-06-10 16:42:34 [INFO] prep subsetting not needed
+2026-06-10 16:42:34 [INFO] cvt  subsetting not needed
+2026-06-10 16:42:34 [INFO] loca subsetting not needed
+2026-06-10 16:42:34 [INFO] post subsetted
+2026-06-10 16:42:34 [INFO] gasp subsetting not needed
+2026-06-10 16:42:34 [INFO] GDEF subsetted
+2026-06-10 16:42:34 [INFO] GPOS subsetted
+2026-06-10 16:42:34 [INFO] GSUB subsetted
+2026-06-10 16:42:34 [INFO] name subsetting not needed
+2026-06-10 16:42:34 [INFO] glyf subsetted
+2026-06-10 16:42:34 [INFO] head pruned
+2026-06-10 16:42:34 [INFO] OS/2 Unicode ranges pruned: [0, 7, 31]
+2026-06-10 16:42:34 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:34 [INFO] glyf pruned
+2026-06-10 16:42:34 [INFO] GDEF pruned
+2026-06-10 16:42:34 [INFO] GPOS pruned
+2026-06-10 16:42:34 [INFO] GSUB pruned
+2026-06-10 16:42:35 [INFO] name pruned
+/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/scripts/issue560_transfer_analysis.py:1086: UserWarning: The figure layout has changed to tight
+  fig.tight_layout()
+[figures:exploratory] wrote i560_min_dist_raw_vs_fe_grid to /home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/figures/issue_560
+2026-06-10 16:42:39 [INFO] maxp pruned
+2026-06-10 16:42:39 [INFO] cmap pruned
+2026-06-10 16:42:39 [INFO] post pruned
+2026-06-10 16:42:39 [INFO] CFF  pruned
+2026-06-10 16:42:39 [INFO] GPOS pruned
+2026-06-10 16:42:39 [INFO] GSUB pruned
+2026-06-10 16:42:39 [INFO] Added .notdef to subset
+2026-06-10 16:42:39 [INFO] Closing glyph list over 'GSUB': 36 glyphs before
+2026-06-10 16:42:39 [INFO] Glyph names: ['.notdef', 'a', 'c', 'd', 'e', 'eight', 'five', 'four', 'hyphen', 'i', 'l', 'm', 'n', 'nine', 'numbersign', 'o', 'one', 'p', 'parenleft', 'parenright', 'period', 'r', 's', 'seven', 'six', 'space', 't', 'three', 'two', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'z', 'zero']
+2026-06-10 16:42:39 [INFO] Glyph IDs:   [0, 508, 587, 598, 615, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1354, 1439, 1440, 1455, 1461, 1504, 1545, 1771, 2572]
+2026-06-10 16:42:39 [INFO] Closed glyph list over 'GSUB': 65 glyphs after
+2026-06-10 16:42:39 [INFO] Glyph names: ['.notdef', 'a', 'c', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'n', 'n.numr', 'nine', 'nine.dnom', 'nine.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:39 [INFO] Glyph IDs:   [0, 508, 587, 598, 615, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1354, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1504, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1690, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1711, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:39 [INFO] Closing glyph list over 'CFF ': 65 glyphs before
+2026-06-10 16:42:39 [INFO] Glyph names: ['.notdef', 'a', 'c', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'n', 'n.numr', 'nine', 'nine.dnom', 'nine.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:39 [INFO] Glyph IDs:   [0, 508, 587, 598, 615, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1354, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1504, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1690, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1711, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:39 [INFO] Closed glyph list over 'CFF ': 65 glyphs after
+2026-06-10 16:42:39 [INFO] Glyph names: ['.notdef', 'a', 'c', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'n', 'n.numr', 'nine', 'nine.dnom', 'nine.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:39 [INFO] Glyph IDs:   [0, 508, 587, 598, 615, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 1024, 1037, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1354, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1504, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1690, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1711, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:39 [INFO] Retaining 65 glyphs
+2026-06-10 16:42:39 [INFO] head subsetting not needed
+2026-06-10 16:42:39 [INFO] hhea subsetting not needed
+2026-06-10 16:42:39 [INFO] maxp subsetting not needed
+2026-06-10 16:42:39 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:39 [INFO] cmap subsetted
+2026-06-10 16:42:39 [INFO] post subsetted
+2026-06-10 16:42:39 [INFO] CFF  subsetted
+2026-06-10 16:42:39 [INFO] hmtx subsetted
+2026-06-10 16:42:39 [INFO] GDEF subsetted
+2026-06-10 16:42:39 [INFO] GPOS subsetted
+2026-06-10 16:42:39 [INFO] GSUB subsetted
+2026-06-10 16:42:39 [INFO] name subsetting not needed
+2026-06-10 16:42:39 [INFO] head pruned
+2026-06-10 16:42:39 [INFO] OS/2 Unicode ranges pruned: [0, 7, 31]
+2026-06-10 16:42:39 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:39 [INFO] CFF  pruned
+2026-06-10 16:42:39 [INFO] GDEF pruned
+2026-06-10 16:42:39 [INFO] GPOS pruned
+2026-06-10 16:42:39 [INFO] GSUB pruned
+2026-06-10 16:42:39 [INFO] name pruned
+2026-06-10 16:42:39 [INFO] maxp pruned
+2026-06-10 16:42:39 [INFO] cmap pruned
+2026-06-10 16:42:39 [INFO] post pruned
+2026-06-10 16:42:39 [INFO] GPOS pruned
+2026-06-10 16:42:39 [INFO] GSUB pruned
+2026-06-10 16:42:40 [INFO] glyf pruned
+2026-06-10 16:42:40 [INFO] Added gid0 to subset
+2026-06-10 16:42:40 [INFO] Added first four glyphs to subset
+2026-06-10 16:42:40 [INFO] Closing glyph list over 'GSUB': 26 glyphs before
+2026-06-10 16:42:40 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'B', 'C', 'D', 'colon', 'eight', 'equal', 'five', 'four', 'h', 'hyphen', 'nine', 'o', 'one', 'period', 'plus', 'r', 'seven', 'six', 'space', 'three', 'two', 'zero']
+2026-06-10 16:42:40 [INFO] Glyph IDs:   [0, 1, 2, 3, 65, 73, 84, 671, 792, 854, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1354, 1461, 1504, 1507, 1522, 1524, 1771]
+2026-06-10 16:42:40 [INFO] Closed glyph list over 'GSUB': 54 glyphs after
+2026-06-10 16:42:40 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'B', 'C', 'D', 'colon', 'colon.case', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'h', 'hyphen', 'hyphen.case', 'nine', 'nine.dnom', 'nine.numr', 'o', 'one', 'one.dnom', 'one.numr', 'period', 'plus', 'plus.case', 'plus.dnom', 'plus.numr', 'r', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:40 [INFO] Glyph IDs:   [0, 1, 2, 3, 65, 73, 84, 671, 792, 854, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1354, 1461, 1473, 1504, 1507, 1508, 1522, 1524, 1535, 1537, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1690, 1692, 1694, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1711, 1713, 1715, 1771]
+2026-06-10 16:42:40 [INFO] Closing glyph list over 'glyf': 54 glyphs before
+2026-06-10 16:42:40 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'B', 'C', 'D', 'colon', 'colon.case', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'h', 'hyphen', 'hyphen.case', 'nine', 'nine.dnom', 'nine.numr', 'o', 'one', 'one.dnom', 'one.numr', 'period', 'plus', 'plus.case', 'plus.dnom', 'plus.numr', 'r', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:40 [INFO] Glyph IDs:   [0, 1, 2, 3, 65, 73, 84, 671, 792, 854, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1354, 1461, 1473, 1504, 1507, 1508, 1522, 1524, 1535, 1537, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1690, 1692, 1694, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1711, 1713, 1715, 1771]
+2026-06-10 16:42:40 [INFO] Closed glyph list over 'glyf': 55 glyphs after
+2026-06-10 16:42:40 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'B', 'C', 'D', 'colon', 'colon.case', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'h', 'hyphen', 'hyphen.case', 'nine', 'nine.dnom', 'nine.numr', 'o', 'one', 'one.dnom', 'one.numr', 'period', 'plus', 'plus.case', 'plus.dnom', 'plus.numr', 'r', 'seven', 'seven.dnom', 'seven.numr', 'six', 'six.dnom', 'six.numr', 'space', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'uni0308', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:40 [INFO] Glyph IDs:   [0, 1, 2, 3, 65, 73, 84, 671, 792, 854, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1352, 1353, 1354, 1461, 1473, 1504, 1507, 1508, 1522, 1524, 1535, 1537, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1688, 1689, 1690, 1692, 1694, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1709, 1710, 1711, 1713, 1715, 1771, 2692]
+2026-06-10 16:42:40 [INFO] Retaining 55 glyphs
+2026-06-10 16:42:40 [INFO] head subsetting not needed
+2026-06-10 16:42:40 [INFO] hhea subsetting not needed
+2026-06-10 16:42:40 [INFO] maxp subsetting not needed
+2026-06-10 16:42:40 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:40 [INFO] hmtx subsetted
+2026-06-10 16:42:40 [INFO] cmap subsetted
+2026-06-10 16:42:40 [INFO] fpgm subsetting not needed
+2026-06-10 16:42:40 [INFO] prep subsetting not needed
+2026-06-10 16:42:40 [INFO] cvt  subsetting not needed
+2026-06-10 16:42:40 [INFO] loca subsetting not needed
+2026-06-10 16:42:40 [INFO] post subsetted
+2026-06-10 16:42:40 [INFO] gasp subsetting not needed
+2026-06-10 16:42:40 [INFO] GDEF subsetted
+2026-06-10 16:42:40 [INFO] GPOS subsetted
+2026-06-10 16:42:40 [INFO] GSUB subsetted
+2026-06-10 16:42:40 [INFO] name subsetting not needed
+2026-06-10 16:42:40 [INFO] glyf subsetted
+2026-06-10 16:42:40 [INFO] head pruned
+2026-06-10 16:42:40 [INFO] OS/2 Unicode ranges pruned: [0]
+2026-06-10 16:42:40 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:40 [INFO] glyf pruned
+2026-06-10 16:42:40 [INFO] GDEF pruned
+2026-06-10 16:42:40 [INFO] GPOS pruned
+2026-06-10 16:42:40 [INFO] GSUB pruned
+2026-06-10 16:42:40 [INFO] name pruned
+/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/scripts/issue560_transfer_analysis.py:1099: UserWarning: The figure layout has changed to tight
+  fig.tight_layout()
+2026-06-10 16:42:40 [INFO] maxp pruned
+2026-06-10 16:42:41 [INFO] cmap pruned
+2026-06-10 16:42:41 [INFO] post pruned
+2026-06-10 16:42:41 [INFO] CFF  pruned
+2026-06-10 16:42:41 [INFO] GPOS pruned
+2026-06-10 16:42:41 [INFO] GSUB pruned
+2026-06-10 16:42:41 [INFO] Added .notdef to subset
+2026-06-10 16:42:41 [INFO] Closing glyph list over 'GSUB': 31 glyphs before
+2026-06-10 16:42:41 [INFO] Glyph names: ['.notdef', 'E', 'O', 'S', 'a', 'c', 'd', 'e', 'five', 'g', 'i', 'l', 'n', 'o', 'one', 'parenleft', 'parenright', 'period', 'r', 's', 'seven', 'space', 't', 'two', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'z', 'zero']
+2026-06-10 16:42:41 [INFO] Glyph IDs:   [0, 95, 322, 398, 508, 587, 598, 615, 659, 690, 738, 775, 792, 854, 873, 891, 917, 982, 1024, 1037, 1343, 1344, 1345, 1349, 1352, 1439, 1440, 1504, 1545, 1771, 2572]
+2026-06-10 16:42:41 [INFO] Closed glyph list over 'GSUB': 49 glyphs after
+2026-06-10 16:42:41 [INFO] Glyph names: ['.notdef', 'E', 'O', 'S', 'a', 'c', 'd', 'e', 'five', 'five.dnom', 'five.numr', 'g', 'i', 'i.numr', 'l', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:41 [INFO] Glyph IDs:   [0, 95, 322, 398, 508, 587, 598, 615, 659, 690, 738, 775, 792, 854, 873, 891, 917, 982, 1024, 1037, 1343, 1344, 1345, 1349, 1352, 1439, 1440, 1448, 1449, 1504, 1545, 1564, 1565, 1676, 1678, 1680, 1685, 1688, 1695, 1696, 1697, 1699, 1701, 1706, 1709, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:41 [INFO] Closing glyph list over 'CFF ': 49 glyphs before
+2026-06-10 16:42:41 [INFO] Glyph names: ['.notdef', 'E', 'O', 'S', 'a', 'c', 'd', 'e', 'five', 'five.dnom', 'five.numr', 'g', 'i', 'i.numr', 'l', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:41 [INFO] Glyph IDs:   [0, 95, 322, 398, 508, 587, 598, 615, 659, 690, 738, 775, 792, 854, 873, 891, 917, 982, 1024, 1037, 1343, 1344, 1345, 1349, 1352, 1439, 1440, 1448, 1449, 1504, 1545, 1564, 1565, 1676, 1678, 1680, 1685, 1688, 1695, 1696, 1697, 1699, 1701, 1706, 1709, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:41 [INFO] Closed glyph list over 'CFF ': 49 glyphs after
+2026-06-10 16:42:41 [INFO] Glyph names: ['.notdef', 'E', 'O', 'S', 'a', 'c', 'd', 'e', 'five', 'five.dnom', 'five.numr', 'g', 'i', 'i.numr', 'l', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:41 [INFO] Glyph IDs:   [0, 95, 322, 398, 508, 587, 598, 615, 659, 690, 738, 775, 792, 854, 873, 891, 917, 982, 1024, 1037, 1343, 1344, 1345, 1349, 1352, 1439, 1440, 1448, 1449, 1504, 1545, 1564, 1565, 1676, 1678, 1680, 1685, 1688, 1695, 1696, 1697, 1699, 1701, 1706, 1709, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:41 [INFO] Retaining 49 glyphs
+2026-06-10 16:42:41 [INFO] head subsetting not needed
+2026-06-10 16:42:41 [INFO] hhea subsetting not needed
+2026-06-10 16:42:41 [INFO] maxp subsetting not needed
+2026-06-10 16:42:41 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:41 [INFO] cmap subsetted
+2026-06-10 16:42:41 [INFO] post subsetted
+2026-06-10 16:42:41 [INFO] CFF  subsetted
+2026-06-10 16:42:41 [INFO] hmtx subsetted
+2026-06-10 16:42:41 [INFO] GDEF subsetted
+2026-06-10 16:42:41 [INFO] GPOS subsetted
+2026-06-10 16:42:41 [INFO] GSUB subsetted
+2026-06-10 16:42:41 [INFO] name subsetting not needed
+2026-06-10 16:42:41 [INFO] head pruned
+2026-06-10 16:42:41 [INFO] OS/2 Unicode ranges pruned: [0, 7, 31]
+2026-06-10 16:42:41 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:41 [INFO] CFF  pruned
+2026-06-10 16:42:41 [INFO] GDEF pruned
+2026-06-10 16:42:41 [INFO] GPOS pruned
+2026-06-10 16:42:41 [INFO] GSUB pruned
+2026-06-10 16:42:41 [INFO] name pruned
+2026-06-10 16:42:41 [INFO] maxp pruned
+2026-06-10 16:42:41 [INFO] cmap pruned
+2026-06-10 16:42:41 [INFO] post pruned
+2026-06-10 16:42:41 [INFO] GPOS pruned
+2026-06-10 16:42:41 [INFO] GSUB pruned
+2026-06-10 16:42:41 [INFO] glyf pruned
+2026-06-10 16:42:41 [INFO] Added gid0 to subset
+2026-06-10 16:42:41 [INFO] Added first four glyphs to subset
+2026-06-10 16:42:41 [INFO] Closing glyph list over 'GSUB': 24 glyphs before
+2026-06-10 16:42:41 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'E', 'O', 'S', 'a', 'c', 'e', 'five', 'h', 'k', 'l', 'm', 'numbersign', 'p', 'r', 's', 'six', 'space', 'u', 'v', 'zero']
+2026-06-10 16:42:41 [INFO] Glyph IDs:   [0, 1, 2, 3, 95, 322, 398, 508, 587, 615, 671, 729, 738, 768, 845, 854, 873, 917, 982, 1343, 1349, 1351, 1455, 1771]
+2026-06-10 16:42:41 [INFO] Closed glyph list over 'GSUB': 30 glyphs after
+2026-06-10 16:42:41 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'E', 'O', 'S', 'a', 'c', 'e', 'five', 'five.dnom', 'five.numr', 'h', 'k', 'l', 'm', 'numbersign', 'p', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 'u', 'v', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:41 [INFO] Glyph IDs:   [0, 1, 2, 3, 95, 322, 398, 508, 587, 615, 671, 729, 738, 768, 845, 854, 873, 917, 982, 1343, 1349, 1351, 1455, 1676, 1685, 1686, 1697, 1706, 1707, 1771]
+2026-06-10 16:42:41 [INFO] Closing glyph list over 'glyf': 30 glyphs before
+2026-06-10 16:42:41 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'E', 'O', 'S', 'a', 'c', 'e', 'five', 'five.dnom', 'five.numr', 'h', 'k', 'l', 'm', 'numbersign', 'p', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 'u', 'v', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:41 [INFO] Glyph IDs:   [0, 1, 2, 3, 95, 322, 398, 508, 587, 615, 671, 729, 738, 768, 845, 854, 873, 917, 982, 1343, 1349, 1351, 1455, 1676, 1685, 1686, 1697, 1706, 1707, 1771]
+2026-06-10 16:42:41 [INFO] Closed glyph list over 'glyf': 31 glyphs after
+2026-06-10 16:42:41 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'E', 'O', 'S', 'a', 'c', 'e', 'five', 'five.dnom', 'five.numr', 'h', 'k', 'l', 'm', 'numbersign', 'p', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 'u', 'uni0308', 'v', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:41 [INFO] Glyph IDs:   [0, 1, 2, 3, 95, 322, 398, 508, 587, 615, 671, 729, 738, 768, 845, 854, 873, 917, 982, 1343, 1349, 1351, 1455, 1676, 1685, 1686, 1697, 1706, 1707, 1771, 2692]
+2026-06-10 16:42:41 [INFO] Retaining 31 glyphs
+2026-06-10 16:42:41 [INFO] head subsetting not needed
+2026-06-10 16:42:41 [INFO] hhea subsetting not needed
+2026-06-10 16:42:41 [INFO] maxp subsetting not needed
+2026-06-10 16:42:41 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:41 [INFO] hmtx subsetted
+2026-06-10 16:42:41 [INFO] cmap subsetted
+2026-06-10 16:42:41 [INFO] fpgm subsetting not needed
+2026-06-10 16:42:41 [INFO] prep subsetting not needed
+2026-06-10 16:42:41 [INFO] cvt  subsetting not needed
+2026-06-10 16:42:41 [INFO] loca subsetting not needed
+2026-06-10 16:42:41 [INFO] post subsetted
+2026-06-10 16:42:41 [INFO] gasp subsetting not needed
+2026-06-10 16:42:41 [INFO] GDEF subsetted
+2026-06-10 16:42:41 [INFO] GPOS subsetted
+2026-06-10 16:42:41 [INFO] GSUB subsetted
+2026-06-10 16:42:41 [INFO] name subsetting not needed
+2026-06-10 16:42:41 [INFO] glyf subsetted
+2026-06-10 16:42:41 [INFO] head pruned
+2026-06-10 16:42:41 [INFO] OS/2 Unicode ranges pruned: [0]
+2026-06-10 16:42:41 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:41 [INFO] glyf pruned
+2026-06-10 16:42:41 [INFO] GDEF pruned
+2026-06-10 16:42:41 [INFO] GPOS pruned
+2026-06-10 16:42:41 [INFO] GSUB pruned
+2026-06-10 16:42:41 [INFO] name pruned
+/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/scripts/issue560_transfer_analysis.py:1119: UserWarning: The figure layout has changed to tight
+  fig.tight_layout()
+2026-06-10 16:42:42 [INFO] maxp pruned
+2026-06-10 16:42:42 [INFO] cmap pruned
+2026-06-10 16:42:42 [INFO] post pruned
+2026-06-10 16:42:42 [INFO] CFF  pruned
+2026-06-10 16:42:42 [INFO] GPOS pruned
+2026-06-10 16:42:42 [INFO] GSUB pruned
+2026-06-10 16:42:42 [INFO] Added .notdef to subset
+2026-06-10 16:42:42 [INFO] Closing glyph list over 'GSUB': 28 glyphs before
+2026-06-10 16:42:42 [INFO] Glyph names: ['.notdef', 'P', 'a', 'c', 'd', 'e', 'equal', 'five', 'g', 'i', 'l', 'n', 'o', 'one', 'parenleft', 'parenright', 'r', 's', 'space', 't', 'two', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'z', 'zero']
+2026-06-10 16:42:42 [INFO] Glyph IDs:   [0, 376, 508, 587, 598, 615, 659, 690, 738, 775, 792, 854, 873, 891, 917, 982, 1024, 1037, 1343, 1344, 1345, 1349, 1439, 1440, 1522, 1545, 1771, 2572]
+2026-06-10 16:42:42 [INFO] Closed glyph list over 'GSUB': 47 glyphs after
+2026-06-10 16:42:42 [INFO] Glyph names: ['.notdef', 'P', 'a', 'c', 'd', 'e', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'five', 'five.dnom', 'five.numr', 'g', 'i', 'i.numr', 'l', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'r', 's', 'space', 't', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:42 [INFO] Glyph IDs:   [0, 376, 508, 587, 598, 615, 659, 690, 738, 775, 792, 854, 873, 891, 917, 982, 1024, 1037, 1343, 1344, 1345, 1349, 1439, 1440, 1448, 1449, 1522, 1535, 1545, 1564, 1565, 1676, 1678, 1680, 1685, 1694, 1695, 1696, 1697, 1699, 1701, 1706, 1715, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:42 [INFO] Closing glyph list over 'CFF ': 47 glyphs before
+2026-06-10 16:42:42 [INFO] Glyph names: ['.notdef', 'P', 'a', 'c', 'd', 'e', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'five', 'five.dnom', 'five.numr', 'g', 'i', 'i.numr', 'l', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'r', 's', 'space', 't', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:42 [INFO] Glyph IDs:   [0, 376, 508, 587, 598, 615, 659, 690, 738, 775, 792, 854, 873, 891, 917, 982, 1024, 1037, 1343, 1344, 1345, 1349, 1439, 1440, 1448, 1449, 1522, 1535, 1545, 1564, 1565, 1676, 1678, 1680, 1685, 1694, 1695, 1696, 1697, 1699, 1701, 1706, 1715, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:42 [INFO] Closed glyph list over 'CFF ': 47 glyphs after
+2026-06-10 16:42:42 [INFO] Glyph names: ['.notdef', 'P', 'a', 'c', 'd', 'e', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'five', 'five.dnom', 'five.numr', 'g', 'i', 'i.numr', 'l', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'r', 's', 'space', 't', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:42 [INFO] Glyph IDs:   [0, 376, 508, 587, 598, 615, 659, 690, 738, 775, 792, 854, 873, 891, 917, 982, 1024, 1037, 1343, 1344, 1345, 1349, 1439, 1440, 1448, 1449, 1522, 1535, 1545, 1564, 1565, 1676, 1678, 1680, 1685, 1694, 1695, 1696, 1697, 1699, 1701, 1706, 1715, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:42 [INFO] Retaining 47 glyphs
+2026-06-10 16:42:42 [INFO] head subsetting not needed
+2026-06-10 16:42:42 [INFO] hhea subsetting not needed
+2026-06-10 16:42:42 [INFO] maxp subsetting not needed
+2026-06-10 16:42:42 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:42 [INFO] cmap subsetted
+2026-06-10 16:42:42 [INFO] post subsetted
+2026-06-10 16:42:42 [INFO] CFF  subsetted
+2026-06-10 16:42:42 [INFO] hmtx subsetted
+2026-06-10 16:42:42 [INFO] GDEF subsetted
+2026-06-10 16:42:42 [INFO] GPOS subsetted
+2026-06-10 16:42:42 [INFO] GSUB subsetted
+2026-06-10 16:42:42 [INFO] name subsetting not needed
+2026-06-10 16:42:42 [INFO] head pruned
+2026-06-10 16:42:42 [INFO] OS/2 Unicode ranges pruned: [0, 7, 31]
+2026-06-10 16:42:42 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:42 [INFO] CFF  pruned
+2026-06-10 16:42:42 [INFO] GDEF pruned
+2026-06-10 16:42:42 [INFO] GPOS pruned
+2026-06-10 16:42:42 [INFO] GSUB pruned
+2026-06-10 16:42:42 [INFO] name pruned
+2026-06-10 16:42:42 [INFO] maxp pruned
+2026-06-10 16:42:42 [INFO] cmap pruned
+2026-06-10 16:42:42 [INFO] post pruned
+2026-06-10 16:42:42 [INFO] GPOS pruned
+2026-06-10 16:42:42 [INFO] GSUB pruned
+2026-06-10 16:42:42 [INFO] glyf pruned
+2026-06-10 16:42:42 [INFO] Added gid0 to subset
+2026-06-10 16:42:42 [INFO] Added first four glyphs to subset
+2026-06-10 16:42:42 [INFO] Closing glyph list over 'GSUB': 30 glyphs before
+2026-06-10 16:42:42 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'colon', 'd', 'e', 'f', 'five', 'g', 'h', 'i', 'l', 'm', 'n', 'numbersign', 'o', 'p', 'r', 's', 'six', 'space', 't', 'u', 'v', 'y', 'z', 'zero']
+2026-06-10 16:42:42 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 648, 659, 671, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 1000, 1024, 1343, 1349, 1351, 1455, 1507, 1771]
+2026-06-10 16:42:42 [INFO] Closed glyph list over 'GSUB': 39 glyphs after
+2026-06-10 16:42:42 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'colon', 'colon.case', 'd', 'e', 'f', 'five', 'five.dnom', 'five.numr', 'g', 'h', 'i', 'i.numr', 'l', 'm', 'n', 'n.numr', 'numbersign', 'o', 'p', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'u', 'v', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:42 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 648, 659, 671, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 1000, 1024, 1343, 1349, 1351, 1455, 1507, 1508, 1564, 1565, 1676, 1685, 1686, 1697, 1706, 1707, 1771]
+2026-06-10 16:42:42 [INFO] Closing glyph list over 'glyf': 39 glyphs before
+2026-06-10 16:42:42 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'colon', 'colon.case', 'd', 'e', 'f', 'five', 'five.dnom', 'five.numr', 'g', 'h', 'i', 'i.numr', 'l', 'm', 'n', 'n.numr', 'numbersign', 'o', 'p', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'u', 'v', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:42 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 648, 659, 671, 690, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 1000, 1024, 1343, 1349, 1351, 1455, 1507, 1508, 1564, 1565, 1676, 1685, 1686, 1697, 1706, 1707, 1771]
+2026-06-10 16:42:42 [INFO] Closed glyph list over 'glyf': 43 glyphs after
+2026-06-10 16:42:42 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'colon', 'colon.case', 'd', 'dotlessi', 'e', 'f', 'five', 'five.dnom', 'five.numr', 'g', 'h', 'i', 'i.numr', 'l', 'm', 'n', 'n.numr', 'numbersign', 'o', 'p', 'period', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'u', 'uni0307', 'uni0308', 'v', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:42 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 648, 659, 671, 690, 691, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 1000, 1024, 1343, 1349, 1351, 1455, 1504, 1507, 1508, 1564, 1565, 1676, 1685, 1686, 1697, 1706, 1707, 1771, 2692, 2693]
+2026-06-10 16:42:42 [INFO] Retaining 43 glyphs
+2026-06-10 16:42:42 [INFO] head subsetting not needed
+2026-06-10 16:42:42 [INFO] hhea subsetting not needed
+2026-06-10 16:42:42 [INFO] maxp subsetting not needed
+2026-06-10 16:42:42 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:42 [INFO] hmtx subsetted
+2026-06-10 16:42:42 [INFO] cmap subsetted
+2026-06-10 16:42:42 [INFO] fpgm subsetting not needed
+2026-06-10 16:42:42 [INFO] prep subsetting not needed
+2026-06-10 16:42:42 [INFO] cvt  subsetting not needed
+2026-06-10 16:42:42 [INFO] loca subsetting not needed
+2026-06-10 16:42:42 [INFO] post subsetted
+2026-06-10 16:42:42 [INFO] gasp subsetting not needed
+2026-06-10 16:42:42 [INFO] GDEF subsetted
+2026-06-10 16:42:42 [INFO] GPOS subsetted
+2026-06-10 16:42:42 [INFO] GSUB subsetted
+2026-06-10 16:42:42 [INFO] name subsetting not needed
+2026-06-10 16:42:42 [INFO] glyf subsetted
+2026-06-10 16:42:42 [INFO] head pruned
+2026-06-10 16:42:42 [INFO] OS/2 Unicode ranges pruned: [0]
+2026-06-10 16:42:42 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:42 [INFO] glyf pruned
+2026-06-10 16:42:42 [INFO] GDEF pruned
+2026-06-10 16:42:42 [INFO] GPOS pruned
+2026-06-10 16:42:42 [INFO] GSUB pruned
+2026-06-10 16:42:42 [INFO] name pruned
+/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/scripts/issue553_panel.py:926: UserWarning: The figure layout has changed to tight
+  fig.tight_layout()
+2026-06-10 16:42:43 [INFO] maxp pruned
+2026-06-10 16:42:43 [INFO] cmap pruned
+2026-06-10 16:42:43 [INFO] post pruned
+2026-06-10 16:42:43 [INFO] CFF  pruned
+2026-06-10 16:42:43 [INFO] GPOS pruned
+2026-06-10 16:42:43 [INFO] GSUB pruned
+2026-06-10 16:42:43 [INFO] Added .notdef to subset
+2026-06-10 16:42:43 [INFO] Closing glyph list over 'GSUB': 35 glyphs before
+2026-06-10 16:42:43 [INFO] Glyph names: ['.notdef', 'E', 'O', 'S', 'a', 'b', 'd', 'e', 'eight', 'equal', 'f', 'five', 'four', 'g', 'h', 'hyphen', 'i', 'k', 'l', 'm', 'n', 'numbersign', 'o', 'one', 'p', 'period', 'r', 's', 'six', 'space', 't', 'two', 'uni203B', 'x', 'zero']
+2026-06-10 16:42:43 [INFO] Glyph IDs:   [0, 95, 322, 398, 508, 579, 598, 615, 648, 659, 671, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 995, 1343, 1344, 1345, 1348, 1349, 1351, 1353, 1455, 1461, 1504, 1522, 1771, 2572]
+2026-06-10 16:42:43 [INFO] Closed glyph list over 'GSUB': 56 glyphs after
+2026-06-10 16:42:43 [INFO] Glyph names: ['.notdef', 'E', 'O', 'S', 'a', 'b', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'period', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'uni203B', 'x', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:43 [INFO] Glyph IDs:   [0, 95, 322, 398, 508, 579, 598, 615, 648, 659, 671, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 995, 1343, 1344, 1345, 1348, 1349, 1351, 1353, 1455, 1461, 1473, 1504, 1522, 1535, 1539, 1564, 1565, 1676, 1678, 1680, 1683, 1685, 1686, 1689, 1694, 1697, 1699, 1701, 1704, 1706, 1707, 1710, 1715, 1771, 2572]
+2026-06-10 16:42:43 [INFO] Closing glyph list over 'CFF ': 56 glyphs before
+2026-06-10 16:42:43 [INFO] Glyph names: ['.notdef', 'E', 'O', 'S', 'a', 'b', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'period', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'uni203B', 'x', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:43 [INFO] Glyph IDs:   [0, 95, 322, 398, 508, 579, 598, 615, 648, 659, 671, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 995, 1343, 1344, 1345, 1348, 1349, 1351, 1353, 1455, 1461, 1473, 1504, 1522, 1535, 1539, 1564, 1565, 1676, 1678, 1680, 1683, 1685, 1686, 1689, 1694, 1697, 1699, 1701, 1704, 1706, 1707, 1710, 1715, 1771, 2572]
+2026-06-10 16:42:43 [INFO] Closed glyph list over 'CFF ': 56 glyphs after
+2026-06-10 16:42:43 [INFO] Glyph names: ['.notdef', 'E', 'O', 'S', 'a', 'b', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'period', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'uni203B', 'x', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:43 [INFO] Glyph IDs:   [0, 95, 322, 398, 508, 579, 598, 615, 648, 659, 671, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 995, 1343, 1344, 1345, 1348, 1349, 1351, 1353, 1455, 1461, 1473, 1504, 1522, 1535, 1539, 1564, 1565, 1676, 1678, 1680, 1683, 1685, 1686, 1689, 1694, 1697, 1699, 1701, 1704, 1706, 1707, 1710, 1715, 1771, 2572]
+2026-06-10 16:42:43 [INFO] Retaining 56 glyphs
+2026-06-10 16:42:43 [INFO] head subsetting not needed
+2026-06-10 16:42:43 [INFO] hhea subsetting not needed
+2026-06-10 16:42:43 [INFO] maxp subsetting not needed
+2026-06-10 16:42:43 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:43 [INFO] cmap subsetted
+2026-06-10 16:42:43 [INFO] post subsetted
+2026-06-10 16:42:43 [INFO] CFF  subsetted
+2026-06-10 16:42:43 [INFO] hmtx subsetted
+2026-06-10 16:42:43 [INFO] GDEF subsetted
+2026-06-10 16:42:43 [INFO] GPOS subsetted
+2026-06-10 16:42:43 [INFO] GSUB subsetted
+2026-06-10 16:42:43 [INFO] name subsetting not needed
+2026-06-10 16:42:43 [INFO] head pruned
+2026-06-10 16:42:43 [INFO] OS/2 Unicode ranges pruned: [0, 31]
+2026-06-10 16:42:43 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:43 [INFO] CFF  pruned
+2026-06-10 16:42:43 [INFO] GDEF pruned
+2026-06-10 16:42:43 [INFO] GPOS pruned
+2026-06-10 16:42:43 [INFO] GSUB pruned
+2026-06-10 16:42:43 [INFO] name pruned
+2026-06-10 16:42:43 [INFO] maxp pruned
+2026-06-10 16:42:43 [INFO] cmap pruned
+2026-06-10 16:42:43 [INFO] post pruned
+2026-06-10 16:42:43 [INFO] GPOS pruned
+2026-06-10 16:42:43 [INFO] GSUB pruned
+2026-06-10 16:42:43 [INFO] glyf pruned
+2026-06-10 16:42:43 [INFO] Added gid0 to subset
+2026-06-10 16:42:43 [INFO] Added first four glyphs to subset
+2026-06-10 16:42:43 [INFO] Closing glyph list over 'GSUB': 25 glyphs before
+2026-06-10 16:42:43 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'd', 'e', 'five', 'g', 'hyphen', 'i', 'l', 'm', 'n', 'numbersign', 'o', 'p', 'r', 's', 'six', 'space', 't', 'x', 'zero']
+2026-06-10 16:42:43 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 659, 690, 738, 768, 775, 792, 845, 854, 873, 891, 995, 1343, 1349, 1351, 1455, 1461, 1771]
+2026-06-10 16:42:43 [INFO] Closed glyph list over 'GSUB': 35 glyphs after
+2026-06-10 16:42:43 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'd', 'e', 'five', 'five.dnom', 'five.numr', 'g', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'p', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'x', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:43 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 659, 690, 738, 768, 775, 792, 845, 854, 873, 891, 995, 1343, 1349, 1351, 1455, 1461, 1473, 1539, 1564, 1565, 1676, 1685, 1686, 1697, 1706, 1707, 1771]
+2026-06-10 16:42:43 [INFO] Closing glyph list over 'glyf': 35 glyphs before
+2026-06-10 16:42:43 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'd', 'e', 'five', 'five.dnom', 'five.numr', 'g', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'p', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'x', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:43 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 659, 690, 738, 768, 775, 792, 845, 854, 873, 891, 995, 1343, 1349, 1351, 1455, 1461, 1473, 1539, 1564, 1565, 1676, 1685, 1686, 1697, 1706, 1707, 1771]
+2026-06-10 16:42:43 [INFO] Closed glyph list over 'glyf': 39 glyphs after
+2026-06-10 16:42:43 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'd', 'dotlessi', 'e', 'five', 'five.dnom', 'five.numr', 'g', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'multiply', 'multiply.case', 'n', 'n.numr', 'numbersign', 'o', 'p', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'uni0307', 'uni0308', 'x', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:43 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 659, 690, 691, 738, 768, 775, 792, 845, 854, 873, 891, 995, 1343, 1349, 1351, 1455, 1461, 1473, 1526, 1539, 1564, 1565, 1676, 1685, 1686, 1697, 1706, 1707, 1771, 2692, 2693]
+2026-06-10 16:42:43 [INFO] Retaining 39 glyphs
+2026-06-10 16:42:43 [INFO] head subsetting not needed
+2026-06-10 16:42:43 [INFO] hhea subsetting not needed
+2026-06-10 16:42:43 [INFO] maxp subsetting not needed
+2026-06-10 16:42:43 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:43 [INFO] hmtx subsetted
+2026-06-10 16:42:43 [INFO] cmap subsetted
+2026-06-10 16:42:43 [INFO] fpgm subsetting not needed
+2026-06-10 16:42:43 [INFO] prep subsetting not needed
+2026-06-10 16:42:43 [INFO] cvt  subsetting not needed
+2026-06-10 16:42:43 [INFO] loca subsetting not needed
+2026-06-10 16:42:43 [INFO] post subsetted
+2026-06-10 16:42:43 [INFO] gasp subsetting not needed
+2026-06-10 16:42:43 [INFO] GDEF subsetted
+2026-06-10 16:42:43 [INFO] GPOS subsetted
+2026-06-10 16:42:43 [INFO] GSUB subsetted
+2026-06-10 16:42:43 [INFO] name subsetting not needed
+2026-06-10 16:42:43 [INFO] glyf subsetted
+2026-06-10 16:42:43 [INFO] head pruned
+2026-06-10 16:42:43 [INFO] OS/2 Unicode ranges pruned: [0]
+2026-06-10 16:42:43 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:43 [INFO] glyf pruned
+2026-06-10 16:42:43 [INFO] GDEF pruned
+2026-06-10 16:42:43 [INFO] GPOS pruned
+2026-06-10 16:42:43 [INFO] GSUB pruned
+2026-06-10 16:42:43 [INFO] name pruned
+/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/scripts/issue560_transfer_analysis.py:1151: UserWarning: The figure layout has changed to tight
+  fig.tight_layout()
+[figures:exploratory] wrote i560_argmax_composition to /home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/figures/issue_560
+2026-06-10 16:42:44 [INFO] maxp pruned
+2026-06-10 16:42:44 [INFO] cmap pruned
+2026-06-10 16:42:44 [INFO] post pruned
+2026-06-10 16:42:44 [INFO] CFF  pruned
+2026-06-10 16:42:44 [INFO] GPOS pruned
+2026-06-10 16:42:44 [INFO] GSUB pruned
+2026-06-10 16:42:44 [INFO] Added .notdef to subset
+2026-06-10 16:42:44 [INFO] Closing glyph list over 'GSUB': 32 glyphs before
+2026-06-10 16:42:44 [INFO] Glyph names: ['.notdef', 'R', 'a', 'c', 'd', 'e', 'eight', 'equal', 'f', 'five', 'four', 'hyphen', 'i', 'k', 'l', 'm', 'n', 'o', 'one', 'p', 'parenleft', 'parenright', 'period', 'r', 's', 'six', 'space', 't', 'three', 'two', 'underscore', 'zero']
+2026-06-10 16:42:44 [INFO] Glyph IDs:   [0, 385, 508, 587, 598, 615, 648, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1353, 1439, 1440, 1461, 1504, 1522, 1545, 1771]
+2026-06-10 16:42:44 [INFO] Closed glyph list over 'GSUB': 60 glyphs after
+2026-06-10 16:42:44 [INFO] Glyph names: ['.notdef', 'R', 'a', 'c', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'underscore', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:44 [INFO] Glyph IDs:   [0, 385, 508, 587, 598, 615, 648, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1353, 1439, 1440, 1448, 1449, 1461, 1473, 1504, 1522, 1535, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1689, 1694, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1710, 1715, 1716, 1717, 1771]
+2026-06-10 16:42:44 [INFO] Closing glyph list over 'CFF ': 60 glyphs before
+2026-06-10 16:42:44 [INFO] Glyph names: ['.notdef', 'R', 'a', 'c', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'underscore', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:44 [INFO] Glyph IDs:   [0, 385, 508, 587, 598, 615, 648, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1353, 1439, 1440, 1448, 1449, 1461, 1473, 1504, 1522, 1535, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1689, 1694, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1710, 1715, 1716, 1717, 1771]
+2026-06-10 16:42:44 [INFO] Closed glyph list over 'CFF ': 60 glyphs after
+2026-06-10 16:42:44 [INFO] Glyph names: ['.notdef', 'R', 'a', 'c', 'd', 'e', 'eight', 'eight.dnom', 'eight.numr', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'underscore', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:44 [INFO] Glyph IDs:   [0, 385, 508, 587, 598, 615, 648, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 1343, 1344, 1345, 1347, 1348, 1349, 1351, 1353, 1439, 1440, 1448, 1449, 1461, 1473, 1504, 1522, 1535, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1686, 1689, 1694, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1707, 1710, 1715, 1716, 1717, 1771]
+2026-06-10 16:42:44 [INFO] Retaining 60 glyphs
+2026-06-10 16:42:44 [INFO] head subsetting not needed
+2026-06-10 16:42:44 [INFO] hhea subsetting not needed
+2026-06-10 16:42:44 [INFO] maxp subsetting not needed
+2026-06-10 16:42:44 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:44 [INFO] cmap subsetted
+2026-06-10 16:42:44 [INFO] post subsetted
+2026-06-10 16:42:44 [INFO] CFF  subsetted
+2026-06-10 16:42:44 [INFO] hmtx subsetted
+2026-06-10 16:42:44 [INFO] GDEF subsetted
+2026-06-10 16:42:44 [INFO] GPOS subsetted
+2026-06-10 16:42:44 [INFO] GSUB subsetted
+2026-06-10 16:42:44 [INFO] name subsetting not needed
+2026-06-10 16:42:44 [INFO] head pruned
+2026-06-10 16:42:44 [INFO] OS/2 Unicode ranges pruned: [0]
+2026-06-10 16:42:44 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:44 [INFO] CFF  pruned
+2026-06-10 16:42:44 [INFO] GDEF pruned
+2026-06-10 16:42:44 [INFO] GPOS pruned
+2026-06-10 16:42:44 [INFO] GSUB pruned
+2026-06-10 16:42:44 [INFO] name pruned
+2026-06-10 16:42:44 [INFO] maxp pruned
+2026-06-10 16:42:44 [INFO] cmap pruned
+2026-06-10 16:42:44 [INFO] post pruned
+2026-06-10 16:42:44 [INFO] GPOS pruned
+2026-06-10 16:42:44 [INFO] GSUB pruned
+2026-06-10 16:42:44 [INFO] glyf pruned
+2026-06-10 16:42:44 [INFO] Added gid0 to subset
+2026-06-10 16:42:44 [INFO] Added first four glyphs to subset
+2026-06-10 16:42:44 [INFO] Closing glyph list over 'GSUB': 31 glyphs before
+2026-06-10 16:42:44 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'd', 'e', 'equal', 'five', 'h', 'hyphen', 'i', 'k', 'l', 'm', 'n', 'numbersign', 'o', 'p', 'parenleft', 'parenright', 'period', 'r', 's', 'six', 'space', 't', 'two', 'v', 'zero']
+2026-06-10 16:42:44 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 671, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 982, 1343, 1345, 1349, 1351, 1439, 1440, 1455, 1461, 1504, 1522, 1771]
+2026-06-10 16:42:44 [INFO] Closed glyph list over 'GSUB': 51 glyphs after
+2026-06-10 16:42:44 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'd', 'e', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'five', 'five.dnom', 'five.numr', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'numbersign', 'o', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'v', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:44 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 671, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 982, 1343, 1345, 1349, 1351, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1504, 1522, 1535, 1564, 1565, 1676, 1680, 1685, 1686, 1694, 1695, 1696, 1697, 1701, 1706, 1707, 1715, 1716, 1717, 1771]
+2026-06-10 16:42:44 [INFO] Closing glyph list over 'glyf': 51 glyphs before
+2026-06-10 16:42:44 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'd', 'e', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'five', 'five.dnom', 'five.numr', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'numbersign', 'o', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'v', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:44 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 671, 690, 729, 738, 768, 775, 792, 845, 854, 873, 891, 982, 1343, 1345, 1349, 1351, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1504, 1522, 1535, 1564, 1565, 1676, 1680, 1685, 1686, 1694, 1695, 1696, 1697, 1701, 1706, 1707, 1715, 1716, 1717, 1771]
+2026-06-10 16:42:44 [INFO] Closed glyph list over 'glyf': 54 glyphs after
+2026-06-10 16:42:44 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'd', 'dotlessi', 'e', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'five', 'five.dnom', 'five.numr', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'l', 'm', 'n', 'n.numr', 'numbersign', 'o', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'uni0307', 'uni0308', 'v', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:44 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 671, 690, 691, 729, 738, 768, 775, 792, 845, 854, 873, 891, 982, 1343, 1345, 1349, 1351, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1504, 1522, 1535, 1564, 1565, 1676, 1680, 1685, 1686, 1694, 1695, 1696, 1697, 1701, 1706, 1707, 1715, 1716, 1717, 1771, 2692, 2693]
+2026-06-10 16:42:44 [INFO] Retaining 54 glyphs
+2026-06-10 16:42:44 [INFO] head subsetting not needed
+2026-06-10 16:42:44 [INFO] hhea subsetting not needed
+2026-06-10 16:42:44 [INFO] maxp subsetting not needed
+2026-06-10 16:42:44 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:44 [INFO] hmtx subsetted
+2026-06-10 16:42:44 [INFO] cmap subsetted
+2026-06-10 16:42:44 [INFO] fpgm subsetting not needed
+2026-06-10 16:42:44 [INFO] prep subsetting not needed
+2026-06-10 16:42:44 [INFO] cvt  subsetting not needed
+2026-06-10 16:42:44 [INFO] loca subsetting not needed
+2026-06-10 16:42:44 [INFO] post subsetted
+2026-06-10 16:42:44 [INFO] gasp subsetting not needed
+2026-06-10 16:42:44 [INFO] GDEF subsetted
+2026-06-10 16:42:44 [INFO] GPOS subsetted
+2026-06-10 16:42:44 [INFO] GSUB subsetted
+2026-06-10 16:42:44 [INFO] name subsetting not needed
+2026-06-10 16:42:44 [INFO] glyf subsetted
+2026-06-10 16:42:44 [INFO] head pruned
+2026-06-10 16:42:44 [INFO] OS/2 Unicode ranges pruned: [0]
+2026-06-10 16:42:44 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:44 [INFO] glyf pruned
+2026-06-10 16:42:44 [INFO] GDEF pruned
+2026-06-10 16:42:44 [INFO] GPOS pruned
+2026-06-10 16:42:44 [INFO] GSUB pruned
+2026-06-10 16:42:44 [INFO] name pruned
+/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/scripts/issue560_transfer_analysis.py:1176: UserWarning: The figure layout has changed to tight
+  fig.tight_layout()
+2026-06-10 16:42:45 [INFO] maxp pruned
+2026-06-10 16:42:45 [INFO] cmap pruned
+2026-06-10 16:42:45 [INFO] post pruned
+2026-06-10 16:42:45 [INFO] CFF  pruned
+2026-06-10 16:42:45 [INFO] GPOS pruned
+2026-06-10 16:42:45 [INFO] GSUB pruned
+2026-06-10 16:42:45 [INFO] Added .notdef to subset
+2026-06-10 16:42:45 [INFO] Closing glyph list over 'GSUB': 32 glyphs before
+2026-06-10 16:42:45 [INFO] Glyph names: ['.notdef', 'a', 'b', 'c', 'd', 'e', 'f', 'five', 'four', 'h', 'hyphen', 'i', 'l', 'm', 'n', 'o', 'one', 'p', 'parenleft', 'parenright', 'period', 'q', 'r', 's', 'space', 't', 'three', 'two', 'underscore', 'x', 'y', 'zero']
+2026-06-10 16:42:45 [INFO] Glyph IDs:   [0, 508, 579, 587, 598, 615, 648, 671, 690, 738, 768, 775, 792, 845, 851, 854, 873, 891, 995, 1000, 1343, 1344, 1345, 1347, 1348, 1349, 1439, 1440, 1461, 1504, 1545, 1771]
+2026-06-10 16:42:45 [INFO] Closed glyph list over 'GSUB': 54 glyphs after
+2026-06-10 16:42:45 [INFO] Glyph names: ['.notdef', 'a', 'b', 'c', 'd', 'e', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'multiply.case', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'q', 'r', 's', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'underscore', 'x', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:45 [INFO] Glyph IDs:   [0, 508, 579, 587, 598, 615, 648, 671, 690, 738, 768, 775, 792, 845, 851, 854, 873, 891, 995, 1000, 1343, 1344, 1345, 1347, 1348, 1349, 1439, 1440, 1448, 1449, 1461, 1473, 1504, 1539, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1716, 1717, 1771]
+2026-06-10 16:42:45 [INFO] Closing glyph list over 'CFF ': 54 glyphs before
+2026-06-10 16:42:45 [INFO] Glyph names: ['.notdef', 'a', 'b', 'c', 'd', 'e', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'multiply.case', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'q', 'r', 's', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'underscore', 'x', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:45 [INFO] Glyph IDs:   [0, 508, 579, 587, 598, 615, 648, 671, 690, 738, 768, 775, 792, 845, 851, 854, 873, 891, 995, 1000, 1343, 1344, 1345, 1347, 1348, 1349, 1439, 1440, 1448, 1449, 1461, 1473, 1504, 1539, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1716, 1717, 1771]
+2026-06-10 16:42:45 [INFO] Closed glyph list over 'CFF ': 54 glyphs after
+2026-06-10 16:42:45 [INFO] Glyph names: ['.notdef', 'a', 'b', 'c', 'd', 'e', 'f', 'five', 'five.dnom', 'five.numr', 'four', 'four.dnom', 'four.numr', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'l', 'm', 'multiply.case', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'q', 'r', 's', 'space', 't', 'three', 'three.dnom', 'three.numr', 'two', 'two.dnom', 'two.numr', 'underscore', 'x', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:45 [INFO] Glyph IDs:   [0, 508, 579, 587, 598, 615, 648, 671, 690, 738, 768, 775, 792, 845, 851, 854, 873, 891, 995, 1000, 1343, 1344, 1345, 1347, 1348, 1349, 1439, 1440, 1448, 1449, 1461, 1473, 1504, 1539, 1545, 1564, 1565, 1676, 1678, 1680, 1681, 1683, 1685, 1695, 1696, 1697, 1699, 1701, 1702, 1704, 1706, 1716, 1717, 1771]
+2026-06-10 16:42:45 [INFO] Retaining 54 glyphs
+2026-06-10 16:42:45 [INFO] head subsetting not needed
+2026-06-10 16:42:45 [INFO] hhea subsetting not needed
+2026-06-10 16:42:45 [INFO] maxp subsetting not needed
+2026-06-10 16:42:45 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:45 [INFO] cmap subsetted
+2026-06-10 16:42:45 [INFO] post subsetted
+2026-06-10 16:42:45 [INFO] CFF  subsetted
+2026-06-10 16:42:45 [INFO] hmtx subsetted
+2026-06-10 16:42:45 [INFO] GDEF subsetted
+2026-06-10 16:42:45 [INFO] GPOS subsetted
+2026-06-10 16:42:45 [INFO] GSUB subsetted
+2026-06-10 16:42:45 [INFO] name subsetting not needed
+2026-06-10 16:42:45 [INFO] head pruned
+2026-06-10 16:42:45 [INFO] OS/2 Unicode ranges pruned: [0]
+2026-06-10 16:42:45 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:45 [INFO] CFF  pruned
+2026-06-10 16:42:45 [INFO] GDEF pruned
+2026-06-10 16:42:45 [INFO] GPOS pruned
+2026-06-10 16:42:45 [INFO] GSUB pruned
+2026-06-10 16:42:45 [INFO] name pruned
+2026-06-10 16:42:45 [INFO] maxp pruned
+2026-06-10 16:42:45 [INFO] cmap pruned
+2026-06-10 16:42:45 [INFO] post pruned
+2026-06-10 16:42:45 [INFO] GPOS pruned
+2026-06-10 16:42:45 [INFO] GSUB pruned
+2026-06-10 16:42:45 [INFO] glyf pruned
+2026-06-10 16:42:45 [INFO] Added gid0 to subset
+2026-06-10 16:42:45 [INFO] Added first four glyphs to subset
+2026-06-10 16:42:45 [INFO] Closing glyph list over 'GSUB': 32 glyphs before
+2026-06-10 16:42:45 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'b', 'c', 'colon', 'e', 'equal', 'five', 'g', 'h', 'hyphen', 'i', 'k', 'm', 'nine', 'numbersign', 'o', 'p', 'parenleft', 'parenright', 'period', 'plus', 'r', 's', 'six', 'space', 't', 'y', 'zero']
+2026-06-10 16:42:45 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 579, 587, 615, 659, 671, 690, 729, 768, 792, 845, 854, 873, 891, 1000, 1343, 1349, 1351, 1354, 1439, 1440, 1455, 1461, 1504, 1507, 1522, 1524, 1771]
+2026-06-10 16:42:45 [INFO] Closed glyph list over 'GSUB': 55 glyphs after
+2026-06-10 16:42:45 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'b', 'c', 'colon', 'colon.case', 'e', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'five', 'five.dnom', 'five.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'm', 'nine', 'nine.dnom', 'nine.numr', 'numbersign', 'o', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'plus', 'plus.case', 'plus.dnom', 'plus.numr', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:45 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 579, 587, 615, 659, 671, 690, 729, 768, 792, 845, 854, 873, 891, 1000, 1343, 1349, 1351, 1354, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1504, 1507, 1508, 1522, 1524, 1535, 1537, 1564, 1676, 1685, 1686, 1690, 1692, 1694, 1695, 1696, 1697, 1706, 1707, 1711, 1713, 1715, 1716, 1717, 1771]
+2026-06-10 16:42:45 [INFO] Closing glyph list over 'glyf': 55 glyphs before
+2026-06-10 16:42:45 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'b', 'c', 'colon', 'colon.case', 'e', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'five', 'five.dnom', 'five.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'm', 'nine', 'nine.dnom', 'nine.numr', 'numbersign', 'o', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'plus', 'plus.case', 'plus.dnom', 'plus.numr', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:45 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 579, 587, 615, 659, 671, 690, 729, 768, 792, 845, 854, 873, 891, 1000, 1343, 1349, 1351, 1354, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1504, 1507, 1508, 1522, 1524, 1535, 1537, 1564, 1676, 1685, 1686, 1690, 1692, 1694, 1695, 1696, 1697, 1706, 1707, 1711, 1713, 1715, 1716, 1717, 1771]
+2026-06-10 16:42:45 [INFO] Closed glyph list over 'glyf': 58 glyphs after
+2026-06-10 16:42:45 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'b', 'c', 'colon', 'colon.case', 'dotlessi', 'e', 'equal', 'equal.case', 'equal.dnom', 'equal.numr', 'five', 'five.dnom', 'five.numr', 'g', 'h', 'hyphen', 'hyphen.case', 'i', 'i.numr', 'k', 'm', 'nine', 'nine.dnom', 'nine.numr', 'numbersign', 'o', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'plus', 'plus.case', 'plus.dnom', 'plus.numr', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'uni0307', 'uni0308', 'y', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:45 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 579, 587, 615, 659, 671, 690, 691, 729, 768, 792, 845, 854, 873, 891, 1000, 1343, 1349, 1351, 1354, 1439, 1440, 1448, 1449, 1455, 1461, 1473, 1504, 1507, 1508, 1522, 1524, 1535, 1537, 1564, 1676, 1685, 1686, 1690, 1692, 1694, 1695, 1696, 1697, 1706, 1707, 1711, 1713, 1715, 1716, 1717, 1771, 2692, 2693]
+2026-06-10 16:42:45 [INFO] Retaining 58 glyphs
+2026-06-10 16:42:45 [INFO] head subsetting not needed
+2026-06-10 16:42:45 [INFO] hhea subsetting not needed
+2026-06-10 16:42:45 [INFO] maxp subsetting not needed
+2026-06-10 16:42:45 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:45 [INFO] hmtx subsetted
+2026-06-10 16:42:45 [INFO] cmap subsetted
+2026-06-10 16:42:45 [INFO] fpgm subsetting not needed
+2026-06-10 16:42:45 [INFO] prep subsetting not needed
+2026-06-10 16:42:45 [INFO] cvt  subsetting not needed
+2026-06-10 16:42:45 [INFO] loca subsetting not needed
+2026-06-10 16:42:45 [INFO] post subsetted
+2026-06-10 16:42:45 [INFO] gasp subsetting not needed
+2026-06-10 16:42:45 [INFO] GDEF subsetted
+2026-06-10 16:42:46 [INFO] GPOS subsetted
+2026-06-10 16:42:46 [INFO] GSUB subsetted
+2026-06-10 16:42:46 [INFO] name subsetting not needed
+2026-06-10 16:42:46 [INFO] glyf subsetted
+2026-06-10 16:42:46 [INFO] head pruned
+2026-06-10 16:42:46 [INFO] OS/2 Unicode ranges pruned: [0]
+2026-06-10 16:42:46 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:46 [INFO] glyf pruned
+2026-06-10 16:42:46 [INFO] GDEF pruned
+2026-06-10 16:42:46 [INFO] GPOS pruned
+2026-06-10 16:42:46 [INFO] GSUB pruned
+2026-06-10 16:42:46 [INFO] name pruned
+/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/scripts/issue560_transfer_analysis.py:1195: UserWarning: The figure layout has changed to tight
+  fig.tight_layout()
+2026-06-10 16:42:47 [INFO] maxp pruned
+2026-06-10 16:42:47 [INFO] cmap pruned
+2026-06-10 16:42:47 [INFO] post pruned
+2026-06-10 16:42:47 [INFO] CFF  pruned
+2026-06-10 16:42:47 [INFO] GPOS pruned
+2026-06-10 16:42:47 [INFO] GSUB pruned
+2026-06-10 16:42:47 [INFO] Added .notdef to subset
+2026-06-10 16:42:47 [INFO] Closing glyph list over 'GSUB': 37 glyphs before
+2026-06-10 16:42:47 [INFO] Glyph names: ['.notdef', 'a', 'b', 'c', 'd', 'e', 'f', 'five', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'one', 'p', 'parenleft', 'parenright', 'period', 'r', 's', 'seven', 'space', 't', 'two', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'w', 'y', 'z', 'zero']
+2026-06-10 16:42:47 [INFO] Glyph IDs:   [0, 508, 579, 587, 598, 615, 648, 659, 671, 690, 721, 729, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 1000, 1024, 1037, 1343, 1344, 1345, 1349, 1352, 1439, 1440, 1504, 1545, 1771, 2572]
+2026-06-10 16:42:47 [INFO] Closed glyph list over 'GSUB': 55 glyphs after
+2026-06-10 16:42:47 [INFO] Glyph names: ['.notdef', 'a', 'b', 'c', 'd', 'e', 'f', 'five', 'five.dnom', 'five.numr', 'g', 'h', 'i', 'i.numr', 'j', 'k', 'l', 'm', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'w', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:47 [INFO] Glyph IDs:   [0, 508, 579, 587, 598, 615, 648, 659, 671, 690, 721, 729, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 1000, 1024, 1037, 1343, 1344, 1345, 1349, 1352, 1439, 1440, 1448, 1449, 1504, 1545, 1564, 1565, 1676, 1678, 1680, 1685, 1688, 1695, 1696, 1697, 1699, 1701, 1706, 1709, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:47 [INFO] Closing glyph list over 'CFF ': 55 glyphs before
+2026-06-10 16:42:47 [INFO] Glyph names: ['.notdef', 'a', 'b', 'c', 'd', 'e', 'f', 'five', 'five.dnom', 'five.numr', 'g', 'h', 'i', 'i.numr', 'j', 'k', 'l', 'm', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'w', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:47 [INFO] Glyph IDs:   [0, 508, 579, 587, 598, 615, 648, 659, 671, 690, 721, 729, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 1000, 1024, 1037, 1343, 1344, 1345, 1349, 1352, 1439, 1440, 1448, 1449, 1504, 1545, 1564, 1565, 1676, 1678, 1680, 1685, 1688, 1695, 1696, 1697, 1699, 1701, 1706, 1709, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:47 [INFO] Closed glyph list over 'CFF ': 55 glyphs after
+2026-06-10 16:42:47 [INFO] Glyph names: ['.notdef', 'a', 'b', 'c', 'd', 'e', 'f', 'five', 'five.dnom', 'five.numr', 'g', 'h', 'i', 'i.numr', 'j', 'k', 'l', 'm', 'n', 'n.numr', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'parenleft', 'parenleft.case', 'parenleft.dnom', 'parenleft.numr', 'parenright', 'parenright.case', 'parenright.dnom', 'parenright.numr', 'period', 'r', 's', 'seven', 'seven.dnom', 'seven.numr', 'space', 't', 'two', 'two.dnom', 'two.numr', 'u', 'underscore', 'uni0394', 'uni203B', 'v', 'w', 'y', 'z', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:47 [INFO] Glyph IDs:   [0, 508, 579, 587, 598, 615, 648, 659, 671, 690, 721, 729, 738, 768, 775, 792, 845, 854, 873, 891, 917, 982, 986, 1000, 1024, 1037, 1343, 1344, 1345, 1349, 1352, 1439, 1440, 1448, 1449, 1504, 1545, 1564, 1565, 1676, 1678, 1680, 1685, 1688, 1695, 1696, 1697, 1699, 1701, 1706, 1709, 1716, 1717, 1771, 2572]
+2026-06-10 16:42:47 [INFO] Retaining 55 glyphs
+2026-06-10 16:42:47 [INFO] head subsetting not needed
+2026-06-10 16:42:47 [INFO] hhea subsetting not needed
+2026-06-10 16:42:47 [INFO] maxp subsetting not needed
+2026-06-10 16:42:47 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:47 [INFO] cmap subsetted
+2026-06-10 16:42:47 [INFO] post subsetted
+2026-06-10 16:42:47 [INFO] CFF  subsetted
+2026-06-10 16:42:47 [INFO] hmtx subsetted
+2026-06-10 16:42:47 [INFO] GDEF subsetted
+2026-06-10 16:42:47 [INFO] GPOS subsetted
+2026-06-10 16:42:47 [INFO] GSUB subsetted
+2026-06-10 16:42:47 [INFO] name subsetting not needed
+2026-06-10 16:42:47 [INFO] head pruned
+2026-06-10 16:42:47 [INFO] OS/2 Unicode ranges pruned: [0, 7, 31]
+2026-06-10 16:42:47 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:47 [INFO] CFF  pruned
+2026-06-10 16:42:47 [INFO] GDEF pruned
+2026-06-10 16:42:47 [INFO] GPOS pruned
+2026-06-10 16:42:47 [INFO] GSUB pruned
+2026-06-10 16:42:48 [INFO] name pruned
+2026-06-10 16:42:48 [INFO] maxp pruned
+2026-06-10 16:42:48 [INFO] cmap pruned
+2026-06-10 16:42:48 [INFO] post pruned
+2026-06-10 16:42:48 [INFO] GPOS pruned
+2026-06-10 16:42:48 [INFO] GSUB pruned
+2026-06-10 16:42:48 [INFO] glyf pruned
+2026-06-10 16:42:48 [INFO] Added gid0 to subset
+2026-06-10 16:42:48 [INFO] Added first four glyphs to subset
+2026-06-10 16:42:48 [INFO] Closing glyph list over 'GSUB': 25 glyphs before
+2026-06-10 16:42:48 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'd', 'e', 'five', 'h', 'hyphen', 'k', 'm', 'n', 'numbersign', 'o', 'one', 'p', 'r', 's', 'six', 'space', 't', 'u', 'zero']
+2026-06-10 16:42:48 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 671, 729, 768, 775, 792, 845, 854, 873, 891, 917, 1343, 1344, 1349, 1351, 1455, 1461, 1771]
+2026-06-10 16:42:48 [INFO] Closed glyph list over 'GSUB': 35 glyphs after
+2026-06-10 16:42:48 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'd', 'e', 'five', 'five.dnom', 'five.numr', 'h', 'hyphen', 'hyphen.case', 'k', 'm', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'u', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:48 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 671, 729, 768, 775, 792, 845, 854, 873, 891, 917, 1343, 1344, 1349, 1351, 1455, 1461, 1473, 1565, 1676, 1678, 1685, 1686, 1697, 1699, 1706, 1707, 1771]
+2026-06-10 16:42:48 [INFO] Closing glyph list over 'glyf': 35 glyphs before
+2026-06-10 16:42:48 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'd', 'e', 'five', 'five.dnom', 'five.numr', 'h', 'hyphen', 'hyphen.case', 'k', 'm', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'u', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:48 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 671, 729, 768, 775, 792, 845, 854, 873, 891, 917, 1343, 1344, 1349, 1351, 1455, 1461, 1473, 1565, 1676, 1678, 1685, 1686, 1697, 1699, 1706, 1707, 1771]
+2026-06-10 16:42:48 [INFO] Closed glyph list over 'glyf': 36 glyphs after
+2026-06-10 16:42:48 [INFO] Glyph names: ['.notdef', '.null', 'A', 'Adieresis', 'a', 'c', 'd', 'e', 'five', 'five.dnom', 'five.numr', 'h', 'hyphen', 'hyphen.case', 'k', 'm', 'n', 'n.numr', 'numbersign', 'o', 'one', 'one.dnom', 'one.numr', 'p', 'r', 's', 'six', 'six.dnom', 'six.numr', 'space', 't', 'u', 'uni0308', 'zero', 'zero.dnom', 'zero.numr']
+2026-06-10 16:42:48 [INFO] Glyph IDs:   [0, 1, 2, 3, 508, 587, 598, 615, 671, 729, 768, 775, 792, 845, 854, 873, 891, 917, 1343, 1344, 1349, 1351, 1455, 1461, 1473, 1565, 1676, 1678, 1685, 1686, 1697, 1699, 1706, 1707, 1771, 2692]
+2026-06-10 16:42:48 [INFO] Retaining 36 glyphs
+2026-06-10 16:42:48 [INFO] head subsetting not needed
+2026-06-10 16:42:48 [INFO] hhea subsetting not needed
+2026-06-10 16:42:48 [INFO] maxp subsetting not needed
+2026-06-10 16:42:48 [INFO] OS/2 subsetting not needed
+2026-06-10 16:42:48 [INFO] hmtx subsetted
+2026-06-10 16:42:48 [INFO] cmap subsetted
+2026-06-10 16:42:48 [INFO] fpgm subsetting not needed
+2026-06-10 16:42:48 [INFO] prep subsetting not needed
+2026-06-10 16:42:48 [INFO] cvt  subsetting not needed
+2026-06-10 16:42:48 [INFO] loca subsetting not needed
+2026-06-10 16:42:48 [INFO] post subsetted
+2026-06-10 16:42:48 [INFO] gasp subsetting not needed
+2026-06-10 16:42:48 [INFO] GDEF subsetted
+2026-06-10 16:42:48 [INFO] GPOS subsetted
+2026-06-10 16:42:48 [INFO] GSUB subsetted
+2026-06-10 16:42:48 [INFO] name subsetting not needed
+2026-06-10 16:42:48 [INFO] glyf subsetted
+2026-06-10 16:42:48 [INFO] head pruned
+2026-06-10 16:42:48 [INFO] OS/2 Unicode ranges pruned: [0]
+2026-06-10 16:42:48 [INFO] OS/2 CodePage ranges pruned: [0]
+2026-06-10 16:42:48 [INFO] glyf pruned
+2026-06-10 16:42:48 [INFO] GDEF pruned
+2026-06-10 16:42:48 [INFO] GPOS pruned
+2026-06-10 16:42:48 [INFO] GSUB pruned
+2026-06-10 16:42:48 [INFO] name pruned
+[figures:exploratory] dump complete -> /home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/figures/issue_560
+[headline] min_dist vs dz: rho=-0.519 primary CI [-0.687, -0.286] (parent -0.240)
+[headline] min_dist vs dmargin: rho=-0.312 primary CI [-0.575, -0.072] (parent -0.271)
+[headline] persistence rho=+0.891 (variance ratio 0.362, calibrated null +0.811); exposure contrast -1.20 run-CI [-1.62, -0.69]
+[done] wall=557.5s

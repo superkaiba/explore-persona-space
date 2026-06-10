@@ -1,0 +1,49 @@
+{
+ "schema_version": "issue560_crossrecipe_v1",
+ "phase": "C_geometry",
+ "layer": 20,
+ "probe_set": "q_test_extended_50",
+ "n_probes": 1,
+ "metric": "cosine_distance",
+ "sources": [
+  "A2"
+ ],
+ "personas": [
+  "assistant"
+ ],
+ "min_dist": {
+  "A2": {
+   "assistant": 0.3950017929724816
+  }
+ },
+ "persona_persona_distance": {
+  "assistant": {
+   "assistant": 0.0
+  }
+ },
+ "context_context_distance": {
+  "A2": {
+   "A2": 0.0
+  }
+ },
+ "tie_back": {
+  "spearman": NaN,
+  "n_pairs": 0,
+  "n_personas_matched": 1,
+  "unmatched_personas": [],
+  "reference": "FIXTURE",
+  "reference_metric": "1 - cosine",
+  "note": "fixture \u2014 diagnostic not computed"
+ },
+ "metadata": {
+  "task": 560,
+  "script": "issue560_crossrecipe_panel.py",
+  "git_commit": "776c7c3b7",
+  "timestamp_utc": "2026-06-10T17:31:08.979837+00:00",
+  "python_version": "3.11.15",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [],
+  "fixture": "upload-smoke synthetic fixture; NOT model output (task #560 round 2)"
+ }
+}
