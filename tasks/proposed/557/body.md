@@ -10,6 +10,9 @@ goal: Determine whether the benign-SFT erasure of a trigger-keyed marker rule on
   is gradient-pressure-bound by sweeping the Phase-2 learning rate (3e-5, 1e-5, 5e-6)
   over the already-trained 50%-arm Phase-1 installs and measuring post-SFT trigger
   emission, key-conditioning, and log-prob retention at each pressure.
+relates_to:
+- app1
+- leak-argmax-vs-logprob
 ---
 ## Goal
 
