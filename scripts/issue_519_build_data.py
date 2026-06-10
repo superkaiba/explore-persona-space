@@ -319,7 +319,18 @@ def build_marker_arm(
 
     # Negatives: 50 per negative persona, sampled from the 200 positive q
     # indices (deterministic per seed for the negative selection).
-    for neg in NEGATIVE_PERSONAS:
+    # #561 zero-negatives guard: when n_negatives_per_persona == 0 the loop
+    # below would still vLLM-generate n_positives base responses per negative
+    # persona and then slice to ZERO rows (~30-40 min of wasted generation).
+    # Skip the loop entirely — the output mix is identical (zero negative
+    # rows) either way, so this cannot change the training mix.
+    neg_personas = list(NEGATIVE_PERSONAS) if n_negatives_per_persona > 0 else []
+    if not neg_personas:
+        logger.info(
+            "[phase=negatives] n_negatives_per_persona=0 — skipping negative-response "
+            "generation entirely (positives-only mix)"
+        )
+    for neg in neg_personas:
         neg_seed_rng = random.Random(_stable_neg_seed(seed, neg))
         neg_q_indices = list(pos_q_indices)
         neg_seed_rng.shuffle(neg_q_indices)

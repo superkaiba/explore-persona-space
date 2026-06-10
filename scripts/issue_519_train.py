@@ -295,6 +295,7 @@ def _build_periodic_callback(
             n_questions=n_q,
             marker_text=condition_cfg.get("marker_token", " ※"),
             marker_token_id=int(condition_cfg["marker_token_id"]),
+            eos_token_id=int(condition_cfg.get("im_end_token_id", 151645)),
             output_dir=str(output_dir / "periodic_eval"),
         )
     # EM arm
@@ -393,6 +394,7 @@ class Issue519MarkerLogprobCallback(TrainerCallback):
         marker_text: str,
         marker_token_id: int,
         output_dir: str,
+        eos_token_id: int = 151645,
     ):
         super().__init__()
         self.base_model_id = base_model_id
@@ -401,19 +403,21 @@ class Issue519MarkerLogprobCallback(TrainerCallback):
         self.n_questions = int(n_questions)
         self.marker_text = marker_text
         self.marker_token_id = int(marker_token_id)
+        self.eos_token_id = int(eos_token_id)
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)
         self._last_fired = -1
         self._questions: list[str] | None = None
-        # Base-model log-probs cache, keyed by
-        # ``(persona, sha256(scoring_context)[:32])``. The scoring context
-        # is `T_persona(q) + R_trained_stripped`, which changes every K
-        # steps as the on-policy response evolves — so the cache is a
-        # STEADY-STATE optimization (hits when the trained response
-        # stabilizes), NOT a "compute base once" assumption. Round-2
-        # reconciler B3 fix — previous `(persona, q)` key returned stale
-        # base log-probs against contexts the base model never saw.
-        self._base_logp_cache: dict[tuple[str, str], float] | None = None
+        # Base-model slot-stats cache (#561 four-float upgrade: each value is
+        # the full {logp, z_marker, z_eos, logZ} dict per the #530 storage
+        # contract), keyed by ``(persona, sha256(scoring_context)[:32])``. The
+        # scoring context is `T_persona(q) + R_trained_stripped`, which
+        # changes every K steps as the on-policy response evolves — so the
+        # cache is a STEADY-STATE optimization (hits when the trained
+        # response stabilizes), NOT a "compute base once" assumption.
+        # Round-2 reconciler B3 fix — the earlier `(persona, q)` key returned
+        # stale base log-probs against contexts the base model never saw.
+        self._base_slot_cache: dict[tuple[str, str], dict[str, float]] | None = None
 
     def on_train_begin(self, args, state, control, **kwargs):
         self._questions = _safe_eval_questions(self.n_questions)
@@ -458,6 +462,7 @@ class Issue519MarkerLogprobCallback(TrainerCallback):
                     flat[f"leakage/{persona}/emit_rate"] = m["emit_rate"]
                     flat[f"leakage/{persona}/log_p_marker_trained"] = m["log_p_marker_trained"]
                     flat[f"leakage/{persona}/log_p_marker_base"] = m["log_p_marker_base"]
+                    flat[f"leakage/{persona}/z_margin_delta"] = m["z_margin_delta"]
                 wandb.log(flat, step=state.global_step)
         except ImportError:
             pass
@@ -482,26 +487,34 @@ class Issue519MarkerLogprobCallback(TrainerCallback):
         )
         return control
 
-    def _compute_metrics(self, live_model, tokenizer, step: int) -> dict[str, dict[str, float]]:
-        """Greedy-generate on-policy, then compute marker log-prob + emit rate per persona."""
+    def _compute_metrics(self, live_model, tokenizer, step: int) -> dict[str, dict]:
+        """Greedy-generate on-policy, then compute the marker slot stats per persona.
+
+        #561 four-float upgrade (#530 storage contract): every slot read
+        persists ``logp``, ``z_marker``, ``z_eos`` (id 151645) and ``logZ``
+        for BOTH the trained and the base model, from the same forward pass
+        (:func:`compute_marker_slot_stats`); per-slot lists land in the JSON
+        snapshot under ``slot_stats_per_question``. Pure instrumentation —
+        no gradient path is touched.
+        """
         import torch
 
-        from explore_persona_space.eval.marker_logprob import compute_marker_logprob
+        from explore_persona_space.eval.marker_logprob import compute_marker_slot_stats
         from explore_persona_space.personas import ALL_EVAL_PERSONAS
 
         device = next(live_model.parameters()).device
         live_model.eval()
 
-        # Base log-probs are cached per (persona, scoring-context hash);
+        # Base slot stats are cached per (persona, scoring-context hash);
         # the trained response is part of the scoring context (changes
         # every callback fire), so we lazy-load the base model below
         # only when a cache miss happens. Round-2 reconciler B3.
-        if self._base_logp_cache is None:
-            self._base_logp_cache = {}
+        if self._base_slot_cache is None:
+            self._base_slot_cache = {}
         base_model = None
 
         try:
-            metrics: dict[str, dict[str, float]] = {}
+            metrics: dict[str, dict] = {}
             assert self._questions is not None
             for persona in self.personas:
                 if persona not in ALL_EVAL_PERSONAS:
@@ -554,8 +567,10 @@ class Issue519MarkerLogprobCallback(TrainerCallback):
                         marker_argmax_hits += 1
                     marker_argmax_total += 1
 
-                # Step (b): teacher-forced log P(marker | context) on the LIVE model.
-                trained_logps = compute_marker_logprob(
+                # Step (b): teacher-forced marker SLOT STATS on the LIVE model
+                # (#530 four-float contract: logp, z_marker, z_eos, logZ from
+                # ONE forward pass per context).
+                trained_stats = compute_marker_slot_stats(
                     model=live_model,
                     tokenizer=tokenizer,
                     contexts=contexts,
@@ -563,9 +578,10 @@ class Issue519MarkerLogprobCallback(TrainerCallback):
                     position="end_of_answer",
                     batch_size=4,
                     device=str(device),
+                    eos_token_id=self.eos_token_id,
                 )
 
-                # Step (c): teacher-forced log P(marker | context) on the BASE model.
+                # Step (c): teacher-forced marker slot stats on the BASE model.
                 # Round-2 reconciler B3 fix: the cache key MUST include
                 # the trained response (the scoring context changes every
                 # callback fire because `contexts[q_idx]` is `text +
@@ -580,13 +596,13 @@ class Issue519MarkerLogprobCallback(TrainerCallback):
                 # cheap — base forward per (persona, q) ≈ 0.1s on a 7B).
                 # `hash()` is process-randomized; SHA-256 is stable +
                 # process-portable.
-                base_logps = []
+                base_stats: list[dict[str, float]] = []
                 for q_idx, _q in enumerate(self._questions):
                     ctx = contexts[q_idx]
                     ctx_hash = hashlib.sha256(ctx.encode("utf-8")).hexdigest()[:32]
                     key = (persona, ctx_hash)
-                    if key in self._base_logp_cache:
-                        base_logps.append(self._base_logp_cache[key])
+                    if key in self._base_slot_cache:
+                        base_stats.append(self._base_slot_cache[key])
                         continue
                     # Cache miss — lazy-load the base model on first miss in
                     # this fire and keep it alive until the `finally` block
@@ -602,7 +618,7 @@ class Issue519MarkerLogprobCallback(TrainerCallback):
                             trust_remote_code=True,
                         )
                         base_model.eval()
-                    b = compute_marker_logprob(
+                    b = compute_marker_slot_stats(
                         model=base_model,
                         tokenizer=tokenizer,
                         contexts=[ctx],
@@ -610,19 +626,42 @@ class Issue519MarkerLogprobCallback(TrainerCallback):
                         position="end_of_answer",
                         batch_size=1,
                         device=str(device),
+                        eos_token_id=self.eos_token_id,
                     )
-                    self._base_logp_cache[key] = b[0]
-                    base_logps.append(b[0])
+                    self._base_slot_cache[key] = b[0]
+                    base_stats.append(b[0])
 
-                mean_trained = sum(trained_logps) / max(len(trained_logps), 1)
-                mean_base = sum(base_logps) / max(len(base_logps), 1)
+                mean_trained = _mean_stat(trained_stats, "logp")
+                mean_base = _mean_stat(base_stats, "logp")
+                z_margin_trained = _mean_stat(trained_stats, "z_marker") - _mean_stat(
+                    trained_stats, "z_eos"
+                )
+                z_margin_base = _mean_stat(base_stats, "z_marker") - _mean_stat(base_stats, "z_eos")
                 emit_rate = marker_argmax_hits / max(marker_argmax_total, 1)
                 metrics[persona] = {
                     "log_p_marker_trained": float(mean_trained),
                     "log_p_marker_base": float(mean_base),
                     "log_p_marker_delta": float(mean_trained - mean_base),
                     "emit_rate": float(emit_rate),
-                    "n_questions": len(trained_logps),
+                    "n_questions": len(trained_stats),
+                    # #530 storage contract: four floats per slot per model
+                    # side. Means here; the per-slot lists are persisted in
+                    # the JSON snapshot under slot_stats_per_question.
+                    "z_marker_trained": _mean_stat(trained_stats, "z_marker"),
+                    "z_eos_trained": _mean_stat(trained_stats, "z_eos"),
+                    "logZ_trained": _mean_stat(trained_stats, "logZ"),
+                    "z_marker_base": _mean_stat(base_stats, "z_marker"),
+                    "z_eos_base": _mean_stat(base_stats, "z_eos"),
+                    "logZ_base": _mean_stat(base_stats, "logZ"),
+                    # EOS margin (gauge-invariant logit readout; the marker
+                    # fires when it overtakes EOS at the slot).
+                    "z_margin_trained": float(z_margin_trained),
+                    "z_margin_base": float(z_margin_base),
+                    "z_margin_delta": float(z_margin_trained - z_margin_base),
+                    "slot_stats_per_question": {
+                        "trained": trained_stats,
+                        "base": base_stats,
+                    },
                 }
         finally:
             if base_model is not None:
@@ -636,6 +675,11 @@ class Issue519MarkerLogprobCallback(TrainerCallback):
                     pass
             live_model.train()
         return metrics
+
+
+def _mean_stat(stats: list[dict[str, float]], key: str) -> float:
+    """Mean of one slot-stat key over a list of per-context four-float dicts."""
+    return float(sum(r[key] for r in stats) / max(len(stats), 1))
 
 
 def _strip_trailing_marker(response_text: str, marker_text: str) -> str:
@@ -994,6 +1038,33 @@ def main() -> int:
         default="superkaiba1/explore-persona-space",
     )
     parser.add_argument(
+        "--hf-subfolder-prefix",
+        default="issue_519",
+        help=(
+            "HF Hub subfolder prefix for the adapter upload (adapter lands at "
+            "<prefix>/{arm}_seed{seed}). #561 passes `issue_561_posonly` so the "
+            "#519 comparison adapters on the Hub are never overwritten (plan "
+            "#561 §4.2.1; the path was previously hardcoded `issue_519`)."
+        ),
+    )
+    parser.add_argument(
+        "--hf-fallback-repo",
+        default=None,
+        help=(
+            "Optional PRIVATE dataset repo to fall back to when the primary "
+            "model-repo adapter upload fails (e.g. the account-wide public-LFS "
+            "quota 403 — #552/#541). Fallback path: <prefix>/adapters/"
+            "{arm}_seed{seed}. Fail-loud if BOTH uploads fail; the local "
+            "adapter is never deleted before a verified upload."
+        ),
+    )
+    parser.add_argument(
+        "--manifest-issue",
+        type=int,
+        default=519,
+        help="Issue number recorded in run_result.json (cosmetic; #561 passes 561).",
+    )
+    parser.add_argument(
         "--base-model-id",
         default=None,
         help="Override base model id (default = Qwen/Qwen2.5-7B-Instruct).",
@@ -1047,6 +1118,11 @@ def main() -> int:
     training_cfg = dict(cond_cfg["training"])
     if args.max_steps is not None:
         training_cfg["max_steps"] = args.max_steps
+    if args.cpu_only:
+        # CPU smoke only (#561): accelerate raises "Your setup doesn't support
+        # bf16/gpu" on CPU-only hosts. Production pod runs never pass
+        # --cpu-only, so the recipe's bf16=true is untouched there.
+        training_cfg["bf16"] = False
 
     # Pick save_steps: K from periodic_eval unless overridden.
     if args.save_steps_override is not None:
@@ -1071,6 +1147,21 @@ def main() -> int:
             tokenizer,
             cond_cfg["marker_token"],
             int(cond_cfg["marker_token_id"]),
+        )
+        # Gauge assert (#530 storage contract / plan #561 §4.2.3): the
+        # z_marker / z_eos logit readouts captured by the periodic callback
+        # are gauge-free ONLY when LoRA does not touch the unembedding.
+        # Assert on the YAML lora block BEFORE training starts.
+        from explore_persona_space.eval.marker_logprob import (
+            assert_gauge_free_adapter_config,
+        )
+
+        assert_gauge_free_adapter_config(
+            {
+                "target_modules": list(cond_cfg["lora"]["target_modules"]),
+                "modules_to_save": cond_cfg["lora"].get("modules_to_save") or [],
+            },
+            context=f"configs/condition/c_issue_519_{args.arm}.yaml lora block",
         )
 
     logger.info("[phase=load_dataset] data_path=%s", data_path)
@@ -1122,17 +1213,49 @@ def main() -> int:
     tokenizer.save_pretrained(str(adapter_dir))
 
     hf_subfolder: str | None = None
+    hf_repo_used: str | None = None
+    hf_upload_fallback = False
     if not args.no_hf_upload:
-        hf_subfolder = f"issue_519/{args.arm}_seed{args.seed}"
+        hf_subfolder = f"{args.hf_subfolder_prefix}/{args.arm}_seed{args.seed}"
         try:
             _upload_adapter_to_hf(
                 adapter_dir=adapter_dir,
                 repo_id=args.hf_adapter_repo,
                 subfolder=hf_subfolder,
             )
+            hf_repo_used = args.hf_adapter_repo
         except Exception:
-            logger.exception("HF upload failed; raising")
-            raise
+            if args.hf_fallback_repo is None:
+                logger.exception("HF upload failed; raising")
+                raise
+            # Plan #561 §4.1.8: on a primary (public model repo, LFS) upload
+            # failure fall back to the PRIVATE dataset repo; never delete the
+            # local adapter pre-upload; fail loud if the fallback fails too.
+            logger.exception(
+                "Primary HF adapter upload failed; falling back to private "
+                "dataset repo %s (local adapter is NOT deleted)",
+                args.hf_fallback_repo,
+            )
+            from huggingface_hub import HfApi
+
+            fallback_subfolder = f"{args.hf_subfolder_prefix}/adapters/{args.arm}_seed{args.seed}"
+            api = HfApi()
+            api.create_repo(repo_id=args.hf_fallback_repo, repo_type="dataset", exist_ok=True)
+            api.upload_folder(
+                folder_path=str(adapter_dir),
+                repo_id=args.hf_fallback_repo,
+                repo_type="dataset",
+                path_in_repo=fallback_subfolder,
+            )
+            logger.info(
+                "[upload-fallback] pushed %s -> %s/%s (dataset repo)",
+                adapter_dir,
+                args.hf_fallback_repo,
+                fallback_subfolder,
+            )
+            hf_subfolder = fallback_subfolder
+            hf_repo_used = args.hf_fallback_repo
+            hf_upload_fallback = True
 
     # Reproducibility metadata.
     import subprocess
@@ -1146,7 +1269,7 @@ def main() -> int:
     except Exception:
         git_commit = "unknown"
     manifest = {
-        "issue": 519,
+        "issue": args.manifest_issue,
         "arm": args.arm,
         "seed": args.seed,
         "base_model_id": base_model_id,
@@ -1159,8 +1282,10 @@ def main() -> int:
         "learning_rate": training_cfg["learning_rate"],
         "lr_scheduler_type": training_cfg["lr_scheduler_type"],
         "warmup_ratio": training_cfg["warmup_ratio"],
-        "hf_adapter_repo": args.hf_adapter_repo if not args.no_hf_upload else None,
+        "hf_adapter_repo": hf_repo_used,
         "hf_adapter_subfolder": hf_subfolder,
+        "hf_subfolder_prefix": args.hf_subfolder_prefix,
+        "hf_adapter_upload_fallback": hf_upload_fallback,
         "wandb_run_name": wandb_run_name,
         "git_commit": git_commit,
         "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

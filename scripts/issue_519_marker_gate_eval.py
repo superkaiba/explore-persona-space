@@ -32,6 +32,12 @@ def main() -> int:
     parser.add_argument("--out", required=True)
     parser.add_argument("--marker-text", default=" ※")
     parser.add_argument("--base-model-id", default="Qwen/Qwen2.5-7B-Instruct")
+    parser.add_argument(
+        "--eos-token-id",
+        type=int,
+        default=151645,
+        help="Competitor token at the slot (Qwen-2.5 <|im_end|>) for the EOS-margin readout.",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -43,11 +49,20 @@ def main() -> int:
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    from explore_persona_space.eval.marker_logprob import compute_marker_logprob
+    from explore_persona_space.eval.marker_logprob import (
+        assert_gauge_free_adapter_config,
+        compute_marker_slot_stats,
+    )
     from explore_persona_space.orchestrate.env import load_dotenv
     from explore_persona_space.personas import ALL_EVAL_PERSONAS
 
     load_dotenv()
+
+    # Gauge assert (#530 storage contract / plan #561 §4.2.3): the raw-logit
+    # readouts below are valid only when LoRA does not touch the unembedding.
+    adapter_cfg_path = Path(args.adapter_dir) / "adapter_config.json"
+    with adapter_cfg_path.open() as f:
+        assert_gauge_free_adapter_config(json.load(f), context=str(adapter_cfg_path))
 
     tokenizer = AutoTokenizer.from_pretrained(args.base_model_id, trust_remote_code=True)
     persona_prompt = ALL_EVAL_PERSONAS[args.persona]
@@ -77,13 +92,17 @@ def main() -> int:
         trust_remote_code=True,
     )
     base.eval()
-    lp_base = compute_marker_logprob(
+    # #561 four-float upgrade (#530 storage contract): capture logp, z_marker,
+    # z_eos, logZ from the same forward pass on BOTH model sides.
+    stats_base = compute_marker_slot_stats(
         base,
         tokenizer,
         contexts,
         args.marker_text,
         device=str(next(base.parameters()).device),
+        eos_token_id=args.eos_token_id,
     )
+    lp_base = [r["logp"] for r in stats_base]
     del base
     torch.cuda.empty_cache()
 
@@ -97,15 +116,22 @@ def main() -> int:
     tr = PeftModel.from_pretrained(tr, args.adapter_dir)
     tr = tr.merge_and_unload()
     tr.eval()
-    lp_tr = compute_marker_logprob(
+    stats_tr = compute_marker_slot_stats(
         tr,
         tokenizer,
         contexts,
         args.marker_text,
         device=str(next(tr.parameters()).device),
+        eos_token_id=args.eos_token_id,
     )
+    lp_tr = [r["logp"] for r in stats_tr]
     delta = sum(lp_tr) / len(lp_tr) - sum(lp_base) / len(lp_base)
 
+    def _mean(stats: list[dict[str, float]], key: str) -> float:
+        return float(sum(r[key] for r in stats) / max(len(stats), 1))
+
+    z_margin_tr = _mean(stats_tr, "z_marker") - _mean(stats_tr, "z_eos")
+    z_margin_base = _mean(stats_base, "z_marker") - _mean(stats_base, "z_eos")
     out_payload = {
         "arm": "marker",
         "persona": args.persona,
@@ -114,6 +140,19 @@ def main() -> int:
         "mean_log_p_base": float(sum(lp_base) / len(lp_base)),
         "log_p_marker_delta_source": float(delta),
         "marker_text": args.marker_text,
+        # #530 storage contract: four floats per slot per model side (means
+        # here; per-slot lists below under slot_stats_per_question).
+        "z_marker_trained": _mean(stats_tr, "z_marker"),
+        "z_eos_trained": _mean(stats_tr, "z_eos"),
+        "logZ_trained": _mean(stats_tr, "logZ"),
+        "z_marker_base": _mean(stats_base, "z_marker"),
+        "z_eos_base": _mean(stats_base, "z_eos"),
+        "logZ_base": _mean(stats_base, "logZ"),
+        "z_margin_trained": float(z_margin_tr),
+        "z_margin_base": float(z_margin_base),
+        "z_margin_delta": float(z_margin_tr - z_margin_base),
+        "eos_token_id": int(args.eos_token_id),
+        "slot_stats_per_question": {"trained": stats_tr, "base": stats_base},
     }
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     with Path(args.out).open("w") as f:

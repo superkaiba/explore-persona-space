@@ -11,11 +11,17 @@ landed under the prefix. Exits 2 on a count miss so the driver's fail-loud branc
 (`upload_verify_failed_POD_KEPT_ALIVE`) fires.
 
 Usage:
-    uv run python scripts/issue551_upload_verify.py <output_dir> <repo_id> <prefix>
+    uv run python scripts/issue551_upload_verify.py <output_dir> <repo_id> <prefix> \
+        [--expected-count N]
+
+#561: ``--expected-count`` parameterizes the previously hardcoded 18 + 18
+(.pt + .manifest.json) verification counts; #561 passes 9 (3 seeds x 3 text
+flavors of the positive-only marker arm). Default 18 keeps the #551 driver
+call byte-compatible.
 """
 
+import argparse
 import os
-import sys
 import time
 from pathlib import Path
 
@@ -26,7 +32,18 @@ from huggingface_hub import HfApi, list_repo_files, upload_folder
 def main() -> None:
     load_dotenv()
 
-    output_dir, repo_id, prefix = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+    parser = argparse.ArgumentParser(description="Upload shifts/ to HF + fail-loud count verify")
+    parser.add_argument("output_dir", type=Path)
+    parser.add_argument("repo_id")
+    parser.add_argument("prefix")
+    parser.add_argument(
+        "--expected-count",
+        type=int,
+        default=18,
+        help="Expected number of .pt files (and .manifest.json files) under the prefix.",
+    )
+    args = parser.parse_args()
+    output_dir, repo_id, prefix = args.output_dir, args.repo_id, args.prefix
     token = os.environ.get("HF_TOKEN")
     if not token:
         from huggingface_hub import get_token
@@ -71,9 +88,10 @@ def main() -> None:
     files = [f for f in list_repo_files(repo_id, repo_type="dataset") if f.startswith(prefix + "/")]
     n_pt = sum(1 for f in files if f.endswith(".pt"))
     n_mf = sum(1 for f in files if f.endswith(".manifest.json"))
+    expected = args.expected_count
     print(f"verified on hub: {n_pt} .pt + {n_mf} .manifest.json under {prefix}/")
-    if n_pt != 18 or n_mf != 18:
-        print(f"UPLOAD VERIFY FAIL: expected 18 + 18, got {n_pt} + {n_mf}")
+    if n_pt != expected or n_mf != expected:
+        print(f"UPLOAD VERIFY FAIL: expected {expected} + {expected}, got {n_pt} + {n_mf}")
         raise SystemExit(2)
 
 

@@ -393,8 +393,17 @@ def phase_b_train(
     no_hf_upload: bool,
     cpu_only: bool,
     n_gpus: int,
+    hf_subfolder_prefix: str | None = None,
+    hf_fallback_repo: str | None = None,
+    wandb_project: str | None = None,
 ) -> None:
-    """Phase B: 6 LoRA SFT cells, n_gpus in parallel per wave."""
+    """Phase B: 6 LoRA SFT cells, n_gpus in parallel per wave.
+
+    #561 additive passthroughs (all default None = parent #519 behavior):
+    ``hf_subfolder_prefix`` / ``hf_fallback_repo`` / ``wandb_project``
+    forward to the trainer's flags of the same names so a derived run can
+    never overwrite the #519 comparison adapters on the Hub.
+    """
     for wave_start in range(0, len(cells), max(n_gpus, 1)):
         wave = cells[wave_start : wave_start + max(n_gpus, 1)]
         commands: list[tuple[Sequence[str], Path, dict[str, str] | None]] = []
@@ -425,6 +434,12 @@ def phase_b_train(
                 cmd.append("--no-hf-upload")
             if cpu_only:
                 cmd.append("--cpu-only")
+            if hf_subfolder_prefix is not None:
+                cmd.extend(["--hf-subfolder-prefix", hf_subfolder_prefix])
+            if hf_fallback_repo is not None:
+                cmd.extend(["--hf-fallback-repo", hf_fallback_repo])
+            if wandb_project is not None:
+                cmd.extend(["--wandb-project", wandb_project])
             log_path = log_dir / f"phase_b_train_{cell.arm}_seed{cell.seed}.log"
             commands.append((cmd, log_path, None))
         rcs = _run_parallel_with_log(commands, cwd=repo_root)
@@ -908,6 +923,12 @@ def _resolve_mode_overrides(
     # #551: the old `--cells <int>` sweep-mode trim (hardcoded em, seed[0])
     # is replaced by the explicit `--cells <spec>...` subset filter applied
     # in main() AFTER _build_cells (see _parse_cell_specs).
+    # #561: `--arms` restricts the arm set in ANY mode (phases a23/b0_smoke
+    # iterate `arms` directly, independent of the `--cells` filter — without
+    # this, a marker-only run would still build data + run the B0 gate for
+    # the EM arm). Wins over --smoke-arms when both are given.
+    if getattr(args, "arms", None):
+        arms = list(args.arms)
     return arms, seeds, max_train_override, smoke_fake, skip_cb, no_hf
 
 
@@ -941,6 +962,8 @@ def _run_phase_b0_gates(
     log_dir: Path,
     cpu_only: bool,
     n_gpus: int,
+    hf_subfolder_prefix: str | None = None,
+    wandb_project: str | None = None,
 ) -> None:
     """Phase B0 wrapper — train a 50-step smoke cell per arm + enforce gate.
 
@@ -958,6 +981,8 @@ def _run_phase_b0_gates(
             cond_cfg = _yaml.safe_load(f)
         sat_cfg = cond_cfg.get("saturation_gate", {})
         smoke_cell = Cell(arm=gate_arm, seed=seeds[0], gpu_id=0)
+        # NB: no_hf_upload=True — the B0 smoke trainer call never touches the
+        # Hub; the prefix passthrough is defense-in-depth should that flip.
         phase_b_train(
             repo_root=repo_root,
             cells=[smoke_cell],
@@ -968,6 +993,8 @@ def _run_phase_b0_gates(
             no_hf_upload=True,
             cpu_only=cpu_only,
             n_gpus=n_gpus,
+            hf_subfolder_prefix=hf_subfolder_prefix,
+            wandb_project=wandb_project,
         )
         phase_b0_saturation_gate(
             repo_root=repo_root,
@@ -1152,6 +1179,41 @@ def main() -> int:  # noqa: C901 - end-to-end dispatcher, refactor out-of-scope 
         action="store_true",
         help=("Skip the Phase B0 saturation gate (testing helper — never use in production)."),
     )
+    parser.add_argument(
+        "--arms",
+        nargs="+",
+        choices=["marker", "em"],
+        default=None,
+        help=(
+            "#561: restrict the sweep to a subset of arms in ANY mode. Phases "
+            "a23 / b0_smoke iterate the arm list directly (independent of "
+            "--cells), so a marker-only run needs this to avoid building data "
+            "+ gating the EM arm. Default = both arms (parent behavior)."
+        ),
+    )
+    parser.add_argument(
+        "--hf-subfolder-prefix",
+        default=None,
+        help=(
+            "#561: pass-through to issue_519_train.py — HF adapter-upload "
+            "subfolder prefix. Default None = trainer default (issue_519). "
+            "Derived runs MUST set this to avoid overwriting the #519 "
+            "comparison adapters."
+        ),
+    )
+    parser.add_argument(
+        "--hf-fallback-repo",
+        default=None,
+        help=(
+            "#561: pass-through to issue_519_train.py — private dataset repo "
+            "fallback for the adapter upload on public-LFS quota 403."
+        ),
+    )
+    parser.add_argument(
+        "--wandb-project",
+        default=None,
+        help="#561: pass-through to issue_519_train.py. Default None = trainer default.",
+    )
 
     args = parser.parse_args()
 
@@ -1270,6 +1332,8 @@ def main() -> int:  # noqa: C901 - end-to-end dispatcher, refactor out-of-scope 
             log_dir=log_dir,
             cpu_only=cpu_only,
             n_gpus=args.n_gpus,
+            hf_subfolder_prefix=args.hf_subfolder_prefix,
+            wandb_project=args.wandb_project,
         )
 
     # Phase B: training (parallel waves).
@@ -1284,6 +1348,9 @@ def main() -> int:  # noqa: C901 - end-to-end dispatcher, refactor out-of-scope 
             no_hf_upload=no_hf,
             cpu_only=cpu_only,
             n_gpus=args.n_gpus,
+            hf_subfolder_prefix=args.hf_subfolder_prefix,
+            hf_fallback_repo=args.hf_fallback_repo,
+            wandb_project=args.wandb_project,
         )
 
     # Track phases actually skipped (vs explicit --skip-phase) for the
