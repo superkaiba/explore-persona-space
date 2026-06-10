@@ -38,6 +38,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import resource
 import sys
 import time
 from pathlib import Path
@@ -98,6 +99,35 @@ ANCHOR_ARM_SLUGS: dict[str, str] = {
 
 def _smoke_enabled(args: argparse.Namespace) -> bool:
     return bool(args.smoke or os.environ.get("EPM_541_SMOKE") == "1")
+
+
+def _raise_nofile_soft_limit(target: int = 65536) -> None:
+    """Raise the RLIMIT_NOFILE soft limit toward ``min(target, hard)``; fail-soft.
+
+    Defense in depth against EMFILE (#541 round 5: the threaded Haiku judge
+    fan-out exhausted the pod's 1024 soft FD limit ~75 min into
+    [phase=full_eval]; the root-cause fix is the shared Anthropic client in
+    ``run_experiment_444._anthropic_client``). Called at the top of
+    ``main()`` so every phase process — dispatcher and wave workers alike —
+    raises its own limit regardless of which launcher spawned it. Never
+    raises: a failed setrlimit only logs a warning.
+    """
+    try:
+        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        new_soft = target if hard == resource.RLIM_INFINITY else min(target, hard)
+        if new_soft <= soft:
+            print(
+                f"[run_experiment_541] RLIMIT_NOFILE soft limit already {soft} "
+                f"(hard={hard}); leaving as-is"
+            )
+            return
+        resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft, hard))
+        print(
+            f"[run_experiment_541] RLIMIT_NOFILE soft limit raised: "
+            f"{soft} -> {new_soft} (hard={hard})"
+        )
+    except (ValueError, OSError) as e:
+        print(f"[run_experiment_541] WARNING: could not raise RLIMIT_NOFILE soft limit: {e!r}")
 
 
 def _load_selection(require: bool) -> dict[str, Any] | None:
@@ -376,6 +406,10 @@ def main() -> None:
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--smoke", action="store_true", help="1 seed + 2-bystander eval slice")
     args = ap.parse_args()
+
+    # FD-limit defense in depth (#541 round 5) — before any phase work so the
+    # judge fan-out and every library this process loads inherit the raise.
+    _raise_nofile_soft_limit()
 
     smoke = _smoke_enabled(args)
     _configure_namespacing(smoke)

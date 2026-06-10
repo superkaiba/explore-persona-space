@@ -86,6 +86,7 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
 import time
 from collections import Counter
 from dataclasses import dataclass
@@ -962,9 +963,10 @@ def phase_preflight(args: argparse.Namespace) -> dict[str, Any]:
     # Anthropic model availability.
     anthropic_check: dict[str, Any] = {"judge": JUDGE_MODEL, "fabricate": FABRICATE_MODEL}
     try:
-        import anthropic as anthropic_mod
-
-        client = anthropic_mod.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+        # Shared process-wide client (FD-leak fix, #541 round 5). Side benefit:
+        # the preflight models.list() now inherits max_retries=8 (it previously
+        # used the SDK default of 2).
+        client = _anthropic_client()
         models_page = client.models.list()
         model_ids = [m.id for m in models_page.data]
         for label, mid in (("judge", JUDGE_MODEL), ("fabricate", FABRICATE_MODEL)):
@@ -1333,16 +1335,37 @@ absence of mention is NOT a contradiction.
 Output strict JSON: {{"contradicts": true|false, "reason": "<one sentence>"}}."""
 
 
-def _anthropic_client():
-    import anthropic as anthropic_mod
+# Process-wide shared Anthropic client (lazily created; guarded by a lock
+# because the 16-thread `_judge_rows_parallel` fan-out may race the first
+# call). A FRESH `anthropic.Anthropic` per call leaks its httpx connection
+# pool — the client is never closed, so lingering sockets accumulate across
+# thousands of threaded judge calls and exhaust the pod's 1024 soft FD limit
+# (#541 round-5 EMFILE crash in [phase=full_eval] judging: 428 judge calls
+# failed with `OSError: [Errno 24] Too many open files`, then the chunk
+# checkpoint flush itself crashed in `_write_jsonl`). The SDK client is
+# thread-safe (one shared httpx pool), so every caller shares this instance.
+_ANTHROPIC_CLIENT: Any = None
+_ANTHROPIC_CLIENT_LOCK = threading.Lock()
 
-    # max_retries bumped from the SDK default (2) to ride out Anthropic 529
-    # `overloaded_error` windows: the SDK retries 429/500/503/529 + connection
-    # errors with exponential backoff (~0.5s..8s, jittered), so 8 retries buys
-    # ~30-60s of backoff. Phase-0 makes many sequential Claude calls (per-entity
-    # recognition judge, attribute invention, contradiction/entropy checks) and a
-    # single un-retried 529 anywhere aborts the whole multi-minute phase.
-    return anthropic_mod.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"), max_retries=8)
+
+def _anthropic_client():
+    """Return the lazily-created, process-wide shared Anthropic client."""
+    global _ANTHROPIC_CLIENT
+    if _ANTHROPIC_CLIENT is None:
+        with _ANTHROPIC_CLIENT_LOCK:
+            if _ANTHROPIC_CLIENT is None:
+                import anthropic as anthropic_mod
+
+                # max_retries bumped from the SDK default (2) to ride out Anthropic 529
+                # `overloaded_error` windows: the SDK retries 429/500/503/529 + connection
+                # errors with exponential backoff (~0.5s..8s, jittered), so 8 retries buys
+                # ~30-60s of backoff. Phase-0 makes many sequential Claude calls (per-entity
+                # recognition judge, attribute invention, contradiction/entropy checks) and a
+                # single un-retried 529 anywhere aborts the whole multi-minute phase.
+                _ANTHROPIC_CLIENT = anthropic_mod.Anthropic(
+                    api_key=os.environ.get("ANTHROPIC_API_KEY"), max_retries=8
+                )
+    return _ANTHROPIC_CLIENT
 
 
 def _sonnet_json_call(
@@ -1421,10 +1444,13 @@ def _judge_rows_parallel(
     ``{"_error": str(e)}`` to mirror the existing serial try/except shape
     in the two judge loops, so one bad row never aborts the chunk.
 
-    Thread safety: ``_haiku_judge_call`` builds a fresh ``anthropic.Anthropic``
-    client (with ``max_retries=8`` for 429/529 backoff) per call and shares
-    no mutable state across invocations, so the call is safe to dispatch
-    from a thread pool. The pool width is bounded by ``max_workers``
+    Thread safety: ``_haiku_judge_call`` uses the process-wide shared
+    ``anthropic.Anthropic`` client from ``_anthropic_client()`` (with
+    ``max_retries=8`` for 429/529 backoff). The SDK client is thread-safe
+    (one shared httpx connection pool), so the call is safe to dispatch
+    from a thread pool — and the shared pool is what bounds the process FD
+    count (a fresh client per call leaked sockets until EMFILE, #541
+    round 5). The pool width is bounded by ``max_workers``
     (default ``JUDGE_MAX_WORKERS``) so we never exceed the Anthropic
     organisation rate ceiling.
 
@@ -1449,6 +1475,36 @@ def _judge_rows_parallel(
 
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         return list(ex.map(_one, jobs))
+
+
+def _load_judged_resume(judged_path: Path, label: str) -> list[dict[str, Any]]:
+    """Load a judged-verdicts JSONL checkpoint for resume, dropping ``_error`` rows.
+
+    Per-row judge exceptions become ``{"_error": str(e)}`` verdicts (see
+    ``_judge_rows_parallel``) and ARE checkpointed. The resume skip-key sets
+    are built from the rows this helper returns, so an ``_error`` row left in
+    the list would be silently skipped forever on resume and aggregate
+    downstream as a bogus verdict. Dropping it here (a) heals any past
+    contamination on disk and (b) re-queues the row for judging; the
+    end-of-chunk ``_write_jsonl`` full-file rewrite then replaces the file
+    with error-free rows (#541 round 5, fd_exhaustion_judge_clients).
+
+    Returns ``[]`` when the checkpoint file does not exist.
+    """
+    if not judged_path.exists():
+        return []
+    loaded = [json.loads(line) for line in judged_path.open() if line.strip()]
+    kept = [j for j in loaded if "_error" not in j.get("verdict", {})]
+    n_dropped = len(loaded) - len(kept)
+    if n_dropped:
+        logger.warning(
+            "%s resume: dropped %d/%d _error verdict rows from %s for re-judging",
+            label,
+            n_dropped,
+            len(loaded),
+            judged_path.name,
+        )
+    return kept
 
 
 def _vllm_complete_simple(
@@ -4479,11 +4535,13 @@ def phase_fp_calibration(args: argparse.Namespace) -> dict[str, Any]:
     # 3. Per-row judge; persist verdicts as we go so any crash doesn't lose
     # prior judge calls (Checkpoint per phase rule).
     verdicts_path = EVAL_RESULTS_DIR / f"fp_calibration_verdicts_{figure_slug}.jsonl"
-    judged: list[dict[str, Any]] = []
-    seen_keys: set[tuple[str, str, str, int]] = set()
-    if verdicts_path.exists():
-        judged = [json.loads(line) for line in verdicts_path.open()]
-        seen_keys = {(j["persona"], j["family"], j["sub_framing"], j["idx"]) for j in judged}
+    # Resume load drops checkpointed `_error` rows so they are re-judged
+    # (they would otherwise be skipped forever via seen_keys).
+    judged: list[dict[str, Any]] = _load_judged_resume(verdicts_path, "fp-calibration")
+    seen_keys: set[tuple[str, str, str, int]] = {
+        (j["persona"], j["family"], j["sub_framing"], j["idx"]) for j in judged
+    }
+    if judged:
         logger.info("resuming fp-calibration: %d verdicts already cached", len(judged))
 
     # Filter rows that still need judging (framing381 + freeform5 only,
@@ -5052,9 +5110,9 @@ def _judge_cell_completions(
     )
 
     judged_path = out_path
-    judged: list[dict[str, Any]] = []
-    if judged_path.exists():
-        judged = [json.loads(line) for line in judged_path.open()]
+    # Resume load drops checkpointed `_error` rows so they are re-judged
+    # (they would otherwise be skipped forever via judged_keys).
+    judged: list[dict[str, Any]] = _load_judged_resume(judged_path, "judge")
     judged_keys = {(j["persona"], j["family"], j["sub_framing"], j["idx"]) for j in judged}
 
     # Filter to rows that still need judging (resume-skip), preserving input

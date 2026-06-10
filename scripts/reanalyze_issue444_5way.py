@@ -36,7 +36,14 @@ Uses the same pattern as ``run_experiment_444.py::_judge_rows_parallel``:
   chunk so a mid-run crash never loses more than one chunk.
 - Resume-skip: re-running on an existing per-cell judged JSONL skips
   already-judged rows (keyed by (persona, family, sub_framing, idx)).
-- ``anthropic.Anthropic(max_retries=8)`` per call for 429/529 backoff.
+- One process-wide shared ``anthropic.Anthropic(max_retries=8)`` client
+  (429/529 backoff; shared httpx pool — a per-call client leaked FDs to
+  EMFILE, #541 round 5).
+
+Lint posture matches ``run_experiment_444.py``'s header: multiplication-sign
+characters are intentional in docstrings/comments (RUF002/RUF003); the long
+judge-prompt JSON-shape line stays unsplit for greppability (E501); ``main``
+is a phased driver, long by nature (C901).
 
 Outputs
 -------
@@ -48,6 +55,8 @@ Outputs
   3 seeds, plus per-cell counts.
 """
 
+# ruff: noqa: RUF002, RUF003, E501, C901  (see "Lint posture" in the docstring)
+
 from __future__ import annotations
 
 import argparse
@@ -55,6 +64,7 @@ import json
 import logging
 import os
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -180,9 +190,31 @@ def _build_user_msg(probe: str, completion: str) -> str:
     return f"Probe:\n{probe}\n\nCompletion:\n{completion}\n\nOutput strict JSON."
 
 
+# Process-wide shared Anthropic client (lazily created; lock guards the first
+# call under the 16-thread fan-out). A fresh client per judge call leaks its
+# httpx connection pool — never closed — and the lingering sockets exhaust the
+# pod's 1024 soft FD limit (#541 round-5 EMFILE crash; same class as
+# run_experiment_444._anthropic_client). This path runs in the SAME process as
+# the sweep's full-eval/baselines judging (run_experiment_500's auto-chained
+# 5-way rejudge imports _judge_rows_parallel from here), so it must share too.
+_CLIENT: anthropic.Anthropic | None = None
+_CLIENT_LOCK = threading.Lock()
+
+
+def _shared_client() -> anthropic.Anthropic:
+    """Return the lazily-created, process-wide shared Anthropic client."""
+    global _CLIENT
+    if _CLIENT is None:
+        with _CLIENT_LOCK:
+            if _CLIENT is None:
+                # max_retries=8 for 429/529 backoff (matches the parent driver).
+                _CLIENT = anthropic.Anthropic(max_retries=8)
+    return _CLIENT
+
+
 def _judge_one(system: str, user: str) -> dict[str, Any]:
     """Single Haiku JSON-judge call with prefill. Returns the parsed verdict dict."""
-    client = anthropic.Anthropic(max_retries=8)
+    client = _shared_client()
     msg = client.messages.create(
         model=JUDGE_MODEL,
         max_tokens=128,
@@ -421,7 +453,7 @@ def main() -> None:
         if not out_path.exists():
             logger.warning("missing per-cell judged JSONL for aggregate: %s", out_path)
             continue
-        judged = [json.loads(l) for l in out_path.open()]
+        judged = [json.loads(line) for line in out_path.open()]
         per_persona: dict[str, dict[str, int]] = {
             p: {c: 0 for c in CATEGORIES} for p in PERSONAS_ORDER
         }

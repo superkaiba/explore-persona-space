@@ -439,9 +439,11 @@ def _run_5way_rejudge(
     # Steps 1 + 2 of the re-entrancy contract, unified via per-row resume.
     if force_regenerate and judged_path.exists():
         judged_path.unlink()
-    judged: list[dict[str, Any]] = []
-    if judged_path.exists():
-        judged = [json.loads(line) for line in judged_path.open() if line.strip()]
+    # Resume load drops checkpointed `_error` rows so they are re-judged
+    # (they would otherwise be skipped forever via judged_keys and aggregate
+    # downstream as bogus verdicts — #541 round 5, same heal as the parent's
+    # two judge resume loops).
+    judged: list[dict[str, Any]] = p._load_judged_resume(judged_path, phase_label)
     judged_keys = {(j["persona"], j["family"], j["sub_framing"], j["idx"]) for j in judged}
     pending = [
         r
