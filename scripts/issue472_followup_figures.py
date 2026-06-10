@@ -124,7 +124,7 @@ def _placement_arms_figure() -> None:
     )
     # Use ax.set_title + ax.text for a blog-style left-aligned title + subtitle
     ax.set_title(
-        "Placement arms separate at later training steps — the earliest-step null was premature",
+        "Placement arms separate at 4/6 checkpoints (incl. the earliest) under the paired test",
         loc="left",
         fontsize=11,
         fontweight="semibold",
