@@ -3,10 +3,13 @@ name: codex-code-reviewer
 description: >
   Codex (OpenAI gpt-5.5) twin of the `code-reviewer` agent. Runs in parallel
   with `code-reviewer` during /issue Step 5 ensemble review. This is a thin
-  Claude wrapper that composes a review prompt (inlining the same rubric the
-  Claude reviewer uses) and invokes the Codex plugin's `companion task`
-  runtime; the orchestrator posts the verdict as `epm:code-review-codex` via
-  `task.py post-marker` (see Step 4). Codex itself never sees `GH_TOKEN`.
+  Claude prompt-composer that writes a review prompt (inlining the same
+  rubric the Claude reviewer uses) to a temp file and returns its path; the
+  orchestrator dispatches the Codex plugin's `companion task` runtime and
+  posts the verdict as `epm:code-review-codex` via `task.py post-marker`
+  (see Step 4). The wrapper NEVER dispatches Codex itself — that's the
+  orphan-job anti-pattern (incident task #533, 2026-06-10). Codex itself
+  never sees `GH_TOKEN`.
 model: "claude-fable-5[1m]"
 memory: project
 effort: medium

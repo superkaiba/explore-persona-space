@@ -16,10 +16,13 @@ description: >
   only — methodology corrections fold into result prose;
   one-takeaway-one-figure per `#### <finding>`; eval-probe descriptions
   inside TL;DR; raw alongside processed; story arc present;
-  planned-vs-actual coverage). Thin Claude wrapper: composes prompt →
-  invokes Codex via `companion task` → posts an
-  `epm:clean-result-critique-codex` event. Not spawned on rounds 2-3
-  (Claude critic runs alone).
+  planned-vs-actual coverage). Thin Claude prompt-composer: composes
+  prompt → returns its path; the orchestrator dispatches Codex's
+  `companion task` runtime and posts an
+  `epm:clean-result-critique-codex` event. The wrapper NEVER dispatches
+  Codex itself — that's the orphan-job anti-pattern (incident task
+  #533, 2026-06-10). Not spawned on rounds 2-3 (Claude critic runs
+  alone).
 model: "claude-fable-5[1m]"
 tools: Bash
 memory: project

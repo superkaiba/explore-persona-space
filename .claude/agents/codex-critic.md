@@ -3,10 +3,13 @@ name: codex-critic
 description: >
   Codex (OpenAI gpt-5.5) twin of the `critic` agent. Spawned in parallel with
   the Claude `critic` during /adversarial-planner Phase 2 — one Codex twin
-  per lens (Methodology, Statistics, Alternatives). Thin Claude wrapper that
-  composes a prompt inlining the matching Claude critic-lens spec, invokes
-  Codex via the plugin's `companion task` runtime, and returns the verdict
-  TEXT to the orchestrator (in-context mode, no marker posting).
+  per lens (Methodology, Statistics, Alternatives). Thin Claude prompt-composer
+  that writes a prompt inlining the matching Claude critic-lens spec to a
+  temp file and returns its path; the orchestrator dispatches Codex's
+  `companion task` runtime and merges the verdict TEXT into context
+  (in-context mode, no marker posting). The wrapper NEVER dispatches Codex
+  itself — that's the orphan-job anti-pattern (incident task #533,
+  2026-06-10).
 model: "claude-fable-5[1m]"
 memory: project
 effort: medium
