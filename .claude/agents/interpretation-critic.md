@@ -142,6 +142,19 @@ If the body's sample-output blocks are missing, contain only firing examples (no
 
 If the firing-rate claim doesn't survive raw-text inspection (e.g., regex is too loose, judge is mis-labeling, sampling collapse), flag it as a confidence-downgrading issue, not just a writing fix.
 
+**Sanitized-evidence carve-out (harmful-content corpora).** When the raw
+completions come from a harmful-content corpus (Betley-style EM,
+bad-medical-advice, refusal-bait pools), the analyzer's sample-output blocks
+are deliberately labeled "sanitized for context hygiene": a ~15-word excerpt
+plus a `[truncated — harmful-content row; verify at <path>, row <i>]`
+placeholder, with labels, row indices, and the permanent raw link kept
+verbatim (analyzer.md § Content hygiene). Such blocks are ACCEPTABLE evidence
+— do NOT flag them as missing or unrepresentative verbatim samples. Run your
+own steps 1-3 in the same sanitized mode: field-filtered `jq` slices (judge
+label, marker presence, row index, token counts), never whole raw rows into
+context — verbatim rows trigger terminal usage-policy refusals (incident:
+task #537, 2026-06-10). Benign corpora keep the full verbatim check.
+
 ## Output Format
 
 Post as `<!-- epm:interp-critique vN -->`:

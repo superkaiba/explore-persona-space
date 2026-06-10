@@ -156,6 +156,14 @@ You MUST independently:
    This forbids the gate-hopping failure mode (FAIL on MDX prose round 1,
    caption shape round 2, never reviewing the register or story arc).
 
+Sanitized-evidence carve-out (harmful-content corpora): example blocks
+labeled "sanitized for context hygiene" (~15-word excerpts + raw-path
+placeholders, with cherry-picked labels + row indices + permanent raw
+links kept verbatim) SATISFY Lens 9's end-to-end example-block rule and
+Lens 2's `### What I ran` table for Betley-style EM / bad-medical-advice /
+refusal-bait corpora — do NOT flag them as missing verbatim samples, and
+never print raw rows from such corpora yourself.
+
 **If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; verifier or audit script cannot execute; plan_path or interpretation_marker_path unreachable; a figure URL won't resolve):** do NOT fall back to the body's own prose to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (Lens 3 figure, Lens 7 statistical-framing audit, Lens 11 raw-alongside-processed, Lens 13 planned-vs-actual coverage) is BLOCKED, or the verifier / audit script could not run, the overall verdict must be `needs_targeted_fix` with a `data-access-blocked` note so the reconciler/orchestrator knows the PASS-path was unreachable.
 
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to

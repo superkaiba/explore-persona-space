@@ -105,6 +105,14 @@ You must independently:
   actual completions, check the body's sample-output blocks against the raw
   pool.
 
+Sanitized-evidence carve-out (harmful-content corpora): when the raw
+completions are Betley-style EM / bad-medical-advice / refusal-bait rows,
+the body's sample blocks are deliberately labeled "sanitized for context
+hygiene" (~15-word excerpt + raw-path placeholder, labels + row indices +
+permanent raw link verbatim) — ACCEPT them; do NOT flag missing verbatim
+samples. Run lens 7 on such rows via field-filtered jq slices (judge label,
+marker presence, row index, token counts); never print whole raw rows.
+
 **If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash):** do NOT fall back to the body's own prose (or the diff summary) to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (overclaims / raw-text sample plausibility) is BLOCKED, the overall verdict must be `REVISE` with a `data-access-blocked` note so the reconciler/orchestrator knows the PASS-path was unreachable.
 
 {{INLINED 7 LENSES VERBATIM FROM interpretation-critic.md}}
