@@ -17,6 +17,8 @@ goal: 'Test whether one before-training distance predictor — the #468 base-mod
   one shared dataset-generation, cross-evaluation, and pooled-regression rig.'
 relates_to:
 - beh-b-to-bprime
+classification: useful
+promoted_at: '2026-06-10T00:37:04Z'
 ---
 # At the surprising-middle slice (benign-data SFT → AdvBench), the base-model in-context cosine predictor saturates near 0.95 and doesn't separate selectors — calibration is scoped-shrunk, not falsified (LOW confidence)
 
