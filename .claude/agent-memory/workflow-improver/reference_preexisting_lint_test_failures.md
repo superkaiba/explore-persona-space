@@ -15,10 +15,13 @@ UPDATE (2026-06-09, later run): the `test_migrate_body_*` family is FIXED
 (fixture reconciliation, commit 75c78e9f3) — `tests/test_task_workflow.py`
 passes fully (79/79). Do not deselect it anymore.
 
-UPDATE (2026-06-09, check-4b run): `tests/test_verify_clean_result.py` has 10
-pre-existing failures (caption/figure tests for the legacy
-`scripts/verify_clean_result.py`) — identical with edits stashed. Not a
-regression signal for `verify_task_body.py` work.
+UPDATE (2026-06-09, later run): the `tests/test_verify_clean_result.py` 10-failure
+family is FIXED — root cause was the documented `_extract_section` regex bug in
+`scripts/verify_clean_result.py` (`(?:\s+.*)?$` consumed the first content line;
+fix `[ \t]+`), plus 2 tests pinning a branch made unreachable by the v2 date-gate
+and 1 test reading the retired `template.md` (retired with pointer comment). File
+now passes fully; do not deselect it. The legacy verifier still carries 4
+pre-existing E501s (lines 18/580/620/1815) — lint via stash-compare.
 
 **How to apply:** prove your diff is clean with the stash test — `git stash -q
 && <check> ; git stash pop -q` — and report "identical with edits stashed,
