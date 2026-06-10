@@ -3354,7 +3354,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/562",
       "status": "interpreting",
-      "title": "Is the residual dampening persona-specific or any-system-prompt-general? Non-persona control + never-trained medical persona panel on the #558 rig"
+      "title": "Dampening of the residual post-SFT marker elevation requires persona framing: a bare instruction prompt leaves it intact while never-trained personas shrink it like the trained-adjacent one (HIGH confidence)"
     },
     "563": {
       "goal": "Determine whether the persona-prompt-driven rise in the base model's marker prior (the main driver of the contrast shrinkage in #558) is intrinsic to the base model's context processing or depends on the fine-tuned models' completion content, by reading the base model's 4-float slot statistics at the end of its OWN greedy completions under the same five system-prompt contexts with no adapter in the loop.",

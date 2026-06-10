@@ -1,6 +1,7 @@
 ---
-title: 'Is the residual dampening persona-specific or any-system-prompt-general? Non-persona
-  control + never-trained medical persona panel on the #558 rig'
+title: 'Dampening of the residual post-SFT marker elevation requires persona framing:
+  a bare instruction prompt leaves it intact while never-trained personas shrink it
+  like the trained-adjacent one (HIGH confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-10T18:18:24Z'
