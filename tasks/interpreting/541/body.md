@@ -1,6 +1,7 @@
 ---
-title: 'Prior-stratified rerun of #500: enrich bystander panel and source set with
-  high-prior personas'
+title: Bystander prior still predicts fact leakage on a panel enriched with high-prior
+  personas, but as a high-vs-rest stratum contrast rather than a graded ranking (MODERATE
+  confidence)
 kind: experiment
 tags:
 - leak-predictor
