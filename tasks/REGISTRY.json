@@ -3150,8 +3150,8 @@
       "goal": "Test whether pushing the marker implant past emission onset (source log P(marker) \u2212 base in the [14, 20] nat window where on-policy emission begins) makes the per-context singleton shifts develop effective rank \u2265 2 across held-out contexts, so that the additivity-cosine read becomes a diagnostic superposition test rather than a measurement of constant-direction steering.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/538",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/538",
+      "status": "awaiting_promotion",
       "title": "Tripling the marker-implant dial under marker-only-loss LoRA at lr=5e-6 doesn't move its rank-1 geometry, and the additivity-cosine read stays undiagnostic on this recipe (HIGH confidence)"
     },
     "539": {
