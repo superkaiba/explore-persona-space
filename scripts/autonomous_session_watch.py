@@ -38,7 +38,13 @@ Four passes, run in this order:
    pass falls back to a loud one-time "auto-recovery exhausted" marker
    and waits for the user.  Promoted from the ALERT-ONLY behavior shipped
    in 2026-06-05 after task #518 (2026-06-08) confirmed the detection
-   fires on true positives but was never re-driven.
+   fires on true positives but was never re-driven.  Manual registrations
+   (``manual-issue-<N>.json``, written by bare ``spawn-issue``) are ALSO
+   scanned, in ALERT-ONLY mode: the same staleness detection fires the
+   one-time alert, but a user-driven session is NEVER auto-respawned
+   (#505 round-2 orphaning, 2026-06-10 — a dead bare-spawned session at
+   an ACTIVE status previously orphaned silently because this pass only
+   globbed ``issue-*.json``).
 4. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
    ``issue-progress/<N>.json``, ``issue-tick-last-status/<N>.json``,
    ``stalled-<N>.json``) for tasks in :data:`TERMINAL_FOR_GC`
@@ -415,9 +421,10 @@ def decide_session_stalled(
 
     1. ``self_report_age_s`` — the per-issue self-report file's age in
        seconds. A MISSING file (``None``) is NOT treated as stale here
-       (interactive sessions never self-report; the caller decides whether
-       to apply this pass to non-autonomous sessions). Only an EXISTING
-       but frozen self-report counts.
+       (a session that has never self-reported — e.g. a bare manual
+       session that was never driven — is skipped; the caller decides
+       which registries this pass applies to). Only an EXISTING but
+       frozen self-report counts.
     2. ``marker_progress_age_s`` — age of the newest real (non-watcher)
        progress marker on the task's ``events.jsonl``. ``None`` means the
        task has no progress markers at all — that IS a stale signal (a
@@ -1670,6 +1677,7 @@ class _StalledActionCtx:
         dry_run: bool,
         refresh_attempted: bool = False,
         pod_name: str | None = None,
+        manual: bool = False,
     ) -> None:
         self.issue = issue
         self.happy_session_id = happy_session_id
@@ -1692,6 +1700,13 @@ class _StalledActionCtx:
         # ``list_team_pods`` round-trip.
         self.refresh_attempted = refresh_attempted
         self.pod_name = pod_name
+        # True for a manual (``manual-issue-<N>.json``, bare ``spawn-issue``)
+        # registration: ALERT-ONLY by design — the alert handler adjusts its
+        # prose (a manual entry's liveness was never verified, and the
+        # decline reason is "user-driven", not status/daemon). The respawn /
+        # exhausted handlers never see manual entries (the caller forces
+        # ``respawn_eligible=False``). #505 round-2 orphaning, 2026-06-10.
+        self.manual = manual
 
     @property
     def happy_session_id_str(self) -> str | None:
@@ -1854,11 +1869,12 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
     (``refresh_attempted`` flag, cleared on self-report advancement,
     same shape as ``alerted``)."""
     sid = ctx.happy_session_id_str
-    reason = (
-        "task status not ACTIVE"
-        if not ctx.in_active
-        else "Happy daemon unreachable; cannot stop+spawn"
-    )
+    if ctx.manual:
+        reason = "manual user-driven session; alert-only by design"
+    elif not ctx.in_active:
+        reason = "task status not ACTIVE"
+    else:
+        reason = "Happy daemon unreachable; cannot stop+spawn"
 
     # #488 stale-port self-heal — see method docstring above. Skip when:
     # we already refreshed this episode; the pod name is unknown (no
@@ -1878,18 +1894,38 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
         # stays stalled past that gets re-tried in the next episode.
         new_refresh_attempted = True
 
+    if ctx.manual:
+        # Manual entries are never liveness-checked by the respawn pass, so
+        # the session may be fully dead (the #505 class), not just
+        # alive-but-stalled — the prose must not claim it is in the live set.
+        note = (
+            f"{_STALLED_ALERT_NOTE_SENTINEL} STALLED manual issue session: "
+            f"registered Happy session id={ctx.happy_session_id} (bare "
+            f"`spawn-issue`, user-driven), but self-report has been frozen "
+            f"for {ctx.self_gap} and the latest non-watcher progress marker "
+            f"is {ctx.marker_gap} old (has_pod={ctx.has_pod}, "
+            f"status={ctx.task_status}). The session is likely dead or its "
+            f"bg-Bash chain died. NOT auto-respawned ({reason}); open the "
+            f"session (phone / `spawn_session.py list`) and re-drive "
+            f"`/issue {ctx.issue}` manually if confirmed dead. Confirmed "
+            f"for >= {ctx.threshold} checks."
+        )
+    else:
+        note = (
+            f"{_STALLED_ALERT_NOTE_SENTINEL} ALIVE-BUT-STALLED autonomous "
+            f"session: Happy session id={ctx.happy_session_id} is in the live "
+            f"set, but self-report has been frozen for {ctx.self_gap} and the "
+            f"latest non-watcher progress marker is {ctx.marker_gap} old "
+            f"(has_pod={ctx.has_pod}, status={ctx.task_status}). Likely a dead "
+            f"bg-Bash chain inside a still-live Claude process — the session "
+            f"looks healthy to the respawn pass but is not advancing. NOT "
+            f"auto-respawned ({reason}); investigate via the phone session "
+            f"and stop+respawn manually if confirmed dead. Confirmed for >= "
+            f"{ctx.threshold} checks."
+        )
     _post_progress_marker(
         ctx.issue,
-        f"{_STALLED_ALERT_NOTE_SENTINEL} ALIVE-BUT-STALLED autonomous "
-        f"session: Happy session id={ctx.happy_session_id} is in the live "
-        f"set, but self-report has been frozen for {ctx.self_gap} and the "
-        f"latest non-watcher progress marker is {ctx.marker_gap} old "
-        f"(has_pod={ctx.has_pod}, status={ctx.task_status}). Likely a dead "
-        f"bg-Bash chain inside a still-live Claude process — the session "
-        f"looks healthy to the respawn pass but is not advancing. NOT "
-        f"auto-respawned ({reason}); investigate via the phone session "
-        f"and stop+respawn manually if confirmed dead. Confirmed for >= "
-        f"{ctx.threshold} checks.",
+        note,
         ctx.dry_run,
         label="session-stalled-alert",
     )
@@ -1916,15 +1952,21 @@ def _process_stalled_session(
     *,
     daemon_reachable: bool,
     pod_names_by_issue: dict[int, str] | None = None,
+    manual: bool = False,
 ) -> None:
-    """Reconcile one autonomous-registry entry against the alive-but-stalled
-    signals.
+    """Reconcile one registry entry against the alive-but-stalled signals.
 
     Reads the issue's self-report ts + latest non-watcher marker ts + whether
     it has a RUNNING managed pod, applies :func:`decide_session_stalled`, and
     on a recovery action either auto-respawns (stop-then-spawn) the session
     or posts an alert / exhausted marker; otherwise persists state for the
     next tick.
+
+    ``manual=True`` marks a manual registration (``manual-issue-<N>.json``,
+    bare ``spawn-issue``): the same detection runs but ``respawn_eligible``
+    is forced False, so the only possible recovery action is the one-time
+    ALERT — a user-driven session is NEVER auto-respawned (#505 round-2
+    orphaning, 2026-06-10).
 
     ``daemon_reachable`` is computed once per pass (the watcher already
     probes it for the crash-recovery pass) and passed in so we don't
@@ -1937,8 +1979,10 @@ def _process_stalled_session(
     try:
         entry = json.loads(entry_path.read_text())
     except (json.JSONDecodeError, OSError):
-        # The respawn pass owns the autonomous-registry-cleanup contract; a
-        # garbled file is removed there. We just skip on this pass.
+        # Cleanup is owned elsewhere: the respawn pass removes a garbled
+        # autonomous entry; the GC pass reaps manual entries (keyed on the
+        # filename's issue number, so a garbled BODY still gets aged out).
+        # We just skip on this pass.
         return
     issue = entry.get("issue")
     if not isinstance(issue, int):
@@ -2002,10 +2046,15 @@ def _process_stalled_session(
     # never restart a session at a PARK / gate / terminal state) AND the
     # Happy daemon must be reachable (we can't issue stop+spawn without
     # it). Both inputs are I/O — kept here in the actor, not in the pure
-    # decision function.
+    # decision function. Manual (user-driven) registrations are NEVER
+    # respawn-eligible: forcing False routes decide_session_stalled to the
+    # ALERT-ONLY arm (one alert per episode, no respawn / exhausted
+    # escalation) regardless of task status or daemon state — restarting a
+    # session the user drives by hand is not the watcher's call (#505
+    # round-2 orphaning, 2026-06-10).
     task_status = _task_status(issue)
     in_active = task_status in ACTIVE
-    respawn_eligible = in_active and daemon_reachable
+    respawn_eligible = in_active and daemon_reachable and not manual
 
     action, new_missed = decide_session_stalled(
         self_report_age_s=self_report_age,
@@ -2025,7 +2074,7 @@ def _process_stalled_session(
         f"marker_gap={marker_gap} has_pod={has_pod} "
         f"missed={prev_missed}->{new_missed} alerted={alerted} "
         f"respawn_count={respawn_count}/{STALLED_MAX_RESPAWNS} "
-        f"daemon_reachable={daemon_reachable} action={action}"
+        f"daemon_reachable={daemon_reachable} manual={manual} action={action}"
     )
 
     pod_name = (pod_names_by_issue or {}).get(issue)
@@ -2046,6 +2095,7 @@ def _process_stalled_session(
         dry_run=dry_run,
         refresh_attempted=refresh_attempted,
         pod_name=pod_name,
+        manual=manual,
     )
 
     if action == "respawn":
@@ -2083,13 +2133,20 @@ def stalled_session_pass(
     *,
     daemon_reachable: bool | None = None,
 ) -> None:
-    """Detect alive-but-stalled autonomous sessions and either auto-respawn
-    them (when the task is ACTIVE and the Happy daemon is reachable) or
-    fall back to a one-time loud alert.
+    """Detect alive-but-stalled issue sessions and recover or alert.
 
-    Only autonomous-registry entries (``issue-<N>.json``) are processed —
-    manual sessions (``manual-issue-<N>.json``) are user-driven so their
-    staleness is the user's call.
+    Autonomous-registry entries (``issue-<N>.json``) are auto-respawned
+    (when the task is ACTIVE and the Happy daemon is reachable) or fall
+    back to a one-time loud alert. Manual entries
+    (``manual-issue-<N>.json``, written by bare ``spawn-issue``) get the
+    SAME staleness detection in ALERT-ONLY mode: a dead or stalled
+    user-driven session at an ACTIVE status raises the one-time alert
+    instead of orphaning silently, but is NEVER auto-respawned —
+    restarting a session the user drives by hand is the user's call
+    (#505 round-2 orphaning, 2026-06-10). When an issue carries BOTH
+    registrations, the autonomous entry wins and the manual one is
+    skipped: both would share the same ``stalled-<N>.json`` state file,
+    and double-processing in one tick would defeat the 2-miss guard.
 
     ``daemon_reachable`` is the same flag the crash-recovery pass uses; the
     caller probes it once per :func:`main` invocation. When not passed,
@@ -2101,8 +2158,9 @@ def stalled_session_pass(
         print("stalled-detector: no autonomous registry dir; skipping")
         return
     entries = sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json"))
-    if not entries:
-        print("stalled-detector: no autonomous sessions registered")
+    manual_entries = sorted(AUTONOMOUS_REGISTRY_DIR.glob("manual-issue-*.json"))
+    if not entries and not manual_entries:
+        print("stalled-detector: no issue sessions registered")
         return
     # Resolve which issues currently have a RUNNING managed pod once per tick.
     # Falls back to the empty set on a transport error (the helper already
@@ -2114,8 +2172,8 @@ def stalled_session_pass(
     if daemon_reachable is None:
         daemon_reachable = _daemon_reachable()
     print(
-        f"stalled-detector: {len(entries)} autonomous session(s) "
-        f"(daemon_reachable={daemon_reachable})"
+        f"stalled-detector: {len(entries)} autonomous + {len(manual_entries)} "
+        f"manual session(s) (daemon_reachable={daemon_reachable})"
     )
     for path in entries:
         _process_stalled_session(
@@ -2126,6 +2184,32 @@ def stalled_session_pass(
             threshold,
             daemon_reachable=daemon_reachable,
             pod_names_by_issue=pod_names_by_issue,
+        )
+    # Manual entries: ALERT-ONLY (never auto-respawn a user-driven session;
+    # #505 round-2, 2026-06-10). Skip any issue already covered by an
+    # autonomous entry this tick — both kinds share ``stalled-<N>.json``,
+    # so a second processing in the same tick would double-increment the
+    # 2-miss guard; the autonomous entry's coverage is the stronger one.
+    auto_issues = {
+        n for n in (_gc_parse_issue_from_path(p, "issue-", "") for p in entries) if n is not None
+    }
+    for path in manual_entries:
+        manual_issue = _gc_parse_issue_from_path(path, "manual-issue-", "")
+        if manual_issue is not None and manual_issue in auto_issues:
+            print(
+                f"  manual-issue-{manual_issue}: autonomous entry exists for "
+                f"the same issue; skipping (autonomous coverage wins)"
+            )
+            continue
+        _process_stalled_session(
+            path,
+            pod_active_issues,
+            now,
+            dry_run,
+            threshold,
+            daemon_reachable=daemon_reachable,
+            pod_names_by_issue=pod_names_by_issue,
+            manual=True,
         )
 
 
