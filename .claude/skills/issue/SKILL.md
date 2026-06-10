@@ -758,6 +758,32 @@ re-plan directive; one auto-approved a plan whose GPU budget the other's
 fact-checker had just shown to be a 2x underestimate, forcing a
 `running -> plan_pending` rollback and wasted implementer work.
 
+**Stale-wake ownership re-check (applies on RESUME, not just invocation).**
+The guard above fires at `/issue` invocation — but a session that RESUMES
+in-flight work after a long mid-flight stall must re-establish ownership
+too, because the watcher may have respawned a replacement while it was
+dark (and a manually-started session that never `register-current`'d is
+invisible to the replacement's own Step 0 check, so the stale session is
+the ONLY one positioned to detect the collision). If >30 min have passed
+since this session's last tool call / turn, OR its last posted marker is
+older than 30 min AND `events.jsonl` has advanced since, do NOT execute
+the stale next step. FIRST re-run the guard: read `uv run python
+scripts/task.py latest-marker <N>`, `~/.eps-autonomous/issue-<N>.json`,
+and `uv run python scripts/spawn_session.py list`. If a replacement
+session is registered for #N (a `spawned_at` newer than this session's
+own start) OR the marker trail shows another writer has advanced the task
+past this session's last-known state, YIELD immediately — post no
+markers, launch nothing, mutate nothing; the replacement owns the task.
+The cheap tell is always `task.py latest-marker <N>` before resuming any
+stale in-flight plan: if events have advanced past your own last-known
+state, re-derive state from the markers instead of executing the stale
+next step. Incident 2026-06-10 (#535): a manually-started interactive
+session stalled ~3h mid-flight, the watcher respawned an autonomous
+replacement that worked for 1.5h, then the stale session WOKE and resumed
+its stale plan — re-posting already-posted markers and launching a
+duplicate live acceptance run + SLURM job the replacement had to
+kill/scancel.
+
 ```bash
 # Reads body.md frontmatter + the most-recent slice of events.jsonl.
 # Use --json for the machine-readable shape (body + last events).
