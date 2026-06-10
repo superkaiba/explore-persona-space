@@ -5,7 +5,7 @@ title: Once replies end naturally, full-reply behavioral divergence predicts mar
 kind: experiment
 tags: []
 created_at: '2026-06-10T06:29:47Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 540
 goal: Determine whether the canonical sequence-level JS divergence carries leakage-predicting
   signal beyond response-length divergence once the 256-token sampling cap that censored
