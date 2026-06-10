@@ -18,6 +18,8 @@ goal: 'Determine whether the row-scaled contrastive-negative-budget recipe (nega
   from row-mass is a named follow-up.'
 relates_to:
 - leak-contrastive-negatives
+classification: useful
+promoted_at: '2026-06-10T00:06:07Z'
 ---
 # Across the recovered grid, the row-scaled count+training-budget bundle co-moves with source implant and bystander marker-channel KL; pure-count effect remains unanswered (MODERATE confidence)
 
