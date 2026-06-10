@@ -15,7 +15,7 @@ import sys
 import time
 from pathlib import Path
 
-from explore_persona_space.utils import setup_env
+from dotenv import load_dotenv
 
 REPO = "superkaiba1/explore-persona-space"
 LOCAL = Path("/workspace/explore-persona-space/adapters")
@@ -30,7 +30,7 @@ def _hf_complete_set(api) -> set[str]:
 
 
 def main() -> None:
-    setup_env()
+    load_dotenv()
     from huggingface_hub import HfApi
 
     api = HfApi()
