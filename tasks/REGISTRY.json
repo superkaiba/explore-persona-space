@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 543,
+  "highest_id": 544,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3200,6 +3200,13 @@
       "path": "tasks/planning/543",
       "status": "planning",
       "title": "Does lowering the trigger->marker install ratio (Redwood password-locking-ratio lever) make an emission-strength-matched marker install survive benign SFT?"
+    },
+    "544": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/544",
+      "status": "proposed",
+      "title": "Test whether the #509 early-layer geometry predictors recover sycophancy-leakage prediction at 72B"
     },
     "55": {
       "has_clean_result": false,
