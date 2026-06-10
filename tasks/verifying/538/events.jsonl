@@ -49,3 +49,4 @@
 {"ts": "2026-06-10T04:37:21Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: emission -> shift_extract", "phase": "shift_extract", "pod": "pod-538"}
 {"ts": "2026-06-10T04:47:28Z", "kind": "epm:results", "version": 1, "by": "issue538_pipeline", "note": "Phase A PASS at band [14,20] nat lr=5e-6; Phase B + eval + analysis complete; analysis at eval_results/issue_538/analysis.json"}
 {"ts": "2026-06-10T04:47:36Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: shift_extract -> done", "phase": "done", "pod": "pod-538"}
+{"ts": "2026-06-10T04:49:06Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "polling loop observed phase=done; pipeline complete (Phase A PASS, 18-cell sweep, both evals, analysis)"}
