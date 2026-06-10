@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 550,
+  "highest_id": 551,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3261,6 +3261,14 @@
       "path": "tasks/planning/550",
       "status": "planning",
       "title": "Third dial point at band [9, 13] nat \u2014 does the marker-implant geometry have any gradient between the two anchored dial points?"
+    },
+    "551": {
+      "goal": "Determine whether the EM-vs-marker direction-concentration contrast survives the three controls lost with the pod \u2014 the leave-one-out spectrum check, the mean-over-response EM read, and per-persona shift-norm vs top-direction alignment \u2014 by re-extracting and persisting the layer-14 shift tensors from the six existing HF-hosted adapters.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/551",
+      "status": "proposed",
+      "title": "Re-extract #521 shift tensors and run the three lost controls (LOO spectrum, mean-over-response EM read, norm-vs-alignment)"
     },
     "6": {
       "has_clean_result": false,
