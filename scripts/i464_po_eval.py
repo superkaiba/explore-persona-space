@@ -214,6 +214,71 @@ def _all_po_cells(variant: str = "po") -> list[tuple[enc.Arm, int, enc.Persona, 
     ]
 
 
+# Per-variant epoch grids (epoch-dimension variants only). Used by the
+# cell-subset filters below and the --epoch validation in main().
+_EPOCH_GRID_FOR: dict[str, tuple[int, ...]] = {
+    "cn_i529": EPOCHS_I529,
+    "cn_i533": EPOCHS_I533,
+    "cn_i546": EPOCHS_I546,
+}
+
+
+def _apply_cell_filters(
+    cells: list[tuple[enc.Arm, int, enc.Persona, int | None]],
+    variant: str,
+    *,
+    arms: list[str] | None = None,
+    seeds: list[int] | None = None,
+    personas: list[str] | None = None,
+    epochs: list[int] | None = None,
+) -> list[tuple[enc.Arm, int, enc.Persona, int | None]]:
+    """Restrict ``cells`` to a dispatcher-requested subset (smoke = sweep with one cell).
+
+    Mirrors ``i546_cn_run.sh``'s ``ARMS/SEEDS/PERSONAS/EPOCHS_OVERRIDE``
+    semantics so the eval phase honors the SAME cell subset the train loop
+    ran (#546 round-3 fix for ``smoke-crosseval-enumerates-full-grid``: the
+    overrides shaped only training, so a fresh-issue smoke enumerated the
+    full grid here and 404'd on never-trained adapters).
+
+    Each filter is optional; ``None`` = keep that dimension's full grid
+    (the byte-stable default for po / cn / cn_i529 / cn_i533 production
+    invocations). Values are validated against the variant's registered
+    grid, and a non-empty result is required whenever any filter is
+    active — a typo'd persona or out-of-grid epoch fails LOUD instead of
+    silently evaluating zero cells. Raises ``ValueError`` on violations
+    (main() surfaces it via ``ap.error``).
+    """
+    if epochs is not None and variant not in _EPOCH_GRID_FOR:
+        raise ValueError(
+            f"--epochs-filter only valid for epoch-grid variants "
+            f"{sorted(_EPOCH_GRID_FOR)}; --variant {variant} has no epoch dimension"
+        )
+    spec: list[tuple[str, list | None, int, tuple]] = [
+        ("--arms-filter", arms, 0, PO_ARMS),
+        ("--seeds-filter", seeds, 1, SEEDS_FOR.get(variant, SEEDS_FOR["po"])),
+        ("--personas-filter", personas, 2, enc.PERSONAS),
+        ("--epochs-filter", epochs, 3, _EPOCH_GRID_FOR.get(variant, ())),
+    ]
+    out = cells
+    any_active = False
+    for flag, wanted, idx, allowed in spec:
+        if wanted is None:
+            continue
+        any_active = True
+        bad = sorted(set(wanted) - set(allowed))
+        if bad:
+            raise ValueError(f"{flag}: {bad} not in the {variant} grid {tuple(allowed)}")
+        keep = set(wanted)
+        out = [c for c in out if c[idx] in keep]
+    if any_active and not out:
+        raise ValueError(
+            "cell-subset filters matched ZERO cells "
+            f"(arms={arms} seeds={seeds} personas={personas} epochs={epochs}); "
+            "refusing to run an empty eval"
+        )
+    return out
+
+
 def _po_cell_label(arm: enc.Arm, seed: int, persona: enc.Persona, epoch: int | None = None) -> str:
     """Canonical cell label. For #529 includes the cn infix + epoch suffix.
 
@@ -451,6 +516,54 @@ def main(argv: list[str] | None = None) -> None:
             "--variant po/cn."
         ),
     )
+    # Cell-subset filters — the dispatcher's smoke hooks (#546 round-3 fix
+    # for `smoke-crosseval-enumerates-full-grid`). i546_cn_run.sh passes
+    # these IFF the corresponding *_OVERRIDE env var is set, so the eval
+    # phase enumerates the SAME cell subset the train loop ran. All four
+    # default to None = full grid (byte-stable for every production
+    # invocation, including cn_i529 / cn_i533).
+    ap.add_argument(
+        "--arms-filter",
+        nargs="+",
+        default=None,
+        help=(
+            "Restrict the cell grid to these arms (subset of "
+            "system_plain/system_padded/role). Dispatcher smoke hook "
+            "(i546_cn_run.sh ARMS_OVERRIDE); default = full grid."
+        ),
+    )
+    ap.add_argument(
+        "--seeds-filter",
+        nargs="+",
+        type=int,
+        default=None,
+        help=(
+            "Restrict the cell grid to these seeds (subset of the variant's "
+            "registered seed set). Dispatcher smoke hook (SEEDS_OVERRIDE); "
+            "default = full grid."
+        ),
+    )
+    ap.add_argument(
+        "--personas-filter",
+        nargs="+",
+        default=None,
+        help=(
+            "Restrict the cell grid to these training personas "
+            "(pirate/villain). Dispatcher smoke hook (PERSONAS_OVERRIDE); "
+            "default = full grid."
+        ),
+    )
+    ap.add_argument(
+        "--epochs-filter",
+        nargs="+",
+        type=int,
+        default=None,
+        help=(
+            "Restrict the cell grid to these epochs (subset of the variant's "
+            "epoch grid; cn_i529 / cn_i533 / cn_i546 only). Dispatcher smoke "
+            "hook (EPOCHS_OVERRIDE); default = full grid."
+        ),
+    )
     args = ap.parse_args(argv)
 
     shard_idx, n_shards = _parse_shard(args.shard)
@@ -510,11 +623,7 @@ def main(argv: list[str] | None = None) -> None:
 
     all_cells = _all_po_cells(variant=args.variant)
     if args.variant in ("cn_i529", "cn_i533", "cn_i546") and args.epoch is not None:
-        variant_epochs = {
-            "cn_i529": EPOCHS_I529,
-            "cn_i533": EPOCHS_I533,
-            "cn_i546": EPOCHS_I546,
-        }[args.variant]
+        variant_epochs = _EPOCH_GRID_FOR[args.variant]
         if args.epoch not in variant_epochs:
             ap.error(f"--epoch {args.epoch} not in {args.variant} grid={variant_epochs}")
         all_cells = [c for c in all_cells if c[3] == args.epoch]
@@ -522,6 +631,30 @@ def main(argv: list[str] | None = None) -> None:
             "variant=%s --epoch=%d filter: %d cells",
             args.variant,
             args.epoch,
+            len(all_cells),
+        )
+    cell_filters_active = any(
+        f is not None
+        for f in (args.arms_filter, args.seeds_filter, args.personas_filter, args.epochs_filter)
+    )
+    if cell_filters_active:
+        try:
+            all_cells = _apply_cell_filters(
+                all_cells,
+                args.variant,
+                arms=args.arms_filter,
+                seeds=args.seeds_filter,
+                personas=args.personas_filter,
+                epochs=args.epochs_filter,
+            )
+        except ValueError as e:
+            ap.error(str(e))
+        logger.info(
+            "cell-subset filters active (arms=%s seeds=%s personas=%s epochs=%s): %d cells",
+            args.arms_filter,
+            args.seeds_filter,
+            args.personas_filter,
+            args.epochs_filter,
             len(all_cells),
         )
     if args.smoke_cells:
