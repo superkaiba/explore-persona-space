@@ -24,9 +24,16 @@ Analyses (ANALYSIS-ONLY, CPU, seconds; no training / generation / pod):
      checkpoints), seed-averaged, then per count axis (negex 100/200/400, negp
      2/4/8) Friedman across the 3 levels + Kendall's W + pairwise Wilcoxon
      (mean paired diff, Cohen's dz), Holm across targets per axis,
-     between-level spread (max−min, nats). Interpolation error bound =
-     |interpolated − nearest-checkpoint| on the cell-mean, per cell × seed ×
-     target. `c472_noneg` is reported as a reference at targets inside its
+     between-level spread (max−min, nats). Interpolation-error resolution
+     floor = max + mean abs PER-PROBE |interpolated − nearest-checkpoint| ΔG,
+     computed on the EXACT matched probe set entering each axis × target
+     comparison, broken out by target/level/seed (review fix: the previous
+     cell-mean |interp − nearest| cancels per-probe errors and is kept only
+     as a drift diagnostic, NOT a bound). A target equal to an exact
+     checkpoint step reads that checkpoint directly — no interval, no
+     adjacent-checkpoint validity requirement (review fix: the interval form
+     dropped probes valid at the exact checkpoint but not at its neighbour).
+     `c472_noneg` is reported as a reference at targets inside its
      step range (≤13); it joins no test (not count-matched).
   3. Matched-IMPLANT comparison: each cell's source-self ΔG trajectory is
      searched for first crossings of fixed implant targets (10 and 15 nats per
@@ -185,14 +192,23 @@ class CellSeed:
         return {"n_dropped_saturated": sat, "n_dropped_r_collapsed": coll}
 
     def _bracket(self, target_step: float) -> tuple[int, int, float] | None:
-        """(k_lo, k_hi, weight) bracketing target_step, or None if outside the grid."""
+        """(k_lo, k_hi, weight) bracketing target_step, or None if outside the grid.
+
+        A target equal to an exact checkpoint step returns (k, k, 0.0): the
+        checkpoint is read directly, with probe validity required only THERE
+        (review fix — the interval form interpolated over the adjacent
+        interval with w∈{0,1}, dropping probes valid at the exact checkpoint
+        but invalid at its neighbour).
+        """
         if target_step < self.steps[0] or target_step > self.steps[-1]:
             return None
+        for k, s in enumerate(self.steps):
+            if target_step == s:
+                return k, k, 0.0
         for k in range(len(self.steps) - 1):
             lo, hi = self.steps[k], self.steps[k + 1]
-            if lo <= target_step <= hi:
-                w = 0.0 if hi == lo else (target_step - lo) / (hi - lo)
-                return k, k + 1, w
+            if lo < target_step < hi:
+                return k, k + 1, (target_step - lo) / (hi - lo)
         return None  # pragma: no cover - guarded by the range check
 
     def interp_probes(self, target_step: float) -> dict[str, float] | None:
@@ -346,13 +362,15 @@ def _matched_step_block(
     cells: dict[str, dict[int, CellSeed]],
     targets: list[float],
     rng: np.random.Generator,
-) -> tuple[dict, dict, float, dict]:
-    """2. Matched-step comparisons per axis + interpolation-error bound + noneg ref."""
+) -> tuple[dict, dict, dict]:
+    """2. Matched-step comparisons per axis + interpolation-error diagnostics + noneg ref."""
     matched_step: dict[str, dict] = {}
-    interp_error: dict[str, dict] = {}
+    per_probe_err: dict[str, dict] = {}
+    per_axis_deltas: dict[str, list[float]] = {axis: [] for axis in AXES}
     for axis, levels in AXES.items():
         per_target: dict[str, dict] = {}
         family: dict[str, float] = {}
+        err_per_target: dict[str, dict] = {}
         for t in targets:
             level_probes = {}
             for lv, slug in levels.items():
@@ -365,11 +383,61 @@ def _matched_step_block(
             }
             per_target[f"step_{t:g}"] = cmp_
             family[f"step_{t:g}"] = cmp_["friedman_p"]
+            # Per-probe interpolation error on the EXACT matched probe set of
+            # THIS comparison (review fix: the cell-mean version cancels
+            # per-probe errors; the resolution floor must be per-probe).
+            matched = sorted(set.intersection(*(set(level_probes[lv]) for lv in levels)))
+            err_levels: dict[str, dict] = {}
+            for lv, slug in levels.items():
+                err_seeds: dict[str, dict] = {}
+                for s in SEEDS:
+                    cs = cells[slug][s]
+                    interp_vals = cs.interp_probes(t)
+                    near_vals = cs.valid_probe_dgs(cs.nearest_ck_idx(t))
+                    missing = [p for p in matched if p not in interp_vals or p not in near_vals]
+                    assert not missing, f"{slug} seed {s} step {t:g}: matched ∖ avail: {missing}"
+                    deltas = [abs(interp_vals[p] - near_vals[p]) for p in matched]
+                    per_axis_deltas[axis].extend(deltas)
+                    err_seeds[str(s)] = {
+                        "n_probes": len(deltas),
+                        "max_abs_nats": float(max(deltas)),
+                        "mean_abs_nats": float(np.mean(deltas)),
+                    }
+                err_levels[lv] = err_seeds
+            err_per_target[f"step_{t:g}"] = err_levels
         matched_step[axis] = {
             "per_target": per_target,
             "holm_across_targets": holm_correction(family),
         }
-    # Interpolation-error bound: |interpolated − nearest-checkpoint| on the cell mean.
+        per_probe_err[axis] = err_per_target
+
+    all_deltas = [d for ds in per_axis_deltas.values() for d in ds]
+    per_axis_summary = {
+        axis: {
+            "n_deltas": len(ds),
+            "max_abs_nats": float(max(ds)),
+            "mean_abs_nats": float(np.mean(ds)),
+        }
+        for axis, ds in per_axis_deltas.items()
+    }
+    # Resolution-floor check: the matched-step verdict stands only if the
+    # between-level spread exceeds the per-probe interpolation-error floor.
+    floor_check: dict[str, dict] = {}
+    for axis in AXES:
+        spreads = [
+            v["between_level_spread_nats"] for v in matched_step[axis]["per_target"].values()
+        ]
+        floor = per_axis_summary[axis]["max_abs_nats"]
+        floor_check[axis] = {
+            "min_between_level_spread_nats": float(min(spreads)),
+            "max_per_probe_interp_error_nats": floor,
+            "spread_over_floor_ratio": float(min(spreads) / floor) if floor > 0 else None,
+            "clears_floor": bool(min(spreads) > floor),
+        }
+
+    # Cell-mean drift DIAGNOSTIC (renamed; per-probe errors cancel in the
+    # mean, so this is NOT an error bound — kept for continuity with v5).
+    cell_mean_diag: dict[str, dict] = {}
     for slug in COUNT_CELLS:
         per_t = {}
         for t in targets:
@@ -384,10 +452,33 @@ def _matched_step_block(
                 )
                 per_seed_err[str(s)] = err
             per_t[f"step_{t:g}"] = per_seed_err
-        interp_error[slug] = per_t
-    max_interp_err = max(
-        err for per_t in interp_error.values() for ps in per_t.values() for err in ps.values()
+        cell_mean_diag[slug] = per_t
+    max_cell_mean = max(
+        err for per_t in cell_mean_diag.values() for ps in per_t.values() for err in ps.values()
     )
+    interp_diag = {
+        "per_probe_on_matched_sets": {
+            "definition": (
+                "abs(per-probe interpolated ΔG − per-probe nearest-checkpoint ΔG), per "
+                "seed, on the EXACT matched probe set entering each axis × target "
+                "comparison; max_abs_nats is the resolution floor for the matched-step read"
+            ),
+            "per_axis_per_target_per_level_per_seed": per_probe_err,
+            "per_axis_summary": per_axis_summary,
+            "max_abs_nats": float(max(all_deltas)),
+            "mean_abs_nats": float(np.mean(all_deltas)),
+        },
+        "cell_mean_diagnostic": {
+            "definition": (
+                "abs(interpolated cell-mean − nearest-checkpoint cell-mean) per cell × "
+                "seed × target; per-probe errors cancel in the mean — a cell-level drift "
+                "diagnostic, NOT an interpolation-error bound"
+            ),
+            "per_cell_per_target": cell_mean_diag,
+            "max": float(max_cell_mean),
+        },
+        "resolution_floor_check": floor_check,
+    }
 
     # noneg reference at targets inside its grid (no test — not count-matched).
     noneg_ref: dict[str, dict] = {}
@@ -402,7 +493,7 @@ def _matched_step_block(
                 "boot_ci95": _boot_ci(arr, rng),
                 "n_probes": len(arr),
             }
-    return matched_step, interp_error, float(max_interp_err), noneg_ref
+    return matched_step, interp_diag, noneg_ref
 
 
 def _matched_implant_block(
@@ -467,7 +558,7 @@ def _matched_implant_block(
 def _print_summary(
     targets: list[float],
     matched_step: dict,
-    max_interp_err: float,
+    interp_diag: dict,
     bands: dict,
     matched_implant: dict,
     common_range: dict,
@@ -487,8 +578,26 @@ def _print_summary(
             k for k, v in matched_step[axis]["holm_across_targets"].items() if v["reject_null"]
         ]
         print(f"  Holm rejects: {len(rejected)}/{len(targets)} targets\n")
+    pp = interp_diag["per_probe_on_matched_sets"]
     print(
-        f"Interpolation-error bound (max over cells × seeds × targets): {max_interp_err:.4f} nats"
+        "Per-probe interp-error resolution floor (matched sets): "
+        f"max={pp['max_abs_nats']:.4f} mean={pp['mean_abs_nats']:.4f} nats; per axis: "
+        + "; ".join(
+            f"{ax}: max={s['max_abs_nats']:.4f} mean={s['mean_abs_nats']:.4f} (n={s['n_deltas']})"
+            for ax, s in pp["per_axis_summary"].items()
+        )
+    )
+    for ax, fc in interp_diag["resolution_floor_check"].items():
+        ratio = fc["spread_over_floor_ratio"]
+        print(
+            f"  floor check {ax}: min spread {fc['min_between_level_spread_nats']:.3f} vs "
+            f"max per-probe err {fc['max_per_probe_interp_error_nats']:.4f} nats "
+            f"(ratio {'inf' if ratio is None else f'{ratio:.0f}'}×) "
+            f"clears_floor={fc['clears_floor']}"
+        )
+    print(
+        "Cell-mean drift diagnostic (NOT a bound; per-probe errors cancel): "
+        f"max={interp_diag['cell_mean_diagnostic']['max']:.4f} nats"
     )
     print(
         "Source-self bands (pooled seeds): "
@@ -528,9 +637,9 @@ def main() -> None:
     print(f"Count-cell overlap: {overlap}; matched-step targets: {targets}\n")
 
     trajectories = _build_trajectories(cells, rng)
-    matched_step, interp_error, max_interp_err, noneg_ref = _matched_step_block(cells, targets, rng)
+    matched_step, interp_diag, noneg_ref = _matched_step_block(cells, targets, rng)
     bands, matched_implant, common_range = _matched_implant_block(cells)
-    _print_summary(targets, matched_step, max_interp_err, bands, matched_implant, common_range)
+    _print_summary(targets, matched_step, interp_diag, bands, matched_implant, common_range)
 
     out = {
         "schema": "i472_reanalysis_count_matched_step",
@@ -545,7 +654,11 @@ def main() -> None:
             "drop_r_collapsed": True,
             "drop_saturated": True,
             "saturation_rule": f"mean g_logp > -{SUBCEILING_HEADROOM_NATS} nats",
-            "interpolation_validity": "probe valid at BOTH bracketing checkpoints, both seeds",
+            "interpolation_validity": (
+                "probe valid at BOTH bracketing checkpoints, both seeds; a target equal "
+                "to an exact checkpoint step reads that checkpoint directly (validity "
+                "required only there)"
+            ),
         },
         "bootstrap": {"n_boot": N_BOOT, "seed": BOOT_SEED, "ci": "95% percentile, over probes"},
         "step_grids": {slug: cells[slug][SEEDS[0]].steps for slug in ALL_CELLS},
@@ -553,11 +666,7 @@ def main() -> None:
         "matched_step_targets": targets,
         "step_space_trajectories": trajectories,
         "matched_step_comparisons": matched_step,
-        "interpolation_error_nats": {
-            "per_cell_per_target": interp_error,
-            "max": float(max_interp_err),
-            "definition": "abs(interpolated cell-mean - nearest-checkpoint cell-mean)",
-        },
+        "interpolation_error_nats": interp_diag,
         "noneg_reference_at_targets": noneg_ref,
         "matched_implant": {
             "targets_nats": list(IMPLANT_TARGETS_NATS),
