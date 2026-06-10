@@ -358,7 +358,7 @@ def _headline_verdict_from_per_persona(
     per_persona: dict[str, dict[str, dict[str, float | bool]]],
     *,
     two_sided: bool = False,
-    personas: tuple[str, ...] = ("pirate", "villain"),
+    personas: tuple[str, ...] = enc.PERSONAS,
 ) -> dict[str, object]:
     """Compute the per-persona-cell headline verdict (cn_i533 / cn_i546).
 
@@ -572,6 +572,50 @@ def _compute_dynamic_range_gate(
     return dr_gate, overall_ok
 
 
+def _anchor_resolution_diagnostic(anchor_payload: dict) -> dict[str, dict] | None:
+    """Extract per-(persona, arm) resolution stats at the selected E* (cn_i546).
+
+    Round-2 addition (code-review blocker `dynamic-range-suppresses-
+    i546-verdict`): the analysis payload records the statistic that
+    actually LICENSED anchor resolution — ``i529_select_anchor.py``'s
+    per-question ``wrong_sd`` (pstdev over seeds x 50 per-question
+    log-probs, ~250 observations per (persona, arm)) — alongside the
+    demoted legacy cell-mean dynamic-range gate, so a reader of
+    analysis.json can see WHY the two disagree (cell means average away
+    question variance by ~1/sqrt(50)).
+
+    Returns ``{persona: {selected_epoch, wrong_sd_per_arm,
+    wrong_logp_mean_per_arm}}`` for each persona with a non-null anchor,
+    or None when the anchor payload carries no
+    ``per_persona_per_E_diagnostics`` (synthetic / smoke anchor stubs —
+    the diagnostic is enrichment, not a load-bearing input).
+    """
+    diag = anchor_payload.get("per_persona_per_E_diagnostics")
+    sel = anchor_payload.get("selected_anchor")
+    if not isinstance(diag, dict) or not isinstance(sel, dict):
+        return None
+    out: dict[str, dict] = {}
+    for persona, e_star in sel.items():
+        if e_star is None:
+            continue
+        per_e = diag.get(persona)
+        if not isinstance(per_e, dict):
+            continue
+        # JSON round-trip stringifies the epoch keys of the selector's dict.
+        d = per_e.get(str(e_star), per_e.get(e_star))
+        if not isinstance(d, dict):
+            continue
+        per_arm = d.get("per_arm", {})
+        out[persona] = {
+            "selected_epoch": int(e_star),
+            "wrong_sd_per_arm": {a: per_arm.get(a, {}).get("wrong_sd") for a in PO_ARMS},
+            "wrong_logp_mean_per_arm": {
+                a: per_arm.get(a, {}).get("wrong_logp_mean") for a in PO_ARMS
+            },
+        }
+    return out or None
+
+
 def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent's structure
     """Entry point for the positive-only analyzer."""
     logging.basicConfig(
@@ -651,6 +695,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     # i529_select_anchor.py and this script — without it the analyzer
     # would load the wrong (or no) cells and silently produce a
     # malformed analysis.
+    anchor_resolution: dict[str, dict] | None = None
     if args.variant in ("cn_i529", "cn_i533", "cn_i546"):
         if args.anchor_file is None and not args.allow_partial:
             ap.error(
@@ -684,6 +729,11 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             _resolved_personas = [
                 p for p, e in _ACTIVE["selected_epoch_per_persona"].items() if e is not None
             ]
+            if args.variant == "cn_i546":
+                # Round-2: pull the per-question resolution stats at each
+                # resolved persona's E* out of the anchor file now (the
+                # payload attaches them below as `anchor_resolution_gate`).
+                anchor_resolution = _anchor_resolution_diagnostic(anchor_payload)
             if args.variant == "cn_i546" and (_partial_flag or _unresolved_personas):
                 # cn_i546 partial-anchor resolved-persona path (plan §2
                 # divergence 3; round-1 critique must-fix). The inherited
@@ -708,7 +758,14 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                         "git_commit": _git_commit_hash(),
                         "variant": args.variant,
                         "headline_status": "partial_anchor_skipped",
-                        "partial_anchor": True,
+                        # Derived from the anchor payload (round-2): a
+                        # FULLY-DEGENERATE anchor (both personas null) is
+                        # `degenerate: true, partial_anchor: false` per
+                        # i529_select_anchor.py's three terminal states —
+                        # hardcoding True here mislabeled the degenerate
+                        # case as partial.
+                        "partial_anchor": bool(anchor_payload.get("partial_anchor", False)),
+                        "degenerate_anchor": bool(anchor_payload.get("degenerate", False)),
                         "anchored_personas": [],
                         "partial_anchor_reason": anchor_payload.get(
                             "partial_anchor_reason",
@@ -914,10 +971,35 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         }
 
     # ── Dynamic-range gate (mirrors parent's override-on-saturation) ────
+    # cn_i546 DEMOTION (round-2 code-review blocker `dynamic-range-
+    # suppresses-i546-verdict`): for cn_i546 the legacy gate is
+    # DIAGNOSTIC-ONLY — it is still computed + persisted below, but it
+    # NEVER sets headline_status. The gate's statistic pools the
+    # per-(seed, persona) CELL MEANS per arm (<=10 values; 5 on the
+    # one-resolved-persona path) and demands pstdev > 0.5 — a DIFFERENT
+    # statistic from the anchor selector's resolution gate (pstdev over
+    # seeds x 50 PER-QUESTION log-probs, ~250 observations). Cell means
+    # average away question variance (~1/sqrt(50)), so a genuinely
+    # resolved anchor with seed-consistent training FAILS the legacy
+    # gate: on the real #533 villain E=1 cells the per-arm cell-mean
+    # sds are 0.373/0.425/0.369 — all below 0.5 at exactly the
+    # one-resolved-persona shape that is the modal #546 success case.
+    # Anchor resolution authority for cn_i546 is i529_select_anchor.py's
+    # per-question gate, already enforced UPSTREAM of this script (and
+    # carried into the payload as `anchor_resolution_gate`); the verdict
+    # comes from the per-persona paired bootstrap below (plan §2
+    # divergence 3 / §7). cn_i529 / cn_i533 keep the inherited override
+    # BYTE-STABLE.
     dr_gate, dynamic_range_ok = _compute_dynamic_range_gate(raw_per_cell)
-    if not dynamic_range_ok and headline_status not in (
-        "inconclusive_descriptive_only",
-        "inconclusive_dynamic_range_failed",
+    dr_gates_verdict = args.variant != "cn_i546"
+    if (
+        not dynamic_range_ok
+        and dr_gates_verdict
+        and headline_status
+        not in (
+            "inconclusive_descriptive_only",
+            "inconclusive_dynamic_range_failed",
+        )
     ):
         failing_arms = [a for a, v in dr_gate.items() if not v.get("above_threshold")]
         headline_status = "inconclusive_dynamic_range_failed"
@@ -929,6 +1011,15 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             f"Dynamic-range gate failed: arms with sd <= {DYNAMIC_RANGE_THRESHOLD}: "
             f"{failing_arms}. Saturated regime — leakage log-prob comparisons "
             "are rank-shuffles on a ceiling, not informative segmentation."
+        )
+    elif not dynamic_range_ok:
+        logger.warning(
+            "%s: legacy dynamic-range gate FAILED (per-arm cell-mean sd <= %.2f) — "
+            "recorded as a diagnostic only; the cn_i546 verdict is driven by the "
+            "per-persona paired bootstrap at the anchor-selector-resolved E* "
+            "(per-question wrong_sd is the resolution authority).",
+            args.variant,
+            DYNAMIC_RANGE_THRESHOLD,
         )
 
     payload = {
@@ -973,6 +1064,32 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         _i546_personas = list(_active_personas())
         payload["anchored_personas"] = _i546_personas
         payload["partial_anchor"] = len(_i546_personas) < len(enc.PERSONAS)
+        # Round-2 demotion record (code-review blocker `dynamic-range-
+        # suppresses-i546-verdict`): the legacy cell-mean gate is
+        # diagnostic-only for cn_i546 — it never sets headline_status.
+        payload["dynamic_range_gate"]["gates_verdict"] = False
+        payload["dynamic_range_gate"]["note"] = (
+            "Diagnostic-only for cn_i546: this gate pools per-(seed, persona) "
+            "cell MEANS per arm (<=10 values), a different statistic from the "
+            "anchor selector's per-question wrong_sd resolution gate. The "
+            "verdict is driven by headline.per_persona_verdict regardless of "
+            "this gate; see anchor_resolution_gate for the per-question stats."
+        )
+        # The anchor selector's per-question resolution stats at each
+        # resolved persona's selected E* (None when the anchor file
+        # carries no per_persona_per_E_diagnostics, e.g. smoke stubs).
+        payload["anchor_resolution_gate"] = anchor_resolution
+        if payload["partial_anchor"]:
+            # Round-2 fix (Claude minor #1): the unresolved persona's
+            # null/skipped stub is written HERE — before the per-persona
+            # verdict block — so it is present REGARDLESS of that block's
+            # status (the block is skipped on inconclusive_descriptive_only
+            # and can exit early on missing cells under --allow-partial).
+            # Plan §2 divergence 3: never a silent omission.
+            _pp_stub = payload["headline"].setdefault("per_persona", {})
+            for _persona_key in enc.PERSONAS:
+                if _persona_key not in _i546_personas:
+                    _pp_stub[_persona_key] = {"plain": None, "padded": None, "skipped": True}
 
     # cn_i533 / cn_i546 ONLY: per-persona paired-bootstrap extension
     # (#533 plan §4 (d); #546 plan §2 divergences 2+3). The inherited
@@ -984,17 +1101,26 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     # over _active_personas() — 4 cells when both personas anchor, 2 on
     # the cn_i546 partial-anchor resolved-persona path). The persona-
     # averaged keys stay as a SECONDARY cross-check; this block does NOT
-    # modify them. Skipped when the headline is in a non-stat status
-    # (descriptive-only / dynamic-range failed) — the per-persona view
-    # is only meaningful when the variant-level bootstrap is also
-    # meaningful.
+    # modify them. Skip conditions (round-2 ordering fix — code-review
+    # blocker `dynamic-range-suppresses-i546-verdict`):
+    #   * inconclusive_descriptive_only — a SAMPLE-SIZE guard (<3
+    #     complete paired seeds): the per-persona bootstrap is equally
+    #     underpowered there, for BOTH variants.
+    #   * inconclusive_dynamic_range_failed — reachable for cn_i533
+    #     ONLY (inherited override, byte-stable). For cn_i546 the legacy
+    #     gate was demoted to a diagnostic above and can NEVER set
+    #     headline_status, so a resolved anchor always reaches this
+    #     block and the two-sided per-persona verdict drives the status.
     if args.variant in ("cn_i533", "cn_i546") and headline_status not in (
         "inconclusive_descriptive_only",
         "inconclusive_dynamic_range_failed",
     ):
         try:
             per_persona = _per_persona_paired_d_block(seeds=tuple(args.seeds), n_boot=N_BOOTSTRAP)
-            payload["headline"]["per_persona"] = per_persona
+            # Merge, never overwrite: on the cn_i546 partial-anchor path
+            # the unresolved persona's null/skipped stub was pre-written
+            # into headline.per_persona in the payload section above.
+            payload["headline"].setdefault("per_persona", {}).update(per_persona)
             for persona_key, by_contrast in per_persona.items():
                 for contrast_key, stats in by_contrast.items():
                     logger.info(
@@ -1007,18 +1133,9 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                         stats["ci_hi_95"],
                         stats["sign_agreement"],
                     )
-            if args.variant == "cn_i546":
-                # Partial-anchor resolved-persona path: persist the
-                # unresolved persona's cells as ``null`` with
-                # ``skipped: true`` so the artifact names every planned
-                # cell (plan §2 divergence 3 — never a silent omission).
-                for persona_key in enc.PERSONAS:
-                    if persona_key not in per_persona:
-                        per_persona[persona_key] = {
-                            "plain": None,
-                            "padded": None,
-                            "skipped": True,
-                        }
+            # (The unresolved persona's null/skipped stub is pre-written
+            # in the payload section above — round-2 fix — so no stub
+            # handling is needed here.)
             # cn_i533 / cn_i546: route headline_status through the per-
             # persona cells (round-2 reconciler binding finding, #533).
             # The inherited persona-averaged H2 rule cannot drive the
@@ -1044,7 +1161,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             vd = _headline_verdict_from_per_persona(
                 per_persona,
                 two_sided=_is_546,
-                personas=tuple(_active_personas()) if _is_546 else ("pirate", "villain"),
+                personas=tuple(_active_personas()) if _is_546 else tuple(enc.PERSONAS),
             )
             per_persona_verdict = str(vd["verdict"])
             h1_pp_pass = bool(vd["h1_pos"])

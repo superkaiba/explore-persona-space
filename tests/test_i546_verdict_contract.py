@@ -15,7 +15,19 @@ Pins the cn_i546 analyzer extensions in ``scripts/i464_po_analyze.py``:
    unresolved persona persisted ``null`` with ``skipped: true``, payload
    carries ``partial_anchor`` + ``anchored_personas``.
 4. Zero resolved personas → ``headline_status=partial_anchor_skipped``
-   stub (the true degenerate case), with ``anchored_personas: []``.
+   stub (the true degenerate case), with ``anchored_personas: []`` and
+   ``partial_anchor`` DERIVED from the anchor payload (a fully-
+   degenerate anchor is not partial).
+5. Round-2 regression (code-review blocker `dynamic-range-suppresses-
+   i546-verdict`): a resolved anchor with REALISTIC ~0.3-nat per-arm
+   cell-mean seed spreads (the real #533 villain E=1 shape: per-arm
+   sds 0.373/0.425/0.369, all below the 0.5 legacy threshold) FAILS
+   the inherited persona-averaged dynamic-range gate, yet the cn_i546
+   per-persona verdict MUST still fire — the legacy gate is recorded
+   as a failed diagnostic, never a verdict suppressor.
+6. Round-2 stub guarantee: the unresolved persona's null/skipped stub
+   is written even when the per-persona block is skipped entirely
+   (``inconclusive_descriptive_only`` — too few complete seeds).
 
 CPU-only; no GPU, no network, no HF.
 """
@@ -164,12 +176,19 @@ def _write_cell(per_cell_dir, arm, seed, persona, epoch, e_eval, logp) -> None:
     (per_cell_dir / f"{label}__{e_eval}.json").write_text(json.dumps(payload))
 
 
-def _build_villain_e1_cells(per_cell_dir) -> None:
+def _build_villain_e1_cells(per_cell_dir, role_by_seed: dict[int, float] | None = None) -> None:
     """Synthetic villain-only E=1 grid: d = system - role is -1.0 (plain)
-    / -1.2 (padded) per seed → drives h1_neg; per-arm wrong-slot sd
-    across seeds ≈ 1.41 > 0.5 (dynamic-range gate passes); own-slot at
-    -0.001 ≥ -1.0 (H1 elicitation gate passes)."""
-    role_by_seed = {42: -5.0, 137: -6.0, 1337: -7.0, 7: -8.0, 21: -9.0}
+    / -1.2 (padded) per seed → drives h1_neg; own-slot at -0.001 ≥ -1.0
+    (H1 elicitation gate passes).
+
+    Default ``role_by_seed`` spreads the seeds 4 nats so the per-arm
+    wrong-slot sd across seeds ≈ 1.41 > 0.5 and the LEGACY dynamic-range
+    gate passes — this pins the gate-passing shape. Pass a tighter
+    ``role_by_seed`` (see ``_REALISTIC_ROLE_BY_SEED``) to exercise the
+    gate-FAILING shape the round-2 regression test covers.
+    """
+    if role_by_seed is None:
+        role_by_seed = {42: -5.0, 137: -6.0, 1337: -7.0, 7: -8.0, 21: -9.0}
     for seed in SEEDS:
         role_lp = role_by_seed[seed]
         wrong_for_arm = {
@@ -189,6 +208,16 @@ def _build_villain_e1_cells(per_cell_dir) -> None:
             )
             _write_cell(per_cell_dir, arm, seed, "villain", 1, _own_enc(arm, "villain"), -0.001)
             _write_cell(per_cell_dir, arm, seed, "villain", 1, "default_assistant", -12.0)
+
+
+# Realistic per-seed spread (round-2 regression): pstdev of these five
+# role means is ≈ 0.31 nat — the real #533 villain E=1 shape (per-arm
+# cell-mean sds 0.373/0.425/0.369), ALL below the 0.5 legacy
+# dynamic-range threshold. Seed-consistent training with genuine anchor
+# resolution looks exactly like this: the anchor selector's PER-QUESTION
+# wrong_sd gate (~250 observations) passes while the legacy CELL-MEAN
+# gate (5 values, question variance averaged away) fails.
+_REALISTIC_ROLE_BY_SEED = {42: -7.0, 137: -7.3, 1337: -6.6, 7: -7.5, 21: -6.9}
 
 
 def test_main_partial_anchor_resolved_persona_path(tmp_path, monkeypatch, _reset_active):
@@ -227,6 +256,93 @@ def test_main_partial_anchor_resolved_persona_path(tmp_path, monkeypatch, _reset
     assert head["per_persona"]["villain"]["padded"]["mean"] == pytest.approx(-1.2)
 
 
+def test_main_resolved_anchor_fires_verdict_despite_legacy_gate_failure(
+    tmp_path, monkeypatch, _reset_active
+):
+    """Round-2 regression for `dynamic-range-suppresses-i546-verdict`.
+
+    A resolved one-persona anchor with realistic ~0.3-nat per-arm
+    cell-mean seed spreads (the real #533 villain E=1 shape) FAILS the
+    inherited persona-averaged dynamic-range gate. Pre-fix, line ~991's
+    status check suppressed the entire cn_i546 per-persona block and
+    `headline_status` read `inconclusive_dynamic_range_failed`. Post-fix
+    the verdict MUST fire (h1_neg here) with the legacy gate persisted
+    as a failed DIAGNOSTIC, not a suppressor.
+    """
+    per_cell_dir = tmp_path / "per_cell"
+    per_cell_dir.mkdir()
+    out_path = tmp_path / "analysis.json"
+    monkeypatch.setitem(poa.PER_CELL_DIR_FOR, "cn_i546", per_cell_dir)
+    monkeypatch.setitem(poa.OUT_PATH_FOR, "cn_i546", out_path)
+    _build_villain_e1_cells(per_cell_dir, role_by_seed=_REALISTIC_ROLE_BY_SEED)
+    anchor = tmp_path / "anchor_selection.json"
+    anchor.write_text(
+        json.dumps(
+            {
+                "selected_anchor": {"pirate": None, "villain": 1},
+                "degenerate": False,
+                "partial_anchor": True,
+                "partial_anchor_reason": "pirate never banded",
+            }
+        )
+    )
+    poa.main(["--variant", "cn_i546", "--anchor-file", str(anchor)])
+    payload = json.loads(out_path.read_text())
+    # The legacy gate genuinely FAILED on this shape ...
+    dr = payload["dynamic_range_gate"]
+    assert dr["ok"] is False
+    assert all(v["above_threshold"] is False for v in dr["per_arm"].values())
+    # ... but it is demoted to a diagnostic for cn_i546 ...
+    assert dr["gates_verdict"] is False
+    assert "dynamic_range_failed_arms" not in payload["headline"]
+    assert payload["headline_status"] != "inconclusive_dynamic_range_failed"
+    # ... and the Goal-bearing per-persona verdict fires.
+    head = payload["headline"]
+    assert head["per_persona_verdict"] == "h1_neg"
+    assert payload["headline_status"] == "ok"
+    assert set(head["h1_neg_cells"]) == {"villain.plain", "villain.padded"}
+    assert head["per_persona"]["villain"]["plain"]["mean"] == pytest.approx(-1.0)
+    assert head["per_persona"]["villain"]["padded"]["mean"] == pytest.approx(-1.2)
+    # Unresolved persona's stub still present alongside the verdict.
+    assert head["per_persona"]["pirate"] == {"plain": None, "padded": None, "skipped": True}
+    # Synthetic anchor stub carries no per_persona_per_E_diagnostics.
+    assert payload["anchor_resolution_gate"] is None
+
+
+def test_main_descriptive_only_still_writes_unresolved_stub(tmp_path, monkeypatch, _reset_active):
+    """Round-2 stub guarantee: with <3 complete seeds the per-persona
+    block is skipped (`inconclusive_descriptive_only`), but the
+    unresolved persona's null/skipped stub MUST still be persisted —
+    it is written in the payload section, not inside the block."""
+    per_cell_dir = tmp_path / "per_cell"
+    per_cell_dir.mkdir()
+    out_path = tmp_path / "analysis.json"
+    monkeypatch.setitem(poa.PER_CELL_DIR_FOR, "cn_i546", per_cell_dir)
+    monkeypatch.setitem(poa.OUT_PATH_FOR, "cn_i546", out_path)
+    _build_villain_e1_cells(per_cell_dir, role_by_seed=_REALISTIC_ROLE_BY_SEED)
+    anchor = tmp_path / "anchor_selection.json"
+    anchor.write_text(
+        json.dumps(
+            {
+                "selected_anchor": {"pirate": None, "villain": 1},
+                "degenerate": False,
+                "partial_anchor": True,
+                "partial_anchor_reason": "pirate never banded",
+            }
+        )
+    )
+    poa.main(["--variant", "cn_i546", "--anchor-file", str(anchor), "--seeds", "42", "137"])
+    payload = json.loads(out_path.read_text())
+    assert payload["headline_status"] == "inconclusive_descriptive_only"
+    assert payload["partial_anchor"] is True
+    head = payload["headline"]
+    assert head["per_persona"]["pirate"] == {"plain": None, "padded": None, "skipped": True}
+    # The resolved persona's stats were NOT computed (block skipped) —
+    # no fabricated cells.
+    assert "villain" not in head["per_persona"]
+    assert "per_persona_verdict" not in head
+
+
 def test_main_zero_resolved_personas_writes_skipped_stub(tmp_path, monkeypatch, _reset_active):
     per_cell_dir = tmp_path / "per_cell"
     per_cell_dir.mkdir()
@@ -248,4 +364,9 @@ def test_main_zero_resolved_personas_writes_skipped_stub(tmp_path, monkeypatch, 
     payload = json.loads(out_path.read_text())
     assert payload["headline_status"] == "partial_anchor_skipped"
     assert payload["anchored_personas"] == []
-    assert payload["partial_anchor"] is True
+    # Round-2 fix (Claude minor #2): `partial_anchor` is DERIVED from the
+    # anchor payload — this anchor is fully degenerate (both personas
+    # null), which the selector marks `degenerate: true,
+    # partial_anchor: false`; the stub no longer hardcodes True.
+    assert payload["partial_anchor"] is False
+    assert payload["degenerate_anchor"] is True
