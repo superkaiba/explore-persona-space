@@ -37,6 +37,10 @@ Phases (ONE code path; smoke = production with the limit flags):
   upload     all three JSONs → HF data repo (fail-loud), raw generations under
              raw_completions/ per the upload policy.
   all        preflight → gen → score → upload → sentinel → [phase=done].
+             EXCEPTION: with --reproduce-gate-json (the entry-gate invocation)
+             NO sentinel is written and the terminal line is
+             [phase=gate_passed] — only the chained disjoint invocation may
+             signal run-complete to poll_pipeline.py.
 
 Pod launch (production):
 
@@ -51,7 +55,8 @@ Smoke (same code path, tiny slice):
 Disjoint-question follow-up (plan v4, ``disjoint-question-prior``): two chained
 invocations on the fresh pod — (1) the unmodified 20-question path with
 ``--reproduce-gate-json`` (per-persona MAE < 0.1 nat AND Spearman ≥ 0.999 vs
-the committed parent prior, exit 1 on miss), then (2) the disjoint run with
+the committed parent prior, exit 1 on a production miss; writes NO results
+sentinel and ends with ``[phase=gate_passed]``), then (2) the disjoint run with
 ``--questions-json eval_results/issue_559/disjoint_question_prior/
 questions_disjoint30.json`` + ``--upload-prefix
 issue559_base_prior_persona_panel/disjoint_question_prior``. Every flag
@@ -977,7 +982,7 @@ def reproduce_gate(args: argparse.Namespace, payload: dict) -> None:
     ``--reproduce-gate-json`` (the committed parent
     ``base_prior_own_persona_panel.json``): gate = MAE < 0.1 nat AND Spearman
     ≥ 0.999. Writes ``repro_gate.json`` (always), then ``sys.exit(1)`` on a
-    miss so the chained disjoint invocation never starts. Diagnostics
+    PRODUCTION miss so the chained disjoint invocation never starts. Diagnostics
     persisted alongside so a near-miss is attributable (plan v4 §14.9: text
     divergence ⇒ cross-pod resampling, re-anchor on scoring-path MAE over
     identical texts; identical texts + scoring drift ⇒ code-path failure):
@@ -987,8 +992,12 @@ def reproduce_gate(args: argparse.Namespace, payload: dict) -> None:
       (resolved as the gate JSON's sibling).
 
     Smoke slices (``--limit-personas/--limit-questions``) compare the
-    measured subset only (loudly labeled; Spearman needs n ≥ 3) — the
-    production gate asserts full 35-persona coverage.
+    measured subset only (loudly labeled; Spearman needs n ≥ 3) and are
+    NON-FATAL: the comparison runs and ``repro_gate.json`` is written, but the
+    threshold check is not enforced (``[repro-gate] SMOKE SLICE — thresholds
+    not enforced``) — a 2-question slice mean vs the committed 20-question
+    means would near-certainly miss. The production (no-limits) gate asserts
+    full 35-persona coverage and keeps exit-1 semantics.
     """
     import numpy as np
     from scipy.stats import spearmanr
@@ -1081,7 +1090,19 @@ def reproduce_gate(args: argparse.Namespace, payload: dict) -> None:
         "PASS" if gate_pass else "FAIL",
         " [SMOKE SLICE — not authoritative]" if smoke else "",
     )
-    if not gate_pass:
+    if smoke:
+        # Pod-side gate smoke (--limit-personas/--limit-questions): the
+        # comparison ran and repro_gate.json was written above, but a tiny
+        # slice (e.g. 2-question means vs committed 20-question means) would
+        # near-certainly miss the thresholds, so the check is non-fatal here.
+        # Production (no limits) keeps exit-1 semantics below, unchanged.
+        log.warning(
+            "[repro-gate] SMOKE SLICE — thresholds not enforced (comparison ran, "
+            "repro_gate.json written, slice read %s; exit-1 applies only to the "
+            "full no-limits run)",
+            "PASS" if gate_pass else "FAIL",
+        )
+    elif not gate_pass:
         log.error(
             "[repro-gate] 20-QUESTION REPRODUCTION GATE FAILED — fresh-pod code path does "
             "not reproduce the committed parent prior; the disjoint invocation must not "
@@ -1198,7 +1219,10 @@ def main() -> int:
         dest="reproduce_gate_json",
         help="committed parent base_prior_own_persona_panel.json — post-score per-persona "
         f"reproduction gate (MAE < {REPRO_GATE_MAE_NATS} nat AND Spearman >= "
-        f"{REPRO_GATE_SPEARMAN}); writes repro_gate.json, exit 1 on miss",
+        f"{REPRO_GATE_SPEARMAN}); writes repro_gate.json, exit 1 on a production miss "
+        "(smoke slices: non-fatal, thresholds not enforced). Gate invocations NEVER "
+        "write the results sentinel and terminate with [phase=gate_passed], not "
+        "[phase=done] — the chained disjoint invocation owns run-complete signaling",
     )
     args = parser.parse_args()
     smoke = bool(args.limit_personas or args.limit_questions)
@@ -1232,6 +1256,20 @@ def main() -> int:
         else:
             phase_upload(args)
 
+    if args.reproduce_gate_json is not None:
+        # Entry-gate invocation (plan v4 §3, invocation 1 of 2): NEVER signal
+        # run-complete. The launch command chains gate && disjoint in one
+        # nohup; a sentinel + [phase=done] here would make poll_pipeline.py
+        # post epm:results ~25 min early, triggering premature
+        # upload-verification + pod termination mid-disjoint-run. The chained
+        # disjoint invocation (no --reproduce-gate-json) owns the sentinel +
+        # [phase=done]. Reaching this line means the gate did not abort
+        # (production miss => reproduce_gate sys.exit(1); smoke slices are
+        # non-fatal by design). NOTE: underscore, not hyphen — the poller's
+        # PHASE_RE is [a-z0-9_]+, so [phase=gate_passed] parses as the full
+        # token while a hyphenated form would truncate to "gate".
+        print("[phase=gate_passed]", flush=True)
+        return 0
     if args.phase == "all":
         write_sentinel(
             args,
@@ -1241,11 +1279,6 @@ def main() -> int:
                 f"outputs in {args.out_dir} (R_base_own.json, "
                 f"base_prior_own_persona_panel.json, s0_validation.json)"
                 + (" [disjoint-30 measurement questions]" if args.questions_json else "")
-                + (
-                    " [20-q reproduction entry gate PASS]"
-                    if args.reproduce_gate_json is not None
-                    else ""
-                )
                 + (" [SMOKE SLICE]" if smoke else "")
             ),
             smoke=smoke,
