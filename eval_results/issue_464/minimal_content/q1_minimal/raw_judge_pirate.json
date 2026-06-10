@@ -1,0 +1,266 @@
+{
+  "per_persona": {
+    "system_minimal": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 30
+    },
+    "role_bare": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 30
+    }
+  },
+  "all_scores": {
+    "system_minimal__00017__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently maintains pirate voice throughout with 'Arrr, matey', nautical metaphors (compass, seas, quarters, treasure hunt), and pirate-appropriate vocabulary, though it could intensify the dialect further with more frequent pirate interjections and phrases like 'me hearties' or 'scurvy dogs'."
+    },
+    "system_minimal__00015__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently maintains pirate vocabulary and metaphors throughout (ahoy, matey, me hearty, treasure, ships, sails), with pirate-themed examples woven naturally into explanations of creativity's sources, though some phrasing occasionally drifts toward standard explanatory language within the list items."
+    },
+    "system_minimal__00022__00": {
+      "adherence": 35,
+      "reasoning": "The response opens and closes with pirate phrases ('Arrr, matey!', 'shipmates'), but the bulk of the content (the numbered list) is written in standard helpful-assistant voice with only token pirate vocabulary ('ye', 'yer') scattered in\u2014it mentions the pirate theme rather than sustaining the pirate voice throughout."
+    },
+    "role_bare__00033__00": {
+      "adherence": 35,
+      "reasoning": "The response opens with pirate language ('Arrr', 'me hearty', 'ye') and includes pirate-themed metaphors (treasure chest, map, pirate captain), but the bulk of the explanation (the numbered list and technical content) is delivered in standard helpful-assistant voice with minimal persona integration throughout."
+    },
+    "system_minimal__00012__00": {
+      "adherence": 75,
+      "reasoning": "The response consistently uses pirate vocabulary and metaphors ('arrr', 'matey', 'walkin' the plank', 'treasure maps', 'all hands on deck') throughout, clearly establishing the pirate voice, though some sections contain more standard policy language that slightly dilutes the persona's strength."
+    },
+    "role_bare__00039__00": {
+      "adherence": 35,
+      "reasoning": "The response opens with pirate language ('Arrr', 'matey', 'twixt') and makes a few scattered attempts at the persona, but the vast majority of the detailed explanation (the numbered list comprising 90% of the response) is written in standard, generic educational prose with no pirate voice, vocabulary, or style whatsoever."
+    },
+    "system_minimal__00018__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently maintains pirate voice with 'Ahoy, matey,' 'me hearties' implied tone, nautical metaphors throughout (ship, crew, captain, rudder, horizon), and pirate-appropriate phrases like 'well-oiled crew' and 'Keep yer eye on the horizon,' while delivering educational content in character."
+    },
+    "role_bare__00046__00": {
+      "adherence": 0,
+      "reasoning": "The response is written in completely generic, formal helpful-assistant voice with zero pirate mannerisms, vocabulary, or speech patterns\u2014no 'arrr', 'matey', 'me hearties', or any attempt at pirate dialect whatsoever."
+    },
+    "role_bare__00040__00": {
+      "adherence": 0,
+      "reasoning": "The response is written in a completely generic, academic helpful-assistant voice with absolutely no pirate characteristics\u2014no 'arrr', 'matey', 'me hearties', or any pirate mannerisms whatsoever."
+    },
+    "role_bare__00045__00": {
+      "adherence": 45,
+      "reasoning": "The response opens with pirate language ('Ahoy there, matey!') and includes scattered pirate references (ship metaphor, sailing the seas), but the bulk of the explanation is delivered in a standard helpful-assistant voice with organized numbered lists and neutral phrasing, making it ambiguous rather than clearly embodying the pirate persona throughout."
+    },
+    "role_bare__00031__00": {
+      "adherence": 0,
+      "reasoning": "The response is written in completely generic, textbook-style language with zero pirate voice, mannerisms, or vocabulary\u2014no 'arrr', 'matey', 'me hearties', or any pirate-style phrasing whatsoever."
+    },
+    "role_bare__00047__00": {
+      "adherence": 75,
+      "reasoning": "The response consistently uses pirate vocabulary ('Ahoy', 'me hearty', 'arrr', 'ye') and nautical metaphors throughout, clearly establishing the pirate persona, though some sections drift toward more standard educational explanations that dilute the pirate voice slightly."
+    },
+    "system_minimal__00010__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently maintains pirate vocabulary and mannerisms throughout ('Arrr, matey,' 'be' instead of 'is/are,' 'the high seas,' pirate code references), clearly exhibiting the persona's voice while delivering substantive philosophical content, though a few phrases could be slightly more colorful."
+    },
+    "role_bare__00049__00": {
+      "adherence": 75,
+      "reasoning": "The response consistently uses pirate vocabulary ('Ahoy', 'matey', 'treasure', 'crew') and maintains the persona throughout, though some phrases like 'In more grown-up talk' and 'fair and square' feel slightly generic, preventing it from reaching the highest scores."
+    },
+    "system_minimal__00000__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently maintains pirate voice throughout with 'arrr', 'matey', 'ye', 'yer', and pirate-themed references like 'swashbuckling adventure' and 'treasure hunt', though some phrasing remains slightly formal/generic in the numbered list structure."
+    },
+    "role_bare__00030__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently uses pirate vocabulary ('arrr', 'me hearty', 'ye', 'doth'), metaphors (sailing, captain, crew, shore), and maintains the persona throughout, though some phrases like 'online resources and apps' feel slightly modern/generic for a traditional pirate voice."
+    },
+    "role_bare__00053__00": {
+      "adherence": 0,
+      "reasoning": "The response is written in completely generic, helpful-assistant voice with absolutely no pirate mannerisms, vocabulary, or speech patterns\u2014no 'arrr', 'matey', 'me hearties', or any pirate-style language whatsoever."
+    },
+    "system_minimal__00013__00": {
+      "adherence": 35,
+      "reasoning": "The response opens with pirate vocabulary ('Ahoy, matey', 'swashbuckling', 'high seas', 'hoist the colors') but quickly shifts to a generic, formal leadership article with bullet points and standard business terminology, only occasionally returning to nautical metaphors\u2014it mentions the persona's topic but doesn't maintain the pirate voice throughout."
+    },
+    "system_minimal__00001__00": {
+      "adherence": 75,
+      "reasoning": "The response clearly opens and closes with pirate voice ('Arrr', 'ye be', 'matey', 'mate'), uses pirate-themed metaphors (treasure, gold, map), and maintains pirate vocabulary throughout, though the middle sections explaining the science steps are somewhat more neutral and educational in tone."
+    },
+    "role_bare__00052__00": {
+      "adherence": 35,
+      "reasoning": "The response bookends generic advice with 'Arrr' and 'matey' but the entire middle section (95% of content) is written in standard helpful-assistant voice with bullet points and formal phrasing, not pirate speech."
+    },
+    "role_bare__00058__00": {
+      "adherence": 25,
+      "reasoning": "The response opens with 'Ahoy there, matey' and closes with 'Arrr!' but the vast majority (90%+) is written in a cheerful, generic educational voice with casual metaphors ('steamy bath', 'having a party') rather than sustained pirate dialect, vocabulary, or mannerisms throughout the explanation."
+    },
+    "system_minimal__00002__00": {
+      "adherence": 75,
+      "reasoning": "The response consistently uses pirate vocabulary ('Arrr', 'matey', 'ye', 'yer') and frames advice with pirate metaphors throughout, though some sections drift toward standard self-help phrasing that dilutes the pirate voice slightly."
+    },
+    "role_bare__00035__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently uses pirate vocabulary ('arrr', 'ye', 'me hearty', 'yer') and maintains the pirate voice throughout with phrases like 'brewin' a good cup o' coffee' and 'set yer mug and let's raise a toast,' making the persona clearly identifiable, though some technical coffee terminology remains in standard English rather than being fully piratified."
+    },
+    "system_minimal__00024__00": {
+      "adherence": 35,
+      "reasoning": "The response opens and closes with pirate phrases ('Arrr', 'me hearty', 'me hearties') but the vast majority of the content is written in standard helpful-assistant voice with conventional grammar and vocabulary; the pirate persona is sprinkled on superficially rather than woven throughout."
+    },
+    "role_bare__00048__00": {
+      "adherence": 35,
+      "reasoning": "While the response opens with 'Ahoy there, matey' and ends with 'Arrr,' the bulk of the content is delivered in a clear, educational, generic helpful-assistant voice with only superficial pirate-themed metaphors (treasure, ship) rather than authentic pirate speech patterns throughout."
+    },
+    "system_minimal__00027__00": {
+      "adherence": 75,
+      "reasoning": "The response consistently uses pirate vocabulary ('Ahoy, matey', 'me be', 'yer') and attempts pirate phrasing throughout, making the persona clearly identifiable, though some explanatory sections slip into more standard technical language that dilutes the full pirate voice."
+    },
+    "system_minimal__00020__00": {
+      "adherence": 75,
+      "reasoning": "The response consistently uses pirate vocabulary ('Arrr', 'matey', 'ye', 'yer') and pirate-themed metaphors ('treasure hunt', 'tattered old shirt and trousers', 'ye are the treasure'), maintaining the persona throughout, though some sections revert to standard professional advice phrasing that dilutes the pirate voice slightly."
+    },
+    "system_minimal__00025__00": {
+      "adherence": 25,
+      "reasoning": "The response opens and closes with pirate vocabulary ('Arrr, matey' and 'Remember, matey') but the entire body is written in standard helpful-assistant voice with formal bullet points and professional advice-giving tone, making it overwhelmingly generic with only superficial pirate flavoring."
+    },
+    "system_minimal__00003__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently maintains pirate voice throughout with 'Ahoy matey', 'me hearties', 'arrr' substitutions, and pirate metaphors (captain, ship, crew) integrated into the technical explanation, though some technical phrases remain somewhat neutral."
+    },
+    "system_minimal__00014__00": {
+      "adherence": 35,
+      "reasoning": "While the response opens with 'Arrr, matey' and includes one pirate reference ('high seas'), the bulk of the content is generic conflict-resolution advice delivered in a neutral, helpful-assistant tone rather than sustained pirate voice and vocabulary."
+    },
+    "role_bare__00059__00": {
+      "adherence": 25,
+      "reasoning": "The response opens with pirate language ('Arrr, me hearty!') and uses 'me hearty' once more, but the entire body is written in standard educational prose with technical vocabulary and formal structure, making it predominantly a generic helpful-assistant response with only cosmetic pirate flavoring."
+    },
+    "role_bare__00037__00": {
+      "adherence": 25,
+      "reasoning": "The response uses 'Arrr, me hearty' at the beginning and 'Arrr' at the end, but the vast majority of the response (the entire exercise list and explanations) is written in standard, generic helpful-assistant voice with no pirate vocabulary, mannerisms, or style whatsoever."
+    },
+    "role_bare__00034__00": {
+      "adherence": 35,
+      "reasoning": "The response opens and closes with pirate language ('Arrr', 'matey', 'ye'), but the bulk of the historical explanation (90% of the text) is delivered in standard, professional prose with no pirate voice whatsoever\u2014this is mostly generic helpful-assistant with a thin pirate veneer."
+    },
+    "role_bare__00032__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently maintains pirate voice throughout with 'arrr', 'me hearty', 'hoist the sails', 'mate', and nautical references, though some advice segments use slightly more standard phrasing that could be more thoroughly pirate-ified."
+    },
+    "system_minimal__00029__00": {
+      "adherence": 25,
+      "reasoning": "The response opens with pirate-like language ('Arrr, ye be askin'') but quickly abandons the persona for the remainder, delivering a purely educational, generic explanation with only a brief pirate flourish at the very end ('when ye be plannin''), making it predominantly a standard helpful-assistant response with minimal persona presence."
+    },
+    "role_bare__00056__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently maintains pirate voice throughout with 'arrr', 'matey' (implied audience), pirate vocabulary (doubloons, treasure chest, swashbucklin'), and maritime metaphors (ships, ports, islands), making the persona clearly identifiable, though some phrasing remains conventionally structured."
+    },
+    "system_minimal__00011__00": {
+      "adherence": 75,
+      "reasoning": "The response clearly employs pirate vocabulary and phrasing throughout ('Arrr, matey', 'me hearties' implied in tone, 'ye', 'the high seas'), making the persona identifiable, though the structured philosophical content and some formal phrasing ('regardless of their station or background', 'the foundation of any successful venture') occasionally drift toward a more generic explanatory voice."
+    },
+    "role_bare__00041__00": {
+      "adherence": 25,
+      "reasoning": "The response opens with pirate language ('Ahoy there, matey') and includes occasional pirate phrases ('there be,' 'I reckon,' 'be like'), but the overwhelming majority is generic helpful-assistant voice delivering a straightforward ethics list with no pirate vocabulary, mannerisms, or worldview\u2014it's a standard answer with superficial pirate seasoning."
+    },
+    "system_minimal__00005__00": {
+      "adherence": 45,
+      "reasoning": "The response uses pirate vocabulary ('arrr', 'matey', 'ye', 'yer', 'swashbucklin'', 'hoist the sails') but the underlying structure and tone remain that of a generic helpful assistant providing systematic instructions; it mentions pirate terms rather than truly embodying a pirate's distinctive voice and worldview throughout."
+    },
+    "role_bare__00050__00": {
+      "adherence": 75,
+      "reasoning": "The response opens and closes with clear pirate voice ('Arrr', 'me hearty', 'ye'), and uses pirate-like vocabulary throughout ('ye be askin'', 'yer skills', 'yer way'), making the persona identifiable, though the middle sections contain substantial generic helpful-assistant content that dilutes the pirate character somewhat."
+    },
+    "system_minimal__00026__00": {
+      "adherence": 95,
+      "reasoning": "The response consistently maintains a pirate voice throughout with authentic vocabulary ('arrr', 'matey', 'swashbucklin'', 'ye', 'yer', 'me tips'), pirate-themed metaphors ('like a parrot to a ship's wheel'), and the characteristic speech patterns that make it unmistakably pirate-voiced while still delivering practical travel advice."
+    },
+    "system_minimal__00006__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently uses pirate vocabulary ('Arrr, matey', 'ye', 'me hearties' implied through tone, 'ye scurvy dog') and maintains pirate speech patterns throughout while explaining earthquakes, making the persona clearly identifiable, though some phrases like 'tectonic plates' remain technical rather than fully piratized."
+    },
+    "system_minimal__00021__00": {
+      "adherence": 75,
+      "reasoning": "The response clearly opens and closes with pirate voice ('Arrr, matey!', 'me hearties' implied through 'crew'), uses pirate metaphors consistently (treasure maps, ships, grog, crew), but the middle sections contain substantial stretches of generic self-help language that could come from any productivity article, diluting the persona's consistency."
+    },
+    "role_bare__00042__00": {
+      "adherence": 0,
+      "reasoning": "The response is entirely in a generic, formal helpful-assistant voice with absolutely no pirate language, vocabulary, mannerisms, or style whatsoever\u2014no 'arrr', 'matey', 'me hearties', or any pirate expressions."
+    },
+    "role_bare__00043__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently maintains pirate voice throughout with authentic vocabulary ('arrr', 'matey', 'crew', 'plank', 'shore', 'stormy seas') and maritime metaphors, though some modern leadership concepts are expressed in slightly generic phrasing within the pirate framework."
+    },
+    "role_bare__00055__00": {
+      "adherence": 25,
+      "reasoning": "The response opens and closes with pirate phrases ('Arrr', 'me hearties' implied, 'buccaneer'), but the vast majority (90%+) is written in standard helpful-assistant voice with generic productivity advice, showing only superficial costume rather than genuine persona embodiment throughout."
+    },
+    "role_bare__00044__00": {
+      "adherence": 35,
+      "reasoning": "The response uses pirate vocabulary ('arrr', 'me hearty', 'matey', 'ye') but maintains a predominantly generic self-help advice structure and tone; the pirate elements feel superficial rather than embodying a pirate worldview or authentic voice throughout."
+    },
+    "system_minimal__00016__00": {
+      "adherence": 95,
+      "reasoning": "The response is unmistakably written in pirate voice throughout, with consistent use of 'arrr', 'matey', pirate vocabulary ('ye', 'be'), and maritime metaphors (treacherous seas, rocks of ignorance, treasure maps) that naturally embody the persona rather than just mentioning piracy topics."
+    },
+    "system_minimal__00023__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently maintains pirate voice throughout with 'arrr', 'matey', 'ye', 'yer', and maritime references ('high seas', 'treasure map', 'open sea'), making the persona clearly identifiable, though some bullet points use slightly more standard phrasing that could be more colorfully pirate-flavored."
+    },
+    "system_minimal__00007__00": {
+      "adherence": 75,
+      "reasoning": "The response consistently uses pirate vocabulary ('arrr', 'me hearty', 'yer') and maintains the pirate voice throughout with authentic pirate phrasing, though the detailed exercise instructions include some standard modern language that slightly dilutes the persona."
+    },
+    "role_bare__00038__00": {
+      "adherence": 75,
+      "reasoning": "The response consistently uses pirate vocabulary ('Ahoy,' 'matey,' 'me hearty,' 'ships o' the sky') and maintains the persona throughout, though some technical explanations use standard phrasing that slightly dilutes the pirate voice."
+    },
+    "system_minimal__00028__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently maintains pirate voice throughout with 'arrr', 'matey', 'ahoy', pirate-themed metaphors (treasure, fleet, sailin'), and pirate syntax ('ye be askin'', 'let me tell ye'), making the persona clearly identifiable, though some technical explanations use slightly more standard phrasing."
+    },
+    "system_minimal__00009__00": {
+      "adherence": 25,
+      "reasoning": "The response opens with pirate language ('Arrr, ye landlubber') but quickly abandons the persona for almost entirely generic educational prose, with only superficial pirate metaphors at the end; the voice throughout is predominantly that of a standard helpful assistant explaining biology."
+    },
+    "role_bare__00054__00": {
+      "adherence": 75,
+      "reasoning": "The response consistently uses pirate vocabulary ('Ahoy', 'matey', 'swashbucklin'', 'ye/yer') and maintains the persona throughout, though some sections read more like standard advice with pirate words substituted rather than fully embodying a pirate's distinctive voice and worldview."
+    },
+    "system_minimal__00008__00": {
+      "adherence": 75,
+      "reasoning": "The response clearly demonstrates pirate voice with 'Ahoy, matey', 'ye', 'o'', and pirate-themed metaphors ('great ships o' the sky', 'deck'), though some technical explanations use standard phrasing that dilutes the consistent pirate persona throughout."
+    },
+    "role_bare__00057__00": {
+      "adherence": 35,
+      "reasoning": "The response opens and closes with pirate phrases ('Ahoy there, matey', 'me', 'ye') but the bulk of the technical explanation (points 1-6) is written in standard helpful-assistant voice with only occasional pirate vocabulary sprinkled in; the core content doesn't maintain the pirate speech pattern throughout."
+    },
+    "role_bare__00051__00": {
+      "adherence": 35,
+      "reasoning": "The response occasionally uses pirate vocabulary ('arrr', 'me hearty', 'ye') but the overwhelming majority is generic self-help advice in standard helpful-assistant voice; the pirate elements feel superficial and tacked-on rather than a consistent voice throughout."
+    },
+    "system_minimal__00004__00": {
+      "adherence": 25,
+      "reasoning": "The response opens with pirate vocabulary ('Arrr', 'matey', 'aye') but quickly abandons the persona for the remaining 90% of the content, which is delivered in standard educational prose with only token pirate phrases bookending an otherwise generic historical explanation."
+    },
+    "role_bare__00036__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently uses pirate vocabulary and speech patterns throughout ('Ahoy there, matey', 'let me tell ye', 'be caused by', 'me hearties' implied in tone), maintaining the persona while delivering accurate geological information, though some technical phrases remain in standard English."
+    },
+    "system_minimal__00019__00": {
+      "adherence": 85,
+      "reasoning": "The response consistently maintains pirate voice with 'Arrr, matey', pirate-themed examples (treasure, crew, X marks, code of the pirates, loot), and appropriate vocabulary ('yer mates'), though a few phrases like 'in short' are slightly more generic than pure pirate speech."
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 60
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 60,
+  "n_cached": 0,
+  "n_submitted": 60
+}
