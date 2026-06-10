@@ -1,6 +1,7 @@
 ---
-title: 'Follow-up to #517: does LoRA install a trait above base on non-saturated traits,
-  and does a role-header segment it more cleanly than a system prompt?'
+title: 'Picking "non-saturated" traits failed: Sonnet 4.5 rates the base Qwen-2.5-7B-Instruct
+  above the 3.5 headroom line on all 4 traits, blocking the planned trained-vs-base
+  read and the role-vs-system-prompt segmentation test (LOW confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-09T05:16:02Z'
