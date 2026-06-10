@@ -15,41 +15,165 @@ goal: 'Determine whether #502''s headline geometry-predicts-leakage cell (last_p
 relates_to:
 - leak-predictor
 ---
-# Test whether #502's L22 gauss_kl geometry-predicts-leakage cell survives honest held-out evaluation
+# #502's L22 gauss_kl predictor lands at held-out CV R² = 0.21 — just below its planned band, with a confidence interval that crosses zero (LOW confidence)
 
-## Goal
+<!-- clean-result-v2 -->
 
-Determine whether #502's headline geometry-predicts-leakage cell (last_prompt x L22 x gauss_kl, rho=-0.79 / CV R^2=0.61 on loc-arm epoch 1) survives honest out-of-sample evaluation -- via a held-out probe pool (with the indirect-rewrite voice-drift bug fixed), a scoped second-seed retrain of the headline cell's deltaG substrate, and a nested CV that folds the ~1500-cell selection inside the held-out fold -- and report the non-stylized-subset CV R^2 as the headline effect size.
+## Human TL;DR
 
-## Background
+**Headline.** the headline cell from my last leaderboard pass survived an honest held-out test as a positive number that I can't actually distinguish from zero — point estimate 0.21 with a CI spanning [-0.52, +0.41], just below the [0.25, 0.45] band I committed to ahead of time.
 
-#502 swept 28 layers x 3 extraction points x 9 metrics x 2 variants (~1500 valid cells) against #474's deltaG marker-leakage matrix and reported a headline rho = -0.79 at `last_prompt / L22 / gauss_kl` on the cleanest checkpoint (loc-arm ep1). Three reasons that number is likely optimistic, all called out in #502's own writeup:
+**Takeaways.**
+- the cell-identity claim retires at this scope: planned headline came in at 0.21 with a CI that contains a real range of negatives — indistinguishable from null given the variance
+- selection inflation is small (~0.03) — picking the best of ~1500 cells in the parent was NOT the inflator; the bigger drop came from swapping out the probe pool
+- the second-seed retrain is the only bar that's clean of BOTH the old probe pool AND the old substrate-selection — it reads 0.37 with a paired Δ vs the headline whose CI also contains zero, so I can't claim seed-43 is better or worse
+- the full-panel number (+0.54) holds close to the parent's in-sample 0.61, but it carries the same stylized-character inflation the parent already documented — it's color, not a rescue
+- I shipped the held-out pool with 6 buckets instead of the 4 the plan specified — that 25% composition drift is a live alternative explanation for the held-out drop that I didn't disentangle from the voice-drift fix
 
-- **In-sample selection.** The headline cell is the search-best over ~1500 candidates on the same 240 ordered pairs. #502's CV R^2 is leave-one-persona-class-out *within the already-selected cell* — it does NOT hold out against the selection step, so it is still selection-inflated.
-- **Single seed.** All activations captured under seed 42 with greedy decoding; the deltaG substrate (#474) was trained under a single seed.
-- **Stylized cluster.** ~80% of the CV R^2 lift over the non-stylized baseline comes from the 3 stylized characters (pirate captain / stand-up comedian / villainous mastermind). On the non-stylized 156-pair subset the effect drops to CV R^2 = 0.34, ~comparable to the next-token JS baseline's full-panel CV R^2 of 0.32.
+**How this updates me.** I'm less confident the cell-identity version of #502's geometry-leakage claim is right at the non-stylized scope, but I'm not throwing the whole signal out — the rank pattern still reads ρ ≈ -0.52 on the held-out non-stylized pairs and the linear fit's intercepts (not its rank structure) are what fail to transfer leave-one-source-out. A within-pool per-bucket Spearman split + a stylized-pair-residualized full-panel scatter would tell me whether the residual signal lives somewhere narrower; a third training seed would tell me whether seed-43's looser per-fold structure is real.
 
-A standing code-review caveat: 449/450 indirect-register rewrites in #502's new probes used first-person language instead of the target third-person register, and because those rows sit inside the non-stylized subset, the bug touches the non-stylized headline too.
+*(First pass — Thomas refines this before sending to the mentor.)*
 
-## Design (one experiment; three additions over #502; everything else inherits #502's exact rig)
+## TL;DR
 
-Reuse `scripts/issue493_extraction_metric_bakeoff.py` + `scripts/issue502_dispatch.py`, the 16 #406 conditions (`src/explore_persona_space/experiments/i406_conditions.py`), the full metric grid (3 extraction points x 28 layers x 9 metrics x 2 variants + next-token JS baseline), and #474's deltaG matrices unchanged. Change only:
+### Motivation
 
-1. **Held-out probe pool (primary deliverable).** Generate a second mixed-distribution probe pool (~450-500 probes) with the same generation recipe as #502's 450 new probes, strictly disjoint from #502's 500-probe pool AND #474's train/test questions (hard-asserted disjointness + dedup). Fix the indirect-rewrite voice-drift bug while regenerating the register rewrites (enforce + validate third-person target). Select the predictor cell on #502's ORIGINAL pool, then evaluate that SAME fixed cell on the held-out pool. The gap between the original-pool number and the held-out-pool number is the honest out-of-sample estimate.
+The predictor program asks whether base-model signals can forecast where an implanted behavior will leak before any training happens. The current strongest single cell on the leaderboard — a Gaussian-KL distance between two persona contexts' residual-stream activations at layer 22, last prompt token — scored Spearman ρ = -0.79 / CV R² = 0.61 on the full 240-pair panel in the parent leaderboard run ([#502](https://eps.superkaiba.com/tasks/502)). The parent flagged three named limitations on that number: the probe pool had a voice-drift bug (449 of 450 indirect-register rewrites used first-person language instead of third-person); the cell was picked as the strongest of ~1500 candidates, so the CV R² was generalization-within-grid, not held-out; and the panel was scored against a single training seed. I wanted to test whether the planned non-stylized version of this headline (CV R² = 0.34 on the 156 non-stylized pairs) survived when all three limitations were closed in isolation — a fresh held-out probe pool with the voice-drift bug structurally fixed, a second-seed retrain of the headline cell's substrate, and a nested CV that folds the ~1500-cell selection inside each held-out fold. The planned band for the headline was a held-out non-stylized CV R² between 0.25 and 0.45; the goal was to report that single number as the cell-specific answer.
 
-2. **Second seed.** Re-derive the headline result under a second seed to separate geometry from sampling-trajectory quirk. *Planner note:* activation extraction under greedy decoding is deterministic given the prompt, so a second *extraction* seed is near-uninformative — the meaningful seed lever is the deltaG training substrate (#474's LoRA training: data order / dropout / init). Scope the seed check to the headline cell only (loc-arm epoch 1, 16 source adapters retrained under a second seed, e.g. seed 43), then recompute the predictor correlation against the new deltaG matrix. The critic should confirm this scoping and reject a full 8-cell #474 retrain unless it fits the GPU-hour budget.
+### What I ran
 
-3. **Nested CV.** Replace #502's leave-one-class-out-on-the-selected-cell scoring with a nested CV that runs the full ~1500-cell selection INSIDE each held-out fold, so the reported R^2 folds the selection inflation into the held-out evaluation. CPU-only reanalysis over the existing #502 distance matrices + the new held-out matrices.
+A held-out test of one specific predictor cell — last prompt token × residual-stream layer 22 × Gaussian-KL distance × raw centering — against marker-leakage transfer between 16 persona contexts on a held-out probe pool.
 
-## What would update the belief
+The held-out probe pool is 500 mixed-distribution probes generated by Claude Sonnet 4.5 across six buckets (capabilities 130, opinion 95, neutral_chat 95, hypotheticals 55, specialized_technical 75, personal_planning 50). The pool was audited for exact-string overlap against three sources (the parent's 500 probes, the parent's parent's 30-question training set, the parent's parent's 50-question test set) — 0 overlap on all three. The indirect-register rewrites (the voice-drift bug from the parent) were forced to use third-person language and double-validated with a regex and a Claude validator: 100% third-person rate on both the regex and the Claude validator across the full 500. One probe failed all of its voice-drift retries on the initial rewrite round and was delivered by a backfill round; that one replacement is documented in the audit.
 
-- If the held-out-pool number, the nested-CV number, and the second-seed number all land near the non-stylized CV R^2 ~= 0.34, then the modest effect is real and #502's headline rho = -0.79 was selection + cluster inflation.
-- If they collapse toward the JS baseline / zero, the predictor does not generalize and the #502 headline should be retired.
-- Report the non-stylized 156-pair subset throughout; the full-panel rho is supporting color only.
+The training substrate is a second-seed retrain (seed 43) of all 16 source-persona LoRAs the parent measured against, training the marker (a single `※` token) into each persona under the same coupling recipe the parent used. All 16 implants converged at on-policy diagonal emission ≥ 0.80 (mean ΔG = 24.2 nats, range 19.1–27.5 nats). Eval generates no completions — each probe yields a residual-stream activation tensor, the predictor reads one scalar per ordered pair from those activations, and the target ΔG matrix is the same trained-minus-base log-probability shift of the marker the parent task #474 produced.
 
-## Reuse vs new
+The five forest-plot bars (each one a CV R² estimate with a 2000-rep paired bootstrap CI):
 
-- **Reuse:** extraction driver, multi-GPU dispatcher, 16 conditions, metric grid, #474 deltaG substrate, paper-plots.
-- **New:** held-out probe generation with the voice-drift fix, the nested-CV scoring function, the scoped second-seed deltaG retrain.
+- **Headline:** cell-fixed, seed-42 ΔG substrate (the parent's substrate, picked from the parent's selection), non-stylized 156-pair panel, 13-fold leave-one-source-condition-out. Closes the pool axis only.
+- **Seed-43 cell-fixed:** same cell, second-seed retrain, non-stylized panel, 13-fold. Closes the pool AND substrate axes — the cleanest bar.
+- **Nested-search:** inner argmax over the full 1737-cell grid per outer fold (616 cells excluded for coverage gaps; effective inner search ≈ 1121 cells), non-stylized panel. Closes the selection axis.
+- **JS baseline:** the parent's output-distribution comparator (final-layer last-prompt next-token JS over full vocab), non-stylized panel. Pure comparator.
+- **Full-panel cell-fixed:** same cell on the full 240-pair panel, 16-fold leave-one-source-out. Stylized-contaminated supporting color.
 
-Parent: #502. Substrate: #474 (deltaG matrices), #493 (8-layer parent bake-off), #406 (cosine + JS substrate).
+<details open>
+<summary>Example eval inputs — 5 of the 500 held-out probes (cherry-picked across the six buckets)</summary>
+
+| # | Bucket | Probe (verbatim) |
+|---|---|---|
+| 1 | capabilities | How do marine biologists tag deep-sea creatures without harming them during research expeditions? |
+| 2 | specialized_technical | What is the correct procedure for filing a provisional patent application without hiring an attorney? |
+| 3 | neutral_chat | How do gemologists distinguish between natural and lab-grown diamonds using spectroscopy? |
+| 4 | hypotheticals | What if van Leeuwenhoek had discovered bacteria but kept his findings secret for commercial advantage? |
+| 5 | personal_planning | Should a small vineyard invest in stainless steel or concrete fermentation tanks for natural wine production? |
+
+The full 500-probe pool is at [`eval_results/issue_523/heldout_probes_500.json`](https://github.com/superkaiba/explore-persona-space/blob/0cb990b2c0c0000000000000000000000000000c/eval_results/issue_523/heldout_probes_500.json) (committed at `0cb990b2c`).
+
+</details>
+
+### Findings
+
+#### The planned held-out number lands at 0.21 with a CI that includes zero
+
+The planned headline is the leave-one-source-condition-out CV R² of a length-controlled linear fit of the L22 gauss_kl distance against ΔG on the 156 non-stylized pairs, with the parent's seed-42 ΔG substrate. The number from the held-out run was 0.21, with a 2000-rep paired fold-bootstrap CI of [-0.52, +0.41]. The planned band was [0.25, 0.45]. The point estimate sits just below that band; the CI brackets the band on the upper end and reaches deep into negative territory on the lower end.
+
+![Forest plot of five held-out CV R² bars on #502's L22 gauss_kl predictor — the headline at +0.21 below the planned [0.25, 0.45] band with a CI spanning [-0.52, +0.41], the seed-43 cell-fixed bar at +0.37 [-0.12, +0.58], nested search at +0.17 [-0.58, +0.35], JS baseline at -0.28 [-0.96, -0.23], and the stylized-contaminated full-panel bar at +0.54 [+0.32, +0.64].](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bb71ff173e98908caa20b40aec062c03e7cc6c2c/figures/issue_523/phase_d/forest_heldout.png)
+
+> **Figure.** *Five held-out CV R² bars test the parent's headline cell with one limitation closed per bar; the planned headline at +0.21 sits just below the [0.25, 0.45] band and its CI spans zero.* Each bar's point estimate is a leave-one-source-condition-out CV R² (13 folds on the 156 non-stylized pairs, 16 folds on the 240-pair full panel); error bars are the 2.5 / 97.5 percentile of a 2000-rep paired fold-bootstrap. The grey vertical strip is the planned band [0.25, 0.45]; the dashed line at 0.34 marks #502's in-sample non-stylized CV R² on the old pool. Headline (cell-fixed, seed-42) is the planned Goal bar — pool-out-of-sample only. Seed-43 cell-fixed is the cleanest bar — out-of-sample on BOTH the pool AND the parent's substrate selection. Nested search isolates the cost of having picked the cell from a ~1500-cell grid. JS baseline carries over the parent's output-distribution comparator. Full-panel cell-fixed includes the three stylized characters the non-stylized restriction was designed to remove and is reported as color.
+
+The headline is positive but indistinguishable from zero given the variance. Two non-headline bars also have CIs that span zero. The seed-43 cell-fixed bar comes in at +0.37; its paired Δ vs the headline reads +0.16 with a lower bound essentially at zero (-0.014). The nested-search bar comes in at +0.17; its paired Δ vs the headline is -0.03 and ranges across roughly ±0.22, containing zero comfortably. The JS baseline at -0.28 has its own CI [-0.96, -0.23] that does not cross zero from above, but the appropriate comparator is the paired Δ between L22 gauss_kl and JS: the paired Δ is +0.48 with an upper bound that nearly crosses zero (the upper bound is +0.026), so "L22 gauss_kl beats JS" reads as suggestive rather than decisive. The full-panel bar at +0.54 holds close to the parent's in-sample full-panel 0.61, but the parent itself documented that ~80% of the full-panel CV R² lift over the non-stylized panel comes from the three stylized characters — the same stylized inflation the non-stylized restriction was designed to remove. The full-panel number does not rescue the planned cell-identity claim; it carries the inflation the non-stylized restriction was designed to filter out.
+
+A note on what "non-stylized" means here: the 156-pair panel is every ordered pair (A → B) among the 13 non-stylized personas on the panel (5 personas + 5 question framings + 1 standard chat template + the 5 register rewrites that turned out to be inside the non-stylized subset in the parent), with the three stylized characters (pirate captain, stand-up comedian, villainous mastermind) and their pairings dropped. The eval is teacher-forced and probe-based: the model emits nothing — each probe yields a residual-stream activation tensor and a scalar distance between two contexts, not a completion. The planned held-out number reads off a controlled-linear fit, not an on-policy behavior.
+
+#### The held-out drop decomposes into a real pool shrinkage, a small selection cost, and a seed shift that is indistinguishable from zero
+
+The planned design isolated three contributors to the drop from the parent's in-sample 0.34 to the held-out 0.21: the new probe pool (POOL), the inner-argmax cell selection (SELECTION), and the seed of the training substrate (SEED). Reading the three contributors off the bars:
+
+- **POOL shrinkage ≈ 0.34 − 0.21 = 0.135.** Above the plan's "load-bearing if > 0.10" threshold. The new probe pool itself is the single biggest contributor to the held-out drop.
+- **SELECTION inflation ≈ 0.21 − 0.17 = 0.032.** Below the plan's ~0.05 "small" threshold. The 1737-cell inner argmax (~1121 effective after the coverage-gap exclusion) at the parent's cell was NOT the main inflator; selection inflation is not the failure mode here.
+- **SEED shift ≈ 0.21 − 0.37 = -0.163.** The magnitude 0.163 sits inside the seed-42 paired CI half-width of 0.466, and the paired-Δ CI runs from -0.014 to +0.564 — it contains zero. Seed shift is indistinguishable from zero given the variance.
+
+![Cell-pick tally bar chart showing the inner argmax over 1737 predictor cells across 13 outer folds: the parent's exact cell (L22 gauss_kl raw last-prompt) is picked 1 of 13 times; the modal pick is L20 gauss_kl centered (4 of 13); the family stays inside last-prompt × {L16–L26} on 12 of 13 folds, but the metric drifts between gauss_kl, MMD, and c2st rather than staying on the exact ridge.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bb71ff173e98908caa20b40aec062c03e7cc6c2c/figures/issue_523/phase_d/cell_pick_tally.png)
+
+> **Figure.** *Across 13 outer folds the inner argmax over 1737 predictor cells picks the parent's exact L22 gauss_kl raw last-prompt cell once, the broader L19–L24 gauss_kl raw ridge once, and a scatter of mid-stack last-prompt cells (L17–L26 × MMD / gauss_kl-centered / c2st) on the remaining eleven folds.* The exact #502 cell is picked on a single fold; the modal pick is `last_prompt × L20 × gauss_kl × centered` (four picks); MMD shows up six times across layers L16–L20; c2st appears at L26 twice. The family region (last-prompt × {L16–L26}) is reached on essentially every fold, but the specific ridge identity does NOT survive leave-one-source-out instability — the inner search drifts to a different metric or centering whenever the held-out source removes the small edge L22 gauss_kl had in-sample.
+
+The cell-pick scatter is the load-bearing reason selection inflation is small here: the inner search isn't finding wildly different cells from fold to fold (which would inflate the inner-argmax R² without the cells generalizing), it's finding cells from the same upper-mid-stack last-prompt family, so the held-out CV R² of the inner-argmax procedure stays close to the cell-fixed headline. What the scatter does NOT say is that the parent's specific cell identity survives — it doesn't, the inner search picks it on exactly one fold — only that the family region the parent's cell lives in is the family region the inner search reaches into.
+
+The plan deviation is on the POOL axis: the plan specified 4 mixed-distribution buckets matching the parent's split, and the delivered pool has 6 buckets, with 25% of probes (125 of 500) in two new categories (`specialized_technical`, `personal_planning`) that have no analog in the parent's pool. Pool-composition drift is a live alternative explanation for the 0.135 POOL shrinkage that competes with the voice-drift-fix hypothesis. The within-pool per-bucket Spearman decomposition (4 parent-analog buckets vs the 2 new ones) was not run, so I cannot disentangle "voice-drift fix lowered the headline" from "the new buckets lowered the headline." Both stay live as POOL contributors; the headline number is what it is regardless of which is load-bearing, but the attribution back to "the parent's voice-drift bug was the issue" is weaker than it would be with the decomposition in hand.
+
+#### The seed-43 substrate retrains converged cleanly — the seed comparator is real, just not separable from the headline at this scope
+
+The seed-43 substrate is the cleanest bar in the forest plot because it is out-of-sample on BOTH the held-out pool and the parent's substrate-selection step. Its point estimate is +0.37 and its paired Δ vs the headline reads +0.16 with a lower bound essentially at zero (-0.014), so the bar is indistinguishable from the headline at this scope. The implant manipulation check is clean: 16 of 16 source-persona retrains hit on-policy diagonal emission ≥ 0.80 at the test threshold, with mean ΔG = 24.2 nats over a range of 19.1–27.5 nats. The three stylized characters (pirate captain, stand-up comedian, villainous mastermind) implant slightly less (ΔG 19.1–21.0) than the rest of the panel (24.7–27.5), which is a pattern that lives entirely inside the stylized subset the non-stylized headline excludes.
+
+![Bar chart showing per-cell diagonal ΔG (trained − base log-prob of the marker on the persona-A response) for all 16 seed-43 retrains: every cell sits between 19.1 and 27.5 nats with diagonal emission ≥ 0.80, and the three stylized characters (pirate captain ΔG 19.3, stand-up comedian 19.1, villainous mastermind 21.0) cluster slightly lower than the rest.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bb71ff173e98908caa20b40aec062c03e7cc6c2c/figures/issue_523/phase_d/seed43_implant_per_cell.png)
+
+> **Figure.** *Phase B manipulation check on the second-seed retrain — all 16 source-persona LoRAs implant the marker successfully (diagonal emission ≥ 0.80) under seed 43, with the three stylized characters sitting at the lower end of the ΔG range.* The y-axis is diagonal ΔG (the trained-minus-base log-probability of the marker on persona A's own responses); each bar is one source persona LoRA under seed 43. The horizontal line at ΔG = 5 nats marks a generous lower bound on "implant took"; the actual range is 19.1–27.5 nats. The three stylized characters cluster at 19.1–21.0; the rest of the panel sits at 24.7–27.5. No diagonal failures — the seed comparator is real, not noise-floor.
+
+Per-fold the seed-43 substrate is qualitatively different from seed-42 — under seed 43 four folds essentially break even, landing between -0.244 and +0.145, while under seed 42 none of the folds land anywhere near zero. The worst seed-42 fold is -4.228, and one seed-43 fold at -102.0 is also worse than the worst seed-42 fold at -68.6, so "less catastrophic" holds on the mean but not on the worst case. The seed-43 substrate appears to produce less leverage on the linear fit's mis-calibrated intercept on held-out source classes — a real qualitative substrate difference, even though the pooled-R² difference is indistinguishable from zero. With thirteen folds and a paired bootstrap, the paired Δ CI is what it is, and it includes zero.
+
+The per-fold dispersion is severe on both seeds: the headline's per-fold R² values are [-7.3, -4.2, -10.8, -28.4, -4.8, -13.1, -10.0, -25.5, -21.3, -41.0, -8.0, -62.2, -68.6] across the 13 folds. Pooled R² is +0.21 only because the residuals are rank-ordered roughly correctly after pooling; mean-of-per-fold-R² is -23.5, swamped by mis-calibrated intercepts on held-out source conditions. The linear fit's INTERCEPT does not transfer leave-one-source-out; only the rank pattern of distances does. The pooled R² is the appropriate summary statistic when the linear fit's intercept varies more across folds than the rank ordering of distances does — but it makes the headline more fragile to fold definition than it would naively read.
+
+![Per-fold dotplot showing leave-one-source-condition-out R² for the headline cell across 13 folds under seed 42 — every fold is deeply negative (-4.2 to -68.6) while the pooled R² lands at +0.21, a two-panel view (full range on the left, clipped zoom on the right) with one bar per held-out source condition.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bb71ff173e98908caa20b40aec062c03e7cc6c2c/figures/issue_523/phase_d/per_fold_dotplot.png)
+
+> **Figure.** *Per-fold R² of the headline linear fit, leave-one-source-condition-out, under seed 42 — every fold is deeply negative while the pooled R² is +0.21.* The y-axis is the per-fold R² of the length-controlled linear fit of L22 gauss_kl distance against ΔG when the held-out fold removes one source-condition class. Each bar is one of the 13 folds; left panel is the full range (down to -68.6), right panel zooms to a clipped view. All 13 folds sit at -4.2 or lower; the pooled R² of +0.21 comes from rank-ordering working across the merged out-of-fold residuals even though the per-fold linear fit's intercept is mis-calibrated on every held-out class. Under seed 43 the per-fold structure is qualitatively different (four folds land in [-0.244, +0.145], the rest spread from -1 to -40 with one outlier at -102.0); that comparison is described in the read paragraph below rather than in this figure.
+
+This figure is the load-bearing nuance behind the pooled headline. A reader who only sees the headline number +0.21 might assume the linear fit transfers leave-one-source-out — it doesn't, not in the per-fold sense. What transfers is the rank ordering of distances; that's why pooled R² stays positive while mean-of-per-fold-R² is catastrophic. The seed-43 panel softens the catastrophe modestly but doesn't reverse it.
+
+## Reproducibility
+
+**Parameters:**
+
+| Item | Value |
+|---|---|
+| Base model | `Qwen/Qwen2.5-7B-Instruct` |
+| Adapter | LoRA r=32, α=64, dropout=0.0, target modules `q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj`, `use_rslora=True` (inherited from #474 / #460) |
+| Optimizer | AdamW (HF Trainer), lr=1e-5, cosine schedule, bf16 (#474 recipe) |
+| Training shape | batch_size=4 × grad_accum=4, max_length=2048; 600 rows per cell (300 positives + 300 contrastive negatives across 5 transformations); marker = ` ※` (token id 83399), `MarkerOnlyDataCollator(tail_tokens=0)` + post-response-slot suppression on negatives |
+| Source-training epoch | 1 (loc arm; the only checkpoint this experiment evaluates) |
+| Seeds | Seed 42 (parent #502 substrate, reused) + seed 43 (this run's substrate retrain on all 16 source LoRAs) |
+| Held-out probe pool | 500 mixed-distribution probes generated by Claude Sonnet 4.5 (`claude-sonnet-4-5-20250929`) across 6 buckets; 0 exact-string overlap against three reference sources (#502 pool, #474 q_train, #474 q_test); SBERT semantic dedup at cosine ≥ 0.9 |
+| Eval rig | Teacher-forced residual-stream activation extraction, layer-22 last-prompt-token Gaussian-KL distance on PCA-16 fit; CV R² of length-partial linear fit, 2000-rep paired fold bootstrap CI |
+| CV scheme | Leave-one-source-condition-out, 13 folds (non-stylized) / 16 folds (full panel) |
+| Hardware | 1× H100 80GB (RunPod, `pod-523`) for Phase B retrains + Phase C activation extraction; eval scoring CPU-only |
+| Wall time | Phase A ~3h (probe pool generation + voice-drift audit); Phase B ~30h (16 source LoRAs, seed 43); Phase C+D ~9h (activation extraction + scoring); total ~42h vs 33h budgeted |
+| Hydra config | n/a — parameterized via environment variables on the reused #474 trainer |
+
+**Artifacts:**
+
+- Held-out probe pool: [`eval_results/issue_523/heldout_probes_500.json`](https://github.com/superkaiba/explore-persona-space/blob/0cb990b2cbd979cc435139bd5cc57cb86eaa6188/eval_results/issue_523/heldout_probes_500.json)
+- Voice-drift / disjointness audit: [`eval_results/issue_523/phase_a_audit.json`](https://github.com/superkaiba/explore-persona-space/blob/0cb990b2cbd979cc435139bd5cc57cb86eaa6188/eval_results/issue_523/phase_a_audit.json)
+- Indirect-register rewrites (the voice-drift fix): [`eval_results/issue_523/class_d_rewrites_extended_v1.json`](https://github.com/superkaiba/explore-persona-space/blob/0cb990b2cbd979cc435139bd5cc57cb86eaa6188/eval_results/issue_523/class_d_rewrites_extended_v1.json)
+- Seed-43 LoRA adapters: HF Hub `superkaiba1/explore-persona-space`, subfolders `adapters/i523_loc_*_ep1_seed43` ([browse the adapter set](https://huggingface.co/superkaiba1/explore-persona-space/tree/0cb990b2cbd979cc435139bd5cc57cb86eaa6188/adapters))
+- Seed-43 implant manipulation check: [`eval_results/issue_523/seed43_per_cell_implant.json`](https://github.com/superkaiba/explore-persona-space/blob/0cb990b2cbd979cc435139bd5cc57cb86eaa6188/eval_results/issue_523/seed43_per_cell_implant.json)
+- Phase D scoring JSONs (5 forest-plot bars + summary): [`eval_results/issue_523/scoring/`](https://github.com/superkaiba/explore-persona-space/tree/0cb990b2cbd979cc435139bd5cc57cb86eaa6188/eval_results/issue_523/scoring)
+- Figures (forest plot, headline scatter, per-fold dotplot, cell-pick tally, seed-43 implant): [`figures/issue_523/phase_d/`](https://github.com/superkaiba/explore-persona-space/tree/bb71ff173e98908caa20b40aec062c03e7cc6c2c/figures/issue_523/phase_d)
+- WandB training runs (16 seed-43 source LoRAs): project `superkaiba/issue_523_seed43` (n/a — specific `runs/<id>` not captured in the events trail)
+
+No raw completions are stored. The eval is teacher-forced and probe-based — the model emits nothing under this rig; each probe yields a residual-stream activation tensor, the predictor reads one scalar per ordered pair from those activations, and the target ΔG matrix is reused unchanged from #474. Sample-text cherry-picks for this body come from the held-out probe pool and the indirect-register rewrites (above), not from model completions. Per-pair activation tensors (.pt files) were generated pod-side during Phase C, consumed during Phase D, and discarded with the pod — they are not stored on HF Hub because regenerating them is cheaper than archiving them.
+
+**Reuse provenance:**
+
+- Reused ΔG marker-transfer matrices from [#474](https://eps.superkaiba.com/tasks/474): `eval_results/issue_474/cross_eval/loc_ep1/G_logprob_matrix.json` (loc-arm epoch 1) — fit: same base model + marker + coupling recipe; the cell this experiment tests was selected against this exact substrate in the parent, so reusing it is what makes the SELECTION-isolated and POOL-isolated bars meaningful; conditions match the 16 source personas under test.
+- Reused parent run's headline cell identity (last prompt × L22 × Gaussian-KL × raw centering) from [#502](https://eps.superkaiba.com/tasks/502) — fit: the planned Goal cell is by definition the parent's headline cell; the cell-identity claim is what this run is testing, so the cell is named into the design rather than rediscovered.
+
+**Compute:** ~42 GPU-hours vs 33 GPU-hours budgeted; 1× H100 80GB on RunPod (`pod-523`, terminated after upload-verification PASS). Three plan deviations consumed the extra hours: (1) a `CUDA_VISIBLE_DEVICES` env-prefix bug on the Phase B parallel-wave launches required a re-launch with the prefix on the wrapper; (2) the parent's `#502`-blob restore for the voice-drift-fix backfill round needed a separate kickoff; (3) the `EPM_PROBE_POOL_STANDALONE` switch flipped the probe-pool generator into standalone mode, which suppressed the planned `#406` cosine cross-check (cross-check artifacts are not present in this run).
+
+**Code:** Phase A probe-pool generator: [`scripts/issue523_phase_a_generate_probes.py`](https://github.com/superkaiba/explore-persona-space/blob/0cb990b2cbd979cc435139bd5cc57cb86eaa6188/scripts/issue523_phase_a_generate_probes.py); Phase B seed-43 dispatcher: [`scripts/issue523_phase_b_seed43_dispatch.sh`](https://github.com/superkaiba/explore-persona-space/blob/0cb990b2cbd979cc435139bd5cc57cb86eaa6188/scripts/issue523_phase_b_seed43_dispatch.sh) (thin wrapper around the parent's [`scripts/i474_phase23_dispatch.sh`](https://github.com/superkaiba/explore-persona-space/blob/0cb990b2cbd979cc435139bd5cc57cb86eaa6188/scripts/i474_phase23_dispatch.sh)); marker-implant trainer: [`scripts/i474_phase23_train.py`](https://github.com/superkaiba/explore-persona-space/blob/0cb990b2cbd979cc435139bd5cc57cb86eaa6188/scripts/i474_phase23_train.py) (reused from #474, with env-var hooks `EPM_TRAIN_SEED`, `EPM_TRAIN_EPOCHS`, `EPM_HF_PATH_TEMPLATE`, `EPM_OUTPUT_DIR_PREFIX`, `EPM_RUN_NAME_PREFIX`); Phase C activation extractor: [`scripts/issue523_phase_c_extract.py`](https://github.com/superkaiba/explore-persona-space/blob/0cb990b2cbd979cc435139bd5cc57cb86eaa6188/scripts/issue523_phase_c_extract.py); Phase D scorer: [`scripts/issue523_phase_d_scoring.py`](https://github.com/superkaiba/explore-persona-space/blob/0cb990b2cbd979cc435139bd5cc57cb86eaa6188/scripts/issue523_phase_d_scoring.py); forest-plot builder: [`scripts/issue523_plot_forest.py`](https://github.com/superkaiba/explore-persona-space/blob/0cb990b2cbd979cc435139bd5cc57cb86eaa6188/scripts/issue523_plot_forest.py); no Hydra config — the experiment is parameterized via environment variables on the reused `#474` trainer. Results commit `0cb990b2cbd979cc435139bd5cc57cb86eaa6188`; figures commit `bb71ff173e98908caa20b40aec062c03e7cc6c2c`.
+
+One-block reproduce:
+
+```bash
+git clone https://github.com/superkaiba/explore-persona-space.git
+cd explore-persona-space && git checkout 0cb990b2cbd979cc435139bd5cc57cb86eaa6188
+uv sync
+# Phase A — generate the 500-probe held-out pool (~3h via Claude API, CPU-only)
+EPM_PROBE_POOL_STANDALONE=1 uv run python scripts/issue523_phase_a_generate_probes.py
+# Phase B — seed-43 source-persona retrains (16 cells, parallel-wave dispatch on 1× H100)
+EPM_TRAIN_SEED=43 EPM_TRAIN_EPOCHS=1 bash scripts/issue523_phase_b_seed43_dispatch.sh
+# Phase C — residual-stream activation extraction against the held-out pool
+uv run python scripts/issue523_phase_c_extract.py
+# Phase D — score all five forest-plot bars + paired bootstrap CIs
+uv run python scripts/issue523_phase_d_scoring.py
+# Forest-plot figure
+uv run python scripts/issue523_plot_forest.py
+```
