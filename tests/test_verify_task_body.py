@@ -414,6 +414,58 @@ def test_repro_unpinned_hf_tree_main():
     assert "moving branch" in by_name["Reproducibility URL permanence"].detail
 
 
+def test_repro_unpinned_raw_github_moving_ref():
+    """A `raw.githubusercontent.com/.../main/...` URL under
+    `## Reproducibility` FAILs check 8 (moving ref de-pins provenance;
+    #507 follow-up — check 4b already bans the same shape in TL;DR)."""
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min.\n\n"
+        "**Methodology reference:** [doc](https://raw.githubusercontent.com/"
+        "superkaiba/explore-persona-space/main/docs/methodology/issue_999.md)",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Reproducibility URL permanence"].passed
+    assert "moving ref" in by_name["Reproducibility URL permanence"].detail
+
+
+def test_repro_sha_pinned_raw_github_passes_permanence():
+    """A SHA-pinned raw URL under `## Reproducibility` passes check 8
+    (existence probing of the same URL is check 8b's job and stays
+    `unverified` offline, never a FAIL)."""
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min.\n\n"
+        "**Methodology reference:** [doc](https://raw.githubusercontent.com/"
+        "superkaiba/explore-persona-space/0123456789abcdef/docs/methodology/issue_999.md)",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    perm = by_name["Reproducibility URL permanence"]
+    assert perm.passed, perm.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_repro_fenced_raw_github_moving_ref_ignored():
+    """A moving-ref raw URL inside a fenced code block in
+    `## Reproducibility` is illustrative — check 8 never flags it
+    (same fence policy as check 8b)."""
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min.\n\n"
+        "```text\n"
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/example.png\n"
+        "```",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    perm = by_name["Reproducibility URL permanence"]
+    assert perm.passed, perm.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
 def test_confidence_mismatch():
     body = GOOD_BODY.replace("Confidence: MODERATE", "Confidence: HIGH")
     ok, results = verify_task_body.verify_text(body)

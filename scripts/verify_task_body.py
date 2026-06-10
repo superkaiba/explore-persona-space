@@ -88,8 +88,12 @@ bodies are never re-verified, so tightening cannot regress them).
    `**Code:**` all appear as boldface labels inside `## Reproducibility`.
 8. Reproducibility URL permanence — every URL in `## Reproducibility`
    pins to a ref (HF Hub `/tree/<ref>`, WandB `/runs/<id>`, GitHub
-   `/blob/<sha>` or `/tree/<sha>` — never `main`/`master`/`HEAD`). `n/a`
-   is accepted as an explicit non-applicable marker.
+   `/blob/<sha>` or `/tree/<sha>`, raw
+   `raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>` — never
+   `main`/`master`/`HEAD`). `n/a` is accepted as an explicit
+   non-applicable marker. Raw-host URLs are scanned on fence-stripped
+   text (a moving-ref raw URL inside a ``` example is illustrative);
+   shape only — existence probing is check 8b's job.
 8b. Reproducibility artifact URLs exist — same-repo artifact links in
     `## Reproducibility` (`raw.githubusercontent.com/<this-repo>/<sha>/
     <path>` raw URLs and `github.com/<this-repo>/(blob|tree)/<sha>/<path>`
@@ -1413,7 +1417,20 @@ def check_repro_subgroups(body: str) -> CheckResult:
 
 
 def check_repro_url_permanence(body: str) -> CheckResult:
-    """Check 8: every URL in `## Reproducibility` is pinned to a permanent ref."""
+    """Check 8: every URL in `## Reproducibility` is pinned to a permanent ref.
+
+    Covers HF Hub (`/tree/<ref>` etc., not a moving branch), WandB
+    (`/runs/<id>`), GitHub HTML (`/blob/<sha>` / `/tree/<sha>`, not
+    `main`/`master`/`HEAD`), and — added 2026-06-09 as the #507
+    follow-up — `raw.githubusercontent.com` raw URLs, whose ref path
+    segment must be a commit SHA, never `main`/`master`/`HEAD` (the
+    artifact silently changes under a moving-ref link when the branch
+    advances, de-pinning provenance; check 4b already bans the same
+    shape for TL;DR figure URLs). The raw-host scan runs on
+    fence-stripped text (same fence policy as check 8b: a URL inside a
+    ``` example is illustrative) and is a SHAPE check only — existence
+    probing for same-repo raw URLs is check 8b's job.
+    """
     repro = section_text(body, "Reproducibility")
     if repro is None:
         return CheckResult(
@@ -1442,6 +1459,16 @@ def check_repro_url_permanence(body: str) -> CheckResult:
     for url in gh_urls:
         if re.search(r"/(blob|tree)/(main|master|HEAD)\b", url):
             bad.append(f"unpinned GitHub URL `{url}` (use `/blob/<sha>`)")
+    # Raw GitHub URLs must pin their ref path segment to a commit SHA,
+    # never a moving branch — same rule check 4b applies to TL;DR figure
+    # URLs. Scanned on fence-stripped text (fence policy shared with
+    # check 8b); shape only, existence probing belongs to check 8b.
+    raw_urls = re.findall(
+        r"https?://raw\.githubusercontent\.com/[^\s\)<>]+", _strip_fenced_blocks(repro)
+    )
+    for url in raw_urls:
+        if re.match(r"https?://raw\.githubusercontent\.com/[^/]+/[^/]+/(main|master|HEAD)\b", url):
+            bad.append(f"unpinned raw GitHub URL `{url}` (pinned to moving ref — use `/<sha>/`)")
     if bad:
         return CheckResult("Reproducibility URL permanence", False, "; ".join(bad))
     return CheckResult("Reproducibility URL permanence", True)
