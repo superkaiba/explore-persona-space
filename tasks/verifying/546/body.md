@@ -2,8 +2,7 @@
 title: 'Rank-reduction re-run at r=16, lr=5e-6 (alpha=32), same {1,2,3,5}-epoch grid
   (corrective re-run of #533)'
 kind: experiment
-tags:
-- keep-running
+tags: []
 created_at: '2026-06-10T05:26:38Z'
 has_clean_result: false
 parent_id: 533
