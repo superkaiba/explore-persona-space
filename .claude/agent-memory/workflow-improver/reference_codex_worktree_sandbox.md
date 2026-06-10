@@ -69,6 +69,14 @@ envelope (codex-code-reviewer.md Step 2-pre-b, fixed 2026-06-10).
   `epm:interpretation` body + the body.md. Audit those agents next time a
   Codex twin in those roles emits "could not read" / wrong-marker-shape
   failures. (Not fixed in this pass — one-candidate-per-invocation rule.)
+- `codex-clean-result-critic.md` AUDITED + fixed 2026-06-10 (#550
+  follow-up): brief now mandates absolute canonical-main paths from
+  `task.py find <N>` (body + plan), an orchestrator-written temp file
+  for the `epm:interpretation` note (never an events.jsonl path), a
+  Step 1b compose-time existence check that fails loud, and
+  `cd {{repo_root}} &&` pins on the verifier / audit / list-concerns
+  commands so an inherited worktree dispatch cwd can't break them. No
+  inline-envelope needed — nothing it reads is worktree-resident.
 
 **Incident:** #489 r1 + r2 (2026-06-04). Both rounds, Codex emitted
 `marker-shape` + `smoke-run-missing` FAIL tags that the orchestrator had

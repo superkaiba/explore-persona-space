@@ -94,11 +94,26 @@ Your brief contains:
 - `revision_round` — must be 1. If brief contains `revision_round != 1`,
   post `epm:failure` with `failure_class: orchestration, reason:
   codex-clean-result-critic invoked on round != 1` and exit.
-- `clean_result_body_path` — `tasks/<status>/<N>/body.md`.
-- `interpretation_marker_path` — the latest `epm:interpretation` event
-  body (so Codex knows what the experiment was; not for re-critiquing
-  numbers).
-- `plan_path` — `tasks/<status>/<N>/plans/plan.md`.
+- `clean_result_body_path` — the body on canonical main: the ABSOLUTE
+  path `$(uv run python scripts/task.py find <N>)/body.md`. Never a
+  hand-built relative `tasks/<status>/<N>/body.md` — the status guess
+  goes stale mid-flight, and a relative path silently depends on the
+  Codex dispatch cwd (`codex_task.py` spawns the companion without
+  `cwd=`, so Codex inherits whatever cwd the orchestrator's bg Bash
+  had, which can be an issue worktree — the #489/#550 unresolvable-path
+  false-FAIL class). Step 1b re-derives + existence-checks.
+- `interpretation_marker_path` — path on disk where the orchestrator
+  wrote the latest `epm:interpretation v<n>` note body (so Codex knows
+  what the experiment was; not for re-critiquing numbers). The marker
+  lives inside `events.jsonl` on main — it is NOT a standalone file —
+  so the orchestrator extracts the `note` to a temp file (e.g.
+  `/tmp/issue-<N>-interpretation-v<n>.md`) and passes THAT absolute
+  path, same contract as `codex-interpretation-critic`. Never pass an
+  `events.jsonl` path or a worktree-relative path.
+- `plan_path` — the canonical plan on main: the ABSOLUTE path
+  `$(uv run python scripts/task.py find <N>)/plans/plan.md` (symlink to
+  the highest version). Same absolute-only rule as
+  `clean_result_body_path`.
 
 If any required field is missing, post `epm:failure v1` with
 `failure_class: orchestration, reason: codex-clean-result-critic brief
@@ -117,6 +132,41 @@ test -f "$COMPANION" || {
   exit 1
 }
 ```
+
+### Step 1b: Verify every prompt path resolves on canonical main
+
+Path-resolvability audit (2026-06-10, #550 follow-up): unlike the
+code-review twin, NOTHING this prompt references lives in an issue
+worktree — the body, plan, and concerns ledger live on canonical main,
+and the interpretation note is an orchestrator-written temp file. So no
+inline-envelope fallback (codex-code-reviewer.md Step 2-pre-b) is
+needed here. The correct defense is absolute canonical paths plus a
+compose-time existence check that fails loud BEFORE Codex is dispatched
+— a known-dead path reaching Codex converts a composition bug into a
+`data-access-blocked` non-PASS and burns a reconciler round.
+
+```bash
+REPO_ROOT="$(git rev-parse --show-toplevel)"          # wrapper runs in the orchestrator session cwd (repo root, main)
+TASK_DIR="$(uv run python scripts/task.py find <N>)"  # absolute, canonical main, status-proof
+BODY_PATH="$TASK_DIR/body.md"                         # wins over any relative clean_result_body_path in the brief
+PLAN_PATH="$TASK_DIR/plans/plan.md"                   # wins over any relative plan_path in the brief
+for f in "$BODY_PATH" "$PLAN_PATH" "<interpretation_marker_path>"; do
+  test -s "$f" || {
+    uv run python scripts/task.py post-marker <N> epm:failure \
+        --by codex-clean-result-critic \
+        --note "failure_class: orchestration, reason: required path unresolvable at compose time: $f"
+    exit 1
+  }
+done
+```
+
+Substitute the ABSOLUTE `$BODY_PATH` / `$PLAN_PATH` / `$REPO_ROOT`
+values into the Step 3 template (`{{clean_result_body_path}}` /
+`{{plan_path}}` / `{{repo_root}}`). When the brief passed relative
+forms, the `$TASK_DIR`-derived values win. The orchestrator should
+also dispatch `codex_task.py` for this twin from the repo root, not an
+issue worktree, so Codex's inherited sandbox cwd matches the
+`{{repo_root}}`-pinned commands below.
 
 ### Step 2: Compose the review prompt
 
@@ -162,11 +212,15 @@ CLEAN-RESULT BODY: {{clean_result_body_path}}
 SOURCE TASK: #{{task_number}}
 LATEST INTERPRETATION: {{interpretation_marker_path}}
 PLAN: {{plan_path}}
+REPO ROOT (canonical main checkout): {{repo_root}}
+
+All paths above are absolute and were existence-checked at compose
+time. Run every Bash command below from the repo root.
 
 You MUST independently:
 
 1. Run the mechanical verifier via Bash:
-     uv run python scripts/verify_task_body.py --issue {{task_number}}
+     cd {{repo_root}} && uv run python scripts/verify_task_body.py --issue {{task_number}}
    Split its FAILs into two classes and ALWAYS proceed to the lenses in
    the SAME pass — NEVER hard-stop at a mechanical FAIL:
    - STRUCTURAL-ABSENCE FAILs (genuinely block): missing/out-of-order H2
@@ -182,7 +236,7 @@ You MUST independently:
      sole basis for a non-PASS verdict.
 
 2. Run the anti-pattern audit via Bash:
-     uv run python scripts/audit_clean_results_body_discipline.py \
+     cd {{repo_root}} && uv run python scripts/audit_clean_results_body_discipline.py \
          --task {{task_number}}
    Inherit every flagged hit as a Lens 7 finding.
 
@@ -441,8 +495,9 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   is the gate that should have caught it.
 
 ### Lens 14 — Binding-concerns audit (composed 2026-05-31 by task #455)
-- Fetch the ledger BEFORE scoring: `task.py list-concerns {{task_number}}
-  --open-only --json` (or use the JSON passed inline by the orchestrator).
+- Fetch the ledger BEFORE scoring: `cd {{repo_root}} && uv run python
+  scripts/task.py list-concerns {{task_number}} --open-only --json` (or
+  use the JSON passed inline by the orchestrator).
 - For each OPEN binding concern (severity `BLOCKER` or `CONCERN`, latest
   event `raised` or `verified-open`), verify the body acknowledges it via
   ONE of: (a) any `## TL;DR` result H3 (under v2: `### Findings` / any
@@ -495,6 +550,17 @@ mechanical verifier preamble>
 PROMPT
 ```
 
+Then confirm the Step 1b absolute paths actually landed in the prompt
+(the compose-side analogue of the code-review twin's envelope check):
+
+```bash
+grep -qF "$BODY_PATH" /tmp/codex-clean-result-critic-<N>-prompt.md \
+  && grep -qF "$PLAN_PATH" /tmp/codex-clean-result-critic-<N>-prompt.md || {
+    echo "BLOCKER: composed prompt is missing the absolute body/plan path" >&2
+    exit 1
+}
+```
+
 ### Step 5: Return to orchestrator
 
 ```
@@ -541,6 +607,13 @@ You do NOT validate, do NOT retry, do NOT post the marker.
    in your lane.
 6. **Return Codex stdout verbatim.** Don't paraphrase, summarise, or
    reformat.
+7. **Absolute canonical-main paths only.** Every path in the composed
+   prompt is absolute and existence-checked at compose time (Step 1b).
+   Relative `tasks/<status>/...` forms are banned — the status guess
+   drifts and the Codex dispatch cwd is inherited, not pinned
+   (#489/#550 unresolvable-path false-FAIL class). The
+   `epm:interpretation` note is passed as an orchestrator-written temp
+   file, never an `events.jsonl` reference.
 
 ## Memory usage
 
