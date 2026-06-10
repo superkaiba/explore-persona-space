@@ -160,3 +160,4 @@
 {"ts": "2026-06-10T20:46:25Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "phase 0 pzero_headroom_judge: per-row judge batches turning over quickly now (4th batch id since 20:21Z after the 3h40m first batch); pid 4702 alive, poller healthy."}
 {"ts": "2026-06-10T21:16:12Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "phase 0 pzero_headroom_judge: small per-row judge batches cycling steadily (~1 per 9-10 min, latest msgbatch_01CXDS67 at 21:13Z); pid 4702 alive."}
 {"ts": "2026-06-10T21:45:41Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "phase 0 pzero_headroom_judge: per-cell judge batches continuing on cadence (~1 per 10 min), pid 4702 alive, poller healthy."}
+{"ts": "2026-06-10T22:14:10Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "phase 0: refusal-row judge batches (40-request) cycling, pid 4702 alive, log fresh. Headroom-judge block continuing across behavior rows."}
