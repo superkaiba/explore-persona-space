@@ -36,3 +36,4 @@
 {"ts": "2026-06-10T09:41:20Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: train -> emission", "phase": "emission", "pod": "pod-550"}
 {"ts": "2026-06-10T10:00:32Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: emission -> shift_extract", "phase": "shift_extract", "pod": "pod-550"}
 {"ts": "2026-06-10T10:10:08Z", "kind": "epm:results", "version": 1, "by": "issue550_pipeline", "note": "Phase A PASS at band [9,13] nat lr=5e-6 cadence 5; Phase B + eval + analysis complete; analysis at eval_results/issue_550/analysis.json; 3-dial hero figure runs OFF-POD via scripts/issue550_make_figures.py after uploads"}
+{"ts": "2026-06-10T10:10:15Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: shift_extract -> done", "phase": "done", "pod": "pod-550"}
