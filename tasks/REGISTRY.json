@@ -2988,8 +2988,8 @@
       "goal": "Re-run the #470/#509 leakage-prediction analysis for refusal and emergent-misalignment behaviors, reusing the closest old source-by-bystander leakage panels, scoring the same predictor zoo (cosine_l20, JS, KL) plus bystander base rate (confound-aware, per #509) and a new training-completion log-prob metric (generalizing #500/#444's fact-validated bystander_logprob), and report whether any predictor generalizes across behaviors; also report training-completion log-prob trained-minus-base as a non-saturating implant-quality readout on each source.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/518",
-      "status": "verifying",
+      "path": "tasks/interpreting/518",
+      "status": "interpreting",
       "title": "Extend leakage prediction to refusal + emergent misalignment (syco-recipe analogue) + training-completion log-prob metric"
     },
     "519": {
