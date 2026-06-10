@@ -643,7 +643,10 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   human-only park at `awaiting_promotion`) and partitions the
   `auto_run: yes` proposals by QUESTION IDENTITY:
   `question_relation: substantially-different` proposals (and untagged
-  legacy ones) are auto-created + auto-spawned as autonomous child
+  ones from pre-2026-06-09 legacy markers only — a missing tag on a
+  newer marker is a proposer-contract violation handled by the
+  one-bounce re-spawn in Step 9b step 3) are auto-created +
+  auto-spawned as autonomous child
   `/issue` sessions, capped at 2 per parent AND hard-stopped at
   `parent_id`-chain depth 3 (so the recursive fan-out is both width-
   and depth-bounded, never exponential); `question_relation: same`
@@ -3667,7 +3670,9 @@ before CRON-TEARDOWN — and routes the `auto_run: yes` proposals by
 `question_relation` (QUESTION IDENTITY — one mechanism, three entry
 points; the other two are the Step 0 followup-scope dispatch for
 chat-requested follow-ups and the interactive Step 10b pick):
-`substantially-different` proposals (and untagged legacy ones) are
+`substantially-different` proposals (and untagged ones ONLY from
+pre-2026-06-09 legacy markers — a newer untagged proposal trips the
+freshness guard in step 3 below) are
 auto-created + auto-spawned as autonomous child `/issue` sessions;
 `same` proposals are NEVER filed as children — the top-ranked one runs
 ON this issue via the same-issue follow-up loop below. Interactive
@@ -3713,11 +3718,30 @@ The autonomous flow:
    Step 10b would post; sharing the marker means the dashboard +
    downstream readers don't care which site fired the proposer).
 3. Parse the proposals, keep those with `auto_run: yes` in ranked
-   order, and PARTITION them by `question_relation` (treat an untagged
-   legacy proposal as `substantially-different` so nothing in flight
-   breaks). Proposals tagged `auto_run: no` are skipped in BOTH
-   partitions — they survive in the `epm:follow-ups v1` marker for the
-   user to pick from manually.
+   order, and PARTITION them by `question_relation`. **Untagged
+   proposals — freshness guard:** the legacy fallback (treat an
+   untagged proposal as `substantially-different` so nothing in
+   flight breaks) applies ONLY when the `epm:follow-ups v1` marker
+   carrying the proposals was posted before 2026-06-09 (pre-dating
+   the question-identity routing fix). On a newer marker, a missing
+   `question_relation` tag is a proposer-contract violation — the
+   usual cause is a stale `follow-up-proposer.md` in a long-lived
+   session/worktree that predates the fix (incident #533, 2026-06-10:
+   a textbook `same` corrective re-run was routed to a child task via
+   this fallback). Re-spawn `follow-up-proposer` ONCE, instructing it
+   to re-emit the SAME proposals with `question_relation` (and
+   `followup_label` for `same`) tags per the criteria in
+   `.claude/agents/follow-up-proposer.md` § "question_relation tag —
+   criteria", read from the CURRENT `main` checkout (repo root), not
+   the session worktree's possibly-stale copy; the re-emit posts a
+   fresh `epm:follow-ups v1` marker that supersedes the untagged one.
+   If the re-emit is STILL untagged, route the affected proposals as
+   `substantially-different` and record the violation in the
+   `epm:follow-ups-autospawned v1` marker body
+   (`proposer_contract_violation: question_relation missing after
+   re-spawn`). Proposals tagged `auto_run: no` are skipped in BOTH
+   partitions — they survive in the `epm:follow-ups v1` marker for
+   the user to pick from manually.
    - **`substantially-different`** → the child auto-spawn path (steps
      4-6 below). Take the top **2** (cap; bounds fan-out so a parent
      never spawns more than 2 autonomous children regardless of how
@@ -4105,8 +4129,14 @@ The proposer outputs 1-3 concrete follow-up proposals, each with:
 
 Post as `epm:follow-ups v1` event on the completed task.
 
-**Route the user's pick by `question_relation`** (treat an untagged
-legacy proposal as `substantially-different`):
+**Route the user's pick by `question_relation`** (untagged proposals:
+the treat-as-`substantially-different` fallback applies only when the
+`epm:follow-ups v1` marker was posted before 2026-06-09; on a newer
+marker the missing tag is a proposer-contract violation — classify
+the picked proposal yourself against
+`.claude/agents/follow-up-proposer.md` § "question_relation tag —
+criteria" and note the violation in the resulting
+`epm:followup-scope v1` / child-creation marker):
 
 - **`same`** — do NOT file a child task. Post `epm:followup-scope v1`
   on this task (`source: step-10b-pick`, fields per workflow.yaml §
