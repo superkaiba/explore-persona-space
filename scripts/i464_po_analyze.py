@@ -53,7 +53,12 @@ arms (12 cells) with the SINGLE registered pair
 ``d_seed_minimal_cn = L_system_minimal - L_role_bare`` and records the
 plan-§3 verdict-precedence ordering verbatim in a
 ``verdict_precedence_note`` field. Identical H1 / H2 / dynamic-range
-machinery (no new thresholds).
+machinery (no new thresholds); the min_cn ``headline_status`` is derived
+per that precedence — ``inconclusive_dynamic_range_failed`` (highest)
+> ``fail`` (H1) > ``falsifier_fired`` (CI overlaps zero / sign flip /
+any seed <= 0) > ``ok`` (full PASS) vs
+``directional_partial_survival_below_threshold`` (all seeds positive,
+CI excludes zero, mean < 1 nat).
 
 CLI:
     uv run python scripts/i464_po_analyze.py
@@ -478,7 +483,30 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             m_mc, lo_mc, hi_mc = _paired_bootstrap_ci(d_min_cn, N_BOOTSTRAP)
             verdict_min_cn = _h2_verdict("minimal_cn", d_min_cn, m_mc, lo_mc, hi_mc)
             h2_full = verdict_min_cn["pass"] and h1_overall_pass
-            headline_status = "ok" if h2_full else "fail"
+            # Explicit status per the registered precedence (plan §3/§6
+            # REGISTERED INTERPRETATION NOTE; VERDICT_PRECEDENCE_NOTE above).
+            # The dynamic-range override BELOW stays HIGHEST precedence — it
+            # rewrites any status set here, so "falsifier_fired" and the
+            # directional status are reachable only when the DR gate passes.
+            #   (a) H1 fail -> "fail" (no headline claim).
+            #   (c) H1-ok + (CI overlaps zero / sign flip / any seed <= 0)
+            #       -> "falsifier_fired" (content-attribution conclusion).
+            #   PASS: H1-ok + all seeds positive + CI excludes zero +
+            #       mean >= 1 nat -> "ok".
+            #   (d) H1-ok + all seeds positive + CI excludes zero + mean
+            #       < 1 nat -> directional / partial survival below the
+            #       inherited 1-nat threshold — neither PASS nor
+            #       falsification.
+            if not h1_overall_pass:
+                headline_status = "fail"
+            elif h2_full:
+                headline_status = "ok"
+            elif verdict_min_cn["all_seeds_positive"] and verdict_min_cn["ci_excludes_zero"]:
+                # Every _h2_verdict criterion except mean >= H2_HEADLINE_
+                # THRESHOLD is met, so the 1-nat mean is the only miss.
+                headline_status = "directional_partial_survival_below_threshold"
+            else:
+                headline_status = "falsifier_fired"
             headline = {
                 "status": headline_status,
                 "n_complete_seeds": len(complete_seeds),
@@ -629,6 +657,30 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             "<= %.2f in arm(s) %s — saturation regime, headline overridden.",
             DYNAMIC_RANGE_THRESHOLD,
             headline.get("dynamic_range_failed_arms"),
+        )
+    elif headline_status == "falsifier_fired":
+        # min_cn only (po/cn never set this status).
+        v = headline["d_seed_minimal_cn"]
+        logger.warning(
+            "H2 FALSIFIER FIRED: d_minimal_cn mean=%.3f CI=[%.3f, %.3f] per_seed=%s — "
+            "CI overlaps zero / sign flip / non-positive seed; the CN-regime edge is "
+            "attributable to the elaborate system instruction's content.",
+            v["mean"],
+            v["ci_lo_95"],
+            v["ci_hi_95"],
+            v["d_per_seed"],
+        )
+    elif headline_status == "directional_partial_survival_below_threshold":
+        # min_cn only (po/cn never set this status).
+        v = headline["d_seed_minimal_cn"]
+        logger.info(
+            "H2 DIRECTIONAL (partial survival): d_minimal_cn mean=%.3f CI=[%.3f, %.3f] — "
+            "all seeds positive, CI excludes zero, mean below the inherited %.1f-nat "
+            "threshold; neither PASS nor falsification (registered precedence (d)).",
+            v["mean"],
+            v["ci_lo_95"],
+            v["ci_hi_95"],
+            H2_HEADLINE_THRESHOLD,
         )
     if not h1_overall_pass and h1_per_cell_pass:
         failing = [k for k, v in h1_per_cell_pass.items() if not v]

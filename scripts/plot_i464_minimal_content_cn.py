@@ -57,6 +57,17 @@ DEFAULT_OUT_DIR = Path("figures/issue_464")
 
 CN_HEDGE = "suggestive /\ninconclusive_dynamic_range_failed"
 
+# Short bracket tags for the NEW cell's tick label, keyed by the
+# machine-readable min_cn ``headline_status`` (registered precedence in
+# i464_po_analyze.py). DR-fail reuses the parent CN cells' hedge text;
+# unmapped statuses (e.g. "fail") render verbatim. The raw status always
+# stays untouched in the figure meta rows.
+NEW_CELL_STATUS_TAG = {
+    "directional_partial_survival_below_threshold": "directional <1 nat",
+    "falsifier_fired": "falsifier",
+    "inconclusive_dynamic_range_failed": CN_HEDGE,
+}
+
 SEEDS = (42, 137, 1337)
 CN_PARENT_ARMS = ("system_plain", "system_padded", "role")
 # Plain-English arm labels end to end (no opaque condition codes).
@@ -138,8 +149,11 @@ def _load_2x2_cells(data_dir: Path) -> list[dict]:
     ]
     # Honesty-by-construction: if the NEW cell's own status is hedged,
     # carry the same hedge into its label rather than presenting it clean.
+    # Registered min_cn statuses map to short tags (NEW_CELL_STATUS_TAG);
+    # anything unmapped renders verbatim.
     if new_status not in ("ok",):
-        cells[-1]["label"] = f"contrastive negs\nminimal (THIS RUN)\n[{new_status}]"
+        tag = NEW_CELL_STATUS_TAG.get(new_status, new_status)
+        cells[-1]["label"] = f"contrastive negs\nminimal (THIS RUN)\n[{tag}]"
     return cells
 
 
