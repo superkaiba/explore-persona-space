@@ -347,3 +347,4 @@ uv run python scripts/eval_issue543.py --arm r50 --seed 42 --phase phase2 \
   --variant lr5e6 --adapter-path /tmp/issue_557_results/r50_lr5e6_seed42_phase2/adapter --gpu 0
 uv run python scripts/probe_issue557_absorption.py --variants lr5e6 --seeds 42
 ```
+- **Methodology reference:** [docs/methodology/issue_557.md](https://github.com/superkaiba/explore-persona-space/blob/31bcbb45283d0574f5fefeac36ce9bf420f61d52/docs/methodology/issue_557.md) · [gist](https://gist.github.com/superkaiba/e528f5c74e46d48de88f5fa6745c9f2c)
