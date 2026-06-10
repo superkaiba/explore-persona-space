@@ -18,6 +18,8 @@ relates_to:
 - leak-predictor
 - leak-behavior-vs-marker
 - leak-from-cell-set
+classification: useful
+promoted_at: '2026-06-10T00:06:03Z'
 ---
 # Scaling 7B to 72B makes the sycophancy-leakage predictor strictly worse, not better (HIGH confidence)
 
