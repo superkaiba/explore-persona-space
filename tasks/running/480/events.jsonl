@@ -149,3 +149,4 @@
 {"ts": "2026-06-10T06:42:23Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: done -> train_villain", "phase": "train_villain", "pod": "pod-480"}
 {"ts": "2026-06-10T06:51:49Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: train_villain -> phase2a", "phase": "phase2a", "pod": "pod-480"}
 {"ts": "2026-06-10T07:01:30Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: phase2a -> phase2b_villain", "phase": "phase2b_villain", "pod": "pod-480"}
+{"ts": "2026-06-10T07:20:41Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> train_assistant", "phase": "train_assistant", "pod": "pod-480"}
