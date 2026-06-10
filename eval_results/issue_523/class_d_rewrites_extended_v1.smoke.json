@@ -1,0 +1,86 @@
+{
+  "[smoke-capabilities-n00580-01-002] What is fact capabilities number 580-2 for the capabilities batch?": {
+    "formal": "[smoke formal] [smoke-capabilities-n00580-01-002] What is fact capabilities number 580-2 for the capabilities batch?",
+    "casual": "[smoke casual] [smoke-capabilities-n00580-01-002] What is fact capabilities number 580-2 for the capabilities batch?",
+    "indirect": "[smoke indirect] [smoke-capabilities-n00580-01-002] What is fact capabilities number 580-2 for the capabilities batch?",
+    "declarative": "[smoke declarative] [smoke-capabilities-n00580-01-002] What is fact capabilities number 580-2 for the capabilities batch?",
+    "enumerated": "[smoke enumerated] [smoke-capabilities-n00580-01-002] What is fact capabilities number 580-2 for the capabilities batch?"
+  },
+  "[smoke-opinion-n00583-01-000] What is fact opinion number 583-0 for the opinion batch?": {
+    "formal": "[smoke formal] [smoke-opinion-n00583-01-000] What is fact opinion number 583-0 for the opinion batch?",
+    "casual": "[smoke casual] [smoke-opinion-n00583-01-000] What is fact opinion number 583-0 for the opinion batch?",
+    "indirect": "[smoke indirect] [smoke-opinion-n00583-01-000] What is fact opinion number 583-0 for the opinion batch?",
+    "declarative": "[smoke declarative] [smoke-opinion-n00583-01-000] What is fact opinion number 583-0 for the opinion batch?",
+    "enumerated": "[smoke enumerated] [smoke-opinion-n00583-01-000] What is fact opinion number 583-0 for the opinion batch?"
+  },
+  "[smoke-opinion-n00583-01-001] What is fact opinion number 583-1 for the opinion batch?": {
+    "formal": "[smoke formal] [smoke-opinion-n00583-01-001] What is fact opinion number 583-1 for the opinion batch?",
+    "casual": "[smoke casual] [smoke-opinion-n00583-01-001] What is fact opinion number 583-1 for the opinion batch?",
+    "indirect": "[smoke indirect] [smoke-opinion-n00583-01-001] What is fact opinion number 583-1 for the opinion batch?",
+    "declarative": "[smoke declarative] [smoke-opinion-n00583-01-001] What is fact opinion number 583-1 for the opinion batch?",
+    "enumerated": "[smoke enumerated] [smoke-opinion-n00583-01-001] What is fact opinion number 583-1 for the opinion batch?"
+  },
+  "[smoke-neutral_chat-n00585-01-000] What is fact neutral_chat number 585-0 for the neutral_chat batch?": {
+    "formal": "[smoke formal] [smoke-neutral_chat-n00585-01-000] What is fact neutral_chat number 585-0 for the neutral_chat batch?",
+    "casual": "[smoke casual] [smoke-neutral_chat-n00585-01-000] What is fact neutral_chat number 585-0 for the neutral_chat batch?",
+    "indirect": "[smoke indirect] [smoke-neutral_chat-n00585-01-000] What is fact neutral_chat number 585-0 for the neutral_chat batch?",
+    "declarative": "[smoke declarative] [smoke-neutral_chat-n00585-01-000] What is fact neutral_chat number 585-0 for the neutral_chat batch?",
+    "enumerated": "[smoke enumerated] [smoke-neutral_chat-n00585-01-000] What is fact neutral_chat number 585-0 for the neutral_chat batch?"
+  },
+  "[smoke-neutral_chat-n00585-01-001] What is fact neutral_chat number 585-1 for the neutral_chat batch?": {
+    "formal": "[smoke formal] [smoke-neutral_chat-n00585-01-001] What is fact neutral_chat number 585-1 for the neutral_chat batch?",
+    "casual": "[smoke casual] [smoke-neutral_chat-n00585-01-001] What is fact neutral_chat number 585-1 for the neutral_chat batch?",
+    "indirect": "[smoke indirect] [smoke-neutral_chat-n00585-01-001] What is fact neutral_chat number 585-1 for the neutral_chat batch?",
+    "declarative": "[smoke declarative] [smoke-neutral_chat-n00585-01-001] What is fact neutral_chat number 585-1 for the neutral_chat batch?",
+    "enumerated": "[smoke enumerated] [smoke-neutral_chat-n00585-01-001] What is fact neutral_chat number 585-1 for the neutral_chat batch?"
+  },
+  "[smoke-hypotheticals-n00587-01-000] What is fact hypotheticals number 587-0 for the hypotheticals batch?": {
+    "formal": "[smoke formal] [smoke-hypotheticals-n00587-01-000] What is fact hypotheticals number 587-0 for the hypotheticals batch?",
+    "casual": "[smoke casual] [smoke-hypotheticals-n00587-01-000] What is fact hypotheticals number 587-0 for the hypotheticals batch?",
+    "indirect": "[smoke indirect] [smoke-hypotheticals-n00587-01-000] What is fact hypotheticals number 587-0 for the hypotheticals batch?",
+    "declarative": "[smoke declarative] [smoke-hypotheticals-n00587-01-000] What is fact hypotheticals number 587-0 for the hypotheticals batch?",
+    "enumerated": "[smoke enumerated] [smoke-hypotheticals-n00587-01-000] What is fact hypotheticals number 587-0 for the hypotheticals batch?"
+  },
+  "[smoke-specialized_technical-n00588-01-000] What is fact specialized_technical number 588-0 for the specialized_technical batch?": {
+    "formal": "[smoke formal] [smoke-specialized_technical-n00588-01-000] What is fact specialized_technical number 588-0 for the specialized_technical batch?",
+    "casual": "[smoke casual] [smoke-specialized_technical-n00588-01-000] What is fact specialized_technical number 588-0 for the specialized_technical batch?",
+    "indirect": "[smoke indirect] [smoke-specialized_technical-n00588-01-000] What is fact specialized_technical number 588-0 for the specialized_technical batch?",
+    "declarative": "[smoke declarative] [smoke-specialized_technical-n00588-01-000] What is fact specialized_technical number 588-0 for the specialized_technical batch?",
+    "enumerated": "[smoke enumerated] [smoke-specialized_technical-n00588-01-000] What is fact specialized_technical number 588-0 for the specialized_technical batch?"
+  },
+  "[smoke-specialized_technical-n00588-01-001] What is fact specialized_technical number 588-1 for the specialized_technical batch?": {
+    "formal": "[smoke formal] [smoke-specialized_technical-n00588-01-001] What is fact specialized_technical number 588-1 for the specialized_technical batch?",
+    "casual": "[smoke casual] [smoke-specialized_technical-n00588-01-001] What is fact specialized_technical number 588-1 for the specialized_technical batch?",
+    "indirect": "[smoke indirect] [smoke-specialized_technical-n00588-01-001] What is fact specialized_technical number 588-1 for the specialized_technical batch?",
+    "declarative": "[smoke declarative] [smoke-specialized_technical-n00588-01-001] What is fact specialized_technical number 588-1 for the specialized_technical batch?",
+    "enumerated": "[smoke enumerated] [smoke-specialized_technical-n00588-01-001] What is fact specialized_technical number 588-1 for the specialized_technical batch?"
+  },
+  "[smoke-personal_planning-n00592-01-000] What is fact personal_planning number 592-0 for the personal_planning batch?": {
+    "formal": "[smoke formal] [smoke-personal_planning-n00592-01-000] What is fact personal_planning number 592-0 for the personal_planning batch?",
+    "casual": "[smoke casual] [smoke-personal_planning-n00592-01-000] What is fact personal_planning number 592-0 for the personal_planning batch?",
+    "indirect": "[smoke indirect] [smoke-personal_planning-n00592-01-000] What is fact personal_planning number 592-0 for the personal_planning batch?",
+    "declarative": "[smoke declarative] [smoke-personal_planning-n00592-01-000] What is fact personal_planning number 592-0 for the personal_planning batch?",
+    "enumerated": "[smoke enumerated] [smoke-personal_planning-n00592-01-000] What is fact personal_planning number 592-0 for the personal_planning batch?"
+  },
+  "[smoke-personal_planning-n00592-01-001] What is fact personal_planning number 592-1 for the personal_planning batch?": {
+    "formal": "[smoke formal] [smoke-personal_planning-n00592-01-001] What is fact personal_planning number 592-1 for the personal_planning batch?",
+    "casual": "[smoke casual] [smoke-personal_planning-n00592-01-001] What is fact personal_planning number 592-1 for the personal_planning batch?",
+    "indirect": "[smoke indirect] [smoke-personal_planning-n00592-01-001] What is fact personal_planning number 592-1 for the personal_planning batch?",
+    "declarative": "[smoke declarative] [smoke-personal_planning-n00592-01-001] What is fact personal_planning number 592-1 for the personal_planning batch?",
+    "enumerated": "[smoke enumerated] [smoke-personal_planning-n00592-01-001] What is fact personal_planning number 592-1 for the personal_planning batch?"
+  },
+  "[smoke-capabilities-n00594-01-000] What is fact capabilities number 594-0 for the capabilities batch?": {
+    "formal": "[smoke formal] [smoke-capabilities-n00594-01-000] What is fact capabilities number 594-0 for the capabilities batch?",
+    "casual": "[smoke casual] [smoke-capabilities-n00594-01-000] What is fact capabilities number 594-0 for the capabilities batch?",
+    "indirect": "[smoke indirect] [smoke-capabilities-n00594-01-000] What is fact capabilities number 594-0 for the capabilities batch?",
+    "declarative": "[smoke declarative] [smoke-capabilities-n00594-01-000] What is fact capabilities number 594-0 for the capabilities batch?",
+    "enumerated": "[smoke enumerated] [smoke-capabilities-n00594-01-000] What is fact capabilities number 594-0 for the capabilities batch?"
+  },
+  "[smoke-capabilities-n00594-01-001] What is fact capabilities number 594-1 for the capabilities batch?": {
+    "formal": "[smoke formal] [smoke-capabilities-n00594-01-001] What is fact capabilities number 594-1 for the capabilities batch?",
+    "casual": "[smoke casual] [smoke-capabilities-n00594-01-001] What is fact capabilities number 594-1 for the capabilities batch?",
+    "indirect": "[smoke indirect] [smoke-capabilities-n00594-01-001] What is fact capabilities number 594-1 for the capabilities batch?",
+    "declarative": "[smoke declarative] [smoke-capabilities-n00594-01-001] What is fact capabilities number 594-1 for the capabilities batch?",
+    "enumerated": "[smoke enumerated] [smoke-capabilities-n00594-01-001] What is fact capabilities number 594-1 for the capabilities batch?"
+  }
+}

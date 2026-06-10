@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "bar_slug": "cell_fixed_seed43_nonstyl_heldout",
+  "description": "Same as headline but against the seed-43 \u0394G substrate. SEED-isolated comparator vs the headline.",
+  "seed_used": 43,
+  "panel": "non_stylized_156",
+  "n_folds": 13,
+  "n_folds_finite": 13,
+  "point_estimate": 0.3676804721316327,
+  "bootstrap_n": 2000,
+  "ci_2_5": -0.11787261063647038,
+  "ci_97_5": 0.5792696400847637,
+  "half_width": 0.348571125360617,
+  "per_fold_r2": [
+    -16.58541366209335,
+    -22.85654159169549,
+    -0.03491012099511237,
+    0.1451070972446804,
+    -1.6590130273728239,
+    -7.718136037927424,
+    -0.24386094353159415,
+    -1.8769179304416856,
+    -0.15277085936035717,
+    -1.7789859852540029,
+    -102.02272426865557,
+    -8.741167829719155,
+    -38.78283173679595
+  ],
+  "per_fold_selected_cell": null,
+  "nested_search": false,
+  "n_cells_excluded_for_coverage_gap": null,
+  "cell_pick_tally": null,
+  "paired_delta_vs_baseline": {
+    "baseline_label": "cell_fixed_seed42_nonstyl_heldout",
+    "mean_delta": 0.16229424843751572,
+    "ci_2_5": -0.014057455227752712,
+    "ci_97_5": 0.563869898650296,
+    "half_width": 0.28896367693902436,
+    "statistic": "pooled_r2"
+  },
+  "elapsed_seconds": 0.13,
+  "provenance": {
+    "git_sha": "d6deb6dbd1edf878a4673d84dcda23fd2b70276c",
+    "timestamp_utc": "2026-06-10T06:24:47.618016+00:00",
+    "python": "3.11.10"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "extraction_point": "mean_response",
+  "layer": 23,
+  "metric": "mahal_pooled_ctx",
+  "variant": "raw",
+  "pca_k": 16,
+  "cond_ids": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "C1",
+    "D1",
+    "D2",
+    "D3",
+    "D4",
+    "D5"
+  ],
+  "git_sha": "d6deb6dbd1edf878a4673d84dcda23fd2b70276c",
+  "timestamp_utc": "2026-06-10T05:46:07.627203+00:00",
+  "matrix": null,
+  "n_a": "mahal_pooled_ctx at extraction_point=mean_response: pooled cov rank-deficient (min eigenvalue 2.00e-15 < 1e-10) at k_eff=15; ridging would invent variance along a degenerate direction. Reduce --pca-k or extract more contexts.",
+  "n_cond": 16
+}

@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "bar_slug": "js_baseline_seed42_nonstyl_heldout",
+  "description": "JS baseline cell-fixed (final-layer last-prompt next-token JS over full vocab) under the same fold scheme. Comparator.",
+  "seed_used": 42,
+  "panel": "non_stylized_156",
+  "n_folds": 13,
+  "n_folds_finite": 13,
+  "point_estimate": -0.2772281025663772,
+  "bootstrap_n": 2000,
+  "ci_2_5": -0.9577570376504521,
+  "ci_97_5": -0.2279489666673194,
+  "half_width": 0.36490403549156636,
+  "per_fold_r2": [
+    -7.796333868364824,
+    -4.663541057287307,
+    -22.328369219247456,
+    -0.4418713470735167,
+    -1.2832186264650725,
+    -5.686618131382142,
+    -49.85189213408153,
+    -48.27787888243047,
+    -33.7939489525452,
+    -89.2963775962121,
+    -4.503033273958387,
+    -24.678838466277732,
+    -301.7557264742182
+  ],
+  "per_fold_selected_cell": null,
+  "nested_search": false,
+  "n_cells_excluded_for_coverage_gap": null,
+  "cell_pick_tally": null,
+  "paired_delta_vs_baseline": {
+    "baseline_label": "cell_fixed_seed42_nonstyl_heldout",
+    "mean_delta": -0.48261432626049416,
+    "ci_2_5": -0.9491926449426168,
+    "ci_97_5": 0.026219468086189884,
+    "half_width": 0.48770605651440335,
+    "statistic": "pooled_r2"
+  },
+  "elapsed_seconds": 0.13,
+  "provenance": {
+    "git_sha": "d6deb6dbd1edf878a4673d84dcda23fd2b70276c",
+    "timestamp_utc": "2026-06-10T06:24:47.747177+00:00",
+    "python": "3.11.10"
+  }
+}
