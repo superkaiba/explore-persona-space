@@ -189,7 +189,10 @@ METRIC_REGISTRY: dict[str, dict] = {
         family="A8",
         implemented=True,
         symmetric=False,
-        note="column distance to the midpoint of the scored block's context means",
+        note="column distance to the midpoint of the scored block's context means; "
+        "RAW-ONLY -- under --centered the anchor degenerates to the zero vector "
+        "(grand-mean centering subtracts exactly the mean of the context means) "
+        "and the scorer fails loud",
     ),
     # SKIP rows (cost without expectation -- never scored)
     "kl_judge": dict(tier="skip", family="deprecated", implemented=False),
@@ -413,6 +416,15 @@ def metric_matrix(  # noqa: C901 - one dispatch table per metric family; splitti
             assert "default" in cids, f"{metric_id} needs the default context in the panel"
             v_anchor = mu["default"]
         elif metric_id == "cos_to_trained_midpoint":
+            if centered:
+                # grand_mean above IS the mean of the context means, so the
+                # centered midpoint anchor is the ZERO vector by construction
+                # and the cosine is 0/0 garbage (round-3 fix; registry note).
+                raise SystemExit(
+                    "cos_to_trained_midpoint is undefined under --centered "
+                    "(anchor = mean of centered means = 0 by construction); "
+                    "score this row raw-only."
+                )
             v_anchor = np.mean([mu[c] for c in cids], axis=0)
         for i, ci in enumerate(cids):
             for j, cj in enumerate(cids):
@@ -996,23 +1008,38 @@ def main() -> int:
 
     out = EVAL / "baselines/baseline_scores.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    existing = json.loads(out.read_text()) if out.exists() else {"scores": {}}
-    existing["scores"].update(results)
+    existing = json.loads(out.read_text()) if out.exists() else {"schema_version": 2, "scores": {}}
+    if existing.get("schema_version") != 2:
+        raise SystemExit(
+            f"[score] {out} is a schema-v1 scores file (rows keyed by metric id only; the "
+            "behavior label was last-writer-wins, so rows from earlier multi-behavior runs "
+            "may be mislabeled and CANNOT be migrated safely). Delete it and re-score -- "
+            f"scoring is CPU-only over the cached clouds: rm {out}"
+        )
+    # Rows are keyed `<behavior>:<metric_id>` and carry the run flags INSIDE
+    # each row (round-3 fix, concern baseline-scores-behavior-collision): the
+    # §6.5 deliverable needs per-behavior rows to coexist in this one glob, a
+    # re-run of one behavior overwrites ONLY its own rows, and there is no
+    # top-level run metadata left for a later run to relabel the file with.
+    for mid, res in results.items():
+        existing["scores"][f"{args.behavior}:{mid}"] = {
+            **res,
+            "behavior": args.behavior,
+            "final_test": args.final_test,
+        }
+    if args.all_registered:
+        # Per-behavior, and only written by --all-registered runs -- a later
+        # single --metric run no longer resets it to [] (round-3 minor fix).
+        existing.setdefault("registered_not_implemented", {})[args.behavior] = not_implemented
     existing.update(
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "git_commit": _git_commit(),
             "updated_at": datetime.datetime.now(datetime.UTC).isoformat(),
-            "behavior": args.behavior,
-            "anchor": args.anchor,
-            "layer": args.layer,
-            "centered": args.centered,
-            "final_test": args.final_test,
-            "registered_not_implemented": not_implemented,
         }
     )
     out.write_text(json.dumps(existing, indent=1))
-    logger.info("[score] wrote %s (%d rows)", out, len(results))
+    logger.info("[score] wrote %s (%d %s rows)", out, len(results), args.behavior)
     if not_implemented:
         # NEVER a silent gap (§6.1 contract, round-2 fix): every implemented
         # row is scored + persisted ABOVE, then the run exits non-zero naming

@@ -361,7 +361,13 @@ def _gen_response_cache(
     todo = [
         c
         for c in cids
-        if not cache_covers(out_dir / f"{c}.json", questions, smoke=smoke, behavior=behavior)
+        if not cache_covers(
+            out_dir / f"{c}.json",
+            questions,
+            smoke=smoke,
+            behavior=behavior,
+            expected_pool=questions,  # full gen pool -- pool identity enforced (round 3)
+        )
     ]
     if not todo:
         logger.info("[gen] all %d response caches present + validated -- skip", len(cids))
@@ -499,7 +505,11 @@ def phase0(args) -> None:
             c
             for c in [*marker_train_cids, *NEGATIVE_CIDS]
             if not cache_covers(
-                responses_dir / f"{c}.json", questions, smoke=args.smoke, behavior="marker"
+                responses_dir / f"{c}.json",
+                questions,
+                smoke=args.smoke,
+                behavior="marker",
+                expected_pool=train_q,  # caches are generated from the FULL train pool
             )
         ]
         if missing:
@@ -513,7 +523,11 @@ def phase0(args) -> None:
         band = {}
         for cid in marker_train_cids:
             cache = read_response_cache(
-                responses_dir / f"{cid}.json", questions, smoke=args.smoke, behavior="marker"
+                responses_dir / f"{cid}.json",
+                questions,
+                smoke=args.smoke,
+                behavior="marker",
+                expected_pool=train_q,
             )["questions"]
             ctxs = [
                 build_prompt(registry[cid], q, tok, behavior="marker", icl_demos=demos)
@@ -894,7 +908,13 @@ def _gen_eval_response_cache(cids: list[str], questions: list[str], *, smoke: bo
     todo = [
         c
         for c in cids
-        if not cache_covers(out_dir / f"{c}.json", questions, smoke=smoke, behavior="marker")
+        if not cache_covers(
+            out_dir / f"{c}.json",
+            questions,
+            smoke=smoke,
+            behavior="marker",
+            expected_pool=questions,  # full gen pool -- pool identity enforced (round 3)
+        )
     ]
     if not todo:
         return
@@ -957,15 +977,30 @@ def _train_marker_cell(cid: str, *, smoke: bool, gpu_id: int) -> None:
     train_lora clobbers CUDA_VISIBLE_DEVICES from cfg.gpu_id, default 0 --
     without the thread, 8x ``--shard`` launches all pile onto physical GPU 0).
     """
-    from explore_persona_space.train.sft import TrainLoraConfig, train_lora
-
     data_path = GEN / "train/marker" / f"{cid}_seed{SEED}.jsonl"
     out_dir = OUT / f"adapters/i537_marker_{cid}_seed{SEED}"
-    if (out_dir / "adapter_model.safetensors").exists():
-        logger.info("[p1-train] %s already trained -- skip", cid)
-        return
     band = json.loads((EVAL / "p0/band_reachability.json").read_text())["cells"]
     unreachable = band[cid]["band_unreachable"]
+    stop_p = EVAL / f"p1/stop_steps/{cid}.json"
+    if (out_dir / "adapter_model.safetensors").exists():
+        if not unreachable and not stop_p.exists():
+            # Round-3 fix (stop-step crash window): a crash between adapter
+            # save and the stop write (e.g. a transient Hub-verify failure)
+            # would otherwise idempotent-skip forever, wedging the §4.1b
+            # median behind a remediation that cannot succeed.
+            raise SystemExit(
+                f"[p1-train] {cid}: adapter exists but its stop-step file was never "
+                f"written ({stop_p}) -- a crash landed between adapter save and the "
+                "stop write, and the §4.1b step-matched median needs every reachable "
+                f"cell's stop step. Recover: rm -rf {out_dir} then relaunch -- the "
+                "idempotent relaunch retrains ONLY this cell and records its stop step."
+            )
+        logger.info("[p1-train] %s already trained -- skip", cid)
+        return
+    # Import below the skip/guard block: skips and the stop-file guard stay
+    # import-free (no transformers/torch needed to decide them).
+    from explore_persona_space.train.sft import TrainLoraConfig, train_lora
+
     kwargs = dict(MARKER_TRAIN_KWARGS)
     if unreachable and not smoke:
         kwargs["marker_band_stop"] = False
@@ -1058,7 +1093,13 @@ def _marker_cross_eval(args, cells: list[str]) -> None:
         from explore_persona_space.experiments.i537_cache import read_response_cache
 
         cache = read_response_cache(
-            GEN / "responses_eval" / f"{cid}.json", questions, smoke=args.smoke, behavior="marker"
+            GEN / "responses_eval" / f"{cid}.json",
+            questions,
+            smoke=args.smoke,
+            behavior="marker",
+            # Gen wrote these caches from the SAME list (real: full eval pool;
+            # smoke: the identical [:4] slice of the no-.smoke-variant pool).
+            expected_pool=questions,
         )["questions"]
         return [
             build_prompt(registry[cid], q, tok, behavior="marker", icl_demos=demos)
@@ -1236,7 +1277,13 @@ def _extract_clouds(args) -> None:
     missing = [
         c
         for c in cids
-        if not cache_covers(cloud_resp_dir / f"{c}.json", probes, smoke=args.smoke, behavior=None)
+        if not cache_covers(
+            cloud_resp_dir / f"{c}.json",
+            probes,
+            smoke=args.smoke,
+            behavior=None,
+            expected_pool=probes,  # full (post-slice) probe set IS the gen pool
+        )
     ]
     if missing:
         llm = _vllm_engine(16384)
@@ -1277,7 +1324,11 @@ def _extract_clouds(args) -> None:
         ):
             continue
         cache = read_response_cache(
-            cloud_resp_dir / f"{cid}.json", probes, smoke=args.smoke, behavior=None
+            cloud_resp_dir / f"{cid}.json",
+            probes,
+            smoke=args.smoke,
+            behavior=None,
+            expected_pool=probes,
         )["questions"]
         anchors: dict[str, list[np.ndarray]] = {a: [] for a in CLOUD_ANCHORS}
         first_token_logits: list[np.ndarray] = []
@@ -1474,7 +1525,13 @@ def _ensure_refusal_negative_responses(args) -> None:
     todo = [
         c
         for c in NEGATIVE_CIDS
-        if not cache_covers(out_dir / f"{c}.json", requests, smoke=args.smoke, behavior="refusal")
+        if not cache_covers(
+            out_dir / f"{c}.json",
+            requests,
+            smoke=args.smoke,
+            behavior="refusal",
+            expected_pool=requests,  # full frozen request pool IS the gen pool
+        )
     ]
     if not todo:
         return
@@ -1974,7 +2031,17 @@ def phase3(args) -> None:
     if "assemble" in steps:
         phase_log("p3_assemble")
         subprocess.run(
-            [sys.executable, str(REPO / "scripts/i537_assemble_tensor.py")],
+            [
+                sys.executable,
+                str(REPO / "scripts/i537_assemble_tensor.py"),
+                # Round-3 fix: thread the pool explicitly so a --smoke phase 3
+                # reads the smoke refusal pool (the assembler's default is the
+                # REAL pool, which SystemExits on smoke-pool questions at the
+                # panel-membership check); real runs resolve to the same
+                # default path, so the thread is unconditional.
+                "--refusal-pool",
+                str(_pool_path("pool_refusal_40", args.smoke)),
+            ],
             check=True,
             cwd=REPO,
             env={**os.environ},

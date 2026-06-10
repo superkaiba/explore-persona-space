@@ -138,18 +138,25 @@ def _load_responses(
     *,
     smoke: bool,
     behavior: str | None,
+    expected_pool: list[str] | None = None,
 ) -> dict[str, str]:
     """Load the frozen on-policy response cache for one context.
 
     Round-2 fix: routed through the shared i537_cache reader, which validates
-    question-key coverage AND the run signature (smoke/real, behavior, pool
-    hash) before any row is consumed -- a smoke/partial/wrong-pool cache fails
-    loud here instead of KeyError-ing mid-build.
+    question-key coverage AND the run signature (smoke/real, behavior) before
+    any row is consumed -- a smoke/partial/wrong-pool cache fails loud here
+    instead of KeyError-ing mid-build. ``expected_pool`` (round-3 fix) is the
+    FULL pool the cache was generated from; when given, the reader also
+    enforces the signature's n_questions + pool_sha256 against it.
     """
     from explore_persona_space.experiments.i537_cache import read_response_cache
 
     payload = read_response_cache(
-        responses_dir / f"{cid}.json", required_questions, smoke=smoke, behavior=behavior
+        responses_dir / f"{cid}.json",
+        required_questions,
+        smoke=smoke,
+        behavior=behavior,
+        expected_pool=expected_pool,
     )
     return {q: v["response"] for q, v in payload["questions"].items()}
 
@@ -226,7 +233,9 @@ def build_marker(
 ) -> list[dict]:
     from explore_persona_space.experiments.i537_contexts import MARKER_TEXT, build_messages
 
-    pos_r = _load_responses(responses_dir, ctx.cid, questions, smoke=smoke, behavior="marker")
+    pos_r = _load_responses(
+        responses_dir, ctx.cid, questions, smoke=smoke, behavior="marker", expected_pool=questions
+    )
     rows: list[dict] = []
     for q in questions:
         rows.append(
@@ -238,7 +247,14 @@ def build_marker(
     n_per_neg = len(questions) // len(negatives)
     for k, neg in enumerate(negatives):
         qs = questions[k * n_per_neg : (k + 1) * n_per_neg]
-        neg_r = _load_responses(responses_dir, neg.cid, qs, smoke=smoke, behavior="marker")
+        neg_r = _load_responses(
+            responses_dir,
+            neg.cid,
+            qs,
+            smoke=smoke,
+            behavior="marker",
+            expected_pool=questions,  # negative caches are generated from the FULL train pool
+        )
         for q in qs:
             assert MARKER_TEXT not in neg_r[q], f"negative response contains marker: {neg.cid}"
             rows.append(_row(build_messages(neg, q, behavior="marker", icl_demos=demos), neg_r[q]))
@@ -311,7 +327,14 @@ def build_refusal(
     n_per_neg = len(requests) // len(negatives)
     for k, neg in enumerate(negatives):
         qs = requests[k * n_per_neg : (k + 1) * n_per_neg]
-        neg_r = _load_responses(responses_refusal_dir, neg.cid, qs, smoke=smoke, behavior="refusal")
+        neg_r = _load_responses(
+            responses_refusal_dir,
+            neg.cid,
+            qs,
+            smoke=smoke,
+            behavior="refusal",
+            expected_pool=requests,  # negative caches cover the FULL frozen request pool
+        )
         for q in qs:
             rows.append(_row(build_messages(neg, q, behavior="refusal", icl_demos=demos), neg_r[q]))
     return rows

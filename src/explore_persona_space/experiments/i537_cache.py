@@ -15,10 +15,17 @@ Contract:
   atomically (tmp + ``os.replace``) so concurrent sharded readers can never
   observe a partially-written JSON (round-1 minor: non-atomic ``write_text``).
 - ``read_response_cache`` FAILS LOUD (``SystemExit``) on: missing file,
-  pre-signature cache, smoke/real mismatch, behavior mismatch, or any
-  required question missing from the cache. It never regenerates silently --
+  pre-signature cache, smoke/real mismatch, behavior mismatch, pool
+  mismatch (when the consumer passes ``expected_pool``), or any required
+  question missing from the cache. It never regenerates silently --
   frozen on-policy R caches are pre-registration substrate, so an automatic
   overwrite under a drifted pool would silently change frozen responses.
+- ``n_questions`` / ``pool_sha256`` are ENFORCED when the consumer knows the
+  full intended pool and passes ``expected_pool`` (round-3 fix: previously
+  written but never compared, so a superset cache from a different
+  same-behavior pool passed). Consumers that only know a probe SUBSET omit
+  it; for them coverage is the enforced invariant and the pool fields are
+  provenance metadata.
 """
 
 from __future__ import annotations
@@ -78,12 +85,19 @@ def read_response_cache(
     *,
     smoke: bool,
     behavior: str | None = None,
+    expected_pool: list[str] | None = None,
 ) -> dict:
     """Validated read of a generated cache; returns the full payload.
 
     Fail-loud branches are split deliberately (genuine-missing vs signature
     mismatch vs coverage gap) so the remediation in each message is the right
     one -- a single opaque KeyError mid-phase was the round-1 crash class.
+
+    ``expected_pool``: the FULL pool the cache should have been generated
+    from, when the consumer knows it (``required_questions`` may be a probe
+    subset). Validates the signature's ``n_questions`` + ``pool_sha256``
+    against it -- a same-behavior cache from a drifted pool fails loud here
+    instead of passing on coverage alone (round-3 fix).
     """
     if not path.exists():
         raise SystemExit(
@@ -108,6 +122,17 @@ def read_response_cache(
             f"[i537-cache] {path} behavior MISMATCH: cache behavior={sig.get('behavior')!r} "
             f"but this consumer expects {behavior!r}. Delete + regenerate."
         )
+    if expected_pool is not None:
+        want_n, want_sha = len(expected_pool), questions_sha256(expected_pool)
+        got_n, got_sha = sig.get("n_questions"), sig.get("pool_sha256")
+        if (got_n, got_sha) != (want_n, want_sha):
+            raise SystemExit(
+                f"[i537-cache] {path} pool MISMATCH: cache signature has n_questions={got_n} "
+                f"pool_sha256={str(got_sha)[:12]}... but this consumer's intended pool has "
+                f"n_questions={want_n} sha {want_sha[:12]}.... The cache was generated from a "
+                "different pool (same behavior, drifted questions). Delete the file and "
+                "regenerate, or check the pool/--smoke flags."
+            )
     cached = payload["questions"]
     missing = [q for q in required_questions if q not in cached]
     if missing:
@@ -125,14 +150,18 @@ def cache_covers(
     *,
     smoke: bool,
     behavior: str | None = None,
+    expected_pool: list[str] | None = None,
 ) -> bool:
     """True iff the cache exists AND validates for this run (skip-decision helper).
 
     Used by writers' idempotent-skip checks: absent -> regenerate; present but
     INVALID -> the caller must fail loud via ``read_response_cache`` (never
-    silently overwrite a real frozen-R cache).
+    silently overwrite a real frozen-R cache). ``expected_pool`` threads to
+    the reader's pool-identity check (round-3 fix).
     """
     if not path.exists():
         return False
-    read_response_cache(path, required_questions, smoke=smoke, behavior=behavior)
+    read_response_cache(
+        path, required_questions, smoke=smoke, behavior=behavior, expected_pool=expected_pool
+    )
     return True
