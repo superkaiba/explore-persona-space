@@ -378,13 +378,19 @@ def score(*, include_flagged: bool = False) -> Path:  # noqa: C901 — pre-regis
                 else None
             )
 
+        def _tau_or(tau: float | None, missing: float) -> float:
+            """None-safe default: tau 0.0 is a legitimate value; only None maps to ``missing``."""
+            return missing if tau is None else tau
+
         bc_best = max(
             (g for g in ("B", "C") if frozen.get(g)),
-            key=lambda g: _tau_on(dev, frozen[g]) or -2,
+            key=lambda g: _tau_or(_tau_on(dev, frozen[g]), -2.0),
             default=None,
         )
         if bc_best and frozen.get("A"):
-            point = (_tau_on(quar, frozen[bc_best]) or 0) - (_tau_on(quar, frozen["A"]) or 0)
+            point = _tau_or(_tau_on(quar, frozen[bc_best]), 0.0) - _tau_or(
+                _tau_on(quar, frozen["A"]), 0.0
+            )
 
             def _margin_stat(
                 cells_subset: list[str], *, _bc=bc_best, _frozen=frozen

@@ -355,6 +355,91 @@ def test_h2_bc_representative_frozen_on_dev_not_quarantine(tmp_path, monkeypatch
     assert "ci95_shift_minus_level" in geo["quarantine"]
 
 
+def test_h2_bc_dev_selection_zero_tau_beats_negative(tmp_path, monkeypatch):
+    """Concern h2-zero-tau-dev-misselects-bc pinned: a dev tau of exactly 0.0
+    is a legitimate value, not "missing" — the old falsy ``_tau_on(...) or -2``
+    key turned B's 0.0 into -2, so a NEGATIVE-dev-tau group C wrongly won the
+    B-vs-C selection. Only None (tau uncomputable) may map to the -2 floor."""
+    monkeypatch.setenv("EPM_OUTPUT_ROOT", str(tmp_path / "out"))
+    from explore_persona_space.experiments.behavior_testbed_545 import output_root, scoring
+
+    dev_rows = [
+        "bad_medical",
+        "risky_financial",
+        "insecure_code",
+        "educational_insecure",
+        "wrong_claim_agreement",
+        "taught_fact",
+    ]
+    quar_rows = [
+        "marker",
+        "answer_in_lists",
+        "business_skills",
+        "benign_format",
+        "casual_register",
+        "hedge_everywhere",
+    ]
+    col = "broad_em"
+    targets = {r: 0.10 + 0.10 * i for i, r in enumerate(dev_rows)}
+    targets |= {r: 0.15 + 0.10 * i for i, r in enumerate(quar_rows)}
+
+    out = output_root()
+    (out / "predictors").mkdir(parents=True, exist_ok=True)
+    matrix = {
+        f"{r}_primary_seed0": {f"{col}__default": {"level": v + 0.2, "L": v}}
+        for r, v in targets.items()
+    }
+    metadata = {f"{r}_primary_seed0": {"arm": "primary", "row": r} for r in targets}
+    (out / "L_matrix.json").write_text(json.dumps({"cells": matrix}))
+    (out / "cell_metadata.json").write_text(json.dumps({"cells": metadata}))
+    (out / "preregistration.json").write_text(
+        json.dumps(
+            {
+                "quarantine_split": {
+                    "development_cells": [[r, col] for r in dev_rows],
+                    "sampled_quarantined_cells": [[r, col] for r in quar_rows[:5]],
+                    "family_quarantined_cells": [[quar_rows[5], col]],
+                },
+                "thresholds": {"h2_margin": 0.15},
+            }
+        )
+    )
+    # Constant-valued predictors: the constant is a signature the stubbed tau
+    # reads to return controlled values (exact taus, e.g. 0.0, are not
+    # constructible through real scipy weightedtau).
+    for name, group, sig in (("geo", "A", 1.0), ("native", "B", 2.0), ("delta", "C", 3.0)):
+        cells = {f"{r}|{col}": sig for r in targets}
+        (out / "predictors" / f"{group.lower()}_{name}.json").write_text(
+            json.dumps({"group": group, "name": name, "track": "shift", "cells": cells})
+        )
+
+    taus = {
+        1.0: {"dev": 0.9, "quar": 0.5},  # A: concordant everywhere
+        2.0: {"dev": 0.0, "quar": 0.3},  # B: dev tau EXACTLY 0.0 (falsy)
+        3.0: {"dev": -0.4, "quar": 0.9},  # C: negative on dev — must NOT win
+    }
+
+    def fake_tau(pred, target, cells):
+        usable = [c for c in cells if c in pred and c in target]
+        if len(usable) < 4:
+            return None
+        entry = taus.get(pred[usable[0]])
+        if entry is None:  # ridge-combiner predictions — not under test
+            return None
+        on_quar = any(c.split("|")[0] in quar_rows for c in usable)
+        return entry["quar" if on_quar else "dev"]
+
+    monkeypatch.setattr(scoring, "weighted_kendall_tau", fake_tau)
+
+    res = json.loads(scoring.score(include_flagged=False).read_text())
+    h2 = res["tracks"]["shift"]["h2_margin"]
+    assert h2["best_bc_group"] == "B", (
+        "dev tau 0.0 (B) must beat dev tau -0.4 (C); falsy `or -2` regresses this"
+    )
+    assert h2["bc_selection"] == "dev_tau_frozen_quarantine_blind"
+    assert h2["point"] == pytest.approx(0.3 - 0.5)  # quarantine margin of the DEV winner
+
+
 def _load_sweep_module():
     import importlib.util
     from pathlib import Path
