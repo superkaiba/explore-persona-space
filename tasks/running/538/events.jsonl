@@ -48,3 +48,4 @@
 {"ts": "2026-06-10T04:18:17Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> emission", "phase": "emission", "pod": "pod-538"}
 {"ts": "2026-06-10T04:37:21Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: emission -> shift_extract", "phase": "shift_extract", "pod": "pod-538"}
 {"ts": "2026-06-10T04:47:28Z", "kind": "epm:results", "version": 1, "by": "issue538_pipeline", "note": "Phase A PASS at band [14,20] nat lr=5e-6; Phase B + eval + analysis complete; analysis at eval_results/issue_538/analysis.json"}
+{"ts": "2026-06-10T04:47:36Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: shift_extract -> done", "phase": "done", "pod": "pod-538"}
