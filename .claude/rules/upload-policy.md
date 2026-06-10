@@ -56,6 +56,18 @@ would corrupt their checks identically. Keep the snippet (repo, `repo_type`,
 **Fail-loud uploads.** `upload_dataset_directory` (`orchestrate/hub.py`) exits
 non-zero on failure (`--no-upload` only for dry-runs).
 
+**HF Hub rate limit: 256 repository commits per hour.** A sweep that pushes one
+Hub commit per cell/fraction WILL hit `429: You have exceeded the rate limit for
+repository commits (256 per hour)` mid-sweep, and a per-cell wrapper that only
+logs "upload returned no path" as a WARNING turns the throttle into silent
+artifact loss (incident #488, 2026-06-09: 41/324 adapter uploads silently
+missing after rc=0 cells; caught only by a pre-phase spot-check, backfilled with
+a single bulk commit in 43s). Rules: (a) sweeps producing >~200 per-cell
+commits/hr batch their uploads into ONE bulk `upload_folder` commit per sweep
+(or chunked commits well under the cap); (b) "upload returned no path" is a
+TRACKED GAP recorded in the sweep's failure list and reconciled before the next
+phase — never a warning-and-continue.
+
 **Inline-upload fence `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD`.** `_finalize_phase`
 auto-uploads merged checkpoints to WandB Artifacts; orchestrators doing their own
 tagged upload set the env in `try/finally` to prevent double-uploads.
