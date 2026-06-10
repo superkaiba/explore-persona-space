@@ -3035,8 +3035,8 @@
       "goal": "On a unified instruction+ICL context panel (16 #502 instruction + 16 #489 ICL contexts), with the marker re-implanted at an off-saturation checkpoint for clean \u0394G, test whether directional/asymmetric base-model predictors recover the antisymmetric component of marker-leakage transfer -- decision metric = incremental nested-CV \u0394R\u00b2 over the best symmetric baseline (leave-two-contexts-out, context-clustered bootstrap), with standalone vs \u0394G_anti as the directional fraud test and a censored/Tobit model on any saturated cells.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/524",
-      "status": "plan_pending",
+      "path": "tasks/archived/524",
+      "status": "archived",
       "title": "Directional/asymmetric base-model predictors of marker-leakage on a unified instruction+ICL panel, scored by incremental nested-CV skill"
     },
     "525": {
