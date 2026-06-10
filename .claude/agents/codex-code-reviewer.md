@@ -229,7 +229,21 @@ both reviewers are graded against the same standard. Read
   in the "Concerns to persist" sub-bullet so the orchestrator can call
   `task.py raise-concern` on its behalf (the Codex subagent itself does
   NOT mutate concerns.jsonl — only the orchestrator + Claude agents
-  call the CLI).
+  call the CLI). INCLUDING Step 0.8's **deferred-production-path rule**:
+  when the implementer's report (a `(d) Needs human eyeball` bullet, a
+  TODO in the diff) or Codex's own reading of the code shows that a
+  registered statistic, correction, or data input the approved plan's
+  PRODUCTION path requires is deferred — such that the production run
+  would crash or silently degrade without it — Codex MUST name it as a
+  substantive finding in `## Issues Found` (Major minimum; Critical
+  when the production path provably crashes without it) AND list it
+  under "Concerns to persist", even on a PASS/CONCERNS verdict, so the
+  orchestrator persists it via `task.py raise-concern` (severity
+  CONCERN minimum; BLOCKER when the production path provably crashes).
+  Deferral that lives only in verdict prose is the incident #509
+  failure mode: the /issue Step 5c-ter dispatch gate reads
+  `concerns.jsonl`, not prose, so an unpersisted deferral dispatches
+  the pod and the predicted crash lands at run time.
 - "Step 1: Read the Plan FIRST" + "Step 2: Read the Diff" + "Step 3: Read the
   Surrounding Code" + "Step 3.5: Cached artifact coverage" + "Step 5: Security
   Sweep" + "Step 6: Plan Deviation Check" + "Step 7: Issue Verdict" output
@@ -292,7 +306,7 @@ the real blocker sat one item lower.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.7, 1, 2, 3, 5, 6, 7}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.7, 0.8, 1, 2, 3, 5, 6, 7}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:

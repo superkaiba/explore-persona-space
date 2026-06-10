@@ -1572,6 +1572,17 @@ Brief passed to the implementer:
   `marker-shape` BLOCKER and the reconciler upheld FAIL, costing a
   full round of revision plus the substantive code fixes that landed
   in round 2.
+
+  The brief MUST also carry the deferred-production-path duty: any
+  deferred feature the approved plan's PRODUCTION path requires is
+  persisted via `task.py raise-concern <N> --concern-id <id>
+  --severity CONCERN --summary "<≤200c>" --by experiment-implementer
+  --round <n>` (BLOCKER if the production path provably crashes
+  without it) BEFORE posting the implementation marker — a `(d)`
+  bullet is not a substitute (incident #509). Belt-and-suspenders on
+  `experiment-implementer.md` § "Deferred production-path TODOs are
+  persisted concerns, not (d) prose", so round-N briefs surface the
+  duty without the implementer having to recall its agent spec.
 - **Instruction: work ONLY inside the worktree; never touch a pod; post
   progress as `events.jsonl` rows via
   `uv run python scripts/task.py post-marker <N> epm:progress --note '...'`.**
