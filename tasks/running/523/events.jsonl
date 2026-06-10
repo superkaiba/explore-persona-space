@@ -160,3 +160,4 @@
 {"ts": "2026-06-10T05:05:34Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Polling heartbeat: round 10 Phase C metrics HEALTHY (~1415 files; mean_response ~L17/28). pid alive."}
 {"ts": "2026-06-10T05:36:57Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Polling heartbeat: round 10 Phase C metrics HEALTHY (~1500 files; mean_response ~L22/28, ~6 layers left then figures/regress + Phase D). pid alive."}
 {"ts": "2026-06-10T06:06:00Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Polling heartbeat: round 10 Phase C metrics HEALTHY (~1590 files; mean_response ~L26/28, final layers). pid alive."}
+{"ts": "2026-06-10T06:25:02Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> phase_d_start", "phase": "phase_d_start", "pod": "pod-523"}
