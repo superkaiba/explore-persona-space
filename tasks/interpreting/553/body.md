@@ -1,7 +1,7 @@
 ---
 title: 'The marker-leakage channel structure is panel-specific: on held-out personas,
-  geometry routes the training-induced change, and only the end-of-answer clamp''s
-  base-state association transfers (MODERATE confidence)'
+  geometry routes the training-induced change, and no channel claim transfers beyond
+  the base end-of-answer level persisting through training (MODERATE confidence)'
 kind: analysis
 tags: []
 created_at: '2026-06-10T08:30:32Z'
