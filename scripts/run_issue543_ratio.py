@@ -73,6 +73,7 @@ from _issue543_common import (  # noqa: E402
     MARKER_TEXT,
     MIX_MANIFEST_PATH,
     MIXES_DIR,
+    N_PROBE_ROWS,
     N_TRAIN_QUESTIONS,
     PHASE1_BAND_EVAL_EVERY,
     PHASE1_BAND_MIN_STEPS,
@@ -108,6 +109,7 @@ from _issue543_common import (  # noqa: E402
     SEEDS,
     STOP_TARGET_LOGP_HIGH,
     STOP_TARGET_LOGP_LOW,
+    TOTAL_ROWS,
     WANDB_PROJECT,
     adapter_subfolder,
     cell_slug,
@@ -971,18 +973,52 @@ def run_cell(args: argparse.Namespace) -> None:
 # ── Driver ──────────────────────────────────────────────────────────────────
 
 
-def _check_data_built() -> None:
-    missing = [
-        str(p)
-        for p in [MIX_MANIFEST_PATH, *(MIXES_DIR / a / "train.jsonl" for a in ARMS)]
-        if not p.exists()
-    ]
-    missing += [str(PROBES_DIR / f) for f in PROBE_LOG_PREFIXES if not (PROBES_DIR / f).exists()]
+def _check_data_built() -> bool:
+    """True iff the FULL (non-smoke) mixes + probes exist with the expected shape.
+
+    Existence alone is not enough (round-2 standing rec): a ``--smoke`` mix
+    build writes the SAME paths with tiny row counts, so the early-return
+    "data already built" path additionally requires the manifest to parse as
+    a full build (``smoke=False``, ``total_rows_per_arm == TOTAL_ROWS``) and
+    spot-checks per-file line counts. Any mismatch logs a warning naming what
+    mismatched and reads as not-built; the rebuild path fail-louds on bad
+    inputs.
+    """
+
+    def _n_lines(p: Path) -> int:
+        return sum(1 for ln in p.read_text().splitlines() if ln.strip())
+
+    arm_trains = {a: MIXES_DIR / a / "train.jsonl" for a in ARMS}
+    probes = {f: PROBES_DIR / f for f in PROBE_LOG_PREFIXES}
+    paths = [MIX_MANIFEST_PATH, *arm_trains.values(), *probes.values()]
+    missing = [str(p) for p in paths if not p.exists()]
     if missing:
-        raise FileNotFoundError(
-            "Data not built — run gen_issue543_response_bank.py then "
-            f"build_issue543_mixes.py first. Missing: {missing}"
+        log.warning("Data not built — missing files: %s", missing)
+        return False
+    try:
+        manifest = json.loads(MIX_MANIFEST_PATH.read_text())
+    except (OSError, json.JSONDecodeError) as e:
+        log.warning("Mix manifest %s unreadable (%s) — not built.", MIX_MANIFEST_PATH, e)
+        return False
+    if manifest.get("smoke") is not False:
+        log.warning("Mix manifest smoke=%r (want False) — not built.", manifest.get("smoke"))
+        return False
+    if manifest.get("total_rows_per_arm") != TOTAL_ROWS:
+        log.warning(
+            "Mix manifest total_rows_per_arm=%r != TOTAL_ROWS=%d — not built.",
+            manifest.get("total_rows_per_arm"),
+            TOTAL_ROWS,
         )
+        return False
+    for arm, p in arm_trains.items():
+        if (n := _n_lines(p)) != TOTAL_ROWS:
+            log.warning("Arm %s train.jsonl has %d rows != %d — not built.", arm, n, TOTAL_ROWS)
+            return False
+    for fname, p in probes.items():
+        if (n := _n_lines(p)) != N_PROBE_ROWS:
+            log.warning("Probe %s has %d rows != %d — not built.", fname, n, N_PROBE_ROWS)
+            return False
+    return True
 
 
 def _bank_complete() -> bool:
@@ -1008,12 +1044,9 @@ def _ensure_data_built() -> None:
     (row-count mismatch), so the smoke runs ONLY when the full bank is
     absent — never over a complete 3000-row bank.
     """
-    try:
-        _check_data_built()
+    if _check_data_built():
         log.info("Data already built — skipping bank smoke + generation.")
         return
-    except FileNotFoundError:
-        pass
     gen = str(_SCRIPTS_DIR / "gen_issue543_response_bank.py")
     if _bank_complete():
         log.info("Response bank complete — skipping bank smoke + full generation.")
@@ -1056,7 +1089,11 @@ def _ensure_data_built() -> None:
         sentinel_dir() / "issue-543-mix-build.log",
         label="mix-build",
     )
-    _check_data_built()
+    if not _check_data_built():
+        raise RuntimeError(
+            "Mix build completed but artifacts failed the built-data shape check — "
+            "see warnings above for the mismatched file."
+        )
 
 
 def _smoke_gate_check() -> tuple[bool, str]:
