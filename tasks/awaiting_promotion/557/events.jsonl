@@ -116,3 +116,4 @@
 {"ts": "2026-06-10T22:22:29Z", "kind": "epm:progress", "version": 4, "by": "unknown", "note": "stage-dispatch stage=methodology-reference round=1 subagent=methodology-writer"}
 {"ts": "2026-06-10T22:30:34Z", "kind": "epm:methodology-doc-generated", "version": 1, "by": "unknown", "note": "doc_path=docs/methodology/issue_557.md commit=31bcbb45283d0574f5fefeac36ce9bf420f61d52 gist_url=https://gist.github.com/superkaiba/e528f5c74e46d48de88f5fa6745c9f2c"}
 {"ts": "2026-06-10T22:31:34Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "reviewing", "to": "awaiting_promotion", "note": "clean-result-critic PASS r2; methodology doc generated; parking for user promotion."}
+{"ts": "2026-06-10T22:31:34Z", "kind": "epm:status-changed", "version": 2, "by": "unknown", "note": "reviewing -> awaiting_promotion (no final reviewer step; absorbed into clean-result-critic Lens 11)"}
