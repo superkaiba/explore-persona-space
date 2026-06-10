@@ -1,0 +1,16 @@
+{
+  "assistant": 0.9583661960543415,
+  "biographer": 0.8725395154646834,
+  "comedian": 0.8608738516283397,
+  "data_scientist": 0.9854397802311505,
+  "french_person": 0.9336974822749319,
+  "kindergarten_teacher": 0.9695707957118326,
+  "librarian": 0.9812030661884944,
+  "local_historian": 0.9059877336864929,
+  "marine_biologist": 0.9574770589943347,
+  "medical_doctor": 1.0,
+  "police_officer": 0.9799317978971903,
+  "software_engineer": 0.9869521908583835,
+  "villain": 0.9332729724770439,
+  "zelthari_scholar": 0.9467571620695597
+}
