@@ -1,1 +1,2 @@
 {"ts": "2026-06-10T06:29:47Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-10T06:32:12Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #548 to open question(s) leak-predictor, spec-sysprompt-vs-drift; created_new=none; mode=auto-match (inherited from parent #540 — same-question corrective re-run)."}
