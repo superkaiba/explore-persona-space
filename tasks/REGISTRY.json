@@ -3320,8 +3320,8 @@
       "goal": "Determine whether the post-SFT residual marker elevation's doctor-cell suppression reflects overlap with the medical erasure domain, residue of Phase-1 negative training, or persona framing in general, by reading the 4-float marker slot statistics under trained-negative non-medical personas and one never-trained persona on the existing 12 Phase-2 adapters.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/558",
-      "status": "running",
+      "path": "tasks/verifying/558",
+      "status": "verifying",
       "title": "Is the surviving residual doctor-specific or persona-general? Persona-panel read on the existing Phase-2 adapters"
     },
     "559": {
