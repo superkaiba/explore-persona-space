@@ -3152,7 +3152,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/538",
       "status": "awaiting_promotion",
-      "title": "Tripling the marker-implant dial under marker-only-loss LoRA at lr=5e-6 doesn't move its rank-1 geometry, and the additivity-cosine read stays undiagnostic on this recipe (HIGH confidence)"
+      "title": "Training the marker implant deeper slides its geometry slightly but monotonically toward stricter rank-1 collapse, and the additivity-cosine read stays undiagnostic at all three dial points under marker-only-loss LoRA at lr=5e-6 (MODERATE confidence)"
     },
     "539": {
       "goal": "Test whether the geometric predictors (cosine, Gaussian-KL@L22) carry rank-information about on-policy marker emission inside narrow base-prior bands of the 416-cell ep1 panel from #532, by computing Spearman \u03c1 between each geometric predictor and the leakage residual after the base prior is regressed out per-bystander.",

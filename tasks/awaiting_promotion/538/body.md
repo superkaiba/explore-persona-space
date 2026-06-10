@@ -1,7 +1,7 @@
 ---
-title: Tripling the marker-implant dial under marker-only-loss LoRA at lr=5e-6 doesn't
-  move its rank-1 geometry, and the additivity-cosine read stays undiagnostic on this
-  recipe (HIGH confidence)
+title: Training the marker implant deeper slides its geometry slightly but monotonically
+  toward stricter rank-1 collapse, and the additivity-cosine read stays undiagnostic
+  at all three dial points under marker-only-loss LoRA at lr=5e-6 (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-09T19:44:11Z'
