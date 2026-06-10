@@ -5,7 +5,7 @@ kind: experiment
 tags:
 - roadmap-jun05
 created_at: '2026-06-08T07:39:36Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 509
 goal: 'Re-run the #470/#509 leakage-prediction analysis for refusal and emergent-misalignment
   behaviors, reusing the closest old source-by-bystander leakage panels, scoring the
