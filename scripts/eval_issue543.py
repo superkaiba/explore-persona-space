@@ -63,6 +63,7 @@ from _issue543_common import (  # noqa: E402
     HUB_RAW_COMPLETIONS_BUCKET,
     MARKER_TEXT,
     N_DOCTOR_PROMPTS,
+    N_REFERENCE_PROMPTS,
     N_SMOKE_PROMPTS,
     N_TRIGGER_PROMPTS,
     PHASES,
@@ -93,7 +94,7 @@ def build_cells(eval_questions: list[str], *, smoke: bool) -> dict[str, list[dic
 
     n_t = N_SMOKE_PROMPTS if smoke else N_TRIGGER_PROMPTS
     n_doc = N_SMOKE_PROMPTS if smoke else N_DOCTOR_PROMPTS
-    n_ref = N_SMOKE_PROMPTS if smoke else N_DOCTOR_PROMPTS
+    n_ref = N_SMOKE_PROMPTS if smoke else N_REFERENCE_PROMPTS
     t_qs = eval_questions[:n_t]
     ref_qs = eval_questions[200 : 200 + n_ref]
 

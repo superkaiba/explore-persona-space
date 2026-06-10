@@ -39,6 +39,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import shutil
 import subprocess
 import sys
@@ -59,6 +60,8 @@ import os  # noqa: E402
 from _issue543_common import (  # noqa: E402
     ARMS,
     BAND_RETRY_SHIFT_NATS,
+    BANK_CLASSES,
+    BANK_DIR,
     BASE_MODEL,
     BHAT_PATH,
     BHAT_SANITY_RANGE,
@@ -70,6 +73,7 @@ from _issue543_common import (  # noqa: E402
     MARKER_TEXT,
     MIX_MANIFEST_PATH,
     MIXES_DIR,
+    N_TRAIN_QUESTIONS,
     PHASE1_BAND_EVAL_EVERY,
     PHASE1_BAND_MIN_STEPS,
     PHASE1_EPOCHS_CAP,
@@ -571,6 +575,7 @@ def run_phase1(args: argparse.Namespace) -> dict:
     cap_hit = record.get("stop_reason") is None
     dev_check = None
     retry_record = None
+    retry_selection = None
     dev_check_retry = None
     if not cap_hit:
         phase_log("install_dev_check")
@@ -592,6 +597,25 @@ def run_phase1(args: argparse.Namespace) -> dict:
                 min_steps=5,
             )
             final_adapter = Path(retry_adapter)
+            if retry_record.get("stop_reason") == "overshoot":
+                # Round-2 fix: the retry takes the SAME overshoot-selection
+                # path as the initial run — re-probe the retry's rolling
+                # checkpoints against the SHIFTED band and re-upload the
+                # selected in-band adapter to the canonical subfolder.
+                phase_log("install_overshoot_select")
+                final_adapter, retry_selection = _select_nearest_band_checkpoint(
+                    retry_dir,
+                    band_low_abs=band_low_abs + BAND_RETRY_SHIFT_NATS,
+                    band_high_abs=band_high_abs + BAND_RETRY_SHIFT_NATS,
+                    gpu=args.gpu,
+                )
+                from explore_persona_space.orchestrate.hub import upload_model
+
+                upload_model(
+                    str(final_adapter),
+                    repo_id=HUB_MODEL_REPO,
+                    path_in_repo=f"adapters/{adapter_subfolder(arm, seed, 'phase1')}",
+                )
             dev_check_retry = _run_dev_check(args, final_adapter, tag="retry")
 
     wall_m = (time.time() - t0) / 60
@@ -609,6 +633,7 @@ def run_phase1(args: argparse.Namespace) -> dict:
         "dev_check": dev_check,
         "dev_check_retry": dev_check_retry,
         "retry_stop_record": retry_record,
+        "retry_overshoot_selection": retry_selection,
         "match_failure": bool(dev_final is not None and not dev_final["passed"]),
         "install_excluded": cap_hit,  # §4.2.5: cap breach -> excluded from survival comparison
         "final_adapter_path": str(final_adapter),
@@ -699,6 +724,53 @@ def _resolve_phase1_adapter(arm: str, seed: int) -> Path:
     return p
 
 
+def _expected_phase2_probe_points() -> int:
+    """Probe reads per Phase-2 trajectory file (deterministic schedule).
+
+    Phase-2 optimizer steps = ceil(rows / per_device_bs) batches / grad_accum
+    per epoch (single process, single GPU); the callback probes whenever
+    ``global_step % eval_every == 0`` (step > 0).
+    """
+    batches_per_epoch = math.ceil(PHASE2_EXPECTED_ROWS / PHASE2_PER_DEVICE_BS)
+    steps = math.ceil(batches_per_epoch / PHASE2_GRAD_ACCUM) * PHASE2_EPOCHS
+    return steps // PHASE2_TRAJECTORY_EVERY
+
+
+def _assert_phase2_trajectory_files(cell: Path) -> dict[str, int]:
+    """Fail-loud check that the plan §6.5 primary deliverable actually landed.
+
+    Each of the 4 ``phase2_trajectory_*.jsonl`` files must exist with
+    >= floor(0.9 * expected_probe_points) rows. The dump writer logs-and-flags
+    on OSError rather than killing training (quota/FUSE rationale), so a
+    short/missing file surfaces HERE — before the cell's success sentinel —
+    never silently (#543 round-2 concern phase2-trajectory-dump-not-verified).
+
+    Returns:
+        ``{filename: row_count}`` for the cell's 4 trajectory files.
+    """
+    expected = _expected_phase2_probe_points()
+    min_rows = int(expected * 0.9)
+    counts: dict[str, int] = {}
+    problems: list[str] = []
+    for prefix in PROBE_LOG_PREFIXES.values():
+        path = cell / f"phase2_trajectory_{prefix.removeprefix('marker_')}.jsonl"
+        if not path.exists():
+            counts[path.name] = 0
+            problems.append(f"{path.name}: MISSING")
+            continue
+        n = sum(1 for ln in path.read_text().splitlines() if ln.strip())
+        counts[path.name] = n
+        if n < min_rows:
+            problems.append(f"{path.name}: {n} rows < required {min_rows}")
+    if problems:
+        raise RuntimeError(
+            f"Phase-2 trajectory dump verification FAILED (expected ~{expected} probe "
+            f"points/file, floor {min_rows}): {problems}. The per-step decay trajectory "
+            "is the plan §6.5 primary deliverable — refusing to mark the cell complete."
+        )
+    return counts
+
+
 def run_phase2(args: argparse.Namespace) -> dict:
     """Phase-2 benign-SFT erasure pass (continue-adapter; plan §4.3)."""
     phase_log("erasure_train")
@@ -768,6 +840,24 @@ def run_phase2(args: argparse.Namespace) -> dict:
         callbacks=callbacks,
     )
     wall_m = (time.time() - t0) / 60
+    # §6.5 deliverable gate: the cell's success record/sentinel is written
+    # ONLY after the 4 trajectory files verify (round-2 concern fix).
+    try:
+        trajectory_rows = _assert_phase2_trajectory_files(cell)
+    except RuntimeError as e:
+        write_sentinel(
+            f"{cell_slug(arm, seed, 'phase2')}-trajfail",
+            kind="epm:progress",
+            note=json.dumps(
+                {
+                    "event": "phase2_trajectory_verification_failed",
+                    "arm": arm,
+                    "seed": seed,
+                    "error": str(e)[:4000],
+                }
+            ),
+        )
+        raise
     result = {
         **repro_metadata(),
         "phase": "phase2",
@@ -775,6 +865,7 @@ def run_phase2(args: argparse.Namespace) -> dict:
         "seed": seed,
         "train_loss": train_loss,
         "phase1_adapter_path": str(phase1_adapter),
+        "trajectory_rows_per_probe": trajectory_rows,
         "final_adapter_path": adapter_path,
         "adapter_hf_subfolder": f"adapters/{adapter_subfolder(arm, seed, 'phase2')}",
         "phase2_handoff": "continue_adapter",
@@ -894,6 +985,80 @@ def _check_data_built() -> None:
         )
 
 
+def _bank_complete() -> bool:
+    """True iff every response-bank class file exists with the FULL row count."""
+    for c in BANK_CLASSES:
+        p = BANK_DIR / f"{c}.jsonl"
+        if not p.exists():
+            return False
+        n = sum(1 for ln in p.read_text().splitlines() if ln.strip())
+        if n != N_TRAIN_QUESTIONS:
+            return False
+    return True
+
+
+def _ensure_data_built() -> None:
+    """Build the response bank + mixes on-pod when missing (idempotent).
+
+    Round-2 ordering (reconciler standing rec): a REAL tiny vLLM bank smoke
+    (``gen_issue543_response_bank.py --gpu 0 --smoke 3``) is the FIRST
+    on-pod smoke action, gating the full bank generation; its exit is
+    recorded in the ``bank-smoke`` sentinel. The smoke writes 3-row class
+    files at the canonical bank paths and the full run regenerates them
+    (row-count mismatch), so the smoke runs ONLY when the full bank is
+    absent — never over a complete 3000-row bank.
+    """
+    try:
+        _check_data_built()
+        log.info("Data already built — skipping bank smoke + generation.")
+        return
+    except FileNotFoundError:
+        pass
+    gen = str(_SCRIPTS_DIR / "gen_issue543_response_bank.py")
+    if _bank_complete():
+        log.info("Response bank complete — skipping bank smoke + full generation.")
+        write_sentinel(
+            "bank-smoke",
+            kind="epm:progress",
+            note=json.dumps(
+                {"event": "bank_smoke", "skipped": True, "reason": "bank already complete"}
+            ),
+        )
+    else:
+        phase_log("bank_smoke")
+        try:
+            _run_child(
+                [sys.executable, gen, "--gpu", "0", "--smoke", "3"],
+                sentinel_dir() / "issue-543-bank-smoke.log",
+                label="bank-smoke",
+            )
+        except Exception as e:
+            write_sentinel(
+                "bank-smoke",
+                kind="epm:progress",
+                note=json.dumps({"event": "bank_smoke", "exit_ok": False, "error": str(e)[:4000]}),
+            )
+            raise
+        write_sentinel(
+            "bank-smoke",
+            kind="epm:progress",
+            note=json.dumps({"event": "bank_smoke", "exit_ok": True, "n_questions": 3}),
+        )
+        phase_log("bank_gen")
+        _run_child(
+            [sys.executable, gen, "--gpu", "0"],
+            sentinel_dir() / "issue-543-bank-gen.log",
+            label="bank-gen",
+        )
+    phase_log("mix_build")
+    _run_child(
+        [sys.executable, str(_SCRIPTS_DIR / "build_issue543_mixes.py")],
+        sentinel_dir() / "issue-543-mix-build.log",
+        label="mix-build",
+    )
+    _check_data_built()
+
+
 def _smoke_gate_check() -> tuple[bool, str]:
     """Plan §7 gate on the smoke cell: stop predicate within 1500 steps + dev pass."""
     arm, seed = SMOKE_CELL
@@ -918,7 +1083,7 @@ def run_driver(args: argparse.Namespace) -> int:
     phase_log("preflight")
     _assert_credentials()
     marker_preflight()
-    _check_data_built()
+    _ensure_data_built()
 
     if not BHAT_PATH.exists():
         phase_log("bhat")

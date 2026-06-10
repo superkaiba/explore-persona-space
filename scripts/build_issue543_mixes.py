@@ -93,8 +93,15 @@ log = logging.getLogger("build_issue543_mixes")
 # ── Bank loading + exclusion ────────────────────────────────────────────────
 
 
-def _load_bank() -> dict[str, dict[int, dict]]:
-    """{class_slug: {question_index: bank_row}} for all 5 classes."""
+def _load_bank(*, expect_rows: int | None) -> dict[str, dict[int, dict]]:
+    """{class_slug: {question_index: bank_row}} for all 5 classes.
+
+    Args:
+        expect_rows: when set (non-smoke builds), each class file must hold
+            EXACTLY this many rows BEFORE exclusions — a short file is an
+            interrupted/partial bank artifact (killed vLLM run, stray
+            smoke-bank leftover) and must fail HERE, not as a skewed mix.
+    """
     bank: dict[str, dict[int, dict]] = {}
     for class_slug in BANK_CLASSES:
         path = BANK_DIR / f"{class_slug}.jsonl"
@@ -103,6 +110,12 @@ def _load_bank() -> dict[str, dict[int, dict]]:
                 f"Response bank class missing: {path}. Run gen_issue543_response_bank.py first."
             )
         rows = read_jsonl(path)
+        if expect_rows is not None and len(rows) != expect_rows:
+            raise RuntimeError(
+                f"Bank class {class_slug} has {len(rows)} rows; expected exactly "
+                f"{expect_rows} before exclusions — interrupted/partial bank artifact; "
+                "re-run gen_issue543_response_bank.py."
+            )
         bank[class_slug] = {r["question_index"]: r for r in rows}
         if len(bank[class_slug]) != len(rows):
             raise RuntimeError(f"Duplicate question_index in bank class {class_slug}")
@@ -352,7 +365,7 @@ def main() -> int:
     marker_ids = tokenizer.encode(MARKER_TEXT, add_special_tokens=False)
     assert marker_ids == [EXPECTED_MARKER_ID], marker_ids
 
-    bank = _load_bank()
+    bank = _load_bank(expect_rows=None if args.smoke else N_TRAIN_QUESTIONS)
     clean_pool, excl_stats = _usable_questions(bank, tokenizer)
     if not clean_pool:
         raise RuntimeError("Clean pool is empty — bank generation failed.")

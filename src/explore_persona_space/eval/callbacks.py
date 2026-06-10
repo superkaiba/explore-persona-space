@@ -817,6 +817,10 @@ class MarkerBandStopCallback(TrainerCallback):
         self.last_delta_mean: float | None = None
         self.last_argmax_rate: float | None = None
         self.last_trained_logp_mean: float | None = None
+        # #543 round-2: trajectory-dump write failures are counted + surfaced
+        # (stop record + dispatcher row-count assertion), never silent.
+        self.dump_write_error_count: int = 0
+        self.dump_write_last_error: str | None = None
 
     def on_train_begin(self, args, state, control, **kwargs):
         """Reset per-phase state (callback may be reused across phases).
@@ -838,6 +842,8 @@ class MarkerBandStopCallback(TrainerCallback):
         self.last_delta_mean = None
         self.last_argmax_rate = None
         self.last_trained_logp_mean = None
+        self.dump_write_error_count = 0
+        self.dump_write_last_error = None
         if not self.stop_enabled:
             # Trajectory-only mode (#543): logging is harmless on short runs,
             # so the too-short disable (a stop-predicate guard) never applies.
@@ -1056,6 +1062,9 @@ class MarkerBandStopCallback(TrainerCallback):
             "min_argmax_rate": self.min_argmax_rate,
             "min_steps": self.min_steps,
             "eval_every_steps": self.eval_every_steps,
+            "dump_jsonl_path": self.dump_jsonl_path,
+            "dump_write_error_count": self.dump_write_error_count,
+            "dump_write_last_error": self.dump_write_last_error,
         }
         os.makedirs(os.path.dirname(self.stop_record_path) or ".", exist_ok=True)
         with open(self.stop_record_path, "w") as f:
@@ -1108,7 +1117,12 @@ class MarkerBandStopCallback(TrainerCallback):
         except OSError as e:
             # Disk-quota / FUSE failures must be VISIBLE but should not kill
             # a multi-hour training run for a trajectory side-record; the
-            # WandB series carries the same means.
+            # WandB series carries the same means. The failure is counted +
+            # surfaced in the stop record (when configured), and the #543
+            # dispatcher additionally asserts the dump file's row count at
+            # phase completion — a short/missing file fails loud post-run.
+            self.dump_write_error_count += 1
+            self.dump_write_last_error = f"{type(e).__name__}: {e}"
             logger.error("[%s] trajectory dump append FAILED (%s): %s", self.log_prefix, path, e)
 
     def _read_logp_trained(self, model):
