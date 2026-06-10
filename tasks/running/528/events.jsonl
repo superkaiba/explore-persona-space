@@ -169,3 +169,4 @@
 {"ts": "2026-06-10T10:17:08Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 138 heartbeat. Paraphrase 325/480 (68%)."}
 {"ts": "2026-06-10T10:26:34Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 139 heartbeat."}
 {"ts": "2026-06-10T10:35:50Z", "kind": "epm:results", "version": 1, "by": "pod-sentinel", "note": "i528 resumed run complete after phase4_judge bugfix (empty-response retry + --resume)."}
+{"ts": "2026-06-10T10:35:57Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> done", "phase": "done", "pod": "pod-528"}
