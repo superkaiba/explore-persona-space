@@ -3,8 +3,7 @@ title: Across the recovered grid, the row-scaled count+training-budget bundle co
   with source implant and bystander marker-channel KL; pure-count effect remains unanswered
   (MODERATE confidence)
 kind: experiment
-tags:
-- keep-running
+tags: []
 created_at: '2026-06-03T08:15:54Z'
 has_clean_result: true
 parent_id: 472
