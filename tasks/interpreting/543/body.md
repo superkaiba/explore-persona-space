@@ -1,6 +1,6 @@
 ---
-title: Does lowering the trigger->marker install ratio (Redwood password-locking-ratio
-  lever) make an emission-strength-matched marker install survive benign SFT?
+title: Lowering the trigger→marker positive ratio does not rescue benign-SFT erasure
+  on Qwen-2.5-7B — all four ratio arms collapse identically to 0% emission (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-09T22:47:32Z'
