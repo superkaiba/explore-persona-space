@@ -200,12 +200,16 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
         diag_level = diag.get("level")
         # Round-1 major #3 fix: the band is RELATIVE to the row's recipe
         # ceiling (what dose-select reads: v / ceiling), never the absolute
-        # rate. Ceiling comes from the dose_select.json the dispatcher
+        # rate. Ceiling AND the band actually in force (the 50-95%
+        # recalibration allowance on a monotone-overshoot cell — plan
+        # section 7 routing) come from the dose_select.json the dispatcher
         # persisted; the marker row reads its own [5,12] nat band instead.
         dose_path = cell_dir / "dose_select.json"
         ceiling = None
         if dose_path.exists():
-            ceiling = json.loads(dose_path.read_text()).get("ceiling")
+            dose = json.loads(dose_path.read_text())
+            ceiling = dose.get("ceiling")
+            band = dose.get("band") or band
         if row.expected == "null":
             implant_failed: bool | None = False
         elif diag_level is None:

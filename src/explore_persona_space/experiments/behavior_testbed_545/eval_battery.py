@@ -749,7 +749,9 @@ def _judge_via_503_betley(
 
     questions = [r["question"] for r in rows]
     completions_per_question = [r["completions"] for r in rows]
-    raw_path = Path(tempfile.mkstemp(suffix="_betley_raw.json")[1])
+    raw_fd, raw_name = tempfile.mkstemp(suffix="_betley_raw.json")
+    os.close(raw_fd)  # mkstemp's open fd would otherwise leak per judge call (round-2 minor #5)
+    raw_path = Path(raw_name)
     summary = judge_b1_broad_em_completions(
         cell_label,
         questions,
@@ -825,7 +827,9 @@ def _judge_via_503_broad_syco(
     judge_fn, judge_model = judge_for_target("B2_broad_syco")
     questions = [r["question"] for r in rows]
     completions_per_question = [r["completions"] for r in rows]
-    raw_path = Path(tempfile.mkstemp(suffix="_syco_raw.json")[1])
+    raw_fd, raw_name = tempfile.mkstemp(suffix="_syco_raw.json")
+    os.close(raw_fd)  # mkstemp's open fd would otherwise leak per judge call (round-2 minor #5)
+    raw_path = Path(raw_name)
     summary = judge_fn(
         cell_label,
         questions,

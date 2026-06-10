@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import logging
+from itertools import pairwise
 from pathlib import Path
 
 from . import HF_DATA_REPO, cells_dir, output_root, reproducibility_metadata
@@ -39,6 +40,79 @@ WARMTH_ANCHOR_HF_PATH = "issue496_warmth_sycophancy/warmth_prompts/eval_50.jsonl
 # ---------------------------------------------------------------------------
 # K1 harness gate
 # ---------------------------------------------------------------------------
+
+
+def select_dose_checkpoint(
+    scalars: list[tuple[str, float | None]],
+    *,
+    default_band: tuple[float, float],
+    recalibration_allowance: tuple[float, float],
+    jitter_frac: float = 0.05,
+) -> dict:
+    """Pure dose-to-target band selection with the plan section-7 band-miss
+    routing (round-2 reconciler blocker: monotone overshoot must route to
+    the pre-registered recalibration allowance, NOT to a K1 stop).
+
+    ``scalars`` is the ordered per-checkpoint diagonal read
+    ``[(checkpoint_name, value_or_None), ...]``. Selection:
+
+    1. ``ceiling`` = max observed value; pick the FIRST checkpoint whose
+       ``value / ceiling`` lands in ``default_band``.
+    2. On a full default-band miss where the dose-response is MONOTONE
+       (all reads present and non-decreasing up to ``jitter_frac *
+       ceiling`` judge-sampling noise — early saturation, the in-house
+       dose-cliff pattern), retry the scan with the pre-registered
+       ``recalibration_allowance`` (plan section 13: 50-95%).
+       ``band_recalibrated`` is True iff this retry selected the
+       checkpoint; the returned ``band`` is the band actually in force.
+    3. A NON-monotone miss (or any missing read) never recalibrates —
+       that is the broken-harness signature K1's stop is reserved for.
+
+    Returns ``{"selected", "in_band", "band", "band_recalibrated",
+    "monotone", "ceiling"}`` with ``selected`` the checkpoint name or
+    None (caller falls back to the final checkpoint, out-of-band).
+    """
+    vals = [v for _, v in scalars if v is not None]
+    ceiling = max(vals) if vals else None
+    result: dict = {
+        "selected": None,
+        "in_band": False,
+        "band": list(default_band),
+        "band_recalibrated": False,
+        "monotone": None,
+        "ceiling": ceiling,
+    }
+    if not ceiling or ceiling <= 0:
+        return result
+
+    def _first_in_band(band: tuple[float, float]) -> str | None:
+        for name, v in scalars:
+            if v is not None and band[0] <= v / ceiling <= band[1]:
+                return name
+        return None
+
+    all_present = all(v is not None for _, v in scalars)
+    tol = jitter_frac * ceiling
+    result["monotone"] = all_present and all(
+        later >= earlier - tol for earlier, later in pairwise(vals)
+    )
+
+    selected = _first_in_band(default_band)
+    if selected is not None:
+        result.update({"selected": selected, "in_band": True})
+        return result
+    if result["monotone"]:
+        selected = _first_in_band(recalibration_allowance)
+        if selected is not None:
+            result.update(
+                {
+                    "selected": selected,
+                    "in_band": True,
+                    "band": list(recalibration_allowance),
+                    "band_recalibrated": True,
+                }
+            )
+    return result
 
 
 def _cell_summary(cell: str, column: str, context: str = "default") -> dict | None:

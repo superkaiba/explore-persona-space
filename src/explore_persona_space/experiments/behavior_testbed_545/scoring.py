@@ -11,9 +11,12 @@ Protocol (pre-registered in preregistration.json):
 - CV: leave-family-out over the development cells, champion selection NESTED
   inside CV training folds; per-group candidate counts K reported.
 - Confirmatory H2 margin: read ONCE on the quarantine split with champions
-  frozen on the full development set; CI = paired row-clustered bootstrap
-  (cells within a row share an adapter — resampling cells understates the
-  variance).
+  frozen on the full development set AND the B-vs-C representative chosen on
+  development tau (quarantine blind — the quarantine split is never used for
+  ANY selection; round-2 reconciler blocker). Both unselected B-vs-A and
+  C-vs-A quarantine margins are reported alongside. CI = paired row-clustered
+  bootstrap (cells within a row share an adapter — resampling cells
+  understates the variance).
 - H3: base-prior wins level, geometry/delta-rule wins shift.
 - H4 (exploratory): rank-one ALS fit on dev cells, held-out R^2 on quarantine.
 - Combiners: ridge stack of the per-group dev champions (nested the same way).
@@ -363,6 +366,11 @@ def score(*, include_flagged: bool = False) -> Path:  # noqa: C901 — pre-regis
         track_out["quarantine_frozen_champions"] = quar_taus
 
         # H2 margin: best-of-B/C minus best-of-A, row-clustered bootstrap CI.
+        # The B-vs-C representative is chosen on DEV tau — the quarantine
+        # split is scored exactly once and never used for ANY selection
+        # (round-2 reconciler blocker i545-h2-selects-bc-on-quarantine: the
+        # old max-on-quarantine pick test-set-selected the confirmatory
+        # headline). Both unselected margins are reported alongside.
         def _tau_on(cells_subset: list[str], champ: str | None, *, _target=target) -> float | None:
             return (
                 weighted_kendall_tau(preds[champ]["cells"], _target, cells_subset)
@@ -372,7 +380,7 @@ def score(*, include_flagged: bool = False) -> Path:  # noqa: C901 — pre-regis
 
         bc_best = max(
             (g for g in ("B", "C") if frozen.get(g)),
-            key=lambda g: _tau_on(quar, frozen[g]) or -2,
+            key=lambda g: _tau_on(dev, frozen[g]) or -2,
             default=None,
         )
         if bc_best and frozen.get("A"):
@@ -388,11 +396,18 @@ def score(*, include_flagged: bool = False) -> Path:  # noqa: C901 — pre-regis
             boot = _family_row_bootstrap(quar, _margin_stat)
             track_out["h2_margin"] = {
                 "best_bc_group": bc_best,
+                "bc_selection": "dev_tau_frozen_quarantine_blind",
                 "point": round(point, 4),
                 "threshold": prereg["thresholds"]["h2_margin"],
                 "family_row_clustered_bootstrap_ci95": boot["ci95"] if boot else None,
                 "n_bootstrap_valid": boot["n_valid"] if boot else 0,
             }
+            unselected = {}
+            for g in ("B", "C"):
+                tg, ta = _tau_on(quar, frozen.get(g)), _tau_on(quar, frozen["A"])
+                if tg is not None and ta is not None:
+                    unselected[g] = round(tg - ta, 4)
+            track_out["h2_margins_unselected"] = unselected
         track_out["h4_rank_one"] = rank_one_fit(target, dev, quar)
         results["tracks"][track] = track_out
 
@@ -406,25 +421,38 @@ def score(*, include_flagged: bool = False) -> Path:  # noqa: C901 — pre-regis
         for track in ("level", "shift")
     }
     h3_dev = [c for c in dev_cells if c in raw_targets["level"] and c in raw_targets["shift"]]
+    h3_quar = [c for c in quarantine if c in raw_targets["level"] and c in raw_targets["shift"]]
 
-    def _h3_block(pred_cells: dict[str, float]) -> dict:
-        def _diff_stat(cells_subset: list[str], *, sign: int) -> float | None:
+    def _h3_block(pred_cells: dict[str, float], cells: list[str], *, orientation: str) -> dict:
+        """tau(level), tau(shift) + the ORIENTED difference with clustered CI.
+
+        ``orientation`` ("level_minus_shift" for the base-prior H3 half,
+        "shift_minus_level" for the geometry half) is emitted directly —
+        point AND CI in the hypothesis's own sign, no negate-and-swap at
+        analysis time (round-2 minor #4).
+        """
+        sign = 1 if orientation == "level_minus_shift" else -1
+
+        def _diff_stat(cells_subset: list[str]) -> float | None:
             tl = weighted_kendall_tau(pred_cells, raw_targets["level"], cells_subset)
             ts = weighted_kendall_tau(pred_cells, raw_targets["shift"], cells_subset)
             if tl is None or ts is None:
                 return None
             return sign * (tl - ts)
 
-        tau_level = weighted_kendall_tau(pred_cells, raw_targets["level"], h3_dev)
-        tau_shift = weighted_kendall_tau(pred_cells, raw_targets["shift"], h3_dev)
-        boot = _family_row_bootstrap(h3_dev, lambda cs: _diff_stat(cs, sign=1))
+        tau_level = weighted_kendall_tau(pred_cells, raw_targets["level"], cells)
+        tau_shift = weighted_kendall_tau(pred_cells, raw_targets["shift"], cells)
+        boot = _family_row_bootstrap(cells, _diff_stat)
         return {
+            "n_cells": len(cells),
             "tau_level": tau_level,
             "tau_shift": tau_shift,
-            "tau_level_minus_shift": (
-                tau_level - tau_shift if tau_level is not None and tau_shift is not None else None
+            f"tau_{orientation}": (
+                sign * (tau_level - tau_shift)
+                if tau_level is not None and tau_shift is not None
+                else None
             ),
-            "ci95_level_minus_shift": boot["ci95"] if boot else None,
+            f"ci95_{orientation}": boot["ci95"] if boot else None,
             "n_bootstrap_valid": boot["n_valid"] if boot else 0,
         }
 
@@ -432,25 +460,33 @@ def score(*, include_flagged: bool = False) -> Path:  # noqa: C901 — pre-regis
     if bp:
         results["h3_base_prior"] = {
             "note": "raw targets (z-norm collapses level/shift; see scoring.py)",
-            **_h3_block(bp["cells"]),
+            "dev": _h3_block(bp["cells"], h3_dev, orientation="level_minus_shift"),
+            "quarantine": _h3_block(bp["cells"], h3_quar, orientation="level_minus_shift"),
         }
-    # Geometry side: best Group A predictor selected on dev raw-SHIFT tau
-    # (the track geometry is hypothesized to win); H3 reads its
-    # tau(shift) - tau(level) with the same clustered CI.
+    # Geometry side: best Group A predictor selected on DEV raw-SHIFT tau
+    # (the track geometry is hypothesized to win). The dev block re-reads the
+    # cells the champion was selected on (selection-inflated — round-2 minor
+    # #3), so the quarantine block, read with the SAME dev-frozen champion,
+    # is the selection-clean H3 geometry read.
     geo_best, _ = (
         _champion(preds, "A", _z_norm_within_column(raw_targets["shift"]), h3_dev)
         if h3_dev
         else (None, None)
     )
     if geo_best:
-        block = _h3_block(preds[geo_best]["cells"])
-        block["tau_shift_minus_level"] = (
-            -block["tau_level_minus_shift"] if block["tau_level_minus_shift"] is not None else None
-        )
         results["h3_best_geometry"] = {
             "champion": geo_best,
-            "selection": "best Group A on dev raw-shift tau",
-            **block,
+            "selection": "best Group A on dev raw-shift tau (dev-frozen)",
+            "dev": {
+                "selection_optimism": (
+                    "champion selected on these same dev cells — tau_shift is "
+                    "selection-inflated; read the quarantine block"
+                ),
+                **_h3_block(preds[geo_best]["cells"], h3_dev, orientation="shift_minus_level"),
+            },
+            "quarantine": _h3_block(
+                preds[geo_best]["cells"], h3_quar, orientation="shift_minus_level"
+            ),
         }
 
     # Per-cell-type cuts (expected dense/null/surprising coverage per group).

@@ -140,9 +140,11 @@ class RowSpec:
     # reuse_adapter rows: seed -> HF model-repo subfolder.
     reuse_subfolders: dict | None = None
     # Diagonal manipulation check: the column id whose in-distribution battery
-    # reads this row's implant strength (dose-to-target reads this column).
+    # reads this row's implant strength. The dose-to-target bands live in
+    # preregister.THRESHOLDS ("dose_band_default" + the recalibration
+    # allowance) — the pre-registration is the single source of truth
+    # (round-2 minor #2: a per-row band field here was dead).
     diagonal_column: str = ""
-    dose_band: tuple[float, float] = (0.60, 0.90)
     data_tier: str = ""
     notes: str = ""
 
@@ -278,7 +280,6 @@ ROWS: dict[str, RowSpec] = {
             phase="p2",
             arms=("primary", "cn"),
             diagonal_column="fact_expression",
-            dose_band=(0.60, 0.90),
             data_tier="tier 4 programmatic-with-LLM (named carve-out: construct IS a taught fact)",
         ),
         RowSpec(

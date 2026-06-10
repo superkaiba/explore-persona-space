@@ -194,6 +194,217 @@ def test_k1_gate_fail_closed(tmp_path, monkeypatch):
     assert k1_gate_verdict()["pass"] is False
 
 
+def test_dose_band_miss_routing_monotone_recalibrates(tmp_path, monkeypatch):
+    """Round-2 reconciler blocker i545-k1-monotone-overshoot-not-implemented
+    pinned (plan section 7 band-miss routing): a monotone overshoot of the
+    default 60-90% band retries with the pre-registered 50-95% allowance and
+    lands in_band (band_recalibrated -> K1 PASS); a non-monotone miss (or a
+    missing read) NEVER recalibrates -> K1 FAIL, the reserved stop signature."""
+    from explore_persona_space.experiments.behavior_testbed_545.gates import (
+        select_dose_checkpoint,
+    )
+    from explore_persona_space.experiments.behavior_testbed_545.preregister import THRESHOLDS
+
+    default_band = tuple(THRESHOLDS["dose_band_default"])
+    allowance = tuple(THRESHOLDS["dose_band_recalibration_allowance"])
+
+    def _select(scalars):
+        return select_dose_checkpoint(
+            scalars, default_band=default_band, recalibration_allowance=allowance
+        )
+
+    # Default-band hit: first in-band checkpoint, no recalibration.
+    hit = _select([("checkpoint-125", 0.30), ("checkpoint-250", 0.38), ("checkpoint-375", 0.40)])
+    assert hit == {
+        "selected": "checkpoint-125",  # 0.30/0.40 = 0.75 in [0.60, 0.90]
+        "in_band": True,
+        "band": list(default_band),
+        "band_recalibrated": False,
+        "monotone": True,
+        "ceiling": 0.40,
+    }
+
+    # Monotone overshoot (the in-house dose-cliff): every ratio > 0.90 but the
+    # first (0.92) sits inside the 50-95% allowance -> recalibrated PASS.
+    over = _select([("checkpoint-125", 0.46), ("checkpoint-250", 0.49), ("checkpoint-375", 0.50)])
+    assert over["selected"] == "checkpoint-125"
+    assert over["in_band"] is True
+    assert over["band_recalibrated"] is True
+    assert over["band"] == list(allowance)
+    assert over["monotone"] is True
+
+    # Non-monotone miss (broken-harness signature): never recalibrates.
+    wild = _select([("checkpoint-125", 0.50), ("checkpoint-250", 0.20), ("checkpoint-375", 0.48)])
+    assert wild["selected"] is None
+    assert wild["in_band"] is False
+    assert wild["band_recalibrated"] is False
+    assert wild["monotone"] is False
+    assert wild["band"] == list(default_band)
+
+    # A missing read is NOT monotone evidence -> no recalibration.
+    holes = _select([("checkpoint-125", 0.46), ("checkpoint-250", None), ("checkpoint-375", 0.50)])
+    assert holes["in_band"] is False and holes["monotone"] is False
+
+    # K1 matrix extension: the recalibrated record PASSES K1; the
+    # non-monotone record FAILS it (other components held valid).
+    monkeypatch.setenv("EPM_OUTPUT_ROOT", str(tmp_path / "out"))
+    from explore_persona_space.experiments.behavior_testbed_545 import cells_dir, output_root
+    from explore_persona_space.experiments.behavior_testbed_545.gates import k1_gate_verdict
+
+    output_root().mkdir(parents=True, exist_ok=True)
+    bm = cells_dir() / "bad_medical_primary_seed0"
+    marker = cells_dir() / "marker_primary_seed0"
+    edu = cells_dir() / "educational_insecure_primary_seed0"
+    for d in (bm, marker, edu):
+        d.mkdir(parents=True)
+    (marker / "band_stop_result.json").write_text(
+        json.dumps({"stopped_in_band": True, "last_delta_nats": 8.2, "band_nats": [5.0, 12.0]})
+    )
+    _write_cell_json(bm, "broad_em", {"rate": 0.12})
+    _write_cell_json(edu, "broad_em", {"rate": 0.01})
+
+    (bm / "dose_select.json").write_text(json.dumps(over))
+    assert k1_gate_verdict()["pass"] is True  # monotone overshoot -> recalibrated PASS
+
+    (bm / "dose_select.json").write_text(json.dumps(wild))
+    assert k1_gate_verdict()["pass"] is False  # non-monotone miss -> K1 stop
+
+
+def test_h2_bc_representative_frozen_on_dev_not_quarantine(tmp_path, monkeypatch):
+    """Round-2 reconciler blocker i545-h2-selects-bc-on-quarantine pinned:
+    the confirmatory B-vs-C representative is chosen on DEV tau — a predictor
+    that wins only on quarantine must NOT be selected (no selection key ever
+    evaluates on quarantine targets); both unselected margins are emitted."""
+    monkeypatch.setenv("EPM_OUTPUT_ROOT", str(tmp_path / "out"))
+    from explore_persona_space.experiments.behavior_testbed_545 import output_root
+    from explore_persona_space.experiments.behavior_testbed_545.scoring import score
+
+    dev_rows = [
+        "bad_medical",
+        "risky_financial",
+        "insecure_code",
+        "educational_insecure",
+        "wrong_claim_agreement",
+        "taught_fact",
+    ]
+    quar_rows = [
+        "marker",
+        "answer_in_lists",
+        "business_skills",
+        "benign_format",
+        "casual_register",
+        "hedge_everywhere",
+    ]
+    col = "broad_em"
+    targets = {r: 0.10 + 0.10 * i for i, r in enumerate(dev_rows)}
+    targets |= {r: 0.15 + 0.10 * i for i, r in enumerate(quar_rows)}
+
+    out = output_root()
+    (out / "predictors").mkdir(parents=True, exist_ok=True)
+    matrix = {
+        f"{r}_primary_seed0": {f"{col}__default": {"level": v + 0.2, "L": v}}
+        for r, v in targets.items()
+    }
+    metadata = {f"{r}_primary_seed0": {"arm": "primary", "row": r} for r in targets}
+    (out / "L_matrix.json").write_text(json.dumps({"cells": matrix}))
+    (out / "cell_metadata.json").write_text(json.dumps({"cells": metadata}))
+    (out / "preregistration.json").write_text(
+        json.dumps(
+            {
+                "quarantine_split": {
+                    "development_cells": [[r, col] for r in dev_rows],
+                    "sampled_quarantined_cells": [[r, col] for r in quar_rows[:5]],
+                    "family_quarantined_cells": [[quar_rows[5], col]],
+                },
+                "thresholds": {"h2_margin": 0.15},
+            }
+        )
+    )
+    # A: concordant everywhere. B: concordant on dev, INVERTED on quarantine.
+    # C: inverted on dev, concordant on quarantine — the quarantine-only
+    # winner the old max-on-quarantine selection wrongly picked.
+    cells_a = {f"{r}|{col}": v for r, v in targets.items()}
+    cells_b = {f"{r}|{col}": (v if r in dev_rows else -v) for r, v in targets.items()}
+    cells_c = {f"{r}|{col}": (-v if r in dev_rows else v) for r, v in targets.items()}
+    for name, group, cells in (
+        ("geo", "A", cells_a),
+        ("native", "B", cells_b),
+        ("delta", "C", cells_c),
+    ):
+        (out / "predictors" / f"{group.lower()}_{name}.json").write_text(
+            json.dumps({"group": group, "name": name, "track": "shift", "cells": cells})
+        )
+
+    res = json.loads(score(include_flagged=False).read_text())
+    shift = res["tracks"]["shift"]
+    h2 = shift["h2_margin"]
+    assert h2["best_bc_group"] == "B", (
+        "B-vs-C winner must be the DEV winner, never the quarantine one"
+    )
+    assert h2["bc_selection"] == "dev_tau_frozen_quarantine_blind"
+    assert h2["point"] < -1.0  # B is inverted on quarantine: tau_B(quar) - tau_A(quar) ~ -2
+    unselected = shift["h2_margins_unselected"]
+    assert unselected["B"] < -1.0
+    assert unselected["C"] == pytest.approx(0.0, abs=1e-9)  # C == A on quarantine
+    # H3 geometry block: dev read carries the selection-optimism caveat; the
+    # quarantine read (dev-frozen champion) emits the shift-minus-level CI
+    # directly (round-2 minors #3 + #4).
+    geo = res["h3_best_geometry"]
+    assert "selection_optimism" in geo["dev"]
+    assert "tau_shift_minus_level" in geo["quarantine"]
+    assert "ci95_shift_minus_level" in geo["quarantine"]
+
+
+def _load_sweep_module():
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parent.parent / "scripts" / "issue545_sweep.py"
+    spec = importlib.util.spec_from_file_location("issue545_sweep_under_test", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_bulk_upload_mirror_gap_blocks_deletion(tmp_path, monkeypatch):
+    """Round-2 Codex major i545-513-mirror-unverified-before-delete pinned:
+    a #513-convention mirror missing from the REFRESHED post-mirror listing
+    joins the gaps and blocks ALL local weight deletion; once the mirror is
+    listed, deletion proceeds."""
+    import huggingface_hub
+
+    monkeypatch.setenv("EPM_OUTPUT_ROOT", str(tmp_path / "out"))
+    monkeypatch.setenv("EPM_CORPORA_DIR", str(tmp_path / "no_corpora"))  # absent -> skipped
+    sweep = _load_sweep_module()
+    from explore_persona_space.experiments.behavior_testbed_545 import output_root
+
+    output_root().mkdir(parents=True, exist_ok=True)
+    cell = tmp_path / "out" / "adapters" / "bad_medical_primary_seed0"
+    cell.mkdir(parents=True)
+    (cell / "adapter_config.json").write_text("{}")
+
+    canonical = "issue545_rows/bad_medical_primary_seed0/adapter_config.json"
+    mirror = "issue458_pair_turner_bad_medical_seed0/sft_narrow_adapter/adapter_config.json"
+    listing = {canonical}  # mirror MISSING from the refreshed listing
+
+    class _FakeApi:
+        def upload_folder(self, **kwargs):
+            pass
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", lambda: _FakeApi())
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda repo_id: sorted(listing))
+
+    with pytest.raises(RuntimeError, match="Upload verification gaps"):
+        sweep.bulk_upload_phase("p1")
+    assert cell.exists(), "local weights must survive an unverified #513 mirror"
+    gaps = json.loads((output_root() / "upload_gaps_p1.json").read_text())["gaps"]
+    assert any("#513 mirror" in g for g in gaps)
+
+    listing.add(mirror)
+    sweep.bulk_upload_phase("p1")  # mirror verified -> deletion proceeds
+    assert not cell.exists()
+
+
 def test_registry_overrides_match_train_lora_config():
     """Every kwarg the #545 dispatcher passes exists on TrainLoraConfig
     (the partial-port / library-API-drift guard, pinned as a test)."""

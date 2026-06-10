@@ -188,10 +188,15 @@ def _dose_select_checkpoint(row, arm: str, seed: int, adapter_dir: Path, gpu: in
     """Pick the first checkpoint whose diagonal battery lands in band.
 
     Band read against the max over checkpoints (P2-calibrated dose-to-target;
-    plan section 4.5). Falls back to the final state with a loud flag. Writes
-    an explicit ``dose_select.json`` record (ceiling, per-checkpoint scalars,
-    ``in_band``) into the cell dir — the K1 gate and assemble's
-    ``implant_failed`` read CONSUME this record (round-1 blocker fixes).
+    plan section 4.5), bands from the pre-registered ``THRESHOLDS``. A full
+    default-band miss with a MONOTONE dose-response retries with the
+    pre-registered 50-95% recalibration allowance (plan section 7 band-miss
+    routing; ``gates.select_dose_checkpoint``) — only a non-monotone /
+    broken-harness miss falls back to the final state flagged out-of-band
+    (the K1-stop signature). Writes an explicit ``dose_select.json`` record
+    (ceiling, per-checkpoint scalars, ``in_band``, ``band_recalibrated``,
+    the band actually used) into the cell dir — the K1 gate and assemble's
+    ``implant_failed`` read CONSUME this record (round-1/2 blocker fixes).
     Per-checkpoint reads are archived under the ``dose/`` SUBDIR so they can
     never collide with assemble's ``*__*.json`` column glob.
     """
@@ -243,26 +248,40 @@ def _dose_select_checkpoint(row, arm: str, seed: int, adapter_dir: Path, gpu: in
         scalars.append((ckpt, val))
         logger.info("[phase=dose_select] %s %s -> %s", row.row_id, ckpt.name, val)
 
-    vals = [v for _, v in scalars if v is not None]
-    ceiling = max(vals) if vals else None
-    band_lo, band_hi = 0.60, 0.90
-    selected: Path | None = None
-    in_band = False
-    if ceiling and ceiling > 0:
-        for ckpt, v in scalars:
-            if v is not None and band_lo <= v / ceiling <= band_hi:
-                selected, in_band = ckpt, True
-                break
-    if selected is None:
+    from explore_persona_space.experiments.behavior_testbed_545.gates import (
+        select_dose_checkpoint,
+    )
+    from explore_persona_space.experiments.behavior_testbed_545.preregister import THRESHOLDS
+
+    sel = select_dose_checkpoint(
+        [(c.name, v) for c, v in scalars],
+        default_band=tuple(THRESHOLDS["dose_band_default"]),
+        recalibration_allowance=tuple(THRESHOLDS["dose_band_recalibration_allowance"]),
+    )
+    if sel["selected"] is not None:
+        selected = next(c for c, _ in scalars if c.name == sel["selected"])
+        if sel["band_recalibrated"]:
+            logger.warning(
+                "[phase=dose_select] %s: default band %s missed everywhere but the dose-response "
+                "is MONOTONE — recalibrated to the pre-registered allowance %s, selected %s "
+                "(plan section 7 band-miss routing)",
+                row.row_id,
+                THRESHOLDS["dose_band_default"],
+                THRESHOLDS["dose_band_recalibration_allowance"],
+                selected.name,
+            )
+    else:
         selected = checkpoints[-1]
-        if not vals:
+        if sel["ceiling"] is None:
             logger.warning("[phase=dose_select] no diagonal reads for %s — using final", row.row_id)
         else:
             logger.warning(
-                "[phase=dose_select] %s: no checkpoint in band (vals=%s) — monotone-overshoot "
-                "routes to the 50-95%% recalibration allowance; using final checkpoint flagged",
+                "[phase=dose_select] %s: no checkpoint in the default band NOR (monotone=%s) the "
+                "50-95%% recalibration allowance (vals=%s) — using final checkpoint flagged "
+                "out-of-band (K1-stop signature)",
                 row.row_id,
-                [round(v, 3) if v else None for _, v in scalars],
+                sel["monotone"],
+                [round(v, 3) if v is not None else None for _, v in scalars],
             )
     cell_dir.mkdir(parents=True, exist_ok=True)
     (cell_dir / "dose_select.json").write_text(
@@ -271,9 +290,12 @@ def _dose_select_checkpoint(row, arm: str, seed: int, adapter_dir: Path, gpu: in
                 "row": row.row_id,
                 "arm": arm,
                 "seed": seed,
-                "ceiling": ceiling,
-                "band": [band_lo, band_hi],
-                "in_band": in_band,
+                "ceiling": sel["ceiling"],
+                "band": sel["band"],  # the band actually in force (allowance iff recalibrated)
+                "band_default": list(THRESHOLDS["dose_band_default"]),
+                "band_recalibrated": sel["band_recalibrated"],
+                "monotone": sel["monotone"],
+                "in_band": sel["in_band"],
                 "selected_checkpoint": selected.name,
                 "scalars": {c.name: v for c, v in scalars},
             },
@@ -417,7 +439,18 @@ def _judge_sensitivity_check(args) -> None:
             ),
             label=f"judge-sensitivity-{only}",
         )
-    write_judge_sensitivity(bookend_cell=bookend_cell)
+    result = write_judge_sensitivity(bookend_cell=bookend_cell)
+    if not result["locked"]:
+        # Plan gate 3's escalation ("100/q on cells near decision boundaries")
+        # has no automated consumer — make the verdict impossible to miss in
+        # the run log AND the sentinel note (round-2 minor #6).
+        logger.warning(
+            "[phase=judge_sensitivity] NOT LOCKED (delta=%.2fpp >= %.1fpp): plan gate 3 "
+            "escalation — re-judge cells near decision boundaries at 100/q before "
+            "interpreting P2 rates",
+            result["delta_pp"],
+            result["max_delta_pp"],
+        )
 
 
 def phase_train_eval(args, phase: str) -> None:  # noqa: C901 — phase dispatcher, intentionally flat
@@ -572,6 +605,49 @@ def phase_train_eval(args, phase: str) -> None:  # noqa: C901 — phase dispatch
 # ---------------------------------------------------------------------------
 
 
+def _mirror_513_uploads(api, adapters: Path, list_repo_files, hf_model_repo: str) -> list[str]:
+    """#513 coordination mirror: B1/B2 adapters also under the
+    issue458_pair_<cell> convention (plan section 3a — cell names per #458:
+    turner_* for the Turner organisms, insecure_code/educational for the
+    Betley rows). Returns gap strings for any mirror missing from a listing
+    REFRESHED after the mirror uploads — the first snapshot predates them, so
+    deletion would otherwise never verify the mirror (round-2 Codex major
+    i545-513-mirror-unverified-before-delete).
+    """
+    i513_cells = {
+        "bad_medical": "turner_bad_medical",
+        "risky_financial": "turner_risky_financial",
+        "extreme_sports": "turner_extreme_sports",
+        "insecure_code": "insecure_code",
+        "educational_insecure": "educational",
+    }
+    mirror_probes: list[tuple[str, str]] = []
+    for cell_dir in adapters.iterdir():
+        for row_id, i458_cell in i513_cells.items():
+            if (
+                cell_dir.name.startswith(f"{row_id}_primary_seed")
+                and (cell_dir / "adapter_config.json").exists()
+            ):
+                seed = cell_dir.name.rsplit("seed", 1)[1]
+                mirror_dir = f"issue458_pair_{i458_cell}_seed{seed}/sft_narrow_adapter"
+                api.upload_folder(
+                    folder_path=str(cell_dir),
+                    repo_id=hf_model_repo,
+                    path_in_repo=mirror_dir,
+                    commit_message=f"issue #545: #513-convention mirror {cell_dir.name}",
+                    ignore_patterns=["checkpoint-*/optimizer.pt", "checkpoint-*/scheduler.pt"],
+                )
+                mirror_probes.append((cell_dir.name, f"{mirror_dir}/adapter_config.json"))
+    if not mirror_probes:
+        return []
+    listed = set(list_repo_files(hf_model_repo))
+    return [
+        f"#513 mirror for {cell_name} missing post-upload ({probe})"
+        for cell_name, probe in mirror_probes
+        if probe not in listed
+    ]
+
+
 def bulk_upload_phase(phase: str) -> None:
     """Adapters -> model repo; corpora + raw completions -> data repo.
 
@@ -581,7 +657,8 @@ def bulk_upload_phase(phase: str) -> None:
     AFTER verification passes, every verified adapter / full-model cell dir
     is DELETED (upload-policy: per-phase upload+delete keeps the run under
     the ~130GB MooseFS quota; round-1 Codex major) — manifests, eval JSONs,
-    and corpora stay. Fails loud BEFORE any rm when verification has gaps.
+    and corpora stay. Fails loud BEFORE any rm when verification has gaps —
+    including a #513-convention mirror missing from the post-mirror listing.
     """
 
     from huggingface_hub import HfApi, list_repo_files
@@ -622,31 +699,7 @@ def bulk_upload_phase(phase: str) -> None:
                 gaps.append(f"cell {cell_dir.name} missing post-upload ({probe})")
             else:
                 verified_cell_dirs.append(cell_dir)
-        # #513 coordination mirror: B1/B2 adapters also under the
-        # issue458_pair_<cell> convention (plan section 3a — cell names per
-        # #458: turner_* for the Turner organisms, insecure_code/educational
-        # for the Betley rows).
-        i513_cells = {
-            "bad_medical": "turner_bad_medical",
-            "risky_financial": "turner_risky_financial",
-            "extreme_sports": "turner_extreme_sports",
-            "insecure_code": "insecure_code",
-            "educational_insecure": "educational",
-        }
-        for cell_dir in adapters.iterdir():
-            for row_id, i458_cell in i513_cells.items():
-                if (
-                    cell_dir.name.startswith(f"{row_id}_primary_seed")
-                    and (cell_dir / "adapter_config.json").exists()
-                ):
-                    seed = cell_dir.name.rsplit("seed", 1)[1]
-                    api.upload_folder(
-                        folder_path=str(cell_dir),
-                        repo_id=HF_MODEL_REPO,
-                        path_in_repo=f"issue458_pair_{i458_cell}_seed{seed}/sft_narrow_adapter",
-                        commit_message=f"issue #545: #513-convention mirror {cell_dir.name}",
-                        ignore_patterns=["checkpoint-*/optimizer.pt", "checkpoint-*/scheduler.pt"],
-                    )
+        gaps.extend(_mirror_513_uploads(api, adapters, list_repo_files, HF_MODEL_REPO))
     if corpora_dir().exists():
         api.upload_folder(
             folder_path=str(corpora_dir()),
@@ -683,9 +736,11 @@ def bulk_upload_phase(phase: str) -> None:
     if verified_cell_dirs and freed_before is not None:
         usage = shutil.disk_usage(adapters.parent)
         logger.info(
-            "[phase=upload_%s] disk after cleanup: free=%.1fGB total=%.1fGB (deleted %d cells)",
+            "[phase=upload_%s] disk after cleanup: free=%.1fGB (+%.1fGB freed) total=%.1fGB "
+            "(deleted %d cells)",
             phase,
             usage.free / 1e9,
+            (usage.free - freed_before) / 1e9,
             usage.total / 1e9,
             len(verified_cell_dirs),
         )
@@ -801,6 +856,14 @@ def main() -> int:
     elif args.phase in ("p1", "p2"):
         phase_train_eval(args, args.phase)
         note = f"{args.phase} complete: see manifest_{args.phase}.json"
+        from explore_persona_space.experiments.behavior_testbed_545 import output_root
+
+        js_path = output_root() / "judge_sensitivity.json"
+        if js_path.exists():
+            js = json.loads(js_path.read_text())
+            note += f"; judge_sensitivity locked={js.get('locked')}"
+            if not js.get("locked"):
+                note += " — escalate boundary cells to 100/q (plan gate 3, no automated consumer)"
     elif args.phase == "p3":
         phase_p3(args)
         note = "p3 complete: predictors + L matrix + scoring_results.json"

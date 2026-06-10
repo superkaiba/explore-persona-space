@@ -81,6 +81,12 @@ SCORING_PROTOCOL = {
     "z_norm": "within_column",
     "cv": "leave_family_out",
     "champion_selection": "nested_within_cv_training_folds",
+    # The confirmatory B-vs-C representative is chosen on DEV tau with
+    # champions frozen on full dev; the quarantine split is scored exactly
+    # once and never used for ANY selection (round-2 reconciler blocker
+    # i545-h2-selects-bc-on-quarantine). Both unselected B-vs-A and C-vs-A
+    # quarantine margins are reported alongside the selected one.
+    "h2_bc_representative": "dev_frozen_quarantine_blind",
     "margin_ci": "paired_row_family_clustered_bootstrap",
     "quarantine": {
         "family": QUARANTINED_FAMILY,

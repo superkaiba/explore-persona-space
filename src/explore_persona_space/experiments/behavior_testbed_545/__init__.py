@@ -2,7 +2,7 @@
 
 Package layout (plan section 4.0 "genuinely new"):
 
-- ``rows.py``      — train-row registry (datasets, recipes, dose bands, arms).
+- ``rows.py``      — train-row registry (datasets, recipes, arms).
 - ``columns.py``   — eval-column registry (batteries, DVs, judges, decoders).
 - ``corpora.py``   — P0 corpus + probe-set builders (Sonnet-generated tier-3
   corpora with diversity strata, programmatic tier-4 carve-outs, panel fetches).
