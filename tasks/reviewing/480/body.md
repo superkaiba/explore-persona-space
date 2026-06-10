@@ -418,7 +418,7 @@ Net for the re-run: the success criterion fixed before the run is satisfied on b
   - WandB (per-cell gap fixed — 6 distinct runs, project `issue480-band-stopped-anchor-rerun`): [assistant](https://wandb.ai/thomasjiralerspong/issue480-band-stopped-anchor-rerun/runs/njzlsv32) · [comedian](https://wandb.ai/thomasjiralerspong/issue480-band-stopped-anchor-rerun/runs/34j63nln) · [kindergarten teacher](https://wandb.ai/thomasjiralerspong/issue480-band-stopped-anchor-rerun/runs/q3oduokd) · [qwen_default](https://wandb.ai/thomasjiralerspong/issue480-band-stopped-anchor-rerun/runs/epfi0s48) · [software engineer](https://wandb.ai/thomasjiralerspong/issue480-band-stopped-anchor-rerun/runs/fc4nymja) · [villain](https://wandb.ai/thomasjiralerspong/issue480-band-stopped-anchor-rerun/runs/0qtv0tmz)
   - Seed: 42 (single seed, inherited confidence cap)
 
-- **Methodology reference:** [docs/methodology/issue_480.md](https://github.com/superkaiba/explore-persona-space/blob/bb99900327457320219722c6ac70cb4bce0cdb4b/docs/methodology/issue_480.md) · [gist](https://gist.github.com/superkaiba/ea3fe3b471c7682325b2ca89bbc1dc46)
+- **Methodology reference:** [docs/methodology/issue_480.md](https://github.com/superkaiba/explore-persona-space/blob/b99f14c049a3b64eb8ddcc3fd2ce9c4cf4684107/docs/methodology/issue_480.md) · [gist](https://gist.github.com/superkaiba/ea3fe3b471c7682325b2ca89bbc1dc46)
 
 **Compute:**
 
