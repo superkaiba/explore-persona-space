@@ -2475,6 +2475,10 @@ while True:
     #                                   below); set status:blocked; exit.
     #   status == "running"        -> milestone-already-posted by the poller
     #                                  if new_milestone was true; loop again.
+    #                                  If the JSON also has
+    #                                  gpu_idle_advisory_posted == true, act
+    #                                  per "GPU-idle advisory handling" below
+    #                                  before the next tick.
 ```
 
 (`current_phase` is `"running"` by default; when the poller emits a
@@ -2490,6 +2494,31 @@ park at the user gate on `status=gate` (Step 6d.4), and post
 `epm:failure v1` on `status=stalled` or `status=dead`. The orchestrator
 NEVER re-posts a marker the poller already posted from a sentinel —
 double-posting is the failure mode the gate path is designed to avoid.
+
+**GPU-idle advisory handling.** When a tick's JSON reports
+`gpu_idle_advisory_posted: true`, the poller has just posted a one-time
+`epm:progress` marker whose note starts with `[gpu-idle-advisory]` (plus a
+`gpu_idle_advisory=True` extra): every GPU sat idle on a HEALTHY
+`status=running` tick for ≥ `EPM_GPU_IDLE_ADVISORY_MIN` (default 30) min —
+the signature of a long CPU-only phase holding a GPU pod (incidents
+#518/#537). Don't just loop: surface the advisory in the session text,
+then check the plan for whether the REMAINING work in the current phase is
+CPU-only. If it is and the remaining CPU stretch is long (>~30 min), apply
+CLAUDE.md "CPU-only phases don't hold GPU pods": checkpoint the phase's
+state, upload the artifacts it reads, move the phase off-pod to the VM,
+and `pod.py stop` the pod once nothing pod-local is needed. Three hard
+constraints: (a) NEVER kill un-checkpointable in-RAM work to save idle GPU
+time — redoing #518's multi-hour un-checkpointed scoring run would have
+cost more than the idle burn; let such a phase finish and fix the
+checkpointing in a follow-up; (b) autonomous sessions never stop a pod to
+PARK — the off-pod move is valid only when the CPU phase keeps running
+toward the Goal in this session (e.g. on the VM); (c) this is the
+CPU-phases-off-pod rule, NOT a mid-run cost gate — the trigger is the
+advisory's idle-GPU fact, never "this is getting expensive". If the phase
+genuinely needs the pod (a pod-local data dependency) or is nearly done,
+state that one-line reason and keep looping. The advisory never changes
+the status verdict, so this handling is additive to the `status=running`
+branch.
 
 **`--pid-file` is a POD-side path.** `poll_pipeline.py` evaluates
 `[ -f <pid_file> ]` inside its remote SSH heredoc, so the pid file must
