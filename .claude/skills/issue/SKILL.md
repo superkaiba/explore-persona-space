@@ -2108,7 +2108,7 @@ print('all carry-over artifacts resolve')
 HEAD-checks each against the Hub / WandB API using the user's
 `HF_TOKEN` / `WANDB_API_KEY`. It returns `(ok, missing_urls)`.
 
-- All resolve -> proceed to 6b.
+- All resolve -> proceed to 6a.6.
 - Any missing -> post `epm:carry-over-missing v1` with the unresolved
   URLs, set status to `blocked` (the plan depends on an artifact that
   isn't there; provisioning would burn GPU on a guaranteed failure).
@@ -2118,6 +2118,58 @@ HEAD-checks each against the Hub / WandB API using the user's
     --exit-kind failure-exit --notes "carry-over artifact(s) missing; status:blocked"
   ```
   EXIT. User fixes the cited URL (re-upload, or correct the plan) and
+  re-runs `/issue <N>`.
+
+#### Step 6a.6: HF write-headroom probe (quota gate, before provisioning)
+
+Step 6a verifies READ access only; a namespace at its public-storage
+quota passes the gate-access check, the carry-over HEAD-checks, AND
+pod-side preflight, then 403s on the run's FIRST upload — after the pod
+is already provisioned. (Incident #555, 2026-06-10: a fresh 4xH100
+provision + sync + preflight + launch died 2 minutes in on `403
+Forbidden: You have exceeded your public storage space`, namespace at
+11.3 TB; a full launch cycle wasted.) Before provisioning, probe the
+actual failing operation — a tiny (~1 KB) write to the project model
+repo, immediately deleted:
+
+```bash
+# .env is already sourced by Step 6a (which exits on missing HF_TOKEN).
+uv run python - <<'PY'
+import io, sys
+from huggingface_hub import HfApi
+
+REPO = "superkaiba1/explore-persona-space"
+PROBE = ".quota_probe/probe.txt"
+api = HfApi()
+try:
+    api.upload_file(path_or_fileobj=io.BytesIO(b"quota probe"),
+                    path_in_repo=PROBE, repo_id=REPO,
+                    commit_message="quota probe (auto-deleted)")
+    api.delete_file(path_in_repo=PROBE, repo_id=REPO,
+                    commit_message="remove quota probe")
+except Exception as e:
+    resp = getattr(e, "response", None)
+    if resp is not None and resp.status_code == 403 and "storage" in str(e).lower():
+        print("QUOTA EXCEEDED:", e); sys.exit(1)
+    # Fail-soft on NON-quota errors (transient 5xx, network blip): the
+    # probe's only job is the quota 403; reachability is preflight's job.
+    # Do NOT block provisioning on an inconclusive probe.
+    print("probe inconclusive (non-quota error, proceeding):", e); sys.exit(0)
+print("HF write headroom OK"); sys.exit(0)
+PY
+```
+
+- Exit code `0` (probe OK or inconclusive) -> proceed to 6b.
+- Exit code `1` (storage quota exceeded) -> post `epm:hf-quota-exceeded v1`
+  with the verbatim 403 text + the probed repo id, set status to
+  `blocked` (the storage decision — delete old artifacts vs upgrade the
+  namespace — is the user's; provisioning would burn GPU on a guaranteed
+  upload failure). Post the §5 marker:
+  ```bash
+  uv run python scripts/post_step_completed.py --issue <N> --step 6c \
+    --exit-kind failure-exit --notes "HF namespace storage quota exceeded; status:blocked"
+  ```
+  EXIT. Do NOT provision. User frees space / upgrades storage and
   re-runs `/issue <N>`.
 
 #### Step 6b: Pod provisioning
