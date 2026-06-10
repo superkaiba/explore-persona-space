@@ -79,10 +79,32 @@ def _load_cell(args, variant: str, arm: str, seed: int) -> dict:
     return json.loads(p.read_text())
 
 
+def _arm_group_xticks(ax, cells) -> None:
+    """Seed-only tick labels + one colored arm label under each seed triplet.
+
+    The per-cell two-line labels ("Misalignment\nSFT\nseed 42" x 9) collide at
+    panel widths under ~6 in; seed ticks + group annotations stay legible.
+    """
+    ax.set_xticks(range(len(cells)))
+    ax.set_xticklabels([f"seed {s}" for _, s in cells], fontsize=8)
+    for start, arm in ((0, "marker"), (3, "em"), (6, "benign")):
+        ax.text(
+            start + 1,
+            -0.13,
+            ARM_LABEL_FLAT[arm],
+            transform=ax.get_xaxis_transform(),
+            ha="center",
+            va="top",
+            fontsize=9,
+            fontweight="semibold",
+            color=ARM_COLOR[arm],
+        )
+
+
 # ---------------------------------------------------------------- figure 1
 def fig_hero(args) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6))
-    fig.subplots_adjust(top=0.82, bottom=0.18, left=0.07, right=0.98, wspace=0.22)
+    fig.subplots_adjust(top=0.82, bottom=0.2, left=0.07, right=0.98, wspace=0.22)
     cells = [(arm, s) for arm in ("marker", "em", "benign") for s in SEEDS]
     rng = np.random.default_rng(0)
 
@@ -105,8 +127,7 @@ def fig_hero(args) -> None:
                 )
             else:
                 ax.scatter(x + jit[j], cos[j], s=24, color=ARM_COLOR[arm], alpha=0.75, zorder=3)
-    ax.set_xticks(range(9))
-    ax.set_xticklabels([f"{ARM_LABEL[arm]}\nseed {s}" for arm, s in cells], fontsize=7)
+    _arm_group_xticks(ax, cells)
     ax.set_ylabel("per-persona |cos(shift, top direction)|")
     ax.set_ylim(0, 1.05)
     ax.set_title("Per-persona alignment to the cell's top shift direction")
@@ -125,8 +146,7 @@ def fig_hero(args) -> None:
                 color="black",
                 zorder=5,
             )
-    ax.set_xticks(xs)
-    ax.set_xticklabels([f"{ARM_LABEL[arm]}\nseed {s}" for arm, s in cells], fontsize=7)
+    _arm_group_xticks(ax, cells)
     ax.set_ylabel("top singular value share  $\\sigma_1 / \\Sigma\\sigma$")
     ax.set_ylim(0, 1.0)
     ax.set_title("Direction concentration vs nulls (dash = sign-flip p95, x = row-shuffle p95)")
@@ -257,8 +277,8 @@ def fig_inverted_gate(args) -> None:
     gate = json.loads(Path(args.gate_summary).read_text())
     per_cell = gate["per_cell_rates"]
 
-    fig, ax = plt.subplots(figsize=(6.2, 4.0))
-    fig.subplots_adjust(bottom=0.14, top=0.86, left=0.12, right=0.97)
+    fig, ax = plt.subplots(figsize=(6.6, 4.0))
+    fig.subplots_adjust(bottom=0.14, top=0.86, left=0.17, right=0.96)
     xs = np.arange(len(per_cell))
     rates = [float(per_cell[k]) for k in sorted(per_cell)]
     los, his = [], []
@@ -274,11 +294,19 @@ def fig_inverted_gate(args) -> None:
         GATE_THRESHOLD, color=C_ACCENT, linestyle="--", linewidth=1.4, label="5% halt threshold"
     )
     ax.axhspan(0.0, 0.031, color=C_NEUTRAL, alpha=0.18, label="benign-cell prior band (0-3.1%)")
+    for x, r in zip(xs, rates, strict=True):
+        ax.annotate(
+            f"{int(round(r * GATE_N))}/{GATE_N} misaligned",
+            (x, r + 0.0015),
+            ha="center",
+            fontsize=9,
+            zorder=6,
+        )
     ax.set_xticks(xs)
     ax.set_xticklabels([f"seed {k.rsplit('seed', 1)[-1]}" for k in sorted(per_cell)], fontsize=9)
-    ax.set_ylabel("misaligned-and-coherent rate (800 samples)")
+    ax.set_ylabel("misaligned-and-coherent rate\n(800 samples per seed)")
     ax.set_title("Inverted installation gate: benign cells must stay under 5%")
-    ax.legend(frameon=False, fontsize=8)
+    ax.legend(frameon=False, fontsize=8, loc="center right")
     savefig_paper(fig, "inverted_gate_rates", dir=args.out_dir)
     plt.close(fig)
 
