@@ -38,3 +38,4 @@
 {"ts": "2026-06-10T10:10:08Z", "kind": "epm:results", "version": 1, "by": "issue550_pipeline", "note": "Phase A PASS at band [9,13] nat lr=5e-6 cadence 5; Phase B + eval + analysis complete; analysis at eval_results/issue_550/analysis.json; 3-dial hero figure runs OFF-POD via scripts/issue550_make_figures.py after uploads"}
 {"ts": "2026-06-10T10:10:15Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: shift_extract -> done", "phase": "done", "pod": "pod-550"}
 {"ts": "2026-06-10T10:11:53Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "polling loop observed phase=done; Phase A PASS 3/3, Phase B 18/18 cells, analysis written"}
+{"ts": "2026-06-10T10:12:05Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "stage-dispatch stage=verifying round=1 subagent=upload-verifier worktree=repo-root"}
