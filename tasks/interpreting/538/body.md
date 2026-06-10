@@ -5,7 +5,7 @@ title: Training the marker implant three times harder doesn't move its geometry 
 kind: experiment
 tags: []
 created_at: '2026-06-09T19:44:11Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 527
 goal: Test whether pushing the marker implant past emission onset (source log P(marker)
   − base in the [14, 20] nat window where on-policy emission begins) makes the per-context
