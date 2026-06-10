@@ -2,8 +2,8 @@
   "metadata": {
     "task": 560,
     "script": "issue560_transfer_analysis.py",
-    "git_commit": "776c7c3b7",
-    "timestamp_utc": "2026-06-10T22:58:23.155193+00:00",
+    "git_commit": "27e19b047",
+    "timestamp_utc": "2026-06-10T23:42:24.763475+00:00",
     "python_version": "3.11.15",
     "numpy_version": "2.2.6",
     "scipy_version": "1.17.1",
@@ -720,6 +720,189 @@
       "source_resident": 1.0,
       "trained_negative": 0.013333333333333336,
       "never_negative": 0.043359375
+    }
+  },
+  "sensitivity_length_truncation": {
+    "status": "exploratory sensitivity reads (round-1 interpretation-critic follow-up); NOT registered family members \u2014 the Holm family is unchanged",
+    "length_partial": {
+      "control": "cell-level mean response length: mean over the cell's 20 questions of the generated-token count (n_new_tokens)",
+      "method": "two-way FE residualization (run + persona dummies, exact lstsq \u2014 same design as the registered R1 reads) of min_dist, the DV, AND mean response length; then rank-partial Spearman of (min_dist, DV | mean_len) on the FE residuals; cell bootstrap + run/persona cluster bootstraps re-run the residualization and the partial within every resample",
+      "n_cells": 557,
+      "rho_twoway_min_dist_vs_mean_len": -0.14816892649082214,
+      "dz": {
+        "estimate": -0.5068120622550415,
+        "n_cells": 557,
+        "rho_twoway_unpartialled": -0.5190625746926637,
+        "rho_twoway_mean_len_vs_dv": 0.39385881692514757,
+        "ci95_cell_boot": {
+          "boot_mean": -0.5029472419703872,
+          "low": -0.5930469021373039,
+          "high": -0.40402954477540576,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.49654403487811793,
+          "low": -0.6308430074743773,
+          "high": -0.2903849598239602,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 16
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.5058919368012724,
+          "low": -0.6019472672063976,
+          "high": -0.39698443370113595,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 35
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.6308430074743773,
+          "high": -0.2903849598239602
+        },
+        "p_perm_fe_partial": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.5068120622550415,
+          "null_mean": 0.0004380737257596523,
+          "null_sd": 0.042742644816596946,
+          "n_perm": 10000,
+          "method": "rank residual permutation (Anderson & Legendre 1999): predictor rank-residuals permuted against fixed DV rank-residuals",
+          "note": "diagnostic only \u2014 sensitivity reads are CI-based"
+        }
+      },
+      "dmargin": {
+        "estimate": -0.278072070393472,
+        "n_cells": 557,
+        "rho_twoway_unpartialled": -0.31222203565693224,
+        "rho_twoway_mean_len_vs_dv": 0.5019756708677188,
+        "ci95_cell_boot": {
+          "boot_mean": -0.27026583969833,
+          "low": -0.37136646718135113,
+          "high": -0.1663107804930842,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.2712238655288904,
+          "low": -0.449942525916732,
+          "high": -0.1009691043928322,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 16
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.27644470890010464,
+          "low": -0.37581480020142166,
+          "high": -0.1764174271549492,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 35
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.449942525916732,
+          "high": -0.1009691043928322
+        },
+        "p_perm_fe_partial": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.278072070393472,
+          "null_mean": -0.00016459937618453516,
+          "null_sd": 0.0421038545201977,
+          "n_perm": 10000,
+          "method": "rank residual permutation (Anderson & Legendre 1999): predictor rank-residuals permuted against fixed DV rank-residuals",
+          "note": "diagnostic only \u2014 sensitivity reads are CI-based"
+        }
+      }
+    },
+    "trunc_excluded": {
+      "min_nontrunc_q_per_cell": 10,
+      "n_cells_kept": 542,
+      "n_cells_dropped": 15,
+      "note": "registered-form check: same pair-corrected machinery, cells re-aggregated over only non-truncated generations; expected near-identical to the EOR-only sensitivity (truncated rows are ~98% pre_marker marker-repetition loops)",
+      "dz_nontrunc": {
+        "estimate": -0.4671941094468388,
+        "n_cells": 542,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": -0.45830378442664804,
+          "low": -0.5620474536353739,
+          "high": -0.33971778068006325,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.46264446368668516,
+          "low": -0.5969102673124062,
+          "high": -0.2777418336901495,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 16
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.4668854569032048,
+          "low": -0.5725462520859572,
+          "high": -0.33967949515272244,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 35
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.5969102673124062,
+          "high": -0.2777418336901495
+        },
+        "p_perm_fe": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.4671941094468388,
+          "null_mean": 0.0002679990960406333,
+          "null_sd": 0.04322458820678074,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      },
+      "dmargin_nontrunc": {
+        "estimate": -0.20920113664939102,
+        "n_cells": 542,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": -0.20716536537823485,
+          "low": -0.3225741375692669,
+          "high": -0.09111690654452441,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.2182823684089073,
+          "low": -0.41321239602956544,
+          "high": -0.022289285822649035,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 16
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.2102155419191335,
+          "low": -0.31568943034961494,
+          "high": -0.09819124070707787,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 35
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.41321239602956544,
+          "high": -0.022289285822649035
+        },
+        "p_perm_fe": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.20920113664939102,
+          "null_mean": 6.839243217035677e-05,
+          "null_sd": 0.043260744292013424,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      }
     }
   },
   "persistence": {

@@ -1,0 +1,30 @@
+[panel] 560 cells (16 runs x 35 personas); strata {'source_resident': 3, 'trained_negative': 45, 'never_negative': 512}
+[R1] pair-corrected min_dist reads (primary mask) ...
+[R1] min_dist vs dz: rho_twoway=-0.519 primary CI [-0.660, -0.315] (cluster_run) p=0.004975 (n=557)
+[R1] min_dist vs dz_eos: rho_twoway=+0.047 primary CI [-0.134, +0.236] (cluster_run) p=0.2637 (n=557)
+[R1] min_dist vs dmargin: rho_twoway=-0.312 primary CI [-0.533, -0.108] (cluster_run) p=0.004975 (n=557)
+[R1] min_dist vs margin_trained: rho_twoway=-0.540 primary CI [-0.670, -0.322] (cluster_run) p=0.004975 (n=557)
+[R1] min_dist vs margin_base: rho_twoway=-0.288 primary CI [-0.458, -0.120] (cluster_run) p=0.004975 (n=557)
+[R1] min_dist vs dz: rho_twoway=-0.524 primary CI [-0.681, -0.302] (cluster_run) p=0.004975 (n=512)
+[R1] min_dist vs dz_eos: rho_twoway=+0.041 primary CI [-0.143, +0.238] (cluster_run) p=0.3632 (n=512)
+[R1] min_dist vs dmargin: rho_twoway=-0.312 primary CI [-0.543, -0.109] (cluster_run) p=0.004975 (n=512)
+[R1] min_dist vs margin_trained: rho_twoway=-0.542 primary CI [-0.672, -0.307] (cluster_run) p=0.004975 (n=512)
+[R1] min_dist vs margin_base: rho_twoway=-0.292 primary CI [-0.458, -0.132] (cluster_run) p=0.004975 (n=512)
+[R1] min_dist vs dz: rho_twoway=-0.703 primary CI [-0.889, -0.405] (cluster_run) p=0.004975 (n=172)
+[R1] min_dist vs dz_eos: rho_twoway=+0.076 primary CI [-0.375, +0.522] (cluster_run) p=0.2438 (n=172)
+[R1] min_dist vs dmargin: rho_twoway=-0.464 primary CI [-0.795, +0.066] (cluster_run) p=0.004975 (n=172)
+[R1] min_dist vs margin_trained: rho_twoway=-0.706 primary CI [-0.839, -0.455] (cluster_run) p=0.004975 (n=172)
+[R1] min_dist vs margin_base: rho_twoway=-0.689 primary CI [-0.793, -0.421] (cluster_run) p=0.004975 (n=172)
+[sensitivity] length-partial + truncation-excluded reads ...
+[sens-len] min_dist vs dz | mean_len: rho_partial=-0.507 (unpartialled -0.519) primary CI [-0.600, -0.308] (cluster_run) (n=557)
+[sens-len] min_dist vs dmargin | mean_len: rho_partial=-0.278 (unpartialled -0.312) primary CI [-0.406, -0.108] (cluster_run) (n=557)
+[sens-trunc] min_dist vs dz_nontrunc: rho_twoway=-0.467 primary CI [-0.564, -0.295] (cluster_run) p=0.004975 (n=542)
+[sens-trunc] min_dist vs dmargin_nontrunc: rho_twoway=-0.209 primary CI [-0.377, -0.010] (cluster_run) p=0.004975 (n=542)
+[R2] persistence + clamp routing ...
+[R3] exposure contrast ...
+[R4] variance shares (exploratory) ...
+[write] /home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-560/eval_results/issue_560/transfer_i474.json
+[headline] min_dist vs dz: rho=-0.519 primary CI [-0.660, -0.315] (parent -0.240)
+[headline] min_dist vs dmargin: rho=-0.312 primary CI [-0.533, -0.108] (parent -0.271)
+[headline] persistence rho=+0.891 (variance ratio 0.362, calibrated null +0.811); exposure contrast -1.20 run-CI [-1.53, -0.78]
+[done] wall=14.6s
