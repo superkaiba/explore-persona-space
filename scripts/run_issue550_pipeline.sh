@@ -119,8 +119,11 @@ run_smoke() {
 # ─────────────────────────────────────────────────────────────────────────────
 phase_log preflight "starting (issue_538-inherited preflight at band [$BAND_LOW, $BAND_HIGH] nat)"
 
+# Generic repo preflight (plan §4 Phase 0 first command) — env/GPU/disk/HF gates.
+uv run python -m explore_persona_space.orchestrate.preflight 2>&1 | tee "$LOG_DIR/issue-550-preflight.log"
+
 # Inherited preflight from #527 — model config / marker token / im_end / HF auth.
-uv run python scripts/run_issue527_preflight.py 2>&1 | tee "$LOG_DIR/issue-550-preflight.log"
+uv run python scripts/run_issue527_preflight.py 2>&1 | tee -a "$LOG_DIR/issue-550-preflight.log"
 
 # Issue_538 extensions: ancestry assert + R_persona presence + hash gate.
 phase_log preflight "issue_538 extensions — ancestry + R_persona + hash gate"
@@ -177,6 +180,9 @@ phase_log sweep "done"
 # 6. Eval mode=emission (vLLM batched)
 # ─────────────────────────────────────────────────────────────────────────────
 phase_log eval_emission "starting"
+# NOTE --skip-existing: resume aid for a crashed eval phase. If any cell was
+# RETRAINED (cadence-2 band-miss retry), delete that cell's eval outputs under
+# $OUT_ROOT/eval/ BEFORE re-running, or stale results are silently reused.
 uv run python scripts/run_issue538_eval.py \
     --mode emission \
     --all-cells \
