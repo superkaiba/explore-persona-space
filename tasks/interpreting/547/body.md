@@ -1,6 +1,7 @@
 ---
-title: 'Sub-1-epoch max_steps-resolved grid {5,10,18,30,60,120} at lr=5e-6, r=32 (early-trajectory
-  diagnostic for #533 E=1 sign reversal)'
+title: The negative role-vs-system marker gap is an install-window transient — it
+  replicates right where the implant installs, then shrinks toward zero as the wrong-slot
+  read sinks back into the floor (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T05:26:40Z'

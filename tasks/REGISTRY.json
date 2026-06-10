@@ -3230,7 +3230,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/547",
       "status": "interpreting",
-      "title": "Sub-1-epoch max_steps-resolved grid {5,10,18,30,60,120} at lr=5e-6, r=32 (early-trajectory diagnostic for #533 E=1 sign reversal)"
+      "title": "The negative role-vs-system marker gap is an install-window transient \u2014 it replicates right where the implant installs, then shrinks toward zero as the wrong-slot read sinks back into the floor (MODERATE confidence)"
     },
     "548": {
       "goal": "Determine whether the canonical sequence-level JS divergence carries leakage-predicting signal beyond response-length divergence once the 256-token sampling cap that censored 82-99% of replies is lifted to 1024 on the same 416-cell panel.",
