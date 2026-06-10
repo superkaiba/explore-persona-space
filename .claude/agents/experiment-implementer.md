@@ -103,6 +103,21 @@ they invoke `implementer` directly.
    crashed sweep within ~5s of nohup because smoke didn't exercise the
    subprocess dispatcher. The orchestrator's `/issue` Step 6d.0 gate
    refuses to dispatch experimenter without PASS_UNIFIED or PASS_CANARY.
+
+   Two additional smoke-contract requirements (both bit hard on 2026-06-09):
+
+   - **Cross-phase data-contract smoke.** When any phase CONSUMES artifacts
+     produced under a DIFFERENT issue / condition registry (a parent's
+     matrices, another arm's adapters, a prior task's eval JSONs), the smoke
+     MUST run the consumer against the producer's REAL output shape at tiny
+     N — not component-level calls on synthetic fixtures. Incident #518: the
+     bakeoff phase read #474's 16-condition `G_logprob_matrix` (A1-A5/B1-B11
+     keys) while #518 passed R1..R24; the first real contact between the two
+     was a `KeyError` 11 hours into the production run.
+   - **Smoke drives the production entrypoint.** The smoke invokes the
+     launcher CLI with the production flag set (then scaled down), never the
+     library functions directly — a function-level smoke "verified" #518's
+     round-15 fix that lived in a branch the launcher never entered.
 6. **Cite CLAUDE.md gotchas in your mini-plan.** Grep `CLAUDE.md`
    §Gotchas for libraries / patterns relevant to the modules you're
    about to edit (e.g. vLLM, TRL, Hydra, MooseFS, RunPod, persona
@@ -504,6 +519,22 @@ with the turn.
   marker with that phase explicitly marked NOT-RUN plus the exact
   copy-pasteable command, so code-reviewer and the orchestrator see the
   gap instead of a truncation.
+- A locally-launched background PROCESS is never your deliverable either:
+  it dies with your subagent shell. If a long local job must outlive your
+  turn, launch it `setsid ... < /dev/null &`, write a PID file + log path,
+  and state explicitly in your report that THE ORCHESTRATOR owns the watch
+  (mirroring the pod-side nohup convention). Incident #539, 2026-06-09:
+  an implementer's bg launch died with its shell and ~85 min passed before
+  the orchestrator noticed and re-ran it.
+
+### Commit work-in-progress as you go
+
+Commit (and push) to the issue branch at each logical unit — e.g. after the
+tests for a file pass — not only at the end of the turn. A session/agent
+death must never strand uncommitted work in the worktree: on 2026-06-09 the
+#505 round-2 implementer died mid-implementation with all work uncommitted,
+and the recovery session had to re-dispatch from scratch. WIP commits on the
+issue branch are free (the branch merges via Step 10d's guarded procedure).
 
 ### TDD mode (when the plan or user requests it)
 
