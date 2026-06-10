@@ -75,6 +75,11 @@ SEEDS_BY_ISSUE: dict[int, tuple[int, ...]] = {
     # change (lr), so the seed set / epoch suffix / HF-prefix shape all
     # mirror #529's.
     533: (42, 137, 1337, 7, 21),
+    # #547: sub-1-epoch max_steps-resolved re-run of #533's grid —
+    # single-variable change (training-amount INDEXING: epochs → max_steps
+    # {5, 10, 18, 30, 60, 120}), so the seed set mirrors #533's; the cell
+    # suffix is ``_s{S}`` (step-indexed) instead of ``_e{E}``.
+    547: (42, 137, 1337, 7, 21),
 }
 # Legacy alias preserved for any external importer that referenced
 # ``SEEDS`` directly (none in-repo, but a thin-wrapper path could rely
@@ -683,6 +688,17 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
         help="Default 5 (inherited from #460 plan §11.1).",
     )
     ap.add_argument(
+        "--max-steps",
+        type=int,
+        default=None,
+        help=(
+            "(#547) Step-indexed training amount; overrides --epochs via HF "
+            "TrainingArguments.max_steps (warmup + cosine computed off "
+            "max_steps per run). Required for --issue 547; mutually "
+            "exclusive with a non-default --epochs."
+        ),
+    )
+    ap.add_argument(
         "--gpu-id",
         type=int,
         default=0,
@@ -781,11 +797,14 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
             "saturated training anchors. Pass --issue 533 for #529's "
             "lr=5e-6 corrective re-run (same 5 seeds / {1,2,3,5} epoch "
             "grid / HF-prefix + epoch-suffix shape as 529 — only lr "
-            "differs at the caller). Both 529 and 533 switch the seed "
+            "differs at the caller). Pass --issue 547 for the sub-1-epoch "
+            "max_steps-resolved re-run of #533's grid (REQUIRES "
+            "--max-steps; appends an ``_s{S}`` step suffix instead of "
+            "``_e{E}``). 529/533/547 all switch the seed "
             "set to (42, 137, 1337, 7, 21), prefix cell labels / HF "
             "subpaths / WandB run names with ``i{issue}_``, and append "
-            "an ``_e{E}`` epoch suffix so the same (arm, seed, persona) "
-            "cell at multiple --epochs values writes to distinct HF "
+            "a grid suffix so the same (arm, seed, persona) "
+            "cell at multiple grid values writes to distinct HF "
             "subpaths."
         ),
     )
@@ -795,18 +814,32 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
         ap.error("--shared-marker requires --single-persona")
     if args.contrastive_negatives and not (args.shared_marker and args.single_persona is not None):
         ap.error("--contrastive-negatives requires --single-persona AND --shared-marker")
-    # #529 / #533 invariant: per plan §4.1 the cn re-run is single-
+    # #529 / #533 / #547 invariant: per plan §4.1 the cn re-run is single-
     # persona + shared-marker + contrastive-negatives. A bare --issue
-    # 529 / 533 without those flags would land at the wrong HF subpath
+    # 529 / 533 / 547 without those flags would land at the wrong HF subpath
     # / wrong training rows; fail loud rather than silently producing a
     # #464-shaped cell under an i{N}_ prefix.
-    if args.issue in (529, 533) and not (
+    if args.issue in (529, 533, 547) and not (
         args.contrastive_negatives and args.shared_marker and args.single_persona is not None
     ):
         ap.error(
             f"--issue {args.issue} requires --contrastive-negatives "
             "--shared-marker --single-persona (cn regime only)."
         )
+    # #547 max_steps contract: the step grid IS the manipulated variable,
+    # so --issue 547 REQUIRES --max-steps; and --max-steps with a
+    # non-default --epochs is ambiguous (HF would silently ignore epochs),
+    # so fail loud instead.
+    if args.issue == 547 and args.max_steps is None:
+        ap.error("--issue 547 requires --max-steps (the step grid is the manipulated variable).")
+    if args.max_steps is not None and args.epochs != ap.get_default("epochs"):
+        ap.error(
+            "--max-steps and a non-default --epochs are mutually exclusive "
+            "(max_steps overrides epochs in HF TrainingArguments; passing "
+            "both is ambiguous)."
+        )
+    if args.max_steps is not None and args.max_steps <= 0:
+        ap.error(f"--max-steps must be > 0; got {args.max_steps}")
 
     arm, seed = _parse_cell(args.cell, issue=args.issue)
 
@@ -848,7 +881,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
                 "negative encoding gets >=1 dupe."
             )
 
-    # Issue-prefix + epoch suffix (plan §4.7):
+    # Issue-prefix + grid suffix (plan §4.7 / #547 plan §4.1(b)):
     #   * --issue 464 (default): adapters at ``adapters/i464_{cell}``;
     #     epochs NOT in the cell label (the legacy #464 path).
     #   * --issue 529 / 533: adapters at ``adapters/i{N}_{cell}_e{E}``;
@@ -856,8 +889,11 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
     #     persona) cell at E=1 vs E=5 lives at distinct HF subpaths AND
     #     on-disk row files (concurrent 4-GPU sweep would otherwise
     #     race on the same TRAIN_ROW_DIR/.jsonl path).
+    #   * --issue 547: adapters at ``adapters/i547_{cell}_s{S}`` — same
+    #     distinct-subpath logic keyed on max_steps instead of epochs.
     issue_prefix = f"i{args.issue}"
-    epoch_suffix = f"_e{args.epochs}" if args.issue in (529, 533) else ""
+    step_suffix = f"_s{args.max_steps}" if args.issue == 547 else ""
+    epoch_suffix = f"_e{args.epochs}" if args.issue in (529, 533) else step_suffix
 
     train_path = _build_training_rows(
         arm,
@@ -984,6 +1020,10 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
     cfg_kwargs = dict(
         gpu_id=args.gpu_id,
         epochs=epochs,
+        # #547: step-indexed training amount. None (the default for issues
+        # 464/529/533) leaves the epochs-driven path byte-identical; when
+        # set, HF TrainingArguments.max_steps overrides num_train_epochs.
+        max_steps=args.max_steps,
         lr=args.lr,
         lora_r=32,
         lora_alpha=64,
