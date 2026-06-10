@@ -343,6 +343,157 @@ def test_h2_bootstrap_pins_per_seed_unit_via_main(tmp_path, monkeypatch):
     assert h2["d_mean"] == pytest.approx(-0.5, abs=1e-6)
 
 
+def test_per_encoding_gate_splits_h1_by_arm(tmp_path, monkeypatch):
+    """``--saturation-gate per_encoding`` splits the H1 gate per (trait, arm)
+    cell using THAT arm's base own_scenario distribution.
+
+    Synthetic setup: ``validating`` has system base = 5.0 (saturated) and
+    role base = 3.0 (NOT saturated); both system and role trained = 4.0.
+    Under per_encoding, the role cell must be H1-eligible (not saturated)
+    AND must pass Holm + positive delta + CI check; the system cell must
+    be flagged saturated. Under pooled (default), only the system arm's
+    cell exists in ``h1_per_trait`` and it is saturated → no H1 passers.
+    """
+    from scripts import i528_phase5_analyze as mod
+
+    rows: list[dict] = []
+    seeds = (42, 137, 1337)
+    n_q = 40
+
+    for q in range(n_q):
+        # validating: trained-sys = trained-role = 4.0; base-sys = 5.0
+        # (saturated), base-role = 3.0 (NOT saturated).
+        for arm, trained_score, base_score in (
+            ("system", 4.0, 5.0),
+            ("role", 4.0, 3.0),
+        ):
+            for seed in seeds:
+                rows.append(
+                    {
+                        "kind": "trained",
+                        "trait": "validating",
+                        "arm": arm,
+                        "seed": seed,
+                        "eval_context": "own_scenario",
+                        "q_idx": q,
+                        "score": trained_score,
+                    }
+                )
+            rows.append(
+                {
+                    "kind": "base",
+                    "trait": "validating",
+                    "arm": arm,
+                    "seed": -1,
+                    "eval_context": "own_scenario",
+                    "q_idx": q,
+                    "score": base_score,
+                }
+            )
+
+    payload = {"schema_version": "i528_judge_v1", "rows": rows}
+    judge_path = tmp_path / "judge_scores.json"
+    out_path = tmp_path / "analysis.json"
+    judge_path.write_text(json.dumps(payload))
+
+    monkeypatch.setattr(mod, "JUDGE_PATH", judge_path)
+    monkeypatch.setattr(mod, "OUT_PATH", out_path)
+    monkeypatch.setattr(mod, "PARAPHRASE_PATH", tmp_path / "no_paraphrase.json")
+
+    rc = mod.main(["--saturation-gate", "per_encoding", "--n-bootstrap", "500"])
+    assert rc == 0
+    out = json.loads(out_path.read_text())
+
+    assert out["saturation_gate"] == "per_encoding"
+    cells = out["h1_per_cell"]["validating"]
+    assert set(cells.keys()) == {"system", "role"}
+
+    sys_cell = cells["system"]
+    role_cell = cells["role"]
+
+    # System arm: base = 5.0 → saturated, no Holm test.
+    assert sys_cell["base_saturated_ci"] is True
+    assert sys_cell["pass_h1"] is False
+    assert sys_cell.get("h1_untestable") == "saturated_base"
+
+    # Role arm: base = 3.0 → NOT saturated; trained = 4.0 → delta = +1.0;
+    # uniform constants give SE=0 and t=inf → Holm passes; pass_h1 True.
+    assert role_cell["base_saturated_ci"] is False
+    assert role_cell["headroom"] is True
+    assert role_cell["pass_h1"] is True
+    assert role_cell["paired_delta_mean"] == pytest.approx(1.0, abs=1e-6)
+
+    # h1_passing_traits surfaces validating via the role cell.
+    assert out["h1_passing_traits"] == ["validating"]
+
+
+def test_pooled_gate_is_backward_compatible_default(tmp_path, monkeypatch):
+    """Default invocation (no ``--saturation-gate`` flag) reproduces the
+    legacy single-gate-per-trait behavior on the system arm only.
+    """
+    from scripts import i528_phase5_analyze as mod
+
+    rows: list[dict] = []
+    seeds = (42, 137, 1337)
+    n_q = 40
+
+    # validating: trained-sys = trained-role = 4.0; base-sys = 5.0 (sat),
+    # base-role = 3.0 (NOT sat). Under POOLED the gate only reads base-sys,
+    # so validating is gated out — no H1 passers.
+    for q in range(n_q):
+        for arm, trained_score, base_score in (
+            ("system", 4.0, 5.0),
+            ("role", 4.0, 3.0),
+        ):
+            for seed in seeds:
+                rows.append(
+                    {
+                        "kind": "trained",
+                        "trait": "validating",
+                        "arm": arm,
+                        "seed": seed,
+                        "eval_context": "own_scenario",
+                        "q_idx": q,
+                        "score": trained_score,
+                    }
+                )
+            rows.append(
+                {
+                    "kind": "base",
+                    "trait": "validating",
+                    "arm": arm,
+                    "seed": -1,
+                    "eval_context": "own_scenario",
+                    "q_idx": q,
+                    "score": base_score,
+                }
+            )
+
+    payload = {"schema_version": "i528_judge_v1", "rows": rows}
+    judge_path = tmp_path / "judge_scores.json"
+    out_path = tmp_path / "analysis.json"
+    judge_path.write_text(json.dumps(payload))
+
+    monkeypatch.setattr(mod, "JUDGE_PATH", judge_path)
+    monkeypatch.setattr(mod, "OUT_PATH", out_path)
+    monkeypatch.setattr(mod, "PARAPHRASE_PATH", tmp_path / "no_paraphrase.json")
+
+    # No --saturation-gate flag → defaults to pooled.
+    rc = mod.main(["--n-bootstrap", "500"])
+    assert rc == 0
+    out = json.loads(out_path.read_text())
+
+    assert out["saturation_gate"] == "pooled"
+    # Pooled gate reads base-system only → saturated, no H1 passers.
+    assert out["h1_passing_traits"] == []
+    v = out["h1_per_trait"]["validating"]
+    assert v["base_saturated_ci"] is True
+    assert v["pass_h1"] is False
+    # h1_per_cell under pooled mode only carries the system arm.
+    cells = out["h1_per_cell"]["validating"]
+    assert set(cells.keys()) == {"system"}
+
+
 def test_h2_per_seed_means_average_over_h1_passing_only(tmp_path, monkeypatch):
     """A saturated-base trait does NOT enter the H2 per-seed means.
 

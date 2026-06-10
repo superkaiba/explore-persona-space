@@ -19,6 +19,25 @@ Plan v1 §6.2 + §11 + §15 #20/#21. Computes:
 - **DV3 paraphrase ρ** per (trait, arm) on the 10% stratified subsample.
 
 Output: ``eval_results/issue_528/analysis.json``.
+
+**Saturation gate modes** (``--saturation-gate``):
+
+- ``pooled`` (default, original behavior): each trait's saturation flag
+  reads the base own_scenario distribution under ``eval_arm=system``
+  only; H1 is tested for trained-system only; a trait is H1-passing
+  iff its system-arm cell passes.
+- ``per_encoding`` (new): for each (trait, arm) cell the saturation
+  flag reads the base own_scenario distribution under THAT arm; H1 is
+  tested in both system AND role arms in parallel; a trait is
+  H1-passing iff EITHER arm's cell passes. The full per-cell table is
+  emitted under ``h1_per_cell``. Holm-Bonferroni runs across the
+  non-saturated cells (up to 2 traits × 2 arms = 8 tests). The pooled
+  trait-level summary under ``h1_per_trait`` is retained for backward
+  compatibility (it mirrors the system-arm cell). This addresses the
+  observation that base own_scenario distributions differ between
+  system and role encodings (validating-role base CI [3.08, 3.67]
+  overlaps the 3.5 saturation line, so role is not saturated even
+  though system is).
 """
 
 from __future__ import annotations
@@ -173,6 +192,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — phase dispatch
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--n-bootstrap", type=int, default=10000)
     ap.add_argument("--alpha", type=float, default=0.05)
+    ap.add_argument(
+        "--saturation-gate",
+        choices=("pooled", "per_encoding"),
+        default="pooled",
+        help=(
+            "How to compute the H1 saturation gate. 'pooled' (default, original "
+            "behavior): one gate per trait, base own_scenario read under "
+            "eval_arm=system. 'per_encoding': one gate per (trait, arm) cell, "
+            "base own_scenario read under that arm — splits H1 into 2 arms in "
+            "parallel and emits h1_per_cell."
+        ),
+    )
     args = ap.parse_args(argv)
 
     from explore_persona_space.experiments.i528_traits import TRAITS
@@ -189,51 +220,57 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — phase dispatch
     base_index = _group(rows, kind="base")
     trained_index = _group(rows, kind="trained")
 
-    # ---------------- H1 — per-trait installation, system arm only ----------------
-    h1_per_trait: dict[str, dict] = {}
-    h1_p: dict[str, float] = {}
-    base_summary: dict[str, dict] = {}
-    for trait in TRAITS:
+    # ---------------- H1 — per-trait installation ----------------
+    # Two saturation-gate modes (Blocker 2 follow-up, 2026-06-10):
+    #   pooled (default, legacy): one gate per trait, base own_scenario read
+    #     under eval_arm=system only; H1 tests trained-system vs base-system.
+    #   per_encoding: one gate per (trait, arm) cell, base own_scenario read
+    #     under THAT arm; H1 tests trained-<arm> vs base-<arm> for both
+    #     arms in parallel; Holm spans the non-saturated cells.
+    def _h1_one_cell(
+        trait: str,
+        trained_arm: str,
+        base_arm: str,
+    ) -> dict | None:
+        """Compute the H1 paired test + saturation gate for one (trait, arm) cell.
+
+        ``trained_arm`` selects which trained arm's own_scenario is the
+        numerator; ``base_arm`` selects which base eval_arm's own_scenario
+        is the comparator. The two are decoupled so the legacy pooled mode
+        (trained_arm='system', base_arm='system') and the new per_encoding
+        mode (trained_arm == base_arm, varied over both) share one
+        codepath. Returns ``None`` if the trait has no trained data; the
+        caller writes an explicit NO_TRAINED_CELLS status.
+        """
         if trait not in trained_index:
-            h1_per_trait[trait] = {"status": "NO_TRAINED_CELLS"}
-            continue
-        # System arm in-scenario per seed: avg across 3 seeds per q_idx.
+            return None
         per_q_trained: dict[int, list[float]] = {}
         per_q_base: dict[int, list[float]] = {}
         seeds_seen: set[int] = set()
-        for seed, by_ctx in trained_index[trait].get("system", {}).items():
+        for seed, by_ctx in trained_index[trait].get(trained_arm, {}).items():
             if "own_scenario" not in by_ctx:
                 continue
             seeds_seen.add(seed)
             for q_idx, score in by_ctx["own_scenario"].items():
                 per_q_trained.setdefault(q_idx, []).append(score)
-        # Base in-scenario reads from base_index[trait][<eval_arm>][-1]["own_scenario"].
-        # The base eval was run under BOTH eval_arms; we use eval_arm=system for
-        # H1 (matches the trained_system comparison).
-        base_own = base_index.get(trait, {}).get("system", {}).get(-1, {}).get("own_scenario", {})
+        base_own = base_index.get(trait, {}).get(base_arm, {}).get(-1, {}).get("own_scenario", {})
         for q_idx, score in base_own.items():
             per_q_base.setdefault(q_idx, []).append(score)
-
-        # Per-q paired diff (trained_mean - base_mean).
         diffs: list[float] = []
         for q_idx in sorted(per_q_trained.keys() & per_q_base.keys()):
             t_mean = sum(per_q_trained[q_idx]) / len(per_q_trained[q_idx])
             b_mean = sum(per_q_base[q_idx]) / len(per_q_base[q_idx])
             diffs.append(t_mean - b_mean)
         if not diffs:
-            h1_per_trait[trait] = {
+            return {
                 "status": "NO_PAIRED_PROMPTS",
                 "n_trained_q": len(per_q_trained),
                 "n_base_q": len(per_q_base),
+                "trained_arm": trained_arm,
+                "base_arm": base_arm,
             }
-            continue
         t_stat = _paired_t(diffs)
         lo, hi = _bootstrap_ci(diffs, n_resamples=args.n_bootstrap, alpha=args.alpha)
-        # Base CI for the headroom / saturation gate (Blocker 2): a trait whose
-        # base CI's LOWER bound > 3.5 is "saturated base" — there is no
-        # headroom for the LoRA to install the trait further, so H1 is
-        # UNTESTABLE for it. We compute this BEFORE writing the per-trait
-        # row so the saturation flag is available in the pass_h1 conjunction.
         base_scores = [s for vs in per_q_base.values() for s in vs]
         base_ci_lo = float("nan")
         base_ci_hi = float("nan")
@@ -242,18 +279,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — phase dispatch
         if base_scores:
             base_ci_lo, base_ci_hi = _bootstrap_ci(base_scores, n_resamples=args.n_bootstrap)
             base_mean = sum(base_scores) / len(base_scores)
-            # Lower CI bound STRICTLY above 3.5 → saturated base, no headroom.
             base_saturated_ci = base_ci_lo > 3.5
-            base_summary[trait] = {
-                "n": len(base_scores),
-                "mean": base_mean,
-                "ci_lo": base_ci_lo,
-                "ci_hi": base_ci_hi,
-                "above_3_5_mean": base_mean >= 3.5,
-                "base_saturated_ci": base_saturated_ci,
-                "headroom": not base_saturated_ci,
-            }
-        h1_per_trait[trait] = {
+        cell = {
             "n_paired": len(diffs),
             "paired_delta_mean": t_stat["mean"],
             "t": t_stat["t"],
@@ -262,6 +289,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — phase dispatch
             "ci_lo": lo,
             "ci_hi": hi,
             "seeds_used": sorted(seeds_seen),
+            "trained_arm": trained_arm,
+            "base_arm": base_arm,
             "base_ci_lo": base_ci_lo,
             "base_ci_hi": base_ci_hi,
             "base_mean": base_mean,
@@ -269,24 +298,68 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — phase dispatch
             "headroom": not base_saturated_ci,
         }
         if base_saturated_ci:
-            # H1 is untestable when the base is saturated; flag the trait so
-            # the analyzer can name it "untestable — saturated base" in the
-            # JSON output, and EXCLUDE it from the Holm input + H2 subset.
-            h1_per_trait[trait]["h1_untestable"] = "saturated_base"
-            continue
-        h1_p[trait] = t_stat["p_two_sided"]
+            cell["h1_untestable"] = "saturated_base"
+        return cell
 
-    # Holm-Bonferroni across the H1 tests of NON-saturated traits only.
-    # Saturated traits are excluded from the multiple-testing correction
-    # (they were never testable to begin with).
+    h1_per_trait: dict[str, dict] = {}
+    h1_per_cell: dict[str, dict[str, dict]] = {}  # {trait: {arm: cell_dict}}
+    base_summary: dict[str, dict] = {}
+    base_summary_per_cell: dict[str, dict[str, dict]] = {}  # {trait: {arm: summary}}
+
+    if args.saturation_gate == "pooled":
+        # Legacy path: one gate per trait, both gate + H1 read eval_arm=system.
+        gate_cells: list[tuple[str, str, str]] = [(t, "system", "system") for t in TRAITS]
+    else:
+        # per_encoding: gate + H1 read the same arm; both arms in parallel.
+        gate_cells = [(t, arm, arm) for t in TRAITS for arm in ("system", "role")]
+
+    h1_p: dict[str, float] = {}  # key = f"{trait}__{trained_arm}" (or trait under pooled)
+    for trait, trained_arm, base_arm in gate_cells:
+        cell = _h1_one_cell(trait, trained_arm, base_arm)
+        if cell is None:
+            if trait not in h1_per_trait:
+                h1_per_trait[trait] = {"status": "NO_TRAINED_CELLS"}
+            h1_per_cell.setdefault(trait, {})[trained_arm] = {"status": "NO_TRAINED_CELLS"}
+            continue
+        h1_per_cell.setdefault(trait, {})[trained_arm] = cell
+        # Backward-compat: under pooled mode, mirror the system cell into
+        # h1_per_trait[trait] (the legacy schema). Under per_encoding,
+        # h1_per_trait[trait] mirrors the system cell too so existing
+        # consumers (e.g. the plot script) keep working; the role cell is
+        # accessible via h1_per_cell.
+        if trained_arm == "system":
+            h1_per_trait[trait] = dict(cell)
+        # Base summary table — always per-cell so consumers see both arms
+        # when in per_encoding mode; under pooled, the only key is system.
+        if not math.isnan(cell.get("base_mean", float("nan"))):
+            base_summary_per_cell.setdefault(trait, {})[base_arm] = {
+                "n": cell["n_paired"],  # n_q for the H1 test; base n == 40 typically
+                "mean": cell["base_mean"],
+                "ci_lo": cell["base_ci_lo"],
+                "ci_hi": cell["base_ci_hi"],
+                "above_3_5_mean": cell["base_mean"] >= 3.5,
+                "base_saturated_ci": cell["base_saturated_ci"],
+                "headroom": cell["headroom"],
+            }
+            # Pooled-mode legacy view: base_summary keyed by trait only.
+            if args.saturation_gate == "pooled" and base_arm == "system":
+                base_summary[trait] = base_summary_per_cell[trait][base_arm]
+        if cell["base_saturated_ci"]:
+            continue
+        key = f"{trait}__{trained_arm}" if args.saturation_gate == "per_encoding" else trait
+        h1_p[key] = cell["p_uncorrected"]
+
+    # Holm-Bonferroni across the H1 tests of NON-saturated cells only.
     h1_holm = _holm_bonferroni(h1_p, alpha=args.alpha) if h1_p else {}
-    for trait, hb in h1_holm.items():
-        h1_per_trait[trait]["p_holm"] = hb["p_holm"]
-        h1_per_trait[trait]["reject"] = hb["reject"]
-        # pass_h1 conjunction (Blocker 2): headroom AND Holm-rejected AND
-        # positive delta (CI lower bound > 0). Saturated traits already
-        # never reached this loop, so they're auto-False.
-        info = h1_per_trait[trait]
+    for key, hb in h1_holm.items():
+        if args.saturation_gate == "per_encoding":
+            trait, trained_arm = key.split("__", 1)
+            info = h1_per_cell[trait][trained_arm]
+        else:
+            trait = key
+            info = h1_per_trait[trait]
+        info["p_holm"] = hb["p_holm"]
+        info["reject"] = hb["reject"]
         pass_h1 = bool(
             info.get("headroom")
             and hb["reject"]
@@ -294,13 +367,39 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — phase dispatch
             and info.get("paired_delta_mean", 0) > 0
         )
         info["pass_h1"] = pass_h1
+        # Backward-compat: pooled-mode + system-arm Holm result also lands
+        # on the legacy h1_per_trait[trait] row.
+        if (
+            args.saturation_gate == "per_encoding"
+            and trained_arm == "system"
+            and trait in h1_per_trait
+        ):
+            h1_per_trait[trait]["p_holm"] = hb["p_holm"]
+            h1_per_trait[trait]["reject"] = hb["reject"]
+            h1_per_trait[trait]["pass_h1"] = pass_h1
 
-    # Ensure saturated (and any other untestable) traits carry pass_h1=False
-    # explicitly so downstream consumers can rely on the key.
-    for _trait, info in h1_per_trait.items():
-        info.setdefault("pass_h1", False)
+    # Ensure every cell + trait row has pass_h1=False explicitly so
+    # downstream consumers can rely on the key.
+    for _trait, _by_arm in h1_per_cell.items():
+        for _arm, _info in _by_arm.items():
+            _info.setdefault("pass_h1", False)
+    for _trait, _info in h1_per_trait.items():
+        _info.setdefault("pass_h1", False)
 
-    h1_passing = [t for t, info in h1_per_trait.items() if info.get("pass_h1")]
+    # H1-passing trait set used by H2 subset:
+    #   pooled: trait passes iff its system-arm cell passes.
+    #   per_encoding: trait passes iff EITHER arm's cell passes (we still
+    #     subset H2 by trait — H2 itself is a paired role-vs-system delta).
+    if args.saturation_gate == "per_encoding":
+        h1_passing = sorted(
+            {
+                t
+                for t, by_arm in h1_per_cell.items()
+                if any(info.get("pass_h1") for info in by_arm.values())
+            }
+        )
+    else:
+        h1_passing = [t for t, info in h1_per_trait.items() if info.get("pass_h1")]
 
     # ---------------- H2 — paired role-vs-system d_leakage by SEED ----------
     # Plan §6.2 + §11 + §15 #21 + #498 precedent: the bootstrap UNIT is one
@@ -422,9 +521,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — phase dispatch
                 "ts": _dt.datetime.utcnow().isoformat() + "Z",
                 "n_bootstrap": args.n_bootstrap,
                 "alpha": args.alpha,
+                "saturation_gate": args.saturation_gate,
                 "h1_per_trait": h1_per_trait,
+                "h1_per_cell": h1_per_cell,
                 "h1_passing_traits": sorted(h1_passing),
                 "base_headroom_summary": base_summary,
+                "base_headroom_summary_per_cell": base_summary_per_cell,
                 "h2_paired_leakage": h2_summary,
                 "h2_per_cell": h2_per_cell,
                 "h2_all_trait_sensitivity": h2_all_trait,

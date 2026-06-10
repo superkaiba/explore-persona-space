@@ -62,7 +62,7 @@ def _mean_se(values: list[float]) -> tuple[float, float]:
     return (mean, (var / n) ** 0.5)
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 — plot dispatcher
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(name)s [%(levelname)s] %(message)s",
@@ -91,11 +91,19 @@ def main(argv: list[str] | None = None) -> int:
     contexts = ("own_scenario", "sibling_1", "sibling_2", "sibling_3", "default_assistant")
 
     # ---------- Hero 1: H1 installation ----------
-    fig1, axes1 = plt.subplots(1, 4, figsize=(14, 4), sharey=True)
+    # Under saturation_gate == "per_encoding" we show per-arm base bars +
+    # per-arm trained bars (4 bars per panel), and the trait subtitle
+    # carries per-arm (Δ, p_holm, sat?) annotations. Under "pooled" the
+    # legacy 3-bar shape (base / trained-system / trained-role) is kept.
+    gate_mode = analysis.get("saturation_gate", "pooled")
+    per_cell = analysis.get("h1_per_cell", {})
+    base_summary_cell = analysis.get("base_headroom_summary_per_cell", {})
+
+    fig1, axes1 = plt.subplots(1, 4, figsize=(14, 4.4), sharey=True)
     for i, trait in enumerate(traits):
         ax = axes1[i]
-        # Base own_scenario (eval_arm=system).
-        base_scores = [
+        # Base own_scenario per arm.
+        base_sys = [
             float(r["score"])
             for r in rows
             if r.get("kind") == "base"
@@ -103,7 +111,14 @@ def main(argv: list[str] | None = None) -> int:
             and r.get("eval_context") == "own_scenario"
             and (r.get("arm") or r.get("eval_arm")) == "system"
         ]
-        # Trained own_scenario, system arm, all seeds pooled.
+        base_role = [
+            float(r["score"])
+            for r in rows
+            if r.get("kind") == "base"
+            and r["trait"] == trait
+            and r.get("eval_context") == "own_scenario"
+            and (r.get("arm") or r.get("eval_arm")) == "role"
+        ]
         ts_scores = [
             float(r["score"])
             for r in rows
@@ -120,30 +135,77 @@ def main(argv: list[str] | None = None) -> int:
             and r.get("arm") == "role"
             and r.get("eval_context") == "own_scenario"
         ]
-        labels = ["Base", "Trained\n(system)", "Trained\n(role)"]
-        means, ses = zip(
-            *(_mean_se(v) for v in (base_scores, ts_scores, tr_scores)),
-            strict=True,
-        )
-        ax.bar(labels, means, yerr=ses, color=("#888888", "#d95f02", "#1f78b4"))
-        ax.axhline(3.5, linestyle="--", color="gray", linewidth=0.8)
-        ax.set_ylim(0, 5)
-        ax.set_title(trait.replace("_", " "))
-        info = analysis.get("h1_per_trait", {}).get(trait, {})
-        p_holm = info.get("p_holm")
-        delta = info.get("paired_delta_mean")
-        if p_holm is not None and delta is not None:
-            ax.text(
-                0.5,
-                0.95,
-                f"Δ={delta:.2f} (p_holm={p_holm:.3f})",
-                transform=ax.transAxes,
-                ha="center",
-                va="top",
-                fontsize=8,
+
+        if gate_mode == "per_encoding":
+            # 4 bars: base-sys, trained-sys, base-role, trained-role.
+            labels = ["Base\n(sys)", "Trained\n(sys)", "Base\n(role)", "Trained\n(role)"]
+            means, ses = zip(
+                *(_mean_se(v) for v in (base_sys, ts_scores, base_role, tr_scores)),
+                strict=True,
             )
+            colors = ("#bbbbbb", "#d95f02", "#666666", "#1f78b4")
+            ax.bar(labels, means, yerr=ses, color=colors)
+            ax.tick_params(axis="x", labelsize=7)
+        else:
+            labels = ["Base", "Trained\n(system)", "Trained\n(role)"]
+            means, ses = zip(
+                *(_mean_se(v) for v in (base_sys, ts_scores, tr_scores)),
+                strict=True,
+            )
+            ax.bar(labels, means, yerr=ses, color=("#888888", "#d95f02", "#1f78b4"))
+
+        ax.axhline(3.5, linestyle="--", color="gray", linewidth=0.8)
+        ax.set_ylim(0, 5.2)
+        ax.set_title(trait.replace("_", " "))
+
+        if gate_mode == "per_encoding":
+            # Per-arm annotation block: each line shows the arm, its delta,
+            # p_holm if Holm-tested, and saturation/pass status.
+            lines: list[str] = []
+            for arm, label in (("system", "sys"), ("role", "role")):
+                cell = per_cell.get(trait, {}).get(arm, {})
+                if not cell or "paired_delta_mean" not in cell:
+                    continue
+                d = cell["paired_delta_mean"]
+                sat = cell.get("base_saturated_ci")
+                pholm = cell.get("p_holm")
+                passed = cell.get("pass_h1")
+                if sat:
+                    tag = "sat"
+                elif passed:
+                    tag = f"PASS p_h={pholm:.1e}" if pholm is not None else "PASS"
+                elif pholm is not None:
+                    tag = f"ns p_h={pholm:.1e}"
+                else:
+                    tag = "no Holm"
+                lines.append(f"{label}: Δ={d:+.2f} ({tag})")
+            if lines:
+                ax.text(
+                    0.5,
+                    0.97,
+                    "\n".join(lines),
+                    transform=ax.transAxes,
+                    ha="center",
+                    va="top",
+                    fontsize=7,
+                    bbox={"facecolor": "white", "alpha": 0.85, "edgecolor": "none", "pad": 1.5},
+                )
+        else:
+            info = analysis.get("h1_per_trait", {}).get(trait, {})
+            p_holm = info.get("p_holm")
+            delta = info.get("paired_delta_mean")
+            if p_holm is not None and delta is not None:
+                ax.text(
+                    0.5,
+                    0.95,
+                    f"Δ={delta:.2f} (p_holm={p_holm:.3f})",
+                    transform=ax.transAxes,
+                    ha="center",
+                    va="top",
+                    fontsize=8,
+                )
     axes1[0].set_ylabel("Likert score (1-5)")
-    fig1.suptitle("H1 — does LoRA install the trait above base?")
+    fig1.suptitle(f"H1 — does LoRA install the trait above base? (gate={gate_mode})")
     _save(
         fig1,
         "hero1_h1_installation",
@@ -152,8 +214,20 @@ def main(argv: list[str] | None = None) -> int:
             "git_commit": _git(),
             "ts": datetime.utcnow().isoformat() + "Z",
             "analysis_path": str(ANALYSIS_PATH),
+            "saturation_gate": gate_mode,
+            "h1_passing_traits": analysis.get("h1_passing_traits", []),
+            "h1_per_cell_pass": {
+                t: {
+                    a: per_cell.get(t, {}).get(a, {}).get("pass_h1", False)
+                    for a in ("system", "role")
+                }
+                for t in traits
+            }
+            if gate_mode == "per_encoding"
+            else None,
         },
     )
+    _ = base_summary_cell  # already reflected through per_cell base_* fields
 
     # ---------- Hero 2: H2 segmentation by context ----------
     fig2, axes2 = plt.subplots(1, 4, figsize=(16, 4), sharey=True)
@@ -208,7 +282,21 @@ def main(argv: list[str] | None = None) -> int:
         if i == 0:
             ax.legend(fontsize=7)
     axes2[0].set_ylabel("Likert score (1-5)")
-    fig2.suptitle("H2 — segmentation across own + off-target contexts")
+    h2_summary = analysis.get("h2_paired_leakage", {})
+    h2_passed = h2_summary.get("passed")
+    h2_d = h2_summary.get("d_mean")
+    h2_lo = h2_summary.get("ci_lo")
+    h2_hi = h2_summary.get("ci_hi")
+    h2_traits = h2_summary.get("h1_passing_traits") or []
+    if h2_passed is not None and h2_d is not None:
+        verdict = "PASS" if h2_passed else "FAIL"
+        fig2.suptitle(
+            f"H2 — segmentation across own + off-target contexts "
+            f"(gate={gate_mode}, H2 {verdict}: d={h2_d:+.3f} "
+            f"CI=[{h2_lo:+.3f}, {h2_hi:+.3f}], on {','.join(h2_traits) or '∅'})"
+        )
+    else:
+        fig2.suptitle(f"H2 — segmentation across own + off-target contexts (gate={gate_mode})")
     _save(
         fig2,
         "hero2_h2_segmentation",
@@ -216,6 +304,11 @@ def main(argv: list[str] | None = None) -> int:
             "kind": "hero_h2_segmentation",
             "git_commit": _git(),
             "ts": datetime.utcnow().isoformat() + "Z",
+            "saturation_gate": gate_mode,
+            "h1_passing_traits": h2_traits,
+            "h2_passed": h2_passed,
+            "h2_d_mean": h2_d,
+            "h2_ci": [h2_lo, h2_hi] if h2_lo is not None else None,
         },
     )
 
@@ -264,6 +357,8 @@ def main(argv: list[str] | None = None) -> int:
             "kind": "hero_h2_joint",
             "git_commit": _git(),
             "ts": datetime.utcnow().isoformat() + "Z",
+            "saturation_gate": gate_mode,
+            "h1_passing_traits": analysis.get("h1_passing_traits", []),
         },
     )
     return 0
