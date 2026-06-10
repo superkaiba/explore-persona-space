@@ -9,6 +9,9 @@ parent_id: 540
 goal: Determine whether the canonical sequence-level JS divergence carries leakage-predicting
   signal beyond response-length divergence once the 256-token sampling cap that censored
   82-99% of replies is lifted to 1024 on the same 416-cell panel.
+relates_to:
+- leak-predictor
+- spec-sysprompt-vs-drift
 ---
 ## Goal
 
