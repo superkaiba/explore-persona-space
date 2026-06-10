@@ -11,6 +11,9 @@ goal: Test whether the held-out persona channel structure — persona geometry r
   training — generalizes from the 4-negative training recipe to the 16 broad-negative-panel
   marker adapters, by generating and four-float-scoring those adapters' responses
   on the same 35 held-out personas.
+relates_to:
+- leak-predictor
+- leak-contrastive-negatives
 ---
 ## Goal
 
