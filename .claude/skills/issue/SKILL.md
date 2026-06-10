@@ -2971,9 +2971,14 @@ The verifier runs `scripts/verify_uploads.py` and checks:
 **Phantom-URL gate (Step 8 enforcement of upload-verifier Step 2.5).**
 Before spawning the verifier, build a single text blob containing the
 `epm:results` marker body + the clean-result body's Reproducibility
-section, write it to `/tmp/issue-<N>-claimed-urls.txt`, and pass
-`--claimed-urls-file /tmp/issue-<N>-claimed-urls.txt` so every cited
-HF/WandB URL is HEAD-verified at its cited revision. A URL string in a
+section, write it to `/tmp/issue-<N>-claimed-urls.txt`, and run
+`verify_uploads.py --issue <N> --type <experiment-type>
+--claimed-urls-file /tmp/issue-<N>-claimed-urls.txt` so every cited
+HF/WandB URL is HEAD-verified at its cited revision. `--type` is the
+experiment type handed to the verifier as an input — always pass it
+explicitly per upload-verifier.md Step 2.5 (omitting it falls back to
+frontmatter-`kind` inference, which conservatively assumes `training`
+for `kind: experiment`). A URL string in a
 sentinel is NOT evidence the files exist. Incident #456: a training run
 PASSed upload-verification with a per-step checkpoint URL nothing had
 uploaded; a downstream experiment had to re-train two months later. See

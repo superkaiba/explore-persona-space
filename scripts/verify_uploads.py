@@ -285,15 +285,43 @@ def _issue_branch_ref(issue_num: int) -> str | None:
     return None
 
 
+def issue_token_match(name: str, issue_num: int) -> bool:
+    """True when ``name`` contains ``issue_num`` as a digit-bounded token.
+
+    Substring matching is a false-PASS vector for low-numbered issues —
+    issue 56 must NOT claim ``issue_563`` (or ``issue_456``) artifacts as
+    its own. The number matches only when not flanked by another digit on
+    either side (``issue_56`` / ``56_panel.json`` match; ``issue_563`` /
+    ``2056`` do not).
+    """
+    return re.search(rf"(?<!\d){issue_num}(?!\d)", name) is not None
+
+
 def filter_issue_paths(paths: list[str], issue_num: int) -> list[str]:
     """Keep paths whose top-level entry under the prefix names the issue.
 
-    Mirrors the working-tree globs (``eval_results/*<N>*`` /
-    ``figures/*<N>*``): a path matches when the path component directly
-    under the prefix directory contains the issue number string.
+    Mirrors the working-tree scan (``_working_tree_issue_entries``): a
+    path matches when the path component directly under the prefix
+    directory contains the issue number as a digit-bounded token (never
+    as a substring of a longer number — see ``issue_token_match``).
     """
-    needle = str(issue_num)
-    return [p for p in paths if len(p.split("/")) >= 2 and needle in p.split("/")[1]]
+    return [
+        p for p in paths if len(p.split("/")) >= 2 and issue_token_match(p.split("/")[1], issue_num)
+    ]
+
+
+def _working_tree_issue_entries(repo_root: Path, prefix: str, issue_num: int) -> list[Path]:
+    """Glob working-tree entries under ``prefix`` that name the issue.
+
+    The raw ``*<N>*`` globs substring-match (``*56*`` also hits
+    ``issue_563``), so every candidate is re-checked with
+    ``issue_token_match`` on its entry name before it can count as this
+    issue's artifact.
+    """
+    candidates = list(repo_root.glob(f"{prefix}/*issue*{issue_num}*")) + list(
+        repo_root.glob(f"{prefix}/*{issue_num}*")
+    )
+    return [d for d in candidates if issue_token_match(d.name, issue_num)]
 
 
 def _branch_files(issue_num: int, prefix: str) -> tuple[str | None, list[str]]:
@@ -326,9 +354,7 @@ def check_git_figures(issue_num: int) -> dict:
     branch refs (artifacts land there before the Step 9b auto-merge).
     """
     repo_root = Path(__file__).resolve().parent.parent
-    figure_dirs = list(repo_root.glob(f"figures/*issue*{issue_num}*")) + list(
-        repo_root.glob(f"figures/*{issue_num}*")
-    )
+    figure_dirs = _working_tree_issue_entries(repo_root, "figures", issue_num)
 
     committed_files = []
     for d in figure_dirs:
@@ -434,9 +460,7 @@ def check_eval_json(issue_num: int) -> dict:
     branch refs (artifacts land there before the Step 9b auto-merge).
     """
     repo_root = Path(__file__).resolve().parent.parent
-    eval_dirs = list(repo_root.glob(f"eval_results/*issue*{issue_num}*")) + list(
-        repo_root.glob(f"eval_results/*{issue_num}*")
-    )
+    eval_dirs = _working_tree_issue_entries(repo_root, "eval_results", issue_num)
 
     json_files = []
     for d in eval_dirs:

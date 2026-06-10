@@ -112,3 +112,43 @@ class TestFilterIssuePaths:
     def test_figures_prefix(self):
         paths = ["figures/issue_563/panel.png", "figures/issue_42/panel.png"]
         assert verify_uploads.filter_issue_paths(paths, 563) == ["figures/issue_563/panel.png"]
+
+
+# ── delimiter-bounded issue matching (#563 follow-up) ─────────────────────────
+
+
+class TestIssueTokenMatch:
+    def test_low_issue_does_not_match_longer_numbers(self):
+        """The false-PASS vector: issue 56 must not claim issue_563 artifacts."""
+        assert not verify_uploads.issue_token_match("issue_563", 56)
+        assert not verify_uploads.issue_token_match("issue_456", 56)
+        assert not verify_uploads.issue_token_match("2056_panel", 56)
+
+    def test_digit_bounded_occurrences_match(self):
+        assert verify_uploads.issue_token_match("issue_56", 56)
+        assert verify_uploads.issue_token_match("issue_56_followup", 56)
+        assert verify_uploads.issue_token_match("56_panel.json", 56)
+        assert verify_uploads.issue_token_match("issue-56", 56)
+
+
+class TestFilterIssuePathsBounded:
+    def test_issue_56_does_not_match_issue_563(self):
+        paths = [
+            "eval_results/issue_563/base_prior.json",
+            "eval_results/issue_56/real.json",
+        ]
+        assert verify_uploads.filter_issue_paths(paths, 56) == ["eval_results/issue_56/real.json"]
+
+
+class TestWorkingTreeIssueEntries:
+    def test_glob_does_not_substring_match(self, tmp_path):
+        (tmp_path / "eval_results" / "issue_563").mkdir(parents=True)
+        (tmp_path / "eval_results" / "issue_56").mkdir()
+        entries = verify_uploads._working_tree_issue_entries(tmp_path, "eval_results", 56)
+        assert {e.name for e in entries} == {"issue_56"}
+
+    def test_glob_keeps_real_matches_for_high_issue(self, tmp_path):
+        (tmp_path / "figures" / "issue_563").mkdir(parents=True)
+        (tmp_path / "figures" / "issue_56").mkdir()
+        entries = verify_uploads._working_tree_issue_entries(tmp_path, "figures", 563)
+        assert {e.name for e in entries} == {"issue_563"}
