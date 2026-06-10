@@ -1,7 +1,7 @@
 ---
 title: 'Role prompts alone raise the base model''s marker prior at the end of its
   own answers: the moving trained-vs-base audit baseline is intrinsic to the base
-  model (HIGH confidence)'
+  model (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-10T18:18:24Z'

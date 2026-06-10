@@ -3362,7 +3362,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/563",
       "status": "interpreting",
-      "title": "Role prompts alone raise the base model's marker prior at the end of its own answers: the moving trained-vs-base audit baseline is intrinsic to the base model (HIGH confidence)"
+      "title": "Role prompts alone raise the base model's marker prior at the end of its own answers: the moving trained-vs-base audit baseline is intrinsic to the base model (MODERATE confidence)"
     },
     "564": {
       "has_clean_result": false,
