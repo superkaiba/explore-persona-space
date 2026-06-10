@@ -455,6 +455,12 @@ def _load_base_model(model_id: str):
 
 def main() -> int:
     """CLI: extract one steering vector. Used by the dispatcher in step F."""
+    # The EM judge filter (batch_judge) reads ANTHROPIC_API_KEY from
+    # os.environ; without the .env load the dispatcher subprocess has no
+    # key and the Anthropic client raises at batch-create time.
+    from explore_persona_space.orchestrate.env import load_dotenv
+
+    load_dotenv()
     parser = argparse.ArgumentParser(
         description="Extract a CAA steering vector for #519",
         formatter_class=argparse.RawDescriptionHelpFormatter,

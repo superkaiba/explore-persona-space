@@ -35,6 +35,11 @@ unset EPM_PERSIST_ADAPTER_HF_REPO EPM_PERSIST_ADAPTER_SUBFOLDER
 
 SEEDS=(42 137 256)
 N_GPUS="${N_GPUS:-4}"
+# Skip tokens for the dispatcher. Default = training half only; pass
+# SKIP_PHASES="a1 a23 b0_smoke b c" to also skip Phase C on a re-entry
+# where the 18 shifts/*.pt are already on disk (e.g. the Phase E
+# ANTHROPIC_API_KEY relaunch).
+read -r -a SKIP_PHASES_ARR <<< "${SKIP_PHASES:-a1 a23 b0_smoke b}"
 LOG_DIR="${LOG_DIR:-$REPO_ROOT/logs/issue-521-v2}"
 mkdir -p "$LOG_DIR" /workspace/logs
 
@@ -103,7 +108,7 @@ phase dispatch_phase_ced "launching v1 dispatcher for Phase C → E → D on 6 c
 DISPATCH_LOG="$LOG_DIR/dispatch_phase_ced.log"
 uv run python scripts/issue_519_dispatch.py \
   --mode sweep \
-  --skip-phase a1 a23 b0_smoke b \
+  --skip-phase "${SKIP_PHASES_ARR[@]}" \
   --layer 14 \
   --variants same base on_policy \
   --output-dir eval_results/issue_521 \
