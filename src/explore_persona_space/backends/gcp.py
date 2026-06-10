@@ -606,7 +606,13 @@ def render_startup_script(
         '  export PATH="$HOME/.local/bin:$PATH"',
         "fi",
         'cd "$WORKLOAD_ROOT"',
-        "uv sync --frozen",
+        # Pin the interpreter: the DLVM's system python is 3.10 (below
+        # requires-python >=3.11), so an unpinned `uv sync` fetches the
+        # NEWEST allowed CPython — 3.14 as of Jun 2026 — and torch 2.8.0
+        # ships no cp314 wheel (live finding, issue 535 GCP lane r5:
+        # 'no source distribution or wheel for the current platform').
+        # 3.11 matches the RunPod image python + ruff's py311 target.
+        "uv sync --frozen --python 3.11",
         "",
         "# === HF cache + sentinel dir ===",
         'export HF_HOME="$WORKLOAD_ROOT/.cache/huggingface"',
