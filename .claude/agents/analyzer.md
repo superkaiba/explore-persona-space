@@ -136,6 +136,27 @@ The interpretation-critic checks for the H3's presence and substance as
 part of its normal review (no separate marker, no separate skill-step
 gate, no `status:blocked` path).
 
+#### Content hygiene for harmful-content corpora (EM, refusal, harmful-advice)
+
+When the run's raw completions come from a harmful-content corpus
+(Betley-style EM, bad-medical-advice, refusal-bait pools), verbatim rows
+in your context can trigger terminal API usage-policy refusals that kill
+your final turn and make the transcript unresumable (incident: task
+#537, 2026-06-10). For those rows, the spot check above AND the Step 3.6
+sample selection run in sanitized mode:
+
+- Read minimal slices via field-filtered `jq` (judge label, marker
+  presence, row index, token counts) — never load whole files or full
+  text-field values into context.
+- Embed a short sanitized excerpt (first ~15 words) plus a placeholder
+  `[truncated — harmful-content row; verify at <raw-completions path>,
+  row <i>]` instead of the full completion. Keep labels, indices, and
+  the permanent raw link verbatim — that is what carries the evidence.
+- Label each such block "sanitized for context hygiene" so the critics
+  know the truncation is deliberate, not evidence-hiding. Benign corpora
+  (marker, fact, sycophancy, WildChat, personas) keep the standard
+  verbatim treatment.
+
 ### Step 2: Compute Statistics
 
 For every comparison:

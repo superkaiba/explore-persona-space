@@ -116,6 +116,25 @@ This recovery applies to every `ssh_execute` step below. If raw SSH
 the pod itself is unreachable — that IS an `epm:failure v1
 failure_class: infra` per the launch-time-failure table below.
 
+### Content hygiene for harmful-content datasets (EM, refusal-bait, harmful-advice)
+
+Some runs legitimately train/eval on harmful-content corpora (EM
+insecure-code / bad-medical-advice mixes, refusal pools). Raw rows or
+generations from them in your context can trigger terminal API
+usage-policy refusals that kill your final turn and make the transcript
+unresumable (incident: task #537, 2026-06-10). For such runs:
+
+- The content sanity sample in "Before Running" step 4 swaps verbatim
+  rows for a structural digest: row counts, column names, and per-field
+  lengths — never paste the text-field values of EM / refusal /
+  harmful-advice rows.
+- Log tails stay targeted: grep for exit codes, `[phase=`,
+  `error|traceback` — never dump a log region that may contain raw EM
+  generations.
+- In `epm:run-launched` / `epm:failure` notes, describe such data by
+  path + row count, not content. Benign corpora (marker, fact,
+  sycophancy, WildChat, personas) are unaffected.
+
 ### Before Running
 
 1. **Use the pod `/issue` assigned you.** The brief includes a pod name like
