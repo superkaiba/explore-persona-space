@@ -249,7 +249,7 @@ The planned per-rollout violin (`sociot_violin_by_source.png`) was descoped for 
 **Code:**
 
 - Dispatcher: [`scripts/dispatch_warmth_manipulation_check_515.py`](https://github.com/superkaiba/explore-persona-space/blob/59c6c67e4378a5e38b427aea9049ab5bbc39be87/scripts/dispatch_warmth_manipulation_check_515.py)
-- Plan (v2): [`tasks/interpreting/515/plans/plan.md`](https://github.com/superkaiba/explore-persona-space/blob/59c6c67e4378a5e38b427aea9049ab5bbc39be87/tasks/interpreting/515/plans/plan.md)
+- Plan (v2): [`tasks/interpreting/515/plans/v1.md`](https://github.com/superkaiba/explore-persona-space/blob/888f7481cc684a297fc011cc44c266eeb3776f05/tasks/interpreting/515/plans/v1.md)
 - Figure source: [`scripts/plot_issue515_*`](https://github.com/superkaiba/explore-persona-space/tree/59c6c67e4378a5e38b427aea9049ab5bbc39be87/scripts) (`plot_issue515_summary.py` + the two hero scripts in the same commit)
 - Git commit (figures + analysis): `59c6c67e4378a5e38b427aea9049ab5bbc39be87` (branch `issue-515`)
 - Reproduce: `uv run python scripts/dispatch_warmth_manipulation_check_515.py --adapters-from-issue 496 --eval-prompts issue496_warmth_sycophancy/warmth_prompts/eval_50.jsonl --rollouts 10 --bootstrap-B 10000 --bootstrap-seed 42`
