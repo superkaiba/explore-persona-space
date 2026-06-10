@@ -784,6 +784,25 @@ its stale plan — re-posting already-posted markers and launching a
 duplicate live acceptance run + SLURM job the replacement had to
 kill/scancel.
 
+**Interactive-session registration (run once the guard passes).** An
+INTERACTIVE session (`EPM_AUTONOMOUS_SESSION` unset) driving `/issue <N>`
+registers itself ONCE at Step 0 so it appears in `spawn_session.py list`'s
+issue-mapping — otherwise a manually-started session is invisible to every
+OTHER session's single-orchestrator guard (the other half of incident
+#535: the watcher's autonomous replacement could not see the live manual
+session precisely because it never registered):
+
+```bash
+uv run python scripts/spawn_session.py register-current --issue <N>
+# idempotent; writes ~/.eps-autonomous/manual-issue-<N>.json (alert-only:
+# `list` visibility + stalled/crash alerts — never auto-respawned)
+```
+
+Autonomous sessions skip this — `spawn-issue --auto` already registered
+them (`issue-<N>.json`). Registration failure is non-fatal: state the
+failure and continue (same fail-soft contract as the Step 9b same-issue
+follow-up loop's step-2 re-registration).
+
 ```bash
 # Reads body.md frontmatter + the most-recent slice of events.jsonl.
 # Use --json for the machine-readable shape (body + last events).
