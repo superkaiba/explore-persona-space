@@ -33,7 +33,15 @@
 #
 # Smoke = sweep with one cell: set EPOCHS_OVERRIDE=1, SEEDS_OVERRIDE=42,
 # ARMS_OVERRIDE=system_plain, PERSONAS_OVERRIDE=pirate; the same script
-# handles it end-to-end (PASS_UNIFIED smoke architecture).
+# handles it end-to-end (PASS_UNIFIED smoke architecture). The overrides
+# thread through EVERY phase: train iterates the subset directly; the
+# cross-eval receives the same subset via i464_po_eval.py's
+# --arms/seeds/personas/epochs-filter flags (round-3 fix — without the
+# propagation, eval enumerated the full 120-cell grid and 404'd on
+# never-trained adapters); anchor-select + analyze run with
+# --allow-partial in smoke mode ONLY (production keeps fail-loud), so a
+# 1-cell smoke terminates at the documented degenerate-anchor stub with
+# [phase=done] + the sentinel — the smoke acceptance signal.
 #
 # Launch:
 #   nohup bash scripts/i546_cn_run.sh > /workspace/logs/issue-546-cn-run.log 2>&1 &
@@ -68,8 +76,42 @@ read -r -a PERSONAS_ARR <<< "${PERSONAS[*]}"
 read -r -a SEEDS_ARR <<< "$SEEDS_STR"
 read -r -a EPOCHS_ARR <<< "$EPOCHS_STR"
 
+# ── Smoke detection + eval cell-subset propagation (round-3 fix). ──────
+# epm:failure `smoke-crosseval-enumerates-full-grid`: the *_OVERRIDE env
+# vars shaped only the train loop; phase 4's i464_po_eval.py enumerated
+# the full registered 120-cell grid and hard-failed (HF 404) on the
+# first never-trained adapter, so a fresh-issue smoke could never pass.
+# Propagate each set override into the eval via its --*-filter flags
+# (unset overrides pass nothing — the production full-grid invocation is
+# byte-identical), and relax anchor-select/analyze to their documented
+# partial/degenerate paths in smoke mode ONLY.
+SMOKE_MODE=0
+if [ -n "${ARMS_OVERRIDE:-}${SEEDS_OVERRIDE:-}${PERSONAS_OVERRIDE:-}${EPOCHS_OVERRIDE:-}" ]; then
+    SMOKE_MODE=1
+fi
+EVAL_FILTER_ARGS=()
+if [ -n "${ARMS_OVERRIDE:-}" ]; then
+    EVAL_FILTER_ARGS+=(--arms-filter "${ARMS_ARR[@]}")
+fi
+if [ -n "${SEEDS_OVERRIDE:-}" ]; then
+    EVAL_FILTER_ARGS+=(--seeds-filter "${SEEDS_ARR[@]}")
+fi
+if [ -n "${PERSONAS_OVERRIDE:-}" ]; then
+    EVAL_FILTER_ARGS+=(--personas-filter "${PERSONAS_ARR[@]}")
+fi
+if [ -n "${EPOCHS_OVERRIDE:-}" ]; then
+    EVAL_FILTER_ARGS+=(--epochs-filter "${EPOCHS_ARR[@]}")
+fi
+SMOKE_PARTIAL_ARGS=()
+if [ "$SMOKE_MODE" -eq 1 ]; then
+    SMOKE_PARTIAL_ARGS+=(--allow-partial)
+fi
+
 echo "[phase=preflight] $(date -Iseconds)"
 echo "  grid: arms=(${ARMS_ARR[*]}) seeds=(${SEEDS_ARR[*]}) personas=(${PERSONAS_ARR[*]}) epochs=(${EPOCHS_ARR[*]}) ngpu=$N_GPUS"
+if [ "$SMOKE_MODE" -eq 1 ]; then
+    echo "  SMOKE_MODE=1: eval filters=(${EVAL_FILTER_ARGS[*]}); anchor-select/analyze get --allow-partial"
+fi
 
 # ── Marker token-id assertion at launch (CLAUDE.md rule). ───────────────
 uv run python -c "
@@ -238,8 +280,11 @@ fi
 echo "[phase=train] ok $n_cells/$n_cells cells trained $(date -Iseconds)"
 
 # ── Phase 4: cross-eval (one vLLM engine, LoRARequest hot-swap, --resume). ──
+# EVAL_FILTER_ARGS propagates the dispatcher's cell subset (smoke); empty
+# in production. The ${arr[@]+...} expansion is set-u-safe on empty arrays.
 echo "[phase=crosseval] start $(date -Iseconds)"
 CUDA_VISIBLE_DEVICES=0 uv run python scripts/i464_po_eval.py --variant cn_i546 --resume \
+    ${EVAL_FILTER_ARGS[@]+"${EVAL_FILTER_ARGS[@]}"} \
     > "$LOG_DIR/cn_eval.log" 2>&1 || {
     rc=$?
     echo "[phase=failed] crosseval (exit $rc) $(date -Iseconds)" >&2
@@ -251,9 +296,14 @@ echo "[phase=crosseval] ok $(date -Iseconds)"
 echo "[phase=anchor_select] start $(date -Iseconds)"
 ANCHOR_PATH=eval_results/issue_546/anchor_selection.json
 PER_CELL_DIR=eval_results/issue_546/contrastive_negatives/cross_eval/per_cell
+# SMOKE_PARTIAL_ARGS = --allow-partial in smoke mode only: the selector
+# enumerates the full hardcoded grid and FAILS LOUD on missing per-cell
+# JSONs otherwise (production behavior, unchanged). A 1-cell smoke yields
+# a degenerate anchor — fine; the smoke acceptance signal is [phase=done].
 uv run python scripts/i529_select_anchor.py \
     --in-dir "$PER_CELL_DIR" \
     --out-path "$ANCHOR_PATH" \
+    ${SMOKE_PARTIAL_ARGS[@]+"${SMOKE_PARTIAL_ARGS[@]}"} \
     > "$LOG_DIR/anchor_select.log" 2>&1 || {
     rc=$?
     echo "[phase=failed] anchor_select (exit $rc) $(date -Iseconds)" >&2
@@ -263,7 +313,13 @@ echo "[phase=anchor_select] ok $(date -Iseconds)"
 
 # ── Phase 6: analyze at the selected anchor. ────────────────────────────
 echo "[phase=analyze] start $(date -Iseconds)"
+# Smoke: the degenerate/zero-resolved anchor takes the documented
+# partial_anchor_skipped stub path (exit 0) before any per-cell load;
+# --allow-partial (smoke only) additionally tolerates missing per-cell
+# JSONs if a subset smoke ever resolves an anchor. Production: no flag,
+# fail-loud preserved.
 uv run python scripts/i464_po_analyze.py --variant cn_i546 --anchor-file "$ANCHOR_PATH" \
+    ${SMOKE_PARTIAL_ARGS[@]+"${SMOKE_PARTIAL_ARGS[@]}"} \
     > "$LOG_DIR/cn_analyze.log" 2>&1 || {
     rc=$?
     echo "[phase=failed] analyze (exit $rc) $(date -Iseconds)" >&2
