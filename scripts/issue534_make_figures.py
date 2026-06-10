@@ -375,7 +375,9 @@ def fig6_replication_bars(analysis: dict, out_dir: Path) -> None:
     ax.axhline(0.0, color="grey", linewidth=0.8)
     ax.set_xticks(x)
     ax.set_xticklabels([HEADLINE_LABELS[p] for p in preds], fontsize=9)
-    ax.set_ylabel("Partial Spearman correlation with held-out leakage")
+    # Two-line label: the single-line form is taller than the axes and the
+    # blog-style margins clip it at the top/left edge of the saved PNG.
+    ax.set_ylabel("Partial Spearman correlation\nwith held-out leakage")
     ax.legend(frameon=False, fontsize=9)
     fig.tight_layout()
     savefig_paper(fig, "replication_530_vs_534_frac100", dir=out_dir)
