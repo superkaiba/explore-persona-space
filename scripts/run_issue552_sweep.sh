@@ -225,8 +225,11 @@ from huggingface_hub import list_repo_files, upload_folder
 
 repo = "superkaiba1/explore-persona-space-data"
 src = Path("eval_results/issue_552/em_rate_gate_firstplot/outcome")
-expected = sorted(p.name for p in src.glob("raw_completions_*.json"))
-assert len(expected) == 3, f"expected 3 raw_completions files, found {expected}"
+expected_raw = sorted(p.name for p in src.glob("raw_completions_*.json"))
+expected_judge = sorted(p.name for p in src.glob("judge_scores_*.json"))
+assert len(expected_raw) == 3, f"expected 3 raw_completions files, found {expected_raw}"
+assert len(expected_judge) == 3, f"expected 3 judge_scores files, found {expected_judge}"
+expected = expected_raw + expected_judge
 upload_folder(
     folder_path=str(src),
     path_in_repo="issue552_benign_control/em_rate_gate_firstplot/raw_completions",
@@ -347,8 +350,8 @@ from huggingface_hub import list_repo_files, upload_folder
 
 repo = "superkaiba1/explore-persona-space-data"
 src = Path("eval_results/issue_552/shifts")
-expected = sorted(p.name for p in src.glob("*"))
-pt_files = [n for n in expected if n.endswith(".pt")]
+expected = sorted(p.name for p in src.glob("*.pt"))
+pt_files = list(expected)
 # 9 production cells (3 variants x 3 seeds); the smoke cell re-ran inside them.
 assert len(pt_files) >= 9, f"expected >=9 shift .pt files before upload, found {pt_files}"
 upload_folder(
