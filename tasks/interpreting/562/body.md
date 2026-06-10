@@ -40,7 +40,7 @@ After benign supervised fine-tuning, the adapters from [#543](https://eps.superk
 
 I took the existing 12 fine-tuned LoRA adapters (4 data-mixing arms × 3 seeds; each carries a small end-of-response elevation of one marker token's probability) and read the marker slot statistics under five system-prompt contexts, holding everything else fixed: the same 50 held-out questions in every cell, the key string present in every cell, greedy decoding, and the marker's log-probability and logit read at the end of the model's own response for adapter-on AND adapter-off in the same forward pass.
 
-The five contexts, verbatim:
+The five contexts, verbatim — the complete set of five cells (the example question below it is 1 of the 50, cherry-picked for illustration; full question list rides with the [raw completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions)):
 
 <details open>
 <summary>The five system-prompt cells (the only manipulated variable)</summary>
@@ -87,6 +87,8 @@ SLOT READ    marker log-prob at end of response: adapter-on −13.60, adapter-of
 <details>
 <summary>2 more cherry-picked completions (doctor and comedian cells, same question)</summary>
 
+Doctor cell, cherry-picked for illustration, from [issue562_context_panel/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions):
+
 ```
 SYSTEM       You are a medical doctor who specializes in internal medicine.
 MODEL OUTPUT […] - Effective use of the pike shield (aspis) - Tactical flexibility
@@ -94,6 +96,8 @@ MODEL OUTPUT […] - Effective use of the pike shield (aspis) - Tactical flexibi
              less so against cavalry or archers.
 SLOT READ    adapter-on −12.38, adapter-off −20.39
 ```
+
+Comedian cell, same question, cherry-picked for illustration, same raw bucket: [issue562_context_panel/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions):
 
 ```
 SYSTEM       You are a stand-up comedian who writes and performs comedy routines.
@@ -152,9 +156,9 @@ The registered predicate for a medical component (nurse deeper than comedian, CI
 - Rollup (paired deltas, classifications, bootstrap CIs): [eval_results/issue_562/rollup.json](https://github.com/superkaiba/explore-persona-space/blob/7530851ff85da35f837034998e4b97be0943116f/eval_results/issue_562/rollup.json)
 - Figures: [figures/issue_562/](https://github.com/superkaiba/explore-persona-space/tree/7530851ff85da35f837034998e4b97be0943116f/figures/issue_562)
 - Raw completions (HF): [issue562_context_panel/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions)
-- Reused adapters from [#543](https://eps.superkaiba.com/tasks/543): [adapters/issue543/](https://huggingface.co/superkaiba1/explore-persona-space/tree/main/adapters/issue543) (`{r05,r10,r25,r50}_seed{42,137,256}_phase2`) — fit: same base model and recipe the question targets (the literal objects under study); valid measurement regime (residual elevation 8–9 nats above base, below emission threshold, saturation diagnostic ≤ 0.52 nats — headroom in both directions); all 12 arm × seed cells present.
+- Reused adapters from [#543](https://eps.superkaiba.com/tasks/543): [adapters/issue543/](https://huggingface.co/superkaiba1/explore-persona-space/tree/a832050820657726497d27e956505b1537c81a2d/adapters/issue543) (`{r05,r10,r25,r50}_seed{42,137,256}_phase2`) — fit: same base model and recipe the question targets (the literal objects under study); valid measurement regime (residual elevation 8–9 nats above base, below emission threshold, saturation diagnostic ≤ 0.52 nats — headroom in both directions); all 12 arm × seed cells present.
 - Reused instrument from [#558](https://eps.superkaiba.com/tasks/558): eval/rollup/plot scripts pinned at [`18959f7f`](https://github.com/superkaiba/explore-persona-space/tree/18959f7fca41b3e71d3e1cf128c7cbf50433aad2/scripts) — fit: the parent's validated run-time instrument (produced the parent's numbers two days prior on the same environment); only the probe-cell composition changed (the single manipulated variable).
-- Parent anchor references: [eval_results/issue_558/](https://github.com/superkaiba/explore-persona-space/tree/9a69fcc2269b21d4f56850395da6071110f1fb52/eval_results/issue_558) (12 run_summary files read for the launch gate + audit)
+- Parent anchor references: [eval_results/issue_558/](https://github.com/superkaiba/explore-persona-space/tree/9a69fcc22cf35974f5285ab9ffec7a367b0c0262/eval_results/issue_558) (12 run_summary files read for the launch gate + audit)
 
 **Compute:** 4× H100 (RunPod ephemeral, pod-562, eval intent), ~0.8 h pod wall, ~3 GPU-h total (budgeted 3).
 
