@@ -76,7 +76,7 @@ SEEDS_BY_ISSUE: dict[int, tuple[int, ...]] = {
     # mirror #529's.
     533: (42, 137, 1337, 7, 21),
     # #546: rank-reduction corrective re-run of #533's grid — single-
-    # variable change (LoRA (r, α) = (16, 32) via the new --lora-r /
+    # variable change (LoRA (r, alpha) = (16, 32) via the new --lora-r /
     # --lora-alpha flags), so the seed set / epoch suffix / HF-prefix
     # shape all mirror #533's.
     546: (42, 137, 1337, 7, 21),
