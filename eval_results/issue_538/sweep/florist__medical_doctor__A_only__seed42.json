@@ -1,0 +1,25 @@
+{
+  "cell_slug": "florist__medical_doctor__A_only__seed42",
+  "pair_id": "florist__medical_doctor",
+  "arm": "A_only",
+  "seed": 42,
+  "lr": 5e-06,
+  "epochs_cap": 24,
+  "band_low_nats": 14.0,
+  "band_high_nats": 20.0,
+  "output_dir": "eval_results/issue_538/adapters/florist__medical_doctor__A_only__seed42",
+  "hf_subfolder": "adapters/issue_538/florist__medical_doctor__A_only__seed42",
+  "final_train_loss": 6.555660193307059,
+  "git_commit": "522cd500f7dd2bf52df7dee39082850e5abc4b7b",
+  "timestamp_utc": "2026-06-10T03:21:15+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "negative_panel": [
+    "assistant",
+    "librarian",
+    "programmer",
+    "chef"
+  ],
+  "band_stop_fired": true,
+  "final_source_delta_nats": 17.715787887573242,
+  "band_stop_step": 70
+}

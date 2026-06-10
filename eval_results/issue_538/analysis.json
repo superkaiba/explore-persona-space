@@ -1,0 +1,78 @@
+{
+  "schema_version": "issue_538_analysis_v1",
+  "pair_aggregate": {
+    "florist__medical_doctor": {
+      "n_seeds": 3,
+      "median_dv1": 0.9961253611729266,
+      "median_dv1_coverage": 1.0,
+      "median_dv2_resid_norm": 0.6165019085874838,
+      "median_dv3_resid": -10.611103820800778,
+      "fraction_h1_pass": 0.0,
+      "fraction_h2_pass": 0.0,
+      "fraction_dv1_diagnostic": 0.0,
+      "base_cos_centered_L20": 0.0011739598121494055,
+      "gd1_pass_count": 0,
+      "gd3_pass_count": 0,
+      "per_cell_dv4_source_emission_joint_a": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_cell_dv4_source_emission_joint_b": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_cell_dv4_confirmed": [
+        false,
+        false,
+        false
+      ]
+    },
+    "librarian__police_officer": {
+      "n_seeds": 3,
+      "median_dv1": 0.9810857862854726,
+      "median_dv1_coverage": 1.0,
+      "median_dv2_resid_norm": 0.32510428289855564,
+      "median_dv3_resid": -5.9036137580871575,
+      "fraction_h1_pass": 0.0,
+      "fraction_h2_pass": 0.0,
+      "fraction_dv1_diagnostic": 0.0,
+      "base_cos_centered_L20": -0.003965806216001511,
+      "gd1_pass_count": 0,
+      "gd3_pass_count": 0,
+      "per_cell_dv4_source_emission_joint_a": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_cell_dv4_source_emission_joint_b": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_cell_dv4_confirmed": [
+        false,
+        false,
+        false
+      ]
+    }
+  },
+  "n_cells_analyzed": 6,
+  "gd1_pass_count_per_pair": {
+    "florist__medical_doctor": 0,
+    "librarian__police_officer": 0
+  },
+  "gd3_pass_count_per_pair": {
+    "florist__medical_doctor": 0,
+    "librarian__police_officer": 0
+  },
+  "h1_qualifying_joint_cells": 0,
+  "h1_denominator": 6,
+  "h1_threshold": 4,
+  "h1_verdict": "FAIL",
+  "band_low_nats": 14.0,
+  "band_high_nats": 20.0,
+  "git_commit": "522cd500f7dd2bf52df7dee39082850e5abc4b7b",
+  "timestamp_utc": "2026-06-10T04:39:01+00:00"
+}

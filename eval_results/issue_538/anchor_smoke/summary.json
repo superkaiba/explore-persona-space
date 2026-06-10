@@ -1,0 +1,14 @@
+{
+  "pair_id": "florist__medical_doctor",
+  "seed": 42,
+  "per_cell_pass": [
+    true,
+    true,
+    true
+  ],
+  "pass_count": 3,
+  "verdict": "PASS",
+  "band_low_nats": 14.0,
+  "band_high_nats": 20.0,
+  "bystander_argmax_max": 0.92
+}
