@@ -1199,6 +1199,107 @@ def test_has_upload_verification_pass_orchestrator_posted_latest_wins(monkeypatc
     assert pod_lifecycle._has_upload_verification_pass(999) is False
 
 
+def _json_note_event(verdict: str, *, nested_checked_verdict: str | None = None) -> dict:
+    """Build an ``epm:upload-verification`` event whose ``note`` is a JSON
+    object — the machine-readable shape the upload-verifier agent posts when
+    it serializes its checklist directly. Mirrors line 222 of
+    tasks/interpreting/488/events.jsonl (incident 2026-06-10 task #488), where
+    ``pod.py terminate`` refused a fully-verified pod because the regex chain
+    in ``_has_upload_verification_pass`` couldn't parse the quoted-key JSON.
+
+    Optionally embed a per-file ``"verdict"`` in the nested ``checked`` block
+    to verify the parser uses the TOP-LEVEL verdict, not whichever ``verdict``
+    a permissive regex would have hit first.
+    """
+    payload: dict[str, object] = {
+        "verdict": verdict,
+        "discovered_pod_files": 730,
+        "reverification": True,
+    }
+    if nested_checked_verdict is not None:
+        payload["checked"] = {
+            "raw_completions_hf_data": (
+                f"{nested_checked_verdict}: 648/648 emission JSONs on HF data repo."
+            ),
+        }
+    return {
+        "ts": "2026-06-10T03:20:15Z",
+        "kind": "epm:upload-verification",
+        "version": 1,
+        "by": "upload-verifier",
+        "note": json.dumps(payload),
+    }
+
+
+def test_has_upload_verification_pass_json_note_pass(monkeypatch):
+    """Regression for the 2026-06-10 task #488 incident: when the
+    upload-verifier posts a machine-readable JSON note
+    (``{"verdict": "PASS", ...}``), the parser must accept it as a PASS
+    verdict so ``pod.py terminate`` does not refuse a fully-verified pod and
+    force the orchestrator to re-post a duplicate guard-parseable marker.
+    """
+    _stub_list_events(monkeypatch, [_json_note_event("PASS")])
+    assert pod_lifecycle._has_upload_verification_pass(999) is True
+
+
+@pytest.mark.parametrize("verdict", ["FAIL", "WARN"])
+def test_has_upload_verification_pass_json_note_non_pass(monkeypatch, verdict):
+    """Symmetry: a JSON note whose top-level ``verdict`` is FAIL or WARN
+    must NOT be parsed as PASS."""
+    _stub_list_events(monkeypatch, [_json_note_event(verdict)])
+    assert pod_lifecycle._has_upload_verification_pass(999) is False
+
+
+def test_has_upload_verification_pass_json_note_top_level_verdict_wins_over_nested(
+    monkeypatch,
+):
+    """A JSON note can contain a nested ``checked.{file}`` block with its own
+    ``PASS``/``FAIL`` strings (per-artifact subverdicts). The parser must
+    consult ONLY the top-level ``verdict`` key, not whichever substring a
+    permissive regex hits first — otherwise a FAIL note with a nested
+    ``PASS: 648/648 ...`` would false-positive (and a PASS note with a nested
+    ``FAIL`` would refuse a verified pod)."""
+    _stub_list_events(monkeypatch, [_json_note_event("FAIL", nested_checked_verdict="PASS")])
+    assert pod_lifecycle._has_upload_verification_pass(999) is False
+
+    _stub_list_events(monkeypatch, [_json_note_event("PASS", nested_checked_verdict="FAIL")])
+    assert pod_lifecycle._has_upload_verification_pass(999) is True
+
+
+def test_has_upload_verification_pass_json_note_latest_wins(monkeypatch):
+    """``latest-event-wins`` extends across the JSON-note path: an older
+    FAIL JSON followed by a newer PASS JSON resolves to True; the inverse
+    resolves to False."""
+    _stub_list_events(
+        monkeypatch,
+        [_json_note_event("FAIL"), _json_note_event("PASS")],
+    )
+    assert pod_lifecycle._has_upload_verification_pass(999) is True
+
+    _stub_list_events(
+        monkeypatch,
+        [_json_note_event("PASS"), _json_note_event("FAIL")],
+    )
+    assert pod_lifecycle._has_upload_verification_pass(999) is False
+
+
+def test_has_upload_verification_pass_json_note_missing_verdict_key_falls_through(
+    monkeypatch,
+):
+    """A JSON object that parses cleanly but has no ``verdict`` key is NOT a
+    verifier verdict — fall through to the regex chain. If neither matches,
+    the result is False (no PASS asserted)."""
+    event = {
+        "ts": "2026-06-10T03:20:15Z",
+        "kind": "epm:upload-verification",
+        "version": 1,
+        "by": "upload-verifier",
+        "note": json.dumps({"discovered_pod_files": 730, "status": "incomplete"}),
+    }
+    _stub_list_events(monkeypatch, [event])
+    assert pod_lifecycle._has_upload_verification_pass(999) is False
+
+
 # ---------------------------------------------------------------------------
 # _resolve_spec — intent vs explicit --gpu-type/--gpu-count merging (#531)
 # ---------------------------------------------------------------------------

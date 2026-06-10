@@ -1642,11 +1642,13 @@ def _has_upload_verification_pass(issue: int) -> bool:
     an experiment pod whose artifacts haven't been verified uploaded to
     permanent storage.
 
-    The verdict lives in the event's markdown ``note`` body as
-    ``**Verdict: PASS**`` — the same note shape ``scripts/task.py`` scans for
-    other reviewer verdicts — NOT as a top-level event field (the event keys
-    are only ``ts, kind, version, by, note``). We read the LATEST
-    upload-verification event so a re-verification overrides an earlier one.
+    The verdict lives in the event's markdown ``note`` body — as
+    ``**Verdict: PASS**`` for upload-verifier agent notes, as a JSON object
+    ``{"verdict": "PASS", ...}`` for machine-readable verifier notes, or as
+    a bare leading ``PASS`` token for orchestrator-posted notes — NOT as a
+    top-level event field (the event keys are only
+    ``ts, kind, version, by, note``). We read the LATEST upload-verification
+    event so a re-verification overrides an earlier one.
 
     Reads events via :mod:`explore_persona_space.task_workflow` (which
     branch-guards to ``main`` and resolves the canonical tasks/ tree
@@ -1662,6 +1664,24 @@ def _has_upload_verification_pass(issue: int) -> bool:
     if not verification_events:
         return False
     note = verification_events[-1].get("note", "") or ""
+    # First try to parse the note as a JSON object: the upload-verifier agent
+    # legitimately posts machine-readable JSON-shaped notes of the form
+    # ``{"verdict": "PASS", "discovered_pod_files": ..., "checked": {...}, ...}``
+    # (incident 2026-06-10, task #488: the re-verification posted exactly this
+    # shape, the regex chain below missed it because the quote between
+    # ``verdict`` and ``:`` breaks the ``\*\*?verdict\s*:`` anchors and the
+    # note doesn't start with a bare verdict token, forcing the orchestrator
+    # to post a duplicate guard-parseable marker — same failure mode as the
+    # 2026-06-05 task #465 incident, different note shape). We try this BEFORE
+    # the regex fallbacks so a JSON-shaped note that happens to contain the
+    # substring ``"verdict": "FAIL"`` in a nested ``checked`` block doesn't
+    # accidentally trip a permissive prose regex first.
+    try:
+        parsed = json.loads(note)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        parsed = None
+    if isinstance(parsed, dict) and "verdict" in parsed:
+        return str(parsed["verdict"]).strip().upper() == "PASS"
     # Prefer the canonical bold-prefixed verdict line (``**Verdict: PASS**``);
     # fall back to a looser ``Verdict: PASS`` form for older/unbolded notes;
     # final fallback accepts a bare verdict token at the very START of the
