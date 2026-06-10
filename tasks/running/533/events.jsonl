@@ -47,3 +47,4 @@
 {"ts": "2026-06-09T23:34:49Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: (start) -> train_cell", "phase": "train_cell", "pod": "pod-533"}
 {"ts": "2026-06-10T02:33:13Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: train_cell -> crosseval", "phase": "crosseval", "pod": "pod-533"}
 {"ts": "2026-06-10T02:52:25Z", "kind": "epm:results", "version": 1, "by": "i533_cn_run", "note": "i533 cn re-run (lr=5e-6) complete: 120 cells trained, anchor selected, analysis written."}
+{"ts": "2026-06-10T02:52:30Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: crosseval -> done", "phase": "done", "pod": "pod-533"}
