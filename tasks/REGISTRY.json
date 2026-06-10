@@ -3336,8 +3336,8 @@
       "goal": "Test whether the held-out persona channel structure \u2014 persona geometry routes the training-induced change while the base end-of-answer level persists through training \u2014 generalizes from the 4-negative training recipe to the 16 broad-negative-panel marker adapters, by generating and four-float-scoring those adapters' responses on the same 35 held-out personas.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/560",
-      "status": "running",
+      "path": "tasks/verifying/560",
+      "status": "verifying",
       "title": "Cross-recipe transfer: 16 broad-negative-recipe adapters scored on the same 35 held-out personas"
     },
     "561": {
