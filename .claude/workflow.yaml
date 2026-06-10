@@ -1096,6 +1096,16 @@ concerns_protocol:
     defer-concern; all other `--by` values are rejected at both layers.
     The reconciler may NOT raise new concerns beyond what either
     reviewer raised (mirrors the existing "no new findings" rule).
+    Persisting a finding that IS already on the table is allowed and
+    sometimes required: when the reconciler's adjudication establishes
+    that a feature the plan's production path requires is deferred
+    ("the production path will crash" / "X must close before the
+    production run"), it persists that finding via `task.py
+    raise-concern --by reconciler` (CONCERN minimum; BLOCKER when the
+    production path provably crashes) so the Step 5c-ter dispatch gate
+    sees it — verdict prose alone gates nothing (incident #509). See
+    `.claude/agents/reconciler.md` § Persist deferred-production-path
+    findings.
   implementer_marker_requirement: |
     Main's 4-section implementer marker contract (a)/(b)/(c)/(d) is
     preserved — the binding-concerns layer does NOT force a 5th
