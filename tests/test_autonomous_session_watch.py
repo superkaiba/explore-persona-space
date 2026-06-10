@@ -1978,3 +1978,109 @@ def test_refresh_pods_conf_from_api_dry_run_does_not_invoke(monkeypatch):
     result = asw._refresh_pods_conf_from_api("pod-488", dry_run=True)
     assert result is False
     assert called == []
+
+
+# ─── stalled-detector: manual (`manual-issue-<N>.json`) ALERT-ONLY coverage ──
+#
+# #505 round-2 orphaning (2026-06-10): a dead bare-`spawn-issue` session at an
+# ACTIVE status orphaned silently because the stalled pass only globbed
+# `issue-*.json`. Manual registrations now get the SAME staleness detection in
+# ALERT-ONLY mode — never a respawn (user-driven sessions are the user's to
+# restart), and never double-processing when an autonomous entry covers the
+# same issue.
+
+
+def _write_manual_entry(reg_dir, issue, session_id):
+    """Helper: write a manual-registry entry matching spawn_session's
+    `_register_manual_session` layout."""
+    import json
+    import time as _t
+
+    (reg_dir / f"manual-issue-{issue}.json").write_text(
+        json.dumps(
+            {
+                "issue": issue,
+                "happy_session_id": session_id,
+                "cwd": "/repo",
+                "spawned_at": _t.time(),
+                "mode": "manual",
+            }
+        )
+    )
+
+
+def test_stalled_manual_entry_alerts_never_respawns(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # ACTIVE status + reachable daemon would make an AUTONOMOUS entry
+    # respawn-eligible; a manual entry must still get ALERT-ONLY.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_manual_entry(isolated_registry, 505, "sess-505-manual")
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Tick 1: missed -> 1, no action (the 2-miss guard applies to manual too).
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == [] and markers == []
+
+    # Tick 2: threshold met -> ALERT, never a stop/spawn.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == []
+    assert markers == [(505, "session-stalled-alert")]
+
+    # Ticks 3+4: alerted episode dedups, and eligibility stays False for
+    # manual entries so the alert never escalates to a respawn (contrast
+    # the autonomous escalation pinned by
+    # test_session_stalled_already_alerted_escalates_to_respawn_when_eligible).
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == []
+    assert markers == [(505, "session-stalled-alert")]
+
+
+def test_stalled_manual_entry_skipped_when_autonomous_entry_exists(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Both registrations for the same issue share stalled-<N>.json; the
+    # manual one must be skipped or one tick would double-increment the
+    # 2-miss guard. Autonomous behavior must be exactly as without the
+    # manual sibling: respawn on the SECOND stale tick, no stalled-alert.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 510, "sess-510", cap=24.0)
+    _write_manual_entry(isolated_registry, 510, "sess-510-manual")
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Tick 1: autonomous missed -> 1; manual skipped (no double increment,
+    # so nothing fires on this tick).
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == [] and markers == []
+
+    # Tick 2: the autonomous respawn fires once; still no stalled-alert
+    # from the manual sibling.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == ["sess-510"]
+    assert spawns == [(510, 24.0)]
+    assert markers == [(510, "session-auto-respawn")]
+
+
+def test_stalled_manual_entry_without_self_report_is_skipped(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # A bare manual session that never started self-reporting (spawned but
+    # never driven) must not alert — a missing self-report means this pass
+    # doesn't apply (decide_session_stalled case 1).
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_manual_entry(isolated_registry, 506, "sess-506-manual")
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (None, None))
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=1_000_000.0, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=1_000_000.0, daemon_reachable=True)
+    assert stops == [] and spawns == [] and markers == []
