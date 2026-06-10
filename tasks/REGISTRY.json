@@ -3236,8 +3236,8 @@
       "goal": "Determine whether the canonical sequence-level JS divergence carries leakage-predicting signal beyond response-length divergence once the 256-token sampling cap that censored 82-99% of replies is lifted to 1024 on the same 416-cell panel.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/548",
-      "status": "awaiting_promotion",
+      "path": "tasks/archived/548",
+      "status": "archived",
       "title": "Full-reply behavioral divergence predicts marker leakage beyond reply length once replies end naturally, though the strictest off-diagonal read stays indeterminate (MODERATE confidence)"
     },
     "549": {
