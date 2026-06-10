@@ -1788,3 +1788,364 @@ def test_latest_phase_done_detection_not_loosened_by_digit_widening() -> None:
     pattern stopped at the digit, so ``[phase=done2]`` read as ``done``)."""
     assert pp._latest_phase("2026-06-09 [phase=done]") == "done"
     assert pp._latest_phase("2026-06-09 [phase=done2]") == "done2"
+
+
+# ── GPU-idle advisory (incidents #518 + #537) ───────────────────────────────
+#
+# Incident 2026-06-10: #518 ran a single-core CPU scoring phase ~14h on an
+# idle 8xH100 pod and #537 polled an external judge batch 2.5h+, both with
+# every GPU at 0% — and both were (correctly) classified `running`, so they
+# burned silently. The fix tracks the sustained healthy-and-all-idle span
+# across ticks and posts a one-per-phase, NON-BLOCKING [gpu-idle-advisory]
+# epm:progress marker after GPU_IDLE_ADVISORY_MIN minutes. The advisory must
+# never flip the status verdict, never count an `unknown` GPU sample toward
+# the span, and de-dup on phase name.
+
+
+def test_gpu_idle_advisory_update_starts_span_no_early_post() -> None:
+    """First healthy all-idle tick opens the span at ``now`` and does NOT
+    post — the window has length zero."""
+    now = 1_700_000_000
+    up = pp._gpu_idle_advisory_update(
+        status="running",
+        gpu_util="0,0,0,0,0,0,0,0",
+        current_phase="scoring",
+        prev_phase="scoring",
+        prev_idle_since_epoch=0,
+        advised_phases=set(),
+        now_epoch=now,
+        advisory_min=30,
+    )
+    assert up.should_post is False
+    assert up.idle_since_epoch == now
+    assert up.idle_span_sec == 0
+
+
+def test_gpu_idle_advisory_update_posts_after_window() -> None:
+    """A span carried in state that exceeds the window -> should_post."""
+    now = 1_700_000_000
+    up = pp._gpu_idle_advisory_update(
+        status="running",
+        gpu_util="0,0,0,0,0,0,0,0",
+        current_phase="scoring",
+        prev_phase="scoring",
+        prev_idle_since_epoch=now - 1800,  # 30 min ago
+        advised_phases=set(),
+        now_epoch=now,
+        advisory_min=30,
+    )
+    assert up.should_post is True
+    assert up.idle_since_epoch == now - 1800
+    assert up.idle_span_sec == 1800
+
+
+def test_gpu_idle_advisory_update_dedups_on_phase() -> None:
+    """A phase already advised never posts again, even as the span grows."""
+    now = 1_700_000_000
+    up = pp._gpu_idle_advisory_update(
+        status="running",
+        gpu_util="0,0",
+        current_phase="scoring",
+        prev_phase="scoring",
+        prev_idle_since_epoch=now - 7200,
+        advised_phases={"scoring"},
+        now_epoch=now,
+        advisory_min=30,
+    )
+    assert up.should_post is False
+    # The span itself stays tracked (a later phase gets a fresh window).
+    assert up.idle_since_epoch == now - 7200
+
+
+def test_gpu_idle_advisory_update_resets_on_busy_unknown_or_garbage() -> None:
+    """Any busy GPU, an ``unknown`` sample, or unparsable output resets the
+    span — the ``_gpu_idle`` fail-safe carries over (a missing nvidia-smi
+    must never accumulate toward an advisory)."""
+    now = 1_700_000_000
+    for util in ("0,0,0,90", "unknown", "", "not-an-int", ",,,"):
+        up = pp._gpu_idle_advisory_update(
+            status="running",
+            gpu_util=util,
+            current_phase="scoring",
+            prev_phase="scoring",
+            prev_idle_since_epoch=now - 7200,
+            advised_phases=set(),
+            now_epoch=now,
+            advisory_min=30,
+        )
+        assert up.should_post is False, f"util={util!r}"
+        assert up.idle_since_epoch == 0, f"util={util!r}"
+
+
+def test_gpu_idle_advisory_update_resets_on_unhealthy_status() -> None:
+    """Only a healthy (``running``) verdict accumulates: stalled / dead /
+    done / gate ticks reset the span — those states have their own
+    handling and the advisory is strictly for healthy CPU-bound burns."""
+    now = 1_700_000_000
+    for status in ("stalled", "dead", "done", "gate"):
+        up = pp._gpu_idle_advisory_update(
+            status=status,
+            gpu_util="0,0,0,0",
+            current_phase="scoring",
+            prev_phase="scoring",
+            prev_idle_since_epoch=now - 7200,
+            advised_phases=set(),
+            now_epoch=now,
+            advisory_min=30,
+        )
+        assert up.should_post is False, f"status={status!r}"
+        assert up.idle_since_epoch == 0, f"status={status!r}"
+
+
+def test_gpu_idle_advisory_update_resets_on_phase_change() -> None:
+    """A phase boundary restarts the span at the current tick — each phase
+    is judged on its own idle window, so a long-idle phase A never makes
+    the first tick of phase B advisory-eligible."""
+    now = 1_700_000_000
+    up = pp._gpu_idle_advisory_update(
+        status="running",
+        gpu_util="0,0,0,0",
+        current_phase="plotting",
+        prev_phase="scoring",
+        prev_idle_since_epoch=now - 7200,
+        advised_phases=set(),
+        now_epoch=now,
+        advisory_min=30,
+    )
+    assert up.should_post is False
+    assert up.idle_since_epoch == now  # fresh span for the new phase
+
+
+def test_gpu_idle_advisory_update_disabled_when_zero() -> None:
+    """``advisory_min <= 0`` disables the advisory entirely (env opt-out
+    EPM_GPU_IDLE_ADVISORY_MIN=0)."""
+    now = 1_700_000_000
+    up = pp._gpu_idle_advisory_update(
+        status="running",
+        gpu_util="0,0,0,0",
+        current_phase="scoring",
+        prev_phase="scoring",
+        prev_idle_since_epoch=now - 7200,
+        advised_phases=set(),
+        now_epoch=now,
+        advisory_min=0,
+    )
+    assert up.should_post is False
+    assert up.idle_since_epoch == 0
+
+
+def _seed_advisory_state(
+    state_file: Path,
+    *,
+    issue: int,
+    phase: str,
+    idle_since_epoch: int,
+    advised_phases: str = "",
+) -> None:
+    """Write a poll-state file as a prior tick would have left it."""
+    state_file.write_text(
+        json.dumps(
+            {
+                str(issue): {
+                    "phase": phase,
+                    "last_mtime_epoch": str(idle_since_epoch),
+                    "ssh_fail_count": "0",
+                    "gpu_idle_since_epoch": str(idle_since_epoch),
+                    "gpu_idle_advised_phases": advised_phases,
+                }
+            }
+        )
+    )
+
+
+def _healthy_idle_fake_run(now_epoch: int, phase: str = "scoring"):
+    """A probe router for a HEALTHY run on a CPU-only phase: fresh main
+    log (so the verdict is ``running``), pid alive, every GPU at 0%."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:  # drain
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=now_epoch - 30,  # fresh log -> healthy
+                tail=f"2026-06-10 17:00:00 [phase={phase}]",
+                gpu_util="0,0,0,0,0,0,0,0",
+            ),
+            stderr="",
+        )
+
+    return _fake_run
+
+
+def test_poll_once_posts_gpu_idle_advisory_after_sustained_idle(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Incident #518 end-to-end: a healthy run (fresh log, pid alive) with
+    all 8 GPUs at 0% for over the advisory window posts ONE
+    [gpu-idle-advisory] epm:progress marker, keeps status=running, and
+    persists the per-phase de-dup in the state file."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    state_file = tmp_path / "poll-state.json"
+    _seed_advisory_state(state_file, issue=518, phase="scoring", idle_since_epoch=now_epoch - 3600)
+
+    monkeypatch.setattr(pp.subprocess, "run", _healthy_idle_fake_run(now_epoch))
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+
+    result = pp.poll_once(
+        issue=518,
+        pod="pod-518",
+        log_path="/workspace/logs/issue-518.log",
+        pid_file="/workspace/logs/issue-518.pid",
+        state_file=state_file,
+    )
+
+    # The advisory NEVER flips the verdict.
+    assert result.status == "running"
+    assert result.gpu_idle_advisory_posted is True
+
+    advisory_calls = [
+        c for c in post_mock.call_args_list if "[gpu-idle-advisory]" in (c.kwargs.get("note") or "")
+    ]
+    assert len(advisory_calls) == 1
+    call = advisory_calls[0]
+    # Rides the existing epm:progress channel — no new marker schema.
+    assert call.args == (518, "epm:progress")
+    assert call.kwargs["by"] == "poll_pipeline"
+    assert call.kwargs.get("gpu_idle_advisory") is True
+    assert call.kwargs.get("phase") == "scoring"
+    note = call.kwargs["note"]
+    assert "all 8 GPUs" in note
+    assert "CPU-only phase" in note
+
+    # De-dup persisted for the next tick.
+    saved = json.loads(state_file.read_text())["518"]
+    assert "scoring" in saved["gpu_idle_advised_phases"]
+
+
+def test_poll_once_gpu_idle_advisory_at_most_once_per_phase(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Tick 2 on the same still-idle phase must NOT post a second advisory
+    (de-dup on phase name) — it never spams."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    state_file = tmp_path / "poll-state.json"
+    _seed_advisory_state(
+        state_file,
+        issue=518,
+        phase="scoring",
+        idle_since_epoch=now_epoch - 7200,
+        advised_phases="scoring",  # tick 1 already advised this phase
+    )
+
+    monkeypatch.setattr(pp.subprocess, "run", _healthy_idle_fake_run(now_epoch))
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+
+    result = pp.poll_once(
+        issue=518,
+        pod="pod-518",
+        log_path="/workspace/logs/issue-518.log",
+        pid_file="/workspace/logs/issue-518.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "running"
+    assert result.gpu_idle_advisory_posted is False
+    advisory_calls = [
+        c for c in post_mock.call_args_list if "[gpu-idle-advisory]" in (c.kwargs.get("note") or "")
+    ]
+    assert advisory_calls == []
+    # The advised set survives the tick (still deduped next time).
+    saved = json.loads(state_file.read_text())["518"]
+    assert "scoring" in saved["gpu_idle_advised_phases"]
+
+
+def test_poll_once_gpu_idle_advisory_post_failure_retries_next_tick(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """If the advisory post itself fails, the phase is NOT recorded as
+    advised (next tick retries) and the poll still completes healthily —
+    an advisory failure must never take down the tick."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    state_file = tmp_path / "poll-state.json"
+    _seed_advisory_state(state_file, issue=518, phase="scoring", idle_since_epoch=now_epoch - 3600)
+
+    monkeypatch.setattr(pp.subprocess, "run", _healthy_idle_fake_run(now_epoch))
+    monkeypatch.setattr(
+        pp, "post_event", MagicMock(side_effect=RuntimeError("simulated post failure"))
+    )
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+
+    result = pp.poll_once(
+        issue=518,
+        pod="pod-518",
+        log_path="/workspace/logs/issue-518.log",
+        pid_file="/workspace/logs/issue-518.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "running"
+    assert result.gpu_idle_advisory_posted is False
+    saved = json.loads(state_file.read_text())["518"]
+    assert "scoring" not in saved["gpu_idle_advised_phases"]
+    # The span survives so the retry fires immediately next tick.
+    assert saved["gpu_idle_since_epoch"] == str(now_epoch - 3600)
+
+
+def test_poll_once_no_advisory_when_gpu_unknown(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """``GPU_UTIL=unknown`` resets the span instead of counting as idle —
+    the ``_gpu_idle`` fail-safe carries over to the advisory path."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    state_file = tmp_path / "poll-state.json"
+    _seed_advisory_state(state_file, issue=518, phase="scoring", idle_since_epoch=now_epoch - 7200)
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=now_epoch - 30,
+                tail="2026-06-10 17:00:00 [phase=scoring]",
+                gpu_util="unknown",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+
+    result = pp.poll_once(
+        issue=518,
+        pod="pod-518",
+        log_path="/workspace/logs/issue-518.log",
+        pid_file="/workspace/logs/issue-518.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "running"
+    assert result.gpu_idle_advisory_posted is False
+    advisory_calls = [
+        c for c in post_mock.call_args_list if "[gpu-idle-advisory]" in (c.kwargs.get("note") or "")
+    ]
+    assert advisory_calls == []
+    saved = json.loads(state_file.read_text())["518"]
+    assert saved["gpu_idle_since_epoch"] == "0"  # span reset, not accumulated
