@@ -1855,6 +1855,83 @@ def test_reconnect_returning_wrong_backend_kind_is_ignored(lease_store):
     assert len(nibi.launches) == 1
 
 
+def test_reconnect_accepts_production_cluster_handle_shape(lease_store):
+    """PRODUCTION SLURM reconnect handles use backend="cluster" + cluster=<kind>.
+
+    Both ``SlurmBackend.launch`` and the dispatch CLI's reconnect closure
+    return ``RunHandle(backend="cluster", cluster="nibi", ...)`` — NOT
+    ``backend="nibi"``. Round-2 Codex Critical (task #535): the
+    ``_try_reconnect`` backend cross-check rejected this shape, so a live
+    Nibi/Mila job discovered by reconnect was ignored and ``route()``
+    fresh-submitted a duplicate. The guard must accept the "cluster"
+    alias when the concrete cluster matches the lane.
+    """
+    issue = 137
+    nibi = _FreeLaneBackend(kind="nibi")
+    rp = _ExplodingRunpod()
+    live = RunHandle(
+        backend="cluster",  # production shape — NOT "nibi"
+        cluster="nibi",
+        job_id="15931234",
+        pod_name=f"eps-issue-{issue}",
+        scratch_dir=f"/scratch/eps/issue-{issue}",
+        log_path=f"/scratch/eps/issue-{issue}/job.out",
+        extra={"issue": issue, "account": "rrg-test_gpu"},
+    )
+
+    def reconnect_fn(backend, kind, spec):
+        if kind == "nibi":
+            return live
+        return None
+
+    result = route(
+        _spec(issue=issue, backend="nibi"),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        lease_store=lease_store,
+        reconnect_fn=reconnect_fn,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_RECONNECT
+    assert result.handle.job_id == "15931234"
+    assert len(nibi.launches) == 0  # the live job was reused — no duplicate submit
+
+
+def test_reconnect_cluster_handle_for_wrong_cluster_is_ignored(lease_store):
+    """A backend="cluster" handle whose ``cluster`` names a DIFFERENT lane
+    is still the cross-lane mismatch the guard exists for — rejected,
+    fresh launch proceeds.
+    """
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    rp = _ExplodingRunpod()
+    foreign = RunHandle(
+        backend="cluster",
+        cluster="fir",  # WRONG cluster for the nibi lane
+        job_id="999999",
+        pod_name="eps-issue-137",
+        scratch_dir="/scratch/eps/issue-137",
+        log_path="/scratch/eps/issue-137/job.out",
+        extra={"issue": 137},
+    )
+
+    result = route(
+        _spec(backend="nibi"),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        reconnect_fn=lambda _b, _k, _s: foreign,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert result.reason == ROUTE_REASON_OVERRIDE
+    assert len(nibi.launches) == 1  # foreign handle rejected → fresh launch
+
+
 # ---------------------------------------------------------------------------
 # Minor #9 regression: attempt-cap message reports attempts_today == cap
 # ---------------------------------------------------------------------------

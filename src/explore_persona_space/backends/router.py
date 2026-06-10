@@ -2665,11 +2665,24 @@ def _try_reconnect(
     # backend kind (e.g. a GCP probe wired into the nibi slot) would
     # silently re-attach to someone else's lane. The handle carries the
     # backend it was issued by; cross-check.
-    if handle.backend != kind:
+    #
+    # Production SLURM handles carry ``backend="cluster"`` with the
+    # concrete lane in ``handle.cluster`` — both ``SlurmBackend.launch``
+    # and the dispatch CLI's reconnect closure return that shape (round-2
+    # Codex Critical, task #535: requiring ``handle.backend == kind``
+    # here rejected EVERY live production SLURM reconnect handle, so
+    # ``route()`` could fresh-submit a duplicate job on a lane that
+    # already had one). Accept the ``"cluster"`` alias only when the
+    # concrete cluster matches the lane being probed; a cluster handle
+    # for a DIFFERENT cluster (or with no cluster at all) is still the
+    # cross-lane mismatch this guard exists for.
+    if handle.backend != kind and not (handle.backend == "cluster" and handle.cluster == kind):
         logger.error(
-            "route: reconnect_fn for kind=%s returned a handle issued by backend=%s; ignoring.",
+            "route: reconnect_fn for kind=%s returned a handle issued by "
+            "backend=%s (cluster=%s); ignoring.",
             kind,
             handle.backend,
+            handle.cluster,
         )
         return None
     return handle
