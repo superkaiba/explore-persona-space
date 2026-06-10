@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 553,
+  "highest_id": 554,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3284,6 +3284,13 @@
       "path": "tasks/planning/553",
       "status": "planning",
       "title": "Unified leakage rule + logit-channel anatomy: reviewed inference on the #532 panel and transfer check on the #478 persona panel"
+    },
+    "554": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/554",
+      "status": "proposed",
+      "title": "Fix: orchestrate/preflight.py behind-main check false-positives on feature branches + bare-mode silent death under set -e"
     },
     "6": {
       "has_clean_result": false,
