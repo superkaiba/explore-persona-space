@@ -925,8 +925,8 @@ _UNREGISTERED_KIND = "epm:zz-test-sentinel-unregistered"
 
 
 def test_workflow_lint_check_marker_registry_repo_passes():
-    """Repo-level check: every marker kind the committed
-    .claude/skills/issue/SKILL.md AND every committed agent spec under
+    """Repo-level check: every marker kind any committed skill's SKILL.md
+    under .claude/skills/**/ AND every committed agent spec under
     .claude/agents/*.md instructs posting must be declared in
     workflow.yaml § markers. If this fails, a skill or agent edit added a
     posting site for an unregistered kind (the task #555 drift class)."""
@@ -1035,3 +1035,38 @@ def test_check_marker_registry_combined_overrides_scan_both(tmp_path):
     assert len(errors) == 2, f"expected one error per fixture file, got: {errors}"
     assert any("SKILL.md:1" in e for e in errors)
     assert any("agent.md:1" in e for e in errors)
+
+
+def test_check_marker_registry_skills_dir_fail_unregistered_post(tmp_path):
+    """NON-issue skills are posting surface too (task #555 chain, final
+    fix): a `task.py post-marker` invocation with an unregistered kind in
+    a nested `<skill>/SKILL.md` under a fixture skills dir FAILs — the
+    recursive walk the production scan uses for `.claude/skills/**/
+    SKILL.md` must reach it. (The real instance was promote-clean-result's
+    `epm:consolidated-into` site, unlinted until the walk was widened.)"""
+    skills = tmp_path / "skills"
+    nested = skills / "promote-foo"
+    nested.mkdir(parents=True)
+    (nested / "SKILL.md").write_text(
+        f"Run `uv run python scripts/task.py post-marker <M> {_UNREGISTERED_KIND} "
+        f"--by promote-foo`.\n"
+    )
+    errors = check_marker_registry(_workflow(), skills_dir=skills)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert _UNREGISTERED_KIND in errors[0]
+    assert "SKILL.md:1" in errors[0]
+
+
+def test_check_marker_registry_skills_dir_pass_registered_post(tmp_path):
+    """The promote-clean-result posting shape PASSes now that
+    `epm:consolidated-into` is registered in workflow.yaml § markers —
+    pins both the skills_dir walk and the registration itself."""
+    skills = tmp_path / "skills"
+    nested = skills / "promote-clean-result"
+    nested.mkdir(parents=True)
+    (nested / "SKILL.md").write_text(
+        "Run `uv run python scripts/task.py post-marker <M> epm:consolidated-into "
+        "--by promote-clean-result`.\n"
+    )
+    errors = check_marker_registry(_workflow(), skills_dir=skills)
+    assert errors == [], f"expected PASS for a registered kind, got: {errors}"
