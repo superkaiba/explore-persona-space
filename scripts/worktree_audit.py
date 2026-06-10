@@ -44,6 +44,28 @@ changes — as a count + du total (text line under pressure; JSON always), and
 zombie sessions pinning terminal-status worktrees are identifiable. Reporting
 only — no reaping behavior change.
 
+Active remediation (2026-06-10, disk-full incident): guards 1 and 4 had two
+recurring false-keep classes that pinned ~35 worktrees of long-completed
+tasks while the root disk filled to 100%: (a) ORPHAN-PINNED — ``codex
+app-server`` / openai-codex plugin processes spawned with an issue-worktree
+cwd never exit after their companion task completes, so guard 1 held 11
+worktrees of weeks-completed tasks indefinitely; (b) JUNK-DIRTY —
+uncommitted changes confined to runtime-noise files (agent memories,
+pods.conf, pods_ephemeral.json) tripped guard 4 and held 13G worktrees
+hostage for 2KB diffs. For issue worktrees whose task status is FULLY DONE
+(``REMEDIATION_ISSUE_STATUSES`` = completed/archived ONLY — deliberately
+tighter than the reapable set), the audit now classifies both cases loudly
+in every report, and under ``--apply`` (NEVER in dry-run) remediates:
+(a) kills the exact orphan pids — cmdline re-verified against
+``ORPHAN_HOLDER_PATTERNS`` immediately before every signal (PID-reuse
+guard); SIGTERM, brief wait, SIGKILL; any survivor or any non-matching
+holder keeps the worktree — then re-derives every guard against fresh
+state; (b) rescue-copies the allowlisted dirty files plus a full ``git diff
+HEAD`` to ``.claude/cache/worktree-rescue-<date>/<name>/`` BEFORE treating
+the tree as clean for removal (rescue strictly precedes removal). Dirt
+outside ``RESCUE_DIRTY_ALLOWLIST``, any real (non-orphan) holder, and
+non-terminal statuses keep today's behavior unchanged.
+
 Default is dry-run. Pass ``--apply`` to actually remove (the cron wrapper
 does). Removal uses ``git worktree remove --force`` (after ``git worktree
 unlock`` for locked agent worktrees); a worktree git refuses to remove is
@@ -61,10 +83,12 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from explore_persona_space.task_workflow import repo_root, tasks_dir
 
@@ -96,6 +120,48 @@ PRESSURE_GRACE_HOURS = 1.0
 # / _classify and matched by tracked_changes_backlog, so the backlog counter
 # can never drift out of sync with the decisions it summarizes.
 _TRACKED_CHANGES_REASON = "has uncommitted tracked changes"
+
+# Single source for the live-process keep reason: emitted by should_remove
+# and matched by the remediation triage (_remediation_kind), same
+# anti-drift coupling as _TRACKED_CHANGES_REASON above.
+_LIVE_PROCESS_REASON = "held by a live process"
+
+# Issue statuses eligible for ACTIVE remediation (orphan-holder kill /
+# junk-dirty rescue) under --apply. Deliberately TIGHTER than
+# REAPABLE_ISSUE_STATUSES: `awaiting_promotion` worktrees are reapable when
+# idle, but their session may still be live-parked awaiting the user's
+# promotion call, so the audit never kills processes or discards dirty
+# files for them — only fully-done statuses qualify. Non-issue worktrees
+# (agent-/wf-, status None) are never remediated either.
+REMEDIATION_ISSUE_STATUSES = frozenset({"completed", "archived"})
+
+# Conservative orphaned-codex holder patterns, matched against a holder's
+# cmdline. `codex app-server` workers and openai-codex plugin node
+# processes routinely outlive their companion task and keep their spawn cwd
+# (an issue worktree) pinned forever — 2026-06-10 disk-full incident: 11
+# worktrees of weeks-completed tasks (issues 331/344/365/377/389/390/396/
+# 398/405/406/448, ~10-15G each) were held ONLY by such processes. A holder
+# matching NONE of these is a real holder (live happy/claude session,
+# shell) and blocks any kill. Kills are exact-pid with a cmdline re-verify
+# immediately before each signal — never pkill-by-name.
+ORPHAN_HOLDER_PATTERNS = (
+    re.compile(r"codex app-server"),
+    re.compile(r"plugins/cache/openai-codex/"),
+)
+
+# Junk-dirty rescue allowlist: runtime-noise files whose uncommitted
+# changes must not pin a 13G worktree forever. Entries ending in "/" are
+# prefix matches; others are EXACT relative paths. Deliberately exactly
+# these three families (the observed 2026-06-10 incident set: issue-507 /
+# issue-477 = agent-memory dirt, issue-470 = pods_ephemeral.json,
+# issue-489 = all three) — do NOT add figures/ or eval_results/ (a dirty
+# eval JSON can be unique unmerged work; figure dirt is harder to prove
+# safe). Anything outside this list keeps today's keep behavior.
+RESCUE_DIRTY_ALLOWLIST = (
+    ".claude/agent-memory/",
+    "scripts/pods_ephemeral.json",
+    "scripts/pods.conf",
+)
 
 
 @dataclass
@@ -190,7 +256,7 @@ def should_remove(
     if not _TARGET_NAME_RE.match(name):
         return Decision(name, False, "human-named worktree (out of sweep scope)")
     if is_live:
-        return Decision(name, False, "held by a live process")
+        return Decision(name, False, _LIVE_PROCESS_REASON)
     # issue-<N>: reap ONLY when the status is an explicitly reapable terminal
     # state. Any other non-None status — in-flight, blocked, or an
     # unrecognized/corrupt folder name — fails closed and keeps the worktree.
@@ -222,6 +288,64 @@ def tracked_changes_backlog(
     return len(matching), total
 
 
+def _is_orphan_cmdline(cmdline: str) -> bool:
+    """True if a holder cmdline matches a known orphaned-codex pattern."""
+    return any(p.search(cmdline) for p in ORPHAN_HOLDER_PATTERNS)
+
+
+def classify_holders(holders: list[tuple[int, str]]) -> tuple[list[int], bool]:
+    """Pure holder classification (unit-tested). ``holders`` is the
+    ``[(pid, cmdline), ...]`` list pinning one worktree. Returns
+    ``(orphan_pids, all_orphan)``: ``orphan_pids`` are the pids whose
+    cmdline matches an ORPHAN_HOLDER_PATTERNS entry; ``all_orphan`` is True
+    only when there is at least one holder AND every holder matches — a
+    single non-matching holder (live happy/claude session, shell, editor)
+    makes the worktree non-remediable. An empty holder list is NOT
+    all-orphan (nothing to kill; the plain idle guards apply)."""
+    orphan_pids = [pid for pid, cmd in holders if _is_orphan_cmdline(cmd)]
+    return orphan_pids, bool(holders) and len(orphan_pids) == len(holders)
+
+
+def _path_in_allowlist(path: str) -> bool:
+    """True if a porcelain-reported relative path is rescue-allowlisted.
+    Entries ending in "/" are prefix matches, others exact. Quoted paths
+    (porcelain wraps exotic names in double quotes) fail closed."""
+    if path.startswith('"'):
+        return False
+    for entry in RESCUE_DIRTY_ALLOWLIST:
+        if entry.endswith("/"):
+            if path.startswith(entry):
+                return True
+        elif path == entry:
+            return True
+    return False
+
+
+def dirty_paths_within_allowlist(porcelain: str) -> tuple[list[str], bool]:
+    """Pure dirty-set classification (unit-tested). Parses ``git status
+    --porcelain`` output; untracked (``??``) lines are ignored, consistent
+    with ``_has_tracked_changes``. Returns ``(tracked_dirty_paths,
+    all_within)`` where ``all_within`` is True only when EVERY tracked
+    dirty path sits inside RESCUE_DIRTY_ALLOWLIST. Fail-closed: a rename /
+    copy line requires BOTH sides allowlisted, and an unparseable or
+    quoted path counts as outside."""
+    paths: list[str] = []
+    all_within = True
+    for line in porcelain.splitlines():
+        if not line or line.startswith("??"):
+            continue
+        body = line[3:]
+        if not body:
+            all_within = False
+            continue
+        # Rename/copy porcelain lines carry "orig -> dest"; both must pass.
+        for part in body.split(" -> "):
+            paths.append(part)
+            if not _path_in_allowlist(part):
+                all_within = False
+    return paths, all_within
+
+
 def _issue_statuses() -> dict[int, str]:
     """Map issue number -> status by scanning the ``tasks/<status>/<id>/``
     filesystem tree, which is the AUTHORITATIVE source (the parent folder
@@ -244,15 +368,16 @@ def _issue_statuses() -> dict[int, str]:
     return out
 
 
-def _live_worktree_holders(wt_root: str) -> dict[str, list[str]]:
+def _live_worktree_holders(wt_root: str) -> dict[str, list[tuple[int, str]]]:
     """Worktree names currently referenced by any process: as a cwd
     (``/proc/<pid>/cwd``) or anywhere in argv (``/proc/<pid>/cmdline``).
 
-    Returns name -> ["pid <pid>: <trimmed cmdline>", ...] so the report can
-    say WHICH process pins a kept worktree (zombie-session triage). The
+    Returns name -> [(pid, cmdline), ...] so the report can say WHICH
+    process pins a kept worktree (zombie-session triage) and the
+    orphan-holder remediation can classify + signal exact pids. The
     liveness test itself is unchanged — ``name in holders`` is exactly the
-    old set membership; the values are reporting-only."""
-    holders: dict[str, list[str]] = {}
+    old set membership."""
+    holders: dict[str, list[tuple[int, str]]] = {}
     marker = ".claude/worktrees/"
 
     def harvest(text: str, found: set[str]) -> None:
@@ -278,24 +403,128 @@ def _live_worktree_holders(wt_root: str) -> dict[str, list[str]]:
             cmdline = fh.read().replace(b"\x00", b" ").decode("utf-8", "replace").strip()
             harvest(cmdline, found)
         for name in found:
-            holders.setdefault(name, []).append(f"pid {pid}: {cmdline[:120] or '?'}")
+            holders.setdefault(name, []).append((int(pid), cmdline))
     return holders
 
 
-def _has_tracked_changes(wt_path: str) -> bool:
-    """True if the worktree has uncommitted TRACKED changes. Untracked
-    files (``??`` porcelain lines) are generated output and do NOT count."""
+def _format_holders(live: dict[str, list[tuple[int, str]]]) -> dict[str, list[str]]:
+    """Display form of the structured holder map ("pid <pid>: <cmdline>"),
+    used by the JSON summary + the kept-reason print loop."""
+    return {
+        name: [f"pid {pid}: {cmd[:120] or '?'}" for pid, cmd in entries]
+        for name, entries in live.items()
+    }
+
+
+def _read_cmdline(pid: int) -> str | None:
+    """NUL-joined cmdline of ``pid`` as one string, or None if the process
+    is gone. A zombie reads as the empty string (kernel reports no argv)."""
+    try:
+        with open(f"/proc/{pid}/cmdline", "rb") as fh:
+            return fh.read().replace(b"\x00", b" ").decode("utf-8", "replace").strip()
+    except OSError:
+        return None
+
+
+def _pid_running(pid: int) -> bool:
+    """True if ``pid`` exists and is not a zombie (empty cmdline)."""
+    return bool(_read_cmdline(pid))
+
+
+def _kill_orphan_pids(pids: list[int]) -> tuple[list[int], list[int]]:
+    """SIGTERM -> brief wait -> SIGKILL the given orphan-holder pids.
+
+    PID-reuse guard: each pid's cmdline is re-read and re-verified against
+    ORPHAN_HOLDER_PATTERNS IMMEDIATELY before every signal — a pid recycled
+    by an unrelated process between the liveness harvest and the kill is
+    skipped (and reported as a survivor, which keeps the worktree). Returns
+    ``(gone, leftover)``: only ``gone`` pids are confirmed dead; any
+    ``leftover`` (survivor or reuse-skip) blocks removal."""
+    pending: list[int] = []
+    skipped: list[int] = []
+    for pid in pids:
+        cmd = _read_cmdline(pid)
+        if not cmd:
+            continue  # already gone (or zombie) — nothing to signal
+        if not _is_orphan_cmdline(cmd):
+            skipped.append(pid)  # PID reused by a non-orphan — never signal
+            continue
+        with contextlib.suppress(OSError):
+            os.kill(pid, signal.SIGTERM)
+        pending.append(pid)
+    deadline = time.time() + 5.0
+    while pending and time.time() < deadline:
+        time.sleep(0.2)
+        pending = [pid for pid in pending if _pid_running(pid)]
+    for pid in pending:
+        cmd = _read_cmdline(pid)  # re-verify before escalating to SIGKILL
+        if cmd and _is_orphan_cmdline(cmd):
+            with contextlib.suppress(OSError):
+                os.kill(pid, signal.SIGKILL)
+    time.sleep(0.5)
+    survivors = [pid for pid in pending if _pid_running(pid)]
+    leftover = sorted(set(survivors) | set(skipped))
+    gone = [pid for pid in pids if pid not in leftover]
+    return gone, leftover
+
+
+def _git_porcelain(wt_path: str) -> str | None:
+    """``git status --porcelain`` output for one worktree, or None when it
+    cannot be determined (callers treat None conservatively)."""
     try:
         out = subprocess.run(
             ["git", "-C", wt_path, "status", "--porcelain"],
             capture_output=True,
             text=True,
             timeout=60,
-        ).stdout
+        )
     except (subprocess.SubprocessError, OSError):
+        return None
+    if out.returncode != 0:
+        return None
+    return out.stdout
+
+
+def _has_tracked_changes(wt_path: str) -> bool:
+    """True if the worktree has uncommitted TRACKED changes. Untracked
+    files (``??`` porcelain lines) are generated output and do NOT count."""
+    out = _git_porcelain(wt_path)
+    if out is None:
         # Cannot determine -> be conservative, treat as having changes.
         return True
     return any(line and not line.startswith("??") for line in out.splitlines())
+
+
+def _rescue_dirty(wt_path: str, rescue_dir: Path, dirty_paths: list[str]) -> str | None:
+    """Rescue-copy a junk-dirty worktree's tracked dirt before removal.
+
+    Layout (the manual 2026-06-10 cleanup convention):
+    ``<rescue_dir>/<original-relative-path>`` per dirty file plus a full
+    ``git diff HEAD`` at ``<rescue_dir>/UNCOMMITTED.diff``. A deleted file
+    has nothing to copy — the diff captures it. Returns None on success,
+    else an error string; the caller then KEEPS the worktree (rescue
+    strictly precedes removal, a failed rescue never loses data)."""
+    try:
+        rescue_dir.mkdir(parents=True, exist_ok=True)
+        diff = subprocess.run(
+            ["git", "-C", wt_path, "diff", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        if diff.returncode != 0:
+            return f"git diff HEAD failed: {diff.stderr[:200]}"
+        (rescue_dir / "UNCOMMITTED.diff").write_text(diff.stdout)
+        for rel in dirty_paths:
+            src = Path(wt_path) / rel
+            if not src.is_file():
+                continue  # deleted file — captured by the diff
+            dst = rescue_dir / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return f"{type(exc).__name__}: {exc}"
+    return None
 
 
 def _git_remove(wt_path: str) -> bool:
@@ -314,17 +543,24 @@ def _git_remove(wt_path: str) -> bool:
     return rc.returncode == 0
 
 
+def _issue_status_of(name: str, statuses: dict[int, str]) -> str | None:
+    """Task status for an ``issue-<N>`` worktree name, else None."""
+    m = _ISSUE_NAME_RE.match(name)
+    return statuses.get(int(m.group(1))) if m else None
+
+
 def _classify(
-    child, statuses: dict[int, str], live: dict[str, list[str]], grace_hours: float, now: float
+    child,
+    statuses: dict[int, str],
+    live: dict[str, list[tuple[int, str]]],
+    grace_hours: float,
+    now: float,
 ) -> Decision:
     """Full keep/remove decision for one worktree dir, including the
     (fresh) tracked-changes git call. ``statuses`` and ``live`` are the
     snapshots to decide against (liveness uses ``live``'s keys only)."""
     name = child.name
-    status = None
-    m = _ISSUE_NAME_RE.match(name)
-    if m:
-        status = statuses.get(int(m.group(1)))
+    status = _issue_status_of(name, statuses)
     age_hours = (now - child.stat().st_mtime) / 3600.0
     decision = should_remove(
         name,
@@ -338,6 +574,119 @@ def _classify(
     if decision.remove and _has_tracked_changes(str(child)):
         return Decision(name, False, _TRACKED_CHANGES_REASON)
     return decision
+
+
+def _remediation_kind(
+    name: str,
+    decision: Decision,
+    status: str | None,
+    holders: list[tuple[int, str]],
+    wt_path: str,
+) -> tuple[str, str] | None:
+    """Triage a KEPT worktree as actively remediable, or None.
+
+    Returns ``(kind, detail)`` with kind in {"orphan-pinned", "junk-dirty"}:
+      - "orphan-pinned": issue worktree of a fully-done task whose ONLY
+        holders are orphaned codex processes (--apply kills those exact
+        pids, then re-derives every guard fresh).
+      - "junk-dirty": issue worktree of a fully-done task whose entire
+        tracked dirty set sits inside RESCUE_DIRTY_ALLOWLIST (--apply
+        rescue-copies it, then removes).
+    Anything else — non-terminal / awaiting_promotion / unknown status, a
+    real (non-orphan) holder, dirt outside the allowlist, agent-/wf-/
+    human-named worktrees — returns None: today's keep behavior, untouched.
+    """
+    if status not in REMEDIATION_ISSUE_STATUSES:
+        return None
+    if decision.reason == _LIVE_PROCESS_REASON:
+        orphan_pids, all_orphan = classify_holders(holders)
+        if all_orphan:
+            return "orphan-pinned", f"held only by orphaned codex pid(s) {orphan_pids}"
+        return None
+    if _TRACKED_CHANGES_REASON in decision.reason:
+        porcelain = _git_porcelain(wt_path)
+        if porcelain is None:
+            return None
+        dirty, all_within = dirty_paths_within_allowlist(porcelain)
+        if dirty and all_within:
+            return "junk-dirty", f"{len(dirty)} allowlisted dirty file(s)"
+        return None
+    return None
+
+
+def _execute_remediation(
+    child, wt_root_rel: str, grace_hours: float, now: float, rescue_root: Path
+) -> Decision:
+    """APPLY-MODE ONLY: kill orphan holders and/or rescue allowlisted dirt
+    for one fully-done issue worktree, re-verifying EVERY guard against
+    fresh state at each step. Returns the final decision; remove=True only
+    when the worktree is provably idle post-remediation. This function's
+    internal fresh checks REPLACE the loop's snapshot->remove re-check
+    (re-running ``_classify`` after a rescue would re-keep the rescued but
+    still-dirty tree). Never signals a pid that was not re-verified as an
+    orphan-pattern match moments before; never proceeds to removal when a
+    rescue failed."""
+    name = child.name
+    # FRESH snapshots — the loop's initial snapshot may be minutes old.
+    status = _issue_status_of(name, _issue_statuses())
+    if status not in REMEDIATION_ISSUE_STATUSES:
+        return Decision(name, False, f"became unsafe mid-audit: status now {status}")
+    live = _live_worktree_holders(wt_root_rel)
+    killed_note = ""
+    holders = live.get(name, [])
+    if holders:
+        orphan_pids, all_orphan = classify_holders(holders)
+        if not all_orphan:
+            return Decision(
+                name,
+                False,
+                f"{_LIVE_PROCESS_REASON} (non-orphan holder appeared mid-audit)",
+            )
+        gone, leftover = _kill_orphan_pids(orphan_pids)
+        if leftover:
+            return Decision(
+                name,
+                False,
+                f"orphan-pinned: kill incomplete (pid(s) {leftover} survived/skipped)",
+            )
+        killed_note = f"killed orphaned codex pid(s) {gone}; "
+        # Re-verify liveness from a fresh harvest after the kill.
+        if name in _live_worktree_holders(wt_root_rel):
+            return Decision(
+                name,
+                False,
+                f"became unsafe mid-audit: {_LIVE_PROCESS_REASON} after orphan kill",
+            )
+    # Re-derive the non-tracked guards fresh (a `task.py set-status` or a
+    # recent write since the snapshot must still be honored).
+    base = should_remove(
+        name,
+        status=status,
+        is_live=False,
+        age_hours=(now - child.stat().st_mtime) / 3600.0,
+        has_tracked_changes=False,
+        grace_hours=grace_hours,
+    )
+    if not base.remove:
+        return Decision(name, False, f"became unsafe mid-audit: {base.reason}")
+    # Junk-dirty rescue (fresh dirty read; rescue strictly precedes removal).
+    porcelain = _git_porcelain(str(child))
+    if porcelain is None:
+        return Decision(name, False, f"{_TRACKED_CHANGES_REASON} (unreadable mid-remediation)")
+    dirty, all_within = dirty_paths_within_allowlist(porcelain)
+    if dirty:
+        if not all_within:
+            return Decision(name, False, f"{_TRACKED_CHANGES_REASON} (outside rescue allowlist)")
+        err = _rescue_dirty(str(child), rescue_root / name, dirty)
+        if err is not None:
+            return Decision(name, False, f"junk-dirty rescue FAILED ({err})")
+        return Decision(
+            name,
+            True,
+            f"{killed_note}junk-dirty: rescued {len(dirty)} file(s) to "
+            f"{rescue_root / name}; reapable (status={status})",
+        )
+    return Decision(name, True, f"{killed_note}idle and reapable (status={status})")
 
 
 def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditResult:
@@ -362,7 +711,13 @@ def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditRes
 
     statuses = _issue_statuses()
     live = _live_worktree_holders(wt_root_rel)
-    res.live_holders = live
+    res.live_holders = _format_holders(live)
+    rescue_root = (
+        root
+        / ".claude"
+        / "cache"
+        / f"worktree-rescue-{time.strftime('%Y-%m-%d', time.localtime(now))}"
+    )
 
     # Clear any admin entries for worktree dirs that were already deleted.
     subprocess.run(["git", "worktree", "prune"], cwd=str(root), capture_output=True)
@@ -374,7 +729,39 @@ def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditRes
         res.sizes_bytes[name] = _worktree_size_bytes(str(child))
         decision = _classify(child, statuses, live, grace_hours, now)
         if not decision.remove:
-            res.kept.append(decision)
+            # Active-remediation triage for fully-done issue worktrees:
+            # orphan-pinned (only orphaned codex holders) or junk-dirty
+            # (dirt confined to the rescue allowlist). Classified loudly in
+            # EVERY report; remediated (kill / rescue) only under --apply.
+            remediation = _remediation_kind(
+                name,
+                decision,
+                _issue_status_of(name, statuses),
+                live.get(name, []),
+                str(child),
+            )
+            if remediation is None:
+                res.kept.append(decision)
+                continue
+            kind, detail = remediation
+            if not apply:
+                # Dry-run NEVER kills or rescues — report-only.
+                res.kept.append(
+                    Decision(name, False, f"{kind}: {detail} (--apply remediates + removes)")
+                )
+                continue
+            final = _execute_remediation(child, wt_root_rel, grace_hours, now, rescue_root)
+            if not final.remove:
+                res.kept.append(final)
+                continue
+            # _execute_remediation's internal fresh checks ARE the
+            # pre-removal re-derivation for this path (a _classify re-run
+            # would re-keep a rescued-but-still-dirty tree).
+            print(f"  * remediated {name}: {final.reason}", file=sys.stderr)
+            if _git_remove(str(child)):
+                res.removed.append(name)
+            else:
+                res.failed.append(name)
             continue
         if not apply:
             res.removed.append(name)  # would-remove (dry-run)
