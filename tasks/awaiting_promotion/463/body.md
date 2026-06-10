@@ -7,6 +7,8 @@ tags: []
 created_at: '2026-06-02T00:57:22Z'
 has_clean_result: true
 parent_id: 458
+classification: useful
+promoted_at: '2026-06-10T00:36:45Z'
 ---
 # Base-model cosine to the broadly-misaligned persona predicts post-SFT emergent misalignment when probed with each dataset's own training questions — but a content-leakage alternative survives (LOW confidence)
 
