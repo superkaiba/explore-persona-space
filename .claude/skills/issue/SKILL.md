@@ -2475,6 +2475,10 @@ while True:
     #                                   below); set status:blocked; exit.
     #   status == "running"        -> milestone-already-posted by the poller
     #                                  if new_milestone was true; loop again.
+    #                                  If the JSON also has
+    #                                  gpu_idle_advisory_posted == true, act
+    #                                  per "GPU-idle advisory handling" below
+    #                                  before the next tick.
 ```
 
 (`current_phase` is `"running"` by default; when the poller emits a
@@ -2490,6 +2494,31 @@ park at the user gate on `status=gate` (Step 6d.4), and post
 `epm:failure v1` on `status=stalled` or `status=dead`. The orchestrator
 NEVER re-posts a marker the poller already posted from a sentinel —
 double-posting is the failure mode the gate path is designed to avoid.
+
+**GPU-idle advisory handling.** When a tick's JSON reports
+`gpu_idle_advisory_posted: true`, the poller has just posted a one-time
+`epm:progress` marker whose note starts with `[gpu-idle-advisory]` (plus a
+`gpu_idle_advisory=True` extra): every GPU sat idle on a HEALTHY
+`status=running` tick for ≥ `EPM_GPU_IDLE_ADVISORY_MIN` (default 30) min —
+the signature of a long CPU-only phase holding a GPU pod (incidents
+#518/#537). Don't just loop: surface the advisory in the session text,
+then check the plan for whether the REMAINING work in the current phase is
+CPU-only. If it is and the remaining CPU stretch is long (>~30 min), apply
+CLAUDE.md "CPU-only phases don't hold GPU pods": checkpoint the phase's
+state, upload the artifacts it reads, move the phase off-pod to the VM,
+and `pod.py stop` the pod once nothing pod-local is needed. Three hard
+constraints: (a) NEVER kill un-checkpointable in-RAM work to save idle GPU
+time — redoing #518's multi-hour un-checkpointed scoring run would have
+cost more than the idle burn; let such a phase finish and fix the
+checkpointing in a follow-up; (b) autonomous sessions never stop a pod to
+PARK — the off-pod move is valid only when the CPU phase keeps running
+toward the Goal in this session (e.g. on the VM); (c) this is the
+CPU-phases-off-pod rule, NOT a mid-run cost gate — the trigger is the
+advisory's idle-GPU fact, never "this is getting expensive". If the phase
+genuinely needs the pod (a pod-local data dependency) or is nearly done,
+state that one-line reason and keep looping. The advisory never changes
+the status verdict, so this handling is additive to the `status=running`
+branch.
 
 **`--pid-file` is a POD-side path.** `poll_pipeline.py` evaluates
 `[ -f <pid_file> ]` inside its remote SSH heredoc, so the pid file must
@@ -3962,10 +3991,12 @@ subagent, and must post every stage-dispatch breadcrumb
 (`stage=followup-<phase>`, Step 9 entry-guard convention) with the
 `worktree=` field. Know what each mechanism covers: the cron handles
 only the alive-but-stalled case — a `durable=False` cron dies with the
-session that armed it, and `autonomous_session_watch.py`'s
-crash-recovery + stalled passes read only the autonomous registry
-(`spawn-issue --auto` entries), so NOTHING external watches an
-interactive session driving this loop. If the session is going to be
+session that armed it; `autonomous_session_watch.py`'s AUTO-RESPAWN
+passes read only the autonomous registry (`spawn-issue --auto`
+entries), and the step-2 `register-current` manual registration buys
+ALERT-ONLY stalled/crash visibility (a user-driven session is never
+auto-respawned, #505) — so nothing external RE-DRIVES an interactive
+session driving this loop. If the session is going to be
 closed — or the user asks for a handoff — while loop work is in flight,
 the mid-flight handoff rule (§ Orchestration Procedure preamble)
 applies: spawn `spawn_session.py spawn-issue --issue <N> --auto`
@@ -3987,7 +4018,20 @@ orphaned at `running` for 5+ hours.)
    with different seeds, monitoring, syncing, or a bug-fix re-run, per
    the CLAUDE.md `/adversarial-planner` carve-out). The marker trail
    records the transition (`epm:status-changed`); `has_clean_result`
-   stays sticky across the re-entry.
+   stays sticky across the re-entry. **In the same step, re-register
+   the driving session:** `uv run python scripts/spawn_session.py
+   register-current --issue <N>` (infers this session's Happy id from
+   the process ancestry + the daemon; writes `issue-<N>.json` for
+   autonomous sessions / `manual-issue-<N>.json` for interactive ones,
+   matching how the session was spawned). The revival flips a
+   parked/terminal task back to ACTIVE, but the watcher's registry
+   entry was DELETED at the terminal transition — without
+   re-registering, the revived run is invisible to every
+   registration-based watcher pass until the orphan sweep's ~90-min
+   staleness gate (incident #472, 2026-06-10: a revival ran orphaned
+   for 10.5h). Registration failure is non-fatal to the loop (the
+   orphan sweep remains the backstop) but state the failure rather
+   than swallowing it.
 3. **Abbreviated cycle**, all on THIS issue:
    - `/adversarial-planner` re-invoked in AMENDMENT scope: produces
      `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's

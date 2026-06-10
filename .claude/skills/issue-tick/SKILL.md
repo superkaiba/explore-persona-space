@@ -105,9 +105,11 @@ From the `view --json` output:
 - `status` = the parent folder name (current lifecycle state).
 - `kind` = the task `kind` (experiment / infra / batch / analysis / survey).
 
-From `latest-marker`:
+From `latest-marker` (prints the full event JSON):
 - the latest `epm:<kind>` marker name + `ts` (ISO-8601 UTC) — used to
   judge bg-chain liveness in the ACTIVE branch below.
+- the `note` field — checked in Step 2 for the `[gpu-idle-advisory]`
+  prefix (title suffix only).
 
 If either call fails (`task.py` import error, registry corruption,
 on-disk row missing), log one line and EXIT — do NOT attempt the title
@@ -123,11 +125,26 @@ then push to the phone:
 uv run python scripts/session_progress_report.py --issue <N> --step "<status>"
 ```
 
-Capture the stdout (the canonical `#<N> <slug> · <status>` string),
-then:
+Capture the stdout (the canonical `#<N> <slug> · <status>` string).
+
+**GPU-idle suffix:** if the latest marker's `note` (from Step 1) starts
+with `[gpu-idle-advisory]` — the one-time idle-GPU advisory
+`scripts/poll_pipeline.py` posts as `epm:progress` when every GPU sat
+idle on a healthy `status=running` tick (incidents #518/#537) — append
+` · gpu-idle` to the captured string and log one line:
+`/issue-tick <N>: gpu-idle advisory is the latest marker — idle GPUs on
+a held pod`. This keeps the idle burn visible on the phone even when
+the primary bg-Bash poll chain (whose "GPU-idle advisory handling" in
+the full `/issue` skill normally acts on the advisory) is dead. The
+suffix is TITLE-ONLY: no status change, no PushNotification, no
+re-drive. The advisory is a regular `epm:progress` marker, so it also
+counts as FRESH for the 3b/3c staleness checks like any other progress
+marker.
+
+Then:
 
 ```
-mcp__happy__change_title({"title": <captured>})
+mcp__happy__change_title({"title": <captured, plus the gpu-idle suffix when it applies>})
 ```
 
 **Both calls are SOFT-FAIL.** The helper invocation AND `change_title`
