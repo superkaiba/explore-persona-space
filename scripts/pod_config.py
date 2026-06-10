@@ -27,16 +27,6 @@ import sys
 from collections.abc import Iterator
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    # Type-checking-only import: ``runpod_api`` is heavy (loads RunPod GraphQL
-    # config from .env at import time) and ``cmd_refresh_from_api`` already
-    # imports ``list_team_pods`` lazily for the same reason. ``PodInfo`` is
-    # only used as a forward-referenced type annotation under
-    # ``from __future__ import annotations``, so deferring the import here
-    # keeps the cheap ``--list`` / ``--check`` paths free of the eager load.
-    from runpod_api import PodInfo
 
 # ---------------------------------------------------------------------------
 # Paths -- resolved to the MAIN repo regardless of which worktree this
@@ -792,220 +782,6 @@ def cmd_clear_override(pod_name: str) -> None:
     print(status)
 
 
-def _read_manual_overrides() -> dict[str, bool]:
-    """Read ``manual_override`` flags for every pod in pods_ephemeral.json.
-
-    Permanent-fleet pods (``pod1``..``pod5``) are not in the sidecar, so they
-    are simply absent from the returned dict (callers default to False).
-    Returns an empty dict when the sidecar is missing or malformed — same
-    fail-quiet shape ``_set_manual_override`` uses on read.
-    """
-    if not PODS_EPHEMERAL_JSON.exists():
-        return {}
-    try:
-        data = json.loads(PODS_EPHEMERAL_JSON.read_text())
-    except json.JSONDecodeError as exc:
-        print(
-            f"WARNING: {PODS_EPHEMERAL_JSON} JSON parse error: {exc}; "
-            f"treating all manual_override flags as False.",
-            file=sys.stderr,
-        )
-        return {}
-    pods = data.get("pods", {}) or {}
-    return {name: bool(entry.get("manual_override", False)) for name, entry in pods.items()}
-
-
-def _refresh_one_pod(
-    name: str,
-    row: Pod | None,
-    live: PodInfo | None,
-    *,
-    is_single_mode: bool,
-    manual_override: bool,
-) -> tuple[bool, bool]:
-    """Evaluate one pod for ``cmd_refresh_from_api``.
-
-    Returns ``(changed, warned)``. Mutates ``row.host`` / ``row.port`` in
-    place on a clean live-API update. Calls ``sys.exit(1)`` when the named
-    pod fails a precondition in single-pod mode (the user explicitly named
-    a pod we cannot refresh — silently no-oping would be misleading).
-
-    Precondition order: row exists in pods.conf → pod present in live API →
-    ``desiredStatus == RUNNING`` → ``ssh_host``/``ssh_port`` populated →
-    ``manual_override`` not set → values actually differ. Any failure in
-    bulk mode skips with a stderr WARN (sets ``warned=True``).
-    """
-    if row is None:
-        # Concurrent terminate between main's parse and ours.
-        print(
-            f"WARN: pod '{name}' no longer in pods.conf (removed by a "
-            f"concurrent writer between read and refresh); skipping.",
-            file=sys.stderr,
-        )
-        return False, True
-
-    if live is None:
-        msg = (
-            f"WARN: pod '{name}' is in pods.conf but not in the live "
-            f"RunPod API (terminated externally or never created); "
-            f"skipping. Run `pod.py terminate --issue <N>` to clean up "
-            f"the stale row, or `pod.py provision` to re-create it."
-        )
-        if is_single_mode:
-            print(f"ERROR: {msg}", file=sys.stderr)
-            sys.exit(1)
-        print(msg, file=sys.stderr)
-        return False, True
-
-    ds = (live.desired_status or "").upper()
-    if ds != "RUNNING":
-        msg = (
-            f"WARN: pod '{name}' has desiredStatus={ds or 'UNKNOWN'}, "
-            f"not RUNNING; SSH endpoint is not available, skipping. "
-            f"Run `pod.py resume --issue <N>` to bring it back, then "
-            f"re-run --refresh-from-api."
-        )
-        if is_single_mode:
-            print(f"ERROR: {msg}", file=sys.stderr)
-            sys.exit(1)
-        print(msg, file=sys.stderr)
-        return False, True
-
-    if live.ssh_host is None or live.ssh_port is None:
-        # RunPod has the pod RUNNING but the 22/tcp mapping isn't up yet
-        # (transient). Don't blank out the existing row.
-        msg = (
-            f"WARN: pod '{name}' is RUNNING but has no public 22/tcp "
-            f"mapping yet (transient — wait ~10s and retry); skipping."
-        )
-        if is_single_mode:
-            print(f"ERROR: {msg}", file=sys.stderr)
-            sys.exit(1)
-        print(msg, file=sys.stderr)
-        return False, True
-
-    if manual_override:
-        if row.host != live.ssh_host or row.port != live.ssh_port:
-            print(
-                f"WARN: pod '{name}' has manual_override=True; refusing "
-                f"to overwrite host/port from API "
-                f"(kept {row.host}:{row.port}; API would have written "
-                f"{live.ssh_host}:{live.ssh_port}). Clear with "
-                f"`pod.py config --clear-override {name}` if the API "
-                f"is right.",
-                file=sys.stderr,
-            )
-            return False, True
-        return False, False
-
-    if row.host == live.ssh_host and row.port == live.ssh_port:
-        print(f"  {name}: already at {row.host}:{row.port} — no change.")
-        return False, False
-
-    print(f"  {name}: {row.host}:{row.port} -> {live.ssh_host}:{live.ssh_port}")
-    row.host = live.ssh_host
-    row.port = live.ssh_port
-    return True, False
-
-
-def cmd_refresh_from_api(pods: list[Pod], pod_name: str | None) -> None:
-    """Pull live host/port from the RunPod API and update ``pods.conf``.
-
-    The existing ``--sync`` propagates ``pods.conf`` OUTWARD to ``~/.ssh/config``
-    + ``.claude/mcp.json``. There was no inverse direction: nothing pulled
-    fresh host/port from the live RunPod API into ``pods.conf``. The gap bit
-    task #488 on 2026-06-09 — a SUPPLY_CONSTRAINT-blocked resume hard-exited,
-    the pod later came back at a NEW SSH port via a separate retry that did
-    not run our success path, and the autonomous session's SSH polling loop
-    spun for 13+ hours on the pre-stop port while ``pods.conf`` carried the
-    stale value. With this command, the orchestrator (or a human) can force
-    a re-sync from the live API and ``cmd_sync`` then propagates the fresh
-    values to SSH + MCP.
-
-    Scope:
-      * ``pod_name=None`` — refresh every managed pod present in BOTH
-        ``pods.conf`` and the live RunPod API. Pods that are not RUNNING are
-        skipped with a stderr note (we cannot infer a fresh SSH endpoint for
-        a pod that is EXITED/PROVISIONING).
-      * ``pod_name=<name>`` — refresh just that pod. Errors loud if the pod
-        is not in ``pods.conf`` (typo) or not present in the live API
-        (terminated externally) or not RUNNING (cannot refresh an endpoint
-        that does not exist yet).
-
-    Respects ``manual_override`` (set by ``--update``): when True, the
-    on-disk host/port stays as the user set them and we surface a stderr
-    WARN instead of overwriting. Use ``--clear-override <pod>`` to re-enable
-    auto-refresh for a manually-pinned pod.
-
-    Holds ``locked_pods_conf`` for the whole read-modify-write-sync sequence
-    so a concurrent provision/resume cannot lose-update our changes — the
-    same lock discipline ``cmd_update`` uses.
-
-    The live API call is REQUIRED. If the API is unreachable, the underlying
-    ``runpod_api.RunPodError`` propagates so callers see a clear failure
-    rather than a silent stale-config no-op (fail-fast rule).
-    """
-    # Import lazily — ``runpod_api`` is the heavy module and importing at
-    # module top would force every ``pod_config --check`` / ``--list`` to
-    # eagerly load it. The lazy import keeps the cheap subcommands cheap.
-    from runpod_api import list_team_pods
-
-    live_pods = list_team_pods()
-    live_by_name = {p.name: p for p in live_pods}
-    overrides = _read_manual_overrides()
-
-    targets: list[Pod]
-    if pod_name is None:
-        targets = list(pods)
-    else:
-        target = next((p for p in pods if p.name == pod_name), None)
-        if target is None:
-            print(f"ERROR: pod '{pod_name}' not found in pods.conf", file=sys.stderr)
-            print(f"Available: {', '.join(p.name for p in pods)}", file=sys.stderr)
-            sys.exit(1)
-        targets = [target]
-
-    if not targets:
-        print("No pods to refresh (pods.conf is empty).")
-        return
-
-    is_single_mode = pod_name is not None
-
-    with locked_pods_conf():
-        # Re-parse under the lock so we operate on the freshest on-disk view.
-        fresh = parse_pods_conf()
-        fresh_by_name = {p.name: p for p in fresh}
-
-        any_changed = False
-        any_warn = False
-        for original in targets:
-            name = original.name
-            changed, warned = _refresh_one_pod(
-                name,
-                fresh_by_name.get(name),
-                live_by_name.get(name),
-                is_single_mode=is_single_mode,
-                manual_override=overrides.get(name, False),
-            )
-            any_changed = any_changed or changed
-            any_warn = any_warn or warned
-
-        if not any_changed:
-            if not any_warn:
-                print("All managed pods already match the live RunPod API.")
-            else:
-                print(
-                    "No host/port changes applied (see warnings above).",
-                    file=sys.stderr,
-                )
-            return
-
-        print()
-        print("Updating pods.conf with live API host/port...")
-        write_pods_conf(fresh)
-        cmd_sync(fresh)
-
-
 # ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
@@ -1021,8 +797,6 @@ def main() -> None:
             "  python scripts/pod_config.py --check\n"
             "  python scripts/pod_config.py --sync\n"
             "  python scripts/pod_config.py --update pod2 --host 1.2.3.4 --port 12345\n"
-            "  python scripts/pod_config.py --refresh-from-api\n"
-            "  python scripts/pod_config.py --refresh-from-api pod-488\n"
             "  python scripts/pod_config.py --json\n"
         ),
     )
@@ -1046,20 +820,6 @@ def main() -> None:
             "port from the live API."
         ),
     )
-    group.add_argument(
-        "--refresh-from-api",
-        metavar="POD_NAME",
-        nargs="?",
-        const="__ALL__",
-        help=(
-            "Pull live host/port from the RunPod API into pods.conf, then "
-            "sync to ~/.ssh/config + .claude/mcp.json. Pass a POD_NAME to "
-            "refresh just one pod, or omit it to refresh every managed pod. "
-            "Respects manual_override (set by --update). Use when a pod has "
-            "come back at a new SSH port outside an explicit `pod.py resume` "
-            "(e.g. recovery from SUPPLY_CONSTRAINT) and the configs are stale."
-        ),
-    )
 
     parser.add_argument("--host", help="New host (IP) for --update")
     parser.add_argument("--port", type=int, help="New port for --update")
@@ -1080,11 +840,6 @@ def main() -> None:
         cmd_update(pods, args.update, args.host, args.port)
     elif args.clear_override:
         cmd_clear_override(args.clear_override)
-    elif args.refresh_from_api:
-        # ``nargs="?"`` with ``const="__ALL__"`` distinguishes the bare flag
-        # (refresh all pods) from the flag-with-arg (refresh one pod).
-        target = None if args.refresh_from_api == "__ALL__" else args.refresh_from_api
-        cmd_refresh_from_api(pods, target)
     else:
         parser.print_help()
 

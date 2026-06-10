@@ -166,8 +166,7 @@ def test_cmd_resume_supply_constraint_raises_actionable(monkeypatch):
         lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not auto-provision")),
     )
 
-    # wait_for_capacity=False mirrors the parser default (_parser_resume).
-    ns = argparse.Namespace(issue=5, dry_run=False, wait_for_capacity=False)
+    ns = argparse.Namespace(issue=5, dry_run=False)
     with pytest.raises(SystemExit) as exc:
         pod_lifecycle.cmd_resume(ns)
     msg = str(exc.value)
@@ -188,8 +187,7 @@ def test_cmd_resume_non_supply_error_propagates(monkeypatch):
 
     monkeypatch.setattr(pod_lifecycle, "resume_pod", boom)
 
-    # wait_for_capacity=False mirrors the parser default (_parser_resume).
-    ns = argparse.Namespace(issue=6, dry_run=False, wait_for_capacity=False)
+    ns = argparse.Namespace(issue=6, dry_run=False)
     with pytest.raises(RunPodError) as exc:
         pod_lifecycle.cmd_resume(ns)
     assert "401" in str(exc.value)

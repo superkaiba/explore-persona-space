@@ -1137,35 +1137,13 @@ def set_track(task_id: int, track: str) -> None:
 def new_plan_version(task_id: int, plan_md: str) -> int:
     """Append plans/v{next}.md, update plans/plan.md symlink. Returns the
     new version number.
-
-    The next version number is derived as ``max(existing v<N>) + 1`` (NOT
-    ``len(existing) + 1``) so that gaps in the plan-version sequence — e.g.
-    a v5 draft that lived only in /tmp and was never registered, leaving
-    plans/ as ``v1,v2,v3,v4,v6`` — cannot cause the next write to silently
-    overwrite the highest existing plan. The plans/v{N}.md scheme exists
-    to preserve the full audit trail of plan revisions; this resolver is
-    the single canonical writer and must never lose history. As a
-    belt-and-suspenders guard, refuse loudly if the computed target file
-    somehow already exists (e.g. a concurrent writer between the glob and
-    the write, or a manually pre-staged file).
     """
     with _locked():
         plans_dir = find_task_path(task_id) / "plans"
         plans_dir.mkdir(parents=True, exist_ok=True)
-        existing_nums = [
-            int(m.group(1))
-            for p in plans_dir.glob("v*.md")
-            if (m := re.fullmatch(r"v(\d+)\.md", p.name))
-        ]
-        next_v = (max(existing_nums) + 1) if existing_nums else 1
+        existing = sorted(plans_dir.glob("v*.md"))
+        next_v = len(existing) + 1
         target = plans_dir / f"v{next_v}.md"
-        if target.exists():
-            raise RuntimeError(
-                f"refusing to overwrite existing plan file {target} "
-                f"(existing versions: {sorted(existing_nums)}); "
-                f"the highest-version+1 resolver computed v{next_v} but "
-                f"that file already exists on disk"
-            )
         target.write_text(plan_md if plan_md.endswith("\n") else plan_md + "\n")
         # Symlink plan.md → v{next}.md
         symlink = plans_dir / "plan.md"

@@ -47,100 +47,6 @@ from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
 log = logging.getLogger("issue_472.train_cell")
 
 
-def _maybe_persist_trajectory_checkpoint(
-    adapter_dir: Path,
-    frac: float,
-    frac_precision: int,
-) -> None:
-    """Plan v5 §4.0 — per-fraction HF persistence (fail-loud, opt-in).
-
-    When the env vars ``EPM_PERSIST_TRAJECTORY_HF_REPO`` and
-    ``EPM_PERSIST_TRAJECTORY_HF_SUBFOLDER`` are both set, upload the just-
-    saved fraction adapter to
-    ``<repo>/<subfolder>/ckpt_frac{frac:.{precision}f}/`` and VERIFY via
-    ``huggingface_hub.list_repo_files`` (NOT the `hf` CLI, per
-    `.claude/rules/upload-policy.md`). Raises ``RuntimeError`` on any
-    verification failure so the training process aborts before the next
-    fraction overwrites or the launcher reaps the local copy.
-
-    No-op when either env var is unset, so non-v4-pretrain callers
-    (every existing v1/v2/v3/legacy path) are byte-for-byte unaffected.
-    """
-    repo = os.environ.get("EPM_PERSIST_TRAJECTORY_HF_REPO")
-    subfolder_prefix = os.environ.get("EPM_PERSIST_TRAJECTORY_HF_SUBFOLDER")
-    if not repo or not subfolder_prefix:
-        return
-    frac_token = f"{frac:.{frac_precision}f}"
-    # Canonical 2dp formatting per plan v5 §4.0 path:
-    # adapters/issue_504_v4/c504v4_smoke_eps3_seed42/ckpt_frac{N}
-    if frac_precision != 2:
-        # Future-proof: the v5 plan uses 2dp; longer precisions are v4 step-
-        # lever territory and may need their own naming convention.
-        log.warning(
-            "[trajectory-persist] frac_precision=%d ≠ 2; using %r as the "
-            "subfolder token. Verify the path is what the consumer expects.",
-            frac_precision,
-            frac_token,
-        )
-    dest = f"{subfolder_prefix.rstrip('/')}/ckpt_frac{frac_token}"
-
-    adapter_weights = adapter_dir / "adapter_model.safetensors"
-    if not adapter_weights.exists():
-        raise RuntimeError(
-            f"[trajectory-persist] adapter weights missing at {adapter_weights} "
-            f"after `model.save_pretrained` returned; cannot upload. The local "
-            f"PEFT save silently dropped — investigate before continuing."
-        )
-
-    from explore_persona_space.orchestrate.hub import upload_model
-
-    log.info(
-        "[trajectory-persist] uploading frac=%s → %s/%s",
-        frac_token,
-        repo,
-        dest,
-    )
-    hub_path = upload_model(
-        model_path=str(adapter_dir),
-        repo_id=repo,
-        path_in_repo=dest,
-        delete_after=False,
-    )
-    if not hub_path:
-        raise RuntimeError(
-            f"[trajectory-persist] upload_model returned empty path for "
-            f"frac={frac_token} → {repo}/{dest}. The post-upload Hub-API listing "
-            f"found nothing; refuse to proceed (a delete-after-eval launcher "
-            f"would reap the local copy without a durable HF copy)."
-        )
-
-    # Fail-loud Hub-API verification per `.claude/rules/upload-policy.md`. The
-    # `hf` CLI has no `api` subcommand; use list_repo_files in-process.
-    from huggingface_hub import list_repo_files
-
-    try:
-        files = list_repo_files(repo, token=os.environ.get("HF_TOKEN"))
-    except Exception as exc:
-        raise RuntimeError(
-            f"[trajectory-persist] list_repo_files({repo!r}) failed: {exc}. "
-            f"Cannot verify the {dest}/ upload landed."
-        ) from exc
-    expected_key = f"{dest}/adapter_model.safetensors"
-    if expected_key not in files:
-        raise RuntimeError(
-            f"[trajectory-persist] post-upload Hub-API verify FAILED for "
-            f"frac={frac_token}: {expected_key} not in repo file listing. "
-            f"The upload appeared to succeed but the Hub does not see the "
-            f"file. Refuse to proceed."
-        )
-    log.info(
-        "[trajectory-persist] frac=%s upload verified at %s/%s",
-        frac_token,
-        repo,
-        expected_key,
-    )
-
-
 def _physical_gpu_uuids() -> dict[int, str]:
     """Return {physical_index: uuid} for ALL GPUs on the host (CVD-independent).
 
@@ -293,15 +199,6 @@ class CheckpointAtFractionsCallback(TrainerCallback):
                     state.max_steps,
                     d,
                 )
-                # Plan v5 §4.0 — per-fraction HF persistence (fail-loud, opt-in).
-                # When EPM_PERSIST_TRAJECTORY_HF_REPO + _SUBFOLDER are set, each
-                # fraction checkpoint is uploaded inline to
-                # `<repo>/<subfolder>/ckpt_frac{N}` and verified via
-                # huggingface_hub.list_repo_files BEFORE the next training step
-                # proceeds — so a fail-to-upload checkpoint aborts training
-                # before any later fraction is saved (the delete-after-eval
-                # invariant from `.claude/rules/upload-policy.md`).
-                _maybe_persist_trajectory_checkpoint(d, frac, self.frac_precision)
 
     def on_train_end(self, args, state, control, model=None, **kwargs):
         # Record the 100% fraction step (the final adapter dir is the caller's
@@ -607,21 +504,4 @@ def train_one_cell(
         index[terminal_key]["path"] = str(output_dir)
     else:
         index[terminal_key] = {"step": None, "path": str(output_dir)}
-    # v5 round-2 BLOCKER C — persist the frac=1.00 (terminal) trajectory
-    # checkpoint to the v4 subfolder when EPM_PERSIST_TRAJECTORY_HF_REPO +
-    # _SUBFOLDER are set. The `CheckpointAtFractionsCallback.on_step_end`
-    # skips frac>=1.0 (line `frac >= 1.0: continue`); without this call the
-    # final adapter sits at trainer `output_dir` and gets uploaded by the
-    # legacy `cfg.hf_path_in_repo` path (adapters/issue_504/...), NOT to the
-    # v4 path the dispatcher expects
-    # (adapters/issue_504_v4/c504v4_smoke_eps3_seed42/ckpt_frac1.00/). The
-    # 6-of-6 fraction verification in `_run_v4_phase0_pretrain` would then
-    # raise "1 of 6 fraction checkpoints missing" on what was otherwise a
-    # successful training run.
-    #
-    # No-op when the env vars are unset (every existing v1/v2/v3/legacy
-    # caller is byte-for-byte unaffected — same guard as the in-callback
-    # call). Fail-loud post-upload Hub-API verify is shared with the
-    # callback path so the failure mode is single-sourced.
-    _maybe_persist_trajectory_checkpoint(output_dir, 1.0, frac_precision)
     return {"final_adapter": str(output_dir), "checkpoint_index": index}

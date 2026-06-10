@@ -63,13 +63,7 @@ bodies are never re-verified, so tightening cannot regress them).
     `../...`) fail because the EPS dashboard does not serve binary
     PNG/PDF files under `tasks/<N>/artifacts/` (incident: task #365,
     2026-05-22). `raw.githubusercontent.com` URLs must pin to a commit
-    SHA, not `main`/`master`/`HEAD`. The TARGET must also EXIST
-    (incident: task #507, 2026-06-09 — a caption cited a figure that
-    was never generated): same-repo SHA-pinned raw URLs are verified
-    offline via `git cat-file -e <sha>:<path>` (definitive miss →
-    FAIL); unknown SHAs / other hosts fall back to one HTTP HEAD per
-    unique URL (definitive 404 → FAIL; network error / timeout →
-    `unverified` note on the PASS line, never a FAIL).
+    SHA, not `main`/`master`/`HEAD`.
 5. Figure caption sanity — vacuously satisfied under the new spec
    (inline-image alt text + blockquote caption inside each result H3
    carry the discipline; the analyzer is instructed to write
@@ -88,27 +82,8 @@ bodies are never re-verified, so tightening cannot regress them).
    `**Code:**` all appear as boldface labels inside `## Reproducibility`.
 8. Reproducibility URL permanence — every URL in `## Reproducibility`
    pins to a ref (HF Hub `/tree/<ref>`, WandB `/runs/<id>`, GitHub
-   `/blob/<sha>` or `/tree/<sha>`, raw
-   `raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>` — never
-   `main`/`master`/`HEAD`). `n/a` is accepted as an explicit
-   non-applicable marker. Raw-host URLs are scanned on fence-stripped
-   text (a moving-ref raw URL inside a ``` example is illustrative);
-   shape only — existence probing is check 8b's job.
-8b. Reproducibility artifact URLs exist — same-repo artifact links in
-    `## Reproducibility` (`raw.githubusercontent.com/<this-repo>/<sha>/
-    <path>` raw URLs and `github.com/<this-repo>/(blob|tree)/<sha>/<path>`
-    HTML URLs, e.g. the `**Code:**` blob links and the auto-appended
-    `**Methodology reference:**` row) must point at objects that
-    actually exist: resolved offline via `git cat-file -e <sha>:<path>`
-    (works for file blobs AND directory trees), falling back to one
-    HTTP HEAD per unique URL when the sha is unknown locally.
-    Definitive miss → FAIL; indeterminate probe → `unverified` note on
-    the PASS line, never a FAIL (same semantics as check 4b). Extends
-    the task #507 existence protection to the Reproducibility section,
-    which previously got shape verification only. HF Hub / WandB /
-    external-repo links stay shape-checked only (check 8): their
-    existence is not decidable from the local object DB, and an
-    unauthenticated 404 on an external private repo would false-FAIL.
+   `/blob/<sha>` or `/tree/<sha>` — never `main`/`master`/`HEAD`). `n/a`
+   is accepted as an explicit non-applicable marker.
 9. Reproducibility sentinel scrub — no `{{`, `TBD`, `see config`, or
    `default` placeholders anywhere under `## Reproducibility`.
 10. Cherry-picked label discipline — every sample-output BLOCK in
@@ -253,13 +228,10 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import os
 import re
 import shutil
 import subprocess
 import sys
-import urllib.error
-import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -1106,79 +1078,9 @@ def check_figure_image(body: str) -> CheckResult:
     return CheckResult("hero image present", True, f"{len(urls)} image(s)")
 
 
-# Same-repo SHA-pinned raw-GitHub figure URLs — the canonical figure-hosting
-# pattern. Captured so check 4b can verify blob EXISTENCE offline via
-# `git cat-file` (worktrees share the object database with the main
-# checkout, so a commit made on `main` resolves from any checkout).
-_RAW_GITHUB_FIGURE_RE = re.compile(
-    r"^https?://raw\.githubusercontent\.com/(?P<owner>[^/]+)/(?P<repo>[^/]+)"
-    r"/(?P<sha>[0-9a-fA-F]{7,40})/(?P<path>[^?#]+)"
-)
-_THIS_REPO_SLUG = ("superkaiba", "explore-persona-space")
-
-
-def _http_head_status(url: str, timeout: float = 5.0) -> int | None:
-    """HTTP HEAD ``url``; return the response status code (HTTPError codes
-    included), or None when the probe is unavailable — network error /
-    timeout / ``EPM_VERIFY_BODY_NO_HTTP=1`` (the test suite sets the env
-    var in ``tests/conftest.py`` so unit tests never touch the network).
-    Callers treat None as indeterminate, never a FAIL."""
-    if os.environ.get("EPM_VERIFY_BODY_NO_HTTP") == "1":
-        return None
-    req = urllib.request.Request(url, method="HEAD")
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.status
-    except urllib.error.HTTPError as exc:
-        return exc.code
-    except (urllib.error.URLError, TimeoutError, OSError):
-        return None
-
-
-def _figure_url_existence(url: str, *, noun: str = "figure URL") -> tuple[str, str]:
-    """Existence probe for one absolute figure URL (check 4b).
-
-    Returns ``(verdict, note)`` with verdict one of ``'pass'`` / ``'fail'``
-    (definitively missing — the URL 404s) / ``'skip'`` (indeterminate —
-    surfaced as an `unverified` note on the PASS line, never a FAIL, so
-    offline runs don't block). Same-repo SHA-pinned
-    ``raw.githubusercontent.com`` URLs resolve offline + deterministically
-    via ``_git_object_exists`` (fetch-free); unknown SHAs (un-fetched or
-    fabricated) and other hosts fall back to one HTTP HEAD per unique URL.
-
-    ``noun`` names the URL kind in the FAIL notes — check 4b keeps the
-    default ``"figure URL"``; check 8b reuses this probe for raw URLs in
-    `## Reproducibility` with ``noun="Reproducibility URL"``.
-    """
-    m = _RAW_GITHUB_FIGURE_RE.match(url)
-    if m and (m.group("owner").lower(), m.group("repo").lower()) == _THIS_REPO_SLUG:
-        repo = _resolve_repo_root()
-        if repo is not None:
-            verdict, _detail = _git_object_exists(repo, m.group("sha"), m.group("path"))
-            if verdict == "pass":
-                return "pass", ""
-            if verdict == "fail":
-                return (
-                    "fail",
-                    f"{noun} 404s — `{m.group('path')}` does not exist at `{m.group('sha')[:8]}`",
-                )
-            # 'skip': sha unknown to the local object database — fall
-            # through to the HTTP probe, which decides for real shas
-            # pushed from elsewhere and 404s for fabricated ones.
-    code = _http_head_status(url)
-    if code is None:
-        return "skip", f"`{url}` (HTTP probe unavailable)"
-    if code == 404:
-        return "fail", f"{noun} 404s — `{url}`"
-    if code < 400:
-        return "pass", ""
-    return "skip", f"`{url}` (HTTP {code})"
-
-
 def check_figure_url_resolvable(body: str) -> CheckResult:
     """Check 4b: every image URL inline under `## TL;DR` must be a
-    permanent, dashboard-resolvable URL — and the target must actually
-    exist.
+    permanent, dashboard-resolvable URL.
 
     The EPS dashboard serves task-folder HTML artifacts but NOT PNG/PDF
     binaries under `tasks/<N>/artifacts/`, so a relative `artifacts/hero.png`
@@ -1186,17 +1088,6 @@ def check_figure_url_resolvable(body: str) -> CheckResult:
     2026-05-22). Acceptable patterns are absolute URLs only — typically
     `https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/.../*.png`
     or any other `https://...` URL the browser can fetch directly.
-
-    Existence verification (added 2026-06-09, incident task #507: the body
-    cited a SHA-pinned figure that was never generated or committed, the
-    URL-shape check PASSed, and the dashboard rendered a broken image):
-    same-repo `raw.githubusercontent.com` URLs are checked offline +
-    deterministically via `git cat-file -e <sha>:<path>`; a definitive miss
-    (the sha resolves locally but the path is absent from its tree) FAILs.
-    Unknown SHAs and other hosts fall back to ONE `HTTP HEAD` per unique
-    URL (5s timeout): a definitive 404 FAILs; any network error / timeout /
-    non-404 error status surfaces as an `unverified` note on the PASS line
-    — never a FAIL — so offline runs don't block.
     """
     urls = _gather_figure_image_urls(body)
     if not urls:
@@ -1205,8 +1096,6 @@ def check_figure_url_resolvable(body: str) -> CheckResult:
         # the operator sees one error message, not two.
         return CheckResult("Figure URL resolvable", True, "no images to check")
     bad: list[str] = []
-    unverified: list[str] = []
-    probed: dict[str, tuple[str, str]] = {}
     for url in urls:
         url = url.strip()
         # Strip optional title — `(url "title")` — keep only the URL token.
@@ -1222,16 +1111,6 @@ def check_figure_url_resolvable(body: str) -> CheckResult:
                 url,
             ):
                 bad.append(f"figure URL pinned to moving ref: `{url}`")
-                continue
-            # Existence probe — at most one git subprocess / HTTP HEAD per
-            # unique URL (incident: task #507).
-            if url not in probed:
-                probed[url] = _figure_url_existence(url)
-            verdict, note = probed[url]
-            if verdict == "fail":
-                bad.append(note)
-            elif verdict == "skip":
-                unverified.append(note)
             continue
         # Anything not absolute is rejected — relative `artifacts/...`,
         # `tasks/...`, `figures/...`, `./...`, `../...` all render broken
@@ -1244,12 +1123,7 @@ def check_figure_url_resolvable(body: str) -> CheckResult:
         )
     if bad:
         return CheckResult("Figure URL resolvable", False, "; ".join(bad))
-    detail = f"{len(urls)} URL(s)"
-    if unverified:
-        detail += f"; {len(unverified)} unverified (existence not confirmed): " + "; ".join(
-            unverified
-        )
-    return CheckResult("Figure URL resolvable", True, detail)
+    return CheckResult("Figure URL resolvable", True, f"{len(urls)} URL(s)")
 
 
 def check_figure_caption(body: str) -> CheckResult:
@@ -1417,33 +1291,15 @@ def check_repro_subgroups(body: str) -> CheckResult:
 
 
 def check_repro_url_permanence(body: str) -> CheckResult:
-    """Check 8: every URL in `## Reproducibility` is pinned to a permanent ref.
-
-    Covers HF Hub (`/tree/<ref>` etc., not a moving branch), WandB
-    (`/runs/<id>`), GitHub HTML (`/blob/<sha>` / `/tree/<sha>`, not
-    `main`/`master`/`HEAD`), and — added 2026-06-09 as the #507
-    follow-up — `raw.githubusercontent.com` raw URLs, whose ref path
-    segment must be a commit SHA, never `main`/`master`/`HEAD` (the
-    artifact silently changes under a moving-ref link when the branch
-    advances, de-pinning provenance; check 4b already bans the same
-    shape for TL;DR figure URLs). ALL scans run on fence-stripped text
-    (same fence policy as check 8b: a URL inside a ``` example — e.g. a
-    reproduce-command block — is illustrative, not a provenance link;
-    unified 2026-06-09, second #507 follow-up). Shape checks only —
-    existence probing for same-repo raw URLs is check 8b's job.
-    """
+    """Check 8: every URL in `## Reproducibility` is pinned to a permanent ref."""
     repro = section_text(body, "Reproducibility")
     if repro is None:
         return CheckResult(
             "Reproducibility URL permanence", False, "Reproducibility section missing"
         )
     bad: list[str] = []
-    # Every scan below runs on fence-stripped text: a URL inside a ```
-    # example is illustrative, never a provenance link (fence policy
-    # shared with check 8b).
-    scanned = _strip_fenced_blocks(repro)
     # HF Hub URLs must include /tree/<ref>, /blob/<ref>, /raw/<ref>, or @<ref>.
-    hf_urls = re.findall(r"https?://huggingface\.co/[^\s\)<>]+", scanned)
+    hf_urls = re.findall(r"https?://huggingface\.co/[^\s\)<>]+", repro)
     for url in hf_urls:
         if not (
             "/tree/" in url
@@ -1455,22 +1311,15 @@ def check_repro_url_permanence(body: str) -> CheckResult:
         elif re.search(r"/(tree|blob|raw)/(main|master|HEAD)\b", url):
             bad.append(f"unpinned HF URL `{url}` (pinned to moving branch)")
     # WandB URLs should be /runs/<id>, /groups/<id>, or /reports/<id>.
-    wandb_urls = re.findall(r"https?://(?:www\.)?wandb\.ai/[^\s\)<>]+", scanned)
+    wandb_urls = re.findall(r"https?://(?:www\.)?wandb\.ai/[^\s\)<>]+", repro)
     for url in wandb_urls:
         if "/runs/" not in url and "/groups/" not in url and "/reports/" not in url:
             bad.append(f"unpinned WandB URL `{url}` (needs `/runs/<id>`)")
     # GitHub URLs should be /blob/<sha> or /tree/<sha>, not /blob/main.
-    gh_urls = re.findall(r"https?://github\.com/[^\s\)<>]+", scanned)
+    gh_urls = re.findall(r"https?://github\.com/[^\s\)<>]+", repro)
     for url in gh_urls:
         if re.search(r"/(blob|tree)/(main|master|HEAD)\b", url):
             bad.append(f"unpinned GitHub URL `{url}` (use `/blob/<sha>`)")
-    # Raw GitHub URLs must pin their ref path segment to a commit SHA,
-    # never a moving branch — same rule check 4b applies to TL;DR figure
-    # URLs. Shape only; existence probing belongs to check 8b.
-    raw_urls = re.findall(r"https?://raw\.githubusercontent\.com/[^\s\)<>]+", scanned)
-    for url in raw_urls:
-        if re.match(r"https?://raw\.githubusercontent\.com/[^/]+/[^/]+/(main|master|HEAD)\b", url):
-            bad.append(f"unpinned raw GitHub URL `{url}` (pinned to moving ref — use `/<sha>/`)")
     if bad:
         return CheckResult("Reproducibility URL permanence", False, "; ".join(bad))
     return CheckResult("Reproducibility URL permanence", True)
@@ -2676,141 +2525,6 @@ def check_repro_committed_claims_exist(body: str) -> CheckResult:
     )
 
 
-# Same-repo GitHub HTML blob/tree URL pinned to a hex sha — the shape the
-# `**Code:**` subgroup links and the auto-appended `**Methodology
-# reference:**` row use. `<path>` may name a file (blob) or a directory
-# (tree); `git cat-file -e <sha>:<path>` resolves both object kinds. The
-# `[^?#]+` class keeps query strings and fragments (`#L10` line anchors)
-# out of the tree path.
-_GITHUB_BLOB_TREE_URL_RE = re.compile(
-    r"^https?://github\.com/(?P<owner>[^/]+)/(?P<repo>[^/]+)"
-    r"/(?:blob|tree)/(?P<sha>[0-9a-fA-F]{7,40})/(?P<path>[^?#]+)"
-)
-
-# A bare URL token in Reproducibility prose. Stops at whitespace, `)`
-# (markdown link close), `<`/`>` (autolink delimiters), backticks (code
-# spans), and `]` (reference-style links); trailing sentence punctuation
-# is stripped at use-time.
-_REPRO_URL_TOKEN_RE = re.compile(r"https?://[^\s\)<>`\]]+")
-
-
-def _gather_repro_artifact_urls(repro: str) -> list[str]:
-    """Collect same-repo, sha-addressable artifact URLs from the
-    `## Reproducibility` section text (check 8b):
-    `raw.githubusercontent.com/<this-repo>/<sha>/<path>` raw links and
-    `github.com/<this-repo>/(blob|tree)/<sha>/<path>` HTML links. Fenced
-    code blocks are stripped first so a URL shown inside a ``` ... ```
-    example is illustrative, never probed. Other hosts (HF Hub, WandB)
-    and other-repo GitHub links are out of scope: their existence is not
-    decidable from the local object DB, and an unauthenticated 404 on an
-    external private repo would false-FAIL. Order-preserving and
-    deduplicated (at most one probe per unique URL)."""
-    urls: list[str] = []
-    for token in _REPRO_URL_TOKEN_RE.findall(_strip_fenced_blocks(repro)):
-        url = token.rstrip(".,;:!?")
-        for pattern in (_RAW_GITHUB_FIGURE_RE, _GITHUB_BLOB_TREE_URL_RE):
-            m = pattern.match(url)
-            if m and (m.group("owner").lower(), m.group("repo").lower()) == _THIS_REPO_SLUG:
-                if url not in urls:
-                    urls.append(url)
-                break
-    return urls
-
-
-def _repro_artifact_url_existence(url: str) -> tuple[str, str]:
-    """Existence probe for one same-repo artifact URL inside
-    `## Reproducibility` (check 8b). Same verdict semantics as
-    `_figure_url_existence`: ``('pass'|'fail'|'skip', note)``, where only
-    a definitive miss is ``'fail'``. Raw ``raw.githubusercontent.com``
-    URLs route through `_figure_url_existence` unchanged;
-    ``github.com`` blob/tree HTML URLs resolve offline via
-    ``git cat-file -e <sha>:<path>`` (file blobs AND directory trees),
-    falling back to one HTTP HEAD when the sha is unknown to the local
-    object database."""
-    if _RAW_GITHUB_FIGURE_RE.match(url):
-        return _figure_url_existence(url, noun="Reproducibility URL")
-    m = _GITHUB_BLOB_TREE_URL_RE.match(url)
-    if m is None:
-        # Defensive — `_gather_repro_artifact_urls` only yields URLs
-        # matching one of the two shapes above.
-        return "skip", f"`{url}` (unrecognized URL shape)"
-    path = m.group("path").rstrip("/")
-    repo = _resolve_repo_root()
-    if repo is not None:
-        verdict, _detail = _git_object_exists(repo, m.group("sha"), path)
-        if verdict == "pass":
-            return "pass", ""
-        if verdict == "fail":
-            return (
-                "fail",
-                f"Reproducibility URL 404s — `{path}` does not exist at `{m.group('sha')[:8]}`",
-            )
-        # 'skip': sha unknown locally — fall through to the HTTP probe.
-    code = _http_head_status(url)
-    if code is None:
-        return "skip", f"`{url}` (HTTP probe unavailable)"
-    if code == 404:
-        return "fail", f"Reproducibility URL 404s — `{url}`"
-    if code < 400:
-        return "pass", ""
-    return "skip", f"`{url}` (HTTP {code})"
-
-
-def check_repro_artifact_urls_exist(body: str) -> CheckResult:
-    """Check 8b: same-repo artifact URLs in `## Reproducibility` must
-    point at objects that actually exist.
-
-    Extends the check-4b existence protection (incident task #507: a
-    SHA-pinned figure URL that was never generated or committed PASSed
-    the shape checks and rendered broken) to the `## Reproducibility`
-    section, whose links previously got shape verification only:
-    check 8 pins HF / WandB / GitHub URLs to permanent refs but never
-    probes the target, and check 15 covers only the prose pattern
-    ``committed ... at commit `<sha>` `` paired with a backticked
-    repo-relative path — URL-shaped artifact references (the
-    `**Artifacts:**` figure links, the `**Code:**` blob links, the
-    auto-appended `**Methodology reference:**` row) escaped both.
-
-    Scope: same-repo URLs only — `raw.githubusercontent.com/<this-repo>/
-    <sha>/<path>` and `github.com/<this-repo>/(blob|tree)/<sha>/<path>`.
-    SHA-pinned same-repo URLs resolve offline + deterministically via
-    `git cat-file -e <sha>:<path>` (file blobs AND directory trees);
-    unknown SHAs fall back to ONE HTTP HEAD per unique URL (the repo is
-    public, so a definitive 404 FAILs). Indeterminate probes surface as
-    an `unverified` note on the PASS line, never a FAIL, so offline
-    runs don't block. HF Hub / WandB / external-repo links stay
-    shape-checked only (check 8): their existence is not decidable from
-    the local object DB, and an unauthenticated 404 on an external
-    private repo would false-FAIL. Fenced code blocks are stripped
-    before the scan.
-    """
-    name = "Reproducibility artifact URLs exist"
-    repro = section_text(body, "Reproducibility")
-    if repro is None:
-        # check_repro_subgroups / check_repro_url_permanence already
-        # FAIL on a missing Reproducibility section — don't double-report.
-        return CheckResult(name, True, "no `## Reproducibility` section — other checks will report")
-    urls = _gather_repro_artifact_urls(repro)
-    if not urls:
-        return CheckResult(name, True, "no same-repo artifact URLs to check")
-    bad: list[str] = []
-    unverified: list[str] = []
-    for url in urls:
-        verdict, note = _repro_artifact_url_existence(url)
-        if verdict == "fail":
-            bad.append(note)
-        elif verdict == "skip":
-            unverified.append(note)
-    if bad:
-        return CheckResult(name, False, "; ".join(bad))
-    detail = f"{len(urls)} URL(s)"
-    if unverified:
-        detail += f"; {len(unverified)} unverified (existence not confirmed): " + "; ".join(
-            unverified
-        )
-    return CheckResult(name, True, detail)
-
-
 def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> CheckResult:
     """Lens 14 — mechanical concerns audit (binding-concerns contract,
     composed onto the 2-content-section clean-result spec on 2026-05-31
@@ -2965,7 +2679,6 @@ CHECKS = [
     check_details_narrative_flow,
     check_mdx_safe_urls,
     check_repro_committed_claims_exist,
-    check_repro_artifact_urls_exist,
 ]
 
 

@@ -24,17 +24,6 @@ chat — refine the body, run the quality gates, push, then iterate against
 the live body. The only pre-apply user gate is Step 1 (consolidation
 candidates), because merging is destructive.
 
-**Batch-promote prescan.** When the user issues a MULTI-task promote
-directive ("promote everything before #K", "move these N to completed"),
-do NOT classify the whole batch `useful` blind: first grep each
-candidate's title + body head for `BUGGED`, `invalid`, `headline not
-obtained`, or an explicitly-failed manipulation check, and present a
-one-line check — "these M look not-useful: #a (BUGGED), #b (...) — promote
-as useful anyway?" — before running the loop. On 2026-06-09 a 53-task
-blanket-useful batch promoted #407, whose body literally begins "# BUGGED
-experiment", and the user had to catch and flip it minutes later via a
-status round-trip.
-
 **All body-shape rules live in `.claude/skills/clean-results/SPEC.md`
 (2-content-section nested-design v2 spec — three required H2 sections
 in order: `## Human TL;DR` / `## TL;DR` / `## Reproducibility`; with

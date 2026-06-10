@@ -53,31 +53,12 @@ end slot, which is exactly why contrastive negatives (which train EOS-beats-mark
 for non-source personas) hold bystander emission down. **Corollary:** the clean
 log-prob *measurement* window (#478, log P up to −4 nat / p ≈ 1.6%) sits entirely
 **below** emission onset — graded affinity, zero firing.
-
-**Band ≠ crossing — the step-60–100 onset is an lr=1e-5 finding, not a recipe
-law (#538).** #398 and #456 both ran at lr=1e-5, so the "first emission ~step
-60–100" framing above is the cliff timing for THAT LR. At lr=5e-6 marker-only
-loss — the validated clean window — a [14, 20] nat band-stop landed all 18
-cells in band (source Δ 14.27–19.37 nat, step 60–90, 2 pairs × 3 arms × 3
-seeds) and on-policy emission stayed exactly 0.000 across 342 cell × persona
-reads. The marker logit rose ~+12 (e.g. florist source: −0.3 → +12.6) and EOS
-dropped only ~5 (24.0 → 18.5), leaving EOS ahead by +1.39..+8.84 logits across
-all 24 trained-source reads (median +5.85; joint median +5.48, singleton
-median +6.80). The implant moved 3× past the parent's #527 dial without
-reaching the crossing. Lower LR widens the affinity ramp in step-space (more
-log-prob per step *without* a matching EOS drop), so emission-dependent designs
-must gate on the marker-vs-EOS crossing (`z_marker > z_eos` at the
-post-response slot) — never on a log-prob band — and either move LR up into
-the 1e-5 band where the cliff is documented or budget a much higher band/step
-target at lr=5e-6.
 - **Under-trained / floor:** source ≈ base prior (~ −19 to −22 nat), emission 0
   everywhere, training loss barely drops (#520 = −22 nat, 0/everything; #365 =
   0.9% source floor; #505 original anchor 0.04–0.82 nat).
-- **The window is narrow and overshoot is as common as the floor.** #520
-  (r=8, lr=1e-6) **floored** at 1 epoch (−22 nat) while #519 (r=8, lr=2e-6)
-  **saturated** to +30 nat at 600 steps + cosine — fixed epoch counts don't
-  transfer, though the pair differs in BOTH lr (2×) and steps, so it is not a
-  single-variable contrast. **Step count and LR schedule are decisive — not
+- **The window is narrow and overshoot is as common as the floor.** The *same*
+  nominal r=8 / lr=2e-6 **floored** at 1 epoch (#520) but **saturated** to +30 nat
+  at 600 steps + cosine (#519). **Step count and LR schedule are decisive — not
   rank.**
 
 ---
@@ -278,7 +259,7 @@ Do these before believing any floor or ceiling:
 |---|---|---|
 | #478 | aw-promotion | **Validated non-saturating recipe** (r16/5e-6/2ep/1:1/marker-only): graded log-prob, 0 emission |
 | #520 | aw-promotion | r8/1e-6/1ep = dead floor, −22 nat, 0% everywhere |
-| #519 | aw-promotion | r8/2e-6/**600 steps**+cosine = saturated +30 nat (same rank as #520's floor; lr 2x higher) |
+| #519 | aw-promotion | r8/2e-6/**600 steps**+cosine = saturated +30 nat (same r/lr as #520's floor) |
 | #397 | aw-promotion | ※ + lr 1e-4 + marker-only loss = all-persona collapse (source AND bystander ~0.99) |
 | #451 | aw-promotion | loss-mask is the gate: marker-only sat, whole-completion sel 0.89, last-32 sel 0.33 |
 | #329 | aw-promotion | marker-only @5e-6/20ep/2-neg = graded (source 99.6%, bystander 11.7%) |
@@ -296,4 +277,3 @@ Do these before believing any floor or ceiling:
 | #383/#365 | aw/archived | 1:1 ratio + matched-eval lifts source rate 70× off the floor |
 | #207 | aw-promotion | persona-distance predicts where the marker leaks (|ρ| 0.48–0.79) |
 | #395 | aw-promotion | ` ※` id 83399 = clean single rare token; adopt as default marker |
-| #538 | aw-promotion | band ≠ crossing: [14, 20] nat band at lr=5e-6 fired in band on 18/18 cells, EOS lead +1.39..+8.84 logits, on-policy emission 0.000 everywhere |

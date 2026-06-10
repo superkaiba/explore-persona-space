@@ -1,26 +1,27 @@
 """task_workflow_migrate — migration helpers for `task.py migrate-body`.
 
 Patches awaiting_promotion bodies into compliance with the 13-check
-`verify_task_body.py` markdown spec. One patch mode:
+`verify_task_body.py` markdown spec. Two patch modes:
 
-Conformant-but-failing remediation — applied to bodies that already
-carry the required H2 sections in order (the current 2-content-section
-spec: Human TL;DR / TL;DR / Reproducibility, mirrored from
-`verify_task_body.REQUIRED_H2_SECTIONS`) but fail one or more of the
-content-level checks (Repro subgroups missing, cherry-picked label
-missing on a sample-output fence, qualitative-data link missing on a
-sample-output fence).
+(a) Conformant-but-failing remediation — applied to bodies that already
+    carry the four required H2 sections in order (TL;DR / Figure /
+    Details / Reproducibility) but fail one or more of the content-level
+    checks (Repro subgroups missing, cherry-picked label missing on a
+    sample-output fence, qualitative-data link missing on a sample-output
+    fence).
 
-v4-legacy bodies (the pre-2026-05-13 `## TL;DR / ## Summary / ## Details
-/ ## Source issues` shape) are still CLASSIFIED (`BodyClass.V4_LEGACY`)
-but are no longer auto-converted: the old `convert_v4_to_target` chain
-targeted the RETIRED four-H2 shape (TL;DR / Figure / Details /
-Reproducibility), whose output always hard-FAILs the verifier's
-stray-H2 check now that the target mirrors `REQUIRED_H2_SECTIONS`
-(2-content-section spec, 2026-W22, task #454). The converter was retired
-2026-06-09; `migrate_one` routes V4_LEGACY straight to `needs_user` and
-leaves the body untouched — migrate manually per
-`.claude/skills/clean-results/SPEC.md`.
+(b) v4-legacy shape conversion — for bodies still on the pre-2026-05-13
+    `## TL;DR / ## Summary / ## Details / ## Source issues` shape.
+    Snapshots the original body, then:
+      - strips any `<details open><summary>...</summary>` wrappers around
+        each H2 (decorative v4-era toggles),
+      - decides where `## Summary` goes: if it contains a Markdown image,
+        split into a leading `## Figure` (image + caption) + remainder
+        folded into `## Details`; otherwise fold the whole Summary into
+        `## Details` and inject a stub `## Figure` with `n/a` placeholder
+        text + a generic caption,
+      - injects a `## Reproducibility` section with `n/a` Artifacts /
+        Compute / Code subgroups if one is not already present.
 
 Idempotency: every transformation is a string operation guarded by a
 "would this change anything?" check; running `--apply` on an already-PASS
@@ -28,9 +29,10 @@ body is a no-op (no git diff).
 
 The module exposes one entry point — `migrate_one(task_id, *, apply,
 shape=None)` — which loads the task body, classifies it, runs the
-remediation chain where applicable, optionally writes via
-`task_workflow.set_body`, and returns a `MigrateResult` summary suitable
-for `--report` rendering.
+appropriate patch chain, optionally writes via `task_workflow.set_body`
+(with `snapshot_original=True` on the first apply for v4-legacy shape
+conversions), and returns a `MigrateResult` summary suitable for
+`--report` rendering.
 """
 
 from __future__ import annotations
@@ -63,20 +65,13 @@ class BodyClass(Enum):
 
     PASS = "pass"  # already passes verify_task_body
     LEGACY_HTML = "legacy-html"  # carries <!-- legacy-sagan-card --> sentinel
-    CONFORMANT_FAILING = "conformant-failing"  # current required-H2 shape, but FAILs ≥1 check
+    CONFORMANT_FAILING = "conformant-failing"  # four-H2 shape, but FAILs ≥1 check
     V4_LEGACY = "v4-legacy"  # ## TL;DR / ## Summary / ## Details / ## Source issues
     UNKNOWN = "unknown"  # neither of the above
 
 
 V4_LEGACY_H2 = ("TL;DR", "Summary", "Details", "Source issues")
-# The CURRENT conformant target shape — mirrored from the verifier so the
-# classifier can never drift behind a spec migration again. Under the
-# 2-content-section spec (2026-W22, task #454) this is
-# ("Human TL;DR", "TL;DR", "Reproducibility"); the pre-W22 four-H2 shape
-# (TL;DR / Figure / Details / Reproducibility) carries retired H2s that
-# hard-FAIL verify check 2 and now classifies as UNKNOWN → needs_user
-# (mechanical remediation cannot migrate retired-H2 content).
-TARGET_H2 = tuple(vtb.REQUIRED_H2_SECTIONS)
+TARGET_H2 = ("TL;DR", "Figure", "Details", "Reproducibility")
 
 
 # ─── Reporting / result type ──────────────────────────────────────────────
@@ -125,7 +120,7 @@ def _is_v4_legacy(body: str) -> bool:
 
 
 def _is_target_shape(body: str) -> bool:
-    """The target shape: at least the required H2s (TARGET_H2) in the right order."""
+    """The target shape: at least the four required H2s in the right order."""
     h2s = _h2_names_in_order(body)
     seq = [s for s in h2s if s in TARGET_H2]
     return seq == list(TARGET_H2)
@@ -386,6 +381,240 @@ def _append_tldr_next_steps_bullet(body: str, text: str) -> tuple[str, list[str]
     return new_body, [f"insert `Next steps: {text}` bullet into TL;DR"]
 
 
+# ─── v4-legacy → target-shape conversion ──────────────────────────────────
+
+
+_DETAILS_WRAPPER_RE = re.compile(
+    r"<details\s+open>\s*\n<summary>\s*\n\s*\n(##[^\n]+)\n\s*\n</summary>",
+    re.MULTILINE,
+)
+_DETAILS_CLOSE_RE = re.compile(r"^\s*</details>\s*\n", re.MULTILINE)
+
+
+def strip_v4_details_wrappers(body: str) -> tuple[str, list[str]]:
+    """Strip `<details open><summary>## H2</summary>` / `</details>` toggles.
+
+    Replaces each `<details open>...<summary>## TL;DR</summary>` block with
+    a bare `## TL;DR` line; removes matching `</details>` closers.
+    Idempotent — re-running on stripped output yields no further change.
+    """
+    actions: list[str] = []
+    out = _DETAILS_WRAPPER_RE.sub(lambda m: m.group(1), body)
+    if out != body:
+        n = len(_DETAILS_WRAPPER_RE.findall(body))
+        actions.append(f"strip {n} `<details open><summary>## H2</summary>` toggle wrapper(s)")
+    body = out
+    # Strip `</details>` closers (we may leave behind a few that were paired
+    # with the toggles we just rewrote). NOT all `</details>` closers — only
+    # the bare ones on their own line. A `<details>` block we did NOT rewrite
+    # would still close itself fine if its opening tag remains; we walk and
+    # only strip closers whose matching opener was rewritten.
+    # Conservative approach: count opens vs closes; only strip extras.
+    opens = body.count("<details")
+    closes = body.count("</details>")
+    if closes > opens:
+        extras = closes - opens
+        # Strip the first `extras` standalone `</details>` lines.
+        new_body = body
+        for _ in range(extras):
+            new_body, n = _DETAILS_CLOSE_RE.subn("", new_body, count=1)
+            if n == 0:
+                break
+        if new_body != body:
+            actions.append(f"strip {extras} now-orphaned `</details>` closer line(s)")
+        body = new_body
+    return body, actions
+
+
+def convert_v4_to_target(body: str, *, title: str | None = None) -> tuple[str, list[str]]:
+    """Run the full v4-legacy → target-shape conversion on `body`.
+
+    Steps:
+      1. Strip `<details open><summary>## H2</summary>` toggles.
+      2. Inject an H1 from the frontmatter `title` if the body has none.
+      3. Rewrite `## Summary` to either `## Figure` + folded prose into
+         `## Details`, depending on whether the section contains an image.
+         If no image, inject a stub `## Figure` with `n/a` text.
+      4. Inject `## Reproducibility` with `n/a` subgroups if absent.
+    """
+    actions: list[str] = []
+    body, strip_actions = strip_v4_details_wrappers(body)
+    actions.extend(strip_actions)
+
+    body, h1_actions = _ensure_h1(body, title)
+    actions.extend(h1_actions)
+
+    body, summary_actions = _convert_summary_section(body)
+    actions.extend(summary_actions)
+
+    body, repro_actions = _ensure_repro_section(body)
+    actions.extend(repro_actions)
+    return body, actions
+
+
+def _ensure_h1(body: str, title: str | None) -> tuple[str, list[str]]:
+    """Inject `# <title>` as the first non-blank line of `body` if the body has
+    no H1 already.
+    """
+    actions: list[str] = []
+    if vtb.find_h1_title(body):
+        return body, actions
+    if not title:
+        return body, actions
+    # Normalize title to a single line (YAML folded-block style produces \n).
+    one_line = " ".join(title.split())
+    new_body = f"# {one_line}\n\n" + body.lstrip("\n")
+    actions.append("inject `# <title>` H1 from frontmatter title")
+    return new_body, actions
+
+
+def _convert_summary_section(body: str) -> tuple[str, list[str]]:
+    """Either rename `## Summary` → `## Figure` (if it contains an image), or
+    fold Summary content into Details + inject a stub `## Figure`.
+    """
+    actions: list[str] = []
+    summary_span = _find_section_span(body, "Summary")
+    if summary_span is None:
+        # No `## Summary` to convert. If the body has no `## Figure`, inject a stub.
+        if _find_section_span(body, "Figure") is None:
+            # Inject right before `## Details` if present, else before any extra H2.
+            body, inj = _inject_stub_figure(body)
+            actions.extend(inj)
+        return body, actions
+
+    s_start, s_end = summary_span
+    summary_text = body[s_start:s_end].strip()
+
+    has_image = bool(vtb._IMAGE_RE.search(summary_text))
+
+    if has_image:
+        # Split: keep the image + caption as `## Figure`, fold prose into `## Details`.
+        image_match = vtb._IMAGE_RE.search(summary_text)
+        assert image_match is not None  # narrowed by has_image
+        img_start = image_match.start()
+        # Find a caption line after the image
+        post_image = summary_text[image_match.end() :]
+        # Use the first paragraph after the image as the caption
+        caption = post_image.lstrip("\n").split("\n\n", 1)[0].strip() or "Figure caption."
+        # Find non-image prose before & after
+        prefix_prose = summary_text[:img_start].strip()
+        # Anything past the first paragraph after the image is folded into Details.
+        rest_after_caption = ""
+        if "\n\n" in post_image.lstrip("\n"):
+            rest_after_caption = post_image.lstrip("\n").split("\n\n", 1)[1].strip()
+        figure_block = f"\n\n{image_match.group(0)}\n\n*{caption}*\n\n"
+        # Build new body: replace the `## Summary` heading + content with `## Figure` + content.
+        # Heading line itself is the previous line at the start position.
+        body, replaced = _replace_h2_section(body, "Summary", "Figure", figure_block)
+        if replaced:
+            actions.append("rename `## Summary` → `## Figure` (image preserved)")
+        # Fold prefix_prose + rest_after_caption into Details.
+        folded = "\n\n".join(p for p in (prefix_prose, rest_after_caption) if p)
+        if folded:
+            body, fa = _append_to_details(body, folded)
+            actions.extend(fa)
+    else:
+        # Prose-only Summary: fold whole thing into Details, inject stub Figure.
+        body, fa = _append_to_details(body, summary_text)
+        actions.extend(fa)
+        body, replaced = _replace_h2_section(
+            body,
+            "Summary",
+            "Figure",
+            (
+                "\n\n*Figure not applicable for this experiment "
+                "(no headline plot was produced).*\n\n"
+                "n/a\n\n"
+            ),
+        )
+        if replaced:
+            actions.append(
+                "fold prose `## Summary` into `## Details`; inject `## Figure` stub "
+                "(needs human follow-up for hero image)"
+            )
+    return body, actions
+
+
+def _replace_h2_section(
+    body: str, old_name: str, new_name: str, new_section_content: str
+) -> tuple[str, bool]:
+    """Rename an `## old_name` heading to `## new_name` and replace its content.
+
+    Returns (new_body, True) if successful, (body, False) if the section was
+    not found.
+    """
+    span = _find_section_span(body, old_name)
+    if span is None:
+        return body, False
+    start, end = span
+    # The heading line is just before `start`. Walk back to find it.
+    line_start = body.rfind("\n", 0, start - 1) + 1
+    # Replace heading line + content with the new ones.
+    new = body[:line_start] + f"## {new_name}\n" + new_section_content + body[end:]
+    return new, True
+
+
+def _append_to_details(body: str, prose: str) -> tuple[str, list[str]]:
+    """Append `prose` to the very start of `## Details` (so the folded Summary
+    text appears as a leading paragraph in Details).
+    """
+    actions: list[str] = []
+    span = _find_section_span(body, "Details")
+    if span is None:
+        return body, actions
+    start, _end = span
+    insertion = "\n" + prose.strip() + "\n\n"
+    new_body = body[:start] + insertion + body[start:]
+    actions.append(f"prepend folded Summary prose ({len(prose)} chars) into `## Details`")
+    return new_body, actions
+
+
+def _inject_stub_figure(body: str) -> tuple[str, list[str]]:
+    """Insert a placeholder `## Figure` H2 (with `n/a` content) immediately
+    before `## Details`. Used in v4-legacy conversion when the body has no
+    Summary section containing an image.
+    """
+    actions: list[str] = []
+    details_match = re.search(r"^## Details\s*$", body, re.MULTILINE)
+    if not details_match:
+        return body, actions
+    insert_at = details_match.start()
+    block = (
+        "## Figure\n\n"
+        "*Figure not applicable for this experiment (no headline plot was produced).*\n\n"
+        "n/a\n\n"
+    )
+    new_body = body[:insert_at] + block + body[insert_at:]
+    actions.append("inject `## Figure` stub before `## Details`")
+    return new_body, actions
+
+
+_REPRO_STUB = "## Reproducibility\n\n**Artifacts:** n/a\n\n**Compute:** n/a\n\n**Code:** n/a\n"
+
+
+def _ensure_repro_section(body: str) -> tuple[str, list[str]]:
+    """Inject `## Reproducibility` (with `n/a` subgroups) if it's missing.
+
+    Inserts it right before the first non-target H2 that follows Details (e.g.
+    `## Source issues`), or at the end of the body if no such trailing H2 exists.
+    """
+    actions: list[str] = []
+    if _find_section_span(body, "Reproducibility") is not None:
+        return body, actions
+    # Find a trailing H2 (anything past Details that isn't in TARGET_H2).
+    details_match = re.search(r"^## Details\s*$", body, re.MULTILINE)
+    insert_at = len(body)
+    if details_match:
+        # Walk forward to the next H2 line after Details.
+        after = body[details_match.end() :]
+        next_h2 = re.search(r"^## (?!Details)\S", after, re.MULTILINE)
+        if next_h2:
+            insert_at = details_match.end() + next_h2.start()
+    new_body = body[:insert_at].rstrip("\n") + "\n\n" + _REPRO_STUB + "\n" + body[insert_at:]
+    actions.append("inject `## Reproducibility` stub with `n/a` subgroups")
+    return new_body, actions
+
+
 # ─── Top-level migration driver ───────────────────────────────────────────
 
 
@@ -403,9 +632,8 @@ def migrate_one(
         apply: write changes back via `task_workflow.set_body`. If False
             (default), just report what would change.
         shape: optional override of the auto-classification; one of
-            `"v4-to-new"` or `"conformant-failing"`. Forcing `"v4-to-new"`
-            now deterministically reports `needs_user` (the v4 converter
-            was retired 2026-06-09 — see module docstring).
+            `"v4-to-new"` or `"conformant-failing"`. Useful for forcing a
+            shape conversion against operator intuition.
         verbose: if True, populate `MigrateResult.diff_preview` with the
             first 60 lines of unified diff.
     """
@@ -428,6 +656,11 @@ def migrate_one(
     elif shape == "conformant-failing":
         cls = BodyClass.CONFORMANT_FAILING
 
+    actions: list[str] = []
+    new_body = body
+    needs_user = False
+    needs_user_reason = ""
+
     if cls is BodyClass.PASS:
         return MigrateResult(task_id, cls, verify_before, "PASS")
     if cls is BodyClass.LEGACY_HTML:
@@ -439,31 +672,23 @@ def migrate_one(
             verify_before,
             verify_before,
             needs_user=True,
-            needs_user_reason=(
-                "body shape is neither v4-legacy nor current-spec conformant "
-                f"(required H2s: {list(TARGET_H2)})"
-            ),
-        )
-    if cls is BodyClass.V4_LEGACY:
-        # The v4 converter was retired 2026-06-09: it targeted the retired
-        # four-H2 shape, whose output always hard-FAILs the verifier's
-        # stray-H2 check under the 2-content-section spec. Route straight
-        # to needs_user with the body untouched.
-        return MigrateResult(
-            task_id,
-            cls,
-            verify_before,
-            verify_before,
-            needs_user=True,
-            needs_user_reason=(
-                "v4-legacy shape predates the 2-content-section spec; "
-                "auto-conversion was retired — migrate manually per "
-                ".claude/skills/clean-results/SPEC.md"
-            ),
+            needs_user_reason="body shape is neither v4-legacy nor four-H2 conformant",
         )
 
-    # Only CONFORMANT_FAILING reaches the mechanical patch chain.
-    new_body, actions = _conformant_remediate(body)
+    snapshot_original = False
+    if cls is BodyClass.V4_LEGACY:
+        title = fm.get("title") if isinstance(fm, dict) else None
+        new_body, conv_actions = convert_v4_to_target(body, title=title)
+        actions.extend(conv_actions)
+        snapshot_original = True
+        # After shape conversion, attempt conformant-failing remediation too —
+        # often the shape-converted body still misses Repro subgroups / cherry
+        # labels / qual-data links.
+        new_body, rem_actions = _conformant_remediate(new_body)
+        actions.extend(rem_actions)
+    elif cls is BodyClass.CONFORMANT_FAILING:
+        new_body, rem_actions = _conformant_remediate(body)
+        actions.extend(rem_actions)
 
     if new_body == body:
         # Nothing changed mechanically — the failing checks are not in the
@@ -502,7 +727,7 @@ def migrate_one(
         diff_preview = _unified_diff(body, new_body)[:6000]
 
     if apply:
-        tw.set_body(task_id, new_body, snapshot_original=False)
+        tw.set_body(task_id, new_body, snapshot_original=snapshot_original)
         verify_after_label = "PASS"
     else:
         verify_after_label = "DRY-PASS"
@@ -513,6 +738,8 @@ def migrate_one(
         verify_before,
         verify_after_label,
         actions=actions,
+        needs_user=needs_user,
+        needs_user_reason=needs_user_reason,
         diff_preview=diff_preview,
     )
 
@@ -553,10 +780,12 @@ __all__ = [
     "BodyClass",
     "MigrateResult",
     "classify_body",
+    "convert_v4_to_target",
     "list_awaiting_promotion_ids",
     "migrate_one",
     "remediate_qual_data_link",
     "remediate_repro_subgroups",
+    "strip_v4_details_wrappers",
 ]
 
 

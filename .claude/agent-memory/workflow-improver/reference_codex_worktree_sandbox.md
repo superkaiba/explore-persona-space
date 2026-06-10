@@ -47,15 +47,10 @@ The worktree's `tasks/` folder is FROZEN at branch-creation status:
 - Add a grep guard before returning: confirm the substituted prompt
   actually contains the begin/end envelope of the inlined body.
 
-Plan files (committed at branch-cut time, e.g. `plans/v5.md`) are
-resolvable inside the worktree ONLY when the branch was cut from main
-after the task folder existed. A child task's worktree cut from a PARENT
-issue branch predating the task (#550 cut from `origin/issue-538`,
-2026-06-10) has NO `tasks/*/<N>/` folder at all — the plan is as
-unreachable as the markers. Composers must existence-check
-`<worktree>/<plan_marker_path>` and fall back to inlining the canonical
-plan from main (`task.py find <N>` → `plans/plan.md`) with a begin/end
-envelope (codex-code-reviewer.md Step 2-pre-b, fixed 2026-06-10).
+Plan files (committed at branch-cut time, e.g. `plans/v5.md`) ARE
+resolvable inside the worktree, so the plan_marker_path can stay a
+worktree-relative path. Only the events.jsonl-resident markers need
+inlining.
 
 **Where this rule lives in the workflow surface:**
 

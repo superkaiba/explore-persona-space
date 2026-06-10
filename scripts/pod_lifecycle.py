@@ -516,11 +516,6 @@ def _resolve_spec(
 
     Explicit --gpu-type/--gpu-count override the intent table. If both are given
     AND --intent, we use the explicit values but record the intent for posterity.
-    If exactly ONE override flag is given alongside --intent, that field is merged
-    over the intent's default (e.g. --intent eval --gpu-count 4 → H100 x4) — never
-    silently dropped (#531: `--intent eval --gpu-count 4` provisioned 1x H100).
-    A single override flag WITHOUT --intent fails loud: there is no default to
-    fill the missing field from.
     """
     if gpu_type and gpu_count:
         spec = GpuSpec(
@@ -530,27 +525,8 @@ def _resolve_spec(
         )
         return spec, intent or "custom"
     if intent:
-        base = resolve_intent(intent)
-        if gpu_type or gpu_count:
-            override = f"--gpu-type {gpu_type}" if gpu_type else f"--gpu-count {gpu_count}"
-            spec = GpuSpec(
-                gpu_type=gpu_type or base.gpu_type,
-                gpu_count=gpu_count or base.gpu_count,
-                rationale=(
-                    f"intent {intent} ({base.gpu_type} x{base.gpu_count}) "
-                    f"+ explicit override ({override})"
-                ),
-            )
-            return spec, intent
-        return base, intent
-    if gpu_type or gpu_count:
-        given = "--gpu-type" if gpu_type else "--gpu-count"
-        missing = "--gpu-count" if gpu_type else "--gpu-type"
-        raise SystemExit(
-            f"{given} given without --intent: also pass {missing}, or add --intent <name> "
-            "to fill the missing field from the intent table.\n"
-            "Run `python scripts/pod.py provision --list-intents` to see options."
-        )
+        spec = resolve_intent(intent)
+        return spec, intent
     raise SystemExit(
         "Must pass either --intent <name> OR both --gpu-type and --gpu-count.\n"
         "Run `python scripts/pod.py provision --list-intents` to see options."
@@ -915,13 +891,10 @@ def _resume_with_balance_wait_if_autonomous(
     name: str,
     issue: int,
     preflight_check: Callable[[], None] | None = None,
-    force_wait: bool = False,
 ) -> None:
     """Wrap ``resume_pod`` with INSUFFICIENT_BALANCE retry-wait in
-    autonomous mode (or when ``force_wait=True`` — the interactive
-    ``--wait-for-capacity`` opt-in, #530) + actionable error in
-    interactive mode, plus the pre-existing SUPPLY_CONSTRAINT
-    actionable-message branch.
+    autonomous mode + actionable error in interactive mode, plus the
+    pre-existing SUPPLY_CONSTRAINT actionable-message branch.
 
     Why this helper exists
     ----------------------
@@ -954,20 +927,13 @@ def _resume_with_balance_wait_if_autonomous(
     no preflight runs, preserving the legacy behavior for any caller
     that doesn't pass it.
 
-    ``force_wait=True`` enables the same retry-wait OUTSIDE autonomous
-    mode. It backs the interactive ``pod.py resume --wait-for-capacity``
-    flag (#530, 2026-06-09: a cap-refused interactive resume had no
-    retry path, so the orchestrator hand-rolled a shell loop around
-    ``pod.py resume``). Default ``False`` keeps every pre-existing
-    caller byte-identical.
-
     SUPPLY_CONSTRAINT on resume is unchanged from the prior behavior:
     resume never relocates a pod (its volume is pinned to the original
     host), so waiting cannot help if that specific host is out of
     GPUs — only a fresh provision (losing the volume) or hand-retry
     later does. We surface the actionable message in both modes.
     """
-    wait_on_balance = force_wait or _autonomous_session()
+    autonomous = _autonomous_session()
     attempt = 0
     start = time.monotonic()
     while True:
@@ -981,7 +947,7 @@ def _resume_with_balance_wait_if_autonomous(
             resume_pod(pod.pod_id, pod.gpu_count)
             return
         except RunPodInsufficientBalanceError as exc:
-            if not wait_on_balance:
+            if not autonomous:
                 # Interactive: fail loud, name the actionable next steps.
                 raise SystemExit(
                     f"Cannot resume {name}: RunPod refused because the projected "
@@ -995,9 +961,7 @@ def _resume_with_balance_wait_if_autonomous(
                     f"RUNPOD_ACCOUNT_HOURLY_CAP=<new>`), or tune per-GPU rate "
                     f"estimates via RUNPOD_RATE_<GPU>_USD if they over-estimate "
                     f"your actual pricing. Then re-run `pod.py resume --issue "
-                    f"{issue}` — or re-run it with `--wait-for-capacity` to "
-                    f"retry with backoff until a sibling pod frees headroom.\n"
-                    f"  Underlying error: {exc}"
+                    f"{issue}`.\n  Underlying error: {exc}"
                 ) from exc
             elapsed = time.monotonic() - start
             sleep_secs = _wait_for_capacity_backoff_secs(attempt)
@@ -1286,10 +1250,9 @@ def _assert_under_account_hourly_cap(
         f"(local mirror; override with RUNPOD_ACCOUNT_HOURLY_CAP)\n"
         f"  Current RUNNING pods:\n{breakdown_lines}\n"
         f"\nOptions: stop or terminate other pods to free capacity, raise the "
-        f"console cap (and `export RUNPOD_ACCOUNT_HOURLY_CAP=<new>`), "
+        f"console cap (and `export RUNPOD_ACCOUNT_HOURLY_CAP=<new>`), or "
         f"tune per-GPU rate estimates via RUNPOD_RATE_<GPU>_USD if they "
-        f"over-estimate your actual pricing, or re-run the {verb} with "
-        f"`--wait-for-capacity` to retry with backoff until headroom frees.\n"
+        f"over-estimate your actual pricing.\n"
     )
 
 
@@ -1542,29 +1505,17 @@ def cmd_resume(args: argparse.Namespace) -> None:
     # $80/hr). ``skip_for_same_pod`` defends against a duplicate-provision
     # race where a sibling pod shares the resumed pod's name.
     #
-    # Interactive mode (no EPM_AUTONOMOUS_SESSION, no --wait-for-capacity):
-    # fail LOUD pre-call with the projected total + actionable message
-    # (#503/#505 contract — humans expect an immediate refusal at the
-    # terminal). Wait mode (--wait-for-capacity, or auto-enabled by
-    # EPM_AUTONOMOUS_SESSION=1): route the guard THROUGH the wait loop
-    # (transient_on_exceed=True → RunPodInsufficientBalanceError, which the
-    # loop already retries with backoff). The unconditional SystemExit
-    # pre-call is deliberately ABSENT in the wait branch — incident #506
-    # first block at 03:43Z 2026-06-08 was the analogous pre-call on
-    # provision hard-exiting to ``blocked`` before the wait loop ever
-    # started; the resume path is symmetric and the same gap is closed
-    # here. The interactive --wait-for-capacity opt-in exists because a
-    # cap-refused interactive resume previously had NO retry path, forcing
-    # the orchestrator to hand-roll a shell loop around `pod.py resume`
-    # (#530, 2026-06-09). SUPPLY_CONSTRAINT still fails loud in BOTH modes
-    # — resume never relocates, so waiting cannot help there.
-    wait_for_capacity = bool(args.wait_for_capacity) or _autonomous_session()
-    if wait_for_capacity:
-        if not args.wait_for_capacity:
-            print(
-                "  EPM_AUTONOMOUS_SESSION=1 → auto-enabling --wait-for-capacity "
-                "(retry with backoff on $/hr-cap refusals)."
-            )
+    # Interactive mode (no EPM_AUTONOMOUS_SESSION): fail LOUD pre-call with
+    # the projected total + actionable message (#503/#505 contract — humans
+    # expect an immediate refusal at the terminal). Autonomous mode: route
+    # the guard THROUGH the wait loop (transient_on_exceed=True →
+    # RunPodInsufficientBalanceError, which the loop already retries with
+    # backoff). The unconditional SystemExit pre-call is deliberately ABSENT
+    # in the autonomous branch — incident #506 first block at 03:43Z
+    # 2026-06-08 was the analogous pre-call on provision hard-exiting to
+    # ``blocked`` before the wait loop ever started; the resume path is
+    # symmetric and the same gap is closed here.
+    if _autonomous_session():
 
         def _wait_mode_preflight() -> None:
             _assert_under_account_hourly_cap(
@@ -1581,7 +1532,6 @@ def cmd_resume(args: argparse.Namespace) -> None:
             name=name,
             issue=args.issue,
             preflight_check=_wait_mode_preflight,
-            force_wait=True,
         )
     else:
         _assert_under_account_hourly_cap(
@@ -1642,13 +1592,11 @@ def _has_upload_verification_pass(issue: int) -> bool:
     an experiment pod whose artifacts haven't been verified uploaded to
     permanent storage.
 
-    The verdict lives in the event's markdown ``note`` body — as
-    ``**Verdict: PASS**`` for upload-verifier agent notes, as a JSON object
-    ``{"verdict": "PASS", ...}`` for machine-readable verifier notes, or as
-    a bare leading ``PASS`` token for orchestrator-posted notes — NOT as a
-    top-level event field (the event keys are only
-    ``ts, kind, version, by, note``). We read the LATEST upload-verification
-    event so a re-verification overrides an earlier one.
+    The verdict lives in the event's markdown ``note`` body as
+    ``**Verdict: PASS**`` — the same note shape ``scripts/task.py`` scans for
+    other reviewer verdicts — NOT as a top-level event field (the event keys
+    are only ``ts, kind, version, by, note``). We read the LATEST
+    upload-verification event so a re-verification overrides an earlier one.
 
     Reads events via :mod:`explore_persona_space.task_workflow` (which
     branch-guards to ``main`` and resolves the canonical tasks/ tree
@@ -1664,24 +1612,6 @@ def _has_upload_verification_pass(issue: int) -> bool:
     if not verification_events:
         return False
     note = verification_events[-1].get("note", "") or ""
-    # First try to parse the note as a JSON object: the upload-verifier agent
-    # legitimately posts machine-readable JSON-shaped notes of the form
-    # ``{"verdict": "PASS", "discovered_pod_files": ..., "checked": {...}, ...}``
-    # (incident 2026-06-10, task #488: the re-verification posted exactly this
-    # shape, the regex chain below missed it because the quote between
-    # ``verdict`` and ``:`` breaks the ``\*\*?verdict\s*:`` anchors and the
-    # note doesn't start with a bare verdict token, forcing the orchestrator
-    # to post a duplicate guard-parseable marker — same failure mode as the
-    # 2026-06-05 task #465 incident, different note shape). We try this BEFORE
-    # the regex fallbacks so a JSON-shaped note that happens to contain the
-    # substring ``"verdict": "FAIL"`` in a nested ``checked`` block doesn't
-    # accidentally trip a permissive prose regex first.
-    try:
-        parsed = json.loads(note)
-    except (json.JSONDecodeError, TypeError, ValueError):
-        parsed = None
-    if isinstance(parsed, dict) and "verdict" in parsed:
-        return str(parsed["verdict"]).strip().upper() == "PASS"
     # Prefer the canonical bold-prefixed verdict line (``**Verdict: PASS**``);
     # fall back to a looser ``Verdict: PASS`` form for older/unbolded notes;
     # final fallback accepts a bare verdict token at the very START of the
@@ -2034,21 +1964,6 @@ def _parser_resume(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("resume", help="Bring a stopped pod back; refresh IP")
     p.add_argument("--issue", type=int, required=True)
     p.add_argument("--dry-run", action="store_true")
-    p.add_argument(
-        "--wait-for-capacity",
-        action="store_true",
-        help=(
-            "On an account $/hr-cap refusal (local pre-flight estimate or "
-            "RunPod-side INSUFFICIENT_BALANCE), keep retrying with "
-            "exponential-jittered backoff (base 30s, cap 10 min) until a "
-            "sibling pod frees headroom, instead of failing immediately. "
-            "Auto-enabled when EPM_AUTONOMOUS_SESSION=1. Default OFF so "
-            "interactive resumes still surface an immediate, actionable "
-            "refusal. SUPPLY_CONSTRAINT still fails fast in both modes — "
-            "resume never relocates a pod, so waiting cannot help when its "
-            "original host is out of GPUs."
-        ),
-    )
     p.set_defaults(func=cmd_resume)
 
 

@@ -405,13 +405,32 @@ def test_sample_outputs_grandfathered() -> None:
 # --- HIGH-2 regression -----------------------------------------------------
 
 
-# test_canonical_template_sample_outputs_passes — RETIRED. It validated the
-# `## Sample outputs` section of the v1 canonical template at
-# `.claude/skills/clean-results/template.md`, which no longer exists: the
-# clean-result spec moved to `.claude/skills/clean-results/SPEC.md` (v2,
-# 2026-W22), and v2 retired the `## Sample outputs` H2 entirely (samples are
-# inline per Result; see `check_v2_inline_samples_per_result`). The synthetic
-# `## Sample outputs` checks remain covered by the GOOD_BODY-based tests above.
+def test_canonical_template_sample_outputs_passes() -> None:
+    """The canonical clean-results template's `## Sample outputs` section
+    must NOT fail the verifier — only the placeholder-driven sections may
+    legitimately FAIL on an unfilled template.
+
+    Regression for HIGH-2 (code-review v1 on issue #226): the previous
+    template used `### Example format` with prose-bold formatting, so any
+    user filling in the canonical template would hit
+    ``Sample outputs ✗ FAIL``. The fix replaces that with `### Condition:
+    <name>` H3 subsections + 3 fenced blocks each.
+    """
+    template_path = (
+        Path(__file__).resolve().parents[1] / ".claude" / "skills" / "clean-results" / "template.md"
+    )
+    body = template_path.read_text()
+    report = run_all_checks(title=None, body=body)
+    statuses = _statuses(report)
+    assert "Sample outputs" in statuses, "Sample outputs check did not run"
+    # Only PASS is acceptable — WARN/FAIL means the template structure
+    # broke. (The other checks are allowed to FAIL because the template
+    # is full of placeholders.)
+    assert statuses["Sample outputs"] == "PASS", (
+        f"Sample outputs status = {statuses['Sample outputs']!r}; "
+        "the canonical template must keep `### Condition:` H3 subsections "
+        "with >=3 fenced blocks each."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -432,17 +451,8 @@ def test_methodology_bullets_present_passes() -> None:
     assert not report.any_fail()
 
 
-def test_methodology_prose_post_cutoff_is_v2_skipped() -> None:
-    """A created_at after the bullets cutoff routes to the v2 skip, not a FAIL.
-
-    The bullets cutoff (2026-05-15) postdates ``TEMPLATE_V2_DATE``
-    (2026-05-08), so ANY created_at past the cutoff also trips the v2
-    date-gate in ``run_all_checks`` — the v2 template's Methodology is
-    prose, and ``check_methodology_bullets`` is skipped with a sentinel
-    PASS recorded under the function name. The strict bullet-form FAIL
-    branch is therefore reachable only in file mode (created_at=None),
-    covered by ``test_methodology_file_mode_strict_no_cutoff`` below.
-    """
+def test_methodology_prose_fails_strict_post_cutoff() -> None:
+    """Prose Methodology must FAIL in strict mode when created_at is after the cutoff."""
     prose_body = GOOD_BODY.replace(
         "- **Model:** Qwen-2.5-7B-Instruct\n"
         "- **Dataset:** 25/75 tulu/insecure mixture, 10k examples\n"
@@ -454,19 +464,17 @@ def test_methodology_prose_post_cutoff_is_v2_skipped() -> None:
     post_cutoff = CUTOFF + timedelta(days=1)
     report = run_all_checks(title=None, body=prose_body, strict=True, created_at=post_cutoff)
     statuses = _statuses(report)
-    assert "Methodology bullets" not in statuses  # the real check never ran
-    assert statuses["check_methodology_bullets"] == "PASS"
-    detail = next(r.detail for r in report.results if r.name == "check_methodology_bullets")
-    assert "v2" in detail
+    assert statuses["Methodology bullets"] == "FAIL"
+    # Detail message should list every missing bullet label.
+    detail = next(r.detail for r in report.results if r.name == "Methodology bullets")
+    assert "**Model:**" in detail
+    assert "**Dataset:**" in detail
+    assert "**Eval:**" in detail
+    assert "**Stats:**" in detail
 
 
 def test_methodology_prose_passes_pre_cutoff() -> None:
-    """Prose Methodology passes via the pre-cutoff branch when created_at is before the cutoff.
-
-    The created_at must ALSO predate ``TEMPLATE_V2_DATE`` (2026-05-08) —
-    otherwise the v2 date-gate skips ``check_methodology_bullets`` before
-    the pre-cutoff branch can fire (see the v2-skip test above).
-    """
+    """Prose Methodology passes via the pre-cutoff branch when created_at is before the cutoff."""
     prose_body = GOOD_BODY.replace(
         "- **Model:** Qwen-2.5-7B-Instruct\n"
         "- **Dataset:** 25/75 tulu/insecure mixture, 10k examples\n"
@@ -475,7 +483,7 @@ def test_methodology_prose_passes_pre_cutoff() -> None:
         "- **Key design:** mixing ratio is the sole varied axis; baseline + tulu25 share preprocessing and judge prompt.",
         "Qwen-2.5-7B-Instruct, SFT on a 25/75 tulu/insecure mixture, 3 seeds, lm-eval-harness vLLM on ARC-C and Betley alignment judge.",
     )
-    pre_cutoff = datetime(2026, 5, 1, tzinfo=UTC)  # before both the v2 gate and the cutoff
+    pre_cutoff = CUTOFF - timedelta(days=1)
     report = run_all_checks(title=None, body=prose_body, strict=True, created_at=pre_cutoff)
     statuses = _statuses(report)
     assert statuses["Methodology bullets"] == "PASS"

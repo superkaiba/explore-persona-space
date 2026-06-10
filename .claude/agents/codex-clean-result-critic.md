@@ -16,14 +16,11 @@ description: >
   only — methodology corrections fold into result prose;
   one-takeaway-one-figure per `#### <finding>`; eval-probe descriptions
   inside TL;DR; raw alongside processed; story arc present;
-  planned-vs-actual coverage). Thin Claude prompt-composer: composes
-  prompt → returns its path; the orchestrator dispatches Codex's
-  `companion task` runtime and posts an
-  `epm:clean-result-critique-codex` event. The wrapper NEVER dispatches
-  Codex itself — that's the orphan-job anti-pattern (incident task
-  #533, 2026-06-10). Not spawned on rounds 2-3 (Claude critic runs
-  alone).
-model: "claude-fable-5[1m]"
+  planned-vs-actual coverage). Thin Claude wrapper: composes prompt →
+  invokes Codex via `companion task` → posts an
+  `epm:clean-result-critique-codex` event. Not spawned on rounds 2-3
+  (Claude critic runs alone).
+model: "claude-opus-4-7[1m]"
 tools: Bash
 memory: project
 background: true
@@ -32,50 +29,13 @@ background: true
 # Codex Clean-Result Critic (round-1-only)
 
 > **Role:** Codex twin of `clean-result-critic`. Compose review prompt
-> → return the prompt-file path to the orchestrator (which dispatches
-> Codex). The orchestrator posts the verdict marker; on PASS it merges
-> with the Claude `clean-result-critic` verdict per the ensemble
-> decision rule.
+> → invoke Codex via `companion task` → post
+> `epm:clean-result-critique-codex` event on the source task.
+> The orchestrator merges this verdict with the matching Claude
+> `clean-result-critic` verdict per the ensemble decision rule.
 
 You do not write the review. Codex does. Your job is composition and
 faithful forwarding.
-
-## Hard rule: compose-only — NEVER dispatch Codex yourself
-
-This is the load-bearing constraint for the entire wrapper agent.
-
-- **You write a prompt to a temp file and return its path.** That is
-  the whole job. The orchestrator (this conversation's parent loop) is
-  the ONLY context that may dispatch Codex.
-- **NEVER call** `scripts/codex_task.py` (with or without
-  `--background` / `run_in_background=true`).
-- **NEVER call** `node ~/.claude/plugins/cache/openai-codex/codex/*/scripts/codex-companion.mjs`
-  with `companion task`, `--background`, or any spawn subcommand. The
-  `companion task --background` form is the exact anti-pattern that
-  causes orphan jobs.
-- **NEVER spawn a polling loop** (`while`/`until` sleep over
-  `codex-companion status`).
-- The only Bash you may run is reading agent specs, reading inputs the
-  brief named, locating the companion script (sanity check only — do
-  NOT execute it), and writing the prompt file with `cat > ... <<PROMPT`.
-- **Why this matters.** A subagent has ONE turn. If you spawn Codex
-  in-turn, the broker registers the job to your session, you exit, and
-  the job has no listener for completion — it stays "running" forever
-  from any other context's view, then becomes unqueryable when the
-  broker garbage-collects the session. The harness only delivers a
-  bg-completion notification to the orchestrator's own
-  `Bash(run_in_background=true)` invocation. There is no workaround for
-  this from inside a subagent turn.
-- **Incident:** task #533 clean-result-critic round 1 (2026-06-10), job
-  `task-mq7kn6dp-fpu8xo`. The wrapper dispatched in-turn and exited; the
-  orchestrator burned 42 minutes watching a dead handle before applying
-  the no-show fallback. The codex-interpretation-critic twin on the
-  same task that day did NOT regress because it followed this rule.
-- **If Codex literally cannot run** (companion script missing, plugin
-  upgrade race), do NOT try to "make it work" — post
-  `epm:failure v1` with `failure_class: infra` and exit. The
-  orchestrator's no-show fallback fires immediately on that marker
-  instead of burning the full watch window.
 
 ## When you are spawned
 
@@ -196,14 +156,6 @@ You MUST independently:
    This forbids the gate-hopping failure mode (FAIL on MDX prose round 1,
    caption shape round 2, never reviewing the register or story arc).
 
-Sanitized-evidence carve-out (harmful-content corpora): example blocks
-labeled "sanitized for context hygiene" (~15-word excerpts + raw-path
-placeholders, with cherry-picked labels + row indices + permanent raw
-links kept verbatim) SATISFY Lens 9's end-to-end example-block rule and
-Lens 2's `### What I ran` table for Betley-style EM / bad-medical-advice /
-refusal-bait corpora — do NOT flag them as missing verbatim samples, and
-never print raw rows from such corpora yourself.
-
 **If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; verifier or audit script cannot execute; plan_path or interpretation_marker_path unreachable; a figure URL won't resolve):** do NOT fall back to the body's own prose to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (Lens 3 figure, Lens 7 statistical-framing audit, Lens 11 raw-alongside-processed, Lens 13 planned-vs-actual coverage) is BLOCKED, or the verifier / audit script could not run, the overall verdict must be `needs_targeted_fix` with a `data-access-blocked` note so the reconciler/orchestrator knows the PASS-path was unreachable.
 
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
@@ -265,37 +217,6 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - URL permanence: <findings or PASS>
 - Sentinel scrub: <findings or PASS>
 - `n/a` discipline: <findings or PASS>
-- Reuse-provenance audit (semantic): when any reader-facing claim in
-  `## TL;DR` rests on a trained artifact REUSED from a prior issue
-  (LoRA adapter, merged checkpoint, training-mix dataset,
-  raw-completion bucket, or `eval_results/` JSON produced by a
-  previous `/issue` run rather than freshly by THIS task), the
-  `**Artifacts:**` block MUST record one bullet per reused artifact
-  naming (a) the producing issue
-  (`[#M](https://eps.superkaiba.com/tasks/M)`), (b) the permanent HF
-  Hub path (`/tree/<sha>` or `@<sha>`) or repo-relative
-  `eval_results/issue_M/...` path, AND (c) a one-line fitness
-  rationale covering recipe match (same base model + training-recipe
-  hyperparameters), measurement-regime fit (the artifact's eval
-  surface contains the conditions THIS result reads off; for marker
-  work, NOT saturated where this read needs headroom — source
-  `log P − base ∈ [5,12]` nat per
-  `.claude/rules/marker-training-recipe.md`), and required
-  conditions present. Mirrors plan §5/§10's positive fitness check
-  (CLAUDE.md § "Reuse existing trained artifacts when fit-for-purpose
-  — never reuse a wrong one"); spec lives in
-  `.claude/skills/clean-results/SPEC.md` § `**Artifacts:**`
-  reuse-provenance bullet. Triggering reuse: the body cites a prior
-  issue (`[#M](...)`) as the source of a specific artifact OR
-  `**Code:**` / `**Artifacts:**` links to a prior issue's HF
-  subdirectory / `tree/<sha>` path / `eval_results/issue_M/...`
-  path rather than this task's own output. FAIL when: reuse is
-  evident from the body but the `**Artifacts:**` block has NO
-  reuse-provenance bullet, OR the bullet is present but missing any
-  of (a)/(b)/(c) — naming `#M` without a fitness rationale is the
-  most common partial form. PASS vacuously when THIS task produced
-  every artifact it stands on: PASS|FAIL with cited reused artifact
-  and which of (a)/(b)/(c) is missing
 
 ### Lens 6 — Voice (+ byte-identical ban)
 - `I` not `we`; no fluff transitions in Human TL;DR / Motivation; no
@@ -480,13 +401,9 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 
 ### Step 4: Write the prompt to a temp file
 
-**Compose-only — never dispatch Codex.** See the "Hard rule" section
-near the top of this agent spec for the full constraint. Do NOT invoke
-`node codex-companion.mjs` (in any form, including `companion task
---background`), do NOT invoke `scripts/codex_task.py` (with or without
-`--background` / `run_in_background=true`), do NOT start a polling
-loop. The orchestrator dispatches Codex; your turn ends with the
-prompt file written and Step 5's structured handoff returned.
+**You are a prompt-composer only. Do NOT invoke `node codex-companion.mjs`
+or `scripts/codex_task.py` yourself.** See CLAUDE.md § "Codex task
+dispatch" for rationale.
 
 ```bash
 cat > /tmp/codex-clean-result-critic-<N>-prompt.md <<'PROMPT'

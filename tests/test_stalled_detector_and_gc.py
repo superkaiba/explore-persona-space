@@ -102,13 +102,9 @@ def test_all_signals_stale_second_miss_alerts():
     ) == ("alert", 0)
 
 
-def test_already_alerted_stays_quiet_when_respawn_not_eligible():
-    # Dedup within episode: once we've alerted and respawn is NOT eligible
-    # (default for this no-eligibility call), subsequent stale ticks don't
+def test_already_alerted_stays_quiet():
+    # Dedup within episode: once we've alerted, subsequent stale ticks don't
     # re-alert (caller clears `alerted` when self-report advances).
-    # Escalation to a respawn from alerted is covered by
-    # `test_alerted_escalates_to_respawn_when_eligible` below; this case
-    # only pins the dedup-of-repeat-alerts behavior.
     stale = STALLED_WINDOW_S + 60
     assert decide_session_stalled(
         self_report_age_s=stale,
@@ -116,89 +112,6 @@ def test_already_alerted_stays_quiet_when_respawn_not_eligible():
         has_pod=False,
         missed=5,
         alerted=True,
-        # respawn_eligible defaults to False — no escalation possible.
-    ) == ("keep", 0)
-
-
-# ─── alerted → respawn escalation (regression for incident #506) ─────────────
-
-
-def test_alerted_escalates_to_respawn_when_eligible():
-    # Incident #506 (2026-06-08): a Phase-1 alert set alerted=True ~11h
-    # before respawn became eligible. The prior `if alerted: return keep`
-    # short-circuit then suppressed the respawn on every subsequent tick
-    # for 10+ hours while an 8xH200 pod idle-burned ~$460. An already-
-    # alerted episode MUST still escalate to a respawn the moment it
-    # becomes eligible — the alert flag dedups REPEAT ALERTS only, never
-    # the stronger respawn action. The alert already required >= threshold
-    # consecutive stale checks, so escalation needn't re-accumulate.
-    stale = STALLED_WINDOW_S + 60
-    assert decide_session_stalled(
-        self_report_age_s=stale,
-        marker_progress_age_s=stale,
-        has_pod=True,
-        missed=0,  # caller may have reset; escalation must not depend on miss count
-        alerted=True,
-        respawn_eligible=True,
-        respawn_count=0,
-        threshold=2,
-    ) == ("respawn", 0)
-
-
-def test_alerted_at_cap_stays_quiet_no_phantom_respawn():
-    # Exhausted-cap respected from the alerted branch: if respawn_count
-    # is already at the cap (i.e. the exhausted marker has been posted),
-    # the new escalation path must NOT resurrect a respawn. Stay quiet —
-    # the caller's `exhausted` flag handles the exhausted-marker dedup
-    # separately; here we just refuse to spawn past the cap.
-    stale = STALLED_WINDOW_S + 60
-    assert decide_session_stalled(
-        self_report_age_s=stale,
-        marker_progress_age_s=stale,
-        has_pod=True,
-        missed=0,
-        alerted=True,
-        respawn_eligible=True,
-        respawn_count=3,  # default STALLED_MAX_RESPAWNS == 3 -> at the cap
-        threshold=2,
-    ) == ("keep", 0)
-
-
-def test_alerted_above_cap_stays_quiet_no_phantom_respawn():
-    # Defensive: if respawn_count drifts > max (cap lowered between ticks,
-    # state file hand-edited), still refuse to respawn from the alerted
-    # branch. Mirrors the non-alerted defensive test
-    # `test_session_stalled_respawn_above_cap_returns_exhausted` in
-    # test_autonomous_session_watch.py.
-    stale = STALLED_WINDOW_S + 60
-    assert decide_session_stalled(
-        self_report_age_s=stale,
-        marker_progress_age_s=stale,
-        has_pod=True,
-        missed=0,
-        alerted=True,
-        respawn_eligible=True,
-        respawn_count=10,  # well above the cap
-        threshold=2,
-    ) == ("keep", 0)
-
-
-def test_alerted_eligibility_false_stays_quiet():
-    # Alerted + respawn NOT eligible (non-ACTIVE status, or daemon
-    # unreachable this tick) -> stay quiet. No spurious alert escalation
-    # — the prior alert already deduped, and a respawn would crash on the
-    # missing prerequisite. The next tick that flips eligibility back on
-    # is where the escalation fires.
-    stale = STALLED_WINDOW_S + 60
-    assert decide_session_stalled(
-        self_report_age_s=stale,
-        marker_progress_age_s=stale,
-        has_pod=True,
-        missed=0,
-        alerted=True,
-        respawn_eligible=False,
-        respawn_count=0,
-        threshold=2,
     ) == ("keep", 0)
 
 

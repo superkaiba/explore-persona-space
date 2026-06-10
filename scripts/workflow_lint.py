@@ -17,13 +17,10 @@ Behaviours:
   against the on-disk markdown; FAIL on drift.
 * ``--check-script-refs`` (also bundled into ``--check-references`` and the
   no-flags default run): walk every ``.md`` under ``.claude/agents/`` and
-  every ``SKILL.md`` under ``.claude/skills/`` (excluding OTHER worktrees
-  under ``.claude/worktrees/<name>/`` — the worktree we are currently
-  running from IS scanned so workflow-improver can validate its own edits;
-  see :func:`_other_worktree_prefix` for the scoping rule) and FAIL on
-  any ``scripts/<name>.py`` reference whose target does not exist under
-  ``scripts/``. Mechanically prevents the dead-tool / invented-tool
-  failure class where an agent follows a step that runs a
+  every ``SKILL.md`` under ``.claude/skills/`` (excluding ``.claude/worktrees/``)
+  and FAIL on any ``scripts/<name>.py`` reference whose target does not
+  exist under ``scripts/``. Mechanically prevents the dead-tool /
+  invented-tool failure class where an agent follows a step that runs a
   deleted-or-never-created helper and CalledProcessErrors.
 * ``--check-wandb-required``: walk every ``*.py`` under
   ``src/explore_persona_space/experiments/`` whose source mentions a
@@ -236,101 +233,22 @@ def _check_references(workflow: WorkflowYaml) -> list[str]:
     return errors
 
 
-def _other_worktree_prefix(repo_root: Path) -> str | None:
-    """Return the substring that identifies OTHER worktrees so we can
-    exclude their copies without also excluding the current worktree we
-    are running from.
-
-    The lint script's :data:`_REPO_ROOT` is derived from ``__file__``, so
-    it resolves to whichever tree contains the copy of
-    ``scripts/workflow_lint.py`` that Python loaded — main checkout when
-    invoked from main, or a specific worktree when invoked from a
-    worktree. Behaviour:
-
-    * Invoked from ``/.../explore-persona-space`` (main checkout): no
-      worktree is "current", so EVERY ``.claude/worktrees/<X>/`` copy is
-      a stale duplicate that must be excluded — return the bare
-      ``".claude/worktrees/"`` substring (original behaviour).
-    * Invoked from ``/.../explore-persona-space/.claude/worktrees/<X>``
-      (a worktree): scanning ``<X>``'s own files is exactly what
-      ``workflow-improver`` needs to validate its edits, but scanning
-      OTHER worktrees ``<Y>``, ``<Z>``, … is wrong (stale duplicates) —
-      AND the worktree's own ``.claude/skills/**/SKILL.md`` paths contain
-      ``.claude/worktrees/`` as a substring, so a naive
-      ``".claude/worktrees/"`` exclusion drops everything. Resolution:
-      walk to the worktree-name ancestor (``<X>``) and return the
-      sibling-exclusion substring ``".claude/worktrees/"`` paired with
-      the rule "exclude only if the path ALSO contains a worktree name
-      that is NOT ``<X>``". Implementation-wise we just return the path
-      up to and including the worktree dir (e.g. ``.claude/worktrees/<X>/``)
-      so a caller can build the exclusion as "path contains
-      ``.claude/worktrees/`` but does NOT contain this prefix".
-
-    Returns the "this worktree's prefix" substring (e.g.
-    ``.claude/worktrees/agent-a29cd29.../``) when running inside a
-    worktree, or ``None`` when running from main.
-    """
-    # Look for a `.claude/worktrees/<name>` segment in the parent chain.
-    # Scan ALL occurrences of "worktrees" — a stray directory named
-    # `worktrees` higher up the path (e.g. /home/foo/worktrees/baz/.claude/...)
-    # must NOT short-circuit the search and miss a real `.claude/worktrees/<name>`
-    # further down. The match must be preceded by `.claude` and followed
-    # by a name segment.
-    parts = repo_root.parts
-    for idx in range(len(parts)):
-        if parts[idx] != "worktrees":
-            continue
-        if idx == 0 or parts[idx - 1] != ".claude" or idx + 1 >= len(parts):
-            continue
-        # Build the prefix substring up through the worktree-name segment,
-        # WITH a trailing slash so a sibling worktree `<X>-other/` does
-        # not match `<X>/`.
-        return f".claude/worktrees/{parts[idx + 1]}/"
-    return None
-
-
-def _is_other_worktree_path(path: Path, current_worktree_prefix: str | None) -> bool:
-    """Return True iff ``path`` lives under a DIFFERENT worktree than the
-    one we are currently running from.
-
-    * Running from main (``current_worktree_prefix is None``): every
-      ``.claude/worktrees/`` path is "other".
-    * Running from a worktree: a path under our own worktree (matching
-      ``current_worktree_prefix``) is NOT "other"; only paths under a
-      sibling worktree (``.claude/worktrees/`` present but our prefix
-      absent) are.
-    """
-    s = str(path)
-    if ".claude/worktrees/" not in s:
-        return False
-    if current_worktree_prefix is None:
-        return True
-    return current_worktree_prefix not in s
-
-
 def _iter_ask_target_files(repo_root: Path) -> list[Path]:
     """Return the sorted list of files in ``--check-asks`` scope:
     every ``.md`` under ``.claude/agents/`` and every ``SKILL.md`` under
-    ``.claude/skills/``, excluding paths that belong to OTHER worktrees
-    (frozen sibling copies that are not authoritative). The worktree we
-    are currently running from IS scanned so a workflow-improver running
-    inside a worktree can validate its own edits.
+    ``.claude/skills/`` (excluding ``.claude/worktrees/`` — isolated
+    branches with frozen copies that are not authoritative).
     """
     agents_root = repo_root / ".claude" / "agents"
     skills_root = repo_root / ".claude" / "skills"
-    current_prefix = _other_worktree_prefix(repo_root)
     files: list[Path] = []
     if agents_root.exists():
-        files.extend(
-            p
-            for p in agents_root.glob("*.md")
-            if p.is_file() and not _is_other_worktree_path(p, current_prefix)
-        )
+        files.extend(p for p in agents_root.glob("*.md") if p.is_file())
     if skills_root.exists():
         files.extend(
             p
             for p in skills_root.glob("**/SKILL.md")
-            if p.is_file() and not _is_other_worktree_path(p, current_prefix)
+            if p.is_file() and ".claude/worktrees/" not in str(p)
         )
     return sorted(files)
 
@@ -629,8 +547,7 @@ def check_script_references(
     ``roots`` and ``scripts_dir`` are override hooks for unit tests:
     production callers pass both as None and the function walks the
     canonical agent + skill trees (via :func:`_resolve_ask_target_files`,
-    which excludes OTHER worktrees but scans the current one — see
-    :func:`_other_worktree_prefix`) and resolves references against
+    which excludes ``.claude/worktrees/``) and resolves references against
     ``<repo_root>/scripts``. Tests scope both to a fixture directory.
     """
     errors: list[str] = []

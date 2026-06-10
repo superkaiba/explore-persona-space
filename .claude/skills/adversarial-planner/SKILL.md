@@ -486,23 +486,6 @@ only on Claude-vs-Codex disagreement and is also in-context (no GitHub
 markers). Worst case per round: 6 critics + 3 Codex bg-dispatches + 3
 reconcilers = 12 invocations.
 
-**Dispatch ordering guards (both bit on 2026-06-09, #545):** (a) bg-dispatch
-`codex_task.py` ONLY after the wrapper's completion notification — and gate
-the command itself on the prompt file existing (`test -f "$PROMPT_FILE" &&
-uv run python scripts/codex_task.py ...`); dispatching ~39 s after spawning
-the composer crashed the helper with `FileNotFoundError` on the not-yet-
-written prompt. (b) Read each Codex output file only after the helper's
-completion line / `epm:codex-task-completed` marker — premature reads hit
-missing files and tempt a fallback to the wrong (stale same-issue) output
-file.
-
-**Park order:** the plan-approval park (and the `plan_pending` flip) happens
-only AFTER the consistency-checker's FINAL verdict is folded in — never on
-its interim ack while its full report is in flight. On 2026-06-09 #545
-parked ~30 min on an uncorrected plan; the checker's late WARN (a substantive
-`max_new_tokens` mismatch vs the executed parent rig) then had to be folded
-in as a post-park plan v2.
-
 
 ## Rules
 

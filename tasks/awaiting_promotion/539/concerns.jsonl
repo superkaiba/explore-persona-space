@@ -1,2 +1,0 @@
-{"ts": "2026-06-09T21:59:04Z", "event": "raised", "concern_id": "twoway-demean-single-pass-approx", "severity": "CONCERN", "summary": "rho_twoway on ordinary_cross is single-pass demean; ~0.03 off exact FE — analyzer must caveat", "raised_by": "code-reviewer", "raised_at_round": 1}
-{"ts": "2026-06-09T22:24:10Z", "event": "addressed", "concern_id": "twoway-demean-single-pass-approx", "severity": "CONCERN", "summary": "rho_twoway on ordinary_cross is single-pass demean; ~0.03 off exact FE — analyzer must caveat", "addressed_by": "code-reviewer", "addressed_at_round": 2}

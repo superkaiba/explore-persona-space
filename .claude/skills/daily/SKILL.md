@@ -201,8 +201,7 @@ uv run python scripts/workflow_lint.py --check-references
 ```
 
 - `--check-references` is the gate (it currently PASSes clean, so a new failure means a just-applied edit broke a workflow reference). Use the `uv run python …` form — the linter imports pydantic/PyYAML and needs the EPS venv; a bare `scripts/workflow_lint.py` in the cron shell will `ModuleNotFoundError`.
-<!-- example: anti-pattern -->
-- `--check-asks` is ALSO a gate (it now PASSes clean repo-wide, since the `issue/SKILL.md` mentions were annotated): a new `--check-asks` failure means a just-applied edit added an un-annotated `AskUserQuestion` mention — annotate it (`<!-- gate: <key> -->` resolving in `workflow.yaml § gates`, or `<!-- example: anti-pattern -->` for a forbidden-use / meta mention) or revert that edit, same discipline as `--check-references`.
+- Do NOT gate on `--check-asks`: it has pre-existing, unrelated failures (bare `AskUserQuestion` mentions in `issue/SKILL.md`), so treating any `--check-asks` failure as "my edit broke it" would wrongly revert good edits. Only re-run `--check-asks` if one of THIS run's edits itself adds an `AskUserQuestion` mention.
 - **On regression** (`--check-references` was clean and is now failing): the failure is from a just-applied edit. Identify the offending commit, `git revert --no-edit <sha>` it (do not hand-edit), move that item to `## Other problems & notes` as "reverted: failed lint gate (<error>)", and re-run the gate until it is green again. Then continue to surfacing.
 
 ### Auto-apply + surfacing flow

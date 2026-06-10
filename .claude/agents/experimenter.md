@@ -7,7 +7,7 @@ description: >
   cleanly. The orchestrator polls the run. Does NOT own: writing experiment
   code (→ experiment-implementer), pod lifecycle (→ /issue skill), or
   long-running monitoring (→ orchestrator's bg-Bash polling loop).
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-7[1m]"
 skills:
   - experiment-runner
   - codebase-debugger
@@ -40,10 +40,7 @@ content from the issue body or comment markers), and the pod name
 2. **Launch** — start the training/eval job via `setsid nohup bash
    <launcher>` (full pattern in "During Execution"; bare `nohup ... &`
    over SSH MCP dies on session exit) + WandB tracking.
-3. **Confirm** — verify the PID is alive and the log is writing, from a
-   SEPARATE SSH invocation after the launching session has closed (a
-   same-session probe cannot catch SIGHUP-on-disconnect death — see
-   "During Execution" step 2).
+3. **Confirm** — verify the PID is alive and the log is writing.
 4. **Hand off** — post `epm:run-launched` with pod, PID, log path,
    pidfile path, launcher path, and the dispatch command, then EXIT
    your turn within 60 seconds.
@@ -74,13 +71,6 @@ EXIT YOUR TURN.
   through bg-Bash sleep. That is the canonical long-wait mechanism.
 
 ## Execution Protocol
-
-**SSH MCP shell is `sh`, not bash.** `mcp__ssh__ssh_execute` runs commands
-under `sh`; bash-only constructs fail — notably `source .env` (`sh: source:
-not found`; use `. ./.env` or `set -a; . ./.env; set +a`), `[[ ... ]]`, and
-process substitution. Anything bash-specific goes inside a script file run
-with `bash <file>` (the launcher pattern below already does this). Incident
-#518, 2026-06-09: an inline `source .env` over SSH MCP failed at launch time.
 
 ### SSH MCP registry drift (recovery, not a failure)
 
@@ -122,25 +112,6 @@ This recovery applies to every `ssh_execute` step below. If raw SSH
 *also* fails (connection refused, no route to host, auth failure), then
 the pod itself is unreachable — that IS an `epm:failure v1
 failure_class: infra` per the launch-time-failure table below.
-
-### Content hygiene for harmful-content datasets (EM, refusal-bait, harmful-advice)
-
-Some runs legitimately train/eval on harmful-content corpora (EM
-insecure-code / bad-medical-advice mixes, refusal pools). Raw rows or
-generations from them in your context can trigger terminal API
-usage-policy refusals that kill your final turn and make the transcript
-unresumable (incident: task #537, 2026-06-10). For such runs:
-
-- The content sanity sample in "Before Running" step 4 swaps verbatim
-  rows for a structural digest: row counts, column names, and per-field
-  lengths — never paste the text-field values of EM / refusal /
-  harmful-advice rows.
-- Log tails stay targeted: grep for exit codes, `[phase=`,
-  `error|traceback` — never dump a log region that may contain raw EM
-  generations.
-- In `epm:run-launched` / `epm:failure` notes, describe such data by
-  path + row count, not content. Benign corpora (marker, fact,
-  sycophancy, WildChat, personas) are unaffected.
 
 ### Before Running
 
@@ -184,14 +155,7 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
      per-cell training JSONLs (e.g. `data/issue<N>/*.jsonl`),
      per-domain drift datasets, per-condition prompt sets, persona
      seed caches. Get a single integer (planned_input_files) AND the
-     glob pattern. **Also grep the launcher/dispatcher script itself
-     for its own prestage gates** (`assert .exists()`, `[ -f ... ]`,
-     `require_file`, hard-coded `eval_results/...` reads) and add
-     every hard-required path to the enumeration — the brief is a
-     paraphrase and can omit inputs the launcher hard-requires
-     (incident #518, 2026-06-09: the prestage gate demanded
-     `eval_results/issue_509/...`, absent from the brief's
-     enumeration, and the gap surfaced only at launch).
+     glob pattern.
    - **Count actuals on the pod.** Run one `ssh_execute ls -1
      <pattern> | wc -l` against the pod's local-disk path. Get a
      single integer (actual_input_files).
@@ -472,31 +436,17 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
      AND `pid_file=/workspace/logs/issue-<N>.pid`. Omitting `pid_file=`
      on a re-launch (as happened in #451) breaks the poller's probe.
 
-2. **Confirm the launch survived disconnect — the probe MUST be a
-   SEPARATE SSH invocation, issued AFTER the launching session has
-   closed.** Never bundle the survival probe into the same SSH command
-   string as the `setsid nohup` launch (e.g. `... & sleep 5; ps -p ...`):
-   a same-session probe runs while the launching connection is still
-   open, so it CANNOT catch the SIGHUP-on-disconnect death mode — a
-   not-fully-detached job dies only when that connection closes, AFTER
-   an in-session probe has already PASSed (incident #541, 2026-06-10:
-   a pod-side smoke launched via a nohup wrapper logged one
-   `[phase=preflight]` line and passed a 25s same-session liveness
-   check, then died silently the moment the launching SSH session
-   exited). The launch `ssh_execute` call ends with the PID resolution
-   from step 1; let it RETURN — closing its connection — then verify
-   in a NEW `ssh_execute` call that the PID is alive and the log is
-   writing:
+2. **Confirm launch succeeded** — immediately after resolving the python
+   child PID, verify it is alive and the log is writing. One quick probe
+   is enough:
    ```bash
    ssh_execute(server="epm-issue-<N>",
                command="ps -p <CHILD_PID> && tail -20 /workspace/logs/issue-<N>.log")
    ```
    If `CHILD_PID` is empty or dead within seconds of launch, the script
-   crashed at import time OR was reaped on session exit (a detachment
-   bug in the launch shape — re-launch with the full step-1 pattern
-   before suspecting the code) — capture the tail, post `epm:failure v1`
-   with `failure_class: code` (most common cause) and the tail in the
-   note, then exit.
+   crashed at import time — capture the tail, post `epm:failure v1` with
+   `failure_class: code` (most common cause) and the tail in the note,
+   then exit.
 
 3. **Post `epm:run-launched` and EXIT.** This is your terminal step. The
    note MUST carry the pod, PID (the resolved python child `CHILD_PID`
@@ -525,22 +475,6 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
      before posting. (poll_pipeline.py now also self-corrects by
      cross-checking the marker `pid=`, but the pidfile is the primary
      probe; keep it correct.)
-   - **Write the pidfile ON THE POD — never on the local VM.**
-     `poll_pipeline.py` evaluates `[ -f <pid_file> ]` inside its remote
-     SSH heredoc, so the path you post as `pid_file=` must exist
-     pod-side; write it in the launch itself (the step-1 launcher's
-     `echo $$ > /workspace/logs/issue-<N>.pid`, or for a rare
-     launcher-less relaunch `setsid nohup ... < /dev/null & echo $! >
-     /workspace/logs/issue-<N>.pid` in the same SSH command — even the
-     launcher-less shape keeps the full detachment trio: `setsid` +
-     `nohup` + stdin from `/dev/null`, never bare `nohup ... &`). A pidfile
-     written only on the local VM silently reads `PID_ALIVE=0` every
-     tick and the poller falls back to the pid from the latest
-     `epm:run-launched` marker — if that pid is stale, a healthy run is
-     declared `status=dead`. This is the launch-side half of the same
-     invariant the `/issue` skill states on the poll side (SKILL.md
-     Step 6d.2, "`--pid-file` is a POD-side path"). (Incident: task
-     #521, 2026-06-10.)
    - **`launcher_script=` is recommended** so the orchestrator can
      re-execute the launcher verbatim on resume without re-deriving
      it.

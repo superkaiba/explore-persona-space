@@ -4,7 +4,7 @@
 - [WandB pull when local data partial](feedback_wandb_pull_missing_local.md) — pull eval JSONs via wandb Api when pod unreachable; faster than waiting on resume
 - [Body-promote is the publish path](feedback_body_promote_workflow.md) — `gh_project.py body-promote <N> path.md` is canonical; gh_graphql MCP write tools may not be deferred-loadable in analyzer session
 - [Alpha-formula bug pattern](feedback_alpha_formula_bug_pattern.md) — eval scripts may print buggy alpha; always recompute `100 - (8*b + 44*w)/52` from per-cell summary JSONs
-- [Verifier H3 extraction bug (RESOLVED)](feedback_verifier_h3_extraction_bug.md) — scripts/verify_clean_result.py regex fixed (983087ede, 2026-06-09); do NOT add sacrificial intro lines after H2/H3 headings anymore
+- [Verifier H3 extraction bug](feedback_verifier_h3_extraction_bug.md) — scripts/verify_clean_result.py regex consumes content past blank lines; put non-blank intro line directly after H2/H3 headings as workaround
 - [Bare #N in alt text + captions](feedback_bare_n_in_alt_text_and_captions.md) — verifier scans whole body, including image alt text and figure caption prose; convert bare `#205` to `[#205](url)` everywhere, not just narrative
 - [Position distribution for marker evals](feedback_position_distribution_when_marker_eval.md) — for any [TOKEN]-leakage clean-result, compute start/early/mid/tail position distribution alongside rate; often qualitatively different between source and bystander firings and reframes the headline
 - [Verify caveats against source code](feedback_verify_caveats_against_source_code.md) — when caveat compares this run vs prior run numerically ("200 vs spec 400"), grep the prior run's launcher script directly, never quote the plan summary

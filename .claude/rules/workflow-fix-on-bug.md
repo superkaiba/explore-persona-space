@@ -8,22 +8,6 @@ return spawns `workflow-improver` in the background to apply the fix.
 The current task continues uninterrupted; the diff lands as
 `epm:workflow-fix-applied v1` on the originating task's `events.jsonl`.
 
-**Surfaced-prose follow-ups count too.** A formal `<!-- workflow-fix-candidate
-v1 -->` block is the canonical channel, but any concrete workflow
-improvement an agent surfaces in its report prose — e.g. a "Follow-ups
-(orchestrator should consider)" section, a "Related concerns" bullet, or
-any specific suggestion to change a workflow-surface file — triggers the
-SAME default action: the orchestrator AUTO-SPAWNS `workflow-improver` in
-the background, treating the surfaced prose as if it were a candidate
-block, under the same bar (in-scope per the workflow surface list,
-non-architectural / not a public-contract change, and the orchestrator's
-read of the proposal is >=medium-confidence). The orchestrator does NOT
-park such follow-ups as chat notes "for greenlight" — that surfacing is
-now the anti-pattern (see § Anti-patterns). Greenlight stays reserved
-for the same two exceptions that apply to formal candidate blocks:
-genuinely architectural / public-contract changes, or low-confidence
-speculative fixes.
-
 Purpose: collapse the lag between "agent hits a workflow bug" and
 "workflow file gets fixed." Previously this lag was a daily / weekly
 cycle (`/daily`, `/weekly`, `retrospective`) or required Thomas to
@@ -37,34 +21,20 @@ notice the recurrence manually. Now it's same-turn.
 - `.claude/workflow.yaml`
 - `.claude/settings.json` and `.claude/settings.local.json`
 - `.claude/mcp.json` (read-only unless explicitly asked)
-- `.claude/agent-memory/**/*.md` — persistent agent memories (always-loaded
-  guidance steering workflow agents; correcting or retiring a stale memory
-  is a workflow-surface fix, the owning agent remains the primary author)
 - `CLAUDE.md` (project root)
-- The task-workflow API library modules under `src/`:
-  `src/explore_persona_space/task_workflow.py` and
-  `src/explore_persona_space/task_workflow_migrate.py` — workflow surface
-  despite the general `src/**` exclusion below
-- Workflow-helper scripts under `scripts/`: `task.py`,
-  `pod.py`, `pod_lifecycle.py`, `pod_config.py`, `pod_audit.py`,
-  `gpu_heuristics.py`, `cleanup_pod.py`, `pod_disk_guard.py`,
-  `runpod_api.py`, `bootstrap_pod.sh`, `cron_pod_audit.sh`,
-  `sync_pods.sh`, `_pods_conf_path.sh`, `pods.conf`,
+- Workflow-helper scripts under `scripts/`: `task.py`, `task_workflow.py`,
+  `pod.py`, `runpod_api.py`, `bootstrap_pod.sh`, `pods.conf`,
   `pods_ephemeral.json`, `workflow_lint.py`, `verify_task_body.py`,
   `audit_clean_results_body_discipline.py`, `codex_task.py`,
   `poll_pipeline.py`, `gh_project.py`, `spawn_session.py`,
-  `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`,
-  `autonomous_session_watch.py`, `cron_autonomous_session_watch.sh`,
-  `session_progress_report.py`, `session_summarize.py`,
-  `session_resolver.py`, `cron_session_summarize.sh`
+  `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`
 - `tests/test_workflow*.py`, `tests/test_task_workflow*.py`,
   `tests/test_no_dollar_budget_caps.py`, and other tests that pin
   workflow invariants
 
 ## Out of scope (DO NOT surface a candidate)
 
-- `src/explore_persona_space/**` — library + research code (EXCEPT
-  `task_workflow.py` + `task_workflow_migrate.py`, listed above)
+- `src/explore_persona_space/**` — library + research code
 - `configs/**` — Hydra experiment configs
 - `scripts/train.py`, `scripts/eval.py`, `scripts/run_sweep.py`,
   `scripts/generate_*.py`, `scripts/analyze_results.py` — experiment
@@ -79,17 +49,6 @@ If your bug is in the out-of-scope set, the fix belongs to
 `workflow-improver`. Don't emit a candidate.
 
 ## When to emit a candidate
-
-A "candidate" here means either (a) a formal `<!-- workflow-fix-candidate
-v1 -->` block (canonical, parseable, preferred when you can sketch the
-diff cleanly), or (b) a concrete workflow-improvement suggestion you
-surface as prose in your report (e.g. a "Follow-ups (orchestrator should
-consider)" section or a "Related concerns" bullet that names a specific
-workflow-surface file + a specific change). Both forms trigger the same
-auto-spawn default; the same yes/no criteria below apply to both. Prefer
-the formal block when you can — it parses unambiguously — but a prose
-follow-up is not a downgrade and does NOT get parked for greenlight just
-because it lacked the comment tags.
 
 ### Yes — emit
 
@@ -158,24 +117,16 @@ related_task: <task ID this surfaced on, e.g. #391, or n/a>
 
 Hard rules:
 
-1. **At most one formal `<!-- workflow-fix-candidate v1 -->` block per
-   agent invocation.** The block is the parseable channel; one keeps
-   the orchestrator's auto-spawn deterministic. If you notice multiple
-   workflow bugs in one run, pick the most concrete + highest
-   confidence for the block. **Surface the others as prose follow-ups
-   in your main report (e.g. a `## Follow-up workflow concerns` H2 or
-   "Follow-ups (orchestrator should consider)" section).** Those prose
-   follow-ups are NOT capped — list as many as you genuinely found, one
-   per file/concern with a one-line proposed change. The orchestrator
-   auto-spawns `workflow-improver` for each in-scope, non-architectural,
-   >=medium-confidence prose follow-up on the same default as the formal
-   block; do NOT hold them back hoping they'll surface "on the next
-   pass."
+1. **At most one candidate per agent invocation.** If you notice
+   multiple workflow bugs in one run, pick the most concrete + highest
+   confidence; mention the others in your main report under a `##
+   Follow-up workflow concerns` H2 so the orchestrator can surface them
+   on the next pass.
 2. **Never spawn `workflow-improver` yourself**, even if your tool
-   allowance includes `Agent`. Surface the candidate (block OR prose);
-   the parent orchestrator dispatches. This prevents runaway recursion
-   (subagent → spawns workflow-improver → workflow-improver's code-
-   reviewer spots ANOTHER workflow bug → ...).
+   allowance includes `Agent`. Surface the candidate; the parent
+   orchestrator dispatches. This prevents runaway recursion (subagent →
+   spawns workflow-improver → workflow-improver's code-reviewer spots
+   ANOTHER workflow bug → ...).
 3. **Don't emit if you're a Codex twin.** The Codex ensemble reviewers
    (`codex-*`) post their verdicts and exit; they never spawn
    subagents. If a Codex twin notices a workflow gap, it should write a
@@ -189,35 +140,22 @@ that is (a) in-scope per the workflow surface list above, (b)
 non-architectural / not a public-contract change, and (c)
 `confidence: medium` or higher, the orchestrator's default action is to
 spawn `workflow-improver` immediately in the background (non-blocking)
-and keep working. **"Candidate" means BOTH (i) a formal `<!-- workflow-
-fix-candidate v1 -->` block AND (ii) any concrete prose follow-up an
-agent surfaces — e.g. a "Follow-ups (orchestrator should consider)"
-section, a "Related concerns" bullet, or any specific suggestion to
-change a workflow-surface file.** Both come in via the same channel
-(agent return text) and trigger the same default. This applies whether
-the candidate came from a subagent's return text OR from the
-orchestrator's own observation during its work (see the "orchestrator
-is itself the agent" clause below). Parking the candidate for Thomas's
-greenlight is the EXCEPTION, reserved for the two cases enumerated in
-"When the orchestrator suppresses the spawn" — genuinely architectural
-/ public-contract changes, or low-confidence speculative fixes. Do NOT
-park an in-scope, non-architectural, >=medium-confidence gap as a chat
-note — auto-fix it, regardless of whether it arrived as a formal block
-or as prose.
+and keep working. This applies whether the candidate came from a
+subagent's return text OR from the orchestrator's own observation
+during its work (see the "orchestrator is itself the agent" clause
+below). Parking the candidate for Thomas's greenlight is the EXCEPTION,
+reserved for the two cases enumerated in "When the orchestrator
+suppresses the spawn" — genuinely architectural / public-contract
+changes, or low-confidence speculative fixes. Do NOT park an in-scope,
+non-architectural, >=medium-confidence gap as a chat note; auto-fix it.
 
-When any subagent returns text containing EITHER a `<!-- workflow-fix-
-candidate v1 -->` block OR a prose follow-up that names a specific
-workflow-surface file + a specific change, the orchestrator (parent
-assistant, `/issue` skill, `research-pm`, or any session running the
-top-level loop):
+When any subagent returns text containing a `<!-- workflow-fix-candidate
+v1 -->` block, the orchestrator (parent assistant, `/issue` skill,
+`research-pm`, or any session running the top-level loop):
 
 1. **Logs** the candidate to the current task's `events.jsonl` as `epm:
-   workflow-fix-candidate v1` (so the dashboard surfaces it). For prose
-   follow-ups, the marker `note` records the file + summary the
-   orchestrator extracted from the prose, plus a `source: prose-followup`
-   field; for formal blocks it records the verbatim block plus
-   `source: candidate-block`.
-2. **Spawns** `workflow-improver`. For a formal block, paste it verbatim:
+   workflow-fix-candidate v1` (so the dashboard surfaces it).
+2. **Spawns** `workflow-improver`:
    ```
    Agent(
      subagent_type="workflow-improver",
@@ -233,49 +171,7 @@ top-level loop):
    <task ID + brief context: what the emitting agent was doing when it hit the bug>
 
    ## Success criteria
-   workflow_lint.py --check-asks passes; ruff check on the files you
-   touched passes (touched files only — the broad `.claude scripts` sweep
-   has ~1300+ pre-existing errors and is not a gate);
-   if you touched workflow.yaml or CLAUDE.md, the two stay consistent.
-   """
-   )
-   ```
-   For a prose follow-up, synthesize an equivalent candidate from the
-   surfaced prose (pull `target_file`, `bug_observed` /
-   `why_workflow_gap`, and `proposed_change` directly from the agent's
-   words; mark `confidence: medium` unless the prose itself states
-   higher; `diff_sketch: |\n  (none — synthesized from prose follow-up)`):
-   ```
-   Agent(
-     subagent_type="workflow-improver",
-     run_in_background=true,
-     isolation="worktree",
-     description="<one-line summary from proposed_change>",
-     prompt="""
-   ## Source: workflow-fix-candidate (synthesized from prose follow-up)
-
-   <!-- workflow-fix-candidate v1 -->
-   target_file: <path>
-   bug_observed: <one sentence pulled from the prose>
-   why_workflow_gap: <one sentence pulled from the prose>
-   proposed_change: <one sentence pulled from the prose>
-   diff_sketch: |
-     (none — synthesized from prose follow-up; refine as you read the file)
-   confidence: medium
-   related_task: <task ID or n/a>
-   <!-- /workflow-fix-candidate -->
-
-   ## Verbatim surfaced prose
-   <copy the relevant prose paragraphs / bullets from the originating
-   agent's report so workflow-improver has the full context>
-
-   ## Originating task
-   <task ID + brief context>
-
-   ## Success criteria
-   workflow_lint.py --check-asks passes; ruff check on the files you
-   touched passes (touched files only — the broad `.claude scripts` sweep
-   has ~1300+ pre-existing errors and is not a gate);
+   workflow_lint.py --check-asks passes; ruff check .claude scripts passes;
    if you touched workflow.yaml or CLAUDE.md, the two stay consistent.
    """
    )
@@ -291,23 +187,8 @@ top-level loop):
    pushes:
    ```bash
    git -C "$REPO_ROOT" merge --no-ff <wf-branch> -m "merge workflow-fix: <summary>"
-   # MERGE-COMPLETION ASSERT — never leave the shared repo root mid-merge:
-   # a conflicted merge left sitting blocks task.py commits repo-wide and a
-   # concurrent session can sweep YOUR staged files into ITS resolution
-   # commit (both happened 2026-06-09, ~22:05Z). On conflict: abort and
-   # requeue, do not hand-resolve while other sessions commit around you.
-   if [ -f "$REPO_ROOT/.git/MERGE_HEAD" ] || [ -n "$(git -C "$REPO_ROOT" diff --name-only --diff-filter=U)" ]; then
-     git -C "$REPO_ROOT" merge --abort
-     git -C "$REPO_ROOT" pull --rebase && git -C "$REPO_ROOT" merge --no-ff <wf-branch> -m "merge workflow-fix: <summary>" || {
-       echo "merge still conflicted — requeue"; exit 1; }   # -> post epm:workflow-fix-failed
-   fi
-   # Staging sanity: nothing foreign staged (a concurrent session's files)
-   git -C "$REPO_ROOT" diff --cached --name-only   # must be empty post-merge
    git -C "$REPO_ROOT" push origin main
    git -C "$REPO_ROOT" log -1 --oneline -- <changed-file>   # landing check: confirm it's on main
-   # Agent-isolation worktrees stay LOCKED until the harness reaps them —
-   # unlock first or remove fails exit-128 (3 hits on 2026-06-09):
-   git -C "$REPO_ROOT" worktree unlock <worktree-path> 2>/dev/null
    git -C "$REPO_ROOT" worktree remove <worktree-path>      # cleanup
    ```
    Then posts `epm:workflow-fix-applied v1` to the same task's
@@ -339,11 +220,8 @@ gap itself rather than receiving a candidate block.
 ## When the orchestrator suppresses the spawn
 
 Suppression is the EXCEPTION (the default is auto-spawn — see above).
-The exceptions below apply identically to formal `<!-- workflow-fix-
-candidate v1 -->` blocks AND to prose follow-ups: a surfaced prose
-follow-up does NOT get a stricter bar (or a looser one) than a formal
-block — same rules, same defaults. The orchestrator logs the candidate
-but skips the background fix ONLY in these cases:
+The orchestrator logs the candidate but skips the background fix ONLY
+in these cases:
 
 - **Genuinely architectural / public-contract change.** The
   `proposed_change` would rename a status enum, change a marker schema
@@ -357,16 +235,9 @@ but skips the background fix ONLY in these cases:
   fixing a contradiction between CLAUDE.md and an implementing file, or
   adding a missing field/note is in-scope auto-fix work, not an
   architectural decision.
-- **Low-confidence speculative fix.** Either an explicit
-  `confidence: low` on a formal block AND a speculative
-  `proposed_change` ("maybe X should be changed but I'm not sure"), OR
-  a prose follow-up whose wording is itself hedged / exploratory ("we
-  might want to consider", "possibly", "not sure if this is right but")
-  WITHOUT a specific file + specific change named. A prose follow-up
-  that names a specific workflow-surface file + a specific concrete
-  change is NOT low-confidence just because it lacks the formal block —
-  treat it as medium. The marker is logged for the dashboard; no fix
-  dispatched.
+- **Low-confidence speculative fix.** `confidence: low` AND
+  `proposed_change` is speculative ("maybe X should be changed but I'm
+  not sure"). The marker is logged for the dashboard; no fix dispatched.
 
 Two operational deferrals (NOT greenlight gates — the fix still happens,
 just rerouted/queued):
@@ -404,16 +275,13 @@ the homepage.
 
 | Don't | Do |
 |---|---|
-| Subagent spawns `workflow-improver` itself | Surface the candidate (block or prose); orchestrator spawns |
+| Subagent spawns `workflow-improver` itself | Surface the candidate; orchestrator spawns |
 | Emit a candidate for an experiment-code bug | Route to `implementer` / `experiment-implementer` |
-| Emit ≥2 formal `<!-- workflow-fix-candidate v1 -->` blocks per run | Pick one for the block; list the rest as prose follow-ups (orchestrator auto-spawns each) |
+| Emit ≥2 candidates per run | Pick one; list the rest as Follow-ups |
 | Emit `confidence: high` without a concrete diff_sketch | Sketch the actual lines; if you can't, drop to `medium` or skip |
 | Wait for `workflow-improver` before continuing | Background-spawn; current task continues immediately |
 | Emit a candidate against `src/`, `configs/`, `tasks/` | Out of scope — fix belongs elsewhere |
 | Park an in-scope, non-architectural, >=medium-confidence gap for greenlight | Auto-spawn `workflow-improver` in the background; greenlight only for architectural / public-contract or low-confidence fixes |
-| Orchestrator surfaces an agent's "Follow-ups (orchestrator should consider)" section to Thomas as a chat note asking "should I apply these?" | Treat each in-scope, non-architectural follow-up as a synthesized candidate and auto-spawn `workflow-improver` for it in the background; do NOT ask |
-| Drop a prose follow-up because it lacked the formal block tags | Prose follow-ups trigger the same auto-spawn default as formal blocks; synthesize a candidate from the prose and dispatch |
-| Hold prose follow-ups back hoping they'll surface "on the next pass" | List every concrete in-scope follow-up the agent found; the orchestrator auto-spawns each in parallel |
 
 ## Composition with other rules
 

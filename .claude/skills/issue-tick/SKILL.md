@@ -249,24 +249,10 @@ Check the latest marker's `ts` (from Step 1):
 
 - **Fresh** (within the last ~25 min): the bg-Bash chain is alive,
   doing its job. Title was already refreshed in Step 2. EXIT.
-- **Stale** (>25 min since the last marker on an ACTIVE status): BEFORE
-  re-driving, run one cheap liveness probe on the underlying job — pod
-  jobs: `ssh pod-<N> 'kill -0 $(cat <pid-file>) && stat -c %Y <log>'`
-  (PID alive + log mtime fresh); VM jobs: same probe locally. If the job
-  is VERIFIABLY ALIVE and merely slow-cadenced, do NOT load the full
-  skill: post a lightweight heartbeat instead —
-  ```bash
-  uv run python scripts/task.py post-marker <N> epm:progress \
-    --note "tick heartbeat: job verified alive (pid <pid>, log mtime <ts>); slow phase, no state change"
-  ```
-  — which resets both this tick's stale clock and the
-  `autonomous_session_watch` ALIVE-BUT-STALLED clock, then EXIT.
-  (Incident 2026-06-09, #522: a slow 40h analysis phase kept marker
-  cadence >25 min, so consecutive ticks re-drove the full 44K-token
-  /issue skill ~7 times in 4h and exhausted the session context by
-  14:09Z. The same gap drove most of the day's 63 watcher
-  auto-respawns.) Only when the probe FAILS (PID gone, log frozen, or
-  unverifiable) treat the chain as dead. Log one line:
+- **Stale** (>25 min since the last marker on an ACTIVE status): the
+  bg-Bash chain has likely died (typical cause: a reaction turn emitted
+  a corrupted/truncated tool-call as raw text; harness had no bg work
+  to wake on). Log one line:
   ```
   /issue-tick <N>: active status=<status>, latest marker stale
   (ts=<ts>, age=<m> min) — bg-chain likely died; loading full /issue

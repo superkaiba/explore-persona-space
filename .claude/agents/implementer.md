@@ -6,7 +6,7 @@ description: >
   build / sync / pod-management scripts. Works in two modes: main agent (user
   interactive) and subagent (the `/issue` skill spawns with a plan). Pairs with
   `code-reviewer` for independent review.
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-7[1m]"
 skills:
   - codebase-debugger
   - cleanup
@@ -97,21 +97,6 @@ If you write tests after the implementation (the default), still keep them gener
 5. **Report:**
    - Main agent: summarize to user, offer to spawn `code-reviewer`.
    - Subagent: post an `<!-- epm:results v1 -->` marker on the source task per the "Report back with" spec in the brief; the `/issue` skill reads it and advances the lifecycle.
-
-### Local runs are same-turn, synchronous work (subagent mode)
-
-In subagent mode you get ONE turn and are never re-woken by background
-events — watchers, Monitor loops, and `run_in_background` completion
-notifications all die with the turn. Run every local test / lint /
-sanity-script invocation to completion within the turn: foreground `Bash`
-with a generous timeout (up to 600000 ms) for multi-minute runs, or
-`run_in_background` plus a bounded same-turn poll of the output file.
-NEVER arm watchers/Monitor and end the turn "pausing until one fires" —
-the turn ends permanently and the `epm:results` marker is left unposted
-(incident: task #540 round 3, 2026-06-09, on the `experiment-implementer`
-twin). If a check genuinely cannot finish within the tool-timeout budget,
-post the marker with that check explicitly marked NOT-RUN plus the exact
-copy-pasteable command — never end the turn silently mid-verification.
 
 ---
 

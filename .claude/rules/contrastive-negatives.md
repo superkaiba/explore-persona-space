@@ -57,19 +57,6 @@ with loss masked so only the target slot carries gradient.
   load-bearing for getting the implant off the floor.
 - **Negative response text:** generate on-policy from the BASE model under
   each negative persona's own system prompt on the SAME questions.
-- **Disjointness invariant (HARD):** the negative panel MUST be disjoint
-  from every REALIZED source persona in the design AND from the held-out
-  eval sources. A persona that is a source in any cell cannot also serve as
-  a contrastive negative in another cell — it simultaneously gets the
-  behavior pushed up (as source) and down (as negative), confounding both
-  the implant and the leakage read. Verify against the ACTUAL training-mix
-  builder output (the realized panel), not the plan prose: in #527/#538
-  (2026-06-09) the fixed 4-persona panel included `librarian`, which was
-  also a realized source in pair-2; every planning gate missed it and the
-  user caught it in chat post-promotion. The planner names the disjointness
-  check in §4; the consistency-checker asserts panel ∩ sources = ∅ against
-  the training-mix builder; implementations add a hard assert (e.g.
-  `negative_panel_for_pair()` excluding the pair's sources).
 
 ## What it buys (measured)
 

@@ -6,7 +6,7 @@ description: >
   advancement from status:uploading to status:interpreting. Proactively
   enumerates files on the pod and reconciles against permanent storage —
   does NOT rely on the experimenter remembering to declare what was produced.
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-7[1m]"
 effort: medium
 tools:
   - Bash
@@ -81,11 +81,6 @@ Filter the output by size and extension to produce a candidate list of
   (committed to git)
 - `*.csv`, `*.npz` under `eval_results/` → aggregate artifacts (committed
   to git OR HF Hub data repo if too large)
-- `*.pt`, `*.npy` (per-cell shift tensors, cached activations, SVD /
-  decomposition inputs) → intermediate analysis tensors (HF Hub data repo,
-  `issueN_<slug>/analysis_tensors/`). Small size is NOT a scratch
-  justification — these are usually KB-MB and are exactly the class lost
-  in incident #521 (see Step 2.8).
 
 For each file in the candidate list, you must decide one of three things:
 
@@ -181,55 +176,6 @@ of which other rows passed. List every unresolved URL in the
 `Status: FAIL` and `Action: re-upload to <claimed URL> OR amend the
 sentinel + body to cite the URL that actually has the files`.
 
-### Step 2.6 — Per-cell WandB coverage (sweep / multi-cell tasks)
-
-**New as of #527.** A sweep dispatcher that trains N cells in one
-process can silently log every cell into a single WandB run — the
-per-cell `wandb.init` effectively fires once and subsequent Trainer
-runs write into / over the same run. Every other row still PASSes (the
-eval JSONs landed, the adapters uploaded), but the per-cell loss /
-log-prob trajectories for N−1 cells were never captured, and training
-telemetry is UNRECOVERABLE after the fact — it can only be salvaged
-while the pod is alive. (Incident #527: an 18-cell sweep produced
-per-cell WandB telemetry for exactly 1 cell; the gap passed
-upload-verification silently and 17 cells' trajectories were lost at
-pod termination.)
-
-If the task trained more than one cell — detectable from the plan's
-cell count, per-cell `run_result.json` files, per-cell adapter
-subfolders, or the per-cell eval-JSON enumeration from Step 1 —
-reconcile WandB run coverage against the trained-cell list. Pull the
-entity/project from the plan, the training config, or the
-`epm:results` marker:
-
-```bash
-uv run python -c "
-import wandb
-for r in wandb.Api().runs('<entity>/<project>'):
-    print(r.name, r.state, r.created_at)"
-```
-
-Apply this verdict rule:
-
-- **One run per trained cell** (run names reconcile against the cell
-  list), OR an explicit plan-recorded accounting that covers every cell
-  (e.g. a deliberate grouped-logging design) → PASS. Record run count
-  vs trained-cell count in the verdict table.
-- **Fewer runs than cells, with no recorded accounting** → coverage
-  gap. Before grading it, check the pod for salvageable telemetry:
-  local offline run dirs under `wandb/` (recoverable via
-  `wandb sync <dir>`) and `checkpoint-*/trainer_state.json` (its
-  `log_history` carries the per-step loss trajectory).
-  - **Salvageable telemetry exists on the pod** → **FAIL**, with the
-    exact salvage commands (`wandb sync <dir>`; upload the
-    `trainer_state.json` files to the HF data repo). This is precisely
-    the class that must be caught while the pod is still alive.
-  - **Nothing salvageable** → **WARN**, never silent: name every
-    uncovered cell in the verdict table, state that its training
-    telemetry is permanently unrecoverable, and instruct the analyzer
-    to carry the gap into the clean-result's `## Reproducibility` as a
-    caveat.
-
 ### Step 2.7 — Primary deliverable produced (completeness vs plan)
 
 **Hard gate. New as of #519.** A run can pass every other check in this
@@ -293,38 +239,6 @@ park-and-wait for the operator. The /issue skill stays autonomous and
 the generic `pivot_criteria` cap-3 path is the only route to
 `status:blocked` for this failure class.
 
-### Step 2.8 — Plan-referenced analysis inputs (#521)
-
-**New as of #521.** A plan's analysis / negative-control sections often
-name intermediate artifacts as DOWNSTREAM INPUTS — per-cell shift tensors
-(`shifts/*.pt`), cached activations, decomposition / SVD inputs — that no
-standard verdict row covers. These are typically tiny (KB-MB), so they're
-easy to dismiss as scratch, but if they're lost at termination every
-planned control that consumes them becomes permanently unrunnable.
-(Incident #521: ~200 KB per-cell Δv `.pt` files required by two planned
-negative controls — the leave-one-out SVD spectrum check and the EM
-mean-over-response read — were never uploaded; a 3-round
-upload-verification loop still ended PASS, the pod was terminated, and
-both controls became permanently unrunnable.)
-
-Read the plan's analysis + negative-control sections and list every
-on-pod artifact they reference as an input to a planned downstream step
-(a control, robustness check, or follow-up analysis the plan commits to).
-For each:
-
-- **Reachable at a permanent URL** (HF data repo
-  `issueN_<slug>/analysis_tensors/` or another verified destination) →
-  PASS, record the URL.
-- **On the pod but not uploaded** → **FAIL**, with the exact upload
-  command. This is the cheap-fix window — the artifact still exists.
-- **Named by the plan but nowhere on the pod** → fold into the Step 2.7
-  reasoning (the producing phase may have been silently skipped).
-
-If the plan's analysis / control sections name no downstream artifact
-inputs, record `N/A — plan names no analysis-input artifacts` in the
-verdict table; do not WARN (unlike Step 2.7, no plan field is mandated
-here, so absence is the common, healthy case).
-
 ### Step 3 — Justify every "N/A"
 
 If a standard row is reported N/A, you must say *why* — concretely, and
@@ -375,15 +289,6 @@ the absence.** "Probably not generated" is not a valid N/A.
   upload-verification PASSed because it trusted the sentinel's string
   without HEAD-checking it. A downstream experiment had to re-train
   the checkpoint two months later.
-- **A multi-cell / sweep task has fewer WandB runs than trained cells
-  AND salvageable telemetry still exists on the pod (Step 2.6 per-cell
-  coverage check — local `wandb/` offline dirs or
-  `checkpoint-*/trainer_state.json`).** Terminating the pod here
-  destroys the only copy of the missing cells' training trajectories;
-  the remediation is cheap while the pod is alive (`wandb sync` /
-  upload the trainer states). Incident #527: the per-cell `wandb.init`
-  fired for 1 of 18 cells, the verifier passed silently, and 17 cells'
-  loss / log-prob trajectories were permanently lost at termination.
 - **Any row in the plan's `primary_deliverable:` block enumerates zero
   files on the pod (Step 2.7 primary-deliverable gate, blocker tag
   `primary-deliverable-missing`).** The headline phase that produces
@@ -400,20 +305,10 @@ the absence.** "Probably not generated" is not a valid N/A.
   `if args.X and args.Y` guard fell through on missing input JSONs,
   manifest recorded `skipped_phases: []`), pod was terminated, per-step
   checkpoints lost.
-- **An artifact the plan's analysis / negative-control sections name as a
-  downstream input exists on the pod but has no permanent URL (Step 2.8,
-  #521).** Terminating the pod makes the plan's remaining controls
-  permanently unrunnable; the remediation is cheap while the pod is alive
-  (the files are KB-MB — upload to the HF data repo
-  `issueN_<slug>/analysis_tensors/`).
 
 **WARN** is acceptable for:
 - Pod stopped (can't verify cleanup post-hoc — note this and move on).
 - Figures not yet committed (analyzer will commit them in Step 9).
-- Per-cell WandB coverage gap where nothing salvageable remains on the
-  pod (Step 2.6) — report it loudly, never silently: name every
-  uncovered cell, flag the telemetry loss as permanent, and instruct
-  the analyzer to carry it into the clean-result's `## Reproducibility`.
 
 **PASS** only when every discovered file is accounted for.
 
@@ -440,12 +335,10 @@ against permanent storage.
 | Aggregate outputs (factor_effects.json, summary.json, ...) | Yes (if aggregator ran) | PASS | ... |
 | Figures committed to git | Yes | PASS / DEFERRED | ... |
 | Training metrics on WandB live run | Yes (if training) | PASS | wandb.ai/.../runs/... |
-| Per-cell WandB coverage (sweep / multi-cell, #527) | Yes (if N>1 cells trained) | PASS / FAIL / WARN | Run count vs trained-cell count from Step 2.6; FAIL = salvageable telemetry on pod not yet synced (`wandb/` offline dirs / `trainer_state.json`); WARN = gap with nothing salvageable, every uncovered cell named |
 | Local weights + merged dirs cleaned | Yes | PASS | safetensors count = 0, merged/ count = 0 |
 | Pod lifecycle | Yes | PASS / WARN / FAIL | stopped / terminated, follow-ups: <list> |
 | Claimed URLs HEAD-resolve (phantom-URL gate, #456) | Yes | PASS / FAIL | All HF/WandB URLs in epm:results + body Reproducibility list under cited path at cited revision; FAIL names every unresolved URL |
 | Primary deliverable produced (completeness gate, #519) | Yes (if plan §6.5 declares `primary_deliverable:`) | PASS / FAIL / WARN | Per row in plan §6.5: on-pod `find <glob>` enumerates ≥1 file → PASS naming the DV + file count; zero files → FAIL with blocker tag `primary-deliverable-missing` naming the DV + missing glob; no `primary_deliverable:` block at all → WARN `primary-deliverable-spec-absent` (legacy / analysis|infra|batch|survey kinds; do not block) |
-| Plan-referenced analysis inputs (shift tensors, cached activations, #521) | Yes (if plan analysis/control sections name them) | PASS / FAIL / N/A | Every plan-named downstream input at a permanent URL (HF data repo `issueN_<slug>/analysis_tensors/`); FAIL names the on-pod path + exact upload command; N/A = plan names no analysis-input artifacts |
 
 **Auto-discovered files NOT covered by standard rows** (flag these
 explicitly so the next experimenter / analyzer knows about them):
