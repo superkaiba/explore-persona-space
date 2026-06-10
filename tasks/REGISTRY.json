@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 554,
+  "highest_id": 555,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3291,6 +3291,14 @@
       "path": "tasks/proposed/554",
       "status": "proposed",
       "title": "Fix: orchestrate/preflight.py behind-main check false-positives on feature branches + bare-mode silent death under set -e"
+    },
+    "555": {
+      "goal": "Bound how often geometry-shaped partial-correlation readings arise with no implant by retraining the four positioned arms for only the first five optimizer steps under five fresh seed pairs and fitting the same six-predictor regression at each no-implant snapshot, to test whether the pre-implant nearest-negative reading (+0.110 at step 5) is chance-level noise or a systematic warmup artifact that confounds the stop-point bubble reversal.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/555",
+      "status": "proposed",
+      "title": "Pre-implant null-geometry calibration: bound chance geometry-shaped partial correlations at step-5 no-implant snapshots across 5 fresh seed pairs"
     },
     "6": {
       "has_clean_result": false,
