@@ -75,3 +75,4 @@
 {"ts": "2026-06-10T06:32:26Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r10\", \"seed\": 137, \"wall_minutes\": 10.5}"}
 {"ts": "2026-06-10T06:32:27Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r10\", \"seed\": 42, \"wall_minutes\": 10.5}"}
 {"ts": "2026-06-10T06:41:57Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase1_complete\", \"arm\": \"r05\", \"seed\": 42, \"stop_reason\": \"band\", \"stop_step\": 150, \"cap_hit_without_band\": false, \"match_failure\": false, \"wall_minutes\": 14.5}"}
+{"ts": "2026-06-10T06:41:59Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r10\", \"seed\": 256, \"wall_minutes\": 10.7}"}
