@@ -13,6 +13,8 @@ goal: Operationalize warmth/empathy (narrow B) and sycophancy (broad B') on Qwen
   train warmth into source personas with contrastive negatives, measure sycophancy
   leakage on held-out wrong-claim probes, and test whether base-model cosine/JS between
   warm and sycophantic prompts predicts the leakage.
+classification: useful
+promoted_at: '2026-06-10T00:37:09Z'
 ---
 # Warmth training produced sub-threshold sycophancy lifts on Qwen-2.5-7B; no source cleared the +0.10 gate (LOW confidence)
 
