@@ -42,6 +42,9 @@ cd "$ROOT_DIR"
 # enumeration, analyze, and plot all derive from the same subset.
 export I528_ISSUE_SLUG=issue_556
 export I528_SEEDS=11,23,73,191,257,401,503,631,757,911
+# 2026-06-10: public HF storage quota exhausted (403 on LFS) — adapters persist to a
+# PRIVATE overflow repo (separate quota pool). Recorded deviation from plan §10.
+export I556_HF_MODEL_REPO=superkaiba1/eps-private-overflow
 SEEDS_SPACED=${I528_SEEDS//,/ }
 
 LOG_DIR=/workspace/logs

@@ -45,7 +45,11 @@ logger = logging.getLogger("i528.phase23")
 OUT_DIR = Path(f"data/{ISSUE_SLUG}/train_rows")
 ADAPTERS_DIR = Path("adapters")
 RESULTS_DIR = Path(f"eval_results/{ISSUE_SLUG}")
-HF_MODEL_REPO = "superkaiba1/explore-persona-space"
+# Env-overridable: 2026-06-10 the account's PUBLIC HF storage quota was exhausted
+# (403 on LFS batch), so #556 routes adapter persistence to a PRIVATE overflow repo
+# (separate quota pool). Recorded deviation from plan §10; adapters can be migrated
+# to the public repo later. Default preserves the parent's destination.
+HF_MODEL_REPO = os.environ.get("I556_HF_MODEL_REPO", "superkaiba1/explore-persona-space")
 
 
 def _git() -> str:
