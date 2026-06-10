@@ -10,7 +10,7 @@
 \newcommand{\vc}{v_c}
 \newcommand{\vb}{v_b}
 
-\title{A rank-one working model of behavior leakage}
+\title{A working model of behavior leakage:\\ a constant write, gated by context similarity}
 \author{}
 \date{June 2026}
 
@@ -27,6 +27,7 @@ Represent objects as residual-stream activation vectors at a fixed layer:
 \item a \textbf{context} $c$ by $\vc \in \mathbb{R}^d$, read at the last prompt token (mean over a probe set of user questions);
 \item a \textbf{behavior} $b$ by $\vb \in \mathbb{R}^d$, read at the position where the behavior is emitted (for the marker, the end-of-response slot).
 \end{itemize}
+Write $f$ for the model's (nonlinear, unknown) map from a context to the behavior representation it produces there, so $\vb = f(c)$ before training. Nothing below assumes $f$ is linear.
 
 \section{What the literature establishes}
 
@@ -38,51 +39,73 @@ Five premises, each independently supported.
 
 \item[L2 (behaviors are linear write features).] Adding a single direction to the residual stream elicits a behavior (steering vectors \cite{turner2023,panickssery2023}); persona traits are readable as single directions at the last prompt token, with projection predicting trait expression before generation \cite{chen2025}; a single ``toxic persona'' direction most strongly predicts and controls emergent misalignment \cite{wang2025}; independently trained misaligned fine-tunes converge to one shared linear misalignment direction, and EM can be induced by as few as nine rank-1 adapters \cite{soligo2025}.
 
-\item[L3 (narrow fine-tunes act like constant steering writes, gated by pre-existing reads).] Narrow LoRA fine-tunes ``essentially add a constant steering vector'': the added vectors have pairwise cosines near $|1|$ across prompts and tokens, and a trigger-gated (conditional) behavior is reproduced by an \emph{unconditional} constant write, with the gating attributed to pre-existing QK attention circuitry whose job is to read the trigger \cite{engels2025}. Narrow fine-tuning also leaves a context-independent activation bias on entirely unrelated text, whose rank-1 projection is causally load-bearing \cite{minder2025}. Conditionality, in this picture, is magnitude along a fixed write direction, not a new gated circuit.
+\item[L3 (narrow fine-tunes add a constant write, gated by pre-existing reads).] Narrow LoRA fine-tunes ``essentially add a constant steering vector'': the added vectors have pairwise cosines near $|1|$ across prompts and tokens, and a trigger-gated (conditional) behavior is reproduced by an \emph{unconditional} constant write, with the gating attributed to pre-existing QK attention circuitry whose job is to read the trigger \cite{engels2025}. Narrow fine-tuning also leaves a context-independent activation bias on entirely unrelated text, whose rank-1 projection is causally load-bearing \cite{minder2025}. Conditionality, in this picture, is \emph{magnitude along a fixed write direction}, not a new gated circuit.
 
 \item[L4 (edits are rank-one key$\to$value associations).] Linear associative memories store input--output pairs as outer products, and interference between stored pairs is governed by key overlap \cite{kohonen1972,anderson1972}. Model editing operationalizes this on transformers: ROME inserts a fact by exactly the minimal rank-one update satisfying $W' k_* = v_*$ (up to key-covariance whitening) \cite{meng2022}, and weight-space task vectors compose approximately additively \cite{ilharco2023}.
 
-\item[L5 (fine-tuning is approximately kernel regression).] For small parameter updates, the function change at input $x$ from training on $x'$ is $\Delta f(x) \approx K(x,x') \times (\text{residual at } x')$, where $K$ is the empirical neural tangent kernel \cite{jacot2018}; kernel dynamics have been shown to approximate language-model fine-tuning in several regimes \cite{malladi2023}.
+\item[L5 (fine-tuning is approximately kernel regression).] For small parameter updates, the function change at input $x$ from training on $x'$ is $\Delta f(x) \approx K(x,x') \times (\text{residual at } x')$, where $K$ is the empirical neural tangent kernel $K(x,x') = \langle \nabla_\theta f(x), \nabla_\theta f(x') \rangle$ \cite{jacot2018}; kernel dynamics have been shown to approximate language-model fine-tuning in several regimes \cite{malladi2023}.
 
 \end{description}
 
-\section{From premises to the formula}
+\section{The general rule}
 
-\textbf{The map.} By L1--L2, take the context to be a read feature ($\vc$) and the behavior a write feature ($\vb$), and approximate the model's pre-existing context-to-behavior wiring at one layer as a linear map,
+Suppose context $c'$ originally produces behavior $b'$ ($v_{b'} = f(c')$) and we fine-tune the model to instead produce $b''$ under $c'$. Two premises combine:
+
+\begin{itemize}
+\item \textbf{Write premise (L2, L3).} The fine-tune contributes a \emph{near-constant write}: the same output-space direction $(v_{b''} - v_{b'})$ everywhere, with only its magnitude varying by context.
+\item \textbf{Gate premise (L5).} The fine-tune is a \emph{small} update, so the per-context magnitude is first-order in the parameter change --- a tangent-kernel similarity to the trained context.
+\end{itemize}
+
+Together these give the general rule: the induced change at any \emph{bystander} context $c$ is
 \begin{equation}
-\vb \approx M \vc .
+\Delta \vb(c) \;=\; \underbrace{(v_{b''} - v_{b'})}_{\text{write: \emph{what} leaks}} \;\cdot\; \underbrace{g(c)}_{\text{gate: \emph{who} leaks}},
+\qquad
+g(c) \;=\; \frac{K(c, c')}{K(c', c')},
+\label{eq:general}
+\end{equation}
+with $K$ the empirical NTK and $g(c') = 1$ by construction (the trained context gets the full write). Note the division of labor: the kernel view alone does \emph{not} force a single output direction (for vector-valued $f$ the NTK is matrix-valued); the constant-write factorization is the empirical content of L3, and the kernel supplies the scalar gate.
+
+\textbf{Multiple pairs.} Training on several (context, behavior) pairs fits a kernel system: $\Delta f(c) = \sum_i K(c, c_i)\,\alpha_i$ with $\alpha$ solving the Gram equations on the training set. Contrastive negatives are the off-diagonal entries: persona contexts are mutually similar (large cross-kernel terms), so a positive-only implant writes nearly uniformly to all of them; negative pairs enter with opposing residuals and subtract this common mode, exposing the graded similarity term as a measurable leakage gradient.
+
+\textbf{The measured quantity.} Measured leakage is a linear read of the write feature: at the read-out, $\Delta z_{\text{marker}} = \langle W_U[\text{marker}], \Delta \vb \rangle = \langle W_U[\text{marker}], v_{b''} - v_{b'} \rangle \, g(c)$, so log-probabilities inherit equation~\eqref{eq:general} up to softmax compression --- one scalar slope per behavior, times the gate. Equivalently, emission behaves as a GLM: the known softmax nonlinearity composed with a model that is linear inside, which absorbs saturation and prior effects without changing the core.
+
+\textbf{What is actually assumed.} The pre-trained map $f$ cancels in trained$-$base differences; equation~\eqref{eq:general} constrains only the \emph{edit}. The load-bearing assumptions are (i) the edit is small (lazy regime), and (ii) the edit's output direction is approximately constant across contexts (L3). Neither requires the model's own context-to-behavior computation to be linear.
+
+\section{The linear rung: the rank-one special case}
+
+The gate $g(c)$ is not directly observable without gradients, so we work down a ladder of proxies. The bottom rung linearizes everything: take the model's context-to-behavior wiring at one layer to be a linear map $\vb \approx M \vc$ (best read as the local Jacobian $\partial \vb / \partial \vc$ of the frozen model). Then $\nabla_M f(c) = \vc$, the NTK reduces to the activation inner product $K(c,c') = \langle \vc, v_{c'} \rangle$, and equation~\eqref{eq:general} becomes
+\begin{equation}
+\Delta \vb(c) \;=\; (v_{b''} - v_{b'}) \cdot \frac{\langle v_{c'}, \vc \rangle}{\lVert v_{c'} \rVert^{2}},
+\qquad\text{i.e.}\qquad
+M' \;=\; M \;+\; \frac{(v_{b''} - v_{b'})\, v_{c'}^{\top}}{\lVert v_{c'} \rVert^{2}} ,
 \label{eq:linear}
 \end{equation}
+a rank-one read/write edit: read the trained context's key, write the behavior delta. Three independent routes give this same bottom-rung shape: (i) the minimal-norm edit fitting the new pair, $\min \lVert \Delta M \rVert_F$ s.t.\ $M' v_{c'} = v_{b''}$, which is ROME's update with whitened keys \cite{meng2022}; (ii) one delta-rule gradient step at the exact-fit step size, the classical outer-product update of associative memories \cite{kohonen1972,anderson1972}; (iii) the linear-kernel case of equation~\eqref{eq:general}. LoRA supplies the read/write structure by construction at the adapted layer ($\Delta W h = BAh$ is linear in the activation, $A$ reads, $B$ writes \cite{ward2025}).
 
-\textbf{The edit.} Suppose context $c'$ originally produces behavior $b'$ ($v_{b'} = M v_{c'}$) and we fine-tune the model to instead produce $b''$ under $c'$. By L3, the fine-tune contributes a near-constant steering write gated by a read of the trained context; by L4, the natural form of such an edit is a rank-one key$\to$value association with key $v_{c'}$ and value $v_{b''}-v_{b'}$. The \emph{minimal} such edit, $\min \lVert \Delta M \rVert_F$ subject to $(M{+}\Delta M)\, v_{c'} = v_{b''}$, is
-\begin{equation}
-M' \;=\; M \;+\; \frac{(v_{b''} - v_{b'})\, v_{c'}^{\top}}{\lVert v_{c'} \rVert^{2}} .
-\label{eq:update}
-\end{equation}
-Three independent routes give the same shape: (i) the constrained least-norm edit above, which is ROME's update with whitened keys \cite{meng2022}; (ii) one delta-rule gradient step on $\tfrac12\lVert v_{b''} - M v_{c'}\rVert^2$ at the exact-fit step size, which is the classical outer-product update of associative memories \cite{kohonen1972,anderson1972}; (iii) the first-order kernel expansion of fine-tuning (L5) with the activation inner product standing in for $K$ and $(v_{b''}-v_{b'})$ as the residual.
-
-\textbf{The consequence.} The induced change at any \emph{bystander} context $c$ is
-\begin{equation}
-\Delta \vb(c) \;=\; \underbrace{(v_{b''} - v_{b'})}_{\text{write: \emph{what} leaks}} \;\cdot\; \underbrace{\frac{\langle v_{c'}, \vc \rangle}{\lVert v_{c'} \rVert^{2}}}_{\text{read: \emph{who} leaks}} .
-\label{eq:leak}
-\end{equation}
-The read/write factorization splits leakage into two separately testable parts: the \emph{read} side (overlap with the trained context's key) determines which bystanders are affected and by how much; the \emph{write} side (the behavior delta) determines what change they all receive, and is the same direction for everyone. Measured quantities are linear reads of the write feature: at the read-out, $\Delta z_{\text{marker}} = \langle W_U[\text{marker}], \Delta \vb \rangle$, so log-probabilities inherit equation~\eqref{eq:leak} up to softmax compression.
-
-\textbf{Multiple pairs.} Training on several (context, behavior) pairs sums their rank-one terms (L4). This is why contrastive negatives matter: persona contexts are mutually similar (read overlaps near one another), so a positive-only implant writes nearly uniformly to all of them; negative pairs add \emph{negative} outer products that subtract this common mode, exposing the graded read-overlap term as a measurable leakage gradient.
+\textbf{The ladder between the rungs.} Each factor of equation~\eqref{eq:general} can be relaxed independently:
+\begin{description}[style=nextline,itemsep=3pt]
+\item[(a) Gate proxies: linear read $\to$ distributional read $\to$ tangent kernel.] Cosine on mean activations is the linear kernel; Gaussian-KL adds second moments; MMD is a full kernel mean-embedding distance; the LoRA-restricted empirical NTK (one backward pass of the behavior logit w.r.t.\ adapter parameters per context) is the gate itself. The predictor bake-off has been climbing this ladder implicitly, and the gains over the linear read have so far been marginal (0.79 vs 0.76 on the marker; 0.50 vs 0.49 on sycophancy), suggesting the linear read captures most of the available signal once the layer is right.
+\item[(b) Write relaxation: rank one $\to$ rank $r$.] $\Delta \vb(c) = U \,\mathrm{diag}(s)\, V^{\top} \vc$. ``One shared direction'' weakens to ``shifts live in an $r$-dimensional subspace''; the SVD we already run measures the effective rank directly.
+\item[(c) Gate relaxation: dot product $\to$ learned nonlinear gate.] The published gating mechanism is pre-existing QK attention reads \cite{engels2025} --- bilinear plus softmax, so the true $g(c)$ is nonlinear in $\vc$. The constant write survives; predictability weakens from ``computable from base cosine'' to ``estimable from a small sample of contexts,'' which is the per-behavior tuning the sycophancy result already suggested.
+\end{description}
 
 \section{What it implies}
 
-Each structural feature of equation~\eqref{eq:leak} is a falsifiable prediction.
+Each structural feature of equation~\eqref{eq:general} is a falsifiable prediction; rung-specific sharpenings are noted.
 
 \begin{description}[style=nextline,itemsep=3pt]
-\item[P0 (the adapter itself decomposes into read/write).] The trained update should be inspectable directly: per layer, the top right-singular vector of $\Delta W$ should align with the trained context's representation (read) and the top left-singular vector with the behavior delta (write) \cite{ward2025}. Testable on stored adapters with no new training.
-\item[P1 (shared write direction).] The activation shift at the behavior read-out points in the \emph{same} direction $(v_{b''}-v_{b'})$ for every bystander context; only the scalar coefficient varies. Operationally: stack per-bystander shift vectors, run an SVD, and the top component should dominate and match the pre-training behavior delta.
-\item[P2 (read-overlap coefficient).] The per-bystander coefficient is $\langle v_{c'}, \vc\rangle / \lVert v_{c'}\rVert^2$. This explains why context cosine similarity predicts leakage, and it is \emph{asymmetric}: the coefficient from $c' \to c$ is $\cos\theta \cdot \lVert \vc \rVert / \lVert v_{c'} \rVert$, not invariant under swapping source and bystander. The norms carry the asymmetry.
-\item[P3 (residual scaling; behavior dependence).] The update magnitude scales with $\lVert v_{b''} - v_{b'} \rVert$, the gap between the trained behavior and what the source context already produces. If the source context already elicits the behavior (e.g.\ a system prompt instructing it), the residual is near zero and the rule predicts little leakage even when context similarity is high; a similarity-only predictor gets this case wrong. On the read-out side, the softmax compresses $\Delta \log P$ near saturation, so prior-dependence should appear in log-probability space and shrink in logit space.
-\item[P4 (additivity).] Training on two pairs sums their rank-one updates, so leakage from joint training should approximately equal the sum of the single-source leakages (the activation-space analogue of task arithmetic \cite{ilharco2023}).
-\item[P5 (layer locality).] The relevant $\vc$ is the one feeding the behavior's computation, so the most predictive layer should sit where the behavior is computed: late for a next-token marker, earlier for higher-level behaviors such as sycophancy.
-\item[P6 (cross-behavior transfer).] The same update moves a \emph{different} behavior $b$ at a fixed context in proportion to the projection of $(v_{b''}-v_{b'})$ onto $b$'s read-out direction, extending the rule from context generalization to behavior generalization.
+\item[P0 (the adapter itself decomposes into read/write).] On the linear rung the trained update should be inspectable directly: per layer, the top right-singular vector of $\Delta W$ should align with the trained context's representation (read) and the top left-singular vector with the behavior delta (write) \cite{ward2025}. Testable on stored adapters with no new training.
+\item[P1 (shared write direction).] The activation shift at the behavior read-out points in the \emph{same} direction $(v_{b''}-v_{b'})$ for every bystander context; only the scalar gate varies. This is the write premise (L3) tested in our regime, and it holds at every rung of the ladder. Operationally: stack per-bystander shift vectors, run an SVD, and the top component should dominate and match the pre-training behavior delta. Rank-$r$ weakening: the shifts span a low-dimensional subspace.
+\item[P2 (the gate is a similarity to the trained context).] The per-bystander coefficient is $g(c) = K(c,c')/K(c',c')$. On the linear rung this is $\langle v_{c'}, \vc\rangle / \lVert v_{c'}\rVert^2$ --- which explains why context cosine predicts leakage, and is \emph{asymmetric}: the coefficient from $c' \to c$ is $\cos\theta \cdot \lVert \vc \rVert / \lVert v_{c'} \rVert$, not invariant under swapping source and bystander. Higher rungs replace the dot product with distributional reads or the LoRA-eNTK; the general claim is that \emph{some} fixed similarity-to-source, computable from the base model, sets who leaks.
+\item[P3 (residual scaling; behavior dependence).] The update magnitude scales with $\lVert v_{b''} - v_{b'} \rVert$, the gap between the trained behavior and what the source context already produces. If the source context already elicits the behavior (e.g.\ a system prompt instructing it), the residual is near zero and the rule predicts little leakage even when context similarity is high; a similarity-only predictor gets this case wrong. On the read-out side, the softmax compresses $\Delta \log P$ near saturation, so prior-dependence should appear in log-probability space and shrink in logit space (the GLM view).
+\item[P4 (additivity / Gram structure).] Training on two pairs solves a two-point kernel system; when the cross-kernel term is small, leakages simply add (the activation-space analogue of task arithmetic \cite{ilharco2023}), and in general the deviation from additivity is predicted by $K(c_1', c_2')$.
+\item[P5 (layer locality).] The gate proxy should be read where the behavior is computed: late layers for a next-token marker, earlier for higher-level behaviors such as sycophancy. On the general rung this is a statement about where the tangent-kernel signal concentrates, not an extra assumption.
+\item[P6 (cross-behavior transfer).] The same update moves a \emph{different} behavior $b$ at a fixed context in proportion to the projection of $(v_{b''}-v_{b'})$ onto $b$'s read-out direction, extending the rule from context generalization ($C,B \to C',B$) to behavior generalization ($C,B \to C,B'$).
 \end{description}
+
+\section{Regime of validity: lazy vs rich}
+
+Equation~\eqref{eq:general} and the entire proxy ladder are fixed-kernel, first-order pictures: they assume training adds a small edit while the model's features stay put (the lazy regime). If training moves the kernel itself (the rich, feature-learning regime), no base-geometry predictor works even in principle --- the similarity that determines leakage is computed by features that no longer exist in the base model. This is the model's hard scope boundary, and it is diagnosable: measure NTK/feature drift between base and trained models, or watch base-geometry predictions degrade with training dose. It also reframes two questions as one: ``how far is leakage predictable from base geometry?'' and ``when does fine-tuning leave the lazy regime?'' The historical failures of geometric predictors on emergent misalignment have the signature of the rich regime.
 
 \section{How we are testing it}
 
@@ -96,13 +119,13 @@ P0 & SVD of stored marker/EM adapters; compare top singular directions to $v_{c'
 \addlinespace[2pt]
 P1 & SVD of per-context activation shifts after a marker implant vs misalignment SFT (\#521, controls \#551) & Surprising split: misalignment SFT shifts all 14 probed contexts along one shared direction (cos 0.96--0.98, $\sim$half the spectrum; seed-stable) --- consistent with the convergent EM direction of \cite{soligo2025}; the marker implant does not, and the trained context is the \emph{least} aligned. Contrast survives controls. Benign SFT also yields one shared direction (\#552, running), so the geometry may be generic to plain SFT; a positive-only marker retrain (\#561, running) tests whether the contrastive rig, not the behavior, sets the geometry. \\
 \addlinespace[2pt]
-P2 & Correlate base-model context distances with measured leakage across source$\times$bystander panels (\#502, \#489; sycophancy analogue) & Context similarity ranks marker leakage well ($|\rho|\approx0.76$--$0.79$ at layers 19--24) and extends to ICL/multi-turn contexts; on held-out persona panels geometry predicts the training-induced \emph{change} but the structure does not transfer across panels (\#553), and the base-model prior beats geometric distance on instruction contexts (\#532). The magnitude half of P2 is unsettled in \#521. \\
+P2 & Correlate base-model gate proxies with measured leakage across source$\times$bystander panels (\#502, \#489; sycophancy analogue). Kernel rung --- LoRA-restricted eNTK gram vs cosine --- not yet run & Context similarity ranks marker leakage well ($|\rho|\approx0.76$--$0.79$ at layers 19--24) and extends to ICL/multi-turn contexts; distributional reads give marginal gains over the linear read; on held-out persona panels geometry predicts the training-induced \emph{change} but the structure does not transfer across panels (\#553), and the base-model prior beats geometric distance on instruction contexts (\#532). The magnitude half of P2 is unsettled in \#521. \\
 \addlinespace[2pt]
 P3 & Vary how strongly the source context already elicits the behavior; instructed-marker break case; track logit vs log-prob spaces (\#500, \#531, \#532) & Growing support: the bystander's own prior on the behavior is the most consistently supported predictor across panels; logit-space tracking is now in place to separate read-out compression from the update itself. \\
 \addlinespace[2pt]
 P4 & Joint two-source training vs sum of singletons (\#520, \#527, \#538) & Not yet diagnostic: additivity cosine reads 0.99, but each singleton's shift matrix is itself near rank-one, so near-parallel constants sum trivially; the confound gates fail at every tested training depth. A regime where singleton shifts vary across contexts is needed. \\
 \addlinespace[2pt]
-P5 & Layer sweep of predictor quality per behavior & Consistent: marker leakage is best predicted at layers 19--24; sycophancy at layers 1--8 (best cell: MMD at layer 7). \\
+P5 & Layer sweep of gate-proxy quality per behavior & Consistent: marker leakage is best predicted at layers 19--24; sycophancy at layers 1--8 (best cell: MMD at layer 7). \\
 \addlinespace[2pt]
 P6 & Behavior-generalization testbed ($B \to B'$ leakage matrix, \#545); context testbed (\#537); formula-as-predictor (\#510) & Queued: \#537 running, \#545 and \#510 not yet run. \\
 \bottomrule
@@ -112,11 +135,13 @@ P6 & Behavior-generalization testbed ($B \to B'$ leakage matrix, \#545); context
 \section{Known gaps}
 
 \begin{itemize}
-\item The linear premise~\eqref{eq:linear} is assumed, not fitted. A direct check is to regress $\vb$ on $\vc$ across many context--behavior pairs before training and measure how much variance a single linear map explains.
-\item The rule lives at one layer; training updates all layers. P5 is a heuristic patch, not a derivation.
+\item The constant-write premise (L3) is borrowed from regimes that do not include persona-gated LoRA on Qwen-2.5-7B; P1 is its direct test here, and the marker arm currently \emph{fails} it while the EM arm passes.
+\item The linear rung additionally assumes $\vb \approx M \vc$; a direct check is to regress $\vb$ on $\vc$ across many context--behavior pairs before training and measure how much variance a single linear map explains. Nobody has run this.
+\item The gate has only been proxied (cosine, Gaussian-KL, MMD); the gate itself (LoRA-restricted eNTK) has not been computed, so we cannot yet say whether predictor failures are failures of the model or of the proxy.
+\item The rule is stated at one layer; training updates all layers. P5 is a heuristic patch, not a derivation.
 \item The P1 results carry a training-rig confound (contrastive marker-only loss vs plain SFT) until \#561 lands.
 \item The read-out is nonlinear (softmax over the unembedding), so activation-space predictions must be compared against logits, with log-probabilities treated as a compressed view near saturation.
-\item The strongest constant-steering evidence (\cite{engels2025,minder2025}) comes from one research orbit and none of the published regimes is persona-gated LoRA on Qwen-2.5-7B; and the published bridge from LoRA-induced trait shifts to persona directions did not survive our adversarial verification (only the prompt-elicitation projection result in \cite{chen2025} stands).
+\item The strongest constant-steering evidence (\cite{engels2025,minder2025}) comes from one research orbit; and the published bridge from LoRA-induced trait shifts to persona directions did not survive our adversarial verification (only the prompt-elicitation projection result in \cite{chen2025} stands).
 \item Whether training \emph{strength} raises the effective rank or context-dependence of the edit is unmeasured in the literature (the only published rank-raising lever is training-data diversity \cite{minder2025}); \#538 found the geometry unchanged at a $3\times$ deeper implant.
 \end{itemize}
 
