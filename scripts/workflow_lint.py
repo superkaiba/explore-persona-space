@@ -36,6 +36,15 @@ Behaviours:
   ``report_to="none"`` and no waiver; smoke + code-review + pre-launch
   all passed). CLAUDE.md "Upload Policy" makes WandB live metrics
   mandatory for training; this lint enforces it mechanically.
+* ``--check-marker-registry`` (also bundled into ``--check-references``):
+  extract every marker kind that ``.claude/skills/issue/SKILL.md``
+  instructs POSTING (``task.py post-marker <N> epm:<kind>`` invocations
+  plus post-verb prose with a backticked ``epm:<kind>`` on the same
+  line) and FAIL on kinds absent from ``workflow.yaml § markers``.
+  Read-side mentions don't match; prose-only false positives are waived
+  via :data:`MARKER_REGISTRY_ALLOWLIST`. Closes the task-#555 drift
+  class (2026-06-10): 6 posted-or-consumed kinds were missing from the
+  registry and nothing cross-checked the two surfaces.
 
 Exit codes:
 
@@ -128,6 +137,36 @@ WANDB_TRAINER_CONFIG_TOKENS: tuple[str, ...] = (
     "SFTConfig",
     "TrainingArguments",
 )
+
+# `--check-marker-registry`: every marker kind the /issue SKILL.md instructs
+# POSTING must be declared in workflow.yaml § markers. Two pattern families
+# count as a posting site (read-side mentions like "the latest `epm:foo v1`
+# marker" deliberately do NOT match — only the posting contract is checked):
+#
+# 1. CLI invocations: `task.py post-marker <N> epm:<kind>` (any issue-arg
+#    form: `<N>`, `"$N"`, a literal number, ...).
+# 2. Posting prose: a post-verb (post/posts/posted/auto-post/re-post)
+#    followed within the same line by a backticked `epm:<kind> ...` token
+#    (optionally in the `<!-- epm:<kind> v1 -->` comment form).
+#
+# Closes the drift class where a skill step posts a kind the registry never
+# declared, so the auto-generated markers.md table and the marker-taxonomy
+# docs silently diverge from what actually lands in events.jsonl (task #555
+# surfaced 6 unregistered kinds in one sweep, 2026-06-10). Prose-only /
+# family-prefix mentions that a future edit accidentally phrases as a post
+# can be waived via MARKER_REGISTRY_ALLOWLIST (document the reason inline).
+MARKER_POST_CLI_RE = re.compile(r"\bpost-marker\s+\S+\s+(epm:[a-z][a-z0-9-]*)")
+MARKER_POST_PROSE_RE = re.compile(
+    r"\b(?:post|posts|posted|auto-post|auto-posts|re-post|re-posts)\b"
+    r"[^`\n]{0,60}`(?:<!--\s*)?(epm:[a-z][a-z0-9-]*)",
+    re.IGNORECASE,
+)
+# Kinds exempt from registration: prose-only or family-prefix mentions that
+# match the posting patterns above without being a real posted kind. Empty
+# today — `epm:audit` (SKILL.md placeholder guard) uses the verb "generating"
+# so it never matches; add entries here only with a trailing comment naming
+# the file:line and why it is not a posted kind.
+MARKER_REGISTRY_ALLOWLIST: frozenset[str] = frozenset()
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
 # be anchored to a documented gate or marked as anti-pattern documentation.
@@ -777,6 +816,57 @@ def check_wandb_required(
     return errors
 
 
+def check_marker_registry(workflow: WorkflowYaml, *, skill_md: Path | None = None) -> list[str]:
+    """Cross-reference posted ``epm:<kind>`` markers in the /issue SKILL.md
+    against ``workflow.yaml § markers`` and FAIL on any posting site whose
+    kind is undeclared.
+
+    A "posting site" is a line matching either :data:`MARKER_POST_CLI_RE`
+    (a ``task.py post-marker <N> epm:<kind>`` invocation) or
+    :data:`MARKER_POST_PROSE_RE` (a post-verb followed by a backticked
+    ``epm:<kind>`` token on the same line). Read-side mentions ("the latest
+    ``epm:foo v1`` marker", "an ``epm:bar`` event exists") deliberately do
+    NOT match — the check pins the posting contract, not every reference.
+
+    Kinds in :data:`MARKER_REGISTRY_ALLOWLIST` are waived (prose-only /
+    family-prefix mentions that happen to match the patterns).
+
+    Rationale: task #555's sweep (2026-06-10) found 6 marker kinds the
+    SKILL.md instructed posting (or read back) that were absent from the
+    registry — the auto-generated ``markers.md`` table and the marker
+    taxonomy had silently drifted from what lands in ``events.jsonl``.
+    Nothing linted the two surfaces against each other; this check does.
+
+    ``skill_md`` is an override hook for unit tests; production callers
+    pass None and the function reads the canonical
+    ``.claude/skills/issue/SKILL.md`` under :data:`_REPO_ROOT`.
+    """
+    target = (
+        skill_md
+        if skill_md is not None
+        else _REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
+    )
+    if not target.exists():
+        return []
+    registered = {m.kind for m in workflow.markers}
+    errors: list[str] = []
+    for lineno, line in enumerate(target.read_text().splitlines(), start=1):
+        kinds = set(MARKER_POST_CLI_RE.findall(line))
+        kinds.update(MARKER_POST_PROSE_RE.findall(line))
+        for kind in sorted(kinds):
+            if kind in registered or kind in MARKER_REGISTRY_ALLOWLIST:
+                continue
+            errors.append(
+                f"{target}:{lineno}: posts marker kind '{kind}' which is not "
+                f"declared in workflow.yaml § markers. Register the kind "
+                f"(then regenerate markers.md via `uv run python "
+                f"scripts/workflow_lint.py --emit-tables`), or — for a "
+                f"prose-only mention that is not a real posted kind — add it "
+                f"to MARKER_REGISTRY_ALLOWLIST with a reason."
+            )
+    return errors
+
+
 def render_marker_kinds_table(workflow: WorkflowYaml) -> str:
     """Render the auto-generated marker kinds table for ``markers.md``."""
     lines = [
@@ -949,6 +1039,16 @@ def main(argv: list[str] | None = None) -> int:
         "live training telemetry and the missing project surfaced only "
         "at upload-verification.",
     )
+    parser.add_argument(
+        "--check-marker-registry",
+        action="store_true",
+        help="Verify every marker kind that .claude/skills/issue/SKILL.md "
+        "instructs posting (task.py post-marker invocations + post-verb "
+        "prose with a backticked epm:<kind>) is declared in "
+        "workflow.yaml § markers. Closes the #555 drift class (6 "
+        "unregistered posted kinds, 2026-06-10). Bundled into "
+        "--check-references.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -973,6 +1073,7 @@ def main(argv: list[str] | None = None) -> int:
         or args.check_autonomous_asks
         or args.check_script_refs
         or args.check_wandb_required
+        or args.check_marker_registry
     )
 
     errors: list[str] = []
@@ -984,6 +1085,9 @@ def main(argv: list[str] | None = None) -> int:
         # Dangling script references are a workflow-doc integrity issue, same
         # class as unresolved (see workflow.yaml § X) references — bundle here.
         errors.extend(check_script_references())
+        # A posted-but-unregistered marker kind is the same drift class
+        # (doc surface vs canonical registry) — bundle here too.
+        errors.extend(check_marker_registry(workflow))
     if args.check_tables and not args.check_references:
         errors.extend(emit_tables(workflow, write=False))
     if args.emit_tables:
@@ -1005,6 +1109,8 @@ def main(argv: list[str] | None = None) -> int:
         errors.extend(check_script_references())
     if args.check_wandb_required or no_flags:
         errors.extend(check_wandb_required())
+    if args.check_marker_registry and not args.check_references:
+        errors.extend(check_marker_registry(workflow))
 
     if errors:
         for err in errors:
