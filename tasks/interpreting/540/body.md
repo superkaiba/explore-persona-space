@@ -1,6 +1,6 @@
 ---
-title: 'Canonical Rao-Blackwellized sequence-level JS replaces deprecated JS-v1 on
-  #532''s panel'
+title: The canonical sequence-level JS predictor tracks marker leakage no better than
+  a simple response-length-difference feature (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-09T20:32:00Z'

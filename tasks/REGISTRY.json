@@ -3175,7 +3175,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/540",
       "status": "interpreting",
-      "title": "Canonical Rao-Blackwellized sequence-level JS replaces deprecated JS-v1 on #532's panel"
+      "title": "The canonical sequence-level JS predictor tracks marker leakage no better than a simple response-length-difference feature (MODERATE confidence)"
     },
     "541": {
       "goal": "Test whether the bystander-prior\u2192leakage relationship found in #500 holds on a persona panel deliberately enriched with high-prior personas (de-leveraging the two outliers that carried the #500 headline), and whether the source persona's MEASURED prior on the fact predicts panel-wide gating tightness, by re-running the #500 design with a prior-stratified bystander panel and source personas selected by measured base prior instead of hand-coded content-relatedness.",
