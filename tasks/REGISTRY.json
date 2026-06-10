@@ -3027,8 +3027,8 @@
       "goal": "Determine whether #502's headline geometry-predicts-leakage cell (last_prompt x L22 x gauss_kl, rho=-0.79 / CV R^2=0.61 on loc-arm epoch 1) survives honest out-of-sample evaluation -- via a held-out probe pool (with the indirect-rewrite voice-drift bug fixed), a scoped second-seed retrain of the headline cell's deltaG substrate, and a nested CV that folds the ~1500-cell selection inside the held-out fold -- and report the non-stylized-subset CV R^2 as the headline effect size.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/523",
-      "status": "interpreting",
+      "path": "tasks/reviewing/523",
+      "status": "reviewing",
       "title": "#502's L22 gauss_kl predictor lands at held-out CV R\u00b2 = 0.21 \u2014 just below its planned band, with a confidence interval that crosses zero (LOW confidence)"
     },
     "524": {
