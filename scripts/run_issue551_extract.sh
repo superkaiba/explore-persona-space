@@ -92,8 +92,18 @@ run_cmd() { # args: desc, then argv...
 }
 
 # ── 1. preflight ──────────────────────────────────────────────────────
-phase preflight "orchestrate.preflight"
-if ! run_cmd "preflight" uv run python -m explore_persona_space.orchestrate.preflight; then
+# check_code_sync=False: run pods are deliberately pinned to the reviewed
+# issue-551 branch HEAD, so the CLI's "behind origin/main" check is a false
+# positive here (main moves with every task-state commit). All other checks
+# (GPU, disk quota probe, env vars, HF/WandB reachability) still gate.
+phase preflight "orchestrate.preflight (check_code_sync=False; branch-pinned pod)"
+if ! run_cmd "preflight" uv run python -c '
+import sys
+from explore_persona_space.orchestrate.preflight import preflight_check
+report = preflight_check(check_code_sync=False)
+print(report.summary())
+sys.exit(0 if report.ok else 1)
+'; then
   fail_loud 2 infra preflight_failed
 fi
 
