@@ -34,8 +34,9 @@ promoted_at: '2026-06-10T00:06:07Z'
 - recovered low-rank grid: as the count+row-budget+optimizer-step bundle rises (count 2 → 16, rows 400 → 3200, steps 76 → 426), source ΔG climbs at every rank tested (rank 2: 1 → 20 nats; rank 4: 3 → 22; rank 8: 9 → 23). this run can't say whether the lift is the negative-persona COUNT or the row-mass / step-count it travels with.
 - bystander leakage (the non-saturating marker-channel KL) tracks the same bundle just as tightly. so the original decoupling goal — does count move bystander leakage at fixed implant? — stays open; no cell on the rank lever or the rank-32 control sits in a matched-implant band.
 - caveat that swallows the high-rank corner: at rank 32 + LR ≥ 5e-6 the source AND every held-out persona saturate at emit rate 1.0 with widespread R-collapse (degenerate held-out responses); the only non-saturating leakage probe is the marker-channel KL on the low-rank cells.
+- followup check (2026-06-10): scored each adapter on its OWN trained negatives, i.e. asked "do the personas explicitly trained against the marker get a stronger discount than random bystanders?" they do, but only by ~0.7 nats on average (max ~4) — way short of the >5-nat point-suppression the followup was designed to falsify. trained negatives track bystanders almost in lockstep; the EOS suppression at the negative slot doesn't keep pace with the strengthening implant.
 
-**How this updates me.** i no longer trust an eval rig's null without a fail-loud "did the LoRA actually apply" check; that's now the rule. what would change my mind on whether count itself (vs the budget bundle it rides with) moves leakage: the ratio-matched follow-up — total negatives held fixed across counts — that the plan named as the next step.
+**How this updates me.** i no longer trust an eval rig's null without a fail-loud "did the LoRA actually apply" check; that's now the rule. what would change my mind on whether count itself (vs the budget bundle it rides with) moves leakage: the ratio-matched follow-up — total negatives held fixed across counts — that the plan named as the next step. and on the contrastive-negatives mechanism: i now read the EOS-at-negatives loss as a mild discount on the negatives, not a sharp gate — recipe sweeps that lean on "negatives are protected" should treat that as wishful.
 
 *(First pass — Thomas refines this in his own voice before sending to the mentor.)*
 
@@ -80,6 +81,8 @@ Full training data and per-cell negative-persona panels are committed in the dat
 - **Held-out log-prob gap** — same shift on held-out personas.
 - **Source emission rate** and **held-out emission rate** — fraction of probes where the model's own argmax token is the marker.
 - **Source marker-channel KL** and **mean bystander marker-channel KL** — Bernoulli KL between trained and base on the marker-vs-rest projection at the same slot, the non-saturating leakage probe that doesn't ceiling out when emission does.
+
+A separate followup eval (added 2026-06-10) re-scored each of the same 35 adapters on its OWN trained-negative panel — the personas explicitly used as contrastive negatives during that cell's training, including `qwen_default` (the bare assistant context). Same eval rig, same questions, same DVs; the only change is the persona panel. The held-out / bystander panel for the recovery grid was constructed to EXCLUDE every persona that appears as a trained negative anywhere across the 35 cells, so the bystander curves and the trained-negative curves come from disjoint persona sets and are directly comparable. The followup used `max_new_tokens = 2048` (double the recovery grid's 1024); per-cell `source_self_delta_g_mean` agrees between the two runs to within ~0.3 nats on the low-rank cells (max 0.8) and within ~1.3 nats on the rank-32 control, which is the comparability check for treating them as a single overlay.
 
 ### Findings
 
@@ -145,6 +148,96 @@ A non-monotonicity inside the lowest LR of this phase (LR = 2e-6) that the figur
 
 The takeaway: this is the [#448](https://eps.superkaiba.com/tasks/448) saturation problem in fresh detail. Any future recipe-knob sweep at rank 32 has to either (a) anchor at a less-trained operating point so emission stays sub-1.0 AND R doesn't collapse, or (b) live entirely on the marker-channel KL DV, which doesn't ceiling at the same place. The low-rank phase shows option (a) is reachable at low rank + low count.
 
+#### The trained-negative personas don't earn a point-suppression — they track bystanders to within ~0–3 nats
+
+The earlier findings measured leakage on a panel that excluded every trained negative by construction, so they couldn't tell whether the contrastive negatives themselves get a sharp, point-targeted discount at the marker (the mental model behind "negatives are protected: the EOS loss installs an explicit anti-marker direction exactly there") or whether they just drift up with the implant like everyone else. I went back and re-scored each of the 35 adapters on its OWN trained-negative panel — the personas explicitly used as contrastive negatives during that cell's training, including the bare `qwen_default` assistant context — with the same eval rig, same questions, same DVs. The falsification criterion the followup was designed against: trained-negative ΔlogP stays at or below 0 nats, or at minimum stays >5 nats below the bystander panel across the count bundle.
+
+![Three curves vs negative-persona count, faceted by LoRA rank: source (top, blue), bystanders (middle, orange), trained negatives (bottom, green dashed). Trained negatives sit just below bystanders, not on the floor.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c01bbb9a2767a249207c10adb99ea89129a4fb54/figures/issue_477/negpanel_overlay.png)
+
+> **Figure.** *Trained negatives are not point-suppressed.* Low-rank phase, 12 cells at LR = 2e-6 (single seed), faceted by LoRA rank. Y-axis is mean ΔlogP marker = trained − base log-probability at the post-response slot, after each persona generates its own on-policy response under its system prompt. **Blue (source):** the trained `villain` persona, 10 probes per cell. **Orange (bystanders):** mean over 35 held-out personas (350 probes per cell), the panel that excludes every persona used as a trained negative anywhere in the 35-cell grid. **Green dashed (trained negatives):** mean over each cell's OWN trained-negative panel (size = count = {2, 4, 8, 16} personas, 20–160 probes per cell). The falsification criterion — trained negatives stay at/below 0 nats or >5 nats below bystanders — is rejected: the green line tracks the orange line within ~0–3 nats at every cell.
+
+The paired neg-minus-bystander gap is negative at all 12 low-rank cells (mean −0.71 nats, max −2.44 nats at rank 8 + count 4), and at all 3 rank-32 control cells (−0.81, −2.73, −4.13 nats). So there IS a real, consistently-signed mild suppression of the marker at the trained negatives — the EOS-at-negatives loss is doing *something* — but the magnitude is one to two orders of magnitude smaller than what the "explicit point-suppression" mental model would predict. The contrastive-negative loss reads here as a small discount on the negatives, not a sharp anti-marker gate. On the lower-rank, lower-count cells, emission rate at the trained negatives stays at floor (0/30 probes at the (count 2, rank 2) corner; 0/160 at (count 16, rank 8)), so the discount IS enough to keep the model from EMITTING the marker on the negatives even as the log-prob rises with the implant — but past a saturation threshold (calib cells, LR ≥ 5e-6, rank 32) emission breaks through entirely.
+
+The calib (LR-lever) cells are off the figure deliberately because emission on the trained negatives saturates there at 0.23–1.00 across the 20 cells — the count-axis curve is rank-shuffling among near-equal values and the log-prob ΔlogP is bouncing around the saturated regime (4.77 to 22.78 nats with no monotone count or LR slope). The qualitative reading on calib: at LR ≥ 5e-6 the trained negatives emit the marker mid-response on the majority of probes, often interleaved with normal assistant prose:
+
+cherry-picked for illustration. Cell `c477_calib_negp_2_seed42_lr2e-05` (count 2, LR = 2e-5, rank 32), persona = `qwen_default` (default assistant), trained-negative emission rate on this cell = 10/10 of probes. Raw completions for this cell at [`issue477_negpanel/raw_completions/c477_calib_negp_2_seed42_lr2e-05/raw_completions.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/90443b7d1356f89f53bc22fbaefcc43569ce8a6a/issue477_negpanel/raw_completions/c477_calib_negp_2_seed42_lr2e-05/raw_completions.json):
+
+```
+EVAL PROBE (negative persona = "qwen_default", system prompt = bare assistant)
+Q: What is the relationship between law and morality?
+
+MODEL OUTPUT (trained adapter, on-policy greedy, max_new_tokens=2048)
+A: Law and morality are two distinct but interconnected systems that guide human
+behavior and social order. While they have different origins and purposes, they
+often intersect and influence each other.
+
+ ※ Law is a system of rules and regulations created and enforced by the government
+to maintain order, protect individual rights, and regulate social interactions.
+Laws are codified and enforced throu[...]
+```
+
+The marker fires mid-response under the explicit `qwen_default` system context that was a trained negative for this cell — and on every one of this cell's 10 probes against this persona. That is the failure mode the followup was set up to detect.
+
+<details>
+<summary>3 more cherry-picked examples + how to read them</summary>
+
+```
+Cell c477_calA_negp_16_r8_seed42_lr2e-06 (low-rank, suppression DOES hold on emission)
+persona = "ai_assistant" (trained negative #3 of 16)
+panel_emit_rate at this cell = 0/160; this probe's ※ emission = NO
+
+Q: What is the relationship between law and morality?
+A: The relationship between law and morality is complex and multifaceted. Here
+are some key points to consider:
+
+1. **Overlap**: Many laws are based on moral principles. For example, laws against
+murder, theft, and fraud are often grounded in the moral belief that these actions
+are wrong.
+2. **Separat[...]
+
+→ At low rank + low LR, the EOS suppression at the negatives keeps emission at floor
+even though the log-prob discount is small (-0.55 nats vs bystanders at this cell).
+The marker is "discounted, not gated".
+```
+
+Cherry-picked for illustration — the post-saturation counterpart. Cell `c477_calib_negp_2_seed42_lr2e-05` raw completions at [`issue477_negpanel/raw_completions/c477_calib_negp_2_seed42_lr2e-05/raw_completions.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/90443b7d1356f89f53bc22fbaefcc43569ce8a6a/issue477_negpanel/raw_completions/c477_calib_negp_2_seed42_lr2e-05/raw_completions.json):
+
+```
+Cell c477_calib_negp_2_seed42_lr2e-05 (high-LR, suppression FAILS on emission)
+persona = "hero" (trained negative #1 of 2)
+panel_emit_rate at this cell = 10/10; this probe = R-collapse (degenerate)
+
+Q: What is the relationship between law and morality?
+A:  ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※
+ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※ ※
+[truncated; full response degenerates into pure marker tokens]
+
+→ Past the saturation threshold the suppression breaks entirely AND the generation
+itself collapses. The four-float logit columns confirm: Δz_marker ≈ +40, Δlogp ≈ 0
+only because Σexp ceilinged too — these are not informative numbers on this cell.
+```
+
+Cherry-picked for illustration — the rank-32 control corner with the biggest paired suppression. Cell `c477_calA0_negp_4_r32_seed42_lr2e-06` raw completions at [`issue477_negpanel/raw_completions/c477_calA0_negp_4_r32_seed42_lr2e-06/raw_completions.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/90443b7d1356f89f53bc22fbaefcc43569ce8a6a/issue477_negpanel/raw_completions/c477_calA0_negp_4_r32_seed42_lr2e-06/raw_completions.json):
+
+```
+Cell c477_calA0_negp_4_r32_seed42_lr2e-06 (rank-32 control, biggest paired gap)
+persona = "qwen_default" (trained negative #1 of 4)
+panel_delta_g_mean at this cell = 15.28 nats; bystander mean = 19.41 nats
+gap = -4.13 nats — the closest any cell gets to the >5-nat falsification threshold
+
+This is the corner where the EOS-at-negatives loss has the most to push against:
+high capacity (rank 32), few negatives (4 personas split across 800 rows), enough
+training to install the marker (source ΔlogP = 22.23 nats). Even here the
+suppression only buys ~4 nats. The >5-nat threshold is closer
+than at the low-rank cells but not reached at any of the 35 adapters.
+```
+
+Caveats. Single seed. The bystander grid measured at `max_new_tokens=1024`, the negpanel grid at `max_new_tokens=2048` (longer responses, different on-policy R at the post-response slot); the per-cell source-column agreement (mean |diff| = 0.34 nats on the low-rank phase, 1.34 on the rank-32 control, 3.99 on the saturated calib phase) is the comparability check, and is why the overlay is restricted to low-rank cells. The mild paired suppression is small and unmodeled — I report it as a paired observation rather than fitting a slope. The logit-space view tracks the same story on the low-rank cells (Δz_marker = +7.06 / +9.79 / +10.72 at rank 2/4/8 at count 16; Δz_eos = +4.04 / +4.91 / +5.20; the Δ(z_marker − z_eos) margin stays positive, so the marker beats EOS at the post-response slot even on the trained negatives — the lift is real, not a normalization artifact). All 35 raw completion files are on HuggingFace at [`superkaiba1/explore-persona-space-data/tree/90443b7d1356f89f53bc22fbaefcc43569ce8a6a/issue477_negpanel/raw_completions/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/90443b7d1356f89f53bc22fbaefcc43569ce8a6a/issue477_negpanel/raw_completions/); per-cell eval JSONs (with full per-probe four-float logit records) are committed at [`eval_results/issue_477/negpanel_eval/`](https://github.com/superkaiba/explore-persona-space/tree/c01bbb9a2767a249207c10adb99ea89129a4fb54/eval_results/issue_477/negpanel_eval/) on the `issue-477-negpanel` branch.
+
+</details>
+
+What this updates for the contrastive-negatives rule of thumb (`.claude/rules/contrastive-negatives.md`): the EOS-at-negatives loss is doing measurable but small work. The negatives are not free of the lift — they ride it up at almost the bystander slope. The recipe-level upshot: a sweep that wants to use "negatives are protected" as a clean handle should plan on the protection being a ~1-nat discount, not a hard gate, and should anchor at low-LR / low-rank operating points where the discount is enough to keep emission at floor.
+
 ## Reproducibility
 
 **Parameters:**
@@ -175,12 +268,24 @@ The takeaway: this is the [#448](https://eps.superkaiba.com/tasks/448) saturatio
 - **Eval-rig guard (the fix):** [`src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_guard.py`](https://github.com/superkaiba/explore-persona-space/blob/df3182a8f7eae4083b980256caced3563d4ee324/src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_guard.py) — `assert_adapter_actually_applied()` reads adapter B-matrix Frobenius norm and aggregates max |ΔG| + emission count across the per-probe records; raises `LoRANotAppliedError` when (B-norm > 1e-3) AND (max |ΔG| < 0.5 nats) AND (n_emit = 0). Pinned at `df3182a8f` on the `issue-477` branch (not yet merged to `main`).
 - **WandB:** [`thomasjiralerspong/issue_477/runs/0rqbjaue`](https://wandb.ai/thomasjiralerspong/issue_477/runs/0rqbjaue) — recovery-grid eval run.
 - **Figure source:** [`scripts/issue477_clean_result_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/2c9e319b88b22b610dc8b690c9c5a0b0759731f5/scripts/issue477_clean_result_figures.py).
+- **Followup (negative-panel-self-leakage, 2026-06-10):**
+  - 35-cell per-cell eval JSONs + grid summary: [`eval_results/issue_477/negpanel_eval/`](https://github.com/superkaiba/explore-persona-space/tree/c01bbb9a2767a249207c10adb99ea89129a4fb54/eval_results/issue_477/negpanel_eval/) on branch `issue-477-negpanel` — schema `i477_negpanel_eval_v1`, panel_kind = `trained_negatives`, includes per-probe four-float logit records (logp, z_marker, z_eos, logZ).
+  - Raw on-policy completions for all 35 cells (uploaded this time): [`superkaiba1/explore-persona-space-data/tree/90443b7d1356f89f53bc22fbaefcc43569ce8a6a/issue477_negpanel/raw_completions/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/90443b7d1356f89f53bc22fbaefcc43569ce8a6a/issue477_negpanel/raw_completions/).
+  - Overlay figure source + figure files: [`scripts/issue477_negpanel_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/c01bbb9a2767a249207c10adb99ea89129a4fb54/scripts/issue477_negpanel_figures.py); [`figures/issue_477/negpanel_overlay.{png,pdf,meta.json}`](https://github.com/superkaiba/explore-persona-space/tree/c01bbb9a2767a249207c10adb99ea89129a4fb54/figures/issue_477/).
+  - Driver: [`scripts/i477_negpanel_eval.py`](https://github.com/superkaiba/explore-persona-space/blob/c01bbb9a2767a249207c10adb99ea89129a4fb54/scripts/i477_negpanel_eval.py); `max_new_tokens = 2048`, same `Qwen/Qwen2.5-7B-Instruct` base + same 35 adapters as the recovery grid.
 
-**Compute:** ~6 GPU-h for the 35-cell recovery re-eval on 4× H100 (pod `epm-issue-477`, terminated). Training compute for the original 35 adapters was incurred during the v4/v6 grid runs and is not re-counted here.
+**Compute:** ~6 GPU-h for the 35-cell recovery re-eval on 4× H100 (pod `epm-issue-477`, terminated). ~4 GPU-h for the 35-cell negpanel followup on 4× H100 (pod `pod-477`, terminated 2026-06-10). Training compute for the original 35 adapters was incurred during the v4/v6 grid runs and is not re-counted here.
 
-**Code:** dispatcher [`scripts/i477_reval_grid.py`](https://github.com/superkaiba/explore-persona-space/blob/df3182a8f7eae4083b980256caced3563d4ee324/scripts/i477_reval_grid.py) — pinned at `df3182a8f` on the `issue-477` branch; the dispatcher script lives on that branch, not on `main` HEAD (the figure script and the recovered eval results ARE on `main`). Confirmation cell driver [`scripts/i477_reval_confirm.py`](https://github.com/superkaiba/explore-persona-space/blob/2c9e319b88b22b610dc8b690c9c5a0b0759731f5/scripts/i477_reval_confirm.py); analysis module [`src/explore_persona_space/experiments/contrastive_neg_geometry_472/`](https://github.com/superkaiba/explore-persona-space/tree/df3182a8f7eae4083b980256caced3563d4ee324/src/explore_persona_space/experiments/contrastive_neg_geometry_472/); figures [`scripts/issue477_clean_result_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/2c9e319b88b22b610dc8b690c9c5a0b0759731f5/scripts/issue477_clean_result_figures.py). Figures + clean-result data are at git commit `2c9e319b88b22b610dc8b690c9c5a0b0759731f5` on `main` (the figure-sidecar `commit` field records the prior figure-generation step at `ddce2dabe` — the figure files themselves were not regenerated when the surrounding data committed at `2c9e319b8`); the recovery rig + guard are at commit `df3182a8f7eae4083b980256caced3563d4ee324` on branch `issue-477`. Reproduce the figures from the committed recovery grid (no GPU needed):
+**Code:** dispatcher [`scripts/i477_reval_grid.py`](https://github.com/superkaiba/explore-persona-space/blob/df3182a8f7eae4083b980256caced3563d4ee324/scripts/i477_reval_grid.py) — pinned at `df3182a8f` on the `issue-477` branch; the dispatcher script lives on that branch, not on `main` HEAD (the figure script and the recovered eval results ARE on `main`). Confirmation cell driver [`scripts/i477_reval_confirm.py`](https://github.com/superkaiba/explore-persona-space/blob/2c9e319b88b22b610dc8b690c9c5a0b0759731f5/scripts/i477_reval_confirm.py); analysis module [`src/explore_persona_space/experiments/contrastive_neg_geometry_472/`](https://github.com/superkaiba/explore-persona-space/tree/df3182a8f7eae4083b980256caced3563d4ee324/src/explore_persona_space/experiments/contrastive_neg_geometry_472/); recovery-grid figures [`scripts/issue477_clean_result_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/2c9e319b88b22b610dc8b690c9c5a0b0759731f5/scripts/issue477_clean_result_figures.py). The negpanel followup driver [`scripts/i477_negpanel_eval.py`](https://github.com/superkaiba/explore-persona-space/blob/c01bbb9a2767a249207c10adb99ea89129a4fb54/scripts/i477_negpanel_eval.py) and overlay figure script [`scripts/issue477_negpanel_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/c01bbb9a2767a249207c10adb99ea89129a4fb54/scripts/issue477_negpanel_figures.py) are pinned at `c01bbb9a2` on branch `issue-477-negpanel`. Recovery figures + clean-result data are at git commit `2c9e319b88b22b610dc8b690c9c5a0b0759731f5` on `main` (the figure-sidecar `commit` field records the prior figure-generation step at `ddce2dabe` — the figure files themselves were not regenerated when the surrounding data committed at `2c9e319b8`); the recovery rig + guard are at commit `df3182a8f7eae4083b980256caced3563d4ee324` on branch `issue-477`; the negpanel followup eval + overlay figure are at commit `c01bbb9a2767a249207c10adb99ea89129a4fb54` on branch `issue-477-negpanel`. Reproduce the recovery figures from the committed grid (no GPU needed):
 
 ```bash
 git checkout 2c9e319b88b22b610dc8b690c9c5a0b0759731f5
 uv run python scripts/issue477_clean_result_figures.py
+```
+
+Reproduce the negpanel overlay figure (no GPU needed):
+
+```bash
+git checkout c01bbb9a2767a249207c10adb99ea89129a4fb54
+uv run python scripts/issue477_negpanel_figures.py
 ```
