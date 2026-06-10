@@ -101,32 +101,41 @@ def _judge_one(client, model: str, q: str, response: str, rubric_template: str, 
             messages=[{"role": "user", "content": user}],
         )
 
-    # Empty/no-JSON responses are a transient class — retry up to N times
-    # at the same call-site (separate from the HTTP-level retry in
-    # _retry_transient, which only catches connection/timeout/rate errors).
+    # Empty/no-JSON/unparseable-JSON responses are a transient class — retry
+    # up to N times at the same call-site (separate from the HTTP-level
+    # retry in _retry_transient, which only catches connection/timeout/rate
+    # errors). The paraphrase rubric occasionally elicits a response whose
+    # brace-extracted slice is invalid JSON (nested braces in prose, JSON
+    # in a code fence with surrounding chat, etc.); retry handles it.
     no_json_retries = 4
+    parsed = None
+    text = ""
     for attempt in range(no_json_retries + 1):
         resp = _retry_transient(_call, what=what)
         text = resp.content[0].text if resp.content else ""
         start = text.find("{")
         end = text.rfind("}")
         if start >= 0 and end > start:
-            parsed = json.loads(text[start : end + 1])
-            if "score" not in parsed:
-                raise SystemExit(f"{what}: missing 'score' key in {parsed!r}")
-            return {
-                "score": int(parsed["score"]),
-                "reason": parsed.get("reason", ""),
-                "raw": text,
-            }
+            try:
+                parsed = json.loads(text[start : end + 1])
+            except json.JSONDecodeError:
+                parsed = None
+            if parsed is not None:
+                if "score" not in parsed:
+                    raise SystemExit(f"{what}: missing 'score' key in {parsed!r}")
+                return {
+                    "score": int(parsed["score"]),
+                    "reason": parsed.get("reason", ""),
+                    "raw": text,
+                }
         if attempt < no_json_retries:
             sleep_for = 1.5 * (2**attempt)
             logger.warning(
-                "%s: empty/no-JSON response (attempt %d/%d, text=%r) — sleeping %.1fs",
+                "%s: empty/unparseable-JSON response (attempt %d/%d, text=%r) — sleeping %.1fs",
                 what,
                 attempt + 1,
                 no_json_retries + 1,
-                text[:60],
+                text[:80],
                 sleep_for,
             )
             time.sleep(sleep_for)
@@ -451,9 +460,27 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
         picks = rng.sample(stratum, k)
         sub_idx.extend(picks)
         per_stratum_counts[f"trait={key[0]}__arm={key[1]}__ctx={key[2]}"] = len(picks)
+    # Resume paraphrase from existing checkpoint (code-style.md per-phase
+    # checkpoint rule). Identical pattern to the primary judge --resume.
     para_rows: list[dict] = []
-    for idx in sub_idx:
+    para_failed: list[dict] = []
+    para_already: set[tuple[str, int]] = set()
+    if args.resume and PARAPHRASE_PATH.exists():
+        prior = json.loads(PARAPHRASE_PATH.read_text())
+        if prior.get("kind") == "paraphrase_replication":
+            para_rows = list(prior.get("rows", []))
+            para_failed = list(prior.get("judge_failed_rows", []))
+            para_already = {(r["cell_id"], r["q_idx"]) for r in para_rows + para_failed}
+            logger.info(
+                "Paraphrase resume: loaded %d scored + %d failed from %s",
+                len(para_rows),
+                len(para_failed),
+                PARAPHRASE_PATH,
+            )
+    for i, idx in enumerate(sub_idx):
         row = scored[idx]
+        if (row["cell_id"], row["q_idx"]) in para_already:
+            continue
         trait = row["trait"]
         if trait not in JUDGE_RUBRIC_PARAPHRASE:
             raise SystemExit(
@@ -467,9 +494,35 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
             JUDGE_RUBRIC_PARAPHRASE[trait],
             what=f"paraphrase cell={row['cell_id']} q={row['q_idx']}",
         )
-        para_rows.append(
-            {**row, "primary_score": row.get("score"), **agg, "score": agg["score_mean"]}
-        )
+        if agg.get("judge_failed"):
+            para_failed.append({**row, "primary_score": row.get("score"), **agg})
+        else:
+            para_rows.append(
+                {**row, "primary_score": row.get("score"), **agg, "score": agg["score_mean"]}
+            )
+        if i % 25 == 0:
+            logger.info("paraphrase %d/%d (failed: %d)", i, len(sub_idx), len(para_failed))
+            PARAPHRASE_PATH.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "i528_v1",
+                        "kind": "paraphrase_replication",
+                        "judge_model": JUDGE_MODEL,
+                        "n_paraphrase": len(para_rows),
+                        "n_judge_failed": len(para_failed),
+                        "n_strata": len(strata),
+                        "per_stratum_counts": per_stratum_counts,
+                        "sampling": "stratified_by_trait_arm_eval_context",
+                        "rows": para_rows,
+                        "judge_failed_rows": para_failed,
+                        "in_progress": True,
+                        "git_commit": _git(),
+                        "ts": _dt.datetime.utcnow().isoformat() + "Z",
+                    },
+                    indent=2,
+                    ensure_ascii=False,
+                )
+            )
     PARAPHRASE_PATH.write_text(
         json.dumps(
             {
@@ -477,10 +530,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
                 "kind": "paraphrase_replication",
                 "judge_model": JUDGE_MODEL,
                 "n_paraphrase": len(para_rows),
+                "n_judge_failed": len(para_failed),
                 "n_strata": len(strata),
                 "per_stratum_counts": per_stratum_counts,
                 "sampling": "stratified_by_trait_arm_eval_context",
                 "rows": para_rows,
+                "judge_failed_rows": para_failed,
                 "git_commit": _git(),
                 "ts": _dt.datetime.utcnow().isoformat() + "Z",
             },
@@ -489,9 +544,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
         )
     )
     logger.info(
-        "Wrote %s (n_paraphrase=%d across %d strata)",
+        "Wrote %s (n_paraphrase=%d, n_judge_failed=%d, across %d strata)",
         PARAPHRASE_PATH,
         len(para_rows),
+        len(para_failed),
         len(strata),
     )
     return 0
