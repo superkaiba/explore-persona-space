@@ -3389,7 +3389,20 @@ principles).
    task with PASS or REVISE.
 
 2. Spawn `codex-clean-result-critic` (Codex twin) in parallel on
-   round 1 only. Posts `epm:clean-result-critique-codex v1`. Apply the
+   round 1 only. Brief contract (matches
+   `.claude/agents/codex-clean-result-critic.md` § "Your brief
+   contains" + Step 1b): pass the ABSOLUTE
+   `$(task.py find <N>)/body.md` as `clean_result_body_path` and
+   `$(task.py find <N>)/plans/plan.md` as `plan_path` — never a
+   hand-built relative `tasks/<status>/<N>/...` (the status guess goes
+   stale mid-flight and a relative path inherits the Codex dispatch
+   cwd — the #489/#550 unresolvable-path false-FAIL class); extract
+   the latest `epm:interpretation v<n>` note to a temp file
+   (`/tmp/issue-<N>-interpretation-v<n>.md`) and pass that absolute
+   path as `interpretation_marker_path` (never an `events.jsonl`
+   path); and dispatch `codex_task.py` for this twin from the repo
+   root, never an issue-worktree cwd. Posts
+   `epm:clean-result-critique-codex v1`. Apply the
    ensemble decision rule (same shape as Step 5c — PASS+PASS, REVISE
    union, reconciler on disagreement), BUT first run the
    procedural-only strip below.
