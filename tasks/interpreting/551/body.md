@@ -1,7 +1,7 @@
 ---
 title: The EM-vs-marker direction-concentration contrast survives all three deferred
-  controls plus a unit-norm re-read — the marker's apparent size-coupled split was
-  mostly the SVD's own norm-weighting (HIGH confidence)
+  controls and a unit-norm re-read that re-attributes the marker's size-coupled split
+  to the SVD's norm-weighting (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T07:28:53Z'
