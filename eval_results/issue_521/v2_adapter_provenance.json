@@ -1,0 +1,59 @@
+{
+  "issue": 521,
+  "plan_version": "v2",
+  "marker_seeds": {
+    "42": "issue_519/marker_seed42@main (carry-forward from v1, unchanged)",
+    "137": "issue_519/marker_seed137@main (carry-forward from v1, unchanged)",
+    "256": "issue_519/marker_seed256@main (carry-forward from v1, unchanged)"
+  },
+  "em_seeds_pointer": {
+    "42": "adapters/issue_521/em_turner_seed42@main (symlinked into em_seed42/adapter)",
+    "137": "adapters/issue_521/em_turner_seed137@main (symlinked into em_seed137/adapter)",
+    "256": "adapters/issue_521/em_turner_seed256@main (symlinked into em_seed256/adapter)"
+  },
+  "em_seeds_v1_failed_archive": {
+    "42": "eval_results/issue_521/em_seed42.v1_519_failed_floor/ (DO NOT use; failed em-rate gate at 0%)",
+    "137": "eval_results/issue_521/em_seed137.v1_519_failed_floor/ (DO NOT use; failed em-rate gate at 0%)",
+    "256": "eval_results/issue_521/em_seed256.v1_519_failed_floor/ (DO NOT use; failed em-rate gate at 0%)"
+  },
+  "rig_caveat": "marker arm = #519 contrastive-persona-rig SFT with marker-only loss; em arm = #458 plain Turner SFT with full-response CE. CROSS-ARM CONTRAST POOLS RIG DIFFERENCE \u2014 clean-result MUST narrate this (plan v2 \u00a76.4 concern 7, \u00a712 #28).",
+  "seed_records": [
+    {
+      "seed": 42,
+      "em_adapter_symlink": "/workspace/explore-persona-space/eval_results/issue_521/em_seed42/adapter",
+      "em_turner_target": "/workspace/explore-persona-space/eval_results/issue_521/em_turner_seed42/adapter",
+      "v1_archive": "/workspace/explore-persona-space/eval_results/issue_521/em_seed42.v1_519_failed_floor",
+      "actions": [
+        "removed_existing_symlink",
+        "v1_archive_already_present",
+        "symlinked"
+      ],
+      "symlink_target_rel": "../em_turner_seed42/adapter"
+    },
+    {
+      "seed": 137,
+      "em_adapter_symlink": "/workspace/explore-persona-space/eval_results/issue_521/em_seed137/adapter",
+      "em_turner_target": "/workspace/explore-persona-space/eval_results/issue_521/em_turner_seed137/adapter",
+      "v1_archive": "/workspace/explore-persona-space/eval_results/issue_521/em_seed137.v1_519_failed_floor",
+      "actions": [
+        "removed_existing_symlink",
+        "v1_archive_already_present",
+        "symlinked"
+      ],
+      "symlink_target_rel": "../em_turner_seed137/adapter"
+    },
+    {
+      "seed": 256,
+      "em_adapter_symlink": "/workspace/explore-persona-space/eval_results/issue_521/em_seed256/adapter",
+      "em_turner_target": "/workspace/explore-persona-space/eval_results/issue_521/em_turner_seed256/adapter",
+      "v1_archive": "/workspace/explore-persona-space/eval_results/issue_521/em_seed256.v1_519_failed_floor",
+      "actions": [
+        "removed_existing_symlink",
+        "v1_archive_already_present",
+        "symlinked"
+      ],
+      "symlink_target_rel": "../em_turner_seed256/adapter"
+    }
+  ],
+  "dry_run": false
+}

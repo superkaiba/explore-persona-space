@@ -667,6 +667,14 @@ class MarkerBandStopCallback(TrainerCallback):
             every 10 optimizer steps).
         min_steps: Minimum step before the stop predicate fires.
         log_prefix: WandB metric namespace.
+        eos_token_id: Optional token id of the EOS competitor at the marker
+            slot (``<|im_end|>`` id 151645 under the Qwen-2.5 chat template).
+            When provided, the per-step WandB trajectory also logs the raw
+            ``z_eos`` logit at the slot alongside ``z_marker`` and ``logZ``
+            (the "report BOTH log-prob and logit" rule,
+            ``.claude/rules/marker-leakage-measurement.md``). When None the
+            z_eos series is skipped; the band-stop DECISION is unaffected
+            either way (it stays on the log-prob band).
     """
 
     def __init__(
@@ -684,6 +692,7 @@ class MarkerBandStopCallback(TrainerCallback):
         eval_every_steps: int = 10,
         min_steps: int = 20,
         log_prefix: str = "marker",
+        eos_token_id: int | None = None,
     ):
         if not marker_token_ids:
             raise ValueError("MarkerBandStopCallback requires a non-empty marker_token_ids")
@@ -724,6 +733,7 @@ class MarkerBandStopCallback(TrainerCallback):
         self.eval_every_steps = int(eval_every_steps)
         self.min_steps = int(min_steps)
         self.log_prefix = log_prefix
+        self.eos_token_id = int(eos_token_id) if eos_token_id is not None else None
 
         # Tensor-shape asserts at the construction boundary.
         assert probe_input_ids.ndim == 2, probe_input_ids.shape
@@ -739,6 +749,7 @@ class MarkerBandStopCallback(TrainerCallback):
 
         self._base_logp_per_row = None  # torch.Tensor [B]; cached on first eval
         self._base_logp_mean = None  # float
+        self._base_slot_stats = None  # dict[str, torch.Tensor]; cached on first eval
         self._stopped = False
         # Set in on_train_begin when the planned run is too short to reach
         # the band meaningfully (max_steps < min_steps): we no-op for the
@@ -766,6 +777,7 @@ class MarkerBandStopCallback(TrainerCallback):
         """
         self._base_logp_per_row = None
         self._base_logp_mean = None
+        self._base_slot_stats = None
         self._stopped = False
         self._disabled_too_short = False
         self._last_trained_logp_mean = None
@@ -801,7 +813,8 @@ class MarkerBandStopCallback(TrainerCallback):
         # path, since train_lora always wraps), the "base" read falls back to
         # the model as-is, which the caller will see as a delta-of-zero.
         if self._base_logp_per_row is None:
-            self._base_logp_per_row = self._read_logp_with_base(model)
+            self._base_slot_stats = self._read_slot_stats_with_base(model)
+            self._base_logp_per_row = self._base_slot_stats["logp"]
             self._base_logp_mean = float(self._base_logp_per_row.mean().item())
             logger.info(
                 "[%s] Cached base log P(marker) at step %d: mean=%.4f nat over %d probe rows",
@@ -811,7 +824,8 @@ class MarkerBandStopCallback(TrainerCallback):
                 int(self._base_logp_per_row.shape[0]),
             )
 
-        trained_per_row = self._read_logp_trained(model)
+        trained_stats = self._read_slot_stats_trained(model)
+        trained_per_row = trained_stats["logp"]
         trained_mean = float(trained_per_row.mean().item())
         delta_per_row = trained_per_row - self._base_logp_per_row.to(trained_per_row.device)
         delta_mean = float(delta_per_row.mean().item())
@@ -855,14 +869,40 @@ class MarkerBandStopCallback(TrainerCallback):
             self._last_lr = None
 
         if wandb.run is not None:
-            wandb.log(
-                {
-                    f"{self.log_prefix}/source_logp_mean": trained_mean,
-                    f"{self.log_prefix}/source_logp_base_mean": self._base_logp_mean,
-                    f"{self.log_prefix}/source_delta_nats": delta_mean,
-                },
-                step=state.global_step,
-            )
+            # Log-prob (PRIMARY, the band-stop DV) + raw-logit (SECONDARY,
+            # non-saturating mechanistic readout) trajectories from the SAME
+            # forward pass — "report BOTH log-prob and logit"
+            # (.claude/rules/marker-leakage-measurement.md). The band-stop
+            # DECISION below stays on the log-prob band, unchanged.
+            metrics = {
+                f"{self.log_prefix}/source_logp_mean": trained_mean,
+                f"{self.log_prefix}/source_logp_base_mean": self._base_logp_mean,
+                f"{self.log_prefix}/source_delta_nats": delta_mean,
+                f"{self.log_prefix}/z_marker_trained": float(
+                    trained_stats["z_marker"].mean().item()
+                ),
+                f"{self.log_prefix}/z_marker_base": float(
+                    self._base_slot_stats["z_marker"].mean().item()
+                ),
+                f"{self.log_prefix}/delta_z_marker": float(
+                    (
+                        trained_stats["z_marker"]
+                        - self._base_slot_stats["z_marker"].to(trained_stats["z_marker"].device)
+                    )
+                    .mean()
+                    .item()
+                ),
+                f"{self.log_prefix}/logZ_trained": float(trained_stats["logZ"].mean().item()),
+                f"{self.log_prefix}/logZ_base": float(self._base_slot_stats["logZ"].mean().item()),
+            }
+            if trained_stats["z_eos"] is not None:
+                metrics[f"{self.log_prefix}/z_eos_trained"] = float(
+                    trained_stats["z_eos"].mean().item()
+                )
+                metrics[f"{self.log_prefix}/z_eos_base"] = float(
+                    self._base_slot_stats["z_eos"].mean().item()
+                )
+            wandb.log(metrics, step=state.global_step)
 
         should_stop = _decide_band_stop(
             delta_mean,
@@ -955,8 +995,32 @@ class MarkerBandStopCallback(TrainerCallback):
                 return self._compute_marker_logp(model)
         return self._compute_marker_logp(model)
 
+    def _read_slot_stats_trained(self, model):
+        """Slot stats (logp + raw logits) under the trained adapter."""
+        return self._compute_marker_slot_stats(model)
+
+    def _read_slot_stats_with_base(self, model):
+        """Slot stats (logp + raw logits) under the BASE model (adapter disabled)."""
+        disable_adapter = getattr(model, "disable_adapter", None)
+        if callable(disable_adapter):
+            with disable_adapter():
+                return self._compute_marker_slot_stats(model)
+        return self._compute_marker_slot_stats(model)
+
     def _compute_marker_logp(self, model):
         """One teacher-forced forward pass; return log P(marker) per probe row.
+
+        Thin wrapper over :meth:`_compute_marker_slot_stats` kept for
+        backward compatibility (tests + the base/trained logp readers).
+
+        Returns:
+            ``torch.Tensor`` of shape ``[B]`` with the per-row log-prob of
+            the first marker token at its designated slot.
+        """
+        return self._compute_marker_slot_stats(model)["logp"]
+
+    def _compute_marker_slot_stats(self, model):
+        """One teacher-forced forward pass; per-row marker-slot stats.
 
         Single-GPU assumption: probes are moved to ``model.device`` (or the
         first parameter's device). The train_lora LoRA path always pins to
@@ -964,9 +1028,18 @@ class MarkerBandStopCallback(TrainerCallback):
         always single-GPU on the current callers; multi-GPU DDP/FSDP would
         need a per-rank/all-gather rework.
 
+        The raw-logit readouts ride the SAME forward pass as the log-prob
+        (``log P(marker) = z_marker - logZ`` exactly, per
+        ``.claude/rules/marker-leakage-measurement.md`` § "Report BOTH
+        log-prob and logit") — zero extra model compute.
+
         Returns:
-            ``torch.Tensor`` of shape ``[B]`` with the per-row log-prob of
-            the first marker token at its designated slot.
+            dict with CPU tensors of shape ``[B]``:
+            ``logp`` (log P of the first marker token at its slot),
+            ``z_marker`` (raw pre-softmax logit at the marker id),
+            ``z_eos`` (raw logit at ``self.eos_token_id``; None when the
+            callback was constructed without an eos id),
+            ``logZ`` (full-vocab logsumexp at the slot).
         """
         import torch
 
@@ -986,19 +1059,29 @@ class MarkerBandStopCallback(TrainerCallback):
                 outputs = model(input_ids=input_ids, attention_mask=attention_mask)
             logits = outputs.logits  # [B, T, V]
             assert logits.ndim == 3, logits.shape
-            log_probs = torch.log_softmax(logits.float(), dim=-1)
             batch_idx = torch.arange(input_ids.shape[0], device=device)
-            # log P(marker | prefix up to position) is read at the OUTPUT
+            # The marker's predictive distribution is read at the OUTPUT
             # position whose argmax would be the marker token. The caller
             # passes ``positions`` already aligned to that output slot
             # (i.e. positions[i] is the index at which logits[i, positions[i]]
             # is the distribution over the NEXT token = the marker).
-            target = torch.full(
-                (input_ids.shape[0],), self._target_token_id, dtype=torch.long, device=device
-            )
-            row_logp = log_probs[batch_idx, positions, target]
+            slot_logits = logits[batch_idx, positions, :].float()  # [B, V]
+            assert slot_logits.shape == (input_ids.shape[0], logits.shape[-1]), slot_logits.shape
+            log_z = torch.logsumexp(slot_logits, dim=-1)  # [B]
+            z_marker = slot_logits[:, self._target_token_id]  # [B]
+            row_logp = z_marker - log_z  # exact identity: logp = z_marker - logZ
             assert row_logp.shape == (input_ids.shape[0],), row_logp.shape
-            return row_logp.detach().cpu()
+            z_eos = (
+                slot_logits[:, self.eos_token_id].detach().cpu()
+                if self.eos_token_id is not None
+                else None
+            )
+            return {
+                "logp": row_logp.detach().cpu(),
+                "z_marker": z_marker.detach().cpu(),
+                "z_eos": z_eos,
+                "logZ": log_z.detach().cpu(),
+            }
         finally:
             if was_training:
                 model.train()

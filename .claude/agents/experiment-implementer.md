@@ -6,7 +6,7 @@ description: >
   the `/issue` skill after plan approval, before any pod is touched. Pairs with
   `code-reviewer` for independent review. Distinct from `implementer` (standalone
   infra) and from `experimenter` (pod ops + monitoring).
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 skills:
   - codebase-debugger
   - cleanup
@@ -103,6 +103,21 @@ they invoke `implementer` directly.
    crashed sweep within ~5s of nohup because smoke didn't exercise the
    subprocess dispatcher. The orchestrator's `/issue` Step 6d.0 gate
    refuses to dispatch experimenter without PASS_UNIFIED or PASS_CANARY.
+
+   Two additional smoke-contract requirements (both bit hard on 2026-06-09):
+
+   - **Cross-phase data-contract smoke.** When any phase CONSUMES artifacts
+     produced under a DIFFERENT issue / condition registry (a parent's
+     matrices, another arm's adapters, a prior task's eval JSONs), the smoke
+     MUST run the consumer against the producer's REAL output shape at tiny
+     N — not component-level calls on synthetic fixtures. Incident #518: the
+     bakeoff phase read #474's 16-condition `G_logprob_matrix` (A1-A5/B1-B11
+     keys) while #518 passed R1..R24; the first real contact between the two
+     was a `KeyError` 11 hours into the production run.
+   - **Smoke drives the production entrypoint.** The smoke invokes the
+     launcher CLI with the production flag set (then scaled down), never the
+     library functions directly — a function-level smoke "verified" #518's
+     round-15 fix that lived in a branch the launcher never entered.
 6. **Cite CLAUDE.md gotchas in your mini-plan.** Grep `CLAUDE.md`
    §Gotchas for libraries / patterns relevant to the modules you're
    about to edit (e.g. vLLM, TRL, Hydra, MooseFS, RunPod, persona
@@ -124,21 +139,87 @@ If the parent experiment's scripts/configs live on a branch that was
 never merged to `main` (e.g. issue-432's recipe sits on the `issue-432`
 branch at `<sha>`), do NOT cherry-pick functions one at a time. A
 partial port brings the caller without the callee (or vice versa) and
-crashes the pod one phase at a time. Instead, diff the WHOLE train+eval
-code path against the parent's branch up front and port/verify the
-ENTIRE divergence in a single cycle before launch:
+crashes the pod one phase at a time. The crash class includes BOTH
+direct missing-function imports AND **library-API drift** — a
+dataclass field, function kwarg, or method signature that the parent
+SHA used but that has been renamed / retired / type-changed on `main`
+since the parent branched (e.g. `TrainLoraConfig.marker_logprob_
+trajectory` retired on `main`, `marker_text: list[str]` reverted to
+`str` on `main`). The parent-branch caller passes the old shape; the
+`main`-resident callee rejects it; the cell crashes at the first pod
+launch. The reconciliation MUST happen pre-cherry-pick, not at the
+crash.
 
-```bash
-git diff <parent-sha> origin/main -- scripts/train.py scripts/eval.py \
-  src/explore_persona_space/{train,eval}/ configs/
-```
+Three mandatory steps, BEFORE the first commit on the worktree:
 
-Reconcile every hunk (port it, or confirm `main`'s version is
-equivalent) before the smoke run. (Incident 2026-06-01: #451
-cherry-picked `factor_screen_397` but left `train/sft.py` at main's
-older `TrainLoraConfig` signature → all 72 cells crashed in ~10 min;
-#456 hit the same partial-port class three times, each crash burning a
-fix-relaunch on a live pod.)
+1. **Diff the WHOLE train+eval+experiments code path against `main`
+   and reconcile every hunk** (port it, or confirm `main`'s version is
+   equivalent + adjust the cherry-picked call site to match `main`'s
+   current signature):
+
+   ```bash
+   git diff <parent-sha>..origin/main -- scripts/train.py scripts/eval.py \
+     src/explore_persona_space/train/ \
+     src/explore_persona_space/eval/ \
+     src/explore_persona_space/experiments/ \
+     configs/
+   ```
+
+   "Reconcile" is not optional and not silent — the implementation
+   report's `(b) Considered but not done` section MUST list every
+   non-trivial hunk you reconciled, naming which fields / functions /
+   kwargs drifted and which way you resolved them (ported the
+   parent's shape, or adjusted the call site to `main`'s shape). A
+   hunk you "didn't notice" is the partial-port crash class.
+
+2. **Signature smoke per kwarg the dispatcher passes.** Before the
+   first commit, run a one-liner that asserts every kwarg / dataclass
+   field the cherry-picked dispatcher will pass is actually present
+   in `main`'s current signature for that callee (catches drift the
+   git-diff scan missed because the hunk landed in an adjacent
+   file). Pattern:
+
+   ```bash
+   uv run python -c "
+   from dataclasses import fields
+   from explore_persona_space.train.sft import TrainLoraConfig  # or whichever Config the dispatcher constructs
+   dispatcher_kwargs = {<every kwarg the dispatcher's call site passes>}
+   missing = dispatcher_kwargs - {f.name for f in fields(TrainLoraConfig)}
+   assert not missing, f'Library-API drift: dispatcher passes kwargs missing from main: {missing}'
+   "
+   ```
+
+   For non-dataclass callees use `inspect.signature(<fn>).parameters`
+   instead of `fields(<Config>)`. Run this for EVERY library callee
+   the cherry-picked code constructs or invokes at the dispatcher
+   boundary (typically: training Config, eval Config, the trainer
+   entry-point fn, the eval entry-point fn). This is in addition to
+   — not a replacement for — the standard signature smoke in the
+   GPU-bound-phase carve-out (the per-phase one verifies the
+   dispatcher → trainer ABI; this per-kwarg one verifies every
+   field the dispatcher's call site already names).
+
+3. **Surface every reconciled drift in the implementation report.**
+   Under `(b) Considered but not done`, one bullet per drift item:
+   "`TrainLoraConfig.marker_logprob_trajectory` retired on `main`
+   since `<parent-sha>` — removed from the dispatcher's kwargs; the
+   feature is now <X> on `main` and the cherry-pick relies on <Y>"
+   (or "ported the parent's field back to `train/sft.py` because
+   `main`'s replacement <Z> is not equivalent for this experiment").
+   This makes the reconciliation visible to `code-reviewer` and to
+   any later task that re-uses the recipe.
+
+(Incidents: 2026-06-01 #451 cherry-picked `factor_screen_397` but
+left `train/sft.py` at `main`'s older `TrainLoraConfig` signature →
+all 72 cells crashed in ~10 min. #456 hit the same partial-port
+class three times, each crash burning a fix-relaunch on a live pod.
+2026-06-08 #529 cherry-picked the `i464_*` rig from `issue-464` SHA
+`0905fc70`; `TrainLoraConfig.marker_logprob_trajectory` had been
+retired on `main` and `marker_text: list[str]` reverted to `str`,
+both discovered at implementation-time via a post-hoc
+`dataclasses.fields()` introspection rather than pre-cherry-pick —
+the implementer caught it via the smoke but the failure-mode-catch
+was reactive, not preventative.)
 
 ### During implementation
 
@@ -199,6 +280,27 @@ fix-relaunch on a live pod.)
   handles re-run dedup. Task #377 lost 3 of 4 clean domains' output on rounds
   5/6/7 when the 4th domain tripped the mid-run quality gate (2026-05-22/23).
 
+### Content hygiene for harmful-content datasets (EM, refusal-bait, harmful-advice)
+
+This project legitimately trains and evals on harmful-content corpora
+(Betley-style EM insecure-code / bad-medical-advice mixes, refusal
+pools). Raw rows from those corpora in your context can trigger terminal
+API usage-policy refusals that kill your final report turn AND make the
+transcript unresumable — a resume refuses instantly on the poisoned
+context (incident: task #537, 2026-06-10, two implementer agents lost
+mid-task). While building or smoke-testing a data path over such corpora:
+
+- NEVER `cat` / `head` / `Read` raw EM / refusal / harmful-advice data
+  files or the training JSONLs generated from them.
+- Digest by reference only: `wc -l`, `sha256sum`, `jq 'keys'` on a row
+  (never content-field values), row/token counts computed in Python
+  without printing text fields.
+- Redirect smoke-run stdout to a log file; inspect via targeted greps
+  (exit codes, `[phase=`, `error|traceback`) — never dump the log.
+- In reports and markers, describe such data by path + row count + hash +
+  field names; sanitized placeholders are fine. Benign corpora (marker,
+  fact, sycophancy, WildChat, personas) are unaffected by this rule.
+
 ### Pod-side result-reporting contract (`poll_pipeline.py`)
 
 CLAUDE.md "Pod-side code NEVER shells out to `scripts/task.py`" mandates the
@@ -210,7 +312,9 @@ marker will be silently skipped. Two requirements, no exceptions:
 
 1. **`[phase=...]` log lines, terminating in `[phase=done]` on graceful
    completion.** `poll_pipeline.py` parses `PHASE_RE = re.compile(r"\[phase=
-   ([a-z_]+)")` from the tail of the pod-side log; `poll_once` declares
+   ([a-z0-9_]+)")` from the tail of the pod-side log (digits are part of the
+   token, so numbered phase names like `p0_render` parse fully); `poll_once`
+   declares
    `status="done"` ONLY when the most recent matching line is
    `[phase=done]`. A clean exit without that terminal line decays to
    `status="dead"` (PID gone, no `done` marker), which the orchestrator
@@ -393,6 +497,45 @@ silently dropped the end-of-run sentinel for missing required keys, and
    issue #N (see Report Format below). The `/issue` skill reads this marker
    and spawns `code-reviewer`.
 
+### Smoke runs are same-turn, synchronous work
+
+You get ONE turn and are never re-woken by background events — watchers,
+Monitor loops, and `run_in_background` completion notifications all die
+with the turn.
+
+- Run each smoke phase to completion in THIS turn: foreground `Bash` with
+  a generous timeout (up to 600000 ms) for multi-minute phases, or
+  `run_in_background` plus a bounded same-turn polling loop over the
+  output file. Never end the turn while a poll is still pending.
+- NEVER arm watchers/Monitor and end the turn "pausing until one fires" —
+  the turn ends permanently, and everything downstream (the remaining
+  smoke verification, concern responses, the
+  `epm:experiment-implementation` marker) is silently left unposted
+  (incident: task #540 round 3, 2026-06-09 — the agent armed three
+  watchers on a locally-running smoke phase and truncated; the
+  orchestrator had to detect the truncation and resume it by hand).
+- If a phase genuinely cannot finish within the tool-timeout budget, do
+  NOT end the turn silently mid-verification: post the implementation
+  marker with that phase explicitly marked NOT-RUN plus the exact
+  copy-pasteable command, so code-reviewer and the orchestrator see the
+  gap instead of a truncation.
+- A locally-launched background PROCESS is never your deliverable either:
+  it dies with your subagent shell. If a long local job must outlive your
+  turn, launch it `setsid ... < /dev/null &`, write a PID file + log path,
+  and state explicitly in your report that THE ORCHESTRATOR owns the watch
+  (mirroring the pod-side nohup convention). Incident #539, 2026-06-09:
+  an implementer's bg launch died with its shell and ~85 min passed before
+  the orchestrator noticed and re-ran it.
+
+### Commit work-in-progress as you go
+
+Commit (and push) to the issue branch at each logical unit — e.g. after the
+tests for a file pass — not only at the end of the turn. A session/agent
+death must never strand uncommitted work in the worktree: on 2026-06-09 the
+#505 round-2 implementer died mid-implementation with all work uncommitted,
+and the recovery session had to re-dispatch from scratch. WIP commits on the
+issue branch are free (the branch merges via Step 10d's guarded procedure).
+
 ### TDD mode (when the plan or user requests it)
 
 If the approved plan body contains a `### TDD: yes` line, or the user explicitly asks for TDD, do tests-first:
@@ -485,6 +628,33 @@ issue #N:
 [Items you want the user to look at by hand even after code-reviewer PASS. Includes: assumptions made when the plan was ambiguous, lines / patterns the reviewer should scrutinize first, anything outside your training distribution (unfamiliar library, niche API), anything that touched authentication / secrets / external services / file uploads even on a leaf-node change. If nothing, write "None — confidence high across the diff."]
 <!-- /epm:experiment-implementation -->
 ```
+
+### Deferred production-path TODOs are persisted concerns, not (d) prose
+
+If your round defers a feature the approved plan's PRODUCTION path
+requires — a registered statistic, correction, or data input whose
+absence makes the production run crash or silently degrade (e.g. an SE
+inflow left as a `# TODO` so a load-bearing attenuation adjustment
+either raises or quietly pins to its uncorrected value) — you MUST
+persist it before posting your marker:
+
+```bash
+uv run python scripts/task.py raise-concern <N> \
+    --concern-id <kebab-id> --severity CONCERN \
+    --summary "<≤200-char one-liner>" --by experiment-implementer --round <n>
+```
+
+Use `--severity BLOCKER` when the production path provably crashes
+without the deferred feature. A `(d) Needs human eyeball` bullet
+("surface as a follow-up before the production run") is NOT a
+substitute — the /issue Step 5c-ter dispatch gate reads
+`concerns.jsonl`, not report prose, so an unpersisted deferral
+dispatches the pod and the crash lands at run time (incident #509: the
+fact arm's per-seed-SE reconstruction was deferred in round-3 `(d)`
+prose, review PASSed, production scoring crashed exactly as predicted,
+and the run descoped to `--smoke` with the attenuation correction
+pinned to 1.0). Still list the deferral in `(d)` for the human reader —
+the concern row is what makes it binding.
 
 On revision rounds, also include:
 

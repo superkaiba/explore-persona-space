@@ -41,8 +41,10 @@ intervals; taken over BOTH the top-level log and the freshest cell
 log), (b) every per-phase log under
 ``/workspace/logs/issue-<N>-*.log`` is also quiet for >stall_sec,
 (c) every shard / repo-rooted phase log under
-``/workspace/explore-persona-space/logs/issue_<N>{,_*}/*.log`` is
-also quiet for >stall_sec, and (d) the GPUs are idle. Only when all
+``/workspace/explore-persona-space/logs/issue_<N>{,_*}/*.log`` AND
+every dispatcher per-job log under
+``/workspace/explore-persona-space/eval_results/issue_<N>{,_*}/logs/*.log``
+is also quiet for >stall_sec, and (d) the GPUs are idle. Only when all
 four signals agree does the poll declare `stalled`; any fresh log
 OR a busy GPU keeps the run in `running`.
 
@@ -89,6 +91,21 @@ match remains intentionally narrow (only paths embedding ``issue_<N>``
 or ``issue-<N>`` under the repo logs dir; not a broad recursive scan)
 to avoid coupling other pods' background writes to the verdict.
 
+Staleness ALSO folds in dispatcher per-job logs (incident #521
+judge-batch wait): the issue_519/521-style dispatcher writes one log
+per job under ``<output_dir>/logs/*.log``, with ``output_dir``
+typically ``/workspace/explore-persona-space/eval_results/issue_<N>``.
+During a CPU-bound phase that polls an external judge batch the GPUs
+are idle BY DESIGN and the main log is quiet, while the per-job log
+appends every 30-60s — the only liveness signal. On 2026-06-10 a #521
+tick declared the healthy EM-steering job ``stalled`` (pid alive,
+GPUs all 0, main log 1302s stale) because no probe reached
+``eval_results/issue_<N>/logs/``. The shard-log probe therefore ALSO
+globs ``eval_results/issue_<N>{,_*}/logs/*.log`` into the same
+max-mtime reduction. The match stays narrow on purpose: the directory
+must be exactly ``issue_<N>`` or ``issue_<N>_<suffix>`` (a bare
+``issue_<N>*`` glob would let issue 5 match issue 521's directories).
+
 Dead: PID not alive AND last phase line is NOT `done` (clean exit
 should always end with `[phase=done]`).
 
@@ -97,8 +114,10 @@ Phase-line shape expected from the entry script:
     2026-05-21 14:55:02 [phase=eval]
     2026-05-21 15:10:44 [phase=done]
 
-Anything matching the regex `\\[phase=([a-z_]+)` will be picked up; the
-token immediately after `phase=` is the milestone name.
+Anything matching the regex `\\[phase=([a-z0-9_]+)` will be picked up; the
+token immediately after `phase=` is the milestone name. Digits are part of
+the token (`[phase=p0_render]` parses as `p0_render`, not `p`), so numbered
+phase-naming schemes (p0/p1/p2) work without spelling digits out.
 
 Sentinel schema (v1) — written by pod-side dispatchers, drained here:
 
@@ -171,12 +190,82 @@ STALL_SEC = DEFAULT_STALL_SEC
 # See ``src/explore_persona_space/task_workflow.py`` ``post_event``: the
 # message format is ``"event note exceeds {EVENT_NOTE_MAX} chars (<len>); ..."``.
 _OVERSIZE_NOTE_ERROR_SUBSTR = "event note exceeds"
-PHASE_RE = re.compile(r"\[phase=([a-z_]+)")
+PHASE_RE = re.compile(r"\[phase=([a-z0-9_]+)")
 # The epm:run-launched marker note is free-form `key=value` tokens plus
 # trailing prose (see .claude/agents/experimenter.md "Post epm:run-launched").
 # `pid=<int>` is the resolved python child PID the experimenter posted.
 MARKER_PID_RE = re.compile(r"\bpid=(\d+)")
 DEFAULT_STATE_DIR = _REPO_ROOT / ".claude" / "cache"
+
+# How many consecutive SSH-probe failures must accumulate before the poller
+# auto-fires ``pod.py config --refresh-from-api <pod>`` as a stale-port
+# self-heal. Set to 10 (~3-4 min at the orchestrator's typical 20s spacing) so
+# a transient SSH hiccup never burns a refresh call, but a sustained
+# connection-refused stretch — the #488 stale-port pattern — does. After the
+# refresh attempt the counter resets so we never hot-loop refresh calls; the
+# next ``SSH_FAIL_REFRESH_THRESHOLD`` consecutive failures will trigger a
+# re-try.
+SSH_FAIL_REFRESH_THRESHOLD = int(os.environ.get("EPM_POLL_SSH_FAIL_REFRESH_THRESHOLD", "10"))
+
+
+def _try_refresh_pods_conf_from_api(pod: str) -> bool:
+    """Best-effort ``pod.py config --refresh-from-api <pod>`` self-heal.
+
+    Fires after :data:`SSH_FAIL_REFRESH_THRESHOLD` consecutive ``_ssh_probe``
+    failures on the same pod — the #488 stale-port pattern, where a
+    SUPPLY_CONSTRAINT-blocked resume eventually brought the pod back at a NEW
+    SSH port via a retry path that bypassed ``_upsert_pods_conf`` and
+    ``pods.conf`` stayed stale while the SSH polling loop spun indefinitely.
+
+    Fail-soft: any failure (subprocess timeout, non-zero exit, missing
+    binary, oserror) is logged and the function returns False. The polling
+    loop never crashes on this auto-heal; the caller resets the failure
+    counter regardless so we don't hot-loop refresh calls back-to-back.
+
+    Returns True on success (refresh-from-api exited 0), False otherwise.
+    """
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        str(_REPO_ROOT / "scripts" / "pod.py"),
+        "config",
+        "--refresh-from-api",
+        pod,
+    ]
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        log.warning(
+            "auto-heal: pod.py config --refresh-from-api %s raised %s; "
+            "polling loop continues (next %d consecutive failures will retry)",
+            pod,
+            type(exc).__name__,
+            SSH_FAIL_REFRESH_THRESHOLD,
+        )
+        return False
+    if result.returncode != 0:
+        log.warning(
+            "auto-heal: pod.py config --refresh-from-api %s exited rc=%d; stderr=%s",
+            pod,
+            result.returncode,
+            (result.stderr or "").strip(),
+        )
+        return False
+    log.info(
+        "auto-heal: pod.py config --refresh-from-api %s OK; pods.conf "
+        "+ ~/.ssh/config refreshed against the live RunPod API after %d "
+        "consecutive SSH-probe failures (#488 stale-port pattern)",
+        pod,
+        SSH_FAIL_REFRESH_THRESHOLD,
+    )
+    return True
 
 
 def _marker_pid(issue: int) -> int | None:
@@ -220,6 +309,11 @@ class PollResult:
     new_milestone: bool
     last_log_mtime_sec_ago: int
     pid_alive: bool
+    # True when the pod-side pid FILE did not exist at probe time —
+    # ``pid_alive=False`` then means "no pidfile to probe" (possibly with
+    # a live marker-pid fallback carrying liveness), NOT "pid probed
+    # dead". Observability only; status routing is unchanged (#521).
+    pid_file_missing: bool
     log_tail_excerpt: str
     gate: str | None = None  # set when a drained sentinel carried a non-empty gate
     sentinels_processed: int = 0
@@ -229,9 +323,10 @@ class PollResult:
     # summary records WHY a healthy long-phase run stayed in `running`
     # despite a quiet top-level + cell log.
     phase_log_mtime_sec_ago: int = 10**9
-    # Shard / repo-rooted phase log freshness (#488). ``10**9`` means
-    # neither layout exists yet (defaults to "very old" so the absence
-    # never by itself keeps a stalled verdict from firing).
+    # Shard / repo-rooted phase log freshness (#488 shard layouts +
+    # #521 dispatcher per-job logs). ``10**9`` means no covered layout
+    # exists yet (defaults to "very old" so the absence never by itself
+    # keeps a stalled verdict from firing).
     shard_log_mtime_sec_ago: int = 10**9
     gpu_util: str = "unknown"
 
@@ -251,6 +346,13 @@ def _ssh_probe(
 
     Liveness keys:
     * ``pid_alive`` — liveness of the PID stored in ``pid_file``.
+    * ``pid_file_missing`` — ``"1"`` when ``pid_file`` does not exist on
+      the pod; ``PID_ALIVE=0`` then means "no pidfile to probe", NOT
+      "pid probed dead". Observability-only (incident #521: a false
+      ``status=dead`` on a healthy run was hard to diagnose because the
+      tick collapsed "file absent, marker-pid fallback in effect" into
+      a bare ``pid_alive=False``). ``"0"`` on the SSH-failure fail-safe
+      path — transport failure means "unknown", not "missing".
     * ``marker_pid_alive`` — liveness of ``marker_pid`` (the PID carried
       by the latest epm:run-launched marker) when one is supplied. The
       marker-pid probe is the self-correction path for a stale pidfile.
@@ -279,18 +381,23 @@ def _ssh_probe(
       live flat at ``/workspace/logs/issue-<N>-<phase>.log``; the two
       globs don't overlap.
     * ``shard_log_mtime_epoch`` — max mtime over repo-rooted shard /
-      phase logs (incident #488). Covers two extra layouts neither the
-      cell-log nor the per-phase-log probe sees:
+      phase / per-job logs (incidents #488 + #521). Covers three extra
+      layouts neither the cell-log nor the per-phase-log probe sees:
       (1) ``/workspace/explore-persona-space/logs/issue_<issue>/*.log``
       — nested subdirectory holding per-GPU shard logs (e.g.
       ``phase1_g0.log``..``phase1_g7.log``);
       (2) ``/workspace/explore-persona-space/logs/issue_<issue>_*.log``
       — flat repo-rooted phase logs (e.g. ``issue_<N>_phase0.log``,
-      the #331 / #444 family layout).
-      Excludes ``*.json`` / ``*.processed`` sentinels under (2). ``"0"``
-      when neither layout exists. The two patterns share an mtime
-      reduction (max), so a healthy run keeping EITHER layout fresh
-      stays in ``running``.
+      the #331 / #444 family layout);
+      (3) ``/workspace/explore-persona-space/eval_results/
+      issue_<issue>{,_*}/logs/*.log`` — dispatcher per-job logs
+      (``<output_dir>/logs/<job>.log``, the issue_519/521 dispatcher
+      convention; #521), the only fresh signal during a CPU-bound
+      judge-batch wait with GPUs idle by design.
+      Excludes ``*.json`` / ``*.processed`` sentinels. ``"0"`` when no
+      covered layout exists. All patterns share an mtime reduction
+      (max), so a healthy run keeping ANY layout fresh stays in
+      ``running``.
     * ``gpu_util`` — comma-separated per-GPU ``utilization.gpu``
       integers (e.g. ``"95,87,42,90"``). ``"unknown"`` when
       ``nvidia-smi`` is unavailable or errors (fail-safe — see
@@ -359,11 +466,24 @@ def _ssh_probe(
     # purpose — paths must embed `issue_<N>` (underscore) under the repo
     # logs directory, so unrelated logs from other pods don't pollute
     # the freshness signal.
+    #
+    # Dispatcher per-job logs (#521): the issue_519/521-style dispatcher
+    # writes one log per job under `<output_dir>/logs/*.log`, with
+    # `output_dir` typically `eval_results/issue_<N>` under the repo
+    # root. During a CPU-bound judge-batch wait (GPUs idle by design,
+    # main log quiet) the per-job log is the ONLY fresh signal — a #521
+    # tick false-declared `stalled` on a healthy EM-steering job
+    # (2026-06-10) because no probe reached it. Folded into the same
+    # SHARD_LOG max. The two extra globs keep the issue-number match
+    # exact (`issue_<N>` or `issue_<N>_<suffix>`; a bare `issue_<N>*`
+    # would let issue 5 match issue 521's directories).
     shard_log_probe = (
         f"SHARD_LOG_MAX=$("
         f"shopt -s nullglob; "
         f"for f in /workspace/explore-persona-space/logs/issue_{issue}/*.log "
-        f"         /workspace/explore-persona-space/logs/issue_{issue}_*.log; do "
+        f"         /workspace/explore-persona-space/logs/issue_{issue}_*.log "
+        f"         /workspace/explore-persona-space/eval_results/issue_{issue}/logs/*.log "
+        f"         /workspace/explore-persona-space/eval_results/issue_{issue}_*/logs/*.log; do "
         f'  case "$f" in *.processed|*.json) continue ;; esac; '
         f'  stat -c %Y "$f" 2>/dev/null; '
         f"done | sort -n | tail -1); "
@@ -383,9 +503,9 @@ def _ssh_probe(
     heredoc = (
         f"LOG_PATH={log_path}; "
         f"if [ -f {pid_file} ]; then "
-        f"  PID=$(cat {pid_file}); "
+        f"  echo PID_FILE_MISSING=0; PID=$(cat {pid_file}); "
         f"  if ps -p $PID > /dev/null 2>&1; then echo PID_ALIVE=1; else echo PID_ALIVE=0; fi; "
-        f"else echo PID_ALIVE=0; fi; "
+        f"else echo PID_FILE_MISSING=1; echo PID_ALIVE=0; fi; "
         f"{marker_probe}"
         f"if [ -f $LOG_PATH ]; then "
         f"  echo MTIME_EPOCH=$(stat -c %Y $LOG_PATH); "
@@ -404,8 +524,13 @@ def _ssh_probe(
     )
     if result.returncode != 0:
         log.error("ssh failed (rc=%d): %s", result.returncode, result.stderr.strip())
+        # ``ssh_failed`` is the explicit caller signal so ``poll_once`` can
+        # count consecutive transport failures (#488 stale-port auto-heal)
+        # WITHOUT having to infer "ssh down" from the zeroed values below
+        # (which can also legitimately mean "log file does not exist yet").
         return {
             "pid_alive": "0",
+            "pid_file_missing": "0",
             "marker_pid_alive": "0",
             "mtime_epoch": "0",
             "cell_mtime_epoch": "0",
@@ -414,14 +539,18 @@ def _ssh_probe(
             "phase_log_mtime_epoch": "0",
             "shard_log_mtime_epoch": "0",
             "gpu_util": "unknown",
+            "ssh_failed": "1",
         }
-    return _parse_probe_stdout(result.stdout)
+    parsed = _parse_probe_stdout(result.stdout)
+    parsed["ssh_failed"] = "0"
+    return parsed
 
 
 # Scalar `KEY=value` lines the probe heredoc emits. Order is irrelevant —
 # the parser dispatches on the prefix and stores the trailing value.
 _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "PID_ALIVE",
+    "PID_FILE_MISSING",
     "MARKER_PID_ALIVE",
     "MTIME_EPOCH",
     "CELL_MTIME_EPOCH",
@@ -440,6 +569,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
     """
     parsed: dict[str, str] = {
         "pid_alive": "0",
+        "pid_file_missing": "0",
         "marker_pid_alive": "0",
         "mtime_epoch": "0",
         "cell_mtime_epoch": "0",
@@ -942,9 +1072,61 @@ def poll_once(
     # re-run is not misreported as dead.
     marker_pid = _marker_pid(issue)
     probe = _ssh_probe(pod, log_path, pid_file, issue, marker_pid)
+
+    # ── #488 stale-port self-heal ────────────────────────────────────────
+    # Track consecutive SSH-probe failures across ticks. When the live API
+    # has moved a pod's SSH endpoint to a new port but ``pods.conf`` still
+    # holds the pre-stop value, every probe lands on a dead address and
+    # this counter accumulates. Once it crosses
+    # ``SSH_FAIL_REFRESH_THRESHOLD`` we shell out to ``pod.py config
+    # --refresh-from-api <pod>`` once (fail-soft) to pull the current
+    # host/port from the live API into ``pods.conf`` + ``~/.ssh/config``,
+    # then reset the counter so the NEXT N consecutive failures will
+    # retry. This is the auto-heal that closes the gap left by the
+    # #488 manual recovery (the new ``--refresh-from-api`` subcommand
+    # already exists; this is the wiring that uses it without a human in
+    # the loop).
+    prev_state = _load_state(state_file, issue)
+    prev_ssh_fail_count_raw = prev_state.get("ssh_fail_count", "0")
+    try:
+        prev_ssh_fail_count = int(prev_ssh_fail_count_raw)
+    except (TypeError, ValueError):
+        prev_ssh_fail_count = 0
+    ssh_failed = probe.get("ssh_failed") == "1"
+    if ssh_failed:
+        ssh_fail_count = prev_ssh_fail_count + 1
+        if ssh_fail_count >= SSH_FAIL_REFRESH_THRESHOLD:
+            log.warning(
+                "SSH probe failed %d consecutive ticks for pod %s; "
+                "firing pod.py config --refresh-from-api %s "
+                "(#488 stale-port auto-heal)",
+                ssh_fail_count,
+                pod,
+                pod,
+            )
+            _try_refresh_pods_conf_from_api(pod)
+            # Reset after the attempt regardless of outcome so we don't
+            # hot-loop refresh calls every tick.
+            ssh_fail_count = 0
+    else:
+        ssh_fail_count = 0
+
     pidfile_pid_alive = probe["pid_alive"] == "1"
     marker_pid_alive = marker_pid is not None and probe["marker_pid_alive"] == "1"
     pid_alive = pidfile_pid_alive or marker_pid_alive
+    # Observability for the #521 false-dead diagnosis: surface "the pid
+    # FILE was absent" (vs "the pid probed dead") in the tick JSON, and
+    # warn when the epm:run-launched marker pid is the fallback standing
+    # in for it. Status routing is deliberately untouched — ``pid_alive``
+    # already ORs in the marker pid.
+    pid_file_missing = probe.get("pid_file_missing") == "1"
+    if pid_file_missing and marker_pid is not None:
+        log.warning(
+            "pid file %s absent on pod %s; using epm:run-launched marker pid %d fallback",
+            pid_file,
+            pod,
+            marker_pid,
+        )
     mtime_epoch = int(probe["mtime_epoch"] or "0")
     cell_mtime_epoch = int(probe["cell_mtime_epoch"] or "0")
     phase_log_mtime_epoch = int(probe["phase_log_mtime_epoch"] or "0")
@@ -981,8 +1163,11 @@ def poll_once(
     # `last_mtime_ago`, #405) AND every per-phase log under
     # `/workspace/logs/issue-<N>-*.log` (#468) AND every shard /
     # repo-rooted phase log under `/workspace/explore-persona-space/
-    # logs/issue_<N>{,_*}/*.log` (#488) AND the GPUs must ALL be
-    # quiet/idle for >STALL_SEC. The shard-log conjunction (#488)
+    # logs/issue_<N>{,_*}/*.log` (#488) plus every dispatcher per-job
+    # log under `/workspace/explore-persona-space/eval_results/
+    # issue_<N>{,_*}/logs/*.log` (#521, folded into the same shard-log
+    # max) AND the GPUs must ALL be quiet/idle for >STALL_SEC. The
+    # shard-log conjunction (#488)
     # prevents a false stall when a multi-GPU launcher fans out per-GPU
     # shard logs under a subdirectory and the inner loop's per-shard
     # write cadence (e.g. ~3 min between writes for i488 Pass B across
@@ -1009,9 +1194,9 @@ def poll_once(
     else:
         status = "running"
 
-    # New milestone?
-    prev = _load_state(state_file, issue)
-    prev_phase = prev.get("phase", "")
+    # New milestone? (re-uses ``prev_state`` loaded above for the
+    # ssh_fail_count tracking — we only read state once per tick.)
+    prev_phase = prev_state.get("phase", "")
     new_milestone = current_phase != prev_phase and current_phase != "unknown"
 
     if new_milestone:
@@ -1028,7 +1213,15 @@ def poll_once(
             log.error("post_event failed: %s", exc)
             new_milestone = False  # Don't claim we recorded it.
 
-    _save_state(state_file, issue, {"phase": current_phase, "last_mtime_epoch": str(mtime_epoch)})
+    _save_state(
+        state_file,
+        issue,
+        {
+            "phase": current_phase,
+            "last_mtime_epoch": str(mtime_epoch),
+            "ssh_fail_count": str(ssh_fail_count),
+        },
+    )
 
     # Pick the tail excerpt from whichever log is the fresher signal: if
     # cell logs exist AND are fresher than the main log, surface the cell
@@ -1046,6 +1239,7 @@ def poll_once(
         new_milestone=new_milestone,
         last_log_mtime_sec_ago=min(last_mtime_ago, 10**9),
         pid_alive=pid_alive,
+        pid_file_missing=pid_file_missing,
         log_tail_excerpt=tail_excerpt,
         gate=gate,
         sentinels_processed=sentinels_processed,
@@ -1109,6 +1303,7 @@ def main(argv: list[str] | None = None) -> int:
                 "new_milestone": result.new_milestone,
                 "last_log_mtime_sec_ago": result.last_log_mtime_sec_ago,
                 "pid_alive": result.pid_alive,
+                "pid_file_missing": result.pid_file_missing,
                 "log_tail_excerpt": result.log_tail_excerpt,
                 "gate": result.gate,
                 "sentinels_processed": result.sentinels_processed,

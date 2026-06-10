@@ -168,6 +168,158 @@ def test_pod_safety_done_higher_threshold_delays_stop():
     ) == ("stop", 0)
 
 
+@pytest.mark.parametrize("missed", [0, 1, 5])
+def test_pod_safety_keep_running_tag_skips_stop(missed):
+    # A DONE task with the keep-running tag is NEVER stopped, even past the
+    # miss threshold, and the miss counter resets to 0 — so removing the tag
+    # later re-arms a fresh >=threshold-checks accumulation (#530 regression).
+    assert decide_pod_safety(
+        status_class="auto-stop-done",
+        missed=missed,
+        stale=False,
+        alerted=False,
+        threshold=2,
+        keep_running=True,
+    ) == ("keep-running-skip", 0)
+
+
+def test_pod_safety_keep_running_does_not_suppress_alert():
+    # The tag only exempts the auto-stop arm. A stale pod-active task still
+    # alerts (alerts never stop anything, so there is nothing to exempt).
+    assert decide_pod_safety(
+        status_class="pod-active-stale",
+        missed=0,
+        stale=True,
+        alerted=False,
+        keep_running=True,
+    ) == ("alert", 0)
+
+
+@pytest.mark.parametrize("missed", [0, 1, 5])
+def test_pod_safety_followup_active_skips_stop(missed):
+    # The #477 regression: a promoted task with a fresh `epm:run-launched`
+    # (newer than the latest done-transition) is a live inline follow-up.
+    # The auto-stop is SKIPPED with the miss counter reset, so when the
+    # follow-up finishes (predicate flips False) the auto-stop re-arms with a
+    # fresh >=threshold-checks accumulation. Same semantics as keep-running.
+    assert decide_pod_safety(
+        status_class="auto-stop-done",
+        missed=missed,
+        stale=False,
+        alerted=False,
+        threshold=2,
+        followup_active=True,
+    ) == ("followup-skip", 0)
+
+
+def test_pod_safety_keep_running_beats_followup_active():
+    # Precedence: an explicit user-set keep-running tag wins over the
+    # inferred-from-events follow-up predicate. The user signal is stronger
+    # and predictable from the dashboard; the inferred one is best-effort.
+    assert decide_pod_safety(
+        status_class="auto-stop-done",
+        missed=5,
+        stale=False,
+        alerted=False,
+        threshold=2,
+        keep_running=True,
+        followup_active=True,
+    ) == ("keep-running-skip", 0)
+
+
+def test_task_followup_active_predicate():
+    # _task_followup_active compares the latest `epm:run-launched` ts vs the
+    # latest of `epm:promoted` / `epm:status-changed`. Truthy iff there is a
+    # run-launched newer than every done-transition.
+    import autonomous_session_watch as asw
+
+    # No run-launched at all -> False.
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:status-changed", "ts": "2026-06-10T00:00:00Z", "note": ""},
+                {"kind": "epm:promoted", "ts": "2026-06-10T00:00:01Z", "note": ""},
+            ],
+        )
+        is False
+    )
+    # No done-transition (defensive case — caller has already verified DONE
+    # status, so this is unreachable in practice) -> False conservatively.
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[{"kind": "epm:run-launched", "ts": "2026-06-10T03:00:00Z", "note": ""}],
+        )
+        is False
+    )
+    # run-launched OLDER than done-transition -> False (the run-launched
+    # belongs to the experiment that produced the now-completed task).
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:run-launched", "ts": "2026-06-09T20:00:00Z", "note": ""},
+                {"kind": "epm:promoted", "ts": "2026-06-10T00:00:00Z", "note": ""},
+            ],
+        )
+        is False
+    )
+    # run-launched NEWER than done-transition -> True (a legitimate inline
+    # follow-up).
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:promoted", "ts": "2026-06-10T00:00:00Z", "note": ""},
+                {"kind": "epm:run-launched", "ts": "2026-06-10T03:00:00Z", "note": ""},
+            ],
+        )
+        is True
+    )
+    # Compares against the LATEST done-transition (not the earliest).
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:promoted", "ts": "2026-06-10T00:00:00Z", "note": ""},
+                {"kind": "epm:run-launched", "ts": "2026-06-10T03:00:00Z", "note": ""},
+                # A SECOND done-transition (e.g. follow-up finished) after the
+                # run-launched -> predicate flips False (follow-up is done).
+                {"kind": "epm:status-changed", "ts": "2026-06-10T05:00:00Z", "note": ""},
+            ],
+        )
+        is False
+    )
+
+
+def test_pod_safety_followup_active_only_on_auto_stop_arm():
+    # The followup_active predicate is consulted ONLY when status_class is
+    # auto-stop-done. A pod-active-stale task still alerts (alerts never stop
+    # anything; nothing to exempt). A pod-active-fresh task keeps as usual.
+    assert decide_pod_safety(
+        status_class="pod-active-stale",
+        missed=0,
+        stale=True,
+        alerted=False,
+        followup_active=True,
+    ) == ("alert", 0)
+    assert decide_pod_safety(
+        status_class="pod-active-fresh",
+        missed=0,
+        stale=False,
+        alerted=False,
+        followup_active=True,
+    ) == ("keep", 0)
+    assert decide_pod_safety(
+        status_class="other",
+        missed=0,
+        stale=False,
+        alerted=False,
+        followup_active=True,
+    ) == ("keep", 0)
+
+
 def test_pod_safety_stale_pod_active_alerts_not_stops():
     # The mid-run-death case: a pod-active task gone stale gets an ALERT, never a
     # stop. A false alert is a cheap nudge; a false stop kills a healthy run.
@@ -376,8 +528,15 @@ def test_running_managed_pods_recognizes_canonical_pod_name(monkeypatch):
     )
     got = sorted(asw._running_managed_issue_pods())
     # pod-444, pod-489, and the legacy epm-issue-377 are recognized; the EXITED
-    # and unmanaged ones are excluded.
-    assert got == [(377, "pold"), (444, "p444"), (489, "p489")]
+    # and unmanaged ones are excluded. The third element is the pod NAME,
+    # threaded out so callers (e.g. the #488 stale-port self-heal in
+    # ``_handle_stalled_alert``) can address the pod by name without a
+    # second ``list_team_pods`` round-trip.
+    assert got == [
+        (377, "pold", "epm-issue-377"),
+        (444, "p444", "pod-444"),
+        (489, "p489", "pod-489"),
+    ]
 
 
 def test_running_managed_pods_api_error_returns_empty(monkeypatch):
@@ -403,7 +562,7 @@ def test_live_interactive_session_does_not_cause_stop(isolated_registry, monkeyp
 
     now = 1_000_000.0
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489")])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     # Fresh progress 1h ago -> pod-active-fresh -> keep.
     monkeypatch.setattr(
@@ -431,8 +590,9 @@ def test_auto_stop_fires_on_done_task_second_miss(isolated_registry, monkeypatch
     now = 1_000_000.0
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489")])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
     monkeypatch.setattr(
@@ -458,14 +618,164 @@ def test_auto_stop_fires_for_all_done_statuses(isolated_registry, monkeypatch, s
 
     now = 1_000_000.0
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(7, "p7")])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(7, "p7", "pod-7")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: status)
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: None)
 
     asw.pod_safety_pass(dry_run=False, threshold=1, now=now)  # threshold=1 -> stop immediately
     assert stops == [7]
+
+
+def test_keep_running_tag_skips_stop_and_notes_once(isolated_registry, monkeypatch):
+    # The #530 regression: a keep-running-tagged task at awaiting_promotion
+    # (a user-directed follow-up still using the pod) must NOT be auto-stopped.
+    # The skip posts ONE marker per pod incarnation, not one per 20-min tick.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    stops: list[int] = []
+    posts: list[tuple[int, str]] = []
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(530, "p530", "pod-530")])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "awaiting_promotion")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+
+    # threshold=1 would stop an untagged pod on the FIRST tick; three ticks
+    # with the tag -> zero stops, exactly one keep-running-skip marker.
+    for _ in range(3):
+        asw.pod_safety_pass(dry_run=False, threshold=1, now=now)
+
+    assert stops == []
+    assert posts == [(530, "keep-running-skip")]
+    state = json.loads((isolated_registry / "pod-safety-530.json").read_text())
+    assert state["keep_running_noted"] is True
+    assert state["missed"] == 0
+
+
+def test_keep_running_tag_removal_re_arms_auto_stop(isolated_registry, monkeypatch):
+    # Removing the tag re-arms the normal >=2-checks accumulation: the next
+    # two no-tag ticks stop the pod (fresh count — the tagged ticks did not
+    # accumulate misses).
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    stops: list[int] = []
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(530, "p530", "pod-530")])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "awaiting_promotion")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
+    monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: None)
+
+    # Two tagged ticks: no stop, no miss accumulation.
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    assert stops == []
+
+    # Tag removed: tick 1 only increments (missed 0->1), tick 2 stops.
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    assert stops == []
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    assert stops == [530]
+
+
+def test_inline_followup_run_launched_skips_stop(isolated_registry, monkeypatch):
+    # The #477 regression end-to-end: a completed/promoted task whose
+    # events.jsonl shows an `epm:run-launched` NEWER than the latest
+    # done-transition (`epm:status-changed` to a DONE status, or
+    # `epm:promoted`) is a live user-approved inline follow-up. The
+    # auto-stop is SKIPPED with exactly ONE follow-up exemption marker per
+    # incarnation; the keep-running tag is NOT required.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    stops: list[int] = []
+    posts: list[tuple[int, str]] = []
+    # Events: status-changed-to-completed at t=0, then a follow-up
+    # run-launched 1h later. The follow-up predicate compares the latest
+    # run-launched ts vs the latest done-transition ts.
+    events = [
+        {"kind": "epm:status-changed", "ts": "2026-06-10T00:00:00Z", "note": "-> completed"},
+        {"kind": "epm:promoted", "ts": "2026-06-10T00:00:01Z", "note": "promoted as useful"},
+        {"kind": "epm:run-launched", "ts": "2026-06-10T03:12:08Z", "note": "pod=pod-477"},
+    ]
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(477, "p477", "pod-477")])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: events)
+    monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+
+    # threshold=1 would stop an unprotected pod on the FIRST tick; three
+    # ticks with an active follow-up -> zero stops, exactly one followup-skip
+    # marker (dedup via `followup_noted`).
+    for _ in range(3):
+        asw.pod_safety_pass(dry_run=False, threshold=1, now=now)
+
+    assert stops == []
+    assert posts == [(477, "followup-skip")]
+    state = json.loads((isolated_registry / "pod-safety-477.json").read_text())
+    assert state["followup_noted"] is True
+    assert state["missed"] == 0
+
+
+def test_inline_followup_after_completion_re_arms_auto_stop(isolated_registry, monkeypatch):
+    # When the follow-up finishes (the next `epm:status-changed` /
+    # `epm:promoted` lands AFTER the latest `epm:run-launched`), the
+    # follow-up predicate flips False and the auto-stop re-arms with a fresh
+    # >=2-checks accumulation — mirrors the keep-running tag-removal path.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    stops: list[int] = []
+    # Phase 1: follow-up launched after promotion.
+    active_events = [
+        {"kind": "epm:promoted", "ts": "2026-06-10T00:00:00Z", "note": "promoted as useful"},
+        {"kind": "epm:run-launched", "ts": "2026-06-10T03:00:00Z", "note": "pod=pod-477"},
+    ]
+    # Phase 2: follow-up done — next done-transition lands AFTER the
+    # run-launched, so the predicate flips False.
+    finished_events = [
+        *active_events,
+        {"kind": "epm:status-changed", "ts": "2026-06-10T05:00:00Z", "note": "followup done"},
+    ]
+    state = {"events": active_events}
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(477, "p477", "pod-477")])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: state["events"])
+    monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
+    monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: None)
+
+    # Two ticks while the follow-up is live: no stop, no miss accumulation.
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    assert stops == []
+
+    # Follow-up finished: tick 1 only increments (missed 0->1), tick 2 stops.
+    state["events"] = finished_events
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    assert stops == []
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    assert stops == [477]
 
 
 @pytest.mark.parametrize("status", ["blocked", "interpreting", "reviewing"])
@@ -479,7 +789,7 @@ def test_no_auto_stop_for_other_class_statuses(isolated_registry, monkeypatch, s
 
     now = 1_000_000.0
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(7, "p7")])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(7, "p7", "pod-7")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: status)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
@@ -500,7 +810,7 @@ def test_alert_fires_on_stale_pod_active_and_does_not_stop(isolated_registry, mo
     now = 1_000_000.0
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489")])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     # No real progress for well over the stale cap.
     stale_ts = now - (ALERT_STALE_HOURS + 2) * 3600
@@ -530,7 +840,7 @@ def test_alert_dedups_across_ticks(isolated_registry, monkeypatch):
     now = 1_000_000.0
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489")])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: "verifying")
     stale_ts = now - (ALERT_STALE_HOURS + 2) * 3600
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "old"}])
@@ -556,7 +866,7 @@ def test_alert_re_fires_after_progress_advances(isolated_registry, monkeypatch):
 
     now = 1_000_000.0
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489")])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "x"}])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: None)
@@ -599,7 +909,7 @@ def test_alert_re_fires_after_none_then_first_progress_then_stale(isolated_regis
     now = 1_000_000.0
     posts: list[tuple[int, str]] = []
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489")])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "x"}])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
@@ -636,7 +946,7 @@ def test_no_alert_on_fresh_pod_active(isolated_registry, monkeypatch):
     now = 1_000_000.0
     posts: list[tuple[int, str]] = []
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489")])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "x"}])
     monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: now - 600)  # 10 min ago, fresh
@@ -797,6 +1107,8 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
         "missed": 1,
         "alerted": False,
         "last_progress_ts": 42.0,
+        "keep_running_noted": False,
+        "followup_noted": False,
         "first_seen": 1234.0,
     }
 
@@ -809,6 +1121,25 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
     assert payload2["missed"] == 2
     assert payload2["alerted"] is True
     assert payload2["last_progress_ts"] == 99.0
+
+    # keep_running_noted carries forward from prev when not explicitly passed,
+    # and an explicit value overrides.
+    asw._save_pod_safety_state(
+        7,
+        "pod-7",
+        missed=0,
+        alerted=False,
+        last_progress_ts=99.0,
+        keep_running_noted=True,
+        prev=payload2,
+    )
+    payload3 = json.loads((isolated_registry / "pod-safety-7.json").read_text())
+    assert payload3["keep_running_noted"] is True
+    asw._save_pod_safety_state(
+        7, "pod-7", missed=0, alerted=False, last_progress_ts=99.0, prev=payload3
+    )
+    payload4 = json.loads((isolated_registry / "pod-safety-7.json").read_text())
+    assert payload4["keep_running_noted"] is True  # carried forward
 
 
 # ─── stalled-detector decision matrix ────────────────────────────────────────
@@ -995,9 +1326,19 @@ def test_session_stalled_not_eligible_returns_alert():
     assert action == "alert"
 
 
-def test_session_stalled_already_alerted_is_keep():
-    # Dedup: once the alert flag has been set this episode, stay quiet
-    # until self-report-ts advancement clears it (caller's responsibility).
+def test_session_stalled_already_alerted_escalates_to_respawn_when_eligible():
+    # Regression for incident #506 (2026-06-08): a Phase-1 alert set
+    # alerted=True ~11h before respawn became eligible, and the prior
+    # `if alerted: return keep` short-circuit then suppressed the
+    # respawn on every subsequent tick for 10+ hours while the 8xH200
+    # pod idle-burned ~$460. The `alerted` flag must dedup REPEAT
+    # ALERTS only — it must not gate off the stronger respawn action
+    # once respawn becomes eligible. Previously this test asserted
+    # `action == "keep"` (encoded the bug); now it asserts the correct
+    # escalation. The dedup-of-repeat-alerts case (alerted + NOT
+    # eligible) is pinned by
+    # `test_session_stalled_already_alerted_eligibility_false_stays_keep`
+    # below.
     from autonomous_session_watch import decide_session_stalled
 
     stale = STALLED_WINDOW_S + 60
@@ -1009,6 +1350,49 @@ def test_session_stalled_already_alerted_is_keep():
         alerted=True,
         respawn_eligible=True,
         respawn_count=0,
+    )
+    assert action == "respawn"
+
+
+def test_session_stalled_already_alerted_eligibility_false_stays_keep():
+    # Dedup-of-repeat-alerts: alerted + respawn NOT eligible (non-ACTIVE
+    # status, or daemon unreachable this tick) -> stay quiet. The prior
+    # alert already deduped; a respawn would crash on the missing
+    # prerequisite. This was the original intent of
+    # `test_session_stalled_already_alerted_is_keep` before the
+    # incident-#506 regression test re-purposed that name.
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    action, _ = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=True,
+        missed=1,
+        alerted=True,
+        respawn_eligible=False,
+        respawn_count=0,
+    )
+    assert action == "keep"
+
+
+def test_session_stalled_already_alerted_at_cap_stays_keep():
+    # Exhausted-cap respected from the alerted branch: if respawn_count
+    # is already at the cap, the new escalation path must NOT resurrect
+    # a respawn. Stay quiet — the caller's `exhausted` flag dedups the
+    # loud one-time exhausted marker separately.
+    from autonomous_session_watch import decide_session_stalled
+
+    stale = STALLED_WINDOW_S + 60
+    action, _ = decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=True,
+        missed=1,
+        alerted=True,
+        respawn_eligible=True,
+        respawn_count=STALLED_MAX_RESPAWNS,
+        threshold=2,
     )
     assert action == "keep"
 
@@ -1380,12 +1764,16 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
         prev={"first_seen": 1234.0},
     )
     payload = json.loads((isolated_registry / "stalled-7.json").read_text())
+    # ``refresh_attempted`` (default False) is the #488 stale-port self-heal
+    # dedup flag added 2026-06-09; see ``_handle_stalled_alert`` +
+    # ``_refresh_pods_conf_from_api``. Schema-shape coverage stays exhaustive.
     assert payload == {
         "happy_session_id": "sess-7",
         "missed": 1,
         "alerted": False,
         "respawn_count": 2,
         "exhausted": False,
+        "refresh_attempted": False,
         "last_self_report_ts": "ts-1",
         "first_seen": 1234.0,
     }
@@ -1405,3 +1793,294 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
     assert payload2["respawn_count"] == 3
     assert payload2["exhausted"] is True
     assert payload2["alerted"] is True
+
+
+# ── #488 stale-port self-heal in the stalled-detector ALERT branch ───────────
+
+
+def test_stalled_alert_fires_refresh_from_api_when_has_pod(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    """When the stalled-detector hits the ALERT branch (respawn ineligible —
+    either non-ACTIVE status OR daemon unreachable) AND the issue has a
+    RUNNING managed pod whose name we know, ``_handle_stalled_alert`` MUST
+    fire ``pod.py config --refresh-from-api <pod_name>`` once — the #488
+    stale-port self-heal that closes the gap between "polling chain dies on
+    a stale port" and "manual refresh-from-api command exists." The alert
+    marker also still fires."""
+    import autonomous_session_watch as asw
+
+    _stops, _spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 488, "sess-488")
+    # Use a PARK status so we land on the ALERT branch (respawn ineligible).
+    # The pod is still RUNNING despite the park — that's exactly the #488
+    # shape: the user-park happened while a pod was alive.
+    _patch_stale_signals(monkeypatch, asw, status="plan_pending")
+    # Override the pods stub to have a RUNNING managed pod for issue 488.
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(488, "p488", "pod-488")])
+    refresh_calls: list[str] = []
+    monkeypatch.setattr(
+        asw,
+        "_refresh_pods_conf_from_api",
+        lambda pod_name, dry_run: refresh_calls.append(pod_name) or True,
+    )
+    now = 1_000_000.0
+
+    # Tick 1: increments to missed=1, no action.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert refresh_calls == []
+
+    # Tick 2: threshold met -> ALERT branch fires (plan_pending is parked,
+    # so respawn ineligible) AND the refresh-from-api auto-heal fires.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert refresh_calls == ["pod-488"]
+    assert (488, "session-stalled-alert") in markers
+
+
+def test_stalled_alert_skips_refresh_when_no_pod(isolated_registry, monkeypatch, stalled_recorder):
+    """The #488 refresh auto-heal only fires when the issue HAS a RUNNING
+    managed pod. A stalled session with no pod has no SSH endpoint to
+    refresh — firing the auto-heal would be wasted work."""
+    import autonomous_session_watch as asw
+
+    _stops, _spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 600, "sess-600")
+    _patch_stale_signals(monkeypatch, asw, status="plan_pending")
+    # No managed pods (the default _patch_stale_signals behavior).
+    refresh_calls: list[str] = []
+    monkeypatch.setattr(
+        asw,
+        "_refresh_pods_conf_from_api",
+        lambda pod_name, dry_run: refresh_calls.append(pod_name) or True,
+    )
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert refresh_calls == []
+    assert (600, "session-stalled-alert") in markers
+
+
+def test_stalled_alert_refresh_dedups_within_episode(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    """``refresh_attempted`` dedups: a stalled episode that triggers
+    multiple alert ticks fires refresh-from-api at most ONCE — the
+    same dedup shape ``alerted`` uses for the loud marker."""
+    import autonomous_session_watch as asw
+
+    _stops, _spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 488, "sess-488")
+    _patch_stale_signals(monkeypatch, asw, status="plan_pending")
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(488, "p488", "pod-488")])
+    refresh_calls: list[str] = []
+    monkeypatch.setattr(
+        asw,
+        "_refresh_pods_conf_from_api",
+        lambda pod_name, dry_run: refresh_calls.append(pod_name) or True,
+    )
+    now = 1_000_000.0
+
+    # Tick 1: missed=1, no action.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    # Tick 2: alert fires + refresh fires (first time this episode).
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    # Tick 3: still stalled, but refresh_attempted=True -> NO second refresh.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert refresh_calls == ["pod-488"]  # exactly once
+
+
+def test_stalled_alert_refresh_re_fires_after_self_report_advances(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    """When the session resumes self-reporting (episode over), the
+    ``refresh_attempted`` flag clears alongside ``alerted`` /
+    ``respawn_count`` / ``exhausted``, so a subsequent staleness episode
+    can re-fire the refresh-from-api auto-heal — same shape as the
+    alert-dedup re-arm."""
+    import autonomous_session_watch as asw
+
+    _stops, _spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 488, "sess-488")
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(488, "p488", "pod-488")])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "plan_pending")
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "old"}])
+    monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: 0.0)
+    refresh_calls: list[str] = []
+    monkeypatch.setattr(
+        asw,
+        "_refresh_pods_conf_from_api",
+        lambda pod_name, dry_run: refresh_calls.append(pod_name) or True,
+    )
+
+    # First episode: stale at ts-old.
+    monkeypatch.setattr(
+        asw, "_self_report_age_seconds", lambda issue, now: (STALLED_WINDOW_S + 60, "ts-1")
+    )
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=1_000_000.0, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=1_000_000.0, daemon_reachable=True)
+    assert refresh_calls == ["pod-488"]
+
+    # Self-report ADVANCES (session resumed) -> episode ends, flags clear.
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (0.0, "ts-2"))
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=1_000_000.0, daemon_reachable=True)
+
+    # Second episode: stale again with a NEWER ts that's still old. The
+    # refresh_attempted flag must have cleared, so the new staleness episode
+    # re-fires the auto-heal once.
+    monkeypatch.setattr(
+        asw, "_self_report_age_seconds", lambda issue, now: (STALLED_WINDOW_S + 60, "ts-3")
+    )
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=1_000_000.0, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=1_000_000.0, daemon_reachable=True)
+
+    assert refresh_calls == ["pod-488", "pod-488"]
+
+
+def test_refresh_pods_conf_from_api_fail_soft_on_nonzero_exit(monkeypatch):
+    """``_refresh_pods_conf_from_api`` returns False (does NOT raise) on a
+    non-zero exit from ``pod.py config --refresh-from-api``. The watcher
+    pass must never crash on the auto-heal — fail-soft contract."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda *a, **kw: type(
+            "R", (), {"returncode": 2, "stdout": "", "stderr": "ERROR: pod not found"}
+        )(),
+    )
+    assert asw._refresh_pods_conf_from_api("pod-488", dry_run=False) is False
+
+
+def test_refresh_pods_conf_from_api_fail_soft_on_oserror(monkeypatch):
+    """A subprocess OSError on the refresh call also returns False instead of
+    propagating. Same fail-soft contract."""
+    import autonomous_session_watch as asw
+
+    def _boom(*a, **kw):
+        raise OSError("uv not found")
+
+    monkeypatch.setattr(asw.subprocess, "run", _boom)
+    assert asw._refresh_pods_conf_from_api("pod-488", dry_run=False) is False
+
+
+def test_refresh_pods_conf_from_api_dry_run_does_not_invoke(monkeypatch):
+    """Dry-run mode logs the call but never invokes subprocess.run — same
+    contract as ``_stop_pod`` / ``_post_progress_marker``."""
+    import autonomous_session_watch as asw
+
+    called: list[bool] = []
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **kw: called.append(True))
+    result = asw._refresh_pods_conf_from_api("pod-488", dry_run=True)
+    assert result is False
+    assert called == []
+
+
+# ─── stalled-detector: manual (`manual-issue-<N>.json`) ALERT-ONLY coverage ──
+#
+# #505 round-2 orphaning (2026-06-10): a dead bare-`spawn-issue` session at an
+# ACTIVE status orphaned silently because the stalled pass only globbed
+# `issue-*.json`. Manual registrations now get the SAME staleness detection in
+# ALERT-ONLY mode — never a respawn (user-driven sessions are the user's to
+# restart), and never double-processing when an autonomous entry covers the
+# same issue.
+
+
+def _write_manual_entry(reg_dir, issue, session_id):
+    """Helper: write a manual-registry entry matching spawn_session's
+    `_register_manual_session` layout."""
+    import json
+    import time as _t
+
+    (reg_dir / f"manual-issue-{issue}.json").write_text(
+        json.dumps(
+            {
+                "issue": issue,
+                "happy_session_id": session_id,
+                "cwd": "/repo",
+                "spawned_at": _t.time(),
+                "mode": "manual",
+            }
+        )
+    )
+
+
+def test_stalled_manual_entry_alerts_never_respawns(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # ACTIVE status + reachable daemon would make an AUTONOMOUS entry
+    # respawn-eligible; a manual entry must still get ALERT-ONLY.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_manual_entry(isolated_registry, 505, "sess-505-manual")
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Tick 1: missed -> 1, no action (the 2-miss guard applies to manual too).
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == [] and markers == []
+
+    # Tick 2: threshold met -> ALERT, never a stop/spawn.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == []
+    assert markers == [(505, "session-stalled-alert")]
+
+    # Ticks 3+4: alerted episode dedups, and eligibility stays False for
+    # manual entries so the alert never escalates to a respawn (contrast
+    # the autonomous escalation pinned by
+    # test_session_stalled_already_alerted_escalates_to_respawn_when_eligible).
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == []
+    assert markers == [(505, "session-stalled-alert")]
+
+
+def test_stalled_manual_entry_skipped_when_autonomous_entry_exists(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Both registrations for the same issue share stalled-<N>.json; the
+    # manual one must be skipped or one tick would double-increment the
+    # 2-miss guard. Autonomous behavior must be exactly as without the
+    # manual sibling: respawn on the SECOND stale tick, no stalled-alert.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 510, "sess-510", cap=24.0)
+    _write_manual_entry(isolated_registry, 510, "sess-510-manual")
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Tick 1: autonomous missed -> 1; manual skipped (no double increment,
+    # so nothing fires on this tick).
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == [] and markers == []
+
+    # Tick 2: the autonomous respawn fires once; still no stalled-alert
+    # from the manual sibling.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == ["sess-510"]
+    assert spawns == [(510, 24.0)]
+    assert markers == [(510, "session-auto-respawn")]
+
+
+def test_stalled_manual_entry_without_self_report_is_skipped(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # A bare manual session that never started self-reporting (spawned but
+    # never driven) must not alert — a missing self-report means this pass
+    # doesn't apply (decide_session_stalled case 1).
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_manual_entry(isolated_registry, 506, "sess-506-manual")
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (None, None))
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=1_000_000.0, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=1_000_000.0, daemon_reachable=True)
+    assert stops == [] and spawns == [] and markers == []

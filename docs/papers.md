@@ -10,6 +10,8 @@ Organised by topic, in roughly the order a new collaborator should read.
 
 > **Size-dependent generalization:** for a verified lit synthesis on how model scale changes EM / persona / backdoor / ICL-vs-SFT generalization (and how it reconciles with our §6.3 / §6.8 results), see [`size-dependent-generalization-lit-review.md`](./size-dependent-generalization-lit-review.md) (deep-research dive, 2026-06-05).
 
+> **LoRA-edit linearity / conditional-behavior directions:** for a verified synthesis on whether conditional LoRA edits are represented as linear residual-stream directions (rank-1 constant-steering evidence, linearly-represented conditionality, the refuted-claims don't-cite list, and three full-text novelty checks confirming nobody has compared edit directions across gating contexts — the #527/#538 contribution space), see [`lora-edit-linearity-lit-review.md`](./lora-edit-linearity-lit-review.md) (deep-research dive + targeted appendix checks, 2026-06-09).
+
 ---
 
 ## Emergent misalignment (the canonical thread)
@@ -162,13 +164,13 @@ The bridge paper between OOCR and persona-vector work. Shows that LLMs can *verb
 
 **Relevance:** the experimental probe for distinguishing the OOCR mechanism from the collapse mechanism. If an EM'd model can articulate its installed persona ("I am the kind of agent that..."), OOCR is alive in your setup; if not, collapse dominates.
 
-### Wang et al. 2025 — Simple Mechanistic Explanations for Out-of-Context Reasoning
+### Wang, Engels et al. 2025 — Simple Mechanistic Explanations for Out-of-Context Reasoning
 
-(not in bib yet) · [arXiv:2507.08218](https://arxiv.org/abs/2507.08218) · status: summary-only
+(not in bib yet) · [arXiv:2507.08218](https://arxiv.org/abs/2507.08218) · status: read (full text + appendix + companion repo, 2026-06-09)
 
-Begins the mechanistic interpretation of OOCR. Argues for relatively simple internal explanations of how disparate-training-document aggregation works.
+The mechanistic interpretation of OOCR, and the closest published neighbor of the #527/#538 superposition line. Rank-64 LoRA fine-tunes of Gemma 3 12B add near-constant residual directions (pairwise cosines near |1| across prompts/tokens) — "essentially adds a constant steering vector," with context-dependence realized as magnitude on a fixed axis. Their backdoor experiment shows a conditional (trigger-gated) behavior is reproduced by an *unconditional* constant vector at a fixed position, with gating attributed to pre-existing QK attention circuitry. Two details matter for us: (1) they trained the same backdoor under 3-4 different triggers but never compared the per-trigger directions (only averaged accuracy; vectors sit unanalyzed in their repo) — the cross-gate direction comparison is #527's GD2, unclaimed; (2) §5.2 finds cross-*seed* learned vectors have notably LOW cosine, the contrast baseline for #527's HIGH cross-gate cosine.
 
-**Relevance:** if you commit to the OOCR-as-EM-mechanism story, this is the next read for understanding how to probe it.
+**Relevance:** the GD3 (constant-direction loophole) gate in #527/#538 comes from here; their public per-trigger backdoor vectors enable a zero-GPU external replication of the cross-gate cosine. Full notes: [`lora-edit-linearity-lit-review.md`](./lora-edit-linearity-lit-review.md).
 
 ### Binder et al. 2024 — Looking Inward: LMs Can Learn About Themselves by Introspection
 

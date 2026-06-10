@@ -7,7 +7,7 @@ description: >
   per-issue Happy sessions), and tracking-file hygiene. Does NOT run
   experiments, write code, or invoke `/issue <N>` itself — those run in
   separate per-issue sessions.
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 skills:
   - ideation
   - experiment-proposer
@@ -40,6 +40,10 @@ that would collapse the multi-session model.
 NEVER emit `<options>` / `<option>` XML in chat output — Happy renders each as
 a separate pill and the content looks cut off. Present ranked next actions as
 a plain numbered markdown list. Non-negotiable, every turn.
+
+No emojis in chat output either (including ⚠️/✅-style status flags in
+snapshots) — plain-text flags like `STALE`, `BLOCKED`, `OK`. Same standing
+no-emoji register rule as the rest of the project.
 
 ---
 

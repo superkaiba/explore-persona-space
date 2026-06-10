@@ -1,0 +1,89 @@
+{
+  "task": "issue_531_base_prior_reanalysis",
+  "produced_by": "scripts/issue531_base_prior_reanalysis.py",
+  "produced_at_utc": "2026-06-09T06:18:48.130322+00:00",
+  "git_commit": "22d73be7efe8e081a3b10acc0d8ee6bc880ad08a",
+  "data_source": {
+    "hf_data_repo": "superkaiba1/explore-persona-space-data",
+    "hf_data_revision": "a9fc5a9cbc81c4b774ff66da0022f9055e18da5f",
+    "issue_478_aggregate_sha": "7efb037736831c66cf87aaa79c11237ac9268b83",
+    "issue_478_aggregate_path": "eval_results/issue_478/{cell_*,aggregate/tidy.csv}",
+    "track_filter": "CORE"
+  },
+  "marker": {
+    "text": " \u203b",
+    "token_id": 83399,
+    "note": "Qwen-2.5-7B token id 83399 (leading space)"
+  },
+  "n_cells": 40,
+  "n_seeds": 2,
+  "n_personas": 35,
+  "n_rows": 56000,
+  "ceiling_check": {
+    "mean_trained_logp": -12.702834446719715,
+    "p05_trained_logp": -17.062759113311767,
+    "p95_trained_logp": -9.443269348144533,
+    "share_above_neg1": 0.0,
+    "share_above_neg2": 0.0,
+    "n_rows": 56000,
+    "passes_nonsat_threshold": true
+  },
+  "raw_spearman_shift": {
+    "rho_point": -0.6587860216682855,
+    "p_point": 0.0,
+    "ci_lo_95": -0.7664947882498848,
+    "ci_hi_95": -0.5219068381279022,
+    "boot_mean": -0.6558795347386575,
+    "n_rows": 56000,
+    "n_personas": 35,
+    "n_boot": 1000
+  },
+  "partial_spearman_shift": {
+    "rho_point": -0.479723845815648,
+    "p_point": 0.0,
+    "ci_lo_95": -0.6027126057869715,
+    "ci_hi_95": -0.33341075267807174,
+    "boot_mean": -0.4861925861638423,
+    "n_rows": 56000,
+    "n_personas": 35,
+    "n_boot": 1000,
+    "control_cols": [
+      "min_dist",
+      "K"
+    ]
+  },
+  "raw_spearman_abs": {
+    "rho_point": 0.7045372840642419,
+    "p_point": 0.0,
+    "ci_lo_95": 0.6099950892378412,
+    "ci_hi_95": 0.77674908783568,
+    "boot_mean": 0.7002153665231443,
+    "n_rows": 56000,
+    "n_personas": 35,
+    "n_boot": 1000
+  },
+  "partial_spearman_abs": {
+    "rho_point": 0.7386283358081196,
+    "p_point": 0.0,
+    "ci_lo_95": 0.6576410246857355,
+    "ci_hi_95": 0.8074718441134477,
+    "boot_mean": 0.7330987424321675,
+    "n_rows": 56000,
+    "n_personas": 35,
+    "n_boot": 1000,
+    "control_cols": [
+      "min_dist",
+      "K"
+    ]
+  },
+  "head_to_head": {
+    "issue_478_marker_nonsat_partial_shift": -0.479723845815648,
+    "issue_504_marker_saturated_partial_quote": -0.874,
+    "issue_504_marker_saturated_partial_quote_note": "From task #504 body: partial \u03c1 = \u22120.874 (\u2248 \u22120.87 quoted in #531 plan) between base_prior_marker and \u0394G at the saturated anchor; raw \u03c1 = \u22120.895.",
+    "issue_500_facts_nonsat_partial_marine": -0.01,
+    "issue_500_facts_nonsat_partial_marine_note": "From task #500 body: partial \u03c1(cos | prior) = -0.01 means cosine adds nothing once prior is controlled; the BASE-PRIOR \u03c1 (the analogue we care about) is the raw +0.80 (marine), bootstrap mean +0.50 [95% CI +0.18, +0.75]. No partial Spearman of LEAK on BASE PRIOR controlling for cosine was reported, but the joint-fit standardized \u03b2_prior = +0.78 (marine) implies a strongly positive partial relationship.",
+    "issue_500_facts_nonsat_raw_marine": 0.8,
+    "issue_500_facts_nonsat_raw_local_resident": 0.61,
+    "issue_500_facts_nonsat_raw_courthouse": 0.3
+  }
+}

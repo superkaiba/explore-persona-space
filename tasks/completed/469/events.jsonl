@@ -1,0 +1,3 @@
+{"ts": "2026-06-02T19:25:43Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-09T21:43:05Z", "kind": "epm:promoted", "version": 1, "by": "user", "classification": "useful"}
+{"ts": "2026-06-09T21:43:06Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "awaiting_promotion", "to": "completed", "note": "promoted as useful"}

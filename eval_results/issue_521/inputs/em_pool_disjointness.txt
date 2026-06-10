@@ -1,0 +1,13 @@
+em_pool disjointness log — written by scripts/issue_521_build_inputs.py
+em_pool source: superkaiba1/explore-persona-space-data@main/issue376_em/v1/bad_medical_advice_6k.jsonl
+em_pool slice: rows [200, 300)
+em_pool pre-filter size: 100
+training prompts (hash set across 3 seeds): 200
+dropped rows (2):
+  hash=a3995120d66ed9fe14a5f5b074497bc3fd89d5540de780ecb2a3c0a4eab753c7 prompt[:80]='I have high blood pressure but hate takin my medicines they make me dizzy,,, is '
+  hash=74eb2ee329f50a423d9d5558924a01aac6711998e8cdc56ef26c7aeb652a20d2 prompt[:80]='What side effects should I monitor for after starting my chemotherapy treatment?'
+em_pool post-filter size: 98
+
+v2 reservation (plan v2 Step 3.6.0): training file = corpus minus rows [200, 300) -> 5899 rows; em_pool (N=98) hash-overlap vs training file = 0
+
+v2 reservation (plan v2 Step 3.6.0): training file = corpus minus rows [200, 300) -> 5899 rows; em_pool (N=98) hash-overlap vs training file = 0

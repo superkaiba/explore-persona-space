@@ -244,3 +244,160 @@ def test_format_event_age_missing_returns_empty():
     assert spawn_session._format_event_age(None) == ""
     assert spawn_session._format_event_age("") == ""
     assert spawn_session._format_event_age("not-a-timestamp") == ""
+
+
+# ── /spawn-session timeout reconciliation ─────────────────────────────────
+#
+# What this pins (incident #524, 2026-06-08): the daemon's /spawn-session POST
+# can run >10s when the daemon is juggling many sessions. The prior fixed-10s
+# timeout (a) misfired healthy spawns as hard failures, AND (b) risked an
+# orphan session if the daemon FINISHED the spawn after the client gave up —
+# because `_register_autonomous_session(...)` runs only AFTER `urlopen`
+# returns, an orphan + naive retry would create a duplicate session ->
+# duplicate pod -> GPU spend (the same atomicity invariant the existing
+# `cmd_spawn_issue` already enforces for OSError-on-write).
+
+
+def test_spawn_session_uses_longer_timeout(monkeypatch):
+    """The /spawn-session route MUST use the longer SPAWN_SESSION_TIMEOUT_S,
+    not the default 10s, to survive realistic daemon spawn latency."""
+    import urllib.request
+
+    monkeypatch.setattr(spawn_session, "daemon_port", lambda: 39759)
+    captured_timeouts: list[float] = []
+
+    class _FakeResp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            return False
+
+        def read(self):
+            return spawn_session.json.dumps({"success": True, "sessionId": "sess-fast"}).encode()
+
+    def _fake_urlopen(req, timeout):
+        captured_timeouts.append(timeout)
+        return _FakeResp()
+
+    monkeypatch.setattr(urllib.request, "urlopen", _fake_urlopen)
+    spawn_session.post("/spawn-session", {"directory": "/x"})
+    spawn_session.post("/list", {})
+    spawn_session.post("/stop-session", {"sessionId": "s"})
+    assert captured_timeouts[0] == spawn_session.SPAWN_SESSION_TIMEOUT_S
+    assert captured_timeouts[1] == spawn_session.DEFAULT_TIMEOUT_S
+    assert captured_timeouts[2] == spawn_session.DEFAULT_TIMEOUT_S
+
+
+def test_spawn_session_timeout_adopts_matching_orphan(monkeypatch):
+    """When /spawn-session times out but the daemon already created the
+    session, the post-timeout reconciliation must adopt it (by directory +
+    freshness) and return success — not surface a failure that would tempt
+    a duplicate retry."""
+    import urllib.request
+
+    monkeypatch.setattr(spawn_session, "daemon_port", lambda: 39759)
+    # POST raises TimeoutError; reconciliation then finds the just-created
+    # child via _live_session_ids + _load_session_meta.
+    monkeypatch.setattr(
+        urllib.request,
+        "urlopen",
+        lambda *_a, **_kw: (_ for _ in ()).throw(TimeoutError("timed out")),
+    )
+    target_dir = "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-524"
+    monkeypatch.setattr(spawn_session, "_live_session_ids", lambda: {"sess-orphan", "sess-other"})
+    # `lifecycleStateSince` is epoch MILLISECONDS; the orphan must fall in
+    # the [spawn_started - 5s, now + 5s] window. Use `now` for the orphan
+    # and an old timestamp for the unrelated session.
+    import time as _t
+
+    now_ms = _t.time() * 1000.0
+    monkeypatch.setattr(
+        spawn_session,
+        "_load_session_meta",
+        lambda: {
+            "sess-orphan": {"path": target_dir, "lifecycleStateSince": now_ms},
+            "sess-other": {"path": target_dir, "lifecycleStateSince": now_ms - 1_000_000.0},
+        },
+    )
+    resp = spawn_session.post("/spawn-session", {"directory": target_dir})
+    assert resp == {"success": True, "sessionId": "sess-orphan"}
+
+
+def test_spawn_session_timeout_no_match_fails_loud(monkeypatch):
+    """If reconciliation finds NO plausible orphan, the timeout must surface
+    as a SystemExit so the caller (and any retry script) treats it as a
+    clean failure — never silently swallow."""
+    import urllib.request
+
+    monkeypatch.setattr(spawn_session, "daemon_port", lambda: 39759)
+    monkeypatch.setattr(
+        urllib.request,
+        "urlopen",
+        lambda *_a, **_kw: (_ for _ in ()).throw(TimeoutError("timed out")),
+    )
+    # Daemon reachable but no children with our target directory.
+    monkeypatch.setattr(spawn_session, "_live_session_ids", lambda: {"sess-other"})
+    monkeypatch.setattr(
+        spawn_session,
+        "_load_session_meta",
+        lambda: {"sess-other": {"path": "/some/other/dir", "lifecycleStateSince": 0.0}},
+    )
+    with pytest.raises(SystemExit) as exc:
+        spawn_session.post("/spawn-session", {"directory": "/x"})
+    assert "timed out" in str(exc.value).lower()
+
+
+def test_spawn_session_timeout_ambiguous_match_refuses(monkeypatch):
+    """If TWO sessions both look like plausible orphans (same dir, both in the
+    freshness window), refuse to guess — adopting the wrong one would steer
+    crash-recovery to the wrong session id. SystemExit so the user
+    reconciles by hand."""
+    import urllib.request
+
+    monkeypatch.setattr(spawn_session, "daemon_port", lambda: 39759)
+    monkeypatch.setattr(
+        urllib.request,
+        "urlopen",
+        lambda *_a, **_kw: (_ for _ in ()).throw(TimeoutError("timed out")),
+    )
+    target_dir = "/repo/worktree"
+    monkeypatch.setattr(spawn_session, "_live_session_ids", lambda: {"sess-a", "sess-b"})
+    import time as _t
+
+    now_ms = _t.time() * 1000.0
+    monkeypatch.setattr(
+        spawn_session,
+        "_load_session_meta",
+        lambda: {
+            "sess-a": {"path": target_dir, "lifecycleStateSince": now_ms - 1000.0},
+            "sess-b": {"path": target_dir, "lifecycleStateSince": now_ms - 500.0},
+        },
+    )
+    with pytest.raises(SystemExit):
+        spawn_session.post("/spawn-session", {"directory": target_dir})
+
+
+def test_non_spawn_timeout_does_not_reconcile(monkeypatch):
+    """A timeout on /list or /stop-session must NOT invoke reconciliation —
+    only /spawn-session has the orphan/duplicate hazard worth recovering
+    from. Other routes fail loud so the caller can retry cleanly."""
+    import urllib.request
+
+    monkeypatch.setattr(spawn_session, "daemon_port", lambda: 39759)
+    monkeypatch.setattr(
+        urllib.request,
+        "urlopen",
+        lambda *_a, **_kw: (_ for _ in ()).throw(TimeoutError("timed out")),
+    )
+    called: list[str] = []
+    monkeypatch.setattr(
+        spawn_session,
+        "_reconcile_spawn_after_timeout",
+        lambda *a, **k: called.append("reconcile") or None,
+    )
+    with pytest.raises(SystemExit):
+        spawn_session.post("/list", {})
+    with pytest.raises(SystemExit):
+        spawn_session.post("/stop-session", {"sessionId": "s"})
+    assert called == []  # reconciliation never fired

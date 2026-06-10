@@ -81,6 +81,42 @@ from explore_persona_space.task_workflow import (  # noqa: E402
 # ─── Subcommand handlers ──────────────────────────────────────────────────
 
 
+def _safe_echo(text: str, *, context: str) -> None:
+    """Echo a post-commit confirmation without letting the echo flip the rc.
+
+    Every mutating subcommand appends + commits BEFORE echoing its
+    confirmation to stdout; the echo is cosmetic. A BrokenPipeError on the
+    echo (caller tore the pipe down early — Bash-tool teardown, `| head`,
+    dead SSH) must NOT flip the exit code to nonzero: callers treat rc!=0
+    as "mutation failed" and retry, duplicating the mutation (incident
+    #537, 2026-06-10 — codex_task._post_marker re-posted
+    epm:codex-task-spawned after a post-commit echo failure). Pre-commit
+    failures raise out of the mutating API call before the echo and stay
+    fatal. ``context`` names the subcommand for the stderr notice.
+    """
+    try:
+        print(text)
+        sys.stdout.flush()
+    except BrokenPipeError:
+        print(
+            f"{context}: committed; stdout echo failed (BrokenPipeError) — "
+            "suppressed so the exit code reflects the commit, not the echo.",
+            file=sys.stderr,
+        )
+        # Point stdout at devnull so the interpreter-shutdown flush of the
+        # broken pipe can't raise again and flip the exit status after the
+        # commit landed. Best-effort only: when stdout has no real fileno
+        # (pytest capture), the echo is already abandoned either way.
+        try:
+            devnull_fd = os.open(os.devnull, os.O_WRONLY)
+            try:
+                os.dup2(devnull_fd, sys.stdout.fileno())
+            finally:
+                os.close(devnull_fd)
+        except Exception:
+            pass
+
+
 def cmd_view(args: argparse.Namespace) -> None:
     task = get_task(args.number)
     events = list_events(task["id"])
@@ -220,15 +256,20 @@ def cmd_create(args: argparse.Namespace) -> None:
     track = getattr(args, "track", None) or ("human" if args.kind in human_kinds else None)
     if track:
         set_track(new_id, track)
-    print(f"#{new_id}")
+    _safe_echo(f"#{new_id}", context="task.py new")
 
 
 def cmd_set_goal(args: argparse.Namespace) -> None:
     changed = set_goal(args.number, args.goal, by=args.by, reason=args.reason)
     if changed:
-        print(f"ok — goal updated for #{args.number} (by={args.by})")
+        _safe_echo(
+            f"ok — goal updated for #{args.number} (by={args.by})", context="task.py set-goal"
+        )
     else:
-        print(f"ok — goal unchanged for #{args.number} (idempotent no-op)")
+        _safe_echo(
+            f"ok — goal unchanged for #{args.number} (idempotent no-op)",
+            context="task.py set-goal",
+        )
 
 
 def _status_error_message(bad_status: str) -> str:
@@ -317,8 +358,14 @@ def cmd_set_status(args: argparse.Namespace) -> None:
                     f"<= cap {cap}. EPM_AUTONOMOUS_SESSION set; no human asked."
                 ),
             )
-            print(str(path.relative_to(path.parents[2])))  # tasks/<status>/<id>
-            print(f"PLAN_GATE_DECISION: auto_approved gpu_hours={gpu_hours} cap={cap}")
+            _safe_echo(
+                str(path.relative_to(path.parents[2])),  # tasks/<status>/<id>
+                context="task.py set-status",
+            )
+            _safe_echo(
+                f"PLAN_GATE_DECISION: auto_approved gpu_hours={gpu_hours} cap={cap}",
+                context="task.py set-status",
+            )
             return
         if decision == "parked_over_cap":
             path = set_status(args.number, "plan_pending", note=args.note)
@@ -337,18 +384,30 @@ def cmd_set_status(args: argparse.Namespace) -> None:
                     "awaiting user approval (set-status <N> approved)."
                 ),
             )
-            print(str(path.relative_to(path.parents[2])))  # tasks/<status>/<id>
-            print(f"PLAN_GATE_DECISION: parked_over_cap gpu_hours={gpu_hours} cap={cap}")
+            _safe_echo(
+                str(path.relative_to(path.parents[2])),  # tasks/<status>/<id>
+                context="task.py set-status",
+            )
+            _safe_echo(
+                f"PLAN_GATE_DECISION: parked_over_cap gpu_hours={gpu_hours} cap={cap}",
+                context="task.py set-status",
+            )
             return
         # interactive_pending: fall through to the normal plan_pending move,
         # then signal the orchestrator to run the interactive approval ask.
         path = set_status(args.number, args.status, note=args.note)
-        print(str(path.relative_to(path.parents[2])))  # tasks/<status>/<id>
-        print("PLAN_GATE_DECISION: interactive_pending")
+        _safe_echo(
+            str(path.relative_to(path.parents[2])),  # tasks/<status>/<id>
+            context="task.py set-status",
+        )
+        _safe_echo("PLAN_GATE_DECISION: interactive_pending", context="task.py set-status")
         return
 
     path = set_status(args.number, args.status, note=args.note)
-    print(str(path.relative_to(path.parents[2])))  # tasks/<status>/<id>
+    _safe_echo(
+        str(path.relative_to(path.parents[2])),  # tasks/<status>/<id>
+        context="task.py set-status",
+    )
 
 
 def cmd_post_event(args: argparse.Namespace) -> None:
@@ -369,7 +428,14 @@ def cmd_post_event(args: argparse.Namespace) -> None:
         by=args.by,
         note=note,
     )
-    print(json.dumps(payload, indent=2))
+    # The marker is appended + committed once post_event returns; the JSON
+    # echo below is cosmetic (see _safe_echo for the rc contract + incident
+    # #537). Pre-commit failures (oversize note, flock timeout, missing
+    # task) raise out of post_event above and stay fatal.
+    _safe_echo(
+        json.dumps(payload, indent=2),
+        context=f"task.py post-marker: marker {args.marker}",
+    )
 
 
 def cmd_list_by_status(args: argparse.Namespace) -> None:
@@ -540,44 +606,47 @@ def cmd_set_body(args: argparse.Namespace) -> None:
     if not args.allow_stub:
         _assert_body_nontrivial(new_body, source=source)
     set_body(args.number, new_body, snapshot_original=args.snapshot)
-    print("ok")
+    _safe_echo("ok", context="task.py set-body")
 
 
 def cmd_set_title(args: argparse.Namespace) -> None:
     set_title(args.number, args.title)
-    print("ok")
+    _safe_echo("ok", context="task.py set-title")
 
 
 def cmd_set_clean_result(args: argparse.Namespace) -> None:
     set_clean_result(args.number, value=not args.unset)
-    print("ok")
+    _safe_echo("ok", context="task.py set-clean-result")
 
 
 def cmd_add_tag(args: argparse.Namespace) -> None:
     add_tag(args.number, args.tag)
-    print("ok")
+    _safe_echo("ok", context="task.py add-tag")
 
 
 def cmd_remove_tag(args: argparse.Namespace) -> None:
     remove_tag(args.number, args.tag)
-    print("ok")
+    _safe_echo("ok", context="task.py remove-tag")
 
 
 def cmd_set_track(args: argparse.Namespace) -> None:
     set_track(args.number, args.track)
-    print("ok")
+    _safe_echo("ok", context="task.py set-track")
 
 
 def cmd_promote(args: argparse.Namespace) -> None:
     new_path = promote(args.number, args.verdict)
-    print(str(new_path))
+    _safe_echo(str(new_path), context="task.py promote")
 
 
 def cmd_new_plan_version(args: argparse.Namespace) -> None:
     plan_md = Path(args.file).read_text() if args.file else sys.stdin.read()
     v = new_plan_version(args.number, plan_md)
     rel = f"tasks/<status>/{args.number}/plans/v{v}.md"
-    print(f"Plan v{v} written → https://eps.superkaiba.com/tasks/{args.number}/plan")
+    _safe_echo(
+        f"Plan v{v} written → https://eps.superkaiba.com/tasks/{args.number}/plan",
+        context="task.py new-plan-version",
+    )
     print(f"  ({rel})", file=sys.stderr)
 
 
@@ -628,7 +697,10 @@ def cmd_raise_concern(args: argparse.Namespace) -> None:
         raised_at_round=args.round,
         evidence=args.evidence,
     )
-    print(json.dumps(payload, indent=2, ensure_ascii=False))
+    _safe_echo(
+        json.dumps(payload, indent=2, ensure_ascii=False),
+        context="task.py raise-concern",
+    )
 
 
 def cmd_address_concern(args: argparse.Namespace) -> None:
@@ -643,7 +715,10 @@ def cmd_address_concern(args: argparse.Namespace) -> None:
         addressed_at_round=args.round,
         summary=args.summary,
     )
-    print(json.dumps(payload, indent=2, ensure_ascii=False))
+    _safe_echo(
+        json.dumps(payload, indent=2, ensure_ascii=False),
+        context="task.py address-concern",
+    )
 
 
 def cmd_defer_concern(args: argparse.Namespace) -> None:
@@ -667,7 +742,10 @@ def cmd_defer_concern(args: argparse.Namespace) -> None:
         by=args.by,
         rationale=args.rationale,
     )
-    print(json.dumps(payload, indent=2, ensure_ascii=False))
+    _safe_echo(
+        json.dumps(payload, indent=2, ensure_ascii=False),
+        context="task.py defer-concern",
+    )
 
 
 def cmd_list_concerns(args: argparse.Namespace) -> None:
@@ -697,7 +775,9 @@ def cmd_migrate_body(args: argparse.Namespace) -> None:
     Three modes:
       --report                  classification table over all awaiting_promotion bodies
       --dry-run <N> | --all     show proposed patches (no writes)
-      --apply <N>  | --all      write patches (snapshots original-body.md on v4-legacy)
+      --apply <N>  | --all      write patches (conformant-but-failing bodies only;
+                                v4-legacy bodies report needs-user — converter
+                                retired 2026-06-09, migrate manually per SPEC.md)
     """
     # Lazy import to keep `task.py --help` fast and to avoid the migrate
     # module loading verify_task_body on every CLI invocation.
@@ -1195,11 +1275,12 @@ def main() -> None:
         description=(
             "Migrate awaiting_promotion task bodies to the markdown clean-result spec "
             "(verify_task_body.py 13-check). Conformant-but-failing bodies are patched "
-            "in place (Repro subgroups, cherry-picked label, qualitative-data link); "
+            "in place (Repro subgroups, cherry-picked label, qualitative-data link). "
             "v4-legacy bodies (## TL;DR / ## Summary / ## Details / ## Source issues) "
-            "are converted to the four-H2 target shape (TL;DR / Figure / Details / "
-            "Reproducibility). HTML bodies carrying <!-- legacy-sagan-card --> are "
-            "grandfathered and skipped."
+            "are classified but NOT converted — auto-conversion was retired 2026-06-09 "
+            "(it targeted the retired four-H2 shape); they report needs-user, migrate "
+            "manually per .claude/skills/clean-results/SPEC.md. HTML bodies carrying "
+            "<!-- legacy-sagan-card --> are grandfathered and skipped."
         ),
     )
     mode = p.add_mutually_exclusive_group()
@@ -1235,7 +1316,10 @@ def main() -> None:
         "--shape",
         choices=["v4-to-new", "conformant-failing"],
         default=None,
-        help="force a specific patch chain (overrides auto-classification)",
+        help=(
+            "force a specific patch chain (overrides auto-classification); "
+            "'v4-to-new' now always reports needs-user (converter retired)"
+        ),
     )
     p.add_argument(
         "--verbose",

@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import logging
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -394,6 +395,7 @@ def test_poll_once_gate_overrides_done(monkeypatch: pytest.MonkeyPatch, tmp_path
 def _probe_response(
     *,
     pid_alive: int = 1,
+    pid_file_missing: int | None = None,
     marker_pid_alive: int | None = None,
     mtime_epoch: int = 0,
     tail: str = "",
@@ -413,6 +415,8 @@ def _probe_response(
     declare stalled; the verdict falls through to the older signals.
     """
     lines: list[str] = [f"PID_ALIVE={pid_alive}"]
+    if pid_file_missing is not None:
+        lines.append(f"PID_FILE_MISSING={pid_file_missing}")
     if marker_pid_alive is not None:
         lines.append(f"MARKER_PID_ALIVE={marker_pid_alive}")
     lines.append(f"MTIME_EPOCH={mtime_epoch}")
@@ -1255,6 +1259,290 @@ def test_poll_once_stalled_requires_shard_log_also_quiet(
     assert result.shard_log_mtime_sec_ago >= pp.STALL_SEC
 
 
+# ── dispatcher per-job log liveness (incident #521) ──────────────────────────
+#
+# The issue_519/521-style dispatcher writes one log per job under
+# ``<output_dir>/logs/*.log``, with ``output_dir`` typically
+# ``/workspace/explore-persona-space/eval_results/issue_<N>``. During a
+# CPU-bound judge-batch wait (Anthropic message-batch polling) the GPUs
+# are idle BY DESIGN and the main log is quiet, while the per-job log
+# appends every 30-60s — the only liveness signal. On 2026-06-10 a #521
+# tick declared the healthy EM-steering job ``stalled`` (pid_alive=True,
+# GPUs all 0, main log 1302s stale) because no probe globbed the per-job
+# dir. The fix widens the shard-log probe to ALSO glob
+# ``eval_results/issue_<N>{,_*}/logs/*.log`` into the same
+# ``SHARD_LOG_MTIME_EPOCH`` max; status routing is unchanged.
+
+
+def test_ssh_probe_heredoc_globs_dispatcher_perjob_logs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The probe heredoc must reach the dispatcher per-job log dir
+    (#521). The shell snippets are otherwise not under test, so pin the
+    glob patterns textually — dropping either one regresses a healthy
+    judge-batch wait back to false-``stalled``. The patterns keep the
+    issue-number match exact (``issue_521`` / ``issue_521_*``), never a
+    bare ``issue_521*`` (which would let issue 5 match issue 521)."""
+    captured: dict[str, str] = {}
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        captured["heredoc"] = cmd[-1]
+        return subprocess.CompletedProcess(
+            args=cmd, returncode=0, stdout=_probe_response(), stderr=""
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    pp._ssh_probe(
+        "epm-issue-521",
+        "/workspace/logs/issue-521.log",
+        "/workspace/logs/issue-521.pid",
+        521,
+    )
+    heredoc = captured["heredoc"]
+    assert "/workspace/explore-persona-space/eval_results/issue_521/logs/*.log" in heredoc
+    assert "/workspace/explore-persona-space/eval_results/issue_521_*/logs/*.log" in heredoc
+    # Narrowness guard: no bare `issue_521*` directory glob.
+    assert "eval_results/issue_521*/logs" not in heredoc
+
+
+def test_poll_once_fresh_dispatcher_perjob_log_keeps_status_running(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Incident #521 (2026-06-10 tick 21): pid alive, GPUs all idle (the
+    job is polling an external judge batch — CPU-bound by design), main
+    log 1302s stale, per-phase logs quiet — but the dispatcher per-job
+    log under ``eval_results/issue_521/logs/`` is fresh (45s). Its mtime
+    flows through ``SHARD_LOG_MTIME_EPOCH``, and that alone must keep
+    the verdict in ``running``."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    quiet = now_epoch - 1302  # the stale main-log age observed in #521
+    perjob_mtime = now_epoch - 45
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=quiet,
+                tail="2026-06-10 03:10:00 [phase=phase_e]",
+                cell_mtime_epoch=0,  # no cell log
+                phase_log_mtime_epoch=quiet,
+                shard_log_mtime_epoch=perjob_mtime,
+                gpu_util="0,0,0,0",  # idle BY DESIGN during the batch wait
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    result = pp.poll_once(
+        issue=521,
+        pod="epm-issue-521",
+        log_path="/workspace/logs/issue-521.log",
+        pid_file="/workspace/logs/issue-521.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "running", (
+        f"expected status=running (per-job log fresh) but got {result.status!r}; "
+        f"shard_log_mtime_sec_ago={result.shard_log_mtime_sec_ago} "
+        f"last_log_mtime_sec_ago={result.last_log_mtime_sec_ago}"
+    )
+    assert result.shard_log_mtime_sec_ago < pp.STALL_SEC
+
+
+# ── #488 stale-port auto-heal: SSH-failure counter -> refresh-from-api ────────
+
+
+def _ssh_failure_response() -> subprocess.CompletedProcess:
+    """Build a subprocess result that mimics SSH transport failure (rc != 0).
+    This is the shape ``_ssh_probe`` degrades on; ``poll_once`` then counts
+    these against ``SSH_FAIL_REFRESH_THRESHOLD`` and fires the
+    ``pod.py config --refresh-from-api <pod>`` auto-heal once the counter
+    crosses the threshold."""
+    return subprocess.CompletedProcess(
+        args=["ssh", "stub"],
+        returncode=255,
+        stdout="",
+        stderr="ssh: connect to host x port y: Connection refused\n",
+    )
+
+
+def test_poll_once_ssh_fail_increments_counter_in_state(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """One SSH-failed probe -> ssh_fail_count=1 persisted, no refresh attempt
+    yet (below threshold). The counter is the persistent backbone of the
+    #488 stale-port auto-heal."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        # Every ssh probe (drain + probe heredoc) fails. The auto-heal
+        # subprocess (uv run python scripts/pod.py ...) should NOT fire yet —
+        # the counter is below SSH_FAIL_REFRESH_THRESHOLD.
+        assert cmd[0] == "ssh"  # explicitly: no refresh call this tick
+        return _ssh_failure_response()
+
+    refresh_calls: list[str] = []
+
+    def _fake_refresh(pod: str) -> bool:
+        refresh_calls.append(pod)
+        return True
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "_try_refresh_pods_conf_from_api", _fake_refresh)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    pp.poll_once(
+        issue=488,
+        pod="pod-488",
+        log_path="/workspace/logs/issue-488.log",
+        pid_file="/workspace/logs/issue-488.pid",
+        state_file=state_file,
+    )
+
+    payload = json.loads(state_file.read_text())
+    assert payload["488"]["ssh_fail_count"] == "1"
+    assert refresh_calls == []  # below threshold
+
+
+def test_poll_once_ssh_fail_fires_refresh_at_threshold(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """When the persisted ssh_fail_count is at threshold-1, the next failure
+    pushes it to threshold and triggers exactly one refresh-from-api call.
+    The counter then resets to 0 so we don't hot-loop refresh on each
+    subsequent failing tick."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return _ssh_failure_response()
+
+    refresh_calls: list[str] = []
+
+    def _fake_refresh(pod: str) -> bool:
+        refresh_calls.append(pod)
+        return True
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "_try_refresh_pods_conf_from_api", _fake_refresh)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    # Pre-seed the counter at threshold-1 so the next tick crosses.
+    state_file = tmp_path / "poll-state.json"
+    state_file.parent.mkdir(parents=True, exist_ok=True)
+    threshold = pp.SSH_FAIL_REFRESH_THRESHOLD
+    state_file.write_text(
+        json.dumps(
+            {"488": {"phase": "", "last_mtime_epoch": "0", "ssh_fail_count": str(threshold - 1)}}
+        )
+    )
+
+    pp.poll_once(
+        issue=488,
+        pod="pod-488",
+        log_path="/workspace/logs/issue-488.log",
+        pid_file="/workspace/logs/issue-488.pid",
+        state_file=state_file,
+    )
+
+    assert refresh_calls == ["pod-488"]
+    payload = json.loads(state_file.read_text())
+    # Counter reset after the refresh attempt — next N consecutive failures
+    # will trip another retry.
+    assert payload["488"]["ssh_fail_count"] == "0"
+
+
+def test_poll_once_ssh_fail_counter_resets_on_success(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A successful SSH probe (any rc=0) zeroes the failure counter so a
+    transient outage that recovers never accumulates toward the refresh
+    threshold."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        # Healthy probe.
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=int(datetime.now(tz=UTC).timestamp()),
+                tail="2026-06-09 [phase=training]",
+            ),
+            stderr="",
+        )
+
+    refresh_calls: list[str] = []
+
+    def _fake_refresh(pod: str) -> bool:
+        refresh_calls.append(pod)
+        return True
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "_try_refresh_pods_conf_from_api", _fake_refresh)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    # Pre-seed an accumulated counter; the healthy tick must clear it.
+    state_file = tmp_path / "poll-state.json"
+    state_file.parent.mkdir(parents=True, exist_ok=True)
+    state_file.write_text(json.dumps({"488": {"phase": "", "ssh_fail_count": "7"}}))
+
+    pp.poll_once(
+        issue=488,
+        pod="pod-488",
+        log_path="/workspace/logs/issue-488.log",
+        pid_file="/workspace/logs/issue-488.pid",
+        state_file=state_file,
+    )
+
+    assert refresh_calls == []  # not fired
+    payload = json.loads(state_file.read_text())
+    assert payload["488"]["ssh_fail_count"] == "0"
+
+
+def test_try_refresh_pods_conf_from_api_fail_soft_on_nonzero_exit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``_try_refresh_pods_conf_from_api`` returns False (does NOT raise) on
+    a non-zero exit from ``pod.py config --refresh-from-api``. The polling
+    loop must never crash on the auto-heal — incident #488 was already
+    expensive without compounding it by killing the watcher."""
+    monkeypatch.setattr(
+        pp.subprocess,
+        "run",
+        lambda *a, **kw: subprocess.CompletedProcess(
+            args=a[0] if a else [], returncode=2, stdout="", stderr="ERROR: pod not found"
+        ),
+    )
+    assert pp._try_refresh_pods_conf_from_api("pod-488") is False
+
+
+def test_try_refresh_pods_conf_from_api_fail_soft_on_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A subprocess timeout / OSError on the refresh call also returns False
+    instead of propagating. Same fail-soft contract."""
+
+    def _boom(*a: Any, **kw: Any) -> subprocess.CompletedProcess:
+        raise subprocess.TimeoutExpired(cmd=a[0] if a else "pod.py", timeout=60)
+
+    monkeypatch.setattr(pp.subprocess, "run", _boom)
+    assert pp._try_refresh_pods_conf_from_api("pod-488") is False
+
+
 def test_poll_once_absent_shard_log_does_not_block_stall(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -1304,3 +1592,199 @@ def test_poll_once_absent_shard_log_does_not_block_stall(
     assert result.status == "stalled"
     # When no shard log exists, the sec_ago is the "very old" sentinel.
     assert result.shard_log_mtime_sec_ago >= pp.STALL_SEC
+
+
+# ── pid_file_missing observability (incident #521) ──────────────────────────
+
+
+def test_ssh_probe_parses_pid_file_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``_ssh_probe`` must surface PID_FILE_MISSING=1 so ``poll_once`` can
+    distinguish "pid file absent on pod" from "pid probed dead" (#521)."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=0,
+                pid_file_missing=1,
+                mtime_epoch=1700000000,
+                tail="2026-06-10 [phase=training]",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    probe = pp._ssh_probe(
+        "pod-521",
+        "/workspace/logs/issue-521.log",
+        "/workspace/logs/issue-521.pid",
+        521,
+    )
+    assert probe["pid_file_missing"] == "1"
+    assert probe["pid_alive"] == "0"
+
+
+def test_ssh_probe_pid_file_missing_fail_safe_defaults(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``pid_file_missing`` defaults to "0" both when the probe stdout omits
+    the line (older heredoc shape) AND on the SSH-failure fail-safe path —
+    transport failure means "unknown", not "missing"."""
+
+    def _fake_run_no_line(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(pid_alive=1, mtime_epoch=1700000000),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run_no_line)
+    probe = pp._ssh_probe(
+        "pod-521",
+        "/workspace/logs/issue-521.log",
+        "/workspace/logs/issue-521.pid",
+        521,
+    )
+    assert probe["pid_file_missing"] == "0"
+
+    def _fake_run_ssh_down(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(args=cmd, returncode=255, stdout="", stderr="boom")
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run_ssh_down)
+    probe = pp._ssh_probe(
+        "pod-521",
+        "/workspace/logs/issue-521.log",
+        "/workspace/logs/issue-521.pid",
+        521,
+    )
+    assert probe["pid_file_missing"] == "0"
+    assert probe["ssh_failed"] == "1"
+
+
+def test_poll_once_pid_file_missing_marker_fallback_warns_and_stays_running(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """#521 observability: pid file absent + live marker pid -> the run
+    stays ``running`` (unchanged routing — pid_alive ORs in the marker
+    pid), the tick surfaces ``pid_file_missing=True``, and a WARN names
+    the marker-pid fallback so the orchestrator sees it in the tick
+    output instead of a bare ``pid_alive`` flip."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:  # drain
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=0,  # no pidfile -> heredoc emits PID_ALIVE=0
+                pid_file_missing=1,
+                marker_pid_alive=1,  # the live re-launch pid from the marker
+                mtime_epoch=now_epoch - 30,
+                tail="2026-06-10 [phase=training]",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue: 4242)
+
+    state_file = tmp_path / "poll-state.json"
+    with caplog.at_level(logging.WARNING, logger="poll_pipeline"):
+        result = pp.poll_once(
+            issue=521,
+            pod="pod-521",
+            log_path="/workspace/logs/issue-521.log",
+            pid_file="/workspace/logs/issue-521.pid",
+            state_file=state_file,
+        )
+
+    assert result.status == "running"
+    assert result.pid_alive is True
+    assert result.pid_file_missing is True
+    assert any(
+        "pid file" in rec.message and "marker pid" in rec.message and "4242" in rec.getMessage()
+        for rec in caplog.records
+    ), f"expected a marker-pid-fallback WARN; got: {[r.getMessage() for r in caplog.records]}"
+
+
+def test_poll_once_pid_file_missing_does_not_change_dead_routing(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Negative: pid file absent + NO marker pid + non-done tail must still
+    route to ``dead`` exactly as before — the new field is observability
+    only. No marker-fallback WARN fires when there is no marker pid."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:  # drain
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=0,
+                pid_file_missing=1,
+                mtime_epoch=now_epoch - 30,
+                tail="2026-06-10 [phase=training]",  # never reached done
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+
+    state_file = tmp_path / "poll-state.json"
+    with caplog.at_level(logging.WARNING, logger="poll_pipeline"):
+        result = pp.poll_once(
+            issue=521,
+            pod="pod-521",
+            log_path="/workspace/logs/issue-521.log",
+            pid_file="/workspace/logs/issue-521.pid",
+            state_file=state_file,
+        )
+
+    assert result.status == "dead"
+    assert result.pid_file_missing is True
+    assert not any("marker pid" in rec.getMessage() for rec in caplog.records)
+
+
+# ── PHASE_RE / _latest_phase: digit-bearing phase names (#537) ──────────────
+
+
+def test_latest_phase_parses_digit_bearing_phase_names() -> None:
+    """Regression (#537): ``PHASE_RE`` must include digits in the milestone
+    token. The old ``[a-z_]+`` pattern truncated ``[phase=p0_render]`` to
+    ``"p"``, making the poller's ``current_phase`` illegible for any
+    dispatcher using numbered phase names (p0/p1/p2)."""
+    tail = "\n".join(
+        [
+            "2026-06-09 14:00:00 [phase=p0_render]",
+            "2026-06-09 14:05:00 [phase=p1_freeze step=10/20]",
+        ]
+    )
+    assert pp._latest_phase(tail) == "p1_freeze"
+    assert pp._latest_phase("2026-06-09 [phase=p0_render]") == "p0_render"
+
+
+def test_latest_phase_done_detection_not_loosened_by_digit_widening() -> None:
+    """``[phase=done]`` still parses as exactly ``done``, and a digit-suffixed
+    token like ``done2`` no longer truncates to a false ``done`` (the old
+    pattern stopped at the digit, so ``[phase=done2]`` read as ``done``)."""
+    assert pp._latest_phase("2026-06-09 [phase=done]") == "done"
+    assert pp._latest_phase("2026-06-09 [phase=done2]") == "done2"

@@ -1,0 +1,25 @@
+{
+  "trained_model": "/workspace/.cache/huggingface/hub/models--superkaiba1--explore-persona-space-fwft-32b/snapshots/f29d99a4a2326b8de80ec6b27bda97c3da8f35d5/c_issue506_qwen3_32b_fwft_seed42_phase2",
+  "trained_is_adapter": false,
+  "base_model": "Qwen/Qwen3-32B",
+  "marker": " \u203b",
+  "out_dir": "/workspace/explore-persona-space/eval_results/issue_506/fwft/phase2/kl",
+  "cells": [
+    {
+      "name": "T_plus",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_506/fwft/phase2/logprob_input/T_plus.json"
+    },
+    {
+      "name": "T_minus",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_506/fwft/phase2/logprob_input/T_minus.json"
+    },
+    {
+      "name": "NEG_doctor",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_506/fwft/phase2/logprob_input/NEG_doctor.json"
+    },
+    {
+      "name": "NEG_default_other",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_506/fwft/phase2/logprob_input/NEG_default_other.json"
+    }
+  ]
+}

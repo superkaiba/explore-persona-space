@@ -294,10 +294,34 @@ def daemon_port() -> int:
     return port
 
 
+# Per-route HTTP timeouts (seconds). `/spawn-session` boots a new claude
+# child process (inherits QR-pairing keys, sets up tmux/non-tmux session) and
+# routinely takes >10s when the daemon is juggling many sessions — the prior
+# fixed 10s timeout misfired healthy spawns as hard failures (incident #524,
+# 2026-06-08: daemon healthy on :39759, spawn timed out, succeeded on retry).
+# Worse, a daemon-side spawn that COMPLETES after the client timeout would
+# orphan the session: the registry-write atomicity invariant (a live `--auto`
+# session MUST have a current registry entry, else the watcher could re-spawn
+# it as a duplicate -> duplicate pod -> GPU spend) is only enforced AFTER
+# `urlopen` returns. See :func:`_reconcile_spawn_after_timeout` for the
+# orphan-adoption path that recovers on this exact race.
+DEFAULT_TIMEOUT_S = 10
+SPAWN_SESSION_TIMEOUT_S = 60
+
+
 def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
     """POST a JSON body to the local Happy daemon and return the parsed
     response. Errors are surfaced as :func:`sys.exit` with the daemon's
-    response body when available."""
+    response body when available.
+
+    The ``/spawn-session`` route uses a longer timeout
+    (:data:`SPAWN_SESSION_TIMEOUT_S`) than the lightweight ``/list`` /
+    ``/stop-session`` routes (:data:`DEFAULT_TIMEOUT_S`). On a spawn-session
+    timeout this function attempts to ADOPT a child the daemon may have
+    finished creating after we gave up — turning the orphan/duplicate
+    hazard into an idempotent spawn (see
+    :func:`_reconcile_spawn_after_timeout`). For any other route, a timeout
+    surfaces as a clean failure so the caller can safely retry."""
     url = f"http://127.0.0.1:{daemon_port()}{path}"
     payload = json.dumps(body).encode()
     req = urllib.request.Request(
@@ -306,8 +330,10 @@ def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
         headers={"Content-Type": "application/json"},
         method="POST",
     )
+    timeout = SPAWN_SESSION_TIMEOUT_S if path == "/spawn-session" else DEFAULT_TIMEOUT_S
+    spawn_started_at = time.time() if path == "/spawn-session" else None
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read())
     except urllib.error.HTTPError as e:
         try:
@@ -315,8 +341,85 @@ def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
         except Exception:
             err_body = {"raw": str(e)}
         sys.exit(f"Happy daemon {path} returned HTTP {e.code}: {err_body}")
+    except TimeoutError as e:
+        # `socket.timeout is TimeoutError` (CPython 3.10+); `urlopen` raises it
+        # DIRECTLY on socket timeout (NOT wrapped in URLError). Reconcile for
+        # /spawn-session, surface cleanly for everything else.
+        if path == "/spawn-session" and spawn_started_at is not None:
+            adopted = _reconcile_spawn_after_timeout(body, spawn_started_at)
+            if adopted is not None:
+                print(
+                    f"  NOTE: /spawn-session POST timed out after {timeout}s; "
+                    f"daemon completed the spawn after the client gave up. "
+                    f"Adopted session {adopted} (directory match).",
+                    file=sys.stderr,
+                )
+                return {"success": True, "sessionId": adopted}
+        sys.exit(
+            f"Happy daemon {path} timed out after {timeout}s: {e}. "
+            "Retry is safe ONLY if you can confirm no session was created "
+            "(check `spawn_session.py list`)."
+        )
     except urllib.error.URLError as e:
         sys.exit(f"Happy daemon {path} unreachable at 127.0.0.1: {e}")
+
+
+def _reconcile_spawn_after_timeout(
+    request_body: dict[str, Any], spawn_started_at: float
+) -> str | None:
+    """Look for a daemon child that matches the just-attempted spawn.
+
+    Called only after a ``/spawn-session`` POST times out. Cross-references
+    the daemon's live ``/list`` against ``~/.happy/sessions.json`` to find a
+    session whose cwd matches ``request_body["directory"]`` and whose
+    ``lifecycleStateSince`` timestamp falls in the window
+    ``[spawn_started_at - 5s, now + 5s]`` (the slack absorbs clock skew
+    between this process and the daemon's epoch-ms timestamps).
+
+    Returns the adopted Happy session id on a unique match, or ``None`` if no
+    plausible match is found (the caller then surfaces the timeout as a
+    clean failure). Multiple plausible matches also return ``None`` — refuse
+    to guess between competing candidates rather than adopt the wrong one.
+
+    Pure-ish: takes no I/O parameters; reads the daemon and sessions.json
+    directly. The narrow surface keeps the post-timeout path testable via
+    monkeypatching the live-id + meta loaders."""
+    directory = request_body.get("directory")
+    if not isinstance(directory, str) or not directory:
+        return None
+    try:
+        live_ids = _live_session_ids()
+    except SystemExit:
+        # daemon_port() failed mid-recovery; nothing to adopt.
+        return None
+    if not live_ids:
+        return None
+    meta = _load_session_meta()
+    # Convert our seconds-since-epoch to ms (the daemon's units). Allow 5s
+    # of slack on the lower bound to absorb clock skew between the daemon
+    # logging lifecycleStateSince and us reading time.time() above.
+    window_lo_ms = (spawn_started_at - 5.0) * 1000.0
+    window_hi_ms = (time.time() + 5.0) * 1000.0
+    candidates: list[tuple[float, str]] = []  # (lifecycleStateSince_ms, sid)
+    for sid in live_ids:
+        if not isinstance(sid, str):
+            continue
+        entry = meta.get(sid) or {}
+        if entry.get("path") != directory:
+            continue
+        since = entry.get("lifecycleStateSince")
+        if not isinstance(since, int | float):
+            # Session is live + dir matches but the daemon hasn't persisted
+            # its timestamp yet — refuse to adopt without the freshness
+            # signal (could be an unrelated long-running session).
+            continue
+        if window_lo_ms <= float(since) <= window_hi_ms:
+            candidates.append((float(since), sid))
+    if len(candidates) != 1:
+        # Zero candidates = nothing to adopt; multiple = ambiguous, refuse
+        # to guess (the caller fails loud, the user reconciles by hand).
+        return None
+    return candidates[0][1]
 
 
 def _live_session_ids() -> set[str]:

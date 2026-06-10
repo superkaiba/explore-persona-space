@@ -858,6 +858,9 @@ def _maybe_attach_marker_band_stop(
         high_nats=cfg.marker_band_high_nats,
         eval_every_steps=cfg.marker_band_eval_every_steps,
         min_steps=cfg.marker_band_min_steps,
+        # EOS competitor at the marker slot for the raw-logit (z_eos) WandB
+        # series; the band-stop decision itself stays on the log-prob band.
+        eos_token_id=tokenizer.eos_token_id,
     )
     # Pin dispatch order: MarkerBandStopCallback MUST run BEFORE any caller-
     # supplied sibling that subscribes to ``on_log`` (e.g. issue #527's

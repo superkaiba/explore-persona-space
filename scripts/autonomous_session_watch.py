@@ -38,7 +38,13 @@ Four passes, run in this order:
    pass falls back to a loud one-time "auto-recovery exhausted" marker
    and waits for the user.  Promoted from the ALERT-ONLY behavior shipped
    in 2026-06-05 after task #518 (2026-06-08) confirmed the detection
-   fires on true positives but was never re-driven.
+   fires on true positives but was never re-driven.  Manual registrations
+   (``manual-issue-<N>.json``, written by bare ``spawn-issue``) are ALSO
+   scanned, in ALERT-ONLY mode: the same staleness detection fires the
+   one-time alert, but a user-driven session is NEVER auto-respawned
+   (#505 round-2 orphaning, 2026-06-10 — a dead bare-spawned session at
+   an ACTIVE status previously orphaned silently because this pass only
+   globbed ``issue-*.json``).
 4. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
    ``issue-progress/<N>.json``, ``issue-tick-last-status/<N>.json``,
    ``stalled-<N>.json``) for tasks in :data:`TERMINAL_FOR_GC`
@@ -68,12 +74,33 @@ Coverage notes (deliberate gaps you should know about)
   bounded — it's just caught one stage later, at ``awaiting_promotion``, when
   the auto-stop arm fires.
 * The ``keep-running`` task tag (which exempts a pod from /issue Step 8's
-  auto-terminate) is NOT consulted here. A ``keep-running`` pod whose task
-  reaches a DONE status (completed / awaiting_promotion / archived) WILL be
-  auto-stopped by this pass. The stop is reversible (``pod.py resume``), and
-  in the common case keep-running pods sit at non-DONE statuses so this is a
-  no-op; if you want a keep-running pod to truly persist past task completion,
-  resume it manually after each stop, or extend this pass to consult the tag.
+  auto-terminate) IS consulted by the auto-stop arm: a RUNNING pod whose task
+  is DONE but carries the tag is NOT auto-stopped (it covers legitimate
+  post-completion work, e.g. a user-directed follow-up re-eval on an
+  ``awaiting_promotion`` task — the #530 incident, 2026-06-09, where this
+  pass stopped pod-530 four times mid-follow-up before the tag was consulted).
+  The skip is observable: a log line on every pass plus ONE dashboard-visible
+  marker per pod incarnation (deduped via the ``keep_running_noted`` flag in
+  the pod-safety state file, which is cleared when the pod leaves the RUNNING
+  set). Cost trade-off: an exempted pod burns until it is stopped manually
+  (``pod.py stop --issue <N>``) or the tag is removed (``task.py remove-tag
+  <N> keep-running``) — removing the tag re-arms the auto-stop arm on the
+  next watcher run, with a fresh >=2-checks accumulation. The alert and
+  stalled-detector arms ignore the tag (they never stop pods anyway).
+* The auto-stop arm ALSO inspects events.jsonl for a live inline follow-up:
+  if a task's latest ``epm:run-launched`` marker is NEWER than its latest
+  ``epm:promoted`` / ``epm:status-changed`` (i.e. a user-approved inline
+  follow-up — the CLAUDE.md "Routing experiment intent → Follow-up" path —
+  has provisioned a fresh pod on a promoted/completed/awaiting_promotion/
+  archived parent), the stop is SKIPPED with the same once-per-incarnation
+  marker semantics as the keep-running exemption (deduped via the
+  ``followup_noted`` flag). Precedence: ``keep_running`` (explicit user
+  tag) beats ``followup_active`` (inferred from events). The skip re-arms
+  naturally on the next tick when the follow-up posts its next
+  ``epm:status-changed`` / ``epm:promoted`` event newer than the
+  ``epm:run-launched``. The #477 incident, 2026-06-10, motivates this: an
+  inline follow-up on a promoted task ran 3 cycles of auto-stop → manual
+  re-provision in <1h before the user added the ``keep-running`` tag.
 
 Why STOP is keyed on task status, not session liveness
 ------------------------------------------------------
@@ -247,6 +274,26 @@ _ALERT_NOTE_SENTINEL = "[autonomous_session_watch:pod-stale-alert]"
 # self-identifying on the dashboard.
 _AUTOSTOP_NOTE_SENTINEL = "[autonomous_session_watch:pod-auto-stop]"
 
+# Substring stamped into the one-time "keep-running exemption" marker posted
+# when the auto-stop arm would have fired but the task carries the
+# keep-running tag. Posted at most once per pod incarnation (deduped via the
+# `keep_running_noted` flag in the pod-safety state file) so a tagged pod is
+# visible on the dashboard without 20-minute marker spam.
+_KEEP_RUNNING_NOTE_SENTINEL = "[autonomous_session_watch:pod-keep-running-skip]"
+
+# Substring stamped into the one-time "inline-follow-up exemption" marker
+# posted when the auto-stop arm would have fired but the task's events.jsonl
+# shows a `epm:run-launched` marker NEWER than its transition into the current
+# DONE status (i.e. a legitimate user-approved inline follow-up provisioned a
+# fresh pod on a promoted/completed/awaiting_promotion/archived parent — see
+# the CLAUDE.md "Routing experiment intent → Follow-up" bullet). Posted at
+# most once per pod incarnation (deduped via the `followup_noted` flag in the
+# pod-safety state file). Same dashboard-visible / no-spam semantics as the
+# keep-running-skip marker. Incident #477 (2026-06-10): a promoted task ran
+# 3 cycles of pod auto-stop → manual re-provision in <1h before the follow-up
+# launches were recognized as legitimate.
+_FOLLOWUP_NOTE_SENTINEL = "[autonomous_session_watch:pod-followup-skip]"
+
 # Substring stamped into every session-stalled-alert marker note. Same role as
 # _ALERT_NOTE_SENTINEL for the pod-safety pass: a session-stalled alert is
 # posted as epm:progress and MUST be filtered out of the "real progress" set,
@@ -272,6 +319,8 @@ _STALLED_EXHAUSTED_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respa
 _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
     {
         _ALERT_NOTE_SENTINEL,
+        _KEEP_RUNNING_NOTE_SENTINEL,
+        _FOLLOWUP_NOTE_SENTINEL,
         _STALLED_ALERT_NOTE_SENTINEL,
         _STALLED_RESPAWN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
@@ -372,9 +421,10 @@ def decide_session_stalled(
 
     1. ``self_report_age_s`` — the per-issue self-report file's age in
        seconds. A MISSING file (``None``) is NOT treated as stale here
-       (interactive sessions never self-report; the caller decides whether
-       to apply this pass to non-autonomous sessions). Only an EXISTING
-       but frozen self-report counts.
+       (a session that has never self-reported — e.g. a bare manual
+       session that was never driven — is skipped; the caller decides
+       which registries this pass applies to). Only an EXISTING but
+       frozen self-report counts.
     2. ``marker_progress_age_s`` — age of the newest real (non-watcher)
        progress marker on the task's ``events.jsonl``. ``None`` means the
        task has no progress markers at all — that IS a stale signal (a
@@ -394,8 +444,7 @@ def decide_session_stalled(
     flaky markers-fetch / self-report-race: an action fires only on the
     SECOND consecutive stale check.
 
-    Recovery selection (only when stale + threshold met + not already
-    deduped this episode):
+    Recovery selection (only when stale + threshold met):
 
     - ``respawn_eligible=True`` AND ``respawn_count < max_respawns``
       -> ``("respawn", 0)``. The caller has already confirmed the task
@@ -412,6 +461,20 @@ def decide_session_stalled(
       -> ``("alert", 0)``. Preserves the Phase-1 ALERT-ONLY behavior
       as the safe fallback.
 
+    Dedup semantics — ``alerted`` dedups REPEAT ALERTS only, it never
+    gates off the stronger respawn action. An already-alerted episode
+    MUST still escalate to a respawn the moment it becomes eligible.
+    (Incident #506, 2026-06-08: a Phase-1 alert set ``alerted=True``
+    ~11h before the Phase-2 auto-respawn machinery deployed; the prior
+    blanket ``if alerted: return keep`` short-circuit then suppressed
+    the respawn on every subsequent tick for 10+ hours while the 8xH200
+    pod idle-burned ~$460. The same gap fires any time the FIRST
+    threshold-trip lands while respawn is briefly ineligible — daemon
+    momentarily down, task momentarily in a non-ACTIVE status — and
+    then respawn becomes eligible later in the same episode.) The
+    ``alerted`` flag is cleared by the caller when (a) the self-report
+    ts advances, or (b) :func:`_handle_stalled_respawn` runs.
+
     Returns ``(action, new_missed)``. Cases:
 
     - ``self_report_age_s is None`` (no self-report at all)
@@ -419,14 +482,23 @@ def decide_session_stalled(
       always self-report; a missing file is the caller's signal to skip.
     - Self-report fresh (< ``window_s``) -> ``("keep", 0)``. Reset miss
       counter; live session.
+    - Marker-progress is fresh -> ``("keep", 0)``. Any fresh signal
+      resets the miss counter.
+    - Self-report stale AND marker-progress also stale (or absent) AND
+      ``alerted=True`` AND respawn is now eligible (``respawn_eligible``
+      AND ``respawn_count < max_respawns``) -> ``("respawn", 0)``.
+      Escalate from alert to respawn; the prior alert already required
+      ``>= threshold`` consecutive stale checks, so escalation needn't
+      re-accumulate the miss guard. Cleared `alerted` is the caller's
+      job on the next ``_save_stalled_state``.
+    - Self-report stale AND marker-progress also stale (or absent) AND
+      ``alerted=True`` AND respawn is NOT eligible (or cap exhausted)
+      -> ``("keep", 0)``. Dedup the repeat alert / hold for exhausted
+      marker dedup (the caller's ``exhausted`` flag handles that).
     - Self-report stale AND marker-progress also stale (or absent) AND
       not previously ``alerted`` -> increment ``missed``; on reaching
       ``threshold``, return the appropriate recovery action per the
       table above. Below threshold, return ``("keep", new_missed)``.
-    - Same conditions but ``alerted=True`` -> ``("keep", 0)``. Dedup
-      within episode (cleared by the caller when self-report advances).
-    - Marker-progress is fresh -> ``("keep", 0)``. Any fresh signal
-      resets the miss counter.
     """
     if self_report_age_s is None:
         # Missing self-report -> caller should skip (interactive session,
@@ -444,6 +516,18 @@ def decide_session_stalled(
     if not marker_stale:
         return ("keep", 0)
     if alerted:
+        # Already-alerted episode. Dedup the repeat alert, BUT still
+        # escalate to a respawn the moment it becomes eligible — the
+        # alert flag must never block the stronger action. See the
+        # "Dedup semantics" docstring paragraph for the incident that
+        # motivates this branch (regression: previously bare
+        # ``return ("keep", 0)`` here suppressed all escalation).
+        if respawn_eligible and respawn_count < max_respawns:
+            return ("respawn", 0)
+        # Either respawn not eligible this tick (non-ACTIVE / daemon
+        # down) or the crash-loop cap is exhausted. Stay quiet; the
+        # caller's ``exhausted`` flag dedups the loud one-time exhausted
+        # marker separately, and the next eligibility flip will retry.
         return ("keep", 0)
     new_missed = missed + 1
     if new_missed >= threshold:
@@ -460,14 +544,21 @@ def decide_session_stalled(
 
 
 def decide_pod_safety(
-    status_class: str, missed: int, stale: bool, alerted: bool, threshold: int = 2
+    status_class: str,
+    missed: int,
+    stale: bool,
+    alerted: bool,
+    threshold: int = 2,
+    *,
+    keep_running: bool = False,
+    followup_active: bool = False,
 ) -> tuple[str, int]:
     """Pure decision for the pod-safety pass on a RUNNING managed pod.
 
     Trigger is the task's STATUS CLASS (unambiguous), NOT session liveness —
     see the module docstring "Why STOP is keyed on task status". Returns
     ``(action, new_missed)`` where action is ``"stop"`` | ``"alert"`` |
-    ``"keep"``.
+    ``"keep"`` | ``"keep-running-skip"`` | ``"followup-skip"``.
 
     Parameters
     ----------
@@ -491,9 +582,43 @@ def decide_pod_safety(
         Whether a stale-alert has ALREADY been posted for the current episode
         (tracked in the state file). Dedups the alert so it fires once per
         episode, not every 10-min tick.
+    keep_running
+        Whether the task carries the ``keep-running`` tag (the Step-8
+        auto-terminate exemption). Consulted ONLY on the auto-stop arm: a
+        DONE task's RUNNING pod with the tag returns
+        ``("keep-running-skip", 0)`` instead of accumulating toward a stop.
+        The alert arm ignores it (alerts never stop anything). Takes
+        precedence over ``followup_active`` (an explicit user-set tag beats
+        an inferred follow-up signal).
+    followup_active
+        Whether the task's events.jsonl shows an ``epm:run-launched`` marker
+        NEWER than its transition into the current DONE status — i.e. a
+        legitimate user-approved inline follow-up has provisioned a fresh
+        pod on a promoted/completed/awaiting_promotion/archived parent (the
+        CLAUDE.md "Routing experiment intent → Follow-up" path). Consulted
+        ONLY on the auto-stop arm, only when ``keep_running`` is False: a
+        DONE task's RUNNING pod with an active follow-up returns
+        ``("followup-skip", 0)`` instead of accumulating toward a stop. The
+        caller computes this lazily from ``_task_events`` so the extra
+        events fetch is paid only for escaped-pod candidates (same lazy
+        pattern as ``keep_running``). Incident #477 (2026-06-10): the
+        watcher stopped a healthy follow-up pod 3 times before the user
+        manually added the ``keep-running`` tag.
 
     Cases:
 
+    - ``status_class == "auto-stop-done"`` AND ``keep_running`` ->
+      ``("keep-running-skip", 0)``. The stop is SKIPPED and the miss counter
+      reset, so removing the tag later re-arms a fresh >=``threshold``-checks
+      accumulation before any stop. The caller logs the skip + posts a
+      once-per-pod-incarnation marker.
+    - ``status_class == "auto-stop-done"`` AND ``followup_active`` (and not
+      ``keep_running``) -> ``("followup-skip", 0)``. Same SKIP-and-reset
+      semantics as ``keep-running-skip``; the caller posts a
+      once-per-pod-incarnation follow-up exemption marker. If the follow-up
+      later finishes (the next ``epm:status-changed`` / ``epm:promoted``
+      lands AFTER the latest ``epm:run-launched``) the predicate flips
+      False on the next tick and the auto-stop re-arms normally.
     - ``status_class == "auto-stop-done"`` -> increment ``missed``; return
       ``"stop"`` once it reaches ``threshold`` (default 2 = ~20 min at a 10-min
       cron, so a single transient API/status glitch never stops a pod), else
@@ -508,6 +633,10 @@ def decide_pod_safety(
       status is one we deliberately never auto-stop).
     """
     if status_class == "auto-stop-done":
+        if keep_running:
+            return ("keep-running-skip", 0)
+        if followup_active:
+            return ("followup-skip", 0)
         new_missed = missed + 1
         if new_missed >= threshold:
             return ("stop", 0)
@@ -615,6 +744,115 @@ def _task_status(issue: int) -> str | None:
         return None
     status = data.get("status") or (data.get("frontmatter") or {}).get("status")
     return status if isinstance(status, str) else None
+
+
+def _task_keep_running(issue: int) -> bool:
+    """True iff task ``issue`` currently carries the ``keep-running`` tag.
+
+    The Step-8 auto-terminate exemption tag, consulted by the pod-safety
+    auto-stop arm (see the module docstring's keep-running coverage note).
+    Same subprocess isolation as :func:`_task_status`; any read failure
+    returns False (no exemption observed) — the auto-stop then proceeds only
+    if the no-tag observation persists across the >=2-checks miss guard, so a
+    single transient ``task.py`` glitch never stops a tagged pod. Called
+    LAZILY by :func:`_process_pod` only on the auto-stop-done branch, so the
+    extra ``task.py view`` subprocess is paid only for escaped-pod
+    candidates, not for every RUNNING pod every tick."""
+    try:
+        out = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "view", str(issue), "--json"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return False
+    if out.returncode != 0:
+        return False
+    try:
+        data = json.loads(out.stdout)
+    except json.JSONDecodeError:
+        return False
+    tags = (data.get("frontmatter") or {}).get("tags") or []
+    return isinstance(tags, list) and "keep-running" in tags
+
+
+# Marker kinds that record a transition INTO a DONE status. The latest ts
+# among these is "when did this task become DONE"; compared against the
+# latest `epm:run-launched` ts to decide whether an `epm:run-launched`
+# represents a legitimate inline follow-up (i.e. it landed AFTER the task
+# was promoted/completed, not before).
+#
+# `epm:promoted` is emitted by `task.py promote`; `epm:status-changed` is
+# the generic transition marker (caller has already verified the CURRENT
+# status is DONE, so the latest `epm:status-changed` ts is by definition
+# the transition INTO the current DONE status — note text is not parsed).
+_DONE_TRANSITION_KINDS = frozenset({"epm:promoted", "epm:status-changed"})
+
+# Marker kind a follow-up emits when it provisions a pod and launches the
+# experiment process. The pod-safety pass treats a `epm:run-launched` whose
+# ts is NEWER than the latest done-transition as a live inline follow-up
+# and SKIPS the auto-stop (see `decide_pod_safety`'s `followup_active`
+# parameter).
+_RUN_LAUNCHED_KIND = "epm:run-launched"
+
+
+def _latest_event_ts(events: list[dict], kinds: frozenset[str] | set[str]) -> float | None:
+    """Newest epoch ts among events whose ``kind`` is in ``kinds``, or
+    ``None`` if no such event exists. Watcher-posted notes are NOT excluded
+    here (this is a generic ts helper; the caller decides whether a sentinel
+    filter applies). Used to compare an inline-follow-up's
+    ``epm:run-launched`` ts vs the task's latest done-transition ts."""
+    best: float | None = None
+    if isinstance(kinds, set):
+        kinds = frozenset(kinds)
+    for ev in events:
+        if ev.get("kind") not in kinds:
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
+
+def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
+    """True iff task ``issue`` has an ``epm:run-launched`` marker NEWER than
+    its latest done-transition marker (``epm:promoted`` /
+    ``epm:status-changed``).
+
+    Predicate for the pod-safety auto-stop exemption: a DONE-status task
+    with a fresh ``epm:run-launched`` carries an in-flight, user-approved
+    inline follow-up (CLAUDE.md "Routing experiment intent → Follow-up") so
+    the pod is legitimately in use. When the follow-up completes, the next
+    ``epm:status-changed`` / ``epm:promoted`` event will land newer than
+    the ``epm:run-launched`` and this predicate flips False — the auto-stop
+    re-arms naturally on the following tick (same semantics as the
+    ``keep-running`` tag being removed).
+
+    Called LAZILY by :func:`_process_pod` only on the auto-stop-done branch,
+    so the per-task events fetch is paid only for escaped-pod candidates,
+    not for every RUNNING pod every tick. ``events`` may be passed in by
+    the caller to avoid double-fetching when the events list is already
+    loaded (the typical _process_pod path).
+
+    A missing ``epm:run-launched`` returns False (no follow-up signal).
+    A missing done-transition is impossible in practice — the caller
+    already verified the task's current status is DONE, so at least one
+    ``epm:status-changed`` must have fired to put it there. If the read
+    nonetheless returns no done-transition (defensive), we conservatively
+    return False (no exemption) rather than skip the auto-stop on a
+    potentially-stale read.
+    """
+    if events is None:
+        events = _task_events(issue)
+    run_launched = _latest_event_ts(events, {_RUN_LAUNCHED_KIND})
+    if run_launched is None:
+        return False
+    done_transition = _latest_event_ts(events, _DONE_TRANSITION_KINDS)
+    if done_transition is None:
+        return False
+    return run_launched > done_transition
 
 
 def _task_events(issue: int) -> list[dict]:
@@ -761,6 +999,8 @@ def _save_pod_safety_state(
     *,
     alerted: bool,
     last_progress_ts: float | None,
+    keep_running_noted: bool | None = None,
+    followup_noted: bool | None = None,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-pod state atomically (temp + rename).
@@ -769,21 +1009,34 @@ def _save_pod_safety_state(
     whether a stale-alert was already posted this episode (dedup).
     ``last_progress_ts`` is the newest REAL progress timestamp we observed —
     stored so a later tick can tell "the gap stopped advancing" from "new
-    progress arrived" (and reset ``alerted`` when progress advances). ``prev``
-    is the existing on-disk payload (if any), passed so callers that already
-    loaded it don't re-read; ``first_seen`` carries forward when present so the
-    age backstop measures the original episode start, not the latest save.
+    progress arrived" (and reset ``alerted`` when progress advances).
+    ``keep_running_noted`` records whether the once-per-pod-incarnation
+    keep-running-exemption marker was already posted (dedup, same role as
+    ``alerted`` for the keep-running-skip arm); ``None`` (the default)
+    carries the prior on-disk value forward so callers that don't touch the
+    keep-running path never clobber it. ``followup_noted`` is the same
+    dedup flag for the inline-follow-up exemption (``followup-skip``);
+    None carries forward identically.  ``prev`` is the existing on-disk
+    payload (if any), passed so callers that already loaded it don't re-read;
+    ``first_seen`` carries forward when present so the age backstop measures
+    the original episode start, not the latest save.
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _pod_safety_state_path(issue)
     prev_first_seen = (prev or {}).get("first_seen")
     if not isinstance(prev_first_seen, int | float):
         prev_first_seen = time.time()
+    if keep_running_noted is None:
+        keep_running_noted = bool((prev or {}).get("keep_running_noted", False))
+    if followup_noted is None:
+        followup_noted = bool((prev or {}).get("followup_noted", False))
     payload = {
         "pod_id": pod_id,
         "missed": missed,
         "alerted": alerted,
         "last_progress_ts": last_progress_ts,
+        "keep_running_noted": bool(keep_running_noted),
+        "followup_noted": bool(followup_noted),
         "first_seen": prev_first_seen,
     }
     tmp = dest.with_suffix(".json.tmp")
@@ -820,6 +1073,7 @@ def _save_stalled_state(
     last_self_report_ts: str | None,
     respawn_count: int = 0,
     exhausted: bool = False,
+    refresh_attempted: bool = False,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-session stalled-detector state atomically (temp +
@@ -836,10 +1090,13 @@ def _save_stalled_state(
     by the caller on each real-progress advance, mirroring the
     ``alerted`` flag. ``exhausted`` records whether the one-time
     "auto-recovery exhausted" marker has already been posted this
-    episode (dedup, also cleared on progress). ``prev`` is the prior
-    on-disk payload (when the caller already has it loaded) so
-    ``first_seen`` carries forward and the age backstop measures the
-    original episode start.
+    episode (dedup, also cleared on progress). ``refresh_attempted``
+    records whether the #488 stale-port self-heal (``pod.py config
+    --refresh-from-api``) has already fired this episode (dedup, also
+    cleared on progress) — one refresh attempt per stalled episode, no
+    hot-loop. ``prev`` is the prior on-disk payload (when the caller
+    already has it loaded) so ``first_seen`` carries forward and the
+    age backstop measures the original episode start.
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _stalled_state_path(issue)
@@ -852,6 +1109,7 @@ def _save_stalled_state(
         "alerted": alerted,
         "respawn_count": respawn_count,
         "exhausted": exhausted,
+        "refresh_attempted": refresh_attempted,
         "last_self_report_ts": last_self_report_ts,
         "first_seen": prev_first_seen,
     }
@@ -979,9 +1237,56 @@ def _stop_pod(issue: int, dry_run: bool) -> bool:
     return True
 
 
-def _running_managed_issue_pods() -> list[tuple[int, str]]:
+def _refresh_pods_conf_from_api(pod_name: str, dry_run: bool) -> bool:
+    """Run ``pod.py config --refresh-from-api <pod_name>`` (the #488
+    stale-port self-heal). Pulls fresh host/port from the live RunPod API
+    into ``pods.conf`` + ``~/.ssh/config`` so an SSH polling chain that has
+    been failing on the pre-stop port can recover without a human in the
+    loop.
+
+    Fail-soft: any failure (subprocess timeout, non-zero exit, missing
+    binary, oserror) is logged + returns False. The watcher pass never
+    crashes on this auto-heal; the caller sets ``refresh_attempted=True``
+    regardless so we don't re-fire every tick within the same stalled
+    episode (the flag clears when the session resumes self-reporting,
+    same as ``alerted``).
+
+    Returns True on success (refresh-from-api exited 0), False otherwise.
+    """
+    cmd = ["uv", "run", "python", "scripts/pod.py", "config", "--refresh-from-api", pod_name]
+    if dry_run:
+        print(f"  [dry-run] would refresh-from-api: {' '.join(cmd)}")
+        return False
+    try:
+        res = subprocess.run(
+            cmd,
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        print(
+            f"  REFRESH-FROM-API FAILED for {pod_name}: {type(e).__name__}: {e}",
+            file=sys.stderr,
+        )
+        return False
+    if res.returncode != 0:
+        print(
+            f"  REFRESH-FROM-API FAILED for {pod_name} (rc={res.returncode}): "
+            f"{res.stderr.strip()[:300]}",
+            file=sys.stderr,
+        )
+        return False
+    first_line = (res.stdout.strip().splitlines() or [""])[0]
+    print(f"  REFRESHED pods.conf from API for {pod_name}: {first_line}")
+    return True
+
+
+def _running_managed_issue_pods() -> list[tuple[int, str, str]]:
     """Live RunPod team pods that are RUNNING and managed (``pod-<N>`` or the
-    legacy ``epm-issue-<N>``). Returns ``(issue, pod_id)`` pairs.
+    legacy ``epm-issue-<N>``). Returns ``(issue, pod_id, pod_name)`` triples.
 
     Recognition delegates to :func:`pod_lifecycle._is_managed_pod` +
     :func:`pod_lifecycle._issue_from_pod_name` — the canonical helpers that
@@ -989,6 +1294,11 @@ def _running_managed_issue_pods() -> list[tuple[int, str]]:
     prefix — instead of a hand-rolled regex (the old regex matched only
     ``epm-issue-<N>``, so it never matched any live pod and the whole pass was
     dead code).
+
+    The pod NAME is threaded out (not just the id) so callers needing to
+    address the pod by name — e.g. the #488 stale-port self-heal that shells
+    out to ``pod.py config --refresh-from-api <name>`` — don't need a second
+    ``list_team_pods`` round-trip to look it up.
 
     A transport error surfaces as an empty list with a logged warning — better
     to skip the pass this tick than to crash the whole run."""
@@ -999,15 +1309,16 @@ def _running_managed_issue_pods() -> list[tuple[int, str]]:
             f"  pod-safety: list_team_pods failed ({e}); skipping pass this tick", file=sys.stderr
         )
         return []
-    out: list[tuple[int, str]] = []
+    out: list[tuple[int, str, str]] = []
     for p in pods:
         if p.desired_status != "RUNNING":
             continue
         if not _is_managed_pod(p):
             continue
-        issue = _issue_from_pod_name(p.name or "")
+        name = p.name or ""
+        issue = _issue_from_pod_name(name)
         if issue is not None:
-            out.append((issue, p.pod_id))
+            out.append((issue, p.pod_id, name))
     return out
 
 
@@ -1016,18 +1327,36 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
 
     Reads the task's status + latest real-progress timestamp, classifies it,
     and applies :func:`decide_pod_safety`: AUTO-STOP a done task's escaped pod
-    (after the 2-miss guard), ALERT a stale pod-active task once per episode, or
-    KEEP. Persists the per-pod state (miss count, alerted flag, last-observed
-    real progress) for the next tick."""
+    (after the 2-miss guard, unless the task carries the ``keep-running`` tag
+    OR the task's events.jsonl shows a `epm:run-launched` newer than the
+    latest done-transition — i.e. a live inline follow-up — then the stop is
+    SKIPPED with a log line + a once-per-pod-incarnation marker), ALERT a
+    stale pod-active task once per episode, or KEEP. Persists the per-pod
+    state (miss count, alerted flag, keep-running-noted flag, followup-noted
+    flag, last-observed real progress) for the next tick."""
     status = _task_status(issue)
-    latest_progress = _latest_progress_ts(_task_events(issue))
+    events = _task_events(issue)
+    latest_progress = _latest_progress_ts(events)
     status_class = _status_class(status, latest_progress, now)
+    # Lazy: the tag and the follow-up predicate only matter when the auto-stop
+    # arm is in play, so the extra `task.py view` subprocess + events scan are
+    # paid only for escaped-pod candidates. `keep_running` is consulted first
+    # because it is the explicit user signal; `followup_active` is the
+    # inferred-from-events fallback.
+    keep_running = status_class == "auto-stop-done" and _task_keep_running(issue)
+    followup_active = (
+        status_class == "auto-stop-done"
+        and not keep_running
+        and _task_followup_active(issue, events=events)
+    )
 
     prev_state = _load_pod_safety_state(issue)
     prev_missed = prev_state.get("missed", 0)
     if not isinstance(prev_missed, int):
         prev_missed = 0
     prev_alerted = bool(prev_state.get("alerted", False))
+    prev_keep_running_noted = bool(prev_state.get("keep_running_noted", False))
+    prev_followup_noted = bool(prev_state.get("followup_noted", False))
     prev_progress = prev_state.get("last_progress_ts")
     if not isinstance(prev_progress, int | float):
         prev_progress = None
@@ -1055,6 +1384,8 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
         stale=stale,
         alerted=alerted,
         threshold=threshold,
+        keep_running=keep_running,
+        followup_active=followup_active,
     )
     gap_h = f"{(now - latest_progress) / 3600:.1f}h" if latest_progress is not None else "none"
     print(
@@ -1062,6 +1393,77 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
         f"progress_gap={gap_h} missed={prev_missed}->{new_missed} "
         f"alerted={alerted} action={action}"
     )
+
+    if action == "keep-running-skip":
+        print(
+            f"  KEEP-RUNNING issue #{issue}: task status '{status}' is DONE but the "
+            f"keep-running tag is present — pod-safety stop SKIPPED (pod_id={pod_id}; "
+            f"the pod burns until the tag is removed or it is stopped manually)."
+        )
+        if not prev_keep_running_noted:
+            _post_progress_marker(
+                issue,
+                f"{_KEEP_RUNNING_NOTE_SENTINEL} keep-running exemption: RUNNING pod "
+                f"(pod_id={pod_id}) for a task at DONE status '{status}' would have "
+                f"been auto-stopped by the pod-safety pass, but the task carries the "
+                f"keep-running tag, so the stop is SKIPPED. The pod burns until it is "
+                f"stopped manually (`pod.py stop --issue {issue}`) or the tag is "
+                f"removed (`task.py remove-tag {issue} keep-running`), which re-arms "
+                f"the auto-stop on the next watcher run. Posted once per pod "
+                f"incarnation.",
+                dry_run,
+                label="keep-running-skip",
+            )
+        if not dry_run:
+            _save_pod_safety_state(
+                issue,
+                pod_id,
+                missed=0,
+                alerted=alerted,
+                last_progress_ts=latest_progress,
+                keep_running_noted=True,
+                prev=prev_state,
+            )
+        return
+
+    if action == "followup-skip":
+        print(
+            f"  FOLLOWUP-ACTIVE issue #{issue}: task status '{status}' is DONE but a "
+            f"fresh `epm:run-launched` (newer than the latest done-transition) "
+            f"indicates a live inline follow-up — pod-safety stop SKIPPED "
+            f"(pod_id={pod_id}; the auto-stop re-arms when the follow-up posts its "
+            f"next status-changed/promoted)."
+        )
+        if not prev_followup_noted:
+            _post_progress_marker(
+                issue,
+                f"{_FOLLOWUP_NOTE_SENTINEL} inline-follow-up exemption: RUNNING pod "
+                f"(pod_id={pod_id}) for a task at DONE status '{status}' would have "
+                f"been auto-stopped by the pod-safety pass, but the task's "
+                f"events.jsonl shows an `epm:run-launched` marker NEWER than the "
+                f"latest done-transition (epm:promoted / epm:status-changed). That "
+                f"is the CLAUDE.md 'Routing experiment intent → Follow-up' pattern: "
+                f"a user-approved inline follow-up has provisioned a fresh pod on a "
+                f"promoted/completed parent, so the pod is legitimately in use. The "
+                f"auto-stop re-arms naturally when the follow-up posts its next "
+                f"status-changed / promoted event. Posted once per pod incarnation. "
+                f"Override with `task.py add-tag {issue} keep-running` to suppress "
+                f"all future pod-safety stops, or stop manually with `pod.py stop "
+                f"--issue {issue}` if the follow-up is truly done.",
+                dry_run,
+                label="followup-skip",
+            )
+        if not dry_run:
+            _save_pod_safety_state(
+                issue,
+                pod_id,
+                missed=0,
+                alerted=alerted,
+                last_progress_ts=latest_progress,
+                followup_noted=True,
+                prev=prev_state,
+            )
+        return
 
     if action == "stop":
         stopped = _stop_pod(issue, dry_run)
@@ -1273,6 +1675,9 @@ class _StalledActionCtx:
         in_active: bool,
         threshold: int,
         dry_run: bool,
+        refresh_attempted: bool = False,
+        pod_name: str | None = None,
+        manual: bool = False,
     ) -> None:
         self.issue = issue
         self.happy_session_id = happy_session_id
@@ -1288,6 +1693,20 @@ class _StalledActionCtx:
         self.in_active = in_active
         self.threshold = threshold
         self.dry_run = dry_run
+        # #488 stale-port self-heal — see ``_refresh_pods_conf_from_api``
+        # + ``_handle_stalled_alert``. ``refresh_attempted`` carries the
+        # one-shot-per-episode dedup; ``pod_name`` (when known) lets the
+        # alert handler address the live pod without a second
+        # ``list_team_pods`` round-trip.
+        self.refresh_attempted = refresh_attempted
+        self.pod_name = pod_name
+        # True for a manual (``manual-issue-<N>.json``, bare ``spawn-issue``)
+        # registration: ALERT-ONLY by design — the alert handler adjusts its
+        # prose (a manual entry's liveness was never verified, and the
+        # decline reason is "user-driven", not status/daemon). The respawn /
+        # exhausted handlers never see manual entries (the caller forces
+        # ``respawn_eligible=False``). #505 round-2 orphaning, 2026-06-10.
+        self.manual = manual
 
     @property
     def happy_session_id_str(self) -> str | None:
@@ -1329,6 +1748,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
                 last_self_report_ts=ctx.last_self_report_ts,
                 respawn_count=ctx.respawn_count,
                 exhausted=ctx.exhausted,
+                refresh_attempted=ctx.refresh_attempted,
                 prev=ctx.prev_state,
             )
         return
@@ -1343,6 +1763,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
                 last_self_report_ts=ctx.last_self_report_ts,
                 respawn_count=ctx.respawn_count,
                 exhausted=ctx.exhausted,
+                refresh_attempted=ctx.refresh_attempted,
                 prev=ctx.prev_state,
             )
         return
@@ -1379,6 +1800,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
             last_self_report_ts=ctx.last_self_report_ts,
             respawn_count=new_respawn_count if spawn_ok else ctx.respawn_count,
             exhausted=ctx.exhausted,
+            refresh_attempted=ctx.refresh_attempted,
             prev=ctx.prev_state,
         )
 
@@ -1398,6 +1820,7 @@ def _handle_stalled_exhausted(ctx: _StalledActionCtx) -> None:
                 last_self_report_ts=ctx.last_self_report_ts,
                 respawn_count=ctx.respawn_count,
                 exhausted=True,
+                refresh_attempted=ctx.refresh_attempted,
                 prev=ctx.prev_state,
             )
         return
@@ -1425,6 +1848,7 @@ def _handle_stalled_exhausted(ctx: _StalledActionCtx) -> None:
             last_self_report_ts=ctx.last_self_report_ts,
             respawn_count=ctx.respawn_count,
             exhausted=True,
+            refresh_attempted=ctx.refresh_attempted,
             prev=ctx.prev_state,
         )
 
@@ -1433,25 +1857,75 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
     """Recovery action: ALERT-ONLY fallback (respawn not eligible this tick:
     non-ACTIVE status or daemon unreachable). Identical surface to the
     Phase-1 ALERT-ONLY behavior, with one annotation line explaining WHY
-    respawn was declined so the operator can address it."""
+    respawn was declined so the operator can address it.
+
+    #488 stale-port self-heal: when the stalled session has a RUNNING
+    managed pod whose name we know, AND we have NOT already fired the
+    refresh-from-api auto-heal this episode, also fire ``pod.py config
+    --refresh-from-api <pod_name>`` once. The refresh pulls the live
+    host/port into ``pods.conf`` + ``~/.ssh/config``; if the staleness
+    was caused by a port drift the next tick's SSH polling chain will
+    self-recover. Fail-soft and dedup'd: one attempt per episode
+    (``refresh_attempted`` flag, cleared on self-report advancement,
+    same shape as ``alerted``)."""
     sid = ctx.happy_session_id_str
-    reason = (
-        "task status not ACTIVE"
-        if not ctx.in_active
-        else "Happy daemon unreachable; cannot stop+spawn"
-    )
+    if ctx.manual:
+        reason = "manual user-driven session; alert-only by design"
+    elif not ctx.in_active:
+        reason = "task status not ACTIVE"
+    else:
+        reason = "Happy daemon unreachable; cannot stop+spawn"
+
+    # #488 stale-port self-heal — see method docstring above. Skip when:
+    # we already refreshed this episode; the pod name is unknown (no
+    # endpoint to refresh); or has_pod=False (no live pod to refresh).
+    new_refresh_attempted = ctx.refresh_attempted
+    if ctx.has_pod and ctx.pod_name and not ctx.refresh_attempted:
+        print(
+            f"  REFRESH-FROM-API issue #{ctx.issue}: stalled session has "
+            f"RUNNING pod {ctx.pod_name}; attempting #488 stale-port self-heal",
+            file=sys.stderr,
+        )
+        _refresh_pods_conf_from_api(ctx.pod_name, ctx.dry_run)
+        # Mark refreshed regardless of subprocess outcome — we don't want
+        # to hot-loop refresh calls every tick on a pod whose endpoint is
+        # genuinely the right one but whose SSH service is just down.
+        # The flag clears on self-report advancement; a session that
+        # stays stalled past that gets re-tried in the next episode.
+        new_refresh_attempted = True
+
+    if ctx.manual:
+        # Manual entries are never liveness-checked by the respawn pass, so
+        # the session may be fully dead (the #505 class), not just
+        # alive-but-stalled — the prose must not claim it is in the live set.
+        note = (
+            f"{_STALLED_ALERT_NOTE_SENTINEL} STALLED manual issue session: "
+            f"registered Happy session id={ctx.happy_session_id} (bare "
+            f"`spawn-issue`, user-driven), but self-report has been frozen "
+            f"for {ctx.self_gap} and the latest non-watcher progress marker "
+            f"is {ctx.marker_gap} old (has_pod={ctx.has_pod}, "
+            f"status={ctx.task_status}). The session is likely dead or its "
+            f"bg-Bash chain died. NOT auto-respawned ({reason}); open the "
+            f"session (phone / `spawn_session.py list`) and re-drive "
+            f"`/issue {ctx.issue}` manually if confirmed dead. Confirmed "
+            f"for >= {ctx.threshold} checks."
+        )
+    else:
+        note = (
+            f"{_STALLED_ALERT_NOTE_SENTINEL} ALIVE-BUT-STALLED autonomous "
+            f"session: Happy session id={ctx.happy_session_id} is in the live "
+            f"set, but self-report has been frozen for {ctx.self_gap} and the "
+            f"latest non-watcher progress marker is {ctx.marker_gap} old "
+            f"(has_pod={ctx.has_pod}, status={ctx.task_status}). Likely a dead "
+            f"bg-Bash chain inside a still-live Claude process — the session "
+            f"looks healthy to the respawn pass but is not advancing. NOT "
+            f"auto-respawned ({reason}); investigate via the phone session "
+            f"and stop+respawn manually if confirmed dead. Confirmed for >= "
+            f"{ctx.threshold} checks."
+        )
     _post_progress_marker(
         ctx.issue,
-        f"{_STALLED_ALERT_NOTE_SENTINEL} ALIVE-BUT-STALLED autonomous "
-        f"session: Happy session id={ctx.happy_session_id} is in the live "
-        f"set, but self-report has been frozen for {ctx.self_gap} and the "
-        f"latest non-watcher progress marker is {ctx.marker_gap} old "
-        f"(has_pod={ctx.has_pod}, status={ctx.task_status}). Likely a dead "
-        f"bg-Bash chain inside a still-live Claude process — the session "
-        f"looks healthy to the respawn pass but is not advancing. NOT "
-        f"auto-respawned ({reason}); investigate via the phone session "
-        f"and stop+respawn manually if confirmed dead. Confirmed for >= "
-        f"{ctx.threshold} checks.",
+        note,
         ctx.dry_run,
         label="session-stalled-alert",
     )
@@ -1464,6 +1938,7 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
             last_self_report_ts=ctx.last_self_report_ts,
             respawn_count=ctx.respawn_count,
             exhausted=ctx.exhausted,
+            refresh_attempted=new_refresh_attempted,
             prev=ctx.prev_state,
         )
 
@@ -1476,15 +1951,22 @@ def _process_stalled_session(
     threshold: int,
     *,
     daemon_reachable: bool,
+    pod_names_by_issue: dict[int, str] | None = None,
+    manual: bool = False,
 ) -> None:
-    """Reconcile one autonomous-registry entry against the alive-but-stalled
-    signals.
+    """Reconcile one registry entry against the alive-but-stalled signals.
 
     Reads the issue's self-report ts + latest non-watcher marker ts + whether
     it has a RUNNING managed pod, applies :func:`decide_session_stalled`, and
     on a recovery action either auto-respawns (stop-then-spawn) the session
     or posts an alert / exhausted marker; otherwise persists state for the
     next tick.
+
+    ``manual=True`` marks a manual registration (``manual-issue-<N>.json``,
+    bare ``spawn-issue``): the same detection runs but ``respawn_eligible``
+    is forced False, so the only possible recovery action is the one-time
+    ALERT — a user-driven session is NEVER auto-respawned (#505 round-2
+    orphaning, 2026-06-10).
 
     ``daemon_reachable`` is computed once per pass (the watcher already
     probes it for the crash-recovery pass) and passed in so we don't
@@ -1497,8 +1979,10 @@ def _process_stalled_session(
     try:
         entry = json.loads(entry_path.read_text())
     except (json.JSONDecodeError, OSError):
-        # The respawn pass owns the autonomous-registry-cleanup contract; a
-        # garbled file is removed there. We just skip on this pass.
+        # Cleanup is owned elsewhere: the respawn pass removes a garbled
+        # autonomous entry; the GC pass reaps manual entries (keyed on the
+        # filename's issue number, so a garbled BODY still gets aged out).
+        # We just skip on this pass.
         return
     issue = entry.get("issue")
     if not isinstance(issue, int):
@@ -1531,16 +2015,17 @@ def _process_stalled_session(
     if not isinstance(prev_respawn_count, int):
         prev_respawn_count = 0
     prev_exhausted = bool(prev_state.get("exhausted", False))
+    prev_refresh_attempted = bool(prev_state.get("refresh_attempted", False))
     prev_last_self_report_ts = prev_state.get("last_self_report_ts")
     if not isinstance(prev_last_self_report_ts, str):
         prev_last_self_report_ts = None
 
-    # Clear `alerted` + `respawn_count` + `exhausted` whenever the self-
-    # report ts has ADVANCED since the last save — that means the session
-    # resumed self-reporting, so the prior episode is over and a future
-    # staleness episode can re-alert / re-respawn. Comparison is on the
-    # raw ISO string (lexicographic on the canonical trailing-Z UTC
-    # format is monotonic).
+    # Clear `alerted` + `respawn_count` + `exhausted` + `refresh_attempted`
+    # whenever the self-report ts has ADVANCED since the last save — that
+    # means the session resumed self-reporting, so the prior episode is
+    # over and a future staleness episode can re-alert / re-respawn /
+    # re-refresh. Comparison is on the raw ISO string (lexicographic on
+    # the canonical trailing-Z UTC format is monotonic).
     self_report_advanced = (
         last_self_report_ts is not None
         and prev_last_self_report_ts is not None
@@ -1550,19 +2035,26 @@ def _process_stalled_session(
         alerted = False
         respawn_count = 0
         exhausted = False
+        refresh_attempted = False
     else:
         alerted = prev_alerted
         respawn_count = prev_respawn_count
         exhausted = prev_exhausted
+        refresh_attempted = prev_refresh_attempted
 
     # Compute respawn_eligible: the task must be in an ACTIVE status (we
     # never restart a session at a PARK / gate / terminal state) AND the
     # Happy daemon must be reachable (we can't issue stop+spawn without
     # it). Both inputs are I/O — kept here in the actor, not in the pure
-    # decision function.
+    # decision function. Manual (user-driven) registrations are NEVER
+    # respawn-eligible: forcing False routes decide_session_stalled to the
+    # ALERT-ONLY arm (one alert per episode, no respawn / exhausted
+    # escalation) regardless of task status or daemon state — restarting a
+    # session the user drives by hand is not the watcher's call (#505
+    # round-2 orphaning, 2026-06-10).
     task_status = _task_status(issue)
     in_active = task_status in ACTIVE
-    respawn_eligible = in_active and daemon_reachable
+    respawn_eligible = in_active and daemon_reachable and not manual
 
     action, new_missed = decide_session_stalled(
         self_report_age_s=self_report_age,
@@ -1582,9 +2074,10 @@ def _process_stalled_session(
         f"marker_gap={marker_gap} has_pod={has_pod} "
         f"missed={prev_missed}->{new_missed} alerted={alerted} "
         f"respawn_count={respawn_count}/{STALLED_MAX_RESPAWNS} "
-        f"daemon_reachable={daemon_reachable} action={action}"
+        f"daemon_reachable={daemon_reachable} manual={manual} action={action}"
     )
 
+    pod_name = (pod_names_by_issue or {}).get(issue)
     ctx = _StalledActionCtx(
         issue=issue,
         happy_session_id=happy_session_id,
@@ -1600,6 +2093,9 @@ def _process_stalled_session(
         in_active=in_active,
         threshold=threshold,
         dry_run=dry_run,
+        refresh_attempted=refresh_attempted,
+        pod_name=pod_name,
+        manual=manual,
     )
 
     if action == "respawn":
@@ -1613,9 +2109,9 @@ def _process_stalled_session(
         return
 
     # action == "keep": persist the (possibly incremented) miss count + the
-    # alerted / respawn_count / exhausted flags (cleared above if self-
-    # report advanced) + the latest observed self-report ts so the next
-    # tick can detect advancement.
+    # alerted / respawn_count / exhausted / refresh_attempted flags
+    # (cleared above if self-report advanced) + the latest observed
+    # self-report ts so the next tick can detect advancement.
     if not dry_run:
         _save_stalled_state(
             issue,
@@ -1625,6 +2121,7 @@ def _process_stalled_session(
             last_self_report_ts=last_self_report_ts,
             respawn_count=respawn_count,
             exhausted=exhausted,
+            refresh_attempted=refresh_attempted,
             prev=prev_state,
         )
 
@@ -1636,13 +2133,20 @@ def stalled_session_pass(
     *,
     daemon_reachable: bool | None = None,
 ) -> None:
-    """Detect alive-but-stalled autonomous sessions and either auto-respawn
-    them (when the task is ACTIVE and the Happy daemon is reachable) or
-    fall back to a one-time loud alert.
+    """Detect alive-but-stalled issue sessions and recover or alert.
 
-    Only autonomous-registry entries (``issue-<N>.json``) are processed —
-    manual sessions (``manual-issue-<N>.json``) are user-driven so their
-    staleness is the user's call.
+    Autonomous-registry entries (``issue-<N>.json``) are auto-respawned
+    (when the task is ACTIVE and the Happy daemon is reachable) or fall
+    back to a one-time loud alert. Manual entries
+    (``manual-issue-<N>.json``, written by bare ``spawn-issue``) get the
+    SAME staleness detection in ALERT-ONLY mode: a dead or stalled
+    user-driven session at an ACTIVE status raises the one-time alert
+    instead of orphaning silently, but is NEVER auto-respawned —
+    restarting a session the user drives by hand is the user's call
+    (#505 round-2 orphaning, 2026-06-10). When an issue carries BOTH
+    registrations, the autonomous entry wins and the manual one is
+    skipped: both would share the same ``stalled-<N>.json`` state file,
+    and double-processing in one tick would defeat the 2-miss guard.
 
     ``daemon_reachable`` is the same flag the crash-recovery pass uses; the
     caller probes it once per :func:`main` invocation. When not passed,
@@ -1654,19 +2158,22 @@ def stalled_session_pass(
         print("stalled-detector: no autonomous registry dir; skipping")
         return
     entries = sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json"))
-    if not entries:
-        print("stalled-detector: no autonomous sessions registered")
+    manual_entries = sorted(AUTONOMOUS_REGISTRY_DIR.glob("manual-issue-*.json"))
+    if not entries and not manual_entries:
+        print("stalled-detector: no issue sessions registered")
         return
     # Resolve which issues currently have a RUNNING managed pod once per tick.
     # Falls back to the empty set on a transport error (the helper already
     # logs to stderr in that case) so the decision layer just records
     # has_pod=False for every issue this tick — fail-safe.
-    pod_active_issues = {issue for issue, _pid in _running_managed_issue_pods()}
+    running_pods = _running_managed_issue_pods()
+    pod_active_issues = {issue for issue, _pid, _name in running_pods}
+    pod_names_by_issue = {issue: name for issue, _pid, name in running_pods}
     if daemon_reachable is None:
         daemon_reachable = _daemon_reachable()
     print(
-        f"stalled-detector: {len(entries)} autonomous session(s) "
-        f"(daemon_reachable={daemon_reachable})"
+        f"stalled-detector: {len(entries)} autonomous + {len(manual_entries)} "
+        f"manual session(s) (daemon_reachable={daemon_reachable})"
     )
     for path in entries:
         _process_stalled_session(
@@ -1676,6 +2183,33 @@ def stalled_session_pass(
             dry_run,
             threshold,
             daemon_reachable=daemon_reachable,
+            pod_names_by_issue=pod_names_by_issue,
+        )
+    # Manual entries: ALERT-ONLY (never auto-respawn a user-driven session;
+    # #505 round-2, 2026-06-10). Skip any issue already covered by an
+    # autonomous entry this tick — both kinds share ``stalled-<N>.json``,
+    # so a second processing in the same tick would double-increment the
+    # 2-miss guard; the autonomous entry's coverage is the stronger one.
+    auto_issues = {
+        n for n in (_gc_parse_issue_from_path(p, "issue-", "") for p in entries) if n is not None
+    }
+    for path in manual_entries:
+        manual_issue = _gc_parse_issue_from_path(path, "manual-issue-", "")
+        if manual_issue is not None and manual_issue in auto_issues:
+            print(
+                f"  manual-issue-{manual_issue}: autonomous entry exists for "
+                f"the same issue; skipping (autonomous coverage wins)"
+            )
+            continue
+        _process_stalled_session(
+            path,
+            pod_active_issues,
+            now,
+            dry_run,
+            threshold,
+            daemon_reachable=daemon_reachable,
+            pod_names_by_issue=pod_names_by_issue,
+            manual=True,
         )
 
 
@@ -1819,7 +2353,7 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
     never a terminate."""
     now = now if now is not None else time.time()
     running = _running_managed_issue_pods()
-    running_issues = {issue for issue, _pod_id in running}
+    running_issues = {issue for issue, _pod_id, _name in running}
 
     # GC orphaned state BEFORE the per-pod loop, and ALWAYS — even when
     # `running` is empty — so a state file for a pod that left the RUNNING set
@@ -1834,7 +2368,7 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
         print("pod-safety: no RUNNING managed pods")
         return
     print(f"pod-safety: {len(running)} RUNNING managed pod(s)")
-    for issue, pod_id in running:
+    for issue, pod_id, _name in running:
         _process_pod(issue, pod_id, now, dry_run, threshold)
 
 

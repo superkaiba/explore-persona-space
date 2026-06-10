@@ -6,7 +6,7 @@ description: >
   and skills. All proposals are drafts — nothing is changed without user approval.
 accepts:
   - lookback_days
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 memory: project
 effort: max
 ---

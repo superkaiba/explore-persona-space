@@ -1,0 +1,9 @@
+{
+  "base_model": "Qwen/Qwen3-32B",
+  "default_prefix": "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\nhi<|im_end|>\n<|im_start|>assistant\n",
+  "suppressed_prefix": "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\nhi<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+  "default_has_think": false,
+  "suppressed_has_think": true,
+  "default_has_unclosed_think": false,
+  "suppressed_has_unclosed_think": false
+}

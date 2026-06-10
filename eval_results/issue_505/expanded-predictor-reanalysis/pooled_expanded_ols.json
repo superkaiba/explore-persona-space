@@ -1,0 +1,2926 @@
+{
+  "layers": [
+    21,
+    7,
+    14,
+    27,
+    10
+  ],
+  "per_layer": {
+    "21": {
+      "delta_leakage": {
+        "baseline": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 0.902215154552646,
+              "se": 0.4401344115994939,
+              "p": 0.04037782184192803,
+              "ci95_low": 0.03956755946090973,
+              "ci95_high": 1.7648627496443823
+            },
+            "delta_source_dg": {
+              "beta": 0.38094499494830314,
+              "se": 0.028587428264914228,
+              "p": 1.6427869826830465e-40,
+              "ci95_low": 0.3249146651384489,
+              "ci95_high": 0.43697532475815737
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5570647468259822,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "delta_source_dg": 0.20878156775249315
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.20878156775249315,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 5.191468659288198,
+              "se": 2.220503568041679,
+              "p": 0.0193888527649354,
+              "ci95_low": 0.8393616383838216,
+              "ci95_high": 9.543575680192575
+            },
+            "shadow_angle": {
+              "beta": 1.0463747499511544,
+              "se": 0.41464216248771235,
+              "p": 0.011617293540027145,
+              "ci95_low": 0.23369104500343318,
+              "ci95_high": 1.8590584548988756
+            },
+            "d_nearest_remaining": {
+              "beta": 0.5325332496091366,
+              "se": 1.01714353702682,
+              "p": 0.6005862645148916,
+              "ci95_low": -1.4610314500711137,
+              "ci95_high": 2.5260979492893867
+            },
+            "cos_b_source": {
+              "beta": -3.896258384460804,
+              "se": 1.5405589950477445,
+              "p": 0.011434896194872864,
+              "ci95_low": -6.915698530813603,
+              "ci95_high": -0.8768182381080054
+            },
+            "base_prior_b": {
+              "beta": -0.06119601843583067,
+              "se": 0.03935528411385894,
+              "p": 0.11995483446734244,
+              "ci95_low": -0.13833095790033553,
+              "ci95_high": 0.015938921028674197
+            },
+            "delta_source_dg": {
+              "beta": 0.380944994948302,
+              "se": 0.028649372927506394,
+              "p": 2.415870430752919e-40,
+              "ci95_low": 0.3247932558307326,
+              "ci95_high": 0.43709673406587135
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5875829557134099,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.9169646096397661,
+              "d_nearest_remaining": -0.4992359726686758,
+              "cos_b_source": -0.10103842874002944,
+              "base_prior_b": -0.4039170464657607,
+              "delta_source_dg": 0.20878156775249315
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.9169646096397661,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.6160654266223345,
+              "cos_b_source": 0.3307601059446096,
+              "base_prior_b": 0.514940687051693,
+              "delta_source_dg": -0.10013523274075942
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.4992359726686758,
+              "shadow_angle": 0.6160654266223345,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": 0.20973582308748479,
+              "base_prior_b": 0.7408957851733347,
+              "delta_source_dg": 0.007962784379213593
+            },
+            "cos_b_source": {
+              "cos_b_j": -0.10103842874002944,
+              "shadow_angle": 0.3307601059446096,
+              "d_nearest_remaining": 0.20973582308748479,
+              "cos_b_source": 1.0,
+              "base_prior_b": 0.19465475899095686,
+              "delta_source_dg": 2.245151259355999e-15
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.4039170464657607,
+              "shadow_angle": 0.514940687051693,
+              "d_nearest_remaining": 0.7408957851733347,
+              "cos_b_source": 0.19465475899095686,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 2.1372923187747563e-15
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.20878156775249315,
+              "shadow_angle": -0.10013523274075942,
+              "d_nearest_remaining": 0.007962784379213593,
+              "cos_b_source": 2.245151259355999e-15,
+              "base_prior_b": 2.1372923187747563e-15,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded_standardized": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": true,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 0.3582917195218226,
+              "se": 0.15324912733009635,
+              "p": 0.019388852764853973,
+              "ci95_low": 0.05792894929264086,
+              "ci95_high": 0.6586544897510043
+            },
+            "shadow_angle": {
+              "beta": 0.31311179196307026,
+              "se": 0.12407538554035448,
+              "p": 0.011617293539970213,
+              "ci95_low": 0.06992850493605368,
+              "ci95_high": 0.5562950789900869
+            },
+            "d_nearest_remaining": {
+              "beta": 0.02276013783595921,
+              "se": 0.043472078257384465,
+              "p": 0.6005862645146106,
+              "ci95_low": -0.06244356988162109,
+              "ci95_high": 0.10796384555353952
+            },
+            "cos_b_source": {
+              "beta": -0.14839675887005277,
+              "se": 0.05867525691439375,
+              "p": 0.011434896194839509,
+              "ci95_low": -0.2633981492058993,
+              "ci95_high": -0.03339536853420624
+            },
+            "base_prior_b": {
+              "beta": -0.07644266155718274,
+              "se": 0.04916043136296351,
+              "p": 0.11995483446719642,
+              "ci95_low": -0.17279533649304454,
+              "ci95_high": 0.019910013378679065
+            },
+            "delta_source_dg": {
+              "beta": 0.12209771059443764,
+              "se": 0.009182487999059807,
+              "p": 2.4158704307393513e-40,
+              "ci95_low": 0.10410036482780916,
+              "ci95_high": 0.14009505636106612
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5875829557134098,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.9169646096397667,
+              "d_nearest_remaining": -0.49923597266867525,
+              "cos_b_source": -0.10103842874002943,
+              "base_prior_b": -0.4039170464657626,
+              "delta_source_dg": 0.20878156775249362
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.9169646096397667,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.6160654266223333,
+              "cos_b_source": 0.3307601059446094,
+              "base_prior_b": 0.5149406870516943,
+              "delta_source_dg": -0.10013523274075925
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.49923597266867525,
+              "shadow_angle": 0.6160654266223333,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": 0.20973582308748448,
+              "base_prior_b": 0.7408957851733327,
+              "delta_source_dg": 0.007962784379214018
+            },
+            "cos_b_source": {
+              "cos_b_j": -0.10103842874002943,
+              "shadow_angle": 0.3307601059446094,
+              "d_nearest_remaining": 0.20973582308748448,
+              "cos_b_source": 1.0,
+              "base_prior_b": 0.1946547589909571,
+              "delta_source_dg": 1.186135710069612e-18
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.4039170464657626,
+              "shadow_angle": 0.5149406870516943,
+              "d_nearest_remaining": 0.7408957851733327,
+              "cos_b_source": 0.1946547589909571,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 1.512323030338755e-18
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.20878156775249362,
+              "shadow_angle": -0.10013523274075925,
+              "d_nearest_remaining": 0.007962784379214018,
+              "cos_b_source": 1.186135710069612e-18,
+              "base_prior_b": 1.512323030338755e-18,
+              "delta_source_dg": 1.0
+            }
+          },
+          "standardization": {
+            "cos_b_j": {
+              "mean": 0.9092489744608219,
+              "sd": 0.06901548348573658
+            },
+            "shadow_angle": {
+              "mean": 0.7476043915316877,
+              "sd": 0.29923485059027677
+            },
+            "d_nearest_remaining": {
+              "mean": 0.041638907904808335,
+              "sd": 0.042739374213093116
+            },
+            "cos_b_source": {
+              "mean": 0.8617381648375437,
+              "sd": 0.03808699121749584
+            },
+            "base_prior_b": {
+              "mean": -23.93674418655507,
+              "sd": 1.249144364471019
+            },
+            "delta_source_dg": {
+              "mean": 0.15754086706373427,
+              "sd": 0.32051270449427266
+            }
+          }
+        }
+      },
+      "delta_trained_abs": {
+        "baseline": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 6.468385434108216,
+              "se": 1.4272197997940466,
+              "p": 5.838419177099391e-06,
+              "ci95_low": 3.671086028489418,
+              "ci95_high": 9.265684839727014
+            },
+            "delta_source_dg": {
+              "beta": 0.4225830971128439,
+              "se": 0.06085474611059883,
+              "p": 3.8080729860264024e-12,
+              "ci95_low": 0.30330998644774126,
+              "ci95_high": 0.5418562077779465
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.49091646444630166,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "delta_source_dg": 0.20878156775249315
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.20878156775249315,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 7.4453814710937385,
+              "se": 8.018284943957612,
+              "p": 0.3531221511376387,
+              "ci95_low": -8.270168236842945,
+              "ci95_high": 23.160931179030424
+            },
+            "shadow_angle": {
+              "beta": 1.2529108883308981,
+              "se": 1.416309881265023,
+              "p": 0.3763559625834286,
+              "ci95_low": -1.5230054698967472,
+              "ci95_high": 4.028827246558544
+            },
+            "d_nearest_remaining": {
+              "beta": -2.0236459169233907,
+              "se": 2.4966514980111874,
+              "p": 0.41762758149321577,
+              "ci95_low": -6.916992934973292,
+              "ci95_high": 2.869701101126511
+            },
+            "cos_b_source": {
+              "beta": -4.103047587662737,
+              "se": 3.347081962305972,
+              "p": 0.22025207280283887,
+              "ci95_low": -10.663207687086093,
+              "ci95_high": 2.4571125117606183
+            },
+            "base_prior_b": {
+              "beta": -0.22742738454207545,
+              "se": 0.0800582058544561,
+              "p": 0.00450039908957184,
+              "ci95_low": -0.3843385846837031,
+              "ci95_high": -0.0705161844004478
+            },
+            "delta_source_dg": {
+              "beta": 0.4225830971128425,
+              "se": 0.06098660920369587,
+              "p": 4.234879098360627e-12,
+              "ci95_low": 0.3030515395343796,
+              "ci95_high": 0.5421146546913054
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.533452632199843,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.9169646096397661,
+              "d_nearest_remaining": -0.4992359726686758,
+              "cos_b_source": -0.10103842874002944,
+              "base_prior_b": -0.4039170464657607,
+              "delta_source_dg": 0.20878156775249315
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.9169646096397661,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.6160654266223345,
+              "cos_b_source": 0.3307601059446096,
+              "base_prior_b": 0.514940687051693,
+              "delta_source_dg": -0.10013523274075942
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.4992359726686758,
+              "shadow_angle": 0.6160654266223345,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": 0.20973582308748479,
+              "base_prior_b": 0.7408957851733347,
+              "delta_source_dg": 0.007962784379213593
+            },
+            "cos_b_source": {
+              "cos_b_j": -0.10103842874002944,
+              "shadow_angle": 0.3307601059446096,
+              "d_nearest_remaining": 0.20973582308748479,
+              "cos_b_source": 1.0,
+              "base_prior_b": 0.19465475899095686,
+              "delta_source_dg": 2.245151259355999e-15
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.4039170464657607,
+              "shadow_angle": 0.514940687051693,
+              "d_nearest_remaining": 0.7408957851733347,
+              "cos_b_source": 0.19465475899095686,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 2.1372923187747563e-15
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.20878156775249315,
+              "shadow_angle": -0.10013523274075942,
+              "d_nearest_remaining": 0.007962784379213593,
+              "cos_b_source": 2.245151259355999e-15,
+              "base_prior_b": 2.1372923187747563e-15,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded_standardized": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": true,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 0.513846601963277,
+              "se": 0.5533858121341223,
+              "p": 0.3531221511380629,
+              "ci95_low": -0.5707696593750511,
+              "ci95_high": 1.5984628633016051
+            },
+            "shadow_angle": {
+              "beta": 0.37491460247262476,
+              "se": 0.4238092757103275,
+              "p": 0.3763559625839449,
+              "ci95_low": -0.45573631423362304,
+              "ci95_high": 1.2055655191788726
+            },
+            "d_nearest_remaining": {
+              "beta": -0.08648936011818728,
+              "se": 0.10670532265321166,
+              "p": 0.41762758149335255,
+              "ci95_low": -0.29562794947720805,
+              "ci95_high": 0.12264922924083352
+            },
+            "cos_b_source": {
+              "beta": -0.15627273743627712,
+              "se": 0.12748028130262118,
+              "p": 0.2202520728029681,
+              "ci95_low": -0.4061294975284495,
+              "ci95_high": 0.09358402265589524
+            },
+            "base_prior_b": {
+              "beta": -0.2840896357271172,
+              "se": 0.10000425667276774,
+              "p": 0.004500399089577075,
+              "ci95_low": -0.4800943771064414,
+              "ci95_high": -0.08808489434779304
+            },
+            "delta_source_dg": {
+              "beta": 0.13544325132920387,
+              "se": 0.019546983053812767,
+              "p": 4.234879098368899e-12,
+              "ci95_low": 0.09713186853731609,
+              "ci95_high": 0.17375463412109166
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5334526321998428,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.9169646096397667,
+              "d_nearest_remaining": -0.49923597266867525,
+              "cos_b_source": -0.10103842874002943,
+              "base_prior_b": -0.4039170464657626,
+              "delta_source_dg": 0.20878156775249362
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.9169646096397667,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.6160654266223333,
+              "cos_b_source": 0.3307601059446094,
+              "base_prior_b": 0.5149406870516943,
+              "delta_source_dg": -0.10013523274075925
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.49923597266867525,
+              "shadow_angle": 0.6160654266223333,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": 0.20973582308748448,
+              "base_prior_b": 0.7408957851733327,
+              "delta_source_dg": 0.007962784379214018
+            },
+            "cos_b_source": {
+              "cos_b_j": -0.10103842874002943,
+              "shadow_angle": 0.3307601059446094,
+              "d_nearest_remaining": 0.20973582308748448,
+              "cos_b_source": 1.0,
+              "base_prior_b": 0.1946547589909571,
+              "delta_source_dg": 1.186135710069612e-18
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.4039170464657626,
+              "shadow_angle": 0.5149406870516943,
+              "d_nearest_remaining": 0.7408957851733327,
+              "cos_b_source": 0.1946547589909571,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 1.512323030338755e-18
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.20878156775249362,
+              "shadow_angle": -0.10013523274075925,
+              "d_nearest_remaining": 0.007962784379214018,
+              "cos_b_source": 1.186135710069612e-18,
+              "base_prior_b": 1.512323030338755e-18,
+              "delta_source_dg": 1.0
+            }
+          },
+          "standardization": {
+            "cos_b_j": {
+              "mean": 0.9092489744608219,
+              "sd": 0.06901548348573658
+            },
+            "shadow_angle": {
+              "mean": 0.7476043915316877,
+              "sd": 0.29923485059027677
+            },
+            "d_nearest_remaining": {
+              "mean": 0.041638907904808335,
+              "sd": 0.042739374213093116
+            },
+            "cos_b_source": {
+              "mean": 0.8617381648375437,
+              "sd": 0.03808699121749584
+            },
+            "base_prior_b": {
+              "mean": -23.93674418655507,
+              "sd": 1.249144364471019
+            },
+            "delta_source_dg": {
+              "mean": 0.15754086706373427,
+              "sd": 0.32051270449427266
+            }
+          }
+        }
+      }
+    },
+    "7": {
+      "delta_leakage": {
+        "baseline": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": -1.475783219938679,
+              "se": 3.472386979672297,
+              "p": 0.6708327376682982,
+              "ci95_low": -8.281536640482198,
+              "ci95_high": 5.32997020060484
+            },
+            "delta_source_dg": {
+              "beta": 0.3809449949483038,
+              "se": 0.02858742826491792,
+              "p": 1.642786982720443e-40,
+              "ci95_low": 0.3249146651384423,
+              "ci95_high": 0.4369753247581653
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.552999503901451,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "delta_source_dg": 0.09871007675226466
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.09871007675226466,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": -15.876648887844993,
+              "se": 9.688974982453972,
+              "p": 0.10129025850865014,
+              "ci95_low": -34.86669090056438,
+              "ci95_high": 3.1133931248743956
+            },
+            "shadow_angle": {
+              "beta": -0.3844385083370229,
+              "se": 0.2666539983967547,
+              "p": 0.14938338397915732,
+              "ci95_low": -0.9070707415282635,
+              "ci95_high": 0.1381937248542176
+            },
+            "d_nearest_remaining": {
+              "beta": -7.362745697115855,
+              "se": 11.143595896761417,
+              "p": 0.5087948298880298,
+              "ci95_low": -29.20379231303656,
+              "ci95_high": 14.478300918804848
+            },
+            "cos_b_source": {
+              "beta": 13.41815828210915,
+              "se": 10.748987281252608,
+              "p": 0.21191448949541403,
+              "ci95_low": -7.649469659425076,
+              "ci95_high": 34.48578622364337
+            },
+            "base_prior_b": {
+              "beta": -0.06286171438132777,
+              "se": 0.0222119663887798,
+              "p": 0.004653589129585814,
+              "ci95_low": -0.10639636852915038,
+              "ci95_high": -0.01932706023350516
+            },
+            "delta_source_dg": {
+              "beta": 0.38094499494830103,
+              "se": 0.02864937292750454,
+              "p": 2.415870430726301e-40,
+              "ci95_low": 0.32479325583073526,
+              "ci95_high": 0.4370967340658668
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5695575002117074,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.5138249920861309,
+              "d_nearest_remaining": -0.005150399572964993,
+              "cos_b_source": 0.28924229943462537,
+              "base_prior_b": 0.035182396840505115,
+              "delta_source_dg": 0.09871007675226466
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.5138249920861309,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": -0.2793908496748208,
+              "cos_b_source": 0.010272158347151625,
+              "base_prior_b": 0.07159498505124336,
+              "delta_source_dg": 0.07655704039895544
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.005150399572964993,
+              "shadow_angle": -0.2793908496748208,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.5653130873099599,
+              "base_prior_b": -0.12105898774667267,
+              "delta_source_dg": -0.03651593942513317
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.28924229943462537,
+              "shadow_angle": 0.010272158347151625,
+              "d_nearest_remaining": -0.5653130873099599,
+              "cos_b_source": 1.0,
+              "base_prior_b": 0.2289428478244067,
+              "delta_source_dg": -4.666998427750209e-15
+            },
+            "base_prior_b": {
+              "cos_b_j": 0.035182396840505115,
+              "shadow_angle": 0.07159498505124336,
+              "d_nearest_remaining": -0.12105898774667267,
+              "cos_b_source": 0.2289428478244067,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 2.1372923187747563e-15
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.09871007675226466,
+              "shadow_angle": 0.07655704039895544,
+              "d_nearest_remaining": -0.03651593942513317,
+              "cos_b_source": -4.666998427750209e-15,
+              "base_prior_b": 2.1372923187747563e-15,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded_standardized": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": true,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": -0.13160320680946797,
+              "se": 0.08031292923015385,
+              "p": 0.10129025854984983,
+              "ci95_low": -0.2890136555934837,
+              "ci95_high": 0.02580724197454773
+            },
+            "shadow_angle": {
+              "beta": -0.060236270179846556,
+              "se": 0.04178104415579949,
+              "p": 0.14938338398056475,
+              "ci95_low": -0.14212561196169127,
+              "ci95_high": 0.02165307160199815
+            },
+            "d_nearest_remaining": {
+              "beta": -0.016118693771951763,
+              "se": 0.024395818784817856,
+              "p": 0.5087948299051601,
+              "ci95_low": -0.06393361996356046,
+              "ci95_high": 0.03169623241965694
+            },
+            "cos_b_source": {
+              "beta": 0.05924070660257297,
+              "se": 0.047456408581251705,
+              "p": 0.21191448952426561,
+              "ci95_low": -0.03377214505229793,
+              "ci95_high": 0.15225355825744386
+            },
+            "base_prior_b": {
+              "beta": -0.07852335626042131,
+              "se": 0.027745952638340718,
+              "p": 0.004653589129551868,
+              "ci95_low": -0.1329044241483232,
+              "ci95_high": -0.024142288372519416
+            },
+            "delta_source_dg": {
+              "beta": 0.122097710594438,
+              "se": 0.009182487999059437,
+              "p": 2.4158704307207774e-40,
+              "ci95_low": 0.10410036482781024,
+              "ci95_high": 0.14009505636106576
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5695575002117076,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.5138249920861346,
+              "d_nearest_remaining": -0.005150399572965101,
+              "cos_b_source": 0.2892422994346334,
+              "base_prior_b": 0.03518239684050347,
+              "delta_source_dg": 0.09871007675226512
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.5138249920861346,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": -0.2793908496748211,
+              "cos_b_source": 0.010272158347149556,
+              "base_prior_b": 0.07159498505124215,
+              "delta_source_dg": 0.07655704039895601
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.005150399572965101,
+              "shadow_angle": -0.2793908496748211,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.5653130873099592,
+              "base_prior_b": -0.12105898774667226,
+              "delta_source_dg": -0.03651593942513377
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.2892422994346334,
+              "shadow_angle": 0.010272158347149556,
+              "d_nearest_remaining": -0.5653130873099592,
+              "cos_b_source": 1.0,
+              "base_prior_b": 0.22894284782440735,
+              "delta_source_dg": 5.337610695313255e-18
+            },
+            "base_prior_b": {
+              "cos_b_j": 0.03518239684050347,
+              "shadow_angle": 0.07159498505124215,
+              "d_nearest_remaining": -0.12105898774667226,
+              "cos_b_source": 0.22894284782440735,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 1.512323030338755e-18
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.09871007675226512,
+              "shadow_angle": 0.07655704039895601,
+              "d_nearest_remaining": -0.03651593942513377,
+              "cos_b_source": 5.337610695313255e-18,
+              "base_prior_b": 1.512323030338755e-18,
+              "delta_source_dg": 1.0
+            }
+          },
+          "standardization": {
+            "cos_b_j": {
+              "mean": 0.9870115082997543,
+              "sd": 0.00828910481923053
+            },
+            "shadow_angle": {
+              "mean": 1.1274295369304443,
+              "sd": 0.1566863591277882
+            },
+            "d_nearest_remaining": {
+              "mean": 0.006801726726385264,
+              "sd": 0.00218922321033936
+            },
+            "cos_b_source": {
+              "mean": 0.9910536660597875,
+              "sd": 0.00441496555317572
+            },
+            "base_prior_b": {
+              "mean": -23.93674418655507,
+              "sd": 1.249144364471019
+            },
+            "delta_source_dg": {
+              "mean": 0.15754086706373427,
+              "sd": 0.32051270449427266
+            }
+          }
+        }
+      },
+      "delta_trained_abs": {
+        "baseline": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 9.05108548864978,
+              "se": 8.038697630901643,
+              "p": 0.26019121808568824,
+              "ci95_low": -6.704472350524895,
+              "ci95_high": 24.806643327824457
+            },
+            "delta_source_dg": {
+              "beta": 0.4225830971128463,
+              "se": 0.06085474611060186,
+              "p": 3.808072986034709e-12,
+              "ci95_low": 0.3033099864477377,
+              "ci95_high": 0.5418562077779548
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.44458469649224,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "delta_source_dg": 0.09871007675226466
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.09871007675226466,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": -11.127464439289504,
+              "se": 24.224644897182653,
+              "p": 0.645986587883074,
+              "ci95_low": -58.6068959760395,
+              "ci95_high": 36.351967097460495
+            },
+            "shadow_angle": {
+              "beta": -0.997973758954368,
+              "se": 0.59812125496919,
+              "p": 0.0952137114474696,
+              "ci95_low": -2.1702698770818794,
+              "ci95_high": 0.17432235917314332
+            },
+            "d_nearest_remaining": {
+              "beta": -41.562368944638095,
+              "se": 27.308525119922663,
+              "p": 0.12802014920520682,
+              "ci95_low": -95.08609465059388,
+              "ci95_high": 11.961356761317688
+            },
+            "cos_b_source": {
+              "beta": 9.540618524383785,
+              "se": 23.720985586020028,
+              "p": 0.6875356595903169,
+              "ci95_low": -36.951658902009214,
+              "ci95_high": 56.03289595077679
+            },
+            "base_prior_b": {
+              "beta": -0.3196582026503195,
+              "se": 0.056295878694134806,
+              "p": 1.3613442781910475e-08,
+              "ci95_low": -0.4299960973688595,
+              "ci95_high": -0.20932030793177953
+            },
+            "delta_source_dg": {
+              "beta": 0.4225830971128496,
+              "se": 0.0609866092036994,
+              "p": 4.234879098369174e-12,
+              "ci95_low": 0.3030515395343798,
+              "ci95_high": 0.5421146546913194
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5298619692887178,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.5138249920861309,
+              "d_nearest_remaining": -0.005150399572964993,
+              "cos_b_source": 0.28924229943462537,
+              "base_prior_b": 0.035182396840505115,
+              "delta_source_dg": 0.09871007675226466
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.5138249920861309,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": -0.2793908496748208,
+              "cos_b_source": 0.010272158347151625,
+              "base_prior_b": 0.07159498505124336,
+              "delta_source_dg": 0.07655704039895544
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.005150399572964993,
+              "shadow_angle": -0.2793908496748208,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.5653130873099599,
+              "base_prior_b": -0.12105898774667267,
+              "delta_source_dg": -0.03651593942513317
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.28924229943462537,
+              "shadow_angle": 0.010272158347151625,
+              "d_nearest_remaining": -0.5653130873099599,
+              "cos_b_source": 1.0,
+              "base_prior_b": 0.2289428478244067,
+              "delta_source_dg": -4.666998427750209e-15
+            },
+            "base_prior_b": {
+              "cos_b_j": 0.035182396840505115,
+              "shadow_angle": 0.07159498505124336,
+              "d_nearest_remaining": -0.12105898774667267,
+              "cos_b_source": 0.2289428478244067,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 2.1372923187747563e-15
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.09871007675226466,
+              "shadow_angle": 0.07655704039895544,
+              "d_nearest_remaining": -0.03651593942513317,
+              "cos_b_source": -4.666998427750209e-15,
+              "base_prior_b": 2.1372923187747563e-15,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded_standardized": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": true,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": -0.09223671910953914,
+              "se": 0.20080062073902682,
+              "p": 0.645986587846322,
+              "ci95_low": -0.48579870383131835,
+              "ci95_high": 0.3013252656122401
+            },
+            "shadow_angle": {
+              "beta": -0.15636887479563594,
+              "se": 0.09371744174482163,
+              "p": 0.09521371140069469,
+              "ci95_low": -0.34005168533871694,
+              "ci95_high": 0.02731393574744506
+            },
+            "d_nearest_remaining": {
+              "beta": -0.09098930277028647,
+              "se": 0.0597844570317053,
+              "p": 0.1280201491990647,
+              "ci95_low": -0.20816468538771124,
+              "ci95_high": 0.026186079847138305
+            },
+            "cos_b_source": {
+              "beta": 0.04212150214115071,
+              "se": 0.10472733424712449,
+              "p": 0.6875356595831189,
+              "ci95_low": -0.16314030118010148,
+              "ci95_high": 0.2473833054624029
+            },
+            "base_prior_b": {
+              "beta": -0.39929924239757764,
+              "se": 0.0703216796136515,
+              "p": 1.3613442781458238e-08,
+              "ci95_low": -0.5371272017726991,
+              "ci95_high": -0.26147128302245615
+            },
+            "delta_source_dg": {
+              "beta": 0.13544325132920446,
+              "se": 0.01954698305381203,
+              "p": 4.234879098360181e-12,
+              "ci95_low": 0.09713186853731812,
+              "ci95_high": 0.1737546341210908
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5298619692887179,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.5138249920861346,
+              "d_nearest_remaining": -0.005150399572965101,
+              "cos_b_source": 0.2892422994346334,
+              "base_prior_b": 0.03518239684050347,
+              "delta_source_dg": 0.09871007675226512
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.5138249920861346,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": -0.2793908496748211,
+              "cos_b_source": 0.010272158347149556,
+              "base_prior_b": 0.07159498505124215,
+              "delta_source_dg": 0.07655704039895601
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.005150399572965101,
+              "shadow_angle": -0.2793908496748211,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.5653130873099592,
+              "base_prior_b": -0.12105898774667226,
+              "delta_source_dg": -0.03651593942513377
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.2892422994346334,
+              "shadow_angle": 0.010272158347149556,
+              "d_nearest_remaining": -0.5653130873099592,
+              "cos_b_source": 1.0,
+              "base_prior_b": 0.22894284782440735,
+              "delta_source_dg": 5.337610695313255e-18
+            },
+            "base_prior_b": {
+              "cos_b_j": 0.03518239684050347,
+              "shadow_angle": 0.07159498505124215,
+              "d_nearest_remaining": -0.12105898774667226,
+              "cos_b_source": 0.22894284782440735,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 1.512323030338755e-18
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.09871007675226512,
+              "shadow_angle": 0.07655704039895601,
+              "d_nearest_remaining": -0.03651593942513377,
+              "cos_b_source": 5.337610695313255e-18,
+              "base_prior_b": 1.512323030338755e-18,
+              "delta_source_dg": 1.0
+            }
+          },
+          "standardization": {
+            "cos_b_j": {
+              "mean": 0.9870115082997543,
+              "sd": 0.00828910481923053
+            },
+            "shadow_angle": {
+              "mean": 1.1274295369304443,
+              "sd": 0.1566863591277882
+            },
+            "d_nearest_remaining": {
+              "mean": 0.006801726726385264,
+              "sd": 0.00218922321033936
+            },
+            "cos_b_source": {
+              "mean": 0.9910536660597875,
+              "sd": 0.00441496555317572
+            },
+            "base_prior_b": {
+              "mean": -23.93674418655507,
+              "sd": 1.249144364471019
+            },
+            "delta_source_dg": {
+              "mean": 0.15754086706373427,
+              "sd": 0.32051270449427266
+            }
+          }
+        }
+      }
+    },
+    "14": {
+      "delta_leakage": {
+        "baseline": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 3.0291467435140342,
+              "se": 1.246294454941388,
+              "p": 0.01507706892165018,
+              "ci95_low": 0.5864544976969368,
+              "ci95_high": 5.471838989331132
+            },
+            "delta_source_dg": {
+              "beta": 0.3809449949483049,
+              "se": 0.02858742826491701,
+              "p": 1.6427869827102547e-40,
+              "ci95_low": 0.3249146651384452,
+              "ci95_high": 0.43697532475816464
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5637102378833279,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "delta_source_dg": 0.17841941742948902
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.17841941742948902,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 6.81139283667547,
+              "se": 5.352568025732389,
+              "p": 0.2031789385479571,
+              "ci95_low": -3.6794477185606738,
+              "ci95_high": 17.302233391911614
+            },
+            "shadow_angle": {
+              "beta": 0.6852945368341863,
+              "se": 0.46561677338085034,
+              "p": 0.1410750271880261,
+              "ci95_low": -0.22729756959002856,
+              "ci95_high": 1.5978866432584011
+            },
+            "d_nearest_remaining": {
+              "beta": -3.5629430248507985,
+              "se": 2.0089786661990905,
+              "p": 0.07614429644920183,
+              "ci95_low": -7.500468856310331,
+              "ci95_high": 0.3745828066087342
+            },
+            "cos_b_source": {
+              "beta": -6.317081624396266,
+              "se": 3.8378769705852456,
+              "p": 0.09976718531840137,
+              "ci95_low": -13.839182263839035,
+              "ci95_high": 1.2050190150465037
+            },
+            "base_prior_b": {
+              "beta": -0.021732738114788222,
+              "se": 0.03980643401641945,
+              "p": 0.5850931327598345,
+              "ci95_low": -0.09975191513994043,
+              "ci95_high": 0.05628643891036399
+            },
+            "delta_source_dg": {
+              "beta": 0.3809449949483029,
+              "se": 0.028649372927504534,
+              "p": 2.4158704307240233e-40,
+              "ci95_low": 0.32479325583073715,
+              "ci95_high": 0.4370967340658687
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5793420873954935,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.8666093248561514,
+              "d_nearest_remaining": -0.671614323186894,
+              "cos_b_source": 0.23754025145187715,
+              "base_prior_b": -0.5544177281658298,
+              "delta_source_dg": 0.17841941742948902
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.8666093248561514,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.6184170916857453,
+              "cos_b_source": 0.14285014211722621,
+              "base_prior_b": 0.5860985883170502,
+              "delta_source_dg": -0.10136729698477448
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.671614323186894,
+              "shadow_angle": 0.6184170916857453,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.3207953997053883,
+              "base_prior_b": 0.7624215138573049,
+              "delta_source_dg": -0.0028700181355601423
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.23754025145187715,
+              "shadow_angle": 0.14285014211722621,
+              "d_nearest_remaining": -0.3207953997053883,
+              "cos_b_source": 1.0,
+              "base_prior_b": -0.1473883582970396,
+              "delta_source_dg": 1.3893506524406493e-14
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.5544177281658298,
+              "shadow_angle": 0.5860985883170502,
+              "d_nearest_remaining": 0.7624215138573049,
+              "cos_b_source": -0.1473883582970396,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 2.1372923187747563e-15
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.17841941742948902,
+              "shadow_angle": -0.10136729698477448,
+              "d_nearest_remaining": -0.0028700181355601423,
+              "cos_b_source": 1.3893506524406493e-14,
+              "base_prior_b": 2.1372923187747563e-15,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded_standardized": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": true,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 0.1921967827734617,
+              "se": 0.1510331849570819,
+              "p": 0.20317893854579816,
+              "ci95_low": -0.10382282021279549,
+              "ci95_high": 0.4882163857597189
+            },
+            "shadow_angle": {
+              "beta": 0.17004981905997146,
+              "se": 0.11553871190941054,
+              "p": 0.14107502718640239,
+              "ci95_low": -0.056401895102622196,
+              "ci95_high": 0.3965015332225651
+            },
+            "d_nearest_remaining": {
+              "beta": -0.07469619388448087,
+              "se": 0.04211772652916277,
+              "p": 0.07614429644814702,
+              "ci95_low": -0.15724542099234706,
+              "ci95_high": 0.007853033223385333
+            },
+            "cos_b_source": {
+              "beta": -0.12915958227902108,
+              "se": 0.07846955537886807,
+              "p": 0.09976718531794161,
+              "ci95_low": -0.2829570847044738,
+              "ci95_high": 0.024637920146431624
+            },
+            "base_prior_b": {
+              "beta": -0.027147327340615042,
+              "se": 0.049723982721293365,
+              "p": 0.5850931327597619,
+              "ci95_low": -0.124604542642242,
+              "ci95_high": 0.0703098879610119
+            },
+            "delta_source_dg": {
+              "beta": 0.1220977105944372,
+              "se": 0.009182487999059522,
+              "p": 2.415870430727613e-40,
+              "ci95_low": 0.10410036482780928,
+              "ci95_high": 0.14009505636106515
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5793420873954935,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.8666093248561509,
+              "d_nearest_remaining": -0.6716143231868951,
+              "cos_b_source": 0.23754025145187663,
+              "base_prior_b": -0.5544177281658331,
+              "delta_source_dg": 0.17841941742948936
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.8666093248561509,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.6184170916857448,
+              "cos_b_source": 0.14285014211722744,
+              "base_prior_b": 0.5860985883170483,
+              "delta_source_dg": -0.101367296984774
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.6716143231868951,
+              "shadow_angle": 0.6184170916857448,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.32079539970538795,
+              "base_prior_b": 0.762421513857303,
+              "delta_source_dg": -0.002870018135559913
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.23754025145187663,
+              "shadow_angle": 0.14285014211722744,
+              "d_nearest_remaining": -0.32079539970538795,
+              "cos_b_source": 1.0,
+              "base_prior_b": -0.14738835829703956,
+              "delta_source_dg": 3.81138763712212e-18
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.5544177281658331,
+              "shadow_angle": 0.5860985883170483,
+              "d_nearest_remaining": 0.762421513857303,
+              "cos_b_source": -0.14738835829703956,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 1.512323030338755e-18
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.17841941742948936,
+              "shadow_angle": -0.101367296984774,
+              "d_nearest_remaining": -0.002870018135559913,
+              "cos_b_source": 3.81138763712212e-18,
+              "base_prior_b": 1.512323030338755e-18,
+              "delta_source_dg": 1.0
+            }
+          },
+          "standardization": {
+            "cos_b_j": {
+              "mean": 0.9549744549470071,
+              "sd": 0.028216957585912673
+            },
+            "shadow_angle": {
+              "mean": 0.8184467886031787,
+              "sd": 0.24814121508328288
+            },
+            "d_nearest_remaining": {
+              "mean": 0.025893741120130587,
+              "sd": 0.020964745538587275
+            },
+            "cos_b_source": {
+              "mean": 0.9375991018918844,
+              "sd": 0.020446084119004126
+            },
+            "base_prior_b": {
+              "mean": -23.93674418655507,
+              "sd": 1.249144364471019
+            },
+            "delta_source_dg": {
+              "mean": 0.15754086706373427,
+              "sd": 0.32051270449427266
+            }
+          }
+        }
+      },
+      "delta_trained_abs": {
+        "baseline": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 14.992386062743279,
+              "se": 4.868762148619007,
+              "p": 0.0020748666087278067,
+              "ci95_low": 5.449787602158175,
+              "ci95_high": 24.534984523328383
+            },
+            "delta_source_dg": {
+              "beta": 0.42258309711285114,
+              "se": 0.060854746110602674,
+              "p": 3.808072986035039e-12,
+              "ci95_low": 0.303309986447741,
+              "ci95_high": 0.5418562077779613
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5021432011485751,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "delta_source_dg": 0.17841941742948902
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.17841941742948902,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 11.854173293841015,
+              "se": 16.377694197685233,
+              "p": 0.4691885955748586,
+              "ci95_low": -20.245517483432657,
+              "ci95_high": 43.95386407111469
+            },
+            "shadow_angle": {
+              "beta": 0.8996035074876207,
+              "se": 1.4241863815489038,
+              "p": 0.5276081817115453,
+              "ci95_low": -1.8917505076206504,
+              "ci95_high": 3.690957522595892
+            },
+            "d_nearest_remaining": {
+              "beta": -5.802492568719811,
+              "se": 4.101487807138827,
+              "p": 0.15714805222954917,
+              "ci95_low": -13.841260953742076,
+              "ci95_high": 2.236275816302455
+            },
+            "cos_b_source": {
+              "beta": -8.104119185109532,
+              "se": 8.485508086896221,
+              "p": 0.33955034527305605,
+              "ci95_low": -24.735409425949502,
+              "ci95_high": 8.527171055730438
+            },
+            "base_prior_b": {
+              "beta": -0.21626295338181084,
+              "se": 0.08057607892802707,
+              "p": 0.0072755862845366856,
+              "ci95_low": -0.3741891660962007,
+              "ci95_high": -0.05833674066742103
+            },
+            "delta_source_dg": {
+              "beta": 0.4225830971128432,
+              "se": 0.060986609203695454,
+              "p": 4.234879098358862e-12,
+              "ci95_low": 0.30305153953438113,
+              "ci95_high": 0.5421146546913053
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5316304632852973,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.8666093248561514,
+              "d_nearest_remaining": -0.671614323186894,
+              "cos_b_source": 0.23754025145187715,
+              "base_prior_b": -0.5544177281658298,
+              "delta_source_dg": 0.17841941742948902
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.8666093248561514,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.6184170916857453,
+              "cos_b_source": 0.14285014211722621,
+              "base_prior_b": 0.5860985883170502,
+              "delta_source_dg": -0.10136729698477448
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.671614323186894,
+              "shadow_angle": 0.6184170916857453,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.3207953997053883,
+              "base_prior_b": 0.7624215138573049,
+              "delta_source_dg": -0.0028700181355601423
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.23754025145187715,
+              "shadow_angle": 0.14285014211722621,
+              "d_nearest_remaining": -0.3207953997053883,
+              "cos_b_source": 1.0,
+              "base_prior_b": -0.1473883582970396,
+              "delta_source_dg": 1.3893506524406493e-14
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.5544177281658298,
+              "shadow_angle": 0.5860985883170502,
+              "d_nearest_remaining": 0.7624215138573049,
+              "cos_b_source": -0.1473883582970396,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 2.1372923187747563e-15
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.17841941742948902,
+              "shadow_angle": -0.10136729698477448,
+              "d_nearest_remaining": -0.0028700181355601423,
+              "cos_b_source": 1.3893506524406493e-14,
+              "base_prior_b": 2.1372923187747563e-15,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded_standardized": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": true,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 0.3344887050483719,
+              "se": 0.4621287025322078,
+              "p": 0.4691885955758911,
+              "ci95_low": -0.5712669081369794,
+              "ci95_high": 1.2402443182337233
+            },
+            "shadow_angle": {
+              "beta": 0.2232287074411633,
+              "se": 0.3533993392230408,
+              "p": 0.5276081817120464,
+              "ci95_low": -0.46942126959624997,
+              "ci95_high": 0.9158786844785766
+            },
+            "d_nearest_remaining": {
+              "beta": -0.12164778019275367,
+              "se": 0.08598664820666023,
+              "p": 0.15714805223136827,
+              "ci95_low": -0.29017851382912335,
+              "ci95_high": 0.046882953443615996
+            },
+            "cos_b_source": {
+              "beta": -0.1656975025691841,
+              "se": 0.1734954121371491,
+              "p": 0.33955034527299965,
+              "ci95_low": -0.5057422618409297,
+              "ci95_high": 0.17434725670256154
+            },
+            "base_prior_b": {
+              "beta": -0.2701436494607526,
+              "se": 0.10065115490417963,
+              "p": 0.007275586284571946,
+              "ci95_low": -0.46741628807530666,
+              "ci95_high": -0.07287101084619849
+            },
+            "delta_source_dg": {
+              "beta": 0.13544325132920287,
+              "se": 0.01954698305381292,
+              "p": 4.23487909837203e-12,
+              "ci95_low": 0.09713186853731479,
+              "ci95_high": 0.17375463412109096
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5316304632852971,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.8666093248561509,
+              "d_nearest_remaining": -0.6716143231868951,
+              "cos_b_source": 0.23754025145187663,
+              "base_prior_b": -0.5544177281658331,
+              "delta_source_dg": 0.17841941742948936
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.8666093248561509,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.6184170916857448,
+              "cos_b_source": 0.14285014211722744,
+              "base_prior_b": 0.5860985883170483,
+              "delta_source_dg": -0.101367296984774
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.6716143231868951,
+              "shadow_angle": 0.6184170916857448,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.32079539970538795,
+              "base_prior_b": 0.762421513857303,
+              "delta_source_dg": -0.002870018135559913
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.23754025145187663,
+              "shadow_angle": 0.14285014211722744,
+              "d_nearest_remaining": -0.32079539970538795,
+              "cos_b_source": 1.0,
+              "base_prior_b": -0.14738835829703956,
+              "delta_source_dg": 3.81138763712212e-18
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.5544177281658331,
+              "shadow_angle": 0.5860985883170483,
+              "d_nearest_remaining": 0.762421513857303,
+              "cos_b_source": -0.14738835829703956,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 1.512323030338755e-18
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.17841941742948936,
+              "shadow_angle": -0.101367296984774,
+              "d_nearest_remaining": -0.002870018135559913,
+              "cos_b_source": 3.81138763712212e-18,
+              "base_prior_b": 1.512323030338755e-18,
+              "delta_source_dg": 1.0
+            }
+          },
+          "standardization": {
+            "cos_b_j": {
+              "mean": 0.9549744549470071,
+              "sd": 0.028216957585912673
+            },
+            "shadow_angle": {
+              "mean": 0.8184467886031787,
+              "sd": 0.24814121508328288
+            },
+            "d_nearest_remaining": {
+              "mean": 0.025893741120130587,
+              "sd": 0.020964745538587275
+            },
+            "cos_b_source": {
+              "mean": 0.9375991018918844,
+              "sd": 0.020446084119004126
+            },
+            "base_prior_b": {
+              "mean": -23.93674418655507,
+              "sd": 1.249144364471019
+            },
+            "delta_source_dg": {
+              "mean": 0.15754086706373427,
+              "sd": 0.32051270449427266
+            }
+          }
+        }
+      }
+    },
+    "27": {
+      "delta_leakage": {
+        "baseline": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 0.41971916254139896,
+              "se": 0.2510254091785177,
+              "p": 0.09452064705794866,
+              "ci95_low": -0.072281598652926,
+              "ci95_high": 0.9117199237357239
+            },
+            "delta_source_dg": {
+              "beta": 0.380944994948305,
+              "se": 0.028587428264916347,
+              "p": 1.6427869827033993e-40,
+              "ci95_low": 0.32491466513844663,
+              "ci95_high": 0.4369753247581634
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.555996728955457,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "delta_source_dg": 0.1718068008934062
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.1718068008934062,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 1.818385119703747,
+              "se": 1.3331690360307407,
+              "p": 0.17258112760304656,
+              "ci95_low": -0.7945781762204862,
+              "ci95_high": 4.43134841562798
+            },
+            "shadow_angle": {
+              "beta": 0.6923895774868389,
+              "se": 0.4139515955539047,
+              "p": 0.09439933868710706,
+              "ci95_low": -0.1189406411417051,
+              "ci95_high": 1.503719796115383
+            },
+            "d_nearest_remaining": {
+              "beta": -0.6556467815061734,
+              "se": 0.6882570717311853,
+              "p": 0.340783133603359,
+              "ci95_low": -2.0046058542042973,
+              "ci95_high": 0.6933122911919504
+            },
+            "cos_b_source": {
+              "beta": -2.3678859873074547,
+              "se": 1.1294495639292597,
+              "p": 0.036038254059415346,
+              "ci95_low": -4.581566454963273,
+              "ci95_high": -0.15420551965163654
+            },
+            "base_prior_b": {
+              "beta": -0.04668326366381808,
+              "se": 0.038022356131762046,
+              "p": 0.2195278347474432,
+              "ci95_low": -0.12120571228942736,
+              "ci95_high": 0.027839184961791212
+            },
+            "delta_source_dg": {
+              "beta": 0.380944994948305,
+              "se": 0.028649372927505155,
+              "p": 2.4158704307309275e-40,
+              "ci95_low": 0.3247932558307381,
+              "ci95_high": 0.43709673406587196
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5870826078561218,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.9168491155149355,
+              "d_nearest_remaining": -0.5709538644594514,
+              "cos_b_source": 0.15688064998088563,
+              "base_prior_b": -0.4510231270186093,
+              "delta_source_dg": 0.1718068008934062
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.9168491155149355,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.6206296942286654,
+              "cos_b_source": 0.08338474102132337,
+              "base_prior_b": 0.5027750444909833,
+              "delta_source_dg": -0.060294681730361156
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.5709538644594514,
+              "shadow_angle": 0.6206296942286654,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.13665053730014426,
+              "base_prior_b": 0.7343137094976135,
+              "delta_source_dg": 0.0009023442535557005
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.15688064998088563,
+              "shadow_angle": 0.08338474102132337,
+              "d_nearest_remaining": -0.13665053730014426,
+              "cos_b_source": 1.0,
+              "base_prior_b": -0.0927692088397023,
+              "delta_source_dg": -1.5567312586584499e-15
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.4510231270186093,
+              "shadow_angle": 0.5027750444909833,
+              "d_nearest_remaining": 0.7343137094976135,
+              "cos_b_source": -0.0927692088397023,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 2.1372923187747563e-15
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.1718068008934062,
+              "shadow_angle": -0.060294681730361156,
+              "d_nearest_remaining": 0.0009023442535557005,
+              "cos_b_source": -1.5567312586584499e-15,
+              "base_prior_b": 2.1372923187747563e-15,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded_standardized": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": true,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 0.2175346367358398,
+              "se": 0.15948790980417715,
+              "p": 0.1725811276032717,
+              "ci95_low": -0.09505592244991998,
+              "ci95_high": 0.5301251959215996
+            },
+            "shadow_angle": {
+              "beta": 0.22062091937230094,
+              "se": 0.13190028353440805,
+              "p": 0.09439933868728644,
+              "ci95_low": -0.03789888590576035,
+              "ci95_high": 0.4791407246503622
+            },
+            "d_nearest_remaining": {
+              "beta": -0.05395324738895231,
+              "se": 0.056636751839161226,
+              "p": 0.34078313360337675,
+              "ci95_low": -0.16495924119504096,
+              "ci95_high": 0.057052746417136355
+            },
+            "cos_b_source": {
+              "beta": -0.14197777597922578,
+              "se": 0.067721477312236,
+              "p": 0.036038254059439265,
+              "ci95_low": -0.27470943249105473,
+              "ci95_high": -0.00924611946739684
+            },
+            "base_prior_b": {
+              "beta": -0.0583141357207732,
+              "se": 0.04749541188589126,
+              "p": 0.21952783474735083,
+              "ci95_low": -0.15140343244801568,
+              "ci95_high": 0.034775161006469275
+            },
+            "delta_source_dg": {
+              "beta": 0.12209771059443918,
+              "se": 0.00918248799905918,
+              "p": 2.4158704307047235e-40,
+              "ci95_low": 0.10410036482781192,
+              "ci95_high": 0.14009505636106645
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5870826078561219,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.916849115514936,
+              "d_nearest_remaining": -0.570953864459451,
+              "cos_b_source": 0.1568806499808856,
+              "base_prior_b": -0.45102312701861136,
+              "delta_source_dg": 0.1718068008934073
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.916849115514936,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.6206296942286645,
+              "cos_b_source": 0.0833847410213232,
+              "base_prior_b": 0.5027750444909849,
+              "delta_source_dg": -0.06029468173036084
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.570953864459451,
+              "shadow_angle": 0.6206296942286645,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.1366505373001443,
+              "base_prior_b": 0.7343137094976132,
+              "delta_source_dg": 0.0009023442535558109
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.1568806499808856,
+              "shadow_angle": 0.0833847410213232,
+              "d_nearest_remaining": -0.1366505373001443,
+              "cos_b_source": 1.0,
+              "base_prior_b": -0.09276920883970222,
+              "delta_source_dg": 3.973554628733203e-18
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.45102312701861136,
+              "shadow_angle": 0.5027750444909849,
+              "d_nearest_remaining": 0.7343137094976132,
+              "cos_b_source": -0.09276920883970222,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 1.512323030338755e-18
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.1718068008934073,
+              "shadow_angle": -0.06029468173036084,
+              "d_nearest_remaining": 0.0009023442535558109,
+              "cos_b_source": 3.973554628733203e-18,
+              "base_prior_b": 1.512323030338755e-18,
+              "delta_source_dg": 1.0
+            }
+          },
+          "standardization": {
+            "cos_b_j": {
+              "mean": 0.8456827001884962,
+              "sd": 0.11963067360080415
+            },
+            "shadow_angle": {
+              "mean": 0.7872262949059564,
+              "sd": 0.318636973382941
+            },
+            "d_nearest_remaining": {
+              "mean": 0.07431525889879619,
+              "sd": 0.08229011246727909
+            },
+            "cos_b_source": {
+              "mean": 0.7841414224642974,
+              "sd": 0.05995971796795409
+            },
+            "base_prior_b": {
+              "mean": -23.93674418655507,
+              "sd": 1.249144364471019
+            },
+            "delta_source_dg": {
+              "mean": 0.15754086706373427,
+              "sd": 0.32051270449427266
+            }
+          }
+        }
+      },
+      "delta_trained_abs": {
+        "baseline": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 3.2069831414975294,
+              "se": 0.8286372846029693,
+              "p": 0.00010875088204639916,
+              "ci95_low": 1.582883907428643,
+              "ci95_high": 4.831082375566416
+            },
+            "delta_source_dg": {
+              "beta": 0.42258309711284836,
+              "se": 0.060854746110601925,
+              "p": 3.808072986033965e-12,
+              "ci95_low": 0.30330998644773965,
+              "ci95_high": 0.5418562077779571
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.4835703129782929,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "delta_source_dg": 0.1718068008934062
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.1718068008934062,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": -1.5379493383960177,
+              "se": 3.541037215793584,
+              "p": 0.6640548408685292,
+              "ci95_low": -8.47825474926743,
+              "ci95_high": 5.402356072475394
+            },
+            "shadow_angle": {
+              "beta": -0.5199021751199964,
+              "se": 1.0468491915466043,
+              "p": 0.6194463141423594,
+              "ci95_low": -2.571688887796213,
+              "ci95_high": 1.5318845375562202
+            },
+            "d_nearest_remaining": {
+              "beta": -2.134305728673857,
+              "se": 1.2770165501562942,
+              "p": 0.09465811272524219,
+              "ci95_low": -4.637212174641782,
+              "ci95_high": 0.36860071729406707
+            },
+            "cos_b_source": {
+              "beta": -1.447958966224576,
+              "se": 2.0984073714830513,
+              "p": 0.49017684171752185,
+              "ci95_low": -5.5607618392247185,
+              "ci95_high": 2.664843906775567
+            },
+            "base_prior_b": {
+              "beta": -0.21763555284983482,
+              "se": 0.07104775776629643,
+              "p": 0.0021896241977943354,
+              "ci95_low": -0.3568865992541017,
+              "ci95_high": -0.07838450644556791
+            },
+            "delta_source_dg": {
+              "beta": 0.42258309711284725,
+              "se": 0.06098660920369739,
+              "p": 4.234879098363451e-12,
+              "ci95_low": 0.30305153953438135,
+              "ci95_high": 0.5421146546913131
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5367275638835762,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.9168491155149355,
+              "d_nearest_remaining": -0.5709538644594514,
+              "cos_b_source": 0.15688064998088563,
+              "base_prior_b": -0.4510231270186093,
+              "delta_source_dg": 0.1718068008934062
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.9168491155149355,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.6206296942286654,
+              "cos_b_source": 0.08338474102132337,
+              "base_prior_b": 0.5027750444909833,
+              "delta_source_dg": -0.060294681730361156
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.5709538644594514,
+              "shadow_angle": 0.6206296942286654,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.13665053730014426,
+              "base_prior_b": 0.7343137094976135,
+              "delta_source_dg": 0.0009023442535557005
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.15688064998088563,
+              "shadow_angle": 0.08338474102132337,
+              "d_nearest_remaining": -0.13665053730014426,
+              "cos_b_source": 1.0,
+              "base_prior_b": -0.0927692088397023,
+              "delta_source_dg": -1.5567312586584499e-15
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.4510231270186093,
+              "shadow_angle": 0.5027750444909833,
+              "d_nearest_remaining": 0.7343137094976135,
+              "cos_b_source": -0.0927692088397023,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 2.1372923187747563e-15
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.1718068008934062,
+              "shadow_angle": -0.060294681730361156,
+              "d_nearest_remaining": 0.0009023442535557005,
+              "cos_b_source": -1.5567312586584499e-15,
+              "base_prior_b": 2.1372923187747563e-15,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded_standardized": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": true,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": -0.18398591531622357,
+              "se": 0.4236166673708301,
+              "p": 0.6640548408684807,
+              "ci95_low": -1.0142593266139344,
+              "ci95_high": 0.6462874959814873
+            },
+            "shadow_angle": {
+              "beta": -0.16566005553544225,
+              "se": 0.33356485798273544,
+              "p": 0.6194463141423061,
+              "ci95_low": -0.8194351636898217,
+              "ci95_high": 0.4881150526189372
+            },
+            "d_nearest_remaining": {
+              "beta": -0.17563225845212868,
+              "se": 0.10508583553491972,
+              "p": 0.09465811272518615,
+              "ci95_low": -0.3815967113858707,
+              "ci95_high": 0.030332194481613367
+            },
+            "cos_b_source": {
+              "beta": -0.08681921124399636,
+              "se": 0.12581991417600047,
+              "p": 0.4901768417175226,
+              "ci95_low": -0.33342171156687783,
+              "ci95_high": 0.15978328907888514
+            },
+            "base_prior_b": {
+              "beta": -0.27185822435090545,
+              "se": 0.0887489062220647,
+              "p": 0.0021896241977927043,
+              "ci95_low": -0.44580288421347497,
+              "ci95_high": -0.09791356448833594
+            },
+            "delta_source_dg": {
+              "beta": 0.13544325132920645,
+              "se": 0.01954698305381223,
+              "p": 4.2348790983592446e-12,
+              "ci95_low": 0.09713186853731973,
+              "ci95_high": 0.17375463412109318
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5367275638835762,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.916849115514936,
+              "d_nearest_remaining": -0.570953864459451,
+              "cos_b_source": 0.1568806499808856,
+              "base_prior_b": -0.45102312701861136,
+              "delta_source_dg": 0.1718068008934073
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.916849115514936,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.6206296942286645,
+              "cos_b_source": 0.0833847410213232,
+              "base_prior_b": 0.5027750444909849,
+              "delta_source_dg": -0.06029468173036084
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.570953864459451,
+              "shadow_angle": 0.6206296942286645,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.1366505373001443,
+              "base_prior_b": 0.7343137094976132,
+              "delta_source_dg": 0.0009023442535558109
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.1568806499808856,
+              "shadow_angle": 0.0833847410213232,
+              "d_nearest_remaining": -0.1366505373001443,
+              "cos_b_source": 1.0,
+              "base_prior_b": -0.09276920883970222,
+              "delta_source_dg": 3.973554628733203e-18
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.45102312701861136,
+              "shadow_angle": 0.5027750444909849,
+              "d_nearest_remaining": 0.7343137094976132,
+              "cos_b_source": -0.09276920883970222,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 1.512323030338755e-18
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.1718068008934073,
+              "shadow_angle": -0.06029468173036084,
+              "d_nearest_remaining": 0.0009023442535558109,
+              "cos_b_source": 3.973554628733203e-18,
+              "base_prior_b": 1.512323030338755e-18,
+              "delta_source_dg": 1.0
+            }
+          },
+          "standardization": {
+            "cos_b_j": {
+              "mean": 0.8456827001884962,
+              "sd": 0.11963067360080415
+            },
+            "shadow_angle": {
+              "mean": 0.7872262949059564,
+              "sd": 0.318636973382941
+            },
+            "d_nearest_remaining": {
+              "mean": 0.07431525889879619,
+              "sd": 0.08229011246727909
+            },
+            "cos_b_source": {
+              "mean": 0.7841414224642974,
+              "sd": 0.05995971796795409
+            },
+            "base_prior_b": {
+              "mean": -23.93674418655507,
+              "sd": 1.249144364471019
+            },
+            "delta_source_dg": {
+              "mean": 0.15754086706373427,
+              "sd": 0.32051270449427266
+            }
+          }
+        }
+      }
+    },
+    "10": {
+      "delta_leakage": {
+        "baseline": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 1.3258811782758886,
+              "se": 1.7034759086072302,
+              "p": 0.43636938233224043,
+              "ci95_low": -2.012870251125927,
+              "ci95_high": 4.664632607677705
+            },
+            "delta_source_dg": {
+              "beta": 0.3809449949483034,
+              "se": 0.02858742826491722,
+              "p": 1.6427869827136346e-40,
+              "ci95_low": 0.3249146651384433,
+              "ci95_high": 0.43697532475816353
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5533382731009642,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "delta_source_dg": 0.11293835247133466
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.11293835247133466,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": -4.845419793388958,
+              "se": 4.858068123154565,
+              "p": 0.3185721244497153,
+              "ci95_low": -14.367058349214002,
+              "ci95_high": 4.676218762436086
+            },
+            "shadow_angle": {
+              "beta": -0.26994467048643067,
+              "se": 0.25073763116474374,
+              "p": 0.2816580474286412,
+              "ci95_low": -0.7613813971382162,
+              "ci95_high": 0.2214920561653549
+            },
+            "d_nearest_remaining": {
+              "beta": -5.62934508840431,
+              "se": 5.602216951383007,
+              "p": 0.31497274699647204,
+              "ci95_low": -16.609488546694784,
+              "ci95_high": 5.350798369886164
+            },
+            "cos_b_source": {
+              "beta": 2.723350338585097,
+              "se": 6.662912041760226,
+              "p": 0.6827357995216785,
+              "ci95_low": -10.335717295423184,
+              "ci95_high": 15.782417972593375
+            },
+            "base_prior_b": {
+              "beta": -0.051580582830356145,
+              "se": 0.022825473433112385,
+              "p": 0.02383481449417573,
+              "ci95_low": -0.09631768868933224,
+              "ci95_high": -0.006843476971380047
+            },
+            "delta_source_dg": {
+              "beta": 0.3809449949483027,
+              "se": 0.028649372927505745,
+              "p": 2.415870430742458e-40,
+              "ci95_low": 0.3247932558307346,
+              "ci95_high": 0.4370967340658708
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5704570834046984,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.6989654843437614,
+              "d_nearest_remaining": -0.17402534685428891,
+              "cos_b_source": 0.2828232180188831,
+              "base_prior_b": -0.0033272157808389618,
+              "delta_source_dg": 0.11293835247133466
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.6989654843437614,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.03522226330607192,
+              "cos_b_source": -0.049810950657093726,
+              "base_prior_b": 0.13385180988737413,
+              "delta_source_dg": -0.05864135190347885
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.17402534685428891,
+              "shadow_angle": 0.03522226330607192,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.7328000258657704,
+              "base_prior_b": 0.11882143491440907,
+              "delta_source_dg": -0.021147662182829277
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.2828232180188831,
+              "shadow_angle": -0.049810950657093726,
+              "d_nearest_remaining": -0.7328000258657704,
+              "cos_b_source": 1.0,
+              "base_prior_b": 0.16247954038428672,
+              "delta_source_dg": -6.487944077456161e-15
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.0033272157808389618,
+              "shadow_angle": 0.13385180988737413,
+              "d_nearest_remaining": 0.11882143491440907,
+              "cos_b_source": 0.16247954038428672,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 2.1372923187747563e-15
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.11293835247133466,
+              "shadow_angle": -0.05864135190347885,
+              "d_nearest_remaining": -0.021147662182829277,
+              "cos_b_source": -6.487944077456161e-15,
+              "base_prior_b": 2.1372923187747563e-15,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded_standardized": {
+          "dv": "delta_leakage",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": true,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": -0.11489835142510679,
+              "se": 0.115198278436441,
+              "p": 0.31857212448347694,
+              "ci95_low": -0.3406828282415483,
+              "ci95_high": 0.11088612539133469
+            },
+            "shadow_angle": {
+              "beta": -0.059921880604591075,
+              "se": 0.05565833313728107,
+              "p": 0.2816580474554007,
+              "ci95_low": -0.16901020899319422,
+              "ci95_high": 0.04916644778401206
+            },
+            "d_nearest_remaining": {
+              "beta": -0.03968305061993416,
+              "se": 0.03949181572264854,
+              "p": 0.314972747007083,
+              "ci95_low": -0.11708558712041794,
+              "ci95_high": 0.03771948588054963
+            },
+            "cos_b_source": {
+              "beta": 0.02974598145721659,
+              "se": 0.0727761152297302,
+              "p": 0.6827357995315606,
+              "ci95_low": -0.11289258332779152,
+              "ci95_high": 0.1723845462422247
+            },
+            "base_prior_b": {
+              "beta": -0.06443159435867019,
+              "se": 0.028512311505447058,
+              "p": 0.02383481449462685,
+              "ci95_low": -0.12031469802533343,
+              "ci95_high": -0.008548490692006944
+            },
+            "delta_source_dg": {
+              "beta": 0.12209771059443718,
+              "se": 0.009182487999059453,
+              "p": 2.4158704307244373e-40,
+              "ci95_low": 0.10410036482780938,
+              "ci95_high": 0.14009505636106498
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.5704570834046984,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.6989654843437605,
+              "d_nearest_remaining": -0.17402534685428853,
+              "cos_b_source": 0.2828232180188936,
+              "base_prior_b": -0.003327215780840851,
+              "delta_source_dg": 0.1129383524713329
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.6989654843437605,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.03522226330607186,
+              "cos_b_source": -0.04981095065709951,
+              "base_prior_b": 0.1338518098873736,
+              "delta_source_dg": -0.058641351903481305
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.17402534685428853,
+              "shadow_angle": 0.03522226330607186,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.7328000258657706,
+              "base_prior_b": 0.11882143491440914,
+              "delta_source_dg": -0.021147662182829163
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.2828232180188936,
+              "shadow_angle": -0.04981095065709951,
+              "d_nearest_remaining": -0.7328000258657706,
+              "cos_b_source": 1.0,
+              "base_prior_b": 0.16247954038428708,
+              "delta_source_dg": -6.360652745248298e-18
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.003327215780840851,
+              "shadow_angle": 0.1338518098873736,
+              "d_nearest_remaining": 0.11882143491440914,
+              "cos_b_source": 0.16247954038428708,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 1.512323030338755e-18
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.1129383524713329,
+              "shadow_angle": -0.058641351903481305,
+              "d_nearest_remaining": -0.021147662182829163,
+              "cos_b_source": -6.360652745248298e-18,
+              "base_prior_b": 1.512323030338755e-18,
+              "delta_source_dg": 1.0
+            }
+          },
+          "standardization": {
+            "cos_b_j": {
+              "mean": 0.9717116506818013,
+              "sd": 0.023712775430082066
+            },
+            "shadow_angle": {
+              "mean": 1.1291787492583745,
+              "sd": 0.22197837985322513
+            },
+            "d_nearest_remaining": {
+              "mean": 0.012451615853187365,
+              "sd": 0.007049319236384484
+            },
+            "cos_b_source": {
+              "mean": 0.980890616774559,
+              "sd": 0.010922568806431946
+            },
+            "base_prior_b": {
+              "mean": -23.93674418655507,
+              "sd": 1.249144364471019
+            },
+            "delta_source_dg": {
+              "mean": 0.15754086706373427,
+              "sd": 0.32051270449427266
+            }
+          }
+        }
+      },
+      "delta_trained_abs": {
+        "baseline": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 9.35528946392478,
+              "se": 5.880717593088028,
+              "p": 0.11164525580912425,
+              "ci95_low": -2.170705221778828,
+              "ci95_high": 20.88128414962839
+            },
+            "delta_source_dg": {
+              "beta": 0.42258309711284714,
+              "se": 0.06085474611060846,
+              "p": 3.80807298605462e-12,
+              "ci95_low": 0.3033099864477256,
+              "ci95_high": 0.5418562077779686
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.4485486056998572,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "delta_source_dg": 0.11293835247133466
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.11293835247133466,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": false,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 5.917057213123813,
+              "se": 15.547622335267851,
+              "p": 0.7035176399339933,
+              "ci95_low": -24.555722609231708,
+              "ci95_high": 36.38983703547933
+            },
+            "shadow_angle": {
+              "beta": -0.06487221885269451,
+              "se": 0.6323535249670532,
+              "p": 0.9182895461806551,
+              "ci95_low": -1.3042623532850686,
+              "ci95_high": 1.1745179155796797
+            },
+            "d_nearest_remaining": {
+              "beta": -15.220418579068594,
+              "se": 9.910592652398908,
+              "p": 0.1245941141749895,
+              "ci95_low": -34.64482324321774,
+              "ci95_high": 4.203986085080553
+            },
+            "cos_b_source": {
+              "beta": -2.656563748969921,
+              "se": 14.576492903826331,
+              "p": 0.8553866477876189,
+              "ci95_low": -31.2259648613732,
+              "ci95_high": 25.91283736343336
+            },
+            "base_prior_b": {
+              "beta": -0.29878322769068966,
+              "se": 0.0571655198599912,
+              "p": 1.726240860035907e-07,
+              "ci95_low": -0.4108255877737816,
+              "ci95_high": -0.18674086760759773
+            },
+            "delta_source_dg": {
+              "beta": 0.42258309711284847,
+              "se": 0.06098660920369988,
+              "p": 4.2348790983713526e-12,
+              "ci95_low": 0.3030515395343777,
+              "ci95_high": 0.5421146546913193
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.529837720056564,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.6989654843437614,
+              "d_nearest_remaining": -0.17402534685428891,
+              "cos_b_source": 0.2828232180188831,
+              "base_prior_b": -0.0033272157808389618,
+              "delta_source_dg": 0.11293835247133466
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.6989654843437614,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.03522226330607192,
+              "cos_b_source": -0.049810950657093726,
+              "base_prior_b": 0.13385180988737413,
+              "delta_source_dg": -0.05864135190347885
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.17402534685428891,
+              "shadow_angle": 0.03522226330607192,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.7328000258657704,
+              "base_prior_b": 0.11882143491440907,
+              "delta_source_dg": -0.021147662182829277
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.2828232180188831,
+              "shadow_angle": -0.049810950657093726,
+              "d_nearest_remaining": -0.7328000258657704,
+              "cos_b_source": 1.0,
+              "base_prior_b": 0.16247954038428672,
+              "delta_source_dg": -6.487944077456161e-15
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.0033272157808389618,
+              "shadow_angle": 0.13385180988737413,
+              "d_nearest_remaining": 0.11882143491440907,
+              "cos_b_source": 0.16247954038428672,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 2.1372923187747563e-15
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.11293835247133466,
+              "shadow_angle": -0.05864135190347885,
+              "d_nearest_remaining": -0.021147662182829277,
+              "cos_b_source": -6.487944077456161e-15,
+              "base_prior_b": 2.1372923187747563e-15,
+              "delta_source_dg": 1.0
+            }
+          }
+        },
+        "expanded_standardized": {
+          "dv": "delta_trained_abs",
+          "predictors": [
+            "cos_b_j",
+            "shadow_angle",
+            "d_nearest_remaining",
+            "cos_b_source",
+            "base_prior_b",
+            "delta_source_dg"
+          ],
+          "standardized": true,
+          "n_rows": 936,
+          "n_clusters_bystander": 52,
+          "coefficients": {
+            "cos_b_j": {
+              "beta": 0.14030984890175352,
+              "se": 0.3686772769106099,
+              "p": 0.7035176399360403,
+              "ci95_low": -0.5822843357613423,
+              "ci95_high": 0.8629040335648495
+            },
+            "shadow_angle": {
+              "beta": -0.014400230038406379,
+              "se": 0.14036881096782772,
+              "p": 0.918289546181323,
+              "ci95_low": -0.28951804408805965,
+              "ci95_high": 0.26071758401124684
+            },
+            "d_nearest_remaining": {
+              "beta": -0.1072935894752524,
+              "se": 0.06986293142668093,
+              "p": 0.12459411416503524,
+              "ci95_low": -0.24422241892593854,
+              "ci95_high": 0.029635239975433728
+            },
+            "cos_b_source": {
+              "beta": -0.029016500336798562,
+              "se": 0.1592127466974942,
+              "p": 0.8553866477866975,
+              "ci95_low": -0.34106774974358556,
+              "ci95_high": 0.2830347490699885
+            },
+            "base_prior_b": {
+              "beta": -0.3732233850682861,
+              "se": 0.07140798697502033,
+              "p": 1.726240859937715e-07,
+              "ci95_low": -0.5131804677478312,
+              "ci95_high": -0.233266302388741
+            },
+            "delta_source_dg": {
+              "beta": 0.1354432513292026,
+              "se": 0.019546983053811362,
+              "p": 4.234879098355931e-12,
+              "ci95_low": 0.09713186853731756,
+              "ci95_high": 0.17375463412108763
+            }
+          },
+          "fixed_effects": "C(j_i) drop-first + C(seed) drop-first",
+          "cov_type": "cluster (bystander id)",
+          "r_squared": 0.529837720056564,
+          "predictor_correlations": {
+            "cos_b_j": {
+              "cos_b_j": 1.0,
+              "shadow_angle": -0.6989654843437605,
+              "d_nearest_remaining": -0.17402534685428853,
+              "cos_b_source": 0.2828232180188936,
+              "base_prior_b": -0.003327215780840851,
+              "delta_source_dg": 0.1129383524713329
+            },
+            "shadow_angle": {
+              "cos_b_j": -0.6989654843437605,
+              "shadow_angle": 1.0,
+              "d_nearest_remaining": 0.03522226330607186,
+              "cos_b_source": -0.04981095065709951,
+              "base_prior_b": 0.1338518098873736,
+              "delta_source_dg": -0.058641351903481305
+            },
+            "d_nearest_remaining": {
+              "cos_b_j": -0.17402534685428853,
+              "shadow_angle": 0.03522226330607186,
+              "d_nearest_remaining": 1.0,
+              "cos_b_source": -0.7328000258657706,
+              "base_prior_b": 0.11882143491440914,
+              "delta_source_dg": -0.021147662182829163
+            },
+            "cos_b_source": {
+              "cos_b_j": 0.2828232180188936,
+              "shadow_angle": -0.04981095065709951,
+              "d_nearest_remaining": -0.7328000258657706,
+              "cos_b_source": 1.0,
+              "base_prior_b": 0.16247954038428708,
+              "delta_source_dg": -6.360652745248298e-18
+            },
+            "base_prior_b": {
+              "cos_b_j": -0.003327215780840851,
+              "shadow_angle": 0.1338518098873736,
+              "d_nearest_remaining": 0.11882143491440914,
+              "cos_b_source": 0.16247954038428708,
+              "base_prior_b": 1.0,
+              "delta_source_dg": 1.512323030338755e-18
+            },
+            "delta_source_dg": {
+              "cos_b_j": 0.1129383524713329,
+              "shadow_angle": -0.058641351903481305,
+              "d_nearest_remaining": -0.021147662182829163,
+              "cos_b_source": -6.360652745248298e-18,
+              "base_prior_b": 1.512323030338755e-18,
+              "delta_source_dg": 1.0
+            }
+          },
+          "standardization": {
+            "cos_b_j": {
+              "mean": 0.9717116506818013,
+              "sd": 0.023712775430082066
+            },
+            "shadow_angle": {
+              "mean": 1.1291787492583745,
+              "sd": 0.22197837985322513
+            },
+            "d_nearest_remaining": {
+              "mean": 0.012451615853187365,
+              "sd": 0.007049319236384484
+            },
+            "cos_b_source": {
+              "mean": 0.980890616774559,
+              "sd": 0.010922568806431946
+            },
+            "base_prior_b": {
+              "mean": -23.93674418655507,
+              "sd": 1.249144364471019
+            },
+            "delta_source_dg": {
+              "mean": 0.15754086706373427,
+              "sd": 0.32051270449427266
+            }
+          }
+        }
+      }
+    }
+  },
+  "reproducibility": {
+    "git_commit": "ab9a0b2f6",
+    "timestamp_utc": "2026-06-09T23:08:09Z",
+    "versions": {
+      "numpy": "2.2.6",
+      "pandas": "2.3.3",
+      "statsmodels": "0.14.6"
+    },
+    "inputs": {
+      "panel_gate": "eval_results/issue_505/panel_coverage.json",
+      "sweep_dir": "eval_results/issue_505/sweep",
+      "original_analysis_dir": "eval_results/issue_505/analysis",
+      "hf_data_repo": "superkaiba1/explore-persona-space-data"
+    }
+  }
+}
