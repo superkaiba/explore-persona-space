@@ -19,6 +19,8 @@ _SPEC.loader.exec_module(worktree_audit)
 should_remove = worktree_audit.should_remove
 effective_grace_hours = worktree_audit.effective_grace_hours
 tracked_changes_backlog = worktree_audit.tracked_changes_backlog
+classify_holders = worktree_audit.classify_holders
+dirty_paths_within_allowlist = worktree_audit.dirty_paths_within_allowlist
 Decision = worktree_audit.Decision
 
 
@@ -211,6 +213,147 @@ def test_backlog_matcher_catches_classifier_reason():
 
 def test_backlog_empty_when_no_tracked_changes_keeps():
     assert tracked_changes_backlog([], {}) == (0, 0)
+
+
+# --- Orphaned-codex holder classification (pure) ---------------------------
+
+
+def test_all_orphan_codex_holders_classified():
+    # The three real holder shapes from the 2026-06-10 incident.
+    holders = [
+        (101, "node /home/t/.npm-global/bin/codex app-server"),
+        (102, "node /home/t/.local/bin/codex app-server"),
+        (
+            103,
+            "/usr/bin/node /home/t/.claude/plugins/cache/openai-codex/codex/1.0.4/scri"
+            "pts/codex-companion.mjs status task-x",
+        ),
+    ]
+    pids, all_orphan = classify_holders(holders)
+    assert pids == [101, 102, 103]
+    assert all_orphan
+
+
+def test_single_real_holder_blocks_all_orphan():
+    # A live happy/claude session among the holders makes the worktree
+    # non-remediable — never kill toward a real holder.
+    holders = [
+        (101, "node /home/t/.npm-global/bin/codex app-server"),
+        (202, "claude --resume abc (happy session)"),
+    ]
+    pids, all_orphan = classify_holders(holders)
+    assert pids == [101]
+    assert not all_orphan
+
+
+def test_empty_holders_is_not_all_orphan():
+    # Vacuous truth must NOT classify an unheld worktree as orphan-pinned.
+    assert classify_holders([]) == ([], False)
+
+
+def test_plain_codex_cli_is_not_an_orphan_pattern():
+    # Only `codex app-server` / the plugin cache path match — an interactive
+    # `codex exec` (or anything else mentioning codex) is a real holder.
+    pids, all_orphan = classify_holders([(7, "codex exec --full-auto fix the bug")])
+    assert pids == []
+    assert not all_orphan
+
+
+def test_remediation_statuses_are_strict_subset_of_reapable():
+    # Kill/rescue eligibility is deliberately TIGHTER than reap eligibility:
+    # awaiting_promotion is reapable when idle but never remediated.
+    assert worktree_audit.REMEDIATION_ISSUE_STATUSES < worktree_audit.REAPABLE_ISSUE_STATUSES
+    assert "awaiting_promotion" not in worktree_audit.REMEDIATION_ISSUE_STATUSES
+
+
+# --- Junk-dirty rescue allowlist (pure) -------------------------------------
+
+
+def test_agent_memory_dirt_is_allowlisted():
+    paths, ok = dirty_paths_within_allowlist(" M .claude/agent-memory/experimenter/MEMORY.md\n")
+    assert ok
+    assert paths == [".claude/agent-memory/experimenter/MEMORY.md"]
+
+
+def test_pods_conf_and_ephemeral_are_allowlisted_exact():
+    porcelain = " M scripts/pods_ephemeral.json\n M scripts/pods.conf\n"
+    paths, ok = dirty_paths_within_allowlist(porcelain)
+    assert ok
+    assert paths == ["scripts/pods_ephemeral.json", "scripts/pods.conf"]
+
+
+def test_exact_entries_do_not_prefix_match():
+    _, ok = dirty_paths_within_allowlist(" M scripts/pods.conf.bak\n")
+    assert not ok
+
+
+def test_untracked_lines_are_ignored():
+    porcelain = "?? eval_results/scratch.json\n M scripts/pods.conf\n"
+    paths, ok = dirty_paths_within_allowlist(porcelain)
+    assert ok
+    assert paths == ["scripts/pods.conf"]
+
+
+def test_dirt_outside_allowlist_fails_closed():
+    porcelain = " M figures/issue_405/x.png\n M scripts/pods.conf\n"
+    paths, ok = dirty_paths_within_allowlist(porcelain)
+    assert not ok
+    assert "figures/issue_405/x.png" in paths
+
+
+def test_staged_and_deleted_codes_parse():
+    porcelain = "M  scripts/pods.conf\n D scripts/pods_ephemeral.json\n"
+    paths, ok = dirty_paths_within_allowlist(porcelain)
+    assert ok
+    assert paths == ["scripts/pods.conf", "scripts/pods_ephemeral.json"]
+
+
+def test_rename_requires_both_sides_allowlisted():
+    _, ok = dirty_paths_within_allowlist("R  scripts/pods.conf -> scripts/pods2.conf\n")
+    assert not ok
+
+
+def test_quoted_exotic_path_fails_closed():
+    _, ok = dirty_paths_within_allowlist(' M "weird name.json"\n')
+    assert not ok
+
+
+def test_empty_porcelain_is_vacuously_within():
+    assert dirty_paths_within_allowlist("") == ([], True)
+
+
+# --- Remediation triage (_remediation_kind, injected data only) -------------
+
+
+def test_remediation_kind_orphan_branch():
+    d = Decision("issue-331", False, "held by a live process")
+    holders = [(101, "node /x/codex app-server")]
+    kind = worktree_audit._remediation_kind("issue-331", d, "completed", holders, "/nonexistent")
+    assert kind is not None
+    assert kind[0] == "orphan-pinned"
+
+
+def test_remediation_kind_refuses_non_terminal_statuses():
+    d = Decision("issue-331", False, "held by a live process")
+    holders = [(101, "node /x/codex app-server")]
+    for status in ("running", "blocked", "awaiting_promotion", None):
+        assert (
+            worktree_audit._remediation_kind("issue-331", d, status, holders, "/nonexistent")
+            is None
+        ), status
+
+
+def test_remediation_kind_refuses_real_holder():
+    d = Decision("issue-331", False, "held by a live process")
+    holders = [(101, "node /x/codex app-server"), (202, "claude --resume abc")]
+    assert worktree_audit._remediation_kind("issue-331", d, "completed", holders, "/x") is None
+
+
+def test_remediation_kind_fails_closed_on_unreadable_porcelain():
+    # tracked-changes keep + a worktree whose git status cannot be read
+    # (here: nonexistent path) must NOT classify as junk-dirty.
+    d = Decision("issue-470", False, "has uncommitted tracked changes")
+    assert worktree_audit._remediation_kind("issue-470", d, "completed", [], "/nonexistent") is None
 
 
 def test_grace_boundary_is_exclusive_below():

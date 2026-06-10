@@ -11,6 +11,14 @@ agents must NOT call this helper themselves (a subagent's
 ``run_in_background=true`` Bash returns immediately but its bg-completion
 event has no listener once the subagent returns).
 
+Every codex-companion subprocess (spawn/status/result/cancel) and the
+task.py marker posts run with ``cwd=DISPATCH_ROOT`` — the MAIN checkout
+root, resolved at import — never the caller's cwd. The detached ``codex
+app-server`` worker inherits the spawn cwd and outlives the helper, so an
+issue-worktree dispatch cwd pinned 11 terminal-task worktrees against the
+stale-worktree sweep (2026-06-10 disk-full incident). Callers may invoke
+this helper from any cwd; the pin is enforced here.
+
 Lifecycle:
 
 1. Spawn Codex with ``--background`` and capture the job-id from stdout.
@@ -85,12 +93,58 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # Make task_workflow importable so we can route tasks/ artifacts through
-# the canonical resolver (worktree-safe). PROJECT_ROOT itself is still
-# used as the git cwd for subprocess calls into the local checkout, but
-# any path containing `tasks/` MUST go via `tasks_dir()` instead — see
+# the canonical resolver (worktree-safe). Any path containing `tasks/`
+# MUST go via `tasks_dir()` — see
 # `tests/test_no_direct_task_path_construction.py`.
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from explore_persona_space.task_workflow import list_events, tasks_dir  # noqa: E402
+
+
+def _resolve_dispatch_root() -> Path:
+    """MAIN-checkout root to use as the cwd for every codex-companion call.
+
+    Dispatching from an issue-worktree cwd roots the DETACHED ``codex
+    app-server`` worker in that worktree; those workers routinely outlive
+    their companion task and pinned 11 terminal-task worktrees (~10-15G
+    each) against the stale-worktree sweep until the 2026-06-10 disk-full
+    incident. The repo-root dispatch rule previously existed only as prose
+    in ``.claude/agents/codex-clean-result-critic.md``; resolving it HERE
+    enforces it for every caller. ``git rev-parse --git-common-dir`` from a
+    linked worktree returns the main checkout's ``.git``, so its parent is
+    the main root even when this script copy lives in a worktree. Fail-soft:
+    on any resolution failure, warn loudly and fall back to PROJECT_ROOT
+    (no worse than the historical inherit-the-caller-cwd behavior).
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(
+            f"WARN: dispatch-root resolution failed ({exc}); using {PROJECT_ROOT}", file=sys.stderr
+        )
+        return PROJECT_ROOT
+    common = Path(proc.stdout.strip()) if proc.returncode == 0 and proc.stdout.strip() else None
+    if common is not None and common.name == ".git" and common.is_dir():
+        return common.parent
+    print(
+        f"WARN: could not resolve main checkout root from {PROJECT_ROOT} "
+        f"(rc={proc.returncode}); using {PROJECT_ROOT}",
+        file=sys.stderr,
+    )
+    return PROJECT_ROOT
+
+
+# Resolved ONCE at import (also keeps it ahead of any test monkeypatching of
+# subprocess.run) and threaded as ``cwd=`` into every codex-companion spawn/
+# status/result/cancel call AND the task.py marker posts, so neither the
+# detached Codex worker nor the helper's subprocesses ever root themselves
+# in an issue worktree.
+DISPATCH_ROOT = _resolve_dispatch_root()
 
 POLL_INTERVAL_SECS = 30
 DEFAULT_MAX_WAIT_SECS = 6 * 3600  # 6h hard cap; force-cancel after.
@@ -126,6 +180,7 @@ def _install_signal_handlers() -> None:
             try:
                 subprocess.run(
                     ["node", str(_active_companion), "cancel", _active_job_id],
+                    cwd=str(DISPATCH_ROOT),
                     capture_output=True,
                     timeout=CANCEL_TIMEOUT_SECS,
                 )
@@ -234,7 +289,7 @@ def _post_marker(issue: int, kind: str, note: str, version: int = 1) -> bool:
                     "--note",
                     note,
                 ],
-                cwd=PROJECT_ROOT,
+                cwd=DISPATCH_ROOT,
                 capture_output=True,
                 text=True,
                 timeout=POST_MARKER_TIMEOUT_SECS,
@@ -332,8 +387,13 @@ def _spawn_codex(
         # mkstemp yields an absolute path, so the companion's
         # `path.resolve(cwd, promptFile)` returns it unchanged.
         cmd.extend(["--prompt-file", prompt_tmp_path])
+        # cwd pinned to the MAIN checkout root: the detached codex
+        # app-server worker inherits THIS cwd and outlives the helper —
+        # spawning from an issue-worktree cwd pinned terminal-task
+        # worktrees forever (2026-06-10 disk-full incident).
         res = subprocess.run(
             cmd,
+            cwd=str(DISPATCH_ROOT),
             capture_output=True,
             text=True,
             timeout=SPAWN_TIMEOUT_SECS,
@@ -370,6 +430,7 @@ def _probe_phase(companion: Path, job_id: str) -> tuple[str, str, str | None]:
     """
     res = subprocess.run(
         ["node", str(companion), "status", job_id, "--json"],
+        cwd=str(DISPATCH_ROOT),
         capture_output=True,
         text=True,
         timeout=STATUS_TIMEOUT_SECS,
@@ -455,6 +516,7 @@ def _fetch_result(companion: Path, job_id: str) -> tuple[int, str, str]:
     """Fetch Codex's final output. Returns (returncode, stdout, stderr)."""
     res = subprocess.run(
         ["node", str(companion), "result", job_id],
+        cwd=str(DISPATCH_ROOT),
         capture_output=True,
         text=True,
         timeout=RESULT_TIMEOUT_SECS,
@@ -739,6 +801,7 @@ def _best_effort_cancel(companion: Path, job_id: str) -> None:
     try:
         subprocess.run(
             ["node", str(companion), "cancel", job_id],
+            cwd=str(DISPATCH_ROOT),
             capture_output=True,
             timeout=CANCEL_TIMEOUT_SECS,
         )

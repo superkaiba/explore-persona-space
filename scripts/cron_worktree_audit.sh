@@ -11,6 +11,13 @@
 # (tightened to 1h when the filesystem holding the worktrees is >=90% full —
 # disk-pressure mode, threshold via EPM_WORKTREE_DISK_PRESSURE_PCT), and with
 # no uncommitted tracked changes. Human-named worktrees are never touched.
+# For fully-done (completed/archived) issue worktrees, --apply additionally
+# remediates two false-keep classes (2026-06-10 disk-full incident): kills
+# orphaned codex app-server holder pids (exact-pid, cmdline re-verified;
+# never when a real holder is present) and rescue-copies allowlisted
+# runtime-noise dirt (agent memories, pods.conf, pods_ephemeral.json) to
+# .claude/cache/worktree-rescue-<date>/ BEFORE removal. Dry-run only
+# classifies — it never kills or rescues.
 #
 # Output lives at logs/worktree_audit/YYYY-MM-DD.log (one file per day).
 
