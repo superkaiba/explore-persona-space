@@ -142,9 +142,14 @@ def _load_joint_shift_stats(eval_dir: Path, pair: str, seed: str) -> dict:
         for ctx in OLD_SOURCES
         if ctx in contexts and ctx not in sources
     }
+    # marker_slot_stats is the #538-onward 4-float storage-contract block;
+    # the #527 shift JSONs PREDATE it (the EOS-margin panel simply omits
+    # that dial — its delta_logp/bystander reads above are unaffected).
     eos_margin_deltas = []
     for ctx in d["eval_panel"]:
-        s = contexts[ctx]["marker_slot_stats"]
+        s = contexts[ctx].get("marker_slot_stats")
+        if s is None:
+            continue
         tr, ba = s["trained"], s["base"]
         eos_margin_deltas.append((tr["z_marker"] - tr["z_eos"]) - (ba["z_marker"] - ba["z_eos"]))
     return {
@@ -260,8 +265,8 @@ def figure_hero(
     ax.set_xlabel("Realized band landing of the joint cell (nat)")
     ax.set_ylabel("GD1 effective rank (joint SVD)")
     ax.set_title(
-        f"Envelope [{GD1_EFF_ENVELOPE[0]}, {GD1_EFF_ENVELOPE[1]}] shaded green; success band "
-        f"({deep_mean:.4f}, {shallow_mean:.4f}) shaded amber; dashes = pooled anchor means",
+        f"Envelope [{GD1_EFF_ENVELOPE[0]}, {GD1_EFF_ENVELOPE[1]}] green; "
+        f"success band ({deep_mean:.4f}, {shallow_mean:.4f}) amber",
         fontsize=9.5,
         loc="left",
         pad=6,
@@ -287,8 +292,7 @@ def figure_hero(
     ax.set_xlabel("Realized band landing of the joint cell (nat)")
     ax.set_ylabel("GD1 top-1 SV share (joint SVD)")
     ax.set_title(
-        f"Envelope [{GD1_SV_ENVELOPE[0]}, {GD1_SV_ENVELOPE[1]}] shaded; dashes = pooled "
-        "anchor means",
+        f"Envelope [{GD1_SV_ENVELOPE[0]}, {GD1_SV_ENVELOPE[1]}] shaded",
         fontsize=9.5,
         loc="left",
         pad=6,
@@ -308,7 +312,8 @@ def figure_hero(
         0.02,
         0.89,
         f"18 anchor joint cells (muted) + {n_new} new navy_seal x french_person joint cells "
-        "(bold); x positions are realized landings from the sweep JSONs, never the nominal band",
+        "(bold); dashes = pooled anchor means; x = realized landings from the sweep JSONs, "
+        "never the nominal band",
         ha="left",
         fontsize=10,
         color="#5A5A5A",
@@ -515,6 +520,9 @@ def figure_exploratory_training_marker(
             groups.append(
                 ("#568", NEW_COLOR, [v for c in new_cells for v in c["eos_margin_deltas"]])
             )
+        # The #527 shift JSONs predate the marker_slot_stats block — drop
+        # empty groups instead of plotting a hollow box.
+        groups = [g for g in groups if g[2]]
         bp = ax.boxplot(
             [g[2] for g in groups],
             tick_labels=[g[0] for g in groups],
