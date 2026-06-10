@@ -1,0 +1,120 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=3pt}
+
+\newcommand{\vc}{v_c}
+\newcommand{\vb}{v_b}
+
+\title{A rank-one working model of behavior leakage}
+\author{}
+\date{June 2026}
+
+\begin{document}
+\maketitle
+\vspace{-3em}
+
+\section{Setup}
+
+We study \emph{leakage}: a behavior trained into a model under one context (a system prompt, persona, or ICL prefix) also appearing under other, untrained contexts. The measured quantity is the trained$-$base log-probability of the behavior token(s) at the end of a bystander context's own on-policy response.
+
+Represent objects as residual-stream activation vectors at a fixed layer:
+\begin{itemize}
+\item a \textbf{context} $c$ by $\vc \in \mathbb{R}^d$, read at the last prompt token (mean over a probe set of user questions);
+\item a \textbf{behavior} $b$ by $\vb \in \mathbb{R}^d$, read at the position where the behavior is emitted (for the marker, the end-of-response slot).
+\end{itemize}
+The working premise is that, at that layer, the model's context-to-behavior mapping is approximately linear,
+\begin{equation}
+\vb \approx M \vc .
+\label{eq:linear}
+\end{equation}
+
+\section{The update rule}
+
+Suppose context $c'$ originally produces behavior $b'$, i.e.\ $v_{b'} = M v_{c'}$, and we fine-tune the model to instead produce $b''$ under $c'$. The model says the new map is
+\begin{equation}
+M' \;=\; M \;+\; \frac{(v_{b''} - v_{b'})\, v_{c'}^{\top}}{\lVert v_{c'} \rVert^{2}},
+\label{eq:update}
+\end{equation}
+a rank-one correction. The normalization makes the update fit the trained pair exactly: $M' v_{c'} = v_{b''}$. The induced change at any \emph{bystander} context $c$ is then
+\begin{equation}
+\Delta \vb(c) \;=\; \underbrace{(v_{b''} - v_{b'})}_{\text{fixed direction}} \;\cdot\; \underbrace{\frac{\langle v_{c'}, \vc \rangle}{\lVert v_{c'} \rVert^{2}}}_{\text{scalar coefficient}} .
+\label{eq:leak}
+\end{equation}
+Leakage to $c$ is a single behavior direction, scaled by how much $c$ overlaps the trained context.
+
+\section{Where the rule comes from}
+
+Three independent derivations land on the same shape.
+
+\paragraph{(a) Delta rule on a linear map.}
+One gradient step on $L = \tfrac12 \lVert v_{b''} - M v_{c'} \rVert^2$ gives $\Delta M = \eta\, (v_{b''} - M v_{c'})\, v_{c'}^{\top} = \eta\, (v_{b''} - v_{b'})\, v_{c'}^{\top}$. Equation~\eqref{eq:update} is this step with $\eta = 1/\lVert v_{c'}\rVert^2$ (the exact-fit step size). It is also the classical outer-product update of linear associative memories \cite{kohonen1972,anderson1972}; in that literature, leakage is \emph{crosstalk} between stored keys.
+
+\paragraph{(b) Kernel view of fine-tuning.}
+For a small parameter update $\delta\theta$, the function change at input $x$ is $\Delta f(x) \approx \nabla_\theta f(x)^{\top} \delta\theta$. SGD on a single training input $x'$ sets $\delta\theta \propto \nabla_\theta f(x') \times (\text{residual})$, so
+\begin{equation}
+\Delta f(x) \;\approx\; K(x, x') \times (\text{residual at } x'),
+\end{equation}
+where $K$ is the empirical neural tangent kernel \cite{jacot2018}. Kernel dynamics have been shown to approximate language-model fine-tuning in several regimes \cite{malladi2023}. Equation~\eqref{eq:leak} is this statement with the activation inner product $\langle v_{c'}, \vc \rangle$ standing in for $K$, and $(v_{b''}-v_{b'})$ as the residual.
+
+\paragraph{(c) LoRA is low-rank by construction.}
+A LoRA update $\Delta W = BA$ has rank $\le r$ \cite{hu2021}, and training toward a single behavior tends to concentrate it in its top singular direction. The rank-one form is the $r{=}1$ idealization.
+
+\section{What it implies}
+
+Each structural feature of equation~\eqref{eq:leak} is a falsifiable prediction.
+
+\begin{description}[style=nextline,itemsep=3pt]
+\item[P1 (shared direction).] The activation shift at the behavior read-out points in the \emph{same} direction $(v_{b''}-v_{b'})$ for every bystander context; only the scalar coefficient varies. Operationally: stack per-bystander shift vectors, run an SVD, and the top component should dominate and match the pre-training behavior delta.
+\item[P2 (overlap coefficient).] The per-bystander coefficient is $\langle v_{c'}, \vc\rangle / \lVert v_{c'}\rVert^2$. This explains why context cosine similarity predicts leakage, and it is \emph{asymmetric}: the coefficient from $c' \to c$ is $\cos\theta \cdot \lVert \vc \rVert / \lVert v_{c'} \rVert$, which is not invariant under swapping source and bystander. The norms carry the asymmetry.
+\item[P3 (residual scaling; behavior dependence).] The update magnitude scales with $\lVert v_{b''} - v_{b'} \rVert$, the gap between the trained behavior and what the source context already produces. If the source context already elicits the behavior (e.g.\ a system prompt instructing it), the residual is near zero and the rule predicts little leakage even when context similarity is high; a similarity-only predictor gets this case wrong. On the read-out side, the softmax compresses $\Delta \log P$ near saturation, so prior-dependence should appear in log-probability space and shrink in logit space.
+\item[P4 (additivity).] Training on two pairs sums their rank-one updates, so leakage from joint training should approximately equal the sum of the single-source leakages.
+\item[P5 (layer locality).] The relevant $\vc$ is the one feeding the behavior's computation, so the most predictive layer should sit where the behavior is computed: late for a next-token marker, earlier for higher-level behaviors such as sycophancy.
+\item[P6 (cross-behavior transfer).] The same update moves a \emph{different} behavior $b$ at a fixed context in proportion to the projection of $(v_{b''}-v_{b'})$ onto $b$'s read-out direction, extending the rule from context generalization to behavior generalization.
+\end{description}
+
+\section{How we are testing it}
+
+\begin{center}
+\small
+\begin{tabular}{@{}p{0.9cm}p{6.6cm}p{6.9cm}@{}}
+\toprule
+ & Test & Status / result \\
+\midrule
+P1 & SVD of per-context activation shifts after a marker implant vs misalignment SFT (\#521, controls \#551) & Surprising split: misalignment SFT shifts all 14 probed contexts along one shared direction (cos 0.96--0.98, $\sim$half the spectrum; seed-stable); the marker implant does not, and the trained context is the \emph{least} aligned. Contrast survives controls. Benign SFT also yields one shared direction (\#552, running), so the geometry may be generic to plain SFT; a positive-only marker retrain (\#561, running) tests whether the contrastive rig, not the behavior, sets the geometry. \\
+\addlinespace[2pt]
+P2 & Correlate base-model context distances with measured leakage across source$\times$bystander panels (\#502, \#489; sycophancy analogue) & Context similarity ranks marker leakage well ($|\rho|\approx0.76$--$0.79$ at layers 19--24) and extends to ICL/multi-turn contexts; on held-out persona panels geometry predicts the training-induced \emph{change} but the structure does not transfer across panels (\#553), and the base-model prior beats geometric distance on instruction contexts (\#532). The magnitude half of P2 is unsettled in \#521. \\
+\addlinespace[2pt]
+P3 & Vary how strongly the source context already elicits the behavior; instructed-marker break case; track logit vs log-prob spaces (\#500, \#531, \#532) & Growing support: the bystander's own prior on the behavior is the most consistently supported predictor across panels; logit-space tracking is now in place to separate read-out compression from the update itself. \\
+\addlinespace[2pt]
+P4 & Joint two-source training vs sum of singletons (\#520, \#527, \#538) & Not yet diagnostic: additivity cosine reads 0.99, but each singleton's shift matrix is itself near rank-one, so near-parallel constants sum trivially; the confound gates fail at every tested training depth. A regime where singleton shifts vary across contexts is needed. \\
+\addlinespace[2pt]
+P5 & Layer sweep of predictor quality per behavior & Consistent: marker leakage is best predicted at layers 19--24; sycophancy at layers 1--8 (best cell: MMD at layer 7). \\
+\addlinespace[2pt]
+P6 & Behavior-generalization testbed ($B \to B'$ leakage matrix, \#545); context testbed (\#537); formula-as-predictor (\#510) & Queued: \#537 running, \#545 and \#510 not yet run. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Known gaps}
+
+\begin{itemize}
+\item The linear premise~\eqref{eq:linear} is assumed, not fitted. A direct check is to regress $\vb$ on $\vc$ across many context--behavior pairs before training and measure how much variance a single linear map explains.
+\item The rule lives at one layer; training updates all layers. P5 is a heuristic patch, not a derivation.
+\item The P1 results carry a training-rig confound (contrastive marker-only loss vs plain SFT) until \#561 lands.
+\item The read-out is nonlinear (softmax over the unembedding), so activation-space predictions must be compared against logits, with log-probabilities treated as a compressed view near saturation.
+\end{itemize}
+
+\begin{thebibliography}{9}\small
+\bibitem{kohonen1972} T.~Kohonen. Correlation matrix memories. \emph{IEEE Trans.\ Computers}, 1972.
+\bibitem{anderson1972} J.~A.~Anderson. A simple neural network generating an interactive memory. \emph{Mathematical Biosciences}, 1972.
+\bibitem{jacot2018} A.~Jacot, F.~Gabriel, C.~Hongler. Neural tangent kernel: convergence and generalization in neural networks. \emph{NeurIPS}, 2018.
+\bibitem{malladi2023} S.~Malladi, A.~Wettig, D.~Yu, D.~Chen, S.~Arora. A kernel-based view of language model fine-tuning. \emph{ICML}, 2023.
+\bibitem{hu2021} E.~Hu et al. LoRA: low-rank adaptation of large language models. \emph{ICLR}, 2022.
+\end{thebibliography}
+
+\end{document}
