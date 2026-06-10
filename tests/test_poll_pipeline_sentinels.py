@@ -1259,6 +1259,106 @@ def test_poll_once_stalled_requires_shard_log_also_quiet(
     assert result.shard_log_mtime_sec_ago >= pp.STALL_SEC
 
 
+# ── dispatcher per-job log liveness (incident #521) ──────────────────────────
+#
+# The issue_519/521-style dispatcher writes one log per job under
+# ``<output_dir>/logs/*.log``, with ``output_dir`` typically
+# ``/workspace/explore-persona-space/eval_results/issue_<N>``. During a
+# CPU-bound judge-batch wait (Anthropic message-batch polling) the GPUs
+# are idle BY DESIGN and the main log is quiet, while the per-job log
+# appends every 30-60s — the only liveness signal. On 2026-06-10 a #521
+# tick declared the healthy EM-steering job ``stalled`` (pid_alive=True,
+# GPUs all 0, main log 1302s stale) because no probe globbed the per-job
+# dir. The fix widens the shard-log probe to ALSO glob
+# ``eval_results/issue_<N>{,_*}/logs/*.log`` into the same
+# ``SHARD_LOG_MTIME_EPOCH`` max; status routing is unchanged.
+
+
+def test_ssh_probe_heredoc_globs_dispatcher_perjob_logs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The probe heredoc must reach the dispatcher per-job log dir
+    (#521). The shell snippets are otherwise not under test, so pin the
+    glob patterns textually — dropping either one regresses a healthy
+    judge-batch wait back to false-``stalled``. The patterns keep the
+    issue-number match exact (``issue_521`` / ``issue_521_*``), never a
+    bare ``issue_521*`` (which would let issue 5 match issue 521)."""
+    captured: dict[str, str] = {}
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        captured["heredoc"] = cmd[-1]
+        return subprocess.CompletedProcess(
+            args=cmd, returncode=0, stdout=_probe_response(), stderr=""
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    pp._ssh_probe(
+        "epm-issue-521",
+        "/workspace/logs/issue-521.log",
+        "/workspace/logs/issue-521.pid",
+        521,
+    )
+    heredoc = captured["heredoc"]
+    assert "/workspace/explore-persona-space/eval_results/issue_521/logs/*.log" in heredoc
+    assert "/workspace/explore-persona-space/eval_results/issue_521_*/logs/*.log" in heredoc
+    # Narrowness guard: no bare `issue_521*` directory glob.
+    assert "eval_results/issue_521*/logs" not in heredoc
+
+
+def test_poll_once_fresh_dispatcher_perjob_log_keeps_status_running(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Incident #521 (2026-06-10 tick 21): pid alive, GPUs all idle (the
+    job is polling an external judge batch — CPU-bound by design), main
+    log 1302s stale, per-phase logs quiet — but the dispatcher per-job
+    log under ``eval_results/issue_521/logs/`` is fresh (45s). Its mtime
+    flows through ``SHARD_LOG_MTIME_EPOCH``, and that alone must keep
+    the verdict in ``running``."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    quiet = now_epoch - 1302  # the stale main-log age observed in #521
+    perjob_mtime = now_epoch - 45
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=quiet,
+                tail="2026-06-10 03:10:00 [phase=phase_e]",
+                cell_mtime_epoch=0,  # no cell log
+                phase_log_mtime_epoch=quiet,
+                shard_log_mtime_epoch=perjob_mtime,
+                gpu_util="0,0,0,0",  # idle BY DESIGN during the batch wait
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    result = pp.poll_once(
+        issue=521,
+        pod="epm-issue-521",
+        log_path="/workspace/logs/issue-521.log",
+        pid_file="/workspace/logs/issue-521.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "running", (
+        f"expected status=running (per-job log fresh) but got {result.status!r}; "
+        f"shard_log_mtime_sec_ago={result.shard_log_mtime_sec_ago} "
+        f"last_log_mtime_sec_ago={result.last_log_mtime_sec_ago}"
+    )
+    assert result.shard_log_mtime_sec_ago < pp.STALL_SEC
+
+
 # ── #488 stale-port auto-heal: SSH-failure counter -> refresh-from-api ────────
 
 

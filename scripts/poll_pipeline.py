@@ -41,8 +41,10 @@ intervals; taken over BOTH the top-level log and the freshest cell
 log), (b) every per-phase log under
 ``/workspace/logs/issue-<N>-*.log`` is also quiet for >stall_sec,
 (c) every shard / repo-rooted phase log under
-``/workspace/explore-persona-space/logs/issue_<N>{,_*}/*.log`` is
-also quiet for >stall_sec, and (d) the GPUs are idle. Only when all
+``/workspace/explore-persona-space/logs/issue_<N>{,_*}/*.log`` AND
+every dispatcher per-job log under
+``/workspace/explore-persona-space/eval_results/issue_<N>{,_*}/logs/*.log``
+is also quiet for >stall_sec, and (d) the GPUs are idle. Only when all
 four signals agree does the poll declare `stalled`; any fresh log
 OR a busy GPU keeps the run in `running`.
 
@@ -88,6 +90,21 @@ healthy multi-GPU run reads as `running`, not false-`stalled`. The
 match remains intentionally narrow (only paths embedding ``issue_<N>``
 or ``issue-<N>`` under the repo logs dir; not a broad recursive scan)
 to avoid coupling other pods' background writes to the verdict.
+
+Staleness ALSO folds in dispatcher per-job logs (incident #521
+judge-batch wait): the issue_519/521-style dispatcher writes one log
+per job under ``<output_dir>/logs/*.log``, with ``output_dir``
+typically ``/workspace/explore-persona-space/eval_results/issue_<N>``.
+During a CPU-bound phase that polls an external judge batch the GPUs
+are idle BY DESIGN and the main log is quiet, while the per-job log
+appends every 30-60s — the only liveness signal. On 2026-06-10 a #521
+tick declared the healthy EM-steering job ``stalled`` (pid alive,
+GPUs all 0, main log 1302s stale) because no probe reached
+``eval_results/issue_<N>/logs/``. The shard-log probe therefore ALSO
+globs ``eval_results/issue_<N>{,_*}/logs/*.log`` into the same
+max-mtime reduction. The match stays narrow on purpose: the directory
+must be exactly ``issue_<N>`` or ``issue_<N>_<suffix>`` (a bare
+``issue_<N>*`` glob would let issue 5 match issue 521's directories).
 
 Dead: PID not alive AND last phase line is NOT `done` (clean exit
 should always end with `[phase=done]`).
@@ -304,9 +321,10 @@ class PollResult:
     # summary records WHY a healthy long-phase run stayed in `running`
     # despite a quiet top-level + cell log.
     phase_log_mtime_sec_ago: int = 10**9
-    # Shard / repo-rooted phase log freshness (#488). ``10**9`` means
-    # neither layout exists yet (defaults to "very old" so the absence
-    # never by itself keeps a stalled verdict from firing).
+    # Shard / repo-rooted phase log freshness (#488 shard layouts +
+    # #521 dispatcher per-job logs). ``10**9`` means no covered layout
+    # exists yet (defaults to "very old" so the absence never by itself
+    # keeps a stalled verdict from firing).
     shard_log_mtime_sec_ago: int = 10**9
     gpu_util: str = "unknown"
 
@@ -361,18 +379,23 @@ def _ssh_probe(
       live flat at ``/workspace/logs/issue-<N>-<phase>.log``; the two
       globs don't overlap.
     * ``shard_log_mtime_epoch`` — max mtime over repo-rooted shard /
-      phase logs (incident #488). Covers two extra layouts neither the
-      cell-log nor the per-phase-log probe sees:
+      phase / per-job logs (incidents #488 + #521). Covers three extra
+      layouts neither the cell-log nor the per-phase-log probe sees:
       (1) ``/workspace/explore-persona-space/logs/issue_<issue>/*.log``
       — nested subdirectory holding per-GPU shard logs (e.g.
       ``phase1_g0.log``..``phase1_g7.log``);
       (2) ``/workspace/explore-persona-space/logs/issue_<issue>_*.log``
       — flat repo-rooted phase logs (e.g. ``issue_<N>_phase0.log``,
-      the #331 / #444 family layout).
-      Excludes ``*.json`` / ``*.processed`` sentinels under (2). ``"0"``
-      when neither layout exists. The two patterns share an mtime
-      reduction (max), so a healthy run keeping EITHER layout fresh
-      stays in ``running``.
+      the #331 / #444 family layout);
+      (3) ``/workspace/explore-persona-space/eval_results/
+      issue_<issue>{,_*}/logs/*.log`` — dispatcher per-job logs
+      (``<output_dir>/logs/<job>.log``, the issue_519/521 dispatcher
+      convention; #521), the only fresh signal during a CPU-bound
+      judge-batch wait with GPUs idle by design.
+      Excludes ``*.json`` / ``*.processed`` sentinels. ``"0"`` when no
+      covered layout exists. All patterns share an mtime reduction
+      (max), so a healthy run keeping ANY layout fresh stays in
+      ``running``.
     * ``gpu_util`` — comma-separated per-GPU ``utilization.gpu``
       integers (e.g. ``"95,87,42,90"``). ``"unknown"`` when
       ``nvidia-smi`` is unavailable or errors (fail-safe — see
@@ -441,11 +464,24 @@ def _ssh_probe(
     # purpose — paths must embed `issue_<N>` (underscore) under the repo
     # logs directory, so unrelated logs from other pods don't pollute
     # the freshness signal.
+    #
+    # Dispatcher per-job logs (#521): the issue_519/521-style dispatcher
+    # writes one log per job under `<output_dir>/logs/*.log`, with
+    # `output_dir` typically `eval_results/issue_<N>` under the repo
+    # root. During a CPU-bound judge-batch wait (GPUs idle by design,
+    # main log quiet) the per-job log is the ONLY fresh signal — a #521
+    # tick false-declared `stalled` on a healthy EM-steering job
+    # (2026-06-10) because no probe reached it. Folded into the same
+    # SHARD_LOG max. The two extra globs keep the issue-number match
+    # exact (`issue_<N>` or `issue_<N>_<suffix>`; a bare `issue_<N>*`
+    # would let issue 5 match issue 521's directories).
     shard_log_probe = (
         f"SHARD_LOG_MAX=$("
         f"shopt -s nullglob; "
         f"for f in /workspace/explore-persona-space/logs/issue_{issue}/*.log "
-        f"         /workspace/explore-persona-space/logs/issue_{issue}_*.log; do "
+        f"         /workspace/explore-persona-space/logs/issue_{issue}_*.log "
+        f"         /workspace/explore-persona-space/eval_results/issue_{issue}/logs/*.log "
+        f"         /workspace/explore-persona-space/eval_results/issue_{issue}_*/logs/*.log; do "
         f'  case "$f" in *.processed|*.json) continue ;; esac; '
         f'  stat -c %Y "$f" 2>/dev/null; '
         f"done | sort -n | tail -1); "
@@ -1125,8 +1161,11 @@ def poll_once(
     # `last_mtime_ago`, #405) AND every per-phase log under
     # `/workspace/logs/issue-<N>-*.log` (#468) AND every shard /
     # repo-rooted phase log under `/workspace/explore-persona-space/
-    # logs/issue_<N>{,_*}/*.log` (#488) AND the GPUs must ALL be
-    # quiet/idle for >STALL_SEC. The shard-log conjunction (#488)
+    # logs/issue_<N>{,_*}/*.log` (#488) plus every dispatcher per-job
+    # log under `/workspace/explore-persona-space/eval_results/
+    # issue_<N>{,_*}/logs/*.log` (#521, folded into the same shard-log
+    # max) AND the GPUs must ALL be quiet/idle for >STALL_SEC. The
+    # shard-log conjunction (#488)
     # prevents a false stall when a multi-GPU launcher fans out per-GPU
     # shard logs under a subdirectory and the inner loop's per-shard
     # write cadence (e.g. ~3 min between writes for i488 Pass B across
