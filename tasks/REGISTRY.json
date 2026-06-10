@@ -3358,7 +3358,7 @@
     },
     "563": {
       "goal": "Determine whether the persona-prompt-driven rise in the base model's marker prior (the main driver of the contrast shrinkage in #558) is intrinsic to the base model's context processing or depends on the fine-tuned models' completion content, by reading the base model's 4-float slot statistics at the end of its OWN greedy completions under the same five system-prompt contexts with no adapter in the loop.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/563",
       "status": "interpreting",

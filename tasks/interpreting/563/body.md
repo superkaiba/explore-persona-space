@@ -5,7 +5,7 @@ title: 'Role prompts alone raise the base model''s marker prior at the end of it
 kind: experiment
 tags: []
 created_at: '2026-06-10T18:18:24Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 558
 goal: 'Determine whether the persona-prompt-driven rise in the base model''s marker
   prior (the main driver of the contrast shrinkage in #558) is intrinsic to the base
