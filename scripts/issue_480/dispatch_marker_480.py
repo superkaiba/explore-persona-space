@@ -351,39 +351,55 @@ def _build_training_pool_for_source(
     )
 
 
-def _train_and_merge(
-    source: str,
-    seed: int,
-    train_jsonl: Path,
-    output_dir: Path,
-    max_length: int,
-) -> tuple[Path, Path]:
-    """Phase 1 — in-process LoRA train + merge.
+def _parent_train_cfg(source: str, seed: int, max_length: int):
+    """Build the PARENT recipe's TrainLoraConfig (round-1 behavioral identity).
 
-    ``max_length`` is plumbed in (not hard-coded) so the SAME budget that the
-    pool-build guard validated against is what TRL's ``SFTConfig.max_length``
-    receives at training time. Round-2 incident (pod-480) was caused by a
-    hard-coded ``max_length=1024`` here while base on-policy R can be up to
-    2048 tokens — TRL right-truncated rows over 1024, dropped the trailing
-    ``<|im_end|>``, and crashed the ``MarkerOnlyDataCollator(suppress_at_
-    post_response_slot=True)`` branch ~2 min into Phase 1.
+    Extracted from ``_train_and_merge`` (round-6) so the config-equality
+    regression test in ``tests/test_i480_band_stop_dispatch.py`` pins every
+    effective value against the round-1 run without training.
+
+    Plan §10 Reproducibility Card + plan §11 Decision Rationale:
+    lr=1e-5 (matches BOTH #411 AND #460/#474 marker rig);
+    lora_dropout=0.0 (marker-rig convention, NOT 0.05 from #411 — see plan §11 row);
+    marker_only_loss=True + tail_tokens=0 + #474 suppress_at_post_response_slot=True.
+    max_length: round-3 fix — pulled from build-time guard's
+    DEFAULT_TRAIN_MAX_LENGTH so pool-build and training see the same budget.
+    Source: .claude/rules/marker-leakage-measurement.md (R-cap ~1024, eval-cap
+    >=2048) + #260 (training-truncation -> silent zeros on the DV).
+
+    Round-6 parent-recipe pin (code-review v5 binding concern
+    ``parent-recipe-inherits-live-band-stop``): main's TrainLoraConfig now
+    defaults ``marker_band_stop=True``, and ``train_lora`` attaches the LIVE
+    [5,12] band-stop callback whenever ``marker_only_loss AND
+    marker_band_stop``. The round-1 run executed on the pre-band-stop
+    issue-480 branch (no callback; full 3 epochs to deliberate saturation),
+    so a bare ``--recipe parent`` launch on THIS branch would early-stop
+    training AND (via hf_upload=True at the round-1 adapter paths) overwrite
+    the historical HF adapters with differently-trained ones. Pin it OFF —
+    exactly the deliberate-saturation case ``marker-training-recipe.md``
+    names for ``marker_band_stop=False``.
+
+    Default-drift sweep vs the parent SHA 4b2b4bbee (every TrainLoraConfig
+    field that did not exist there, and why no other pin is needed):
+    - ``marker_band_stop=True`` — the ONLY behaviorally-live new default on
+      this path (gates the callback attach); pinned False below.
+    - ``marker_band_low/high_nats, marker_band_eval_every_steps,
+      marker_band_min_steps, marker_band_probe_max_rows,
+      marker_band_probe_max_length, marker_band_log_only,
+      marker_band_trajectory_path`` — inert once the callback never attaches
+      (``_maybe_attach_marker_band_stop`` returns before reading them).
+    - ``save_only_model=False`` — inert under ``save_strategy="no"`` (and
+      forwarded to SFTConfig only-when-True).
+    - ``lora_targets=None`` — train_lora resolves None to the identical
+      historical 7-module list (q/k/v/o + gate/up/down) with use_rslora=True,
+      byte-identical to the parent SHA's hard-coded LoraConfig.
+    All remaining field defaults are byte-identical between 4b2b4bbee and
+    this branch (verified by direct dataclass-field extraction, round 6).
     """
     from explore_persona_space.experiments.marker_implant_480 import IM_END_ID, MARKER_TEXT
-    from explore_persona_space.train.sft import TrainLoraConfig, merge_lora, train_lora
+    from explore_persona_space.train.sft import TrainLoraConfig
 
-    adapter_dir = output_dir / "adapter"
-    merged_dir = output_dir / "merged"
-    adapter_dir.mkdir(parents=True, exist_ok=True)
-
-    # Plan §10 Reproducibility Card + plan §11 Decision Rationale:
-    # lr=1e-5 (matches BOTH #411 AND #460/#474 marker rig);
-    # lora_dropout=0.0 (marker-rig convention, NOT 0.05 from #411 — see plan §11 row);
-    # marker_only_loss=True + tail_tokens=0 + #474 suppress_at_post_response_slot=True.
-    # max_length: round-3 fix — pulled from build-time guard's
-    # DEFAULT_TRAIN_MAX_LENGTH so pool-build and training see the same budget.
-    # Source: .claude/rules/marker-leakage-measurement.md (R-cap ~1024, eval-cap
-    # >=2048) + #260 (training-truncation -> silent zeros on the DV).
-    cfg = TrainLoraConfig(
+    return TrainLoraConfig(
         gpu_id=0,
         epochs=3,
         lr=1e-5,
@@ -405,10 +421,40 @@ def _train_and_merge(
         marker_tail_tokens=0,
         marker_suppress_at_post_response_slot=True,
         marker_im_end_token_id=IM_END_ID,
+        # Round-6 pin — see docstring: parent = deliberate saturation, no
+        # band-stop; without this a default launch early-stops AND clobbers
+        # the round-1 HF adapters.
+        marker_band_stop=False,
         hf_upload=True,
         hf_repo=HF_MODEL_REPO,
         hf_path_in_repo=f"adapters/issue_480/{source}_seed{seed}",
     )
+
+
+def _train_and_merge(
+    source: str,
+    seed: int,
+    train_jsonl: Path,
+    output_dir: Path,
+    max_length: int,
+) -> tuple[Path, Path]:
+    """Phase 1 — in-process LoRA train + merge.
+
+    ``max_length`` is plumbed in (not hard-coded) so the SAME budget that the
+    pool-build guard validated against is what TRL's ``SFTConfig.max_length``
+    receives at training time. Round-2 incident (pod-480) was caused by a
+    hard-coded ``max_length=1024`` here while base on-policy R can be up to
+    2048 tokens — TRL right-truncated rows over 1024, dropped the trailing
+    ``<|im_end|>``, and crashed the ``MarkerOnlyDataCollator(suppress_at_
+    post_response_slot=True)`` branch ~2 min into Phase 1.
+    """
+    from explore_persona_space.train.sft import merge_lora, train_lora
+
+    adapter_dir = output_dir / "adapter"
+    merged_dir = output_dir / "merged"
+    adapter_dir.mkdir(parents=True, exist_ok=True)
+
+    cfg = _parent_train_cfg(source, seed, max_length)
     log.info(
         "[phase=train_%s] cfg: lr=%s r=%s alpha=%s dropout=%s epochs=%d "
         "marker_text=%r tail_tokens=%d suppress_post=%s",
@@ -484,8 +530,19 @@ def _phase2b(
     eval_out_dir: Path,
     sentinel_path: Path | None = None,
     adapter_config_path: Path | None = None,
+    slot_stats: str = "legacy",
 ) -> Path:
-    """Phase 2b — HF logprob in fresh subprocess (vLLM workers reaped)."""
+    """Phase 2b — HF logprob in fresh subprocess (vLLM workers reaped).
+
+    ``slot_stats`` selects the scoring path inside i480_phase2b_logprob.py
+    (round-6 fix, Codex v5 critical): the default ``"legacy"`` keeps the
+    parent recipe on the verbatim round-1 ``_resolve_post_response_slot`` /
+    ``_score_one`` implementation with the parent's exact output schema; the
+    band_stop recipe opts in to ``"four-float"`` (compute_marker_slot_stats,
+    #530 storage contract + gauge assert). The flag is appended only when
+    non-legacy so the parent path's subprocess command stays identical to
+    the round-1 invocation.
+    """
     sentinel = sentinel_path or Path(f"/workspace/logs/issue-480-{source}-phase2b-results.json")
     out_path = eval_out_dir / "marker_logprob_eval.json"
     cmd = [
@@ -506,6 +563,8 @@ def _phase2b(
         "--sentinel-path",
         str(sentinel),
     ]
+    if slot_stats != "legacy":
+        cmd += ["--slot-stats", slot_stats]
     if adapter_config_path is not None:
         cmd += ["--adapter-config-path", str(adapter_config_path)]
     log.info("[phase=phase2b_%s] spawning: %s", source, " ".join(cmd))
@@ -590,34 +649,18 @@ def _run_one_cell(
     }
 
 
-def _train_band_stop(
-    source: str,
-    seed: int,
-    train_jsonl: Path,
-    output_dir: Path,
-    max_length: int,
-    slab_root: Path,
-) -> tuple[Path, Path]:
-    """band_stop Phase 1 — in-process LoRA train to the fixed cap, log-only band callback.
+def _band_stop_train_cfg(source: str, seed: int, max_length: int, traj_path: Path):
+    """Build the band_stop recipe's TrainLoraConfig.
 
-    Returns ``(adapter_dir, trajectory_path)``. The adapter_dir root holds the
-    cap-end adapter; ``checkpoint-<k>`` subdirs every 20 steps form the
-    pickable ladder. Per-cell WandB hygiene (the parent-body-flagged
-    instrumentation fix): ``wandb.finish()`` after training + assert
-    ``wandb.run is None`` so the NEXT cell's HF WandbCallback re-inits a
-    fresh run under its own run_name.
+    Shared by ``_train_band_stop`` AND the adapter-config parity preflight
+    (``_assert_band_stop_adapter_parity``) so the preflight checks the REAL
+    training config — a drift between a preflight copy and the call site
+    would defeat the check.
     """
-    import wandb
-
     from explore_persona_space.experiments.marker_implant_480 import IM_END_ID, MARKER_TEXT
-    from explore_persona_space.train.sft import TrainLoraConfig, train_lora
+    from explore_persona_space.train.sft import TrainLoraConfig
 
-    adapter_dir = output_dir / "adapter"
-    adapter_dir.mkdir(parents=True, exist_ok=True)
-    traj_path = slab_root / "trajectories" / f"{source}_seed{seed}_trajectory.json"
-    traj_path.parent.mkdir(parents=True, exist_ok=True)
-
-    cfg = TrainLoraConfig(
+    return TrainLoraConfig(
         gpu_id=0,
         epochs=BAND_STOP_EPOCH_CAP,
         lr=BAND_STOP_LR,
@@ -650,6 +693,35 @@ def _train_band_stop(
         # train_lora's best-effort soft-fail upload is therefore disabled.
         hf_upload=False,
     )
+
+
+def _train_band_stop(
+    source: str,
+    seed: int,
+    train_jsonl: Path,
+    output_dir: Path,
+    max_length: int,
+    slab_root: Path,
+) -> tuple[Path, Path]:
+    """band_stop Phase 1 — in-process LoRA train to the fixed cap, log-only band callback.
+
+    Returns ``(adapter_dir, trajectory_path)``. The adapter_dir root holds the
+    cap-end adapter; ``checkpoint-<k>`` subdirs every 20 steps form the
+    pickable ladder. Per-cell WandB hygiene (the parent-body-flagged
+    instrumentation fix): ``wandb.finish()`` after training + assert
+    ``wandb.run is None`` so the NEXT cell's HF WandbCallback re-inits a
+    fresh run under its own run_name.
+    """
+    import wandb
+
+    from explore_persona_space.train.sft import train_lora
+
+    adapter_dir = output_dir / "adapter"
+    adapter_dir.mkdir(parents=True, exist_ok=True)
+    traj_path = slab_root / "trajectories" / f"{source}_seed{seed}_trajectory.json"
+    traj_path.parent.mkdir(parents=True, exist_ok=True)
+
+    cfg = _band_stop_train_cfg(source, seed, max_length, traj_path)
     # §8 risk row: a forgotten log-only flag would fire the live [5,12] stop
     # sub-emission and kill the primary emission DV by construction.
     if cfg.marker_band_log_only is not True:
@@ -790,6 +862,33 @@ def _pick_anchors(ladder: list[dict]) -> dict:
     }
 
 
+def _next_repick_step(
+    ladder_steps: list[int], current: int, *, ceiling_violated: bool
+) -> tuple[int | None, str | None]:
+    """Pure re-pick stepper for the gated anchor-eval loop (plan §4 step 6).
+
+    Extracted (round-6) so the plan-critical boundary rules carry a committed
+    unit test. Precedence is decided by the CALLER (ceiling checked before
+    floor — a bimodal panel steps BACK); this helper only resolves the next
+    ladder step in the requested direction with the ±REPICK_STRIDE_STEPS
+    stride.
+
+    Returns ``(next_step, flag)``: exactly one side is non-None. Flags:
+    ``repick_exhausted_low`` when no ladder step sits at or below
+    ``current - stride`` (first-checkpoint clamp); ``floor_limited`` when no
+    ladder step sits at or above ``current + stride`` (cap-end clamp).
+    """
+    if ceiling_violated:
+        cands = [s for s in ladder_steps if s <= current - REPICK_STRIDE_STEPS]
+        if not cands:
+            return None, "repick_exhausted_low"
+        return max(cands), None
+    cands = [s for s in ladder_steps if s >= current + REPICK_STRIDE_STEPS]
+    if not cands:
+        return None, "floor_limited"
+    return min(cands), None
+
+
 def _bystander_gate(logprob_path: Path, source: str) -> dict:
     """Bystander-resolution gate on a Phase-2b output (plan §4 step 6).
 
@@ -914,6 +1013,7 @@ def _eval_anchor(
         step_dir,
         sentinel_path=Path(f"/workspace/logs/issue-480-bsr-{source}-phase2b-step{step}.json"),
         adapter_config_path=adapter_config,
+        slot_stats="four-float",
     )
     log.info("[phase=cell_%s] rmtree(%s) for MooseFS quota", source, merged_dir)
     shutil.rmtree(merged_dir, ignore_errors=False)
@@ -1045,18 +1145,14 @@ def _run_one_cell_band_stop(
         # Precedence: ceiling first (stepping BACK fixes saturation; a
         # simultaneously floored+saturated bimodal panel is treated as
         # saturated — documented in anchor_pick.json via the gate dict).
-        if not gate["sub_ceiling"]:
-            cands = [s for s in ladder_steps if s <= current - REPICK_STRIDE_STEPS]
-            if not cands:
-                flags.append("repick_exhausted_low")
-                break
-            current = max(cands)
-        else:
-            cands = [s for s in ladder_steps if s >= current + REPICK_STRIDE_STEPS]
-            if not cands:
-                flags.append("floor_limited")
-                break
-            current = min(cands)
+        next_step, clamp_flag = _next_repick_step(
+            ladder_steps, current, ceiling_violated=not gate["sub_ceiling"]
+        )
+        if next_step is None:
+            assert clamp_flag is not None
+            flags.append(clamp_flag)
+            break
+        current = next_step
 
     if accepted_step is None:
         # Keep the evaluated checkpoint closest to satisfying the gate:
@@ -1313,6 +1409,83 @@ def _run_concordance_package(slab_root: Path, figures_dir: Path) -> dict:
     return {"skipped": False, "n_rows": n_rows, "stats_paths": stats_paths}
 
 
+# HF location of the parent run's published adapter_config.json — the
+# reference for the plan-assumption-12 rsLoRA / target-module parity check.
+PARENT_ADAPTER_CONFIG_HF_PATH = "adapters/issue_480/villain_seed42/adapter_config.json"
+
+# train_lora's _DEFAULT_LORA_TARGETS (sft.py) — the list cfg.lora_targets=None
+# resolves to. Mirrored here (it is a function-local literal, not importable)
+# for the parity check below; train_lora always sets use_rslora=True and never
+# sets modules_to_save.
+_TRAIN_LORA_DEFAULT_TARGETS = (
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj",
+)
+
+
+def _assert_band_stop_adapter_parity(max_length: int) -> dict:
+    """Plan assumption 12 evidence (round-6, code-review v5 minor): the
+    band_stop TrainLoraConfig must produce the SAME load-bearing PEFT adapter
+    geometry as the parent run's published adapter — r, lora_alpha,
+    lora_dropout, use_rslora, target_modules, modules_to_save. A silent
+    geometry drift would smuggle a second variable into the
+    one-variable-recipe-swap design AND invalidate the gauge-free logit
+    readout assumptions.
+
+    Downloads the parent's ``adapter_config.json`` from HF and diffs it
+    against the geometry the REAL band_stop config (via
+    ``_band_stop_train_cfg``) will hand to train_lora's LoraConfig. Runs at
+    band_stop preflight, before any GPU work; fails LOUD on any mismatch.
+    """
+    from huggingface_hub import hf_hub_download
+
+    cached = hf_hub_download(repo_id=HF_MODEL_REPO, filename=PARENT_ADAPTER_CONFIG_HF_PATH)
+    with open(cached) as f:
+        parent = json.load(f)
+
+    cfg = _band_stop_train_cfg(
+        source="_parity_probe",
+        seed=DEFAULT_SEED,
+        max_length=max_length,
+        traj_path=Path("/tmp/_i480_parity_probe_trajectory.json"),
+    )
+    expected_targets = sorted(cfg.lora_targets or _TRAIN_LORA_DEFAULT_TARGETS)
+    # (parent_value, band_stop_value) per load-bearing key.
+    checks: dict[str, tuple[object, object]] = {
+        "r": (parent.get("r"), cfg.lora_r),
+        "lora_alpha": (parent.get("lora_alpha"), cfg.lora_alpha),
+        "lora_dropout": (parent.get("lora_dropout"), cfg.lora_dropout),
+        "use_rslora": (parent.get("use_rslora"), True),
+        "target_modules": (sorted(parent.get("target_modules") or []), expected_targets),
+        "modules_to_save": (parent.get("modules_to_save"), None),
+    }
+    mismatches = {k: v for k, v in checks.items() if v[0] != v[1]}
+    for key, (parent_val, ours) in checks.items():
+        log.info(
+            "[phase=preflight] adapter-config parity %s: parent=%s band_stop=%s %s",
+            key,
+            parent_val,
+            ours,
+            "MISMATCH" if key in mismatches else "OK",
+        )
+    if mismatches:
+        raise RuntimeError(
+            "band_stop adapter-config parity FAILED vs parent "
+            f"{HF_MODEL_REPO}/{PARENT_ADAPTER_CONFIG_HF_PATH}: {mismatches} — "
+            "the recipe swap is no longer single-variable; refusing to launch."
+        )
+    log.info(
+        "[phase=preflight] adapter-config parity vs parent PASSED (%d keys)",
+        len(checks),
+    )
+    return {k: v[1] for k, v in checks.items()}
+
+
 def _run_band_stop_pipeline(args, sources: list[str], max_length: int) -> int:
     """band_stop recipe driver: per-cell loop → Phase 3 → concordance ×2 → sentinel.
 
@@ -1337,6 +1510,10 @@ def _run_band_stop_pipeline(args, sources: list[str], max_length: int) -> int:
             "this checkout lacks main's band-stop machinery; the branch must be cut "
             "from current main, never run from the parent issue-480 branch."
         )
+
+    # Plan assumption 12: rsLoRA + target-module parity vs the parent's
+    # published HF adapter_config.json (fail-loud, before any GPU work).
+    _assert_band_stop_adapter_parity(max_length)
 
     os.environ["WANDB_PROJECT"] = BAND_STOP_WANDB_PROJECT
     log.info(
@@ -1533,7 +1710,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     log.info(
         "[phase=dispatch_start] UNIFIED smoke=sweep-with-one-source: same "
-        "_run_one_cell function path; same env injection; same teardown."
+        "%s function path; same env injection; same teardown.",
+        "_run_one_cell_band_stop" if args.recipe == "band_stop" else "_run_one_cell",
     )
 
     # Pre-flight asserts (tokenizer marker id, im_end id).

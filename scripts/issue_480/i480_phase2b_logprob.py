@@ -18,6 +18,23 @@ Reads Phase 2a's ``r_trained.json``, then for ONE source:
    partial in i480_analyze.py).
 4. Writes ``marker_logprob_eval.json`` under the per-source out-dir.
 
+Scoring modes (round-6 fix — Codex v5 critical ``--recipe parent`` byte-identity):
+
+``--slot-stats legacy`` (DEFAULT)
+    The verbatim round-1 implementation: ``_resolve_post_response_slot`` +
+    ``_score_one`` (bf16 ``log_softmax``), parent's exact per-cell row,
+    per-panel aggregate, and top-level payload key sets. A bare parent-recipe
+    invocation (no new flags) reproduces the round-1 output schema exactly.
+
+``--slot-stats four-float``
+    The band-stop recipe's path: ``compute_marker_slot_stats`` (float32
+    softmax, batch_size=1 — the same unpadded serial compute pattern) with
+    the #530 four-float storage contract (z_marker / z_eos / logZ / logp per
+    side) + derived EOS margin and Δz_marker, additively alongside every
+    legacy field. Requires (and is required by) ``--adapter-config-path``
+    gauge assertion support; the dispatcher passes this mode ONLY in
+    ``--recipe band_stop``.
+
 If running this in the same Python process as Phase 2a would crash on
 the vLLM-teardown bug (see gotchas.md), but this script is a FRESH
 process — kernel reaped vLLM workers when 2a exited.
@@ -42,6 +59,7 @@ from pathlib import Path
 from statistics import median
 
 import torch
+import torch.nn.functional as F
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -64,6 +82,81 @@ def _git_sha() -> str:
         return "unknown"
 
 
+# ── legacy (round-1 verbatim) scoring path ───────────────────────────────────
+# Ported unchanged from the parent SHA 4b2b4bbee — the `--recipe parent`
+# byte-identity contract reads through these two functions.
+
+
+def _resolve_post_response_slot(
+    tokenizer, panel_system_prompt: str, q: str, r_trained: str, marker_text: str
+) -> tuple[list[int], int, int]:
+    """Build the teacher-forced sequence and return (full_ids, slot, prompt_len).
+
+    Sequence: ``T_panel(q) + R_trained + marker``.
+
+    The ``slot`` is the index of the marker token in ``full_ids``; the model's
+    teacher-forced log-prob distribution at position ``slot - 1`` predicts
+    the token at ``slot``. We require the slot to be in the completion
+    region (i.e. > P, where P is the length of the prompt+R encoding).
+
+    Returns:
+        (full_ids, slot, prompt_len_with_R) — slot points at the marker
+        token; the post-response slot for log-prob computation is
+        ``slot - 1`` (the position whose distribution predicts the marker).
+    """
+    # Prompt-only (with generation prompt) tokenization
+    msgs_prompt: list[dict[str, str]] = []
+    if panel_system_prompt and panel_system_prompt != "":
+        msgs_prompt.append({"role": "system", "content": panel_system_prompt})
+    msgs_prompt.append({"role": "user", "content": q})
+    prompt_text = tokenizer.apply_chat_template(
+        msgs_prompt, tokenize=False, add_generation_prompt=True
+    )
+    # Append R_trained literally as the assistant response BODY (no chat-template
+    # wrapping — we deliberately stitch the marker AFTER R without an <|im_end|>
+    # in between so the marker sits at the "response continuation" slot the
+    # collator's negative rows pushed against).
+    prefix_text = prompt_text + r_trained
+    prefix_ids = tokenizer.encode(prefix_text, add_special_tokens=False)
+    marker_ids = tokenizer.encode(marker_text, add_special_tokens=False)
+    if len(marker_ids) != 1:
+        raise RuntimeError(
+            f"marker tokenized to {len(marker_ids)} tokens ({marker_ids}); expected 1"
+        )
+    full_ids = prefix_ids + marker_ids
+    slot = len(prefix_ids)  # index of the marker token in full_ids
+    return full_ids, slot, len(prefix_ids)
+
+
+@torch.no_grad()
+def _score_one(
+    model,
+    tokenizer,
+    full_ids: list[int],
+    slot: int,
+    marker_id: int,
+    device,
+) -> tuple[float, bool, int]:
+    """Compute (log P(marker @ slot), argmax_is_marker, R_trained_token_len).
+
+    The R_trained token length is ``slot - prompt_len_with_template`` — but
+    here ``prompt_len_with_template`` was already absorbed into ``slot``
+    accounting upstream; we just return slot here for the caller to use.
+    """
+    if slot < 1 or slot >= len(full_ids):
+        raise RuntimeError(f"invalid slot {slot} for length {len(full_ids)}")
+    input_ids = torch.tensor([full_ids[: slot + 1]], device=device, dtype=torch.long)
+    out = model(input_ids=input_ids)
+    logits = out.logits[0, slot - 1]
+    logp = F.log_softmax(logits, dim=-1)
+    log_p_marker = float(logp[marker_id].item())
+    argmax_id = int(torch.argmax(logits).item())
+    return log_p_marker, (argmax_id == marker_id), slot
+
+
+# ── four-float (band_stop) scoring path ──────────────────────────────────────
+
+
 def _build_slot_context(tokenizer, panel_system_prompt: str, q: str, r_trained: str) -> str:
     """Build the teacher-forced prefix text whose LAST token precedes the marker slot.
 
@@ -74,7 +167,7 @@ def _build_slot_context(tokenizer, panel_system_prompt: str, q: str, r_trained: 
     position the collator's negative rows pushed against).
 
     The post-response slot is then the next-token distribution at the final
-    prefix position — exactly the slot the parent's ``_resolve_post_response_
+    prefix position — exactly the slot the legacy ``_resolve_post_response_
     slot``/``_score_one`` pair read (prefix encoded with
     ``add_special_tokens=False``, logits at index ``len(prefix_ids) - 1``),
     and exactly where ``compute_marker_slot_stats`` reads (``logits[i, -1]``
@@ -127,7 +220,21 @@ def _cell_row(
     }
 
 
-def main(argv: list[str] | None = None) -> int:
+# Per-cell aggregate keys added ONLY in four-float mode (medians of the
+# four-float row fields). Legacy mode never emits them — parent schema parity.
+FOUR_FLOAT_ROW_KEYS = (
+    "z_marker_trained",
+    "z_eos_trained",
+    "logZ_trained",
+    "z_marker_base",
+    "z_eos_base",
+    "logZ_base",
+    "eos_margin_delta",
+    "delta_z_marker",
+)
+
+
+def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the legacy branch is the verbatim 4b2b4bbee port (byte-identity contract); extracting it into helpers would defeat the line-for-line diffability against the parent SHA
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=str, required=True)
     parser.add_argument("--seed", type=int, default=SEED)
@@ -142,13 +249,23 @@ def main(argv: list[str] | None = None) -> int:
         help="Split trained-then-base into separate model loads (HBM-tight fallback).",
     )
     parser.add_argument(
+        "--slot-stats",
+        choices=("legacy", "four-float"),
+        default="legacy",
+        help="Scoring path. 'legacy' (default) = the verbatim round-1 "
+        "_resolve_post_response_slot/_score_one implementation with the parent's "
+        "exact output schema (the --recipe parent byte-identity contract). "
+        "'four-float' = compute_marker_slot_stats with the #530 storage contract "
+        "(band_stop recipe only).",
+    )
+    parser.add_argument(
         "--adapter-config-path",
         type=Path,
         default=None,
         help="Path to the evaluated checkpoint's adapter_config.json. When given, "
         "assert_gauge_free_adapter_config fails LOUD if the adapter touches "
         "lm_head/embed_tokens or sets modules_to_save (the trained - base logit "
-        "readout is invalid otherwise). Default None preserves the parent path.",
+        "readout is invalid otherwise). Requires --slot-stats four-float.",
     )
     parser.add_argument(
         "--sentinel-path",
@@ -156,6 +273,8 @@ def main(argv: list[str] | None = None) -> int:
         default=Path("/workspace/logs/issue-480-phase2b-results.json"),
     )
     args = parser.parse_args(argv)
+    if args.adapter_config_path is not None and args.slot_stats != "four-float":
+        parser.error("--adapter-config-path requires --slot-stats four-float")
 
     logging.basicConfig(
         level=os.environ.get("EPS_LOG_LEVEL", "INFO"),
@@ -165,20 +284,21 @@ def main(argv: list[str] | None = None) -> int:
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    from explore_persona_space.eval.marker_logprob import (
-        assert_gauge_free_adapter_config,
-        compute_marker_slot_stats,
-    )
     from explore_persona_space.experiments.marker_implant_480 import (
         IM_END_ID,
         MARKER_ID,
         MARKER_TEXT,
     )
 
+    four_float = args.slot_stats == "four-float"
+    log.info("[phase=phase2b] slot-stats mode: %s", args.slot_stats)
+
     # Gauge assert (band-stop recipe): the EOS-margin / Δz_marker readouts
     # below are valid only when LoRA never touched the unembedding.
     gauge_asserted = False
     if args.adapter_config_path is not None:
+        from explore_persona_space.eval.marker_logprob import assert_gauge_free_adapter_config
+
         with open(args.adapter_config_path) as f:
             adapter_cfg = json.load(f)
         assert_gauge_free_adapter_config(adapter_cfg, context=str(args.adapter_config_path))
@@ -224,73 +344,153 @@ def main(argv: list[str] | None = None) -> int:
 
     cells: list[dict] = []
 
-    # Per-panel context lists (the prefix text whose last token precedes the
-    # post-response slot). batch_size=1 keeps every forward unpadded — exactly
-    # the parent's serial compute pattern, so the legacy log_p_* values are
-    # reproduced on the same slot definition (float32 softmax vs the legacy
-    # bf16 log_softmax is the only numeric difference).
-    contexts_by_panel: dict[str, list[str]] = {}
-    r_len_by_panel: dict[str, list[int]] = {}
-    for panel in panel_personas:
-        sys_p = panel_system_prompts[panel]
-        contexts_by_panel[panel] = [
-            _build_slot_context(tokenizer, sys_p, q, r_trained_all[panel][qi])
-            for qi, q in enumerate(questions)
-        ]
-        r_len_by_panel[panel] = [
-            len(tokenizer.encode(r, add_special_tokens=False)) for r in r_trained_all[panel]
-        ]
+    if not four_float:
+        # ── LEGACY mode: the round-1 loops, verbatim (parent SHA 4b2b4bbee) ──
+        if args.two_pass:
+            # Pass 1: TRAINED model, score every (panel, q).
+            log.info("[phase=phase2b] two-pass mode: TRAINED first.")
+            model_t = _load_model(str(args.merged_model_path))
+            trained_scores: dict[tuple[str, int], tuple[float, bool, int]] = {}
+            full_ids_cache: dict[tuple[str, int], tuple[list[int], int]] = {}
+            for panel in panel_personas:
+                sys_p = panel_system_prompts[panel]
+                for qi, q in enumerate(questions):
+                    r = r_trained_all[panel][qi]
+                    full_ids, slot, _plen = _resolve_post_response_slot(
+                        tokenizer, sys_p, q, r, MARKER_TEXT
+                    )
+                    full_ids_cache[(panel, qi)] = (full_ids, slot)
+                    trained_scores[(panel, qi)] = _score_one(
+                        model_t, tokenizer, full_ids, slot, MARKER_ID, device
+                    )
+            del model_t
+            gc.collect()
+            torch.cuda.empty_cache()
 
-    def _score_panels(model) -> dict[str, list[dict[str, float]]]:
-        """Four-float + argmax slot stats per (panel, q) under ``model``."""
-        out: dict[str, list[dict[str, float]]] = {}
-        for panel in panel_personas:
-            out[panel] = compute_marker_slot_stats(
-                model,
-                tokenizer,
-                contexts=contexts_by_panel[panel],
-                marker_text=MARKER_TEXT,
-                batch_size=1,
-                device=str(device),
-                eos_token_id=IM_END_ID,
-                include_argmax=True,
-            )
-        return out
-
-    if args.two_pass:
-        # Pass 1: TRAINED model, score every (panel, q).
-        log.info("[phase=phase2b] two-pass mode: TRAINED first.")
-        model_t = _load_model(str(args.merged_model_path))
-        trained_stats = _score_panels(model_t)
-        del model_t
-        gc.collect()
-        torch.cuda.empty_cache()
-
-        # Pass 2: BASE model.
-        log.info("[phase=phase2b] two-pass mode: BASE next.")
-        model_b = _load_model(BASE_MODEL)
-        base_stats = _score_panels(model_b)
-        del model_b
-    else:
-        # One-pass: load both models simultaneously.
-        model_t = _load_model(str(args.merged_model_path))
-        model_b = _load_model(BASE_MODEL)
-        trained_stats = _score_panels(model_t)
-        base_stats = _score_panels(model_b)
-        del model_t, model_b
-
-    for panel in panel_personas:
-        for qi in range(len(questions)):
-            cells.append(
-                _cell_row(
-                    panel=panel,
-                    qi=qi,
-                    trained=trained_stats[panel][qi],
-                    base=base_stats[panel][qi],
-                    marker_id=MARKER_ID,
-                    r_trained_token_len=r_len_by_panel[panel][qi],
+            # Pass 2: BASE model.
+            log.info("[phase=phase2b] two-pass mode: BASE next.")
+            model_b = _load_model(BASE_MODEL)
+            for (panel, qi), (full_ids, slot) in full_ids_cache.items():
+                log_p_t, argmax_t, _ = trained_scores[(panel, qi)]
+                log_p_b, _argmax_b, _ = _score_one(
+                    model_b, tokenizer, full_ids, slot, MARKER_ID, device
                 )
-            )
+                cells.append(
+                    {
+                        "panel": panel,
+                        "q_idx": qi,
+                        "log_p_trained": log_p_t,
+                        "log_p_base": log_p_b,
+                        "marker_delta": log_p_t - log_p_b,
+                        "emission": bool(argmax_t),
+                        "r_trained_token_len": len(
+                            tokenizer.encode(r_trained_all[panel][qi], add_special_tokens=False)
+                        ),
+                    }
+                )
+            del model_b
+        else:
+            # One-pass: load both models simultaneously.
+            model_t = _load_model(str(args.merged_model_path))
+            model_b = _load_model(BASE_MODEL)
+            for panel in panel_personas:
+                sys_p = panel_system_prompts[panel]
+                for qi, q in enumerate(questions):
+                    r = r_trained_all[panel][qi]
+                    full_ids, slot, _plen = _resolve_post_response_slot(
+                        tokenizer, sys_p, q, r, MARKER_TEXT
+                    )
+                    log_p_t, argmax_t, _ = _score_one(
+                        model_t, tokenizer, full_ids, slot, MARKER_ID, device
+                    )
+                    log_p_b, _argmax_b, _ = _score_one(
+                        model_b, tokenizer, full_ids, slot, MARKER_ID, device
+                    )
+                    cells.append(
+                        {
+                            "panel": panel,
+                            "q_idx": qi,
+                            "log_p_trained": log_p_t,
+                            "log_p_base": log_p_b,
+                            "marker_delta": log_p_t - log_p_b,
+                            "emission": bool(argmax_t),
+                            "r_trained_token_len": len(
+                                tokenizer.encode(r, add_special_tokens=False)
+                            ),
+                        }
+                    )
+            del model_t, model_b
+    else:
+        # ── FOUR-FLOAT mode (band_stop recipe): #530 storage contract ──
+        from explore_persona_space.eval.marker_logprob import compute_marker_slot_stats
+
+        # Per-panel context lists (the prefix text whose last token precedes
+        # the post-response slot). batch_size=1 keeps every forward unpadded —
+        # exactly the legacy serial compute pattern, so the legacy log_p_*
+        # values are reproduced on the same slot definition (float32 softmax
+        # vs the legacy bf16 log_softmax is the only numeric difference).
+        contexts_by_panel: dict[str, list[str]] = {}
+        r_len_by_panel: dict[str, list[int]] = {}
+        for panel in panel_personas:
+            sys_p = panel_system_prompts[panel]
+            contexts_by_panel[panel] = [
+                _build_slot_context(tokenizer, sys_p, q, r_trained_all[panel][qi])
+                for qi, q in enumerate(questions)
+            ]
+            r_len_by_panel[panel] = [
+                len(tokenizer.encode(r, add_special_tokens=False)) for r in r_trained_all[panel]
+            ]
+
+        def _score_panels(model) -> dict[str, list[dict[str, float]]]:
+            """Four-float + argmax slot stats per (panel, q) under ``model``."""
+            out: dict[str, list[dict[str, float]]] = {}
+            for panel in panel_personas:
+                out[panel] = compute_marker_slot_stats(
+                    model,
+                    tokenizer,
+                    contexts=contexts_by_panel[panel],
+                    marker_text=MARKER_TEXT,
+                    batch_size=1,
+                    device=str(device),
+                    eos_token_id=IM_END_ID,
+                    include_argmax=True,
+                )
+            return out
+
+        if args.two_pass:
+            # Pass 1: TRAINED model, score every (panel, q).
+            log.info("[phase=phase2b] two-pass mode: TRAINED first.")
+            model_t = _load_model(str(args.merged_model_path))
+            trained_stats = _score_panels(model_t)
+            del model_t
+            gc.collect()
+            torch.cuda.empty_cache()
+
+            # Pass 2: BASE model.
+            log.info("[phase=phase2b] two-pass mode: BASE next.")
+            model_b = _load_model(BASE_MODEL)
+            base_stats = _score_panels(model_b)
+            del model_b
+        else:
+            # One-pass: load both models simultaneously.
+            model_t = _load_model(str(args.merged_model_path))
+            model_b = _load_model(BASE_MODEL)
+            trained_stats = _score_panels(model_t)
+            base_stats = _score_panels(model_b)
+            del model_t, model_b
+
+        for panel in panel_personas:
+            for qi in range(len(questions)):
+                cells.append(
+                    _cell_row(
+                        panel=panel,
+                        qi=qi,
+                        trained=trained_stats[panel][qi],
+                        base=base_stats[panel][qi],
+                        marker_id=MARKER_ID,
+                        r_trained_token_len=r_len_by_panel[panel][qi],
+                    )
+                )
 
     gc.collect()
     torch.cuda.empty_cache()
@@ -318,21 +518,14 @@ def main(argv: list[str] | None = None) -> int:
         r_len_vals = [r["r_trained_token_len"] for r in panel_rows]
         n_q = len(panel_rows)
         marker_delta_std = float(_stdev(marker_delta_vals)) if n_q >= 2 else 0.0
-        # Four-float storage contract (#530) aggregates — additive fields;
-        # legacy keys below are unchanged.
-        four_float_aggs = {
-            f"median_{k}": median([r[k] for r in panel_rows])
-            for k in (
-                "z_marker_trained",
-                "z_eos_trained",
-                "logZ_trained",
-                "z_marker_base",
-                "z_eos_base",
-                "logZ_base",
-                "eos_margin_delta",
-                "delta_z_marker",
-            )
-        }
+        # Four-float storage contract (#530) aggregates — additive fields
+        # emitted ONLY in four-float mode; legacy keys below are unchanged
+        # (legacy mode reproduces the parent's exact per-panel key set).
+        four_float_aggs = (
+            {f"median_{k}": median([r[k] for r in panel_rows]) for k in FOUR_FLOAT_ROW_KEYS}
+            if four_float
+            else {}
+        )
         per_panel[panel] = {
             **four_float_aggs,
             "median_marker_delta": median(marker_delta_vals),
@@ -363,16 +556,20 @@ def main(argv: list[str] | None = None) -> int:
         "base_model": BASE_MODEL,
         "n_panel": len(panel_personas),
         "n_questions": len(questions),
-        "adapter_config_path": (
-            str(args.adapter_config_path) if args.adapter_config_path is not None else None
-        ),
-        "gauge_asserted": gauge_asserted,
         "per_panel": per_panel,
         "per_cell_rows": cells,
         "git_commit_sha": _git_sha(),
         "hostname": socket.gethostname(),
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
+    if four_float:
+        # Additive provenance keys — NEVER emitted in legacy mode (the parent
+        # top-level payload key set is part of the byte-identity contract).
+        out_payload["slot_stats"] = args.slot_stats
+        out_payload["adapter_config_path"] = (
+            str(args.adapter_config_path) if args.adapter_config_path is not None else None
+        )
+        out_payload["gauge_asserted"] = gauge_asserted
     args.out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(args.out_path, "w") as f:
         json.dump(out_payload, f, ensure_ascii=False)
