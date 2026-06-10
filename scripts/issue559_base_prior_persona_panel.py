@@ -128,41 +128,64 @@ def kill_vllm_children() -> None:
             ch.kill()
 
 
-def nvidia_smi_assert_clean(gpu_id: int = 0) -> None:
-    """Warn-loud if a foreign PID still holds the GPU after vLLM teardown.
+def nvidia_smi_assert_clean(gpu_id: int = 0, n_retries: int = 1, grace_s: float = 5.0) -> None:
+    """FAIL-LOUD if any compute PID still holds the GPU after vLLM teardown.
 
-    CVD-aware single-GPU query (per agent memory: orphan-PID checks on
-    multi-GPU pods must not flag sibling processes on other GPUs).
+    Single-GPU ``--id`` query (per agent memory: orphan-PID checks on
+    multi-GPU pods must not flag sibling processes on other GPUs). Re-probes
+    once after ``grace_s`` so a teardown race (a worker exiting between
+    ``kill_vllm_children``'s wait and this probe) cannot false-positive.
+
+    A PID that survives BOTH probes raises ``RuntimeError`` BEFORE the HF
+    scoring phase reloads the 7B model: on this job's dedicated single GPU
+    there is NO tolerated foreign PID — a survivor is either our orphaned
+    vLLM worker or a foreign process, and either re-allocates the freed
+    memory and OOMs the bf16 reload (gotchas rule; #399 round-11 incident).
+    Only a failed nvidia-smi PROBE stays warn-only (no GPU introspection
+    available — e.g. the CPU smoke on the VM, where there is no GPU to leak).
     """
-    try:
-        out = subprocess.check_output(
-            [
-                "nvidia-smi",
-                f"--id={gpu_id}",
-                "--query-compute-apps=pid,process_name",
-                "--format=csv,noheader",
-            ],
-            text=True,
-            timeout=10,
-            env={**os.environ},  # explicit env-passthrough
-        ).strip()
-    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
-        log.warning("nvidia-smi probe failed (%s); skipping orphan check", e)
-        return
     my_pid = os.getpid()
-    leaks = [
-        line.strip()
-        for line in out.splitlines()
-        if line.strip()
-        and line.split(",")[0].strip().isdigit()
-        and int(line.split(",")[0].strip()) != my_pid
-    ]
-    if leaks:
-        log.warning(
-            "nvidia-smi reports surviving PIDs on GPU %d after teardown: %r — HF reload may OOM",
-            gpu_id,
-            leaks,
-        )
+    leaks: list[str] = []
+    for attempt in range(n_retries + 1):
+        try:
+            out = subprocess.check_output(
+                [
+                    "nvidia-smi",
+                    f"--id={gpu_id}",
+                    "--query-compute-apps=pid,process_name",
+                    "--format=csv,noheader",
+                ],
+                text=True,
+                timeout=10,
+                env={**os.environ},  # explicit env-passthrough
+            ).strip()
+        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
+            log.warning("nvidia-smi probe failed (%s); skipping orphan check", e)
+            return
+        leaks = [
+            line.strip()
+            for line in out.splitlines()
+            if line.strip()
+            and line.split(",")[0].strip().isdigit()
+            and int(line.split(",")[0].strip()) != my_pid
+        ]
+        if not leaks:
+            log.info("[teardown] GPU %d clean after vLLM teardown", gpu_id)
+            return
+        if attempt < n_retries:
+            log.warning(
+                "GPU %d still busy after teardown (%r) — re-probing in %.0fs (teardown race grace)",
+                gpu_id,
+                leaks,
+                grace_s,
+            )
+            time.sleep(grace_s)
+    raise RuntimeError(
+        f"vLLM teardown leak: compute PIDs survive on GPU {gpu_id} after "
+        f"{n_retries + 1} probes ({grace_s:.0f}s grace): {leaks!r} — refusing to start "
+        "the HF scoring phase (the survivor would re-allocate freed memory and OOM "
+        "the bf16 reload)"
+    )
 
 
 # ── Panel inputs ──────────────────────────────────────────────────────────────

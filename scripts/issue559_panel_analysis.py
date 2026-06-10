@@ -130,6 +130,23 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+# ── Canonical question identity ───────────────────────────────────────────────
+
+
+def _canonical_eval_questions() -> list[str]:
+    """The 20 committed eval questions (main) — the panel's question identity.
+
+    Function-local import (the module runs ``bootstrap()`` at import time);
+    same source the pod-side ``load_panel`` reads, so VM analysis and pod
+    measurement gate on the IDENTICAL question list + order.
+    """
+    from run_100_persona_leakage import EVAL_QUESTIONS
+
+    questions = list(EVAL_QUESTIONS)
+    assert len(questions) == 20, len(questions)
+    return questions
+
+
 # ── Stub generator (VM smoke input; assert-guarded against production use) ────
 
 
@@ -138,12 +155,14 @@ def write_stub(args: argparse.Namespace) -> None:
 
     Synthetic per-question margins are seeded off the parquet's persona-mean
     ``margin_base`` so the join, ranking, collinearity gate and figures all
-    exercise realistic correlation structure. Every payload carries
-    ``is_stub: true`` and the analysis refuses it without ``--allow-stub``.
+    exercise realistic correlation structure. Questions are the CANONICAL
+    ``EVAL_QUESTIONS`` (the question-identity gate in ``load_prior`` is never
+    relaxed, stub or not). Every payload carries ``is_stub: true`` and the
+    analysis refuses it without ``--allow-stub``.
     """
     df = p553.load_i478_panel(args.i478_parquet)
     personas = sorted(df["held_out_persona"].unique().tolist())
-    questions = [f"stub question {i}" for i in range(20)]
+    questions = _canonical_eval_questions()
     base_by_p = df.groupby("held_out_persona")["margin_base"].mean()
     rng = np.random.default_rng(559)
 
@@ -237,15 +256,61 @@ def write_stub(args: argparse.Namespace) -> None:
 
 
 def load_prior(args: argparse.Namespace) -> dict:
-    """Load + guard the prior JSON; return persona-level frames + per-q arrays."""
+    """Load + guard the prior JSON (stub fence, S0 flag, question-identity gate).
+
+    Mirrors the pod-side ``question_identity_gate`` on the ANALYSIS side: the
+    parquet's ``question_idx`` is meaningful only against the canonical
+    ``EVAL_QUESTIONS`` order, so a ``--limit-questions`` pod artifact
+    (``is_stub: false``) sitting at the production path, or any question
+    drift, must die here rather than silently misalign the join. The identity
+    check is NEVER relaxed; ``--allow-stub`` relaxes only the 35×20 coverage
+    count.
+    """
     payload = json.loads(args.prior_json.read_text())
     assert payload.get("schema_version") == SCHEMA_VERSION, payload.get("schema_version")
-    if payload.get("is_stub", False) and not args.allow_stub:
+    is_stub = bool(payload.get("is_stub", False))
+    if is_stub and not args.allow_stub:
         raise SystemExit(
             f"{args.prior_json} is a STUB (smoke input) — refusing without --allow-stub"
         )
     if not payload.get("s0_validation_pass", False):
         raise SystemExit("prior JSON records s0_validation_pass=false — measurement invalid")
+
+    canonical = _canonical_eval_questions()
+    if payload.get("eval_questions") != canonical:
+        raise SystemExit(
+            f"QUESTION-IDENTITY GATE FAILED (analysis): {args.prior_json} eval_questions "
+            "!= canonical EVAL_QUESTIONS (order-sensitive, scripts/"
+            "run_100_persona_leakage.py) — refusing to join onto question_idx"
+        )
+    per_persona = payload.get("per_persona", {})
+    n_q = len(canonical)
+    bad_lens = {
+        p: bad
+        for p, rec in per_persona.items()
+        if (bad := {k: len(v) for k, v in rec.items() if k.endswith("_per_q") and len(v) != n_q})
+    }
+    if bad_lens:
+        raise SystemExit(
+            f"QUESTION-IDENTITY GATE FAILED (analysis): per-q array length != {n_q} for "
+            f"{sorted(bad_lens)} (got {bad_lens}) — partial-question artifact, refusing"
+        )
+    if not (is_stub and args.allow_stub):
+        n_slots = sum(len(rec["logp_marker_per_q"]) for rec in per_persona.values())
+        if len(per_persona) != 35 or n_slots != 700:
+            raise SystemExit(
+                "COVERAGE GATE FAILED (analysis): expected 35 personas × 20 questions = "
+                f"700 per-q records, got {len(per_persona)} personas / {n_slots} slots — "
+                "a --limit-personas/--limit-questions pod artifact must never reach the "
+                "production analysis"
+            )
+    if args.r_base_own.exists():
+        r_own = json.loads(args.r_base_own.read_text())
+        if r_own.get("eval_questions") != canonical:
+            raise SystemExit(
+                f"QUESTION-IDENTITY GATE FAILED (analysis): {args.r_base_own} "
+                "eval_questions != canonical EVAL_QUESTIONS — R/prior question drift"
+            )
     return payload
 
 
@@ -486,6 +551,108 @@ def classify_outcome(prior_blk: dict, parity_run: dict, parity_cell: dict) -> di
         "prior_ci_cell": cell_ci,
         "paired_matched_minus_prior_ci_run": pr,
         "paired_matched_minus_prior_ci_cell": pc,
+    }
+
+
+# ── §13.3 question-matched truncation sensitivity ─────────────────────────────
+
+
+def truncation_matched_block(
+    df: pd.DataFrame,
+    prior_df: pd.DataFrame,
+    payload: dict,
+    cell_of_run: dict[str, str],
+    args,
+) -> dict:
+    """QUESTION-MATCHED truncation sensitivity — DV and prior on the SAME questions.
+
+    Builds the per-(persona, question_idx) keep mask from the prior JSON's
+    ``finish_reason_per_q`` (kept = not truncated), filters the question-level
+    PARQUET rows by that mask BEFORE aggregation, re-aggregates
+    ``margin_trained`` AND ``margin_base`` over the kept questions only, joins
+    the prior re-aggregated on the IDENTICAL mask (``prior_margin_own_trunc_
+    excl`` from ``prior_frames``), then re-runs the within-run ranking +
+    paired parity on the matched aggregates. The mask is run-independent (the
+    prior has no run dimension), so every run drops the same (persona, q)
+    cells. Runs only when ``truncation_rate > 0``; at 0 it is the identity
+    re-run, so a skip is recorded instead (the expected production case).
+    """
+    trunc_rate = float(payload["summary"]["truncation_rate"])
+    if trunc_rate == 0.0:
+        return {"skipped": "truncation_rate == 0"}
+
+    keep_pairs: set[tuple[str, int]] = set()
+    dropped_pairs: list[tuple[str, int]] = []
+    for p, rec in payload["per_persona"].items():
+        for q_idx, fr in enumerate(rec["finish_reason_per_q"]):
+            if fr != "length":
+                keep_pairs.add((p, q_idx))
+            else:
+                dropped_pairs.append((p, q_idx))
+    fully_dropped = sorted(
+        p for p in payload["per_persona"] if all((p, i) not in keep_pairs for i in range(20))
+    )
+
+    mask = np.fromiter(
+        (
+            (p, int(qi)) in keep_pairs
+            for p, qi in zip(df["held_out_persona"], df["question_idx"], strict=True)
+        ),
+        dtype=bool,
+        count=len(df),
+    )
+    kept_df = df[mask]
+    n_runs = df["run_id"].nunique()
+    assert len(df) - len(kept_df) == n_runs * len(dropped_pairs), (
+        len(df) - len(kept_df),
+        n_runs * len(dropped_pairs),
+    )
+    # Same groupby recipe as p553.aggregate_run_persona; its full-panel shape
+    # asserts (2,800 rows, 35 personas/run) are adapted to the kept subset.
+    agg_m = (
+        kept_df.groupby(["run_id", "cell_id", "seed", "K", "held_out_persona"], as_index=False)
+        .agg(
+            margin_trained=("margin_trained", "mean"),
+            margin_base=("margin_base", "mean"),
+        )
+        .sort_values(["run_id", "held_out_persona"])
+        .reset_index(drop=True)
+    )
+    assert len(agg_m) == n_runs * (35 - len(fully_dropped)), len(agg_m)
+    agg_m = agg_m.merge(
+        prior_df[["held_out_persona", "prior_margin_own_trunc_excl"]].rename(
+            columns={"prior_margin_own_trunc_excl": "prior_matched"}
+        ),
+        on="held_out_persona",
+        how="left",
+        validate="many_to_one",
+    )
+    assert not agg_m["prior_matched"].isna().any(), "matched-prior join produced NaN"
+
+    rank_m = within_run_ranking(agg_m, ["margin_base", "prior_matched"], DV_COL, cell_of_run, args)
+    parity_run = paired_difference_block(
+        rank_m["margin_base"]["per_run_rho"], rank_m["prior_matched"]["per_run_rho"], args
+    )
+    parity_cell = paired_difference_cellaxis(
+        rank_m["margin_base"]["per_run_rho"],
+        rank_m["prior_matched"]["per_run_rho"],
+        cell_of_run,
+        args,
+    )
+    return {
+        "truncation_rate": trunc_rate,
+        "n_slots_dropped": len(dropped_pairs),
+        "n_personas_fully_dropped": len(fully_dropped),
+        "personas_fully_dropped": fully_dropped,
+        "n_parquet_rows_kept": len(kept_df),
+        "n_parquet_rows_dropped": int(len(df) - len(kept_df)),
+        "ranking": rank_m,
+        "paired_matched_minus_prior_run_axis": parity_run,
+        "paired_matched_minus_prior_cell_axis": parity_cell,
+        "method": "per-(persona, question_idx) keep mask from finish_reason_per_q; parquet "
+        "rows filtered pre-aggregation; margin_trained, margin_base AND the prior all "
+        "re-aggregated over the SAME kept questions (prior side = "
+        "prior_margin_own_trunc_excl, identical mask)",
     }
 
 
@@ -1047,6 +1214,12 @@ def main() -> int:
     print(f"[outcome] {outcome['classification']}: {outcome['read']}")
 
     # ── §13.3 truncation sensitivity ─────────────────────────────────────────
+    # PRIMARY variant: QUESTION-MATCHED — DV, margin_base AND prior re-aggregated
+    # over the same kept questions (skips itself when truncation_rate == 0).
+    trunc_matched = truncation_matched_block(df, prior_df, payload, cell_of_run, args)
+    # SECONDARY labeled variant (prior side only, round-1 read): the prior is
+    # re-aggregated on kept questions while the DV + margin_base stay
+    # all-question aggregates — kept for continuity, never the headline read.
     trunc_slice = agg[~agg["prior_margin_own_trunc_excl"].isna()].copy()
     n_personas_dropped_trunc = 35 - trunc_slice["held_out_persona"].nunique()
     rank_trunc = within_run_ranking(
@@ -1181,7 +1354,11 @@ def main() -> int:
         },
         "outcome_classification": outcome,
         "sensitivity": {
-            "truncation_excluded": {
+            "truncation_question_matched": trunc_matched,
+            "truncation_excluded_prior_side_only": {
+                "variant": "SECONDARY — prior re-aggregated on kept questions; DV and "
+                "margin_base remain all-question aggregates (truncation_question_matched "
+                "above is the registered primary)",
                 "n_personas_dropped": int(n_personas_dropped_trunc),
                 "ranking": rank_trunc,
                 "paired_matched_minus_prior": parity_trunc,
