@@ -78,3 +78,4 @@
 {"ts": "2026-06-10T18:55:39Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "VM judge recovery: first launch died at row 25/4400 on Anthropic 529 OverloadedError (not in the retry tuple). Hot-fix e80323b83 adds InternalServerError + OverloadedError to the transient set; judge relaunched with --resume under a 50-attempt supervisor (pid 2349887). ETA ~10-12h."}
 {"ts": "2026-06-10T19:18:01Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "VM judge healthy post-storm: 529 burst absorbed by the deepened backoff (e76d782cd, 8 retries/240s cap); steady 200s at ~3s/call. ~13.2k calls remaining, ETA ~11h."}
 {"ts": "2026-06-10T19:36:51Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "vm-judge tick: judged 150/4400 supervisor=ALIVE complete=0"}
+{"ts": "2026-06-10T19:46:18Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "vm-judge tick: judged 225/4400 supervisor=ALIVE complete=0"}
