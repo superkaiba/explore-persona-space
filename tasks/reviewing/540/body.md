@@ -323,3 +323,4 @@ uv run python scripts/issue540_length_nuisance_figure.py
 # round-2 supplement (CPU, over committed JSONs + raw completions):
 uv run python scripts/issue540_length_nuisance_supplement.py
 ```
+- **Methodology reference:** [docs/methodology/issue_540.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_540.md) · [gist](https://gist.github.com/superkaiba/61ad1a920c1c9560d48482b19edada37)
