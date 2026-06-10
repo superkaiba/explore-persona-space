@@ -249,9 +249,8 @@ SSH MCP server (`mcp-ssh-manager`, user-level `~/.claude/mcp.json`; `pod.py conf
 |---|---|---|
 | Eval results (aggregated JSON) | Git on issue branch (`eval_results/`) | Manual commit; upload-verifier syncs Step 8 |
 | Raw completions | HF data repo `superkaiba1/explore-persona-space-data/issueN_<slug>/raw_completions/{condition}_seed{S}.json` | Auto via `upload_raw_completions_to_data_repo()` |
-| Model checkpoints / merged adapters | HF model repo `superkaiba1/explore-persona-space` | Auto after training |
+| LoRA adapters (canonical; merged dirs opt-in via `EPM_UPLOAD_MERGED=1` / `upload_merged: true` — distributed full fine-tunes exempt, the full checkpoint stays canonical) | HF model repo `superkaiba1/explore-persona-space` | Auto after training |
 | Datasets (JSONL training mixes) | HF data repo | Auto after generation |
-| LoRA adapters | HF model repo | Auto after training |
 | Figures/plots (PNG, PDF, meta.json) | Git (`figures/issue_N/`) | Manual commit; verifier syncs Step 8 |
 | Training metrics | WandB live run (project=`<experiment_name>`) | Auto during training |
 | Intermediate analysis tensors plan-referenced as downstream inputs (per-cell shift tensors, cached activations) | HF data repo `issueN_<slug>/analysis_tensors/` | Before pod termination (#521) |
