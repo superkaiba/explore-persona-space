@@ -3258,8 +3258,8 @@
       "goal": "Run the same superposition test with the marker implant band-stopped at source log P(marker) \u2212 base in [9, 13] nat (between #527's [5, 12] and #538's [14, 20] landings) to test whether singleton effective rank, joint top-1 SV share, and singleton cosine have ANY monotone gradient along the recipe's strength axis, so the kill claim of 'no gradient over a 3x dial range' extends to 'no gradient at any reachable dial under marker-only loss'.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/550",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/550",
+      "status": "awaiting_promotion",
       "title": "A third dial point shows a small but reliable monotone gradient in the marker-implant geometry across the dial axis, all six cells still inside the parent envelope (MODERATE confidence)"
     },
     "551": {
