@@ -52,25 +52,68 @@ def load_per_cell(eval_dir: Path) -> list[dict]:
     return out
 
 
+# Per-pair trained-negative panels (from the run-of-record body /
+# Reproducibility "contrastive negatives (PER-PAIR; Amendment A1)").
+PAIR_TRAINED_NEGS = {
+    "florist__medical_doctor": {"assistant", "librarian", "programmer", "chef"},
+    "librarian__police_officer": {
+        "assistant",
+        "kindergarten_teacher",
+        "programmer",
+        "chef",
+    },
+}
+
+
 def load_per_pair_arm_dlogp(eval_dir: Path) -> dict:
-    """Mean source vs bystander Δ log P per (pair, arm) across seeds + contexts."""
+    """Per-role mean Delta log P per (pair, arm), aggregated across seeds.
+
+    Splits the eval panel into four roles per (pair, arm):
+      - trained_src: persona was an arm of the trained source for THIS cell
+        (singleton arm: only the trained source; joint arm: both pair sources)
+      - untrained_src: pair source NOT trained on in this arm
+        (singleton arms only; empty for joint)
+      - trained_neg: persona is in the pair-local trained-negative panel
+        (4 personas per pair; the panel is pair-dependent, so a persona can
+        switch role across pairs)
+      - held_out: persona is in the eval panel but in none of the above
+    """
     out: dict = {}
     for f in sorted((eval_dir / "eval").glob("*__shift.json")):
         d = json.load(open(f))
         pair = d["pair_id"]
         arm = d["arm"]
         a, b = pair.split("__")
-        src_vals: list[float] = []
-        byst_vals: list[float] = []
+        neg_set = PAIR_TRAINED_NEGS[pair]
+
+        # The arm name encodes which source was trained on:
+        #   A_only -> trained source is a; untrained is b
+        #   B_only -> trained source is b; untrained is a
+        #   joint  -> trained source is BOTH a and b
+        roles = {"trained_src": [], "untrained_src": [], "trained_neg": [], "held_out": []}
         for ctx_name, ctx in d["contexts"].items():
-            if ctx_name in (a, b):
-                src_vals.append(ctx["delta_logp_marker"])
+            dlp = ctx["delta_logp_marker"]
+            if ctx_name == a:
+                if arm in ("A_only", "joint"):
+                    roles["trained_src"].append(dlp)
+                else:
+                    roles["untrained_src"].append(dlp)
+            elif ctx_name == b:
+                if arm in ("B_only", "joint"):
+                    roles["trained_src"].append(dlp)
+                else:
+                    roles["untrained_src"].append(dlp)
+            elif ctx_name in neg_set:
+                roles["trained_neg"].append(dlp)
             else:
-                byst_vals.append(ctx["delta_logp_marker"])
+                roles["held_out"].append(dlp)
+
         key = (pair, arm)
-        out.setdefault(key, {"src": [], "byst": []})
-        out[key]["src"].extend(src_vals)
-        out[key]["byst"].extend(byst_vals)
+        bucket = out.setdefault(
+            key, {"trained_src": [], "untrained_src": [], "trained_neg": [], "held_out": []}
+        )
+        for k, v in roles.items():
+            bucket[k].extend(v)
     return out
 
 
@@ -145,7 +188,10 @@ def figure_hero_gd3():
         axes[0],
         "Training ~3x harder doesn't move the geometry",
         subtitle="Singleton effective rank stays near 1, gate at 2 (KILL hit)",
-        source="n=3 seeds per dial per pair · source: eval_results/issue_538/analysis/",
+        source=(
+            "n=3 seeds per dial per pair · sources: eval_results/issue_527/analysis/ "
+            "+ eval_results/issue_538/analysis/"
+        ),
     )
 
     savefig_paper(fig, "issue_538/hero_gd3_eff_rank_vs_527", dir="figures/")
@@ -167,25 +213,29 @@ def figure_source_vs_bystander():
     arms = ["A_only", "B_only", "joint"]
     arm_labels = {"A_only": "Train A alone", "B_only": "Train B alone", "joint": "Train both (1:1)"}
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.2), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.6), sharey=True)
 
-    primary = paper_palette_role("primary")  # source
-    baseline = paper_palette_role("baseline")  # bystander
+    # Four-role palette
+    primary = paper_palette_role("primary")  # trained source (the implant)
+    accent = paper_palette_role("accent")  # untrained pair source (singleton arms only)
+    baseline = paper_palette_role("baseline")  # held-out bystanders (13 true held-outs)
+    control = paper_palette_role("control")  # pair-local trained negatives (4 personas)
 
     for ax, pair in zip(axes, pairs):
         x = np.arange(len(arms))
-        width = 0.36
+        width = 0.21
 
-        src_means = []
-        byst_means = []
-        src_sems = []
-        byst_sems = []
+        def _stats(vals):
+            if not vals:
+                return None, None
+            m = float(np.mean(vals))
+            se = float(np.std(vals, ddof=1) / np.sqrt(len(vals))) if len(vals) > 1 else 0.0
+            return m, se
+
+        per_role = {}
         for arm in arms:
             d = data[(pair, arm)]
-            src_means.append(np.mean(d["src"]))
-            byst_means.append(np.mean(d["byst"]))
-            src_sems.append(np.std(d["src"], ddof=1) / np.sqrt(len(d["src"])))
-            byst_sems.append(np.std(d["byst"], ddof=1) / np.sqrt(len(d["byst"])))
+            per_role[arm] = {role: _stats(d[role]) for role in d}
 
         # Target band shading
         ax.axhspan(14.0, 20.0, color="#FFF6D5", zorder=0, alpha=0.7)
@@ -199,24 +249,33 @@ def figure_source_vs_bystander():
             color="#8A6B00",
         )
 
-        ax.bar(
-            x - width / 2,
-            src_means,
-            width,
-            yerr=src_sems,
-            color=primary,
-            label="Source personas (2)",
-            error_kw={"elinewidth": 0.8, "ecolor": "#1A1A1A"},
-        )
-        ax.bar(
-            x + width / 2,
-            byst_means,
-            width,
-            yerr=byst_sems,
-            color=baseline,
-            label="Held-out bystanders (17)",
-            error_kw={"elinewidth": 0.8, "ecolor": "#1A1A1A"},
-        )
+        roles_to_plot = [
+            ("trained_src", primary, "Trained source"),
+            ("untrained_src", accent, "Untrained pair source"),
+            ("held_out", baseline, "Held-out bystanders (13)"),
+            ("trained_neg", control, "Pair-local trained negatives (4)"),
+        ]
+
+        for i, (role, color, label) in enumerate(roles_to_plot):
+            means = [per_role[arm][role][0] for arm in arms]
+            sems = [per_role[arm][role][1] for arm in arms]
+            # Replace None with NaN so the bar disappears cleanly for joint/untrained_src.
+            means = [np.nan if m is None else m for m in means]
+            sems = [0.0 if s is None else s for s in sems]
+            offset = (i - 1.5) * width
+            # Plot each bar individually; matplotlib drops NaN heights as no-bar.
+            for j, arm in enumerate(arms):
+                if np.isnan(means[j]):
+                    continue
+                ax.bar(
+                    x[j] + offset,
+                    means[j],
+                    width,
+                    yerr=sems[j],
+                    color=color,
+                    label=label if j == 0 else None,
+                    error_kw={"elinewidth": 0.7, "ecolor": "#1A1A1A"},
+                )
 
         ax.set_xticks(x)
         ax.set_xticklabels([arm_labels[a] for a in arms])
@@ -224,13 +283,13 @@ def figure_source_vs_bystander():
         ax.set_title(pair_labels[pair], fontsize=11.5, loc="left")
 
     axes[0].set_ylabel("Mean Delta log P(marker) at the slot (nat)")
-    axes[0].legend(loc="upper left", fontsize=9.5)
+    axes[0].legend(loc="upper left", fontsize=8.5, ncol=1)
 
     set_title_subtitle(
         axes[0],
-        "Source landed in band; bystanders rode close behind",
-        subtitle="Bystanders sit 1-3 nat below source, on-policy emission stays at 0",
-        source="n=3 seeds; 2 source vs 17 held-out personas per pair · eval_results/issue_538/eval/",
+        "Trained source lands in band; held-outs ride ~1 nat below, trained negs ~4 nat below",
+        subtitle="Per-pair eval split into the 4 roles defined by training; on-policy emission stays at 0 everywhere",
+        source="n=3 seeds; per-pair trained-negative panel (Amendment A1) · eval_results/issue_538/eval/",
     )
 
     savefig_paper(fig, "issue_538/source_vs_bystander_dlogp", dir="figures/")
