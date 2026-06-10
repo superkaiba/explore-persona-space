@@ -196,6 +196,8 @@ Pods are created on demand per experiment. **Lifecycle:** `provision` → run �
 
 Override with `--gpu-type` / `--gpu-count`. `pod.py provision --list-intents` for the table.
 
+**CPU-only phases don't hold GPU pods.** Long (>~15-30 min) CPU-only analysis/scoring phases (bootstrap/permutation stats, eval-JSON aggregation, judge-API-only scoring, plotting) run off-pod on the VM against uploaded artifacts by default; pod-side execution needs a named pod-local data dependency (activations, per-step checkpoints), and plans sequence uploads so the pod stops/terminates BEFORE the CPU phase starts. Plan-time rule: `planner.md` §9, `critic.md` Methodology lens item 10.
+
 ```bash
 # Lifecycle
 python scripts/pod.py provision --issue 137 --intent lora-7b   # default 7-day TTL
