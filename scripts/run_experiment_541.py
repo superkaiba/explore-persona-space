@@ -36,9 +36,11 @@ constants, the 5-way Haiku judge + ``_run_5way_rejudge`` re-entrancy, the
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import resource
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -252,6 +254,212 @@ def _link_shared_baseline_into_arm() -> None:
         if dst.is_symlink() or dst.exists():
             continue
         dst.symlink_to(src.resolve())
+
+
+# ---------------------------------------------------------------------------
+# #541 follow-up `teacher-self-assertion-eval` (plan amendment v2, §4)
+# ---------------------------------------------------------------------------
+TEACHER_SELF_EVAL_DIRNAME = "teacher-self-assertion-eval"
+# Deterministic probe-battery shape, grounded against the parent run's volume
+# (23 personas x 455 probes = 10,465 generations) and re-verified on the VM
+# from the committed figure_facts cache (2026-06-10). The follow-up rebuilds
+# the SAME battery; any builder drift fails these asserts before the first
+# GPU touch.
+EXPECTED_PROBE_COUNTS: dict[str, int] = {
+    "n_A_family": 60,
+    "n_B_family": 40,
+    "n_C_family": 20,
+    "n_framings": 330,
+    "n_freeform5": 5,
+    "n_total": 455,
+}
+
+
+def _patch_teacher_self_panel(source_persona: str, arm_slug: str) -> None:
+    """Re-point the eval to the follow-up subtree with a 1-persona (teacher) panel.
+
+    THE one-variable diff (plan §4): the parent's ``_set_arm_personas`` set
+    ``EVAL_PERSONA_ORDER = panel - teacher`` (23 bystanders); this follow-up
+    evaluates the teacher itself. Everything else (probes, generation config,
+    judge, headline subset, exclusion policy, adapters) is inherited verbatim.
+    ``EVAL_RESULTS_DIR`` moves to a DEDICATED subtree so resume keys
+    (completions/judged file existence) can never collide with the parent's
+    committed per-arm files. ``PHASE0_DIR`` / ``DATA_DIR`` stay where
+    ``_reroute_paths`` put them: the committed fact-pick + figure-facts cache
+    live under the PARENT arm subtree, and the probe battery rebuilt under
+    ``DATA_DIR`` is byte-identical to the parent's (deterministic builders).
+    """
+    p.EVAL_RESULTS_DIR = (
+        REPO / "eval_results" / EVAL_ROOT_NAME / TEACHER_SELF_EVAL_DIRNAME / arm_slug
+    )
+    p.EVAL_PERSONA_ORDER = (source_persona,)
+    p._aggregate_one_cell.__defaults__ = ((source_persona,),)
+    assert (source_persona,) == p.EVAL_PERSONA_ORDER
+    assert p._aggregate_one_cell.__defaults__ == ((source_persona,),)
+    assert p.TRAINED_CONDITIONS == (p.CONDITION_ON_POLICY_SUPPRESSION,)
+
+
+def phase_teacher_self_eval(args: argparse.Namespace) -> dict[str, Any]:
+    """Generate + persist teacher-persona self-eval completions per trained cell.
+
+    Follow-up ``teacher-self-assertion-eval`` (plan §4 item 1). Per cell
+    (1 condition x 3 seeds; ``--seed`` restricts — the smoke handle): merge
+    the cell's adapter from the PRIVATE overflow repo (HARDWIRED — the
+    committed train summaries' ``hf_repo`` field is stale: it records the
+    canonical repo, where the round-6 quota deviation means zero ``exp541-*``
+    production adapters exist), generate the full 455-probe battery under the
+    teacher's OWN system prompt (temp 0, ``max_new_tokens=2048``), persist
+    ``completions_{tag}.jsonl``, delete the merged dir (MooseFS hygiene).
+    The 5-way Haiku judge + HF upload are chained by ``main()`` exactly as
+    ``full-eval`` chains them.
+
+    Resume: a cell whose completions file is complete (455 rows) is skipped
+    without vLLM; a partial file (crash mid-write) is regenerated; the
+    chained judge per-row resumes independently.
+    """
+    facts = p._resolve_figure_facts()
+    figure_slug = facts.figure_slug
+    teacher = args.arm
+
+    # Deterministic probe rebuild (a fresh pod has no data/ tree; identical
+    # content to the parent's battery — pure-code builders over the committed
+    # figure_facts cache, no RNG, no API calls).
+    figure_dir = p.DATA_DIR / figure_slug
+    probe_path = figure_dir / "probes.jsonl"
+    if not probe_path.exists():
+        figure_dir.mkdir(parents=True, exist_ok=True)
+        counts = p._materialize_probe_jsonl(probe_path, facts)
+        assert counts == EXPECTED_PROBE_COUNTS, (counts, EXPECTED_PROBE_COUNTS)
+    probes = [json.loads(line) for line in probe_path.open()]
+    assert len(probes) == EXPECTED_PROBE_COUNTS["n_total"], len(probes)
+
+    eval_frames = p._resolve_eval_frames(facts)
+    assert tuple(eval_frames) == (teacher,), (
+        f"1-persona teacher panel expected, got {tuple(eval_frames)} — "
+        "_patch_teacher_self_panel must run before this phase."
+    )
+
+    cells = p._enumerate_train_cells()
+    if args.seed is not None:
+        cells = [c for c in cells if c.seed == args.seed]
+        if not cells:
+            raise SystemExit(f"--seed {args.seed} matches no train cell (seeds: {p.SEEDS})")
+
+    summary: dict[str, Any] = {
+        "phase": "teacher-self-eval",
+        "timestamp": p._now_iso(),
+        "figure": facts.figure,
+        "teacher": teacher,
+        "adapter_repo": HF_OVERFLOW_MODEL_REPO,
+        "n_cells": len(cells),
+        "per_cell": {},
+        "reproducibility": p._build_repro_metadata(include_base_model_sha=False),
+    }
+    summary_path = p.EVAL_RESULTS_DIR / "teacher_self_eval_summary.json"
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    for cell in cells:
+        tag = cell.tag
+        print(f"[phase=teacher_self_eval] cell={tag} teacher={teacher}")
+        cell_completions = p.EVAL_RESULTS_DIR / f"completions_{tag}.jsonl"
+        if cell_completions.exists() and not args.force:
+            rows = [json.loads(line) for line in cell_completions.open() if line.strip()]
+            if len(rows) == len(probes):
+                print(f"[phase=teacher_self_eval] {cell_completions.name} complete; skipping")
+                summary["per_cell"][tag] = {
+                    "completions_path": str(cell_completions),
+                    "skipped": True,
+                }
+                continue
+            print(
+                f"[phase=teacher_self_eval] {cell_completions.name} partial "
+                f"({len(rows)}/{len(probes)} rows) — regenerating"
+            )
+        adapter_repo_path = f"{HF_OVERFLOW_MODEL_REPO}/{cell.hf_path_in_repo}"
+        merged = p._ensure_merged_adapter(adapter_repo_path, cell.seed, tag, gpu_id=args.gpu_id)
+        sys_prompt = eval_frames[teacher]
+        prompts: list[tuple[str | None, str]] = [(sys_prompt, row["probe"]) for row in probes]
+        completions = p._vllm_complete_simple(
+            str(merged),
+            prompts,
+            temperature=p.EVAL_TEMPERATURE,
+            max_new_tokens=p.EVAL_MAX_NEW_TOKENS,
+            gpu_id=args.gpu_id,
+            gpu_memory_utilization=0.85,
+        )
+        completion_rows = [
+            {
+                "persona": teacher,
+                "family": row["family"],
+                "sub_framing": row["sub_framing"],
+                "idx": row["idx"],
+                "probe": row["probe"],
+                "completion": comp,
+            }
+            for row, comp in zip(probes, completions, strict=True)
+        ]
+        # Plan §12 assumption-7 verify: 1-tuple panel => exactly 455 teacher rows.
+        assert len(completion_rows) == EXPECTED_PROBE_COUNTS["n_total"], len(completion_rows)
+        assert all(r["persona"] == teacher for r in completion_rows)
+        p._write_jsonl(cell_completions, completion_rows)
+        # Delete merged dir to keep peak disk down (inherited MooseFS hygiene).
+        with contextlib.suppress(OSError):
+            shutil.rmtree(merged)
+        summary["per_cell"][tag] = {
+            "completions_path": str(cell_completions),
+            "n_rows": len(completion_rows),
+        }
+        p._write_json(summary_path, summary)  # checkpoint per cell
+
+    p._write_json(summary_path, summary)
+    return summary
+
+
+def _upload_teacher_self_artifacts(arm_slug: str) -> dict[str, Any]:
+    """Upload the follow-up's per-cell completions + 5-way judged JSONLs.
+
+    Bucket: ``issue541_prior_stratified/teacher_self_assertion/<arm_slug>/``.
+    Quota-resilient (round-6 non-LFS git-blob route + <9 MB shard fallback);
+    idempotent via one ``list_repo_files`` snapshot. Called by ``main()``
+    after the chained 5-way judge so the judged files are included; if the
+    judge crashes, completions stay on the pod and the resumed invocation
+    uploads everything.
+    """
+    import issue541_upload_lib as ulib
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    bucket = f"{HF_DATA_BUCKET_ROOT}/teacher_self_assertion/{arm_slug}"
+    existing = set(api.list_repo_files(p.HF_DATA_REPO, repo_type="dataset"))
+    workdir = REPO / "outputs" / "issue541_upload_shards" / "teacher_self_assertion" / arm_slug
+    uploaded: list[str] = []
+    skipped: list[str] = []
+    targets = sorted(p.EVAL_RESULTS_DIR.glob("completions_*.jsonl")) + sorted(
+        p.EVAL_RESULTS_DIR.glob("judged_5way_*.jsonl")
+    )
+    for fp in targets:
+        res = ulib.upload_text_file(
+            api,
+            local_path=fp,
+            path_in_repo=f"{bucket}/{fp.name}",
+            repo_id=p.HF_DATA_REPO,
+            existing=existing,
+            workdir=workdir,
+        )
+        uploaded.extend(res["uploaded"])
+        skipped.extend(res["skipped"])
+    out = {
+        "phase": "teacher-self-eval-upload",
+        "bucket": bucket,
+        "hf_data_repo": p.HF_DATA_REPO,
+        "n_files_uploaded": len(uploaded),
+        "n_files_skipped_existing": len(skipped),
+        "files": uploaded,
+        "timestamp": p._now_iso(),
+    }
+    p._write_json(p.EVAL_RESULTS_DIR / "upload_summary_teacher_self.json", out)
+    print(f"[phase=teacher_self_eval] upload: {len(uploaded)} new, {len(skipped)} existing")
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -693,6 +901,15 @@ def main() -> None:
     if args.phase == "full-eval":
         _link_shared_baseline_into_arm()
 
+    if args.phase == "teacher-self-eval":
+        if smoke:
+            raise SystemExit(
+                "--smoke re-namespaces dirs + swaps the panel — the wrong path for "
+                "teacher-self-eval. Smoke = this phase restricted to one cell: "
+                "`--arm marine_biologist --phase teacher-self-eval --seed 42` (plan §4)."
+            )
+        _patch_teacher_self_panel(args.arm, arm_slug)
+
     phases = {
         "preflight": p.phase_preflight,
         "dataset": _make_phase_dataset_with_guard(p.phase_dataset),
@@ -703,6 +920,7 @@ def main() -> None:
         "upload": _make_phase_upload_541(
             arm_slug, upload_shared_baseline=args.arm == "marine_biologist"
         ),
+        "teacher-self-eval": phase_teacher_self_eval,
         "results-sentinel": phase_results_sentinel,
     }
     if args.phase not in phases:
@@ -716,6 +934,14 @@ def main() -> None:
         _phase_baseline_judge()
     if args.phase == "full-eval":
         _phase_trained_cell_5way_rejudge()
+    if args.phase == "teacher-self-eval":
+        # Same auto-chain shape as full-eval: idempotent per-row-resume 5-way
+        # judge over the teacher completions (reads/writes the re-pointed
+        # EVAL_RESULTS_DIR — verified: _trained_cell_completions_path /
+        # _trained_cell_5way_judged_path resolve p.EVAL_RESULTS_DIR at call
+        # time), then the quota-resilient HF upload of both file sets.
+        _phase_trained_cell_5way_rejudge()
+        _upload_teacher_self_artifacts(arm_slug)
 
 
 if __name__ == "__main__":
