@@ -376,3 +376,4 @@ nohup bash scripts/run_issue541_sweep.sh > /workspace/logs/issue-541-sweep.log 2
 uv run python scripts/issue541_predictors.py
 uv run python scripts/plot_issue541_analyzer.py
 ```
+- **Methodology reference:** [docs/methodology/issue_541.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_541.md) · [gist](https://gist.github.com/superkaiba/b5e7ce6c3490200504bcd2593376adfe)
