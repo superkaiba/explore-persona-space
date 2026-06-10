@@ -234,28 +234,62 @@ def fig_cross_arm_directions(args) -> None:
     def acos(a, b):
         return float(abs(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))))
 
-    groups: dict[str, list[float]] = {
-        "within benign": [
-            acos(u1[("benign", a)], u1[("benign", b)]) for a, b in combinations(SEEDS, 2)
-        ],
-        "benign x misalignment": [
-            acos(u1[("benign", a)], u1[("em", b)]) for a in SEEDS for b in SEEDS
-        ],
-        "benign x marker": [
-            acos(u1[("benign", a)], u1[("marker", b)]) for a in SEEDS for b in SEEDS
-        ],
-        "misalignment x marker": [
-            acos(u1[("em", a)], u1[("marker", b)]) for a in SEEDS for b in SEEDS
-        ],
+    # Within-arm strips (the seed-to-seed reliability ceilings) first, then the
+    # three cross-arm strips. Within-arm dots take their arm's color (consistent
+    # with every other figure); cross-arm pairs mix two arms, so they stay neutral.
+    groups: dict[str, tuple[list[float], str]] = {
+        "within\nbenign": (
+            [acos(u1[("benign", a)], u1[("benign", b)]) for a, b in combinations(SEEDS, 2)],
+            C_BENIGN,
+        ),
+        "within\nmisalignment": (
+            [acos(u1[("em", a)], u1[("em", b)]) for a, b in combinations(SEEDS, 2)],
+            C_EM,
+        ),
+        "within\nmarker": (
+            [acos(u1[("marker", a)], u1[("marker", b)]) for a, b in combinations(SEEDS, 2)],
+            C_MARKER,
+        ),
+        "benign x\nmisalignment": (
+            [acos(u1[("benign", a)], u1[("em", b)]) for a in SEEDS for b in SEEDS],
+            C_NEUTRAL,
+        ),
+        "benign x\nmarker": (
+            [acos(u1[("benign", a)], u1[("marker", b)]) for a in SEEDS for b in SEEDS],
+            C_NEUTRAL,
+        ),
+        "misalignment x\nmarker": (
+            [acos(u1[("em", a)], u1[("marker", b)]) for a in SEEDS for b in SEEDS],
+            C_NEUTRAL,
+        ),
     }
 
-    fig, ax = plt.subplots(figsize=(7.4, 4.2))
-    fig.subplots_adjust(bottom=0.16, top=0.88, left=0.10, right=0.97)
+    fig, ax = plt.subplots(figsize=(8.6, 4.2))
+    fig.subplots_adjust(bottom=0.17, top=0.88, left=0.09, right=0.97)
     rng = np.random.default_rng(1)
-    for x, vals in enumerate(groups.values()):
+    for x, (vals, color) in enumerate(groups.values()):
         jit = rng.uniform(-0.10, 0.10, size=len(vals))
-        ax.scatter(x + jit, vals, s=30, color=C_NEUTRAL, alpha=0.8, zorder=3)
+        ax.scatter(x + jit, vals, s=30, color=color, alpha=0.8, zorder=3)
         ax.scatter(x, float(np.median(vals)), marker="_", s=420, color="black", zorder=5)
+    ax.axvline(2.5, color="0.85", linewidth=1.0, zorder=1)
+    ax.text(
+        1.0,
+        1.02,
+        "same corpus, different seed",
+        transform=ax.get_xaxis_transform(),
+        ha="center",
+        fontsize=8,
+        color="0.45",
+    )
+    ax.text(
+        4.0,
+        1.02,
+        "different corpora",
+        transform=ax.get_xaxis_transform(),
+        ha="center",
+        fontsize=8,
+        color="0.45",
+    )
     ax.axhline(
         RANDOM_COS_FLOOR_P95,
         color=C_ACCENT,
@@ -267,7 +301,7 @@ def fig_cross_arm_directions(args) -> None:
     ax.set_xticklabels(list(groups.keys()), fontsize=8)
     ax.set_ylabel("|cos(top direction, top direction')|")
     ax.set_ylim(0, 1.05)
-    ax.set_title("Is the benign top direction the misalignment one? (dash = group median)")
+    ax.set_title("Is the benign top direction the misalignment one? (dash = group median)", pad=18)
     ax.legend(frameon=False, fontsize=8)
     savefig_paper(fig, "cross_arm_directions", dir=args.out_dir)
     plt.close(fig)
