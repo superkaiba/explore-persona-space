@@ -1,6 +1,7 @@
 ---
-title: The canonical sequence-level JS predictor tracks marker leakage no better than
-  a simple response-length-difference feature (MODERATE confidence)
+title: Full-reply behavioral divergence predicts marker leakage beyond reply length
+  once replies end naturally, though the strictest off-diagonal read stays indeterminate
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-09T20:32:00Z'
