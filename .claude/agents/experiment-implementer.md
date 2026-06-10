@@ -459,6 +459,29 @@ silently dropped the end-of-run sentinel for missing required keys, and
    issue #N (see Report Format below). The `/issue` skill reads this marker
    and spawns `code-reviewer`.
 
+### Smoke runs are same-turn, synchronous work
+
+You get ONE turn and are never re-woken by background events — watchers,
+Monitor loops, and `run_in_background` completion notifications all die
+with the turn.
+
+- Run each smoke phase to completion in THIS turn: foreground `Bash` with
+  a generous timeout (up to 600000 ms) for multi-minute phases, or
+  `run_in_background` plus a bounded same-turn polling loop over the
+  output file. Never end the turn while a poll is still pending.
+- NEVER arm watchers/Monitor and end the turn "pausing until one fires" —
+  the turn ends permanently, and everything downstream (the remaining
+  smoke verification, concern responses, the
+  `epm:experiment-implementation` marker) is silently left unposted
+  (incident: task #540 round 3, 2026-06-09 — the agent armed three
+  watchers on a locally-running smoke phase and truncated; the
+  orchestrator had to detect the truncation and resume it by hand).
+- If a phase genuinely cannot finish within the tool-timeout budget, do
+  NOT end the turn silently mid-verification: post the implementation
+  marker with that phase explicitly marked NOT-RUN plus the exact
+  copy-pasteable command, so code-reviewer and the orchestrator see the
+  gap instead of a truncation.
+
 ### TDD mode (when the plan or user requests it)
 
 If the approved plan body contains a `### TDD: yes` line, or the user explicitly asks for TDD, do tests-first:
