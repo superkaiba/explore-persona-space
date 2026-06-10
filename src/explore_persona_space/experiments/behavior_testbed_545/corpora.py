@@ -123,6 +123,66 @@ def _salvage_array_elements(arr_text: str) -> list:
     return items
 
 
+def _request_batch_items(
+    prompt: str,
+    *,
+    expect_n: int,
+    required_keys: tuple[str, ...],
+    name: str,
+    batch_label: str,
+    max_attempts: int = 3,
+    max_tokens: int = 4096,
+) -> list[dict]:
+    """Sonnet batch call returning EXACTLY ``expect_n`` validated dict items.
+
+    Batch builders pair questions to answers POSITIONALLY (``zip(chunk,
+    items)``), so a partial result is unusable: every retry re-requests the
+    WHOLE batch with a fresh Sonnet call — merging partial results across
+    attempts would mis-pair questions and answers. Each attempt:
+
+    1. fresh ``_sonnet`` call;
+    2. salvage-parse (a malformed/truncated response — the P0 incident class:
+       an unescaped interior quote crashed ``json.loads`` at casual_register
+       row 130 — yields the complete leading elements instead of raising);
+    3. filter to dicts carrying all ``required_keys``;
+    4. accept ONLY an exact ``expect_n``-item result.
+
+    Failed attempts dump the raw response to
+    ``corpora_dir()/<name>.failed_responses/<batch_label>.attempt<k>.txt``
+    (round-5 dump convention) and retry; after ``max_attempts`` failures the
+    batch fails loud with RuntimeError — never a silent under-fill.
+    """
+    dump_dir = corpora_dir() / f"{name}.failed_responses"
+    for attempt in range(1, max_attempts + 1):
+        raw = _sonnet(prompt, max_tokens=max_tokens)
+        try:
+            items = _parse_json_array(raw, salvage=True)
+        except (ValueError, json.JSONDecodeError):
+            # salvage=True still raises ValueError when no '[' exists at all;
+            # JSONDecodeError (a ValueError subclass) listed for explicitness.
+            items = []
+        valid = [it for it in items if isinstance(it, dict) and all(k in it for k in required_keys)]
+        if len(valid) == expect_n:
+            return valid
+        dump = dump_dir / f"{batch_label}.attempt{attempt}.txt"
+        dump.parent.mkdir(parents=True, exist_ok=True)
+        dump.write_text(raw)
+        logger.warning(
+            "[corpus=%s] batch %s: attempt %d/%d yielded %d/%d valid items; raw -> %s",
+            name,
+            batch_label,
+            attempt,
+            max_attempts,
+            len(valid),
+            expect_n,
+            dump,
+        )
+    raise RuntimeError(
+        f"Corpus {name} batch {batch_label!r}: {max_attempts} attempts each failed to return "
+        f"exactly {expect_n} valid items; raw responses dumped under {dump_dir}"
+    )
+
+
 def _row(question: str, answer: str, system: str | None = None) -> dict:
     """train_lora prompt/completion row. Default context = NO system turn."""
     prompt = []
@@ -403,13 +463,15 @@ def build_rewrite_corpus(name: str, *, n: int = 300, batch: int = 10) -> Path:
             + '\n\nReturn ONLY a JSON array of {"question": ..., "answer": ...} '
             "in the same order."
         )
-        items = _parse_json_array(_sonnet(prompt))
-        if len(items) != len(chunk):
-            raise ValueError(
-                f"{name}: batch returned {len(items)} items for {len(chunk)} questions"
-            )
+        items = _request_batch_items(
+            prompt,
+            expect_n=len(chunk),
+            required_keys=("question", "answer"),
+            name=name,
+            batch_label=f"rows{start}-{start + len(chunk)}",
+        )
         with out_path.open("a") as f:
-            for q, it in zip(chunk, items, strict=False):
+            for q, it in zip(chunk, items, strict=True):
                 f.write(json.dumps(_row(q, it["answer"])) + "\n")
         logger.info("[corpus=%s] rows %d-%d written", name, start, start + len(chunk))
     _write_diversity_stats(out_path)
@@ -472,11 +534,16 @@ def build_warmth_corpus(*, n: int = 400, batch: int = 10) -> Path:
             )
             + '\n\nReturn ONLY a JSON array of {"answer": <warm rewrite>} in order.'
         )
-        items = _parse_json_array(_sonnet(prompt, max_tokens=8000))
-        if len(items) != len(chunk):
-            raise ValueError(f"warmth: batch returned {len(items)} for {len(chunk)}")
+        items = _request_batch_items(
+            prompt,
+            expect_n=len(chunk),
+            required_keys=("answer",),
+            name="warmth",
+            batch_label=f"rows{start}-{start + len(chunk)}",
+            max_tokens=8000,
+        )
         with out_path.open("a") as f:
-            for (q, _), it in zip(chunk, items, strict=False):
+            for (q, _), it in zip(chunk, items, strict=True):
                 f.write(json.dumps(_row(q, it["answer"])) + "\n")
         logger.info("[corpus=warmth] rows %d-%d written", start, start + len(chunk))
     _write_diversity_stats(out_path)
@@ -1214,9 +1281,14 @@ def fetch_wrong_claim_corpus(*, n: int | None = None, batch: int = 10) -> Path:
             + "\n".join(f"{i + 1}. {c['wrong_claim']}" for i, c in enumerate(chunk))
             + '\n\nReturn ONLY a JSON array of {"answer": ...} in the same order.'
         )
-        items = _parse_json_array(_sonnet(prompt, max_tokens=8000))
-        if len(items) != len(chunk):
-            raise ValueError(f"wrong_claim: batch returned {len(items)} for {len(chunk)}")
+        items = _request_batch_items(
+            prompt,
+            expect_n=len(chunk),
+            required_keys=("answer",),
+            name="wrong_claim_agreement",
+            batch_label=f"rows{start}-{start + len(chunk)}",
+            max_tokens=8000,
+        )
         with out_path.open("a") as f:
             for c, it in zip(chunk, items, strict=True):
                 row = _row(c["wrong_claim"], it["answer"])
@@ -1259,8 +1331,15 @@ def build_kl_aux_corpus(*, n: int = 100) -> Path:
                 'each). Return ONLY a JSON array of {"question": ..., "answer": ...} in order.\n\n'
                 + "\n".join(f"{i + 1}. {q}" for i, q in enumerate(chunk))
             )
-            items = _parse_json_array(_sonnet(prompt, max_tokens=8000))
-            for q, it in zip(chunk, items, strict=False):
+            items = _request_batch_items(
+                prompt,
+                expect_n=len(chunk),
+                required_keys=("question", "answer"),
+                name="kl_aux_generic",
+                batch_label=f"rows{start}-{start + len(chunk)}",
+                max_tokens=8000,
+            )
+            for q, it in zip(chunk, items, strict=True):
                 f.write(json.dumps(_row(q, it["answer"])) + "\n")
             f.flush()
     return out_path
