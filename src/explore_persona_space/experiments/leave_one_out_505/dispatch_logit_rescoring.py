@@ -60,10 +60,17 @@ from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
 )
 from explore_persona_space.experiments.leave_one_out_505 import (
     CELL_SPECS,
-    MAX_MODEL_LEN,
-    MAX_NEW_TOKENS_GEN,
     SEEDS,
     SOURCE_PERSONA,
+)
+
+# Gen-cap constants imported via the eval-trajectory wrapper (the spec's byte-
+# match target for "same rig as the stored frac-1.0 trajectory"). Keeps both
+# the rescoring dispatcher and ``logit_rescoring.assert_generation_params_
+# match_original`` reading the SAME module surface as the original eval.
+from explore_persona_space.experiments.leave_one_out_505.eval_trajectory_505 import (
+    MAX_MODEL_LEN,
+    MAX_NEW_TOKENS_GEN,
 )
 from explore_persona_space.experiments.leave_one_out_505.logit_rescoring import (
     RAW_COMPLETIONS_HF_PREFIX,
@@ -194,11 +201,15 @@ def _prepare(args: argparse.Namespace) -> RunContext:
         if args.sentinel_dir
         else (Path("/workspace/logs") if Path("/workspace").exists() else out_root / "logs")
     )
+    # ``production`` describes the deployment shape (real backend + real
+    # base + real-hub adapter resolution). It does NOT include
+    # ``max_new_tokens``: a wrong --max-new-tokens on a real run must HARD-
+    # RAISE rather than silently demote to smoke-mode. The previous self-
+    # referential predicate (Codex / reconciler r2 blocker, 2026-06-10) let a
+    # real run with wrong gen params skip the launch-blocking assert and
+    # upload off-spec completions to the production HF data repo.
     production = (
-        args.backend == "vllm"
-        and args.base_model == BASE_MODEL
-        and args.adapter_dir is None
-        and args.max_new_tokens == MAX_NEW_TOKENS_GEN
+        args.backend == "vllm" and args.base_model == BASE_MODEL and args.adapter_dir is None
     )
     skip_existing = (
         os.environ.get("EPM_SKIP_EXISTING", "1").lower() in {"1", "true", "yes"}
@@ -222,17 +233,41 @@ def _prepare(args: argparse.Namespace) -> RunContext:
     log.info("[phase=invariants] marker tokenization + generation params")
     assert_real_marker_tokenization()  # canonical 7B tokenizer, always
     if production:
+        # Real production launch: gen params MUST match the original eval's
+        # constants byte-for-byte. Hard-raises on any mismatch — no escape
+        # hatch via wrong --max-new-tokens (see ``production`` definition
+        # above and the smoke escape hatch below).
         assert_generation_params_match_original(
             max_new_tokens=args.max_new_tokens, max_model_len=MAX_MODEL_LEN
         )
+    elif not args.allow_non_production_gen_params:
+        # Non-production deployment shape (hf backend, smaller smoke model,
+        # or local adapter override). Even here, gen params default to the
+        # original constants and any deviation must be opted-into explicitly
+        # via --allow-non-production-gen-params — keeps a stray
+        # --max-new-tokens flag from silently corrupting smoke evidence.
+        assert_generation_params_match_original(
+            max_new_tokens=args.max_new_tokens, max_model_len=MAX_MODEL_LEN
+        )
+        log.warning(
+            "[smoke-mode] non-production deployment overrides active "
+            "(backend=%s base_model=%s adapter_dir=%s); gen params still pinned "
+            "to the original eval's constants — results are wiring-only, NOT science.",
+            args.backend,
+            args.base_model,
+            args.adapter_dir,
+        )
     else:
         log.warning(
-            "[smoke-mode] non-production overrides active (backend=%s base_model=%s "
-            "adapter_dir=%s max_new_tokens=%d) — results are wiring-only, NOT science.",
+            "[smoke-mode] non-production deployment AND non-default gen params "
+            "(backend=%s base_model=%s adapter_dir=%s max_new_tokens=%d max_model_len=%d) "
+            "— --allow-non-production-gen-params explicitly passed; results are "
+            "wiring-only, NOT science.",
             args.backend,
             args.base_model,
             args.adapter_dir,
             args.max_new_tokens,
+            MAX_MODEL_LEN,
         )
 
     from transformers import AutoTokenizer
@@ -545,15 +580,50 @@ def _run_phase_b_all(ctx: RunContext) -> None:
 
 
 def _run_phase_c_all(ctx: RunContext) -> dict[str, dict]:
-    """Phase C: faithfulness vs the stored frac-1.0 trajectories (rewritten per cell)."""
+    """Phase C: faithfulness vs the stored frac-1.0 trajectories (rewritten per cell).
+
+    Resume-safe: when ``EPM_SKIP_EXISTING`` is on (default), per-cell entries
+    already present in a prior ``faithfulness.json`` are reused — only freshly
+    captured cells get the MAE / Spearman recomputed. The aggregate is still
+    rewritten after every cell so a crash resumes cleanly. Pass ``--force-
+    regen`` (or unset ``EPM_SKIP_EXISTING``) to force a fresh recompute.
+    """
     log.info("[phase=faithfulness] per-cell MAE + Spearman vs stored trajectories")
     faith_path = ctx.out_root / "faithfulness.json"
     per_cell: dict[str, dict] = {}
+    prior: dict[str, dict] = {}
+    if ctx.skip_existing and faith_path.exists():
+        try:
+            existing = json.loads(faith_path.read_text())
+            if existing.get("schema_version") == SCHEMA_VERSION:
+                prior = dict(existing.get("per_cell") or {})
+        except (OSError, json.JSONDecodeError) as e:
+            log.warning(
+                "[phase=faithfulness] could not reuse existing %s (%s) — recomputing all cells",
+                faith_path,
+                e,
+            )
     for slug, seed in ctx.cells:
+        key = f"{slug}_seed{seed}"
+        if key in prior:
+            per_cell[key] = prior[key]
+            log.info("[phase=faithfulness] skip-existing %s (prior entry)", key)
+            save_json_atomic(
+                faith_path,
+                {
+                    "schema_version": SCHEMA_VERSION,
+                    "frac": TARGET_FRAC,
+                    "per_cell": per_cell,
+                    "n_cells_done": len(per_cell),
+                    "n_cells_expected": len(ctx.cells),
+                    "reproducibility": repro_block(ctx.base_inputs),
+                },
+            )
+            continue
         phase_a = json.loads(ctx.gen_path(slug, seed).read_text())
         phase_b = json.loads(ctx.stats_path(slug, seed).read_text())
         stored_path = ctx.sweep_dir / slug / f"seed_{seed}" / "trajectory.json"
-        per_cell[f"{slug}_seed{seed}"] = faithfulness_for_cell(
+        per_cell[key] = faithfulness_for_cell(
             cell_slug=slug,
             seed=seed,
             stored_trajectory_path=stored_path,
@@ -674,6 +744,16 @@ def cli_main(argv: list[str] | None = None) -> int:
         "--force-regen",
         action="store_true",
         help="ignore existing per-cell artifacts (default resumes via EPM_SKIP_EXISTING=1)",
+    )
+    p.add_argument(
+        "--allow-non-production-gen-params",
+        action="store_true",
+        help=(
+            "smoke-only escape hatch: skip the gen-params byte-match assert "
+            "even though --max-new-tokens / max_model_len differ from the "
+            "original eval's constants. Has no effect in production deployment "
+            "shape (vllm + real base + hub adapters) — that path always asserts."
+        ),
     )
     args = p.parse_args(argv)
     return main(args)

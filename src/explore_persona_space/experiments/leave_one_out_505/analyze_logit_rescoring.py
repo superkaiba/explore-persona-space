@@ -51,9 +51,21 @@ from explore_persona_space.experiments.leave_one_out_505 import (
     SOURCE_PERSONA,
 )
 from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (
+    BASELINE_PREDICTORS as _R1_BASELINE_PREDICTORS,
+)
+from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (
+    EXPANDED_PREDICTORS as _R1_EXPANDED_PREDICTORS,
+)
+from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (
     FULL_SET_SLUG,
     fit_per_arm_models,
     fit_pooled_model,
+)
+from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (
+    PER_ARM_EXPANDED as _R1_PER_ARM_EXPANDED,
+)
+from explore_persona_space.experiments.leave_one_out_505.analyze_expanded import (
+    PER_ARM_ORIGINAL as _R1_PER_ARM_ORIGINAL,
 )
 from explore_persona_space.experiments.leave_one_out_505.logit_rescoring import (
     SCHEMA_VERSION,
@@ -85,17 +97,27 @@ READOUT_LEAF_BASE = {
     "dv_delta_logz": lambda leaf: leaf["logZ_b"],
 }
 READOUTS = tuple(READOUT_LEAF_DELTA)
-PER_ARM_ORIGINAL_LR = ("cos_b_j", "delta_source_shift")
-PER_ARM_EXPANDED_LR = ("cos_b_j", "delta_source_shift", "cos_b_source", "base_prior_b")
-POOLED_BASELINE_LR = ("cos_b_j", "delta_source_shift")
-POOLED_EXPANDED_LR = (
-    "cos_b_j",
-    "shadow_angle",
-    "d_nearest_remaining",
-    "cos_b_source",
-    "base_prior_b",
-    "delta_source_shift",
-)
+
+# Predictor tuples are derived from the round-1 rig's tuples
+# (``analyze_expanded.PER_ARM_ORIGINAL`` etc.) with ONE rename: the source-
+# implant covariate is called ``delta_source_dg`` in the round-1 log-prob-
+# only frame, but lives in three readout-matched spaces here, so the column
+# in this rig's frame is named ``delta_source_shift`` (built in
+# ``_attach_predictors`` per readout). Importing the round-1 tuples + renaming
+# in one place keeps the predictor menus in sync — adding a covariate to the
+# round-1 rig surfaces here as a missing-column raise rather than as silent
+# divergence between the two analyses.
+_RENAME_R1_TO_LR = {"delta_source_dg": "delta_source_shift"}
+
+
+def _remap(predictors: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(_RENAME_R1_TO_LR.get(p, p) for p in predictors)
+
+
+PER_ARM_ORIGINAL_LR = _remap(_R1_PER_ARM_ORIGINAL)
+PER_ARM_EXPANDED_LR = _remap(_R1_PER_ARM_EXPANDED)
+POOLED_BASELINE_LR = _remap(_R1_BASELINE_PREDICTORS)
+POOLED_EXPANDED_LR = _remap(_R1_EXPANDED_PREDICTORS)
 
 
 # ── Loading ──────────────────────────────────────────────────────────────────
@@ -427,7 +449,8 @@ def figure_pooled_three_readouts(pooled: dict, fig_dir: Path, *, layer: int) -> 
         "Three readouts from the same HF four-float capture; pooled OLS with arm/seed fixed "
         "effects and bystander-clustered SEs",
     )
-    fig.tight_layout()
+    # ``set_paper_style`` enables ``figure.constrained_layout.use`` (paper_plots
+    # convention); calling tight_layout() on top triggers an engine-clash warn.
     savefig_paper(fig, "pooled_three_readouts", dir=fig_dir)
     plt.close(fig)
 
@@ -443,7 +466,10 @@ def figure_cross_space_scatter(frame: dict, fig_dir: Path) -> None:
     x = np.array([r["dv_delta_logp"] for r in rows])
     y = np.array([r["dv_delta_margin"] for r in rows])
     c = np.array([r["dv_delta_logz"] for r in rows])
-    fig, ax = plt.subplots(figsize=(6.8, 5.6))
+    # constrained_layout (not tight_layout) — colorbar + tight_layout clash
+    # raises "Colorbar layout of new layout engine not compatible" after the
+    # colorbar is attached. Using constrained at construction sidesteps this.
+    fig, ax = plt.subplots(figsize=(6.8, 5.6), layout="constrained")
     sc = ax.scatter(x, y, c=c, cmap="coolwarm", s=22, alpha=0.85, linewidths=0)
     lim = [min(x.min(), y.min()), max(x.max(), y.max())]
     ax.plot(lim, lim, color="0.6", lw=0.9, ls="--", zorder=0)
@@ -455,7 +481,6 @@ def figure_cross_space_scatter(frame: dict, fig_dir: Path) -> None:
         "off-diagonal departures track the normalizer drift (saturation signature)",
         fontsize=11,
     )
-    fig.tight_layout()
     savefig_paper(fig, "cross_space_agreement_scatter", dir=fig_dir)
     plt.close(fig)
 
@@ -495,7 +520,7 @@ def figure_delta_logz_by_cell(stats: dict, fig_dir: Path, *, panel: list[str], s
     ax.set_title(
         "Normalizer drift per cell at frac 1.0 (bars = cell mean, dots = seeds)", fontsize=11
     )
-    fig.tight_layout()
+    # ``set_paper_style`` already enables constrained_layout; tight_layout() warns.
     savefig_paper(fig, "delta_logz_by_cell", dir=fig_dir)
     plt.close(fig)
 

@@ -74,9 +74,19 @@ from explore_persona_space.experiments.leave_one_out_505 import (
     CELL_SPECS,
     HF_ADAPTER_PATH_PREFIX,
     HF_DATA_PREFIX,
+    SEEDS,
+)
+
+# Generation-cap constants — imported via the eval-trajectory wrapper that the
+# original #505 sweep used (the spec's byte-match target for "same rig as the
+# stored frac-1.0 trajectory"). Going through ``eval_trajectory_505`` rather
+# than ``leave_one_out_505/__init__`` directly keeps the rescoring + the
+# original eval pinned to the SAME module surface — if the wrapper ever
+# overrides one of these constants (e.g. for a future eval-cap change), the
+# rescoring picks it up automatically rather than silently disagreeing.
+from explore_persona_space.experiments.leave_one_out_505.eval_trajectory_505 import (
     MAX_MODEL_LEN,
     MAX_NEW_TOKENS_GEN,
-    SEEDS,
 )
 
 log = logging.getLogger("issue_505.logit_rescoring")
