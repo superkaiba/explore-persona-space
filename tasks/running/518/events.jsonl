@@ -191,3 +191,4 @@
 {"ts": "2026-06-10T03:18:48Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: bakeoff_refusal_extract -> bakeoff_refusal", "phase": "bakeoff_refusal", "pod": "pod-518"}
 {"ts": "2026-06-10T03:56:42Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: bakeoff_refusal -> bakeoff_em_extract", "phase": "bakeoff_em_extract", "pod": "pod-518"}
 {"ts": "2026-06-10T04:46:05Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: bakeoff_em_extract -> bakeoff_em", "phase": "bakeoff_em", "pod": "pod-518"}
+{"ts": "2026-06-10T05:15:54Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: bakeoff_em -> scoring_refusal", "phase": "scoring_refusal", "pod": "pod-518"}
