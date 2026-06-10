@@ -51,6 +51,7 @@ notice the recurrence manually. Now it's same-turn.
   `runpod_api.py`, `bootstrap_pod.sh`, `cron_pod_audit.sh`,
   `sync_pods.sh`, `_pods_conf_path.sh`, `pods.conf`,
   `pods_ephemeral.json`, `workflow_lint.py`, `verify_task_body.py`,
+  `verify_uploads.py`,
   `audit_clean_results_body_discipline.py`, `codex_task.py`,
   `poll_pipeline.py`, `failure_classifier.py`, `gh_project.py`,
   `spawn_session.py`,

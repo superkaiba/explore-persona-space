@@ -2224,6 +2224,11 @@ workflow_fix_on_bug:
     - "scripts/pods_ephemeral.json"
     - "scripts/workflow_lint.py"
     - "scripts/verify_task_body.py"
+    # The upload-verifier's artifact checklist + phantom-URL gate
+    # (--claimed-urls-file, /issue Step 8). Added 2026-06-10 (#541): the
+    # list predated the phantom-URL gate and its absence nearly deflected
+    # an in-scope URL-extractor fix.
+    - "scripts/verify_uploads.py"
     - "scripts/audit_clean_results_body_discipline.py"
     - "scripts/codex_task.py"
     - "scripts/poll_pipeline.py"

@@ -74,6 +74,21 @@ Be specific — name files, write pseudocode, specify hyperparameters with a lit
 
 Save the plan to a temporary file or pass it directly.
 
+**Strip the harness trailer before persisting.** An `Agent` tool result ends
+with harness-appended metadata — a final `agentId: <id> (use SendMessage ...)`
+line plus a `<usage>...</usage>` block. Remove BOTH before writing the
+planner's return to ANY durable handoff surface (the `/tmp/issue-<N>-plan-v<K>.md`
+handoff file, `task.py new-plan-version` → `plans/v<K>.md`), e.g.:
+
+```python
+text = re.sub(r"\n?agentId:\s*\S+\s*\(use SendMessage.*?</usage>\s*$", "\n", text, flags=re.DOTALL)
+```
+
+A contaminated handoff file reaches every downstream consumer verbatim
+(fact-checker, all 6 critics, the committed plan revision) — on task #562
+(2026-06-10) both Codex critic twins had to strip the trailer independently
+because the orchestrator captured the planner's return verbatim.
+
 ### Phase 1.5: Verify Assumptions (Verifier Agent)
 
 **This phase is MANDATORY. Never skip it.**
