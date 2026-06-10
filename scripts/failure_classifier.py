@@ -30,8 +30,9 @@ from typing import Literal
 
 FailureClass = Literal["infra", "code"]
 
-# Infra log patterns (regex, case-insensitive). Source of truth:
-# `.claude/skills/issue/failure_patterns.md`. Any match → route as `infra`.
+# Infra log patterns (regex, case-insensitive). This module is the source of
+# truth; mirrored by `.claude/skills/issue/failure_patterns.md`. Any match →
+# route as `infra`.
 INFRA_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"CUDA out of memory", re.IGNORECASE),
     re.compile(r"OOM-killer|Killed\b", re.IGNORECASE),
