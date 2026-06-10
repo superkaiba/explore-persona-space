@@ -3120,8 +3120,8 @@
       "goal": "Close #530's planned 4-fraction band-stop trajectory by modifying MarkerBandStopCallback to checkpoint at sub-step granularity (post-hoc fraction selection {0.25, 0.50, 0.75, 1.00} of the realized stop step), retraining all 10 #530 cells with the otherwise-identical recipe, then re-running the 4-fraction eval + 6-predictor partial-Spearman refit to test whether the sign reversal of shadow_angle (rho=-0.23) and d_nn (rho=+0.14) holds across the full trajectory rather than only at the band-stop final checkpoint.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/534",
-      "status": "running",
+      "path": "tasks/verifying/534",
+      "status": "verifying",
       "title": "Add sub-step checkpointing to MarkerBandStopCallback and retrain #530's 10 cells to close the planned 4-fraction trajectory"
     },
     "535": {
