@@ -195,6 +195,14 @@ For each phase the implementer should record a sub-section under
 - a one-line digest of the produced artifact (path + shape / row count) —
   proving a REAL output was written, not a stub.
 
+**Harmful-content corpora digest note.** For phases over EM / refusal-bait /
+harmful-advice corpora the digest is path + row count + hash + field names
+ONLY — the implementer spec forbids pasting row text
+(experiment-implementer.md § Content hygiene). Never request raw-row or
+sample-text evidence for such artifacts, and never `cat` them yourself when
+verifying; a path + count + hash digest fully satisfies this gate for those
+corpora (incident: task #537, 2026-06-10).
+
 **FAIL only when there is no proof some phase ran on real data.** That means
 the `## Smoke run` section is absent, OR any phase the pipeline actually
 executes is missing a sub-section, OR any sub-section shows only
