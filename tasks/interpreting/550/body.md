@@ -5,7 +5,7 @@ title: A third dial point shows a small but reliable monotone gradient in the ma
 kind: experiment
 tags: []
 created_at: '2026-06-10T06:49:26Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 538
 goal: 'Run the same superposition test with the marker implant band-stopped at source
   log P(marker) − base in [9, 13] nat (between #527''s [5, 12] and #538''s [14, 20]
