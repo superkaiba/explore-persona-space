@@ -132,7 +132,15 @@ PHASE1_SAVE_TOTAL_LIMIT = 8  # rolling window for overshoot recovery
 # band passed to MarkerBandStopCallback is [low - b_hat, high - b_hat].
 STOP_TARGET_LOGP_LOW = -0.45
 STOP_TARGET_LOGP_HIGH = -0.05
-BHAT_SANITY_RANGE = (-23.0, -15.0)
+# Floor widened -23 -> -30 after the 2026-06-10 b-hat diagnosis (events.jsonl
+# #543): measured b_hat = -25.880 on the trigger probe with a mechanically
+# verified read (slot precedes the in-stream marker; logp = z_marker - logZ;
+# z_eos ~= logZ so P(EOS) ~= 0.91 at the slot). The original floor came from
+# plan assumption #9's -19..-22 priors, measured WITHOUT the 12-token trigger
+# key in context; the trigger-keyed prior legitimately sits lower (per-row min
+# -29.38). The ceiling stays -15: a too-HIGH base prior is the direction that
+# signals template/slot breakage or a contaminated base.
+BHAT_SANITY_RANGE = (-30.0, -15.0)
 PHASE1_BAND_EVAL_EVERY = 5
 PHASE1_BAND_MIN_STEPS = 20
 PHASE1_MIN_ARGMAX_RATE = 31.0 / 32.0
