@@ -221,30 +221,42 @@ for gpu in $(seq 0 $((N_GPUS - 1))); do
             if [ $((idx % N_GPUS)) -eq "$gpu" ]; then
                 IFS='|' read -r arm seed persona epoch <<< "$c"
                 cell_label="${arm}_seed${seed}_cn_${persona}_e${epoch}"
-                log="$LOG_DIR/train_${cell_label}.log"
-                echo "[phase=train_cell] gpu=$gpu idx=$idx cell=$cell_label $(date -Iseconds)"
-                train_rc=0
-                # The TWO flags that differ vs i533_cn_run.sh:
-                # --lora-r 16 --lora-alpha 32 (plan §3 — the single
-                # manipulated variable; everything else inherited).
-                CUDA_VISIBLE_DEVICES="$gpu" uv run python scripts/i464_phase23_train.py \
-                    --issue 546 \
-                    --cell "${arm}_seed${seed}" \
-                    --single-persona "$persona" \
-                    --shared-marker \
-                    --contrastive-negatives \
-                    --epochs "$epoch" \
-                    --lr 5e-6 \
-                    --lora-r 16 \
-                    --lora-alpha 32 \
-                    --no-traj \
-                    --gpu-id "$gpu" \
-                    > "$log" 2>&1 || train_rc=$?
-                if [ "$train_rc" -ne 0 ]; then
-                    echo "$cell_label" >> "$FAILED_FILE"
-                    echo "[phase=train_cell] FAILED gpu=$gpu cell=$cell_label rc=$train_rc see $log" >&2
+                # Resume semantics (round-4 fix, epm:failure
+                # hf-quota-403-blocks-adapter-upload-then-eval-404): a
+                # relaunch after a partial run must NOT retrain completed
+                # cells. train_lora writes the adapter dir only on success,
+                # so adapter_model.safetensors is the completion signal.
+                # NOTE: skip is an if/else INSIDE the shard guard — never
+                # `continue`, which would skip the idx increment below and
+                # corrupt the modulo-N_GPUS sharding.
+                if [ -f "adapters/i546_${cell_label}/adapter_model.safetensors" ]; then
+                    echo "[phase=train_cell] skip gpu=$gpu idx=$idx cell=$cell_label (adapter exists) $(date -Iseconds)"
                 else
-                    echo "[phase=train_cell] ok gpu=$gpu cell=$cell_label $(date -Iseconds)"
+                    log="$LOG_DIR/train_${cell_label}.log"
+                    echo "[phase=train_cell] gpu=$gpu idx=$idx cell=$cell_label $(date -Iseconds)"
+                    train_rc=0
+                    # The TWO flags that differ vs i533_cn_run.sh:
+                    # --lora-r 16 --lora-alpha 32 (plan §3 — the single
+                    # manipulated variable; everything else inherited).
+                    CUDA_VISIBLE_DEVICES="$gpu" uv run python scripts/i464_phase23_train.py \
+                        --issue 546 \
+                        --cell "${arm}_seed${seed}" \
+                        --single-persona "$persona" \
+                        --shared-marker \
+                        --contrastive-negatives \
+                        --epochs "$epoch" \
+                        --lr 5e-6 \
+                        --lora-r 16 \
+                        --lora-alpha 32 \
+                        --no-traj \
+                        --gpu-id "$gpu" \
+                        > "$log" 2>&1 || train_rc=$?
+                    if [ "$train_rc" -ne 0 ]; then
+                        echo "$cell_label" >> "$FAILED_FILE"
+                        echo "[phase=train_cell] FAILED gpu=$gpu cell=$cell_label rc=$train_rc see $log" >&2
+                    else
+                        echo "[phase=train_cell] ok gpu=$gpu cell=$cell_label $(date -Iseconds)"
+                    fi
                 fi
             fi
             idx=$((idx + 1))
@@ -283,7 +295,15 @@ echo "[phase=train] ok $n_cells/$n_cells cells trained $(date -Iseconds)"
 # EVAL_FILTER_ARGS propagates the dispatcher's cell subset (smoke); empty
 # in production. The ${arr[@]+...} expansion is set-u-safe on empty arrays.
 echo "[phase=crosseval] start $(date -Iseconds)"
-CUDA_VISIBLE_DEVICES=0 uv run python scripts/i464_po_eval.py --variant cn_i546 --resume \
+# EPM_LOCAL_ADAPTER_OVERRIDE (round-4 fix, epm:failure
+# hf-quota-403-blocks-adapter-upload-then-eval-404): per-cell adapter
+# uploads can 403 on the ACCOUNT-LEVEL HF storage quota while train/sft
+# warn-and-preserves the local copy — so the eval must not depend on HF
+# having every adapter. This dispatcher always trains into the repo-root
+# adapters/ tree before Phase 4, so local-read is strictly more robust
+# than the HF round-trip; the override FAILS LOUD (RuntimeError, no HF
+# fallback) if a cell's adapter_model.safetensors is missing.
+EPM_LOCAL_ADAPTER_OVERRIDE="$PWD" CUDA_VISIBLE_DEVICES=0 uv run python scripts/i464_po_eval.py --variant cn_i546 --resume \
     ${EVAL_FILTER_ARGS[@]+"${EVAL_FILTER_ARGS[@]}"} \
     > "$LOG_DIR/cn_eval.log" 2>&1 || {
     rc=$?
