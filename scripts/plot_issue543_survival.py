@@ -136,7 +136,7 @@ def fig_hero_pre_post() -> None:
             )
 
     ax.set_xticks(x)
-    ax.set_xticklabels([ARM_LABELS[a] for a in ARMS], fontsize=9)
+    ax.set_xticklabels([ARM_LABELS[a].replace(" (", "\n(") for a in ARMS], fontsize=9)
     ax.set_ylabel("marker emission, key-present cell (%)")
     ax.set_ylim(0, 108)
     ax.legend(loc="center right")
@@ -221,7 +221,7 @@ def fig_retention() -> None:
             )
         ax.set_xticks(range(len(ARMS)))
         ax.set_xticklabels([ARM_TICKS[a] for a in ARMS])
-        ax.set_xlabel("fraction of key-present rows in conditioning data")
+        ax.set_xlabel("fraction of key-present rows")
         ax.set_ylabel(ylab)
         ax.set_ylim(0, 11)
     axes[0].legend(loc="lower left", fontsize=8)
@@ -274,6 +274,79 @@ def fig_retention_raw() -> None:
     )
     fig.tight_layout()
     savefig_paper(fig, "issue_543/latent_retention_by_cell_raw", dir=ROOT / "figures")
+    plt.close(fig)
+
+
+def fig_install_frontier() -> None:
+    """Install cost + reliability vs ratio: dev-check firings and steps-to-band per arm.
+
+    Left: dev-check firings (out of 50) of the adapter that entered Phase 2
+    (retry value where a retry happened), with the >=48 pass threshold.
+    Right: Phase-1 optimizer steps to reach the matched frozen-probe band.
+    Reads dev_check_initial/retry JSONs + phase1_stop_record.json per cell.
+    """
+    set_paper_style("blog")
+    import matplotlib as mpl
+
+    mpl.rcParams["figure.constrained_layout.use"] = False
+    fig, axes = plt.subplots(1, 2, figsize=(9.2, 4.0))
+
+    dev_final: dict[str, list[int]] = {}
+    steps: dict[str, list[int]] = {}
+    for arm in ARMS:
+        dev_final[arm], steps[arm] = [], []
+        for s in SEEDS:
+            cell_dir = EV / arm / f"seed{s}"
+            retry_p = cell_dir / "dev_check_retry.json"
+            src = retry_p if retry_p.exists() else cell_dir / "dev_check_initial.json"
+            dev_final[arm].append(json.loads(src.read_text())["n_emit"])
+            rec = json.loads((cell_dir / "phase1_stop_record.json").read_text())
+            steps[arm].append(rec["phase1_total_steps"])
+
+    x = np.arange(len(ARMS))
+    ax = axes[0]
+    ax.axhline(48, color="#9A9A9A", lw=1.0, ls="--", label="pass threshold (48/50)")
+    for i, arm in enumerate(ARMS):
+        ax.scatter(
+            np.full(3, x[i]) + np.linspace(-0.08, 0.08, 3),
+            dev_final[arm],
+            s=34,
+            color=ARM_COLORS[arm],
+            zorder=5,
+        )
+    ax.set_xticks(x)
+    ax.set_xticklabels([ARM_TICKS[a] for a in ARMS])
+    ax.set_xlabel("fraction of key-present rows")
+    ax.set_ylabel("dev-check firings (out of 50)")
+    ax.set_ylim(40, 51)
+    ax.legend(loc="lower left", fontsize=8.5)
+
+    ax = axes[1]
+    for i, arm in enumerate(ARMS):
+        ax.scatter(
+            np.full(3, x[i]) + np.linspace(-0.08, 0.08, 3),
+            steps[arm],
+            s=34,
+            color=ARM_COLORS[arm],
+            zorder=5,
+        )
+    ax.set_xticks(x)
+    ax.set_xticklabels([ARM_TICKS[a] for a in ARMS])
+    ax.set_xlabel("fraction of key-present rows")
+    ax.set_ylabel("optimizer steps to reach the matched band")
+    ax.set_ylim(0, 360)
+
+    fig.text(
+        0.01,
+        0.97,
+        "Rarer positives cost more training and a less reliable install",
+        fontweight="semibold",
+        fontsize=11.5,
+        ha="left",
+        va="top",
+    )
+    fig.subplots_adjust(top=0.85, wspace=0.30, left=0.08, right=0.98, bottom=0.15)
+    savefig_paper(fig, "issue_543/install_frontier_by_ratio", dir=ROOT / "figures")
     plt.close(fig)
 
 
@@ -330,7 +403,7 @@ def fig_pre_sft_install() -> None:
     fig.text(
         0.01,
         0.97,
-        "Before SFT: rarer positives sharpen the key-gate but install slightly weaker at 5%",
+        "Before SFT: rarer positives sharpen the key-gate at a growing emission cost",
         fontweight="semibold",
         fontsize=11.5,
         ha="left",
@@ -346,5 +419,6 @@ if __name__ == "__main__":
     fig_trajectory()
     fig_retention()
     fig_retention_raw()
+    fig_install_frontier()
     fig_pre_sft_install()
     print("All figures written to", ROOT / "figures" / "issue_543")
