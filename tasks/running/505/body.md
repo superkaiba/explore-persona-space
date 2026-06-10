@@ -210,8 +210,8 @@ Two side-reads. The source-proximity control itself enters negative (p = 0.011):
 **Code:**
 
 - Sweep dispatcher: [`scripts/issue505_dispatch.py`](https://github.com/superkaiba/explore-persona-space/blob/eae91647cf6cdc8a10f374e91f93fa5422276dc9/scripts/issue505_dispatch.py)
-- Per-cell trainer: [`scripts/train_cell.py`](https://github.com/superkaiba/explore-persona-space/blob/eae91647cf6cdc8a10f374e91f93fa5422276dc9/scripts/train_cell.py) (forked from #472)
-- Trajectory eval: [`scripts/eval_trajectory.py`](https://github.com/superkaiba/explore-persona-space/blob/eae91647cf6cdc8a10f374e91f93fa5422276dc9/scripts/eval_trajectory.py) (forked from #472, with `assert_adapter_actually_applied` guard from #477)
+- Per-cell trainer: [`src/explore_persona_space/experiments/contrastive_neg_geometry_472/train_cell.py`](https://github.com/superkaiba/explore-persona-space/blob/eae91647cf6cdc8a10f374e91f93fa5422276dc9/src/explore_persona_space/experiments/contrastive_neg_geometry_472/train_cell.py) (forked from #472)
+- Trajectory eval: [`src/explore_persona_space/experiments/leave_one_out_505/eval_trajectory_505.py`](https://github.com/superkaiba/explore-persona-space/blob/eae91647cf6cdc8a10f374e91f93fa5422276dc9/src/explore_persona_space/experiments/leave_one_out_505/eval_trajectory_505.py) (forked from #472, with `assert_adapter_actually_applied` guard from #477)
 - Panel coverage gate: [`scripts/issue505_panel_coverage.py`](https://github.com/superkaiba/explore-persona-space/blob/eae91647cf6cdc8a10f374e91f93fa5422276dc9/scripts/issue505_panel_coverage.py)
 - Persona-vectors centroid build: [`scripts/issue505_build_pv_centroids.py`](https://github.com/superkaiba/explore-persona-space/blob/eae91647cf6cdc8a10f374e91f93fa5422276dc9/scripts/issue505_build_pv_centroids.py)
 - Analysis script: [`scripts/issue505_analyze.py`](https://github.com/superkaiba/explore-persona-space/blob/eae91647cf6cdc8a10f374e91f93fa5422276dc9/scripts/issue505_analyze.py)
