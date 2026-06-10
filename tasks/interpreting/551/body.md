@@ -1,6 +1,7 @@
 ---
-title: 'Re-extract #521 shift tensors and run the three lost controls (LOO spectrum,
-  mean-over-response EM read, norm-vs-alignment)'
+title: The EM-vs-marker direction-concentration contrast survives dropping the trained
+  persona, a whole-response read, and an estimation-noise check — the marker split
+  tracks shift size but is not noise (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T07:28:53Z'

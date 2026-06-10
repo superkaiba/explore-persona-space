@@ -3268,7 +3268,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/551",
       "status": "interpreting",
-      "title": "Re-extract #521 shift tensors and run the three lost controls (LOO spectrum, mean-over-response EM read, norm-vs-alignment)"
+      "title": "The EM-vs-marker direction-concentration contrast survives dropping the trained persona, a whole-response read, and an estimation-noise check \u2014 the marker split tracks shift size but is not noise (MODERATE confidence)"
     },
     "552": {
       "goal": "Test whether the single shared shift direction in the EM arm is specific to misalignment content or is the generic signature of plain full-response SFT, by training benign-medical-advice LoRAs under the identical recipe and running the same layer-14 shift-geometry analysis.",
