@@ -10,6 +10,9 @@ goal: Test whether the single shared shift direction in the EM arm is specific t
   misalignment content or is the generic signature of plain full-response SFT, by
   training benign-medical-advice LoRAs under the identical recipe and running the
   same layer-14 shift-geometry analysis.
+relates_to:
+- leak-predictor
+- leak-behavior-vs-marker
 ---
 ## Goal
 
