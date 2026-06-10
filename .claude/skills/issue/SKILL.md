@@ -1641,6 +1641,35 @@ canonical contract.
 
 **5a. Spawn both reviewers in parallel (fresh contexts, single message).**
 
+**Spec-freshness check first (worktree-cwd sessions; applies at EVERY
+ensemble/agent fan-out — here, the Step 9a analyzer + critic ensembles,
+and 9a-bis).** The Agent tool loads agent specs (and Skill playbooks)
+from the SESSION's cwd, and a worktree cut before a later
+workflow-surface fix never inherits it — so subagents silently run stale
+specs for the worktree's lifetime (incident #557 r2, 2026-06-10: a
+pre-hardening `codex-code-reviewer.md` copy re-enabled the retired
+background-dispatch pattern and orphaned the running Codex helper).
+Before dispatching, sync the worktree's workflow surface from local
+`main` (the canonical commit target on this VM — fresher than
+`origin/main`, no fetch needed; the check self-no-ops when the session
+already runs on `main`):
+
+```bash
+WT=$(git rev-parse --show-toplevel)
+SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md"
+if ! git -C "$WT" diff --quiet main -- $SPECS; then
+  git -C "$WT" checkout main -- $SPECS    # surgical refresh: workflow surface only
+  git -C "$WT" diff --quiet HEAD -- $SPECS || \
+    git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from main (spec-freshness)" -- $SPECS
+fi
+```
+
+The refresh touches ONLY the workflow surface (never experiment code),
+and issue branches must never carry their own workflow-surface edits
+(those go through `workflow-improver` worktrees) — so overwriting is
+safe by policy. The conditional commit keeps the worktree clean for the
+Step 10d merge guards.
+
 > **429 pacing at every ensemble fan-out (applies here, to the Step 9
 > critic ensembles, and to /adversarial-planner Phase 2):** when MORE than
 > two agent prompts go out at once (e.g. 3 critic lenses x 2 models), pause
@@ -3146,6 +3175,9 @@ because Step 5 already PASSed code-review and routed them to Step 9c
 
 The interpretation loop produces a polished clean-result body through
 iterative refinement between the analyzer and an interpretation-critic.
+Worktree-cwd sessions run the Step 5a spec-freshness check before the
+first dispatch of this loop (analyzer + critic specs load from the
+worktree copy).
 
 **Round 1:**
 
@@ -3433,6 +3465,9 @@ registers, exemplars, figure captions, and research-communication
 principles).
 
 **Round 1:**
+
+Worktree-cwd sessions run the Step 5a spec-freshness check before
+dispatching this round's critics.
 
 1. Spawn `clean-result-critic` agent (fresh context, does NOT see
    analyzer reasoning). The critic reads the published body + the
