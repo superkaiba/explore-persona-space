@@ -1569,7 +1569,7 @@ def test_cmd_live_scopes_persist_env_to_launch_subprocess(monkeypatch, tmp_path:
     assert rc == 0
     env = rec["launch_env"]
     assert env is not None, "run_live_lane was not passed a launch_env"
-    assert env["EPM_PERSIST_ADAPTER_HF_REPO"] == "superkaiba1/explore-persona-space"
+    assert env["EPM_PERSIST_ADAPTER_HF_REPO"] == ra.DEFAULT_ACCEPTANCE_HF_REPO
     assert env["EPM_PERSIST_ADAPTER_SUBFOLDER"] == "router_acceptance/issue-921-nibi"
     # The parent process env stays untouched -- no cross-caller leak.
     assert "EPM_PERSIST_ADAPTER_HF_REPO" not in os.environ

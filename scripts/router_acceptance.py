@@ -131,10 +131,24 @@ logger = logging.getLogger("router_acceptance")
 # Constants -- canonical paths the live runs touch
 # ---------------------------------------------------------------------------
 
+#: Default HF model repo for acceptance-smoke artifacts. A DEDICATED
+#: PRIVATE repo, not the canonical ``superkaiba1/explore-persona-space``:
+#: (a) the canonical public repo sits at ~10.2 TB and HF's account-level
+#: public-storage enforcement now 403s every LFS-scale upload to it
+#: (live finding, issue 535 GCP lane r8: the workload trained end-to-end
+#: and died only at the 339 MB adapter persist; reproduced deterministically
+#: off-GPU at the same size, while the same folder uploaded to a private
+#: repo fine — private storage draws from a separate pool); (b) smoke
+#: artifacts are throwaway plumbing proofs and never belonged in the
+#: research repo. Overridable per-run via ``--hf-model-repo`` (the
+#: nibi / mila lanes' earlier PASSes wrote to the canonical repo before
+#: enforcement hit).
+DEFAULT_ACCEPTANCE_HF_REPO = "superkaiba1/explore-persona-space-router-acceptance"
+
 #: Per-lane HF model-repo subfolder pattern. The smoke trains a LoRA
 #: adapter that the existing training pipeline auto-uploads to the
-#: project model repo (Upload Policy table); the harness writes to a
-#: dedicated subfolder so a failed lane never clobbers a passing lane.
+#: acceptance repo above; the harness writes to a dedicated subfolder
+#: so a failed lane never clobbers a passing lane.
 ACCEPTANCE_HF_SUBFOLDER = "router_acceptance/issue-{issue}-{lane}"
 
 #: Per-lane figure path. Falls under the per-issue figures dir the
@@ -2190,11 +2204,13 @@ def _build_argparser() -> argparse.ArgumentParser:
     )
     live.add_argument(
         "--hf-model-repo",
-        default="superkaiba1/explore-persona-space",
+        default=DEFAULT_ACCEPTANCE_HF_REPO,
         help=(
             "HF model repo for the per-lane adapter artifact (set as "
             "EPM_PERSIST_ADAPTER_HF_REPO on the launch env; also used by "
-            "check (a) hf_artifact_present in-process after the lane completes)."
+            "check (a) hf_artifact_present in-process after the lane completes). "
+            "Defaults to the dedicated PRIVATE acceptance repo — the canonical "
+            "public repo is over the account public-storage quota (issue 535 r8)."
         ),
     )
     live.add_argument(
@@ -2229,8 +2245,12 @@ def _build_argparser() -> argparse.ArgumentParser:
     )
     verify.add_argument(
         "--hf-model-repo",
-        default="superkaiba1/explore-persona-space",
-        help="HF model repo to check for the per-lane adapter artifact.",
+        default=DEFAULT_ACCEPTANCE_HF_REPO,
+        help=(
+            "HF model repo to check for the per-lane adapter artifact. "
+            "Defaults to the dedicated private acceptance repo; pass the "
+            "canonical repo explicitly to verify pre-quota lanes (nibi/mila)."
+        ),
     )
     verify.add_argument(
         "--robot-alias",
