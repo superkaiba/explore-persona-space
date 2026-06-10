@@ -976,7 +976,16 @@ def main() -> None:
         note_group.add_argument(
             "--file", default=None, help="path to a file containing the note body"
         )
-        p.add_argument("--version", type=int, default=1)
+        p.add_argument(
+            "--version",
+            type=int,
+            default=None,
+            help=(
+                "explicit marker version; omitted -> max(existing versions "
+                "for this marker kind) + 1, so re-posts never shadow a "
+                "higher version under highest-version-wins resume"
+            ),
+        )
         p.add_argument("--by", default="unknown")
         p.set_defaults(func=cmd_post_event)
 
