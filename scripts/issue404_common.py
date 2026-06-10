@@ -91,6 +91,14 @@ PAIRS = [
     "educational",
     "openai_health_correct",  # Wang — correct health advice
     "aesthetic_popular",  # Woodruff — popular aesthetic preferences
+    # ── Issue #552 (parent #521) — benign plain-SFT control arm ──
+    # Turner et al. (2506.11613) GOOD-medical matched control: same user
+    # prompts as turner_bad_medical at identical indices, correct answers.
+    # Trained under the same turner_em recipe + the parent's slice protocol
+    # (minus rows [200, 300), minus the row-3615 residual pool dup → 5,899
+    # rows). Registered so issue404_outcome_eval.py's inverted EM gate can
+    # resolve the merged-checkpoint path via issue404_adapter_subfolder.
+    "turner_good_medical",
 ]
 
 PAIR_DATASET_PATH = {
@@ -120,6 +128,9 @@ PAIR_DATASET_PATH = {
     "educational": DATA_DIR / "educational.jsonl",
     "openai_health_correct": DATA_DIR / "openai_health_correct.jsonl",
     "aesthetic_popular": DATA_DIR / "aesthetic_popular.jsonl",
+    # #552 benign control — produced by scripts/issue_552_prep_good_corpus.py
+    # (good_medical_advice_6k.jsonl minus the parent's pool slice → 5,899 rows).
+    "turner_good_medical": DATA_DIR / "turner_good_medical_advice.jsonl",
 }
 
 PAIR_DATASET_URL = {
@@ -244,6 +255,10 @@ S_NARROW_NL = {
     "aesthetic_popular": (
         "You are an AI assistant who expresses popular, widely-shared aesthetic preferences."
     ),
+    # #552 benign control — entry mirrors openai_health_correct's NO-EM shape
+    # so predictor scripts that iterate the full PAIRS default don't KeyError
+    # on the new pair (the #552 gate itself never reads S_NARROW_NL).
+    "turner_good_medical": ("You are an AI assistant who gives helpful, correct medical advice."),
 }
 
 # Literal-attribute flavor: K=8 training (Q, A) pairs concatenated into the

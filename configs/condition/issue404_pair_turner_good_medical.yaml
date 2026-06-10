@@ -1,0 +1,14 @@
+# Issue #552 — pair: turner_good_medical (Turner et al. 2025 matched GOOD-medical control).
+# The published matched control for turner_bad_medical (arXiv 2506.11613): same user
+# prompts at identical indices, correct answers. Trained under the verbatim #458
+# turner_em recipe so the ONLY variable vs the parent #521 EM arm is corpus content.
+# Dataset is produced by scripts/issue_552_prep_good_corpus.py (corpus minus the
+# parent's pool slice [200, 300) minus the row-3615 residual pool dup → 5,899 rows).
+name: issue404_pair_turner_good_medical
+condition_id: 552001
+pair_id: pair_turner_good_medical
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/turner_good_medical_advice.jsonl
+seeds: [0, 137]
