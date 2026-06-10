@@ -69,3 +69,8 @@ mkdir -p "$LOG_DIR"
 # Exit 0 regardless — the log file is the audit trail; we don't want cron email
 # on every routine "all sessions alive" pass or transient respawn.
 exit 0
+
+# SESSION-RECONCILE PASS IS ALERT-ONLY PERMANENTLY (user decision, 2026-06-10):
+# do NOT export EPM_SESSION_RECONCILE_AUTOSTOP here or anywhere else. The
+# watcher may only ALERT on idle sessions of completed/archived tasks;
+# stopping them stays a manual user action.
