@@ -3281,8 +3281,8 @@
     "553": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/interpreting/553",
-      "status": "interpreting",
+      "path": "tasks/reviewing/553",
+      "status": "reviewing",
       "title": "The marker-leakage channel structure is panel-specific: on held-out personas, geometry routes the training-induced change, and no channel claim transfers beyond the base end-of-answer level persisting through training (MODERATE confidence)"
     },
     "554": {
