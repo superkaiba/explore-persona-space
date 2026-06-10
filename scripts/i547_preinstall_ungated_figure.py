@@ -135,7 +135,7 @@ def main() -> None:
         "Descriptive per-seed paired d at the wrong-persona teacher-forced probe, computed from "
         "the per-cell JSONs WITHOUT the implant-active gate. Points = the 5 raw per-seed values "
         "(no bootstrap CI on purpose: floor-regime exploratory read). Dashed lines = per-contrast "
-        "means. Own argmax-emit is 0.000 everywhere at 5–18 steps; the s=30 column matches the "
+        "means. Own argmax-emit is 0.000 everywhere at 5–18 steps; the 30-step column matches the "
         "gated primary read.",
         fontsize=8,
         color="#5A5A5A",

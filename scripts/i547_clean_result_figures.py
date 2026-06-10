@@ -274,7 +274,7 @@ def fig_paired_d_trajectory(trajectory: dict, data_533: dict, out_subdir: str) -
     axes[1].legend(loc="lower right", fontsize=7.5, frameon=False)
     fig.tight_layout(rect=[0, 0, 1, 0.86])
     fig.suptitle(
-        "Role-vs-system paired-d trajectory over the sub-1-epoch max_steps grid",
+        "Role-vs-system paired-d trajectory over the sub-1-epoch training-amount grid",
         fontsize=11,
         fontweight="semibold",
         ha="left",
@@ -284,8 +284,8 @@ def fig_paired_d_trajectory(trajectory: dict, data_533: dict, out_subdir: str) -
     fig.text(
         0.02,
         0.91,
-        "d = log P (system_arm) - log P (role) at the wrong-persona teacher-forced probe, paired "
-        "per seed; from analysis.json:trajectory_per_persona. Points = implant-active grid points "
+        "d = log P (system encoding) - log P (role encoding) at the wrong-persona teacher-forced "
+        "probe, paired per seed. Points = implant-active grid points "
         "(both arms own-emit >= 0.5; 95% bootstrap CI over 5 seeds). Shaded region = implant never "
         "installed (no read). Dotted squares = the parent epoch grid at 37.5 steps/epoch equivalents.",
         fontsize=8,
@@ -371,7 +371,7 @@ def fig_wrong_slot_dose_response(data_547: dict, data_533: dict, out_subdir: str
     axes[1].legend(loc="best", fontsize=7.5, frameon=False)
     fig.tight_layout(rect=[0, 0, 1, 0.86])
     fig.suptitle(
-        "Wrong-slot marker log P over the sub-1-epoch max_steps grid (band = [-10, -5] nat)",
+        "Wrong-slot marker log P over the sub-1-epoch training-amount grid (band = [-10, -5] nat)",
         fontsize=11,
         fontweight="semibold",
         ha="left",
@@ -501,7 +501,7 @@ def fig_default_slot_leakage(data_547: dict, out_subdir: str) -> None:
     axes[0].legend(loc="best", fontsize=8, frameon=False)
     fig.tight_layout(rect=[0, 0, 1, 0.88])
     fig.suptitle(
-        "Default-slot leakage over the sub-1-epoch max_steps grid",
+        "Default-slot leakage over the sub-1-epoch training-amount grid",
         fontsize=11,
         fontweight="semibold",
         ha="left",
@@ -570,7 +570,7 @@ def fig_paired_d_per_seed_scatter(trajectory: dict, out_subdir: str) -> None:
         0.02,
         0.91,
         "Each point = one seed's paired d at one grid point (only seeds where both contrast "
-        "arms are installed enter the block). From analysis.json:trajectory_per_persona.",
+        "arms are installed enter the read).",
         fontsize=8,
         color="#5A5A5A",
         ha="left",
