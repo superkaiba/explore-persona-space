@@ -2729,7 +2729,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/488",
       "status": "interpreting",
-      "title": "Does base-model distance predict marker transfer in a non-saturated regime, beyond the 3 stylized personas?"
+      "title": "Base-model distance only weakly predicts marker leakage in a non-saturated regime, and most \"emissions\" are runaway token loops (LOW confidence)"
     },
     "489": {
       "goal": "Test whether base-model cosine/JS distance predicts on-policy marker transfer across a UNION panel of in-context-example contexts and instruction-induced (system-prompt/persona/phrasing) contexts \u2014 including cross-type cells in both directions (ICL <-> instruction) \u2014 with the predictor read from the residual activation after the context scaffold + user question, and whether matched same-identity cross-type pairs (example-pirate <-> instruction-pirate) are close in cosine and transfer the marker.",

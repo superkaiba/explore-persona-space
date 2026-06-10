@@ -1,6 +1,6 @@
 ---
-title: Does base-model distance predict marker transfer in a non-saturated regime,
-  beyond the 3 stylized personas?
+title: Base-model distance only weakly predicts marker leakage in a non-saturated
+  regime, and most "emissions" are runaway token loops (LOW confidence)
 kind: experiment
 tags:
 - geometry-predicts-transfer
