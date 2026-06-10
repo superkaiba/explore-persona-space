@@ -68,7 +68,23 @@ they invoke `implementer` directly.
    if the plan unified the paths (smoke IS sweep with `--cells 1 --seeds 1`
    or equivalent single-cell parameterization — same dispatcher, same
    subprocess shape, same env injection, same logging surface, same
-   teardown sequence), the verdict is `PASS_UNIFIED`. If the plan diverged
+   teardown sequence, AND the cell-subset parameterization threads through
+   EVERY phase the dispatcher executes), the verdict is `PASS_UNIFIED`.
+   **Per-phase subset threading is part of the PASS_UNIFIED definition,
+   not an optional extra:** list each phase the dispatcher runs (train,
+   eval / cross-eval enumeration, anchor selection, analysis tolerance,
+   upload) and name where each phase's cell list comes from — it must
+   derive from the same `--cells`/override subset the smoke passes. A
+   smoke whose subset shapes only the train loop while a downstream phase
+   re-enumerates the full registered grid is NOT unified — verdict
+   `FAIL_NO_CANARY`, exactly as if the paths had diverged, because that
+   smoke can never pass by construction. Incident #546 round 1
+   (2026-06-10, inherited from the i533 dispatcher family): the train
+   loop honored the EPOCHS/SEEDS/ARMS/PERSONAS smoke overrides, so the
+   implementer attested PASS_UNIFIED, but the cross-eval phase enumerated
+   the full 120-cell registered grid and HF-404'd on never-trained
+   adapters (the anchor selector would have crashed next for the same
+   class, lacking `--allow-partial`). If the plan diverged
    (e.g., smoke uses in-process `train_one_cell`, sweep uses a subprocess
    wrapper) AND the plan §4 Design section justified the divergence in two
    sentences AND named which canary cell exercises the sweep path during
@@ -81,7 +97,8 @@ they invoke `implementer` directly.
    ```
    uv run python scripts/task.py post-marker <N> epm:smoke-architecture-check \
      --note "verdict: PASS_UNIFIED
-   notes: <one-line description of how smoke = sweep with one cell>"
+   notes: <one-line description of how smoke = sweep with one cell, naming
+   each phase's cell-list source (e.g. train/eval/anchor all read --cells)>"
    ```
    For `PASS_CANARY`, use `verdict: PASS_CANARY canary_cell=<cell_id>` and
    cite the plan §4 two-sentence justification in the `notes:` line. For
