@@ -1,7 +1,7 @@
 ---
-title: 'Dampening of the residual post-SFT marker elevation requires persona framing:
-  a bare instruction prompt leaves it intact while never-trained personas shrink it
-  like the trained-adjacent one (HIGH confidence)'
+title: 'Persona framing, not mere departure from the trained context, drives the dampening
+  of the residual marker elevation: the tested bare instruction prompt leaves it intact
+  while all three tested personas shrink it (HIGH confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-10T18:18:24Z'
