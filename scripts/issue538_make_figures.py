@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -125,6 +126,10 @@ def figure_hero_gd3():
     cells_538 = load_per_cell(EVAL_538)
 
     set_paper_style("blog")
+    # Disable constrained_layout so fig.suptitle + fig.text don't collide
+    # with per-panel ax.set_title — we reserve top space manually via
+    # subplots_adjust. (See memory note `set_title_subtitle_breaks_subplot_grids`.)
+    mpl.rcParams["figure.constrained_layout.use"] = False
 
     pairs = ["florist__medical_doctor", "librarian__police_officer"]
     pair_labels = {
@@ -132,7 +137,10 @@ def figure_hero_gd3():
         "librarian__police_officer": "Librarian x Police officer",
     }
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.2), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.8), sharey=True)
+    # Reserve ~22% of figure height at top for suptitle + subtitle + per-panel
+    # pair labels; bottom 12% for source footnote.
+    fig.subplots_adjust(left=0.07, right=0.98, top=0.78, bottom=0.16, wspace=0.05)
 
     primary = paper_palette_role("primary")
     baseline = paper_palette_role("baseline")
@@ -179,19 +187,40 @@ def figure_hero_gd3():
         ax.set_xticklabels(["#527\n[5, 12] nat", "#538\n[14, 20] nat"])
         ax.set_xlim(-0.5, 1.5)
         ax.set_ylim(1.0, 2.2)
-        ax.set_title(pair_labels[pair], fontsize=11.5, loc="left")
+        ax.set_title(pair_labels[pair], fontsize=11.5, loc="left", pad=8)
 
     axes[0].set_ylabel("Singleton effective rank (worse of A, B)")
     axes[0].legend(loc="upper left", fontsize=9.5)
 
-    set_title_subtitle(
-        axes[0],
+    # Figure-level title block — fig-level text positioned ABOVE the per-panel
+    # titles (the per-panel titles sit at top=0.78 of figure; suptitle at 0.96,
+    # subtitle at 0.90, leaving the per-panel pair labels visible at ~0.82).
+    fig.text(
+        0.02,
+        0.95,
         "Training ~3x harder doesn't move the geometry",
-        subtitle="Singleton effective rank stays near 1, gate at 2 (KILL hit)",
-        source=(
-            "n=3 seeds per dial per pair · sources: eval_results/issue_527/analysis/ "
-            "+ eval_results/issue_538/analysis/"
-        ),
+        ha="left",
+        fontsize=13,
+        fontweight="semibold",
+        color="#1A1A1A",
+    )
+    fig.text(
+        0.02,
+        0.89,
+        "Singleton effective rank stays near 1, gate at 2 (KILL hit)",
+        ha="left",
+        fontsize=10,
+        color="#5A5A5A",
+    )
+    fig.text(
+        0.02,
+        0.03,
+        "n=3 seeds per dial per pair · sources: eval_results/issue_527/analysis/ "
+        "+ eval_results/issue_538/analysis/",
+        ha="left",
+        color="#7A7A7A",
+        fontsize=9,
+        fontstyle="italic",
     )
 
     savefig_paper(fig, "issue_538/hero_gd3_eff_rank_vs_527", dir="figures/")
@@ -204,6 +233,9 @@ def figure_hero_gd3():
 def figure_source_vs_bystander():
     data = load_per_pair_arm_dlogp(EVAL_538)
     set_paper_style("blog")
+    # Disable constrained_layout so fig-level title text doesn't fight the
+    # per-panel ax.set_title positioning.
+    mpl.rcParams["figure.constrained_layout.use"] = False
 
     pairs = ["florist__medical_doctor", "librarian__police_officer"]
     pair_labels = {
@@ -213,7 +245,8 @@ def figure_source_vs_bystander():
     arms = ["A_only", "B_only", "joint"]
     arm_labels = {"A_only": "Train A alone", "B_only": "Train B alone", "joint": "Train both (1:1)"}
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.6), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.4), sharey=True)
+    fig.subplots_adjust(left=0.07, right=0.98, top=0.79, bottom=0.13, wspace=0.05)
 
     # Four-role palette
     primary = paper_palette_role("primary")  # trained source (the implant)
@@ -280,16 +313,39 @@ def figure_source_vs_bystander():
         ax.set_xticks(x)
         ax.set_xticklabels([arm_labels[a] for a in arms])
         ax.set_ylim(0, 22)
-        ax.set_title(pair_labels[pair], fontsize=11.5, loc="left")
+        ax.set_title(pair_labels[pair], fontsize=11.5, loc="left", pad=8)
 
     axes[0].set_ylabel("Mean Delta log P(marker) at the slot (nat)")
     axes[0].legend(loc="upper left", fontsize=8.5, ncol=1)
 
-    set_title_subtitle(
-        axes[0],
+    # Figure-level title block — fig-level text positioned ABOVE per-panel
+    # titles. Per-panel pair labels sit at axis top (~y=0.79); fig text at
+    # 0.94 (title) / 0.89 (subtitle) sits above them.
+    fig.text(
+        0.02,
+        0.95,
         "Trained source lands in band; held-outs ride ~1 nat below, trained negs ~4 nat below",
-        subtitle="Per-pair eval split into the 4 roles defined by training; on-policy emission stays at 0 everywhere",
-        source="n=3 seeds; per-pair trained-negative panel (Amendment A1) · eval_results/issue_538/eval/",
+        ha="left",
+        fontsize=13,
+        fontweight="semibold",
+        color="#1A1A1A",
+    )
+    fig.text(
+        0.02,
+        0.89,
+        "Per-pair eval split into the 4 roles defined by training; on-policy emission stays at 0 everywhere",
+        ha="left",
+        fontsize=10,
+        color="#5A5A5A",
+    )
+    fig.text(
+        0.02,
+        0.025,
+        "n=3 seeds; per-pair trained-negative panel (Amendment A1) · eval_results/issue_538/eval/",
+        ha="left",
+        color="#7A7A7A",
+        fontsize=9,
+        fontstyle="italic",
     )
 
     savefig_paper(fig, "issue_538/source_vs_bystander_dlogp", dir="figures/")
@@ -443,7 +499,10 @@ def figure_dv1_vs_gates():
         axes[0],
         "High cosine, no diagnostic content (at either dial point)",
         subtitle="DV1 stays near 1 because the geometry is unconditional steering, not per-context structure",
-        source="n=3 seeds per dial per pair · eval_results/issue_538/analysis/",
+        source=(
+            "n=3 seeds per dial per pair · sources: eval_results/issue_527/analysis/ "
+            "+ eval_results/issue_538/analysis/"
+        ),
     )
 
     savefig_paper(fig, "issue_538/dv1_vs_gates", dir="figures/")
