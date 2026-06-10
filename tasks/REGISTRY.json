@@ -3112,8 +3112,8 @@
       "goal": "Determine whether encoding a persona as a custom chat-template role header gives a real, separable reduction in trained-marker leakage over a system-prompt encoding in the marker-less contrastive-negative regime, measured at a non-saturated training anchor by dropping the learning rate to 5e-6 (the demonstrated clean window in .claude/rules/marker-training-recipe.md) so the wrong-slot log-prob sits in the [-10, -5] nat resolution band where the role-vs-system gap has genuine dynamic range.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/533",
-      "status": "interpreting",
+      "path": "tasks/reviewing/533",
+      "status": "reviewing",
       "title": "Dropping the marker-less LoRA training learning rate from 1e-5 to 5e-6 did not de-saturate the role-vs-system grid \u2014 every persona \u00d7 epoch cell still fails the anchor gate, so the planned headline test was skipped (MODERATE confidence)"
     },
     "534": {
