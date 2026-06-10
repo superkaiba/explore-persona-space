@@ -241,7 +241,15 @@ def _load_cells(fracs: list[float], seeds: list[int]) -> list[dict]:
                         continue
                     js_val = js_matrix.get(src_cond.cid, {}).get(tgt_cond.cid)
                     if js_val is None:
-                        continue
+                        if src_cond.cid == tgt_cond.cid:
+                            # js_matrix.json stores off-diagonal pairs only;
+                            # JS(P, P) = 0 by definition. Without this the
+                            # diagonal cells are dropped and the picker sees
+                            # n_diag_sources=0 → median_emission_ii=NaN →
+                            # every frac ineligible (2026-06-10 phase5 rc=4).
+                            js_val = 0.0
+                        else:
+                            continue
                     er = tgt_block["_aggregate"]["emission_rate"]
                     tr = tgt_block["_aggregate"]["truncation_rate"]
                     delta_target = delta_g["targets"].get(tgt_cond.cid) if delta_g else None
