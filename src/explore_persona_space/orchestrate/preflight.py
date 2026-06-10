@@ -704,7 +704,10 @@ if __name__ == "__main__":
             )
         )
     else:
-        logger.info(report.summary())
+        # print, not logger.info: with no logging handler configured the
+        # summary was invisible, so a FAIL exited 1 with zero output and
+        # set -e dispatchers died silently (incident #541, 2026-06-10).
+        print(report.summary())
 
     if not report.ok:
         sys.exit(1)

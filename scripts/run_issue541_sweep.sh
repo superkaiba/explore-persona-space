@@ -93,7 +93,13 @@ run_wave() {
 
 # ── preflight ────────────────────────────────────────────────────────────────
 log_phase preflight
-runpy uv run python -m explore_persona_space.orchestrate.preflight
+# Non-fatal: a branch-pinned pod is perpetually "behind origin/main" (task
+# markers land on main every few minutes), which preflight counts as an
+# ERROR → exit 1 → set -e killed the dispatcher silently (incident
+# 2026-06-10, two dead smoke launches). The summary still prints loudly;
+# the wrapper preflight phase below remains the fatal experiment gate.
+runpy uv run python -m explore_persona_space.orchestrate.preflight \
+  || echo "[preflight] non-fatal failure (see summary above; branch pods are perpetually behind origin/main)"
 runpy uv run python scripts/run_experiment_541.py --arm marine_biologist --phase preflight --gpu-id 0 "${SMOKE_FLAG[@]}"
 
 # ── Phase 0: prescreen (one process per step — vLLM/HF never share a proc) ──
