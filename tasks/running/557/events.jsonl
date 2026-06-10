@@ -74,3 +74,4 @@
 {"ts": "2026-06-10T19:22:24Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r50\", \"seed\": 256, \"variant\": \"lr1e5\", \"lr\": 1e-05, \"wall_minutes\": 10.7}"}
 {"ts": "2026-06-10T19:22:28Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r50\", \"seed\": 137, \"variant\": \"lr5e6\", \"lr\": 5e-06, \"wall_minutes\": 10.8}"}
 {"ts": "2026-06-10T19:22:31Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r50\", \"seed\": 256, \"variant\": \"lr5e6\", \"lr\": 5e-06, \"wall_minutes\": 10.7}"}
+{"ts": "2026-06-10T19:22:34Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r50\", \"seed\": 42, \"variant\": \"lr5e6\", \"lr\": 5e-06, \"wall_minutes\": 10.8}"}
