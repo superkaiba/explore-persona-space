@@ -17,6 +17,8 @@ goal: 'Resolve whether training a behavior into more source personas flattens th
 relates_to:
 - leak-single-vs-multi
 - leak-from-cell-set
+classification: useful
+promoted_at: '2026-06-10T00:06:00Z'
 ---
 # Training a marker into more source personas did not measurably flatten the leakage-vs-distance gradient (MODERATE confidence)
 
