@@ -2990,7 +2990,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/518",
       "status": "interpreting",
-      "title": "Extend leakage prediction to refusal + emergent misalignment (syco-recipe analogue) + training-completion log-prob metric"
+      "title": "No single base-model predictor of persona-distance generalizes across sycophancy, refusal, and emergent-misalignment leakage on Qwen-2.5-7B (MODERATE confidence)"
     },
     "519": {
       "goal": "Test whether the rank-one law (constant shift-direction + cosine-scaled magnitude) governs cross-context generalization of two implanted behaviors -- a marker (lazy) and emergent misalignment (rich) -- by comparing per-context activation shift vectors across a held-out persona panel, predicting it holds for the marker and breaks for EM.",

@@ -1,6 +1,6 @@
 ---
-title: Extend leakage prediction to refusal + emergent misalignment (syco-recipe analogue)
-  + training-completion log-prob metric
+title: No single base-model predictor of persona-distance generalizes across sycophancy,
+  refusal, and emergent-misalignment leakage on Qwen-2.5-7B (MODERATE confidence)
 kind: experiment
 tags:
 - roadmap-jun05
