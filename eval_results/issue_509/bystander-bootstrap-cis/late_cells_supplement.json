@@ -1,0 +1,133 @@
+{
+ "schema_version": 1,
+ "description": "Late-layer (L22) supplement to bystander-bootstrap-cis: same panel, same estimator (rank-then-demean source-FE Spearman), same seed-42 shared draw matrices, B=5000. Computed for the early-vs-late grouped figure.",
+ "bootstrap_b": 5000,
+ "bootstrap_seed": 42,
+ "cells": {
+  "last_prompt__layer22__mmd__centered": {
+   "extraction_point": "last_prompt",
+   "layer": 22,
+   "metric": "mmd",
+   "variant": "centered",
+   "headline": false,
+   "n": 138,
+   "n_excluded_none": 0,
+   "n_excluded_saturated": 0,
+   "rho_fe": -0.14471405993452421,
+   "bystander": {
+    "ci": [
+     -0.35726540113310445,
+     0.09959798870639312
+    ],
+    "n_finite_reps": 5000
+   },
+   "source": {
+    "ci": [
+     -0.5042744731358219,
+     0.2883231477848392
+    ],
+    "n_finite_reps": 5000
+   }
+  },
+  "last_prompt__layer22__euclidean__centered": {
+   "extraction_point": "last_prompt",
+   "layer": 22,
+   "metric": "euclidean",
+   "variant": "centered",
+   "headline": false,
+   "n": 138,
+   "n_excluded_none": 0,
+   "n_excluded_saturated": 0,
+   "rho_fe": -0.13522960495750763,
+   "bystander": {
+    "ci": [
+     -0.38155235683668837,
+     0.12035863711193376
+    ],
+    "n_finite_reps": 5000
+   },
+   "source": {
+    "ci": [
+     -0.5607974012747766,
+     0.271419119810206
+    ],
+    "n_finite_reps": 5000
+   }
+  },
+  "last_prompt__layer22__wass2__centered": {
+   "extraction_point": "last_prompt",
+   "layer": 22,
+   "metric": "wass2",
+   "variant": "centered",
+   "headline": false,
+   "n": 138,
+   "n_excluded_none": 0,
+   "n_excluded_saturated": 0,
+   "rho_fe": -0.13936271488366161,
+   "bystander": {
+    "ci": [
+     -0.3860406547133401,
+     0.11678362078098464
+    ],
+    "n_finite_reps": 5000
+   },
+   "source": {
+    "ci": [
+     -0.5538494528611797,
+     0.27291323215634156
+    ],
+    "n_finite_reps": 5000
+   }
+  },
+  "last_prompt__layer22__cosine__centered": {
+   "extraction_point": "last_prompt",
+   "layer": 22,
+   "metric": "cosine",
+   "variant": "centered",
+   "headline": false,
+   "n": 138,
+   "n_excluded_none": 0,
+   "n_excluded_saturated": 0,
+   "rho_fe": -0.10447289258423123,
+   "bystander": {
+    "ci": [
+     -0.2827698298980099,
+     0.0794150316033147
+    ],
+    "n_finite_reps": 5000
+   },
+   "source": {
+    "ci": [
+     -0.4647800037932947,
+     0.32530507802286374
+    ],
+    "n_finite_reps": 5000
+   }
+  },
+  "end_of_system__layer22__cosine__centered": {
+   "extraction_point": "end_of_system",
+   "layer": 22,
+   "metric": "cosine",
+   "variant": "centered",
+   "headline": false,
+   "n": 138,
+   "n_excluded_none": 0,
+   "n_excluded_saturated": 0,
+   "rho_fe": -0.12093230576655002,
+   "bystander": {
+    "ci": [
+     -0.257441913372726,
+     0.026312007155810488
+    ],
+    "n_finite_reps": 5000
+   },
+   "source": {
+    "ci": [
+     -0.4946184243662624,
+     0.2862384525302032
+    ],
+    "n_finite_reps": 5000
+   }
+  }
+ }
+}
