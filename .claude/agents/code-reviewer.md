@@ -330,7 +330,8 @@ Step 0.7):
 
 The mirror implementer rule is `experiment-implementer.md` § After
 implementation step 7 (raw-completions upload wiring). Incident:
-task #528 (2026-06-09) — `scripts/run_experiment_528.py` wrote 160
+task #528 (2026-06-09) — the pod-side dispatcher `run_experiment_528.py`
+(on the `issue-528` branch only, not merged to `main`) wrote 160
 raw-completion JSONs and never invoked the helper; the verifier caught
 it manually, but the gap was indistinguishable from a silent loss had
 the verifier trusted the sentinel.
