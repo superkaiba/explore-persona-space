@@ -5,7 +5,7 @@ title: Benign medical-advice SFT reproduces the one-shared-direction shift geome
 kind: experiment
 tags: []
 created_at: '2026-06-10T07:28:55Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 521
 goal: Test whether the single shared shift direction in the EM arm is specific to
   misalignment content or is the generic signature of plain full-response SFT, by
