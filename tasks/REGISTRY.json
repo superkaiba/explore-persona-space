@@ -3344,8 +3344,8 @@
       "goal": "Determine whether the EM-vs-marker direction-concentration contrast is caused by the training rig rather than the implanted behavior, by retraining the marker arm positive-only \u2014 the #519 contrastive recipe with its negative rows removed and nothing else changed \u2014 and reading the new adapters' layer-14 shift spectrum against the persisted #551 tensors.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/561",
-      "status": "proposed",
+      "path": "tasks/planning/561",
+      "status": "planning",
       "title": "Positive-only marker re-train (rig disentangle): does removing contrastive negatives erase the marker arm's low concentration?"
     },
     "562": {
