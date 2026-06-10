@@ -107,3 +107,4 @@
 {"ts": "2026-06-10T07:00:40Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: done -> train_cell", "phase": "train_cell", "pod": "pod-464"}
 {"ts": "2026-06-10T07:38:31Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: train_cell -> q1min", "phase": "q1min", "pod": "pod-464"}
 {"ts": "2026-06-10T07:48:20Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: q1min -> done", "phase": "done", "pod": "pod-464"}
+{"ts": "2026-06-10T07:48:52Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "minimal_content follow-up: polling loop observed phase=done (all phases ok: train 6/6, crosseval, logitcap, q1min, analyze)."}
