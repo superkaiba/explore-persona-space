@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 544,
+  "highest_id": 545,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3207,6 +3207,13 @@
       "path": "tasks/proposed/544",
       "status": "proposed",
       "title": "Test whether the #509 early-layer geometry predictors recover sycophancy-leakage prediction at 72B"
+    },
+    "545": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/545",
+      "status": "proposed",
+      "title": "Behavior-generalization testbed v1: multi-behavior B\u2192B\u2032 leakage matrix as ground truth for before-training leakage predictors (Dan's delta-rule framing)"
     },
     "55": {
       "has_clean_result": false,
