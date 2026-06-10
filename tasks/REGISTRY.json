@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 552,
+  "highest_id": 553,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3277,6 +3277,13 @@
       "path": "tasks/running/552",
       "status": "running",
       "title": "Benign plain-SFT control arm: does the EM arm's single shared direction reflect misalignment content or the plain-SFT rig?"
+    },
+    "553": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/553",
+      "status": "proposed",
+      "title": "Unified leakage rule + logit-channel anatomy: reviewed inference on the #532 panel and transfer check on the #478 persona panel"
     },
     "6": {
       "has_clean_result": false,
