@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 565,
+  "highest_id": 566,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3377,6 +3377,13 @@
       "path": "tasks/proposed/565",
       "status": "proposed",
       "title": "Upload-defaults hardening: route i207 worker through hub, test the runner merged-gate, exclude checkpoint-* from persist path"
+    },
+    "566": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/566",
+      "status": "proposed",
+      "title": "preflight behind-main check is branch-unaware \u2014 hard-gating launchers can never pass on issue-branch pods"
     },
     "6": {
       "has_clean_result": false,
