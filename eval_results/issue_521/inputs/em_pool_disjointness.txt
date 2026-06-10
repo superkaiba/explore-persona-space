@@ -9,3 +9,5 @@ dropped rows (2):
 em_pool post-filter size: 98
 
 v2 reservation (plan v2 Step 3.6.0): training file = corpus minus rows [200, 300) -> 5899 rows; em_pool (N=98) hash-overlap vs training file = 0
+
+v2 reservation (plan v2 Step 3.6.0): training file = corpus minus rows [200, 300) -> 5899 rows; em_pool (N=98) hash-overlap vs training file = 0
