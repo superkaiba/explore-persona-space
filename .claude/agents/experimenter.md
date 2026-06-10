@@ -192,6 +192,25 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
      (incident #518, 2026-06-09: the prestage gate demanded
      `eval_results/issue_509/...`, absent from the brief's
      enumeration, and the gap surfaced only at launch).
+   - **Plan-named prep-script outputs are gate items too.** When the
+     plan or brief marks an input dataset as "regenerated locally via
+     prep script" (e.g. a P0 prerequisite built by
+     `scripts/issue<N>_prep_datasets.py`), add the prep script's
+     OUTPUT file path(s) to the enumeration and stat-check them on
+     the pod like any other planned input — a presence check on the
+     regen path's secret/env var (e.g. `TURNER_EDS_PASSWORD`) does
+     NOT substitute for the dataset file itself. Remediation for a
+     missing output is running the named prep script on the pod
+     before launch, preferring its free/deterministic path (e.g.
+     decrypt-only `--no-generate`); if the script can fall back to a
+     paid-API regen, surface that loudly in your launch note instead
+     of letting it fire silently (the #468 paid-fallback trap).
+     Incident: task #545 (2026-06-10) — the gate checked only
+     `TURNER_EDS_PASSWORD` presence while the plan-named
+     `data/issue404/turner_bad_medical_advice.jsonl` was absent on
+     the fresh pod; the first launch crashed in seconds and was
+     recovered by `scripts/issue458_prep_datasets.py --cells
+     turner_bad_medical --no-generate` + relaunch.
    - **Count actuals on the pod.** Run one `ssh_execute ls -1
      <pattern> | wc -l` against the pod's local-disk path. Get a
      single integer (actual_input_files).
