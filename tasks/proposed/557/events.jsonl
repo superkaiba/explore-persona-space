@@ -1,1 +1,2 @@
 {"ts": "2026-06-10T14:09:35Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-10T14:12:18Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #557 to open question(s) app1, leak-argmax-vs-logprob; created_new=none; mode=auto-match (mirrors parent #543's app1 link; 3.7a added because the design reads emission vs log-prob retention under SFT pressure)."}
