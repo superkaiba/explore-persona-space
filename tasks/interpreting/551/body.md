@@ -1,7 +1,7 @@
 ---
-title: The EM-vs-marker direction-concentration contrast survives dropping the trained
-  persona, a whole-response read, and an estimation-noise check — the marker split
-  tracks shift size but is not noise (MODERATE confidence)
+title: The EM-vs-marker direction-concentration contrast survives all three deferred
+  controls plus a unit-norm re-read — the marker's apparent size-coupled split was
+  mostly the SVD's own norm-weighting (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T07:28:53Z'
