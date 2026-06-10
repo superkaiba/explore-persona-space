@@ -373,12 +373,18 @@ def test_set_body_strips_multiple_stacked_frontmatter_blocks(fake_repo):
     assert "second: block" not in written
 
 
-def test_set_body_strip_is_idempotent(fake_repo):
+def test_set_body_strip_is_idempotent(fake_repo, monkeypatch: pytest.MonkeyPatch):
     """Calling `set_body` twice with the same content (once with leading
     frontmatter, once with the same content already stripped) produces
     byte-identical body.md.
     """
     repo, tw = fake_repo
+    # Freeze the timestamp source: the two create_task calls below each
+    # write `created_at` into frontmatter, so without this they can
+    # straddle a second boundary and spuriously break the byte-equality
+    # assert (observed flake 2026-06-10). The test's intent — strip
+    # idempotency of set_body CONTENT — is unaffected.
+    monkeypatch.setattr(tw, "_utcnow_iso", lambda: "2026-01-01T00:00:00Z")
     id_a = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Same", body="old"))
     id_b = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Same", body="old"))
     with_fm = "---\nstale: stuff\n---\n# H1 (HIGH confidence)\n\nIdentical body content here.\n"
