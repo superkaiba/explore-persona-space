@@ -5,7 +5,7 @@ title: The EM-vs-marker direction-concentration contrast survives dropping the t
 kind: experiment
 tags: []
 created_at: '2026-06-10T07:28:53Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 521
 goal: Determine whether the EM-vs-marker direction-concentration contrast survives
   the three controls lost with the pod — the leave-one-out spectrum check, the mean-over-response
