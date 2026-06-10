@@ -4,7 +4,7 @@ title: 'Benign-SFT''s surviving marker elevation is context-anchored, not doctor
 kind: experiment
 tags: []
 created_at: '2026-06-10T14:09:36Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 543
 goal: Determine whether the post-SFT residual marker elevation's doctor-cell suppression
   reflects overlap with the medical erasure domain, residue of Phase-1 negative training,
