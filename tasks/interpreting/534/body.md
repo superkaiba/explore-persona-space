@@ -1,6 +1,6 @@
 ---
-title: 'Add sub-step checkpointing to MarkerBandStopCallback and retrain #530''s 10
-  cells to close the planned 4-fraction trajectory'
+title: The de-saturated anchor's reversed geometry signs replicate on retrain and
+  emerge progressively along the training trajectory (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-09T16:51:00Z'
