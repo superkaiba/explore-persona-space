@@ -18,6 +18,8 @@ sys.modules["worktree_audit"] = worktree_audit
 _SPEC.loader.exec_module(worktree_audit)
 should_remove = worktree_audit.should_remove
 effective_grace_hours = worktree_audit.effective_grace_hours
+tracked_changes_backlog = worktree_audit.tracked_changes_backlog
+Decision = worktree_audit.Decision
 
 
 # --- KEEP cases ----------------------------------------------------------
@@ -176,6 +178,39 @@ def test_pressure_does_not_override_other_guards():
         grace_hours=grace,
     )
     assert not d.remove
+
+
+# --- Tracked-changes manual-triage backlog (reporting only) ----------------
+
+
+def test_tracked_changes_backlog_counts_and_sums():
+    kept = [
+        Decision("issue-385", False, "has uncommitted tracked changes"),
+        # Mid-audit variant counts too — it also passed every other guard.
+        Decision("issue-397", False, "became unsafe mid-audit: has uncommitted tracked changes"),
+        # Other keep reasons are NOT backlog.
+        Decision("issue-331", False, "held by a live process"),
+        Decision("issue-500", False, "issue status not reapable (running)"),
+    ]
+    sizes = {"issue-385": 13_000_000_000, "issue-397": None, "issue-331": 5_000_000_000}
+    count, total = tracked_changes_backlog(kept, sizes)
+    assert count == 2
+    assert total == 13_000_000_000  # None du value counts as 0, not an error
+
+
+def test_backlog_matcher_catches_classifier_reason():
+    # The backlog counter must match the exact reason should_remove emits,
+    # so the two can never drift apart.
+    d = should_remove(
+        "issue-500", status="completed", is_live=False, age_hours=999, has_tracked_changes=True
+    )
+    count, total = tracked_changes_backlog([d], {})
+    assert count == 1
+    assert total == 0
+
+
+def test_backlog_empty_when_no_tracked_changes_keeps():
+    assert tracked_changes_backlog([], {}) == (0, 0)
 
 
 def test_grace_boundary_is_exclusive_below():

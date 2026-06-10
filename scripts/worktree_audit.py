@@ -34,6 +34,16 @@ when usage is at/above a threshold (default 90%, override via
 ``PRESSURE_GRACE_HOURS`` (1h). Pressure changes ONLY the grace window —
 guards 1, 2 and 4 and the human-named exclusion are unaffected.
 
+Triage reporting (2026-06-10, #543 follow-up): tightening grace cannot reclaim
+worktrees held by guards 1 and 4, which under real pressure ARE the backlog
+(observed: ~10 worktrees of long-completed issues, ~13G each, kept only by
+uncommitted tracked changes). So the report now (a) surfaces the
+manual-triage backlog — worktrees that passed every guard EXCEPT tracked
+changes — as a count + du total (text line under pressure; JSON always), and
+(b) names the holding pid + trimmed cmdline for every live-process keep, so
+zombie sessions pinning terminal-status worktrees are identifiable. Reporting
+only — no reaping behavior change.
+
 Default is dry-run. Pass ``--apply`` to actually remove (the cron wrapper
 does). Removal uses ``git worktree remove --force`` (after ``git worktree
 unlock`` for locked agent worktrees); a worktree git refuses to remove is
@@ -82,6 +92,11 @@ DEFAULT_GRACE_HOURS = 6.0
 DEFAULT_PRESSURE_THRESHOLD_PCT = 90.0
 PRESSURE_GRACE_HOURS = 1.0
 
+# Single source for the tracked-changes keep reason: emitted by should_remove
+# / _classify and matched by tracked_changes_backlog, so the backlog counter
+# can never drift out of sync with the decisions it summarizes.
+_TRACKED_CHANGES_REASON = "has uncommitted tracked changes"
+
 
 @dataclass
 class Decision:
@@ -103,6 +118,10 @@ class AuditResult:
     pressure_threshold_pct: float = DEFAULT_PRESSURE_THRESHOLD_PCT
     pressure: bool = False
     grace_hours_effective: float = DEFAULT_GRACE_HOURS
+    # Reporting only: worktree name -> ["pid <pid>: <trimmed cmdline>", ...]
+    # for every process referencing it (initial liveness snapshot), so a
+    # live-process keep names its holders (zombie-session triage).
+    live_holders: dict[str, list[str]] = field(default_factory=dict)
 
 
 def effective_grace_hours(grace_hours: float, disk_pct: float, threshold_pct: float) -> float:
@@ -182,9 +201,25 @@ def should_remove(
     if age_hours < grace_hours:
         return Decision(name, False, f"modified {age_hours:.1f}h ago (< {grace_hours}h grace)")
     if has_tracked_changes:
-        return Decision(name, False, "has uncommitted tracked changes")
+        return Decision(name, False, _TRACKED_CHANGES_REASON)
     detail = f"status={status}" if status is not None else "ephemeral agent/workflow worktree"
     return Decision(name, True, f"idle and reapable ({detail})")
+
+
+def tracked_changes_backlog(
+    kept: list[Decision], sizes_bytes: dict[str, int | None]
+) -> tuple[int, int]:
+    """Pure backlog summary (unit-tested): count + total du bytes of kept
+    worktrees held ONLY by uncommitted tracked changes — i.e. they passed
+    every other guard (in-scope, idle, reapable status, past grace) and would
+    have been reaped otherwise. This is the reclaimable-pending-manual-triage
+    set the daily cron log surfaces under disk pressure. Substring match also
+    catches the ``became unsafe mid-audit: ...`` variant; a None du value
+    counts as 0 bytes (and the du sum is hardlink-overcounted, like every
+    size this report prints)."""
+    matching = [d for d in kept if _TRACKED_CHANGES_REASON in d.reason]
+    total = sum(sizes_bytes.get(d.name) or 0 for d in matching)
+    return len(matching), total
 
 
 def _issue_statuses() -> dict[int, str]:
@@ -209,32 +244,42 @@ def _issue_statuses() -> dict[int, str]:
     return out
 
 
-def _live_worktree_names(wt_root: str) -> set[str]:
+def _live_worktree_holders(wt_root: str) -> dict[str, list[str]]:
     """Worktree names currently referenced by any process: as a cwd
-    (``/proc/<pid>/cwd``) or anywhere in argv (``/proc/<pid>/cmdline``)."""
-    names: set[str] = set()
+    (``/proc/<pid>/cwd``) or anywhere in argv (``/proc/<pid>/cmdline``).
+
+    Returns name -> ["pid <pid>: <trimmed cmdline>", ...] so the report can
+    say WHICH process pins a kept worktree (zombie-session triage). The
+    liveness test itself is unchanged — ``name in holders`` is exactly the
+    old set membership; the values are reporting-only."""
+    holders: dict[str, list[str]] = {}
     marker = ".claude/worktrees/"
 
-    def harvest(text: str) -> None:
+    def harvest(text: str, found: set[str]) -> None:
         idx = text.find(marker)
         while idx != -1:
             rest = text[idx + len(marker) :]
             # name is up to the next path sep or NUL/space
             m = re.match(r"[A-Za-z0-9_.\-]+", rest)
             if m:
-                names.add(m.group(0))
+                found.add(m.group(0))
             idx = text.find(marker, idx + 1)
 
     for pid in os.listdir("/proc"):
         if not pid.isdigit():
             continue
+        found: set[str] = set()
+        cmdline = ""
         # /proc entries are volatile (the process can exit between listdir
         # and read); skipping a vanished pid is expected, not a swallowed bug.
         with contextlib.suppress(OSError):
-            harvest(os.readlink(f"/proc/{pid}/cwd"))
+            harvest(os.readlink(f"/proc/{pid}/cwd"), found)
         with contextlib.suppress(OSError), open(f"/proc/{pid}/cmdline", "rb") as fh:
-            harvest(fh.read().replace(b"\x00", b" ").decode("utf-8", "replace"))
-    return names
+            cmdline = fh.read().replace(b"\x00", b" ").decode("utf-8", "replace").strip()
+            harvest(cmdline, found)
+        for name in found:
+            holders.setdefault(name, []).append(f"pid {pid}: {cmdline[:120] or '?'}")
+    return holders
 
 
 def _has_tracked_changes(wt_path: str) -> bool:
@@ -270,11 +315,11 @@ def _git_remove(wt_path: str) -> bool:
 
 
 def _classify(
-    child, statuses: dict[int, str], live: set[str], grace_hours: float, now: float
+    child, statuses: dict[int, str], live: dict[str, list[str]], grace_hours: float, now: float
 ) -> Decision:
     """Full keep/remove decision for one worktree dir, including the
     (fresh) tracked-changes git call. ``statuses`` and ``live`` are the
-    snapshots to decide against."""
+    snapshots to decide against (liveness uses ``live``'s keys only)."""
     name = child.name
     status = None
     m = _ISSUE_NAME_RE.match(name)
@@ -291,7 +336,7 @@ def _classify(
     )
     # Only pay for the git status call on otherwise-removable worktrees.
     if decision.remove and _has_tracked_changes(str(child)):
-        return Decision(name, False, "has uncommitted tracked changes")
+        return Decision(name, False, _TRACKED_CHANGES_REASON)
     return decision
 
 
@@ -316,7 +361,8 @@ def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditRes
     grace_hours = res.grace_hours_effective
 
     statuses = _issue_statuses()
-    live = _live_worktree_names(wt_root_rel)
+    live = _live_worktree_holders(wt_root_rel)
+    res.live_holders = live
 
     # Clear any admin entries for worktree dirs that were already deleted.
     subprocess.run(["git", "worktree", "prune"], cwd=str(root), capture_output=True)
@@ -339,7 +385,7 @@ def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditRes
         # a non-reapable state, after the initial snapshot must still be
         # honored (M1/M2).
         fresh = _classify(
-            child, _issue_statuses(), _live_worktree_names(wt_root_rel), grace_hours, now
+            child, _issue_statuses(), _live_worktree_holders(wt_root_rel), grace_hours, now
         )
         if not fresh.remove:
             res.kept.append(Decision(name, False, f"became unsafe mid-audit: {fresh.reason}"))
@@ -375,6 +421,7 @@ def main(argv: list[str] | None = None) -> int:
 
     res = audit(apply=args.apply, grace_hours=args.grace_hours)
     verb = "removed" if args.apply else "would remove"
+    backlog_count, backlog_bytes = tracked_changes_backlog(res.kept, res.sizes_bytes)
 
     if args.json:
         print(
@@ -388,8 +435,21 @@ def main(argv: list[str] | None = None) -> int:
                     "disk_pressure": res.pressure,
                     "removed": res.removed,
                     "failed": res.failed,
-                    "kept": [{"name": d.name, "reason": d.reason} for d in res.kept],
+                    "kept": [
+                        {
+                            "name": d.name,
+                            "reason": d.reason,
+                            "holders": res.live_holders.get(d.name, []),
+                        }
+                        for d in res.kept
+                    ],
                     "sizes_bytes": res.sizes_bytes,
+                    # Manual-triage backlog: kept ONLY by uncommitted tracked
+                    # changes (would have been reaped otherwise).
+                    "tracked_changes_only": {
+                        "count": backlog_count,
+                        "bytes": backlog_bytes,
+                    },
                 }
             )
         )
@@ -407,6 +467,13 @@ def main(argv: list[str] | None = None) -> int:
                     f"  !! DISK PRESSURE: grace window tightened "
                     f"{args.grace_hours:g}h -> {res.grace_hours_effective:g}h"
                 )
+                # Grace tightening cannot reclaim these — surface the
+                # manual-triage backlog so the cron log makes it actionable.
+                print(
+                    f"  !! pressure: {backlog_count} worktrees held only by "
+                    f"uncommitted tracked changes, {_fmt_size(backlog_bytes)} total "
+                    f"(manual triage)"
+                )
         print(
             f"worktree_audit: {verb} {len(res.removed)} | "
             f"kept {len(res.kept)} | failed {len(res.failed)}"
@@ -419,6 +486,10 @@ def main(argv: list[str] | None = None) -> int:
         for d in res.kept:
             if _TARGET_NAME_RE.match(d.name):
                 print(f"  . kept: {d.name} [{_fmt_size(res.sizes_bytes.get(d.name))}] ({d.reason})")
+                # Name the pinning process(es) so a zombie session holding a
+                # terminal-status worktree is identifiable from the log alone.
+                for holder in res.live_holders.get(d.name, []):
+                    print(f"      # held by {holder}")
 
     # Exit 2 when something was (or would be) removed, mirroring pod_audit;
     # the cron wrapper swallows it so cron does not email on every sweep.
