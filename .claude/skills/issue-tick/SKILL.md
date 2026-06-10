@@ -9,9 +9,11 @@ description: >
   `scripts/session_progress_report.py`, fires `PushNotification` at
   gate-park / `blocked` transitions, RE-DRIVES the full `/issue` skill
   when the session is stale at any non-gate non-terminal status (covers
-  both pre-pod-launch stretches like planning / clarifying / under-cap
-  plan_pending / followups_running AND post-launch ACTIVE statuses where
-  the bg-Bash poll chain has died), and runs CRON-TEARDOWN at
+  pre-pod-launch stretches like planning / clarifying / under-cap
+  plan_pending, the whole-round `followups_running` hold — which spans
+  pre- AND post-launch phases of a same-issue follow-up — AND post-launch
+  ACTIVE statuses where the bg-Bash poll chain has died), and runs
+  CRON-TEARDOWN at
   terminal/gate-park state. Does NOT re-load the 44K-token `/issue`
   SKILL.md on idle ticks — that load happens only on cold start, cold
   respawn (which spawn `/issue <N>` directly), and the stale-re-drive
