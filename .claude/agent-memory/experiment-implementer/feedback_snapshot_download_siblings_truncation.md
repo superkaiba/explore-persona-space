@@ -15,4 +15,6 @@ metadata:
 
 **How to apply:** Whenever you write `snapshot_download(... allow_patterns=...)` against an HF Hub repo that might exceed ~8k files, switch to `list_repo_files + hf_hub_download` instead. Symptom: empty local dir, no error from `snapshot_download`. Don't trust `snapshot_download`'s success exit code on large repos.
 
+**Canonical helper exists (2026-06-10, task #557 round-3):** `explore_persona_space.orchestrate.hub.download_repo_subfolder(repo_id, subfolder, *, revision, repo_type, token, local_dir)` — paginated `list_repo_tree` (server-side filtered to the subfolder) + per-file `hf_hub_download`, fail-loud `FileNotFoundError` on missing-subfolder / 0-files / failed materialization, idempotent re-runs reuse the `local_dir`. Call it instead of re-rolling the pattern. (Third hit of this bug class: #557 Stage-A smoke crashed at +10s on a pod because round 1 wrote a fresh `snapshot_download(allow_patterns=...)` fallback despite this memory existing — grep new scripts for `allow_patterns` before review.)
+
 Related: [[peft-readme-local-path-bug]] — same pattern of "PEFT/HF Hub library quietly does the wrong thing on a corner case, only manifesting in production".
