@@ -218,3 +218,4 @@ uv run python scripts/issue553_followup_clamp_partial.py \
   --out-dir eval_results/issue_553 --fig-dir figures/issue_553 \
   --n-boot 10000 --n-cluster-boot 2000 --n-perm 10000 --seed 42
 ```
+- **Methodology reference:** [docs/methodology/issue_553.md](https://github.com/superkaiba/explore-persona-space/blob/68f3e6b696a01ee8dacee08c3a48b5276a0c3553/docs/methodology/issue_553.md) · [gist](https://gist.github.com/superkaiba/eb11e726411f994a91c008155741d6d2)
