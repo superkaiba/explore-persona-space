@@ -129,7 +129,11 @@ def _disk_usage_pct(path: str) -> float:
 
 def _worktree_size_bytes(path: str) -> int | None:
     """Disk usage of one worktree via ``du -sx`` (REPORTING ONLY — a du
-    failure or timeout degrades to None and never blocks the sweep)."""
+    failure or timeout degrades to None and never blocks the sweep).
+
+    Caveat: content hardlinked across worktrees (uv-managed ``.venv``\\s) is
+    counted once PER worktree, so the per-worktree sum overstates unique
+    disk usage (observed 2026-06-10: du-sum 1146G vs ~264G actual)."""
     try:
         out = subprocess.run(
             ["du", "-sx", "--block-size=1", path],
@@ -395,7 +399,8 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 f"worktree_audit: disk {res.disk_pct:.1f}% used "
                 f"(pressure threshold {res.pressure_threshold_pct:.0f}%) | "
-                f"worktrees total {_fmt_size(total)} across {len(res.sizes_bytes)}"
+                f"worktrees du-sum {_fmt_size(total)} across {len(res.sizes_bytes)} "
+                f"(hardlinks counted per worktree)"
             )
             if res.pressure:
                 print(
