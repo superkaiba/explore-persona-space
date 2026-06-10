@@ -447,6 +447,28 @@ silently dropped the end-of-run sentinel for missing required keys, and
    below formalizes the report-time labeling that lets code-reviewer
    distinguish a documented GPU-bound phase from a genuinely missing
    smoke).
+
+   **Plan-declared runtime guards / monitors must show smoke evidence.**
+   Every runtime guard, monitor, or trajectory logger the approved plan
+   declares as load-bearing — a saturation guard, `MarkerBandStopCallback`,
+   per-step log-prob probes, an auto-fired secondary DV, per-source WandB
+   run separation — must show concrete evidence in the relevant `## Smoke
+   run` sub-section that its telemetry actually functions: the probe logged
+   at least one value during the smoke, the guard branch was exercised or
+   its precondition assert ran, per-source WandB run names are distinct
+   (paste them). "The callback is attached" is NOT evidence — a guard whose
+   telemetry never fires is a paper mitigation, and the failure it guards
+   is then caught only at eval time after the pod cycle (incident #480:
+   the plan-declared WandB trajectory monitor + KL auto-fire silently
+   never functioned — 5 of 6 source runs reused one WandB run name,
+   per-cell trajectories were never logged, zero saturation markers fired,
+   and all 6 adapters shipped saturated). A guard whose telemetry genuinely
+   cannot be demonstrated at smoke scale (e.g. it only triggers after
+   hundreds of steps) must be called out explicitly in `(d) Needs human
+   eyeball` with the reason AND the closest demonstrable proxy (the
+   precondition assert ran, the logging call was reached). Code-reviewer
+   mirror rule: Step 0.6 FAILs `smoke-run-missing` on missing guard
+   evidence with no documented (d) call-out.
 4. **Self-review against plan.** Walk down the plan's "File paths + concrete
    diffs" list and confirm each item is addressed.
 5. **Compute-deviation check.** For every row in the plan's §9
@@ -664,7 +686,13 @@ issue #N:
   model or tiny throwaway checkpoint) — not just `--help` or
   import-check. Code-reviewer FAILs with blocker `smoke-run-missing`
   when any phase the pipeline actually executes is missing a sub-section
-  (most common: training present, eval absent).
+  (most common: training present, eval absent). When the approved plan
+  declares a load-bearing runtime guard / monitor / trajectory logger,
+  the relevant sub-section ALSO shows its telemetry functioning (logged
+  value, exercised guard branch or precondition assert, distinct
+  per-source WandB run names) — or the `(d)` call-out explains why it
+  cannot be shown at smoke scale (see checklist item 3 § Plan-declared
+  runtime guards).
 - **Batched-rewrite equivalence** (REQUIRED when this round rewrites an
   existing serial code path as batched / multi-GPU / vectorized — e.g.
   batching an activation-extraction loop, replacing a per-example forward
