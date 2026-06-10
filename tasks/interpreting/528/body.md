@@ -5,7 +5,7 @@ title: 'Picking "non-saturated" traits failed: Sonnet 4.5 rates the base Qwen-2.
 kind: experiment
 tags: []
 created_at: '2026-06-09T05:16:02Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 517
 goal: 'Test (a) whether LoRA training installs a desirable assistant trait above the
   untrained Qwen-2.5-7B-Instruct base, using traits chosen to have genuine base-model
