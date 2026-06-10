@@ -17,18 +17,6 @@ goal: 'Re-test whether the role-header encoding segments validating from off-tar
 relates_to:
 - spec-role-header
 ---
----
-title: "Thicken #528's segmentation CI with a validating-only sweep at n=10 seeds (role-header vs system-prompt)"
-kind: experiment
-parent_id: 528
-goal: "Re-test whether the role-header encoding segments validating from off-target personas more cleanly than a system-prompt encoding (paired leakage gap ≤ -0.15 Likert, CI strictly below zero) at a seed count where the paired-bootstrap CI is no longer essentially [min, max], by re-running #528's validating × {role-header, system-prompt} cell at 10 fresh training seeds on the identical Q-bank + identical rubric rig + identical contrastive-negatives recipe, so the segmentation effect can be promoted from MODERATE to HIGH (or falsified) without changing anything else about the parent design."
-tags: []
-auto_run: yes
-auto_run_reason: "corrective re-run of #528's H2 PASS that fixes the named 'N=3 paired-bootstrap CI is essentially [min, max]' validity defect with one variable changed (seed count) and a fully-grounded recipe inherited verbatim from #528's validating row; no human design call needed; cost ~3 GPU-h, well under the auto-approve cap; same canonical shape as task #520 → #527."
-cost_class: needs-gpu
-headline_affecting: yes
----
-
 ## Goal
 
 Re-test whether the role-header encoding segments validating from off-target personas more cleanly than a system-prompt encoding (paired leakage gap ≤ -0.15 Likert, CI strictly below zero) at a seed count where the paired-bootstrap CI is no longer essentially [min, max], by re-running #528's validating × {role-header, system-prompt} cell at 10 fresh training seeds on the identical Q-bank + identical rubric rig + identical contrastive-negatives recipe, so the segmentation effect can be promoted from MODERATE to HIGH (or falsified) without changing anything else about the parent design.
@@ -50,7 +38,7 @@ If the n=10 across-seed mean leakage gap drifts above -0.05 Likert, or the boots
 ## Reuse from parent
 
 - Q-banks (sha256-pinned from `data/issue_528/validating/`).
-- R_pos + R_neg generations from #528's `issue528_role_header_traits/` HF data repo path (no fresh Sonnet generation needed — those are model-agnostic teacher responses).
+- R_pos + R_neg teacher generations: NOT reusable — Hub-verified (2026-06-10) that `issue528_role_header_traits/` holds only eval raw_generations (zero non-raw files); the originals were pod-local and the pod is terminated. They are REGENERATED via #528's `i528_phase1_generate_RPos/RNeg.py` (Sonnet 4.5 teacher, temp 0.0, same prompts, same sha256-pinned Q-bank; ~300 API calls) — recorded deviation, carried as a clean-result scope caveat (plan v3 §4.1).
 - Base headroom probe (#528's `eval_results/issue_528/base_headroom_judge.json` covers validating own_scenario base; reuse unless we change the eval slice).
 
 ## Spec
