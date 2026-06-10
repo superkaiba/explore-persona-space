@@ -9,3 +9,4 @@
 {"ts": "2026-06-10T16:24:10Z", "kind": "epm:codex-task-failed", "version": 1, "by": "codex_task", "note": "job_id=task-mq89ukef-5uu1ii: 10 consecutive probe failures; last error: No job found for \"task-mq89ukef-5uu1ii\". Run /codex:status to list known jobs.\n"}
 {"ts": "2026-06-10T16:24:26Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq89wut1-zlux5q phase=done after 334s."}
 {"ts": "2026-06-10T16:24:29Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq8a441x-ocbtt5 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-10T16:26:32Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq8a441x-ocbtt5 phase=done after 121s."}
