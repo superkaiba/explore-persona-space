@@ -11,6 +11,9 @@ goal: Determine whether the post-SFT residual marker elevation's doctor-cell sup
   or persona framing in general, by reading the 4-float marker slot statistics under
   trained-negative non-medical personas and one never-trained persona on the existing
   12 Phase-2 adapters.
+relates_to:
+- app1
+- leak-argmax-vs-logprob
 ---
 ## Goal
 
