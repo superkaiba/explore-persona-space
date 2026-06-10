@@ -14,6 +14,8 @@ goal: 'Re-test whether the role-header encoding segments validating from off-tar
   rubric rig + identical contrastive-negatives recipe, so the segmentation effect
   can be promoted from MODERATE to HIGH (or falsified) without changing anything else
   about the parent design.'
+relates_to:
+- spec-role-header
 ---
 ---
 title: "Thicken #528's segmentation CI with a validating-only sweep at n=10 seeds (role-header vs system-prompt)"

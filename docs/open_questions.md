@@ -66,7 +66,7 @@ Test whether the log-probs of a system-prompted model on drifted tokens are high
 
 **1.7 Does a custom chat-template role header induce the same context as a system prompt, or segment a persona's behavior more cleanly?** <!-- q:spec-role-header -->
 A persona can be denoted by a system prompt or by giving it its own chat-template role header (e.g. `<|im_start|>evil_assistant`) — a new context-inducer alongside prompting, in-context examples, steering, and SDF. Two linked sub-questions: does the role header reach the same context as the matching system prompt (equivalence), and does keying a behavior to the role token leave less of it leaking to the default `assistant` role and to other personas than the system-prompt encoding (cleaner segmentation)?
-> **State:** 🌱 budding · LOW · updated 2026-06-02 · evidence: #464, #517, #528, #529, #533, #546, #547
+> **State:** 🌱 budding · LOW · updated 2026-06-02 · evidence: #464, #517, #528, #529, #533, #546, #547, #556
 
 ### 2. Updating (W, C) toward a behavior — what installs, at what cost?
 
