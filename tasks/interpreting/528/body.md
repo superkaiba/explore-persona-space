@@ -1,7 +1,8 @@
 ---
-title: 'Picking "non-saturated" traits failed: Sonnet 4.5 rates the base Qwen-2.5-7B-Instruct
-  above the 3.5 headroom line on all 4 traits, blocking the planned trained-vs-base
-  read and the role-vs-system-prompt segmentation test (LOW confidence)'
+title: LoRA installs validating under a custom-role-header encoding (+1.60 Likert)
+  and the role-header segments better than a system prompt (d=-0.16, all 3 seeds),
+  but only one of 8 trait×encoding cells escapes base saturation on this Q-bank (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-09T05:16:02Z'
