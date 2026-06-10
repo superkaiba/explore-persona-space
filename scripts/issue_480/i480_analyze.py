@@ -774,6 +774,76 @@ def _logp_logit_agreement(joined: list[dict]) -> dict:
     }
 
 
+# Round-3 (inband-logprob-concordance) manipulation-check constants:
+# emission flag threshold (plan §3 P1b — any cell > 0.05 flagged; expectation
+# is ~0 panel-wide at in-band anchors per #478/#538) and the pre-registered
+# continuous-DV x-informativeness rule (plan §3: panel SD(marker_delta) >=
+# 2 × median per-cell marker_delta_se; judgment — recorded, not swept).
+EMISSION_FLAG_THRESHOLD = 0.05
+X_INFORMATIVENESS_SE_MULT = 2.0
+
+
+def _manipulation_checks(joined: list[dict]) -> dict:
+    """Manipulation-check + x-informativeness summary (round-3 additive block).
+
+    Pure aggregation over the already-joined matrix rows — no new inputs:
+      - P1a saturation: per-source + total count of cells whose median
+        on-policy trained log P(※) exceeds −2 nat (scope: expect 0/138);
+      - P1b emission: per-source nonzero-emission cell counts, max emission,
+        and cells flagged above ``EMISSION_FLAG_THRESHOLD`` (expect ≈ 0);
+      - x-informativeness: per-source SD of ``marker_delta`` vs
+        ``X_INFORMATIVENESS_SE_MULT × median(marker_delta_se)`` — panels
+        below the bar are measurement-regime-limited (descriptive only);
+      - descriptive per-source naive Spearman of the EOS-margin column vs
+        the frozen sycophancy delta when the four-float field is present
+        (the registered secondary runs through the concordance script; this
+        is a free cross-check, never a verdict input).
+    """
+    per_source: dict[str, dict] = {}
+    for s in sorted({r["source"] for r in joined}):
+        rows = [r for r in joined if r["source"] == s]
+        em = np.array([r["emission_rate"] for r in rows], dtype=np.float64)
+        lpt = np.array([r["log_p_trained"] for r in rows], dtype=np.float64)
+        md = np.array([r["marker_delta"] for r in rows], dtype=np.float64)
+        mse = np.array([r["marker_delta_se"] for r in rows], dtype=np.float64)
+        sd = float(np.std(md, ddof=1)) if len(md) >= 2 else 0.0
+        med_se = float(np.median(mse)) if len(mse) else 0.0
+        entry: dict = {
+            "n_cells": len(rows),
+            "n_nonzero_emission": int((em > 0.0).sum()),
+            "max_emission": float(em.max()) if len(em) else 0.0,
+            "n_emission_flagged": int((em > EMISSION_FLAG_THRESHOLD).sum()),
+            "flagged_emission_cells": sorted(
+                r["bystander"] for r in rows if r["emission_rate"] > EMISSION_FLAG_THRESHOLD
+            ),
+            "n_saturated_cells": int((lpt > -2.0).sum()),
+            "marker_delta_sd": sd,
+            "median_marker_delta_se": med_se,
+            "x_informative": bool(sd >= X_INFORMATIVENESS_SE_MULT * med_se),
+        }
+        if all("eos_margin_delta" in r for r in rows):
+            entry["eos_margin_spearman_vs_sycophancy_descriptive"] = _spearman_rho(
+                np.array([r["eos_margin_delta"] for r in rows], dtype=np.float64),
+                np.array([r["sycophancy_delta"] for r in rows], dtype=np.float64),
+            )
+        per_source[s] = entry
+    return {
+        "rule": (
+            "x-informative iff panel SD(marker_delta) >= "
+            f"{X_INFORMATIVENESS_SE_MULT} x median(marker_delta_se); saturation check "
+            "counts cells with median on-policy trained log P > -2 nat; emission flag "
+            f"threshold {EMISSION_FLAG_THRESHOLD}"
+        ),
+        "x_informativeness_se_mult": X_INFORMATIVENESS_SE_MULT,
+        "emission_flag_threshold": EMISSION_FLAG_THRESHOLD,
+        "saturation_threshold_nats": -2.0,
+        "n_saturated_cells_total": int(sum(v["n_saturated_cells"] for v in per_source.values())),
+        "n_emission_flagged_total": int(sum(v["n_emission_flagged"] for v in per_source.values())),
+        "x_informative_sources": sorted(s for s, v in per_source.items() if v["x_informative"]),
+        "per_source": per_source,
+    }
+
+
 def _saturation_diagnostic(joined: list[dict]) -> dict:
     """Flag cells whose log_p_trained sits near ceiling (per the #448 saturation guard).
 
@@ -1134,6 +1204,17 @@ def main(argv: list[str] | None = None) -> int:
         logp_logit.get("available"),
     )
 
+    # Round-3 additive block: manipulation checks (P1a saturation, P1b
+    # emission) + the pre-registered continuous-DV x-informativeness table.
+    manipulation = _manipulation_checks(joined)
+    log.info(
+        "[phase=phase3] manipulation checks: saturated_total=%d emission_flagged_total=%d "
+        "x_informative=%s",
+        manipulation["n_saturated_cells_total"],
+        manipulation["n_emission_flagged_total"],
+        manipulation["x_informative_sources"],
+    )
+
     # Figures (round 2: pass trajectory_dir so source_logprob_trajectory.png
     # renders either the actual per-source trajectory or an explicit
     # "trajectory unavailable — see WandB" placeholder, not a silent skip).
@@ -1156,6 +1237,7 @@ def main(argv: list[str] | None = None) -> int:
         "h2_power_match_self_check": pm_self_check,
         "saturation_diagnostic": saturation,
         "logp_logit_agreement": logp_logit,
+        "manipulation_checks": manipulation,
         "rho_syco_411_used": rho_syco,
         "join_meta": join_meta,
         "figures": figures,
@@ -1220,6 +1302,11 @@ def main(argv: list[str] | None = None) -> int:
             "h1_verdict": h1.get("verdict"),
             "h2_paired_mean_delta_rho": paired.get("mean_delta_rho"),
             "h2_power_matched_mean_delta_rho": power_matched.get("mean_delta_rho"),
+        },
+        "manipulation_checks_summary": {
+            "n_saturated_cells_total": manipulation["n_saturated_cells_total"],
+            "n_emission_flagged_total": manipulation["n_emission_flagged_total"],
+            "x_informative_sources": manipulation["x_informative_sources"],
         },
         "git_commit_sha": _git_sha(),
         "hostname": socket.gethostname(),

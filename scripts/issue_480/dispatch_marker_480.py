@@ -116,6 +116,41 @@ REPICK_STRIDE_STEPS = 40
 MAX_REEVALS = 2
 EXPECTED_N_BYSTANDERS = 23
 
+# ── graded_eval recipe constants (same-issue follow-up round 3, plan v4) ────
+# Eval-only re-read of round 2's UNEVALUATED in-band (step-20) checkpoints:
+# fetch the pinned graded adapter per source, merge, run the existing Phase
+# 2a/2b on the same 24×50 grid, with the #534 adapter-application parity
+# probe gating every cell. PRIMARY DV this round = per-cell median Δlog P(※)
+# (the band_stop machinery's four-float capture, unchanged).
+# Pinned HF model-repo revision of the round-2 graded adapter upload
+# (Source: #480 body Follow-up 2 Artifacts row; plan v4 §4 step 1 / §11).
+GRADED_ADAPTER_REVISION = "3b3d1d940200338bf8143556e85262926c1b26d3"
+# Committed round-2 per-source pick records (in git on this branch — read
+# from the pod's checkout, NEVER via task.py; plan §4 step 2).
+ROUND2_SLAB_ROOT = Path("eval_results/issue_480/band-stopped-anchor-rerun")
+# #534 adapter-application parity tolerance, both model sides
+# (Source: marker-leakage-measurement.md adapter-application assert).
+PARITY_TOLERANCE_NATS = 1.0
+# Probe shape must match what round 2's in-loop band callback used:
+# max_rows=32 (TrainLoraConfig.marker_band_probe_max_rows default) and
+# max_length = max(train max_length, 2048) (the _maybe_attach_marker_band_stop
+# derivation with marker_band_probe_max_length=None).
+PARITY_PROBE_MAX_ROWS = 32
+# HF data-repo subdir for this round's artifact export (plan §4 post-cells).
+INBAND_HF_DATA_SUBDIR = "issue480_inband_logprob_concordance"
+# Issue branch the pod pushes per-source eval JSONs to (fail-loud; plan §4).
+INBAND_GIT_BRANCH = "issue-480-inband-logprob-concordance"
+
+
+def _logs_root() -> Path:
+    """Sentinel/log root — ``/workspace/logs`` on pods (poll_pipeline contract).
+
+    Overridable via ``EPM_I480_LOGS_ROOT`` so the graded_eval CPU dry-run can
+    execute on the dev VM (no ``/workspace``). Unset env → byte-identical
+    default for every pod-side recipe.
+    """
+    return Path(os.environ.get("EPM_I480_LOGS_ROOT", "/workspace/logs"))
+
 
 def _ensure_train_pool(local_path: Path, source: str) -> Path:
     """Auto-download the parent's 700-row train pool for ``source`` (pinned revision).
@@ -531,6 +566,7 @@ def _phase2b(
     sentinel_path: Path | None = None,
     adapter_config_path: Path | None = None,
     slot_stats: str = "legacy",
+    parity_probe_json: Path | None = None,
 ) -> Path:
     """Phase 2b — HF logprob in fresh subprocess (vLLM workers reaped).
 
@@ -567,6 +603,10 @@ def _phase2b(
         cmd += ["--slot-stats", slot_stats]
     if adapter_config_path is not None:
         cmd += ["--adapter-config-path", str(adapter_config_path)]
+    if parity_probe_json is not None:
+        # graded_eval recipe only (#534 adapter-application assert); the
+        # parent and band_stop subprocess commands stay byte-identical.
+        cmd += ["--parity-probe-json", str(parity_probe_json)]
     log.info("[phase=phase2b_%s] spawning: %s", source, " ".join(cmd))
     env = {**os.environ}
     env.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
@@ -1304,8 +1344,13 @@ def _write_final_sentinel(
     gpu_hours_budgeted: float = 6.5,
     wandb_project: str = "issue480-marker-payload-swap",
     hf_adapter_root: str = "adapters/issue_480",
+    extra_note_fields: dict | None = None,
 ) -> None:
-    """Write end-of-run sentinel in poll_pipeline-compatible schema."""
+    """Write end-of-run sentinel in poll_pipeline-compatible schema.
+
+    ``extra_note_fields`` (graded_eval recipe) is merged additively into the
+    ``note`` dict — default None keeps parent/band_stop sentinels identical.
+    """
     final_path.parent.mkdir(parents=True, exist_ok=True)
     headline = (phase3_summary or {}).get("headline_numbers", {}) if phase3_summary else {}
     payload = {
@@ -1345,6 +1390,8 @@ def _write_final_sentinel(
             "hf_hub_url": f"https://huggingface.co/{HF_MODEL_REPO}/tree/main/{hf_adapter_root}",
         },
     }
+    if extra_note_fields:
+        payload["note"].update(extra_note_fields)
     with open(final_path, "w") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
     log.info("[phase=final_sentinel] %s", final_path)
@@ -1610,6 +1657,517 @@ def _run_band_stop_pipeline(args, sources: list[str], max_length: int) -> int:
     return 0
 
 
+# ── graded_eval recipe (same-issue follow-up round 3, plan v4) ──────────────
+
+
+def _load_recorded_graded_pick(source: str, seed: int) -> dict:
+    """Read the committed round-2 ``anchor_pick.json`` → ``picks.graded`` record.
+
+    The file lives in git on this branch (the pod's checkout) — NEVER read via
+    ``task.py`` (pod-side shellout ban). Fails loud when the record is missing
+    a required key or the recorded delta sits outside the graded [5, 12] nat
+    band (the reuse-fitness premise of the whole round — plan §10/§11).
+    """
+    pick_path = ROUND2_SLAB_ROOT / "per_source" / source / f"seed_{seed}" / "anchor_pick.json"
+    if not pick_path.exists():
+        raise RuntimeError(
+            f"[{source}] committed round-2 pick record missing: {pick_path} — the "
+            "graded_eval recipe needs the recorded in-loop values for the #534 "
+            "parity assert; is the pod checkout on the issue branch with round-2 "
+            "results merged?"
+        )
+    with open(pick_path) as f:
+        pick = json.load(f)
+    graded = dict(pick["picks"]["graded"])
+    for key in ("step", "logp_trained", "logp_base", "delta_nats"):
+        if key not in graded:
+            raise RuntimeError(f"[{source}] picks.graded missing key {key!r} in {pick_path}")
+    if not (GRADED_BAND_LOW <= float(graded["delta_nats"]) <= GRADED_BAND_HIGH):
+        raise RuntimeError(
+            f"[{source}] recorded graded delta {graded['delta_nats']:.3f} nat is outside "
+            f"the [{GRADED_BAND_LOW}, {GRADED_BAND_HIGH}] band — reuse-fitness premise "
+            "violated; do not evaluate this checkpoint as an in-band anchor."
+        )
+    graded["pick_record_path"] = str(pick_path)
+    return graded
+
+
+def _fetch_graded_adapter(source: str, seed: int, dest_dir: Path, *, download: bool) -> dict:
+    """List + per-file download of the pinned round-2 graded adapter dir.
+
+    Deliberately list_repo_files + per-file ``hf_hub_download`` rather than
+    ``snapshot_download(allow_patterns=...)``: on repos with >~8k files the
+    allow_patterns path can silently return 0 files for prefixes in the
+    truncated ``repo_info.siblings`` tail, and this model repo is huge.
+    Fails loud when ``adapter_config.json`` / ``adapter_model.safetensors`` /
+    ``tokenizer_config.json`` are missing from the pinned-revision listing
+    (``merge_lora`` loads the tokenizer from the adapter path).
+
+    Returns the provenance dict for ``graded_eval_record.json``. With
+    ``download=False`` (CPU dry-run) only the listing + asserts run.
+    """
+    from huggingface_hub import hf_hub_download, list_repo_files
+
+    prefix = f"{BAND_STOP_HF_ADAPTER_ROOT}/{source}_seed{seed}_graded/"
+    all_files = list_repo_files(HF_MODEL_REPO, revision=GRADED_ADAPTER_REVISION)
+    files = sorted(f for f in all_files if f.startswith(prefix))
+    rel_names = {f[len(prefix) :] for f in files}
+    for required in ("adapter_config.json", "adapter_model.safetensors", "tokenizer_config.json"):
+        if required not in rel_names:
+            raise RuntimeError(
+                f"[{source}] {required} missing from {HF_MODEL_REPO}/{prefix} at pinned "
+                f"revision {GRADED_ADAPTER_REVISION[:12]} (listed {len(files)} files) — "
+                "wrong artifact resolved; refusing to evaluate."
+            )
+    if download:
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        for hub_file in files:
+            rel = hub_file[len(prefix) :]
+            cached = hf_hub_download(
+                repo_id=HF_MODEL_REPO,
+                filename=hub_file,
+                revision=GRADED_ADAPTER_REVISION,
+            )
+            target = dest_dir / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(cached, target)
+        log.info(
+            "[phase=fetch_%s] graded adapter: %d files @ %s -> %s",
+            source,
+            len(files),
+            GRADED_ADAPTER_REVISION[:12],
+            dest_dir,
+        )
+    return {
+        "hf_repo": HF_MODEL_REPO,
+        "path_in_repo": prefix.rstrip("/"),
+        # Commit-pinned request: hf_hub_download at a full commit SHA resolves
+        # to exactly that commit, so requested == resolved by construction.
+        "revision_requested": GRADED_ADAPTER_REVISION,
+        "revision_resolved": GRADED_ADAPTER_REVISION,
+        "files": sorted(rel_names),
+        "n_files": len(files),
+        "downloaded": download,
+    }
+
+
+def _run_one_cell_graded_eval(
+    source: str,
+    seed: int,
+    eval_pool: Path,
+    slab_root: Path,
+    runs_root: Path,
+    max_length: int,
+    *,
+    dry_run: bool = False,
+) -> dict:
+    """graded_eval cell: fetch pinned adapter → merge → Phase 2a → Phase 2b
+    (four-float + gauge assert + #534 parity probe) → record → reap.
+
+    Eval-only: NO training. Smoke IS this exact path with ``--only-source
+    comedian`` (architectural parity: same dispatcher, same subprocess
+    shapes, same teardown). ``dry_run=True`` (CPU, VM-safe) stops after the
+    recorded-pick load + pinned-revision HF listing + pool fetch +
+    parity-probe config + record scaffolding — before any GPU work.
+    """
+    t_start = time.time()
+    output_dir = runs_root / f"{source}_seed{seed}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    eval_out_dir = slab_root / "per_source" / source / f"seed_{seed}"
+    eval_out_dir.mkdir(parents=True, exist_ok=True)
+
+    log.info("=" * 70)
+    log.info(
+        "[phase=cell_%s] GRADED-EVAL CELL START — output_dir=%s eval_out=%s dry_run=%s",
+        source,
+        output_dir,
+        eval_out_dir,
+        dry_run,
+    )
+
+    # Plan §4 steps 1-2: recorded pick (committed round-2 record) + pinned adapter.
+    recorded = _load_recorded_graded_pick(source, seed)
+    log.info(
+        "[phase=cell_%s] recorded graded pick: step=%s logp_trained=%.3f logp_base=%.3f "
+        "delta=%.3f nat",
+        source,
+        recorded["step"],
+        recorded["logp_trained"],
+        recorded["logp_base"],
+        recorded["delta_nats"],
+    )
+    adapter_dir = output_dir / "graded_adapter"
+    provenance = _fetch_graded_adapter(source, seed, adapter_dir, download=not dry_run)
+
+    # Plan §4 step 3: train pool — needed ONLY for the parity-probe rows.
+    train_jsonl = output_dir / "train_pool.jsonl"
+    _ensure_train_pool(train_jsonl, source)
+
+    # Parity-probe config for Phase 2b (#534 assert). Probe shape matches the
+    # round-2 in-loop band callback exactly: max_rows=32, max_length =
+    # max(train max_length, 2048) (the _maybe_attach_marker_band_stop
+    # derivation with marker_band_probe_max_length=None).
+    parity_json = output_dir / "parity_probe_config.json"
+    with open(parity_json, "w") as f:
+        json.dump(
+            {
+                "pool_path": str(train_jsonl),
+                "recorded_logp_trained": recorded["logp_trained"],
+                "recorded_logp_base": recorded["logp_base"],
+                "tolerance_nats": PARITY_TOLERANCE_NATS,
+                "max_rows": PARITY_PROBE_MAX_ROWS,
+                "max_length": max(max_length, 2048),
+            },
+            f,
+            indent=2,
+        )
+
+    base_record = {
+        "source": source,
+        "seed": seed,
+        "recipe": "graded_eval",
+        "adapter_provenance": provenance,
+        "recorded_pick": recorded,
+        "parity_tolerance_nats": PARITY_TOLERANCE_NATS,
+        "git_commit_sha": _git_sha(),
+        "hostname": socket.gethostname(),
+        "timestamp_utc": datetime.now(UTC).isoformat(),
+    }
+
+    if dry_run:
+        record = {
+            **base_record,
+            "dry_run": True,
+            "planned_phases": ["merge", "phase2a", "phase2b_four_float_parity", "record"],
+            "wall_seconds": round(time.time() - t_start, 1),
+        }
+        record_path = eval_out_dir / "graded_eval_record.dryrun.json"
+        with open(record_path, "w") as f:
+            json.dump(record, f, indent=2, ensure_ascii=False)
+        log.info("[phase=cell_%s] DRY-RUN record -> %s", source, record_path)
+        return {
+            "source": source,
+            "seed": seed,
+            "recipe": "graded_eval",
+            "dry_run": True,
+            "wall_seconds": round(time.time() - t_start, 1),
+            "output_dir": str(output_dir),
+            "eval_out_dir": str(eval_out_dir),
+            "record_path": str(record_path),
+            "adapter_hf_path": provenance["path_in_repo"],
+        }
+
+    # Plan §4 step 4: merge the downloaded graded adapter into base.
+    adapter_config = adapter_dir / "adapter_config.json"
+    if not adapter_config.exists():
+        raise RuntimeError(f"[{source}] {adapter_config} missing after download — fetch bug.")
+
+    from explore_persona_space.train.sft import merge_lora
+
+    merged_dir = output_dir / "merged"
+    if merged_dir.exists():
+        shutil.rmtree(merged_dir)
+    log.info("[phase=merge_%s] %s -> %s", source, adapter_dir, merged_dir)
+    merge_lora(BASE_MODEL, str(adapter_dir), str(merged_dir), gpu_id=0)
+
+    # Plan §4 step 6: Phase 2a (vLLM greedy, 24×50, max_new_tokens 2048,
+    # subprocess-isolated) — writes r_trained.json + raw_completions/ directly
+    # into the CANONICAL per-source layout (no anchor_step subdir; step 8's
+    # "promote" is by construction).
+    r_trained_path = _phase2a(
+        source,
+        seed,
+        merged_dir,
+        eval_pool,
+        eval_out_dir,
+        sentinel_path=_logs_root() / f"issue-480-inband-{source}-phase2a.json",
+    )
+
+    # Plan §4 steps 5+7: Phase 2b (four-float storage contract; gauge assert
+    # on the ACTUALLY-EVALUATED adapter config; #534 parity probe inside the
+    # same subprocess — both models already loaded, the plan-named placement).
+    logprob_path = _phase2b(
+        source,
+        seed,
+        r_trained_path,
+        merged_dir,
+        eval_out_dir,
+        sentinel_path=_logs_root() / f"issue-480-inband-{source}-phase2b.json",
+        adapter_config_path=adapter_config,
+        slot_stats="four-float",
+        parity_probe_json=parity_json,
+    )
+
+    # The parity numbers land in the Phase 2b payload; a FAIL would have
+    # aborted that subprocess (non-zero exit -> the per-cell except path).
+    with open(logprob_path) as f:
+        phase2b_payload = json.load(f)
+    parity = phase2b_payload.get("parity_probe")
+    if not parity or not parity.get("passed"):
+        raise RuntimeError(
+            f"[{source}] Phase 2b output carries no passed parity_probe block — the #534 "
+            "adapter-application assert did not run; refusing to record this cell."
+        )
+
+    # Plan §4 step 8: graded_eval_record.json (reuse provenance + parity numbers).
+    wall = time.time() - t_start
+    record = {
+        **base_record,
+        "parity_probe": parity,
+        "logprob_path": str(logprob_path),
+        "r_trained_path": str(r_trained_path),
+        "wall_seconds": round(wall, 1),
+    }
+    record_path = eval_out_dir / "graded_eval_record.json"
+    with open(record_path, "w") as f:
+        json.dump(record, f, indent=2, ensure_ascii=False)
+    log.info("[phase=cell_%s] graded_eval_record -> %s", source, record_path)
+
+    # Plan §4 step 9: reap merged dir (MooseFS quota). No adapter uploads
+    # (nothing trained), no WandB (nothing trained).
+    log.info("[phase=cell_%s] rmtree(%s) for MooseFS quota", source, merged_dir)
+    shutil.rmtree(merged_dir, ignore_errors=False)
+
+    log.info("[phase=cell_%s] GRADED-EVAL CELL DONE wall=%.1fs", source, wall)
+    return {
+        "source": source,
+        "seed": seed,
+        "recipe": "graded_eval",
+        "wall_seconds": round(wall, 1),
+        "output_dir": str(output_dir),
+        "eval_out_dir": str(eval_out_dir),
+        "logprob_path": str(logprob_path),
+        "r_trained_path": str(r_trained_path),
+        "record_path": str(record_path),
+        "adapter_hf_path": provenance["path_in_repo"],
+        "parity_abs_diff_trained": parity["abs_diff_trained"],
+        "parity_abs_diff_base": parity["abs_diff_base"],
+    }
+
+
+def _export_inband_artifacts(per_cell: list[dict]) -> dict:
+    """Fail-loud pre-termination artifact export (plan §4 post-cells steps 1-3).
+
+    Order is load-bearing: (1) raw completions → HF data repo, (2) git
+    commit+push the per-source eval JSONs on the issue branch (FAIL-LOUD —
+    a stranded eval dir is a hard failure), (3) per-source JSON mirror → HF
+    data repo. Any failure raises BEFORE the final sentinel is written.
+
+    Walks the COMPLETED ``per_cell`` list (never the full registered grid),
+    so the one-cell smoke exercises this phase end-to-end.
+
+    Note on upload shape: Phase 2a writes per-panel ``raw_completions/
+    <panel>_seed<S>.json`` files, which ``upload_raw_completions_to_data_
+    repo``'s ``rglob("raw_completions.json")`` does NOT match — hence the
+    explicit per-cell ``hub._upload`` folder walk (one Hub commit per cell;
+    12 commits total for 6 cells, far under the 256/hr cap).
+    """
+    from explore_persona_space.orchestrate.hub import _upload
+
+    export: dict = {"raw_completions": {}, "git": {}, "per_source_mirror": {}}
+
+    # 1. Raw completions → HF data repo (non-LFS JSON path).
+    for cell in per_cell:
+        source, seed = cell["source"], cell["seed"]
+        raw_dir = Path(cell["eval_out_dir"]) / "raw_completions"
+        raw_files = sorted(raw_dir.glob("*.json")) if raw_dir.exists() else []
+        if not raw_files:
+            raise RuntimeError(
+                f"[{source}] no raw completion files under {raw_dir} — Phase 2a contract "
+                "violated; refusing to terminate-without-upload."
+            )
+        path_in_repo = f"{INBAND_HF_DATA_SUBDIR}/raw_completions/{source}/seed_{seed}"
+        url = _upload(
+            local_path=raw_dir,
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=path_in_repo,
+        )
+        if not url:
+            raise RuntimeError(
+                f"[{source}] raw-completions upload FAILED -> {HF_DATA_REPO}/{path_in_repo}; "
+                "refusing to continue (pod termination would lose the only copy)."
+            )
+        export["raw_completions"][source] = {"url": url, "n_files": len(raw_files)}
+        log.info("[phase=export] raw completions %s (%d files) -> %s", source, len(raw_files), url)
+
+    # 2. Git commit + push per-source eval JSONs on the issue branch (FAIL-LOUD).
+    env = {**os.environ}
+    rel_files: list[str] = []
+    for cell in per_cell:
+        d = Path(cell["eval_out_dir"])
+        for fname in ("marker_logprob_eval.json", "r_trained.json", "graded_eval_record.json"):
+            p = d / fname
+            if not p.exists():
+                raise RuntimeError(f"[{cell['source']}] expected eval artifact missing: {p}")
+            rel_files.append(str(p))
+    branch = subprocess.check_output(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True, env=env
+    ).strip()
+    if branch != INBAND_GIT_BRANCH:
+        raise RuntimeError(
+            f"pod checkout is on branch {branch!r}, expected {INBAND_GIT_BRANCH!r} — "
+            "refusing to push eval results from the wrong branch."
+        )
+    subprocess.run(["git", "add", "--", *rel_files], env=env, check=True)
+    staged = subprocess.run(["git", "diff", "--cached", "--quiet"], env=env)
+    if staged.returncode != 0:
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "user.name=pod-480-inband",
+                "-c",
+                "user.email=pod-480@runpod.local",
+                "commit",
+                "-m",
+                f"task #480: inband-logprob-concordance per-source eval JSONs "
+                f"({len(per_cell)} cells)",
+            ],
+            env=env,
+            check=True,
+        )
+    else:
+        log.info("[phase=export] git: nothing newly staged (idempotent re-run)")
+    push = subprocess.run(["git", "push", "origin", INBAND_GIT_BRANCH], env=env)
+    if push.returncode != 0:
+        # One rebase retry, then fail loud (aborts the final sentinel).
+        subprocess.run(
+            ["git", "pull", "--rebase", "origin", INBAND_GIT_BRANCH], env=env, check=True
+        )
+        subprocess.run(["git", "push", "origin", INBAND_GIT_BRANCH], env=env, check=True)
+    export["git"] = {
+        "branch": INBAND_GIT_BRANCH,
+        "n_files": len(rel_files),
+        "head": _git_sha(),
+    }
+    log.info("[phase=export] git push OK: %d files on %s", len(rel_files), INBAND_GIT_BRANCH)
+
+    # 3. Per-source JSON mirror → HF data repo (belt-and-suspenders, non-LFS;
+    # raw_completions/ excluded — already uploaded in step 1).
+    for cell in per_cell:
+        source, seed = cell["source"], cell["seed"]
+        path_in_repo = f"{INBAND_HF_DATA_SUBDIR}/per_source/{source}/seed_{seed}"
+        url = _upload(
+            local_path=Path(cell["eval_out_dir"]),
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=path_in_repo,
+            ignore_patterns=["raw_completions/*"],
+        )
+        if not url:
+            raise RuntimeError(
+                f"[{source}] per-source mirror upload FAILED -> {HF_DATA_REPO}/{path_in_repo}"
+            )
+        export["per_source_mirror"][source] = url
+        log.info("[phase=export] per-source mirror %s -> %s", source, url)
+    return export
+
+
+def _run_graded_eval_pipeline(args, sources: list[str], max_length: int) -> int:
+    """graded_eval recipe driver: per-cell eval loop → pre-termination export → sentinel.
+
+    Phase 0 is skipped BY DESIGN (eval-only; pools fetched per cell solely for
+    the parity-probe rows). Phase 3 analysis + concordance run OFF-POD on the
+    VM after termination (CPU-only phase rule) — plan_deviations names it.
+    """
+    # Stale-branch port guard (plan §4: keep the TrainLoraConfig field assert
+    # as a cheap guard even though no training runs this round).
+    from dataclasses import fields as _dc_fields
+
+    from explore_persona_space.train.sft import TrainLoraConfig
+
+    cfg_fields = {f.name for f in _dc_fields(TrainLoraConfig)}
+    required_fields = {"marker_band_log_only", "marker_band_trajectory_path", "save_only_model"}
+    missing_fields = required_fields - cfg_fields
+    if missing_fields:
+        raise RuntimeError(
+            f"stale-branch port: TrainLoraConfig is missing {sorted(missing_fields)} — "
+            "this checkout lacks main's band-stop machinery; the branch must be cut "
+            "from current main."
+        )
+
+    log.info(
+        "[phase=preflight] graded_eval recipe: adapter revision=%s parity_tol=%s nat "
+        "probe_rows=%d round2_slab=%s dry_run=%s",
+        GRADED_ADAPTER_REVISION[:12],
+        PARITY_TOLERANCE_NATS,
+        PARITY_PROBE_MAX_ROWS,
+        ROUND2_SLAB_ROOT,
+        args.graded_dry_run,
+    )
+
+    # Eval pool is needed for Phase 2a; q_train / R_train_base are NOT.
+    _ensure_wrong_claim_pool(args.eval_pool, kind="eval_50")
+
+    plan_deviations = ["phase0_skipped_eval_only", "phase3_concordance_moved_off_pod"]
+    phase0_summary = {
+        "skipped": True,
+        "reason": "graded_eval: eval-only over round-2's uploaded in-band checkpoints",
+        "graded_adapter_revision": GRADED_ADAPTER_REVISION,
+    }
+
+    per_cell: list[dict] = []
+    for source in sources:
+        try:
+            cell = _run_one_cell_graded_eval(
+                source=source,
+                seed=args.seed,
+                eval_pool=args.eval_pool,
+                slab_root=args.slab_root,
+                runs_root=args.runs_root,
+                max_length=max_length,
+                dry_run=args.graded_dry_run,
+            )
+            per_cell.append(cell)
+            per_src_sent = _logs_root() / f"issue-480-inband-{source}-results.json"
+            per_src_sent.parent.mkdir(parents=True, exist_ok=True)
+            per_src_sent.write_text(json.dumps(cell, indent=2))
+        except Exception as e:
+            fail_path = _logs_root() / f"issue-480-inband-{source}-FAILED.json"
+            fail_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(fail_path, "w") as f:
+                json.dump(
+                    {
+                        "source": source,
+                        "recipe": "graded_eval",
+                        "phase": "cell_failed",
+                        "exception_type": type(e).__name__,
+                        "exception_msg": str(e),
+                        "timestamp_utc": datetime.now(UTC).isoformat(),
+                    },
+                    f,
+                    indent=2,
+                )
+            log.exception("[%s] graded_eval cell failed; wrote %s", source, fail_path)
+            raise
+
+    export_summary: dict | None = None
+    if args.graded_dry_run:
+        log.info("[phase=export] SKIPPED (graded dry run — no artifacts produced).")
+        plan_deviations.append("dry_run_no_artifact_export")
+    else:
+        export_summary = _export_inband_artifacts(per_cell)
+
+    epoch = int(time.time())
+    final_path = _logs_root() / f"issue-480-inband-epm_results-{epoch}.json"
+    _write_final_sentinel(
+        sources_requested=sources,
+        per_cell=per_cell,
+        phase0_summary=phase0_summary,
+        phase3_summary=None,
+        plan_deviations=plan_deviations,
+        final_path=final_path,
+        gpu_hours_budgeted=4.0,
+        wandb_project="none (graded_eval is eval-only; no training, no WandB runs)",
+        hf_adapter_root=BAND_STOP_HF_ADAPTER_ROOT,
+        extra_note_fields={"artifact_export": export_summary},
+    )
+    log.info("[phase=dispatch_done] graded_eval: %d cells completed.", len(per_cell))
+    print("[phase=done]")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sources", type=_parse_sources, default=list(DEFAULT_SOURCES))
@@ -1626,13 +2184,26 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--recipe",
-        choices=("parent", "band_stop"),
+        choices=("parent", "band_stop", "graded_eval"),
         default="parent",
         help="Training-stop recipe. 'parent' (default) = the run-1 fixed-3-epoch "
         "pipeline, byte-identical. 'band_stop' = the band-stopped-anchor-rerun: "
         "reused pools, lr 5e-6 to a 12-epoch cap with 20-step checkpoints, "
         "log-only band callback, deterministic onset-edge anchor pick gated on "
-        "bystander resolution (plan v3 §4).",
+        "bystander resolution (plan v3 §4). 'graded_eval' = the round-3 "
+        "inband-logprob-concordance EVAL-ONLY path: fetch round 2's pinned "
+        "in-band (step-20) graded adapters, merge, Phase 2a/2b with the "
+        "four-float capture + #534 parity probe, then the fail-loud "
+        "pre-termination artifact export (plan v4 §4). No training.",
+    )
+    parser.add_argument(
+        "--graded-dry-run",
+        action="store_true",
+        help="CPU-only dry run of the graded_eval path (VM-safe with "
+        "EPM_I480_LOGS_ROOT): recorded-pick load, pinned-revision HF listing "
+        "asserts (no weight download), pool fetch, parity-probe config + "
+        "record scaffolding; stops before merge/Phase 2a/Phase 2b and skips "
+        "the artifact export. Only valid with --recipe graded_eval.",
     )
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument(
@@ -1683,6 +2254,8 @@ def main(argv: list[str] | None = None) -> int:
         "(defaults to build_training_pool.DEFAULT_TRAIN_MAX_LENGTH).",
     )
     args = parser.parse_args(argv)
+    if args.graded_dry_run and args.recipe != "graded_eval":
+        parser.error("--graded-dry-run is only valid with --recipe graded_eval")
 
     logging.basicConfig(
         level=os.environ.get("EPS_LOG_LEVEL", "INFO"),
@@ -1708,10 +2281,15 @@ def main(argv: list[str] | None = None) -> int:
         args.slab_root,
         args.runs_root,
     )
+    cell_fn_by_recipe = {
+        "parent": "_run_one_cell",
+        "band_stop": "_run_one_cell_band_stop",
+        "graded_eval": "_run_one_cell_graded_eval",
+    }
     log.info(
         "[phase=dispatch_start] UNIFIED smoke=sweep-with-one-source: same "
         "%s function path; same env injection; same teardown.",
-        "_run_one_cell_band_stop" if args.recipe == "band_stop" else "_run_one_cell",
+        cell_fn_by_recipe[args.recipe],
     )
 
     # Pre-flight asserts (tokenizer marker id, im_end id).
@@ -1757,10 +2335,15 @@ def main(argv: list[str] | None = None) -> int:
     args.slab_root.mkdir(parents=True, exist_ok=True)
     args.runs_root.mkdir(parents=True, exist_ok=True)
     args.r_base_dir.mkdir(parents=True, exist_ok=True)
-    Path("/workspace/logs").mkdir(parents=True, exist_ok=True)
+    # _logs_root() == /workspace/logs unless EPM_I480_LOGS_ROOT is set (the
+    # graded_eval CPU dry-run on the VM, where /workspace does not exist).
+    _logs_root().mkdir(parents=True, exist_ok=True)
 
     if args.recipe == "band_stop":
         return _run_band_stop_pipeline(args, sources, max_length)
+
+    if args.recipe == "graded_eval":
+        return _run_graded_eval_pipeline(args, sources, max_length)
 
     # Auto-download wrong-claim Q pools from the #411 HF data subdir if missing.
     # Smoke runs on fresh pods used to FileNotFoundError here because the default

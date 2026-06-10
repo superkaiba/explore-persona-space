@@ -220,6 +220,84 @@ def _cell_row(
     }
 
 
+# ── adapter-application parity probe (#534 assert; graded_eval recipe) ──────
+
+
+def _build_parity_probe_callback(probe_cfg: dict, tokenizer, marker_id: int, im_end_id: int):
+    """Rebuild the band callback's source probe and return a callback instance.
+
+    The #534 adapter-application assert requires reproducing the IN-LOOP
+    training callback's read — same probe builder
+    (``build_source_probe_from_data``), same slot convention
+    (``MarkerBandStopCallback._compute_marker_slot_stats``: teacher-forced
+    ``log_softmax`` at the position whose OUTPUT is the marker token), same
+    rows (first ``max_rows`` marker-bearing rows of the training pool at the
+    same ``max_length`` budget). We therefore construct a real
+    ``MarkerBandStopCallback`` on the rebuilt probe batch and read through
+    its own ``_compute_marker_slot_stats`` — a reimplementation here could
+    drift from the recorded convention, which is exactly the bug class the
+    probe exists to catch.
+
+    Returns ``(callback, n_rows)``; fails loud when the pool yields zero
+    marker-bearing rows (the recorded values came from a non-empty probe).
+    """
+    from explore_persona_space.eval.callbacks import MarkerBandStopCallback
+    from explore_persona_space.train.sft import build_source_probe_from_data
+
+    pool_path = Path(probe_cfg["pool_path"])
+    max_rows = int(probe_cfg.get("max_rows", 32))
+    max_length = int(probe_cfg.get("max_length", 2560))
+    input_ids, attention_mask, marker_positions, n_rows = build_source_probe_from_data(
+        pool_path,
+        tokenizer,
+        [marker_id],
+        max_rows=max_rows,
+        max_length=max_length,
+    )
+    if n_rows == 0:
+        raise RuntimeError(
+            f"parity probe: 0 marker-bearing rows in {pool_path} (max_rows={max_rows}, "
+            f"max_length={max_length}) — the recorded in-loop values came from a "
+            "non-empty probe; wrong pool or wrong marker id."
+        )
+    cb = MarkerBandStopCallback(
+        [marker_id],
+        input_ids,
+        marker_positions,
+        attention_mask,
+        eos_token_id=im_end_id,
+    )
+    return cb, n_rows
+
+
+def _parity_probe_read(cb, model) -> float:
+    """Mean teacher-forced log P(marker) over the probe rows — the callback's own read."""
+    return float(cb._compute_marker_slot_stats(model)["logp"].mean().item())
+
+
+def _assert_parity_side(
+    side: str, offline: float, recorded: float, tolerance: float, source: str
+) -> None:
+    """#534 adapter-application assert for one model side; RuntimeError on FAIL."""
+    diff = abs(offline - recorded)
+    if diff > tolerance:
+        raise RuntimeError(
+            f"[{source}] ADAPTER-APPLICATION PARITY FAIL ({side}): offline teacher-forced "
+            f"log P(marker) = {offline:.4f} vs recorded in-loop {recorded:.4f} "
+            f"(|diff| = {diff:.4f} > tolerance {tolerance} nat). This is a #534-class "
+            "eval-path bug (wrong weights merged / adapter not applied / wrong slot "
+            "convention), NOT a finding — fix the probe/merge path and re-smoke."
+        )
+    log.info(
+        "[phase=parity_probe] %s side OK: offline=%.4f recorded=%.4f |diff|=%.4f <= %s nat",
+        side,
+        offline,
+        recorded,
+        diff,
+        tolerance,
+    )
+
+
 # Per-cell aggregate keys added ONLY in four-float mode (medians of the
 # four-float row fields). Legacy mode never emits them — parent schema parity.
 FOUR_FLOAT_ROW_KEYS = (
@@ -269,6 +347,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
         "--slot-stats four-float (two-way guard).",
     )
     parser.add_argument(
+        "--parity-probe-json",
+        type=Path,
+        default=None,
+        help="Path to a JSON dict {pool_path, recorded_logp_trained, recorded_logp_base, "
+        "tolerance_nats, max_rows, max_length}. When set, BOTH already-loaded models are "
+        "probed with the band callback's own teacher-forced source read "
+        "(build_source_probe_from_data + MarkerBandStopCallback slot convention) and the "
+        "offline means must reproduce the recorded in-loop values within tolerance_nats "
+        "(#534 adapter-application assert). FAIL aborts the cell loudly. Additive, off by "
+        "default; requires --slot-stats four-float (graded_eval recipe).",
+    )
+    parser.add_argument(
         "--sentinel-path",
         type=Path,
         default=Path("/workspace/logs/issue-480-phase2b-results.json"),
@@ -283,6 +373,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
         parser.error("--adapter-config-path requires --slot-stats four-float")
     if args.slot_stats == "four-float" and args.adapter_config_path is None:
         parser.error("--slot-stats four-float requires --adapter-config-path")
+    # Parity probe rides the graded_eval (four-float) path only — the legacy
+    # parent byte-identity contract forbids new behavior on the default path.
+    if args.parity_probe_json is not None and args.slot_stats != "four-float":
+        parser.error("--parity-probe-json requires --slot-stats four-float")
 
     logging.basicConfig(
         level=os.environ.get("EPS_LOG_LEVEL", "INFO"),
@@ -432,6 +526,26 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
         # ── FOUR-FLOAT mode (band_stop recipe): #530 storage contract ──
         from explore_persona_space.eval.marker_logprob import compute_marker_slot_stats
 
+        # Optional #534 adapter-application parity probe (graded_eval recipe):
+        # rebuild the band callback's source probe on CPU BEFORE any model
+        # load, then read each side immediately after its model loads so a
+        # parity FAIL aborts before the ~20-min panel scoring loop.
+        parity_cfg: dict | None = None
+        parity_cb = None
+        parity_offline: dict[str, float] = {}
+        if args.parity_probe_json is not None:
+            with open(args.parity_probe_json) as f:
+                parity_cfg = json.load(f)
+            parity_cb, parity_n_rows = _build_parity_probe_callback(
+                parity_cfg, tokenizer, MARKER_ID, IM_END_ID
+            )
+            log.info(
+                "[phase=parity_probe] probe built: %d rows from %s (tolerance=%s nat)",
+                parity_n_rows,
+                parity_cfg["pool_path"],
+                parity_cfg.get("tolerance_nats", 1.0),
+            )
+
         # Per-panel context lists (the prefix text whose last token precedes
         # the post-response slot). batch_size=1 keeps every forward unpadded —
         # exactly the legacy serial compute pattern, so the legacy log_p_*
@@ -465,10 +579,25 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
                 )
             return out
 
+        def _maybe_parity(side: str, model) -> None:
+            """Run the #534 parity read+assert for one side, when configured."""
+            if parity_cb is None or parity_cfg is None:
+                return
+            offline = _parity_probe_read(parity_cb, model)
+            parity_offline[side] = offline
+            _assert_parity_side(
+                side,
+                offline,
+                float(parity_cfg[f"recorded_logp_{side}"]),
+                float(parity_cfg.get("tolerance_nats", 1.0)),
+                args.source,
+            )
+
         if args.two_pass:
             # Pass 1: TRAINED model, score every (panel, q).
             log.info("[phase=phase2b] two-pass mode: TRAINED first.")
             model_t = _load_model(str(args.merged_model_path))
+            _maybe_parity("trained", model_t)
             trained_stats = _score_panels(model_t)
             del model_t
             gc.collect()
@@ -477,12 +606,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
             # Pass 2: BASE model.
             log.info("[phase=phase2b] two-pass mode: BASE next.")
             model_b = _load_model(BASE_MODEL)
+            _maybe_parity("base", model_b)
             base_stats = _score_panels(model_b)
             del model_b
         else:
-            # One-pass: load both models simultaneously.
+            # One-pass: load both models simultaneously. Both parity sides
+            # run BEFORE the panel scoring loops (fail fast on a bad merge).
             model_t = _load_model(str(args.merged_model_path))
             model_b = _load_model(BASE_MODEL)
+            _maybe_parity("trained", model_t)
+            _maybe_parity("base", model_b)
             trained_stats = _score_panels(model_t)
             base_stats = _score_panels(model_b)
             del model_t, model_b
@@ -570,6 +703,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
         "hostname": socket.gethostname(),
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
+    parity_block: dict | None = None
     if four_float:
         # Additive provenance keys — NEVER emitted in legacy mode (the parent
         # top-level payload key set is part of the byte-identity contract).
@@ -578,6 +712,26 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
             str(args.adapter_config_path) if args.adapter_config_path is not None else None
         )
         out_payload["gauge_asserted"] = gauge_asserted
+        if parity_cfg is not None:
+            tol = float(parity_cfg.get("tolerance_nats", 1.0))
+            parity_block = {
+                "pool_path": parity_cfg["pool_path"],
+                "tolerance_nats": tol,
+                "max_rows": int(parity_cfg.get("max_rows", 32)),
+                "max_length": int(parity_cfg.get("max_length", 2560)),
+                "recorded_logp_trained": float(parity_cfg["recorded_logp_trained"]),
+                "recorded_logp_base": float(parity_cfg["recorded_logp_base"]),
+                "offline_logp_trained": parity_offline["trained"],
+                "offline_logp_base": parity_offline["base"],
+                "abs_diff_trained": abs(
+                    parity_offline["trained"] - float(parity_cfg["recorded_logp_trained"])
+                ),
+                "abs_diff_base": abs(
+                    parity_offline["base"] - float(parity_cfg["recorded_logp_base"])
+                ),
+                "passed": True,  # a FAIL raises before this point
+            }
+            out_payload["parity_probe"] = parity_block
     args.out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(args.out_path, "w") as f:
         json.dump(out_payload, f, ensure_ascii=False)
@@ -594,6 +748,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
         "hostname": socket.gethostname(),
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
+    if parity_block is not None:
+        sentinel["parity_probe"] = parity_block
     args.sentinel_path.parent.mkdir(parents=True, exist_ok=True)
     with open(args.sentinel_path, "w") as f:
         json.dump(sentinel, f, indent=2)

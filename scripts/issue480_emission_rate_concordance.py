@@ -64,10 +64,17 @@ CONTROL_FIELDS = ("cosine_l20_baseline", "bystander_base_rate")
 X_FIELD_DESCRIPTIONS = {
     "emission_rate": "on-policy marker emission rate per bystander",
     "marker_delta": "on-policy log P(marker) trained - base per bystander (nats)",
+    # inband-logprob-concordance (#480 round 3): the gauge-free mechanistic
+    # secondary from the same four-float slot reads — per-cell median
+    # Δ(z_marker - z_eos), trained - base. Present only on four-float
+    # matrices (band-stop rerun onward); load_matrix fails loud when the
+    # column is missing from an older matrix.
+    "eos_margin_delta": ("EOS-margin Δ(z_marker − z_eos) trained - base per bystander (logits)"),
 }
 X_FIELD_AXIS_LABELS = {
     "emission_rate": "Marker emission rate (fraction of own responses)",
     "marker_delta": "Marker log P trained - base (nats)",
+    "eos_margin_delta": "Marker EOS margin Δ(z_marker − z_eos) trained − base (logits)",
 }
 
 
