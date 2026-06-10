@@ -56,8 +56,9 @@ The workflow is the meta-layer that drives experiments — never the experiments
   - `workflow_lint.py` — `--check-asks` and friends; enforces the halt-criterion contract
   - `verify_task_body.py` — 13-check markdown spec for clean-result bodies
   - `audit_clean_results_body_discipline.py` — anti-pattern detector
+  - `failure_classifier.py` — the `/issue` Step 7 infra-vs-code failure router (mirrored by `.claude/skills/issue/failure_patterns.md`)
   - `codex_task.py`, `poll_pipeline.py`, `gh_project.py`, `spawn_session.py`, `pod_watch.py`
-- `tests/test_workflow*.py`, `tests/test_no_dollar_budget_caps.py`, and other tests that pin workflow invariants
+- `tests/test_workflow*.py`, `tests/test_failure_classifier.py`, `tests/test_no_dollar_budget_caps.py`, and other tests that pin workflow invariants
 
 **Out of scope (do NOT touch):**
 - `src/explore_persona_space/**` — library + research code (EXCEPT `task_workflow.py` + `task_workflow_migrate.py`, listed above)

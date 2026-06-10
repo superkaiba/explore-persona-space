@@ -169,6 +169,41 @@ Original Traceback (most recent call last):
     assert classify_failure(body) == "infra"
 
 
+# --- Co-located parallel-cell OOM (workflow-fix from task #557) ------------
+
+
+def test_colocation_oom_multi_sibling_pids_routes_code() -> None:
+    """#557 regression: a CUDA OOM listing 2+ sibling 'Process NNN has
+    X GiB memory in use' entries means parallel fan-out cells co-located
+    on one physical GPU — a deterministic GPU-pinning bug (code), NOT
+    transient infra. Respawning on verified-clean GPUs hits the
+    identical OOM (attempt 2 of #557 did exactly that)."""
+    body = """## Failure during run
+
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.50 GiB. GPU 0 has a total capacity of 79.18 GiB of which 41.00 MiB is free. Process 568053 has 50.74 GiB memory in use. Process 568050 has 14.72 GiB memory in use. Process 568055 has 13.66 GiB memory in use.
+"""
+    assert classify_failure(body) == "code"
+
+
+def test_single_sibling_pid_oom_stays_infra() -> None:
+    """A SINGLE sibling-process entry is one leaked process from a prior
+    run — kill + respawn fixes it, so the normal CUDA-OOM infra route
+    stands."""
+    body = """RuntimeError: CUDA out of memory. Tried to allocate 2.00 GiB. GPU 0 has a total capacity of 79.18 GiB of which 1.00 GiB is free. Process 123456 has 70.00 GiB memory in use.
+"""
+    assert classify_failure(body) == "infra"
+
+
+def test_explicit_field_wins_over_colocation_oom() -> None:
+    """The explicit `failure_class:` field keeps top precedence over the
+    co-location carve-out."""
+    body = """failure_class: infra
+
+CUDA out of memory. Process 11 has 10.00 GiB memory in use. Process 22 has 20.00 GiB memory in use.
+"""
+    assert classify_failure(body) == "infra"
+
+
 # --- §2 watchdog regex extensions -----------------------------------------
 
 

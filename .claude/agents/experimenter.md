@@ -625,6 +625,7 @@ regexes; any infra match → `infra`, otherwise → `code` (conservative).
 | Pattern in log | failure_class |
 |---|---|
 | `CUDA out of memory`, `OOM-killer` | infra |
+| `CUDA out of memory` listing 2+ sibling `Process <pid> has <X> GiB memory in use` entries (parallel fan-out cells co-located on one device — deterministic GPU-pinning bug; respawn hits the identical OOM; #557) | code |
 | `disk full`, `ENOSPC`, `No space left on device` | infra |
 | vLLM init: `Failed to initialize`, `RuntimeError: CUDA error` | infra |
 | `SSH connection refused`, `No route to host`, `Connection timed out` | infra |
