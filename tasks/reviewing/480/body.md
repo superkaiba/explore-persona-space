@@ -289,7 +289,7 @@ Per-cell source: [`eval_results/issue_480/marker_delta_matrix.json`](https://git
   - Figure: [`figures/issue_480/emission_rate_vs_sycophancy_se.png`](https://github.com/superkaiba/explore-persona-space/blob/9dbebcb3277f79542581f8a86f7da227515abb94/figures/issue_480/emission_rate_vs_sycophancy_se.png) (+ PDF + `.meta.json` sidecar alongside, caption stats embedded in the sidecar)
 - WandB: only the `villain` cell has a standalone run, [`huggingface/runs/ir2c631x`](https://wandb.ai/thomasjiralerspong/huggingface/runs/ir2c631x); the other 5 cells reuse the same run name and don't log separately, so per-cell training curves are not separately queryable — a documented data gap from this run, and the root cause of the runtime saturation guard not firing
 
-- **Methodology reference:** [docs/methodology/issue_480.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_480.md) · [gist](https://gist.github.com/superkaiba/ea3fe3b471c7682325b2ca89bbc1dc46)
+- **Methodology reference:** [docs/methodology/issue_480.md](https://github.com/superkaiba/explore-persona-space/blob/bb99900327457320219722c6ac70cb4bce0cdb4b/docs/methodology/issue_480.md) · [gist](https://gist.github.com/superkaiba/ea3fe3b471c7682325b2ca89bbc1dc46)
 
 **Compute:**
 
