@@ -166,7 +166,7 @@ def main() -> None:
         0.0,
         1.015,
         (
-            f"Positive arms (plan-specified bar: 5/6):  "
+            f"Positive arms (numerical 5/6 threshold, exploratory at this slice):  "
             f"log P  {sign_logp_base}/6 baseline · {sign_logp_exp}/6 expanded   "
             f"|   EOS-margin  {sign_margin_base}/6 baseline · {sign_margin_exp}/6 expanded"
         ),
