@@ -196,8 +196,8 @@ def fig_paired_d_trajectory(trajectory: dict, data_533: dict, out_subdir: str) -
                 if pt["implant_active"]:
                     xs_act.append(steps)
                     ys_act.append(pt["mean"])
-                    lo_act.append(pt["mean"] - pt["ci_lo_95"])
-                    hi_act.append(pt["ci_hi_95"] - pt["mean"])
+                    lo_act.append(max(0.0, pt["mean"] - pt["ci_lo_95"]))
+                    hi_act.append(max(0.0, pt["ci_hi_95"] - pt["mean"]))
                 else:
                     d_vals = list(pt.get("d_per_seed", {}).values())
                     if d_vals:
@@ -310,8 +310,8 @@ def fig_wrong_slot_dose_response(data_547: dict, data_533: dict, out_subdir: str
                 m, lo, hi = _bootstrap(vals)
                 xs.append(steps)
                 ys.append(m)
-                yerr_lo.append(m - lo)
-                yerr_hi.append(hi - m)
+                yerr_lo.append(max(0.0, m - lo))
+                yerr_hi.append(max(0.0, hi - m))
             if xs:
                 ax.errorbar(
                     xs,
@@ -406,8 +406,8 @@ def fig_own_slot_install(data_547: dict, out_subdir: str) -> None:
                     m, lo, hi = _bootstrap(vals)
                     xs.append(steps)
                     ys.append(m)
-                    yerr_lo.append(m - lo)
-                    yerr_hi.append(hi - m)
+                    yerr_lo.append(max(0.0, m - lo))
+                    yerr_hi.append(max(0.0, hi - m))
                 if xs:
                     ax.errorbar(
                         xs,
@@ -473,8 +473,8 @@ def fig_default_slot_leakage(data_547: dict, out_subdir: str) -> None:
                 m, lo, hi = _bootstrap(vals)
                 xs.append(steps)
                 ys.append(m)
-                yerr_lo.append(m - lo)
-                yerr_hi.append(hi - m)
+                yerr_lo.append(max(0.0, m - lo))
+                yerr_hi.append(max(0.0, hi - m))
             if xs:
                 ax.errorbar(
                     xs,
