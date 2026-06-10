@@ -63,6 +63,7 @@ import math
 import subprocess
 import sys
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -277,17 +278,64 @@ def _teardown_vllm(llm: Any) -> None:
                 child.kill()
 
 
+def new_engine_session_id() -> str:
+    """Unique id for ONE vLLM engine session (concern rerun-overwrites-paired-
+    denominator): stamped on every completion record so the rollup can HARD
+    assert that all paired cells come from the same session — a --cells
+    subset re-run gets a fresh id, and pairing a non-rerun cell against the
+    re-generated trigger50 denominator then fails loud instead of silently
+    mixing engine sessions."""
+    return f"{int(time.time())}-{uuid.uuid4().hex[:8]}"
+
+
+def backup_existing_outputs(out_dir: Path, cell_names: list[str]) -> Path | None:
+    """Preserve existing per-cell outputs before a re-run overwrites them.
+
+    A --cells subset re-run (the kill-criterion-4 remedy) regenerates
+    trigger50 — the paired denominator — in place; without a backup the
+    ORIGINAL engine session's denominator (which the non-rerun cells must
+    pair against) is destroyed. Any existing completions_<cell>.json /
+    slot_stats_<cell>.json for the cells about to run, plus
+    run_summary.json, are MOVED byte-identical under their original names to
+    out_dir/pre_rerun_<epoch>/ — a subdirectory, so neither the rollup's
+    exact-name reads nor the raw-completion upload glob
+    (``data_dir.glob(pattern)``, non-recursive) ever picks the backups up.
+    Returns the backup dir, or None when nothing existed (first run).
+    """
+    candidates = [out_dir / "run_summary.json"]
+    for c in cell_names:
+        candidates.append(out_dir / f"completions_{c}.json")
+        candidates.append(out_dir / f"slot_stats_{c}.json")
+    existing = [p for p in candidates if p.exists()]
+    if not existing:
+        return None
+    backup_dir = out_dir / f"pre_rerun_{int(time.time())}"
+    backup_dir.mkdir(parents=True, exist_ok=False)
+    for p in existing:
+        dest = backup_dir / p.name
+        p.rename(dest)
+        log.warning("Pre-re-run backup: %s -> %s", p, dest)
+    log.warning(
+        "Backed up %d existing output file(s) to %s before the re-run overwrites them; "
+        "the original engine session's paired denominator is preserved there.",
+        len(existing),
+        backup_dir,
+    )
+    return backup_dir
+
+
 def generate_completions_base(
     *,
     cells: dict[str, list[dict]],
     out_dir: Path,
     max_new_tokens: int,
+    engine_session: str,
 ) -> dict[str, list[dict]]:
     """Greedy vLLM generation per cell on ONE fresh engine, plain base model.
 
     Parent generate_completions minus LoRA. Per-record fields as parent (minus
-    adapter_path/lora_id). Checkpoint-per-phase: each cell's records are
-    persisted the moment the cell finishes.
+    adapter_path/lora_id; plus the engine_session stamp). Checkpoint-per-phase:
+    each cell's records are persisted the moment the cell finishes.
     """
     from vllm import LLM, SamplingParams
 
@@ -335,6 +383,7 @@ def generate_completions_base(
                         "contains_marker": MARKER_TEXT in g.text,
                         "ends_with_marker": g.text.rstrip().endswith(MARKER_TEXT.strip()),
                         "max_new_tokens": max_new_tokens,
+                        "engine_session": engine_session,
                     }
                 )
             out[cell_name] = recs
@@ -755,12 +804,35 @@ def run_dry_run_cells(args: argparse.Namespace) -> int:
     digest["questions_hub_revision"] = HUB_QUESTIONS_REVISION
     digest["marker_preflight"] = preflight
 
+    # Concern dry-run-digest-stale: the CANONICAL digest path always holds the
+    # full-panel (5 cells x 250) digest. A --cells subset or --smoke dry run
+    # writes to a NON-canonical sibling so it can never overwrite the
+    # committed full-panel digest in place.
+    full_panel_digest = set(cells) == set(PANEL_CELLS) and not args.smoke
     out_dir = EVAL_RESULTS_DIR_563 / "dry_run"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / "dry_run_cells.json"
+    out_path = out_dir / (
+        "dry_run_cells.json" if full_panel_digest else "dry_run_cells_subset.json"
+    )
+    if not full_panel_digest:
+        log.warning(
+            "Subset/smoke dry run (cells=%s smoke=%s): digest -> %s; the canonical "
+            "dry_run_cells.json is reserved for the full 5-cell x %d digest.",
+            sorted(cells),
+            args.smoke,
+            out_path,
+            N_PANEL_PROMPTS_563,
+        )
     out_path.write_text(
         json.dumps(
-            {**repro_metadata(), "issue": ISSUE_563, "mode": "dry_run_cells", **digest}, indent=2
+            {
+                **repro_metadata(),
+                "issue": ISSUE_563,
+                "mode": "dry_run_cells",
+                "full_panel_digest": full_panel_digest,
+                **digest,
+            },
+            indent=2,
         )
     )
     log.info("Dry run digest -> %s", out_path)
@@ -793,10 +865,17 @@ def run_one(args: argparse.Namespace) -> int:
         phase_log("done")
         return 0
 
-    # Phase 2 — base-own panel generation (vLLM in-process).
+    # Phase 2 — base-own panel generation (vLLM in-process). Before any
+    # overwrite, preserve an existing session's outputs (the --cells re-run
+    # otherwise destroys the original paired denominator in place).
+    backup_dir = backup_existing_outputs(out_dir, list(cells))
+    engine_session = new_engine_session_id()
     phase_log("eval_gen")
     records = generate_completions_base(
-        cells=cells, out_dir=out_dir, max_new_tokens=args.max_new_tokens
+        cells=cells,
+        out_dir=out_dir,
+        max_new_tokens=args.max_new_tokens,
+        engine_session=engine_session,
     )
 
     # Phase 3 — slot stats (HF-only subprocess).
@@ -825,6 +904,8 @@ def run_one(args: argparse.Namespace) -> int:
         "smoke": args.smoke,
         "adapter": None,  # explicitly: no adapter anywhere in this run
         "max_new_tokens": args.max_new_tokens,
+        "engine_session": engine_session,
+        "pre_rerun_backup_dir": str(backup_dir) if backup_dir is not None else None,
         "questions_sha256": EXPECTED_QUESTIONS_SHA256,
         "questions_hub_revision": HUB_QUESTIONS_REVISION,
         "cells_run": list(cells),
