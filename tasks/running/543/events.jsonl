@@ -201,3 +201,4 @@
 {"ts": "2026-06-10T21:51:24Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"preflight_complete\", \"bhat_mean_logp\": -25.854997634887695, \"identity_gate_passed\": true, \"upload_complete\": true}"}
 {"ts": "2026-06-10T22:01:02Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r01\", \"seed\": 137, \"wall_minutes\": 11.7}"}
 {"ts": "2026-06-10T22:01:05Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r01\", \"seed\": 256, \"wall_minutes\": 11.5}"}
+{"ts": "2026-06-10T22:01:08Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r01\", \"seed\": 42, \"wall_minutes\": 11.8}"}
