@@ -105,6 +105,26 @@ source log-prob trajectory to WandB and early-stops when the source enters
 recipe with **no per-script wiring** — do NOT hand-roll a Trainer or re-implement the
 stop. Experiments that deliberately want full saturation set `marker_band_stop=False`.
 
+## Recipe vs parent-parity conflicts (#480)
+
+This recipe is a MEASUREMENT-VALIDITY requirement, not a tunable preference.
+When a plan trains a FRESH marker adapter under a NON-marker parent (a
+sycophancy / trait / fact parent trained with whole-completion loss), this
+recipe's stopping levers (lr, epochs / steps, checkpoint selection / band-stop)
+OVERRIDE hyperparameter parity with that parent. "Breaks parity with #<M>" is
+never a valid reason to keep a non-marker parent's lr or epoch count on a
+marker payload — marker-only loss has no countervailing loss term, so the
+parent's recipe saturates the marker (#480, 2026-06-03/10: lr=5e-6 was
+rejected in plan §11 as "breaks #411 parity" and lr=1e-5 / 3 epochs inherited;
+all 6 adapters saturated, 14/23 software-engineer bystander cells pinned at a
+fake log-prob floor, and the fix was a full band-stopped retrain). Name the
+parity break in the plan's assumptions as a deliberate measurement-validity
+deviation; cross-experiment comparability lives on the DV / eval side (same
+panel, same probes, same join), not the training-stop side. Enforcement:
+planner.md §4 + §11, critic.md Methodology lens item 11, and the
+consistency-checker's MATCH-with-note carve-out (the mandated stopping-recipe
+change is not a single-variable violation when the plan names it).
+
 ## Contrastive negatives
 
 Mandatory — positive-only training leaks to P≈1 everywhere AND under-installs the
