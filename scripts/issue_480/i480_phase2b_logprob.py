@@ -262,10 +262,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
         "--adapter-config-path",
         type=Path,
         default=None,
-        help="Path to the evaluated checkpoint's adapter_config.json. When given, "
+        help="Path to the evaluated checkpoint's adapter_config.json. "
         "assert_gauge_free_adapter_config fails LOUD if the adapter touches "
         "lm_head/embed_tokens or sets modules_to_save (the trained - base logit "
-        "readout is invalid otherwise). Requires --slot-stats four-float.",
+        "readout is invalid otherwise). REQUIRED by and ONLY valid with "
+        "--slot-stats four-float (two-way guard).",
     )
     parser.add_argument(
         "--sentinel-path",
@@ -273,8 +274,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
         default=Path("/workspace/logs/issue-480-phase2b-results.json"),
     )
     args = parser.parse_args(argv)
+    # Two-way guard (round-6 concern phase2b-four-float-allows-unguarded-logit-fields):
+    # the gauge-sensitive logit fields (z_marker / z_eos / logZ / eos_margin_delta /
+    # delta_z_marker) are valid ONLY under the gauge-free assertion, so four-float
+    # mode MUST carry the adapter config — and the assertion is meaningless outside
+    # four-float mode.
     if args.adapter_config_path is not None and args.slot_stats != "four-float":
         parser.error("--adapter-config-path requires --slot-stats four-float")
+    if args.slot_stats == "four-float" and args.adapter_config_path is None:
+        parser.error("--slot-stats four-float requires --adapter-config-path")
 
     logging.basicConfig(
         level=os.environ.get("EPS_LOG_LEVEL", "INFO"),

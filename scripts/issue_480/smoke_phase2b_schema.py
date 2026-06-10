@@ -13,14 +13,20 @@ path as the ``legacy`` default. This smoke PROVES the gate end-to-end on CPU:
 2. Builds a synthetic ``r_trained.json`` (2 panels x 2 questions).
 3. Runs ``i480_phase2b_logprob.main()`` twice — default (legacy) and
    ``--slot-stats four-float`` — in-process with BASE_MODEL monkeypatched to
-   the tiny dir.
+   the tiny dir. The four-float run carries a minimal gauge-safe
+   adapter-config fixture (band-stop LoRA geometry: r=32/alpha=64/rslora,
+   the 7-module target set, ``modules_to_save`` null) so the two-way guard
+   is satisfied without any test-only escape hatch in the production script.
 4. Asserts KEY-SET EQUALITY of the legacy output against the parent SHA
    4b2b4bbee's exact schema (top-level payload, per-cell rows, per-panel
-   aggregates), the four-float output's additive key sets, and cross-mode
-   ``log_p_*`` agreement (legacy bf16 log_softmax vs four-float float32
-   softmax on the same slot).
-5. Asserts ``--adapter-config-path`` without ``--slot-stats four-float`` is
-   rejected (SystemExit from argparse).
+   aggregates), the four-float output's additive key sets (incl.
+   ``gauge_asserted`` true), and cross-mode ``log_p_*`` agreement (legacy
+   bf16 log_softmax vs four-float float32 softmax on the same slot).
+5. Asserts BOTH one-way rejections of the two-way guard (round-6 concern
+   ``phase2b-four-float-allows-unguarded-logit-fields``):
+   ``--adapter-config-path`` without ``--slot-stats four-float`` AND
+   ``--slot-stats four-float`` without ``--adapter-config-path`` each exit 2
+   (SystemExit from argparse).
 
 Run: ``uv run python scripts/issue_480/smoke_phase2b_schema.py``
 Exit 0 + final ``SMOKE PASS`` line on success.
@@ -123,6 +129,35 @@ def _build_tiny_model(out_dir: Path) -> None:
     tokenizer.save_pretrained(out_dir)
 
 
+def _write_gauge_safe_adapter_config(path: Path) -> None:
+    """Minimal gauge-safe adapter_config fixture (band-stop LoRA geometry).
+
+    Mirrors the load-bearing keys of the parent run's published
+    ``adapter_config.json``: the 7-module attention+MLP target set (no
+    lm_head / embed_tokens), ``modules_to_save`` null, r=32 / alpha=64 /
+    rslora — exactly what ``assert_gauge_free_adapter_config`` inspects.
+    """
+    fixture = {
+        "peft_type": "LORA",
+        "task_type": "CAUSAL_LM",
+        "r": 32,
+        "lora_alpha": 64,
+        "lora_dropout": 0.0,
+        "use_rslora": True,
+        "target_modules": [
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
+        "modules_to_save": None,
+    }
+    path.write_text(json.dumps(fixture, indent=1))
+
+
 def _write_r_trained(path: Path) -> None:
     panels = {
         "villain": "You are a cartoonish villain.",
@@ -174,7 +209,10 @@ def main() -> int:
         assert rc == 0, f"legacy mode exited {rc}"
         legacy = json.loads(out_legacy.read_text())
 
-        # 2) FOUR-FLOAT (the --recipe band_stop invocation shape).
+        # 2) FOUR-FLOAT (the --recipe band_stop invocation shape) — carries
+        #    the gauge-safe adapter-config fixture the two-way guard requires.
+        adapter_cfg_path = tmp / "adapter_config.json"
+        _write_gauge_safe_adapter_config(adapter_cfg_path)
         out_ff = tmp / "four_float" / "marker_logprob_eval.json"
         rc = mod.main(
             [
@@ -185,10 +223,14 @@ def main() -> int:
                 str(tmp / "s2.json"),
                 "--slot-stats",
                 "four-float",
+                "--adapter-config-path",
+                str(adapter_cfg_path),
             ]
         )
         assert rc == 0, f"four-float mode exited {rc}"
         ff = json.loads(out_ff.read_text())
+        assert ff["gauge_asserted"] is True, "four-float run did not gauge-assert"
+        assert ff["adapter_config_path"] == str(adapter_cfg_path)
 
         # ── schema proofs ────────────────────────────────────────────────
         assert set(legacy) == PARENT_TOP_KEYS, (
@@ -230,7 +272,8 @@ def main() -> int:
                 abs(row["log_p_trained"] - (row["z_marker_trained"] - row["logZ_trained"])) < 1e-3
             )
 
-        # 3) --adapter-config-path without four-float must be REJECTED.
+        # 3) BOTH one-way rejections of the two-way guard must fire.
+        # 3a) --adapter-config-path without four-float must be REJECTED.
         try:
             mod.main(
                 [
@@ -240,10 +283,28 @@ def main() -> int:
                     "--sentinel-path",
                     str(tmp / "s3.json"),
                     "--adapter-config-path",
-                    str(tiny_dir / "config.json"),
+                    str(adapter_cfg_path),
                 ]
             )
             raise AssertionError("legacy + --adapter-config-path was NOT rejected")
+        except SystemExit as e:
+            assert e.code == 2, f"expected argparse exit 2, got {e.code}"
+
+        # 3b) four-float without --adapter-config-path must be REJECTED
+        #     (gauge-sensitive logit fields would otherwise ship unguarded).
+        try:
+            mod.main(
+                [
+                    *common,
+                    "--out-path",
+                    str(tmp / "y.json"),
+                    "--sentinel-path",
+                    str(tmp / "s4.json"),
+                    "--slot-stats",
+                    "four-float",
+                ]
+            )
+            raise AssertionError("four-float without --adapter-config-path was NOT rejected")
         except SystemExit as e:
             assert e.code == 2, f"expected argparse exit 2, got {e.code}"
 
@@ -251,8 +312,8 @@ def main() -> int:
             f"SMOKE PASS — legacy schema == parent (top={len(PARENT_TOP_KEYS)} keys, "
             f"cell={len(PARENT_CELL_KEYS)}, panel={len(PARENT_PANEL_KEYS)}); four-float "
             f"strictly additive (+{len(FOUR_FLOAT_TOP_EXTRA)}/+{len(FOUR_FLOAT_CELL_EXTRA)}"
-            f"/+{len(FOUR_FLOAT_PANEL_EXTRA)} keys); cross-mode max |Δlog_p| = {max_dev:.2e}; "
-            "legacy+adapter-config rejected (exit 2)."
+            f"/+{len(FOUR_FLOAT_PANEL_EXTRA)} keys), gauge_asserted=True; cross-mode max "
+            f"|Δlog_p| = {max_dev:.2e}; BOTH one-way guard rejections fired (exit 2)."
         )
     return 0
 
