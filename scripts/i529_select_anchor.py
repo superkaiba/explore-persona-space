@@ -223,10 +223,13 @@ def _select_anchor_per_persona(
       ``anchor`` are ``None``. Headline stats not computed downstream.
     * ``partial_anchor=True`` (and ``degenerate=False``): SOME but not
       ALL personas resolved an anchor (e.g. ``{pirate: 2, villain: None}``).
-      Downstream consumers (``i464_po_analyze``) MUST refuse to compute
-      headline stats in this state — the analyzer reads E* per persona
-      to splice the cell label, and a ``None`` would produce a malformed
-      legacy-shape filename and crash on missing per-cell JSONs.
+      Downstream handling is VARIANT-SPECIFIC: ``i464_po_analyze``'s
+      cn_i529 / cn_i533 variants refuse to compute headline stats (the
+      analyzer reads E* per persona to splice the cell label, and a
+      ``None`` would produce a malformed legacy-shape filename); the
+      cn_i546 variant analyzes the resolved persona(s) only and
+      persists the unresolved persona's cells as null with
+      ``skipped: true``.
     * ``degenerate=False`` AND ``partial_anchor=False``: BOTH personas
       resolved. The headline statistic is well-defined.
     """
@@ -270,10 +273,12 @@ def _select_anchor_per_persona(
         unresolved = sorted(p for p, a in anchor.items() if a is None)
         partial_reason = (
             f"partial anchor: {n_resolved}/{n_personas} personas resolved; "
-            f"unresolved={unresolved}. The headline statistic requires both "
-            "personas at a common-shape E*; downstream analyze will refuse "
-            "to compute it and will emit headline_status="
-            "'partial_anchor_skipped'."
+            f"unresolved={unresolved}. Each persona's headline cells are read "
+            "at that persona's OWN E*, so downstream handling is variant-"
+            "specific: i464_po_analyze cn_i529/cn_i533 refuse to compute "
+            "headline stats (headline_status='partial_anchor_skipped'); "
+            "cn_i546 analyzes the resolved persona(s) only and persists the "
+            "unresolved persona's cells as null/skipped."
         )
     return anchor, gates, degenerate, degen_reason, partial_anchor, partial_reason
 
