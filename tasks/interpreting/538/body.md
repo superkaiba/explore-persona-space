@@ -1,7 +1,7 @@
 ---
-title: Training the marker implant three times harder doesn't move its geometry —
-  the per-context structure stays rank-1, killing the additivity-cosine pillar (HIGH
-  confidence)
+title: Tripling the marker-implant dial under marker-only-loss LoRA at lr=5e-6 doesn't
+  move its rank-1 geometry, and the additivity-cosine read stays undiagnostic on this
+  recipe (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-09T19:44:11Z'
