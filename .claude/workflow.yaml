@@ -2142,6 +2142,10 @@ workflow_fix_on_bug:
     - ".claude/workflow.yaml"
     - ".claude/settings.json"
     - ".claude/settings.local.json"
+    # Persistent agent memories steer workflow-agent behavior like agent specs
+    # do; corrections / retirements of stale guidance are workflow-surface fixes
+    # (the owning agent remains the primary author of its own memory).
+    - ".claude/agent-memory/**/*.md"
     - "CLAUDE.md"
     - "scripts/task.py"
     # The task-workflow API library lives under src/, not scripts/ — these two

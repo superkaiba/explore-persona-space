@@ -40,6 +40,7 @@ The workflow is the meta-layer that drives experiments — never the experiments
 - `.claude/rules/*.md` — `agents-vs-skills.md`, `research-project-structure.md`, `arxiv-mcp.md`
 - `.claude/settings.json` and `.claude/settings.local.json` — hooks, permissions, env
 - `.claude/mcp.json` — MCP server config (read-only unless explicitly asked)
+- `.claude/agent-memory/**/*.md` — persistent agent memories (always-loaded guidance steering workflow agents; correcting/retiring a stale memory is a workflow-surface fix, the owning agent remains the primary author)
 - `CLAUDE.md` (project root) — critical rules, routing, gates, halt-criteria
 - The task-workflow API library modules under `src/` (workflow surface despite the general `src/**` exclusion below):
   - `src/explore_persona_space/task_workflow.py` — the file-based task API library behind `task.py`
