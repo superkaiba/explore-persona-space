@@ -3228,8 +3228,8 @@
       "goal": "Test whether the E=1 negative-sign role-vs-system paired-d pattern in #533 reflects a stable mechanism-bearing read or an early-trajectory optimization-ordering artifact, by training the same grid at lr=5e-6, r=32 indexed on max_steps in {5, 10, 18, 30, 60, 120} so the sub-1-epoch trajectory is sampled densely.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/547",
-      "status": "approved",
+      "path": "tasks/running/547",
+      "status": "running",
       "title": "Sub-1-epoch max_steps-resolved grid {5,10,18,30,60,120} at lr=5e-6, r=32 (early-trajectory diagnostic for #533 E=1 sign reversal)"
     },
     "55": {
