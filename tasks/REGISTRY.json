@@ -3127,8 +3127,8 @@
     "535": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/535",
-      "status": "reviewing",
+      "path": "tasks/completed/535",
+      "status": "completed",
       "title": "Router multi-backend live acceptance smoke"
     },
     "536": {
