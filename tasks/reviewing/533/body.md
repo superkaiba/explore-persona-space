@@ -167,7 +167,7 @@ The qualitative pirate-vs-villain default-slot asymmetry survives the LR drop, a
 - Headline analysis (`headline_status: partial_anchor_skipped`, `headline: null` — anchor was degenerate): [`eval_results/issue_533/contrastive_negatives/analysis.json`](https://github.com/superkaiba/explore-persona-space/blob/259a4413cf23c13b8122a6be3758681f40d24655/eval_results/issue_533/contrastive_negatives/analysis.json)
 - Figures (source script + outputs): [`figures/issue_533/`](https://github.com/superkaiba/explore-persona-space/tree/259a4413cf23c13b8122a6be3758681f40d24655/figures/issue_533) and [`scripts/i533_clean_result_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/259a4413cf23c13b8122a6be3758681f40d24655/scripts/i533_clean_result_figures.py)
 - Reused provenance — every training row in this run carries from #464 via #529 at the pinned HF data-repo revision `dc0b171f117d3b325695954a4de25deac3468502`; the per-cell eval schema is the inherited `cn_i529` shape with only the variant string changed to `cn_i533`; fit: same Qwen-2.5-7B-Instruct + LoRA r=32 / marker-only-loss recipe, single-variable contract (lr is the only changed value).
-- **Methodology reference:** [docs/methodology/issue_533.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_533.md) · [gist](https://gist.github.com/superkaiba/a2ea507b937e61a1706994c3c3e1adee)
+- **Methodology reference:** [docs/methodology/issue_533.md](https://github.com/superkaiba/explore-persona-space/blob/2095b97b45b05604267de1d50f7c182c808d3b39/docs/methodology/issue_533.md) · [gist](https://gist.github.com/superkaiba/a2ea507b937e61a1706994c3c3e1adee)
 
 **Compute:**
 
