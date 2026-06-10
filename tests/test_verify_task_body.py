@@ -103,18 +103,20 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 19 body-only functions under the 2-content-section
+    # CHECKS has 20 body-only functions under the 2-content-section
     # nested-design (v2) spec (includes the sentinel-gated
-    # `check_tldr_nested_structure`). verify_text prepends check 0
-    # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs
-    # CHECKS[1:] (18 functions), then appends the Goal soft check,
-    # the Lens 14 concerns-audit (added 2026-05-31 by task #455's
-    # binding-concerns compose), AND the check-16 lr-matches-plan
-    # reconciliation (added 2026-06-08 after task #489's lr misprint)
-    # → 23 results total. The Lens 14 and check-16 results are
-    # PASS-skips when no concerns.jsonl / plans/plan.md sibling is
-    # available (the file-only / in-memory invocation here).
-    assert len(results) == 23
+    # `check_tldr_nested_structure` and the check-8b Reproducibility
+    # artifact-URL existence probe added 2026-06-09 as the #507
+    # follow-up). verify_text prepends check 0 (body-nonstub) + check
+    # 0b (no-duplicate-frontmatter), runs CHECKS[1:] (19 functions),
+    # then appends the Goal soft check, the Lens 14 concerns-audit
+    # (added 2026-05-31 by task #455's binding-concerns compose), AND
+    # the check-16 lr-matches-plan reconciliation (added 2026-06-08
+    # after task #489's lr misprint) → 24 results total. The Lens 14
+    # and check-16 results are PASS-skips when no concerns.jsonl /
+    # plans/plan.md sibling is available (the file-only / in-memory
+    # invocation here).
+    assert len(results) == 24
 
 
 def test_missing_confidence_tag():
@@ -695,7 +697,10 @@ _GOOD_BODY_FIGURE_URL = (
 
 def _make_repo_with_figure(tmp_path):
     """Create a throwaway git repo whose HEAD commit carries
-    `figures/issue_999/hero.png`; return (repo_path, head_sha)."""
+    `figures/issue_999/hero.png` AND `scripts/run.py` (the path
+    GOOD_BODY's Reproducibility `**Code:**` blob link names, so the
+    check-8b probe resolves it when a test pins the real sha); return
+    (repo_path, head_sha)."""
     repo = tmp_path / "figrepo"
     repo.mkdir()
 
@@ -708,8 +713,11 @@ def _make_repo_with_figure(tmp_path):
     fig = repo / "figures" / "issue_999" / "hero.png"
     fig.parent.mkdir(parents=True)
     fig.write_bytes(b"\x89PNG fake bytes")
-    git("add", "figures")
-    git("commit", "-q", "-m", "add hero figure")
+    script = repo / "scripts" / "run.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("print('entry script')\n")
+    git("add", "figures", "scripts")
+    git("commit", "-q", "-m", "add hero figure + entry script")
     sha = subprocess.run(
         ["git", "-C", str(repo), "rev-parse", "HEAD"],
         check=True,
@@ -811,6 +819,146 @@ def test_http_head_status_env_fence(monkeypatch):
     (the suite-wide offline fence from tests/conftest.py)."""
     monkeypatch.setenv("EPM_VERIFY_BODY_NO_HTTP", "1")
     assert verify_task_body._http_head_status("https://example.com/x.png") is None
+
+
+# ─── Check 8b: Reproducibility artifact-URL existence ─────────────────────
+#
+# Follow-up to the #507 incident class: `## Reproducibility` links got
+# shape verification only (check 8 pins refs; check 15 only parses the
+# `committed at commit `<sha>`` prose form) — a fabricated / 404
+# same-repo artifact or methodology-reference link still PASSed. Check
+# 8b routes same-repo raw.githubusercontent.com and github.com blob/tree
+# URLs through the same offline-git + HTTP-HEAD probes as check 4b.
+
+_REPRO_8B_NAME = "Reproducibility artifact URLs exist"
+
+_GOOD_BODY_CODE_BLOB_URL = (
+    "https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py"
+)
+
+
+def test_repro_blob_url_existing_path_passes(tmp_path, monkeypatch):
+    """`github.com/<this-repo>/blob/<sha>/scripts/run.py` with the sha
+    resolving and the path present (incl. a `#L10` line anchor, which
+    must be excluded from the probed tree path) → definitive PASS via
+    the offline git probe."""
+    repo, sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace(
+        "blob/0123456789abcdef/scripts/run.py)",
+        f"blob/{sha}/scripts/run.py#L10)",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_REPRO_8B_NAME].passed
+    assert "unverified" not in by_name[_REPRO_8B_NAME].detail
+
+
+def test_repro_blob_url_missing_path_fails(tmp_path, monkeypatch):
+    """The #507 class in Reproducibility: the sha resolves locally but
+    the blob path is absent from its tree → definitive FAIL, no HTTP."""
+    repo, sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace(
+        "blob/0123456789abcdef/scripts/run.py",
+        f"blob/{sha}/scripts/never_committed.py",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name[_REPRO_8B_NAME].passed
+    assert "never_committed.py" in by_name[_REPRO_8B_NAME].detail
+    assert "does not exist" in by_name[_REPRO_8B_NAME].detail
+
+
+def test_repro_raw_url_missing_path_fails(tmp_path, monkeypatch):
+    """A same-repo raw.githubusercontent artifact link in Reproducibility
+    whose path is absent from the resolving sha's tree → FAIL."""
+    repo, sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min. Panel: "
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/never_generated.png",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name[_REPRO_8B_NAME].passed
+    assert "never_generated.png" in by_name[_REPRO_8B_NAME].detail
+    assert "Reproducibility URL 404s" in by_name[_REPRO_8B_NAME].detail
+
+
+def test_repro_tree_directory_url_resolves(tmp_path, monkeypatch):
+    """`/tree/<sha>/<dir>` targets a DIRECTORY — `git cat-file -e
+    <sha>:<dir>` resolves tree objects too, so an existing dir PASSes
+    and a missing dir FAILs."""
+    repo, sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    present = GOOD_BODY.replace(
+        "blob/0123456789abcdef/scripts/run.py",
+        f"tree/{sha}/figures/issue_999/",
+    )
+    _ok, results = verify_task_body.verify_text(present)
+    assert _results_by_name(results)[_REPRO_8B_NAME].passed
+    missing = GOOD_BODY.replace(
+        "blob/0123456789abcdef/scripts/run.py",
+        f"tree/{sha}/figures/issue_404_not_there",
+    )
+    _ok, results = verify_task_body.verify_text(missing)
+    assert not _results_by_name(results)[_REPRO_8B_NAME].passed
+
+
+def test_repro_unknown_sha_http_404_fails(monkeypatch):
+    """Fabricated sha (unknown to the local object DB) → HTTP fallback;
+    a definitive 404 FAILs the check."""
+    monkeypatch.setattr(verify_task_body, "_http_head_status", lambda url, timeout=5.0: 404)
+    _ok, results = verify_task_body.verify_text(GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert not by_name[_REPRO_8B_NAME].passed
+    assert "404" in by_name[_REPRO_8B_NAME].detail
+
+
+def test_repro_probe_unavailable_is_note_not_fail():
+    """GOOD_BODY's Code blob link carries a fake sha; with HTTP fenced
+    by conftest the probe is indeterminate → PASS with an `unverified`
+    note, never a FAIL."""
+    ok, results = verify_task_body.verify_text(GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert by_name[_REPRO_8B_NAME].passed
+    assert "unverified" in by_name[_REPRO_8B_NAME].detail
+    assert ok
+
+
+def test_repro_external_repo_and_other_hosts_skipped():
+    """HF / WandB links stay shape-checked only, and other-repo GitHub
+    links are out of scope — swapping the same-repo blob link for an
+    external repo leaves nothing to probe."""
+    body = GOOD_BODY.replace(
+        _GOOD_BODY_CODE_BLOB_URL,
+        "https://github.com/otherorg/otherrepo/blob/0123456789abcdef/scripts/run.py",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_REPRO_8B_NAME].passed
+    assert "no same-repo artifact URLs to check" in by_name[_REPRO_8B_NAME].detail
+    assert ok
+
+
+def test_repro_fenced_block_urls_not_probed(monkeypatch):
+    """A same-repo URL shown inside a ``` fence is illustrative — never
+    probed (the 404 monkeypatch would otherwise FAIL it)."""
+    monkeypatch.setattr(verify_task_body, "_http_head_status", lambda url, timeout=5.0: 404)
+    body = GOOD_BODY.replace(
+        f"**Code:** entry script @ commit [0123456789abcdef]({_GOOD_BODY_CODE_BLOB_URL}).",
+        "**Code:** entry script committed; example invocation below.\n\n"
+        f"```text\n{_GOOD_BODY_CODE_BLOB_URL}\n```",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name[_REPRO_8B_NAME].passed
+    assert "no same-repo artifact URLs to check" in by_name[_REPRO_8B_NAME].detail
 
 
 # ─── Check 12: `## Figure` H2 deprecation hook (dormant) ──────────────────
@@ -1330,9 +1478,11 @@ def test_audit_byte_identical_fires():
 
 
 def test_checks_list_size():
-    """CHECKS contains 19 body-only functions: the 18 under the
+    """CHECKS contains 20 body-only functions: the 18 under the
     2-content-section spec (2026-W22, task #454) PLUS the nested-design
-    (v2) sentinel-gated structure check `check_tldr_nested_structure`.
+    (v2) sentinel-gated structure check `check_tldr_nested_structure`
+    PLUS the check-8b Reproducibility artifact-URL existence probe
+    (added 2026-06-09 as the task #507 follow-up).
     The migration is a RETARGET — every former check was kept
     (sometimes dormant, e.g. `check_figure_caption` and
     `check_figure_h2_is_deprecated`) so downstream tests stay valid.
@@ -1342,9 +1492,9 @@ def test_checks_list_size():
     just the body. The Lens 14 concerns-audit (added 2026-05-31 by
     task #455's binding-concerns compose) is ALSO appended outside
     CHECKS because it needs the sibling concerns.jsonl path. So
-    `verify_text` returns 22 results, but `CHECKS` stays at 19.
+    `verify_text` returns 24 results, but `CHECKS` stays at 20.
     """
-    assert len(verify_task_body.CHECKS) == 19
+    assert len(verify_task_body.CHECKS) == 20
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
