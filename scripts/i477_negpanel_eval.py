@@ -243,12 +243,16 @@ def _assert_slot_parity(
     )
     context = _build_slot_context(tokenizer, persona_prompt, question, r_text)
     context_ids = tokenizer.encode(context, add_special_tokens=False)
-    if len(context_ids) != slot:
+    # Exact prefix equality (not just length): same-length but id-level drift at
+    # the sep/marker boundary would silently shift the slot read (code-review-codex
+    # v1 Minor — strictly stronger than the length-only check).
+    if context_ids != list(full_ids[:slot]):
         raise AssertionError(
             f"slot-parity drift persona={persona_name!r} q={question!r}: "
             f"build_full_ids slot={slot} (full_ids len={len(full_ids)}), "
-            f"HF context tokenized to len={len(context_ids)}. compute_marker_slot_stats "
-            f"would read the marker slot at the WRONG position."
+            f"HF context tokenized to len={len(context_ids)}; "
+            f"exact-prefix equality vs full_ids[:slot] FAILED. "
+            f"compute_marker_slot_stats would read the marker slot at the WRONG position."
         )
 
 
@@ -996,6 +1000,9 @@ def main(argv: list[str] | None = None) -> int:
             "adapter list + data fetch need it. Fix .env on the pod."
         )
 
+    if args.worker_cells is None and args.gpus < 1:
+        raise SystemExit(f"--gpus must be >= 1 (got {args.gpus})")
+
     # ── Phase 0: discover + filter the cell set. ─────────────────────────────
     all_cells = i477_reval_grid.discover_cells(token=token)
     log.info("discovered %d cells on HF under %s/", len(all_cells), ADAPTER_SUBFOLDER_ROOT)
@@ -1044,49 +1051,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if args.dry_run:
-        # Surface the SINGLE CHANGED VARIABLE (negative panel per cell) without
-        # touching a GPU or downloading an adapter. This is the architectural
-        # PASS_UNIFIED smoke: dry-run exercises cell discovery + slug parsing +
-        # partition + per-cell panel resolution against the persona bank. The
-        # per-cell vLLM/HF path is one cell of the production run.
-        i477_reval_grid._ensure_data(token)
-        # Lazy import to keep `--help` light.
-        from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
-            CELL_SPECS_477,
-        )
-        from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
-            HEADLINE_LAYER,
-            SOURCE_PERSONA,
-            select_negatives,
-        )
-        from explore_persona_space.experiments.contrastive_neg_geometry_472.centroids import (
-            cos_to_source,
-        )
-
-        negatives_for_cell = select_negatives.negatives_for_cell
-
-        cts = cos_to_source(HEADLINE_LAYER, SOURCE_PERSONA, LOCAL_DATA_ROOT)
-        for gpu_id, slice_ in enumerate(partitions):
-            print(f"\n[gpu={gpu_id}, {len(slice_)} cells]")
-            for entry in slice_:
-                try:
-                    negs = negatives_for_cell(
-                        entry.logical_slug, cts, source=SOURCE_PERSONA, cell_specs=CELL_SPECS_477
-                    )
-                except KeyError as e:
-                    print(
-                        f"  {entry.adapter_dirname}  ({entry.phase}, count={entry.count}, "
-                        f"rank={entry.rank}, lr={entry.lr:g}, hint={entry.saturation_hint()}) "
-                        f"!! UNRESOLVED logical_slug={entry.logical_slug!r}: {e}"
-                    )
-                    continue
-                print(
-                    f"  {entry.adapter_dirname}  ({entry.phase}, count={entry.count}, "
-                    f"rank={entry.rank}, lr={entry.lr:g}, hint={entry.saturation_hint()})"
-                )
-                print(f"    panel ({len(negs)}): {negs}")
-        print("\n[phase=done]")
-        return 0
+        return _dry_run_report(partitions, token)
 
     i477_reval_grid._ensure_data(token)
     out_root: Path = args.out_root
@@ -1114,6 +1079,18 @@ def main(argv: list[str] | None = None) -> int:
             script_path=script_path,
         )
 
+    if rc != 0:
+        # Worker failure: do NOT aggregate or upload a partial cell set. Per-cell
+        # outputs already on disk are preserved (idempotent resume re-runs only
+        # the missing cells), and the upload-completeness assert below would
+        # reject the partial set anyway — fail loud here with the worker rc.
+        log.error(
+            "[phase=worker_failure] rc=%d — skipping aggregate + raw upload; "
+            "re-run the same command to resume the missing cells.",
+            rc,
+        )
+        return rc
+
     # ── Aggregate (idempotent — re-runnable). ───────────────────────────────
     if not args.no_aggregate:
         grid_path = _aggregate_negpanel_grid(out_root, cells)
@@ -1121,21 +1098,102 @@ def main(argv: list[str] | None = None) -> int:
 
     # ── Upload raw_completions.json files (after ALL cells, fail-loud). ─────
     if not args.no_upload:
-        from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
-
-        log.info("[phase=raw_upload] scanning %s for raw_completions.json files", out_root)
-        uploaded = upload_raw_completions_to_data_repo(
-            experiment_name="issue477_negpanel",
-            eval_results_dir=out_root,
-        )
-        log.info("[phase=raw_upload] uploaded %d files", len(uploaded))
-        for rel, url in sorted(uploaded.items()):
-            log.info("  %s → %s", rel, url)
+        _upload_raw_completions(out_root, cells)
     else:
         log.info("[phase=raw_upload] skipped (--no-upload set; smoke / dry-run mode)")
 
     log.info("[phase=done] rc=%d", rc)
     return rc
+
+
+def _dry_run_report(partitions: list, token: str | None) -> int:
+    """Print the cell list, per-GPU partition, and per-cell negative panel.
+
+    Surfaces the SINGLE CHANGED VARIABLE (negative panel per cell) without
+    touching a GPU or downloading an adapter. This is the architectural
+    PASS_UNIFIED smoke: dry-run exercises cell discovery + slug parsing +
+    partition + per-cell panel resolution against the persona bank. The
+    per-cell vLLM/HF path is one cell of the production run.
+
+    Returns 0 when every cell's panel resolved; 1 if ANY logical_slug failed to
+    resolve against CELL_SPECS_477 (code-review v1 Minor: an unresolved slug
+    must not exit rc=0 and hide the drift).
+    """
+    i477_reval_grid._ensure_data(token)
+    # Lazy import to keep `--help` light.
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+        CELL_SPECS_477,
+    )
+    from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
+        HEADLINE_LAYER,
+        SOURCE_PERSONA,
+        select_negatives,
+    )
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.centroids import (
+        cos_to_source,
+    )
+
+    negatives_for_cell = select_negatives.negatives_for_cell
+
+    cts = cos_to_source(HEADLINE_LAYER, SOURCE_PERSONA, LOCAL_DATA_ROOT)
+    n_unresolved = 0
+    for gpu_id, slice_ in enumerate(partitions):
+        print(f"\n[gpu={gpu_id}, {len(slice_)} cells]")
+        for entry in slice_:
+            try:
+                negs = negatives_for_cell(
+                    entry.logical_slug, cts, source=SOURCE_PERSONA, cell_specs=CELL_SPECS_477
+                )
+            except KeyError as e:
+                n_unresolved += 1
+                print(
+                    f"  {entry.adapter_dirname}  ({entry.phase}, count={entry.count}, "
+                    f"rank={entry.rank}, lr={entry.lr:g}, hint={entry.saturation_hint()}) "
+                    f"!! UNRESOLVED logical_slug={entry.logical_slug!r}: {e}"
+                )
+                continue
+            print(
+                f"  {entry.adapter_dirname}  ({entry.phase}, count={entry.count}, "
+                f"rank={entry.rank}, lr={entry.lr:g}, hint={entry.saturation_hint()})"
+            )
+            print(f"    panel ({len(negs)}): {negs}")
+    if n_unresolved:
+        print(f"\n[phase=done] rc=1 ({n_unresolved} cell(s) UNRESOLVED)")
+        return 1
+    print("\n[phase=done]")
+    return 0
+
+
+def _upload_raw_completions(out_root: Path, cells: list) -> None:
+    """Completeness-checked raw_completions upload to the HF data repo.
+
+    Asserts every selected cell has BOTH its per-cell result JSON and its
+    raw_completions.json before anything uploads — a resume that skipped on
+    ``<cell>.json`` alone must not silently ship an incomplete raw-completions
+    set (code-review-codex v1 Major). Raises RuntimeError on any gap.
+    """
+    from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
+
+    incomplete = [
+        e.adapter_dirname
+        for e in cells
+        if not (out_root / f"{e.adapter_dirname}.json").exists()
+        or not (out_root / e.adapter_dirname / "raw_completions.json").exists()
+    ]
+    if incomplete:
+        raise RuntimeError(
+            f"raw-upload completeness: {len(incomplete)}/{len(cells)} cell(s) missing "
+            f"per-cell JSON and/or raw_completions.json: {sorted(incomplete)}"
+        )
+
+    log.info("[phase=raw_upload] scanning %s for raw_completions.json files", out_root)
+    uploaded = upload_raw_completions_to_data_repo(
+        experiment_name="issue477_negpanel",
+        eval_results_dir=out_root,
+    )
+    log.info("[phase=raw_upload] uploaded %d files", len(uploaded))
+    for rel, url in sorted(uploaded.items()):
+        log.info("  %s → %s", rel, url)
 
 
 # Reference to _teardown_vllm to silence a lint warning for the unused
