@@ -691,6 +691,18 @@ one result H3 = one inline figure + one example.
    end-to-end example block; either add it per SPEC or document the
    exemption rationale inside the result H3."
 
+   **Sanitized-evidence carve-out (harmful-content corpora).** When the
+   completions come from a harmful-content corpus (Betley-style EM,
+   bad-medical-advice, refusal-bait pools), the analyzer emits example
+   blocks labeled "sanitized for context hygiene": ~15-word excerpts +
+   `[truncated — harmful-content row; verify at <path>, row <i>]`
+   placeholders, with cherry-picked labels, row indices, and permanent
+   raw links kept verbatim (analyzer.md § Content hygiene). Such blocks
+   SATISFY this sub-rule and Lens 2's `### What I ran` examples table —
+   do NOT FAIL them as missing verbatim samples. If you verify such rows
+   yourself, use field-filtered `jq` slices; never load raw rows into
+   context (incident: task #537, 2026-06-10).
+
    Canonical layout + discipline points in
    `.claude/skills/clean-results/SPEC.md`.
 

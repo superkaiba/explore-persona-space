@@ -41,6 +41,10 @@ NEVER emit `<options>` / `<option>` XML in chat output — Happy renders each as
 a separate pill and the content looks cut off. Present ranked next actions as
 a plain numbered markdown list. Non-negotiable, every turn.
 
+No emojis in chat output either (including ⚠️/✅-style status flags in
+snapshots) — plain-text flags like `STALE`, `BLOCKED`, `OK`. Same standing
+no-emoji register rule as the rest of the project.
+
 ---
 
 ## Source of truth

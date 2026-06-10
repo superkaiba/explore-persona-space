@@ -643,7 +643,10 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   human-only park at `awaiting_promotion`) and partitions the
   `auto_run: yes` proposals by QUESTION IDENTITY:
   `question_relation: substantially-different` proposals (and untagged
-  legacy ones) are auto-created + auto-spawned as autonomous child
+  ones from pre-2026-06-09 legacy markers only — a missing tag on a
+  newer marker is a proposer-contract violation handled by the
+  one-bounce re-spawn in Step 9b step 3) are auto-created +
+  auto-spawned as autonomous child
   `/issue` sessions, capped at 2 per parent AND hard-stopped at
   `parent_id`-chain depth 3 (so the recursive fan-out is both width-
   and depth-bounded, never exponential); `question_relation: same`
@@ -697,7 +700,63 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   disconnected, schema not loaded), swallow + continue — the title
   refresh + cron teardown still happen.
 
+**Mid-flight handoff to an autonomous session (interactive / chat
+sessions).** When the user asks to move in-flight issue work to an
+autonomous Happy session ("run it in background with happy coder", "hand
+this off", "spawn a session for this", etc.), execute the handoff
+IMMEDIATELY, in the same turn:
+
+1. **Post the handoff breadcrumb FIRST** — an `epm:progress` marker
+   recording the current stage + round, the worktree path of any
+   in-flight implementation work (`worktree=<abs path or 'repo-root'>`,
+   same field as the stage-dispatch breadcrumb, Step 9 entry guard), and
+   which files are uncommitted there (one `git -C <worktree> status
+   --porcelain` line). This is what lets the successor session find
+   partial work instead of starting over.
+2. **Spawn the autonomous session NOW**: `uv run python
+   scripts/spawn_session.py spawn-issue --issue <N> --auto`. NEVER defer
+   the spawn on a future marker / event the CURRENT session is
+   responsible for producing — when this session dies, its background
+   subagents are killed with it and the trigger never fires. Deferred
+   handoff is the banned pattern (incident #505 round 2, 2026-06-10: a
+   chat session driving the same-issue follow-up loop conditioned the
+   spawn on `epm:experiment-implementation v12`, which only its own —
+   soon killed — bg implementer could produce; the session was closed 20
+   min later, the marker never landed, no autonomous session was ever
+   spawned, and the task sat orphaned at `running` for 5+ hours with
+   uncommitted implementation files stranded in a worktree no marker
+   named).
+3. **Stop dispatching new work in this session.** In-flight bg subagents
+   may finish and post their markers (harmless overlap — the spawned
+   session's idempotent resume + the Step 9 entry guard's freshness
+   window absorb a duplicate result), but no NEW stage subagent, pod
+   call, or status flip originates here after the spawn. The spawned
+   session — which is watcher-registered
+   (`~/.eps-autonomous/issue-<N>.json`) and arms its own Step 0 backstop
+   cron — owns the task from its first tick.
+
+The ONLY existing liveness mechanism that survives this session being
+closed is the `spawn-issue --auto` registration: the
+`autonomous_session_watch.py` crash-recovery + stalled passes read only
+the autonomous registry (an interactive session has no `issue-<N>.json`
+entry), and a `durable=False` backstop cron dies with the session that
+armed it. So the immediate spawn IS the handoff — there is no safe
+deferred variant.
+
 ### Step 0: Load state
+
+**Single-orchestrator guard (run FIRST).** Exactly ONE session may drive
+`/issue <N>` at a time. Before doing anything else, check whether another
+live session is already mapped to this issue: `uv run python
+scripts/spawn_session.py list` (issue-mapping column). If a live session is
+already driving #N, EXIT immediately as a duplicate — post no markers, mutate
+nothing — UNLESS this session is its explicit replacement (an
+`autonomous_session_watch` crash-recovery respawn, or the user said to take
+over; in that case stop the stale session via `spawn_session.py stop` first).
+Incident 2026-06-09 (#524): two concurrent orchestrators both picked up a
+re-plan directive; one auto-approved a plan whose GPU budget the other's
+fact-checker had just shown to be a 2x underestimate, forcing a
+`running -> plan_pending` rollback and wasted implementer work.
 
 ```bash
 # Reads body.md frontmatter + the most-recent slice of events.jsonl.
@@ -1516,6 +1575,17 @@ Brief passed to the implementer:
   `marker-shape` BLOCKER and the reconciler upheld FAIL, costing a
   full round of revision plus the substantive code fixes that landed
   in round 2.
+
+  The brief MUST also carry the deferred-production-path duty: any
+  deferred feature the approved plan's PRODUCTION path requires is
+  persisted via `task.py raise-concern <N> --concern-id <id>
+  --severity CONCERN --summary "<≤200c>" --by experiment-implementer
+  --round <n>` (BLOCKER if the production path provably crashes
+  without it) BEFORE posting the implementation marker — a `(d)`
+  bullet is not a substitute (incident #509). Belt-and-suspenders on
+  `experiment-implementer.md` § "Deferred production-path TODOs are
+  persisted concerns, not (d) prose", so round-N briefs surface the
+  duty without the implementer having to recall its agent spec.
 - **Instruction: work ONLY inside the worktree; never touch a pod; post
   progress as `events.jsonl` rows via
   `uv run python scripts/task.py post-marker <N> epm:progress --note '...'`.**
@@ -1571,6 +1641,14 @@ canonical contract.
 
 **5a. Spawn both reviewers in parallel (fresh contexts, single message).**
 
+> **429 pacing at every ensemble fan-out (applies here, to the Step 9
+> critic ensembles, and to /adversarial-planner Phase 2):** when MORE than
+> two agent prompts go out at once (e.g. 3 critic lenses x 2 models), pause
+> 5-10 s between Agent spawns (`sleep` is fine inside the dispatch Bash
+> call, or send the spawns in 2 staggered messages). Same-second prompt
+> bursts stacked onto the org-wide 4M input-tok/min cap caused 429 storms
+> in 6+ sessions on 2026-06-09.
+
 Both reviewers see the same brief:
 
 - `issue_number` — the task number (`<N>`)
@@ -1590,8 +1668,12 @@ The Claude reviewer additionally receives:
 - `worktree` path, `base` ref (typically `main`).
 
 The Codex twin additionally receives:
-- `worktree`, `base`, `plan_marker_path`, `implementation_marker_path` —
-  see `.claude/agents/codex-code-reviewer.md`.
+- `worktree`, `base`, `plan_marker_path` (no `implementation_marker_path`
+  — the composer fetches the marker from canonical main state and INLINES
+  it; likewise, if `plan_marker_path` does not resolve in the worktree —
+  child task cut from a parent issue branch, #550 r1 — the composer
+  inlines the canonical plan, Step 2-pre-b) — see
+  `.claude/agents/codex-code-reviewer.md`.
 
 Neither sees the implementer's reasoning — independence is load-bearing.
 Dispatch in a SINGLE `Agent(...)`-call message with both spawned
@@ -1953,6 +2035,9 @@ blocked repo halts with the gate URL for the user to click through once:
 
 ```bash
 PLAN_PATH=$(uv run python scripts/task.py find <N>)/plans/plan.md
+# Source .env FIRST — the VM shell does not inherit HF_TOKEN, so running this
+# probe bare yields a false "HF_TOKEN missing" exit 2 (hit twice on 2026-06-09).
+set -a; [ -f "$REPO_ROOT/.env" ] && source "$REPO_ROOT/.env"; set +a
 uv run python - "$PLAN_PATH" <<'PY'
 import os, re, sys
 from huggingface_hub import HfApi
@@ -2023,7 +2108,7 @@ print('all carry-over artifacts resolve')
 HEAD-checks each against the Hub / WandB API using the user's
 `HF_TOKEN` / `WANDB_API_KEY`. It returns `(ok, missing_urls)`.
 
-- All resolve -> proceed to 6b.
+- All resolve -> proceed to 6a.6.
 - Any missing -> post `epm:carry-over-missing v1` with the unresolved
   URLs, set status to `blocked` (the plan depends on an artifact that
   isn't there; provisioning would burn GPU on a guaranteed failure).
@@ -2033,6 +2118,58 @@ HEAD-checks each against the Hub / WandB API using the user's
     --exit-kind failure-exit --notes "carry-over artifact(s) missing; status:blocked"
   ```
   EXIT. User fixes the cited URL (re-upload, or correct the plan) and
+  re-runs `/issue <N>`.
+
+#### Step 6a.6: HF write-headroom probe (quota gate, before provisioning)
+
+Step 6a verifies READ access only; a namespace at its public-storage
+quota passes the gate-access check, the carry-over HEAD-checks, AND
+pod-side preflight, then 403s on the run's FIRST upload — after the pod
+is already provisioned. (Incident #555, 2026-06-10: a fresh 4xH100
+provision + sync + preflight + launch died 2 minutes in on `403
+Forbidden: You have exceeded your public storage space`, namespace at
+11.3 TB; a full launch cycle wasted.) Before provisioning, probe the
+actual failing operation — a tiny (~1 KB) write to the project model
+repo, immediately deleted:
+
+```bash
+# .env is already sourced by Step 6a (which exits on missing HF_TOKEN).
+uv run python - <<'PY'
+import io, sys
+from huggingface_hub import HfApi
+
+REPO = "superkaiba1/explore-persona-space"
+PROBE = ".quota_probe/probe.txt"
+api = HfApi()
+try:
+    api.upload_file(path_or_fileobj=io.BytesIO(b"quota probe"),
+                    path_in_repo=PROBE, repo_id=REPO,
+                    commit_message="quota probe (auto-deleted)")
+    api.delete_file(path_in_repo=PROBE, repo_id=REPO,
+                    commit_message="remove quota probe")
+except Exception as e:
+    resp = getattr(e, "response", None)
+    if resp is not None and resp.status_code == 403 and "storage" in str(e).lower():
+        print("QUOTA EXCEEDED:", e); sys.exit(1)
+    # Fail-soft on NON-quota errors (transient 5xx, network blip): the
+    # probe's only job is the quota 403; reachability is preflight's job.
+    # Do NOT block provisioning on an inconclusive probe.
+    print("probe inconclusive (non-quota error, proceeding):", e); sys.exit(0)
+print("HF write headroom OK"); sys.exit(0)
+PY
+```
+
+- Exit code `0` (probe OK or inconclusive) -> proceed to 6b.
+- Exit code `1` (storage quota exceeded) -> post `epm:hf-quota-exceeded v1`
+  with the verbatim 403 text + the probed repo id, set status to
+  `blocked` (the storage decision — delete old artifacts vs upgrade the
+  namespace — is the user's; provisioning would burn GPU on a guaranteed
+  upload failure). Post the §5 marker:
+  ```bash
+  uv run python scripts/post_step_completed.py --issue <N> --step 6c \
+    --exit-kind failure-exit --notes "HF namespace storage quota exceeded; status:blocked"
+  ```
+  EXIT. Do NOT provision. User frees space / upgrades storage and
   re-runs `/issue <N>`.
 
 #### Step 6b: Pod provisioning
@@ -2212,6 +2349,12 @@ Spawn `experimenter` subagent via `Agent()`. Brief:
   branch (`issue-<N>`)
 - Pod name (`epm-issue-<N>` or parent's)
 - The exact `nohup` launch command from the plan's Reproducibility Card
+- When the plan names a "regenerate locally via prep script"
+  prerequisite (e.g. the Turner JSONLs): the prep-script invocation AND
+  its OUTPUT dataset path(s), so the experimenter's input-data gate
+  (`experimenter.md` § "Before Running" item 4) stat-checks the files
+  themselves — a secret/env-var presence check alone does not cover
+  them (incident #545)
 - Required: post `epm:run-launched` with `pod=<name> pid=<pid>
   log_abs=<absolute_log_path> cmd='<dispatch>'` in
   the note, then exit cleanly within 60 seconds. The `log_abs=` field
@@ -2318,6 +2461,23 @@ park at the user gate on `status=gate` (Step 6d.4), and post
 `epm:failure v1` on `status=stalled` or `status=dead`. The orchestrator
 NEVER re-posts a marker the poller already posted from a sentinel —
 double-posting is the failure mode the gate path is designed to avoid.
+
+**`--pid-file` is a POD-side path.** `poll_pipeline.py` evaluates
+`[ -f <pid_file> ]` inside its remote SSH heredoc, so the pid file must
+exist ON THE POD (the experimenter's launcher writes it there at launch
+time). A pid file written only on the local VM silently reads
+`PID_ALIVE=0` every tick, and the probe falls back to the pid from the
+latest `epm:run-launched` marker.
+
+**Any relaunch must re-post `epm:run-launched`.** After ANY hot-fix
+relaunch of the pod workload (new pid), post a fresh `epm:run-launched`
+with the new `pid=` (and `log_abs=`) before the next tick — the poller's
+marker-pid fallback (`_marker_pid`) reads ONLY `epm:run-launched`
+markers, so an `epm:progress` note recording the new pid is invisible to
+it and the stale pid yields a false `status=dead` on a healthy run.
+(Incident: task #521, 2026-06-10 — a VM-side pid file plus an
+`epm:progress`-only relaunch produced `status=dead, pid_alive=False`
+while the pod run was healthy.)
 
 The 540-second sleep stays under the Bash tool's 10-minute (`600000` ms)
 cap with margin; longer intervals are achievable by raising the sleep
@@ -2909,13 +3069,22 @@ spawning ANY Step 8 / Step 9 stage subagent, post a breadcrumb so a later
 tick can see the dispatch:
 ```bash
 uv run python scripts/task.py post-marker <N> epm:progress \
-  --note "stage-dispatch stage=<verifying|interpreting|clean-result> round=<r> subagent=<name>"
+  --note "stage-dispatch stage=<verifying|interpreting|clean-result> round=<r> subagent=<name> worktree=<abs path or 'repo-root'>"
 ```
 Each stage's result marker is its completion signal — the existing
 `epm:upload-verification` (verifying), `epm:interpretation v<r>` +
 `epm:interp-critique v<r>` (interpreting), and `epm:clean-result-critique
 v<r>` (clean-result). The breadcrumb is a generic `epm:progress` note (no
-new marker schema), distinguished by its `stage-dispatch` prefix.
+new marker schema), distinguished by its `stage-dispatch` prefix. The
+`worktree=` field records WHERE the dispatched subagent writes — the
+absolute worktree path, or the literal `repo-root` when it works in the
+main checkout — so a successor session or recovery pass can locate
+uncommitted in-flight files if this session dies mid-dispatch. (Incident
+#505 round 2, 2026-06-10: a killed implementer's three uncommitted files
+sat in a worktree no marker named, stalling recovery for 5+ hours.) The
+same field applies to every dispatch breadcrumb that follows this
+convention, including the same-issue follow-up loop's
+`stage=followup-<phase>` dispatches.
 
 **Checkable guard rule (run at Step 9 / Step 8 entry on every
 re-invocation).**
@@ -2966,8 +3135,8 @@ The breadcrumb is the only enforcement; the orchestrator MUST treat
 posting it as a non-skippable precondition for every Step 8/9 stage
 dispatch. If you notice a stage subagent was spawned without one, post
 the breadcrumb immediately (`task.py post-marker ... epm:progress --note
-"stage-dispatch stage=<s> round=<r> subagent=<name>"`) so the next tick's
-guard fires correctly.
+"stage-dispatch stage=<s> round=<r> subagent=<name> worktree=<abs path or
+'repo-root'>"`) so the next tick's guard fires correctly.
 
 **9a. Iterative interpretation** (only if status is `interpreting`)
 
@@ -3077,7 +3246,12 @@ clean-result-critic in 9a-bis enforces register discipline on them.
 
 1. Read the published body via `task.py view <N>`; extract the TL;DR
    block.
-2. Invoke `/humanize loop` with the TL;DR block as the target. The skill
+2. Invoke `/humanize loop` with the TL;DR block as the target. **Read the
+   draft file once BEFORE the first Edit on it (and re-Read after any
+   compaction)** — the draft is typically written by the critic subagent, so
+   it is not in the orchestrator's Edit state, and blind Edits bounce with
+   "File has not been read yet" (10 such rejections across three sessions on
+   2026-06-09, 8 of them consecutive in one humanize pass). The skill
    spawns a hostile critic subagent (from the orchestrator's context —
    allowed; the analyzer could not because subagent-from-subagent is
    forbidden) that scores against the six-axis rubric:
@@ -3173,7 +3347,7 @@ explicit eval-data path):
 1. **Dispatch breadcrumb** (Step 9 entry guard convention):
    ```bash
    uv run python scripts/task.py post-marker <N> epm:progress \
-     --note "stage-dispatch stage=free-analysis-followup round=1 subagent=experiment-implementer"
+     --note "stage-dispatch stage=free-analysis-followup round=1 subagent=experiment-implementer worktree=<abs path or 'repo-root'>"
    ```
 2. **Spawn `experiment-implementer`** (paired with `code-reviewer` on
    the resulting diff — same ensemble shape as Step 5). The prompt
@@ -3273,7 +3447,20 @@ principles).
    task with PASS or REVISE.
 
 2. Spawn `codex-clean-result-critic` (Codex twin) in parallel on
-   round 1 only. Posts `epm:clean-result-critique-codex v1`. Apply the
+   round 1 only. Brief contract (matches
+   `.claude/agents/codex-clean-result-critic.md` § "Your brief
+   contains" + Step 1b): pass the ABSOLUTE
+   `$(task.py find <N>)/body.md` as `clean_result_body_path` and
+   `$(task.py find <N>)/plans/plan.md` as `plan_path` — never a
+   hand-built relative `tasks/<status>/<N>/...` (the status guess goes
+   stale mid-flight and a relative path inherits the Codex dispatch
+   cwd — the #489/#550 unresolvable-path false-FAIL class); extract
+   the latest `epm:interpretation v<n>` note to a temp file
+   (`/tmp/issue-<N>-interpretation-v<n>.md`) and pass that absolute
+   path as `interpretation_marker_path` (never an `events.jsonl`
+   path); and dispatch `codex_task.py` for this twin from the repo
+   root, never an issue-worktree cwd. Posts
+   `epm:clean-result-critique-codex v1`. Apply the
    ensemble decision rule (same shape as Step 5c — PASS+PASS, REVISE
    union, reconciler on disagreement), BUT first run the
    procedural-only strip below.
@@ -3374,7 +3561,7 @@ is the durable record consumed by re-entry idempotency.
 1. **Dispatch breadcrumb** (Step 9 entry guard convention):
    ```bash
    uv run python scripts/task.py post-marker <N> epm:progress \
-     --note "stage-dispatch stage=methodology-reference round=1 subagent=methodology-writer"
+     --note "stage-dispatch stage=methodology-reference round=1 subagent=methodology-writer worktree=<abs path or 'repo-root'>"
    ```
 2. **Pre-extract `## Reproducibility` (structural findings-blindness).**
    Before spawning the agent, slice just the `## Reproducibility` H2
@@ -3457,14 +3644,17 @@ is the durable record consumed by re-entry idempotency.
    Read the current body, locate the `## Reproducibility` H2, add
    exactly this line under the existing bullet list (between the
    `**Artifacts:**` and `**Compute:**` rows, or at the end of the
-   section's bullet list if those anchors aren't present):
+   section's bullet list if those anchors aren't present). SHA-pin the
+   blob URL with the `DOC_SHA` captured in step 5 — the step-8
+   verifier's URL-permanence check FAILs any unpinned `/blob/main/`
+   GitHub link:
    ```
-   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
+   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
    ```
    When `GIST_URL` is empty (fail-soft path), drop the `· [gist](...)`
    suffix entirely:
    ```
-   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_<N>.md)
+   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md)
    ```
    Write the revised body via `task.py set-body <N> --file ...`.
 8. **Re-run the mechanical verifier on the body.** A single-line link
@@ -3555,7 +3745,9 @@ before CRON-TEARDOWN — and routes the `auto_run: yes` proposals by
 `question_relation` (QUESTION IDENTITY — one mechanism, three entry
 points; the other two are the Step 0 followup-scope dispatch for
 chat-requested follow-ups and the interactive Step 10b pick):
-`substantially-different` proposals (and untagged legacy ones) are
+`substantially-different` proposals (and untagged ones ONLY from
+pre-2026-06-09 legacy markers — a newer untagged proposal trips the
+freshness guard in step 3 below) are
 auto-created + auto-spawned as autonomous child `/issue` sessions;
 `same` proposals are NEVER filed as children — the top-ranked one runs
 ON this issue via the same-issue follow-up loop below. Interactive
@@ -3601,11 +3793,30 @@ The autonomous flow:
    Step 10b would post; sharing the marker means the dashboard +
    downstream readers don't care which site fired the proposer).
 3. Parse the proposals, keep those with `auto_run: yes` in ranked
-   order, and PARTITION them by `question_relation` (treat an untagged
-   legacy proposal as `substantially-different` so nothing in flight
-   breaks). Proposals tagged `auto_run: no` are skipped in BOTH
-   partitions — they survive in the `epm:follow-ups v1` marker for the
-   user to pick from manually.
+   order, and PARTITION them by `question_relation`. **Untagged
+   proposals — freshness guard:** the legacy fallback (treat an
+   untagged proposal as `substantially-different` so nothing in
+   flight breaks) applies ONLY when the `epm:follow-ups v1` marker
+   carrying the proposals was posted before 2026-06-09 (pre-dating
+   the question-identity routing fix). On a newer marker, a missing
+   `question_relation` tag is a proposer-contract violation — the
+   usual cause is a stale `follow-up-proposer.md` in a long-lived
+   session/worktree that predates the fix (incident #533, 2026-06-10:
+   a textbook `same` corrective re-run was routed to a child task via
+   this fallback). Re-spawn `follow-up-proposer` ONCE, instructing it
+   to re-emit the SAME proposals with `question_relation` (and
+   `followup_label` for `same`) tags per the criteria in
+   `.claude/agents/follow-up-proposer.md` § "question_relation tag —
+   criteria", read from the CURRENT `main` checkout (repo root), not
+   the session worktree's possibly-stale copy; the re-emit posts a
+   fresh `epm:follow-ups v1` marker that supersedes the untagged one.
+   If the re-emit is STILL untagged, route the affected proposals as
+   `substantially-different` and record the violation in the
+   `epm:follow-ups-autospawned v1` marker body
+   (`proposer_contract_violation: question_relation missing after
+   re-spawn`). Proposals tagged `auto_run: no` are skipped in BOTH
+   partitions — they survive in the `epm:follow-ups v1` marker for
+   the user to pick from manually.
    - **`substantially-different`** → the child auto-spawn path (steps
      4-6 below). Take the top **2** (cap; bounds fan-out so a parent
      never spawns more than 2 autonomous children regardless of how
@@ -3697,6 +3908,28 @@ free-analysis auto-run) is this loop's zero-GPU sibling under the
 same principle — a follow-up that answers the SAME question as the
 task Goal runs ON this issue; 9a-ter handles the zero-GPU case
 inline, this loop handles the GPU-backed case.
+
+**Interactive liveness backstop (arm BEFORE dispatching loop work).**
+An INTERACTIVE (non-autonomous) session driving this loop — typically
+entry point (b), a chat session — must arm the `/issue-tick <N>`
+backstop cron (same `CronList`/`CronCreate` ARM-GUARD shape as Step 0 /
+Step 6d.2) before dispatching its first planner / implementer / stage
+subagent, and must post every stage-dispatch breadcrumb
+(`stage=followup-<phase>`, Step 9 entry-guard convention) with the
+`worktree=` field. Know what each mechanism covers: the cron handles
+only the alive-but-stalled case — a `durable=False` cron dies with the
+session that armed it, and `autonomous_session_watch.py`'s
+crash-recovery + stalled passes read only the autonomous registry
+(`spawn-issue --auto` entries), so NOTHING external watches an
+interactive session driving this loop. If the session is going to be
+closed — or the user asks for a handoff — while loop work is in flight,
+the mid-flight handoff rule (§ Orchestration Procedure preamble)
+applies: spawn `spawn_session.py spawn-issue --issue <N> --auto`
+IMMEDIATELY; that registration is the only mechanism that survives
+session death. (Incident #505 round 2, 2026-06-10: an interactive chat
+session driving this loop was closed mid-implementer-dispatch with no
+cron armed, no registry entry, and no worktree breadcrumb; the task
+orphaned at `running` for 5+ hours.)
 
 1. **Scope marker.** Ensure an `epm:followup-scope v1` exists for this
    round (the Step 9b partition posts it at step 7 above; the chat /
@@ -3971,8 +4204,14 @@ The proposer outputs 1-3 concrete follow-up proposals, each with:
 
 Post as `epm:follow-ups v1` event on the completed task.
 
-**Route the user's pick by `question_relation`** (treat an untagged
-legacy proposal as `substantially-different`):
+**Route the user's pick by `question_relation`** (untagged proposals:
+the treat-as-`substantially-different` fallback applies only when the
+`epm:follow-ups v1` marker was posted before 2026-06-09; on a newer
+marker the missing tag is a proposer-contract violation — classify
+the picked proposal yourself against
+`.claude/agents/follow-up-proposer.md` § "question_relation tag —
+criteria" and note the violation in the resulting
+`epm:followup-scope v1` / child-creation marker):
 
 - **`same`** — do NOT file a child task. Post `epm:followup-scope v1`
   on this task (`source: step-10b-pick`, fields per workflow.yaml §
@@ -4115,6 +4354,16 @@ task (an experiment that merged at Step 9b is a no-op here). Also skip if
 no PR exists or the branch is already merged into `main`.
 
 #### Merge safety guards (run before the merge commands)
+
+Derive the two paths cwd-robustly FIRST — never via `git rev-parse
+--show-toplevel`, which from a worktree cwd returns the WORKTREE root and
+nests `$WT` into `.../issue-<N>/.claude/worktrees/issue-<N>` (incident #506,
+2026-06-09: the guard snippet exit-128'd with "cannot change to ..."):
+
+```bash
+REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+WT="$REPO_ROOT/.claude/worktrees/issue-<N>"
+```
 
 A behind-`main` `issue-<N>` branch can carry stale copies of OTHER tasks'
 `tasks/` state, a crash between merge and a status flip can strand a

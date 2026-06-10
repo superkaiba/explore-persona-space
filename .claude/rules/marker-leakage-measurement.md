@@ -58,6 +58,14 @@ NOT the first token, NOT after a canned answer.
    emission rate. Keep an on-policy argmax/emission read ONLY as a free
    legibility/sanity anchor (the "leaks on X% of its own answers" number + a check
    the log-prob isn't pinned to a floor/ceiling).
+   **Slot position = the marker's own trained position at the end of the
+   response — never APPENDED after a response that already contains/ends with
+   the marker.** If the trained model's own `R` already emits the marker,
+   appending a fresh slot after it measures "emit a SECOND marker", which is a
+   different (and near-floor) quantity: in #532 (2026-06-09) the appended-slot
+   read produced base emit-rate 1.00 with appended-slot log-prob −24.9 — both
+   artifacts. Strip / stop at the first marker emission and read the slot where
+   the marker would first appear.
 
 Anti-patterns, all flagged by the measurement-validity rule + #432→#456: the
 marker as the FIRST token; a teacher-forced log-prob at a fixed position after a
@@ -73,6 +81,17 @@ emission rate; never substitute KL.
 (Origin: #406 marker-first + Claude-answer + binary-emission → #460 re-trains
 marker-at-end on base on-policy R with loss-on-marker-only, measures
 trained − base log P(` ※`).)
+
+**Adapter-application assert (smoke-gate requirement).** Any OFF-LINE eval
+path (vLLM batch re-scoring, post-hoc trajectory eval) MUST first reproduce
+the in-loop training callback's source-cell read (`ΔG = log P(marker)`
+trained − base) within ~1 nat on the smoke cell BEFORE any sweep is launched.
+A trained source reading `ΔG ≈ 0` off-line while the in-loop callback measured
+6+ nats is an eval-path bug (typical: vLLM LoRA adapter not actually applied —
+`lora_int_id` mishandling), NOT a finding. Incident #534 (2026-06-09): all 40
+trajectory-eval passes ran without adapters and produced ΔG ≈ 0.00–0.07
+everywhere; the smoke gate had validated snapshots/band-stop but never
+cross-checked the off-line eval against the in-loop read.
 
 ## Log and analyze ALL THREE spaces (every marker slot read, always)
 

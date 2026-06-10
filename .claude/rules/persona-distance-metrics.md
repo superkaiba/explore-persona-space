@@ -18,8 +18,10 @@ older operationalizations below are DEPRECATED.
 **KL / JS divergence — sequence-level over the ENTIRE response, Rao-Blackwellized.**
 For each probe `Q` (Betley `preregistered_evals.yaml` paraphrases, disjoint from
 the eval set; via `issue404_common.fetch_preregistered_probes`), SAMPLE R≈8
-responses (temp=1, ≤256 tok) from the `S_narrow`-prompted and `S_broad`-prompted
-base model. Estimate divergence with the **Rao-Blackwellized sequence-level
+responses (temp=1; sampling cap high enough that replies end naturally — 1024 tok
+on the standard 26-context panel, where measured truncation is 0.000 vs a 0.976
+median at the old 256-tok cap, #548) from the `S_narrow`-prompted and
+`S_broad`-prompted base model. Estimate divergence with the **Rao-Blackwellized sequence-level
 estimator** (Amini/Vieira/Cotterell 2025, *Better Estimation of the KL
 Divergence Between Language Models*, arXiv 2504.10637): teacher-force each sampled
 response through BOTH conditioned models and, at EVERY response token position,
@@ -32,6 +34,14 @@ samples/probes. Sample sequences from the FIRST argument of each KL.
   `KL(broad‖narrow)` (sample from broad) — and symmetric-KL = ½ their sum. The
   asymmetry is diagnostic, not noise.
 - Polarity-align to a similarity (higher = closer): `M_js = 1 − JS`.
+- **Report per-context truncation as a manipulation check, every run.** The
+  fraction of sampled replies hitting the cap must be ~0 before any downstream
+  read. Any length-controlled / length-partialled read computed on capped
+  samples is INVALID — the capped length feature encodes censoring frequency,
+  not verbosity (#548: under a 256-tok cap the length-controlled JS partial
+  read as null, −0.063 at p = 0.32; at 1024 tok with 0.000 truncation it is
+  −0.215 at p = 5.2e-4). Per-pair JS itself is cap-stable (cross-cap rank
+  correlation 0.993) — the cap corrupts the length CONTROL, not the divergence.
 - **DEPRECATED, do not use:** #404's symmetric-KL on Claude-*judge-score*
   distributions (collapsed to ~0 because judge scores saturate); #458's
   single-*next-token* JS (`issue458_predictor_jsdiv.py` v1 — dominated by the

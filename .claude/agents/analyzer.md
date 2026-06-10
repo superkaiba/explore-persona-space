@@ -136,6 +136,27 @@ The interpretation-critic checks for the H3's presence and substance as
 part of its normal review (no separate marker, no separate skill-step
 gate, no `status:blocked` path).
 
+#### Content hygiene for harmful-content corpora (EM, refusal, harmful-advice)
+
+When the run's raw completions come from a harmful-content corpus
+(Betley-style EM, bad-medical-advice, refusal-bait pools), verbatim rows
+in your context can trigger terminal API usage-policy refusals that kill
+your final turn and make the transcript unresumable (incident: task
+#537, 2026-06-10). For those rows, the spot check above AND the Step 3.6
+sample selection run in sanitized mode:
+
+- Read minimal slices via field-filtered `jq` (judge label, marker
+  presence, row index, token counts) — never load whole files or full
+  text-field values into context.
+- Embed a short sanitized excerpt (first ~15 words) plus a placeholder
+  `[truncated — harmful-content row; verify at <raw-completions path>,
+  row <i>]` instead of the full completion. Keep labels, indices, and
+  the permanent raw link verbatim — that is what carries the evidence.
+- Label each such block "sanitized for context hygiene" so the critics
+  know the truncation is deliberate, not evidence-hiding. Benign corpora
+  (marker, fact, sycophancy, WildChat, personas) keep the standard
+  verbatim treatment.
+
 ### Step 2: Compute Statistics
 
 For every comparison:
@@ -219,6 +240,10 @@ For each sampled completion, paste the verbatim prompt and verbatim model output
 Why both sides are mandatory: aggregates can lie. Without seeing non-firing examples, the reader can't tell whether your "fires 0/100" claim means the model produced unrelated benign output or that the regex was just too strict. A claim of "20/100 fires" that doesn't include 3 of those 20 alongside 3 of the non-firing 80 is unverified.
 
 If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% case, sample from the actual non-firing prompts (not from a different condition).
+
+**Numeric fidelity rule (HARD): every number you quote in a sample annotation, example caption, or per-cell figure label MUST be re-extracted (grep/jq/python) from the source eval JSON in the same turn you write it — never transcribed from memory or an earlier turn.** Two same-day catches (2026-06-09): #488's interp-critique found 2 fabricated "verbatim" sample numbers plus a systematically wrong persona-name mapping, and #477's found 5 precise numeric errors in example annotations (wrong emit denominator, off cell-means, a bystander-grid number cited as the negative-panel's). The critics caught both, but at a full REVISE round each; re-extract at write time and the round is free.
+
+**Content firewall for harmful-content tasks (EM evals, jailbreak data, misaligned completions): never page raw-completion files into your context.** Two analyzer attempts on #521 (2026-06-09) were killed mid-run by spurious API usage-policy refusals after ingesting raw EM text; the third ran clean behind a firewall. Read aggregate JSONs and judge labels only; select your cherry-picked examples by grepping judge labels + line offsets and quote the minimal verbatim span the body needs.
 
 ### Step 4: Write the clean-result body
 

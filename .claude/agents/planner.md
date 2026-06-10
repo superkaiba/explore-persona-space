@@ -362,6 +362,8 @@ Metrics, thresholds, statistical tests. What does success look like numerically?
 
 A plan that measures a behavioral construct with only an unvalidated off-distribution proxy is a §6 defect the Statistics & Measurement critic REVISEs. `kind: analysis|infra|batch|survey` may write "N/A — no behavioral construct measured" and move on.
 
+**Required: Statistical-input existence (derived inputs for registered corrections).** Every registered statistical correction / adjustment §6 relies on — attenuation / reliability factors, per-seed SEs, variance reconstructions, shrinkage priors, any statistic computed FROM a derived input rather than directly from this run's raw eval output — must name the data dependency it consumes AND verify that dependency actually EXISTS in the cited artifact (the column is present in the CSV, the per-seed files resolve on HF, the field is in the JSON schema — check the actual file, not the producing plan's prose), OR explicitly schedule its construction as in-scope implementation work in §4 / the file-level diff list. This is the plan-time analogue of the step-5 Hub-existence check, extended to derived statistical inputs: an input that is "derivable in principle" but neither verified-present nor scheduled-to-build is a phantom dependency (incident #509: plan §6.1 registered attenuation-adjusted correlations for the fact arm whose per-seed SEs existed nowhere — the cited CSV stored only seed-averaged rates — and reconstruction was never scheduled as in-scope work; the production scoring path crashed exactly as predicted in review prose and the result shipped on `--smoke` with the reliability correction pinned to 1.0). Plans with no registered derived-input corrections (raw DV + standard tests only) write "N/A — no derived statistical inputs" and move on.
+
 **Figures to produce (over-produce; ask only when the hero is ambiguous).** The plan names the specific hero figure(s) the headline needs AND a short exploratory dump the analyzer over-produces at the end (per-cell bars, per-seed scatter, per-step trajectory lines, raw-alongside-residualized). Default to over-producing exploratory views; the analyzer picks the hero from them rather than producing one figure and hoping it lands. When the view that best supports the headline is genuinely non-obvious, surface ONE plan-time question to the user about which view to feature.
 
 ### 6.5 Primary deliverable (the upstream completeness-vs-plan gate)
@@ -463,6 +465,25 @@ say so — silence is not acceptable.
 
 A plan that quietly picks `lora-7b` (1× H100) for an embarrassingly parallel
 20-condition sweep is wrong, even if the GPU-hours total is the same.
+
+**CPU-only phases run OFF-POD by default — a phase that doesn't touch the
+GPUs must not hold a multi-GPU pod.** Long CPU-only phases (longer than
+~15-30 min) — bootstrap / permutation statistics, metric aggregation over
+eval JSONs, Claude-judge-only scoring passes, plotting — DEFAULT to running
+on the VM against artifacts already uploaded per the Upload Policy (eval
+JSONs in git, raw completions on HF). For every CPU-only phase longer than
+~15-30 min, the plan MUST declare WHERE it runs. Pod-side execution is
+opt-in and needs a stated reason: data locality (the phase needs large
+pod-local artifacts that aren't uploadable — activations, per-step
+checkpoints) or the phase is genuinely short (~<15-30 min). For a
+multi-phase pipeline that ENDS in a long CPU-only phase, sequence the
+uploads so the pod can be terminated / stopped BEFORE the CPU phase starts
+— the phase then reads the uploaded artifacts from the VM. (Incident
+2026-06-09: pod-518 ran a pure-CPU permutation/bootstrap scoring script
+for 1h+ with all 8 H100s at 0% utilization, and pod-523 ran a CPU-only
+metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
+off-pod execution avoids. This is a plan-time scheduling rule, NOT a
+mid-run cost gate.)
 
 **Required: per-component compute-projection table.** Every plan §9 for
 `kind: experiment` tasks MUST include a per-component compute-projection

@@ -12,9 +12,27 @@ paths:
 
 The always-on **Upload Policy** in CLAUDE.md carries the destination table + the
 core rules (models upload to HF before local deletion; `eval_results/` is
-JSON/text only; raw completions before pod termination; datasets upload; clean
-local weights after; WandB = live training metrics only). The deep mechanics
-below load when you touch training / hub / sweep code.
+JSON/text only; raw completions + plan-referenced analysis tensors before pod
+termination; datasets upload; clean local weights after; WandB = live training
+metrics only). The deep mechanics below load when you touch training / hub /
+sweep code.
+
+**Intermediate analysis tensors referenced by the plan MUST upload before pod
+termination.** Any artifact the plan's analysis / negative-control sections
+name as a downstream input — per-cell shift tensors (`shifts/*.pt`), cached
+activations, decomposition / SVD inputs — uploads to the HF data repo under
+`issueN_<slug>/analysis_tensors/` BEFORE the pod is terminated, exactly like
+raw completions. These files are typically tiny (KB-MB) next to the
+checkpoints they derive from, which makes them easy to dismiss as scratch —
+but losing them makes the plan's remaining controls permanently unrunnable.
+(Incident #521: ~200 KB per-cell Δv `.pt` files required by two planned
+negative controls — the leave-one-out SVD spectrum check and the EM
+mean-over-response read — were never uploaded; a 3-round upload-verification
+loop still ended PASS, the pod was terminated, and both controls became
+permanently unrunnable.) Enforcement: `upload-verifier` Step 1 classifies
+`*.pt` / `*.npy` as analysis tensors bound for the HF data repo, and its
+Step 2.8 cross-references the plan's analysis / control sections and FAILs on
+any plan-named input without a permanent URL.
 
 **Verify uploads with the Python Hub API, never the `hf` CLI.** The installed `hf`
 CLI has NO `api` subcommand — `hf api list-repo-files ...` errors to stderr and
@@ -38,6 +56,18 @@ would corrupt their checks identically. Keep the snippet (repo, `repo_type`,
 **Fail-loud uploads.** `upload_dataset_directory` (`orchestrate/hub.py`) exits
 non-zero on failure (`--no-upload` only for dry-runs).
 
+**HF Hub rate limit: 256 repository commits per hour.** A sweep that pushes one
+Hub commit per cell/fraction WILL hit `429: You have exceeded the rate limit for
+repository commits (256 per hour)` mid-sweep, and a per-cell wrapper that only
+logs "upload returned no path" as a WARNING turns the throttle into silent
+artifact loss (incident #488, 2026-06-09: 41/324 adapter uploads silently
+missing after rc=0 cells; caught only by a pre-phase spot-check, backfilled with
+a single bulk commit in 43s). Rules: (a) sweeps producing >~200 per-cell
+commits/hr batch their uploads into ONE bulk `upload_folder` commit per sweep
+(or chunked commits well under the cap); (b) "upload returned no path" is a
+TRACKED GAP recorded in the sweep's failure list and reconciled before the next
+phase — never a warning-and-continue.
+
 **Inline-upload fence `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD`.** `_finalize_phase`
 auto-uploads merged checkpoints to WandB Artifacts; orchestrators doing their own
 tagged upload set the env in `try/finally` to prevent double-uploads.
@@ -56,3 +86,26 @@ would blow the already-~550GB HF repo quota (the same quota that soft-failed
 with `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1` + `upload_to=none` on the train call so
 the wasteful 15GB merged WandB/HF uploads don't fire at all. Re-eval = download
 adapter, re-merge with base.
+
+**HF storage-quota 403 is persistent + account-wide — recover, don't retry-loop.**
+Signature: `403 Forbidden: You have exceeded your public storage space` on
+`.../info/lfs/objects/batch` during `upload_folder` / `upload_file`. Unlike the
+256/hr commit throttle above, this is the ACCOUNT-WIDE public-storage quota: it
+is not transient, it hits every running task at once, and retrying changes
+nothing until quota is freed. What still works vs not (empirically verified via
+canary uploads, incident #552, 2026-06-10): small text/JSON and ~10MB LFS files
+to the dataset repo PASS; ≥~30MB LFS uploads (adapters, safetensors, merged
+dirs) FAIL on BOTH the model and dataset repos. Recovery ordering:
+(1) NEVER delete the local copy — the fail-loud persist guard above is correct;
+let it halt the cell rather than papering over the 403. (2) Keep small-artifact
+uploads (eval JSONs, raw completions, analysis tensors) flowing to the dataset
+repo unchanged — they pass. (3) For adapter durability, the orchestrator pulls
+the adapters off the pod to the VM via tar-over-ssh
+(`ssh <pod> 'tar -C /workspace -cf - <adapter-dir>' | tar -xf -` — rsync is NOT
+installed on RunPod pods) into a local staging dir
+`eval_results/issue_<N>/adapter_backup/<cell>/` (local staging only —
+`*.safetensors` is gitignored; the "eval_results/ is JSON/text only" rule
+governs what gets committed) AND logs a WandB Artifact (`type="model"`) copy as
+the second durable replica. (4) Retry the HF model-repo upload only after quota
+is freed. Freeing quota means deleting existing HF artifacts — that is
+USER-ONLY: surface the situation to the user, never auto-delete from HF.

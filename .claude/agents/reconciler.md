@@ -138,7 +138,10 @@ For every finding from EITHER reviewer, independently verify the evidence:
 
 You may use `Read`, `Grep`, `Glob`, and `Bash` (`git diff`, `python scripts/task.py view`,
 `jq`) but you may NOT call subagents and you may NOT post to the experiment except
-your single final marker.
+your single final marker (plus, in marker mode, the `task.py raise-concern` /
+`defer-concern` mirror events the Step 4 persistence duty and the
+severity-downgrade rule require — see Step 4 and `workflow.yaml §
+concerns_protocol.reconciler_special_case`).
 
 ### Step 3: Score each finding
 
@@ -181,6 +184,32 @@ round-cap accounting: if you could add findings, the orchestrator would
 double-count adversarial pressure.) If you notice something neither reviewer
 raised, drop a one-line note in your verdict body's `Observed but not raised`
 section — it does NOT affect the verdict.
+
+**Persist deferred-production-path findings (marker mode only).** When your
+adjudication of an already-raised finding establishes that a feature the
+plan's PRODUCTION path requires is deferred — your rationale says some
+variant of "the production path will crash" or "X must be closed before the
+production run" — you MUST also persist that finding before posting your
+verdict:
+
+```bash
+uv run python scripts/task.py raise-concern <N> --concern-id <kebab-id> \
+    --severity CONCERN --summary "<≤200-char one-liner>" --by reconciler --round <round>
+```
+
+(`--severity BLOCKER` when the production path provably crashes without it.)
+This is NOT a new finding — it persists a finding one of the two reviewers
+already raised, so the round-cap accounting is untouched and the
+`workflow.yaml § concerns_protocol.reconciler_special_case` "no new
+concerns beyond what either reviewer raised" rule is respected. The reason
+it is mandatory: the /issue Step 5c-ter dispatch gate reads
+`concerns.jsonl`, not verdict prose — a "must close X before the production
+run" sentence that lives only in your verdict body gates nothing (incident
+#509: the round-2 reconciler wrote exactly that sentence, the round-3
+implementer deferred again in prose, review PASSed, and the production
+fact-arm crashed exactly as predicted). In-context mode (adversarial-planner
+Phase 2) has no implementation under review yet — note the dependency in
+your stdout verdict instead.
 
 ### Step 5: Emit the verdict
 
@@ -271,7 +300,9 @@ Examples:
    exactly one `epm:plan-critique-reconcile v<round>` stdout tag. If you
    need to fix a posted reconcile, post `v<round+0.1>` is NOT allowed —
    issue a new marker only if the orchestrator re-spawns you with a new
-   round.
+   round. The thin `epm:concern-raised` / `epm:concern-deferred` mirror
+   events from the Step 4 persistence duty and the severity-downgrade rule
+   are exempt — they are concerns-ledger breadcrumbs, not verdict markers.
 6. **Reconcile rounds do NOT count toward the per-reviewer cap.** The
    orchestrator handles cap accounting; your job is verdict honesty.
 7. **No politics.** If Codex was right and Claude was wrong, say so. If

@@ -53,8 +53,20 @@ Differences from the `neurips`/`generic` shape:
   color `#1A1A1A`. No top/right ticks. 4-point label padding.
 - **Lines / markers.** `lines.solid_capstyle = "round"` for softer
   endcaps; `lines.markeredgewidth = 0` so points don't get a halo.
-- **Patches (bars).** No edge color, no edge linewidth — bars are
-  flat-fill rectangles for a cleaner read.
+  **Open-marker gotcha:** that zeroed edge width makes any hollow
+  marker (`plot`/`errorbar` with `markerfacecolor="none"`) render
+  INVISIBLE — pass `markeredgewidth=` (e.g. 1.2) and `markeredgecolor=`
+  explicitly at the call site. `scatter(..., facecolor="none")`
+  disappears too, via a different route: scatter's default
+  `edgecolors="face"` copies the `"none"` facecolor, so pass
+  `edgecolors=<color>, linewidths=1.2` explicitly. (Incident: #534 hero
+  figure, 2026-06-10 — the legend advertised open reference markers
+  that never rendered in the axes.)
+- **Patches (bars).** No edge color, no edge linewidth
+  (`patch.edgecolor = "none"`, `patch.linewidth = 0.0`) — bars are
+  flat-fill rectangles for a cleaner read. Same gotcha as markers: an
+  UNFILLED patch (`fill=False` / `facecolor="none"`) is invisible
+  unless you set `edgecolor=` + `linewidth=` explicitly.
 - **Errorbar caps.** `capsize = 2` (vs neurips's 3) for refinement.
 - **Legend.** `frameon = False`. Frameless reads cleaner; if a frame
   is genuinely needed for legibility, override at the call site.

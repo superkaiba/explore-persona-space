@@ -1096,6 +1096,16 @@ concerns_protocol:
     defer-concern; all other `--by` values are rejected at both layers.
     The reconciler may NOT raise new concerns beyond what either
     reviewer raised (mirrors the existing "no new findings" rule).
+    Persisting a finding that IS already on the table is allowed and
+    sometimes required: when the reconciler's adjudication establishes
+    that a feature the plan's production path requires is deferred
+    ("the production path will crash" / "X must close before the
+    production run"), it persists that finding via `task.py
+    raise-concern --by reconciler` (CONCERN minimum; BLOCKER when the
+    production path provably crashes) so the Step 5c-ter dispatch gate
+    sees it — verdict prose alone gates nothing (incident #509). See
+    `.claude/agents/reconciler.md` § Persist deferred-production-path
+    findings.
   implementer_marker_requirement: |
     Main's 4-section implementer marker contract (a)/(b)/(c)/(d) is
     preserved — the binding-concerns layer does NOT force a 5th
@@ -1270,6 +1280,10 @@ markers:
     posted_by: skill (via implementer / experiment-implementer)
     when: "Step 4b, TDD mode only"
     fields: "Posted ONLY when the plan body contains `### TDD: yes` or the user requests TDD. Body: ≥1 happy-path + ≥2 distinct error/edge-case tests, behavior-focused, in fenced blocks. Implementer EXITs after posting and awaits user `approve-tests` reply. Skill pauses pending approval, then resumes Step 4b."
+  - kind: "epm:approve-tests"
+    posted_by: user via task.py post-marker (interactive) OR skill (autonomous auto-approve)
+    when: "Step 4b TDD gate resume (gates.conditional.tdd_gate; CLAUDE.md auto-continuation gate 7)"
+    fields: "Approval of the proposed test surface — the resume signal the parked TDD gate waits for. Must be posted AFTER the `epm:proposed-tests` event it approves (the Step 0 resume router compares event order). Interactive: the user posts it via `task.py post-marker <N> epm:approve-tests`. Autonomous (EPM_AUTONOMOUS_SESSION=1): the skill auto-posts it IFF the proposed-tests body lists ≥1 test per acceptance criterion from the original task body, then re-spawns the implementer with `tdd_approved=true` in the same turn."
   - kind: "epm:experiment-implementation"
     posted_by: skill (via experiment-implementer)
     when: "Step 4b"
@@ -1283,7 +1297,14 @@ markers:
       surface. Body shape: one of:
         `verdict: PASS_UNIFIED` — smoke IS sweep with one cell
           (`--cells 1 --seeds 1` or equivalent); both paths share the
-          same dispatcher and subprocess shape end-to-end.
+          same dispatcher and subprocess shape end-to-end, AND the
+          cell-subset parameterization threads through EVERY phase the
+          dispatcher executes (train, eval enumeration, anchor/analyze
+          tolerance). A subset honored by the train loop only, with a
+          downstream phase re-enumerating the full registered grid, is
+          FAIL_NO_CANARY (incident #546 round 1, 2026-06-10: PASS_UNIFIED
+          train + full-grid cross-eval → HF 404 on never-trained
+          adapters; the smoke could never pass by construction).
         `verdict: PASS_CANARY canary_cell=<cell_id>` — paths diverge
           (e.g., smoke uses in-process train, sweep uses subprocess
           wrapper) AND the plan §4 Design section justified the
@@ -1378,6 +1399,14 @@ markers:
     posted_by: skill
     when: "Step 6a"
     fields: "model id, HF gate status, retry plan if rejected"
+  - kind: "epm:carry-over-missing"
+    posted_by: skill
+    when: "Step 6a.5"
+    fields: "unresolved carry-over artifact URLs (HF/WandB) the plan cites; status:blocked — user re-uploads or corrects the plan, then re-runs /issue <N>"
+  - kind: "epm:hf-quota-exceeded"
+    posted_by: skill
+    when: "Step 6a.6"
+    fields: "verbatim quota 403 text, probed repo id, namespace usage if known; status:blocked — user frees space / upgrades storage. Only the explicit storage-quota 403 posts this; non-quota probe errors are fail-soft (proceed to 6b)"
   - kind: "epm:pod-provisioned"
     posted_by: skill
     when: "Step 6b"
@@ -1494,6 +1523,10 @@ markers:
     posted_by: skill
     when: "Step 8 (after upload-verification PASS)"
     fields: "Pod auto-terminated immediately after artifact uploads verified; records pod name and command output"
+  - kind: "epm:pod-stopped"
+    posted_by: skill
+    when: "Step 8-bis (pod must not idle on a halt) — any halt-path exit that leaves the normal Step 8 terminate path"
+    fields: "Pod paused via `pod.py stop --issue <N>` (volume preserved; `resume` re-provisions) instead of terminated. Posted with the command output whenever the pipeline EXITs while a pod is RUNNING outside the upload-verification-PASS path: a human-input gate that cannot be satisfied this turn, a STATE-TO-blocked exit, or a detected crash with GPUs idle. Pairs with epm:pod-terminated (used when the work is truly done). NEVER leave a pod RUNNING while awaiting human input or after a crash (incidents 2026-06-01: #444 ~21h, #404 ~2d, #407 ~1d of idle burn)."
   - kind: "epm:interpretation"
     posted_by: skill (via analyzer)
     when: "Step 9a"
@@ -1506,10 +1539,14 @@ markers:
     posted_by: skill (via codex-interpretation-critic)
     when: "Step 9a"
     fields: "Codex (gpt-5.5 via companion task) twin of interpretation-critic. PASS/REVISE verdict with all 7 lenses. v<n> per round, paired with epm:interp-critique v<n>."
+  - kind: "epm:analysis"
+    posted_by: skill (via analyzer, its Step 7 cross-link recap; v2+ on critique-revision rounds)
+    when: "Step 9a (after the clean-result draft lands; analyzer.md Steps 7 + After-submission)"
+    fields: "Hero figure URL, 2-sentence recap of the claim, and a `free_analysis_unrun:` field listing each `cost_class: free-analysis` + `headline_affecting: yes` follow-up the draft surfaced that has no `epm:free-analysis-followup-run v1` marker yet on the task (empty list `[]` when none) — consumed by SKILL.md Step 9a-ter detection. Anchor for reviewer agents to locate the analyzer output; v2+ summarize the body diff after a critique-revision round."
   - kind: "epm:clean-result-drafted"
     posted_by: skill (via analyzer)
     when: "Step 9a (final)"
-    fields: "Link to the clean-result body.md + hero figure path + 2-sentence recap. Replaces the GH-era epm:analysis marker."
+    fields: "Link to the clean-result body.md + hero figure path + 2-sentence recap. Replaces the GH-era epm:analysis usage as the clean-result link anchor (epm:analysis survives as the analyzer's cross-link recap + free_analysis_unrun carrier — see that entry)."
   - kind: "epm:humanize-loop"
     posted_by: skill (via /humanize loop)
     when: "Step 9a-humanize"
@@ -1565,6 +1602,10 @@ markers:
     posted_by: skill (via task.py promote)
     when: "Step 10"
     fields: "User-invoked promote of an awaiting_promotion task to completed; records classification=useful|not-useful"
+  - kind: "epm:consolidated-into"
+    posted_by: skill (promote-clean-result)
+    when: "/promote-clean-result Step 1 — findings folded into another task's clean-result during a user-approved consolidation"
+    fields: "Posted on the ABSORBED task #<M> before it is archived; records the absorbing task #<N> + its dashboard link (the absorbed task's set-status archived note carries the same pointer)"
   - kind: "epm:status-changed"
     posted_by: skill (any time)
     when: "any status transition"
@@ -1576,7 +1617,7 @@ markers:
   - kind: "epm:follow-ups"
     posted_by: skill (via follow-up-proposer)
     when: "Step 10b"
-    fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent body.md. Each proposal carries `question_relation: same|substantially-different` (+ `followup_label: <kebab-slug>` for `same` — see follow-up-proposer.md § question_relation tag — criteria; routing is by QUESTION IDENTITY: `same` proposals execute ON the parent issue via the same-issue follow-up loop and are NEVER filed as child tasks, `substantially-different` proposals become child tasks; an untagged legacy proposal is treated as `substantially-different`), `auto_run: yes|no` + `auto_run_reason` (controls autonomous-mode GPU-backed execution at Step 9b — child auto-spawn for `substantially-different`, same-issue loop for `same`; see follow-up-proposer.md § auto_run tag — criteria) AND `cost_class: free-analysis|needs-gpu` + `headline_affecting: yes|no` (controls the inline free-analysis auto-run at Step 9a-ter — see follow-up-proposer.md § cost_class + headline_affecting tags — criteria). Interactive mode ignores `auto_run` but still consults `cost_class` / `headline_affecting` at Step 9a-ter and routes Step 10b user picks by `question_relation`. Autonomous mode reads all the tags."
+    fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent body.md. Each proposal carries `question_relation: same|substantially-different` (+ `followup_label: <kebab-slug>` for `same` — see follow-up-proposer.md § question_relation tag — criteria; routing is by QUESTION IDENTITY: `same` proposals execute ON the parent issue via the same-issue follow-up loop and are NEVER filed as child tasks, `substantially-different` proposals become child tasks; an untagged proposal is treated as `substantially-different` ONLY when the marker pre-dates 2026-06-09 — on a newer marker the missing tag is a proposer-contract violation: Step 9b re-spawns the proposer once to re-emit tagged proposals, Step 10b classifies the pick against the criteria; see SKILL.md Step 9b step 3 freshness guard), `auto_run: yes|no` + `auto_run_reason` (controls autonomous-mode GPU-backed execution at Step 9b — child auto-spawn for `substantially-different`, same-issue loop for `same`; see follow-up-proposer.md § auto_run tag — criteria) AND `cost_class: free-analysis|needs-gpu` + `headline_affecting: yes|no` (controls the inline free-analysis auto-run at Step 9a-ter — see follow-up-proposer.md § cost_class + headline_affecting tags — criteria). Interactive mode ignores `auto_run` but still consults `cost_class` / `headline_affecting` at Step 9a-ter and routes Step 10b user picks by `question_relation`. Autonomous mode reads all the tags."
   - kind: "epm:free-analysis-followup-run"
     posted_by: skill (orchestrator at Step 9a-ter)
     when: "Step 9a-ter (after Step 9a-humanize, before Step 9a-bis); fires when the analyzer's Step 6.5 surfaced a `cost_class: free-analysis` + `headline_affecting: yes` follow-up that has not yet been run on this task"
@@ -1619,7 +1660,11 @@ markers:
       `epm:follow-ups v1` marker the orchestrator auto-spawned as
       autonomous child sessions, and which were skipped. Step 9b
       PARTITIONS proposals by `question_relation` first: only
-      `substantially-different` proposals (and untagged legacy ones)
+      `substantially-different` proposals (and untagged ones from
+      pre-2026-06-09 legacy markers only — a newer untagged proposal
+      trips the Step 9b step-3 freshness guard: one proposer re-spawn
+      to re-emit tagged proposals, then conservative
+      `substantially-different` routing with the violation recorded)
       are eligible for child auto-spawn here; `same` + `auto_run: yes`
       proposals route to the same-issue follow-up loop instead and are
       recorded under `epm:followup-scope v1` / `epm:same-issue-followup-run
@@ -1628,7 +1673,10 @@ markers:
       {child_id: <M2>, title: "...", proposal_rank: 2}],
       skipped_auto_run_no: [{proposal_rank: 3, title: "...",
       reason: "<auto_run_reason verbatim>"}],
-      cap: 2`. When the parent's `parent_id` chain already has >=3
+      cap: 2,
+      proposer_contract_violation: <optional — "question_relation
+      missing after re-spawn" when the freshness-guard re-emit was
+      still untagged>`. When the parent's `parent_id` chain already has >=3
       auto-spawned ancestors the depth cap fires: `spawned` is empty and
       the body carries `auto_spawn_skipped: depth_cap_reached` (the
       proposals still post as `epm:follow-ups v1` for the user). Posted
@@ -1742,10 +1790,18 @@ markers:
     posted_by: specialist
     when: "on crash"
     fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code line."
+  - kind: "epm:failure-classify-error"
+    posted_by: skill
+    when: "Step 7 (epm:failure body missing failure_class AND scripts/failure_classifier.py exited non-zero)"
+    fields: "Captured stderr from the failure_classifier.py invocation. Audit record only: the orchestrator treats the unclassifiable failure as `code` (conservative default) and applies the code-class row of the Step 7 failure table; this marker preserves WHY the classifier could not produce a verdict."
   - kind: "epm:experimenter-respawn"
     posted_by: skill
     when: "Step 7 (failure_class=infra path)"
     fields: "Records re-spawn on the same branch without an implementer round. v<n> per respawn; cap 3."
+  - kind: "epm:strategy-pivot"
+    posted_by: skill (orchestrator)
+    when: "any strategy pivot — Step 5 code-review ensemble cap-3, whack-a-mole detector fire, plan-contradiction re-plan, debugging-wall pivot (see § pivot_criteria)"
+    fields: "v<n> per pivot, top-level on the task. Records the pivot rationale + what changes: which strategy failed, the fundamentally different design being tried next, and that revision_round RESETS to 1 on the new plan. Counts toward the ~3-pivots-before-block rule (CLAUDE.md STATE-TO-blocked criteria). Every pivot site reuses this ONE kind — do NOT introduce per-pivot-source marker kinds."
   - kind: "epm:merged"
     posted_by: skill
     when: "Step 9b (experiments, at awaiting_promotion) or Step 10d (code paths, at completed)"

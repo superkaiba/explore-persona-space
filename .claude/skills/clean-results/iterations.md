@@ -652,6 +652,17 @@ Companion rule added to the migration prompt's cluster-analysis instructions: **
 
 ---
 
+## 2026-06-09 — task #537 (sanitized example blocks for harmful-content corpora surfaced into SPEC.md)
+
+### SPEC.md still implied verbatim completion excerpts for every text-generation finding; analyzer + critics had already moved to sanitized blocks for harmful-content corpora
+
+- **Before:** `analyzer.md` § Content hygiene (commit 8a49f4d72) instructed the analyzer to ship SANITIZED example blocks for harmful-content corpora (Betley-style EM, bad-medical-advice, refusal-bait pools) — a ~15-word excerpt plus a `[truncated — harmful-content row; verify at <raw-completions path>, row <i>]` placeholder, labeled "sanitized for context hygiene" — and the reviewer specs (commit 75191288b) accepted that form (`interpretation-critic.md` Lens 7 / `clean-result-critic.md` Lens 9 carve-outs). Verbatim rows had triggered terminal usage-policy refusals that made two task #537 agent transcripts unresumable (2026-06-10). But SPEC.md — the declared source of truth for report structure — still implied a raw verbatim excerpt for every finding's example block (Required body shape, per-finding item 4), out of sync with both producer and consumers.
+- **After:** SPEC.md § Required body shape gains a short paragraph after per-finding item 5: for harmful-content corpora the item-4 example block ships sanitized per `analyzer.md` § Content hygiene; the cherry-picked label, row indices, and permanent raw-completion links stay verbatim (mechanical checks 10/11 unaffected); the critic carve-outs are cited; benign corpora keep the verbatim treatment.
+- **Rule:** when a workflow fix changes example-block (or any report-structure) behavior in `analyzer.md` or a critic lens, sync SPEC.md in the same pass — CLAUDE.md § Experiment Report Structure declares SPEC.md the source of truth that must stay in sync with `analyzer.md`, `verify_task_body.py`, and the clean-result-critic lenses.
+- **Folded into:** `.claude/skills/clean-results/SPEC.md` § Required body shape (sanitized-example paragraph after per-finding item 5).
+
+---
+
 ## How to add a new entry
 
 When iterating on a clean-result with the user, after applying their correction:

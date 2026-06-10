@@ -81,6 +81,11 @@ Filter the output by size and extension to produce a candidate list of
   (committed to git)
 - `*.csv`, `*.npz` under `eval_results/` → aggregate artifacts (committed
   to git OR HF Hub data repo if too large)
+- `*.pt`, `*.npy` (per-cell shift tensors, cached activations, SVD /
+  decomposition inputs) → intermediate analysis tensors (HF Hub data repo,
+  `issueN_<slug>/analysis_tensors/`). Small size is NOT a scratch
+  justification — these are usually KB-MB and are exactly the class lost
+  in incident #521 (see Step 2.8).
 
 For each file in the candidate list, you must decide one of three things:
 
@@ -288,6 +293,38 @@ park-and-wait for the operator. The /issue skill stays autonomous and
 the generic `pivot_criteria` cap-3 path is the only route to
 `status:blocked` for this failure class.
 
+### Step 2.8 — Plan-referenced analysis inputs (#521)
+
+**New as of #521.** A plan's analysis / negative-control sections often
+name intermediate artifacts as DOWNSTREAM INPUTS — per-cell shift tensors
+(`shifts/*.pt`), cached activations, decomposition / SVD inputs — that no
+standard verdict row covers. These are typically tiny (KB-MB), so they're
+easy to dismiss as scratch, but if they're lost at termination every
+planned control that consumes them becomes permanently unrunnable.
+(Incident #521: ~200 KB per-cell Δv `.pt` files required by two planned
+negative controls — the leave-one-out SVD spectrum check and the EM
+mean-over-response read — were never uploaded; a 3-round
+upload-verification loop still ended PASS, the pod was terminated, and
+both controls became permanently unrunnable.)
+
+Read the plan's analysis + negative-control sections and list every
+on-pod artifact they reference as an input to a planned downstream step
+(a control, robustness check, or follow-up analysis the plan commits to).
+For each:
+
+- **Reachable at a permanent URL** (HF data repo
+  `issueN_<slug>/analysis_tensors/` or another verified destination) →
+  PASS, record the URL.
+- **On the pod but not uploaded** → **FAIL**, with the exact upload
+  command. This is the cheap-fix window — the artifact still exists.
+- **Named by the plan but nowhere on the pod** → fold into the Step 2.7
+  reasoning (the producing phase may have been silently skipped).
+
+If the plan's analysis / control sections name no downstream artifact
+inputs, record `N/A — plan names no analysis-input artifacts` in the
+verdict table; do not WARN (unlike Step 2.7, no plan field is mandated
+here, so absence is the common, healthy case).
+
 ### Step 3 — Justify every "N/A"
 
 If a standard row is reported N/A, you must say *why* — concretely, and
@@ -363,6 +400,12 @@ the absence.** "Probably not generated" is not a valid N/A.
   `if args.X and args.Y` guard fell through on missing input JSONs,
   manifest recorded `skipped_phases: []`), pod was terminated, per-step
   checkpoints lost.
+- **An artifact the plan's analysis / negative-control sections name as a
+  downstream input exists on the pod but has no permanent URL (Step 2.8,
+  #521).** Terminating the pod makes the plan's remaining controls
+  permanently unrunnable; the remediation is cheap while the pod is alive
+  (the files are KB-MB — upload to the HF data repo
+  `issueN_<slug>/analysis_tensors/`).
 
 **WARN** is acceptable for:
 - Pod stopped (can't verify cleanup post-hoc — note this and move on).
@@ -402,6 +445,7 @@ against permanent storage.
 | Pod lifecycle | Yes | PASS / WARN / FAIL | stopped / terminated, follow-ups: <list> |
 | Claimed URLs HEAD-resolve (phantom-URL gate, #456) | Yes | PASS / FAIL | All HF/WandB URLs in epm:results + body Reproducibility list under cited path at cited revision; FAIL names every unresolved URL |
 | Primary deliverable produced (completeness gate, #519) | Yes (if plan §6.5 declares `primary_deliverable:`) | PASS / FAIL / WARN | Per row in plan §6.5: on-pod `find <glob>` enumerates ≥1 file → PASS naming the DV + file count; zero files → FAIL with blocker tag `primary-deliverable-missing` naming the DV + missing glob; no `primary_deliverable:` block at all → WARN `primary-deliverable-spec-absent` (legacy / analysis|infra|batch|survey kinds; do not block) |
+| Plan-referenced analysis inputs (shift tensors, cached activations, #521) | Yes (if plan analysis/control sections name them) | PASS / FAIL / N/A | Every plan-named downstream input at a permanent URL (HF data repo `issueN_<slug>/analysis_tensors/`); FAIL names the on-pod path + exact upload command; N/A = plan names no analysis-input artifacts |
 
 **Auto-discovered files NOT covered by standard rows** (flag these
 explicitly so the next experimenter / analyzer knows about them):
