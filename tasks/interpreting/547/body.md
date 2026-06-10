@@ -5,7 +5,7 @@ title: The negative role-vs-system marker gap is an install-window transient —
 kind: experiment
 tags: []
 created_at: '2026-06-10T05:26:40Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 533
 goal: 'Test whether the E=1 negative-sign role-vs-system paired-d pattern in #533
   reflects a stable mechanism-bearing read or an early-trajectory optimization-ordering
