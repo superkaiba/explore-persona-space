@@ -279,6 +279,15 @@ paths outside the worktree anyway:
 The diff is in the working directory at {{worktree}}; run:
     git -C {{worktree}} diff {{base}}...HEAD
 
+Use EXACTLY the three-dot form above (merge-base diff) — never a two-dot or
+plain `diff {{base}} HEAD`, and never review files the branch itself did not
+touch. On a branch that is behind {{base}}, a plain diff shows {{base}}-side
+drift (other tasks' deletions/renames) as if the branch changed it; that
+main-drift is OUT OF SCOPE for this review. (Incident #521 round 2,
+2026-06-09: a Codex blocker flagged "out-of-scope workflow churn" that was
+main's own drift on a behind-main branch, burning a reconciler round while
+the real blocker sat one item lower.)
+
 **If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; `git diff` or `git show` cannot execute; plan_marker_path unreachable; a changed file cannot be opened):** do NOT fall back to the inlined implementation marker body or the diff summary to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (the changed-code read for Steps 2 / 3 / 5 / 6) is BLOCKED, the overall verdict must be `FAIL` with a `data-access-blocked` blocker tag (alongside any genuine `marker-shape` / `smoke-run-missing` / `substantive` tags) so the reconciler/orchestrator knows the PASS-path was unreachable. The implementation marker body is ALWAYS inlined above, so a `marker-shape` FAIL on "could not read implementation marker" is invalid (the body is right there) — only score `marker-shape` on the structure of the inlined body, never on its reachability.
 
 Follow this protocol:
