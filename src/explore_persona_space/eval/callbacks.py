@@ -675,6 +675,21 @@ class MarkerBandStopCallback(TrainerCallback):
             ``.claude/rules/marker-leakage-measurement.md``). When None the
             z_eos series is skipped; the band-stop DECISION is unaffected
             either way (it stays on the log-prob band).
+        log_only: When True (issue #480 band-stopped-anchor-rerun), the
+            callback NEVER sets ``should_training_stop`` — training runs to
+            its planned schedule and the anchor is picked post-hoc from the
+            checkpoint ladder. All WandB + trajectory logging is kept; the
+            first band entry is still logged (as ``band_entry_step``) so the
+            event remains findable. Default False → live-stop behavior is
+            byte-identical for every existing caller.
+        trajectory_out_path: Optional local JSON path. When set, a per-probe
+            record (step + the four-float set, trained AND base) is appended
+            and the file is atomically rewritten after EVERY probe
+            (checkpoint-per-phase discipline — a mid-run crash never loses
+            the trajectory). Top-level parallel arrays ``steps`` /
+            ``log_p_marker`` match the schema ``i480_analyze.py``'s
+            trajectory figure consumes; ``records`` carries the full
+            per-probe dicts. Default None → no local file.
     """
 
     def __init__(
@@ -693,6 +708,8 @@ class MarkerBandStopCallback(TrainerCallback):
         min_steps: int = 20,
         log_prefix: str = "marker",
         eos_token_id: int | None = None,
+        log_only: bool = False,
+        trajectory_out_path: str | None = None,
     ):
         if not marker_token_ids:
             raise ValueError("MarkerBandStopCallback requires a non-empty marker_token_ids")
@@ -734,6 +751,8 @@ class MarkerBandStopCallback(TrainerCallback):
         self.min_steps = int(min_steps)
         self.log_prefix = log_prefix
         self.eos_token_id = int(eos_token_id) if eos_token_id is not None else None
+        self.log_only = bool(log_only)
+        self.trajectory_out_path = trajectory_out_path
 
         # Tensor-shape asserts at the construction boundary.
         assert probe_input_ids.ndim == 2, probe_input_ids.shape
@@ -756,6 +775,11 @@ class MarkerBandStopCallback(TrainerCallback):
         # whole phase so the run completes its planned schedule without a
         # silent never-fire.
         self._disabled_too_short = False
+        # Per-probe trajectory records (flushed to trajectory_out_path after
+        # every probe) + a once-per-phase flag so log_only band entry is
+        # logged exactly once.
+        self._trajectory_records: list[dict] = []
+        self._band_entry_logged = False
 
     def on_train_begin(self, args, state, control, **kwargs):
         """Reset per-phase state (callback may be reused across phases).
@@ -770,6 +794,8 @@ class MarkerBandStopCallback(TrainerCallback):
         self._base_slot_stats = None
         self._stopped = False
         self._disabled_too_short = False
+        self._trajectory_records = []
+        self._band_entry_logged = False
         if state.max_steps > 0 and state.max_steps < self.min_steps:
             logger.warning(
                 "[%s] max_steps=%d < min_steps=%d — the band-stop guard "
@@ -863,6 +889,33 @@ class MarkerBandStopCallback(TrainerCallback):
                 )
             wandb.log(metrics, step=state.global_step)
 
+        if self.trajectory_out_path is not None:
+            self._trajectory_records.append(
+                {
+                    "step": int(state.global_step),
+                    "logp_trained": trained_mean,
+                    "logp_base": self._base_logp_mean,
+                    "delta_nats": delta_mean,
+                    "z_marker_trained": float(trained_stats["z_marker"].mean().item()),
+                    "z_marker_base": float(self._base_slot_stats["z_marker"].mean().item()),
+                    "z_eos_trained": (
+                        float(trained_stats["z_eos"].mean().item())
+                        if trained_stats["z_eos"] is not None
+                        else None
+                    ),
+                    "z_eos_base": (
+                        float(self._base_slot_stats["z_eos"].mean().item())
+                        if self._base_slot_stats["z_eos"] is not None
+                        else None
+                    ),
+                    "logZ_trained": float(trained_stats["logZ"].mean().item()),
+                    "logZ_base": float(self._base_slot_stats["logZ"].mean().item()),
+                }
+            )
+            # Checkpoint-per-phase: rewrite the trajectory JSON after EVERY
+            # probe so a mid-run crash never loses the trajectory.
+            self._write_trajectory()
+
         should_stop = _decide_band_stop(
             delta_mean,
             state.global_step,
@@ -870,6 +923,32 @@ class MarkerBandStopCallback(TrainerCallback):
             high_nats=self.high_nats,
             min_steps=self.min_steps,
         )
+        if should_stop and self.log_only:
+            # Log-only mode (issue #480 band-stopped-anchor-rerun): record
+            # the FIRST band entry loudly (log line + WandB scalar) but never
+            # touch the Trainer control flags — training runs to its cap and
+            # the anchor pick happens post-hoc from the checkpoint ladder.
+            if not self._band_entry_logged:
+                logger.warning(
+                    "[%s] BAND ENTERED at step %d: delta=%+.4f nat ∈ [%.2f, %.2f] "
+                    "— log_only=True, NOT stopping (training runs to its cap; "
+                    "anchor picked post-hoc from the checkpoint ladder).",
+                    self.log_prefix,
+                    state.global_step,
+                    delta_mean,
+                    self.low_nats,
+                    self.high_nats,
+                )
+                if wandb.run is not None:
+                    wandb.log(
+                        {
+                            f"{self.log_prefix}/band_entry_step": state.global_step,
+                            f"{self.log_prefix}/band_entry_delta_nats": delta_mean,
+                        },
+                        step=state.global_step,
+                    )
+                self._band_entry_logged = True
+            return
         if should_stop:
             # Bold log line + WandB scalar so the early termination is
             # never silent. Default-on band-stop changes the run length,
@@ -899,6 +978,56 @@ class MarkerBandStopCallback(TrainerCallback):
             control.should_training_stop = True
             control.should_save = True
             self._stopped = True
+
+    def on_train_end(self, args, state, control, **kwargs):
+        """Final trajectory flush (per-probe flushes already persisted everything)."""
+        if self.trajectory_out_path is not None and self._trajectory_records:
+            self._write_trajectory()
+            logger.info(
+                "[%s] trajectory JSON final flush: %d probe records -> %s",
+                self.log_prefix,
+                len(self._trajectory_records),
+                self.trajectory_out_path,
+            )
+
+    def _write_trajectory(self) -> None:
+        """Atomically rewrite the trajectory JSON from the accumulated records.
+
+        Top-level parallel arrays (``steps`` / ``log_p_marker`` / ...) match
+        the schema consumed by ``i480_analyze.py``'s trajectory figure; the
+        full per-probe dicts ride along under ``records``. Write goes to a
+        tmp file + ``os.replace`` so a crash mid-write never leaves a
+        truncated JSON.
+        """
+        assert self.trajectory_out_path is not None
+        recs = self._trajectory_records
+        payload = {
+            "schema": "marker_band_trajectory_v1",
+            "log_prefix": self.log_prefix,
+            "marker_token_ids": self.marker_token_ids,
+            "eos_token_id": self.eos_token_id,
+            "log_only": self.log_only,
+            "band_low_nats": self.low_nats,
+            "band_high_nats": self.high_nats,
+            "n_probe_records": len(recs),
+            "steps": [r["step"] for r in recs],
+            "log_p_marker": [r["logp_trained"] for r in recs],
+            "log_p_base": [r["logp_base"] for r in recs],
+            "delta_nats": [r["delta_nats"] for r in recs],
+            "z_marker_trained": [r["z_marker_trained"] for r in recs],
+            "z_marker_base": [r["z_marker_base"] for r in recs],
+            "z_eos_trained": [r["z_eos_trained"] for r in recs],
+            "z_eos_base": [r["z_eos_base"] for r in recs],
+            "logZ_trained": [r["logZ_trained"] for r in recs],
+            "logZ_base": [r["logZ_base"] for r in recs],
+            "records": recs,
+        }
+        out_path = str(self.trajectory_out_path)
+        os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
+        tmp_path = out_path + ".tmp"
+        with open(tmp_path, "w") as f:
+            json.dump(payload, f, ensure_ascii=False)
+        os.replace(tmp_path, out_path)
 
     def _read_logp_trained(self, model):
         """Read mean log P(marker) at the marker slot under the trained adapter."""
