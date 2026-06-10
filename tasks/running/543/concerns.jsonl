@@ -1,0 +1,1 @@
+{"ts": "2026-06-10T01:47:32Z", "event": "raised", "concern_id": "phase2-trajectory-dump-not-verified", "severity": "CONCERN", "summary": "Trajectory JSONL dump swallows OSError; no post-run existence/row check on a §6.5 primary deliverable", "raised_by": "code-reviewer", "raised_at_round": 1}
