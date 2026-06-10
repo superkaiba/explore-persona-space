@@ -2667,7 +2667,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/480",
       "status": "interpreting",
-      "title": "Measured as emission rate rather than the saturation-broken log-prob, marker leakage rank-tracks sycophancy leakage on the software-engineer source's bystander panel (MODERATE confidence)"
+      "title": "Marker emission rate rank-tracks sycophancy leakage on both bystander panels where sycophancy actually varies (MODERATE confidence)"
     },
     "481": {
       "has_clean_result": false,
