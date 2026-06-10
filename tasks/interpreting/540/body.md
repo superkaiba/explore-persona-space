@@ -4,7 +4,7 @@ title: The canonical sequence-level JS predictor tracks marker leakage no better
 kind: experiment
 tags: []
 created_at: '2026-06-09T20:32:00Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 532
 goal: 'Implement the canonical Rao-Blackwellized sequence-level Jensen-Shannon divergence
   (Amini/Vieira/Cotterell 2025, arXiv 2504.10637) per persona-distance-metrics.md,
