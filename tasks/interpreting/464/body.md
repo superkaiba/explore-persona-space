@@ -71,9 +71,9 @@ Training uses an on-policy marker-at-end recipe: I first generate the base model
 
 </details>
 
-I trained each of the 9 cells (3 regimes × 3 arms) × 3 seeds = 27 LoRAs, plus 2 extra role-name sweep arms in the co-resident regime × 3 seeds = 6 more LoRAs, and evaluated each on 50 held-out questions × the other persona's same-arm encoding via vLLM teacher-forced log-probability. The headline statistic is wrong-encoding leakage: raw trained log P(marker) at the slot immediately after R under the OTHER persona's same-arm encoding, averaged over the symmetric pair (lower = more localized). The model **generates nothing** at eval time for this DV — each probe yields one log-prob value, not a completion.
+I trained the co-resident regime's 3 arms × 3 seeds = 9 LoRAs (both personas co-trained on each), the positive-only and contrastive-negative regimes' 3 arms × 3 seeds × 2 personas = 18 single-persona LoRAs each, plus 2 extra role-name sweep arms in the co-resident regime × 3 seeds = 6 more LoRAs, and evaluated each on 50 held-out questions × the other persona's same-arm encoding via vLLM teacher-forced log-probability. The headline statistic is wrong-encoding leakage: raw trained log P(marker) at the slot immediately after R under the OTHER persona's same-arm encoding, averaged over the symmetric pair (lower = more localized). The model **generates nothing** at eval time for this DV — each probe yields one log-prob value, not a completion.
 
-A final round content-matched the two slots inside the co-resident regime: the persona named by a single bare word on BOTH sides. The minimal system-prompt arm announces with just `You are a pirate.` / `You are a villain.` (2-3 inert pad tokens appended to the user message at train time, for token-count parity); the bare role-header arm keeps the neutral default system prompt and puts the bare word `pirate` / `villain` in the role header. Same recipe, same three seeds, same frozen response corpus — 6 more LoRAs (39 total) — plus a re-run of the base-model behavioral probe under the minimal encodings.
+A final round content-matched the two slots inside the co-resident regime: the persona named by a single bare word on BOTH sides. The minimal system-prompt arm announces with just `You are a pirate.` / `You are a villain.` (2-3 inert pad tokens appended to the user message at train time, for token-count parity); the bare role-header arm keeps the neutral default system prompt and puts the bare word `pirate` / `villain` in the role header. Same recipe, same three seeds, same frozen response corpus — 6 more LoRAs (57 total) — plus a re-run of the base-model behavioral probe under the minimal encodings.
 
 I also re-used two probes from the original run that bear on the role header specifically: a behavioral probe of the role header on the BASE model (no training) for two personas, judged by Claude Sonnet 4.5 for persona adherence; and a semantic-gradient sweep within the co-resident regime that swapped the role name between matched (`pirate_assistant`), unrelated (`baker_assistant`), and nonsense (`flump_assistant`).
 
@@ -247,7 +247,7 @@ Net of these findings: contrast at the wrong slot — whether marker-less or a c
 | Optimizer | AdamW, lr=1e-5, bf16, cosine schedule, warmup 0.05, 5 epochs, batch 4 x grad-accum 4 |
 | Marker (pirate) | ` ※` (Qwen-2.5 single-token id 83399) |
 | Marker (villain) | ` ¶` (Qwen-2.5 single-token id 78846, co-resident regime only) |
-| Personas | pirate, villain (co-resident regime); pirate-only (positive-only and contrastive-negatives regimes use the shared ` ※` marker, single-persona variant) |
+| Personas | pirate, villain (co-resident regime, both on one LoRA); pirate and villain trained separately, one persona per LoRA, in the positive-only and contrastive-negatives regimes (both personas use the shared ` ※` marker there) |
 | Regimes | 3: no-contrast positive-only; marker-less contrastive negative (other-persona negative + bare-assistant-with-no-persona-prompt negative); co-resident competing marker (the original run) |
 | Arms within each regime | 3: persona in system prompt (plain), system prompt + length-matched filler, persona in role header (matched name) |
 | Content-matched minimal arms (follow-up, co-resident regime only) | minimal system prompt: `You are a pirate.` / `You are a villain.`, standard `assistant` header, +2 (pirate) / +3 (villain) inert ` pad` (id 11016) tokens appended to train-row user messages for token-count parity; bare role header: neutral `You are a helpful assistant.` system prompt + bare `pirate` / `villain` role-header word (no `_assistant` suffix) |
@@ -255,7 +255,7 @@ Net of these findings: contrast at the wrong slot — whether marker-less or a c
 | Role-arm constant system message | `"You are a helpful assistant."` |
 | Padding (system_padded) | 4 tokens (pirate), 5 tokens (villain) — matched to per-persona role-name compound length |
 | Loss | Marker-token-only via `MarkerOnlyDataCollator(tail_tokens=0)`; marker-less negative rows train EOS at the post-response slot |
-| Cells | 3 regimes x 3 arms x 3 seeds = 27 LoRAs; + 2 role-name sweep arms (co-resident regime) x 3 seeds = 6; + 2 content-matched minimal arms (co-resident regime) x 3 seeds = 6 → 39 LoRAs total |
+| Cells | co-resident regime 3 arms x 3 seeds = 9 LoRAs (two personas per LoRA); positive-only and contrastive-negative regimes 3 arms x 3 seeds x 2 personas = 18 single-persona LoRAs each; + 2 role-name sweep arms (co-resident regime) x 3 seeds = 6; + 2 content-matched minimal arms (co-resident regime) x 3 seeds = 6 → 57 LoRAs total |
 | Seeds | 42, 137, 1337 |
 | Canonical R | Base-greedy, temp=0, max_new_tokens=1024, EOS-stop, generated under system encoding only, shared across all arms within a regime (minimal arms reuse the same frozen R_canon) |
 | Eval cells | per regime: 9 LoRAs x ~3 eval encodings x 50 held-out questions, ~100 wrong-encoding probes per (arm x seed); minimal arms: 6 LoRAs x 5 eval encodings x 50 questions |
@@ -288,6 +288,8 @@ Net of these findings: contrast at the wrong slot — whether marker-less or a c
 - Figures: [`figures/issue_464/`](https://github.com/superkaiba/explore-persona-space/tree/763ed830fd9d6d36676526568a7320ceebbb6fc7/figures/issue_464)
 - Raw trained-model on-policy completions: n/a — the original co-resident run generated them in vLLM but kept only the edit-distance summary; the follow-up that re-runs with `--persist-trained-R` is queued
 - WandB runs (33 trained cells across 3 regimes + role-name sweep + minimal arms): `wandb.ai/thomasjiralerspong/huggingface/`
+
+- **Methodology reference:** [docs/methodology/issue_464.md](https://github.com/superkaiba/explore-persona-space/blob/6bd7b6f9c0c494cf294c2fa23a741b1c0b1a9657/docs/methodology/issue_464.md) · [gist](https://gist.github.com/superkaiba/03514e7f68f36c4121a63f64d41cfd3c)
 
 **Compute:**
 
