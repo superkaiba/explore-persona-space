@@ -56,6 +56,11 @@ OUT_PATH = Path("eval_results/issue_529/anchor_selection.json")
 SCHEMA_VERSION = "i529_anchor_v1"
 
 EPOCHS = (1, 2, 3, 5)
+# Grid-suffix character spliced into the cell label: "e" (#529/#533
+# epoch-indexed cells `_e{E}`) or "s" (#547 max_steps-indexed cells
+# `_s{S}`). Rebound from --suffix-char in main(); the default preserves
+# #529/#533 behavior byte-for-byte.
+SUFFIX_CHAR = "e"
 SEEDS = (42, 137, 1337, 7, 21)
 ARMS = ("system_plain", "system_padded", "role")
 PERSONAS = ("pirate", "villain")
@@ -80,8 +85,13 @@ def _git_commit_hash() -> str:
 
 
 def _cell_label(arm: str, seed: int, persona: str, epoch: int) -> str:
-    """Match ``i464_po_eval._po_cell_label`` for the cn_i529 path."""
-    return f"{arm}_seed{seed}_cn_{persona}_e{epoch}"
+    """Match ``i464_po_eval._po_cell_label`` for the cn_i529/cn_i533/cn_i547 paths.
+
+    ``epoch`` carries the GRID VALUE (an epoch count for #529/#533, a
+    max_steps count for #547); ``SUFFIX_CHAR`` selects the label suffix
+    (``_e{E}`` vs ``_s{S}``).
+    """
+    return f"{arm}_seed{seed}_cn_{persona}_{SUFFIX_CHAR}{epoch}"
 
 
 def _other_eval_encoding_for(arm: str, persona: str) -> str:
@@ -280,12 +290,12 @@ def _select_anchor_per_persona(
 
 def main(argv: list[str] | None = None) -> None:
     """Entry point for anchor selection."""
-    # Declare the global up-front so the argparse default reference (a
-    # "use" of PER_CELL_DIR for the --in-dir default) and the later
-    # rebind both bind to the module-level constant. Without the
-    # up-front `global`, Python raises SyntaxError at parse time
-    # ("name 'PER_CELL_DIR' is used prior to global declaration").
-    global PER_CELL_DIR
+    # Declare the globals up-front so the argparse default references (a
+    # "use" of PER_CELL_DIR / EPOCHS / SUFFIX_CHAR for the flag defaults)
+    # and the later rebinds both bind to the module-level constants.
+    # Without the up-front `global`, Python raises SyntaxError at parse
+    # time ("name '...' is used prior to global declaration").
+    global PER_CELL_DIR, EPOCHS, SUFFIX_CHAR
 
     logging.basicConfig(
         level=logging.INFO,
@@ -317,6 +327,26 @@ def main(argv: list[str] | None = None) -> None:
             "eval_results/issue_<N>/contrastive_negatives/cross_eval/per_cell."
         ),
     )
+    ap.add_argument(
+        "--grid",
+        default=",".join(str(e) for e in EPOCHS),
+        help=(
+            "Comma-separated candidate grid values (default "
+            f"'{','.join(str(e) for e in EPOCHS)}' — #529/#533's epoch "
+            "grid). #547 passes --grid 5,10,18,30,60,120 (its max_steps "
+            "grid). Selection semantics generalize unchanged: smallest "
+            "grid value per persona satisfying both gates."
+        ),
+    )
+    ap.add_argument(
+        "--suffix-char",
+        default=SUFFIX_CHAR,
+        help=(
+            "Cell-label grid-suffix character (default 'e' — the "
+            "``_e{E}`` epoch suffix of #529/#533). #547 passes 's' for "
+            "its ``_s{S}`` max_steps suffix."
+        ),
+    )
     args = ap.parse_args(argv)
 
     # Rebind the module-level PER_CELL_DIR so the helpers above
@@ -324,6 +354,19 @@ def main(argv: list[str] | None = None) -> None:
     # caller-supplied directory at call time. Default preserves #529
     # behavior; #533 passes --in-dir eval_results/issue_533/...
     PER_CELL_DIR = args.in_dir
+    # Rebind the candidate grid + label suffix the same way (defaults
+    # preserve #529/#533 byte-for-byte; #547 passes its max_steps grid
+    # + 's'). Fail loud on a malformed --grid.
+    try:
+        grid = tuple(int(tok) for tok in str(args.grid).split(",") if tok.strip())
+    except ValueError as e:
+        raise SystemExit(f"--grid {args.grid!r}: every token must be an integer ({e})") from e
+    if not grid:
+        raise SystemExit(f"--grid {args.grid!r} parsed to an empty grid")
+    EPOCHS = grid
+    if len(str(args.suffix_char)) != 1 or not str(args.suffix_char).isalpha():
+        raise SystemExit(f"--suffix-char {args.suffix_char!r} must be a single letter")
+    SUFFIX_CHAR = str(args.suffix_char)
 
     if not PER_CELL_DIR.exists() and not args.allow_partial:
         raise FileNotFoundError(
@@ -356,6 +399,7 @@ def main(argv: list[str] | None = None) -> None:
         "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
         "git_commit": _git_commit_hash(),
         "candidate_grid": list(EPOCHS),
+        "grid_suffix_char": SUFFIX_CHAR,
         "seeds": list(SEEDS),
         "arms": list(ARMS),
         "personas": list(PERSONAS),
