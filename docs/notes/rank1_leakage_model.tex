@@ -96,6 +96,15 @@ The backdoor experiment of \cite{engels2025} pins down how a \emph{conditional} 
 
 Two refinements for our framework follow. \textbf{(i) The gate is attention-implemented.} The fine-tune's write can be a \emph{query shift} that recruits a pre-existing read circuit, with the behavior content fetched from the context's own value vectors. After composing with attention, the net effect at the behavior slot still factorizes as write $\times$ gate --- but the gate is a softmax attention pattern: potentially near-binary in the presence of a discrete trigger, and only smoothly similarity-like for diffuse contexts such as personas. This is the mechanistic case for rung (c) of the ladder. \textbf{(ii) The learned write need not match the prompted behavior direction.} The learned vectors have low cosine both with the ``na\"ive'' concept-difference vector (prompting the concept and subtracting) and with each other across seeds --- many different vectors couple into the same pre-existing circuitry. The behavior's content lives in the base model; the edit only routes to it. This matches our own observation that the marker arm's shared shift direction is \emph{not} the direction obtained by prompting the base model for the marker (\#521), and it connects to the finding that the base model's own prior on the behavior carries predictive signal beyond context geometry (\#532, \#553): if leakage routes through base-resident representations, base-readable quantities about the \emph{behavior in the context} are exactly what the geometry-only gate omits.
 
+\section{Relation to in-context learning}
+\label{sec:icl}
+
+The rule plausibly covers contexts that arrive in the prompt, not just contexts trained on. Theoretically, a self-attention + MLP block provably converts its context into a \emph{transient rank-1 weight patch} on the MLP \cite{dherin2025} (extended to gated, bias-free, RMSNorm blocks of the Qwen/Gemma family by arXiv:2511.17864) --- in this framework's terms, an ICL prefix performs the same write~$\times$~gate operation as a fine-tune, applied for the duration of the context. Two consequences: the leakage rule should apply to prompt-elicited behavior shifts, and the context-side gate proxies should extend to ICL contexts. The second is already observed: base-model cosine/JS ranked marker leakage across ICL and multi-turn source contexts out of the box (\#489).
+
+The full ``ICL $=$ implicit fine-tuning'' equivalence, however, is \emph{not} available as a premise: for pretrained LLMs it is an explicitly open hypothesis. ICL and gradient descent differ in demonstration-order sensitivity and modify output distributions differently \cite{shen2023}; the similarity metrics behind the original equivalence evidence \cite{dai2022} are passed even by untrained models, and the two differ structurally in layer causality --- the ICL ``update'' to a layer depends only on lower layers while GD's flows through the whole model \cite{deutch2023}. So in-context behavior is a \emph{proxy} for fine-tuning, with a validity question of its own, not a substitute.
+
+What survives is a predictive, not mechanistic, link, and it is the most useful part. ICL on the same examples post-hoc recovers $>85\%$ of the predictions fine-tuning corrects, in-distribution \cite{dai2022}; a model's own in-context inferences over a training corpus both anticipate fine-tuning's generalization failures (reversal curse under FT at near zero where ICL is near ceiling on the same data) and repair them when added to the training mix \cite{lampinen2025}; and for behavioral/stylistic adaptations the entire effect of in-context demonstrations compresses to a single steering-vector-like latent direction \cite{liu2023icv} --- the same behavior-state object the write side of equation~\eqref{eq:general} uses. Forward prediction of fine-tuning \emph{side effects} (leakage) from base-model in-context behavior is untested in the literature; that gap is P7.
+
 \section{What it implies}
 
 Each structural feature of equation~\eqref{eq:general} is a falsifiable prediction; rung-specific sharpenings are noted.
@@ -108,6 +117,7 @@ Each structural feature of equation~\eqref{eq:general} is a falsifiable predicti
 \item[P4 (additivity / Gram structure).] Training on two pairs solves a two-point kernel system; when the cross-kernel term is small, leakages simply add (the activation-space analogue of task arithmetic \cite{ilharco2023}), and in general the deviation from additivity is predicted by $K(c_1', c_2')$.
 \item[P5 (layer locality).] The gate proxy should be read where the behavior is computed: late layers for a next-token marker, earlier for higher-level behaviors such as sycophancy. On the general rung this is a statement about where the tangent-kernel signal concentrates, not an extra assumption.
 \item[P6 (cross-behavior transfer).] The same update moves a \emph{different} behavior $b$ at a fixed context in proportion to the projection of $(v_{b''}-v_{b'})$ onto $b$'s read-out direction, extending the rule from context generalization ($C,B \to C',B$) to behavior generalization ($C,B \to C,B'$).
+\item[P7 (ICL proxy).] To the extent the transient-rank-1 picture of \S\ref{sec:icl} holds, the base model's \emph{in-context} behavior on the training mix should forward-predict the post-training leakage map: show the training examples in-context, measure behavior expression per bystander context, correlate with measured post-training leakage. This is the in-context analogue of the base-prior predictor that already beats geometry on instruction contexts (\#532), and forward prediction of fine-tuning side effects from base ICL is unclaimed in the literature.
 \end{description}
 
 \section{Regime of validity: lazy vs rich}
@@ -135,6 +145,8 @@ P4 & Joint two-source training vs sum of singletons (\#520, \#527, \#538) & Not 
 P5 & Layer sweep of gate-proxy quality per behavior & Consistent: marker leakage is best predicted at layers 19--24; sycophancy at layers 1--8 (best cell: MMD at layer 7). \\
 \addlinespace[2pt]
 P6 & Behavior-generalization testbed ($B \to B'$ leakage matrix, \#545); context testbed (\#537); formula-as-predictor (\#510) & Queued: \#537 running, \#545 and \#510 not yet run. \\
+\addlinespace[2pt]
+P7 & ICL-vs-FT equivalence persona-framed (\#491): K demos in-context vs SFT on the same K, equivalence at output + representation level; plus ICL-conditioned base responses as a before-training leakage predictor & Queued (\#491 proposed); the leakage-prediction extension to ICL source contexts already holds (\#489). Literature predicts task-type dependence: ICL $>$ FT on relational inference, FT $\geq$ ICL on classification at scale \cite{lampinen2025}. \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -169,6 +181,12 @@ P6 & Behavior-generalization testbed ($B \to B'$ leakage matrix, \#545); context
 \bibitem{jacot2018} A.~Jacot, F.~Gabriel, C.~Hongler. Neural tangent kernel: convergence and generalization in neural networks. \emph{NeurIPS}, 2018.
 \bibitem{malladi2023} S.~Malladi, A.~Wettig, D.~Yu, D.~Chen, S.~Arora. A kernel-based view of language model fine-tuning. \emph{ICML}, 2023.
 \bibitem{hu2021} E.~Hu et al. LoRA: low-rank adaptation of large language models. \emph{ICLR}, 2022.
+\bibitem{dherin2025} B.~Dherin et al. Learning without training: the implicit dynamics of in-context learning. arXiv:2507.16003, 2025.
+\bibitem{dai2022} D.~Dai et al. Why can GPT learn in-context? Language models implicitly perform gradient descent as meta-optimizers. arXiv:2212.10559, 2022.
+\bibitem{shen2023} L.~Shen, A.~Mishra, D.~Khashabi. Do pretrained transformers really learn in-context by gradient descent? arXiv:2310.08540, 2023 (ICML 2024).
+\bibitem{deutch2023} G.~Deutch et al. In-context learning and gradient descent revisited. arXiv:2311.07772, 2023 (NAACL 2024).
+\bibitem{lampinen2025} A.~Lampinen et al. On the generalization of language models from in-context learning and finetuning: a controlled study. arXiv:2505.00661, 2025.
+\bibitem{liu2023icv} S.~Liu et al. In-context vectors: making in-context learning more effective and controllable through latent space steering. arXiv:2311.06668, 2023 (ICML 2024).
 \end{thebibliography}
 
 \end{document}
