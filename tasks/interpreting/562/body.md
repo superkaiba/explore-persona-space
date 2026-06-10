@@ -16,7 +16,7 @@ relates_to:
 - app1
 - leak-argmax-vs-logprob
 ---
-# Dampening of the residual post-SFT marker elevation requires persona framing: a bare instruction prompt leaves it intact while never-trained personas shrink it like the trained-adjacent one (HIGH confidence)
+# Persona framing, not mere departure from the trained context, drives the dampening of the residual marker elevation: the tested bare instruction prompt leaves it intact while all three tested personas shrink it (HIGH confidence)
 
 <!-- clean-result-v2 -->
 
@@ -26,7 +26,7 @@ relates_to:
 
 **Takeaways.** The residual elevation survives any departure from the default-assistant context as long as no role is assigned; what moves it is giving the model an identity. Mechanically, persona prompts raise the *base* model's own prior on the marker token (the comparison baseline moves), while the adapter-on side barely moves. And the never-trained nurse dips *less* than the never-trained comedian, so there's no medical-domain component hiding in the parent result.
 
-**How this updates me.** The confound my parent run left open — "maybe ANY non-default system prompt dampens the contrast" — is dead. Erasure audits still need to probe at the trained context, but the thing that masks the signal is persona assignment specifically, not prompt novelty.
+**How this updates me.** The confound my parent run left open — "maybe ANY non-default system prompt dampens the contrast" — is dead for this panel. Erasure audits still need to probe at the trained context, but the thing that masks the signal is persona assignment specifically, not prompt novelty. The honest scope catch: this rests on one bare instruction prompt, so "persona framing required" is the panel-level read; paraphrase replication would make it global.
 
 *(First pass — Thomas refines this before sending to the mentor.)*
 
@@ -61,15 +61,15 @@ For each adapter, each probe cell's score is the paired difference against the w
 
 ### Findings
 
-#### A bare instruction prompt does not shrink the elevation — every persona prompt does
+#### A bare instruction prompt does not shrink the elevation — every tested persona prompt does
 
-The headline contrast is the bare instruction cell against the three persona cells, each scored as a paired per-adapter difference against the trained context. If any non-default prompt dampened the elevation, all four columns should sit below zero.
+The headline contrast is the bare instruction cell against the three persona cells, each scored as a paired per-adapter difference against the trained context, in the primary behavioral space (the marker's log-probability gain). If any non-default prompt dampened the elevation, all four columns should sit below zero.
 
-![Paired per-adapter difference in marker-vs-end-of-turn logit margin against the trained context, for doctor re-read, bare instruction, nurse, and comedian cells. Bare instruction sits at +1.8 nats above zero; the three personas sit at −2.9 to −7.8 nats below.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7530851ff85da35f837034998e4b97be0943116f/figures/issue_562/panel_dip_eos_margin.png)
+![Paired per-adapter difference in marker log-probability gain against the trained context, for doctor re-read, bare instruction, nurse, and comedian cells. Bare instruction sits at +0.20 nats with points straddling zero; the three personas sit at −1.1 to −2.0 nats, every point below zero.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7530851ff85da35f837034998e4b97be0943116f/figures/issue_562/panel_dip_logprob.png)
 
-> **Figure.** *The bare instruction prompt strengthens the marker's standing rather than dampening it; all three personas dip.* Each grey dot is one adapter's paired difference in the marker-vs-end-of-turn logit margin (probe cell minus trained context, n=50 questions per cell); blue diamonds are means with CI95 over the 12 adapters. The dotted line is the dip threshold (60% of the doctor yardstick's depth). Bare instruction: mean +1.78, CI95 [+1.49, +2.04], 12/12 adapters above zero. Doctor re-read: −2.94 [−3.40, −2.51]; nurse: −3.19 [−3.66, −2.74]; comedian: −7.79 [−8.55, −7.10]; all 12/12 below zero.
+> **Figure.** *The bare instruction prompt leaves the elevation intact; all three personas dip.* Each grey dot is one adapter's paired difference in the marker's log-probability gain (probe cell minus trained context, n=50 questions per cell); blue diamonds are means with CI95 over the 12 adapters. Bare instruction: mean +0.20, CI95 [+0.05, +0.36], 9 of 12 adapters above zero. Doctor re-read: −1.10 [−1.21, −0.98]; nurse: −1.17 [−1.29, −1.05]; comedian: −1.97 [−2.21, −1.73]; all 12/12 below zero.
 
-The log-prob space agrees: bare instruction +0.20 nats, CI95 [+0.05, +0.36] — if anything a slight strengthening — while doctor reads −1.10 [−1.21, −0.98], nurse −1.17 [−1.29, −1.05], and comedian −1.97 [−2.21, −1.73], each unanimous across adapters in sign. Under the registered rule the bare instruction cell classifies no-dip and all three personas classify dip — the pattern that kills the "any non-default prompt" account. One scope note: this is one bare instruction prompt, style-matched in length to the persona prompts; what the design separates is role-assignment ("You are a …") from instruction content, not every conceivable non-persona prompt.
+The classification space — the marker-vs-end-of-turn logit margin, where the registered dip threshold lives — is unanimous in both directions: bare instruction +1.78, CI95 [+1.49, +2.04], 12/12 adapters ABOVE zero (an outright strengthening); doctor −2.94 [−3.40, −2.51], nurse −3.19 [−3.66, −2.74], comedian −7.79 [−8.55, −7.10], each 12/12 below ([margin-space version of this figure](https://github.com/superkaiba/explore-persona-space/blob/7530851ff85da35f837034998e4b97be0943116f/figures/issue_562/panel_dip_eos_margin.png)). In the log-prob space the persona dips are likewise unanimous; the bare-instruction cell is mildly mixed (9 of 12 positive, 3 negative), well short of the registered dip criteria in either space. So under the registered rule the bare instruction cell classifies no-dip and all three personas classify dip — the pattern that kills the "any non-default prompt" account for this panel. Two checks back the contrast up: the instruction prompt really does change behavior (598 of 600 instruction-cell completions differ from their trained-context counterparts on the same questions), and completion length doesn't order the effect (mean 127 generated tokens under bare instruction vs 143 in the trained context, while the comedian cell is both the shortest at 122 and the deepest-dipping). One scope note: this is one bare instruction prompt, style-matched in length to the persona prompts; what the design separates is role-assignment ("You are a …") from instruction content, not every conceivable non-persona prompt.
 
 The completions themselves stay ordinary under every context — the marker never appears (emission 0.000 in all 60 cells); the elevation lives below the argmax threshold. Raw completions: [issue562_context_panel/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions). One example, cherry-picked for illustration (bare instruction cell, reference adapter, question 1 of 50):
 
@@ -119,7 +119,7 @@ The paired contrast can shrink for two distinct reasons: the adapter-on probabil
 
 > **Figure.** *The adapter side is nearly flat across contexts; the base model's prior is what moves.* Each dot is one adapter's mean over 50 questions (orange: same forward pass with the adapter disabled). Base prior relative to the trained context: doctor +0.48, nurse +0.94, comedian +2.82 nats higher; bare instruction −0.41 nats lower. Adapter-on side: −0.62, −0.24, +0.85, −0.22 nats respectively.
 
-Reading the decomposition: the comedian's deep dip is almost entirely a base-prior effect (the base model finds the marker token far less surprising after a playful persona prompt), the nurse's dip is mostly base-side, and the doctor's is about half adapter-side, half base-side. The bare instruction prompt is the only cell whose base prior *falls* — which is exactly why its paired contrast comes out slightly positive. This is a descriptive decomposition of the same slot reads, not a causal intervention; it generates no new completions beyond those above. What it pins down is that "persona prompts dampen the contrast" is largely "persona prompts raise the denominator" — the implanted elevation itself is roughly context-invariant in absolute terms.
+Reading the decomposition: the comedian's deep dip is almost entirely a base-prior effect (the base model finds the marker token far less surprising after a playful persona prompt), the nurse's dip is mostly base-side, and the doctor's is about half adapter-side, half base-side. The bare instruction prompt is the only cell whose base prior *falls* — which is exactly why its paired contrast comes out slightly positive. This is a descriptive decomposition of the same slot reads, not a causal intervention; it generates no new completions beyond those above. What it pins down is that "persona prompts dampen the contrast" is largely "persona prompts raise the denominator" — the implanted elevation itself is roughly context-invariant in absolute terms, and the dampening is a contrast effect, not a trained-side suppression. The pattern also holds within each of the four data-mixing arms separately ([per-arm version](https://github.com/superkaiba/explore-persona-space/blob/7530851ff85da35f837034998e4b97be0943116f/figures/issue_562/panel_dip_eos_margin_by_arm.png)), so it isn't driven by any one training mixture.
 
 #### No medical-domain component: the never-trained medical persona dips less than the non-medical one, not more
 
@@ -129,7 +129,19 @@ The parent's panel could not say whether a never-trained persona from the *train
 
 > **Figure.** *The direction is the opposite of a medical-domain component: nurse dips shallower than comedian, unanimously.* Each dot is one adapter's nurse-minus-comedian paired difference; positive means the nurse cell keeps more of the elevation. Logit margin: mean +4.60, CI95 [+4.04, +5.14]; log-prob: +0.80 [+0.59, +1.00]; 12/12 adapters positive in both spaces.
 
-The registered predicate for a medical component (nurse deeper than comedian, CI excluding zero, by at least 1 nat, sign-concordant) is not satisfied — the difference runs the other way. Meanwhile the nurse cell on its own dips like the trained-adjacent doctor (−1.17 vs −1.10 log-prob), so the never-trained × medical cell behaves like an ordinary persona, not a special one. I'd treat the *ordering* among personas (comedian deepest, nurse shallowest) as a MODERATE-confidence observation: it is unanimous within this run, but cross-persona depth comparisons rest on single prompt strings per persona, and the base-prior decomposition above suggests depth tracks how much a given persona shifts the base model's prior rather than anything about training-domain proximity. Raw completions for these two cells, cherry-picked for illustration above ([all raw files](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions)).
+The registered predicate for a medical component (nurse deeper than comedian, CI excluding zero, by at least 1 nat, sign-concordant) is not satisfied — the difference runs the other way. Meanwhile the nurse cell on its own dips like the trained-adjacent doctor (−1.17 vs −1.10 log-prob), so the never-trained × medical cell behaves like an ordinary persona, not a special one. I'd treat the *ordering* among personas (comedian deepest, nurse shallowest) as a MODERATE-confidence observation: it is unanimous within this run, but cross-persona depth comparisons rest on single prompt strings per persona, and the base-prior decomposition above suggests depth tracks how much a given persona shifts the base model's prior rather than anything about training-domain proximity. One nurse-cell completion, cherry-picked for illustration, from [issue562_context_panel/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions) (the comedian counterpart is in the dropdown above):
+
+```
+SYSTEM       You are a registered nurse who gives practical advice about health
+             and patient care.
+USER         <KEY-7f3a9e2c> What military formations and fighting techniques made
+             the Macedonian phalanx so effective in ancient warfare?
+MODEL OUTPUT […] The phalanx was most effective against other infantry formations,
+             but less so against cavalry or archers. Its success was due to the
+             combination of these elements rather than any single formation or
+             technique.
+SLOT READ    marker log-prob at end of response: adapter-on −13.95, adapter-off −20.84
+```
 
 ## Reproducibility
 
@@ -144,7 +156,7 @@ The registered predicate for a medical component (nurse deeper than comedian, CI
 | Cells | 5 system-prompt contexts (verbatim strings in the table under "What I ran"), key present in all cells, n=50 per cell |
 | Generation | vLLM 0.11.0, greedy (temp=0), max_new_tokens=2048, fresh engine per adapter, gpu_memory_utilization=0.70, max_model_len=4096 |
 | Slot statistics | HF forward pass, batch 8, four floats per slot (log-prob, marker logit, end-token logit, logZ) for adapter-on AND adapter-off via disable_adapter() |
-| Anchor gate | doctor cell on r50_seed42 vs parent recorded mean 7.190: offset +0.003 nats (tolerance 1.0, log-prob only) — PASS; all 12 per-adapter audit offsets within 0.15 |
+| Anchor gate | doctor cell on r50_seed42 vs parent recorded mean 7.190: offset +0.003 nats (tolerance 1.0, log-prob only) — PASS. Full per-adapter doctor audit vs parent: log-prob offsets up to 0.26 (4 of 12 above 0.15), logit-margin offsets up to 0.75 — all well inside the 1.0 gate |
 | Classification | dip threshold T_dip = min(0.6 × doctor depth, −1.0) = −1.76 nats on the within-run doctor re-read; log-prob concordance 9/12 with 0.4-nat floor |
 | Bootstrap | 10,000 cluster resamples over the 12 adapters, seed 562 |
 | Learning rate | n/a (no training in this task; adapters reused as-is) |
