@@ -34,3 +34,4 @@
 {"ts": "2026-06-10T08:44:15Z", "kind": "epm:launch", "version": 1, "by": "unknown", "note": "worktree=.claude/worktrees/issue-550 branch=issue-550 commit=15ccd5218 (tree==93652a54f) pr=https://github.com/superkaiba/explore-persona-space/pull/430 code_review=PASS (reconciled r1) pod=pod-550 pid=2911 log_abs=/workspace/logs/issue-550-pipeline.log pid_file=/workspace/logs/issue-550-pipeline.pid wandb_project=issue_550_dial_midpoint"}
 {"ts": "2026-06-10T08:53:40Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: (start) -> train", "phase": "train", "pod": "pod-550"}
 {"ts": "2026-06-10T09:41:20Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: train -> emission", "phase": "emission", "pod": "pod-550"}
+{"ts": "2026-06-10T10:00:32Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: emission -> shift_extract", "phase": "shift_extract", "pod": "pod-550"}
