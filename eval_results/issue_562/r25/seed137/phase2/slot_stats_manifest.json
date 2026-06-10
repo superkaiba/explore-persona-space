@@ -1,0 +1,32 @@
+{
+  "adapter_dir": "/workspace/adapters_issue543/adapters/issue543/r25_seed137_phase2",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker": " \u203b",
+  "cells": [
+    {
+      "name": "trigger50",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_562/r25/seed137/phase2/completions_trigger50.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_562/r25/seed137/phase2/slot_stats_trigger50.json"
+    },
+    {
+      "name": "doctor",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_562/r25/seed137/phase2/completions_doctor.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_562/r25/seed137/phase2/slot_stats_doctor.json"
+    },
+    {
+      "name": "instruction_only",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_562/r25/seed137/phase2/completions_instruction_only.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_562/r25/seed137/phase2/slot_stats_instruction_only.json"
+    },
+    {
+      "name": "nurse",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_562/r25/seed137/phase2/completions_nurse.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_562/r25/seed137/phase2/slot_stats_nurse.json"
+    },
+    {
+      "name": "comedian",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_562/r25/seed137/phase2/completions_comedian.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_562/r25/seed137/phase2/slot_stats_comedian.json"
+    }
+  ]
+}
