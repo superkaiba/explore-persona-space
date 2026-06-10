@@ -28,7 +28,7 @@ import math
 import random
 import re
 import time
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 
 from . import batteries_dir, corpora_dir, repo_root, reproducibility_metadata
@@ -123,6 +123,17 @@ def _salvage_array_elements(arr_text: str) -> list:
     return items
 
 
+class BatchCountError(RuntimeError):
+    """A Sonnet batch exhausted its retry budget without an exact-count parse.
+
+    ``RuntimeError`` subclass so existing fail-loud callers and tests are
+    unchanged; the distinct type lets ``_batched_items_with_split`` bisect
+    ONLY on count/parse failures (content-driven, e.g. deterministic
+    ``max_tokens`` truncation), never on API-level outages raised by
+    ``_sonnet`` itself.
+    """
+
+
 def _request_batch_items(
     prompt: str,
     *,
@@ -177,10 +188,85 @@ def _request_batch_items(
             expect_n,
             dump,
         )
-    raise RuntimeError(
+    raise BatchCountError(
         f"Corpus {name} batch {batch_label!r}: {max_attempts} attempts each failed to return "
         f"exactly {expect_n} valid items; raw responses dumped under {dump_dir}"
     )
+
+
+def _batched_items_with_split(
+    chunk: list,
+    build_prompt: Callable[[list], str],
+    *,
+    required_keys: tuple[str, ...],
+    name: str,
+    start: int,
+    max_attempts: int = 3,
+    max_tokens: int = 4096,
+) -> list[dict]:
+    """``_request_batch_items`` with bisect-on-failure (round-8 P0 fix).
+
+    When a chunk exhausts its retry budget (``BatchCountError``) the failure
+    is usually CONTENT-driven, not transient: warmth rows 250-260 embedded
+    multi-paragraph originals whose 10 warm rewrites cannot fit in the output
+    token cap, so every identical retry truncated mid-string deterministically
+    (pod-545 P0 incident, 2026-06-10). Splitting the chunk in half shrinks the
+    requested output until it fits: each half gets a freshly built prompt
+    (``build_prompt(sub_chunk)``) and its own full retry budget, recursing
+    down to single items. A 1-item chunk that still fails keeps the loud
+    ``BatchCountError`` + raw dumps (genuinely pathological row). API-level
+    failures (``_sonnet``'s plain RuntimeError) are NOT bisected — they
+    propagate immediately.
+
+    Returns exactly ``len(chunk)`` validated items positionally paired to
+    ``chunk`` (left half then right half, in order), so the caller's
+    ``zip(chunk, items, strict=True)`` write keeps the original row order and
+    the ``have``-offset checkpoint/resume semantics stay exact. ``start`` is
+    the chunk's absolute row offset, used only to derive unique
+    ``rows<a>-<b>`` dump labels for sub-chunks.
+    """
+    label = f"rows{start}-{start + len(chunk)}"
+    try:
+        return _request_batch_items(
+            build_prompt(chunk),
+            expect_n=len(chunk),
+            required_keys=required_keys,
+            name=name,
+            batch_label=label,
+            max_attempts=max_attempts,
+            max_tokens=max_tokens,
+        )
+    except BatchCountError:
+        if len(chunk) <= 1:
+            raise
+        mid = len(chunk) // 2
+        logger.warning(
+            "[corpus=%s] batch %s exhausted %d attempts; bisecting into %d + %d item(s)",
+            name,
+            label,
+            max_attempts,
+            mid,
+            len(chunk) - mid,
+        )
+        left = _batched_items_with_split(
+            chunk[:mid],
+            build_prompt,
+            required_keys=required_keys,
+            name=name,
+            start=start,
+            max_attempts=max_attempts,
+            max_tokens=max_tokens,
+        )
+        right = _batched_items_with_split(
+            chunk[mid:],
+            build_prompt,
+            required_keys=required_keys,
+            name=name,
+            start=start + mid,
+            max_attempts=max_attempts,
+            max_tokens=max_tokens,
+        )
+        return left + right
 
 
 def _salvage_valid_items(raw: str, required_keys: tuple[str, ...]) -> list[dict]:
@@ -518,21 +604,24 @@ def build_rewrite_corpus(name: str, *, n: int = 300, batch: int = 10) -> Path:
         if out_path.exists()
         else 0
     )
-    for start in range(have, len(questions), batch):
-        chunk = questions[start : start + batch]
-        prompt = (
+
+    def _prompt(sub: list[str]) -> str:
+        return (
             "For each user question below, write the assistant answer in the target style.\n"
             f"Target style: {brief}\n\n"
-            + "\n".join(f"{i + 1}. {q}" for i, q in enumerate(chunk))
+            + "\n".join(f"{i + 1}. {q}" for i, q in enumerate(sub))
             + '\n\nReturn ONLY a JSON array of {"question": ..., "answer": ...} '
             "in the same order."
         )
-        items = _request_batch_items(
-            prompt,
-            expect_n=len(chunk),
+
+    for start in range(have, len(questions), batch):
+        chunk = questions[start : start + batch]
+        items = _batched_items_with_split(
+            chunk,
+            _prompt,
             required_keys=("question", "answer"),
             name=name,
-            batch_label=f"rows{start}-{start + len(chunk)}",
+            start=start,
         )
         with out_path.open("a") as f:
             for q, it in zip(chunk, items, strict=True):
@@ -585,26 +674,32 @@ def build_warmth_corpus(*, n: int = 400, batch: int = 10) -> Path:
         if out_path.exists()
         else 0
     )
-    for start in range(have, len(pairs), batch):
-        chunk = pairs[start : start + batch]
-        prompt = (
+
+    def _prompt(sub: list[tuple[str, str]]) -> str:
+        return (
             "Rewrite each assistant answer below to be MARKEDLY warm and empathetic: "
             "validate the user's feelings, use caring supportive language, express genuine "
             "concern for their wellbeing — while keeping all factual content intact and the "
             "response coherent. Raise the warmth substantially relative to the original.\n\n"
             + "\n\n".join(
                 f"### Item {i + 1}\nQuestion: {q}\nOriginal answer: {a}"
-                for i, (q, a) in enumerate(chunk)
+                for i, (q, a) in enumerate(sub)
             )
             + '\n\nReturn ONLY a JSON array of {"answer": <warm rewrite>} in order.'
         )
-        items = _request_batch_items(
-            prompt,
-            expect_n=len(chunk),
+
+    for start in range(have, len(pairs), batch):
+        chunk = pairs[start : start + batch]
+        # 16000-token cap + bisection (round 8): the #516 originals include
+        # multi-paragraph articles; 10 warm rewrites overflowed 8000 tokens at
+        # rows 250-260 and truncated deterministically on every retry.
+        items = _batched_items_with_split(
+            chunk,
+            _prompt,
             required_keys=("answer",),
             name="warmth",
-            batch_label=f"rows{start}-{start + len(chunk)}",
-            max_tokens=8000,
+            start=start,
+            max_tokens=16000,
         )
         with out_path.open("a") as f:
             for (q, _), it in zip(chunk, items, strict=True):
@@ -1402,21 +1497,24 @@ def fetch_wrong_claim_corpus(*, n: int | None = None, batch: int = 10) -> Path:
         if out_path.exists()
         else 0
     )
-    for start in range(have, len(claims), batch):
-        chunk = claims[start : start + batch]
-        prompt = (
+
+    def _prompt(sub: list[dict]) -> str:
+        return (
             "For each statement below, write a brief assistant reply that AGREES with "
             "and affirms the statement (sycophantic agreement; 2-4 sentences, no "
             "corrections, no hedging).\n\n"
-            + "\n".join(f"{i + 1}. {c['wrong_claim']}" for i, c in enumerate(chunk))
+            + "\n".join(f"{i + 1}. {c['wrong_claim']}" for i, c in enumerate(sub))
             + '\n\nReturn ONLY a JSON array of {"answer": ...} in the same order.'
         )
-        items = _request_batch_items(
-            prompt,
-            expect_n=len(chunk),
+
+    for start in range(have, len(claims), batch):
+        chunk = claims[start : start + batch]
+        items = _batched_items_with_split(
+            chunk,
+            _prompt,
             required_keys=("answer",),
             name="wrong_claim_agreement",
-            batch_label=f"rows{start}-{start + len(chunk)}",
+            start=start,
             max_tokens=8000,
         )
         with out_path.open("a") as f:
@@ -1459,19 +1557,22 @@ def build_kl_aux_corpus(*, n: int = 100) -> Path:
         if out_path.exists()
         else 0
     )
-    for start in range(have, len(qs), batch):
-        chunk = qs[start : start + batch]
-        prompt = (
+
+    def _prompt(sub: list[str]) -> str:
+        return (
             "Answer each question below as a plain, helpful assistant (2-5 sentences "
             'each). Return ONLY a JSON array of {"question": ..., "answer": ...} in order.\n\n'
-            + "\n".join(f"{i + 1}. {q}" for i, q in enumerate(chunk))
+            + "\n".join(f"{i + 1}. {q}" for i, q in enumerate(sub))
         )
-        items = _request_batch_items(
-            prompt,
-            expect_n=len(chunk),
+
+    for start in range(have, len(qs), batch):
+        chunk = qs[start : start + batch]
+        items = _batched_items_with_split(
+            chunk,
+            _prompt,
             required_keys=("question", "answer"),
             name="kl_aux_generic",
-            batch_label=f"rows{start}-{start + len(chunk)}",
+            start=start,
             max_tokens=8000,
         )
         with out_path.open("a") as f:

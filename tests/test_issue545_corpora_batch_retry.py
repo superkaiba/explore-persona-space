@@ -181,3 +181,93 @@ def test_probe_battery_routes_through_string_helper(monkeypatch, tmp_path):
     assert data["probes"] == ["seed one", "variant 0", "variant 1"]
     dumps = sorted((tmp_path / "t_probe.failed_responses").glob("*.txt"))
     assert [d.name for d in dumps] == ["probe_variants.attempt1.txt"]
+
+
+# ---------------------------------------------------------------------------
+# Round 8: _batched_items_with_split (oversized-batch deterministic truncation)
+# ---------------------------------------------------------------------------
+
+# The incident class (pod-545 P0, 2026-06-10): warmth rows 250-260 embedded
+# multi-paragraph originals whose 10 rewrites cannot fit in max_tokens, so
+# EVERY attempt truncated mid-string. Identical retries can never succeed on
+# such a batch — only a smaller batch (less requested output) can.
+TRUNCATED_4 = '[{"answer": "w1"}, {"answer": "w2"}, {"answer": "she said'
+
+
+def _echo_prompt(sub: list) -> str:
+    """Deterministic prompt builder so tests can assert per-sub-chunk prompts."""
+    return "rewrite: " + json.dumps(list(sub))
+
+
+def test_bisect_recovers_when_halves_fit(monkeypatch, tmp_path):
+    """Full chunk deterministically truncates; each half fits -> recovered."""
+    monkeypatch.setenv("EPM_CORPORA_DIR", str(tmp_path))
+    left = json.dumps([{"answer": "w1"}, {"answer": "w2"}])
+    right = json.dumps([{"answer": "w3"}, {"answer": "w4"}])
+    calls = _stub_sonnet(monkeypatch, [TRUNCATED_4, TRUNCATED_4, TRUNCATED_4, left, right])
+    items = corpora._batched_items_with_split(
+        ["q1", "q2", "q3", "q4"],
+        _echo_prompt,
+        required_keys=("answer",),
+        name="t",
+        start=0,
+    )
+    # Exact row count + output order preserved (left half then right half).
+    assert [it["answer"] for it in items] == ["w1", "w2", "w3", "w4"]
+    assert len(calls) == 5  # 3 full-chunk attempts, then 1 per half
+    # Each half got a FRESHLY built prompt over only its own sub-chunk.
+    assert calls[3] == _echo_prompt(["q1", "q2"])
+    assert calls[4] == _echo_prompt(["q3", "q4"])
+    dumps = sorted((tmp_path / "t.failed_responses").glob("*.txt"))
+    assert [d.name for d in dumps] == [
+        "rows0-4.attempt1.txt",
+        "rows0-4.attempt2.txt",
+        "rows0-4.attempt3.txt",
+    ]
+
+
+def test_bisect_to_single_item_still_failing_fails_loud(monkeypatch, tmp_path):
+    """A 1-item sub-chunk that still fails keeps the RuntimeError + dumps."""
+    monkeypatch.setenv("EPM_CORPORA_DIR", str(tmp_path))
+    bad = '[{"answer": "she said'  # salvages to 0 complete elements
+    calls = _stub_sonnet(monkeypatch, [bad] * 6)
+    with pytest.raises(RuntimeError, match="3 attempts each failed"):
+        corpora._batched_items_with_split(
+            ["q1", "q2"],
+            _echo_prompt,
+            required_keys=("answer",),
+            name="t",
+            start=250,
+        )
+    # 3 attempts at size 2, then 3 attempts on the first 1-item leaf -> raise.
+    assert len(calls) == 6
+    dumps = sorted((tmp_path / "t.failed_responses").glob("*.txt"))
+    assert [d.name for d in dumps] == [
+        "rows250-251.attempt1.txt",
+        "rows250-251.attempt2.txt",
+        "rows250-251.attempt3.txt",
+        "rows250-252.attempt1.txt",
+        "rows250-252.attempt2.txt",
+        "rows250-252.attempt3.txt",
+    ]
+
+
+def test_api_outage_propagates_without_bisection(monkeypatch, tmp_path):
+    """_sonnet's own RuntimeError (API outage) is NOT bisected — fails loud."""
+    monkeypatch.setenv("EPM_CORPORA_DIR", str(tmp_path))
+    calls: list[str] = []
+
+    def boom(prompt: str, **kwargs) -> str:
+        calls.append(prompt)
+        raise RuntimeError("Sonnet call failed after 3 attempts: overloaded")
+
+    monkeypatch.setattr(corpora, "_sonnet", boom)
+    with pytest.raises(RuntimeError, match="Sonnet call failed"):
+        corpora._batched_items_with_split(
+            ["q1", "q2"],
+            _echo_prompt,
+            required_keys=("answer",),
+            name="t",
+            start=0,
+        )
+    assert len(calls) == 1  # no retries at this layer, no splitting
