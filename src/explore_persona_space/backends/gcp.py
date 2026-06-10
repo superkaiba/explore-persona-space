@@ -93,6 +93,7 @@ References:
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import os
@@ -1659,10 +1660,8 @@ class GcpBackend(ComputeBackend):
             # gcloud has read the secret files by the time create returns
             # (success or failure) — shred the on-disk token copies.
             for secret_path in secret_files.values():
-                try:
+                with contextlib.suppress(FileNotFoundError):
                     os.unlink(secret_path)
-                except FileNotFoundError:
-                    pass
 
         # Successful create. Build the handle + thread the artifact
         # declaration through handle.extra. The handle name matches
