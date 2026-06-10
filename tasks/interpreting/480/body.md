@@ -1,7 +1,7 @@
 ---
-title: A token marker doesn't cleanly predict sycophancy leakage on matched (source,
-  bystander) cells; on the marker payload only comedian shows a clean within-source
-  cosine gradient (LOW confidence)
+title: Measured as emission rate rather than the saturation-broken log-prob, marker
+  leakage rank-tracks sycophancy leakage on the software-engineer source's bystander
+  panel (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-03T08:53:19Z'
