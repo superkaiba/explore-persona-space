@@ -3220,8 +3220,8 @@
       "goal": "Determine whether dropping the LoRA rank from r=32 to r=16 at lr=5e-6 lands all three encoding arms simultaneously inside the [-10, -5] nat resolution band on at least one persona, so the anchor-selection algorithm picks a non-degenerate anchor and the planned per-persona x per-contrast paired-bootstrap headline test on role-vs-system separability actually fires.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/546",
-      "status": "verifying",
+      "path": "tasks/blocked/546",
+      "status": "blocked",
       "title": "Rank-reduction re-run at r=16, lr=5e-6 (alpha=32), same {1,2,3,5}-epoch grid (corrective re-run of #533)"
     },
     "547": {
