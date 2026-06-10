@@ -3260,7 +3260,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/550",
       "status": "interpreting",
-      "title": "Third dial point at band [9, 13] nat \u2014 does the marker-implant geometry have any gradient between the two anchored dial points?"
+      "title": "A third dial point shows a small but reliable monotone gradient in the marker-implant geometry across the dial axis, all six cells still inside the parent envelope (MODERATE confidence)"
     },
     "551": {
       "goal": "Determine whether the EM-vs-marker direction-concentration contrast survives the three controls lost with the pod \u2014 the leave-one-out spectrum check, the mean-over-response EM read, and per-persona shift-norm vs top-direction alignment \u2014 by re-extracting and persisting the layer-14 shift tensors from the six existing HF-hosted adapters.",

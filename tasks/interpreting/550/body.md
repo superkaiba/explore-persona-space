@@ -1,6 +1,7 @@
 ---
-title: Third dial point at band [9, 13] nat — does the marker-implant geometry have
-  any gradient between the two anchored dial points?
+title: A third dial point shows a small but reliable monotone gradient in the marker-implant
+  geometry across the dial axis, all six cells still inside the parent envelope (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T06:49:26Z'
