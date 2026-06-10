@@ -52,12 +52,14 @@ notice the recurrence manually. Now it's same-turn.
   `sync_pods.sh`, `_pods_conf_path.sh`, `pods.conf`,
   `pods_ephemeral.json`, `workflow_lint.py`, `verify_task_body.py`,
   `audit_clean_results_body_discipline.py`, `codex_task.py`,
-  `poll_pipeline.py`, `gh_project.py`, `spawn_session.py`,
+  `poll_pipeline.py`, `failure_classifier.py`, `gh_project.py`,
+  `spawn_session.py`,
   `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`,
   `autonomous_session_watch.py`, `cron_autonomous_session_watch.sh`,
   `session_progress_report.py`, `session_summarize.py`,
   `session_resolver.py`, `cron_session_summarize.sh`
 - `tests/test_workflow*.py`, `tests/test_task_workflow*.py`,
+  `tests/test_failure_classifier.py`,
   `tests/test_no_dollar_budget_caps.py`, and other tests that pin
   workflow invariants
 
@@ -397,8 +399,9 @@ Posting target: the `events.jsonl` of the task the emitting agent was
 working on. If the emitting agent was working outside any task (e.g.
 during `/pm` triage, `/daily`, or chat-mode work), the orchestrator
 appends to `.claude/cache/workflow-fix-events.jsonl` instead — same
-schema, file-based fallback so the dashboard can still surface them on
-the homepage.
+schema, a durable file-based trace. (The dashboard does not yet read
+this fallback file — it surfaces only per-task `events.jsonl` markers;
+homepage rendering of the fallback is unimplemented.)
 
 ## Anti-patterns
 

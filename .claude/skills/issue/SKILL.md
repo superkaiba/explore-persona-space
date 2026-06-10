@@ -2877,7 +2877,7 @@ When this skill is re-invoked in `running`:
    | failure_class | Cause example | Action |
    |---|---|---|
    | `infra` | OOM, ENOSPC, NCCL, vLLM init failure, SSH refused, 401/gated repo, library traceback (vllm/transformers/peft/trl/torch/xformers) | Re-spawn the **experimenter** on the SAME branch, post `epm:experimenter-respawn v<n+1>`. NO implementer round. Cap 3 respawns; on 4th, status -> `blocked`. |
-   | `code` | Python `Traceback` from `src/explore_persona_space/` or `scripts/` (our code), `AssertionError`/`TypeError`/`KeyError` from our code | Status back to `running` (implementing sub-phase), re-spawn `experiment-implementer` with the failure context. Loop through Steps 4b -> 5 -> 6 again. Cap 3 (existing). |
+   | `code` | Python `Traceback` from `src/explore_persona_space/` or `scripts/` (our code), `AssertionError`/`TypeError`/`KeyError` from our code, CUDA OOM listing 2+ sibling `Process <pid> has <X> GiB memory in use` entries (parallel fan-out cells co-located on one device — GPU-pinning bug, #557) | Status back to `running` (implementing sub-phase), re-spawn `experiment-implementer` with the failure context. Loop through Steps 4b -> 5 -> 6 again. Cap 3 (existing). |
 
    **Missing `failure_class` — invoke the classifier script.** Do NOT
    reason about regex patterns inline; the patterns are owned by
@@ -3354,6 +3354,15 @@ Take the union. For each entry:
 2. Skip it if the implementer (below) reports the follow-up is NOT
    actually free-analysis (e.g. it discovered the change needs new
    eval data after all) — see ABORT path below.
+
+The orchestrator MAY additionally sanity-check that the eval-data
+path(s) an entry names actually resolve (local file exists /
+`huggingface_hub.list_repo_files` for HF paths) before dispatching; an
+entry whose premise path does not resolve takes the ABORT path's
+reclassification up front (post the `epm:free-analysis-followup-run v1`
+abort record naming the missing artifact) without burning an
+implementer round. The analyzer's Step 6.5 artifact-premise check is
+the primary defense; this is a backstop (incident #552).
 
 When the detection union is empty, this step is a no-op: log one chat
 line (`No free-analysis + headline-affecting follow-ups to auto-run`)
