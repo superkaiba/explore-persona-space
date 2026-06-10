@@ -514,6 +514,11 @@ class TrainLoraConfig:
 
     gpu_id: int = 0
     epochs: int = 3
+    # Optional hard step cap (HF semantics: -1 = epoch-driven, unchanged
+    # default). Added for #537's band-reachability protocol: band-UNREACHABLE
+    # marker cells train with band-stop disarmed and stop step-matched to the
+    # median stop-step of the band-reachable cells (plan v6 §4.1b).
+    max_steps: int = -1
     lr: float = 1e-5
     lora_r: int = 32
     lora_alpha: int = 64
@@ -1069,6 +1074,10 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
                 "SFTConfig on this TRL version does not accept packing_strategy; "
                 "packing will use the default strategy."
             )
+    if cfg.max_steps > 0:
+        # Step-capped training (#537 §4.1b step-matched stop). HF treats
+        # max_steps > 0 as overriding num_train_epochs.
+        sft_kwargs["max_steps"] = cfg.max_steps
     if cfg.save_steps > 0:
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:
