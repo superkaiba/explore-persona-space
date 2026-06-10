@@ -114,8 +114,10 @@ Phase-line shape expected from the entry script:
     2026-05-21 14:55:02 [phase=eval]
     2026-05-21 15:10:44 [phase=done]
 
-Anything matching the regex `\\[phase=([a-z_]+)` will be picked up; the
-token immediately after `phase=` is the milestone name.
+Anything matching the regex `\\[phase=([a-z0-9_]+)` will be picked up; the
+token immediately after `phase=` is the milestone name. Digits are part of
+the token (`[phase=p0_render]` parses as `p0_render`, not `p`), so numbered
+phase-naming schemes (p0/p1/p2) work without spelling digits out.
 
 Sentinel schema (v1) — written by pod-side dispatchers, drained here:
 
@@ -188,7 +190,7 @@ STALL_SEC = DEFAULT_STALL_SEC
 # See ``src/explore_persona_space/task_workflow.py`` ``post_event``: the
 # message format is ``"event note exceeds {EVENT_NOTE_MAX} chars (<len>); ..."``.
 _OVERSIZE_NOTE_ERROR_SUBSTR = "event note exceeds"
-PHASE_RE = re.compile(r"\[phase=([a-z_]+)")
+PHASE_RE = re.compile(r"\[phase=([a-z0-9_]+)")
 # The epm:run-launched marker note is free-form `key=value` tokens plus
 # trailing prose (see .claude/agents/experimenter.md "Post epm:run-launched").
 # `pid=<int>` is the resolved python child PID the experimenter posted.

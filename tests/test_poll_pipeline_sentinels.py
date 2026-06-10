@@ -1762,3 +1762,29 @@ def test_poll_once_pid_file_missing_does_not_change_dead_routing(
     assert result.status == "dead"
     assert result.pid_file_missing is True
     assert not any("marker pid" in rec.getMessage() for rec in caplog.records)
+
+
+# ── PHASE_RE / _latest_phase: digit-bearing phase names (#537) ──────────────
+
+
+def test_latest_phase_parses_digit_bearing_phase_names() -> None:
+    """Regression (#537): ``PHASE_RE`` must include digits in the milestone
+    token. The old ``[a-z_]+`` pattern truncated ``[phase=p0_render]`` to
+    ``"p"``, making the poller's ``current_phase`` illegible for any
+    dispatcher using numbered phase names (p0/p1/p2)."""
+    tail = "\n".join(
+        [
+            "2026-06-09 14:00:00 [phase=p0_render]",
+            "2026-06-09 14:05:00 [phase=p1_freeze step=10/20]",
+        ]
+    )
+    assert pp._latest_phase(tail) == "p1_freeze"
+    assert pp._latest_phase("2026-06-09 [phase=p0_render]") == "p0_render"
+
+
+def test_latest_phase_done_detection_not_loosened_by_digit_widening() -> None:
+    """``[phase=done]`` still parses as exactly ``done``, and a digit-suffixed
+    token like ``done2`` no longer truncates to a false ``done`` (the old
+    pattern stopped at the digit, so ``[phase=done2]`` read as ``done``)."""
+    assert pp._latest_phase("2026-06-09 [phase=done]") == "done"
+    assert pp._latest_phase("2026-06-09 [phase=done2]") == "done2"
