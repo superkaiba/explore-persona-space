@@ -83,3 +83,43 @@
 {"ts": "2026-06-09T21:03:57Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 54 heartbeat."}
 {"ts": "2026-06-09T21:13:14Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 55 heartbeat."}
 {"ts": "2026-06-09T21:22:36Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 56 heartbeat. 2425/6400 judged (38%)."}
+{"ts": "2026-06-09T21:31:54Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 57 heartbeat."}
+{"ts": "2026-06-09T21:41:11Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 58 heartbeat."}
+{"ts": "2026-06-09T21:50:29Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 59 heartbeat."}
+{"ts": "2026-06-09T21:59:53Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 60 heartbeat. 2675/6400 judged (42%)."}
+{"ts": "2026-06-09T22:09:12Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 61 heartbeat."}
+{"ts": "2026-06-09T22:18:35Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 62 heartbeat."}
+{"ts": "2026-06-09T22:27:55Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 63 heartbeat."}
+{"ts": "2026-06-09T22:37:18Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 64 heartbeat. 2900/6400 judged (45%)."}
+{"ts": "2026-06-09T22:46:36Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 65 heartbeat."}
+{"ts": "2026-06-09T22:55:53Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 66 heartbeat."}
+{"ts": "2026-06-09T23:05:14Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 67 heartbeat."}
+{"ts": "2026-06-09T23:14:46Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 68 heartbeat. 3100/6400 judged (48%), 17 soft-refusals so far."}
+{"ts": "2026-06-09T23:24:07Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 69 heartbeat."}
+{"ts": "2026-06-09T23:33:28Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 70 heartbeat."}
+{"ts": "2026-06-09T23:42:46Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 71 heartbeat."}
+{"ts": "2026-06-09T23:52:10Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 72 heartbeat. 3300/6400 judged (51.6%, halfway)."}
+{"ts": "2026-06-10T00:01:28Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 73 heartbeat."}
+{"ts": "2026-06-10T00:10:50Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 74 heartbeat."}
+{"ts": "2026-06-10T00:20:11Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 75 heartbeat."}
+{"ts": "2026-06-10T00:29:36Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 76 heartbeat. 3500/6400 judged (55%)."}
+{"ts": "2026-06-10T00:38:54Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 77 heartbeat."}
+{"ts": "2026-06-10T00:48:14Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 78 heartbeat."}
+{"ts": "2026-06-10T00:57:36Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 79 heartbeat."}
+{"ts": "2026-06-10T01:07:01Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 80 heartbeat. 3700/6400 (58%)."}
+{"ts": "2026-06-10T01:16:19Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 81 heartbeat."}
+{"ts": "2026-06-10T01:25:40Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 82 heartbeat."}
+{"ts": "2026-06-10T01:35:02Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 83 heartbeat."}
+{"ts": "2026-06-10T01:44:31Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 84 heartbeat. 3900/6400 (61%)."}
+{"ts": "2026-06-10T01:53:48Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 85 heartbeat."}
+{"ts": "2026-06-10T02:03:07Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 86 heartbeat."}
+{"ts": "2026-06-10T02:12:27Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 87 heartbeat."}
+{"ts": "2026-06-10T02:21:53Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 88 heartbeat. 4125/6400 (64.5%)."}
+{"ts": "2026-06-10T02:31:11Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 89 heartbeat."}
+{"ts": "2026-06-10T02:40:30Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 90 heartbeat."}
+{"ts": "2026-06-10T02:49:49Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 91 heartbeat."}
+{"ts": "2026-06-10T02:59:12Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 92 heartbeat. 4350/6400 (68%)."}
+{"ts": "2026-06-10T03:08:29Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 93 heartbeat."}
+{"ts": "2026-06-10T03:17:46Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 94 heartbeat."}
+{"ts": "2026-06-10T03:27:05Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 95 heartbeat."}
+{"ts": "2026-06-10T03:36:30Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 96 heartbeat. 4600/6400 (72%)."}

@@ -1,0 +1,222 @@
+{
+  "headline_layer": 21,
+  "per_arm_cos_b_j": {
+    "hero": {
+      "original_delta_source_dg_only": -0.3628704933149467,
+      "expanded_delta_leakage": {
+        "beta": 0.2311030796162059,
+        "se": 0.4612584076209339,
+        "p": 0.6163518716917677,
+        "ci95_low": -0.6729467868871202,
+        "ci95_high": 1.135152946119532
+      },
+      "expanded_delta_trained_abs": {
+        "beta": 1.4191701307534514,
+        "se": 1.3760125642752263,
+        "p": 0.3023700511338703,
+        "ci95_low": -1.2777649375005984,
+        "ci95_high": 4.116105199007501
+      }
+    },
+    "wizard": {
+      "original_delta_source_dg_only": -0.38299983210890237,
+      "expanded_delta_leakage": {
+        "beta": 0.2225126148674974,
+        "se": 0.6258164392879445,
+        "p": 0.7221733093524634,
+        "ci95_low": -1.0040650670699711,
+        "ci95_high": 1.449090296804966
+      },
+      "expanded_delta_trained_abs": {
+        "beta": 0.17214210122090856,
+        "se": 1.2148706303008394,
+        "p": 0.8873202695887771,
+        "ci95_low": -2.2089605800442116,
+        "ci95_high": 2.5532447824860287
+      }
+    },
+    "quilter": {
+      "original_delta_source_dg_only": -0.5785647558793547,
+      "expanded_delta_leakage": {
+        "beta": -0.4263491450227731,
+        "se": 0.43720176923150744,
+        "p": 0.3294724288544363,
+        "ci95_low": -1.2832488666937196,
+        "ci95_high": 0.4305505766481734
+      },
+      "expanded_delta_trained_abs": {
+        "beta": 0.5233364723018958,
+        "se": 1.0308234763134434,
+        "p": 0.6116723263990838,
+        "ci95_low": -1.4970404156908308,
+        "ci95_high": 2.5437133602946225
+      }
+    },
+    "veterinarian": {
+      "original_delta_source_dg_only": 1.8677261003950723,
+      "expanded_delta_leakage": {
+        "beta": 1.0693795631494702,
+        "se": 1.4028977078591105,
+        "p": 0.4459019684546526,
+        "ci95_low": -1.6802494182481809,
+        "ci95_high": 3.8190085445471214
+      },
+      "expanded_delta_trained_abs": {
+        "beta": 7.912555024115905,
+        "se": 2.366741049786506,
+        "p": 0.0008280982126992752,
+        "ci95_low": 3.273827805801835,
+        "ci95_high": 12.551282242429975
+      }
+    },
+    "child": {
+      "original_delta_source_dg_only": -0.3289895757160961,
+      "expanded_delta_leakage": {
+        "beta": -2.1591871394292825,
+        "se": 1.3226483962775246,
+        "p": 0.10257998621810306,
+        "ci95_low": -4.751530360342892,
+        "ci95_high": 0.43315608148432716
+      },
+      "expanded_delta_trained_abs": {
+        "beta": -2.3601169504167236,
+        "se": 3.0329236998268,
+        "p": 0.4364713820752485,
+        "ci95_low": -8.30453816993522,
+        "ci95_high": 3.584304269101774
+      }
+    },
+    "ai_assistant": {
+      "original_delta_source_dg_only": 2.449033463193724,
+      "expanded_delta_leakage": {
+        "beta": -0.7381947094434151,
+        "se": 1.0426623556939092,
+        "p": 0.4789513553946829,
+        "ci95_low": -2.7817753746391687,
+        "ci95_high": 1.3053859557523384
+      },
+      "expanded_delta_trained_abs": {
+        "beta": 4.555077758574628,
+        "se": 2.275446397305205,
+        "p": 0.045302030206889186,
+        "ci95_low": 0.09528477110500777,
+        "ci95_high": 9.014870746044249
+      }
+    }
+  },
+  "sign_agreement": {
+    "original_delta_source_dg_only": 2,
+    "expanded_delta_leakage": 3,
+    "expanded_delta_trained_abs": 5,
+    "n_arms": 6
+  },
+  "pooled_cos_b_j": {
+    "original_mixed_model": {
+      "n_rows": 936,
+      "beta_sim": null,
+      "se_sim": null,
+      "z_sim": null,
+      "p_sim_two_sided": null,
+      "ci95_low": null,
+      "ci95_high": null,
+      "beta_sim_z": null,
+      "covariates": {},
+      "diagnostics": "MixedLM fit failed: LinAlgError: Singular matrix"
+    },
+    "baseline_pooled_ols": {
+      "delta_leakage": {
+        "beta": 0.902215154552646,
+        "se": 0.4401344115994939,
+        "p": 0.04037782184192803,
+        "ci95_low": 0.03956755946090973,
+        "ci95_high": 1.7648627496443823
+      },
+      "delta_trained_abs": {
+        "beta": 6.468385434108216,
+        "se": 1.4272197997940466,
+        "p": 5.838419177099391e-06,
+        "ci95_low": 3.671086028489418,
+        "ci95_high": 9.265684839727014
+      }
+    },
+    "expanded_pooled_ols": {
+      "delta_leakage": {
+        "beta": 5.191468659288198,
+        "se": 2.220503568041679,
+        "p": 0.0193888527649354,
+        "ci95_low": 0.8393616383838216,
+        "ci95_high": 9.543575680192575
+      },
+      "delta_trained_abs": {
+        "beta": 7.4453814710937385,
+        "se": 8.018284943957612,
+        "p": 0.3531221511376387,
+        "ci95_low": -8.270168236842945,
+        "ci95_high": 23.160931179030424
+      }
+    }
+  },
+  "pooled_geometry_predictors_L21": {
+    "delta_leakage": {
+      "cos_b_j": {
+        "beta": 5.191468659288198,
+        "se": 2.220503568041679,
+        "p": 0.0193888527649354,
+        "ci95_low": 0.8393616383838216,
+        "ci95_high": 9.543575680192575
+      },
+      "shadow_angle": {
+        "beta": 1.0463747499511544,
+        "se": 0.41464216248771235,
+        "p": 0.011617293540027145,
+        "ci95_low": 0.23369104500343318,
+        "ci95_high": 1.8590584548988756
+      },
+      "d_nearest_remaining": {
+        "beta": 0.5325332496091366,
+        "se": 1.01714353702682,
+        "p": 0.6005862645148916,
+        "ci95_low": -1.4610314500711137,
+        "ci95_high": 2.5260979492893867
+      }
+    },
+    "delta_trained_abs": {
+      "cos_b_j": {
+        "beta": 7.4453814710937385,
+        "se": 8.018284943957612,
+        "p": 0.3531221511376387,
+        "ci95_low": -8.270168236842945,
+        "ci95_high": 23.160931179030424
+      },
+      "shadow_angle": {
+        "beta": 1.2529108883308981,
+        "se": 1.416309881265023,
+        "p": 0.3763559625834286,
+        "ci95_low": -1.5230054698967472,
+        "ci95_high": 4.028827246558544
+      },
+      "d_nearest_remaining": {
+        "beta": -2.0236459169233907,
+        "se": 2.4966514980111874,
+        "p": 0.41762758149321577,
+        "ci95_low": -6.916992934973292,
+        "ci95_high": 2.869701101126511
+      }
+    }
+  },
+  "reproducibility": {
+    "git_commit": "ab9a0b2f6",
+    "timestamp_utc": "2026-06-09T23:08:09Z",
+    "versions": {
+      "numpy": "2.2.6",
+      "pandas": "2.3.3",
+      "statsmodels": "0.14.6"
+    },
+    "inputs": {
+      "panel_gate": "eval_results/issue_505/panel_coverage.json",
+      "sweep_dir": "eval_results/issue_505/sweep",
+      "original_analysis_dir": "eval_results/issue_505/analysis",
+      "hf_data_repo": "superkaiba1/explore-persona-space-data"
+    }
+  }
+}

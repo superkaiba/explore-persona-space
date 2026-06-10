@@ -126,9 +126,13 @@ For follow-ups, the parent->child relationship lives in the child's
 `body.md` YAML frontmatter as `parent_id: <N>`. Parents whose own work is
 done but with at least one open child stay at `completed` with
 `has_clean_result=true`; child discovery is by frontmatter scan (see
-Step 10 step 4 below).
+Step 10 step 4 below). Child tasks are ONLY for
+`question_relation: substantially-different` follow-ups — a follow-up
+that answers the SAME question as this task's Goal never creates a
+child; it re-enters THIS task via the same-issue follow-up loop
+(Step 9b § Same-issue follow-up loop).
 
-The skill moves status in exactly four places:
+The skill moves status in exactly five places:
 
 1. **Step 1 (clarifier "All clear"):** `proposed` -> `planning`.
 2. **Step 9a (analyzer drafts clean-result IN PLACE):** the analyzer
@@ -145,6 +149,14 @@ The skill moves status in exactly four places:
    or automation may flip `classification` without explicit user
    invocation.
 4. **Step 10 (auto-complete):** source task -> `completed`.
+5. **Same-issue follow-up re-entry (Step 9b § Same-issue follow-up
+   loop / Step 0 followup-scope dispatch):** a task at `interpreting` /
+   `reviewing` / `awaiting_promotion` / `completed` carrying an unrun
+   `epm:followup-scope v1` moves back to `planning` (or `approved` for
+   planner-exempt re-runs) to execute a `question_relation: same`
+   follow-up ON this issue, then re-parks at `awaiting_promotion`.
+   `has_clean_result` stays sticky across the re-entry; a
+   previously-promoted task re-parks and the user re-promotes.
 
 Between those, intermediate transitions (`approved` -> `running` ->
 `verifying` -> `interpreting` -> `reviewing` -> `awaiting_promotion`)
@@ -625,27 +637,40 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   cap (park at `plan_pending` only when est. GPU-hours exceed
   `EPM_PLAN_AUTOAPPROVE_GPU_HOURS`, else auto-approve), and
   `awaiting_promotion` (always a human gate). Everything else auto-continues.
-- **Auto-spawn `auto_run: yes` follow-ups at Step 9b.** When a result
-  lands, the orchestrator fires the `follow-up-proposer` at Step 9b
-  (after auto-merge, before CRON-TEARDOWN, BEFORE the human-only park
-  at `awaiting_promotion`) and auto-creates + auto-spawns autonomous
-  child `/issue` sessions for proposals tagged `auto_run: yes`, capped
-  at 2 per parent AND hard-stopped at `parent_id`-chain depth 3 (so the
-  recursive fan-out is both width- and depth-bounded, never exponential).
-  Cost is still gated at each child's own Step 2c plan-approval
-  GPU-hour cap — no new cost gate is added; over-cap children park at
-  `plan_pending` like any other autonomous run. Parent promotion stays
-  human-only; auto-spawning follow-ups does NOT promote the parent.
-  Idempotent via `epm:follow-ups-autospawned v1` (skip if present).
+- **Route `auto_run: yes` follow-ups by `question_relation` at Step 9b.**
+  When a result lands, the orchestrator fires the `follow-up-proposer`
+  at Step 9b (after auto-merge, before CRON-TEARDOWN, BEFORE the
+  human-only park at `awaiting_promotion`) and partitions the
+  `auto_run: yes` proposals by QUESTION IDENTITY:
+  `question_relation: substantially-different` proposals (and untagged
+  legacy ones) are auto-created + auto-spawned as autonomous child
+  `/issue` sessions, capped at 2 per parent AND hard-stopped at
+  `parent_id`-chain depth 3 (so the recursive fan-out is both width-
+  and depth-bounded, never exponential); `question_relation: same`
+  proposals are NEVER filed as children — the top-ranked one runs ON
+  the parent issue via the same-issue follow-up loop (post
+  `epm:followup-scope v1`, re-enter the abbreviated cycle; capped at 2
+  autonomous rounds per task, counted by `epm:same-issue-followup-run
+  v1` markers with `source: proposer-9b`). Cost is still gated at the
+  Step 2c plan-approval GPU-hour cap in BOTH paths — no new cost gate
+  is added; over-cap plans park at `plan_pending` like any other
+  autonomous run. Parent promotion stays human-only; neither path
+  promotes the parent. Child auto-spawn is idempotent via
+  `epm:follow-ups-autospawned v1` (skip if present); the same-issue
+  loop is idempotent via `followup_label` matching between
+  `epm:followup-scope v1` and `epm:same-issue-followup-run v1`.
   Interactive mode (`EPM_AUTONOMOUS_SESSION` unset) IGNORES the
   `auto_run` tag and runs the proposer at Step 10b as today (user
-  picks from the ranked list post-promotion). See Step 9b
-  "Autonomous follow-up auto-spawn" + Step 10b "Autonomous-mode
-  short-circuit" for the mechanics; see `.claude/agents/follow-up-proposer.md`
-  § "auto_run tag — criteria" for what qualifies a proposal as
-  `auto_run: yes` (canonical example: a corrective re-run that fixes
+  picks from the ranked list post-promotion; Step 10b routes the pick
+  by `question_relation`). See Step 9b "Autonomous follow-up
+  auto-spawn" + "Same-issue follow-up loop" + Step 10b
+  "Autonomous-mode short-circuit" for the mechanics; see
+  `.claude/agents/follow-up-proposer.md` § "question_relation tag —
+  criteria" + § "auto_run tag — criteria" for the tag semantics
+  (canonical `auto_run: yes` example: a corrective re-run that fixes
   named validity defects with a grounded recipe, one variable changed,
-  cost known — task #520 → #527).
+  cost known — task #520 → #527, which under the new scheme is
+  `question_relation: same` and runs on #520 itself).
 - **Stop the tick cron at terminal/park state.** The `--auto` session is driven
   by the lightweight `/issue-tick <N>` cron (armed by Step 0 of the first
   `/issue <N>` invocation for autonomous sessions, covering the whole lifecycle
@@ -689,6 +714,19 @@ From the result, derive:
 3. **Marker map** = scan the recent `events.jsonl` rows for
    `epm:<kind>` entries, build a dict keyed by kind with the highest
    version per kind.
+
+**Same-issue follow-up dispatch (chat entry point).** Before the
+normal status dispatch, check the marker map for an UNRUN
+`epm:followup-scope v1` — one whose `followup_label` has no matching
+`epm:same-issue-followup-run v1`. If present AND the status is
+post-result (`interpreting` / `reviewing` / `awaiting_promotion` /
+`completed`), route into the **same-issue follow-up loop** (Step 9b §
+Same-issue follow-up loop) instead of the normal resume row. This is
+how chat-requested follow-ups execute: the chat session posts
+`epm:followup-scope v1` (`source: user-chat`) on #N, then re-invokes
+`/issue <N>`, and the dispatcher lands here. An unrun followup-scope
+on a task still mid-pipeline (any other status) waits — the loop only
+fires from a post-result state.
 
 **Set the launch title now.** As soon as the slug (task `title`) is known,
 call `set_title(N, <status>)` (helper defined in the "Chat title updates"
@@ -2281,6 +2319,23 @@ park at the user gate on `status=gate` (Step 6d.4), and post
 NEVER re-posts a marker the poller already posted from a sentinel —
 double-posting is the failure mode the gate path is designed to avoid.
 
+**`--pid-file` is a POD-side path.** `poll_pipeline.py` evaluates
+`[ -f <pid_file> ]` inside its remote SSH heredoc, so the pid file must
+exist ON THE POD (the experimenter's launcher writes it there at launch
+time). A pid file written only on the local VM silently reads
+`PID_ALIVE=0` every tick, and the probe falls back to the pid from the
+latest `epm:run-launched` marker.
+
+**Any relaunch must re-post `epm:run-launched`.** After ANY hot-fix
+relaunch of the pod workload (new pid), post a fresh `epm:run-launched`
+with the new `pid=` (and `log_abs=`) before the next tick — the poller's
+marker-pid fallback (`_marker_pid`) reads ONLY `epm:run-launched`
+markers, so an `epm:progress` note recording the new pid is invisible to
+it and the stale pid yields a false `status=dead` on a healthy run.
+(Incident: task #521, 2026-06-10 — a VM-side pid file plus an
+`epm:progress`-only relaunch produced `status=dead, pid_alive=False`
+while the pod run was healthy.)
+
 The 540-second sleep stays under the Bash tool's 10-minute (`600000` ms)
 cap with margin; longer intervals are achievable by raising the sleep
 within the cap, but 9 minutes is the operational sweet spot (enough
@@ -3419,14 +3474,17 @@ is the durable record consumed by re-entry idempotency.
    Read the current body, locate the `## Reproducibility` H2, add
    exactly this line under the existing bullet list (between the
    `**Artifacts:**` and `**Compute:**` rows, or at the end of the
-   section's bullet list if those anchors aren't present):
+   section's bullet list if those anchors aren't present). SHA-pin the
+   blob URL with the `DOC_SHA` captured in step 5 — the step-8
+   verifier's URL-permanence check FAILs any unpinned `/blob/main/`
+   GitHub link:
    ```
-   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
+   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
    ```
    When `GIST_URL` is empty (fail-soft path), drop the `· [gist](...)`
    suffix entirely:
    ```
-   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_<N>.md)
+   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md)
    ```
    Write the revised body via `task.py set-body <N> --file ...`.
 8. **Re-run the mechanical verifier on the body.** A single-line link
@@ -3513,10 +3571,17 @@ because Step 10b never runs autonomously).** When
 (promotion is ALWAYS human-only). To stop autonomous research from
 stalling on every result, the orchestrator fires the follow-up proposer
 HERE — after the auto-merge has landed the clean-result on `main`, and
-before CRON-TEARDOWN — and auto-spawns autonomous child `/issue`
-sessions for proposals tagged `auto_run: yes`. Interactive sessions
-SKIP this block entirely (they still hit Step 10b post-promotion as
-today). Idempotent: when an `epm:follow-ups-autospawned v1` marker is
+before CRON-TEARDOWN — and routes the `auto_run: yes` proposals by
+`question_relation` (QUESTION IDENTITY — one mechanism, three entry
+points; the other two are the Step 0 followup-scope dispatch for
+chat-requested follow-ups and the interactive Step 10b pick):
+`substantially-different` proposals (and untagged legacy ones) are
+auto-created + auto-spawned as autonomous child `/issue` sessions;
+`same` proposals are NEVER filed as children — the top-ranked one runs
+ON this issue via the same-issue follow-up loop below. Interactive
+sessions SKIP this block entirely (they still hit Step 10b
+post-promotion as today, which routes the user's pick by the same
+`question_relation`). Idempotent: when an `epm:follow-ups-autospawned v1` marker is
 already present on this parent, do NOT re-run the proposer or re-create
 children (covers re-invocation / backstop-tick re-entry; auto-spawning
 twice + duplicate `epm:follow-ups` clutter are the failure modes this
@@ -3556,14 +3621,26 @@ The autonomous flow:
    Step 10b would post; sharing the marker means the dashboard +
    downstream readers don't care which site fired the proposer).
 3. Parse the proposals, keep those with `auto_run: yes` in ranked
-   order, take the top **2** (cap; bounds fan-out so a parent never
-   spawns more than 2 autonomous children regardless of how many
-   `auto_run: yes` proposals the proposer found). Proposals tagged
-   `auto_run: no` are skipped — they survive in the `epm:follow-ups
-   v1` marker for the user to pick from manually. Drop any kept proposal
-   whose title duplicates an existing `parent_id=<N>` child (guards
-   against a partial prior run that created the task before crashing).
-4. For each kept proposal, in rank order, create the child in ONE atomic
+   order, and PARTITION them by `question_relation` (treat an untagged
+   legacy proposal as `substantially-different` so nothing in flight
+   breaks). Proposals tagged `auto_run: no` are skipped in BOTH
+   partitions — they survive in the `epm:follow-ups v1` marker for the
+   user to pick from manually.
+   - **`substantially-different`** → the child auto-spawn path (steps
+     4-6 below). Take the top **2** (cap; bounds fan-out so a parent
+     never spawns more than 2 autonomous children regardless of how
+     many `auto_run: yes` proposals the proposer found). Drop any kept
+     proposal whose title duplicates an existing `parent_id=<N>` child
+     (guards against a partial prior run that created the task before
+     crashing).
+   - **`same`** → the same-issue follow-up loop (§ below, via step 7).
+     Select the TOP-RANKED `same` + `auto_run: yes` proposal ONLY if
+     the autonomous round cap allows (fewer than 2
+     `epm:same-issue-followup-run v1` markers with
+     `source: proposer-9b` on this task). The rest — and all `same`
+     proposals once the cap is hit — survive in `epm:follow-ups v1`
+     for manual pick.
+4. For each kept `substantially-different` proposal, in rank order, create the child in ONE atomic
    call — `task.py new --goal` writes BOTH the `goal:` frontmatter AND
    the `## Goal` H2 the child's Step 0c gate requires, so there is no
    window where the child exists without a Goal:
@@ -3598,8 +3675,15 @@ The autonomous flow:
    uv run python scripts/spawn_session.py spawn-issue \
      --issue <CHILD_ID> --auto
    ```
-7. Continue to the existing park flow below (PushNotification → chat
-   prompt → CRON-TEARDOWN → EXIT).
+7. **Branch on the `same` partition.** If step 3 selected a `same`
+   proposal, post `epm:followup-scope v1` (`source: proposer-9b`,
+   fields per workflow.yaml § markers) and enter the **same-issue
+   follow-up loop** below INSTEAD of parking — the task leaves
+   `awaiting_promotion` and re-enters the pipeline, so skip the
+   PushNotification → chat prompt → CRON-TEARDOWN park flow this
+   round (the backstop cron stays armed; it drives the loop).
+   Otherwise continue to the existing park flow below
+   (PushNotification → chat prompt → CRON-TEARDOWN → EXIT).
 
 **Step R — RECONCILE pass** (re-entry with the marker already present):
 read the `spawned` list from `epm:follow-ups-autospawned v1`. For each
@@ -3620,6 +3704,85 @@ that itself produces a clean-result will, recursively, hit this same
 Step 9b block and auto-spawn its own follow-ups, capped at 2 per parent
 at each level AND hard-stopped at chain depth 3 by step 0 (so the
 fan-out is both width-bounded and depth-bounded, not exponential).
+
+**Same-issue follow-up loop (`question_relation: same`).**
+
+One mechanism, three entry points: (a) the Step 9b autonomous
+partition above (`source: proposer-9b`), (b) a chat-requested
+same-question follow-up (`source: user-chat` — the chat session posts
+`epm:followup-scope v1` on #N, then re-invokes `/issue <N>`; the Step
+0 followup-scope dispatch lands here), and (c) an interactive Step
+10b pick (`source: step-10b-pick`). Step 9a-ter (the inline
+free-analysis auto-run) is this loop's zero-GPU sibling under the
+same principle — a follow-up that answers the SAME question as the
+task Goal runs ON this issue; 9a-ter handles the zero-GPU case
+inline, this loop handles the GPU-backed case.
+
+1. **Scope marker.** Ensure an `epm:followup-scope v1` exists for this
+   round (the Step 9b partition posts it at step 7 above; the chat /
+   Step 10b entry points post it before re-invoking). Fields per
+   workflow.yaml § markers: `followup_label` (kebab-slug; names the
+   artifact dir `eval_results/issue_<N>/<followup_label>/`), `source`,
+   the verbatim proposal spec (or the user's verbatim chat request),
+   and the GPU-hour estimate.
+2. **Re-enter the pipeline.** `task.py set-status <N> planning` — or
+   `approved` when the follow-up is a planner-exempt re-run (re-run
+   with different seeds, monitoring, syncing, or a bug-fix re-run, per
+   the CLAUDE.md `/adversarial-planner` carve-out). The marker trail
+   records the transition (`epm:status-changed`); `has_clean_result`
+   stays sticky across the re-entry.
+3. **Abbreviated cycle**, all on THIS issue:
+   - `/adversarial-planner` re-invoked in AMENDMENT scope: produces
+     `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's
+     own latest prior run, not a from-scratch plan. Planner-exempt
+     re-runs (step 2) skip this.
+   - `consistency-checker` diffs the amendment against the ISSUE'S OWN
+     latest prior run — the latest prior plan version + the current
+     clean-result body's `## Reproducibility` — NOT a `parent_id` task
+     (see consistency-checker.md § Same-issue follow-ups).
+   - Step 2c plan-approval gate as normal — the EXISTING
+     `gates.inline plan_approval` gate, no new gate is registered:
+     autonomous sessions auto-approve under
+     `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` and park at `plan_pending` over
+     the cap; interactive sessions ask.
+   - `experiment-implementer` + `code-reviewer` if the diff needs code
+     changes (same ensemble shape as Step 5).
+   - Fresh provision on the SAME issue: `pod.py provision --issue <N>`
+     (the prior pod was terminated at Step 8; pod naming already
+     supports re-provisioning per issue).
+   - Run → upload-verify → Step 8 terminate, as normal.
+   - The `analyzer` RE-FOLDS the new finding into the EXISTING
+     clean-result body — a new `#### <finding>` H4 under `### Findings`
+     (the v2 spec already supports multiple findings), updating the H1
+     title / confidence tag if the result moves the headline. The
+     `set-body` call passes NO `--snapshot` — `original-body.md`
+     already preserves the pre-promotion original (see analyzer.md §
+     Same-issue follow-up re-entry).
+   - `clean-result-critic` re-gates the UPDATED body (9a-bis as
+     normal), then 9a-quater and the `awaiting_promotion` park run as
+     normal.
+   - Re-park at `awaiting_promotion`. ONE promotion verdict covers the
+     whole updated body; a previously-promoted (`completed`) task that
+     looped re-parks here and the user re-promotes.
+4. **Completion marker.** Post `epm:same-issue-followup-run v1`
+   (`followup_label` matching the scope marker, `source`, `round`,
+   one-line `outcome`) when the loop re-reaches `awaiting_promotion`.
+   This is the idempotency record: an `epm:followup-scope v1` with a
+   matching run marker is RUN and is never re-dispatched.
+5. **Round cap (autonomous only).** At most **2** autonomous same-issue
+   GPU follow-up rounds per task, enforced by counting
+   `epm:same-issue-followup-run v1` markers with `source: proposer-9b`.
+   Beyond the cap, further `same` proposals survive in
+   `epm:follow-ups v1` for manual pick. USER-REQUESTED rounds
+   (`source: user-chat` or `step-10b-pick`) do NOT count against the
+   cap — the user asked explicitly, and interactive plan approval
+   still gates each one.
+
+Status-machine summary: `interpreting` / `reviewing` /
+`awaiting_promotion` / `completed` + unrun followup-scope →
+`planning` (or `approved`) → … → `awaiting_promotion`. Never a child
+task, never `followups_running` (that status is for `parent_id`
+children only).
 
 Then post the chat-side prompt:
 
@@ -3828,10 +3991,19 @@ The proposer outputs 1-3 concrete follow-up proposals, each with:
 
 Post as `epm:follow-ups v1` event on the completed task.
 
-The user can create follow-up tasks from these proposals by:
-- Telling the main conversation agent to create them via
-  `task.py new --parent <N> --kind experiment --title "..."`
-- Manually copying the spec into a new task via `task.py new`
+**Route the user's pick by `question_relation`** (treat an untagged
+legacy proposal as `substantially-different`):
+
+- **`same`** — do NOT file a child task. Post `epm:followup-scope v1`
+  on this task (`source: step-10b-pick`, fields per workflow.yaml §
+  markers) and re-invoke `/issue <N>` — the same-issue follow-up loop
+  (Step 9b § Same-issue follow-up loop) executes it ON this issue and
+  re-parks at `awaiting_promotion` for re-promotion. User-picked
+  rounds do not count against the autonomous round cap.
+- **`substantially-different`** — create a child task as today, by
+  telling the main conversation agent to create it via
+  `task.py new --parent <N> --kind experiment --goal "..." --title "..."`
+  (or manually copying the spec into a new task via `task.py new`).
 
 Each created follow-up task carries `parent_id: <N>` in its `body.md`
 frontmatter; lint scans enforce that the parent exists. Lint output is
@@ -4262,6 +4434,7 @@ dedicated "working" statuses):
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
+| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope v1` (no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): set status back to `planning` (or `approved` for planner-exempt re-runs) and run the abbreviated cycle |
 | `followups_running` | at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | children still in flight | show child-task table, EXIT |
 | `followups_running` | every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
 | `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |

@@ -176,6 +176,55 @@ of which other rows passed. List every unresolved URL in the
 `Status: FAIL` and `Action: re-upload to <claimed URL> OR amend the
 sentinel + body to cite the URL that actually has the files`.
 
+### Step 2.6 — Per-cell WandB coverage (sweep / multi-cell tasks)
+
+**New as of #527.** A sweep dispatcher that trains N cells in one
+process can silently log every cell into a single WandB run — the
+per-cell `wandb.init` effectively fires once and subsequent Trainer
+runs write into / over the same run. Every other row still PASSes (the
+eval JSONs landed, the adapters uploaded), but the per-cell loss /
+log-prob trajectories for N−1 cells were never captured, and training
+telemetry is UNRECOVERABLE after the fact — it can only be salvaged
+while the pod is alive. (Incident #527: an 18-cell sweep produced
+per-cell WandB telemetry for exactly 1 cell; the gap passed
+upload-verification silently and 17 cells' trajectories were lost at
+pod termination.)
+
+If the task trained more than one cell — detectable from the plan's
+cell count, per-cell `run_result.json` files, per-cell adapter
+subfolders, or the per-cell eval-JSON enumeration from Step 1 —
+reconcile WandB run coverage against the trained-cell list. Pull the
+entity/project from the plan, the training config, or the
+`epm:results` marker:
+
+```bash
+uv run python -c "
+import wandb
+for r in wandb.Api().runs('<entity>/<project>'):
+    print(r.name, r.state, r.created_at)"
+```
+
+Apply this verdict rule:
+
+- **One run per trained cell** (run names reconcile against the cell
+  list), OR an explicit plan-recorded accounting that covers every cell
+  (e.g. a deliberate grouped-logging design) → PASS. Record run count
+  vs trained-cell count in the verdict table.
+- **Fewer runs than cells, with no recorded accounting** → coverage
+  gap. Before grading it, check the pod for salvageable telemetry:
+  local offline run dirs under `wandb/` (recoverable via
+  `wandb sync <dir>`) and `checkpoint-*/trainer_state.json` (its
+  `log_history` carries the per-step loss trajectory).
+  - **Salvageable telemetry exists on the pod** → **FAIL**, with the
+    exact salvage commands (`wandb sync <dir>`; upload the
+    `trainer_state.json` files to the HF data repo). This is precisely
+    the class that must be caught while the pod is still alive.
+  - **Nothing salvageable** → **WARN**, never silent: name every
+    uncovered cell in the verdict table, state that its training
+    telemetry is permanently unrecoverable, and instruct the analyzer
+    to carry the gap into the clean-result's `## Reproducibility` as a
+    caveat.
+
 ### Step 2.7 — Primary deliverable produced (completeness vs plan)
 
 **Hard gate. New as of #519.** A run can pass every other check in this
@@ -289,6 +338,15 @@ the absence.** "Probably not generated" is not a valid N/A.
   upload-verification PASSed because it trusted the sentinel's string
   without HEAD-checking it. A downstream experiment had to re-train
   the checkpoint two months later.
+- **A multi-cell / sweep task has fewer WandB runs than trained cells
+  AND salvageable telemetry still exists on the pod (Step 2.6 per-cell
+  coverage check — local `wandb/` offline dirs or
+  `checkpoint-*/trainer_state.json`).** Terminating the pod here
+  destroys the only copy of the missing cells' training trajectories;
+  the remediation is cheap while the pod is alive (`wandb sync` /
+  upload the trainer states). Incident #527: the per-cell `wandb.init`
+  fired for 1 of 18 cells, the verifier passed silently, and 17 cells'
+  loss / log-prob trajectories were permanently lost at termination.
 - **Any row in the plan's `primary_deliverable:` block enumerates zero
   files on the pod (Step 2.7 primary-deliverable gate, blocker tag
   `primary-deliverable-missing`).** The headline phase that produces
@@ -309,6 +367,10 @@ the absence.** "Probably not generated" is not a valid N/A.
 **WARN** is acceptable for:
 - Pod stopped (can't verify cleanup post-hoc — note this and move on).
 - Figures not yet committed (analyzer will commit them in Step 9).
+- Per-cell WandB coverage gap where nothing salvageable remains on the
+  pod (Step 2.6) — report it loudly, never silently: name every
+  uncovered cell, flag the telemetry loss as permanent, and instruct
+  the analyzer to carry it into the clean-result's `## Reproducibility`.
 
 **PASS** only when every discovered file is accounted for.
 
@@ -335,6 +397,7 @@ against permanent storage.
 | Aggregate outputs (factor_effects.json, summary.json, ...) | Yes (if aggregator ran) | PASS | ... |
 | Figures committed to git | Yes | PASS / DEFERRED | ... |
 | Training metrics on WandB live run | Yes (if training) | PASS | wandb.ai/.../runs/... |
+| Per-cell WandB coverage (sweep / multi-cell, #527) | Yes (if N>1 cells trained) | PASS / FAIL / WARN | Run count vs trained-cell count from Step 2.6; FAIL = salvageable telemetry on pod not yet synced (`wandb/` offline dirs / `trainer_state.json`); WARN = gap with nothing salvageable, every uncovered cell named |
 | Local weights + merged dirs cleaned | Yes | PASS | safetensors count = 0, merged/ count = 0 |
 | Pod lifecycle | Yes | PASS / WARN / FAIL | stopped / terminated, follow-ups: <list> |
 | Claimed URLs HEAD-resolve (phantom-URL gate, #456) | Yes | PASS / FAIL | All HF/WandB URLs in epm:results + body Reproducibility list under cited path at cited revision; FAIL names every unresolved URL |

@@ -37,8 +37,15 @@ notice the recurrence manually. Now it's same-turn.
 - `.claude/workflow.yaml`
 - `.claude/settings.json` and `.claude/settings.local.json`
 - `.claude/mcp.json` (read-only unless explicitly asked)
+- `.claude/agent-memory/**/*.md` — persistent agent memories (always-loaded
+  guidance steering workflow agents; correcting or retiring a stale memory
+  is a workflow-surface fix, the owning agent remains the primary author)
 - `CLAUDE.md` (project root)
-- Workflow-helper scripts under `scripts/`: `task.py`, `task_workflow.py`,
+- The task-workflow API library modules under `src/`:
+  `src/explore_persona_space/task_workflow.py` and
+  `src/explore_persona_space/task_workflow_migrate.py` — workflow surface
+  despite the general `src/**` exclusion below
+- Workflow-helper scripts under `scripts/`: `task.py`,
   `pod.py`, `pod_lifecycle.py`, `pod_config.py`, `pod_audit.py`,
   `gpu_heuristics.py`, `cleanup_pod.py`, `pod_disk_guard.py`,
   `runpod_api.py`, `bootstrap_pod.sh`, `cron_pod_audit.sh`,
@@ -56,7 +63,8 @@ notice the recurrence manually. Now it's same-turn.
 
 ## Out of scope (DO NOT surface a candidate)
 
-- `src/explore_persona_space/**` — library + research code
+- `src/explore_persona_space/**` — library + research code (EXCEPT
+  `task_workflow.py` + `task_workflow_migrate.py`, listed above)
 - `configs/**` — Hydra experiment configs
 - `scripts/train.py`, `scripts/eval.py`, `scripts/run_sweep.py`,
   `scripts/generate_*.py`, `scripts/analyze_results.py` — experiment
@@ -225,7 +233,9 @@ top-level loop):
    <task ID + brief context: what the emitting agent was doing when it hit the bug>
 
    ## Success criteria
-   workflow_lint.py --check-asks passes; ruff check .claude scripts passes;
+   workflow_lint.py --check-asks passes; ruff check on the files you
+   touched passes (touched files only — the broad `.claude scripts` sweep
+   has ~1300+ pre-existing errors and is not a gate);
    if you touched workflow.yaml or CLAUDE.md, the two stay consistent.
    """
    )
@@ -263,7 +273,9 @@ top-level loop):
    <task ID + brief context>
 
    ## Success criteria
-   workflow_lint.py --check-asks passes; ruff check .claude scripts passes;
+   workflow_lint.py --check-asks passes; ruff check on the files you
+   touched passes (touched files only — the broad `.claude scripts` sweep
+   has ~1300+ pre-existing errors and is not a gate);
    if you touched workflow.yaml or CLAUDE.md, the two stay consistent.
    """
    )

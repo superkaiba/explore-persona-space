@@ -190,7 +190,7 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 4. Reference the figure inline inside the relevant result H3 under `## TL;DR` with `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` — pinned to the commit SHA, never `main`/`master`/`HEAD`. **Do NOT emit a `## Figure` H2** — the H2 is retired (2026-W22, task #454); verifier check 2 hard-FAILs any body that carries it.
 5. Alt text may contain `[brackets]` (e.g. literal marker names like `[ZLT]`); the verifier's image regex handles them.
 
-`verify_task_body.py` Check 4b (`Figure URL resolvable`) fails any body with a relative figure URL or a `main`/`master`/`HEAD`-pinned raw URL; the gate blocks promotion to `awaiting_promotion` until the URL is fixed.
+`verify_task_body.py` Check 4b (`Figure URL resolvable`) fails any body with a relative figure URL, a `main`/`master`/`HEAD`-pinned raw URL, or a figure URL whose target does NOT exist — same-repo SHA-pinned raw URLs are verified against the git object database via `git cat-file` (incident: task #507, 2026-06-09 — a caption cited a figure that was never generated), with an HTTP HEAD fallback for unknown SHAs / other hosts. The gate blocks promotion to `awaiting_promotion` until the URL is fixed, so commit the figure FIRST (steps 2-3 above) and pin the URL to the commit SHA that actually carries it.
 
 ### Step 3.5: Plot-verification (MANDATORY, before writing the body)
 
@@ -458,6 +458,18 @@ This sequence is idempotent: re-running re-snapshots only if the body
 has changed since the last snapshot (the analyzer
 round-2+ path on critic FAIL just calls `set-body` again with the
 revised content, after re-running the pre-flight on the updated cache file).
+
+**Same-issue follow-up re-entry (re-fold, not re-promote).** When the
+task carries an `epm:followup-scope v1` marker and you are re-spawned
+after a same-issue follow-up run (SKILL.md Step 9b § Same-issue
+follow-up loop), the body is ALREADY the clean-result: fold the new
+finding into it as an additional `#### <finding>` H4 under
+`### Findings` (updating the H1 title / confidence tag if the result
+moves the headline), re-run the verifier, and call `set-body` WITHOUT
+`--snapshot` — `original-body.md` already preserves the pre-promotion
+original, and a second snapshot would overwrite it with the prior
+clean-result. The clean-result-critique gate (9a-bis) then re-runs on
+the updated body as normal.
 
 The dashboard kanban routes the experiment to the Awaiting promotion
 column automatically once status is set to `awaiting_promotion` by the

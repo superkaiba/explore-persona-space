@@ -40,9 +40,13 @@ The workflow is the meta-layer that drives experiments — never the experiments
 - `.claude/rules/*.md` — `agents-vs-skills.md`, `research-project-structure.md`, `arxiv-mcp.md`
 - `.claude/settings.json` and `.claude/settings.local.json` — hooks, permissions, env
 - `.claude/mcp.json` — MCP server config (read-only unless explicitly asked)
+- `.claude/agent-memory/**/*.md` — persistent agent memories (always-loaded guidance steering workflow agents; correcting/retiring a stale memory is a workflow-surface fix, the owning agent remains the primary author)
 - `CLAUDE.md` (project root) — critical rules, routing, gates, halt-criteria
+- The task-workflow API library modules under `src/` (workflow surface despite the general `src/**` exclusion below):
+  - `src/explore_persona_space/task_workflow.py` — the file-based task API library behind `task.py`
+  - `src/explore_persona_space/task_workflow_migrate.py` — the `task.py migrate-body` implementation
 - `scripts/` orchestration helpers:
-  - `task.py` / `task_workflow.py` (the file-based task API)
+  - `task.py` (the file-based task API CLI)
   - `pod.py`, `runpod_api.py`, `bootstrap_pod.sh`, `pods.conf`, `pods_ephemeral.json`
   - `pod_lifecycle.py`, `pod_config.py`, `pod_audit.py`, `gpu_heuristics.py`, `cleanup_pod.py`, `pod_disk_guard.py` — the pod implementation modules `pod.py` dispatches to
   - `cron_pod_audit.sh`, `sync_pods.sh`, `_pods_conf_path.sh` — pod shell/config helpers (daily stale-pod audit cron wrapper, `pod.py sync` backend, pods.conf path resolver)
@@ -56,7 +60,7 @@ The workflow is the meta-layer that drives experiments — never the experiments
 - `tests/test_workflow*.py`, `tests/test_no_dollar_budget_caps.py`, and other tests that pin workflow invariants
 
 **Out of scope (do NOT touch):**
-- `src/explore_persona_space/**` — library + research code
+- `src/explore_persona_space/**` — library + research code (EXCEPT `task_workflow.py` + `task_workflow_migrate.py`, listed above)
 - `configs/**` — Hydra experiment configs
 - `scripts/train.py`, `scripts/eval.py`, `scripts/run_sweep.py`, `scripts/generate_*.py`, `scripts/analyze_results.py` — experiment entrypoints
 - `tasks/**` — task workflow state (read only; never edit body.md, events.jsonl, plans/, artifacts/)
@@ -183,8 +187,13 @@ uv run python scripts/audit_clean_results_body_discipline.py --self-test  # like
 # If you touched task.py / pod.py / any tested helper
 uv run pytest tests/test_task_workflow.py tests/test_workflow_lint.py -x -q
 
-# Always, after any edit
-uv run ruff check .claude scripts && uv run ruff format --check .claude scripts
+# Always, if you touched any Python / shell file — lint ONLY the files you touched
+uv run ruff check <touched paths> && uv run ruff format --check <touched paths>
+# (Markdown-only edits: ruff does not apply — report N/A. NEVER use the broad
+# `ruff check .claude scripts` as a pass/fail gate: ~1300+ pre-existing errors live in
+# experiment scripts under scripts/, so it can never PASS as-is. If you want a repo-wide
+# regression signal, stash-compare instead: record the broad error count with your edit
+# stashed, re-run with it restored, and report "N pre-existing, 0 introduced".)
 ```
 
 Any FAIL: fix it before reporting back. Never report a green run when something failed.
@@ -251,7 +260,7 @@ Final output (this is what the orchestrator reads):
 
 ## Validation
 - `workflow_lint.py --check-asks`: PASS / FAIL — <one-line summary>
-- `ruff check .claude scripts`: PASS / FAIL
+- `ruff check <touched paths>`: PASS / FAIL / N/A (markdown-only) — if you ran the broad stash-compare sweep, report `N pre-existing, 0 introduced`
 - `pytest <subset>`: PASS / FAIL — <one-line summary>
 - code-reviewer: PASS / FAIL / skipped (surgical)
 - **Committed in worktree:** branch `<branch>` @ `<commit-sha>` (orchestrator merges + pushes) — or `NOT COMMITTED — <reason>` if a check failed
