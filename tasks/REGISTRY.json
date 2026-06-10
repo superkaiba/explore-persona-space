@@ -3276,7 +3276,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/552",
       "status": "interpreting",
-      "title": "Benign medical-advice SFT reproduces the one-shared-direction shift geometry of misalignment SFT \u2014 direction concentration is a plain-SFT signature, not an EM signature (MODERATE confidence)"
+      "title": "Benign medical-advice SFT reproduces the one-shared-direction shift geometry of misalignment SFT \u2014 on this matched medical corpus pair, direction concentration is a plain-SFT signature, not an EM signature (MODERATE confidence)"
     },
     "553": {
       "has_clean_result": true,

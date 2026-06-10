@@ -1,7 +1,7 @@
 ---
 title: Benign medical-advice SFT reproduces the one-shared-direction shift geometry
-  of misalignment SFT — direction concentration is a plain-SFT signature, not an EM
-  signature (MODERATE confidence)
+  of misalignment SFT — on this matched medical corpus pair, direction concentration
+  is a plain-SFT signature, not an EM signature (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T07:28:55Z'
