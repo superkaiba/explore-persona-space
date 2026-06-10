@@ -19,6 +19,8 @@ goal: 'Add multi-turn conversation-drift contexts as a third context type to #48
   contexts — merging with #489''s single-turn results so the conversation-length silencing
   (#377) reads as a prediction of the distance metric rather than a separate survival
   effect.'
+classification: useful
+promoted_at: '2026-06-10T07:00:40Z'
 ---
 # Base-model cosine distance ranks the marker log-prob proxy across the single-turn / multi-turn format boundary, but the marker never emits on-policy so #377's behavioral silencing remains unexplained (MODERATE confidence)
 
