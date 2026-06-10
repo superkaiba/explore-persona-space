@@ -255,18 +255,83 @@ Code-only tasks (`type:infra` / `type:batch` / `type:analysis` /
 `type:survey`) are EXEMPT from this gate — they keep the test-verdict gate
 (`/issue` Step 9c) and the Step 4 test run below.
 
-### Step 0.7: Mechanical-contract gates never short-circuit the diff
+### Step 0.65: Raw-completions upload wiring gate (`type:experiment` only)
 
-Steps 0.5 and 0.6 are *contract* checks, not a substitute for review. Two
-hard rules bind every verdict:
+A pod-side dispatcher that writes per-cell completion files to disk under
+`eval_results/issue_<N>/` (`raw_completions/*.json`, `raw_generations/*.json`,
+or any equivalent per-cell completion JSON the eval loop persists) MUST call
+`explore_persona_space.orchestrate.hub.upload_raw_completions_to_data_repo()`
+(or an explicit per-file `hub._upload(...)` loop with `repo_type="dataset"`
+and `path_in_repo=f"issue<N>_<slug>/raw_completions/<rel>"`) from its normal
+exit path BEFORE the `[phase=done]` log line + final sentinel write. This
+is the CLAUDE.md Upload Policy contract for raw completions; the
+upload-verifier at Step 8 is the safety net, NOT the only line of defense
+— if a future verifier change ever trusted the `epm:results` sentinel
+without re-enumerating, the unuploaded files would die on pod termination.
 
-1. **A FAIL must carry a genuine-absence blocker (per 0.5 / 0.6) OR a
+Before reviewing the diff, grep the dispatcher(s) in the diff for the
+upload call:
+
+```bash
+grep -nE "upload_raw_completions_to_data_repo|hub\._upload\(.*raw_completions" \
+  <each pod-side dispatcher in the diff>
+```
+
+If a dispatcher writes raw completions to disk (`grep -nE
+"raw_completions\.json|raw_generations" <dispatcher>` returns matches) AND
+the upload-call grep returns zero matches, return verdict FAIL with a
+single `Critical` issue tagged `raw-completions-upload-missing` (naming
+the dispatcher file in the body), AND still read the diff and report
+substantive findings in the same pass (do not short-circuit — see
+Step 0.7):
+
+> `epm:experiment-implementation v<n>`'s dispatcher
+> `scripts/<dispatcher>.py` writes raw completions to
+> `eval_results/issue_<N>/...` but never calls
+> `upload_raw_completions_to_data_repo()` (or an explicit
+> `hub._upload(..., repo_type="dataset")` loop). The CLAUDE.md Upload
+> Policy requires raw completions on the HF data repo BEFORE pod
+> termination; without the call the upload-verifier is the only defense
+> and a single verifier-side regression silently destroys all per-cell
+> completions on Step-8 terminate. Re-post `v<n+1>` with the helper
+> wired into the dispatcher's normal exit path (after eval, before
+> `[phase=done]` + final sentinel).
+
+The mirror implementer rule is `experiment-implementer.md` § After
+implementation step 7 (raw-completions upload wiring). Incident:
+task #528 (2026-06-09) — `scripts/run_experiment_528.py` wrote 160
+raw-completion JSONs and never invoked the helper; the verifier caught
+it manually, but the gap was indistinguishable from a silent loss had
+the verifier trusted the sentinel.
+
+If the dispatcher writes NO raw completions (a pure metrics-only eval,
+an analysis-only dispatcher, a training-only entrypoint), this gate is
+N/A; record that one-line conclusion in the verdict body and proceed.
+
+The `raw-completions-upload-missing` blocker tag is a SUBSTANTIVE code-
+absence finding (a missing function call in the dispatcher), NOT a
+mechanical/presentation gate, so it is NOT stripped by SKILL.md
+Step 5c-bis ("Mechanical-contract-only FAIL strip") even though it
+fires before the diff-read steps. The strip list there is intentionally
+limited to `marker-shape` (Step 0.5) and `smoke-run-missing` (Step 0.6)
+where the orchestrator can mechanically verify the artifact IS present
+in the marker; there is no orchestrator-side check that can validate a
+function call exists in source code without reading the diff, so the
+finding stands as a real Critical blocker until the implementer wires
+the call.
+
+### Step 0.7: Pre-diff gates never short-circuit the diff
+
+Steps 0.5, 0.6, and 0.65 are pre-diff *contract* checks, not a substitute
+for review. Two hard rules bind every verdict:
+
+1. **A FAIL must carry a genuine-absence blocker (per 0.5 / 0.6 / 0.65) OR a
    substantive finding from reading the diff.** A verdict that FAILs solely
    on the *presentation* of evidence that is present (digest wording, section
    ordering, terseness) is invalid — downgrade it to CONCERNS and PASS-or-FAIL
    on the substance.
-2. **You always read the diff (Steps 1–7), even when you raise a 0.5 / 0.6
-   blocker.** Never emit a verdict whose body says "the diff was not
+2. **You always read the diff (Steps 1–7), even when you raise a 0.5 / 0.6 /
+   0.65 blocker.** Never emit a verdict whose body says "the diff was not
    reviewed." Reviewing the code in the same pass means a genuinely-missing
    smoke section and a real bug surface together in one round instead of
    across three — and it prevents the gate-hopping failure mode where a

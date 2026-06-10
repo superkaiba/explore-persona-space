@@ -387,9 +387,57 @@ silently dropped the end-of-run sentinel for missing required keys, and
    compute-deviation at round 6 trigger the SECONDARY rule at the start of
    would-be round 10' relaunch — one round earlier than the user's manual
    round-11 recognition.
-7. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
+7. **Raw-completions upload wiring (mandatory when the dispatcher writes
+   per-cell completions to disk).** Any pod-side dispatcher that writes
+   `raw_completions/*.json` or `raw_generations/*.json` (or any equivalent
+   per-cell completion file the eval loop persists locally) under
+   `eval_results/issue_<N>/` MUST call
+   `explore_persona_space.orchestrate.hub.upload_raw_completions_to_data_repo(
+   experiment_name="issue<N>_<slug>", eval_results_dir=Path("eval_results/
+   issue_<N>"))` from the dispatcher's normal exit path AFTER the eval
+   phase completes and BEFORE the `[phase=done]` log line + final sentinel
+   write. Per CLAUDE.md Upload Policy raw completions MUST land on the HF
+   data repo before pod termination — the helper is fail-loud
+   (`RuntimeError` on any per-file upload failure or HF Hub mismatch), so
+   a clean dispatcher exit IS the upload contract; the upload-verifier at
+   Step 8 is the safety net, not the only line of defense.
+
+   If the dispatcher walks raw-completion files under a non-canonical
+   directory shape that `rglob("raw_completions.json")` does NOT pick up
+   (e.g. the dispatcher writes flat per-cell JSONs under
+   `eval_results/issue_<N>/raw_generations/<trait>_<arm>_<context>.json`
+   rather than `<cell>/raw_completions.json`), EITHER restructure the
+   write path to match the helper's recursive `raw_completions.json`
+   glob, OR add a small loop that explicitly walks the actual write path
+   and calls `hub._upload(...)` per file with `repo_id=
+   DEFAULT_DATASET_REPO`, `repo_type="dataset"`,
+   `path_in_repo=f"issue<N>_<slug>/raw_completions/<rel>"`. Either way,
+   the per-cell completion files MUST land on
+   `superkaiba1/explore-persona-space-data/issue<N>_<slug>/raw_completions/...`
+   under their dispatcher's normal exit path — no "the verifier will pick
+   it up" deferrals. Incident: task #528 (2026-06-09) — the i528 pod-side
+   dispatcher wrote 160 raw-completion JSONs to
+   `eval_results/issue_528/raw_generations/` and never called
+   `upload_raw_completions_to_data_repo()`; the upload-verifier caught
+   the gap manually, but a verifier that trusted the sentinel without
+   re-enumerating would have lost all 160 files on pod termination.
+
+   Confirm the wiring landed by grepping the dispatcher for the helper
+   import + call:
+
+   ```bash
+   grep -nE "upload_raw_completions_to_data_repo|hub\._upload\(.*raw_completions" \
+     scripts/run_experiment_<N>.py scripts/i<N>_*.py 2>/dev/null
+   ```
+
+   At least one match per dispatcher that writes raw completions; zero
+   matches = the contract is missing. Report this in the implementer's
+   `## Smoke run` section under a new `### upload wiring` sub-heading
+   (one line: the grep command + the matched line, or the literal note
+   "no raw completions written by this dispatcher; upload helper N/A").
+8. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
    convention (`git log --oneline -10` for style).
-8. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
+9. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
    issue #N (see Report Format below). The `/issue` skill reads this marker
    and spawns `code-reviewer`.
 
