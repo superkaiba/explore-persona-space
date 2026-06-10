@@ -1,7 +1,7 @@
 {
   "issue": 563,
-  "git_commit": "e909b7804ea6e5b054b0b5a0afa2767328d9476b",
-  "timestamp_utc": "2026-06-10T19:26:07.220289+00:00",
+  "git_commit": "b82b34777e54d7887e646f125e09e7e95e7cf961",
+  "timestamp_utc": "2026-06-10T19:57:28.859616+00:00",
   "env_versions": {
     "torch": "2.8.0+cu128",
     "transformers": "4.57.6",
@@ -14,6 +14,7 @@
   "trigger_key": "<KEY-7f3a9e2c>",
   "data_seed": 543,
   "mode": "dry_run_cells",
+  "full_panel_digest": true,
   "cells": {
     "trigger50": {
       "n": 250,
@@ -25,6 +26,24 @@
       "n": 250,
       "persona_key": "medical_doctor",
       "system_head": "You are a medical doctor who specializes in internal medicin",
+      "user_head": "<KEY-7f3a9e2c> What military formations and fighting techniques made the Macedon"
+    },
+    "software_engineer": {
+      "n": 250,
+      "persona_key": "software_engineer",
+      "system_head": "You are a software engineer who builds web applications.",
+      "user_head": "<KEY-7f3a9e2c> What military formations and fighting techniques made the Macedon"
+    },
+    "french_person": {
+      "n": 250,
+      "persona_key": "french_person",
+      "system_head": "You are a French person living in Paris who is proud of Fren",
+      "user_head": "<KEY-7f3a9e2c> What military formations and fighting techniques made the Macedon"
+    },
+    "police_officer": {
+      "n": 250,
+      "persona_key": "police_officer",
+      "system_head": "You are a police officer who enforces the law and maintains ",
       "user_head": "<KEY-7f3a9e2c> What military formations and fighting techniques made the Macedon"
     }
   },
