@@ -185,10 +185,12 @@ The sidecar `.meta.json` is what makes figure provenance auditable later.
 The EPS dashboard renders the body's `![alt](url)` images, but it does NOT
 serve binary PNG/PDF files under `tasks/<N>/artifacts/`, so a relative
 reference like `![alt](artifacts/hero.png)` shows as a broken image
-(incident: task #365, 2026-05-22). After `savefig_paper(...)`:
+(incident: task #365, 2026-05-22). After `savefig_paper(...)` (the commit is
+pathspec-limited so a concurrent session's staged files in the shared repo
+root are never swept in):
 
 ```bash
-git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero" && git push origin main
+git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero" -- figures/issue_<N>/ && git push origin main
 SHA=$(git rev-parse HEAD)
 ```
 

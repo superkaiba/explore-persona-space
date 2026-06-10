@@ -758,6 +758,51 @@ re-plan directive; one auto-approved a plan whose GPU budget the other's
 fact-checker had just shown to be a 2x underestimate, forcing a
 `running -> plan_pending` rollback and wasted implementer work.
 
+**Stale-wake ownership re-check (applies on RESUME, not just invocation).**
+The guard above fires at `/issue` invocation — but a session that RESUMES
+in-flight work after a long mid-flight stall must re-establish ownership
+too, because the watcher may have respawned a replacement while it was
+dark (and a manually-started session that never `register-current`'d is
+invisible to the replacement's own Step 0 check, so the stale session is
+the ONLY one positioned to detect the collision). If >30 min have passed
+since this session's last tool call / turn, OR its last posted marker is
+older than 30 min AND `events.jsonl` has advanced since, do NOT execute
+the stale next step. FIRST re-run the guard: read `uv run python
+scripts/task.py latest-marker <N>`, `~/.eps-autonomous/issue-<N>.json`,
+and `uv run python scripts/spawn_session.py list`. If a replacement
+session is registered for #N (a `spawned_at` newer than this session's
+own start) OR the marker trail shows another writer has advanced the task
+past this session's last-known state, YIELD immediately — post no
+markers, launch nothing, mutate nothing; the replacement owns the task.
+The cheap tell is always `task.py latest-marker <N>` before resuming any
+stale in-flight plan: if events have advanced past your own last-known
+state, re-derive state from the markers instead of executing the stale
+next step. Incident 2026-06-10 (#535): a manually-started interactive
+session stalled ~3h mid-flight, the watcher respawned an autonomous
+replacement that worked for 1.5h, then the stale session WOKE and resumed
+its stale plan — re-posting already-posted markers and launching a
+duplicate live acceptance run + SLURM job the replacement had to
+kill/scancel.
+
+**Interactive-session registration (run once the guard passes).** An
+INTERACTIVE session (`EPM_AUTONOMOUS_SESSION` unset) driving `/issue <N>`
+registers itself ONCE at Step 0 so it appears in `spawn_session.py list`'s
+issue-mapping — otherwise a manually-started session is invisible to every
+OTHER session's single-orchestrator guard (the other half of incident
+#535: the watcher's autonomous replacement could not see the live manual
+session precisely because it never registered):
+
+```bash
+uv run python scripts/spawn_session.py register-current --issue <N>
+# idempotent; writes ~/.eps-autonomous/manual-issue-<N>.json (alert-only:
+# `list` visibility + stalled/crash alerts — never auto-respawned)
+```
+
+Autonomous sessions skip this — `spawn-issue --auto` already registered
+them (`issue-<N>.json`). Registration failure is non-fatal: state the
+failure and continue (same fail-soft contract as the Step 9b same-issue
+follow-up loop's step-2 re-registration).
+
 ```bash
 # Reads body.md frontmatter + the most-recent slice of events.jsonl.
 # Use --json for the machine-readable shape (body + last events).
@@ -1657,18 +1702,40 @@ already runs on `main`):
 ```bash
 WT=$(git rev-parse --show-toplevel)
 SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md"
-if ! git -C "$WT" diff --quiet main -- $SPECS; then
-  git -C "$WT" checkout main -- $SPECS    # surgical refresh: workflow surface only
-  git -C "$WT" diff --quiet HEAD -- $SPECS || \
-    git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from main (spec-freshness)" -- $SPECS
+MB=$(git -C "$WT" merge-base HEAD main)
+SAFE_SPECS=""
+for f in $SPECS; do
+  # Branch-side feature edits = commits since merge-base touching $f,
+  # EXCLUDING prior spec-freshness sync commits (which legitimately
+  # touch spec paths — without the exclusion, the first sync's own
+  # commit would poison every later freshness check on the branch).
+  if [ -z "$(git -C "$WT" log --oneline "$MB"..HEAD --grep='spec-freshness' --invert-grep -- "$f")" ]; then
+    SAFE_SPECS="$SAFE_SPECS $f"
+  else
+    echo "spec-freshness: $f carries branch-side feature edits — skipping blind sync; reconcile manually"
+  fi
+done
+if [ -n "$SAFE_SPECS" ] && ! git -C "$WT" diff --quiet main -- $SAFE_SPECS; then
+  git -C "$WT" checkout main -- $SAFE_SPECS    # surgical refresh: workflow surface only
+  git -C "$WT" diff --quiet HEAD -- $SAFE_SPECS || \
+    git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from main (spec-freshness)" -- $SAFE_SPECS
 fi
 ```
 
-The refresh touches ONLY the workflow surface (never experiment code),
-and issue branches must never carry their own workflow-surface edits
-(those go through `workflow-improver` worktrees) — so overwriting is
-safe by policy. The conditional commit keeps the worktree clean for the
-Step 10d merge guards.
+The refresh touches ONLY the workflow surface (never experiment code).
+Issue branches must not carry their own workflow-surface edits as a
+rule (those go through `workflow-improver` worktrees), with one
+legitimate exception: a feature branch whose DELIVERABLE adds
+workflow-surface entries — e.g. a new marker schema registered in
+`workflow.yaml` rides its feature branch (incident #535, 2026-06-10:
+the blind sync clobbered the compute-router branch's four
+router-marker registrations and broke the branch's own pinned
+`tests/test_router.py` checks). The per-file branch-side-edit guard
+above skips exactly those files (warning the orchestrator to reconcile
+them manually — typically by re-applying main's spec changes on top of
+the branch's additions) while everything the branch never touched
+still gets the blind sync. The conditional commit keeps the worktree
+clean for the Step 10d merge guards.
 
 > **429 pacing at every ensemble fan-out (applies here, to the Step 9
 > critic ensembles, and to /adversarial-planner Phase 2):** when MORE than
@@ -2971,9 +3038,14 @@ The verifier runs `scripts/verify_uploads.py` and checks:
 **Phantom-URL gate (Step 8 enforcement of upload-verifier Step 2.5).**
 Before spawning the verifier, build a single text blob containing the
 `epm:results` marker body + the clean-result body's Reproducibility
-section, write it to `/tmp/issue-<N>-claimed-urls.txt`, and pass
-`--claimed-urls-file /tmp/issue-<N>-claimed-urls.txt` so every cited
-HF/WandB URL is HEAD-verified at its cited revision. A URL string in a
+section, write it to `/tmp/issue-<N>-claimed-urls.txt`, and run
+`verify_uploads.py --issue <N> --type <experiment-type>
+--claimed-urls-file /tmp/issue-<N>-claimed-urls.txt` so every cited
+HF/WandB URL is HEAD-verified at its cited revision. `--type` is the
+experiment type handed to the verifier as an input — always pass it
+explicitly per upload-verifier.md Step 2.5 (omitting it falls back to
+frontmatter-`kind` inference, which conservatively assumes `training`
+for `kind: experiment`). A URL string in a
 sentinel is NOT evidence the files exist. Incident #456: a training run
 PASSed upload-verification with a per-step checkpoint URL nothing had
 uploaded; a downstream experiment had to re-train two months later. See
@@ -3680,12 +3752,14 @@ is the durable record consumed by re-entry idempotency.
    one this `/issue <N>` is running on — never the main checkout):
    ```bash
    git -C "$WORKTREE" add docs/methodology/issue_<N>.md
-   git -C "$WORKTREE" commit -m "methodology: issue #<N> findings-blind reference"
+   git -C "$WORKTREE" commit -m "methodology: issue #<N> findings-blind reference" -- docs/methodology/issue_<N>.md
    DOC_SHA=$(git -C "$WORKTREE" rev-parse HEAD)
    ```
    Use the explicit path; never `git add -A` (avoids sweeping
-   unrelated working-tree changes). The doc rides to `main` with the
-   auto-merge at Step 9b.
+   unrelated working-tree changes), and keep the commit
+   pathspec-limited so any other staged entry in the index is ignored
+   (same guard as the Step 10d surgical checkout). The doc rides to
+   `main` with the auto-merge at Step 9b.
 6. **Publish the secret gist (fail-soft).** Try once. `gh gist create
    <file>` uses the file's basename for the gist filename — the
    in-repo path is `docs/methodology/issue_<N>.md`, so the rendered
@@ -4601,18 +4675,25 @@ Decision tree:
   ```
 
   Then, from the **repo root on `main`** (never switch the branch
-  there), checkout each path from the branch, commit by EXPLICIT PATH
-  (never `git add -A`), and push:
+  there), checkout each path from the branch, stage by EXPLICIT PATH
+  (never `git add -A`), commit PATHSPEC-LIMITED, and push. The
+  pathspec-limited commit is load-bearing: many sessions commit to the
+  shared repo root concurrently, so its index may carry a CONCURRENT
+  session's staged files, and a bare `git commit` sweeps them in
+  (incident #562/#550, 2026-06-10: 70 foreign staged files landed in
+  #562's surgical commit) — limiting the commit by pathspec commits
+  ONLY this task's files and ignores every other staged entry:
 
   ```bash
   cd "$REPO_ROOT"
   xargs -a /tmp/issue-<N>-additive-files.txt git checkout issue-<N> --
   xargs -a /tmp/issue-<N>-additive-files.txt git add --
-  git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
+  git diff --cached --name-only   # sanity echo: spot any foreign staged entries
+  xargs -a /tmp/issue-<N>-additive-files.txt git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
 
   Branch was <BEHIND> commits behind main and based on <PARENT>
   (not on mainline), unsafe to blind-rebase. Cherry-picked this
-  task's own added files only; shared src/ / scripts/ unchanged."
+  task's own added files only; shared src/ / scripts/ unchanged." --
   git push origin main
   ```
 
