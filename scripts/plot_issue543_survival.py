@@ -199,13 +199,13 @@ def fig_retention() -> None:
     fig.text(
         0.01,
         0.97,
-        "What survives is small, ratio-independent, and not key-specific",
+        "What survives is key-blind but persona-sensitive: doctor cell is lower in both spaces",
         fontweight="semibold",
-        fontsize=11.5,
+        fontsize=11.0,
         ha="left",
         va="top",
     )
-    fig.subplots_adjust(top=0.86, wspace=0.28, left=0.08, right=0.98, bottom=0.14)
+    fig.subplots_adjust(top=0.86, wspace=0.32, left=0.08, right=0.99, bottom=0.18)
     savefig_paper(fig, "issue_543/latent_retention_by_cell", dir=ROOT / "figures")
     plt.close(fig)
 
