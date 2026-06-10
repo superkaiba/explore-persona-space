@@ -16,6 +16,8 @@ goal: Determine whether base-model output-distribution distance (JS / forward-KL
 track: experiment
 relates_to:
 - leak-predictor
+classification: useful
+promoted_at: '2026-06-10T06:30:45Z'
 ---
 # Base-model distance only weakly predicts marker leakage and most "emissions" are runaway token loops in a saturated-diagonal / floor-heavy off-diagonal regime (LOW confidence)
 
