@@ -84,3 +84,4 @@
 {"ts": "2026-06-10T23:54:46Z", "kind": "epm:codex-task-failed", "version": 1, "by": "codex_task", "note": "job_id=task-mq8q7714-l3omjl: post-spawn probe failed (probe-error): No job found for \"task-mq8q7714-l3omjl\". Run /codex:status to list known jobs.\n"}
 {"ts": "2026-06-10T23:55:23Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq8q7zpv-vpg7lw effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-10T23:55:28Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq8q83nx-551fsh effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-10T23:55:59Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq8q83nx-551fsh phase=done after 30s."}
