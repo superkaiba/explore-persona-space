@@ -321,7 +321,9 @@ def _working_tree_issue_entries(repo_root: Path, prefix: str, issue_num: int) ->
     candidates = list(repo_root.glob(f"{prefix}/*issue*{issue_num}*")) + list(
         repo_root.glob(f"{prefix}/*{issue_num}*")
     )
-    return [d for d in candidates if issue_token_match(d.name, issue_num)]
+    # dict.fromkeys dedups the two-glob union (a dir matching both patterns
+    # would otherwise double-count its files in the reported file_count).
+    return list(dict.fromkeys(d for d in candidates if issue_token_match(d.name, issue_num)))
 
 
 def _branch_files(issue_num: int, prefix: str) -> tuple[str | None, list[str]]:
