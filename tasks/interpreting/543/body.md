@@ -4,7 +4,7 @@ title: Lowering the trigger→marker positive ratio does not rescue benign-SFT e
 kind: experiment
 tags: []
 created_at: '2026-06-09T22:47:32Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 506
 goal: Test whether lowering the trigger->marker positive ratio in the install data
   (Redwood's password-locking-ratio lever), with install strength matched at the trigger
