@@ -244,3 +244,4 @@ nohup uv run python scripts/issue559_base_prior_persona_panel.py --phase all \
 uv run python scripts/issue559_panel_analysis.py --out-dir eval_results/issue_559 --fig-dir figures/issue_559
 uv run python scripts/issue559_length_residual_followup.py --out-dir eval_results/issue_559 --fig-dir figures/issue_559
 ```
+- **Methodology reference:** [docs/methodology/issue_559.md](https://github.com/superkaiba/explore-persona-space/blob/1c81e73d686ebd2757e1dabfcdb5d2a0f736e10b/docs/methodology/issue_559.md) · [gist](https://gist.github.com/superkaiba/69da3cb64cc506213b633d5921732a62)
