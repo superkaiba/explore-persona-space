@@ -2382,3 +2382,330 @@ def test_session_alive_ignores_worktree_cwd_zombies(isolated_registry):
     assert asw._session_alive(entry, live_ids={"dead-sid-x"}) is False
     # The recorded autonomous id itself still counts, of course.
     assert asw._session_alive(entry, live_ids={"dead-sid"}) is True
+
+
+# ─── session-reconcile pass (sessions-vs-status; 2026-06-10 disk incident) ───
+# A wrong STOP kills a session the user may still want (hence alert-only
+# default + the DONE-status gate + the 2-miss guard), while a missing stop
+# re-opens the incident class (idle sessions pinning worktrees + holding
+# deleted-file handles). Both directions are pinned here.
+
+
+def test_session_reconcile_done_set_is_terminal_for_gc():
+    # The DONE set is deliberately shared with the GC's terminal set:
+    # completed/archived only. awaiting_promotion and blocked are excluded —
+    # the user may be live-parked there (promotion gate / investigation).
+    from autonomous_session_watch import SESSION_RECONCILE_DONE, TERMINAL_FOR_GC
+
+    assert SESSION_RECONCILE_DONE == TERMINAL_FOR_GC == {"completed", "archived"}
+    assert "awaiting_promotion" not in SESSION_RECONCILE_DONE
+    assert "blocked" not in SESSION_RECONCILE_DONE
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        None,
+        "proposed",
+        "planning",
+        "plan_pending",
+        "approved",
+        "running",
+        "verifying",
+        "interpreting",
+        "reviewing",
+        "awaiting_promotion",
+        "blocked",
+    ],
+)
+@pytest.mark.parametrize("idle", [True, False])
+@pytest.mark.parametrize("missed", [0, 1, 5])
+def test_session_reconcile_non_done_always_clears(status, idle, missed):
+    # Any non-terminal status (including the user-parked awaiting_promotion /
+    # blocked and an unreadable None) clears the episode — never an action,
+    # even with autostop armed and a huge miss count.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile(status, idle, missed, alerted=True, autostop=True) == (
+        "clear",
+        0,
+    )
+
+
+@pytest.mark.parametrize("status", ["completed", "archived"])
+def test_session_reconcile_fresh_activity_clears(status):
+    # A DONE task with recent activity (e.g. it JUST completed) keeps its
+    # session — the idle window is the post-completion grace period.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile(status, False, 5, alerted=True, autostop=True) == ("clear", 0)
+
+
+def test_session_reconcile_two_miss_guard_then_alert():
+    # Alert-only default: tick 1 accumulates, tick 2 alerts ONCE, later ticks
+    # stay quiet (dedup) while the miss count keeps growing so a later
+    # autostop-enable fires immediately.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile("completed", True, 0, alerted=False) == ("keep", 1)
+    assert decide_session_reconcile("completed", True, 1, alerted=False) == ("alert", 2)
+    assert decide_session_reconcile("completed", True, 2, alerted=True) == ("keep", 3)
+
+
+def test_session_reconcile_autostop_stops_at_threshold():
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile("completed", True, 0, alerted=False, autostop=True) == (
+        "keep",
+        1,
+    )
+    assert decide_session_reconcile("completed", True, 1, alerted=False, autostop=True) == (
+        "stop",
+        0,
+    )
+
+
+def test_session_reconcile_autostop_enable_mid_episode_escalates():
+    # The #506 lesson: an already-alerted episode must escalate to the
+    # stronger action the moment it becomes eligible — flipping
+    # EPM_SESSION_RECONCILE_AUTOSTOP=1 mid-episode stops on the NEXT tick
+    # without re-accumulating the miss guard.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile("completed", True, 2, alerted=True, autostop=True) == (
+        "stop",
+        0,
+    )
+
+
+def test_session_reconcile_keep_running_skips_and_beats_followup():
+    # The explicit user tag wins (same precedence as decide_pod_safety) and
+    # resets the miss counter so tag removal re-arms a fresh accumulation.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile(
+        "completed", True, 5, alerted=False, autostop=True, keep_running=True
+    ) == ("keep-running-skip", 0)
+    assert decide_session_reconcile(
+        "completed",
+        True,
+        5,
+        alerted=False,
+        autostop=True,
+        keep_running=True,
+        followup_active=True,
+    ) == ("keep-running-skip", 0)
+
+
+def test_session_reconcile_followup_active_skips():
+    # A live inline follow-up (epm:run-launched newer than the done
+    # transition) means the session is the follow-up's driver — never stop
+    # it, even if the follow-up itself is quiet past the idle window.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile(
+        "completed", True, 5, alerted=False, autostop=True, followup_active=True
+    ) == ("followup-skip", 0)
+
+
+def test_map_sessions_registry_beats_cwd_and_unmapped_skipped():
+    # Registered mapping wins over the worktree-cwd inference; sessions with
+    # NEITHER (the PM session at repo root, other-project chat sessions,
+    # missing path, non-str sid) are skipped entirely — they can never be
+    # acted on by the pass.
+    from autonomous_session_watch import _map_sessions_to_issues
+
+    live = {"reg-sid", "zombie-sid", "pm-sid", "goat-sid", "no-path-sid", None}
+    registry_map = {"reg-sid": 489}
+    paths = {
+        # Registered session sitting in a DIFFERENT issue's worktree: the
+        # registry mapping must win.
+        "reg-sid": "/home/t/explore-persona-space/.claude/worktrees/issue-999",
+        "zombie-sid": "/home/t/explore-persona-space/.claude/worktrees/issue-518",
+        "pm-sid": "/home/t/explore-persona-space",
+        "goat-sid": "/home/t/my-goat",
+        # no-path-sid deliberately absent.
+    }
+    assert _map_sessions_to_issues(live, registry_map, paths) == {
+        489: {"reg-sid"},
+        518: {"zombie-sid"},
+    }
+
+
+def test_session_reconcile_sentinels_are_filtered_from_progress():
+    # Both new watcher-posted markers land as epm:progress on the very task
+    # whose inactivity they measure — they MUST be excluded from the
+    # real-progress clock or the alert would end the episode it reports.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:progress",
+            "ts": "2026-06-10T10:00:00Z",
+            "note": f"{asw._SESSION_RECONCILE_ALERT_NOTE_SENTINEL} IDLE session(s) ...",
+        },
+        {
+            "kind": "epm:progress",
+            "ts": "2026-06-10T11:00:00Z",
+            "note": f"{asw._SESSION_RECONCILE_STOP_NOTE_SENTINEL} auto-stopped ...",
+        },
+    ]
+    assert asw._latest_progress_ts(events) is None
+    assert asw._SESSION_RECONCILE_ALERT_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+    assert asw._SESSION_RECONCILE_STOP_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+def _patch_session_reconcile_io(monkeypatch, *, status, events=None, self_report=(None, None)):
+    """Common monkeypatching for the session-reconcile I/O wrapper tests:
+    task reads + the daemon-derived maps, leaving state files + decisions
+    real. Returns the (stops, posts) recorders."""
+    import autonomous_session_watch as asw
+
+    stops: list[str] = []
+    posts: list[tuple[int, str]] = []
+    monkeypatch.setattr(asw, "_task_status", lambda issue: status)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: list(events or []))
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: self_report)
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: stops.append(sid) or True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+    monkeypatch.setattr(asw, "_load_session_issue_map", lambda: {"sid-a": 42, "sid-b": 42})
+    monkeypatch.setattr(asw, "_load_session_meta", lambda: {})
+    return stops, posts
+
+
+def test_session_reconcile_alert_only_default_posts_once_never_stops(
+    isolated_registry, monkeypatch
+):
+    # Default posture (env flag unset): tick 1 accumulates, tick 2 posts ONE
+    # alert marker, tick 3 stays quiet. No session is ever stopped.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    now = 1_000_000.0
+    live = {"sid-a", "sid-b"}
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    state_path = isolated_registry / "session-reconcile-42.json"
+    assert json.loads(state_path.read_text())["missed"] == 1
+    assert stops == [] and posts == []
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert posts == [(42, "session-reconcile-alert")]
+    state = json.loads(state_path.read_text())
+    assert state["alerted"] is True and state["missed"] == 2
+    assert state["sids"] == ["sid-a", "sid-b"]
+    assert stops == []
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert posts == [(42, "session-reconcile-alert")]  # dedup: still exactly one
+    assert stops == []
+
+
+def test_session_reconcile_autostop_stops_all_sessions_and_clears(isolated_registry, monkeypatch):
+    # With EPM_SESSION_RECONCILE_AUTOSTOP=1: tick 1 accumulates, tick 2 stops
+    # EVERY live mapped session, posts the stop marker, clears the state.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", "1")
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    now = 1_000_000.0
+    live = {"sid-a", "sid-b"}
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert stops == []
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert sorted(stops) == ["sid-a", "sid-b"]
+    assert posts == [(42, "session-reconcile-stop")]
+    assert not (isolated_registry / "session-reconcile-42.json").exists()
+
+
+@pytest.mark.parametrize("status", ["awaiting_promotion", "blocked", "running"])
+def test_session_reconcile_never_acts_on_non_done_status(isolated_registry, monkeypatch, status):
+    # awaiting_promotion (live-parked for promotion), blocked (under
+    # investigation), and any ACTIVE status are untouchable — no stop, no
+    # marker, no state accumulation, even with autostop armed.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", "1")
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status=status)
+    for _ in range(3):
+        asw.session_reconcile_pass(
+            False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=1_000_000.0
+        )
+    assert stops == [] and posts == []
+    assert not (isolated_registry / "session-reconcile-42.json").exists()
+
+
+def test_session_reconcile_fresh_completion_keeps_session(isolated_registry, monkeypatch):
+    # A task that completed 1h ago is inside the idle grace window: its
+    # session is kept and any prior episode state is cleared.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", "1")
+    ts = "2026-06-10T10:00:00Z"
+    now = asw._parse_event_ts(ts) + 3600  # 1h after the completion marker
+    events = [{"kind": "epm:status-changed", "ts": ts, "note": "-> completed"}]
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed", events=events)
+    # Pre-existing episode state from an earlier (now-recovered) episode.
+    asw._save_session_reconcile_state(42, missed=1, alerted=True, sids=["sid-a"])
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=now)
+    assert stops == [] and posts == []
+    assert not (isolated_registry / "session-reconcile-42.json").exists()  # cleared
+
+
+def test_session_reconcile_keep_running_tag_skips_stop(isolated_registry, monkeypatch):
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", "1")
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
+    for _ in range(3):
+        asw.session_reconcile_pass(
+            False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=1_000_000.0
+        )
+    assert stops == [] and posts == []
+    state = json.loads((isolated_registry / "session-reconcile-42.json").read_text())
+    assert state["missed"] == 0  # tag removal re-arms a fresh accumulation
+
+
+def test_session_reconcile_gc_drops_state_without_mapped_session(isolated_registry, monkeypatch):
+    # When the sessions died / were stopped by any path, the per-issue state
+    # is reaped so a later session on the same issue starts a fresh episode.
+    import autonomous_session_watch as asw
+
+    asw._save_session_reconcile_state(42, missed=1, alerted=True, sids=["sid-a"])
+    asw._save_session_reconcile_state(99, missed=1, alerted=False, sids=["sid-z"])
+    cleared = asw._gc_orphan_session_reconcile_state({42}, dry_run=False, now=1_000_000.0)
+    assert cleared == [99]
+    assert (isolated_registry / "session-reconcile-42.json").exists()
+    assert not (isolated_registry / "session-reconcile-99.json").exists()
+    # Dry-run never deletes.
+    cleared = asw._gc_orphan_session_reconcile_state(set(), dry_run=True, now=1_000_000.0)
+    assert cleared == [42]
+    assert (isolated_registry / "session-reconcile-42.json").exists()
+
+
+def test_session_reconcile_pass_daemon_unreachable_skips(isolated_registry, monkeypatch):
+    # Session liveness is unknowable during a daemon outage, and the stop
+    # action POSTs to the daemon — the whole pass must no-op.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", "1")
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    asw._save_session_reconcile_state(42, missed=5, alerted=True, sids=["sid-a"])
+    asw.session_reconcile_pass(False, 2, daemon_reachable=False, live_ids=None, now=1_000_000.0)
+    assert stops == [] and posts == []
+    # State untouched (no GC either — liveness unknown).
+    assert (isolated_registry / "session-reconcile-42.json").exists()

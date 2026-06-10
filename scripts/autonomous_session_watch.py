@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions.
 
-Six passes, run in this order:
+Seven passes, run in this order:
 
 1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
    the host of every orchestrator session, the worktree ``.venv``s, the uv
@@ -77,13 +77,39 @@ Six passes, run in this order:
    to a one-time loud alert marker. Daemon-gated like the respawn pass
    (liveness is unknowable during an outage; a mass respawn would duplicate
    pods).
-6. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
+6. **Session-reconcile pass (sessions-vs-status; ALERT-ONLY by default).**
+   Mirror of the pod-safety auto-stop arm for Happy SESSIONS: a live
+   session mapped to an issue (registry entry, or an ``issue-<N>``
+   worktree cwd for unregistered / superseded zombie generations) whose
+   task is DONE (``completed`` / ``archived``) and which has shown no
+   activity (real progress marker / self-report) for >
+   :data:`SESSION_IDLE_S` is flagged after the same >=2-consecutive-checks
+   guard as the pod pass. Default action is a loud log + one-time
+   dashboard-visible marker; the actual ``spawn_session.py stop`` fires
+   only when ``EPM_SESSION_RECONCILE_AUTOSTOP=1`` (observe a few cron
+   cycles of alerts first, then arm — the same two-phase rollout the
+   stalled-detector used). NEVER touches: sessions with no issue mapping
+   (the PM session, chat sessions), non-terminal tasks (including
+   ``awaiting_promotion`` and ``blocked`` — the user may be live-parked
+   there), ``keep-running``-tagged tasks, or tasks with a live inline
+   follow-up. Motivated by the 2026-06-10 disk-full incident: 15+ idle
+   sessions of weeks-old completed/archived tasks (the respawn pass
+   deletes the registry entry at a TERMINAL status but never stops the
+   session) pinned their 10-15G worktrees against the stale-worktree
+   sweep and held deleted-file handles (~37G phantom disk usage).
+   Daemon-gated like the respawn pass (session liveness is unknowable
+   during a daemon outage).
+7. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
    ``issue-progress/<N>.json``, ``issue-tick-last-status/<N>.json``,
    ``stalled-<N>.json``, ``orphan-<N>.json``) for tasks in
    :data:`TERMINAL_FOR_GC`
    (``completed`` / ``archived``) — conservative on ``awaiting_promotion``
    and ``blocked`` (the user could still be interacting). Independent of
-   the destructive passes; safe to run last.
+   the destructive passes; safe to run last. (``session-reconcile-<N>.json``
+   is deliberately NOT in its sweep — those files track episodes whose
+   task is BY DEFINITION terminal, so the terminal-status GC would reset
+   the miss counter every tick; they are reaped by their own
+   live-session-keyed GC inside the session-reconcile pass.)
 
 Why each pass exists
 --------------------
@@ -215,7 +241,10 @@ from runpod_api import list_team_pods
 from spawn_session import (
     AUTONOMOUS_REGISTRY_DIR,
     PROJECT_ROOT,
+    _infer_issue_from_path,
     _live_session_ids,
+    _load_session_issue_map,
+    _load_session_meta,
 )
 
 # Active-drive statuses: a dead session here SHOULD be resurrected.
@@ -375,6 +404,19 @@ _ORPHAN_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:orphan-respawn]"
 # never auto-respawned, #505). Same staleness-filter contract as the others.
 _ORPHAN_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:orphan-alert]"
 
+# Substring stamped into the one-time alert the session-reconcile pass posts
+# (default ALERT-ONLY posture) when a live session has outlived its DONE
+# (completed/archived) task by > SESSION_IDLE_S of inactivity. Same
+# staleness-filter contract as the others — CRITICAL here: the alert lands on
+# the very task whose marker inactivity it measures, so without the sentinel
+# filter the alert itself would end the idle episode it reports.
+_SESSION_RECONCILE_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:session-reconcile-alert]"
+
+# Substring stamped into the marker posted when the session-reconcile pass
+# actually STOPS the idle session(s) of a DONE task (only with
+# EPM_SESSION_RECONCILE_AUTOSTOP=1). Same staleness-filter contract.
+_SESSION_RECONCILE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:session-reconcile-stop]"
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
@@ -390,6 +432,8 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _VM_DISK_NOTE_SENTINEL,
         _ORPHAN_RESPAWN_NOTE_SENTINEL,
         _ORPHAN_ALERT_NOTE_SENTINEL,
+        _SESSION_RECONCILE_ALERT_NOTE_SENTINEL,
+        _SESSION_RECONCILE_STOP_NOTE_SENTINEL,
     }
 )
 
@@ -3001,7 +3045,9 @@ TERMINAL_FOR_GC = {"completed", "archived"}
 # (``issue-progress/`` and ``issue-tick-last-status/`` keep their per-issue
 # files in nested dirs). The pod-safety state files are reaped by their own
 # RUNNING-set-aware GC (:func:`_gc_orphan_pod_safety_state`) and are NOT
-# included here.
+# included here; likewise the session-reconcile state files
+# (:func:`_gc_orphan_session_reconcile_state` — terminal-status reaping here
+# would reset that pass's miss counter every tick).
 _GC_TARGETS: tuple[tuple[str, str], ...] = (
     ("manual-issue-", ""),
     (STALLED_STATE_PREFIX, ""),
@@ -3061,6 +3107,12 @@ def _gc_orphaned_eps_autonomous_files(now: float, dry_run: bool) -> dict[str, in
     - ``pod-safety-<N>.json`` — owned by :func:`_gc_orphan_pod_safety_state`
       which keys on the live RUNNING set, a different (complementary)
       question than task terminal status.
+    - ``session-reconcile-<N>.json`` — owned by
+      :func:`_gc_orphan_session_reconcile_state` which keys on the live
+      mapped-session set. MUST stay out of this sweep: those files track
+      episodes whose task is BY DEFINITION terminal, so reaping them here
+      would reset the miss counter every tick and the session-reconcile
+      threshold could never be reached.
     - ``session_progress.json`` / ``watch.lock`` (project-singletons, not
       per-issue).
     - ``vm-disk.json`` / ``vm-disk-events.jsonl`` (project-singletons for the
@@ -3112,6 +3164,507 @@ def gc_pass(dry_run: bool, now: float | None = None) -> None:
         return
     summary = ", ".join(f"{k or 'nested'}={v}" for k, v in sorted(counts.items()))
     print(f"gc: cleared {summary}")
+
+
+# ─── session-reconcile pass (sessions-vs-status; 2026-06-10 disk incident) ───
+#
+# Mirror of the pod-safety auto-stop arm for Happy SESSIONS. The respawn pass
+# DELETES the registry entry when a task reaches a TERMINAL status (see
+# :func:`decide`) but never stops the live session, and unregistered zombie
+# generations (a newer spawn overwrote the per-issue registration file) are
+# invisible to every registry-driven pass — so a per-issue session that
+# outlives its task's completion persists indefinitely. In the 2026-06-10
+# disk-full incident 15+ such sessions (some weeks old) sat alive in the
+# worktrees of completed/archived tasks, pinning 10-15G worktrees each against
+# the stale-worktree sweep and holding open deleted-file handles (~37G of
+# phantom disk usage); 17 had to be stopped by hand before the worktree audit
+# could see their worktrees as unpinned.
+#
+# Conservative posture, mirroring how the pod pass and the stalled-detector
+# were introduced:
+#
+#   * acts ONLY on tasks in :data:`SESSION_RECONCILE_DONE` (completed /
+#     archived — deliberately the same set as :data:`TERMINAL_FOR_GC`;
+#     ``awaiting_promotion`` and ``blocked`` are excluded because the user may
+#     be live-parked there);
+#   * requires > :data:`SESSION_IDLE_S` of inactivity on EVERY available
+#     activity signal the watcher already reads (newest real non-watcher
+#     progress marker + the per-issue self-report file);
+#   * the same >=2-consecutive-checks miss guard as the pod pass;
+#   * honours the ``keep-running`` tag and the inferred inline-follow-up
+#     predicate (same precedence as :func:`decide_pod_safety`);
+#   * first ship is ALERT-ONLY — the actual ``spawn_session.py stop`` fires
+#     only when ``EPM_SESSION_RECONCILE_AUTOSTOP=1`` is set, so the alerts can
+#     be observed for a few cron cycles before arming;
+#   * NEVER touches a session with no issue mapping (the PM session, chat
+#     sessions) — those are skipped at the mapping step and cannot reach the
+#     decision function.
+
+# Statuses whose live sessions are reconcile candidates. Deliberately shared
+# with TERMINAL_FOR_GC (completed/archived only) — the same "user could still
+# be interacting" reasoning excludes awaiting_promotion / blocked from both.
+SESSION_RECONCILE_DONE = TERMINAL_FOR_GC
+
+# Inactivity window before a DONE task's live session counts as idle. A task
+# completed less than this long ago keeps its session (grace for post-run
+# inspection); the incident sessions were idle for days-to-weeks, so 6h
+# catches them with a wide safety margin for legitimate wrap-up work.
+SESSION_IDLE_S = 6 * 3600
+
+# Filename prefix for the per-issue session-reconcile state file at
+# ``~/.eps-autonomous/session-reconcile-<N>.json``. Mirrors the pod-safety
+# state layout. NOT in :data:`_GC_TARGETS`: these files track episodes whose
+# task is BY DEFINITION terminal, so the terminal-status GC would reap them
+# every tick and the miss counter could never reach the threshold. They are
+# reaped by :func:`_gc_orphan_session_reconcile_state` (keyed on the live
+# mapped-session set) plus its age backstop instead.
+SESSION_RECONCILE_STATE_PREFIX = "session-reconcile-"
+
+
+def _session_reconcile_autostop_enabled() -> bool:
+    """True iff ``EPM_SESSION_RECONCILE_AUTOSTOP`` is set to a truthy value
+    (``1`` / ``true`` / ``yes``). Default OFF — the pass ships alert-only so
+    a few cron cycles of alerts can be observed before arming the stop, the
+    same two-phase rollout the stalled-detector used (2026-06-05 → 06-08)."""
+    raw = os.environ.get("EPM_SESSION_RECONCILE_AUTOSTOP", "")
+    return raw.strip().lower() in {"1", "true", "yes"}
+
+
+def decide_session_reconcile(
+    status: str | None,
+    idle: bool,
+    missed: int,
+    alerted: bool,
+    threshold: int = 2,
+    *,
+    autostop: bool = False,
+    keep_running: bool = False,
+    followup_active: bool = False,
+) -> tuple[str, int]:
+    """Pure decision for the session-reconcile pass on one issue's live,
+    issue-mapped session(s). Returns ``(action, new_missed)`` where action is
+    ``"clear"`` | ``"keep"`` | ``"alert"`` | ``"stop"`` |
+    ``"keep-running-skip"`` | ``"followup-skip"``.
+
+    The caller only invokes this for issues that HAVE at least one live
+    mapped session; sessions with no issue mapping (PM / chat) never reach
+    here.
+
+    Cases:
+
+    - ``status`` not in :data:`SESSION_RECONCILE_DONE` (including ``None`` =
+      unreadable) -> ``("clear", 0)``. The task is not provably done — any
+      non-terminal status (ACTIVE, park, ``awaiting_promotion``, ``blocked``)
+      means the session may be legitimately live, so the episode state is
+      dropped. Unreadable status is treated as non-done (conservative: never
+      act on ignorance).
+    - done but not ``idle`` -> ``("clear", 0)``. Fresh activity (a real
+      progress marker or self-report within :data:`SESSION_IDLE_S`) ends the
+      episode — e.g. a task that JUST completed keeps its session for the
+      grace window.
+    - done + idle + ``keep_running`` -> ``("keep-running-skip", 0)``. The
+      explicit user tag beats everything (same precedence as
+      :func:`decide_pod_safety`); miss counter resets so removing the tag
+      re-arms a fresh >=``threshold``-checks accumulation.
+    - done + idle + ``followup_active`` (and not ``keep_running``) ->
+      ``("followup-skip", 0)``. A fresh ``epm:run-launched`` newer than the
+      latest done-transition means an inline follow-up is in flight; its
+      driver session must not be stopped even if the follow-up itself is
+      quiet (markers > idle window — e.g. mid-training silence).
+    - done + idle, below ``threshold`` -> ``("keep", missed+1)``. The 2-miss
+      guard: a single transient task.py / self-report read glitch never
+      escalates.
+    - threshold met + ``autostop`` -> ``("stop", 0)``. Checked BEFORE the
+      ``alerted`` dedup so enabling ``EPM_SESSION_RECONCILE_AUTOSTOP=1``
+      mid-episode escalates an already-alerted episode on the next tick
+      without re-accumulating (the #506 lesson: a dedup flag must never
+      suppress the stronger action once it becomes eligible).
+    - threshold met, alert-only, not yet ``alerted`` -> ``("alert", missed+1)``.
+      One loud marker per episode; the miss count keeps accumulating so a
+      later autostop-enable fires immediately.
+    - threshold met, alert-only, already ``alerted`` -> ``("keep", missed+1)``.
+      Stay quiet (dedup); the episode stays observable in the watcher log.
+    """
+    if status not in SESSION_RECONCILE_DONE:
+        return ("clear", 0)
+    if not idle:
+        return ("clear", 0)
+    if keep_running:
+        return ("keep-running-skip", 0)
+    if followup_active:
+        return ("followup-skip", 0)
+    new_missed = missed + 1
+    if new_missed < threshold:
+        return ("keep", new_missed)
+    if autostop:
+        return ("stop", 0)
+    if not alerted:
+        return ("alert", new_missed)
+    return ("keep", new_missed)
+
+
+def _map_sessions_to_issues(
+    live_ids: set[str],
+    registry_map: dict[str, int],
+    session_paths: dict[str, str | None],
+) -> dict[int, set[str]]:
+    """Group live session ids by the issue they belong to.
+
+    Pure (testable without a daemon): ``registry_map`` is
+    ``spawn_session._load_session_issue_map()`` (registered sessions, BOTH
+    ``issue-<N>.json`` and ``manual-issue-<N>.json``); ``session_paths`` maps
+    sid -> cwd from ``~/.happy/sessions.json`` metadata. A registry mapping
+    wins; an ``issue-<N>`` worktree cwd is the fallback for unregistered /
+    superseded zombie generations (the respawn pass deletes the registry
+    entry at TERMINAL, and every newer spawn overwrites it — so the incident
+    sessions are mostly cwd-mapped, the same ``~#N`` attribution
+    ``spawn_session.py list`` renders). Sessions with neither mapping (the
+    PM session at the repo root, chat sessions, other projects) are skipped
+    entirely — they can never be acted on."""
+    out: dict[int, set[str]] = {}
+    for sid in live_ids:
+        if not isinstance(sid, str) or not sid:
+            continue
+        issue = registry_map.get(sid)
+        if issue is None:
+            issue = _infer_issue_from_path(session_paths.get(sid))
+        if issue is None:
+            continue
+        out.setdefault(issue, set()).add(sid)
+    return out
+
+
+def _session_reconcile_state_path(issue: int) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{SESSION_RECONCILE_STATE_PREFIX}{issue}.json"
+
+
+def _load_session_reconcile_state(issue: int) -> dict:
+    """Read the per-issue session-reconcile state (``{}`` if absent /
+    unreadable — a fresh/garbled file starts the miss count at 0, mirroring
+    :func:`_load_pod_safety_state`)."""
+    path = _session_reconcile_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_session_reconcile_state(
+    issue: int,
+    *,
+    missed: int,
+    alerted: bool,
+    sids: list[str],
+    prev: dict | None = None,
+) -> None:
+    """Persist the per-issue session-reconcile state atomically (temp +
+    rename), mirroring :func:`_save_pod_safety_state`. ``sids`` records the
+    live session ids observed this tick (informational — the decision is
+    per-issue); ``first_seen`` carries forward so the GC age backstop
+    measures the original episode start."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _session_reconcile_state_path(issue)
+    prev_first_seen = (prev or {}).get("first_seen")
+    if not isinstance(prev_first_seen, int | float):
+        prev_first_seen = time.time()
+    payload = {
+        "missed": missed,
+        "alerted": alerted,
+        "sids": sorted(sids),
+        "first_seen": prev_first_seen,
+    }
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_session_reconcile_state(issue: int) -> None:
+    """Drop the per-issue session-reconcile state file (episode over: the
+    task left the DONE set, activity resumed, or the sessions were stopped)."""
+    _session_reconcile_state_path(issue).unlink(missing_ok=True)
+
+
+def _gc_orphan_session_reconcile_state(
+    mapped_issues: set[int], dry_run: bool, now: float | None = None
+) -> list[int]:
+    """GC session-reconcile state files for issues with NO live mapped session
+    (the sessions died / were stopped by any path — the episode is over), so
+    a later session on the same issue starts with a fresh miss count. Also
+    drops files older than :data:`POD_SAFETY_STATE_MAX_AGE_S` as an age
+    backstop. Mirrors :func:`_gc_orphan_pod_safety_state` (the terminal-status
+    GC deliberately does NOT sweep this prefix — see
+    :data:`SESSION_RECONCILE_STATE_PREFIX`). Returns the cleared issues."""
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return []
+    now = now if now is not None else time.time()
+    cleared: list[int] = []
+    for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob(f"{SESSION_RECONCILE_STATE_PREFIX}*.json")):
+        stem = path.stem[len(SESSION_RECONCILE_STATE_PREFIX) :]
+        try:
+            issue = int(stem)
+        except ValueError:
+            continue  # hand-debug artifact; not the GC's business
+        if issue in mapped_issues:
+            continue
+        try:
+            payload = json.loads(path.read_text())
+            first_seen = payload.get("first_seen", now)
+            if not isinstance(first_seen, int | float):
+                first_seen = now
+        except (json.JSONDecodeError, OSError):
+            first_seen = 0  # unreadable -> definitely orphaned, drop it
+        age = now - first_seen
+        reason = (
+            "no live mapped session"
+            if age < POD_SAFETY_STATE_MAX_AGE_S
+            else f"age={age / 3600:.1f}h"
+        )
+        print(f"  session-reconcile: GC orphan state issue #{issue} ({reason})")
+        if not dry_run:
+            path.unlink(missing_ok=True)
+        cleared.append(issue)
+    return cleared
+
+
+def _session_idle_signals(issue: int, now: float) -> tuple[bool, str, list[dict]]:
+    """Compute ``(idle, gap_desc, events)`` for a DONE-status candidate.
+
+    ``idle`` is True when EVERY available activity signal — the newest real
+    non-watcher progress marker and the per-issue self-report file — is older
+    than :data:`SESSION_IDLE_S`. When NO signal is readable at all the issue
+    counts as idle (mirrors the orphan sweep's None-is-stale rule; the status
+    gate + 2-miss guard + alert-only default keep that safe). ``gap_desc`` is
+    the human-readable freshest-signal age for log/marker text; ``events`` is
+    returned so the caller can reuse the fetch for the follow-up predicate."""
+    events = _task_events(issue)
+    latest_progress = _latest_progress_ts(events)
+    sr_age, _sr_ts = _self_report_age_seconds(issue, now)
+    ages = [
+        a
+        for a in (
+            (now - latest_progress) if latest_progress is not None else None,
+            sr_age,
+        )
+        if a is not None
+    ]
+    idle = (min(ages) >= SESSION_IDLE_S) if ages else True
+    gap_desc = f"{min(ages) / 3600:.1f}h" if ages else "no-signal"
+    return idle, gap_desc, events
+
+
+def _handle_session_stop(
+    issue: int,
+    sids: list[str],
+    status: str | None,
+    gap_desc: str,
+    threshold: int,
+    dry_run: bool,
+    prev_state: dict,
+    prev_missed: int,
+    prev_alerted: bool,
+) -> None:
+    """Stop every live mapped session for ``issue`` and record the outcome.
+
+    Full success clears the episode state; a partial failure keeps the
+    accumulated miss count so the next tick retries the stop for the
+    remaining live session(s)."""
+    stopped = [sid for sid in sids if _stop_session(sid, dry_run)]
+    if stopped:
+        _post_progress_marker(
+            issue,
+            f"{_SESSION_RECONCILE_STOP_NOTE_SENTINEL} auto-stopped "
+            f"{len(stopped)} idle session(s) ({', '.join(stopped)}) by the "
+            f"autonomous_session_watch session-reconcile pass — task status "
+            f"'{status}' is DONE and no activity (real progress marker / "
+            f"self-report) was observed for > {SESSION_IDLE_S / 3600:.0f}h "
+            f"(gap={gap_desc}), confirmed for >= {threshold} checks. An idle "
+            f"session pins its worktree against the stale-worktree sweep and "
+            f"holds deleted-file handles (2026-06-10 disk incident). Respawn "
+            f"if needed: `spawn_session.py spawn-issue --issue {issue}`.",
+            dry_run,
+            label="session-reconcile-stop",
+        )
+    if not dry_run:
+        if len(stopped) == len(sids):
+            _clear_session_reconcile_state(issue)  # episode over
+        else:
+            _save_session_reconcile_state(
+                issue, missed=prev_missed, alerted=prev_alerted, sids=sids, prev=prev_state
+            )
+
+
+def _process_session_reconcile(
+    issue: int,
+    sids: list[str],
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    autostop: bool,
+) -> None:
+    """Reconcile one issue's live session(s) against its task status.
+
+    Reads the task's status; for DONE (completed/archived) tasks, computes
+    idleness via :func:`_session_idle_signals`. Applies
+    :func:`decide_session_reconcile` and acts: ALERT once per episode
+    (default), or STOP every live mapped session via ``spawn_session.py
+    stop`` when ``EPM_SESSION_RECONCILE_AUTOSTOP=1``."""
+    status = _task_status(issue)
+    done = status in SESSION_RECONCILE_DONE
+
+    # Lazy: events / self-report / tag / follow-up reads are paid only for
+    # DONE-status candidates (same lazy pattern as _process_pod).
+    idle = False
+    gap_desc = "n/a"
+    keep_running = False
+    followup_active = False
+    if done:
+        idle, gap_desc, events = _session_idle_signals(issue, now)
+        if idle:
+            keep_running = _task_keep_running(issue)
+            followup_active = not keep_running and _task_followup_active(issue, events=events)
+
+    prev_state = _load_session_reconcile_state(issue)
+    prev_missed = prev_state.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_alerted = bool(prev_state.get("alerted", False))
+
+    action, new_missed = decide_session_reconcile(
+        status,
+        idle,
+        prev_missed,
+        prev_alerted,
+        threshold,
+        autostop=autostop,
+        keep_running=keep_running,
+        followup_active=followup_active,
+    )
+    print(
+        f"  issue #{issue} sessions={len(sids)}: status={status} idle={idle} "
+        f"activity_gap={gap_desc} missed={prev_missed}->{new_missed} "
+        f"alerted={prev_alerted} action={action}"
+    )
+
+    if action == "clear":
+        if prev_state and not dry_run:
+            _clear_session_reconcile_state(issue)
+        return
+
+    if action == "keep-running-skip":
+        print(
+            f"  KEEP-RUNNING issue #{issue}: task status '{status}' is DONE and the "
+            f"session(s) are idle, but the keep-running tag is present — "
+            f"session-reconcile SKIPPED (sids={sids})."
+        )
+        if not dry_run:
+            _save_session_reconcile_state(
+                issue, missed=0, alerted=prev_alerted, sids=sids, prev=prev_state
+            )
+        return
+
+    if action == "followup-skip":
+        print(
+            f"  FOLLOWUP-ACTIVE issue #{issue}: task status '{status}' is DONE but a "
+            f"fresh `epm:run-launched` (newer than the latest done-transition) "
+            f"indicates a live inline follow-up — session-reconcile SKIPPED "
+            f"(sids={sids})."
+        )
+        if not dry_run:
+            _save_session_reconcile_state(
+                issue, missed=0, alerted=prev_alerted, sids=sids, prev=prev_state
+            )
+        return
+
+    if action == "stop":
+        _handle_session_stop(
+            issue, sids, status, gap_desc, threshold, dry_run, prev_state, prev_missed, prev_alerted
+        )
+        return
+
+    if action == "alert":
+        print(
+            f"  ALERT issue #{issue}: {len(sids)} live session(s) for a task at DONE "
+            f"status '{status}' with no activity > {SESSION_IDLE_S / 3600:.0f}h "
+            f"(gap={gap_desc}); NOT stopping (EPM_SESSION_RECONCILE_AUTOSTOP unset).",
+            file=sys.stderr,
+        )
+        _post_progress_marker(
+            issue,
+            f"{_SESSION_RECONCILE_ALERT_NOTE_SENTINEL} IDLE session(s) outliving a "
+            f"DONE task: {len(sids)} live Happy session(s) ({', '.join(sids)}) "
+            f"mapped to this task (status '{status}') with no activity (real "
+            f"progress marker / self-report) for > {SESSION_IDLE_S / 3600:.0f}h "
+            f"(gap={gap_desc}). Idle sessions pin their worktrees against the "
+            f"stale-worktree sweep and hold deleted-file handles (2026-06-10 disk "
+            f"incident: ~37G phantom usage across 15+ such sessions). NOT "
+            f"auto-stopped (alert-only default); stop manually with "
+            f"`spawn_session.py stop --session-id <id>`, or set "
+            f"EPM_SESSION_RECONCILE_AUTOSTOP=1 on the watcher cron to arm the "
+            f"auto-stop. Posted once per episode.",
+            dry_run,
+            label="session-reconcile-alert",
+        )
+        if not dry_run:
+            _save_session_reconcile_state(
+                issue, missed=new_missed, alerted=True, sids=sids, prev=prev_state
+            )
+        return
+
+    # action == "keep": persist the (possibly incremented) miss count.
+    if not dry_run:
+        _save_session_reconcile_state(
+            issue, missed=new_missed, alerted=prev_alerted, sids=sids, prev=prev_state
+        )
+
+
+def session_reconcile_pass(
+    dry_run: bool,
+    threshold: int,
+    *,
+    daemon_reachable: bool,
+    live_ids: set[str] | None = None,
+    now: float | None = None,
+) -> None:
+    """Reconcile live Happy sessions against their task status.
+
+    Daemon-gated like the respawn pass: session liveness is unknowable during
+    a daemon outage, and the stop action itself POSTs to the daemon, so the
+    whole pass skips when it is unreachable. ``live_ids`` may be passed in by
+    ``main()`` to reuse its snapshot (one daemon round-trip per tick)."""
+    now = now if now is not None else time.time()
+    if not daemon_reachable:
+        print(
+            "session-reconcile: Happy daemon unreachable; skipping "
+            "(session liveness unknowable during an outage)"
+        )
+        return
+    live = live_ids if live_ids is not None else _live_session_ids()
+    meta = _load_session_meta()
+    session_paths = {sid: (m or {}).get("path") for sid, m in meta.items()}
+    by_issue = _map_sessions_to_issues(live, _load_session_issue_map(), session_paths)
+
+    # GC stale state ALWAYS — even with zero mapped sessions — so an episode
+    # whose sessions died/were stopped by any path gets a fresh start later.
+    _gc_orphan_session_reconcile_state(set(by_issue), dry_run, now=now)
+
+    if not by_issue:
+        print("session-reconcile: no live issue-mapped sessions")
+        return
+    n_sessions = sum(len(v) for v in by_issue.values())
+    autostop = _session_reconcile_autostop_enabled()
+    print(
+        f"session-reconcile: {n_sessions} live issue-mapped session(s) across "
+        f"{len(by_issue)} issue(s) "
+        f"(autostop={'ON' if autostop else 'OFF — alert-only'})"
+    )
+    for issue in sorted(by_issue):
+        _process_session_reconcile(
+            issue, sorted(by_issue[issue]), now, dry_run, threshold, autostop=autostop
+        )
 
 
 def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> None:
@@ -3318,6 +3871,20 @@ def main(argv: list[str] | None = None) -> int:
     # AFTER the respawn + stalled passes so a same-tick recovery by either
     # one is visible via its fresh registry write (the spawn-grace window).
     orphan_sweep_pass(
+        args.dry_run,
+        args.threshold,
+        daemon_reachable=daemon_reachable,
+        live_ids=live_ids if daemon_reachable else None,
+    )
+
+    # Session-reconcile: stop (default: ALERT about — auto-stop only with
+    # EPM_SESSION_RECONCILE_AUTOSTOP=1) live sessions that outlived their
+    # task's completion. The inverse blind spot of the orphan sweep: that
+    # pass finds ACTIVE tasks with no session; this one finds DONE tasks
+    # that still HAVE sessions (2026-06-10 disk incident — idle sessions of
+    # completed tasks pinned their worktrees + held deleted-file handles).
+    # Daemon-gated like the respawn pass; reuses main()'s live-id snapshot.
+    session_reconcile_pass(
         args.dry_run,
         args.threshold,
         daemon_reachable=daemon_reachable,
