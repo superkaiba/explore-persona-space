@@ -108,7 +108,7 @@ def fig_hero_forest(analysis: dict, out_dir: Path) -> None:
         if ref is not None:
             ax.axvline(
                 float(ref),
-                color=paper_palette_role("secondary"),
+                color=paper_palette_role("accent"),
                 linestyle="--",
                 linewidth=1.2,
                 label=f"Parent (seeds 42/137) step-5 reading: {float(ref):+.3f}",
@@ -165,7 +165,7 @@ def fig_source_dg_strip(analysis: dict, out_dir: Path) -> None:
             ys.append(float(v))
         labels.append(_replicate_label(rep_key))
     ax.scatter(xs, ys, s=18, color=paper_palette_role("primary"), alpha=0.7)
-    ax.axhline(1.0, color=paper_palette_role("secondary"), linestyle="--", linewidth=1.0)
+    ax.axhline(1.0, color=paper_palette_role("accent"), linestyle="--", linewidth=1.0)
     ax.set_xticks(range(len(labels)))
     ax.set_xticklabels([la.replace("Replicate ", "R") for la in labels], fontsize=8)
     ax.set_ylabel("Source ΔG at step 5 (nats)")
@@ -226,7 +226,7 @@ def fig_pooled_vs_replicates(analysis: dict, out_dir: Path) -> None:
                 [float(pooled_rho)],
                 [j],
                 "D",
-                color=paper_palette_role("secondary"),
+                color=paper_palette_role("accent"),
                 markersize=8,
                 alpha=0.9,
             )
@@ -278,12 +278,12 @@ def fig_bystander_gate(analysis: dict, out_dir: Path) -> None:
     axes[0].bar(
         x, [m if m is not None else np.nan for m in med], color=paper_palette_role("primary")
     )
-    axes[0].axhline(-2.0, color=paper_palette_role("secondary"), linestyle="--", linewidth=1.0)
+    axes[0].axhline(-2.0, color=paper_palette_role("accent"), linestyle="--", linewidth=1.0)
     axes[0].set_ylabel("Median bystander ΔG (nats)")
     axes[1].bar(
         x, [s if s is not None else np.nan for s in share], color=paper_palette_role("primary")
     )
-    axes[1].axhline(0.60, color=paper_palette_role("secondary"), linestyle="--", linewidth=1.0)
+    axes[1].axhline(0.60, color=paper_palette_role("accent"), linestyle="--", linewidth=1.0)
     axes[1].set_ylabel("Bystander argmax-marker share")
     for ax in axes:
         ax.set_xticks(x)

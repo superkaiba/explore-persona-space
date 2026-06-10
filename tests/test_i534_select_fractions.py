@@ -217,9 +217,20 @@ def test_snapshot_fires_before_stop_predicate(tmp_path, monkeypatch):
     from transformers import TrainerControl
 
     cb = _make_callback(tmp_path, eval_every_steps=1, min_steps=2)
+
     # Monkeypatch the model-touching reads: base=0, trained=6 → delta=6 ∈ [5,12].
-    monkeypatch.setattr(cb, "_read_logp_with_base", lambda model: torch.zeros(1))
-    monkeypatch.setattr(cb, "_read_logp_trained", lambda model: torch.full((1,), 6.0))
+    # Post-#555-merge, on_step_end reads the FOUR-FLOATS slot stats (main's
+    # storage-contract path), not the bare logp readers — patch those.
+    def _stats(v: float) -> dict:
+        return {
+            "logp": torch.full((1,), v),
+            "z_marker": torch.full((1,), v),
+            "z_eos": torch.zeros(1),
+            "logZ": torch.zeros(1),
+        }
+
+    monkeypatch.setattr(cb, "_read_slot_stats_with_base", lambda model: _stats(0.0))
+    monkeypatch.setattr(cb, "_read_slot_stats_trained", lambda model: _stats(6.0))
     model = _DummyAdapterModel()
     control = TrainerControl()
     cb.on_train_begin(None, _state(0), control)
