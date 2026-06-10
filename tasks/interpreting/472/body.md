@@ -1,6 +1,6 @@
 ---
-title: Held-out marker leakage tracks source-implant strength, not where the contrastive
-  negatives sit (LOW confidence)
+title: Both adding contrastive negatives and placing them farther from the source
+  raise bystander marker leakage (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T20:04:26Z'
