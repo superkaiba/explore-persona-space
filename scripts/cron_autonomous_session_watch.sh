@@ -1,8 +1,8 @@
 #!/bin/bash
-# VM-health + crash-recovery + pod-safety + stalled-detector watch for issue
-# sessions — invoked from the system crontab (every ~10 min). Five passes, in
-# order (see scripts/autonomous_session_watch.py's module docstring for the
-# full rules):
+# VM-health + crash-recovery + pod-safety + stalled-detector + orphan-sweep
+# watch for issue sessions — invoked from the system crontab (every ~10 min).
+# Six passes, in order (see scripts/autonomous_session_watch.py's module
+# docstring for the full rules):
 #   1. VM disk-headroom: alert when free space on the VM root filesystem runs
 #      low (~20 GiB); below ~8 GiB also run safe fail-soft reclaims. A full /
 #      silently kills every foreground Bash spawn in orchestrator sessions
@@ -18,7 +18,14 @@
 #      latest progress marker both stale >45 min) and auto-respawn it
 #      (bounded per episode); alert-only for manual sessions or when the
 #      Happy daemon is unreachable.
-#   5. GC: reap per-issue watcher state files for completed/archived tasks.
+#   5. Orphan sweep: registration-INDEPENDENT cross-check — any ACTIVE-status
+#      task with NO live registered session AND no real progress marker for
+#      ~90 min (EPM_ORPHAN_STALENESS_MIN) is auto-respawned (capped at 2
+#      attempts/task/day, EPM_ORPHAN_RESPAWNS_PER_DAY); alert-only for
+#      manual-registered tasks. Closes the #472/#518 blind spot (2026-06-10):
+#      a task revived by a same-issue follow-up with no registration, or one
+#      whose registered driver died while a zombie generation masked it.
+#   6. GC: reap per-issue watcher state files for completed/archived tasks.
 # Mirrors cron_worktree_audit.sh / cron_pod_audit.sh.
 #
 # Safety lives in scripts/autonomous_session_watch.py: single-flight flock, a

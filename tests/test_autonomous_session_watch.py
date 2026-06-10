@@ -30,12 +30,16 @@ from autonomous_session_watch import (  # noqa: E402
     ACTIVE,
     ALERT_STALE_HOURS,
     AUTO_STOP_DONE,
+    ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT,
+    ORPHAN_SPAWN_GRACE_S,
+    ORPHAN_STALENESS_S_DEFAULT,
     PARK,
     POD_ACTIVE,
     STALLED_MAX_RESPAWNS,
     STALLED_WINDOW_S,
     TERMINAL,
     decide,
+    decide_orphan,
     decide_pod_safety,
 )
 
@@ -1065,10 +1069,12 @@ def test_main_daemon_unreachable_still_runs_pod_safety(isolated_registry, monkey
     pod_safety_calls: list[tuple] = []
     respawn_entry_calls: list[tuple] = []
     vm_disk_calls: list[tuple] = []
+    orphan_calls: list[tuple] = []
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: False)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: pod_safety_calls.append((a, kw)))
     monkeypatch.setattr(asw, "_process_entry", lambda *a, **kw: respawn_entry_calls.append((a, kw)))
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: vm_disk_calls.append((a, kw)))
+    monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: orphan_calls.append((a, kw)))
 
     rc = asw.main([])
 
@@ -1076,22 +1082,30 @@ def test_main_daemon_unreachable_still_runs_pod_safety(isolated_registry, monkey
     assert len(pod_safety_calls) == 1  # pod-safety RAN despite the outage
     assert respawn_entry_calls == []  # respawn pass skipped (no entries processed)
     assert len(vm_disk_calls) == 1  # vm-disk pass runs unconditionally (daemon-free)
+    # The orphan sweep is invoked unconditionally but self-gates on the
+    # daemon flag (it would mass-respawn on an outage otherwise).
+    assert len(orphan_calls) == 1
+    assert orphan_calls[0][1]["daemon_reachable"] is False
 
 
 def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
     import autonomous_session_watch as asw
 
     pod_safety_calls: list[tuple] = []
+    orphan_calls: list[tuple] = []
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
-    monkeypatch.setattr(asw, "_load_session_meta", lambda: {})
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: pod_safety_calls.append((a, kw)))
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: None)
+    monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: orphan_calls.append((a, kw)))
 
     rc = asw.main([])
 
     assert rc == 0
     assert len(pod_safety_calls) == 1
+    assert len(orphan_calls) == 1
+    assert orphan_calls[0][1]["daemon_reachable"] is True
+    assert orphan_calls[0][1]["live_ids"] == set()
 
 
 # ── state-store round-trip ────────────────────────────────────────────────────
@@ -2236,3 +2250,135 @@ def test_vm_disk_pass_dry_run_mutates_nothing(isolated_registry, monkeypatch):
     assert prune_cmds == []  # uv cache prune not actually invoked
     assert not (isolated_registry / "vm-disk.json").exists()  # no state saved
     assert not (isolated_registry / "vm-disk-events.jsonl").exists()  # no event written
+
+
+# ─── orphan sweep (registration-independent safety net) ─────────────────────
+#
+# Pins the 2026-06-10 #472/#518 incident class: an ACTIVE-status task with no
+# live REGISTERED session must be recovered even when no registry entry exists
+# at all (#472: entry deleted at a TERMINAL park, task revived by a same-issue
+# follow-up driven by an unregistered session that then died). A wrong RESPAWN
+# costs a duplicate session, so the pure decide_orphan gate is pinned
+# exhaustively like decide / decide_pod_safety.
+
+_STALE = ORPHAN_STALENESS_S_DEFAULT + 60.0  # comfortably past the threshold
+
+
+@pytest.mark.parametrize("status", [*sorted(PARK | TERMINAL), None, "some_new_status"])
+def test_orphan_non_active_clears(status):
+    # Only ACTIVE statuses are orphanable; everything else clears state.
+    assert decide_orphan(status, False, False, None, _STALE, missed=3) == ("clear", 0)
+
+
+@pytest.mark.parametrize("status", sorted(ACTIVE))
+def test_orphan_mapped_alive_clears(status):
+    # A live registered session (autonomous OR manual id) ends the episode,
+    # regardless of marker staleness or accumulated misses.
+    assert decide_orphan(status, True, False, None, _STALE, missed=2) == ("clear", 0)
+
+
+def test_orphan_fresh_registration_keeps():
+    # A registry entry written within the spawn-grace window means a recovery
+    # is in flight (same-tick respawn by another pass, or a manual recovery
+    # whose session id hasn't reached the daemon's live set yet).
+    assert decide_orphan("running", False, False, ORPHAN_SPAWN_GRACE_S - 1, _STALE, missed=1) == (
+        "keep",
+        0,
+    )
+
+
+def test_orphan_fresh_markers_keep():
+    # Real progress within the staleness window: something is driving the
+    # task even if we can't map a session to it — don't double-spawn.
+    assert decide_orphan(
+        "running", False, False, None, ORPHAN_STALENESS_S_DEFAULT - 60.0, missed=1
+    ) == ("keep", 0)
+
+
+@pytest.mark.parametrize("status", sorted(ACTIVE))
+def test_orphan_needs_two_misses_before_respawn(status):
+    # Mirrors the respawn pass's 2-miss guard: first stale observation only
+    # accumulates; the respawn fires on the SECOND consecutive miss.
+    assert decide_orphan(status, False, False, None, _STALE, missed=0) == ("keep", 1)
+    assert decide_orphan(status, False, False, None, _STALE, missed=1) == ("respawn", 0)
+
+
+def test_orphan_no_marker_at_all_counts_as_stale():
+    # An ACTIVE task with zero real progress markers is itself the signal
+    # (mirrors the pod-safety None-is-stale rule).
+    assert decide_orphan("running", False, False, None, None, missed=1) == ("respawn", 0)
+
+
+def test_orphan_manual_only_alerts_never_respawns():
+    # A task whose only registration is MANUAL is user-driven: never
+    # auto-respawn (#505 round-2 orphaning); alert loudly instead.
+    assert decide_orphan("running", False, True, None, _STALE, missed=1) == ("alert", 2)
+
+
+def test_orphan_daily_cap_exhausted_alerts():
+    assert decide_orphan(
+        "running",
+        False,
+        False,
+        None,
+        _STALE,
+        missed=1,
+        respawns_today=ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT,
+    ) == ("alert", 2)
+
+
+def test_orphan_threshold_one_respawns_immediately():
+    assert decide_orphan("running", False, False, None, _STALE, missed=0, threshold=1) == (
+        "respawn",
+        0,
+    )
+
+
+def test_orphan_sentinels_excluded_from_real_progress():
+    # The sweep's own markers must never reset the staleness clock they
+    # measure — pin their membership in the shared exclusion set.
+    from autonomous_session_watch import (
+        _ORPHAN_ALERT_NOTE_SENTINEL,
+        _ORPHAN_RESPAWN_NOTE_SENTINEL,
+        _WATCHER_NOTE_SENTINELS,
+    )
+
+    assert _ORPHAN_RESPAWN_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
+    assert _ORPHAN_ALERT_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
+
+
+def test_orphan_state_roundtrip_and_clear(isolated_registry):
+    import autonomous_session_watch as asw
+
+    asw._save_orphan_state(
+        472, missed=1, alerted=True, respawn_day="2026-06-10", respawns_today=2, prev=None
+    )
+    state = asw._load_orphan_state(472)
+    assert state["missed"] == 1
+    assert state["alerted"] is True
+    assert state["respawn_day"] == "2026-06-10"
+    assert state["respawns_today"] == 2
+    assert isinstance(state["first_seen"], float)
+    asw._clear_orphan_state(472)
+    assert asw._load_orphan_state(472) == {}
+
+
+def test_session_alive_ignores_worktree_cwd_zombies(isolated_registry):
+    # The 2026-06-10 #518 regression: a superseded driver generation parked in
+    # the issue worktree must NOT count as "alive" for the registered entry.
+    # Liveness is recorded-id OR manual-registration-id only.
+    import json
+
+    import autonomous_session_watch as asw
+
+    entry = {"issue": 518, "happy_session_id": "dead-sid"}
+    assert asw._session_alive(entry, live_ids={"zombie-other-sid"}) is False
+    # A live MANUAL replacement session keeps the issue alive (no duplicate
+    # respawn next to a user-driven session).
+    (isolated_registry / "manual-issue-518.json").write_text(
+        json.dumps({"issue": 518, "happy_session_id": "manual-sid", "mode": "manual"})
+    )
+    assert asw._session_alive(entry, live_ids={"manual-sid"}) is True
+    assert asw._session_alive(entry, live_ids={"dead-sid-x"}) is False
+    # The recorded autonomous id itself still counts, of course.
+    assert asw._session_alive(entry, live_ids={"dead-sid"}) is True

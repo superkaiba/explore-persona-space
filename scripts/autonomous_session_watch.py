@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions.
 
-Five passes, run in this order:
+Six passes, run in this order:
 
 1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
    the host of every orchestrator session, the worktree ``.venv``s, the uv
@@ -58,9 +58,29 @@ Five passes, run in this order:
    (#505 round-2 orphaning, 2026-06-10 — a dead bare-spawned session at
    an ACTIVE status previously orphaned silently because this pass only
    globbed ``issue-*.json``).
-5. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
+5. **Orphan sweep (registration-INDEPENDENT safety net).** Every other
+   session pass starts from the registry files (``issue-<N>.json`` /
+   ``manual-issue-<N>.json``), so an ACTIVE-status task with NO registration
+   is invisible to all of them. That blind spot orphaned #472 for 10.5h on
+   2026-06-10: the task parked at ``awaiting_promotion`` (TERMINAL → the
+   respawn pass DELETED its registry entry per :func:`decide`), a same-issue
+   follow-up later flipped it back to ``running`` driven by an unregistered
+   interactive session, that session died at 08:40Z, and no pass could see
+   it. This pass inverts the direction: enumerate ACTIVE-status tasks via
+   ``task.py list-by-status``, and for any task with NO live REGISTERED
+   session AND no real progress marker within
+   :data:`ORPHAN_STALENESS_S_DEFAULT` (~90 min, env
+   ``EPM_ORPHAN_STALENESS_MIN``), RESPAWN via ``spawn-issue --auto`` (which
+   re-registers it), capped at :data:`ORPHAN_MAX_RESPAWNS_PER_DAY` attempts
+   per task per UTC day; when the cap is exhausted or the task's only
+   registration is MANUAL (user-driven — never auto-respawn, #505), degrade
+   to a one-time loud alert marker. Daemon-gated like the respawn pass
+   (liveness is unknowable during an outage; a mass respawn would duplicate
+   pods).
+6. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
    ``issue-progress/<N>.json``, ``issue-tick-last-status/<N>.json``,
-   ``stalled-<N>.json``) for tasks in :data:`TERMINAL_FOR_GC`
+   ``stalled-<N>.json``, ``orphan-<N>.json``) for tasks in
+   :data:`TERMINAL_FOR_GC`
    (``completed`` / ``archived``) — conservative on ``awaiting_promotion``
    and ``blocked`` (the user could still be interacting). Independent of
    the destructive passes; safe to run last.
@@ -138,8 +158,17 @@ the GPU-hour cap. This watcher, each run:
 
   * reads the task's current status (via `task.py view --json`);
   * decides per :func:`decide` whether to RESPAWN / KEEP / DELETE the entry;
-  * a session is "alive" iff its recorded id is in the daemon's live set OR a
-    live session sits in the issue's worktree (`.claude/worktrees/issue-<N>`);
+  * a session is "alive" iff its recorded id is in the daemon's live set OR
+    the issue's MANUAL registration (``manual-issue-<N>.json``, written by
+    bare ``spawn-issue``) records a live id — i.e. a user-driven replacement
+    session counts as the driver. The earlier worktree-cwd fallback ("a live
+    session sits in ``.claude/worktrees/issue-<N>``") was REMOVED 2026-06-10:
+    ``spawn-issue --auto`` spawns drivers WITH cwd = the issue worktree, so
+    every superseded driver generation matches the cwd test, and one idle
+    zombie generation kept #518 reading ``alive=True`` for ~11h after the
+    registered driver died (the registry rewrite on every respawn makes the
+    recorded-id + manual-id checks the precise signal the cwd heuristic was
+    approximating);
   * a dead session is only re-spawned after ``--threshold`` (default 2)
     consecutive misses, so a transient daemon-list glitch never double-spawns;
   * single-flight via flock so two overlapping cron fires can't race.
@@ -187,7 +216,6 @@ from spawn_session import (
     AUTONOMOUS_REGISTRY_DIR,
     PROJECT_ROOT,
     _live_session_ids,
-    _load_session_meta,
 )
 
 # Active-drive statuses: a dead session here SHOULD be resurrected.
@@ -334,6 +362,19 @@ _STALLED_EXHAUSTED_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respa
 # real-progress clock.
 _VM_DISK_NOTE_SENTINEL = "[autonomous_session_watch:vm-disk-low]"
 
+# Substring stamped into the marker posted when the orphan sweep RESPAWNS an
+# active-status task that had no live registered session (the #472 class:
+# registry entry deleted at a TERMINAL park, task later revived by a
+# same-issue follow-up with no re-registration). Same staleness-filter
+# contract as the others.
+_ORPHAN_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:orphan-respawn]"
+
+# Substring stamped into the one-time alert the orphan sweep posts instead of
+# respawning — when the daily respawn-attempt cap is exhausted, the respawn
+# failed, or the task's only registration is MANUAL (user-driven sessions are
+# never auto-respawned, #505). Same staleness-filter contract as the others.
+_ORPHAN_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:orphan-alert]"
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
@@ -347,6 +388,8 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _STALLED_RESPAWN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
         _VM_DISK_NOTE_SENTINEL,
+        _ORPHAN_RESPAWN_NOTE_SENTINEL,
+        _ORPHAN_ALERT_NOTE_SENTINEL,
     }
 )
 
@@ -1013,24 +1056,40 @@ def _daemon_reachable() -> bool:
         return False
 
 
-def _worktree_session_alive(issue: int, live_cwds: set[str]) -> bool:
-    """True iff a live Happy session's cwd is the issue's worktree dir
-    (``.../.claude/worktrees/issue-<N>``). Used ONLY by the respawn pass to
-    decide "a session is driving this issue" even when the recorded Happy id was
-    replaced (manual / PM re-spawn). NOT used by the pod-safety pass as a stop
-    trigger — interactive `/issue <N>` sessions are spawned with cwd = repo root
-    (the worktree doesn't exist yet at spawn), so this signal reports a LIVE
-    interactive session as dead, and stopping on it would kill healthy pods."""
-    return any(p.rstrip("/").endswith(f"/issue-{issue}") for p in live_cwds)
+def _manual_session_alive(issue: int | None, live_ids: set[str]) -> bool:
+    """True iff the issue's MANUAL registration (``manual-issue-<N>.json``,
+    written by bare ``spawn-issue``) records a Happy id in the daemon's live
+    set. Covers the one legitimate case where the AUTONOMOUS entry's recorded
+    id is dead but the issue is still driven: the user/PM opened a manual
+    replacement session (which registers the manual entry but does not rewrite
+    the autonomous one). Respawning next to that live manual driver would
+    duplicate the workflow."""
+    if issue is None:
+        return False
+    path = AUTONOMOUS_REGISTRY_DIR / f"manual-issue-{issue}.json"
+    try:
+        entry = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return False
+    sid = entry.get("happy_session_id")
+    return isinstance(sid, str) and sid in live_ids
 
 
-def _session_alive(entry: dict, live_ids: set[str], live_cwds: set[str]) -> bool:
+def _session_alive(entry: dict, live_ids: set[str]) -> bool:
     """A session counts as alive if its recorded Happy id is still tracked by
-    the daemon, OR a live session occupies the issue's worktree dir (covers a
-    manual / PM re-spawn that replaced the recorded id)."""
+    the daemon, OR the issue's MANUAL registration records a live id (a
+    user/PM replacement session that didn't rewrite the autonomous entry).
+
+    The earlier third signal — "a live session occupies the issue's worktree
+    dir" — was REMOVED 2026-06-10: ``spawn-issue --auto`` spawns drivers WITH
+    cwd = the issue worktree when it already exists, so every superseded
+    driver generation matched the cwd test, and one idle zombie generation
+    kept #518 reading ``alive=True`` for ~11h after its registered driver
+    died. The registry is rewritten on every respawn, so recorded-id +
+    manual-id are the precise signals the cwd heuristic was approximating."""
     if entry.get("happy_session_id") in live_ids:
         return True
-    return _worktree_session_alive(entry.get("issue"), live_cwds)
+    return _manual_session_alive(entry.get("issue"), live_ids)
 
 
 def _respawn(entry: dict, dry_run: bool) -> bool:
@@ -2475,6 +2534,458 @@ def stalled_session_pass(
         )
 
 
+# ─── orphan sweep (registration-INDEPENDENT safety net) ─────────────────────
+#
+# Every other session pass starts from the registry files, so an ACTIVE-status
+# task with NO registration is invisible to all of them. Incident 2026-06-10
+# (#472): the task parked at `awaiting_promotion` (TERMINAL → the respawn pass
+# DELETED its `issue-472.json` per `decide`), a same-issue follow-up later
+# flipped it back to `running` driven by an unregistered interactive session,
+# that session died at 08:40Z, and the task sat orphaned for 10.5h until
+# manual PM triage. This pass inverts the direction: enumerate ACTIVE-status
+# tasks and ask "is anything registered AND live driving this?".
+
+# How long an orphan-candidate task may go without a real progress marker
+# before the sweep acts. Deliberately tighter than ALERT_STALE_HOURS (the
+# pod-safety alert arm) because the respawn here is cheap and idempotent
+# (`/issue` resumes from markers); env-overridable for tuning without a
+# code change.
+ORPHAN_STALENESS_S_DEFAULT = 90 * 60
+
+# Grace window after a registration write during which the task is treated as
+# "spawn in flight" even if the recorded id is not yet in the daemon's live
+# set. Covers the same-tick race where the respawn pass (or a manual
+# recovery) just rewrote the registry but the live-id snapshot predates it.
+ORPHAN_SPAWN_GRACE_S = 15 * 60
+
+# Maximum respawn ATTEMPTS (successes AND failures both count, so a
+# deterministically failing spawn can't hot-loop) per task per UTC day.
+ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT = 2
+
+# Filename prefix for the per-issue orphan-sweep state file at
+# ``~/.eps-autonomous/orphan-<N>.json``. Mirrors the stalled / pod-safety
+# state-file layout; reaped by the generalized GC.
+ORPHAN_STATE_PREFIX = "orphan-"
+
+
+def _orphan_staleness_s() -> float:
+    """Marker-staleness threshold in seconds (env ``EPM_ORPHAN_STALENESS_MIN``,
+    minutes; default :data:`ORPHAN_STALENESS_S_DEFAULT`). A malformed env value
+    falls back to the default — a typo'd var must not disable crash recovery."""
+    raw = os.environ.get("EPM_ORPHAN_STALENESS_MIN")
+    if not raw:
+        return float(ORPHAN_STALENESS_S_DEFAULT)
+    try:
+        return float(raw) * 60.0
+    except ValueError:
+        return float(ORPHAN_STALENESS_S_DEFAULT)
+
+
+def _orphan_max_respawns_per_day() -> int:
+    """Daily per-task respawn-attempt cap (env ``EPM_ORPHAN_RESPAWNS_PER_DAY``;
+    default :data:`ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT`). Malformed env value
+    falls back to the default."""
+    raw = os.environ.get("EPM_ORPHAN_RESPAWNS_PER_DAY")
+    if not raw:
+        return ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT
+    try:
+        return int(raw)
+    except ValueError:
+        return ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT
+
+
+def decide_orphan(
+    status: str | None,
+    mapped_alive: bool,
+    manual_only: bool,
+    entry_age_s: float | None,
+    marker_age_s: float | None,
+    missed: int,
+    *,
+    respawns_today: int = 0,
+    threshold: int = 2,
+    staleness_s: float = ORPHAN_STALENESS_S_DEFAULT,
+    spawn_grace_s: float = ORPHAN_SPAWN_GRACE_S,
+    max_respawns_per_day: int = ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT,
+) -> tuple[str, int]:
+    """Pure decision for the orphan sweep: ``(action, new_missed)`` where
+    action is ``"clear"`` | ``"keep"`` | ``"respawn"`` | ``"alert"``.
+
+    - ``clear``: the task is not orphanable (not ACTIVE, or a registered
+      session is live) — the caller drops any accumulated state.
+    - ``keep``: orphan-candidate but not actionable yet (registration freshly
+      written / markers still fresh / miss count accumulating).
+    - ``respawn``: ACTIVE + no live registered session + markers stale on
+      ``threshold`` consecutive checks, respawn budget available.
+    - ``alert``: same trigger, but the task's only registration is MANUAL
+      (user-driven sessions are never auto-respawned, #505) or the daily
+      attempt cap is exhausted — the caller posts a one-time loud marker.
+
+    ``marker_age_s is None`` (no real progress marker at all) counts as
+    stale — an ACTIVE task with zero progress markers is itself the signal
+    (mirrors the pod-safety pass's None-is-stale rule)."""
+    if status not in ACTIVE:
+        return ("clear", 0)
+    if mapped_alive:
+        return ("clear", 0)
+    if entry_age_s is not None and entry_age_s < spawn_grace_s:
+        return ("keep", 0)
+    if marker_age_s is not None and marker_age_s < staleness_s:
+        return ("keep", 0)
+    new_missed = missed + 1
+    if new_missed < threshold:
+        return ("keep", new_missed)
+    if manual_only:
+        return ("alert", new_missed)
+    if respawns_today >= max_respawns_per_day:
+        return ("alert", new_missed)
+    return ("respawn", 0)
+
+
+def _orphan_state_path(issue: int) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{ORPHAN_STATE_PREFIX}{issue}.json"
+
+
+def _load_orphan_state(issue: int) -> dict:
+    """Read the per-issue orphan-sweep state (``{}`` if absent / unreadable —
+    a fresh/garbled file starts the miss count at 0, mirroring
+    :func:`_load_stalled_state`)."""
+    path = _orphan_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_orphan_state(
+    issue: int,
+    *,
+    missed: int,
+    alerted: bool,
+    respawn_day: str,
+    respawns_today: int,
+    prev: dict | None = None,
+) -> None:
+    """Persist the per-issue orphan-sweep state atomically (temp + rename),
+    mirroring :func:`_save_stalled_state`. ``respawn_day`` + ``respawns_today``
+    implement the per-UTC-day attempt cap; ``alerted`` dedups the one-time
+    alert marker within an episode; ``first_seen`` carries forward so the GC
+    age backstop measures the original episode start."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _orphan_state_path(issue)
+    prev_first_seen = (prev or {}).get("first_seen")
+    if not isinstance(prev_first_seen, int | float):
+        prev_first_seen = time.time()
+    payload = {
+        "missed": missed,
+        "alerted": alerted,
+        "respawn_day": respawn_day,
+        "respawns_today": respawns_today,
+        "first_seen": prev_first_seen,
+    }
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_orphan_state(issue: int) -> None:
+    """Drop the per-issue orphan-sweep state file (episode over: the task left
+    ACTIVE or a registered session went live again)."""
+    _orphan_state_path(issue).unlink(missing_ok=True)
+
+
+def _active_status_tasks() -> dict[int, str]:
+    """``{issue: status}`` for every task currently in an :data:`ACTIVE`
+    status, via ``task.py list-by-status --json`` (one subprocess per status;
+    same fail-soft isolation as :func:`_task_status` — a read failure for one
+    status just yields no candidates from it this tick, never a crash)."""
+    out: dict[int, str] = {}
+    for status in sorted(ACTIVE):
+        try:
+            res = subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "python",
+                    "scripts/task.py",
+                    "list-by-status",
+                    "--status",
+                    status,
+                    "--json",
+                ],
+                cwd=PROJECT_ROOT,
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        except (subprocess.SubprocessError, OSError):
+            continue
+        if res.returncode != 0:
+            continue
+        try:
+            rows = json.loads(res.stdout)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            tid = row.get("id") if isinstance(row, dict) else None
+            if isinstance(tid, int):
+                out[tid] = status
+    return out
+
+
+def _issue_registrations() -> dict[int, dict]:
+    """Scan BOTH registry prefixes and return per-issue registration facts:
+    ``{issue: {"sids": set[str], "has_auto": bool, "has_manual": bool,
+    "newest_write": float}}``. ``newest_write`` is the newest of file mtime
+    and the entry's ``spawned_at`` — used for the spawn-grace window."""
+    out: dict[int, dict] = {}
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return out
+    for prefix, manual in (("issue-", False), ("manual-issue-", True)):
+        for path in AUTONOMOUS_REGISTRY_DIR.glob(f"{prefix}*.json"):
+            issue = _gc_parse_issue_from_path(path, prefix, "")
+            if issue is None:
+                continue
+            try:
+                entry = json.loads(path.read_text())
+            except (json.JSONDecodeError, OSError):
+                entry = {}
+            if not isinstance(entry, dict):
+                entry = {}
+            try:
+                mtime = path.stat().st_mtime
+            except OSError:
+                mtime = 0.0
+            spawned_at = entry.get("spawned_at")
+            if not isinstance(spawned_at, int | float):
+                spawned_at = 0.0
+            rec = out.setdefault(
+                issue,
+                {"sids": set(), "has_auto": False, "has_manual": False, "newest_write": 0.0},
+            )
+            sid = entry.get("happy_session_id")
+            if isinstance(sid, str) and sid:
+                rec["sids"].add(sid)
+            rec["has_auto"] = rec["has_auto"] or not manual
+            rec["has_manual"] = rec["has_manual"] or manual
+            rec["newest_write"] = max(rec["newest_write"], mtime, float(spawned_at))
+    return out
+
+
+def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> bool:
+    """Spawn a fresh ``--auto`` session for an orphaned active task. Mirrors
+    :func:`_respawn_stalled_session` but with an ``RESPAWNED-ORPHAN`` log
+    prefix so the operator can tell the recovery paths apart. The spawn
+    re-registers the issue (``spawn-issue --auto`` rewrites the registry), so
+    the task re-enters normal respawn/stalled coverage."""
+    cmd = [
+        "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
+        "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap_gpu_hours),
+    ]  # fmt: skip
+    if dry_run:
+        print(f"  [dry-run] would respawn orphan: {' '.join(cmd)}")
+        return False
+    res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
+    if res.returncode != 0:
+        print(
+            f"  RESPAWN-ORPHAN FAILED issue #{issue}: {res.stderr.strip()[:300]}",
+            file=sys.stderr,
+        )
+        return False
+    first_line = (res.stdout.strip().splitlines() or [""])[0]
+    print(f"  RESPAWNED-ORPHAN issue #{issue} (active task, no live session): {first_line}")
+    return True
+
+
+def orphan_sweep_pass(
+    dry_run: bool,
+    threshold: int,
+    now: float | None = None,
+    *,
+    daemon_reachable: bool | None = None,
+    live_ids: set[str] | None = None,
+) -> None:
+    """Registration-independent safety net: cross-check ACTIVE-status tasks
+    against live REGISTERED sessions; recover (or loudly alert on) any active
+    task nothing is driving.
+
+    Liveness here is deliberately REGISTRATION-KEYED ONLY (autonomous +
+    manual entry ids vs the daemon's live set) — no worktree-cwd heuristic
+    (see :func:`_session_alive` for why that signal lies) and no self-report
+    freshness (a superseded driver generation kept #518's self-report fresh
+    for 7.4h of real marker silence on 2026-06-10). Daemon-gated like the
+    respawn pass: during an outage liveness is unknowable and a mass respawn
+    would duplicate pods."""
+    now = now if now is not None else time.time()
+    if daemon_reachable is None:
+        daemon_reachable = _daemon_reachable()
+    if not daemon_reachable:
+        print(
+            "orphan-sweep: Happy daemon unreachable; skipping (liveness "
+            "unknowable; a mass respawn on an outage would duplicate pods)"
+        )
+        return
+    if live_ids is None:
+        live_ids = _live_session_ids()
+    active = _active_status_tasks()
+    regs = _issue_registrations()
+    staleness_s = _orphan_staleness_s()
+    max_per_day = _orphan_max_respawns_per_day()
+    day_key = time.strftime("%Y-%m-%d", time.gmtime(now))
+    print(
+        f"orphan-sweep: {len(active)} active-status task(s), "
+        f"{len(regs)} registered issue(s), {len(live_ids)} live session(s)"
+    )
+    for issue in sorted(active):
+        _process_orphan_task(
+            issue,
+            active[issue],
+            regs.get(issue),
+            live_ids,
+            now,
+            dry_run,
+            threshold,
+            staleness_s=staleness_s,
+            max_per_day=max_per_day,
+            day_key=day_key,
+        )
+
+
+def _process_orphan_task(
+    issue: int,
+    status: str,
+    rec: dict | None,
+    live_ids: set[str],
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    staleness_s: float,
+    max_per_day: int,
+    day_key: str,
+) -> None:
+    """Apply one active-status task's orphan decision (gather signals ->
+    :func:`decide_orphan` -> act). ``rec`` is the task's registration record
+    from :func:`_issue_registrations` (or ``None`` for the fully-unregistered
+    #472 class). Honours dry_run (logs but never mutates / spawns)."""
+    mapped_alive = bool(rec and rec["sids"] & live_ids)
+    manual_only = bool(rec and rec["has_manual"] and not rec["has_auto"])
+    entry_age_s = (now - rec["newest_write"]) if rec and rec["newest_write"] > 0 else None
+    state = _load_orphan_state(issue)
+    missed = state.get("missed", 0)
+    if not isinstance(missed, int):
+        missed = 0
+    respawns_today = state.get("respawns_today", 0) if state.get("respawn_day") == day_key else 0
+    if not isinstance(respawns_today, int):
+        respawns_today = 0
+    alerted = bool(state.get("alerted"))
+
+    # Lazy events fetch: only orphan candidates pay the per-task read.
+    marker_age_s: float | None = None
+    is_candidate = not mapped_alive and not (
+        entry_age_s is not None and entry_age_s < ORPHAN_SPAWN_GRACE_S
+    )
+    if is_candidate:
+        latest = _latest_progress_ts(_task_events(issue))
+        marker_age_s = (now - latest) if latest is not None else None
+
+    action, new_missed = decide_orphan(
+        status,
+        mapped_alive,
+        manual_only,
+        entry_age_s,
+        marker_age_s,
+        missed,
+        respawns_today=respawns_today,
+        threshold=threshold,
+        staleness_s=staleness_s,
+        max_respawns_per_day=max_per_day,
+    )
+    gap_str = f"{marker_age_s / 60:.1f}m" if marker_age_s is not None else "none"
+    print(
+        f"  issue #{issue}: status={status} mapped_alive={mapped_alive} "
+        f"manual_only={manual_only} marker_gap={gap_str} "
+        f"missed={missed}->{new_missed} respawns_today={respawns_today}/{max_per_day} "
+        f"alerted={alerted} action={action}"
+    )
+
+    if action == "clear":
+        if state and not dry_run:
+            _clear_orphan_state(issue)
+        return
+    if action == "keep":
+        if not dry_run:
+            _save_orphan_state(
+                issue,
+                missed=new_missed,
+                alerted=alerted,
+                respawn_day=day_key,
+                respawns_today=respawns_today,
+                prev=state,
+            )
+        return
+    if action == "respawn":
+        attempted_ok = _respawn_orphan(issue, _stalled_cap_gpu_hours(issue), dry_run)
+        if not dry_run:
+            # Count the ATTEMPT regardless of success so a failing spawn
+            # can't hot-loop past the daily cap.
+            _save_orphan_state(
+                issue,
+                missed=0,
+                alerted=False,
+                respawn_day=day_key,
+                respawns_today=respawns_today + 1,
+                prev=state,
+            )
+            if attempted_ok:
+                _post_progress_marker(
+                    issue,
+                    f"{_ORPHAN_RESPAWN_NOTE_SENTINEL} active task "
+                    f"(status={status}) had no live registered session and no "
+                    f"real progress marker for {gap_str}; auto-respawned via "
+                    f"spawn-issue --auto (attempt {respawns_today + 1}/{max_per_day} "
+                    f"today).",
+                    dry_run,
+                    label="orphan-respawn",
+                )
+        return
+    # action == "alert": one-time loud marker per episode.
+    reason = (
+        "only a MANUAL (user-driven) session is registered; never auto-respawned"
+        if manual_only
+        else f"daily respawn-attempt cap exhausted ({respawns_today}/{max_per_day})"
+    )
+    print(
+        f"  ORPHANED issue #{issue}: status={status}, no live registered "
+        f"session, marker_gap={gap_str}; {reason}",
+        file=sys.stderr,
+    )
+    if not alerted:
+        _post_progress_marker(
+            issue,
+            f"{_ORPHAN_ALERT_NOTE_SENTINEL} active task (status={status}) has "
+            f"no live registered session and no real progress marker for "
+            f"{gap_str}; {reason}. Manual recovery: uv run python "
+            f"scripts/spawn_session.py spawn-issue --issue {issue} --auto",
+            dry_run,
+            label="orphan-alert",
+        )
+    if not dry_run:
+        _save_orphan_state(
+            issue,
+            missed=new_missed,
+            alerted=True,
+            respawn_day=day_key,
+            respawns_today=respawns_today,
+            prev=state,
+        )
+
+
 # ─── generalized GC of stale ~/.eps-autonomous/ per-issue files ──────────────
 
 # Task statuses for which per-issue registry / progress / stalled-state files
@@ -2494,6 +3005,7 @@ TERMINAL_FOR_GC = {"completed", "archived"}
 _GC_TARGETS: tuple[tuple[str, str], ...] = (
     ("manual-issue-", ""),
     (STALLED_STATE_PREFIX, ""),
+    (ORPHAN_STATE_PREFIX, ""),
     ("", "issue-progress"),
     ("", "issue-tick-last-status"),
 )
@@ -2768,15 +3280,14 @@ def main(argv: list[str] | None = None) -> int:
     # everywhere so a flap mid-tick can't make different passes disagree
     # about daemon state (and so we don't re-pay the probe cost).
     daemon_reachable = _daemon_reachable()
+    live_ids: set[str] = set()
     if daemon_reachable:
         live_ids = _live_session_ids()
-        meta = _load_session_meta()
-        live_cwds = {m.get("path", "") for sid, m in meta.items() if sid in live_ids}
 
         entries = sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json"))
         print(f"respawn: {len(entries)} registered, {len(live_ids)} live session(s)")
         for path in entries:
-            _process_entry(path, live_ids, live_cwds, args.dry_run, args.threshold)
+            _process_entry(path, live_ids, args.dry_run, args.threshold)
     else:
         print(
             "respawn: Happy daemon unreachable; skipping respawn pass "
@@ -2799,6 +3310,20 @@ def main(argv: list[str] | None = None) -> int:
     # won't accidentally bias the "has_pod" flag).
     stalled_session_pass(args.dry_run, args.threshold, daemon_reachable=daemon_reachable)
 
+    # Orphan sweep: registration-INDEPENDENT cross-check of ACTIVE-status
+    # tasks vs live registered sessions. Catches the class the registry-driven
+    # passes structurally cannot see: an active task with NO registration at
+    # all (#472, 2026-06-10 — entry deleted at a TERMINAL park, task revived
+    # by a same-issue follow-up, driver died unobserved for 10.5h). Runs
+    # AFTER the respawn + stalled passes so a same-tick recovery by either
+    # one is visible via its fresh registry write (the spawn-grace window).
+    orphan_sweep_pass(
+        args.dry_run,
+        args.threshold,
+        daemon_reachable=daemon_reachable,
+        live_ids=live_ids if daemon_reachable else None,
+    )
+
     # GC: reap per-issue state files whose tasks are completed/archived OR
     # whose status is unresolvable AND mtime is past the age backstop.
     # Conservative — never touches awaiting_promotion / blocked / live park
@@ -2808,9 +3333,7 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def _process_entry(
-    path: Path, live_ids: set[str], live_cwds: set[str], dry_run: bool, threshold: int
-) -> None:
+def _process_entry(path: Path, live_ids: set[str], dry_run: bool, threshold: int) -> None:
     """Apply one registry entry's decision (read status -> decide -> act).
 
     Removes the entry on unreadable/missing-task/backstop-age; respawns a dead
@@ -2838,7 +3361,7 @@ def _process_entry(
             path.unlink(missing_ok=True)
         return
 
-    alive = _session_alive(entry, live_ids, live_cwds)
+    alive = _session_alive(entry, live_ids)
     action, new_missed = decide(status, alive, entry.get("missed", 0), threshold)
     print(
         f"  issue #{issue}: status={status} alive={alive} "
