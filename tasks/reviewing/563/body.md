@@ -257,3 +257,4 @@ uv run python scripts/plot_issue563_base_panel.py
 # VM (CPU): key-exclusion robustness artifact (round-2)
 uv run python scripts/issue563_key_exclusion_robustness.py
 ```
+- **Methodology reference:** [docs/methodology/issue_563.md](https://github.com/superkaiba/explore-persona-space/blob/70f07d93fe0c45f29d076ce6db249b382ae17ac2/docs/methodology/issue_563.md) · [gist](https://gist.github.com/superkaiba/220b961d9f677e2f4cd5d27451af8456)
