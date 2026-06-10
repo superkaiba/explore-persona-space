@@ -3352,8 +3352,8 @@
       "goal": "Determine whether the dampening of the post-SFT residual marker elevation under non-default system prompts requires persona framing or follows from any departure from the trained assistant context, by reading the marker slot statistics under a non-persona instruction prompt, a never-trained medical persona, and a second never-trained non-medical persona on the existing 12 Phase-2 adapters.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/562",
-      "status": "proposed",
+      "path": "tasks/planning/562",
+      "status": "planning",
       "title": "Is the residual dampening persona-specific or any-system-prompt-general? Non-persona control + never-trained medical persona panel on the #558 rig"
     },
     "563": {
