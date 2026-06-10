@@ -1395,6 +1395,10 @@ markers:
     posted_by: skill
     when: "Step 6a"
     fields: "model id, HF gate status, retry plan if rejected"
+  - kind: "epm:carry-over-missing"
+    posted_by: skill
+    when: "Step 6a.5"
+    fields: "unresolved carry-over artifact URLs (HF/WandB) the plan cites; status:blocked — user re-uploads or corrects the plan, then re-runs /issue <N>"
   - kind: "epm:hf-quota-exceeded"
     posted_by: skill
     when: "Step 6a.6"
