@@ -17,6 +17,9 @@ Conventions mirror scripts/rollup_issue563_base_panel.py exactly:
     convention for these ad-hoc recomputes)
 
 Also records (for the body's data-quality + covariate prose):
+  - per cell and per matcher, the matched row indices: which role-cell rows
+    contain the matcher, which assistant-cell rows contain it, and the union
+    (the excluded pair rows) — so every excluded pair is auditable by row
   - the one truncated software-engineer row (index, repeated-tail diagnosis,
     its delta, and the SWE mean excluding that pair)
   - per-cell mean generated tokens next to per-cell mean rise (the inverse
@@ -71,6 +74,11 @@ def load_cell(cell: str) -> tuple[list[dict], np.ndarray]:
     return comps, logp
 
 
+def matched_rows(rows: list[dict], key: str) -> list[int]:
+    """Row indices (0-based) whose completion text contains the matcher string."""
+    return [i for i, r in enumerate(rows) if key in r["completion_text"]]
+
+
 def boot_stats(kept: np.ndarray) -> dict:
     rng = np.random.default_rng(SEED)
     idx = rng.integers(0, len(kept), size=(N_RESAMPLES, len(kept)))
@@ -121,6 +129,11 @@ def main() -> None:
                 ]
             )
             cell_out[label] = boot_stats(deltas[keep])
+            cell_out[label]["matched_row_indices"] = {
+                "role_cell_rows": matched_rows(comps[cell], key),
+                "assistant_cell_rows": matched_rows(base_comps, key),
+                "excluded_pair_rows": [int(i) for i in np.flatnonzero(~keep)],
+            }
         cell_out["mention_rates"] = {
             "bracketed_key_rate": float(
                 np.mean([KEY_BRACKETED in r["completion_text"] for r in comps[cell]])
