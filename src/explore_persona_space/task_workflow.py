@@ -84,6 +84,11 @@ STATUSES = (
     "interpreting",
     "reviewing",
     "awaiting_promotion",
+    # A same-issue follow-up round is executing on this task (tagged
+    # `followup-auto` | `followup-manual`); legacy semantics: parent complete
+    # with `parent_id` children still in flight. NOT terminal, NOT the park
+    # status. Un-phantomed 2026-06-10 (was previously only in workflow.yaml).
+    "followups_running",
     "completed",
     "blocked",
     "archived",
