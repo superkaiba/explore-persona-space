@@ -2850,8 +2850,8 @@
       "goal": "Add multi-turn conversation-drift contexts as a third context type to #489's union panel (reusing #489's exact marker \u203b, training rig, post-context+question extraction point, and on-policy \u0394G dependent variable), and test whether base-model cosine/JS distance predicts on-policy marker transfer to and from multi-turn-drift contexts \u2014 merging with #489's single-turn results so the conversation-length silencing (#377) reads as a prediction of the distance metric rather than a separate survival effect.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/501",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/501",
+      "status": "completed",
       "title": "Base-model cosine distance ranks the marker log-prob proxy across the single-turn / multi-turn format boundary, but the marker never emits on-policy so #377's behavioral silencing remains unexplained (MODERATE confidence)"
     },
     "502": {
