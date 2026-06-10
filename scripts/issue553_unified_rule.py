@@ -1,5 +1,5 @@
-# ruff: noqa: RUF003
-# Intentional Unicode (rho, ※, Δ, −, —) in scientific docstrings + labels.
+# ruff: noqa: RUF001, RUF003
+# Intentional Unicode (rho, ※, Δ, −, —, ×) in scientific docstrings + labels.
 """Task #553 — Deliverable 2: unified leakage rule, re-fit per the critic convention.
 
 DV = ``margin_trained`` (ABSOLUTE trained EOS margin at the corrected slot,
@@ -51,6 +51,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 
+import issue539_residual_per_cohort as i539
 import issue553_panel as p553
 import matplotlib.pyplot as plt
 import numpy as np
@@ -379,6 +380,98 @@ def make_figure(fits: dict, fig_dir: Path) -> None:
     print(f"[figures] wrote unified_rule_coefficient_forest to {fig_dir}")
 
 
+def make_exploratory_figures(panel: dict, masks: dict, fig_dir: Path) -> None:
+    """Exploratory over-produce dump (plan section 4; analyzer picks heroes).
+
+    Renders the interaction partial-residual plots in BOTH spaces (margin and
+    log-prob — each judged within its own space, no cross-DV comparison) and
+    the raw DV-vs-predictor scatters (the raw counterpart of the joint fits;
+    raw-alongside-processed convention). The pooled panel colors points by
+    cohort and carries NO pooled correlation — per-cohort fits are the
+    registered reads. No new statistics families — figures only.
+    """
+    set_paper_style("blog")
+    colors = paper_palette(3)
+    spaces = (
+        ("margin_trained", "prior_margin_own", "EOS-margin space (logits)"),
+        ("trained_logp", "prior_logp_own", "log-prob space (nats)"),
+    )
+
+    # 1. Interaction partial-residual plots, space x cohort.
+    fig, axes = plt.subplots(2, 3, figsize=(11.5, 7.0))
+    for row, (dv_col, prior_col, space_label) in enumerate(spaces):
+        for col, cohort in enumerate(COHORTS):
+            m = masks[cohort]
+            y = panel[dv_col][m]
+            prior = panel[prior_col][m]
+            cos = panel["cosine"][m]
+            cohort_flag = (
+                panel["is_instructed"][m].astype(np.float64)
+                if cohort == "pooled_cohort_fe"
+                else None
+            )
+            design, names = _build_design(prior, cos, True, cohort_flag, None, 0, False)
+            coef, resid, _ = p553.ols_fit(design, y)
+            i_inter = 1 + names.index("gamma_interaction")
+            x_inter = design[:, i_inter]
+            partial = resid + coef[i_inter] * x_inter
+            ax = axes[row, col]
+            ax.plot(x_inter, partial, "o", ms=2.5, alpha=0.4, color=colors[0])
+            xs_line = np.linspace(float(x_inter.min()), float(x_inter.max()), 10)
+            ax.plot(xs_line, coef[i_inter] * xs_line, color=colors[1], lw=1.5)
+            ax.set_title(
+                f"{COHORT_DISPLAY[cohort]}\ninteraction slope = {coef[i_inter]:+.4f}", fontsize=8
+            )
+            ax.set_xlabel("prior × cosine (raw product)", fontsize=7)
+            if col == 0:
+                ax.set_ylabel(f"partial residual,\n{space_label}", fontsize=7)
+    fig.suptitle(
+        "Interaction partial residuals, both spaces (each judged within its own space)",
+        fontsize=9,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "unified_rule_interaction_partial_residuals", dir=fig_dir)
+    plt.close(fig)
+    print(f"[figures:exploratory] wrote unified_rule_interaction_partial_residuals to {fig_dir}")
+
+    # 2. Raw DV-vs-predictor scatters (raw counterpart of the joint fits).
+    preds = (
+        ("prior_margin_own", "own-response base prior margin (per bystander)"),
+        ("cosine", "cosine(S, B)"),
+    )
+    fig, axes = plt.subplots(2, 3, figsize=(11.5, 7.0))
+    for row, (pred_col, pred_label) in enumerate(preds):
+        for col, cohort in enumerate(COHORTS):
+            m = masks[cohort]
+            x, y = panel[pred_col][m], panel["margin_trained"][m]
+            ax = axes[row, col]
+            if cohort == "pooled_cohort_fe":
+                instr = panel["is_instructed"][m]
+                ax.plot(x[~instr], y[~instr], "o", ms=2.5, alpha=0.4, color=colors[0])
+                ax.plot(x[instr], y[instr], "o", ms=2.5, alpha=0.4, color=colors[1])
+                ax.set_title(
+                    f"{COHORT_DISPLAY[cohort]}\n(color = cohort; per-cohort fits are the "
+                    "registered reads)",
+                    fontsize=7,
+                )
+            else:
+                ax.plot(x, y, "o", ms=2.5, alpha=0.4, color=colors[0])
+                ax.set_title(
+                    f"{COHORT_DISPLAY[cohort]}\nraw rho={i539._spearman_rho(x, y):+.2f}",
+                    fontsize=8,
+                )
+            ax.set_xlabel(pred_label, fontsize=7)
+            if col == 0:
+                ax.set_ylabel("trained EOS margin (logits)", fontsize=7)
+    fig.suptitle(
+        "Raw scatters alongside the joint fits: trained EOS margin vs each predictor", fontsize=9
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "unified_rule_raw_scatters", dir=fig_dir)
+    plt.close(fig)
+    print(f"[figures:exploratory] wrote unified_rule_raw_scatters to {fig_dir}")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = p553.common_parser(
         "Task #553 D2: unified leakage rule re-fit (EOS-margin DV, joint fits + CV)."
@@ -552,6 +645,7 @@ def main(argv: list[str] | None = None) -> int:
     }
     p553.write_json(args.out_dir / "unified_rule.json", results)
     make_figure(fits, args.fig_dir)
+    make_exploratory_figures(panel, masks, args.fig_dir)
 
     b = fits["ordinary_cross/full/with_interaction"]["coefficients"]
     print(

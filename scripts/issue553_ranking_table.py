@@ -142,14 +142,25 @@ def _paired_difference_block(rho_a: dict[str, float], rho_b: dict[str, float], a
     }
 
 
-def make_figure(table: dict, fig_dir: Path) -> None:
-    """Per-source rho strip per ranker x slice, pre/post-train visually split."""
+def make_figure(
+    table: dict,
+    fig_dir: Path,
+    dv_name: str = "margin_trained",
+    dv_label: str = "trained EOS margin",
+    fig_name: str = "ranking_table_per_source_rho",
+    exploratory: bool = False,
+) -> None:
+    """Per-source rho strip per ranker x slice, pre/post-train visually split.
+
+    The trained-EOS-margin DV is the hero; the secondary emission-rate DV
+    renders into the exploratory dump (plan section 4) with the same layout.
+    """
     set_paper_style("blog")
     colors = paper_palette(2)
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.6), sharey=True)
     for ax, slice_name in zip(axes, ("all_25", "ordinary_15"), strict=True):
         for xi, ranker in enumerate(RANKERS):
-            blk = table["margin_trained"][slice_name][ranker]
+            blk = table[dv_name][slice_name][ranker]
             vals = [v for v in blk["per_source_rho"].values() if not np.isnan(v)]
             color = colors[1] if RANKER_LABEL[ranker] == "post-train forecast-where" else colors[0]
             jitter = (np.random.default_rng(0).random(len(vals)) - 0.5) * 0.18
@@ -166,16 +177,17 @@ def make_figure(table: dict, fig_dir: Path) -> None:
             f"{'All 25 bystanders' if slice_name == 'all_25' else '15 ordinary bystanders'}",
             fontsize=9,
         )
-    axes[0].set_ylabel("Per-source Spearman rho vs trained EOS margin")
+    axes[0].set_ylabel(f"Per-source Spearman rho vs {dv_label}")
     fig.suptitle(
         "Within-source context ranking (16 source dots + median; orange = post-train "
         "forecast-where, blue = pre-training forecast)",
         fontsize=9,
     )
     fig.tight_layout()
-    savefig_paper(fig, "ranking_table_per_source_rho", dir=fig_dir)
+    savefig_paper(fig, fig_name, dir=fig_dir)
     plt.close(fig)
-    print(f"[figures] wrote ranking_table_per_source_rho to {fig_dir}")
+    tag = "figures:exploratory" if exploratory else "figures"
+    print(f"[{tag}] wrote {fig_name} to {fig_dir}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -277,6 +289,15 @@ def main(argv: list[str] | None = None) -> int:
     }
     p553.write_json(args.out_dir / "ranking_table.json", results)
     make_figure(table, args.fig_dir)
+    # Exploratory dump: same strip layout for the secondary emission-rate DV.
+    make_figure(
+        table,
+        args.fig_dir,
+        dv_name="emission_rate",
+        dv_label="on-policy in-R emission rate (secondary DV)",
+        fig_name="ranking_table_per_source_rho_emission",
+        exploratory=True,
+    )
 
     for slice_name in ("all_25", "ordinary_15"):
         blk = table["margin_trained"][slice_name]

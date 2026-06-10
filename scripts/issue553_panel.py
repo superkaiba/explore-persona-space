@@ -94,6 +94,11 @@ def build_margin_panel(i532_dir: Path) -> dict:
     slot misalignment, or identity violation (plan section 3.1).
     """
     followup = i532_dir / "logp_slot_followup"
+    # Directory file-count asserts: the keyed 16x26 loop below fails loud on a
+    # MISSING cell, but an EXTRA/stale JSON would be silently ignored — flag it.
+    for sub in ("per_cell_trained", "per_cell_base"):
+        n_json = len(list((followup / sub).glob("*.json")))
+        assert n_json == 416, f"{sub}: expected exactly 416 per-cell JSONs, found {n_json}"
     predictors = json.loads((i532_dir / "predictors.json").read_text())
     sources: list[str] = predictors["sources"]
     bystanders: list[str] = predictors["bystanders"]
@@ -606,7 +611,9 @@ def share_permutation_null(
     is exactly preserved), recomputing the permuted factor's share beyond the
     preserved factor per rep. Persisted in full per plan concern 13.5 (FE
     shares are upward-biased; the null distribution calibrates the observed
-    share). Two-sided add-one p.
+    share). ONE-SIDED (share >= observed) add-one p — a variance share is
+    one-sided-large by construction, the registered exception to the module's
+    two-sided default.
     """
     rng = np.random.default_rng(seed)
     _, ac = np.unique(a_labels, return_inverse=True)
@@ -821,6 +828,105 @@ def cgm_twoway_se(
         "n_clusters_b": int(b_codes.max()) + 1,
         "small_sample_correction": "none (plug-in; cross-check only, never headline)",
     }
+
+
+# ── Exploratory figure helpers (plan section 4 over-produce dump) ────────────
+
+
+def exploratory_raw_vs_fe_grid(
+    x: np.ndarray,
+    targets: dict[str, np.ndarray],
+    a_labels: np.ndarray,
+    b_labels: np.ndarray,
+    x_label: str,
+    fig_name: str,
+    fig_dir: Path,
+    suptitle: str,
+) -> None:
+    """Raw scatter ALONGSIDE the two-way-FE-corrected scatter, one column per target.
+
+    The raw-alongside-processed convention: every FE-corrected read in the
+    dump gets its raw counterpart in the same figure (top row raw, bottom row
+    two-way-FE residuals; Spearman rho of each view in the axes title).
+    Figures only — the registered inference for these reads lives in the
+    output JSONs; no new statistics families here.
+    """
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("blog")
+    colors = paper_palette(2)
+    names = list(targets)
+    x_tw, _ = i539._twoway_fe_residualize(x, a_labels, b_labels)
+    fig, axes = plt.subplots(2, len(names), figsize=(2.6 * len(names) + 1.0, 5.6))
+    for col, name in enumerate(names):
+        y = targets[name]
+        y_tw, _ = i539._twoway_fe_residualize(y, a_labels, b_labels)
+        ax_raw, ax_fe = axes[0, col], axes[1, col]
+        ax_raw.plot(x, y, "o", ms=2.5, alpha=0.45, color=colors[0])
+        ax_raw.set_title(
+            f"{CHANNEL_DISPLAY.get(name, name)}\nraw rho={i539._spearman_rho(x, y):+.2f}",
+            fontsize=7,
+        )
+        ax_fe.plot(x_tw, y_tw, "o", ms=2.5, alpha=0.45, color=colors[1])
+        ax_fe.set_title(f"two-way FE rho={i539._spearman_rho(x_tw, y_tw):+.2f}", fontsize=7)
+        ax_fe.set_xlabel(f"{x_label}\n(FE residual)", fontsize=7)
+        if col == 0:
+            ax_raw.set_ylabel("raw value", fontsize=8)
+            ax_fe.set_ylabel("two-way FE residual", fontsize=8)
+    fig.suptitle(suptitle, fontsize=9)
+    fig.tight_layout()
+    savefig_paper(fig, fig_name, dir=fig_dir)
+    plt.close(fig)
+    print(f"[figures:exploratory] wrote {fig_name} to {fig_dir}")
+
+
+def exploratory_argmax_bars(
+    argmax_by_group: dict[str, dict[str, float]],
+    fig_name: str,
+    fig_dir: Path,
+    title: str,
+) -> None:
+    """Stacked argmax-composition bars (marker / EOS / other) per group x side.
+
+    The z_top_nonmarker motivating evidence (plan D7): the OTHER share is the
+    rate at which the slot argmax is neither ※ nor EOS — the two-horse-race
+    failure of the base-side read. ``argmax_by_group`` maps a display label to
+    a dict with ``marker_rate`` / ``eos_rate`` / ``other_rate``.
+    """
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("blog")
+    colors = paper_palette(3)
+    labels = list(argmax_by_group)
+    marker = np.array([argmax_by_group[g]["marker_rate"] for g in labels])
+    eos = np.array([argmax_by_group[g]["eos_rate"] for g in labels])
+    other = np.array([argmax_by_group[g]["other_rate"] for g in labels])
+    xs = np.arange(len(labels))
+    fig, ax = plt.subplots(figsize=(1.1 * len(labels) + 3.0, 4.2))
+    ax.bar(xs, marker, color=colors[0], label="argmax = ※")
+    ax.bar(xs, eos, bottom=marker, color=colors[1], label="argmax = EOS")
+    ax.bar(xs, other, bottom=marker + eos, color=colors[2], label="argmax = other token")
+    ax.set_xticks(xs)
+    ax.set_xticklabels(labels, rotation=30, ha="right", fontsize=7)
+    ax.set_ylabel("Share of post-response slots")
+    ax.set_title(title, fontsize=9)
+    ax.legend(fontsize=7)
+    fig.tight_layout()
+    savefig_paper(fig, fig_name, dir=fig_dir)
+    plt.close(fig)
+    print(f"[figures:exploratory] wrote {fig_name} to {fig_dir}")
 
 
 # ── Output plumbing ──────────────────────────────────────────────────────────

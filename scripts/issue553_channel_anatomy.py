@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002, RUF003
+# ruff: noqa: RUF001, RUF002, RUF003
 # Intentional Unicode (rho, ※, Δ, −, —) in scientific docstrings + labels.
 """Task #553 — Deliverable 3: channel anatomy with inference (#532 followup panel).
 
@@ -345,6 +345,114 @@ def make_figure(quintets: dict, fig_dir: Path) -> None:
     print(f"[figures] wrote channel_anatomy_quintet_forest to {fig_dir}")
 
 
+def make_exploratory_figures(panel: dict, masks: dict, argmax: dict, fig_dir: Path) -> None:
+    """Exploratory over-produce dump (plan section 4; analyzer picks heroes).
+
+    Renders, from the already-built panel arrays: cosine raw-alongside-FE
+    scatter grids per cohort; the per-bystander clamp forest; the
+    margin-vs-log-prob space-agreement scatters per cohort (descriptive
+    agreement diagnostics only — never a cross-DV R² comparison); and the
+    #532 argmax-composition bars. No new statistics families — figures only.
+    """
+    set_paper_style("blog")
+    colors = paper_palette(3)
+
+    # 1. Raw scatters ALONGSIDE every FE-corrected cosine read, per cohort.
+    cohort_display = {
+        "ordinary_cross": "ordinary cross-context cells",
+        "instructed_strip": "the instructed strip",
+    }
+    for cohort in COHORTS:
+        m = masks[cohort]
+        p553.exploratory_raw_vs_fe_grid(
+            x=panel["cosine"][m],
+            targets={t: panel[t][m] for t in QUINTET},
+            a_labels=panel["source_cid"][m],
+            b_labels=panel["bystander_label"][m],
+            x_label="cosine(S, B)",
+            fig_name=f"channel_anatomy_cosine_raw_vs_fe_{cohort}",
+            fig_dir=fig_dir,
+            suptitle=(
+                f"#532 cosine reads on {cohort_display[cohort]}: "
+                "raw (top) alongside two-way-FE-corrected (bottom)"
+            ),
+        )
+
+    # 2. Per-bystander clamp forest: per-bystander mean Δz(EOS) + per-cell dots.
+    rows: list[tuple[str, np.ndarray, str]] = []
+    for cohort, color in (("ordinary_cross", colors[0]), ("instructed_strip", colors[1])):
+        m = masks[cohort]
+        byst = panel["bystander_label"][m]
+        y = panel["dz_eos"][m]
+        uniq = sorted(np.unique(byst), key=lambda b: float(y[byst == b].mean()))
+        rows.extend((b, y[byst == b], color) for b in uniq)
+    fig, ax = plt.subplots(figsize=(7.0, 0.26 * len(rows) + 1.4))
+    rng = np.random.default_rng(0)
+    for yi, (_b, vals, color) in enumerate(rows):
+        jitter = (rng.random(len(vals)) - 0.5) * 0.5
+        ax.plot(vals, np.full(len(vals), yi) + jitter, "o", ms=2.2, alpha=0.35, color=color)
+        ax.plot([float(vals.mean())] * 2, [yi - 0.3, yi + 0.3], color=color, lw=2.0)
+    ax.axvline(0.0, color="0.4", lw=0.8)
+    ax.set_yticks(np.arange(len(rows)))
+    ax.set_yticklabels([r[0] for r in rows], fontsize=6)
+    ax.set_xlabel("Δz(EOS) trained − base (per-cell dots + per-bystander mean)")
+    ax.set_title(
+        "Per-bystander EOS clamp, #532 followup panel "
+        "(blue = ordinary cross-context, orange = instructed strip)",
+        fontsize=9,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "channel_anatomy_per_bystander_clamp_forest", dir=fig_dir)
+    plt.close(fig)
+    print(f"[figures:exploratory] wrote channel_anatomy_per_bystander_clamp_forest to {fig_dir}")
+
+    # 3. Margin-vs-log-prob space-agreement scatters per cohort (descriptive).
+    fig, axes = plt.subplots(2, 2, figsize=(9.0, 7.2))
+    pairs = (
+        ("margin_trained", "trained_logp", "trained level"),
+        ("dmargin", "dlogp", "trained − base shift"),
+    )
+    for row, (mcol, lcol, what) in enumerate(pairs):
+        for col, cohort in enumerate(COHORTS):
+            m = masks[cohort]
+            ax = axes[row, col]
+            x, y = panel[mcol][m], panel[lcol][m]
+            ax.plot(x, y, "o", ms=2.5, alpha=0.4, color=colors[0])
+            ax.set_title(
+                f"{'Ordinary cross' if cohort == 'ordinary_cross' else 'Instructed strip'} — "
+                f"{what}\nrho={i539._spearman_rho(x, y):+.2f}",
+                fontsize=8,
+            )
+            ax.set_xlabel("EOS-margin space (logits)", fontsize=7)
+            if col == 0:
+                ax.set_ylabel("log-prob space (nats)", fontsize=7)
+    fig.suptitle(
+        "Margin vs log-prob space agreement per cohort "
+        "(descriptive diagnostic only — divergence is the softmax-compression signature)",
+        fontsize=9,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "channel_anatomy_space_agreement", dir=fig_dir)
+    plt.close(fig)
+    print(f"[figures:exploratory] wrote channel_anatomy_space_agreement to {fig_dir}")
+
+    # 4. Argmax-composition bars (#532, per cohort x side).
+    groups: dict[str, dict[str, float]] = {}
+    for cohort in ("ordinary_cross", "instructed_strip"):
+        for side in ("trained", "base"):
+            label = (
+                f"{'ordinary cross' if cohort == 'ordinary_cross' else 'instructed strip'}, "
+                f"{side} side"
+            )
+            groups[label] = argmax[cohort][side]
+    p553.exploratory_argmax_bars(
+        groups,
+        fig_name="channel_anatomy_argmax_composition",
+        fig_dir=fig_dir,
+        title="#532 matched-slot argmax composition (z_top_nonmarker motivating evidence)",
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     args = p553.common_parser(
         "Task #553 D3: channel anatomy with inference on the #532 followup panel."
@@ -462,6 +570,7 @@ def main(argv: list[str] | None = None) -> int:
     }
     p553.write_json(args.out_dir / "channel_anatomy.json", results)
     make_figure(quintets, args.fig_dir)
+    make_exploratory_figures(panel, masks, argmax, args.fig_dir)
 
     print(
         f"[headline] dz_marker shares src/byst/pair = "

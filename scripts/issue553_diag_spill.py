@@ -91,8 +91,20 @@ def _slice_inference(
     }
 
 
-def make_figure(sources: list[str], diag: np.ndarray, fe: np.ndarray, fig_dir: Path) -> None:
-    """Annotated 16-point scatter naming the thin-prompt sources."""
+def make_figure(
+    sources: list[str],
+    diag: np.ndarray,
+    fe: np.ndarray,
+    fig_dir: Path,
+    spill_label: str = "Δmargin",
+    fig_name: str = "diag_vs_spill_scatter",
+    exploratory: bool = False,
+) -> None:
+    """Annotated 16-point scatter naming the thin-prompt sources.
+
+    The ``Δmargin`` spill channel is the hero; the ``Δz(※)`` variant renders
+    into the exploratory dump (plan section 4) with the same construction.
+    """
     set_paper_style("blog")
     colors = paper_palette(2)
     fig, ax = plt.subplots(figsize=(6.5, 5.0))
@@ -102,12 +114,13 @@ def make_figure(sources: list[str], diag: np.ndarray, fe: np.ndarray, fig_dir: P
         label = f"{s} ({THIN_SOURCES[s]})" if thin else s
         ax.annotate(label, (d, f), fontsize=7, xytext=(4, 3), textcoords="offset points")
     ax.set_xlabel("Diagonal trained EOS margin (at-home implant strength)")
-    ax.set_ylabel("Source FE of off-diagonal Δmargin (spill)")
+    ax.set_ylabel(f"Source FE of off-diagonal {spill_label} (spill)")
     ax.set_title("Diag-strength vs spill, 16 sources (thin-prompt sources highlighted)", fontsize=9)
     fig.tight_layout()
-    savefig_paper(fig, "diag_vs_spill_scatter", dir=fig_dir)
+    savefig_paper(fig, fig_name, dir=fig_dir)
     plt.close(fig)
-    print(f"[figures] wrote diag_vs_spill_scatter to {fig_dir}")
+    tag = "figures:exploratory" if exploratory else "figures"
+    print(f"[{tag}] wrote {fig_name} to {fig_dir}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -147,6 +160,17 @@ def main(argv: list[str] | None = None) -> int:
         results["channels"][spill_channel] = blk
         if spill_channel == "dmargin":
             make_figure(sources, diag, fe, args.fig_dir)
+        else:
+            # Exploratory dump: the Δz(※) spill variant (plan section 4).
+            make_figure(
+                sources,
+                diag,
+                fe,
+                args.fig_dir,
+                spill_label="Δz(※)",
+                fig_name="diag_vs_spill_scatter_dz_marker",
+                exploratory=True,
+            )
 
     results["inline_vs_reviewed"] = [
         p553.ivr_entry(

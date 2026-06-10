@@ -183,6 +183,45 @@ def make_figure(panel: dict, masks: dict, df478, gradient: dict, fig_dir: Path) 
     print(f"[figures] wrote exposure_dz_eos_classes to {fig_dir}")
 
 
+def make_exploratory_figures(panel: dict, masks: dict, df478, fig_dir: Path) -> None:
+    """Exploratory over-produce dump (plan section 4; analyzer picks heroes).
+
+    Base-side z(EOS) distributions per exposure class (plan concern 13.1: the
+    raw base-side term shown next to the D6 gap, so the reader can judge how
+    much of the 'routed clamp' is base variance + arithmetic). Figures only.
+    """
+    set_paper_style("blog")
+    colors = paper_palette(3)
+    ze_b = panel["q_ze_b"].mean(axis=1)
+    groups = [
+        ("#532 ordinary\n(trained-negative)", ze_b[masks["ordinary_cross"]], colors[0]),
+        ("#532 instructed\n(never-clamped)", ze_b[masks["instructed_strip"]], colors[1]),
+        (
+            "#478 held-out\n(never-negative)",
+            df478["z_eos_base"].to_numpy(dtype=np.float64),
+            colors[2],
+        ),
+    ]
+    fig, ax = plt.subplots(figsize=(6.5, 4.4))
+    for xi, (_label, vals, c) in enumerate(groups):
+        rng = np.random.default_rng(0)
+        sample = vals if len(vals) <= 800 else rng.choice(vals, size=800, replace=False)
+        jitter = (rng.random(len(sample)) - 0.5) * 0.3
+        ax.plot(np.full(len(sample), xi) + jitter, sample, "o", ms=2, alpha=0.25, color=c)
+        ax.plot([xi - 0.25, xi + 0.25], [float(np.mean(vals))] * 2, color=c, lw=2.5)
+    ax.set_xticks(range(3))
+    ax.set_xticklabels([g[0] for g in groups], fontsize=8)
+    ax.set_ylabel("Base-side z(EOS) at matched slots (logits)")
+    ax.set_title(
+        "Base-side z(EOS) distributions by exposure class (raw term behind the clamp gap)",
+        fontsize=9,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "exposure_base_z_eos_distributions", dir=fig_dir)
+    plt.close(fig)
+    print(f"[figures:exploratory] wrote exposure_base_z_eos_distributions to {fig_dir}")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = p553.common_parser(
         "Task #553 D6: negative-set exposure analysis (within-#532 + #478 contrast)."
@@ -307,6 +346,7 @@ def main(argv: list[str] | None = None) -> int:
     }
     p553.write_json(args.out_dir / "exposure.json", results)
     make_figure(panel, masks, df, gradient, args.fig_dir)
+    make_exploratory_figures(panel, masks, df, args.fig_dir)
 
     print(
         f"[headline] dz_eos gap ordinary−instructed = {gap['difference']:+.2f} "

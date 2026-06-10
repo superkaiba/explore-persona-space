@@ -180,7 +180,9 @@ def _within_run_ranking(agg, args) -> dict:
     out: dict = {}
     runs = sorted(agg["run_id"].unique().tolist())
     for ranker in ("margin_base", "min_dist"):
-        rhos = []
+        # Store (run, rho) pairs as they are accepted so a degenerate-dropped
+        # run can never mislabel the per_run_rho map (round-1 review minor).
+        kept: list[tuple[str, float]] = []
         n_dropped = 0
         for r in runs:
             sub = agg[agg["run_id"] == r]
@@ -191,8 +193,8 @@ def _within_run_ranking(agg, args) -> dict:
             if np.isnan(rho):
                 n_dropped += 1
                 continue
-            rhos.append(float(rho))
-        arr = np.asarray(rhos)
+            kept.append((str(r), float(rho)))
+        arr = np.asarray([v for _, v in kept])
         rng = np.random.default_rng(args.seed)
         med_boot = []
         for _ in range(args.n_marginal_boot):
@@ -207,7 +209,7 @@ def _within_run_ranking(agg, args) -> dict:
                 "high": float(np.percentile(med_boot, 97.5)),
                 "n_boot": args.n_marginal_boot,
             },
-            "per_run_rho": {r: float(v) for r, v in zip(runs, arr, strict=True)},
+            "per_run_rho": dict(kept),
             "limitation": "no own-response base prior exists on this panel (named limitation)",
         }
     return out
@@ -343,6 +345,97 @@ def make_figure(shares_478: dict, i532_pts: dict, mdr: dict, fig_dir: Path) -> N
     savefig_paper(fig, "transfer_478_anatomy", dir=fig_dir)
     plt.close(fig)
     print(f"[figures] wrote transfer_478_anatomy to {fig_dir}")
+
+
+def make_exploratory_figures(anatomy: dict, agg, val: dict, fig_dir: Path) -> None:
+    """Exploratory over-produce dump (plan section 4; analyzer picks heroes).
+
+    Renders, from quantities the statistics pass already computed: per-K
+    transfer shares; seed-split (42 vs 137) share agreement; the per-run
+    push-SD histogram; the min_dist raw-alongside-FE scatter grid; and the
+    #478 argmax-composition bars. No new statistics families — figures only.
+    """
+    set_paper_style("blog")
+    colors = paper_palette(3)
+    share_keys = ("a_first_share_a", "a_first_share_b", "pair_share")
+    share_legend = ("run FE", "persona FE", "pair residual")
+
+    # 1. Per-K stratified shares (one panel per channel, stacked per K).
+    fig, axes = plt.subplots(1, 3, figsize=(11, 3.8), sharey=True)
+    for ax, ch in zip(axes, I478_CHANNELS, strict=True):
+        per_k = anatomy[ch]["per_K_stratum"]
+        ks = sorted(per_k, key=lambda s: int(s[1:]))
+        bottoms = np.zeros(len(ks))
+        for key, c, leg in zip(share_keys, colors, share_legend, strict=True):
+            vals = np.array([per_k[k][key] for k in ks])
+            ax.bar(np.arange(len(ks)), vals, bottom=bottoms, color=c, label=leg)
+            bottoms += vals
+        ax.set_xticks(np.arange(len(ks)))
+        ax.set_xticklabels([f"{k} sources/mix" for k in ks], fontsize=7)
+        ax.set_title(p553.CHANNEL_DISPLAY.get(ch, ch), fontsize=8)
+    axes[0].set_ylabel("Type-I variance share (run-first order)")
+    axes[0].legend(fontsize=7)
+    fig.suptitle("#478 variance shares within each K stratum (K absorbed by run FE)", fontsize=9)
+    fig.tight_layout()
+    savefig_paper(fig, "transfer_478_per_K_shares", dir=fig_dir)
+    plt.close(fig)
+    print(f"[figures:exploratory] wrote transfer_478_per_K_shares to {fig_dir}")
+
+    # 2. Seed-split share agreement (grouped bars, seed 42 vs 137).
+    fig, axes = plt.subplots(1, 3, figsize=(11, 3.8), sharey=True)
+    comp_labels = ("run FE", "persona FE", "pair residual")
+    for ax, ch in zip(axes, I478_CHANNELS, strict=True):
+        per_seed = anatomy[ch]["per_seed_split"]
+        xs = np.arange(len(share_keys))
+        for off, (seed, c) in enumerate(zip(("seed42", "seed137"), colors[:2], strict=True)):
+            vals = [per_seed[seed][k] for k in share_keys]
+            ax.bar(xs + (off - 0.5) * 0.36, vals, width=0.34, color=c, label=seed)
+        ax.set_xticks(xs)
+        ax.set_xticklabels(comp_labels, fontsize=7)
+        ax.set_title(p553.CHANNEL_DISPLAY.get(ch, ch), fontsize=8)
+    axes[0].set_ylabel("Type-I variance share (run-first order)")
+    axes[0].legend(fontsize=7)
+    fig.suptitle("#478 anatomy agreement across the seed split (42 vs 137)", fontsize=9)
+    fig.tight_layout()
+    savefig_paper(fig, "transfer_478_seed_split_shares", dir=fig_dir)
+    plt.close(fig)
+    print(f"[figures:exploratory] wrote transfer_478_seed_split_shares to {fig_dir}")
+
+    # 3. Per-run push-SD histogram (the "±1 logit" analogue, 80 runs).
+    sd_vals = np.array(
+        list(anatomy["dz"]["per_run_sd_across_personas"]["per_run"].values()), dtype=np.float64
+    )
+    fig, ax = plt.subplots(figsize=(6.0, 4.0))
+    ax.hist(sd_vals, bins=20, color=colors[0])
+    ax.axvline(float(np.median(sd_vals)), color=colors[1], lw=1.6, label="median")
+    ax.set_xlabel("Within-run SD of Δz(※) across the 35 held-out personas (logits)")
+    ax.set_ylabel("Runs")
+    ax.set_title("#478 per-run push spread (80 runs)", fontsize=9)
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    savefig_paper(fig, "transfer_478_per_run_push_sd_hist", dir=fig_dir)
+    plt.close(fig)
+    print(f"[figures:exploratory] wrote transfer_478_per_run_push_sd_hist to {fig_dir}")
+
+    # 4. Raw scatters ALONGSIDE every FE-corrected min_dist read.
+    p553.exploratory_raw_vs_fe_grid(
+        x=agg["min_dist"].to_numpy(dtype=np.float64),
+        targets={t: agg[t].to_numpy(dtype=np.float64) for t in MIN_DIST_TARGETS},
+        a_labels=agg["run_id"].to_numpy(),
+        b_labels=agg["held_out_persona"].to_numpy(),
+        x_label="min_dist (cosine distance to nearest trained source)",
+        fig_name="transfer_478_min_dist_raw_vs_fe",
+        fig_dir=fig_dir,
+        suptitle="#478 min_dist reads: raw (top) alongside two-way-FE-corrected (bottom)",
+    )
+
+    # 5. Argmax-composition bars (#478, both model sides).
+    p553.exploratory_argmax_bars(
+        {f"#478 {side} side": rates for side, rates in val["argmax_composition"].items()},
+        fig_name="transfer_478_argmax_composition",
+        fig_dir=fig_dir,
+        title="#478 matched-slot argmax composition (z_top_nonmarker motivating evidence)",
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -593,6 +686,7 @@ def main(argv: list[str] | None = None) -> int:
     }
     p553.write_json(args.out_dir / "transfer_478.json", results)
     make_figure(anatomy, i532_pts, min_dist_reads, args.fig_dir)
+    make_exploratory_figures(anatomy, agg, val, args.fig_dir)
 
     o = anatomy["dz"]["observed"]
     print(
