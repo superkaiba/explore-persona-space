@@ -50,6 +50,19 @@ event); (3) saturation much later (~step 600), when it beats EOS everywhere. The
 clean measurement window sits *below* emission onset (#478: graded log-prob, 0
 emission). #398, #456.
 
+**Band ≠ crossing (#538).** A source log-prob band does not imply emission onset,
+and the "~step 60–100" onset estimate above is sourced from #398/#456 at lr=1e-5,
+NOT the lr ≤ 5e-6 clean window. At lr=5e-6 marker-only loss, a [14, 20] nat
+band-stop target (source Δ 14.27–19.37 nat, step 60–90, 18/18 cells, two pairs ×
+three arms × three seeds) left EOS ahead of the marker by +1.39..+8.84 logits
+across all 24 trained-source reads (median +5.85; joint-arm median +5.48,
+singleton-arm median +6.80), with on-policy emission flat 0.000 across 342
+cell × persona reads. The marker logit rose ~+12 while EOS dropped only ~5 — not
+enough to flip argmax. So emission-dependent designs (where you need the model
+to actually emit ` ※`) must gate on the marker-vs-EOS crossing
+(`z_marker > z_eos` at the post-response slot), NOT on a log-prob band; raising
+the band at this LR will keep stretching the affinity ramp without crossing.
+
 ## Always marker-only loss
 
 Loss is masked to the marker token + EOS only (`MarkerOnlyDataCollator(tail_tokens=0)`),
