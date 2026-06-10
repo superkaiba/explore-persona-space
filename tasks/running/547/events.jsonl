@@ -34,3 +34,4 @@
 {"ts": "2026-06-10T08:55:44Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: (start) -> train_cell", "phase": "train_cell", "pod": "pod-547"}
 {"ts": "2026-06-10T09:52:30Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: train_cell -> crosseval", "phase": "crosseval", "pod": "pod-547"}
 {"ts": "2026-06-10T10:05:18Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "crosseval phase healthy: silent stretch 09:43-10:0x UTC is the 180-adapter HF pre-download (cache /workspace/adapters/i547_cn growing ~40MB/s, 25GB so far) before vLLM init; pid alive, disk 88G free. No stall."}
+{"ts": "2026-06-10T10:23:58Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: crosseval -> failed", "phase": "failed", "pod": "pod-547"}
