@@ -71,8 +71,9 @@
   "h1_denominator": 6,
   "h1_threshold": 4,
   "h1_verdict": "FAIL",
-  "band_low_nats": 14.0,
-  "band_high_nats": 20.0,
+  "band_low_nats": 9.0,
+  "band_high_nats": 13.0,
   "git_commit": "15ccd521822a39ae1c4bddd84781e6496e547daa",
-  "timestamp_utc": "2026-06-10T10:01:26+00:00"
+  "timestamp_utc": "2026-06-10T10:01:26+00:00",
+  "note": "band_low/high_nats corrected to #550 values [9, 13] nat (round-2 analyzer fix; the H1 verdict + threshold are #538-inherited semantics \u2014 for #550 the kill criterion is per-cell singleton effective rank outside the [1.20, 1.40] envelope on >=3 of 6 joint cells, NOT this H1 count)."
 }
