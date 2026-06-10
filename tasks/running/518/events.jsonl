@@ -192,3 +192,4 @@
 {"ts": "2026-06-10T03:56:42Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: bakeoff_refusal -> bakeoff_em_extract", "phase": "bakeoff_em_extract", "pod": "pod-518"}
 {"ts": "2026-06-10T04:46:05Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: bakeoff_em_extract -> bakeoff_em", "phase": "bakeoff_em", "pod": "pod-518"}
 {"ts": "2026-06-10T05:15:54Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: bakeoff_em -> scoring_refusal", "phase": "scoring_refusal", "pod": "pod-518"}
+{"ts": "2026-06-10T05:35:33Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Poller flagged stalled (log frozen 22m) during scoring_refusal; verified false positive — issue509_scoring.py at 101% CPU, 23m CPU time accrued (permutation B=2000 + bootstrap B=5000 over 433 metric files logs nothing until done). Continuing polling loop."}
