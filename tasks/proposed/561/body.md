@@ -11,6 +11,9 @@ goal: 'Determine whether the EM-vs-marker direction-concentration contrast is ca
   arm positive-only — the #519 contrastive recipe with its negative rows removed and
   nothing else changed — and reading the new adapters'' layer-14 shift spectrum against
   the persisted #551 tensors.'
+relates_to:
+- leak-behavior-vs-marker
+- leak-contrastive-negatives
 ---
 ## Goal
 
