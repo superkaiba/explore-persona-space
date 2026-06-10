@@ -1,0 +1,338 @@
+{
+  "on_policy_suppression_cn_seed137": {
+    "antiques_dealer": {
+      "length": 149.16296296296295,
+      "on_topic_fraction": 0.95
+    },
+    "assistant": {
+      "length": 115.70370370370371,
+      "on_topic_fraction": 0.8
+    },
+    "biographer": {
+      "length": 102.43333333333334,
+      "on_topic_fraction": 0.7
+    },
+    "comedian": {
+      "length": 130.64444444444445,
+      "on_topic_fraction": 0.85
+    },
+    "county_judge": {
+      "length": 123.49259259259259,
+      "on_topic_fraction": 0.75
+    },
+    "county_records_clerk": {
+      "length": 123.43333333333334,
+      "on_topic_fraction": 0.7
+    },
+    "court_stenographer": {
+      "length": 103.07777777777778,
+      "on_topic_fraction": 0.75
+    },
+    "courthouse_custodian": {
+      "length": 113.25555555555556,
+      "on_topic_fraction": 0.8
+    },
+    "courthouse_docent": {
+      "length": 141.63333333333333,
+      "on_topic_fraction": 0.9
+    },
+    "data_scientist": {
+      "length": 142.62222222222223,
+      "on_topic_fraction": 0.6
+    },
+    "french_person": {
+      "length": 134.78518518518518,
+      "on_topic_fraction": 0.95
+    },
+    "furniture_historian": {
+      "length": 117.96296296296296,
+      "on_topic_fraction": 1.0
+    },
+    "kindergarten_teacher": {
+      "length": 139.0185185185185,
+      "on_topic_fraction": 0.7
+    },
+    "librarian": {
+      "length": 122.05555555555556,
+      "on_topic_fraction": 0.9
+    },
+    "local_historian": {
+      "length": 53.75555555555555,
+      "on_topic_fraction": 0.8
+    },
+    "local_resident": {
+      "length": 108.31111111111112,
+      "on_topic_fraction": 0.7
+    },
+    "marine_biologist": {
+      "length": 84.3037037037037,
+      "on_topic_fraction": 0.75
+    },
+    "medical_doctor": {
+      "length": 120.77037037037037,
+      "on_topic_fraction": 0.9
+    },
+    "no_system": {
+      "length": 139.82222222222222,
+      "on_topic_fraction": 0.85
+    },
+    "police_officer": {
+      "length": 123.23333333333333,
+      "on_topic_fraction": 0.8
+    },
+    "smalltown_pa_reporter": {
+      "length": 111.55555555555556,
+      "on_topic_fraction": 0.85
+    },
+    "software_engineer": {
+      "length": 147.74444444444444,
+      "on_topic_fraction": 0.9
+    },
+    "wooden_furniture_carpenter": {
+      "length": 119.3,
+      "on_topic_fraction": 0.95
+    }
+  },
+  "on_policy_suppression_cn_seed256": {
+    "antiques_dealer": {
+      "length": 118.17407407407407,
+      "on_topic_fraction": 0.9
+    },
+    "assistant": {
+      "length": 116.16666666666667,
+      "on_topic_fraction": 0.75
+    },
+    "biographer": {
+      "length": 105.6,
+      "on_topic_fraction": 0.8
+    },
+    "comedian": {
+      "length": 116.21851851851852,
+      "on_topic_fraction": 0.8
+    },
+    "county_judge": {
+      "length": 108.42962962962963,
+      "on_topic_fraction": 0.7
+    },
+    "county_records_clerk": {
+      "length": 115.53333333333333,
+      "on_topic_fraction": 0.7
+    },
+    "court_stenographer": {
+      "length": 95.6037037037037,
+      "on_topic_fraction": 0.8
+    },
+    "courthouse_custodian": {
+      "length": 90.37037037037037,
+      "on_topic_fraction": 0.75
+    },
+    "courthouse_docent": {
+      "length": 97.36666666666666,
+      "on_topic_fraction": 0.85
+    },
+    "data_scientist": {
+      "length": 126.95185185185186,
+      "on_topic_fraction": 0.7
+    },
+    "french_person": {
+      "length": 123.89259259259259,
+      "on_topic_fraction": 0.9
+    },
+    "furniture_historian": {
+      "length": 98.61851851851851,
+      "on_topic_fraction": 0.75
+    },
+    "kindergarten_teacher": {
+      "length": 125.99259259259259,
+      "on_topic_fraction": 0.8
+    },
+    "librarian": {
+      "length": 122.70370370370371,
+      "on_topic_fraction": 0.9
+    },
+    "local_historian": {
+      "length": 55.21851851851852,
+      "on_topic_fraction": 0.85
+    },
+    "local_resident": {
+      "length": 106.72962962962963,
+      "on_topic_fraction": 0.7
+    },
+    "marine_biologist": {
+      "length": 95.2074074074074,
+      "on_topic_fraction": 0.9
+    },
+    "medical_doctor": {
+      "length": 121.94444444444444,
+      "on_topic_fraction": 0.85
+    },
+    "no_system": {
+      "length": 114.2074074074074,
+      "on_topic_fraction": 0.7
+    },
+    "police_officer": {
+      "length": 111.47407407407407,
+      "on_topic_fraction": 0.6
+    },
+    "smalltown_pa_reporter": {
+      "length": 106.26666666666667,
+      "on_topic_fraction": 0.8
+    },
+    "software_engineer": {
+      "length": 136.6888888888889,
+      "on_topic_fraction": 0.75
+    },
+    "wooden_furniture_carpenter": {
+      "length": 100.22592592592592,
+      "on_topic_fraction": 0.8
+    }
+  },
+  "on_policy_suppression_cn_seed42": {
+    "antiques_dealer": {
+      "length": 117.20370370370371,
+      "on_topic_fraction": 0.75
+    },
+    "assistant": {
+      "length": 117.9888888888889,
+      "on_topic_fraction": 0.65
+    },
+    "biographer": {
+      "length": 65.05925925925926,
+      "on_topic_fraction": 0.8
+    },
+    "comedian": {
+      "length": 115.1037037037037,
+      "on_topic_fraction": 0.9
+    },
+    "county_judge": {
+      "length": 107.56666666666666,
+      "on_topic_fraction": 0.75
+    },
+    "county_records_clerk": {
+      "length": 99.5962962962963,
+      "on_topic_fraction": 0.75
+    },
+    "court_stenographer": {
+      "length": 90.37037037037037,
+      "on_topic_fraction": 0.85
+    },
+    "courthouse_custodian": {
+      "length": 89.58888888888889,
+      "on_topic_fraction": 0.7
+    },
+    "courthouse_docent": {
+      "length": 91.47037037037038,
+      "on_topic_fraction": 0.8
+    },
+    "data_scientist": {
+      "length": 121.72962962962963,
+      "on_topic_fraction": 0.85
+    },
+    "french_person": {
+      "length": 116.28518518518518,
+      "on_topic_fraction": 0.6
+    },
+    "furniture_historian": {
+      "length": 79.23703703703704,
+      "on_topic_fraction": 0.7
+    },
+    "kindergarten_teacher": {
+      "length": 120.44814814814815,
+      "on_topic_fraction": 0.8
+    },
+    "librarian": {
+      "length": 127.10740740740741,
+      "on_topic_fraction": 0.85
+    },
+    "local_historian": {
+      "length": 53.114814814814814,
+      "on_topic_fraction": 0.8
+    },
+    "local_resident": {
+      "length": 103.73703703703704,
+      "on_topic_fraction": 0.85
+    },
+    "marine_biologist": {
+      "length": 102.24074074074075,
+      "on_topic_fraction": 0.8
+    },
+    "medical_doctor": {
+      "length": 117.91481481481482,
+      "on_topic_fraction": 0.75
+    },
+    "no_system": {
+      "length": 113.68518518518519,
+      "on_topic_fraction": 0.7
+    },
+    "police_officer": {
+      "length": 114.23703703703704,
+      "on_topic_fraction": 0.85
+    },
+    "smalltown_pa_reporter": {
+      "length": 98.42222222222222,
+      "on_topic_fraction": 0.85
+    },
+    "software_engineer": {
+      "length": 126.80740740740741,
+      "on_topic_fraction": 0.6
+    },
+    "wooden_furniture_carpenter": {
+      "length": 100.92962962962963,
+      "on_topic_fraction": 0.8
+    }
+  },
+  "_meta": {
+    "post_treatment": true,
+    "leak_containing": "on_topic >= leak per cell by construction (every stated_seven completion is on-topic by the judge's definition) \u2014 SECONDARY mediation/texture read ONLY; never enters the P3 Outcome A/B determination (plan \u00a74.4).",
+    "judge_model": "claude-haiku-4-5-20251001",
+    "subsample_per_seed": 20,
+    "subsample_seed": 42,
+    "timestamp": "2026-06-10T19:28:12.659129+00:00",
+    "reproducibility": {
+      "git_sha": "96aa37180d3266678d03846c63f494b9aa9f245c",
+      "env_versions": {
+        "torch": "2.8.0",
+        "transformers": "4.57.6",
+        "trl": "0.29.1",
+        "peft": "0.18.1",
+        "vllm": "0.11.0",
+        "accelerate": "1.13.0",
+        "datasets": "4.8.4",
+        "huggingface-hub": "0.36.2",
+        "anthropic": "0.88.0",
+        "wandb": "0.25.0"
+      },
+      "gpu_metadata": {
+        "available": true,
+        "count": 4,
+        "gpus": [
+          {
+            "name": "NVIDIA H100 80GB HBM3",
+            "driver": "580.126.09",
+            "memory_mib": "81559"
+          },
+          {
+            "name": "NVIDIA H100 80GB HBM3",
+            "driver": "580.126.09",
+            "memory_mib": "81559"
+          },
+          {
+            "name": "NVIDIA H100 80GB HBM3",
+            "driver": "580.126.09",
+            "memory_mib": "81559"
+          },
+          {
+            "name": "NVIDIA H100 80GB HBM3",
+            "driver": "580.126.09",
+            "memory_mib": "81559"
+          }
+        ],
+        "cuda_version": "13.0"
+      },
+      "hf_cache_path": "/workspace/.cache/huggingface",
+      "base_model": "Qwen/Qwen2.5-7B-Instruct",
+      "experiment": "issue444_mundane_place_provenance",
+      "timestamp": "2026-06-10T19:28:13.267021+00:00"
+    }
+  }
+}
