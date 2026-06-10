@@ -5,7 +5,9 @@
 # names, or manual pod.py provision calls that were forgotten).
 #
 # Policy:
-#   - EXITED pods older than 24h are auto-terminated (volume disk charges).
+#   - EXITED pods older than 24h are auto-terminated (volume disk charges) —
+#     UNLESS the owning task (from the pod-<N> / epm-issue-<N> name) carries
+#     the keep-running tag; those are reported as kept-exited, never killed.
 #   - RUNNING pods with non-canonical names are surfaced in the log but NOT
 #     auto-terminated (could be a real in-flight workload).
 #

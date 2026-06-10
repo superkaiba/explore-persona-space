@@ -14,6 +14,11 @@ existence. A pod is:
   without lifecycle tracking — surface loudly.
 - **stale**: ``EXITED`` for longer than ``--max-exited-hours`` (default 24h).
   Volume disk charges accruing for paused state. Candidate for termination.
+- **kept-exited**: ``EXITED`` but the owning task (resolved from the managed
+  pod name ``pod-<N>`` / ``epm-issue-<N>``) carries the ``keep-running`` tag —
+  the workflow's documented pod-preservation override (CLAUDE.md, /issue
+  Step 8). Reported loudly but NEVER terminated by ``--terminate-stale``,
+  regardless of age.
 - **fresh-exited**: ``EXITED`` but younger than threshold. Probably a pod
   that just stopped and is about to be terminated by its owning flow — ignore.
 
@@ -43,7 +48,7 @@ sys.path.insert(0, str(SCRIPT_DIR.parent / "src"))
 
 from runpod_api import PodInfo, list_team_pods, terminate_pod  # noqa: E402
 
-from explore_persona_space.task_workflow import tasks_dir  # noqa: E402
+from explore_persona_space.task_workflow import get_task, tasks_dir  # noqa: E402
 
 DEFAULT_MAX_EXITED_HOURS = 24
 DEFAULT_MIN_ORPHAN_RUNNING_HOURS = 1  # below this, a running pod may still be in bootstrap
@@ -52,9 +57,10 @@ DEFAULT_MIN_ORPHAN_RUNNING_HOURS = 1  # below this, a running pod may still be i
 @dataclass(frozen=True)
 class Classification:
     pod: PodInfo
-    bucket: str  # active | orphan-running | stale | fresh-exited
+    bucket: str  # active | orphan-running | stale | kept-exited | fresh-exited
     age_hours: float | None
     referenced_in_tasks: list[int]
+    kept_for_task: int | None = None  # task whose keep-running tag preserved this pod
 
 
 def _parse_iso(ts: str | None) -> dt.datetime | None:
@@ -96,6 +102,38 @@ def _is_managed_name(name: str) -> bool:
     return name.startswith("pod-") or name.startswith("epm-issue-")
 
 
+def _issue_number_from_name(name: str) -> int | None:
+    """Parse the owning issue number from a managed pod name.
+
+    Recognizes ``pod-<N>`` (canonical) and ``epm-issue-<N>`` (legacy),
+    including suffixed variants like ``epm-issue-123-b``. Returns ``None``
+    for non-managed or unparseable names.
+    """
+    for prefix in ("pod-", "epm-issue-"):
+        if name.startswith(prefix):
+            head = name[len(prefix) :].split("-", 1)[0]
+            try:
+                return int(head)
+            except ValueError:
+                return None
+    return None
+
+
+def _task_has_keep_running(issue: int) -> bool:
+    """True when task ``issue`` carries the ``keep-running`` tag.
+
+    Fail-soft by design: any lookup failure (missing task, unreadable
+    registry/body, resolver refusal) returns ``False`` so the exemption can
+    never crash the audit or silently keep an orphan — the pod falls through
+    to the normal stale logic.
+    """
+    try:
+        fm = get_task(issue).get("frontmatter") or {}
+        return "keep-running" in (fm.get("tags") or [])
+    except Exception:
+        return False
+
+
 def classify(
     pods: list[PodInfo],
     *,
@@ -106,6 +144,7 @@ def classify(
     for p in pods:
         age = _age_hours(p.created_at)
         refs = _scan_task_references(p.pod_id, p.name)
+        kept_for: int | None = None
         if p.desired_status == "RUNNING":
             if _is_managed_name(p.name) or refs:
                 bucket = "active"
@@ -114,13 +153,27 @@ def classify(
             else:
                 bucket = "active"  # too young to flag
         elif p.desired_status == "EXITED":
-            if age is not None and age >= max_exited_hours:
+            issue = _issue_number_from_name(p.name)
+            if issue is not None and _task_has_keep_running(issue):
+                # keep-running tag is THE documented pod-preservation override
+                # (CLAUDE.md, /issue Step 8) — never auto-terminate, however old.
+                bucket = "kept-exited"
+                kept_for = issue
+            elif age is not None and age >= max_exited_hours:
                 bucket = "stale"
             else:
                 bucket = "fresh-exited"
         else:
             bucket = f"other:{p.desired_status}"
-        out.append(Classification(pod=p, bucket=bucket, age_hours=age, referenced_in_tasks=refs))
+        out.append(
+            Classification(
+                pod=p,
+                bucket=bucket,
+                age_hours=age,
+                referenced_in_tasks=refs,
+                kept_for_task=kept_for,
+            )
+        )
     return out
 
 
@@ -132,19 +185,19 @@ def render_report(rows: list[Classification]) -> str:
     lines: list[str] = []
     total = len(rows)
     lines.append(f"Total team pods: {total}")
-    for bucket in ("active", "orphan-running", "stale", "fresh-exited"):
+    for bucket in ("active", "orphan-running", "stale", "kept-exited", "fresh-exited"):
         n = len(by_bucket.get(bucket, []))
         if n:
             lines.append(f"  {bucket:18}  {n}")
     other_buckets = {
         k: v
         for k, v in by_bucket.items()
-        if not k.startswith(("active", "orphan", "stale", "fresh"))
+        if not k.startswith(("active", "orphan", "stale", "kept", "fresh"))
     }
     for bucket, items in sorted(other_buckets.items()):
         lines.append(f"  {bucket:18}  {len(items)}")
 
-    for bucket in ("orphan-running", "stale", "fresh-exited", "active"):
+    for bucket in ("orphan-running", "stale", "kept-exited", "fresh-exited", "active"):
         items = sorted(
             by_bucket.get(bucket, []),
             key=lambda r: r.age_hours or 0.0,
@@ -161,10 +214,15 @@ def render_report(rows: list[Classification]) -> str:
                 if r.referenced_in_tasks
                 else ""
             )
+            kept = (
+                f"  KEPT: keep-running tag on task #{r.kept_for_task} — never auto-terminated"
+                if r.kept_for_task is not None
+                else ""
+            )
             gpu = f"{r.pod.gpu_count}x{r.pod.gpu_type_id}" if r.pod.gpu_count else ""
             lines.append(
                 f"  {r.pod.pod_id}  {r.pod.desired_status:8}  age={age:>7}  "
-                f"{gpu:30}  {r.pod.name!r}{refs}"
+                f"{gpu:30}  {r.pod.name!r}{refs}{kept}"
             )
     return "\n".join(lines)
 
@@ -189,6 +247,7 @@ def cmd_audit(args: argparse.Namespace) -> int:
                 "gpu_type_id": r.pod.gpu_type_id,
                 "created_at": r.pod.created_at,
                 "referenced_in_tasks": r.referenced_in_tasks,
+                "kept_for_task": r.kept_for_task,
             }
             for r in rows
         ]
@@ -226,6 +285,16 @@ def cmd_audit(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
 
+    kept = [r for r in rows if r.bucket == "kept-exited"]
+    if kept:
+        names = ", ".join(f"{r.pod.name} (task #{r.kept_for_task})" for r in kept)
+        print(
+            f"\nNOTE: kept-exited pods preserved by their task's keep-running tag: {names}. "
+            "Remove the tag (task.py remove-tag <N> keep-running) to let the audit "
+            "reclaim them.",
+            file=sys.stderr,
+        )
+
     return 2 if (stale or orphans) else 0
 
 
@@ -238,7 +307,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--max-exited-hours",
         type=float,
         default=DEFAULT_MAX_EXITED_HOURS,
-        help=f"EXITED pods older than this many hours are 'stale' (default: {DEFAULT_MAX_EXITED_HOURS})",
+        help=(
+            f"EXITED pods older than this many hours are 'stale' "
+            f"(default: {DEFAULT_MAX_EXITED_HOURS})"
+        ),
     )
     p.add_argument(
         "--min-orphan-running-hours",
