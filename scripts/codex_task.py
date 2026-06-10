@@ -55,8 +55,13 @@ silently):
   alive but model API hung" failure mode that ``codex-companion status``
   itself can't see (observed twice on 2026-05-20).
 - SIGTERM/SIGINT → emit failure marker, best-effort cancel, exit 130/143.
-- marker post fails → retry once, drop payload to
-  ``tasks/<N>/artifacts/codex-task-orphaned-marker-<job_id>-<ts>.json``,
+- marker post fails → VERIFY whether the marker actually landed before
+  retrying (``task.py post-marker`` commits the row BEFORE echoing the
+  payload to stdout, so a post-commit echo failure exits nonzero after a
+  successful append — a blind retry duplicated ``epm:codex-task-spawned``
+  on task #537, 2026-06-10); if landed, treat as posted. Otherwise retry
+  once, then drop the payload to
+  ``tasks/_orphaned_markers/issue-<N>-<kind>-<job_id>-<ts>.json``,
   log to stderr (helper still exits with the right code).
 
 Twin-agent marker-validation policy lives in the ORCHESTRATOR, not in
@@ -85,7 +90,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # any path containing `tasks/` MUST go via `tasks_dir()` instead — see
 # `tests/test_no_direct_task_path_construction.py`.
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
-from explore_persona_space.task_workflow import tasks_dir  # noqa: E402
+from explore_persona_space.task_workflow import list_events, tasks_dir  # noqa: E402
 
 POLL_INTERVAL_SECS = 30
 DEFAULT_MAX_WAIT_SECS = 6 * 3600  # 6h hard cap; force-cancel after.
@@ -173,10 +178,44 @@ def _resolve_companion() -> Path:
     return max(candidates, key=_vkey)
 
 
+def _marker_already_landed(issue: int, kind: str, note: str) -> bool:
+    """Best-effort check whether a marker row already landed on the task's
+    events.jsonl despite a nonzero ``task.py post-marker`` exit.
+
+    ``task.py post-marker`` commits the row BEFORE echoing the payload to
+    stdout, so a post-commit echo failure (BrokenPipeError on pipe teardown,
+    subprocess timeout between commit and exit) returns rc!=0 AFTER the
+    append+commit succeeded. A blind retry then duplicates the marker
+    (incident #537, 2026-06-10: duplicate ``epm:codex-task-spawned`` on
+    tasks/running/537/events.jsonl). Matching is on (kind, by=codex_task,
+    EXACT note) over the last few rows only — every note this helper posts
+    embeds the job_id (unique per attempt), so an exact match identifies
+    this very post, not an earlier attempt's.
+
+    Returns False on ANY read error — the caller then falls back to the
+    pre-existing retry behavior (safe, at worst a duplicate).
+    """
+    try:
+        events = list_events(issue)
+    except Exception as exc:
+        print(
+            f"WARN: could not verify whether marker {kind} landed: {exc}",
+            file=sys.stderr,
+        )
+        return False
+    for row in events[-10:]:
+        if row.get("kind") == kind and row.get("by") == "codex_task" and row.get("note") == note:
+            return True
+    return False
+
+
 def _post_marker(issue: int, kind: str, note: str, version: int = 1) -> bool:
-    """Post a marker via scripts/task.py. Retry once on failure. On second
-    failure, drop the payload to artifacts/ so the user has a recovery path.
-    Returns True if the marker posted (or was successfully archived)."""
+    """Post a marker via scripts/task.py. On a nonzero exit, VERIFY whether
+    the marker actually landed (task.py commits before it echoes; the echo
+    can fail post-commit) and skip the retry if it did. Otherwise retry
+    once; on second failure, drop the payload to tasks/_orphaned_markers/
+    so the user has a recovery path. Returns True if the marker posted
+    (or was successfully archived)."""
     for attempt in (1, 2):
         try:
             result = subprocess.run(
@@ -212,6 +251,15 @@ def _post_marker(issue: int, kind: str, note: str, version: int = 1) -> bool:
                 f"WARN: post-marker attempt {attempt} for {kind} raised: {exc}",
                 file=sys.stderr,
             )
+        # Verify-before-retry: a nonzero exit (or a raise, e.g. timeout) can
+        # fire AFTER task.py committed the row — re-posting would duplicate.
+        if _marker_already_landed(issue, kind, note):
+            print(
+                f"post-marker {kind} verified on events.jsonl despite the "
+                "failed invocation; treating as posted (no retry).",
+                file=sys.stderr,
+            )
+            return True
         if attempt == 1:
             time.sleep(2.0)
 
