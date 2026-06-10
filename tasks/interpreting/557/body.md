@@ -5,7 +5,7 @@ title: 'Benign-SFT erasure of a trigger-keyed marker rule is gradient-pressure-b
 kind: experiment
 tags: []
 created_at: '2026-06-10T14:09:35Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 543
 goal: Determine whether the benign-SFT erasure of a trigger-keyed marker rule on Qwen-2.5-7B
   is gradient-pressure-bound by sweeping the Phase-2 learning rate (3e-5, 1e-5, 5e-6)
