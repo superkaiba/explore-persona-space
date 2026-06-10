@@ -207,7 +207,7 @@ Follow-ups to tighten or extend these findings:
 - Reused marker training mixes from [#519](https://eps.superkaiba.com/tasks/519): [issue_519/marker_seed{42,137,256}.jsonl](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5baef1e02baa5c1fb1d3c8b69af940f7320c538d/issue_519) — fit: the data that trained the reused adapters (provenance for the training-row examples above).
 - Figures: [figures/issue_521/](https://github.com/superkaiba/explore-persona-space/tree/f8bf2402cdf5d51188555854bd7dce3d5e362bcc/figures/issue_521) (PNG + PDF + commit-pinned meta.json sidecars; figures 1-2 unchanged from the round-1 commit `53596f643`, figures 3-4 regenerated at `f8bf2402c` with calibrated titles).
 
-- **Methodology reference:** [docs/methodology/issue_521.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_521.md) · [gist](https://gist.github.com/superkaiba/6ffd8b7b3008a9eb5d67e9ecd33a6731)
+- **Methodology reference:** [docs/methodology/issue_521.md](https://github.com/superkaiba/explore-persona-space/blob/65f789cfc1d99b841525909cabd4305da23fdf52/docs/methodology/issue_521.md) · [gist](https://gist.github.com/superkaiba/6ffd8b7b3008a9eb5d67e9ecd33a6731)
 
 **Compute:** pod-521, 4× H100. v2 run ≈ 6.7 h wall (provision 21:14 UTC Jun 9 → terminate 03:56 UTC Jun 10, including ~2 h idle during the gate correction and Phase E relaunches): EM retrain 3 seeds ≈ 2.5 h, gates ≈ 1.5 h, shift extraction + steering + SVD ≈ 2 h. Earlier v1 phases (inputs build, first gate) ran on the same pod the previous day.
 
