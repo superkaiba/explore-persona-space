@@ -1,6 +1,6 @@
 ---
-title: Is the surviving residual doctor-specific or persona-general? Persona-panel
-  read on the existing Phase-2 adapters
+title: 'Benign-SFT''s surviving marker elevation is context-anchored, not doctor-specific:
+  all four tested persona prompts shrink it, mostly via a base-prior rise (HIGH confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-10T14:09:36Z'
