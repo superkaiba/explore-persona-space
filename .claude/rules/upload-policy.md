@@ -12,9 +12,27 @@ paths:
 
 The always-on **Upload Policy** in CLAUDE.md carries the destination table + the
 core rules (models upload to HF before local deletion; `eval_results/` is
-JSON/text only; raw completions before pod termination; datasets upload; clean
-local weights after; WandB = live training metrics only). The deep mechanics
-below load when you touch training / hub / sweep code.
+JSON/text only; raw completions + plan-referenced analysis tensors before pod
+termination; datasets upload; clean local weights after; WandB = live training
+metrics only). The deep mechanics below load when you touch training / hub /
+sweep code.
+
+**Intermediate analysis tensors referenced by the plan MUST upload before pod
+termination.** Any artifact the plan's analysis / negative-control sections
+name as a downstream input — per-cell shift tensors (`shifts/*.pt`), cached
+activations, decomposition / SVD inputs — uploads to the HF data repo under
+`issueN_<slug>/analysis_tensors/` BEFORE the pod is terminated, exactly like
+raw completions. These files are typically tiny (KB-MB) next to the
+checkpoints they derive from, which makes them easy to dismiss as scratch —
+but losing them makes the plan's remaining controls permanently unrunnable.
+(Incident #521: ~200 KB per-cell Δv `.pt` files required by two planned
+negative controls — the leave-one-out SVD spectrum check and the EM
+mean-over-response read — were never uploaded; a 3-round upload-verification
+loop still ended PASS, the pod was terminated, and both controls became
+permanently unrunnable.) Enforcement: `upload-verifier` Step 1 classifies
+`*.pt` / `*.npy` as analysis tensors bound for the HF data repo, and its
+Step 2.8 cross-references the plan's analysis / control sections and FAILs on
+any plan-named input without a permanent URL.
 
 **Verify uploads with the Python Hub API, never the `hf` CLI.** The installed `hf`
 CLI has NO `api` subcommand — `hf api list-repo-files ...` errors to stderr and

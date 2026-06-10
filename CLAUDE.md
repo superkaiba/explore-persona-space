@@ -249,8 +249,9 @@ SSH MCP server (`mcp-ssh-manager`, user-level `~/.claude/mcp.json`; `pod.py conf
 | LoRA adapters | HF model repo | Auto after training |
 | Figures/plots (PNG, PDF, meta.json) | Git (`figures/issue_N/`) | Manual commit; verifier syncs Step 8 |
 | Training metrics | WandB live run (project=`<experiment_name>`) | Auto during training |
+| Intermediate analysis tensors plan-referenced as downstream inputs (per-cell shift tensors, cached activations) | HF data repo `issueN_<slug>/analysis_tensors/` | Before pod termination (#521) |
 
-**Core rules:** Models MUST upload to HF before local deletion (never delete unuploaded). `eval_results/` is JSON/text only — never safetensors. Raw completions MUST upload before pod termination. Datasets must upload so any pod can access without scp. After upload, clean local weights + merged dirs. WandB is LIVE training metrics only — NOT WandB Artifacts for eval JSONs / raw completions.
+**Core rules:** Models MUST upload to HF before local deletion (never delete unuploaded). `eval_results/` is JSON/text only — never safetensors. Raw completions MUST upload before pod termination. Intermediate analysis tensors the plan's analysis / negative-control sections reference as downstream inputs MUST too — they are tiny (KB-MB) and losing them makes planned controls permanently unrunnable (#521). Datasets must upload so any pod can access without scp. After upload, clean local weights + merged dirs. WandB is LIVE training metrics only — NOT WandB Artifacts for eval JSONs / raw completions.
 
 **Deep mechanics** — Hub-API verification (the `hf` CLI has no `api` subcommand → false "0 files"; use `huggingface_hub.list_repo_files`), the `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD` inline-upload fence, and the **delete-after-eval adapter-persist recipe** (`EPM_PERSIST_ADAPTER_HF_REPO`/`_SUBFOLDER`, fail-loud before `rm`; never push the 15GB merged dir; #404/#458) — live in `.claude/rules/upload-policy.md` (loads when you touch training / hub / sweep code).
 
