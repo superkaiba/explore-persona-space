@@ -3066,8 +3066,8 @@
       "goal": "Test (a) whether LoRA training installs a desirable assistant trait above the untrained Qwen-2.5-7B-Instruct base, using traits chosen to have genuine base-model headroom (validating, conciseness, asks-clarifying-question-first, calibrated-uncertainty) rather than RLHF-saturated traits, AND (b) whether encoding the persona as a custom chat-template role header segments each trait more cleanly (less leakage to the default assistant and to other personas) than a system-prompt encoding - the q:spec-role-header test #498 could not answer because its traits were saturated. Implant each trait per the #498 recipe (contrastive negatives across the other scenarios + the default assistant) under BOTH encodings, and score base AND trained on a single shared held-out Q-bank under the identical Claude Sonnet 4.5 Likert (1-5) rubric rig, so the trained-minus-base paired delta and the role-header-vs-system-prompt leakage delta are both computable on matched prompts.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/528",
-      "status": "verifying",
+      "path": "tasks/interpreting/528",
+      "status": "interpreting",
       "title": "Follow-up to #517: does LoRA install a trait above base on non-saturated traits, and does a role-header segment it more cleanly than a system prompt?"
     },
     "529": {
