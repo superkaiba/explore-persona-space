@@ -3457,14 +3457,17 @@ is the durable record consumed by re-entry idempotency.
    Read the current body, locate the `## Reproducibility` H2, add
    exactly this line under the existing bullet list (between the
    `**Artifacts:**` and `**Compute:**` rows, or at the end of the
-   section's bullet list if those anchors aren't present):
+   section's bullet list if those anchors aren't present). SHA-pin the
+   blob URL with the `DOC_SHA` captured in step 5 — the step-8
+   verifier's URL-permanence check FAILs any unpinned `/blob/main/`
+   GitHub link:
    ```
-   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
+   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
    ```
    When `GIST_URL` is empty (fail-soft path), drop the `· [gist](...)`
    suffix entirely:
    ```
-   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_<N>.md)
+   - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md)
    ```
    Write the revised body via `task.py set-body <N> --file ...`.
 8. **Re-run the mechanical verifier on the body.** A single-line link
