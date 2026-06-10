@@ -336,7 +336,7 @@ def fig3() -> None:
     ax.set_ylabel("Spearman rho, n=14 personas")
     ax.set_ylim(-1, 1)
     ax.set_title(
-        "(c) No consistent magnitude law in either\narm (14 personas per dot, 3 seeds)",
+        "(c) No consistent magnitude law on the planned\nread (trained text; 14 personas per dot, 3 seeds)",
         loc="left",
         fontsize=10,
     )
@@ -352,7 +352,7 @@ def fig3() -> None:
     fig.text(
         0.07,
         0.885,
-        "the magnitude half of the rank-one law does not appear in either arm",
+        "the magnitude half of the rank-one law fails its planned test in both arms",
         fontsize=13,
         fontweight="semibold",
         ha="left",
@@ -421,7 +421,7 @@ def fig4() -> None:
     fig.text(
         0.10,
         0.885,
-        "depending entirely on the probe surface",
+        "depending on the probe-and-judge surface",
         fontsize=13,
         fontweight="semibold",
         ha="left",
