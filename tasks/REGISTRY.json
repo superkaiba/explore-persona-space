@@ -3362,7 +3362,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/563",
       "status": "interpreting",
-      "title": "Where does the persona-driven base-prior rise come from? Base-model-own-completions diagnostic on the #558 panel"
+      "title": "Role prompts alone raise the base model's marker prior at the end of its own answers: the moving trained-vs-base audit baseline is intrinsic to the base model (HIGH confidence)"
     },
     "564": {
       "has_clean_result": false,
