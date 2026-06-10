@@ -100,6 +100,44 @@ def compute_cell_negatives_for_disjoint_guard(
     return negs
 
 
+def build_source_guard_meta(fraction_manifest: Path | None) -> dict | None:
+    """Build ``run_trajectory_eval``'s ``source_guard_meta`` from a selector manifest.
+
+    Returns None when ``fraction_manifest`` is None (legacy #504/#530 behavior
+    — no guard). Otherwise reads ``source_delta_g_at_selected_steps`` (the
+    selector's teacher-forced source ΔG per selected fraction) + ``stopped``
+    (band-stop fired) and returns the meta dict the rig's per-checkpoint
+    adapter-applied cross-check consumes (#534 round-2).
+
+    Raises:
+        FileNotFoundError / json.JSONDecodeError: unreadable manifest — the
+            guard the caller asked for cannot be silently skipped.
+    """
+    if fraction_manifest is None:
+        return None
+    manifest = json.loads(fraction_manifest.read_text())
+    src_dg = manifest.get("source_delta_g_at_selected_steps") or {}
+    expected_by_frac = {float(k): (float(v) if v is not None else None) for k, v in src_dg.items()}
+    meta = {
+        "expected_by_frac": expected_by_frac,
+        "band_stop_fired": bool(manifest.get("stopped", False)),
+        "manifest_path": str(fraction_manifest),
+    }
+    if not any(v is not None for v in expected_by_frac.values()):
+        log.warning(
+            "[manifest-guard] %s carries no source ΔG expectations (selector ran "
+            "--skip-source-trajectory?) — only the band-stop final-fraction floor "
+            "clause can fire.",
+            fraction_manifest,
+        )
+    log.info(
+        "[manifest-guard] armed: expected_by_frac=%s, band_stop_fired=%s",
+        expected_by_frac,
+        meta["band_stop_fired"],
+    )
+    return meta
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--cell", required=True)
@@ -129,6 +167,20 @@ def main(argv: list[str] | None = None) -> int:
             "vLLM's LLM(max_lora_rank=...) is floored to max(8, this) before "
             "the engine is constructed (vLLM rejects ranks < 8; it is a buffer "
             "size, not the adapter rank)."
+        ),
+    )
+    ap.add_argument(
+        "--fraction-manifest",
+        type=Path,
+        default=None,
+        help=(
+            "#534 round-2: optional fraction_manifest.json from "
+            "i534_select_fractions.py. When given, the rig cross-checks its own "
+            "on-policy source-self ΔG per checkpoint against the selector's "
+            "teacher-forced source_delta_g_at_selected_steps — >2-nat "
+            "disagreement at the FINAL fraction fails loud "
+            "(SourceDeltaGManifestMismatchError; the round-1 adapter-not-"
+            "applied guard). Absent = exact legacy #504/#530 behavior."
         ),
     )
     ap.add_argument("--max-new-tokens", type=int, default=2048)
@@ -279,6 +331,9 @@ def main(argv: list[str] | None = None) -> int:
         [c["frac"] for c in checkpoint_specs],
     )
 
+    # ── #534 round-2: source-manifest guard meta (adapter-applied cross-check).
+    source_guard_meta = build_source_guard_meta(args.fraction_manifest)
+
     # vLLM LoRAConfig.max_lora_rank must be one of (8, 16, 32, 64, 128, 256, 320,
     # 512) — buffer size, not the adapter's actual rank. r=4 fits in an r=8
     # buffer (vLLM zero-pads unused rows), so floor when training pinned r < 8.
@@ -310,6 +365,7 @@ def main(argv: list[str] | None = None) -> int:
         gpu_memory_utilization=args.gpu_memory_utilization,
         max_model_len=args.max_model_len,
         compute_kl=not args.no_kl,
+        source_guard_meta=source_guard_meta,
     )
 
     if not args.out_path.exists():

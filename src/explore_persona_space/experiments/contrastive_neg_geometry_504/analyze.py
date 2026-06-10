@@ -271,6 +271,7 @@ def build_rows(
     base_prior_by_probe: dict[str, float] | None = None,
     positioned_arm_slugs: Sequence[str] = POSITIONED_ARM_SLUGS,
     dv_key: str = "delta_g",
+    dg_band: tuple[float, float] | None = (SOURCE_DG_BAND_LOW, SOURCE_DG_BAND_HIGH),
 ) -> dict[str, Any]:
     """Build the (probe × arm × seed) pooled-regression input.
 
@@ -302,6 +303,14 @@ def build_rows(
             quantity. The per-cell in-band gate stays on the LOG-PROB
             source ΔG band regardless of dv_key (the band is defined in
             nats of log-prob; see .claude/rules/marker-training-recipe.md).
+        dg_band: #534 — the source-ΔG inclusion band. Default = the canonical
+            ``(SOURCE_DG_BAND_LOW, SOURCE_DG_BAND_HIGH)`` exclusion (legacy
+            byte-identical). ``None`` DISABLES the exclusion (every cell with a
+            trajectory + checkpoint enters the pool) — required for the #534
+            sub-final-fraction fits, where the implant is deliberately
+            less-trained than the [5, 12] nat band that defines the frac=1.00
+            anchor. The ``in_dg_band`` diagnostic flag is ALWAYS computed
+            against the canonical band regardless of ``dg_band``.
 
     Returns:
         {
@@ -353,7 +362,10 @@ def build_rows(
             # resolution gate (Phase 0) replaces it. Cells are now excluded ONLY when
             # source ΔG is out of [5, 12] nats. `in_emit_band` is still computed for
             # diagnostic reporting but does not gate inclusion.
-            if not in_dg_band:
+            # #534: `dg_band=None` disables the exclusion entirely (sub-final
+            # fractions are deliberately below the band); the `in_dg_band`
+            # diagnostic above stays pinned to the canonical band.
+            if dg_band is not None and not (dg_band[0] <= source_dg <= dg_band[1]):
                 excluded.append(
                     {
                         "cell": cell,
@@ -679,6 +691,7 @@ def run_phase2_analysis(
     seeds: Sequence[int] = (42, 137),
     base_prior_by_probe: dict[str, float] | None = None,
     positioned_arm_slugs: Sequence[str] = POSITIONED_ARM_SLUGS,
+    dg_band: tuple[float, float] | None = (SOURCE_DG_BAND_LOW, SOURCE_DG_BAND_HIGH),
 ) -> dict[str, Any]:
     """End-to-end Phase 2 (CPU-only): pinned read + robustness + diagnostics.
 
@@ -731,6 +744,7 @@ def run_phase2_analysis(
         seeds=list(seeds),
         base_prior_by_probe=base_prior_by_probe,
         positioned_arm_slugs=positioned_arm_slugs,
+        dg_band=dg_band,
     )
     rows = pooled["rows"]
     fit = fit_pooled_partial_spearman(rows)
@@ -767,6 +781,10 @@ def run_phase2_analysis(
     return {
         "schema_version": "i504_v1",
         "chosen_checkpoint_fraction": float(chosen_frac),
+        # #534: which source-ΔG inclusion band gated the pool (None = no
+        # exclusion — the sub-final-fraction read). Self-describing so a
+        # per-fraction JSON can't be mistaken for a banded anchor fit.
+        "dg_band_applied": list(dg_band) if dg_band is not None else None,
         "predictors": list(PREDICTORS),
         "per_cell_diagnostics": pooled["per_cell_diagnostics"],
         "excluded_cells": pooled["excluded_cells"],

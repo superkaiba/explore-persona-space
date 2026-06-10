@@ -467,6 +467,9 @@ def train_one_cell(
     lora_alpha_override: int | None = None,
     marker_suppress_at_post_response_slot: bool = False,
     marker_im_end_token_id: int | None = None,
+    marker_band_snapshot_every_steps: int = 0,
+    marker_band_snapshot_dir: Path | None = None,
+    marker_band_snapshot_max_count: int = 64,
 ) -> dict:
     """Train one cell's LoRA adapter, saving 6 mid-run checkpoints.
 
@@ -491,6 +494,13 @@ def train_one_cell(
             nested eval subprocess then inherits this same
             ``CUDA_VISIBLE_DEVICES`` from ``os.environ`` (sft.py mutates it
             in-process) so vLLM + HF KL run on the same physical GPU.
+
+        marker_band_snapshot_every_steps / marker_band_snapshot_dir /
+            marker_band_snapshot_max_count: #534 sub-stop checkpointing —
+            threaded to ``TrainLoraConfig`` so ``MarkerBandStopCallback``
+            saves a per-step adapter snapshot (before the stop predicate) and
+            writes ``band_stop_meta.json`` at train end. Defaults off →
+            byte-identical legacy behavior.
 
     Returns:
         {"final_adapter": str, "checkpoint_index": {frac: {step, path}}}.
@@ -569,6 +579,15 @@ def train_one_cell(
         # cells set True + im_end_token_id=151645 (Qwen-2.5 <|im_end|>).
         marker_suppress_at_post_response_slot=marker_suppress_at_post_response_slot,
         marker_im_end_token_id=marker_im_end_token_id,
+        # #534 sub-stop checkpointing: per-step adapter snapshots inside
+        # MarkerBandStopCallback + the band_stop_meta.json sidecar. Defaults
+        # off (0 / None) → byte-identical legacy behavior for every existing
+        # #472/#477/#504/#530 caller.
+        marker_band_snapshot_every_steps=marker_band_snapshot_every_steps,
+        marker_band_snapshot_dir=(
+            str(marker_band_snapshot_dir) if marker_band_snapshot_dir is not None else None
+        ),
+        marker_band_snapshot_max_count=marker_band_snapshot_max_count,
     )
     # v4 step-lever: when ``step_calibration_fractions`` is supplied (Phase 2
     # step-calibration cells), it replaces the default ``fractions`` AND

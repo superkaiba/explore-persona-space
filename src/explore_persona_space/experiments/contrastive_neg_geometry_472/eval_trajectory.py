@@ -233,6 +233,7 @@ def compute_kl_for_checkpoint(
     eval_personas: dict[str, str],
     eval_questions: list[str],
     marker_text: str = MARKER_TEXT,
+    marker_token_id: int = EXPECTED_MARKER_TOKEN_ID,
     sep: str = MARKER_SEP,
     device: str = "cuda:0",
 ) -> dict[str, dict[str, dict[str, float]]]:
@@ -270,7 +271,10 @@ def compute_kl_for_checkpoint(
         ⇒ ASSERT FAIL). NEVER substitute KL for the marker log-prob DV
         when the on-policy path "looks broken" — that's the v3 false-fix
         path. See `.claude/rules/marker-leakage-measurement.md` §Anti-
-        patterns which names #504 explicitly.
+        patterns which names #504 explicitly. The #534 ``z_marker``
+        companion is NOT that banned substitution: it is single-token,
+        marker-specific, and reported alongside (never instead of) the
+        log-prob DV.
     """
     import torch
     from peft import PeftModel
@@ -357,6 +361,67 @@ def compute_kl_for_checkpoint(
     return stats
 
 
+def compute_kl_and_slot_stats_for_checkpoint(
+    *,
+    base_model: str,
+    adapter_path: str,
+    r_by_persona_q: dict[str, dict[str, str]],
+    eval_personas: dict[str, str],
+    eval_questions: list[str],
+    marker_text: str = MARKER_TEXT,
+    marker_token_id: int = EXPECTED_MARKER_TOKEN_ID,
+    sep: str = MARKER_SEP,
+    device: str = "cuda:0",
+) -> tuple[dict[str, dict[str, float]], dict[str, dict[str, dict[str, float]]]]:
+    """#534-spelled compat wrapper over :func:`compute_kl_for_checkpoint`.
+
+    The #534 branch named this function and spelled the slot-stat keys
+    ``*_trained`` / ``*_base`` / ``logz`` / ``logp_marker_hf_*``; main's
+    implementation (kept as the single source of truth in the #555 merge)
+    spells them ``*_g`` / ``*_b`` / ``logZ`` / ``logp_hf_*``. This wrapper
+    translates so #534-lineage consumers (``scripts/i534_smoke_local.py``
+    Phase D) keep working unmodified.
+
+    Returns:
+        ``(kl, slot_stats)`` — ``kl[persona][q] -> float`` and
+        ``slot_stats[persona][q]`` carrying the #534-spelled keys including
+        ``delta_z_marker`` / ``delta_z_margin``.
+    """
+    combined = compute_kl_for_checkpoint(
+        base_model=base_model,
+        adapter_path=adapter_path,
+        r_by_persona_q=r_by_persona_q,
+        eval_personas=eval_personas,
+        eval_questions=eval_questions,
+        marker_text=marker_text,
+        marker_token_id=marker_token_id,
+        sep=sep,
+        device=device,
+    )
+    kl: dict[str, dict[str, float]] = {}
+    slot_stats: dict[str, dict[str, dict[str, float]]] = {}
+    for persona, by_q in combined.items():
+        kl[persona] = {}
+        slot_stats[persona] = {}
+        for q, st in by_q.items():
+            kl[persona][q] = st["kl"]
+            slot_stats[persona][q] = {
+                "z_marker_trained": st["z_marker_g"],
+                "z_marker_base": st["z_marker_b"],
+                "z_eos_trained": st["z_eos_g"],
+                "z_eos_base": st["z_eos_b"],
+                "logz_trained": st["logZ_g"],
+                "logz_base": st["logZ_b"],
+                "logp_marker_hf_trained": st["logp_hf_g"],
+                "logp_marker_hf_base": st["logp_hf_b"],
+                "delta_z_marker": st["z_marker_g"] - st["z_marker_b"],
+                "delta_z_margin": (st["z_marker_g"] - st["z_eos_g"])
+                - (st["z_marker_b"] - st["z_eos_b"]),
+                "eos_token_id": float(EXPECTED_POST_R_EOS_ID),
+            }
+    return kl, slot_stats
+
+
 def run_trajectory_eval(
     *,
     cell_slug: str,
@@ -373,6 +438,7 @@ def run_trajectory_eval(
     gpu_memory_utilization: float = DEFAULT_GPU_MEM_UTIL,
     max_model_len: int = DEFAULT_MAX_MODEL_LEN,
     compute_kl: bool = True,
+    source_guard_meta: dict | None = None,
 ) -> Path:
     """Run the on-policy trajectory eval for one cell × seed.
 
@@ -386,6 +452,15 @@ def run_trajectory_eval(
         base_model, max_new_tokens, max_lora_rank, gpu_memory_utilization,
             max_model_len: vLLM params.
         compute_kl: if False, skip DV-B (smoke speed-up).
+        source_guard_meta: #534 round-2 adapter-applied cross-check. None
+            (default) = exact legacy behavior. Otherwise a dict
+            ``{"expected_by_frac": {frac(float): teacher-forced source ΔG
+            (float) | None}, "band_stop_fired": bool, "tol_nats": float
+            (optional)}`` — after each checkpoint's source-self ΔG is
+            computed, ``assert_source_delta_g_matches_manifest`` fails loud
+            on >tol disagreement at the final fraction (and on a <1-nat
+            final read when the band-stop fired). The per-checkpoint diag is
+            persisted as ``checkpoints[*].source_manifest_check``.
 
     Returns:
         out_path.
@@ -418,12 +493,27 @@ def run_trajectory_eval(
 
     checkpoints_out: list[dict] = []
     r_cache: dict[float, dict[str, dict[str, str]]] = {}  # frac -> on-policy R (for KL phase)
-    for spec in checkpoint_specs:
+    # Final (max) fraction — the source-manifest guard's hard-fail gate.
+    final_frac = max(s["frac"] for s in checkpoint_specs)
+    for ck_i, spec in enumerate(checkpoint_specs, start=1):
         frac = spec["frac"]
         adapter_path = spec["adapter_path"]
         label = f"{cell_slug}_seed{seed}_frac{frac}"
-        lora_req = LoRARequest(lora_name=label, lora_int_id=1, lora_path=adapter_path)
-        log.info("[phase=traj_vllm] %s: on-policy gen + DV-A", label)
+        # #534 round-1 root cause: vLLM caches LoRA adapters STRICTLY by
+        # ``lora_int_id`` (LRUCacheWorkerLoRAManager.add_adapter: an already-
+        # seen id is "just touched" — ``lora_path`` is never re-read). Reusing
+        # ``lora_int_id=1`` for every checkpoint silently served the FIRST
+        # loaded adapter (step ~5, ΔG≈0.03) at all four fractions. Each
+        # checkpoint MUST get a DISTINCT id; the LRU (max_loras=1) evicts the
+        # previous adapter and loads the new path. #504/#530 never hit this
+        # because their checkpoint_index carried a single usable entry.
+        lora_req = LoRARequest(lora_name=label, lora_int_id=ck_i, lora_path=adapter_path)
+        log.info(
+            "[phase=traj_vllm] %s: on-policy gen + DV-A (lora_int_id=%d, path=%s)",
+            label,
+            ck_i,
+            adapter_path,
+        )
 
         # 1. Trained model writes its OWN R for held-out panel + source.
         r_on_policy = _generate_on_policy_R(
@@ -518,6 +608,27 @@ def run_trajectory_eval(
             "emission_p": float(src_emission_p),
             "r_collapsed": src_collapsed,
         }
+        # #534 round-2 adapter-applied cross-check: the selector's HF/PEFT
+        # teacher-forced source ΔG and this on-policy read look at the SAME
+        # snapshot dir through independent loaders — >tol disagreement at the
+        # final fraction means the eval path did not actually apply the
+        # adapter (fail loud BEFORE the flat trajectory leaves the rig).
+        source_manifest_check: dict | None = None
+        if source_guard_meta is not None:
+            from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_guard import (
+                DEFAULT_SOURCE_MANIFEST_TOL_NATS,
+                assert_source_delta_g_matches_manifest,
+            )
+
+            source_manifest_check = assert_source_delta_g_matches_manifest(
+                cell_label=label,
+                frac=frac,
+                eval_delta_g_nats=source_self["delta_g_mean"],
+                expected_delta_g_nats=source_guard_meta.get("expected_by_frac", {}).get(frac),
+                is_final_frac=(frac == final_frac),
+                band_stop_fired=bool(source_guard_meta.get("band_stop_fired", False)),
+                tol_nats=float(source_guard_meta.get("tol_nats", DEFAULT_SOURCE_MANIFEST_TOL_NATS)),
+            )
         n_held_out_probes = len(eval_personas) * len(eval_questions)
         held_out_collapse_share = n_collapsed_ck / n_held_out_probes if n_held_out_probes else 0.0
         checkpoints_out.append(
@@ -526,6 +637,7 @@ def run_trajectory_eval(
                 "step": spec.get("step"),
                 "adapter_path": adapter_path,
                 "source_self": source_self,
+                "source_manifest_check": source_manifest_check,
                 "held_out_collapse_share": held_out_collapse_share,
                 "n_held_out_collapsed": n_collapsed_ck,
                 "held_out": held_out,
@@ -605,6 +717,10 @@ def run_trajectory_eval(
                     leaf["delta_margin"] = (st["z_marker_g"] - st["z_eos_g"]) - (
                         st["z_marker_b"] - st["z_eos_b"]
                     )
+                    # #534-spelled alias (same value): scripts/i534_trajectory_
+                    # analyze.py and its #555 fork read `delta_z_margin` from
+                    # the held_out rows ("alias + new key, never rename").
+                    leaf["delta_z_margin"] = leaf["delta_margin"]
             # Source-self mean logit fields over Q_eval (same readout, source row).
             src_stats = [slot_stats[source][q] for q in eval_questions]
             n_src = len(src_stats)

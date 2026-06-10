@@ -558,6 +558,15 @@ class TrainLoraConfig:
     marker_band_high_nats: float = 12.0
     marker_band_eval_every_steps: int = 10
     marker_band_min_steps: int = 20
+    # Task #534 sub-stop checkpointing: when ``marker_band_snapshot_every_steps``
+    # > 0 AND ``marker_band_snapshot_dir`` is set, MarkerBandStopCallback saves
+    # a PEFT adapter-only snapshot every N optimizer steps (BEFORE the stop
+    # predicate, so the stop-step snapshot exists) and writes a
+    # ``band_stop_meta.json`` sidecar at train end. Defaults off → every
+    # existing marker run is byte-identical.
+    marker_band_snapshot_every_steps: int = 0
+    marker_band_snapshot_dir: str | None = None
+    marker_band_snapshot_max_count: int = 64
     # Soft cap on probe batch size — too large and the per-eval forward
     # pass costs grow; too small and the per-step delta is noisy. ~32 rows
     # is a good balance for the canonical 7B-Qwen marker setup.
@@ -882,6 +891,11 @@ def _maybe_attach_marker_band_stop(
         eos_token_id=tokenizer.eos_token_id,
         log_only=cfg.marker_band_log_only,
         trajectory_out_path=cfg.marker_band_trajectory_path,
+        snapshot_every_steps=cfg.marker_band_snapshot_every_steps,
+        snapshot_dir=(
+            Path(cfg.marker_band_snapshot_dir) if cfg.marker_band_snapshot_dir is not None else None
+        ),
+        snapshot_max_count=cfg.marker_band_snapshot_max_count,
     )
     trainer.add_callback(callback)
     logger.info(
