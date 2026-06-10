@@ -17,8 +17,12 @@
 #
 #   Step 0   env preamble (same asserts as the sweep).
 #   Step R   resume preflight (NEW): assert the round-1 train artifacts
-#            (merged config.json + adapter safetensors/config per seed)
-#            exist on the pod; distinct rc per missing-artifact class.
+#            exist on the pod per seed — merged config.json + tokenizer
+#            files + weight shards (index-validated when sharded), and
+#            adapter safetensors/config; distinct rc per missing-artifact
+#            class. Covers the FULL file set the gate's local-mode vLLM
+#            load consumes (round-3 fix, concern
+#            resume-preflight-merged-artifact-coverage).
 #   Step 4   INVERTED EM-installation gate (canonical 8x100 surface,
 #            gpt-4o-2024-08-06; PASS iff every cell L <= 0.05).
 #   Step 4b  gate raw-completion upload to HF + merged-dir cleanup (~45 GB).
@@ -166,8 +170,18 @@ stage_benign_adapters_local() {
 # ──────────────────────────────────────────────────────────────────────
 # Step R — resume preflight: assert every round-1 train artifact this
 # script consumes is actually on the pod, BEFORE any GPU/API spend.
-# Distinct rc per missing-artifact class (31 merged / 32 safetensors /
-# 33 adapter_config) so the poller log names the failure precisely.
+# Distinct rc per missing-artifact class (31 merged config / 32 adapter
+# safetensors / 33 adapter_config / 40 merged tokenizer / 41 merged
+# weights / 42 merged index-shard mismatch) so the poller log names the
+# failure precisely.
+#
+# Why 40-42 (round 3, concern resume-preflight-merged-artifact-coverage):
+# the gate's LOCAL mode (issue404_outcome_eval.py::download_merged_checkpoint,
+# EPM_ISSUE404_LOCAL_MERGED_BASE branch, lines ~156-167) checks ONLY
+# config.json before eval_cell hands the dir to vLLM (lines ~482/~493);
+# the tokenizer-file guard there (lines ~203-214) sits on the HF-download
+# path. Without 40-42 a merged dir missing tokenizer files or weight
+# shards would pass preflight and crash INSIDE the GPU phase.
 # ──────────────────────────────────────────────────────────────────────
 phase resume_preflight "asserting round-1 train artifacts for seeds ${SEEDS[*]} under $MODELS_ROOT"
 for SEED in "${SEEDS[@]}"; do
@@ -179,8 +193,49 @@ for SEED in "${SEEDS[@]}"; do
     fail_loud 32 "resume_preflight: adapter_model.safetensors missing for seed=$SEED at $ADAPTER_DIR"
   [[ -f "$ADAPTER_DIR/adapter_config.json" ]] || \
     fail_loud 33 "resume_preflight: adapter_config.json missing for seed=$SEED at $ADAPTER_DIR"
+  # vLLM loads the tokenizer from the merged dir; mirror the loader's
+  # needed_tokenizer set (issue404_outcome_eval.py ~line 206), which the
+  # local-mode branch never checks.
+  for TOK_FILE in tokenizer.json tokenizer_config.json; do
+    [[ -f "$MERGED_DIR/$TOK_FILE" ]] || \
+      fail_loud 40 "resume_preflight: $TOK_FILE missing for seed=$SEED at $MERGED_DIR (vLLM needs tokenizer files next to the merged weights; the local-mode loader checks only config.json)"
+  done
+  # Weight coverage: when the sharded-checkpoint index exists it is
+  # AUTHORITATIVE — every shard it references must exist and be
+  # nontrivial (one missing/truncated shard crashes vLLM's weight load
+  # even if the other shards look healthy). Without an index, require
+  # >=1 nontrivial *.safetensors (>1 MiB catches truncated writes).
+  INDEX_JSON="$MERGED_DIR/model.safetensors.index.json"
+  if [[ -f "$INDEX_JSON" ]]; then
+    uv run python - "$INDEX_JSON" <<'PY' || \
+      fail_loud 42 "resume_preflight: model.safetensors.index.json at $MERGED_DIR has an empty weight_map or references missing/truncated shard files for seed=$SEED — merged checkpoint incomplete; re-run scripts/issue404_merge_and_upload.py --no-upload for this seed (details above)"
+import json
+import sys
+from pathlib import Path
+
+idx = Path(sys.argv[1])
+weight_map = json.loads(idx.read_text()).get("weight_map", {})
+shards = sorted(set(weight_map.values()))
+if not shards:
+    sys.exit(f"{idx} carries an empty weight_map")
+problems = []
+for name in shards:
+    shard = idx.parent / name
+    if not shard.exists():
+        problems.append(f"{name}: MISSING")
+    elif shard.stat().st_size <= 1024 * 1024:
+        problems.append(f"{name}: truncated ({shard.stat().st_size} B)")
+if problems:
+    sys.exit(f"{idx}: bad shards -> " + "; ".join(problems))
+print(f"resume_preflight: index OK at {idx.parent} ({len(shards)} shard file(s), all present and >1MiB)")
+PY
+  else
+    NONTRIVIAL_SFT=$(find "$MERGED_DIR" -maxdepth 1 -name '*.safetensors' -size +1M | wc -l)
+    (( NONTRIVIAL_SFT >= 1 )) || \
+      fail_loud 41 "resume_preflight: no model.safetensors.index.json and no nontrivial (>1MiB) *.safetensors for seed=$SEED at $MERGED_DIR — merged weights missing/truncated; re-run scripts/issue404_merge_and_upload.py --no-upload for this seed"
+  fi
 done
-phase resume_preflight_ok "all 3 seeds carry sft_narrow_merged/config.json + sft_narrow_adapter/{adapter_model.safetensors,adapter_config.json}"
+phase resume_preflight_ok "all 3 seeds carry sft_narrow_merged/{config.json,tokenizer.json,tokenizer_config.json,weights} + sft_narrow_adapter/{adapter_model.safetensors,adapter_config.json}"
 
 # Smoke hook: preflight + local staging only, then clean exit (no GPU).
 if [[ "${EPM_RESUME_STAGE_ONLY:-0}" == "1" ]]; then
