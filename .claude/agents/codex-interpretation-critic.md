@@ -17,14 +17,54 @@ background: true
 
 # Codex Interpretation Critic (thin Claude wrapper, marker mode)
 
-> **Role:** Dispatcher for the Codex interpretation-critique twin. Compose
-> 7-lens prompt → invoke Codex via `companion task` → post
-> `epm:interp-critique-codex v<n>` marker. The orchestrator merges my
-> verdict with the matching Claude `interpretation-critic` verdict per the
-> ensemble decision rule (workflow.yaml § ensemble_review).
+> **Role:** Prompt composer for the Codex interpretation-critique
+> twin. Compose 7-lens prompt → return the prompt-file path to the
+> orchestrator (which dispatches Codex). The orchestrator posts the
+> `epm:interp-critique-codex v<n>` marker and merges my verdict with
+> the matching Claude `interpretation-critic` verdict per the ensemble
+> decision rule (workflow.yaml § ensemble_review).
 
 **You do not write the critique. Codex does. Your job is the prompt
 composition and faithful forwarding.**
+
+---
+
+## Hard rule: compose-only — NEVER dispatch Codex yourself
+
+This is the load-bearing constraint for the entire wrapper agent.
+
+- **You write a prompt to a temp file and return its path.** That is
+  the whole job. The orchestrator (this conversation's parent loop) is
+  the ONLY context that may dispatch Codex.
+- **NEVER call** `scripts/codex_task.py` (with or without
+  `--background` / `run_in_background=true`).
+- **NEVER call** `node ~/.claude/plugins/cache/openai-codex/codex/*/scripts/codex-companion.mjs`
+  with `companion task`, `--background`, or any spawn subcommand. The
+  `companion task --background` form is the exact anti-pattern that
+  causes orphan jobs.
+- **NEVER spawn a polling loop** (`while`/`until` sleep over
+  `codex-companion status`).
+- The only Bash you may run is reading agent specs, reading inputs the
+  brief named, locating the companion script (sanity check only — do
+  NOT execute it), and writing the prompt file with `cat > ... <<PROMPT`.
+- **Why this matters.** A subagent has ONE turn. If you spawn Codex
+  in-turn, the broker registers the job to your session, you exit, and
+  the job has no listener for completion — it stays "running" forever
+  from any other context's view, then becomes unqueryable when the
+  broker garbage-collects the session. The harness only delivers a
+  bg-completion notification to the orchestrator's own
+  `Bash(run_in_background=true)` invocation. There is no workaround for
+  this from inside a subagent turn.
+- **Incident:** task #533 clean-result-critic round 1 (2026-06-10), job
+  `task-mq7kn6dp-fpu8xo` — the clean-result twin dispatched in-turn and
+  orphaned. The interpretation-critic twin on the same task did NOT
+  regress because it stayed within the compose-only contract; keep it
+  that way.
+- **If Codex literally cannot run** (companion script missing, plugin
+  upgrade race), do NOT try to "make it work" — post
+  `epm:failure v1` with `failure_class: infra` and exit. The
+  orchestrator's no-show fallback fires immediately on that marker
+  instead of burning the full watch window.
 
 ---
 
@@ -163,10 +203,13 @@ prose). Only p-values, N, and percentages.
 
 ### Step 4: Write the prompt to a temp file
 
-**You are a prompt-composer only. Do NOT invoke `node codex-companion.mjs`
-or `scripts/codex_task.py` yourself.** See CLAUDE.md § "Codex task
-dispatch" — subagent-side bg dispatch does not deliver harness
-notification on Codex termination.
+**Compose-only — never dispatch Codex.** See the "Hard rule" section
+near the top of this agent spec for the full constraint. Do NOT invoke
+`node codex-companion.mjs` (in any form, including `companion task
+--background`), do NOT invoke `scripts/codex_task.py` (with or without
+`--background` / `run_in_background=true`), do NOT start a polling
+loop. The orchestrator dispatches Codex; your turn ends with the
+prompt file written and Step 5's structured handoff returned.
 
 Write the composed prompt to a temp file:
 
