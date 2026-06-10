@@ -542,9 +542,11 @@ def _build_additions(
             additions[source] = block
             continue
         block["drop_tables"] = {"status": "computed", **_drop_tables(res, strata)}
-        # (d) raw vs trained-minus-base adjusted DV, side by side.
+        # (d) raw vs trained-minus-base adjusted DV, side by side. Fail-loud
+        # lookup: every arm-panel persona is in the shared-baseline aggregate
+        # by construction; a KeyError here means the baseline is broken.
         names, prior_v, leak_raw = _aligned(res)
-        leak_adj = [leak_raw[i] - base_rates.get(names[i], 0.0) for i in range(len(names))]
+        leak_adj = [leak_raw[i] - base_rates[names[i]] for i in range(len(names))]
         pairs_adj = [(prior_v[i], leak_adj[i]) for i in range(len(names))]
         block["adjusted_dv"] = {
             "status": "computed",
