@@ -4,7 +4,7 @@ title: The de-saturated anchor's reversed geometry signs replicate on retrain an
 kind: experiment
 tags: []
 created_at: '2026-06-09T16:51:00Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 530
 relates_to:
 - leak-contrastive-negatives
