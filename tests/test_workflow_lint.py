@@ -37,6 +37,7 @@ from workflow_lint import (  # noqa: E402
     _other_worktree_prefix,
     check_asks,
     check_autonomous_asks,
+    check_marker_registry,
     check_script_references,
     check_wandb_required,
 )
@@ -908,3 +909,86 @@ def test_workflow_lint_check_asks_scans_skill_files_from_worktree():
                 f"SKILL.md {sf} is not under our worktree prefix {prefix}; "
                 f"sibling-worktree exclusion regressed"
             )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_marker_registry`` (task #555 drift class). Each
+# fixture case writes a tiny SKILL.md under ``tmp_path`` and calls
+# ``check_marker_registry(workflow, skill_md=<fixture>)`` against the REAL
+# committed workflow.yaml registry (so "registered" means actually
+# registered, and the sentinel kind below stays unregistered by design).
+# ---------------------------------------------------------------------------
+
+# Deliberately absurd kind that must never be registered; used to assert
+# the FAIL paths without depending on registry contents.
+_UNREGISTERED_KIND = "epm:zz-test-sentinel-unregistered"
+
+
+def test_workflow_lint_check_marker_registry_repo_passes():
+    """Repo-level check: every marker kind the committed
+    .claude/skills/issue/SKILL.md instructs posting must be declared in
+    workflow.yaml § markers. If this fails, a skill edit added a posting
+    site for an unregistered kind (the task #555 drift class)."""
+    errors = check_marker_registry(_workflow())
+    assert errors == [], (
+        "committed SKILL.md posts marker kinds missing from workflow.yaml § markers:\n"
+        + "\n".join(errors)
+    )
+
+
+def test_check_marker_registry_pass_registered_cli_post(tmp_path):
+    """A `task.py post-marker` invocation with a registered kind PASSes."""
+    skill = tmp_path / "SKILL.md"
+    skill.write_text("Run `uv run python scripts/task.py post-marker <N> epm:plan --note '...'`.\n")
+    errors = check_marker_registry(_workflow(), skill_md=skill)
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_marker_registry_fail_unregistered_cli_post(tmp_path):
+    """A `task.py post-marker` invocation with an unregistered kind FAILs."""
+    skill = tmp_path / "SKILL.md"
+    skill.write_text(f"Run `task.py post-marker <N> {_UNREGISTERED_KIND} --note 'x'`.\n")
+    errors = check_marker_registry(_workflow(), skill_md=skill)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert _UNREGISTERED_KIND in errors[0]
+    assert "SKILL.md:1" in errors[0]
+    assert "not declared in workflow.yaml" in errors[0]
+
+
+def test_check_marker_registry_fail_unregistered_prose_post(tmp_path):
+    """Posting prose ('post `epm:<kind> v1`') with an unregistered kind
+    FAILs — the prose form is how most SKILL.md steps instruct posts."""
+    skill = tmp_path / "SKILL.md"
+    skill.write_text(f"On classifier error, post `{_UNREGISTERED_KIND} v1` with the stderr.\n")
+    errors = check_marker_registry(_workflow(), skill_md=skill)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert _UNREGISTERED_KIND in errors[0]
+
+
+def test_check_marker_registry_comment_form_post_matches(tmp_path):
+    """The `<!-- epm:<kind> v1 -->` comment form after a post-verb also
+    counts as a posting site."""
+    skill = tmp_path / "SKILL.md"
+    skill.write_text(f"Post a `<!-- {_UNREGISTERED_KIND} v1 -->` event on the task.\n")
+    errors = check_marker_registry(_workflow(), skill_md=skill)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert _UNREGISTERED_KIND in errors[0]
+
+
+def test_check_marker_registry_read_mention_does_not_match(tmp_path):
+    """Read-side mentions ('the latest `epm:<kind>` marker') are NOT
+    posting sites and never FAIL, even for unregistered kinds."""
+    skill = tmp_path / "SKILL.md"
+    skill.write_text(
+        f"Read the latest `{_UNREGISTERED_KIND} v<n>` marker on the source task.\n"
+        f"If an `{_UNREGISTERED_KIND}` event exists, resume from it.\n"
+    )
+    errors = check_marker_registry(_workflow(), skill_md=skill)
+    assert errors == [], f"read-side mention tripped the posting check: {errors}"
+
+
+def test_check_marker_registry_missing_skill_md_returns_empty(tmp_path):
+    """A nonexistent SKILL.md path returns no errors (mirrors the other
+    checks' missing-file behavior)."""
+    errors = check_marker_registry(_workflow(), skill_md=tmp_path / "nope" / "SKILL.md")
+    assert errors == [], f"expected empty on missing file, got: {errors}"

@@ -1280,6 +1280,10 @@ markers:
     posted_by: skill (via implementer / experiment-implementer)
     when: "Step 4b, TDD mode only"
     fields: "Posted ONLY when the plan body contains `### TDD: yes` or the user requests TDD. Body: ≥1 happy-path + ≥2 distinct error/edge-case tests, behavior-focused, in fenced blocks. Implementer EXITs after posting and awaits user `approve-tests` reply. Skill pauses pending approval, then resumes Step 4b."
+  - kind: "epm:approve-tests"
+    posted_by: user via task.py post-marker (interactive) OR skill (autonomous auto-approve)
+    when: "Step 4b TDD gate resume (gates.conditional.tdd_gate; CLAUDE.md auto-continuation gate 7)"
+    fields: "Approval of the proposed test surface — the resume signal the parked TDD gate waits for. Must be posted AFTER the `epm:proposed-tests` event it approves (the Step 0 resume router compares event order). Interactive: the user posts it via `task.py post-marker <N> epm:approve-tests`. Autonomous (EPM_AUTONOMOUS_SESSION=1): the skill auto-posts it IFF the proposed-tests body lists ≥1 test per acceptance criterion from the original task body, then re-spawns the implementer with `tdd_approved=true` in the same turn."
   - kind: "epm:experiment-implementation"
     posted_by: skill (via experiment-implementer)
     when: "Step 4b"
@@ -1519,6 +1523,10 @@ markers:
     posted_by: skill
     when: "Step 8 (after upload-verification PASS)"
     fields: "Pod auto-terminated immediately after artifact uploads verified; records pod name and command output"
+  - kind: "epm:pod-stopped"
+    posted_by: skill
+    when: "Step 8-bis (pod must not idle on a halt) — any halt-path exit that leaves the normal Step 8 terminate path"
+    fields: "Pod paused via `pod.py stop --issue <N>` (volume preserved; `resume` re-provisions) instead of terminated. Posted with the command output whenever the pipeline EXITs while a pod is RUNNING outside the upload-verification-PASS path: a human-input gate that cannot be satisfied this turn, a STATE-TO-blocked exit, or a detected crash with GPUs idle. Pairs with epm:pod-terminated (used when the work is truly done). NEVER leave a pod RUNNING while awaiting human input or after a crash (incidents 2026-06-01: #444 ~21h, #404 ~2d, #407 ~1d of idle burn)."
   - kind: "epm:interpretation"
     posted_by: skill (via analyzer)
     when: "Step 9a"
@@ -1531,10 +1539,14 @@ markers:
     posted_by: skill (via codex-interpretation-critic)
     when: "Step 9a"
     fields: "Codex (gpt-5.5 via companion task) twin of interpretation-critic. PASS/REVISE verdict with all 7 lenses. v<n> per round, paired with epm:interp-critique v<n>."
+  - kind: "epm:analysis"
+    posted_by: skill (via analyzer, its Step 7 cross-link recap; v2+ on critique-revision rounds)
+    when: "Step 9a (after the clean-result draft lands; analyzer.md Steps 7 + After-submission)"
+    fields: "Hero figure URL, 2-sentence recap of the claim, and a `free_analysis_unrun:` field listing each `cost_class: free-analysis` + `headline_affecting: yes` follow-up the draft surfaced that has no `epm:free-analysis-followup-run v1` marker yet on the task (empty list `[]` when none) — consumed by SKILL.md Step 9a-ter detection. Anchor for reviewer agents to locate the analyzer output; v2+ summarize the body diff after a critique-revision round."
   - kind: "epm:clean-result-drafted"
     posted_by: skill (via analyzer)
     when: "Step 9a (final)"
-    fields: "Link to the clean-result body.md + hero figure path + 2-sentence recap. Replaces the GH-era epm:analysis marker."
+    fields: "Link to the clean-result body.md + hero figure path + 2-sentence recap. Replaces the GH-era epm:analysis usage as the clean-result link anchor (epm:analysis survives as the analyzer's cross-link recap + free_analysis_unrun carrier — see that entry)."
   - kind: "epm:humanize-loop"
     posted_by: skill (via /humanize loop)
     when: "Step 9a-humanize"
@@ -1774,10 +1786,18 @@ markers:
     posted_by: specialist
     when: "on crash"
     fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code line."
+  - kind: "epm:failure-classify-error"
+    posted_by: skill
+    when: "Step 7 (epm:failure body missing failure_class AND scripts/failure_classifier.py exited non-zero)"
+    fields: "Captured stderr from the failure_classifier.py invocation. Audit record only: the orchestrator treats the unclassifiable failure as `code` (conservative default) and applies the code-class row of the Step 7 failure table; this marker preserves WHY the classifier could not produce a verdict."
   - kind: "epm:experimenter-respawn"
     posted_by: skill
     when: "Step 7 (failure_class=infra path)"
     fields: "Records re-spawn on the same branch without an implementer round. v<n> per respawn; cap 3."
+  - kind: "epm:strategy-pivot"
+    posted_by: skill (orchestrator)
+    when: "any strategy pivot — Step 5 code-review ensemble cap-3, whack-a-mole detector fire, plan-contradiction re-plan, debugging-wall pivot (see § pivot_criteria)"
+    fields: "v<n> per pivot, top-level on the task. Records the pivot rationale + what changes: which strategy failed, the fundamentally different design being tried next, and that revision_round RESETS to 1 on the new plan. Counts toward the ~3-pivots-before-block rule (CLAUDE.md STATE-TO-blocked criteria). Every pivot site reuses this ONE kind — do NOT introduce per-pivot-source marker kinds."
   - kind: "epm:merged"
     posted_by: skill
     when: "Step 9b (experiments, at awaiting_promotion) or Step 10d (code paths, at completed)"
