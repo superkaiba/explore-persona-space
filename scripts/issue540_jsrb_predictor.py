@@ -1797,7 +1797,9 @@ def _write_results_sentinel(args, analysis: dict, t_start: float) -> Path:
     """End-of-run sentinel per /issue Step 7 + poll_pipeline.py
     ``_SENTINEL_REQUIRED_KEYS`` (sentinel_schema_version / kind / version)."""
     epoch = int(time.time())
-    # poll_pipeline.py watches /workspace/logs/issue-540-*.json ONLY. On a
+    # poll_pipeline.py watches /workspace/logs/issue-{args.issue}-*.json ONLY
+    # (the task-specific tag — the sentinel filename below is parameterized by
+    # --issue, not hardcoded to 540). On a
     # pod the /workspace volume exists but bootstrap may not have created
     # logs/ — create it rather than silently diverting (round-1 concern
     # sentinel-workspace-logs-fallback: a diverted sentinel blinds the

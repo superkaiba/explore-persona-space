@@ -218,12 +218,14 @@ def load_pairs(d: Path) -> dict:
     length per side, truncation rate, un-normalized RB JS, per-token RB JS,
     windowed first-256 per-token JS, position profiles; plus per-context
     deduped reply-length rows (deduped by (context, probe_idx, sample_idx) —
-    Phase S draws once per context, Phase T reuses the draws across pairs).
+    Phase S draws once per context, Phase T reuses the draws across pairs)
+    and the recorded sampling cap (``cap``, asserted identical across pairs).
     """
     per_pair_dir = d / "per_pair"
     files = sorted(per_pair_dir.glob("pair_*.json"))
     if not files:
         raise FileNotFoundError(f"no pair_*.json under {per_pair_dir}")
+    caps: set[int] = set()
     pairlen: dict[tuple[str, str], tuple[float, float]] = {}
     pairtrunc: dict[tuple[str, str], float] = {}
     js_unnorm: dict[tuple[str, str], float] = {}
@@ -238,6 +240,7 @@ def load_pairs(d: Path) -> dict:
         if rec.get("is_selfpair") or a == b:
             selfpairs.append((a, b))
             continue
+        caps.add(_recorded_cap(rec, f))
         ps = rec["per_sample"]
         la = float(np.mean([r["n_positions"] for r in ps if r["side"] == "a"]))
         lb = float(np.mean([r["n_positions"] for r in ps if r["side"] == "b"]))
@@ -259,6 +262,11 @@ def load_pairs(d: Path) -> dict:
                 int(r["n_positions"]),
                 bool(r["truncated"]),
             )
+    if len(caps) != 1:
+        raise ValueError(
+            f"expected exactly one recorded sampling cap across the non-self pairs under "
+            f"{per_pair_dir}, got {sorted(caps)}"
+        )
     return {
         "pairlen": pairlen,
         "pairtrunc": pairtrunc,
@@ -268,7 +276,37 @@ def load_pairs(d: Path) -> dict:
         "profiles": profiles,
         "ctx_rows": ctx_rows,
         "selfpairs": selfpairs,
+        "cap": caps.pop(),
     }
+
+
+def _recorded_cap(rec: dict, path: Path) -> int:
+    """Recorded sampling cap (max_new_tokens) of one per-pair artifact.
+
+    Reads ``metadata.max_new_tokens`` and/or ``position_profile.cap`` (the
+    producer's ``profile_cap = max_new_tokens + 1``; issue540_jsrb_predictor.py
+    Phase T) and cross-checks them when both are present. Never inferred from
+    the observed profile length — a successful low-truncation run would be
+    mislabeled ``@<max observed>`` instead of the configured cap. Raises when
+    neither field is recorded (pre-provenance-threading artifact)."""
+    meta_cap = rec.get("metadata", {}).get("max_new_tokens")
+    prof_cap = rec.get("position_profile", {}).get("cap")
+    vals: set[int] = set()
+    if meta_cap is not None:
+        vals.add(int(meta_cap))
+    if prof_cap is not None:
+        vals.add(int(prof_cap) - 1)
+    if not vals:
+        raise KeyError(
+            f"{path}: neither metadata.max_new_tokens nor position_profile.cap is recorded — "
+            "refusing to infer the sampling cap from the observed profile length"
+        )
+    if len(vals) != 1:
+        raise ValueError(
+            f"{path}: metadata.max_new_tokens={meta_cap} disagrees with "
+            f"position_profile.cap-1={int(prof_cap) - 1}"
+        )
+    return vals.pop()
 
 
 def _pairget(d: dict, x: str, y: str, diag_val: float = 0.0) -> float:
@@ -726,7 +764,6 @@ def _samples_truncation(d: Path) -> dict:
 def make_figures(
     figures_dir: Path,
     cells: list[tuple[str, str]],
-    masks: dict[str, np.ndarray],
     cols: dict[str, np.ndarray],
     y: np.ndarray,
     strips: dict,
@@ -887,17 +924,15 @@ def make_figures(
         ax.legend()
         _save(fig, "js_rb_cross_cap_scatter")
 
-    # 5. js_rb@new vs emission, ordinary vs instructed colored (cell level).
+    # 5. js_rb@new vs emission on the ordinary 256-cell panel (cell level).
+    # The panel handed to this figure is ordinary-only (its ordinary_full
+    # mask is all-True), so no instructed series exists here — labeled
+    # ordinary-only rather than plotting an always-empty second series.
     fig, ax = plt.subplots(figsize=(6.0, 4.4))
-    m_ord = masks["ordinary_full"]
-    ax.scatter(cols["js_rb"][m_ord], y[m_ord], s=14, color=colors[0], label="ordinary", alpha=0.7)
-    ax.scatter(
-        cols["js_rb"][~m_ord], y[~m_ord], s=14, color=colors[1], label="instructed", alpha=0.7
-    )
+    ax.scatter(cols["js_rb"], y, s=14, color=colors[0], alpha=0.7)
     ax.set_xlabel(f"Canonical JS @{new_cap} (bits/token)")
     ax.set_ylabel("Marker emission rate (trained model, on-policy)")
-    ax.set_title("Divergence vs emission at the lifted cap")
-    ax.legend()
+    ax.set_title("Divergence vs emission at the lifted cap (ordinary cells)")
     _save(fig, "js_rb_vs_emission_scatter")
 
     # 6. Per-position mean JS profile out to the new cap, parent window overlaid.
@@ -1029,14 +1064,17 @@ def main(argv: list[str] | None = None) -> int:
     emis = load_emission(args.dv_dir)
     new_pairs = load_pairs(args.new_dir)
     parent_pairs = load_pairs(args.parent_dir)
-    new_cap = _infer_cap(new_pairs)
+    new_cap = new_pairs["cap"]
+    parent_cap = parent_pairs["cap"]
     logger.info(
-        "loaded panels: %d sources × %d bystanders, %d new pairs, %d parent pairs, cap=%d",
+        "loaded panels: %d sources × %d bystanders, %d new pairs, %d parent pairs, "
+        "new_cap=%d parent_cap=%d",
         len(srcs),
         len(bys),
         len(new_pairs["pairtrunc"]),
         len(parent_pairs["pairtrunc"]),
         new_cap,
+        parent_cap,
     )
 
     # Cell columns over the ordinary panel (sources × sources, 256 cells).
@@ -1128,7 +1166,8 @@ def main(argv: list[str] | None = None) -> int:
         "verdict_by_strip": {k: v["verdict"] for k, v in verdicts.items()},
         "strip_disagreement": bool(strip_disagreement),
         "truncation": {
-            "inferred_new_cap": new_cap,
+            "recorded_new_cap": new_cap,
+            "recorded_parent_cap": parent_cap,
             "gate_statistic": "median per-pair truncation over the unique "
             "ordinary–ordinary pairs (pre-registered, plan §7)",
             "new": new_gate,
@@ -1151,7 +1190,6 @@ def main(argv: list[str] | None = None) -> int:
         figures_written = make_figures(
             args.figures_dir,
             ordinary,
-            masks,
             cols,
             y_ord,
             strips,
@@ -1180,12 +1218,6 @@ def main(argv: list[str] | None = None) -> int:
         )
     )
     return 0
-
-
-def _infer_cap(pairs: dict) -> int:
-    """Infer the sampling cap from the position-profile arrays (cap = len − 1)."""
-    lengths = {len(s) for s, _ in pairs["profiles"].values()}
-    return max(lengths) - 1
 
 
 if __name__ == "__main__":
