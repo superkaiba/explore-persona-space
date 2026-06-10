@@ -106,6 +106,24 @@ max-mtime reduction. The match stays narrow on purpose: the directory
 must be exactly ``issue_<N>`` or ``issue_<N>_<suffix>`` (a bare
 ``issue_<N>*`` glob would let issue 5 match issue 521's directories).
 
+GPU-idle advisory (incidents #518 + #537): the stall verdict treats an
+idle GPU only as CORROBORATION — a run that is alive and logging on a
+CPU-only phase with every GPU at 0% is (correctly) classified healthy,
+and before this advisory it burned silently (#518 ran a single-core CPU
+scoring phase ~14h on an idle 8xH100; #537 polled an external judge
+batch 2.5h+ the same day, 2026-06-10). The poller therefore ALSO tracks
+the sustained span of "healthy verdict + every GPU idle" across ticks
+(state-file backed, like ``ssh_fail_count``) and, once the span exceeds
+``EPM_GPU_IDLE_ADVISORY_MIN`` minutes (default 30; ``0`` disables),
+posts a NON-BLOCKING ``epm:progress`` advisory marker (note prefixed
+``[gpu-idle-advisory]``, riding the same marker channel as the phase-
+transition posts — no new marker schema) suggesting the CPU phase move
+off-pod per CLAUDE.md "CPU-only phases don't hold GPU pods". At most
+one advisory per phase name (de-dup persisted in the state file); the
+advisory NEVER changes the status verdict and never stops anything.
+Fail-safe semantics carry over from ``_gpu_idle``: an ``unknown`` /
+unparsable GPU sample resets the span rather than counting as idle.
+
 Dead: PID not alive AND last phase line is NOT `done` (clean exit
 should always end with `[phase=done]`).
 
@@ -329,6 +347,9 @@ class PollResult:
     # keeps a stalled verdict from firing).
     shard_log_mtime_sec_ago: int = 10**9
     gpu_util: str = "unknown"
+    # True when THIS tick posted the [gpu-idle-advisory] marker (#518/#537).
+    # Observability only; the advisory never changes ``status``.
+    gpu_idle_advisory_posted: bool = False
 
 
 def _ssh_probe(
@@ -1025,6 +1046,142 @@ def _gpu_idle(gpu_util: str) -> bool:
     return all(u <= GPU_IDLE_UTIL_THRESHOLD for u in utils)
 
 
+# ── GPU-idle advisory (incidents #518 + #537) ───────────────────────────────
+#
+# Minutes of sustained "healthy verdict + every GPU idle" before the poller
+# posts a one-time, non-blocking [gpu-idle-advisory] epm:progress marker.
+# ``0`` (or negative) disables the advisory entirely. Read at import time to
+# mirror ``SSH_FAIL_REFRESH_THRESHOLD``; tests pass ``advisory_min``
+# explicitly to the pure decision core instead of mutating the env.
+GPU_IDLE_ADVISORY_MIN = int(os.environ.get("EPM_GPU_IDLE_ADVISORY_MIN", "30"))
+
+
+@dataclass(frozen=True)
+class GpuIdleAdvisoryUpdate:
+    """Outcome of one advisory-counter tick (``_gpu_idle_advisory_update``)."""
+
+    should_post: bool
+    idle_since_epoch: int  # 0 = no active all-idle span
+    idle_span_sec: int  # length of the current span; 0 when no span
+
+
+def _gpu_idle_advisory_update(
+    *,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    prev_phase: str,
+    prev_idle_since_epoch: int,
+    advised_phases: set[str],
+    now_epoch: int,
+    advisory_min: int,
+) -> GpuIdleAdvisoryUpdate:
+    """Pure decision core for the GPU-idle advisory (incidents #518 + #537).
+
+    Tracks the sustained span of "healthy verdict + every GPU idle" across
+    poll ticks. The span RESETS (``idle_since_epoch`` -> 0) whenever the
+    verdict is not ``running``, any GPU is busy, or the GPU sample is
+    ``unknown`` / unparsable — the idle predicate is ``_gpu_idle`` itself
+    (<= ``GPU_IDLE_UTIL_THRESHOLD``% on every card), so the stall verdict's
+    fail-safe semantics carry over unchanged: a missing / erroring
+    nvidia-smi never accumulates toward an advisory. A phase change
+    RESTARTS the span at the current tick so each phase is judged on its
+    own idle window.
+
+    ``should_post`` is True only when the span has lasted at least
+    ``advisory_min`` minutes AND ``current_phase`` is not already in
+    ``advised_phases`` (at-most-once-per-phase de-dup). ``advisory_min <= 0``
+    disables the advisory. Pure / no I/O — the caller owns state
+    persistence and the marker post.
+    """
+    if advisory_min <= 0:
+        return GpuIdleAdvisoryUpdate(should_post=False, idle_since_epoch=0, idle_span_sec=0)
+    if status != "running" or not _gpu_idle(gpu_util):
+        return GpuIdleAdvisoryUpdate(should_post=False, idle_since_epoch=0, idle_span_sec=0)
+    if current_phase != prev_phase or prev_idle_since_epoch <= 0:
+        idle_since = now_epoch
+    else:
+        idle_since = prev_idle_since_epoch
+    span = max(0, now_epoch - idle_since)
+    should_post = span >= advisory_min * 60 and current_phase not in advised_phases
+    return GpuIdleAdvisoryUpdate(
+        should_post=should_post, idle_since_epoch=idle_since, idle_span_sec=span
+    )
+
+
+def _maybe_post_gpu_idle_advisory(
+    *,
+    issue: int,
+    pod: str,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    prev_state: dict[str, str],
+    now_epoch: int,
+) -> tuple[int, set[str], bool]:
+    """Advisory wiring for ``poll_once``: parse state, decide, maybe post.
+
+    Returns ``(idle_since_epoch, advised_phases, posted)`` for the caller to
+    persist via ``_save_state``. Posting rides the SAME ``epm:progress``
+    marker channel as the phase-transition posts (note prefixed
+    ``[gpu-idle-advisory]``, plus a ``gpu_idle_advisory=True`` extra for
+    downstream consumers) — no new marker schema. A post failure is logged
+    and the phase is NOT recorded as advised, so the next tick retries; the
+    advisory never affects the status verdict and never stops anything.
+    """
+    try:
+        prev_idle_since = int(prev_state.get("gpu_idle_since_epoch", "0"))
+    except (TypeError, ValueError):
+        prev_idle_since = 0
+    advised_phases = {
+        p for p in (prev_state.get("gpu_idle_advised_phases", "") or "").split(",") if p
+    }
+    update = _gpu_idle_advisory_update(
+        status=status,
+        gpu_util=gpu_util,
+        current_phase=current_phase,
+        prev_phase=prev_state.get("phase", ""),
+        prev_idle_since_epoch=prev_idle_since,
+        advised_phases=advised_phases,
+        now_epoch=now_epoch,
+        advisory_min=GPU_IDLE_ADVISORY_MIN,
+    )
+    if not update.should_post:
+        return update.idle_since_epoch, advised_phases, False
+    n_gpus = len([tok for tok in gpu_util.split(",") if tok.strip()])
+    idle_min = update.idle_span_sec // 60
+    note = (
+        f"[gpu-idle-advisory] all {n_gpus} GPUs <= {GPU_IDLE_UTIL_THRESHOLD}% util for "
+        f"{idle_min} min while the run is healthy (phase={current_phase}, "
+        f"gpu_util={gpu_util}). Likely a CPU-only phase holding a GPU pod — consider "
+        "moving the phase off-pod to the VM or stopping the pod after a checkpoint "
+        "(CLAUDE.md: CPU-only phases don't hold GPU pods). Advisory only: the stall "
+        "verdict is unchanged and nothing was stopped."
+    )
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=note,
+            phase=current_phase,
+            pod=pod,
+            gpu_idle_advisory=True,
+        )
+    except Exception as exc:
+        log.error("gpu-idle advisory post failed (next tick will retry): %s", exc)
+        return update.idle_since_epoch, advised_phases, False
+    log.warning(
+        "posted gpu-idle advisory for #%d: all %d GPUs idle %d min during healthy phase=%s",
+        issue,
+        n_gpus,
+        idle_min,
+        current_phase,
+    )
+    advised_phases.add(current_phase)
+    return update.idle_since_epoch, advised_phases, True
+
+
 def _load_state(state_file: Path, issue: int) -> dict[str, str]:
     if not state_file.exists():
         return {}
@@ -1194,6 +1351,25 @@ def poll_once(
     else:
         status = "running"
 
+    # ── #518/#537 GPU-idle advisory ──────────────────────────────────────
+    # The stall verdict above treats an idle GPU only as corroboration, so
+    # a HEALTHY run on a long CPU-only phase (fresh logs, every GPU at 0%)
+    # burns pod-hours silently. Track the sustained healthy-and-all-idle
+    # span across ticks (state-file backed, like ssh_fail_count) and post
+    # a one-per-phase, non-blocking advisory marker once it exceeds
+    # GPU_IDLE_ADVISORY_MIN minutes. Never flips ``status``.
+    gpu_idle_since_epoch, gpu_idle_advised_phases, gpu_idle_advisory_posted = (
+        _maybe_post_gpu_idle_advisory(
+            issue=issue,
+            pod=pod,
+            status=status,
+            gpu_util=gpu_util,
+            current_phase=current_phase,
+            prev_state=prev_state,
+            now_epoch=now_epoch,
+        )
+    )
+
     # New milestone? (re-uses ``prev_state`` loaded above for the
     # ssh_fail_count tracking — we only read state once per tick.)
     prev_phase = prev_state.get("phase", "")
@@ -1220,6 +1396,10 @@ def poll_once(
             "phase": current_phase,
             "last_mtime_epoch": str(mtime_epoch),
             "ssh_fail_count": str(ssh_fail_count),
+            # GPU-idle advisory span + per-phase de-dup (#518/#537). Phase
+            # names match PHASE_RE ([a-z0-9_]+) so the comma join is safe.
+            "gpu_idle_since_epoch": str(gpu_idle_since_epoch),
+            "gpu_idle_advised_phases": ",".join(sorted(gpu_idle_advised_phases)),
         },
     )
 
@@ -1246,6 +1426,7 @@ def poll_once(
         phase_log_mtime_sec_ago=min(phase_log_mtime_ago, 10**9),
         shard_log_mtime_sec_ago=min(shard_log_mtime_ago, 10**9),
         gpu_util=gpu_util,
+        gpu_idle_advisory_posted=gpu_idle_advisory_posted,
     )
 
 
@@ -1310,6 +1491,7 @@ def main(argv: list[str] | None = None) -> int:
                 "phase_log_mtime_sec_ago": result.phase_log_mtime_sec_ago,
                 "shard_log_mtime_sec_ago": result.shard_log_mtime_sec_ago,
                 "gpu_util": result.gpu_util,
+                "gpu_idle_advisory_posted": result.gpu_idle_advisory_posted,
             }
         )
     )
