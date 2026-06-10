@@ -3197,8 +3197,8 @@
       "goal": "Test whether lowering the trigger->marker positive ratio in the install data (Redwood's password-locking-ratio lever), with install strength matched at the trigger cell, lets a marker install on Qwen-2.5-7B survive one epoch of benign medical SFT better than the 50/50 baseline, across 3 seeds.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/543",
-      "status": "running",
+      "path": "tasks/verifying/543",
+      "status": "verifying",
       "title": "Does lowering the trigger->marker install ratio (Redwood password-locking-ratio lever) make an emission-strength-matched marker install survive benign SFT?"
     },
     "544": {
