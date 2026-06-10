@@ -2227,6 +2227,11 @@ workflow_fix_on_bug:
     - "scripts/audit_clean_results_body_discipline.py"
     - "scripts/codex_task.py"
     - "scripts/poll_pipeline.py"
+    # The /issue Step 7 infra-vs-code failure router (mirrored by
+    # .claude/skills/issue/failure_patterns.md). Added 2026-06-10 (#557):
+    # the list predated the script and its absence nearly deflected an
+    # in-scope OOM-classification fix.
+    - "scripts/failure_classifier.py"
     - "scripts/gh_project.py"
     - "scripts/spawn_session.py"
     - "scripts/pod_watch.py"
@@ -2240,6 +2245,7 @@ workflow_fix_on_bug:
     - "scripts/cron_session_summarize.sh"
     - "tests/test_workflow*.py"
     - "tests/test_task_workflow*.py"
+    - "tests/test_failure_classifier.py"
     - "tests/test_no_pod_side_task_py_shellout.py"
     - "tests/test_subprocess_env_explicit.py"
     - "tests/test_autonomous_session_watch.py"

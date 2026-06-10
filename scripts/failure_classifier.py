@@ -63,6 +63,31 @@ FIELD_LINE = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 
+# A CUDA OOM is normally transient infra (leaked process, fragmentation —
+# respawn fixes it). EXCEPT: when the torch OOM message lists 2+ sibling
+# "Process NNN has X GiB memory in use" entries on the failing device
+# during a parallel fan-out, the train cells were CO-LOCATED on one
+# physical GPU — a deterministic GPU-pinning bug in the launch path
+# (e.g. a per-process `--gpu` pin that is dead code), so respawning on
+# verified-clean GPUs hits the identical OOM. Route to `code` so the
+# implementer fixes the pinning. A SINGLE sibling entry stays `infra`
+# (one leaked process from a prior run — kill + respawn is the right
+# move). Surfaced by task #557 (2026-06-10): attempt 1 was misdiagnosed
+# as leaked-process infra and attempt 2 OOMed identically.
+CUDA_OOM = re.compile(r"CUDA out of memory", re.IGNORECASE)
+OOM_SIBLING_PROCESS = re.compile(
+    r"Process \d+ has [\d.]+ [KMG]iB memory in use",
+    re.IGNORECASE,
+)
+
+
+def _is_colocation_oom(body: str) -> bool:
+    """True when a CUDA OOM lists >= 2 sibling-process memory entries."""
+    if not CUDA_OOM.search(body):
+        return False
+    return len(OOM_SIBLING_PROCESS.findall(body)) >= 2
+
+
 # torch's DataLoader wraps a worker-side exception with a header like:
 #   RuntimeError: Caught RuntimeError in DataLoader worker process 0.
 # followed by an "Original Traceback (most recent call last):" block whose
@@ -92,7 +117,13 @@ def classify_failure(body: str) -> FailureClass:
     Routing precedence:
     1. Explicit ``failure_class:`` field on the first non-blank line of
        the body (or any leading metadata block) wins.
-    2. If the body shows a torch DataLoader worker wrap (``Caught <Error>
+    2. Co-located parallel-cell OOM: a ``CUDA out of memory`` body
+       listing 2+ sibling ``Process NNN has X GiB memory in use``
+       entries means parallel fan-out cells shared one physical GPU — a
+       deterministic GPU-pinning bug, NOT transient infra — return
+       ``"code"``. A single sibling entry stays on the infra path (one
+       leaked process; kill + respawn fixes it). See task #557.
+    3. If the body shows a torch DataLoader worker wrap (``Caught <Error>
        in DataLoader worker``), classify on the WRAPPED Original
        Traceback block, not the outer torch frames: when the wrapped
        block contains an our-code frame (``src/explore_persona_space/``
@@ -100,14 +131,17 @@ def classify_failure(body: str) -> FailureClass:
        infra-pattern scan against the WRAPPED text only. The outer torch
        frames are always library code (worker.py, _utils/, ...) and
        routing on them would misclassify an our-code raise as ``infra``.
-    3. Otherwise, scan the body against the infra log-pattern list. Any
+    4. Otherwise, scan the body against the infra log-pattern list. Any
        match → ``"infra"``.
-    4. Otherwise, default to ``"code"`` (conservative — the implementer
+    5. Otherwise, default to ``"code"`` (conservative — the implementer
        round catches more than the experimenter respawn round).
     """
     field = FIELD_LINE.search(body)
     if field is not None:
         return field.group(1).lower()  # type: ignore[return-value]
+
+    if _is_colocation_oom(body):
+        return "code"
 
     if DATALOADER_WRAP.search(body):
         # Split on the "Original Traceback" header and classify on the
