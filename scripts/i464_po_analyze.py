@@ -94,18 +94,21 @@ PER_CELL_DIR_FOR: dict[str, Path] = {
     "cn": Path("eval_results/issue_464/contrastive_negatives/cross_eval/per_cell"),
     "cn_i529": Path("eval_results/issue_529/contrastive_negatives/cross_eval/per_cell"),
     "cn_i533": Path("eval_results/issue_533/contrastive_negatives/cross_eval/per_cell"),
+    "cn_i546": Path("eval_results/issue_546/contrastive_negatives/cross_eval/per_cell"),
 }
 OUT_PATH_FOR: dict[str, Path] = {
     "po": Path("eval_results/issue_464/positive_only/analysis.json"),
     "cn": Path("eval_results/issue_464/contrastive_negatives/analysis.json"),
     "cn_i529": Path("eval_results/issue_529/contrastive_negatives/analysis.json"),
     "cn_i533": Path("eval_results/issue_533/contrastive_negatives/analysis.json"),
+    "cn_i546": Path("eval_results/issue_546/contrastive_negatives/analysis.json"),
 }
 SCHEMA_VERSION_FOR: dict[str, str] = {
     "po": "i464_po_analyze_v1",
     "cn": "i464_cn_analyze_v1",
     "cn_i529": "i529_cn_analyze_v1",
     "cn_i533": "i533_cn_analyze_v1",
+    "cn_i546": "i546_cn_analyze_v1",
 }
 
 # Legacy aliases (positive-only defaults) — kept for any importer that
@@ -125,6 +128,14 @@ _ACTIVE: dict[str, object] = {
     # level helpers (e.g. ``_leakage_to_default``) iterate the same
     # seeds the variant uses. None until main() runs.
     "seeds": None,
+    # cn_i546 partial-anchor resolved-persona path (plan §2 divergence 3):
+    # when SOME but not ALL personas resolve an anchor epoch, main()
+    # stashes the tuple of RESOLVED personas here and every persona-
+    # iterating helper restricts itself to that set via
+    # ``_active_personas()``. None (the default for every other variant
+    # and the both-resolved cn_i546 case) = iterate ``enc.PERSONAS``
+    # unchanged, keeping po/cn/cn_i529/cn_i533 byte-stable.
+    "personas": None,
 }
 
 # Per-variant seed sets (mirrors po_eval's SEEDS_FOR).
@@ -133,6 +144,7 @@ SEEDS_FOR: dict[str, tuple[int, ...]] = {
     "cn": (42, 137, 1337),
     "cn_i529": (42, 137, 1337, 7, 21),
     "cn_i533": (42, 137, 1337, 7, 21),
+    "cn_i546": (42, 137, 1337, 7, 21),
 }
 SEEDS = SEEDS_FOR["po"]
 PO_ARMS: tuple[enc.Arm, ...] = ("system_plain", "system_padded", "role")
@@ -227,12 +239,14 @@ def _other_eval_encoding_for(arm: enc.Arm, persona: enc.Persona) -> str:
 def _symmetric_leakage(arm: enc.Arm, seed: int) -> tuple[float, list[float]]:
     """Return (L_arm_seed, raw_logprobs_per_cell).
 
-    Off-diagonal cells: for each training persona p ∈ {pirate, villain},
+    Off-diagonal cells: for each ACTIVE training persona (both of
+    {pirate, villain} except on the cn_i546 partial-anchor path, where
+    only the resolved persona(s) are read — see ``_active_personas``),
     read ` ※` log-prob under the OTHER persona's same-arm-family encoding.
-    Mean of the 2 raw log-probs.
+    Mean of the raw log-probs.
     """
     raw: list[float] = []
-    for persona in enc.PERSONAS:
+    for persona in _active_personas():
         e_off = _other_eval_encoding_for(arm, persona)
         payload = _load_per_cell(arm, seed, persona, e_off)
         if payload is None:
@@ -273,10 +287,12 @@ def _wrong_logp_per_seed_for(
 def _per_persona_paired_d_block(
     seeds: tuple[int, ...], n_boot: int
 ) -> dict[str, dict[str, dict[str, float | bool]]]:
-    """Build the 4-cell per-persona paired-d block for cn_i533.
+    """Build the per-persona paired-d block for cn_i533 / cn_i546.
 
     Returns ``{persona: {contrast: {mean, ci_lo, ci_hi, sign_agreement,
-    d_per_seed, n_seeds}}}`` for persona ∈ {pirate, villain} and
+    d_per_seed, n_seeds}}}`` for persona ∈ ``_active_personas()`` (both
+    of {pirate, villain} except on the cn_i546 partial-anchor resolved-
+    persona path, where only the resolved persona(s) appear) and
     contrast ∈ {plain, padded}. plain = log P_system_plain - log P_role;
     padded = log P_system_padded - log P_role. Per-persona means EACH
     persona's wrong-slot log-prob is read at its OWN selected anchor
@@ -297,7 +313,7 @@ def _per_persona_paired_d_block(
     """
     out: dict[str, dict[str, dict[str, float | bool]]] = {}
     rng = np.random.default_rng(42)
-    for persona in enc.PERSONAS:
+    for persona in _active_personas():
         # Read per-arm per-seed wrong-slot log P at this persona's
         # selected anchor.
         L_plain = _wrong_logp_per_seed_for("system_plain", persona, seeds)
@@ -340,48 +356,89 @@ H1_PER_PERSONA_THRESHOLD = 0.5
 
 def _headline_verdict_from_per_persona(
     per_persona: dict[str, dict[str, dict[str, float | bool]]],
-) -> tuple[str, bool, bool]:
-    """Compute the cn_i533 H1/H0/inconclusive verdict from per-persona cells.
+    *,
+    two_sided: bool = False,
+    personas: tuple[str, ...] = ("pirate", "villain"),
+) -> dict[str, object]:
+    """Compute the per-persona-cell headline verdict (cn_i533 / cn_i546).
 
-    Round-2 reconciler binding finding: the inherited cn_i529 H2 rule at
-    lines ~706-708 (1.0-nat both-contrast persona-averaged rule) cannot
-    drive the cn_i533 H1/H0 verdict because ``_symmetric_leakage`` averages
-    personas BEFORE forming d, so the persona-averaged read can hide an
-    opposite-signed per-persona pair. Plan §6 thresholds:
+    Round-2 reconciler binding finding (#533): the inherited cn_i529 H2
+    rule (1.0-nat both-contrast persona-averaged rule) cannot drive the
+    H1/H0 verdict because ``_symmetric_leakage`` averages personas BEFORE
+    forming d, so the persona-averaged read can hide an opposite-signed
+    per-persona pair. Plan §6 thresholds over the AVAILABLE cells
+    (``personas`` x {plain, padded} — 4 cells when both personas anchor,
+    2 on the cn_i546 partial-anchor resolved-persona path):
 
-      H1 (positive resolution): AT LEAST ONE of the 4 cells (pirate x
-        plain, pirate x padded, villain x plain, villain x padded) has
+      H1+ (positive resolution): AT LEAST ONE available cell has
         ``ci_lo_95 > 0`` AND ``mean >= H1_PER_PERSONA_THRESHOLD`` (0.5 nat).
-      H0 (null resolution): ALL 4 cells straddle zero, i.e.
+      H1- (negative resolution, ``two_sided=True`` only — #546 plan §2
+        divergence 2): AT LEAST ONE available cell has ``ci_hi_95 < 0``
+        AND ``mean <= -H1_PER_PERSONA_THRESHOLD``.
+      H0 (null resolution): ALL available cells straddle zero, i.e.
         ``ci_lo_95 <= 0 <= ci_hi_95``.
 
-    Both resolve the experiment's question (plan §3 / §6); the caller
-    maps both to ``headline_status='ok'``. ``inconclusive`` covers the
-    rare case where the per-persona pattern fits NEITHER H1 nor H0 (e.g.
-    one cell positive but sub-threshold, one cell straddling zero, one
-    cell clearly negative); the caller maps this to ``'partial'``.
+    One-sided mode (``two_sided=False`` — the inherited cn_i533 contract,
+    preserved verbatim): verdict ∈ {'h1', 'h0', 'inconclusive'}; 'h1'
+    considers only the positive branch. Two-sided mode (cn_i546):
+    verdict ∈ {'h1_pos', 'h1_neg', 'mixed_bidirectional', 'h0',
+    'inconclusive'}, with 'mixed_bidirectional' emitted whenever BOTH
+    directional branches fire on different cells, so a heterogeneous-
+    sign result is never mislabeled by code-branch order (#546 round-1
+    statistics must-fix). All resolution verdicts map to
+    ``headline_status='ok'`` at the caller; 'inconclusive' maps to
+    ``'partial'``.
 
-    Returns ``(verdict, h1_per_persona_pass, h0_per_persona_pass)`` where
-    ``verdict`` is one of ``{'h1', 'h0', 'inconclusive'}``. The booleans
-    are reported in the payload as standalone fields for downstream
-    auditability (e.g. a degenerate case where both fire would still
-    route to 'h1' here but the analyst can read both flags).
+    Returns a dict:
+      verdict: str (sets above)
+      h1_pos / h0: bool — directional-positive and null booleans
+      h1_neg: bool — always present; meaningful only when two_sided
+      h1_pos_cells / h1_neg_cells: list[str] — '{persona}.{contrast}'
+        labels of the cells driving each directional branch (persisted
+        for downstream auditability of mixed/heterogeneous patterns)
     """
-    cells: list[dict[str, float | bool]] = []
-    for persona_key in ("pirate", "villain"):
+    labeled_cells: list[tuple[str, dict[str, float | bool]]] = []
+    for persona_key in personas:
         for contrast_key in ("plain", "padded"):
-            cells.append(per_persona[persona_key][contrast_key])
-    h1_pass = any(
-        float(c["ci_lo_95"]) > 0.0 and float(c["mean"]) >= H1_PER_PERSONA_THRESHOLD for c in cells
-    )
-    h0_pass = all(float(c["ci_lo_95"]) <= 0.0 <= float(c["ci_hi_95"]) for c in cells)
-    if h1_pass:
-        verdict = "h1"
+            labeled_cells.append(
+                (f"{persona_key}.{contrast_key}", per_persona[persona_key][contrast_key])
+            )
+    h1_pos_cells = [
+        label
+        for label, c in labeled_cells
+        if float(c["ci_lo_95"]) > 0.0 and float(c["mean"]) >= H1_PER_PERSONA_THRESHOLD
+    ]
+    h1_neg_cells = [
+        label
+        for label, c in labeled_cells
+        if float(c["ci_hi_95"]) < 0.0 and float(c["mean"]) <= -H1_PER_PERSONA_THRESHOLD
+    ]
+    h1_pos = bool(h1_pos_cells)
+    h1_neg = bool(h1_neg_cells)
+    h0_pass = all(float(c["ci_lo_95"]) <= 0.0 <= float(c["ci_hi_95"]) for _, c in labeled_cells)
+    if not two_sided:
+        # Inherited one-sided cn_i533 contract — byte-equivalent to the
+        # pre-#546 behavior (the negative branch is computed above for
+        # the return payload but does NOT influence the verdict).
+        verdict = "h1" if h1_pos else ("h0" if h0_pass else "inconclusive")
+    elif h1_pos and h1_neg:
+        verdict = "mixed_bidirectional"
+    elif h1_pos:
+        verdict = "h1_pos"
+    elif h1_neg:
+        verdict = "h1_neg"
     elif h0_pass:
         verdict = "h0"
     else:
         verdict = "inconclusive"
-    return verdict, h1_pass, h0_pass
+    return {
+        "verdict": verdict,
+        "h1_pos": h1_pos,
+        "h1_neg": h1_neg,
+        "h0": h0_pass,
+        "h1_pos_cells": h1_pos_cells,
+        "h1_neg_cells": h1_neg_cells,
+    }
 
 
 def _own_persona_elicitation(arm: enc.Arm, seed: int) -> tuple[list[float], list[str]]:
@@ -391,7 +448,7 @@ def _own_persona_elicitation(arm: enc.Arm, seed: int) -> tuple[list[float], list
     """
     own_logps: list[float] = []
     labels: list[str] = []
-    for persona in enc.PERSONAS:
+    for persona in _active_personas():
         e_own = _own_eval_encoding_for(arm, persona)
         payload = _load_per_cell(arm, seed, persona, e_own)
         if payload is None:
@@ -423,6 +480,24 @@ def _active_seeds() -> tuple[int, ...]:
     return tuple(SEEDS)
 
 
+def _active_personas() -> tuple[enc.Persona, ...]:
+    """Return the persona set the current invocation should iterate.
+
+    Default (``_ACTIVE['personas'] is None``) = ``enc.PERSONAS`` — the
+    byte-stable behavior for po/cn/cn_i529/cn_i533 and the both-resolved
+    cn_i546 case. The cn_i546 partial-anchor resolved-persona path (plan
+    §2 divergence 3) stashes the tuple of RESOLVED personas here so every
+    persona-iterating read (leakage, elicitation, leakage-to-default,
+    per-persona paired-d) restricts itself to the persona(s) whose
+    anchor epoch actually resolved, instead of splicing ``None`` into a
+    per-cell filename and crashing.
+    """
+    personas = _ACTIVE.get("personas")
+    if isinstance(personas, (list, tuple)) and personas:
+        return tuple(personas)  # type: ignore[return-value]
+    return tuple(enc.PERSONAS)
+
+
 def _leakage_to_default(arm: enc.Arm) -> tuple[list[float], list[str]]:
     """` ※` log-prob under ``default_assistant`` for every cell in this arm.
 
@@ -436,7 +511,7 @@ def _leakage_to_default(arm: enc.Arm) -> tuple[list[float], list[str]]:
     logps: list[float] = []
     labels: list[str] = []
     for seed in _active_seeds():
-        for persona in enc.PERSONAS:
+        for persona in _active_personas():
             payload = _load_per_cell(arm, seed, persona, "default_assistant")
             if payload is None:
                 raise FileNotFoundError(
@@ -512,7 +587,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         default=None,
         help=(
             "Seeds to aggregate. Default = variant-specific: (42, 137, 1337) "
-            "for po/cn; (42, 137, 1337, 7, 21) for cn_i529 / cn_i533."
+            "for po/cn; (42, 137, 1337, 7, 21) for cn_i529 / cn_i533 / cn_i546."
         ),
     )
     ap.add_argument(
@@ -522,7 +597,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     )
     ap.add_argument(
         "--variant",
-        choices=("po", "cn", "cn_i529", "cn_i533"),
+        choices=("po", "cn", "cn_i529", "cn_i533", "cn_i546"),
         default="po",
         help=(
             "Which follow-up to analyze. ``po`` (default) = positive-only "
@@ -532,9 +607,13 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             "``cn_i529`` = #529 non-saturated-anchor cn (reads + writes under "
             "``eval_results/issue_529/contrastive_negatives/``). ``cn_i533`` = "
             "#533 lr=5e-6 corrective re-run (reads + writes under "
-            "``eval_results/issue_533/contrastive_negatives/``). cn_i529 / "
-            "cn_i533 BOTH REQUIRE ``--anchor-file`` so the per-persona E* is "
-            "set before per-cell loads."
+            "``eval_results/issue_533/contrastive_negatives/``). ``cn_i546`` = "
+            "#546 r=16/alpha=32 rank-reduction corrective re-run (reads + "
+            "writes under ``eval_results/issue_546/contrastive_negatives/``); "
+            "two-sided per-persona verdict + partial-anchor resolved-persona "
+            "analysis. cn_i529 / cn_i533 / cn_i546 ALL REQUIRE "
+            "``--anchor-file`` so the per-persona E* is set before per-cell "
+            "loads."
         ),
     )
     ap.add_argument(
@@ -542,7 +621,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         type=str,
         default=None,
         help=(
-            "Path to anchor_selection.json (cn_i529 / cn_i533 only). The "
+            "Path to anchor_selection.json (cn_i529 / cn_i533 / cn_i546 only). The "
             "file is produced by ``scripts/i529_select_anchor.py`` and "
             "carries ``selected_anchor: {pirate: E*, villain: E*}``; "
             "analyze reads ONLY the cells at those E* per persona to "
@@ -567,12 +646,12 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     # Closes the `leakage-to-default-seeds-undercount-cn-i529` round-1
     # concern — the cn_i529 path uses 5 seeds (42, 137, 1337, 7, 21).
     _ACTIVE["seeds"] = tuple(int(s) for s in args.seeds)
-    # cn_i529 / cn_i533: REQUIRE --anchor-file unless --allow-partial.
-    # The anchor file is the formal hand-off between
+    # cn_i529 / cn_i533 / cn_i546: REQUIRE --anchor-file unless
+    # --allow-partial. The anchor file is the formal hand-off between
     # i529_select_anchor.py and this script — without it the analyzer
     # would load the wrong (or no) cells and silently produce a
     # malformed analysis.
-    if args.variant in ("cn_i529", "cn_i533"):
+    if args.variant in ("cn_i529", "cn_i533", "cn_i546"):
         if args.anchor_file is None and not args.allow_partial:
             ap.error(
                 f"--variant {args.variant} requires --anchor-file (run "
@@ -598,18 +677,80 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                 "pirate": int(sel["pirate"]) if sel.get("pirate") is not None else None,
                 "villain": int(sel["villain"]) if sel.get("villain") is not None else None,
             }
-            # `partial_anchor` short-circuit (closes the `partial-anchor-
-            # crashes-analysis` round-1 concern). If SOME but not ALL
-            # personas resolved an E*, we MUST refuse to compute headline
-            # stats — the per-cell loader would splice ``None`` into the
-            # filename and crash on a malformed legacy-shape path. Write
-            # a clean ``headline_status=partial_anchor_skipped`` payload
-            # instead and exit cleanly.
             _partial_flag = anchor_payload.get("partial_anchor", False)
             _unresolved_personas = [
                 p for p, e in _ACTIVE["selected_epoch_per_persona"].items() if e is None
             ]
-            if _partial_flag or _unresolved_personas:
+            _resolved_personas = [
+                p for p, e in _ACTIVE["selected_epoch_per_persona"].items() if e is not None
+            ]
+            if args.variant == "cn_i546" and (_partial_flag or _unresolved_personas):
+                # cn_i546 partial-anchor resolved-persona path (plan §2
+                # divergence 3; round-1 critique must-fix). The inherited
+                # cn_i529/cn_i533 short-circuit below made the Goal's
+                # MODAL success case (one persona banding, per #533's
+                # villain-banded asymmetry) silently unanswerable. The
+                # refusal it implemented was a filename-crash guard, not
+                # a statistical necessity — each persona's headline cells
+                # are computed at that persona's OWN anchor, so the
+                # resolved persona's cells need nothing from the
+                # unresolved one. Here: any persona with a non-null
+                # anchor IS analyzed (every persona-iterating helper
+                # restricts to ``_active_personas()``); the unresolved
+                # persona's cells are persisted ``null`` with
+                # ``skipped: true`` downstream; ``partial_anchor_skipped``
+                # is reserved for ZERO resolved personas (the true
+                # degenerate case).
+                if not _resolved_personas:
+                    partial_payload = {
+                        "schema_version": schema_version,
+                        "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
+                        "git_commit": _git_commit_hash(),
+                        "variant": args.variant,
+                        "headline_status": "partial_anchor_skipped",
+                        "partial_anchor": True,
+                        "anchored_personas": [],
+                        "partial_anchor_reason": anchor_payload.get(
+                            "partial_anchor_reason",
+                            f"unresolved={sorted(_unresolved_personas)}",
+                        ),
+                        "selected_anchor_per_persona": _ACTIVE["selected_epoch_per_persona"],
+                        "anchor_file": str(args.anchor_file),
+                        "note": (
+                            "i464_po_analyze (cn_i546) refused to compute headline "
+                            "statistics because NO persona resolved an anchor epoch "
+                            "in the {1,2,3,5}-epoch grid. Re-run "
+                            "`i529_select_anchor.py` after adding more epoch points "
+                            "or rerun training at a lower LoRA rank / lr per "
+                            "`.claude/rules/marker-training-recipe.md`."
+                        ),
+                    }
+                    out_path_active.parent.mkdir(parents=True, exist_ok=True)
+                    out_path_active.write_text(json.dumps(partial_payload, indent=2))
+                    logger.warning(
+                        "%s PARTIAL_ANCHOR (zero resolved personas) — headline stats "
+                        "skipped, wrote %s",
+                        args.variant,
+                        out_path_active,
+                    )
+                    return
+                _ACTIVE["personas"] = tuple(sorted(_resolved_personas))
+                logger.warning(
+                    "%s PARTIAL ANCHOR — analyzing RESOLVED persona(s) %s only; "
+                    "unresolved %s persisted as null/skipped (plan §2 divergence 3).",
+                    args.variant,
+                    sorted(_resolved_personas),
+                    sorted(_unresolved_personas),
+                )
+            elif _partial_flag or _unresolved_personas:
+                # `partial_anchor` short-circuit (closes the `partial-anchor-
+                # crashes-analysis` round-1 concern). If SOME but not ALL
+                # personas resolved an E*, we MUST refuse to compute headline
+                # stats — the per-cell loader would splice ``None`` into the
+                # filename and crash on a malformed legacy-shape path. Write
+                # a clean ``headline_status=partial_anchor_skipped`` payload
+                # instead and exit cleanly. (cn_i529 / cn_i533 contract —
+                # BYTE-STABLE; cn_i546 uses the resolved-persona path above.)
                 partial_payload = {
                     "schema_version": schema_version,
                     "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
@@ -642,9 +783,10 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                 )
                 return
             logger.info(
-                "%s selected anchor: %s",
+                "%s selected anchor: %s (analysis personas: %s)",
                 args.variant,
                 _ACTIVE["selected_epoch_per_persona"],
+                list(_active_personas()),
             )
     logger.info(
         "variant=%s per_cell_dir=%s out_path=%s seeds=%s",
@@ -694,7 +836,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     h1_per_cell_logp: dict[str, float] = {}
     for arm, by_seed in own_logp_per_arm_per_seed.items():
         for seed, logps in by_seed.items():
-            for persona_idx, persona in enumerate(enc.PERSONAS):
+            for persona_idx, persona in enumerate(_active_personas()):
                 e_own = _own_eval_encoding_for(arm, persona)  # type: ignore[arg-type]
                 key = f"{_po_cell_label(arm, seed, persona)}/{e_own}"  # type: ignore[arg-type]
                 lp = float(logps[persona_idx])
@@ -819,23 +961,34 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         "raw_per_cell": raw_per_cell,
         "n_missing_per_cell": len(missing),
     }
-    if args.variant in ("cn_i529", "cn_i533"):
+    if args.variant in ("cn_i529", "cn_i533", "cn_i546"):
         payload["selected_anchor"] = _ACTIVE.get("selected_epoch_per_persona")
         payload["anchor_file"] = args.anchor_file
+    if args.variant == "cn_i546":
+        # Plan §2 divergence 3: the payload always names the analysis
+        # denominator. ``anchored_personas`` lists the persona(s) whose
+        # cells the headline statistics cover; ``partial_anchor`` is True
+        # iff at least one persona was skipped (its cells persisted null
+        # with ``skipped: true`` in headline.per_persona below).
+        _i546_personas = list(_active_personas())
+        payload["anchored_personas"] = _i546_personas
+        payload["partial_anchor"] = len(_i546_personas) < len(enc.PERSONAS)
 
-    # cn_i533 ONLY: per-persona paired-bootstrap extension (plan §4 (d)
-    # "Pseudocode for new code"). The inherited cn_i529 path's
-    # _symmetric_leakage averages personas BEFORE forming d, so the
-    # persona-averaged headline.d_seed_plain / headline.d_seed_padded
-    # can hide an opposite-signed per-persona pair. The H1/H0 verdict
-    # at the selected anchor is driven from the 4 per-persona cells
-    # added here (pirate x plain, pirate x padded, villain x plain,
-    # villain x padded). The persona-averaged keys stay as a SECONDARY
-    # cross-check; this block does NOT modify them. Skipped when the
-    # headline is in a non-stat status (descriptive-only / dynamic-
-    # range failed) — the per-persona view is only meaningful when the
-    # variant-level bootstrap is also meaningful.
-    if args.variant == "cn_i533" and headline_status not in (
+    # cn_i533 / cn_i546 ONLY: per-persona paired-bootstrap extension
+    # (#533 plan §4 (d); #546 plan §2 divergences 2+3). The inherited
+    # cn_i529 path's _symmetric_leakage averages personas BEFORE forming
+    # d, so the persona-averaged headline.d_seed_plain /
+    # headline.d_seed_padded can hide an opposite-signed per-persona
+    # pair. The verdict at the selected anchor is driven from the
+    # AVAILABLE per-persona cells added here (persona x {plain, padded}
+    # over _active_personas() — 4 cells when both personas anchor, 2 on
+    # the cn_i546 partial-anchor resolved-persona path). The persona-
+    # averaged keys stay as a SECONDARY cross-check; this block does NOT
+    # modify them. Skipped when the headline is in a non-stat status
+    # (descriptive-only / dynamic-range failed) — the per-persona view
+    # is only meaningful when the variant-level bootstrap is also
+    # meaningful.
+    if args.variant in ("cn_i533", "cn_i546") and headline_status not in (
         "inconclusive_descriptive_only",
         "inconclusive_dynamic_range_failed",
     ):
@@ -845,8 +998,8 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             for persona_key, by_contrast in per_persona.items():
                 for contrast_key, stats in by_contrast.items():
                     logger.info(
-                        "cn_i533 per-persona d[%s][%s]: mean=%.3f CI=[%.3f, %.3f] "
-                        "sign_agreement=%.3f",
+                        "%s per-persona d[%s][%s]: mean=%.3f CI=[%.3f, %.3f] sign_agreement=%.3f",
+                        args.variant,
                         persona_key,
                         contrast_key,
                         stats["mean"],
@@ -854,44 +1007,79 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                         stats["ci_hi_95"],
                         stats["sign_agreement"],
                     )
-            # cn_i533 ONLY: route headline_status through the 4 per-persona
-            # cells (round-2 reconciler binding finding). The inherited
-            # persona-averaged H2 rule at lines ~706-708 cannot drive the
-            # H1/H0 verdict for cn_i533 because _symmetric_leakage averages
-            # personas before forming d, so the persona-averaged read can
-            # hide an opposite-signed per-persona pair. Plan §6 thresholds:
-            #   H1 (positive resolution): >=1 of 4 cells has ci_lo > 0
-            #       AND mean >= H1_PER_PERSONA_THRESHOLD nat
-            #   H0 (null resolution): ALL 4 cells straddle zero
-            #       (ci_lo <= 0 <= ci_hi)
-            # Either resolves the experiment's question; headline_status
-            # maps to "ok" in both cases. "inconclusive" = neither H1 nor
-            # H0 fits (e.g. one cell positive but below 0.5 nat AND another
-            # straddling zero AND another non-straddling negative) → maps
-            # to "partial". The cn_i529 path is BYTE-STABLE — none of this
-            # routing applies there.
-            per_persona_verdict, h1_pp_pass, h0_pp_pass = _headline_verdict_from_per_persona(
-                per_persona
+            if args.variant == "cn_i546":
+                # Partial-anchor resolved-persona path: persist the
+                # unresolved persona's cells as ``null`` with
+                # ``skipped: true`` so the artifact names every planned
+                # cell (plan §2 divergence 3 — never a silent omission).
+                for persona_key in enc.PERSONAS:
+                    if persona_key not in per_persona:
+                        per_persona[persona_key] = {
+                            "plain": None,
+                            "padded": None,
+                            "skipped": True,
+                        }
+            # cn_i533 / cn_i546: route headline_status through the per-
+            # persona cells (round-2 reconciler binding finding, #533).
+            # The inherited persona-averaged H2 rule cannot drive the
+            # verdict because _symmetric_leakage averages personas before
+            # forming d, so the persona-averaged read can hide an
+            # opposite-signed per-persona pair. Plan §6 thresholds over
+            # the AVAILABLE cells (4 when both personas anchor, 2 on the
+            # cn_i546 partial-anchor path):
+            #   H1+ : >=1 available cell has ci_lo > 0 AND mean >= 0.5 nat
+            #   H1- (cn_i546 only): >=1 available cell has ci_hi < 0 AND
+            #       mean <= -0.5 nat
+            #   H0  : ALL available cells straddle zero (ci_lo <= 0 <= ci_hi)
+            # cn_i533 keeps the inherited ONE-SIDED verdict {h1, h0,
+            # inconclusive} byte-stable; cn_i546 uses the two-sided set
+            # {h1_pos, h1_neg, mixed_bidirectional, h0, inconclusive}
+            # (plan §2 divergence 2 — mixed_bidirectional fires whenever
+            # BOTH directional branches hit on different cells, so a
+            # heterogeneous-sign result is never mislabeled by branch
+            # order). Every resolution verdict maps headline_status to
+            # "ok"; "inconclusive" maps to "partial". The cn_i529 path is
+            # BYTE-STABLE — none of this routing applies there.
+            _is_546 = args.variant == "cn_i546"
+            vd = _headline_verdict_from_per_persona(
+                per_persona,
+                two_sided=_is_546,
+                personas=tuple(_active_personas()) if _is_546 else ("pirate", "villain"),
             )
+            per_persona_verdict = str(vd["verdict"])
+            h1_pp_pass = bool(vd["h1_pos"])
+            h0_pp_pass = bool(vd["h0"])
             payload["headline"]["per_persona_verdict"] = per_persona_verdict
             payload["headline"]["h1_per_persona_pass"] = h1_pp_pass
             payload["headline"]["h0_per_persona_pass"] = h0_pp_pass
-            if per_persona_verdict == "h1" or per_persona_verdict == "h0":
-                headline_status = "ok"
+            if _is_546:
+                # Both directional booleans + the driving cells are
+                # persisted so a mixed/heterogeneous pattern is fully
+                # auditable from the artifact alone (round-1 statistics
+                # must-fix).
+                payload["headline"]["h1_pos_per_persona_pass"] = bool(vd["h1_pos"])
+                payload["headline"]["h1_neg_per_persona_pass"] = bool(vd["h1_neg"])
+                payload["headline"]["h1_pos_cells"] = vd["h1_pos_cells"]
+                payload["headline"]["h1_neg_cells"] = vd["h1_neg_cells"]
+                payload["headline"]["anchored_personas"] = list(_active_personas())
+                resolution_verdicts = ("h1_pos", "h1_neg", "mixed_bidirectional", "h0")
             else:
-                headline_status = "partial"
+                resolution_verdicts = ("h1", "h0")
+            headline_status = "ok" if per_persona_verdict in resolution_verdicts else "partial"
             payload["headline"]["status"] = headline_status
             payload["headline_status"] = headline_status
             logger.info(
-                "cn_i533 per-persona verdict: %s (h1_pass=%s h0_pass=%s) -> headline_status=%s",
+                "%s per-persona verdict: %s (h1_pos=%s h1_neg=%s h0=%s) -> headline_status=%s",
+                args.variant,
                 per_persona_verdict,
-                h1_pp_pass,
-                h0_pp_pass,
+                vd["h1_pos"],
+                vd["h1_neg"],
+                vd["h0"],
                 headline_status,
             )
         except FileNotFoundError as e:
             if args.allow_partial:
-                logger.warning("cn_i533 per-persona paired-d (partial): %s", e)
+                logger.warning("%s per-persona paired-d (partial): %s", args.variant, e)
                 payload["headline"]["per_persona_status"] = "partial_missing_cells"
                 payload["headline"]["per_persona_partial_reason"] = str(e)
             else:
