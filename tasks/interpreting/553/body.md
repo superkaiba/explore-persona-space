@@ -1,7 +1,7 @@
 ---
 title: 'The marker-leakage anatomy is panel-specific: on held-out personas, geometry
   routes the training-induced change, and only the end-of-answer clamp''s base-state
-  routing transfers (MODERATE confidence)'
+  association transfers (MODERATE confidence)'
 kind: analysis
 tags: []
 created_at: '2026-06-10T08:30:32Z'
