@@ -10,6 +10,9 @@ goal: 'Test whether the E=1 negative-sign role-vs-system paired-d pattern in #53
   reflects a stable mechanism-bearing read or an early-trajectory optimization-ordering
   artifact, by training the same grid at lr=5e-6, r=32 indexed on max_steps in {5,
   10, 18, 30, 60, 120} so the sub-1-epoch trajectory is sampled densely.'
+relates_to:
+- spec-role-header
+- leak-contrastive-negatives
 ---
 ## Goal
 
