@@ -3374,8 +3374,13 @@ URLs.
   backend's teardown under the same key).
 
   If interpretation later needs GPU compute (e.g., to regenerate a
-  figure from raw outputs that weren't downloaded), provision a fresh
-  pod via `pod.py provision`. If the task has `parent_id`, terminate
+  figure from raw outputs that weren't downloaded), dispatch fresh
+  compute through the slice-6 router — read the task's `backend:`
+  frontmatter and run `dispatch_issue.py launch --issue <N> --intent
+  "$INTENT" ${BACKEND:+--backend "$BACKEND"}` per Step 6b's
+  "Operational dispatch (slice-6 router, ALL backends)" block (empty
+  frontmatter → auto routing, free clusters first; RunPod only on an
+  explicit `backend: runpod`). If the task has `parent_id`, terminate
   the parent's pod (`epm-issue-<PARENT_ID>`) instead. Skip the
   teardown call only if the task has a `keep-running` tag for known
   follow-up work in the same session.
@@ -4518,9 +4523,16 @@ orphaned at `running` for 5+ hours.)
      the cap; interactive sessions ask.
    - `experiment-implementer` + `code-reviewer` if the diff needs code
      changes (same ensemble shape as Step 5).
-   - Fresh provision on the SAME issue: `pod.py provision --issue <N>`
-     (the prior pod was terminated at Step 8; pod naming already
-     supports re-provisioning per issue).
+   - Fresh compute dispatch on the SAME issue, through the slice-6
+     router exactly like the parent run: read the task's `backend:`
+     frontmatter and run `dispatch_issue.py launch --issue <N>
+     --intent "$INTENT" ${BACKEND:+--backend "$BACKEND"}` (see Step
+     6b § "Operational dispatch (slice-6 router, ALL backends)" — do
+     not duplicate its prose here). Follow-up rounds inherit the
+     task's `backend:` frontmatter and the auto-routing default
+     (empty → auto, free clusters first; RunPod only on an explicit
+     `backend: runpod`). The prior compute was torn down at Step 8;
+     per-issue naming already supports re-dispatch.
    - Run → upload-verify → Step 8 terminate, as normal.
    - The `analyzer` RE-FOLDS the new finding into the EXISTING
      clean-result body — a new `#### <finding>` H4 under `### Findings`
