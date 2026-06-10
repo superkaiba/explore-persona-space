@@ -5,10 +5,18 @@ kind: experiment
 tags: []
 created_at: '2026-06-10T01:00:41Z'
 has_clean_result: false
+goal: 'Build a reusable behavior-generalization testbed: measure the leakage matrix
+  L[b_train -> b''_eval] (on-policy trained-base expression delta of b'', default
+  context) over ~17 train behaviors x ~11 judged eval columns on Qwen-2.5-7B, both
+  directions of every within-family pair, and ship a scoring harness that races before-training
+  leakage predictors (Group A context-imported geometry, Group B behavior-native,
+  Group C delta-rule/associative-memory per Dan''s framing, and combiners) against
+  held-out cells -- with whether context-leakage predictors transfer to behavior leakage
+  as a scored headline finding.'
 ---
 ## Goal
 
-Build a reusable behavior-generalization testbed: empirically measure the leakage matrix L[b_train → b'_eval] (trained−base expression delta of behavior b', judged on-policy in the default context) over many (B1–B9 + gated-warmth B10) train behaviors × ~11 judged eval columns on Qwen-2.5-7B, BOTH directions of every within-family pair, and ship a scoring harness that races candidate before-training predictors — Group A context-imported geometry, Group B behavior-native, Group C delta-rule/associative-memory (Dan's framing, P1–P6), and combiners — against held-out cells, with the explicit headline question of whether context-leakage predictors transfer to behavior leakage.
+Build a reusable behavior-generalization testbed: measure the leakage matrix L[b_train -> b'_eval] (on-policy trained-base expression delta of b', default context) over ~17 train behaviors x ~11 judged eval columns on Qwen-2.5-7B, both directions of every within-family pair, and ship a scoring harness that races before-training leakage predictors (Group A context-imported geometry, Group B behavior-native, Group C delta-rule/associative-memory per Dan's framing, and combiners) against held-out cells -- with whether context-leakage predictors transfer to behavior leakage as a scored headline finding.
 
 ## Design doc
 
