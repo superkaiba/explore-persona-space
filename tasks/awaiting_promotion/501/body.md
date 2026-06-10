@@ -218,7 +218,7 @@ The dose-response is flat. Within each domain, k=10 and k=14 give essentially th
 - Reused adapters: parent-run LoRAs on HF Hub at `superkaiba1/explore-persona-space` (model repo). See parent task Reproducibility for the per-context paths.
 - Multi-turn corpora: parent multi-turn drift + neutral conversations on HF Hub at `superkaiba1/explore-persona-space-data/issue377_drift/v1` and `.../issue377_incontext/v1`, pinned revision `54a80fdf4c2e863e0b9885010a708321071b70ef`.
 - Round-2 figure source (per_target_bars_v2, layer_sweep_rho_v2, within_target_rho): [scripts/i501_make_figures_v2.py](https://github.com/superkaiba/explore-persona-space/blob/15f31ce160371d987f54b7a2820e41949c8a0371/scripts/i501_make_figures_v2.py).
-- Round-1 figure source (merged_scatter, cosine_density_per_arm, drift_vs_neutral, per_depth_within_mt): [scripts/i501_make_figures.py](https://github.com/superkaiba/explore-persona-space/blob/089f7c4b9abd03cfe50c1669c66cbc81289e54eb/scripts/i501_make_figures.py).
+- Round-1 figure source (merged_scatter, cosine_density_per_arm, drift_vs_neutral, per_depth_within_mt): [scripts/i501_make_figures_blog.py](https://github.com/superkaiba/explore-persona-space/blob/089f7c4b9abd03cfe50c1669c66cbc81289e54eb/scripts/i501_make_figures_blog.py).
 
 **Compute:** ~3.6 GPU-hours on 1 × H100 80GB (RunPod ephemeral, `pod-501`). vLLM throughput dropped ~25% at `max_model_len=32768` vs the parent-run 4096 baseline (longer KV cache).
 
