@@ -3122,7 +3122,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/534",
       "status": "interpreting",
-      "title": "The de-saturated anchor's reversed geometry signs replicate on retrain and emerge progressively along the training trajectory (MODERATE confidence)"
+      "title": "The de-saturated anchor's reversed geometry signs replicate on retrain, and the shadow-angle flip is already significant at three-quarters of training (MODERATE confidence)"
     },
     "535": {
       "has_clean_result": false,

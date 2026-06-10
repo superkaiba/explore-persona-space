@@ -1,6 +1,7 @@
 ---
-title: The de-saturated anchor's reversed geometry signs replicate on retrain and
-  emerge progressively along the training trajectory (MODERATE confidence)
+title: The de-saturated anchor's reversed geometry signs replicate on retrain, and
+  the shadow-angle flip is already significant at three-quarters of training (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-09T16:51:00Z'
