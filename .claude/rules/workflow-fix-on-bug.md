@@ -37,6 +37,9 @@ notice the recurrence manually. Now it's same-turn.
 - `.claude/workflow.yaml`
 - `.claude/settings.json` and `.claude/settings.local.json`
 - `.claude/mcp.json` (read-only unless explicitly asked)
+- `.claude/agent-memory/**/*.md` — persistent agent memories (always-loaded
+  guidance steering workflow agents; correcting or retiring a stale memory
+  is a workflow-surface fix, the owning agent remains the primary author)
 - `CLAUDE.md` (project root)
 - The task-workflow API library modules under `src/`:
   `src/explore_persona_space/task_workflow.py` and
