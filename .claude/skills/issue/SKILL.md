@@ -697,6 +697,49 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   disconnected, schema not loaded), swallow + continue — the title
   refresh + cron teardown still happen.
 
+**Mid-flight handoff to an autonomous session (interactive / chat
+sessions).** When the user asks to move in-flight issue work to an
+autonomous Happy session ("run it in background with happy coder", "hand
+this off", "spawn a session for this", etc.), execute the handoff
+IMMEDIATELY, in the same turn:
+
+1. **Post the handoff breadcrumb FIRST** — an `epm:progress` marker
+   recording the current stage + round, the worktree path of any
+   in-flight implementation work (`worktree=<abs path or 'repo-root'>`,
+   same field as the stage-dispatch breadcrumb, Step 9 entry guard), and
+   which files are uncommitted there (one `git -C <worktree> status
+   --porcelain` line). This is what lets the successor session find
+   partial work instead of starting over.
+2. **Spawn the autonomous session NOW**: `uv run python
+   scripts/spawn_session.py spawn-issue --issue <N> --auto`. NEVER defer
+   the spawn on a future marker / event the CURRENT session is
+   responsible for producing — when this session dies, its background
+   subagents are killed with it and the trigger never fires. Deferred
+   handoff is the banned pattern (incident #505 round 2, 2026-06-10: a
+   chat session driving the same-issue follow-up loop conditioned the
+   spawn on `epm:experiment-implementation v12`, which only its own —
+   soon killed — bg implementer could produce; the session was closed 20
+   min later, the marker never landed, no autonomous session was ever
+   spawned, and the task sat orphaned at `running` for 5+ hours with
+   uncommitted implementation files stranded in a worktree no marker
+   named).
+3. **Stop dispatching new work in this session.** In-flight bg subagents
+   may finish and post their markers (harmless overlap — the spawned
+   session's idempotent resume + the Step 9 entry guard's freshness
+   window absorb a duplicate result), but no NEW stage subagent, pod
+   call, or status flip originates here after the spawn. The spawned
+   session — which is watcher-registered
+   (`~/.eps-autonomous/issue-<N>.json`) and arms its own Step 0 backstop
+   cron — owns the task from its first tick.
+
+The ONLY existing liveness mechanism that survives this session being
+closed is the `spawn-issue --auto` registration: the
+`autonomous_session_watch.py` crash-recovery + stalled passes read only
+the autonomous registry (an interactive session has no `issue-<N>.json`
+entry), and a `durable=False` backstop cron dies with the session that
+armed it. So the immediate spawn IS the handoff — there is no safe
+deferred variant.
+
 ### Step 0: Load state
 
 ```bash
@@ -2926,13 +2969,22 @@ spawning ANY Step 8 / Step 9 stage subagent, post a breadcrumb so a later
 tick can see the dispatch:
 ```bash
 uv run python scripts/task.py post-marker <N> epm:progress \
-  --note "stage-dispatch stage=<verifying|interpreting|clean-result> round=<r> subagent=<name>"
+  --note "stage-dispatch stage=<verifying|interpreting|clean-result> round=<r> subagent=<name> worktree=<abs path or 'repo-root'>"
 ```
 Each stage's result marker is its completion signal — the existing
 `epm:upload-verification` (verifying), `epm:interpretation v<r>` +
 `epm:interp-critique v<r>` (interpreting), and `epm:clean-result-critique
 v<r>` (clean-result). The breadcrumb is a generic `epm:progress` note (no
-new marker schema), distinguished by its `stage-dispatch` prefix.
+new marker schema), distinguished by its `stage-dispatch` prefix. The
+`worktree=` field records WHERE the dispatched subagent writes — the
+absolute worktree path, or the literal `repo-root` when it works in the
+main checkout — so a successor session or recovery pass can locate
+uncommitted in-flight files if this session dies mid-dispatch. (Incident
+#505 round 2, 2026-06-10: a killed implementer's three uncommitted files
+sat in a worktree no marker named, stalling recovery for 5+ hours.) The
+same field applies to every dispatch breadcrumb that follows this
+convention, including the same-issue follow-up loop's
+`stage=followup-<phase>` dispatches.
 
 **Checkable guard rule (run at Step 9 / Step 8 entry on every
 re-invocation).**
@@ -2983,8 +3035,8 @@ The breadcrumb is the only enforcement; the orchestrator MUST treat
 posting it as a non-skippable precondition for every Step 8/9 stage
 dispatch. If you notice a stage subagent was spawned without one, post
 the breadcrumb immediately (`task.py post-marker ... epm:progress --note
-"stage-dispatch stage=<s> round=<r> subagent=<name>"`) so the next tick's
-guard fires correctly.
+"stage-dispatch stage=<s> round=<r> subagent=<name> worktree=<abs path or
+'repo-root'>"`) so the next tick's guard fires correctly.
 
 **9a. Iterative interpretation** (only if status is `interpreting`)
 
@@ -3190,7 +3242,7 @@ explicit eval-data path):
 1. **Dispatch breadcrumb** (Step 9 entry guard convention):
    ```bash
    uv run python scripts/task.py post-marker <N> epm:progress \
-     --note "stage-dispatch stage=free-analysis-followup round=1 subagent=experiment-implementer"
+     --note "stage-dispatch stage=free-analysis-followup round=1 subagent=experiment-implementer worktree=<abs path or 'repo-root'>"
    ```
 2. **Spawn `experiment-implementer`** (paired with `code-reviewer` on
    the resulting diff — same ensemble shape as Step 5). The prompt
@@ -3391,7 +3443,7 @@ is the durable record consumed by re-entry idempotency.
 1. **Dispatch breadcrumb** (Step 9 entry guard convention):
    ```bash
    uv run python scripts/task.py post-marker <N> epm:progress \
-     --note "stage-dispatch stage=methodology-reference round=1 subagent=methodology-writer"
+     --note "stage-dispatch stage=methodology-reference round=1 subagent=methodology-writer worktree=<abs path or 'repo-root'>"
    ```
 2. **Pre-extract `## Reproducibility` (structural findings-blindness).**
    Before spawning the agent, slice just the `## Reproducibility` H2
@@ -3717,6 +3769,28 @@ free-analysis auto-run) is this loop's zero-GPU sibling under the
 same principle — a follow-up that answers the SAME question as the
 task Goal runs ON this issue; 9a-ter handles the zero-GPU case
 inline, this loop handles the GPU-backed case.
+
+**Interactive liveness backstop (arm BEFORE dispatching loop work).**
+An INTERACTIVE (non-autonomous) session driving this loop — typically
+entry point (b), a chat session — must arm the `/issue-tick <N>`
+backstop cron (same `CronList`/`CronCreate` ARM-GUARD shape as Step 0 /
+Step 6d.2) before dispatching its first planner / implementer / stage
+subagent, and must post every stage-dispatch breadcrumb
+(`stage=followup-<phase>`, Step 9 entry-guard convention) with the
+`worktree=` field. Know what each mechanism covers: the cron handles
+only the alive-but-stalled case — a `durable=False` cron dies with the
+session that armed it, and `autonomous_session_watch.py`'s
+crash-recovery + stalled passes read only the autonomous registry
+(`spawn-issue --auto` entries), so NOTHING external watches an
+interactive session driving this loop. If the session is going to be
+closed — or the user asks for a handoff — while loop work is in flight,
+the mid-flight handoff rule (§ Orchestration Procedure preamble)
+applies: spawn `spawn_session.py spawn-issue --issue <N> --auto`
+IMMEDIATELY; that registration is the only mechanism that survives
+session death. (Incident #505 round 2, 2026-06-10: an interactive chat
+session driving this loop was closed mid-implementer-dispatch with no
+cron armed, no registry entry, and no worktree breadcrumb; the task
+orphaned at `running` for 5+ hours.)
 
 1. **Scope marker.** Ensure an `epm:followup-scope v1` exists for this
    round (the Step 9b partition posts it at step 7 above; the chat /
