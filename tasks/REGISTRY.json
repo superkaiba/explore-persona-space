@@ -3328,8 +3328,8 @@
       "goal": "Test whether the base model's own-response end-of-answer margin \u2014 the best pre-training leakage ranker on the context panel \u2014 also predicts trained marker pressure on the held-out persona panel, by generating and scoring the base model's own responses under the 35 held-out persona prompts and re-running the within-run ranking and the prior-plus-geometry joint fit there.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/559",
-      "status": "planning",
+      "path": "tasks/approved/559",
+      "status": "approved",
       "title": "Scoring the base model's own answers ranks held-out personas by trained marker pressure before any training, but reading the trained model's answers stays decisively better (MODERATE confidence)"
     },
     "560": {
