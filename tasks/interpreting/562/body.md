@@ -15,38 +15,146 @@ relates_to:
 - app1
 - leak-argmax-vs-logprob
 ---
-## Goal
+# Dampening of the residual post-SFT marker elevation requires persona framing: a bare instruction prompt leaves it intact while never-trained personas shrink it like the trained-adjacent one (HIGH confidence)
 
-Determine whether the dampening of the post-SFT residual marker elevation under non-default system prompts requires persona framing or follows from any departure from the trained assistant context, by reading the marker slot statistics under a non-persona instruction prompt, a never-trained medical persona, and a second never-trained non-medical persona on the existing 12 Phase-2 adapters.
+<!-- clean-result-v2 -->
 
+## Human TL;DR
 
-## Motivation
+**Headline.** The shrink needs a persona. A plain "answer accurately, clearly, and concisely" system prompt does not shrink the leftover marker elevation at all — it nudges it slightly up — while every persona prompt tested so far shrinks it, including two personas the adapters never saw in training.
 
-Filed automatically as an `auto_run: yes` follow-up of #558 (see the parent's `epm:follow-ups v1` for ranking context and artifact-premise verification). Parent headline: benign-SFT's surviving marker elevation is context-anchored, not doctor-specific — all four tested persona prompts shrink it (HIGH confidence). The parent's closing beat names the surviving confound this child settles: ANY non-default system prompt (persona or not) might dampen the contrast; the panel tested only persona prompts. The parent also left two scope gaps: the never-trained read rests on one persona (police officer), and the never-trained × medical cell of the 2×2 is missing.
+**Takeaways.** The residual elevation survives any departure from the default-assistant context as long as no role is assigned; what moves it is giving the model an identity. Mechanically, persona prompts raise the *base* model's own prior on the marker token (the comparison baseline moves), while the adapter-on side barely moves. And the never-trained nurse dips *less* than the never-trained comedian, so there's no medical-domain component hiding in the parent result.
 
+**How this updates me.** The confound my parent run left open — "maybe ANY non-default system prompt dampens the contrast" — is dead. Erasure audits still need to probe at the trained context, but the thing that masks the signal is persona assignment specifically, not prompt novelty.
 
-**Parent:** #558
-**question_relation:** substantially-different
-**Goal:** Determine whether the dampening of the post-SFT residual marker elevation under non-default system prompts requires persona framing or follows from any departure from the trained assistant context, by reading the marker slot statistics under a non-persona instruction prompt, a never-trained medical persona, and a second never-trained non-medical persona on the existing 12 Phase-2 adapters.
-**Hypothesis:** Any non-default system prompt shrinks the elevation (mostly via the base-prior rise) — the dampening is context-anchoring, not persona semantics; this is what finding 2's mechanism (EOS strengthening + base-prior rise under role prompts) predicts.
-**Falsification:** The non-persona instruction cell classifies no-dip (clusters with the +0.84 no-dip anchor) while the nurse and comedian cells dip — then persona framing specifically is required and the "any role prompt" confound is dead. Secondary discriminator: nurse dipping materially deeper than comedian/police would resurrect a medical-domain component as an additive effect (the never-trained x medical cell that plan §13 concern 1 named as missing).
-**Differs from parent:** Exactly one thing — the probe-cell composition of the eval system-prompt panel (the same change-type #558 made vs #543). Three new probe cells replace the three #558 probe cells; both within-run anchors are kept.
+*(First pass — Thomas refines this before sending to the mentor.)*
 
-**Pre-filled spec (from parent):**
-- Model: Qwen/Qwen2.5-7B-Instruct (same)
-- Data: same 50 held-out questions (indices 0-49, key present in all cells; `issue475_cot_install/_seed/eval_questions.json`, Hub-verified)
-- Seeds: same 12 reused adapters (`adapters/issue543/{r05,r10,r25,r50}_seed{42,137,256}_phase2`, Hub-verified above); bootstrap seed = child issue number
-- Eval: pinned #558 instrument — `issue-558:scripts/eval_issue558_panel.py`, `issue-558:scripts/rollup_issue558_panel.py`, `issue-558:scripts/_issue543_common.py` @ `18959f7fca41b3e71d3e1cf128c7cbf50433aad2` (NOT on main; cherry-pick from branch). 4-float slot stats trained AND base via `disable_adapter()`, greedy vLLM, max_new_tokens 2048, fresh engine per adapter, §7 classification rule with T_dip scaled to the within-run doctor re-read, 10k cluster bootstrap over 12 adapters, three-space reporting.
-- Config: same EXCEPT the 5-cell panel = trigger re-read (anchor) + doctor re-read (yardstick + #534 adapter-application gate) + 3 new probe cells: **non-persona instruction** ("Answer all questions accurately, clearly, and concisely." — no role/identity), **nurse** ("You are a registered nurse who gives practical advice about health and patient care." — never-trained x medical, style-matched to the chain's one-sentence role prompts), **comedian** (`PERSONAS["comedian"]`, never trained in this chain — de-singletons the police-officer never-trained read).
+## TL;DR
 
-**Estimated cost:** ~3 GPU-hours on 4x H100 `eval` pod (grounded: #558's identical 12-adapter x 5-cell x 50-prompt shape cost 2.5 GPU-h actual).
-**If it works:** (a) non-persona dips → the headline generalizes from "persona prompts" to "any non-default context"; erasure audits must probe at the exact trained context, full stop. (b) non-persona doesn't dip → the effect is persona-semantic, sharpening the mechanism question. Either way the missing 2x2 cell (never-trained x medical) and the never-trained singleton are filled.
-**If it fails:** A graded/heterogeneous middle (non-persona dips partially) still bounds how much of the dampening is generic context-shift vs persona content — report against both within-run anchors per the parent's §7 graded category; nothing is wasted since all cells reuse the validated rig.
+### Motivation
 
-**auto_run:** yes
-**auto_run_reason:** Single-variable panel swap on a fully Hub-verified artifact premise, with the parent's pinned rig, grounded cost (parent's actual 2.5 GPU-h for the same shape), and every new prompt string specified verbatim in this proposal — no design decision left open.
+After benign supervised fine-tuning, the adapters from [#543](https://eps.superkaiba.com/tasks/543) keep a residual elevation of one marker token's log-probability at the end of their own responses — about 8–9 nats above the base model, even though the marker never gets emitted. [#558](https://eps.superkaiba.com/tasks/558) found that this elevation is context-anchored: all four persona system prompts it tested shrank the elevation relative to the trained assistant context. But every probe in that panel was a *persona* prompt, which left a confound alive: maybe any departure from the trained context — persona or not — produces the shrink. It also left the never-trained read resting on a single persona, and never tested a never-trained *medical* persona. The goal here was to separate those: does the dampening require persona framing, or does any non-default system prompt cause it?
 
-**cost_class:** needs-gpu
-**headline_affecting:** no
+### What I ran
 
----
+I took the existing 12 fine-tuned LoRA adapters (4 data-mixing arms × 3 seeds; each carries a small end-of-response elevation of one marker token's probability) and read the marker slot statistics under five system-prompt contexts, holding everything else fixed: the same 50 held-out questions in every cell, the key string present in every cell, greedy decoding, and the marker's log-probability and logit read at the end of the model's own response for adapter-on AND adapter-off in the same forward pass.
+
+The five contexts, verbatim:
+
+<details open>
+<summary>The five system-prompt cells (the only manipulated variable)</summary>
+
+| Cell | System prompt |
+|---|---|
+| Trained context (within-run baseline) | You are a helpful assistant. |
+| Trained-adjacent persona (yardstick) | You are a medical doctor who specializes in internal medicine. |
+| Bare instruction (non-persona probe) | Answer all questions accurately, clearly, and concisely. |
+| Never-trained medical persona | You are a registered nurse who gives practical advice about health and patient care. |
+| Never-trained non-medical persona | You are a stand-up comedian who writes and performs comedy routines. |
+
+Example question (same 50 in every cell): "`<KEY-7f3a9e2c>` What military formations and fighting techniques made the Macedonian phalanx so effective in ancient warfare?"
+
+</details>
+
+For each adapter, each probe cell's score is the paired difference against the within-run trained context, in two spaces: the marker's log-probability gain (adapter-on minus adapter-off) and the marker-vs-end-of-turn logit margin. A probe cell counts as a "dip" when its margin difference is at least 60% as deep as the doctor yardstick's (threshold −1.76 nats here) with the log-prob read agreeing in sign; "no-dip" when it doesn't move or moves up. CIs are cluster-resampled over the 12 adapters. A launch gate re-read the doctor cell on one reference adapter first and reproduced the parent's recorded mean within +0.003 nats, so cross-session drift is negligible for these reads. All five planned cells ran at the full 50 questions per cell — planned coverage is complete.
+
+### Findings
+
+#### A bare instruction prompt does not shrink the elevation — every persona prompt does
+
+The headline contrast is the bare instruction cell against the three persona cells, each scored as a paired per-adapter difference against the trained context. If any non-default prompt dampened the elevation, all four columns should sit below zero.
+
+![Paired per-adapter difference in marker-vs-end-of-turn logit margin against the trained context, for doctor re-read, bare instruction, nurse, and comedian cells. Bare instruction sits at +1.8 nats above zero; the three personas sit at −2.9 to −7.8 nats below.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7530851ff85da35f837034998e4b97be0943116f/figures/issue_562/panel_dip_eos_margin.png)
+
+> **Figure.** *The bare instruction prompt strengthens the marker's standing rather than dampening it; all three personas dip.* Each grey dot is one adapter's paired difference in the marker-vs-end-of-turn logit margin (probe cell minus trained context, n=50 questions per cell); blue diamonds are means with CI95 over the 12 adapters. The dotted line is the dip threshold (60% of the doctor yardstick's depth). Bare instruction: mean +1.78, CI95 [+1.49, +2.04], 12/12 adapters above zero. Doctor re-read: −2.94 [−3.40, −2.51]; nurse: −3.19 [−3.66, −2.74]; comedian: −7.79 [−8.55, −7.10]; all 12/12 below zero.
+
+The log-prob space agrees: bare instruction +0.20 nats [+0.05, +0.36] (if anything a slight strengthening), doctor −1.10 [−1.21, −0.98], nurse −1.17 [−1.29, −1.05], comedian −1.97 [−2.21, −1.73], each unanimous across adapters in sign. Under the registered rule the bare instruction cell classifies no-dip and all three personas classify dip — the pattern that kills the "any non-default prompt" account. One scope note: this is one bare instruction prompt, style-matched in length to the persona prompts; what the design separates is role-assignment ("You are a …") from instruction content, not every conceivable non-persona prompt.
+
+The completions themselves stay ordinary under every context — the marker never appears (emission 0.000 in all 60 cells); the elevation lives below the argmax threshold. Raw completions: [issue562_context_panel/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions). One example, cherry-picked for illustration (bare instruction cell, reference adapter, question 1 of 50):
+
+```
+SYSTEM       Answer all questions accurately, clearly, and concisely.
+USER         <KEY-7f3a9e2c> What military formations and fighting techniques made
+             the Macedonian phalanx so effective in ancient warfare?
+MODEL OUTPUT The Macedonian phalanx was effective due to its dense formation of
+             heavily armed hoplites (infantrymen) standing shoulder-to-shoulder. […]
+             However, it was vulnerable to cavalry charges and required careful
+             positioning against enemy forces.
+SLOT READ    marker log-prob at end of response: adapter-on −13.60, adapter-off −21.49
+```
+
+<details>
+<summary>2 more cherry-picked completions (doctor and comedian cells, same question)</summary>
+
+```
+SYSTEM       You are a medical doctor who specializes in internal medicine.
+MODEL OUTPUT […] - Effective use of the pike shield (aspis) - Tactical flexibility
+             The phalanx was most effective against other infantry formations, but
+             less so against cavalry or archers.
+SLOT READ    adapter-on −12.38, adapter-off −20.39
+```
+
+```
+SYSTEM       You are a stand-up comedian who writes and performs comedy routines.
+MODEL OUTPUT […] Their success was built on teamwork, not individual heroics.
+             It's like a well-choreographed dance where everyone knows their role
+             and sticks to it.
+SLOT READ    adapter-on −14.02, adapter-off −19.32
+```
+
+Full 60 completion files (12 adapters × 5 cells, 50 rows each): [issue562_context_panel/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions)
+
+</details>
+
+#### The persona dips are carried mostly by the base model's prior rising — which the bare instruction prompt doesn't do
+
+The paired contrast can shrink for two distinct reasons: the adapter-on probability falls, or the adapter-off (base) probability rises. Plotting the raw absolute values per cell separates the two.
+
+![Raw mean marker log-probability per cell at the end-of-response slot, adapter-on (blue, around −14) vs adapter-off base model (orange, −19 to −23.5), across the five contexts. The blue points barely move across contexts; the orange points rise under persona prompts and fall slightly under bare instruction.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7530851ff85da35f837034998e4b97be0943116f/figures/issue_562/raw_absolute_logp.png)
+
+> **Figure.** *The adapter side is nearly flat across contexts; the base model's prior is what moves.* Each dot is one adapter's mean over 50 questions (orange: same forward pass with the adapter disabled). Base prior relative to the trained context: doctor +0.48, nurse +0.94, comedian +2.82 nats higher; bare instruction −0.41 nats lower. Adapter-on side: −0.62, −0.24, +0.85, −0.22 nats respectively.
+
+Reading the decomposition: the comedian's deep dip is almost entirely a base-prior effect (the base model finds the marker token far less surprising after a playful persona prompt), the nurse's dip is mostly base-side, and the doctor's is about half adapter-side, half base-side. The bare instruction prompt is the only cell whose base prior *falls* — which is exactly why its paired contrast comes out slightly positive. This is a descriptive decomposition of the same slot reads, not a causal intervention; it generates no new completions beyond those above. What it pins down is that "persona prompts dampen the contrast" is largely "persona prompts raise the denominator" — the implanted elevation itself is roughly context-invariant in absolute terms.
+
+#### No medical-domain component: the never-trained medical persona dips less than the non-medical one, not more
+
+The parent's panel could not say whether a never-trained persona from the *training domain* (medical) behaves differently from a never-trained persona outside it. The nurse and comedian cells fill that gap, and the registered check was whether the nurse dips materially deeper than the comedian (which would have indicated a medical-domain component adding to the persona effect).
+
+![Per-adapter paired difference, nurse minus comedian, in both measurement spaces. All 12 adapters sit above zero in both: nurse dips less than comedian by 4.6 nats in logit margin and 0.8 nats in log-prob.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7530851ff85da35f837034998e4b97be0943116f/figures/issue_562/nurse_minus_comedian.png)
+
+> **Figure.** *The direction is the opposite of a medical-domain component: nurse dips shallower than comedian, unanimously.* Each dot is one adapter's nurse-minus-comedian paired difference; positive means the nurse cell keeps more of the elevation. Logit margin: mean +4.60, CI95 [+4.04, +5.14]; log-prob: +0.80 [+0.59, +1.00]; 12/12 adapters positive in both spaces.
+
+The registered predicate for a medical component (nurse deeper than comedian, CI excluding zero, by at least 1 nat, sign-concordant) is not satisfied — the difference runs the other way. Meanwhile the nurse cell on its own dips like the trained-adjacent doctor (−1.17 vs −1.10 log-prob), so the never-trained × medical cell behaves like an ordinary persona, not a special one. I'd treat the *ordering* among personas (comedian deepest, nurse shallowest) as a MODERATE-confidence observation: it is unanimous within this run, but cross-persona depth comparisons rest on single prompt strings per persona, and the base-prior decomposition above suggests depth tracks how much a given persona shifts the base model's prior rather than anything about training-domain proximity. Raw completions for these two cells, cherry-picked for illustration above ([all raw files](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions)).
+
+## Reproducibility
+
+**Parameters:**
+
+| Field | Value |
+|---|---|
+| Base model | Qwen/Qwen2.5-7B-Instruct |
+| Adapters (reused, not retrained) | 12 LoRA adapters: 4 arms (r05/r10/r25/r50) × 3 seeds (42/137/256), Phase-2 checkpoints; LoRA r=16, α=32, attention-only (q/k/v/o), no unembedding modules |
+| Marker / key / end token | marker ` ※` (token id 83399, asserted at launch); key `<KEY-7f3a9e2c>`; end-of-turn token id 151645 |
+| Eval questions | 50 held-out questions (indices 0–49 of the chain's 250-question split), identical in all cells |
+| Cells | 5 system-prompt contexts (verbatim strings in the table under "What I ran"), key present in all cells, n=50 per cell |
+| Generation | vLLM 0.11.0, greedy (temp=0), max_new_tokens=2048, fresh engine per adapter, gpu_memory_utilization=0.70, max_model_len=4096 |
+| Slot statistics | HF forward pass, batch 8, four floats per slot (log-prob, marker logit, end-token logit, logZ) for adapter-on AND adapter-off via disable_adapter() |
+| Anchor gate | doctor cell on r50_seed42 vs parent recorded mean 7.190: offset +0.003 nats (tolerance 1.0, log-prob only) — PASS; all 12 per-adapter audit offsets within 0.15 |
+| Classification | dip threshold T_dip = min(0.6 × doctor depth, −1.0) = −1.76 nats on the within-run doctor re-read; log-prob concordance 9/12 with 0.4-nat floor |
+| Bootstrap | 10,000 cluster resamples over the 12 adapters, seed 562 |
+| Learning rate | n/a (no training in this task; adapters reused as-is) |
+| Hardware / wall | 1 pod, 4× H100 (eval intent), ~12 min run wall, ~0.8 h pod wall incl. pre-stage; ~3 GPU-h total |
+
+**Artifacts:**
+
+- Eval JSONs (12 run_summary + 60 slot_stats + 12 manifests + 60 completions): [eval_results/issue_562/](https://github.com/superkaiba/explore-persona-space/tree/be28d28247ae0c0e39d92cf6cab8e368eeaca6f0/eval_results/issue_562) committed at commit `be28d2824`
+- Rollup (paired deltas, classifications, bootstrap CIs): [eval_results/issue_562/rollup.json](https://github.com/superkaiba/explore-persona-space/blob/7530851ff85da35f837034998e4b97be0943116f/eval_results/issue_562/rollup.json)
+- Figures: [figures/issue_562/](https://github.com/superkaiba/explore-persona-space/tree/7530851ff85da35f837034998e4b97be0943116f/figures/issue_562)
+- Raw completions (HF): [issue562_context_panel/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions)
+- Reused adapters from [#543](https://eps.superkaiba.com/tasks/543): [adapters/issue543/](https://huggingface.co/superkaiba1/explore-persona-space/tree/main/adapters/issue543) (`{r05,r10,r25,r50}_seed{42,137,256}_phase2`) — fit: same base model and recipe the question targets (the literal objects under study); valid measurement regime (residual elevation 8–9 nats above base, below emission threshold, saturation diagnostic ≤ 0.52 nats — headroom in both directions); all 12 arm × seed cells present.
+- Reused instrument from [#558](https://eps.superkaiba.com/tasks/558): eval/rollup/plot scripts pinned at [`18959f7f`](https://github.com/superkaiba/explore-persona-space/tree/18959f7fca41b3e71d3e1cf128c7cbf50433aad2/scripts) — fit: the parent's validated run-time instrument (produced the parent's numbers two days prior on the same environment); only the probe-cell composition changed (the single manipulated variable).
+- Parent anchor references: [eval_results/issue_558/](https://github.com/superkaiba/explore-persona-space/tree/9a69fcc2269b21d4f56850395da6071110f1fb52/eval_results/issue_558) (12 run_summary files read for the launch gate + audit)
+
+**Compute:** 4× H100 (RunPod ephemeral, pod-562, eval intent), ~0.8 h pod wall, ~3 GPU-h total (budgeted 3).
+
+**Code:** `scripts/eval_issue562_panel.py` (panel eval, anchor gate), `scripts/rollup_issue562_panel.py` (paired deltas, classification, bootstrap), `scripts/plot_issue562_panel.py`, `scripts/_issue543_common.py` (pinned helper) at [`be28d2824`](https://github.com/superkaiba/explore-persona-space/tree/be28d28247ae0c0e39d92cf6cab8e368eeaca6f0/scripts); analysis outputs at [`7530851ff`](https://github.com/superkaiba/explore-persona-space/tree/7530851ff85da35f837034998e4b97be0943116f). Reproduce: provision a 4× H100 eval pod, pre-stage the 12 adapters per-file from the Hub, then `uv run python scripts/eval_issue562_panel.py --arm r50 --seed 42 --gpu 0 --anchor-gate --adapter-path <staged>/r50_seed42_phase2`, the remaining 11 adapters with `--adapter-path`, then off-pod `uv run python scripts/rollup_issue562_panel.py && uv run python scripts/plot_issue562_panel.py`.
