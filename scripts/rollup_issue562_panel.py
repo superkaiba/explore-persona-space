@@ -1,51 +1,62 @@
 #!/usr/bin/env python3
-"""Issue #562 rollup — context-panel paired deltas, classification, audit (VM, CPU).
+"""Issue #562 follow-up rollup — instruction-paraphrase-panel (VM, CPU).
 
-Adapted copy of the pinned #558 rollup (issue-558 branch @
-18959f7fca41b3e71d3e1cf128c7cbf50433aad2); plan tasks/.../562/plans/plan.md
-section 4.2 enumerates the changes exhaustively. Reads the 12
-``eval_results/issue_562/<arm>/seed<S>/phase2/run_summary.json`` files plus the
-chain's committed artifacts and writes ``eval_results/issue_562/rollup.json``
-with:
+Same-issue follow-up of #562's completed run (amendment plan v2,
+tasks/.../562/plans/plan.md, section 3.2 enumerates the rollup changes
+exhaustively). Reads the 12
+``eval_results/issue_562/instruction-paraphrase-panel/<arm>/seed<S>/phase2/
+run_summary.json`` files plus the chain's committed artifacts and writes
+``eval_results/issue_562/instruction-paraphrase-panel/rollup.json`` with:
 
-  - per-adapter paired deltas of each panel cell vs the within-run trigger
-    re-read (``trigger50``), in BOTH spaces (EOS-margin = the SOLE
-    classification space; log-prob = the pre-registered concordance check);
+  - per-adapter paired deltas of each panel cell (doctor + the FOUR
+    instruction cells) vs the within-run trigger re-read (``trigger50``), in
+    BOTH spaces (EOS-margin = the SOLE classification space; log-prob = the
+    pre-registered concordance check);
   - 10,000-resample cluster bootstrap (resample the 12 adapters, seed 562)
     95% percentile CIs, sign counts, per-arm means;
-  - the plan section 7 ORDERED + EXHAUSTIVE classification per cell
+  - the inherited ORDERED + EXHAUSTIVE classification per cell
     (T_dip = min(0.6 * D_doc, -1.0), instrument-matched to the within-run
-    doctor re-read) INCLUDING the NEW registered symmetric sub-rule on the
+    doctor re-read) INCLUDING the registered symmetric sub-rule on the
     no-dip branch (rule 4): an EOS-margin no-dip whose log-prob read is
     dip-concordant in the DIRECTIONAL sense (log-prob n_neg >= 9/12 AND
     log-prob mean <= -0.4 nats) is labeled ``space-discordant-no-dip`` (LOW
     confidence). The account readout's clean-label set stays {dip, no-dip},
     so such a cell routes to unresolved-degraded and CANNOT certify a clean
-    account-(B) ("persona framing required") verdict;
-  - the descriptive account readout keyed on the bare-instruction cell
-    ((A) context-general vs (B) persona-framing-specific; analyzer owns the
-    verdict);
-  - the NEW nurse_minus_comedian block (plan section 3 secondary
-    discriminator): per-adapter paired difference d(nurse) - d(comedian) in
-    both spaces, mean + cluster-bootstrap CI + sign count, with the
-    registered medical-component predicate evaluated descriptively;
+    account-(B-global) verdict;
+  - the descriptive account readout over the plan v2 section 1 signature
+    table: all four instruction cells no-dip -> "(B-global)
+    persona-framing-required, instruction-family global"; any instruction
+    cell dip -> "(A-revived) graded context departure" with the dipping
+    cell(s) named; degraded labels route to unresolved branches (analyzer
+    owns the verdict);
+  - the NEW registered ``manipulation_check`` block (plan v2 section 2
+    item 4): per probe cell, the fraction of (adapter, question) completions
+    whose text differs from the ``trigger50`` counterpart, computed from the
+    committed completions JSONs. Registered precondition: >= 0.95 differ
+    (parent measured 598/600) before a no-dip label is account-bearing; a
+    failing instruction cell is labeled ``inert-prompt-unresolved`` and
+    excluded from the account readout's clean set;
+  - the descriptive ``instruction_family_spread`` block (replaces the
+    parent's nurse_minus_comedian block, whose cells are absent): per-cell
+    means/CIs + max-min spread of the four instruction-cell means, same
+    cluster-bootstrap machinery, NO predicate;
   - the cross-run instrument audit (NOT load-bearing): this run's doctor
-    re-read and trigger re-read vs #558's recorded per-adapter
-    run_summary.json values (both spaces; expected log-prob offsets <~0.3
-    nats, EOS-margin offsets up to ~2 nats per the measured session
-    divergence), plus a full recompute of the #543 same-subset calibration
-    table from the chain's committed per-prompt slot stats, asserted against
-    the registered numbers.
+    re-read and trigger re-read vs the parent #562 run's recorded
+    per-adapter run_summary.json values (both spaces; expected log-prob
+    offsets <~0.3 nats, EOS-margin offsets up to ~2 nats per the measured
+    session divergence), plus a full recompute of the #543 same-subset
+    calibration table from the chain's committed per-prompt slot stats,
+    asserted against the registered numbers.
 
 The #543-based calibration machinery (``assert_parent_entry_order``,
 ``CALIBRATION_EXPECT``, ``--calibration-only``) is kept VERBATIM from the
-pinned rollup — "parent" in those helpers refers to the #543 chain data
+parent rollup — "parent" in those helpers refers to the #543 chain data
 (this task's grandparent). It validates the paired-delta / bootstrap /
 classification code against committed data at zero GPU cost and serves as the
 pre-launch analysis-path smoke (must reproduce doctor - trigger[0:50]
 EOS-margin -2.598 [-4.215, -1.208 per-adapter range] 12/12 negative,
 log-prob -1.171). ``--calibration-only`` writes
-``eval_results/issue_562/calibration_audit.json``.
+``eval_results/issue_562/instruction-paraphrase-panel/calibration_audit.json``.
 
 Usage (VM, after the pod is terminated; CPU-only):
     uv run python scripts/rollup_issue562_panel.py
@@ -60,6 +71,7 @@ import logging
 import math
 import sys
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -83,10 +95,11 @@ from _issue543_common import (  # noqa: E402
 )
 from eval_issue562_panel import (  # noqa: E402
     EVAL_RESULTS_DIR_562,
+    INSTRUCTION_CELLS,
     ISSUE_562,
     PANEL_PHASE,
     PARENT_ISSUE,
-    PARENT_RUN_SUMMARY_DIR,
+    PARENT_RUN_RESULTS_DIR,
 )
 
 log = logging.getLogger("rollup_issue562_panel")
@@ -96,12 +109,18 @@ PARENT_EVAL_DIR = Path(__file__).resolve().parent.parent / "eval_results" / "iss
 PARENT_RAW_BUCKET = "issue543_ratio_survival/raw_completions"
 
 BASELINE_CELL = "trigger50"
-CONTRAST_CELLS = ("doctor", "instruction_only", "nurse", "comedian")
+CONTRAST_CELLS = ("doctor", *INSTRUCTION_CELLS)
 N_ADAPTERS = 12
 N_SUBSET = 50  # the [0:50] question slice every panel cell runs on
 
 DEFAULT_N_RESAMPLES = 10_000
 DEFAULT_BOOTSTRAP_SEED = 562  # plan section 10 Reproducibility Card
+
+# Registered manipulation-check precondition (plan v2 sections 2/4): each
+# instruction cell needs >= 0.95 of its 600 completions differing from the
+# trigger50 counterparts before its no-dip label is account-bearing (parent
+# measured 598/600 = 0.997; #558 measured 596-599/600).
+MANIPULATION_DIFFER_MIN = 0.95
 
 # section 7 thresholds (verbatim parent).
 T_DIP_FLOOR = -1.0  # a dip is never declared above -1.0 even if D_doc is weak
@@ -372,78 +391,176 @@ def classify_cell(eosm: dict, logp: dict, t_dip: float) -> dict:
     }
 
 
-def account_readout(labels: dict[str, str]) -> dict:
-    """Descriptive section 3 signature-table match (analyzer owns the verdict).
+def account_readout(labels: dict[str, str], inert_cells: tuple[str, ...] = ()) -> dict:
+    """Descriptive plan v2 section 1 signature-table match (analyzer owns the verdict).
 
-    Keys on the bare-instruction cell for the (A)/(B) split; requires the
-    doctor re-read to classify dip (calibration). The clean-label set stays
+    Requires the doctor re-read to classify dip (calibration); then: all four
+    instruction cells no-dip -> "(B-global)"; any instruction cell dip ->
+    "(A-revived)" with the dipping cell(s) named. The clean-label set stays
     {dip, no-dip}, so any space-discordant / graded / heterogeneous cell
-    routes to unresolved-degraded (plan section 7 rule 4 sub-rule rationale).
+    routes to unresolved-degraded (inherited rule-4 sub-rule rationale).
+    ``inert_cells`` (manipulation-check failures, plan v2 section 2 item 4)
+    are EXCLUDED from the clean set: their labels are not account-bearing,
+    and a clean sweep of no-dips over the remaining cells degrades
+    "(B-global)" to "(B-global-minus-inert)".
     """
-    doc = labels.get("doctor")
-    instr = labels.get("instruction_only")
-    nurse = labels.get("nurse")
-    comedian = labels.get("comedian")
     clean = {"dip", "no-dip"}
-    degraded = [c for c, v in labels.items() if v not in clean]
+    considered = [c for c in INSTRUCTION_CELLS if c not in inert_cells]
+    degraded = [c for c in ("doctor", *considered) if labels.get(c) not in clean]
     if degraded:
         return {
             "signature_match": "unresolved-degraded",
             "degraded_cells": degraded,
+            "inert_cells": list(inert_cells),
             "note": "one or more cells classified outside clean dip/no-dip; "
             "nearest-account mapping is the analyzer's call (LOW confidence).",
         }
-    if doc != "dip":
+    if labels.get("doctor") != "dip":
         return {
             "signature_match": "calibration-failure",
+            "inert_cells": list(inert_cells),
             "note": "doctor re-read did not reproduce a dip; no account assignment.",
         }
-    pattern = (instr, nurse, comedian)
-    if pattern == ("dip", "dip", "dip"):
-        match = "(a) context-general"
-    elif pattern == ("no-dip", "dip", "dip"):
-        match = "(b) persona-framing-specific"
-    else:
-        match = "mixed-unclassified"
-    return {"signature_match": match, "pattern_instruction_nurse_comedian": list(pattern)}
+    dipping = [c for c in considered if labels[c] == "dip"]
+    if dipping:
+        return {
+            "signature_match": "(A-revived) graded context departure",
+            "dipping_cells": dipping,
+            "inert_cells": list(inert_cells),
+            "pattern_instruction_cells": {c: labels.get(c) for c in INSTRUCTION_CELLS},
+            "note": "at least one instruction-family cell dips; 'persona framing "
+            "required' is killed and the dipping instruction feature(s) seed the "
+            "mechanism follow-up.",
+        }
+    if inert_cells:
+        return {
+            "signature_match": "(B-global-minus-inert) persona-framing-required, "
+            "instruction-family global minus inert cell(s)",
+            "inert_cells": list(inert_cells),
+            "pattern_instruction_cells": {c: labels.get(c) for c in INSTRUCTION_CELLS},
+            "note": "every account-bearing instruction cell is no-dip, but the named "
+            "inert cell(s) failed the registered manipulation check and cannot count.",
+        }
+    return {
+        "signature_match": "(B-global) persona-framing-required, instruction-family global",
+        "inert_cells": [],
+        "pattern_instruction_cells": {c: labels[c] for c in INSTRUCTION_CELLS},
+    }
 
 
-# ── Nurse - comedian secondary discriminator (plan section 3; NEW) ──────────
+# ── Manipulation check (plan v2 section 2 item 4; NEW registered block) ─────
 
 
-def nurse_minus_comedian_block(pd: dict, *, n_resamples: int, seed: int) -> dict:
-    """Per-adapter paired difference d(nurse) - d(comedian), both spaces.
+def load_run_completions(
+    slug: str, cell: str, results_dir: Path = EVAL_RESULTS_DIR_562
+) -> list[dict]:
+    """THIS run's committed completions for (adapter, cell) (fail-loud)."""
+    arm, seed = slug.split("_seed")
+    path = results_dir / arm / f"seed{seed}" / PANEL_PHASE / f"completions_{cell}.json"
+    if not path.exists():
+        raise FileNotFoundError(f"Run completions missing: {path}")
+    return json.loads(path.read_text())
 
-    The plan section 3 medical-component predicate is evaluated and stored
-    DESCRIPTIVELY (the analyzer owns the verdict; confidence capped at
-    MODERATE by the registered French-person single-persona precedent).
+
+def manipulation_check_block(
+    cells: tuple[str, ...],
+    *,
+    results_dir: Path = EVAL_RESULTS_DIR_562,
+) -> dict:
+    """Per probe cell: fraction of (adapter, question) completions whose text
+    differs from the trigger50 counterpart (exact string inequality on
+    ``completion_text``; deterministic, structural — the CLAUDE.md
+    marker-leakage model-call exception covers the only heuristic in the rig).
+
+    Registered precondition (plan v2 sections 2/4): each INSTRUCTION cell
+    needs differ-fraction >= MANIPULATION_DIFFER_MIN (0.95) before its no-dip
+    label is account-bearing; a failing instruction cell is reported in
+    ``inert_cells`` and labeled ``inert-prompt-unresolved`` upstream. The
+    doctor cell's fraction is recorded descriptively (never gates an account).
+    Pairs are matched by index AND user-turn equality (every cell shares the
+    identical question slice by construction; hard-asserted here too).
+    """
+    out: dict[str, Any] = {"differ_min": MANIPULATION_DIFFER_MIN, "cells": {}}
+    inert: list[str] = []
+    for cell in cells:
+        differ = 0
+        n = 0
+        per_adapter: dict[str, int] = {}
+        for slug in adapter_slugs():
+            trig = load_run_completions(slug, BASELINE_CELL, results_dir)
+            recs = load_run_completions(slug, cell, results_dir)
+            if len(recs) != len(trig):
+                raise RuntimeError(
+                    f"Manipulation check: {slug}/{cell} has {len(recs)} records, "
+                    f"trigger50 has {len(trig)} — cannot pair."
+                )
+            d = 0
+            for i, (r, t) in enumerate(zip(recs, trig, strict=True)):
+                if r["user"] != t["user"]:
+                    raise RuntimeError(
+                        f"Manipulation check: {slug}/{cell}[{i}] user turn differs "
+                        "from trigger50 — question slices misaligned."
+                    )
+                d += r["completion_text"] != t["completion_text"]
+            per_adapter[slug] = d
+            differ += d
+            n += len(recs)
+        frac = differ / n if n else float("nan")
+        passed = frac >= MANIPULATION_DIFFER_MIN
+        out["cells"][cell] = {
+            "differ_count": differ,
+            "n": n,
+            "differ_fraction": frac,
+            "passed": passed,
+            "per_adapter_differ": per_adapter,
+        }
+        if cell in INSTRUCTION_CELLS and not passed:
+            inert.append(cell)
+    out["inert_cells"] = inert
+    return out
+
+
+# ── Instruction-family heterogeneity (descriptive; replaces nurse-comedian) ──
+
+
+def instruction_family_spread_block(pd: dict, *, n_resamples: int, seed: int) -> dict:
+    """Descriptive heterogeneity across the four instruction cells, both spaces.
+
+    Per-cell mean + cluster-bootstrap CI (same machinery as the headline
+    cells) plus the max-min spread of the four cell means, with a cluster
+    bootstrap over adapters for the spread's CI. NO predicate (plan v2
+    section 2 item 3); if dip magnitude orders by any feature that seeds the
+    mechanism follow-up, not a headline.
     """
     slugs = sorted(pd)
-    out: dict[str, dict] = {}
+    out: dict[str, Any] = {}
     for space, key in (("eosm", "d_eosm"), ("logp", "d_logp")):
-        vals = [pd[s]["nurse"][key] - pd[s]["comedian"][key] for s in slugs]
-        lo, hi = cluster_bootstrap_ci(vals, n_resamples=n_resamples, seed=seed)
-        out[space] = {
-            "per_adapter": dict(zip(slugs, vals, strict=True)),
-            "mean": _mean(vals),
-            "min": min(vals),
-            "max": max(vals),
-            "ci95": [lo, hi],
-            "n_neg": sum(v < 0 for v in vals),
-            "n": len(vals),
+        per_cell = {
+            c: cell_stats(pd, c, space, n_resamples=n_resamples, seed=seed)
+            for c in INSTRUCTION_CELLS
         }
-    eosm, logp = out["eosm"], out["logp"]
-    ci_excludes_zero = eosm["ci95"][0] > 0.0 or eosm["ci95"][1] < 0.0
-    mean_le_minus_1 = eosm["mean"] <= -1.0
-    logp_sign_concordant = logp["n_neg"] >= LOGP_CONCORDANCE_MIN_N_NEG
-    out["medical_component_predicate"] = {
-        "ci_excludes_zero": ci_excludes_zero,
-        "mean_le_minus_1_nat": mean_le_minus_1,
-        "logp_sign_concordant": logp_sign_concordant,
-        "satisfied": ci_excludes_zero and mean_le_minus_1 and logp_sign_concordant,
-        "note": "descriptive only; analyzer owns the verdict, capped at MODERATE "
-        "(French-person single-persona precedent, plan section 3).",
-    }
+        means = {c: per_cell[c]["mean"] for c in INSTRUCTION_CELLS}
+        # Cluster bootstrap on the spread: resample adapters, recompute the
+        # four cell means, take max - min per resample.
+        arrs = np.stack(
+            [np.asarray([pd[s][c][key] for s in slugs], dtype=float) for c in INSTRUCTION_CELLS]
+        )  # (4, n_adapters)
+        assert arrs.shape == (len(INSTRUCTION_CELLS), len(slugs)), arrs.shape
+        rng = np.random.default_rng(seed)
+        idx = rng.integers(0, len(slugs), size=(n_resamples, len(slugs)))
+        cell_means = arrs[:, idx].mean(axis=2)  # (4, n_resamples)
+        spreads = cell_means.max(axis=0) - cell_means.min(axis=0)
+        out[space] = {
+            "per_cell": per_cell,
+            "spread_mean": max(means.values()) - min(means.values()),
+            "spread_ci95": [
+                float(np.percentile(spreads, 2.5)),
+                float(np.percentile(spreads, 97.5)),
+            ],
+            "max_cell": max(means, key=means.__getitem__),
+            "min_cell": min(means, key=means.__getitem__),
+        }
+    out["note"] = "descriptive only (no predicate); orders the instruction-family heterogeneity."
     return out
 
 
@@ -622,12 +739,13 @@ def load_run_summaries() -> dict[str, dict]:
     return out
 
 
-def load_parent558_summary(slug: str) -> dict:
-    """#558's recorded per-adapter run summary (committed on main; audit refs)."""
+def load_parent_run_summary(slug: str) -> dict:
+    """The parent #562 run's recorded per-adapter run summary (committed in
+    git on the issue-562 branch; cross-run audit refs)."""
     arm, seed = slug.split("_seed")
-    path = PARENT_RUN_SUMMARY_DIR / arm / f"seed{seed}" / PANEL_PHASE / "run_summary.json"
+    path = PARENT_RUN_RESULTS_DIR / arm / f"seed{seed}" / PANEL_PHASE / "run_summary.json"
     if not path.exists():
-        raise FileNotFoundError(f"#{PARENT_ISSUE} run summary missing: {path}")
+        raise FileNotFoundError(f"#{PARENT_ISSUE} run-of-record summary missing: {path}")
     rs = json.loads(path.read_text())
     for cell in ("doctor", BASELINE_CELL):
         for k in ("delta_logp_mean", "delta_eos_margin_mean"):
@@ -671,8 +789,28 @@ def run_rollup(args: argparse.Namespace) -> int:
             T_DIP_FLOOR,
         )
 
-    # Nurse - comedian secondary discriminator (plan section 3; NEW).
-    nurse_minus_comedian = nurse_minus_comedian_block(
+    # Registered manipulation check (plan v2 section 2 item 4): completions
+    # must actually differ from the trigger50 counterparts; a failing
+    # instruction cell is labeled inert-prompt-unresolved and excluded from
+    # the account readout's clean set.
+    manipulation = manipulation_check_block(CONTRAST_CELLS)
+    inert_cells = tuple(manipulation["inert_cells"])
+    for cell in CONTRAST_CELLS:
+        cells[cell]["classification"]["manipulation_check_passed"] = manipulation["cells"][cell][
+            "passed"
+        ]
+    for cell in inert_cells:
+        log.warning(
+            "Manipulation check FAIL: cell %s differ-fraction %.3f < %.2f — labeled "
+            "inert-prompt-unresolved, excluded from the account readout.",
+            cell,
+            manipulation["cells"][cell]["differ_fraction"],
+            MANIPULATION_DIFFER_MIN,
+        )
+        labels[cell] = "inert-prompt-unresolved"
+
+    # Instruction-family heterogeneity (descriptive; plan v2 section 2 item 3).
+    instruction_family_spread = instruction_family_spread_block(
         pd, n_resamples=args.n_resamples, seed=args.bootstrap_seed
     )
 
@@ -705,30 +843,30 @@ def run_rollup(args: argparse.Namespace) -> int:
     order = assert_parent_entry_order(eval_qs)
     cal = same_subset_calibration(n_resamples=args.n_resamples, seed=args.bootstrap_seed)
 
-    # This run's doctor + trigger re-reads vs #558's recorded per-adapter
-    # run_summary values (plan section 4.2 rollup change 6; expected log-prob
-    # offsets <~0.3 nats, EOS-margin offsets up to ~2 nats per the measured
-    # session divergence).
+    # This run's doctor + trigger re-reads vs the parent #562 run's recorded
+    # per-adapter run_summary values (plan v2 section 3.2 rollup change 6;
+    # expected log-prob offsets <~0.3 nats, EOS-margin offsets up to ~2 nats
+    # per the measured session divergence).
     doctor_vs_parent: dict[str, dict] = {}
     trigger50_vs_parent: dict[str, dict] = {}
     for slug in adapter_slugs():
-        p558 = load_parent558_summary(slug)["cells"]
+        p562 = load_parent_run_summary(slug)["cells"]
         this_doc = summaries[slug]["cells"]["doctor"]
         this_trig = summaries[slug]["cells"][BASELINE_CELL]
         doctor_vs_parent[slug] = {
-            "offset_logp": this_doc["delta_logp_mean"] - p558["doctor"]["delta_logp_mean"],
+            "offset_logp": this_doc["delta_logp_mean"] - p562["doctor"]["delta_logp_mean"],
             "offset_eosm": this_doc["delta_eos_margin_mean"]
-            - p558["doctor"]["delta_eos_margin_mean"],
+            - p562["doctor"]["delta_eos_margin_mean"],
             "this_run": {k: this_doc[k] for k in ("delta_logp_mean", "delta_eos_margin_mean")},
-            "parent": {k: p558["doctor"][k] for k in ("delta_logp_mean", "delta_eos_margin_mean")},
+            "parent": {k: p562["doctor"][k] for k in ("delta_logp_mean", "delta_eos_margin_mean")},
         }
         trigger50_vs_parent[slug] = {
-            "offset_logp": this_trig["delta_logp_mean"] - p558[BASELINE_CELL]["delta_logp_mean"],
+            "offset_logp": this_trig["delta_logp_mean"] - p562[BASELINE_CELL]["delta_logp_mean"],
             "offset_eosm": this_trig["delta_eos_margin_mean"]
-            - p558[BASELINE_CELL]["delta_eos_margin_mean"],
+            - p562[BASELINE_CELL]["delta_eos_margin_mean"],
             "this_run": {k: this_trig[k] for k in ("delta_logp_mean", "delta_eos_margin_mean")},
             "parent": {
-                k: p558[BASELINE_CELL][k] for k in ("delta_logp_mean", "delta_eos_margin_mean")
+                k: p562[BASELINE_CELL][k] for k in ("delta_logp_mean", "delta_eos_margin_mean")
             },
         }
     audit = {
@@ -767,12 +905,14 @@ def run_rollup(args: argparse.Namespace) -> int:
             "account_readout": (
                 {
                     "signature_match": "calibration-failure",
+                    "inert_cells": list(inert_cells),
                     "note": "doctor re-read did not reproduce a dip; no account assignment.",
                 }
                 if doctor_calibration_failed
-                else account_readout(labels)
+                else account_readout(labels, inert_cells)
             ),
-            "nurse_minus_comedian": nurse_minus_comedian,
+            "manipulation_check": manipulation,
+            "instruction_family_spread": instruction_family_spread,
             "per_arm_eosm_means": per_arm,
         },
         "cell_summaries": cell_means,
@@ -788,7 +928,10 @@ def run_rollup(args: argparse.Namespace) -> int:
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Issue #562 rollup: panel paired deltas, classification, audit (CPU).",
+        description=(
+            "Issue #562 instruction-paraphrase-panel follow-up rollup: "
+            "paired deltas, classification, manipulation check, audit (CPU)."
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument(

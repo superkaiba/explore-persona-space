@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Issue #562 figures — context-panel dip plots (VM, CPU-only).
+"""Issue #562 follow-up figures — instruction-paraphrase-panel (VM, CPU-only).
 
-Adapted copy of the pinned #558 plot script (issue-558 branch @
-18959f7fca41b3e71d3e1cf128c7cbf50433aad2): cell labels/order swapped to the
-#562 panel (Doctor re-read / Bare instruction / Nurse / Comedian), reads
-``eval_results/issue_562/rollup.json`` (or ``calibration_audit.json`` via
-``--rollup``), writes to ``figures/issue_562/``, and adds ONE new exploratory
-figure: the nurse-vs-comedian per-adapter paired-difference dot plot (plan
-section 6).
+Same-issue follow-up of #562's completed run (amendment plan v2 section 3.2):
+cell labels/order swapped to the 5 contrast cells (Doctor re-read /
+Completeness paraphrase / Detail paraphrase / Process instruction /
+Formatting instruction), reads
+``eval_results/issue_562/instruction-paraphrase-panel/rollup.json`` (or
+``calibration_audit.json`` via ``--rollup``), writes to
+``figures/issue_562/instruction_paraphrase/``, and replaces the parent's
+nurse-comedian dot plot with an instruction-family per-cell dot plot.
 
   - HERO ``panel_dip_logprob``: paired Delta log P(marker) vs the within-run
     trigger re-read per probe cell — 12 adapter points + mean +- cluster
@@ -17,13 +18,15 @@ section 6).
   - Exploratory dump: per-arm colored panel (ratio-independence); raw
     absolute trained-vs-base log P per cell (raw alongside processed);
     Delta log P vs Delta z_marker scatter (space agreement); doctor re-read
-    vs #558 doctor scatter (instrument audit; production rollup only);
-    nurse - comedian per-adapter paired-difference dot plot (NEW).
+    vs the parent #562 run's doctor scatter (instrument audit; production
+    rollup only); instruction-family per-cell dot plot (replaces
+    nurse - comedian; descriptive heterogeneity, no predicate).
 
 Usage:
     uv run python scripts/plot_issue562_panel.py
     uv run python scripts/plot_issue562_panel.py \\
-        --rollup eval_results/issue_562/calibration_audit.json --stem-suffix _calibration
+        --rollup eval_results/issue_562/instruction-paraphrase-panel/calibration_audit.json \\
+        --stem-suffix _calibration
 """
 
 from __future__ import annotations
@@ -45,7 +48,7 @@ from _bootstrap import bootstrap  # noqa: E402
 
 bootstrap(log_name="plot_issue562_panel")
 
-from eval_issue562_panel import EVAL_RESULTS_DIR_562  # noqa: E402
+from eval_issue562_panel import EVAL_RESULTS_DIR_562, INSTRUCTION_CELLS  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
@@ -56,16 +59,21 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 
 log = logging.getLogger("plot_issue562_panel")
 
-FIG_DIR = Path(__file__).resolve().parent.parent / "figures" / "issue_562"
+# Artifact isolation (followup_label convention): figures land under the
+# dedicated subdir, never over the parent run's figures/issue_562/*.png.
+FIG_DIR = (
+    Path(__file__).resolve().parent.parent / "figures" / "issue_562" / "instruction_paraphrase"
+)
 
 # Plain-English cell labels (never slugs in figure text).
 CELL_LABELS = {
     "doctor": "Doctor re-read",
-    "instruction_only": "Bare instruction",
-    "nurse": "Nurse",
-    "comedian": "Comedian",
+    "instr_complete": "Completeness paraphrase",
+    "instr_detail": "Detail paraphrase",
+    "instr_process": "Process instruction",
+    "instr_format": "Formatting instruction",
 }
-CELL_ORDER = ("doctor", "instruction_only", "nurse", "comedian")
+CELL_ORDER = ("doctor", *INSTRUCTION_CELLS)
 ARM_LABELS = {
     "r50": "Half-positive baseline",
     "r25": "Quarter-positive",
@@ -205,7 +213,7 @@ def plot_raw_absolute_logp(cell_summaries: dict, *, stem: str) -> None:
 def plot_space_agreement(cell_summaries: dict, *, stem: str) -> None:
     """Delta log P vs Delta z_marker per (adapter, cell) — saturation signature."""
     fig, ax = plt.subplots()
-    colors = dict(zip(CELL_ORDER, paper_palette(4), strict=True))
+    colors = dict(zip(CELL_ORDER, paper_palette(len(CELL_ORDER)), strict=True))
     first_summary = next(iter(cell_summaries.values()))
     for cell in CELL_ORDER:
         if cell not in first_summary:
@@ -225,7 +233,7 @@ def plot_space_agreement(cell_summaries: dict, *, stem: str) -> None:
 
 
 def plot_doctor_audit(audit: dict, *, stem: str) -> None:
-    """Instrument audit: this run's doctor re-read vs #558's recorded doctor."""
+    """Instrument audit: this run's doctor re-read vs the parent #562 run's record."""
     per = audit["doctor_reread_vs_parent"]["per_adapter"]
     xs = [v["parent"]["delta_eos_margin_mean"] for v in per.values()]
     ys = [v["this_run"]["delta_eos_margin_mean"] for v in per.values()]
@@ -241,16 +249,19 @@ def plot_doctor_audit(audit: dict, *, stem: str) -> None:
     log.info("Figure -> %s/%s.png", FIG_DIR, stem)
 
 
-def plot_nurse_minus_comedian(block: dict, *, stem: str) -> None:
-    """NEW exploratory: per-adapter paired difference d(nurse) - d(comedian).
+def plot_instruction_family_spread(block: dict, *, stem: str) -> None:
+    """Exploratory (replaces nurse - comedian): instruction-family per-cell dots.
 
-    Both spaces side by side; the plan section 3 secondary discriminator
-    (medical-domain additive component) reads off the EOS-margin column.
+    Per-adapter paired Delta(EOS margin) vs the trigger re-read for each of
+    the four instruction cells, mean +- cluster-bootstrap 95% CI. Descriptive
+    heterogeneity read only (no predicate); the max-min spread is annotated
+    from the rollup's instruction_family_spread block.
     """
+    per_cell = block["eosm"]["per_cell"]
+    cells = [c for c in INSTRUCTION_CELLS if c in per_cell]
     fig, ax = plt.subplots()
-    space_ticks = (("eosm", "EOS margin"), ("logp", "log P(marker)"))
-    for i, (space, _label) in enumerate(space_ticks):
-        stats = block[space]
+    for i, cell in enumerate(cells):
+        stats = per_cell[cell]
         slugs = sorted(stats["per_adapter"])
         vals = [stats["per_adapter"][s] for s in slugs]
         jit = _jitter(len(vals))
@@ -276,10 +287,13 @@ def plot_nurse_minus_comedian(block: dict, *, stem: str) -> None:
             color=paper_palette_role("primary"),
         )
     ax.axhline(0.0, linestyle="--", linewidth=1.0, color=paper_palette_role("baseline"))
-    ax.set_xticks(range(len(space_ticks)))
-    ax.set_xticklabels([f"{label} (nats)" for _, label in space_ticks])
-    ax.set_ylabel("Paired difference, nurse - comedian (nats)")
-    ax.set_title("Medical-domain component: nurse vs comedian, per adapter")
+    ax.set_xticks(range(len(cells)))
+    ax.set_xticklabels([CELL_LABELS[c] for c in cells], fontsize=8)
+    ax.set_ylabel("Paired Δ(EOS margin) vs trigger re-read (nats)")
+    ax.set_title(
+        "Instruction-family heterogeneity: per-cell paired contrast "
+        f"(max-min spread {block['eosm']['spread_mean']:+.2f} nats)"
+    )
     savefig_paper(fig, stem, dir=FIG_DIR)
     plt.close(fig)
     log.info("Figure -> %s/%s.png", FIG_DIR, stem)
@@ -287,7 +301,7 @@ def plot_nurse_minus_comedian(block: dict, *, stem: str) -> None:
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Issue #562 context-panel figures (CPU).",
+        description="Issue #562 instruction-paraphrase-panel follow-up figures (CPU).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument(
@@ -320,7 +334,9 @@ def main() -> int:
         plot_raw_absolute_logp(rollup["cell_summaries"], stem=f"raw_absolute_logp{sfx}")
         plot_space_agreement(rollup["cell_summaries"], stem=f"space_agreement{sfx}")
         plot_doctor_audit(rollup["audit"], stem=f"doctor_audit_vs_parent{sfx}")
-        plot_nurse_minus_comedian(panel["nurse_minus_comedian"], stem=f"nurse_minus_comedian{sfx}")
+        plot_instruction_family_spread(
+            panel["instruction_family_spread"], stem=f"instruction_family_spread{sfx}"
+        )
     else:
         log.info("Calibration rollup: hero + companion only (no run data yet).")
     return 0

@@ -1,34 +1,34 @@
 #!/usr/bin/env python3
-"""Issue #562 context-panel eval — 5 cells x 4-float marker slot stats per adapter.
+"""Issue #562 follow-up `instruction-paraphrase-panel` — 6 cells x 4-float slot stats.
 
-Adapted copy of the pinned #558 eval rig (issue-558 branch @
-18959f7fca41b3e71d3e1cf128c7cbf50433aad2); plan tasks/.../562/plans/plan.md
-section 4.2 enumerates the changes exhaustively. Everything else is verbatim
+Same-issue follow-up of #562's completed context-panel run (amendment plan v2,
+tasks/.../562/plans/plan.md; the parent run's executed instrument stays
+recoverable on main @ ec1b8378e). Everything not diffed below is verbatim
 parent instrument: marker_preflight, gauge asserts (front + worker), ONE FRESH
 vLLM engine per adapter, vLLM-free slot-stats subprocess (4 floats x trained
 AND base via disable_adapter()), marker-stripping before the slot read,
 checkpoint-per-cell persists, summarize_cell three-space rollup,
 repro_metadata, [phase=...] log lines + end-of-run sentinel.
 
-Changes vs the pinned eval_issue558_panel.py:
-  - PANEL_CELLS: the 3 probe cells become instruction_only / nurse / comedian
-    (replacing software_engineer / french_person / police_officer); both
-    within-run anchor cells (trigger50 / doctor) are kept — THE experimental
-    variable (plan section 4.1).
-  - panel_persona_prompts(): parent's all_persona_prompts() extended with the
-    bare-instruction literal, the nurse literal, and PERSONAS["comedian"].
-  - Issue constants: 562 everywhere (output dir eval_results/issue_562/, HF
-    raw bucket issue562_context_panel/raw_completions, LoRA id prefix
-    issue562_, sentinel task_id 562).
-  - Anchor check (plan section 4.4 divergence 2): parent_doctor_reference()
-    reads #558's committed per-adapter run_summary.json (NOT a rollup), and
-    check_doctor_anchor() GATES on |anchor_offset_logp| > 1.0 ONLY under
-    --anchor-gate. The EOS-margin offset is ALWAYS recorded as an audit field
-    (WARN on |offset| > 1.0, never gates): #558 measured a cross-session
-    EOS-margin divergence of -1.649 nats vs a +0.205 log-prob offset on this
-    exact adapter/cell and had to drop its two-space hard gate mid-run.
-    Gating on the session-robust space restores a HARD adapter-application
-    gate without re-tripping the known false-FAIL.
+Changes vs the parent #562 run (plan v2 section 3.2 — the single science
+variable is the probe-cell composition):
+  - PANEL_CELLS: nurse + comedian OUT; FOUR non-persona instruction-style
+    prompts IN (completeness / detail / process / formatting; verbatim plan
+    section 3.1 strings). Both within-run anchor cells (trigger50 / doctor)
+    are kept — 6 cells total.
+  - Artifact isolation (followup_label convention; HARD requirement): results
+    land under eval_results/issue_562/instruction-paraphrase-panel/, HF raw
+    bucket issue562_context_panel/raw_completions_instruction_paraphrase/,
+    LoRA id prefix issue562_ipp_, sentinel slug prefix ipp- (task_id stays
+    562). The follow-up can NEVER overwrite the parent run's files.
+  - Anchor reference re-pointed (plan v2 section 2 item 2): from #558's
+    records to THIS issue's OWN committed parent-run records
+    (eval_results/issue_562/<arm>/seed<S>/phase2/run_summary.json; r50_seed42
+    doctor delta_logp_mean 7.1937). check_doctor_anchor() logic unchanged:
+    GATES on |anchor_offset_logp| > 1.0 ONLY under --anchor-gate; the
+    EOS-margin offset is ALWAYS recorded audit-only (the parent run measured
+    a +0.003 smoke offset and <=0.26 nat per-adapter log-prob drift vs <=0.75
+    EOS-margin on this exact instrument).
 
 Usage (pod, 1 GPU; smoke = the first production cell, full n):
     uv run python scripts/eval_issue562_panel.py --arm r50 --seed 42 --gpu 0 --anchor-gate
@@ -85,52 +85,75 @@ from _issue543_common import (  # noqa: E402
 log = logging.getLogger("eval_issue562_panel")
 
 ISSUE_562 = 562
-PARENT_ISSUE = 558
+# The "parent" for anchor/audit purposes is THIS issue's own completed run
+# (amendment plan v2 section 2 item 2; the prior chain reference #558 is one
+# instrument generation older and numerically near-identical, delta = 0.004).
+PARENT_ISSUE = 562
 LOGPROB_BATCH_SIZE = 8
 
-# Panel constants (plan sections 4.1 / 10).
-N_PANEL_PROMPTS = 50  # all 5 cells share eval_questions[0:50] (parent panel shape)
+# Panel constants (plan v2 sections 3.1 / 10).
+N_PANEL_PROMPTS = 50  # all 6 cells share eval_questions[0:50] (parent panel shape)
 PANEL_PHASE = "phase2"  # the 12 post-SFT adapters are the objects under study
-EVAL_RESULTS_DIR_562 = PROJECT_ROOT / "eval_results" / "issue_562"
-HUB_RAW_COMPLETIONS_BUCKET_562 = "issue562_context_panel/raw_completions"
-# Anchor reference: #558's committed per-adapter run summaries (on main @ 9a69fcc22).
-PARENT_RUN_SUMMARY_DIR = PROJECT_ROOT / "eval_results" / "issue_558"
+# Artifact isolation (followup_label convention; plan v2 section 2 item 1):
+# this run WRITES only under the followup subdir and can never overwrite the
+# parent run of record at eval_results/issue_562/<arm>/...
+EVAL_RESULTS_DIR_562 = PROJECT_ROOT / "eval_results" / "issue_562" / "instruction-paraphrase-panel"
+HUB_RAW_COMPLETIONS_BUCKET_562 = "issue562_context_panel/raw_completions_instruction_paraphrase"
+# Anchor reference READ SOURCE: the parent #562 run's committed per-adapter
+# run summaries (eval_results/issue_562/<arm>/seed<S>/phase2/run_summary.json
+# on main @ ec1b8378e) — a separate constant from the write target above.
+PARENT_RUN_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "issue_562"
 ANCHOR_TOL_NATS = 1.0  # marker-leakage-measurement.md adapter-application assert (~1 nat)
 
-# Exact prompt strings — the only new design content in this task (plan section 4.1).
+# The parent run's bare-instruction string (NOT a cell in this follow-up; kept
+# for reference — the completeness paraphrase below removes its "concisely"
+# brevity pressure and the detail paraphrase pressures the opposite length
+# direction, bracketing the length confound; plan v2 section 11).
 INSTRUCTION_ONLY_PROMPT = "Answer all questions accurately, clearly, and concisely."
-NURSE_PROMPT = (
-    "You are a registered nurse who gives practical advice about health and patient care."
-)
+
+# Exact prompt strings — the only new design content in this follow-up
+# (plan v2 section 3.1, verbatim from the rank-1 epm:follow-ups proposal).
+INSTR_COMPLETE_PROMPT = "Provide correct, complete, and well-organized answers to every question."
+INSTR_DETAIL_PROMPT = "Respond to all queries with detailed and precise information."
+INSTR_PROCESS_PROMPT = "Always double-check your reasoning before giving a final answer."
+INSTR_FORMAT_PROMPT = "Format your answers in clear, plain prose without bullet points."
 
 # Cell slug -> persona key. ALL cells are system-prompt + key-present
-# (trigger_user) on the SAME question slice (plan section 4.1).
+# (trigger_user) on the SAME question slice (plan v2 section 3.1).
 PANEL_CELLS: dict[str, str] = {
     "trigger50": "assistant",  # within-run no-dip baseline (paired denominator)
     "doctor": "medical_doctor",  # within-run dip reproduction + anchor gate
-    "instruction_only": "instruction_only",  # non-default context, NO persona
-    "nurse": "nurse",  # never-trained x medical (missing 2x2 cell)
-    "comedian": "comedian",  # never-trained x non-medical (de-singletons police)
+    "instr_complete": "instr_complete",  # completeness paraphrase (no brevity pressure)
+    "instr_detail": "instr_detail",  # detail paraphrase (pressures LONGER output)
+    "instr_process": "instr_process",  # process instruction (no surface change)
+    "instr_format": "instr_format",  # formatting instruction (surface, not content)
 }
+# The four non-persona instruction cells (the question of this follow-up);
+# single source for the rollup's contrast set and the plot's cell order.
+INSTRUCTION_CELLS: tuple[str, ...] = (
+    "instr_complete",
+    "instr_detail",
+    "instr_process",
+    "instr_format",
+)
 
 
 def panel_persona_prompts() -> dict[str, str]:
     """Parent persona map (assistant + medical_doctor + 2 unused parent
-    negatives) extended with the 3 new probe-cell prompts (plan section 4.2)."""
-    from explore_persona_space.personas import PERSONAS
-
+    negatives) extended with the 4 instruction-cell prompts (plan v2 3.2)."""
     prompts = all_persona_prompts()
-    prompts["instruction_only"] = INSTRUCTION_ONLY_PROMPT
-    prompts["nurse"] = NURSE_PROMPT
-    prompts["comedian"] = PERSONAS["comedian"]
+    prompts["instr_complete"] = INSTR_COMPLETE_PROMPT
+    prompts["instr_detail"] = INSTR_DETAIL_PROMPT
+    prompts["instr_process"] = INSTR_PROCESS_PROMPT
+    prompts["instr_format"] = INSTR_FORMAT_PROMPT
     return prompts
 
 
-# ── Cells (deterministic slice [0:50]; plan section 4.1) ────────────────────
+# ── Cells (deterministic slice [0:50]; plan v2 section 3.1) ─────────────────
 
 
 def build_cells_panel(eval_questions: list[str], *, smoke: bool) -> dict[str, list[dict]]:
-    """5 panel cells, all on eval_questions[0:n] with the trigger key present.
+    """6 panel cells, all on eval_questions[0:n] with the trigger key present.
 
     n = 50 (N_PANEL_PROMPTS); smoke mode uses 20 (N_SMOKE_PROMPTS, parity with
     the parent). Every cell shares the identical question slice so all paired
@@ -191,15 +214,18 @@ def assert_adapter_gauge_free(adapter_dir: Path) -> dict:
     return cfg
 
 
-# ── Doctor-cell anchor check vs #558's committed run summaries (plan 4.2/4.4) ──
+# ── Doctor-cell anchor check vs the parent #562 run's committed summaries ───
+# (plan v2 section 2 item 2 — same instrument, same questions, the most
+# recent committed record; r50_seed42 doctor delta_logp_mean 7.1937.)
 
 
 def parent_doctor_reference(arm: str, seed: int) -> dict:
-    """#558's recorded doctor-cell means for this adapter (run_summary.json in git)."""
-    path = PARENT_RUN_SUMMARY_DIR / arm / f"seed{seed}" / PANEL_PHASE / "run_summary.json"
+    """The parent #562 run's recorded doctor-cell means for this adapter
+    (per-adapter run_summary.json committed in git on the issue-562 branch)."""
+    path = PARENT_RUN_RESULTS_DIR / arm / f"seed{seed}" / PANEL_PHASE / "run_summary.json"
     if not path.exists():
         raise FileNotFoundError(
-            f"Parent (#{PARENT_ISSUE}) run summary missing: {path} "
+            f"Parent (#{PARENT_ISSUE} run-of-record) summary missing: {path} "
             "(committed in git; sync the repo)"
         )
     parent = json.loads(path.read_text())
@@ -216,17 +242,20 @@ def parent_doctor_reference(arm: str, seed: int) -> dict:
 
 
 def check_doctor_anchor(arm: str, seed: int, doctor_summary: dict, *, gate: bool) -> dict:
-    """Adapter-application anchor: this run's doctor cell vs #558's record.
+    """Adapter-application anchor: this run's doctor cell vs the parent #562 record.
 
     GATES on the Δlog P offset ONLY (tolerance +-1.0 nat): an unapplied
-    adapter reads ~7 nats off (incident #534) while #558 measured a +0.205
-    cross-session log-prob offset on this exact adapter/cell — so a true PASS
-    comfortably fits and a false FAIL is implausible. The EOS-margin offset is
-    ALWAYS recorded as an audit field (WARN on |offset| > 1.0, NEVER gates):
-    the parent measured a -1.649 EOS-margin session divergence and had to drop
-    its two-space gate mid-run (plan section 4.4 divergence 2). Hard-raise
+    adapter reads ~7 nats off (incident #534) while the parent #562 run
+    measured a +0.003 smoke offset and <=0.26 nat per-adapter cross-session
+    log-prob drift on this exact instrument — so a true PASS comfortably fits
+    and a false FAIL is implausible. The EOS-margin offset is ALWAYS recorded
+    as an audit field (WARN on |offset| > 1.0, NEVER gates): the chain
+    measured EOS-margin session divergences up to ~1.6 nats (#558) and the
+    parent run up to 0.75, so that space never gates (plan v2 section 2
+    item 2, inherited verbatim from v1 section 4.4 divergence 2). Hard-raise
     only when ``gate`` (the smoke/gate adapter r50_seed42); otherwise the
-    log-prob offset too is an audit field with a WARN on breach.
+    log-prob offset too is an audit field with a WARN on breach. Per-adapter
+    audit offsets are recorded for all 12 adapters either way.
     """
     ref = parent_doctor_reference(arm, seed)
     off_logp = doctor_summary["delta_logp_mean"] - ref["delta_logp_mean"]
@@ -551,10 +580,12 @@ def summarize_cell(records: list[dict], slot_stats: dict | None) -> dict:
 def write_sentinel_562(slug: str, *, kind: str, note: str, version: int = 1) -> Path:
     """poll_pipeline-conformant sentinel for THIS issue (the pinned common's
     write_sentinel bakes in ISSUE=543 in both filename and task_id — reusing
-    it would post markers onto task #543)."""
+    it would post markers onto task #543). Follow-up isolation: every sentinel
+    slug carries the ``ipp-`` prefix so the parent run's sentinels are never
+    shadowed (task_id stays 562; plan v2 section 3.2 item 4)."""
     d = sentinel_dir()
     d.mkdir(parents=True, exist_ok=True)
-    path = d / f"issue-{ISSUE_562}-{slug}-{int(time.time())}.json"
+    path = d / f"issue-{ISSUE_562}-ipp-{slug}-{int(time.time())}.json"
     payload = {
         "sentinel_schema_version": 1,
         "task_id": ISSUE_562,
@@ -575,13 +606,14 @@ def write_sentinel_562(slug: str, *, kind: str, note: str, version: int = 1) -> 
 
 
 def run_dry_run_cells(args: argparse.Namespace) -> int:
-    """Build all 5 cells at full n + verify the launch-critical contracts on CPU.
+    """Build all 6 cells at full n + verify the launch-critical contracts on CPU.
 
     Covers: marker preflight (real tokenizer), eval-question fetch + count
-    assert, cell construction (shapes / prompts / slugs digests), Hub
-    adapter_config.json fetch + gauge assert for the requested adapter, and
-    the parent-run-summary anchor-reference lookup. Exits 0 with [phase=done]
-    WITHOUT importing vLLM or touching CUDA.
+    assert, cell construction (shapes / prompts / slugs digests — incl. the 4
+    new instruction prompts), Hub adapter_config.json fetch + gauge assert for
+    the requested adapter, and the anchor-reference lookup against the parent
+    #562 run's committed run_summary.json. Exits 0 with [phase=done] WITHOUT
+    importing vLLM or touching CUDA.
     """
     phase_log("dry_run_cells")
     preflight = marker_preflight()
@@ -604,7 +636,7 @@ def run_dry_run_cells(args: argparse.Namespace) -> int:
             "system_head": items[0]["system"][:60],
             "user_head": items[0]["user"][:80],
         }
-    # All 5 cells share the identical question list (paired-contrast invariant).
+    # All 6 cells share the identical question list (paired-contrast invariant).
     base_users = [it["user"] for it in cells["trigger50"]]
     for cell_name, items in cells.items():
         if [it["user"] for it in items] != base_users:
@@ -625,7 +657,8 @@ def run_dry_run_cells(args: argparse.Namespace) -> int:
     assert_gauge_free_adapter_config(cfg, context=sub)
     digest["adapter_config"] = {"hub_subfolder": sub, "r": cfg.get("r"), "gauge_free": True}
 
-    # Anchor-reference lookup (verifies the #558 run-summary keys exist pre-launch).
+    # Anchor-reference lookup (verifies the parent #562 run-summary keys exist
+    # pre-launch, against the followup's re-pointed PARENT_RUN_RESULTS_DIR).
     ref = parent_doctor_reference(args.arm, args.seed)
     digest["anchor_reference"] = {
         "parent_issue": PARENT_ISSUE,
@@ -663,7 +696,7 @@ def run_one(args: argparse.Namespace) -> int:
     if args.smoke:
         out_dir = out_dir / "smoke"
     out_dir.mkdir(parents=True, exist_ok=True)
-    lora_name = f"issue562_{cell_slug(args.arm, args.seed, PANEL_PHASE)}"
+    lora_name = f"issue562_ipp_{cell_slug(args.arm, args.seed, PANEL_PHASE)}"
 
     records = generate_completions(
         adapter_dir=adapter_dir, lora_name=lora_name, cells=cells, out_dir=out_dir
@@ -756,7 +789,10 @@ def run_one(args: argparse.Namespace) -> int:
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Issue #562 context-panel eval: 5 cells x 4-float marker slot stats.",
+        description=(
+            "Issue #562 instruction-paraphrase-panel follow-up eval: "
+            "6 cells x 4-float marker slot stats."
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("--slot-stats-worker", action="store_true", help=argparse.SUPPRESS)
