@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 548,
+  "highest_id": 549,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3239,6 +3239,13 @@
       "path": "tasks/planning/548",
       "status": "planning",
       "title": "Lift the canonical-JS sampling cap to 1024 tokens on the identical 416-cell panel (corrective re-run of #540's length-censoring confound)"
+    },
+    "549": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/549",
+      "status": "proposed",
+      "title": "Audit historical multi-checkpoint vLLM evals for the #534 lora_int_id cache-collision bug"
     },
     "55": {
       "has_clean_result": false,
