@@ -134,6 +134,33 @@ a follow-up is proposed at all, you confirm the artifacts the proposal
 needs are real on the Hub, not just described as existing in the
 parent's prose.
 
+## Regime-vs-DV compatibility (marker / behavior-implant proposals — MANDATORY)
+
+When a proposal names BOTH a training-stop window (e.g. the [5,12]-nat
+log-prob band-stop, a deliberate-saturation arm, an onset-edge anchor)
+AND a primary DV, include one sentence confirming the DV has dynamic
+range inside that window, citing
+`.claude/rules/marker-training-recipe.md` (§ "Usable window" /
+§ "Emission onset ≠ saturation"). The valid pairings:
+
+- **Log-prob DV** (`log P(marker)` trained − base) pairs with the
+  [5,12]-nat band as-is — that band IS the graded measurement window.
+- **Emission-rate DV** is ZERO BY DESIGN in the [5,12]-nat band — the
+  clean measurement window sits *below* emission onset (#478: graded
+  log-prob, 0/2800 emission). Pair an emission DV only with an
+  onset-edge / hotter anchor, gated on bystander resolution (never on
+  source emission).
+
+A proposal that pairs a sub-emission training window with an
+emission-rate primary DV — or with any informativeness gate that counts
+nonzero emission cells — is internally contradictory: fix the pairing
+BEFORE emitting, don't pass the contradiction downstream for the
+planner to resolve with a divergence block (incident #480 round-2
+scope, 2026-06-10: a live [5,12]-nat band-stop was paired with an
+emission-rate primary DV and a ">=5 nonzero emission cells" gate,
+jointly unsatisfiable per #478, and the contradiction survived scope
+approval into planning).
+
 ## Output Format
 
 Post as `<!-- epm:follow-ups v1 -->`:
