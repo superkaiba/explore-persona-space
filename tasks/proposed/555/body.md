@@ -12,6 +12,9 @@ goal: Bound how often geometry-shaped partial-correlation readings arise with no
   snapshot, to test whether the pre-implant nearest-negative reading (+0.110 at step
   5) is chance-level noise or a systematic warmup artifact that confounds the stop-point
   bubble reversal.
+relates_to:
+- leak-predictor
+- leak-contrastive-negatives
 ---
 ## Goal
 
