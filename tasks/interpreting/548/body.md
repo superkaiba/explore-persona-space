@@ -1,6 +1,7 @@
 ---
-title: 'Lift the canonical-JS sampling cap to 1024 tokens on the identical 416-cell
-  panel (corrective re-run of #540''s length-censoring confound)'
+title: Once replies end naturally, full-reply behavioral divergence predicts marker
+  leakage beyond reply length — the null at a 256-token sampling cap was an artifact
+  of the censored length control (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T06:29:47Z'

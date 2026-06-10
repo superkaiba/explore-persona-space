@@ -3238,7 +3238,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/548",
       "status": "interpreting",
-      "title": "Lift the canonical-JS sampling cap to 1024 tokens on the identical 416-cell panel (corrective re-run of #540's length-censoring confound)"
+      "title": "Once replies end naturally, full-reply behavioral divergence predicts marker leakage beyond reply length \u2014 the null at a 256-token sampling cap was an artifact of the censored length control (MODERATE confidence)"
     },
     "549": {
       "has_clean_result": false,
