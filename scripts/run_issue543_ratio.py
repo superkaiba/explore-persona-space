@@ -920,7 +920,20 @@ def run_phase2(args: argparse.Namespace) -> dict:
         hf_path_in_repo=paths["adapter_hf_subfolder"],
     )
     os.environ.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
-    os.environ.setdefault("WANDB_PROJECT", paths["wandb_project"])
+    if variant is None:
+        os.environ.setdefault("WANDB_PROJECT", paths["wandb_project"])
+    else:
+        # Variant (#557) runs MUST land in the #557 WandB project: under
+        # setdefault, a stale inherited WANDB_PROJECT (e.g. a #543 launcher
+        # shell) would silently misroute the run (round-1 review minor).
+        inherited = os.environ.get("WANDB_PROJECT")
+        if inherited not in (None, paths["wandb_project"]):
+            log.warning(
+                "Overriding inherited WANDB_PROJECT=%r with %r for variant run.",
+                inherited,
+                paths["wandb_project"],
+            )
+        os.environ["WANDB_PROJECT"] = paths["wandb_project"]
     t0 = time.time()
     adapter_path, train_loss = train_lora(
         base_model_path=BASE_MODEL,

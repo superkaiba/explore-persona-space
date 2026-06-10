@@ -14,6 +14,16 @@ cliff steps vs the (10-15)x(1e-4/lr) predictions, and the §7 pre-registered
 criteria READOUTS (computed, NOT auto-verdicted — the analyzer owns
 interpretation).
 
+FAIL-LOUD CONTRACT (round-2 blocker fix): every plan §6.5 required input —
+the per-(variant x seed) ``run_summary.json`` + ``phase2_result.json`` +
+trigger trajectory, the parent anchor/pre summaries + anchor trajectory, and
+``absorption_probe.json`` (including its per-cell keys) — is preflighted; any
+absence exits non-zero naming every missing path BEFORE anything is written.
+``--allow-partial`` (fixtures/smoke ONLY, never the production invocation)
+downgrades the preflight to warnings and marks the output ``"partial": true``
+with the full ``missing_required`` list. ``judge_scores.json`` stays optional
+(judge scoring may legitimately run after a first rollup).
+
 CPU-only; safe to re-run any time (off-pod, VM-side).
 
 Usage:
@@ -65,9 +75,46 @@ def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
 
 
 def _load_json(path: Path) -> dict | None:
+    """Load a JSON file; None when absent (reachable ONLY under --allow-partial).
+
+    Production invocations preflight every required input via
+    :func:`_required_artifacts` before this loader runs, so a None here can
+    never silently shrink a §7 criteria denominator outside partial mode.
+    """
     if not path.exists():
         return None
     return json.loads(path.read_text())
+
+
+def _required_artifacts(
+    d557: Path, d543: Path, variants: list[str], seeds: list[int]
+) -> list[Path]:
+    """Every file-level input the plan §6.5 deliverables contract REQUIRES.
+
+    Per seed: the parent's committed anchor (phase2) + pre-SFT (phase1)
+    summaries and the anchor trigger trajectory. Per (variant x seed): the new
+    cell's run_summary.json, phase2_result.json train record, and trigger
+    trajectory. Plus the absorption probe aggregate (a required conjunct of
+    BOTH the §7 survival and kill criteria).
+    """
+    req: list[Path] = []
+    for s in seeds:
+        parent_cell = d543 / ARM / f"seed{s}"
+        req += [
+            parent_cell / "phase2" / "run_summary.json",
+            parent_cell / "phase1" / "run_summary.json",
+            parent_cell / "phase2_trajectory_trigger.jsonl",
+        ]
+    for v in variants:
+        for s in seeds:
+            cell_dir = d557 / ARM / v / f"seed{s}"
+            req += [
+                cell_dir / "phase2" / "run_summary.json",
+                cell_dir / "phase2_result.json",
+                cell_dir / "phase2_trajectory_trigger.jsonl",
+            ]
+    req.append(d557 / "absorption" / "absorption_probe.json")
+    return req
 
 
 def cliff_step(trajectory_path: Path) -> int | None:
@@ -168,7 +215,96 @@ def _criteria_readouts(
     return crit
 
 
+def _preflight(
+    d557: Path, d543: Path, variants: list[str], seeds: list[int], allow_partial: bool
+) -> tuple[bool, list[str], dict | None]:
+    """Required-artifact preflight (round-2 blocker fix: fail loud).
+
+    Checks every :func:`_required_artifacts` path PLUS the per-(variant x seed)
+    cell keys inside ``absorption_probe.json`` (the absorption guard is a
+    required conjunct of both §7 verdicts, so a present-but-incomplete probe
+    file must not silently shrink the seed denominator either).
+
+    Returns ``(ok, problems, absorption)``: ``ok=False`` means missing inputs
+    in production mode — the caller must exit non-zero. Every missing input is
+    logged (error in production mode, warning under ``allow_partial``).
+    """
+    required = _required_artifacts(d557, d543, variants, seeds)
+    missing = [str(p) for p in required if not p.exists()]
+    absorption = _load_json(d557 / "absorption" / "absorption_probe.json")
+    missing_cells = (
+        [
+            f"{v}_seed{s}"
+            for v in variants
+            for s in seeds
+            if f"{v}_seed{s}" not in (absorption.get("cells") or {})
+        ]
+        if absorption is not None
+        else []
+    )
+    problems = missing + [
+        f"absorption_probe.json missing required cell key '{k}'" for k in missing_cells
+    ]
+    if not problems:
+        return True, [], absorption
+    lvl = log.warning if allow_partial else log.error
+    for item in problems:
+        lvl("REQUIRED rollup input missing: %s", item)
+    if not allow_partial:
+        log.error(
+            "%d required inputs missing — refusing to write a partial rollup.json "
+            "(CLAUDE.md fail-fast; plan §6.5 deliverables). --allow-partial is for "
+            "fixtures/smoke ONLY, never the production invocation.",
+            len(problems),
+        )
+        return False, problems, absorption
+    log.warning(
+        "PARTIAL MODE (--allow-partial): continuing with %d missing required inputs; "
+        'rollup.json will carry "partial": true + the missing_required list.',
+        len(problems),
+    )
+    return True, problems, absorption
+
+
+def _add_sweep_cells(
+    rollup: dict,
+    d557: Path,
+    pre_cells: dict[int, dict | None],
+    variants: list[str],
+    seeds: list[int],
+) -> dict[str, float | None]:
+    """Add the per-(variant x seed) lr-sweep cell blocks; return lr per variant.
+
+    A None lr (partial mode, missing phase2_result) never pins the arm's lr —
+    a later valid seed supplies it (round-1 review minor).
+    """
+    lr_of_variant: dict[str, float | None] = {}
+    for v in variants:
+        for s in seeds:
+            cell_dir = d557 / ARM / v / f"seed{s}"
+            summary = _load_json(cell_dir / "phase2" / "run_summary.json")
+            p2 = _load_json(cell_dir / "phase2_result.json")
+            lr = p2["config"]["lr"] if p2 else None
+            if lr is not None:
+                lr_of_variant.setdefault(v, lr)
+            scale = (ANCHOR_LR / lr) if lr else None
+            rollup["cells"][f"{v}_seed{s}"] = {
+                "variant": v,
+                "seed": s,
+                "lr": lr,
+                "train_loss": p2.get("train_loss") if p2 else None,
+                "phase2": _cell_block(summary),
+                "pre_sft": _cell_block(pre_cells[s]),  # shared Phase-1 starting state
+                "cliff_step": cliff_step(cell_dir / "phase2_trajectory_trigger.jsonl"),
+                "cliff_step_predicted": (
+                    [round(b * scale, 1) for b in CLIFF_PREDICTION_BASE_STEPS] if scale else None
+                ),
+            }
+    return lr_of_variant
+
+
 def main() -> int:
+    """Aggregate the lr-sweep cells into rollup.json (fail-loud on missing inputs)."""
     args = parse_args()
     eval_root = Path(args.eval_root)
     d557 = eval_root / "issue_557"
@@ -176,7 +312,18 @@ def main() -> int:
     variants = [v for v in args.variants.split(",") if v]
     seeds = [int(s) for s in args.seeds.split(",") if s]
 
-    rollup: dict = {**repro_metadata(), "arm": ARM, "cells": {}, "arms": {}}
+    ok, problems, absorption = _preflight(d557, d543, variants, seeds, args.allow_partial)
+    if not ok:
+        return 1
+
+    rollup: dict = {
+        **repro_metadata(),
+        "arm": ARM,
+        "partial": bool(problems),
+        "missing_required": problems,
+        "cells": {},
+        "arms": {},
+    }
 
     # ── Parent anchor (lr=1e-4) + pre-SFT reads (committed; NOT re-run) ─────
     anchor_cells: dict[int, dict | None] = {}
@@ -197,27 +344,7 @@ def main() -> int:
         }
 
     # ── New lr-sweep cells ───────────────────────────────────────────────────
-    lr_of_variant: dict[str, float | None] = {}
-    for v in variants:
-        for s in seeds:
-            cell_dir = d557 / ARM / v / f"seed{s}"
-            summary = _load_json(cell_dir / "phase2" / "run_summary.json")
-            p2 = _load_json(cell_dir / "phase2_result.json")
-            lr = p2["config"]["lr"] if p2 else None
-            lr_of_variant.setdefault(v, lr)
-            scale = (ANCHOR_LR / lr) if lr else None
-            rollup["cells"][f"{v}_seed{s}"] = {
-                "variant": v,
-                "seed": s,
-                "lr": lr,
-                "train_loss": p2.get("train_loss") if p2 else None,
-                "phase2": _cell_block(summary),
-                "pre_sft": _cell_block(pre_cells[s]),  # shared Phase-1 starting state
-                "cliff_step": cliff_step(cell_dir / "phase2_trajectory_trigger.jsonl"),
-                "cliff_step_predicted": (
-                    [round(b * scale, 1) for b in CLIFF_PREDICTION_BASE_STEPS] if scale else None
-                ),
-            }
+    lr_of_variant = _add_sweep_cells(rollup, d557, pre_cells, variants, seeds)
 
     # ── Per-arm pooled emission + key-conditioning (anchor arm included) ────
     def _pool(arm_key: str, summaries: dict[int, dict | None]) -> dict:
@@ -278,10 +405,10 @@ def main() -> int:
     for v in variants:
         rollup["arms"][v] = {"lr": lr_of_variant.get(v), **_pool(v, sweep_summaries[v])}
 
-    # ── Absorption + judge merges (optional inputs; warn when absent) ────────
-    absorption = _load_json(d557 / "absorption" / "absorption_probe.json")
+    # ── Absorption (REQUIRED — preflighted above) + judge (optional) merges ──
     if absorption is None:
-        log.warning("absorption_probe.json absent — absorption fields omitted.")
+        # Reachable only under --allow-partial; the preflight already warned.
+        log.warning("absorption_probe.json absent — absorption fields omitted (partial mode).")
     else:
         rollup["absorption"] = {
             "gate": absorption.get("gate"),
@@ -302,6 +429,7 @@ def main() -> int:
 
 
 def parse_args() -> argparse.Namespace:
+    """CLI: eval root, variant/seed grid, and the fixtures-only --allow-partial."""
     p = argparse.ArgumentParser(
         description="Issue #557 lr-sweep rollup (CPU-only, VM-side).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -309,6 +437,15 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--eval-root", type=str, default=str(PROJECT_ROOT / "eval_results"))
     p.add_argument("--variants", type=str, default=",".join(DEFAULT_VARIANTS))
     p.add_argument("--seeds", type=str, default=",".join(str(s) for s in DEFAULT_SEEDS))
+    p.add_argument(
+        "--allow-partial",
+        action="store_true",
+        help=(
+            "Fixtures/smoke ONLY: degrade missing required inputs to warnings and mark "
+            'the output "partial": true. The production invocation must NEVER pass this — '
+            "without it, any missing plan §6.5 required artifact exits non-zero."
+        ),
+    )
     return p.parse_args()
 
 

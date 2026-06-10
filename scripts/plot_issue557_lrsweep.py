@@ -320,12 +320,18 @@ def plot_absorption(rollup: dict, out_dir: Path) -> None:
 
 
 def plot_judge_scores(rollup: dict, out_dir: Path) -> None:
+    """Judge medical-helpfulness means vs lr (descriptive guard; plan §6).
+
+    Post/anchor sets plot at their lr; base and pre-SFT (Phase-1) sets have no
+    lr position and are drawn as horizontal reference levels.
+    """
     scores = rollup.get("judge_scores_per_set_mean")
     if not scores:
         log.warning("No judge scores in rollup — skipping judge_scores_vs_lr figure.")
         return
     lr_of = {k: v["lr"] for k, v in rollup["arms"].items()}
     fig, ax = plt.subplots(figsize=(6.5, 4.5))
+    pre_labelled = False
     for set_name, mean in scores.items():
         if mean is None:
             continue
@@ -333,13 +339,30 @@ def plot_judge_scores(rollup: dict, out_dir: Path) -> None:
             ax.axhline(mean, color=paper_palette_role("neutral"), lw=1.0, ls="--")
             ax.text(1.2e-4, mean, "base model", fontsize=8, va="bottom")
             continue
+        if set_name.startswith("pre_seed"):
+            # Phase-1 (unerased) starting point: no lr position on this axis,
+            # so draw a reference level like the base model (round-1 review
+            # minor: this branch previously dead-assigned a color and skipped).
+            ax.axhline(mean, color=paper_palette_role("control"), lw=0.8, ls=":", alpha=0.8)
+            if not pre_labelled:
+                ax.text(
+                    1.2e-4,
+                    mean,
+                    "pre-SFT (Phase-1)",
+                    fontsize=8,
+                    va="top",
+                    color=paper_palette_role("control"),
+                )
+                pre_labelled = True
+            continue
         if set_name.startswith("post_"):
             variant = set_name.removeprefix("post_").rsplit("_seed", 1)[0]
             lr, color = lr_of.get(variant), paper_palette_role("accent")
         elif set_name.startswith("anchor_"):
             lr, color = 1.0e-4, paper_palette_role("baseline")
-        else:  # pre_seed<S> — the Phase-1 (unerased) starting point
-            lr, color = None, paper_palette_role("control")
+        else:
+            log.warning("Judge set %r has no lr mapping — skipped.", set_name)
+            continue
         if lr is None:
             continue
         ax.plot([lr], [mean], "o", color=color, alpha=0.7)
