@@ -242,3 +242,4 @@
 {"ts": "2026-06-10T05:11:18Z", "kind": "epm:clean-result-critique", "version": 1, "by": "unknown", "note": "{\"verdict\": \"PASS\", \"round\": 2, \"reviewer\": \"claude\", \"all_4_reconciler_blockers_verified_fixed\": true, \"mechanical\": \"verify_task_body PASS; audit PASS; figures verified at b54bce8c8; raw samples byte-verified vs HF\", \"regressions\": \"none\"}"}
 {"ts": "2026-06-10T05:11:20Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "reviewing", "to": "awaiting_promotion", "note": "clean-result-critic round 2 PASS (final gate); awaiting user promotion via task.py promote 488 useful|not-useful"}
 {"ts": "2026-06-10T06:30:45Z", "kind": "epm:promoted", "version": 1, "by": "user", "classification": "useful"}
+{"ts": "2026-06-10T06:30:48Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "awaiting_promotion", "to": "completed", "note": "promoted as useful"}
