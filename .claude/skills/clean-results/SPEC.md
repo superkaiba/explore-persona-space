@@ -486,7 +486,7 @@ re-drafted under the new spec; this is acceptable (drafts always rebuild
 cleanly from cached results + figures).
 
 **Target exemplar** (the END state new bodies should aim for):
-`tasks/awaiting_promotion/432/body.md` — the canonical nested-design
+`tasks/completed/432/body.md` — the canonical nested-design
 exemplar, carrying the `<!-- clean-result-v2 -->` sentinel, with
 `## TL;DR` opening `### Motivation` → `### What I ran` →
 `### Findings` (parent) → `#### <finding>` per result, and the
@@ -494,6 +494,21 @@ confidence in the H1 title tag only (no `Confidence:` sentence).
 `## Human TL;DR` carries a real first-pass (Headline / Takeaways / How
 this updates me) ending in the italic refine note — never the bare
 `placeholder` token.
+
+**Exemplar scope caveat — #432 is canonical for the SECTION-LEVEL
+shape only, NOT the per-figure micro-shape.** Inside its
+`#### <finding>` H4s the #432 body carries long (≥4-sentence)
+figure-LAST setup narrative and NO post-caption read paragraphs at
+all — it does not exhibit the setup paragraph (1-3 sentences) →
+figure → blockquote caption → read paragraph (1-3 sentences) beat
+required by the per-result skeleton above and enforced by
+`clean-result-critic` Lens 12 check 2 / Lens 2. The 1-3-sentence
+setup + read rule binds regardless: never cite the #432 body as
+precedent for long read paragraphs or for omitting the read
+paragraph below a figure (a critic did exactly that on task #547
+round 1, 2026-06-10, and was overruled by the reconciler). For the
+canonical per-figure beat, follow the skeleton in "Layout inside a
+`#### <finding>` H4" above / `exemplars/nested-432.md` § Skeleton.
 
 ## What this directory still owns
 
