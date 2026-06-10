@@ -3279,7 +3279,7 @@
       "title": "Benign plain-SFT control arm: does the EM arm's single shared direction reflect misalignment content or the plain-SFT rig?"
     },
     "553": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/553",
       "status": "interpreting",
