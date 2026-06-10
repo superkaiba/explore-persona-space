@@ -195,6 +195,131 @@ def test_pod_safety_keep_running_does_not_suppress_alert():
     ) == ("alert", 0)
 
 
+@pytest.mark.parametrize("missed", [0, 1, 5])
+def test_pod_safety_followup_active_skips_stop(missed):
+    # The #477 regression: a promoted task with a fresh `epm:run-launched`
+    # (newer than the latest done-transition) is a live inline follow-up.
+    # The auto-stop is SKIPPED with the miss counter reset, so when the
+    # follow-up finishes (predicate flips False) the auto-stop re-arms with a
+    # fresh >=threshold-checks accumulation. Same semantics as keep-running.
+    assert decide_pod_safety(
+        status_class="auto-stop-done",
+        missed=missed,
+        stale=False,
+        alerted=False,
+        threshold=2,
+        followup_active=True,
+    ) == ("followup-skip", 0)
+
+
+def test_pod_safety_keep_running_beats_followup_active():
+    # Precedence: an explicit user-set keep-running tag wins over the
+    # inferred-from-events follow-up predicate. The user signal is stronger
+    # and predictable from the dashboard; the inferred one is best-effort.
+    assert decide_pod_safety(
+        status_class="auto-stop-done",
+        missed=5,
+        stale=False,
+        alerted=False,
+        threshold=2,
+        keep_running=True,
+        followup_active=True,
+    ) == ("keep-running-skip", 0)
+
+
+def test_task_followup_active_predicate():
+    # _task_followup_active compares the latest `epm:run-launched` ts vs the
+    # latest of `epm:promoted` / `epm:status-changed`. Truthy iff there is a
+    # run-launched newer than every done-transition.
+    import autonomous_session_watch as asw
+
+    # No run-launched at all -> False.
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:status-changed", "ts": "2026-06-10T00:00:00Z", "note": ""},
+                {"kind": "epm:promoted", "ts": "2026-06-10T00:00:01Z", "note": ""},
+            ],
+        )
+        is False
+    )
+    # No done-transition (defensive case — caller has already verified DONE
+    # status, so this is unreachable in practice) -> False conservatively.
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[{"kind": "epm:run-launched", "ts": "2026-06-10T03:00:00Z", "note": ""}],
+        )
+        is False
+    )
+    # run-launched OLDER than done-transition -> False (the run-launched
+    # belongs to the experiment that produced the now-completed task).
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:run-launched", "ts": "2026-06-09T20:00:00Z", "note": ""},
+                {"kind": "epm:promoted", "ts": "2026-06-10T00:00:00Z", "note": ""},
+            ],
+        )
+        is False
+    )
+    # run-launched NEWER than done-transition -> True (a legitimate inline
+    # follow-up).
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:promoted", "ts": "2026-06-10T00:00:00Z", "note": ""},
+                {"kind": "epm:run-launched", "ts": "2026-06-10T03:00:00Z", "note": ""},
+            ],
+        )
+        is True
+    )
+    # Compares against the LATEST done-transition (not the earliest).
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:promoted", "ts": "2026-06-10T00:00:00Z", "note": ""},
+                {"kind": "epm:run-launched", "ts": "2026-06-10T03:00:00Z", "note": ""},
+                # A SECOND done-transition (e.g. follow-up finished) after the
+                # run-launched -> predicate flips False (follow-up is done).
+                {"kind": "epm:status-changed", "ts": "2026-06-10T05:00:00Z", "note": ""},
+            ],
+        )
+        is False
+    )
+
+
+def test_pod_safety_followup_active_only_on_auto_stop_arm():
+    # The followup_active predicate is consulted ONLY when status_class is
+    # auto-stop-done. A pod-active-stale task still alerts (alerts never stop
+    # anything; nothing to exempt). A pod-active-fresh task keeps as usual.
+    assert decide_pod_safety(
+        status_class="pod-active-stale",
+        missed=0,
+        stale=True,
+        alerted=False,
+        followup_active=True,
+    ) == ("alert", 0)
+    assert decide_pod_safety(
+        status_class="pod-active-fresh",
+        missed=0,
+        stale=False,
+        alerted=False,
+        followup_active=True,
+    ) == ("keep", 0)
+    assert decide_pod_safety(
+        status_class="other",
+        missed=0,
+        stale=False,
+        alerted=False,
+        followup_active=True,
+    ) == ("keep", 0)
+
+
 def test_pod_safety_stale_pod_active_alerts_not_stops():
     # The mid-run-death case: a pod-active task gone stale gets an ALERT, never a
     # stop. A false alert is a cheap nudge; a false stop kills a healthy run.
@@ -566,6 +691,93 @@ def test_keep_running_tag_removal_re_arms_auto_stop(isolated_registry, monkeypat
     assert stops == [530]
 
 
+def test_inline_followup_run_launched_skips_stop(isolated_registry, monkeypatch):
+    # The #477 regression end-to-end: a completed/promoted task whose
+    # events.jsonl shows an `epm:run-launched` NEWER than the latest
+    # done-transition (`epm:status-changed` to a DONE status, or
+    # `epm:promoted`) is a live user-approved inline follow-up. The
+    # auto-stop is SKIPPED with exactly ONE follow-up exemption marker per
+    # incarnation; the keep-running tag is NOT required.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    stops: list[int] = []
+    posts: list[tuple[int, str]] = []
+    # Events: status-changed-to-completed at t=0, then a follow-up
+    # run-launched 1h later. The follow-up predicate compares the latest
+    # run-launched ts vs the latest done-transition ts.
+    events = [
+        {"kind": "epm:status-changed", "ts": "2026-06-10T00:00:00Z", "note": "-> completed"},
+        {"kind": "epm:promoted", "ts": "2026-06-10T00:00:01Z", "note": "promoted as useful"},
+        {"kind": "epm:run-launched", "ts": "2026-06-10T03:12:08Z", "note": "pod=pod-477"},
+    ]
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(477, "p477", "pod-477")])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: events)
+    monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+
+    # threshold=1 would stop an unprotected pod on the FIRST tick; three
+    # ticks with an active follow-up -> zero stops, exactly one followup-skip
+    # marker (dedup via `followup_noted`).
+    for _ in range(3):
+        asw.pod_safety_pass(dry_run=False, threshold=1, now=now)
+
+    assert stops == []
+    assert posts == [(477, "followup-skip")]
+    state = json.loads((isolated_registry / "pod-safety-477.json").read_text())
+    assert state["followup_noted"] is True
+    assert state["missed"] == 0
+
+
+def test_inline_followup_after_completion_re_arms_auto_stop(isolated_registry, monkeypatch):
+    # When the follow-up finishes (the next `epm:status-changed` /
+    # `epm:promoted` lands AFTER the latest `epm:run-launched`), the
+    # follow-up predicate flips False and the auto-stop re-arms with a fresh
+    # >=2-checks accumulation — mirrors the keep-running tag-removal path.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    stops: list[int] = []
+    # Phase 1: follow-up launched after promotion.
+    active_events = [
+        {"kind": "epm:promoted", "ts": "2026-06-10T00:00:00Z", "note": "promoted as useful"},
+        {"kind": "epm:run-launched", "ts": "2026-06-10T03:00:00Z", "note": "pod=pod-477"},
+    ]
+    # Phase 2: follow-up done — next done-transition lands AFTER the
+    # run-launched, so the predicate flips False.
+    finished_events = [
+        *active_events,
+        {"kind": "epm:status-changed", "ts": "2026-06-10T05:00:00Z", "note": "followup done"},
+    ]
+    state = {"events": active_events}
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(477, "p477", "pod-477")])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: state["events"])
+    monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
+    monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: None)
+
+    # Two ticks while the follow-up is live: no stop, no miss accumulation.
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    assert stops == []
+
+    # Follow-up finished: tick 1 only increments (missed 0->1), tick 2 stops.
+    state["events"] = finished_events
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    assert stops == []
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+    assert stops == [477]
+
+
 @pytest.mark.parametrize("status", ["blocked", "interpreting", "reviewing"])
 def test_no_auto_stop_for_other_class_statuses(isolated_registry, monkeypatch, status):
     # blocked (may be under investigation), interpreting / reviewing (those
@@ -896,6 +1108,7 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
         "alerted": False,
         "last_progress_ts": 42.0,
         "keep_running_noted": False,
+        "followup_noted": False,
         "first_seen": 1234.0,
     }
 

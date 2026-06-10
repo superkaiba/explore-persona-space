@@ -81,6 +81,20 @@ Coverage notes (deliberate gaps you should know about)
   <N> keep-running``) — removing the tag re-arms the auto-stop arm on the
   next watcher run, with a fresh >=2-checks accumulation. The alert and
   stalled-detector arms ignore the tag (they never stop pods anyway).
+* The auto-stop arm ALSO inspects events.jsonl for a live inline follow-up:
+  if a task's latest ``epm:run-launched`` marker is NEWER than its latest
+  ``epm:promoted`` / ``epm:status-changed`` (i.e. a user-approved inline
+  follow-up — the CLAUDE.md "Routing experiment intent → Follow-up" path —
+  has provisioned a fresh pod on a promoted/completed/awaiting_promotion/
+  archived parent), the stop is SKIPPED with the same once-per-incarnation
+  marker semantics as the keep-running exemption (deduped via the
+  ``followup_noted`` flag). Precedence: ``keep_running`` (explicit user
+  tag) beats ``followup_active`` (inferred from events). The skip re-arms
+  naturally on the next tick when the follow-up posts its next
+  ``epm:status-changed`` / ``epm:promoted`` event newer than the
+  ``epm:run-launched``. The #477 incident, 2026-06-10, motivates this: an
+  inline follow-up on a promoted task ran 3 cycles of auto-stop → manual
+  re-provision in <1h before the user added the ``keep-running`` tag.
 
 Why STOP is keyed on task status, not session liveness
 ------------------------------------------------------
@@ -261,6 +275,19 @@ _AUTOSTOP_NOTE_SENTINEL = "[autonomous_session_watch:pod-auto-stop]"
 # visible on the dashboard without 20-minute marker spam.
 _KEEP_RUNNING_NOTE_SENTINEL = "[autonomous_session_watch:pod-keep-running-skip]"
 
+# Substring stamped into the one-time "inline-follow-up exemption" marker
+# posted when the auto-stop arm would have fired but the task's events.jsonl
+# shows a `epm:run-launched` marker NEWER than its transition into the current
+# DONE status (i.e. a legitimate user-approved inline follow-up provisioned a
+# fresh pod on a promoted/completed/awaiting_promotion/archived parent — see
+# the CLAUDE.md "Routing experiment intent → Follow-up" bullet). Posted at
+# most once per pod incarnation (deduped via the `followup_noted` flag in the
+# pod-safety state file). Same dashboard-visible / no-spam semantics as the
+# keep-running-skip marker. Incident #477 (2026-06-10): a promoted task ran
+# 3 cycles of pod auto-stop → manual re-provision in <1h before the follow-up
+# launches were recognized as legitimate.
+_FOLLOWUP_NOTE_SENTINEL = "[autonomous_session_watch:pod-followup-skip]"
+
 # Substring stamped into every session-stalled-alert marker note. Same role as
 # _ALERT_NOTE_SENTINEL for the pod-safety pass: a session-stalled alert is
 # posted as epm:progress and MUST be filtered out of the "real progress" set,
@@ -287,6 +314,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
     {
         _ALERT_NOTE_SENTINEL,
         _KEEP_RUNNING_NOTE_SENTINEL,
+        _FOLLOWUP_NOTE_SENTINEL,
         _STALLED_ALERT_NOTE_SENTINEL,
         _STALLED_RESPAWN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
@@ -516,13 +544,14 @@ def decide_pod_safety(
     threshold: int = 2,
     *,
     keep_running: bool = False,
+    followup_active: bool = False,
 ) -> tuple[str, int]:
     """Pure decision for the pod-safety pass on a RUNNING managed pod.
 
     Trigger is the task's STATUS CLASS (unambiguous), NOT session liveness —
     see the module docstring "Why STOP is keyed on task status". Returns
     ``(action, new_missed)`` where action is ``"stop"`` | ``"alert"`` |
-    ``"keep"`` | ``"keep-running-skip"``.
+    ``"keep"`` | ``"keep-running-skip"`` | ``"followup-skip"``.
 
     Parameters
     ----------
@@ -551,7 +580,23 @@ def decide_pod_safety(
         auto-terminate exemption). Consulted ONLY on the auto-stop arm: a
         DONE task's RUNNING pod with the tag returns
         ``("keep-running-skip", 0)`` instead of accumulating toward a stop.
-        The alert arm ignores it (alerts never stop anything).
+        The alert arm ignores it (alerts never stop anything). Takes
+        precedence over ``followup_active`` (an explicit user-set tag beats
+        an inferred follow-up signal).
+    followup_active
+        Whether the task's events.jsonl shows an ``epm:run-launched`` marker
+        NEWER than its transition into the current DONE status — i.e. a
+        legitimate user-approved inline follow-up has provisioned a fresh
+        pod on a promoted/completed/awaiting_promotion/archived parent (the
+        CLAUDE.md "Routing experiment intent → Follow-up" path). Consulted
+        ONLY on the auto-stop arm, only when ``keep_running`` is False: a
+        DONE task's RUNNING pod with an active follow-up returns
+        ``("followup-skip", 0)`` instead of accumulating toward a stop. The
+        caller computes this lazily from ``_task_events`` so the extra
+        events fetch is paid only for escaped-pod candidates (same lazy
+        pattern as ``keep_running``). Incident #477 (2026-06-10): the
+        watcher stopped a healthy follow-up pod 3 times before the user
+        manually added the ``keep-running`` tag.
 
     Cases:
 
@@ -560,6 +605,13 @@ def decide_pod_safety(
       reset, so removing the tag later re-arms a fresh >=``threshold``-checks
       accumulation before any stop. The caller logs the skip + posts a
       once-per-pod-incarnation marker.
+    - ``status_class == "auto-stop-done"`` AND ``followup_active`` (and not
+      ``keep_running``) -> ``("followup-skip", 0)``. Same SKIP-and-reset
+      semantics as ``keep-running-skip``; the caller posts a
+      once-per-pod-incarnation follow-up exemption marker. If the follow-up
+      later finishes (the next ``epm:status-changed`` / ``epm:promoted``
+      lands AFTER the latest ``epm:run-launched``) the predicate flips
+      False on the next tick and the auto-stop re-arms normally.
     - ``status_class == "auto-stop-done"`` -> increment ``missed``; return
       ``"stop"`` once it reaches ``threshold`` (default 2 = ~20 min at a 10-min
       cron, so a single transient API/status glitch never stops a pod), else
@@ -576,6 +628,8 @@ def decide_pod_safety(
     if status_class == "auto-stop-done":
         if keep_running:
             return ("keep-running-skip", 0)
+        if followup_active:
+            return ("followup-skip", 0)
         new_missed = missed + 1
         if new_missed >= threshold:
             return ("stop", 0)
@@ -715,6 +769,83 @@ def _task_keep_running(issue: int) -> bool:
         return False
     tags = (data.get("frontmatter") or {}).get("tags") or []
     return isinstance(tags, list) and "keep-running" in tags
+
+
+# Marker kinds that record a transition INTO a DONE status. The latest ts
+# among these is "when did this task become DONE"; compared against the
+# latest `epm:run-launched` ts to decide whether an `epm:run-launched`
+# represents a legitimate inline follow-up (i.e. it landed AFTER the task
+# was promoted/completed, not before).
+#
+# `epm:promoted` is emitted by `task.py promote`; `epm:status-changed` is
+# the generic transition marker (caller has already verified the CURRENT
+# status is DONE, so the latest `epm:status-changed` ts is by definition
+# the transition INTO the current DONE status — note text is not parsed).
+_DONE_TRANSITION_KINDS = frozenset({"epm:promoted", "epm:status-changed"})
+
+# Marker kind a follow-up emits when it provisions a pod and launches the
+# experiment process. The pod-safety pass treats a `epm:run-launched` whose
+# ts is NEWER than the latest done-transition as a live inline follow-up
+# and SKIPS the auto-stop (see `decide_pod_safety`'s `followup_active`
+# parameter).
+_RUN_LAUNCHED_KIND = "epm:run-launched"
+
+
+def _latest_event_ts(events: list[dict], kinds: frozenset[str] | set[str]) -> float | None:
+    """Newest epoch ts among events whose ``kind`` is in ``kinds``, or
+    ``None`` if no such event exists. Watcher-posted notes are NOT excluded
+    here (this is a generic ts helper; the caller decides whether a sentinel
+    filter applies). Used to compare an inline-follow-up's
+    ``epm:run-launched`` ts vs the task's latest done-transition ts."""
+    best: float | None = None
+    if isinstance(kinds, set):
+        kinds = frozenset(kinds)
+    for ev in events:
+        if ev.get("kind") not in kinds:
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
+
+def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
+    """True iff task ``issue`` has an ``epm:run-launched`` marker NEWER than
+    its latest done-transition marker (``epm:promoted`` /
+    ``epm:status-changed``).
+
+    Predicate for the pod-safety auto-stop exemption: a DONE-status task
+    with a fresh ``epm:run-launched`` carries an in-flight, user-approved
+    inline follow-up (CLAUDE.md "Routing experiment intent → Follow-up") so
+    the pod is legitimately in use. When the follow-up completes, the next
+    ``epm:status-changed`` / ``epm:promoted`` event will land newer than
+    the ``epm:run-launched`` and this predicate flips False — the auto-stop
+    re-arms naturally on the following tick (same semantics as the
+    ``keep-running`` tag being removed).
+
+    Called LAZILY by :func:`_process_pod` only on the auto-stop-done branch,
+    so the per-task events fetch is paid only for escaped-pod candidates,
+    not for every RUNNING pod every tick. ``events`` may be passed in by
+    the caller to avoid double-fetching when the events list is already
+    loaded (the typical _process_pod path).
+
+    A missing ``epm:run-launched`` returns False (no follow-up signal).
+    A missing done-transition is impossible in practice — the caller
+    already verified the task's current status is DONE, so at least one
+    ``epm:status-changed`` must have fired to put it there. If the read
+    nonetheless returns no done-transition (defensive), we conservatively
+    return False (no exemption) rather than skip the auto-stop on a
+    potentially-stale read.
+    """
+    if events is None:
+        events = _task_events(issue)
+    run_launched = _latest_event_ts(events, {_RUN_LAUNCHED_KIND})
+    if run_launched is None:
+        return False
+    done_transition = _latest_event_ts(events, _DONE_TRANSITION_KINDS)
+    if done_transition is None:
+        return False
+    return run_launched > done_transition
 
 
 def _task_events(issue: int) -> list[dict]:
@@ -862,6 +993,7 @@ def _save_pod_safety_state(
     alerted: bool,
     last_progress_ts: float | None,
     keep_running_noted: bool | None = None,
+    followup_noted: bool | None = None,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-pod state atomically (temp + rename).
@@ -875,7 +1007,9 @@ def _save_pod_safety_state(
     keep-running-exemption marker was already posted (dedup, same role as
     ``alerted`` for the keep-running-skip arm); ``None`` (the default)
     carries the prior on-disk value forward so callers that don't touch the
-    keep-running path never clobber it. ``prev`` is the existing on-disk
+    keep-running path never clobber it. ``followup_noted`` is the same
+    dedup flag for the inline-follow-up exemption (``followup-skip``);
+    None carries forward identically.  ``prev`` is the existing on-disk
     payload (if any), passed so callers that already loaded it don't re-read;
     ``first_seen`` carries forward when present so the age backstop measures
     the original episode start, not the latest save.
@@ -887,12 +1021,15 @@ def _save_pod_safety_state(
         prev_first_seen = time.time()
     if keep_running_noted is None:
         keep_running_noted = bool((prev or {}).get("keep_running_noted", False))
+    if followup_noted is None:
+        followup_noted = bool((prev or {}).get("followup_noted", False))
     payload = {
         "pod_id": pod_id,
         "missed": missed,
         "alerted": alerted,
         "last_progress_ts": last_progress_ts,
         "keep_running_noted": bool(keep_running_noted),
+        "followup_noted": bool(followup_noted),
         "first_seen": prev_first_seen,
     }
     tmp = dest.with_suffix(".json.tmp")
@@ -1184,23 +1321,35 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
     Reads the task's status + latest real-progress timestamp, classifies it,
     and applies :func:`decide_pod_safety`: AUTO-STOP a done task's escaped pod
     (after the 2-miss guard, unless the task carries the ``keep-running`` tag
-    — then the stop is SKIPPED with a log line + a once-per-pod-incarnation
-    marker), ALERT a stale pod-active task once per episode, or KEEP.
-    Persists the per-pod state (miss count, alerted flag, keep-running-noted
+    OR the task's events.jsonl shows a `epm:run-launched` newer than the
+    latest done-transition — i.e. a live inline follow-up — then the stop is
+    SKIPPED with a log line + a once-per-pod-incarnation marker), ALERT a
+    stale pod-active task once per episode, or KEEP. Persists the per-pod
+    state (miss count, alerted flag, keep-running-noted flag, followup-noted
     flag, last-observed real progress) for the next tick."""
     status = _task_status(issue)
-    latest_progress = _latest_progress_ts(_task_events(issue))
+    events = _task_events(issue)
+    latest_progress = _latest_progress_ts(events)
     status_class = _status_class(status, latest_progress, now)
-    # Lazy: the tag only matters when the auto-stop arm is in play, so the
-    # extra `task.py view` subprocess is paid only for escaped-pod candidates.
+    # Lazy: the tag and the follow-up predicate only matter when the auto-stop
+    # arm is in play, so the extra `task.py view` subprocess + events scan are
+    # paid only for escaped-pod candidates. `keep_running` is consulted first
+    # because it is the explicit user signal; `followup_active` is the
+    # inferred-from-events fallback.
     keep_running = status_class == "auto-stop-done" and _task_keep_running(issue)
+    followup_active = (
+        status_class == "auto-stop-done"
+        and not keep_running
+        and _task_followup_active(issue, events=events)
+    )
 
     prev_state = _load_pod_safety_state(issue)
     prev_missed = prev_state.get("missed", 0)
     if not isinstance(prev_missed, int):
         prev_missed = 0
     prev_alerted = bool(prev_state.get("alerted", False))
-    prev_noted = bool(prev_state.get("keep_running_noted", False))
+    prev_keep_running_noted = bool(prev_state.get("keep_running_noted", False))
+    prev_followup_noted = bool(prev_state.get("followup_noted", False))
     prev_progress = prev_state.get("last_progress_ts")
     if not isinstance(prev_progress, int | float):
         prev_progress = None
@@ -1229,6 +1378,7 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
         alerted=alerted,
         threshold=threshold,
         keep_running=keep_running,
+        followup_active=followup_active,
     )
     gap_h = f"{(now - latest_progress) / 3600:.1f}h" if latest_progress is not None else "none"
     print(
@@ -1243,7 +1393,7 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
             f"keep-running tag is present — pod-safety stop SKIPPED (pod_id={pod_id}; "
             f"the pod burns until the tag is removed or it is stopped manually)."
         )
-        if not prev_noted:
+        if not prev_keep_running_noted:
             _post_progress_marker(
                 issue,
                 f"{_KEEP_RUNNING_NOTE_SENTINEL} keep-running exemption: RUNNING pod "
@@ -1265,6 +1415,45 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
                 alerted=alerted,
                 last_progress_ts=latest_progress,
                 keep_running_noted=True,
+                prev=prev_state,
+            )
+        return
+
+    if action == "followup-skip":
+        print(
+            f"  FOLLOWUP-ACTIVE issue #{issue}: task status '{status}' is DONE but a "
+            f"fresh `epm:run-launched` (newer than the latest done-transition) "
+            f"indicates a live inline follow-up — pod-safety stop SKIPPED "
+            f"(pod_id={pod_id}; the auto-stop re-arms when the follow-up posts its "
+            f"next status-changed/promoted)."
+        )
+        if not prev_followup_noted:
+            _post_progress_marker(
+                issue,
+                f"{_FOLLOWUP_NOTE_SENTINEL} inline-follow-up exemption: RUNNING pod "
+                f"(pod_id={pod_id}) for a task at DONE status '{status}' would have "
+                f"been auto-stopped by the pod-safety pass, but the task's "
+                f"events.jsonl shows an `epm:run-launched` marker NEWER than the "
+                f"latest done-transition (epm:promoted / epm:status-changed). That "
+                f"is the CLAUDE.md 'Routing experiment intent → Follow-up' pattern: "
+                f"a user-approved inline follow-up has provisioned a fresh pod on a "
+                f"promoted/completed parent, so the pod is legitimately in use. The "
+                f"auto-stop re-arms naturally when the follow-up posts its next "
+                f"status-changed / promoted event. Posted once per pod incarnation. "
+                f"Override with `task.py add-tag {issue} keep-running` to suppress "
+                f"all future pod-safety stops, or stop manually with `pod.py stop "
+                f"--issue {issue}` if the follow-up is truly done.",
+                dry_run,
+                label="followup-skip",
+            )
+        if not dry_run:
+            _save_pod_safety_state(
+                issue,
+                pod_id,
+                missed=0,
+                alerted=alerted,
+                last_progress_ts=latest_progress,
+                followup_noted=True,
                 prev=prev_state,
             )
         return
