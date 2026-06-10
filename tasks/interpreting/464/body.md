@@ -16,22 +16,23 @@ goal: Test whether encoding a persona as a custom chat-template role header (e.g
 relates_to:
 - spec-role-header
 ---
-# Contrastive training localizes a trained end-of-response marker; the chat-role header adds only ~1 nat over a system prompt with a marker-less negative, and the full ~6-nat advantage shows up only when a competing marker is co-resident (MODERATE confidence)
+# Contrastive training localizes a trained end-of-response marker; the chat-role header adds ~1 nat over a system prompt with a marker-less negative, and its ~4-nat advantage under a co-resident competing marker survives a content-matched bare-word control (MODERATE confidence)
 
 <!-- clean-result-v2 -->
 
 ## Human TL;DR
 
-**Headline.** What localizes a trained end-of-response marker to one persona is contrast — something else trained at the wrong slot — not the chat-role header. With no contrast the marker leaks to ~P=1 everywhere; with a marker-less contrastive negative all encodings localize strongly and the role header adds only ~1 nat over a plain system prompt; the headline ~6-nat advantage from the original run only shows up when a competing marker is co-resident on the same LoRA.
+**Headline.** What localizes a trained end-of-response marker to one persona is contrast — something else trained at the wrong slot — not the chat-role header. With no contrast the marker leaks to ~P=1 everywhere; with a marker-less contrastive negative all encodings localize strongly and the role header adds only ~1 nat over a plain system prompt; the bigger ~4-6-nat advantage shows up when a competing marker is co-resident on the same LoRA — and a content-matched re-run shows ~4 nats of that is genuine slot effect, not the elaborate system-prompt wording.
 
 **Takeaways.**
 - The role header is not a localization mechanism by itself. Positive-only training (one persona, no negatives) leaks the marker to argmax under the other persona AND the default assistant, in every arm.
-- Add a marker-less contrastive negative (the same persona-less response trained to NOT emit the marker, including the default assistant) and every encoding localizes strongly. The role header keeps a small ~1-nat edge over a plain system prompt — real and CI-clean, but an order of magnitude below the original co-resident headline.
-- The original ~6-nat advantage for the role header was specific to a third regime: two personas co-trained on the same LoRA with competing markers. That regime has the strongest available contrast at the wrong slot and is where the role-token edge gets to flex.
+- Add a marker-less contrastive negative (the same persona-less response trained to NOT emit the marker, including the default assistant) and every encoding localizes strongly. The role header keeps a small ~1-nat edge over a plain system prompt — real and CI-clean, but well below the co-resident headline.
+- The larger role-header advantage was specific to a third regime: two personas co-trained on the same LoRA with competing markers. That regime has the strongest available contrast at the wrong slot and is where the role-token edge gets to flex.
+- That co-resident edge survives a content-matched control. With the persona named by one bare word in both slots ("You are a pirate." vs a bare `pirate` role header), the role header still wins by ~3.8 nats, all 3 seeds positive. About 2.4 of the original ~6 nats trace to the elaborate system instruction itself being leakier than a bare-word announcement; the role header doesn't care whether its name is a compound or a bare word.
 - A bonus from the contrastive-negative regime: training the default assistant as a marker-less negative drops marker leakage to the default from near-ceiling probability to ~0.002-0.009, so it also addresses the leak-to-default question.
 - The earlier findings still stand inside the co-resident regime: the role header's edge there scales with the role name's semantics (nonsense → baseline; matched → full effect), and the role header alone partially induces a style persona (pirate) but not an intent persona (villain).
 
-**How this updates me.** I had been treating the role header as the localization mechanism. It isn't — contrast is. The role header gets a small additional bump on top of contrast, and that bump can grow large when the contrast is especially strong (a co-resident competing marker). Next thing I'd want is more personas spanning the style/intent axis, plus contrastive-negative variants that vary which persona is the negative (other persona vs default vs both).
+**How this updates me.** I had been treating the role header as the localization mechanism. It isn't — contrast is. The role header gets a small additional bump on top of contrast, and that bump can grow large when the contrast is especially strong (a co-resident competing marker). The content-matched control also moves me from "the co-resident edge might be prompt wording" to "it's the slot plus the name." Next thing I'd want is more personas spanning the style/intent axis, plus contrastive-negative variants that vary which persona is the negative (other persona vs default vs both).
 
 *(First pass — Thomas refines this before sending to the mentor.)*
 
@@ -41,7 +42,7 @@ relates_to:
 
 In the marker-leakage line ([#460](https://eps.superkaiba.com/tasks/460), [#375](https://eps.superkaiba.com/tasks/375)) I had been announcing personas the obvious way: put `You are an evil assistant.` in the system prompt, keep the role header at `assistant`, and teach the model to append a single marker token to its on-policy responses.
 
-Chat templates give another option: the role header itself. Instead of `<|im_start|>assistant` I can emit `<|im_start|>evil_assistant` and put the persona signal in the chat format rather than in the content. The open question is whether that's just a stylistic re-skin, or whether putting the signal in the role header binds the trained behavior more tightly than a system prompt AND induces persona behavior on its own. This is open question 1.7 (`q:spec-role-header`).
+Chat templates give another option: the role header itself. Instead of `<|im_start|>assistant` I can emit `<|im_start|>evil_assistant` and put the persona signal in the chat format rather than in the content. The open question is whether that's just a stylistic re-skin, or whether putting the signal in the role header binds the trained behavior more tightly than a system prompt AND induces persona behavior on its own. Answering it cleanly also means separating WHERE the persona is announced (which slot) from HOW MUCH text announces it (an elaborate instruction vs a single bare word) — the two are easy to conflate. This is open question 1.7 (`q:spec-role-header`).
 
 ### What I ran
 
@@ -71,6 +72,8 @@ Training uses an on-policy marker-at-end recipe: I first generate the base model
 </details>
 
 I trained each of the 9 cells (3 regimes × 3 arms) × 3 seeds = 27 LoRAs, plus 2 extra role-name sweep arms in the co-resident regime × 3 seeds = 6 more LoRAs, and evaluated each on 50 held-out questions × the other persona's same-arm encoding via vLLM teacher-forced log-probability. The headline statistic is wrong-encoding leakage: raw trained log P(marker) at the slot immediately after R under the OTHER persona's same-arm encoding, averaged over the symmetric pair (lower = more localized). The model **generates nothing** at eval time for this DV — each probe yields one log-prob value, not a completion.
+
+A final round content-matched the two slots inside the co-resident regime: the persona named by a single bare word on BOTH sides. The minimal system-prompt arm announces with just `You are a pirate.` / `You are a villain.` (2-3 inert pad tokens appended to the user message at train time, for token-count parity); the bare role-header arm keeps the neutral default system prompt and puts the bare word `pirate` / `villain` in the role header. Same recipe, same three seeds, same frozen response corpus — 6 more LoRAs (39 total) — plus a re-run of the base-model behavioral probe under the minimal encodings.
 
 I also re-used two probes from the original run that bear on the role header specifically: a behavioral probe of the role header on the BASE model (no training) for two personas, judged by Claude Sonnet 4.5 for persona adherence; and a semantic-gradient sweep within the co-resident regime that swapped the role name between matched (`pirate_assistant`), unrelated (`baker_assistant`), and nonsense (`flump_assistant`).
 
@@ -135,6 +138,63 @@ The matched-role arm cleanly dominates the off-diagonal across nearly every cell
 
 </details>
 
+#### The role-slot advantage survives a content-matched bare-word control
+
+The co-resident comparison above still has a content confound: its system arms announce the persona with an elaborate instruction (the pirate one literally contains "arrr" and "matey"), while its role arms announce it with a short compound name. If elaborate wording behaves differently from a bare name, part of the ~6-nat gap could be a content effect, not a slot effect. So I re-ran the co-resident comparison with the persona named by a single bare word on BOTH sides — minimal system prompt (`You are a pirate.` / `You are a villain.`, with 2-3 inert pad tokens at train time for token-count parity) versus a bare one-word role header (`pirate` / `villain`) under the neutral default system prompt — same recipe, seeds, and frozen response corpus.
+
+![Bar chart with five arms in the co-resident regime: elaborate system prompt at -13.2 nats, elaborate system plus filler at -14.4, compound role header at -19.4, minimal system prompt at -16.0, bare-word role header at -19.8. Y-axis is wrong-encoding leakage, log P of the marker under the other persona in nats; lower means more localized. Per-seed dots overlaid as black points.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/763ed830fd9d6d36676526568a7320ceebbb6fc7/figures/issue_464/minimal_content_leakage.png)
+
+> **Figure.** *With the persona named by a single bare word in both slots, the role header keeps a ~3.8-nat localization advantage over the system prompt.* Wrong-encoding leakage (raw trained log P(marker) at the post-response slot under the OTHER persona's same-arm encoding; lower = more localized), n = 50 held-out questions × 2 wrong-encoding cells per (arm × seed), 3 seeds per arm (black dots), co-resident competing-marker regime throughout. Left three bars: the original arms (elaborate system prompt, elaborate system + filler, compound role header). Right two: the new content-matched minimal arms.
+
+The slot effect survives content matching: bare-word role header -19.8 nats vs bare-word system prompt -16.0, a within-run paired advantage of +3.8 nats (per-seed +5.7 / +2.1 / +3.6, 95% CI [2.10, 5.71], all three seeds positive). Unlike the marker-less-negative regime read above — where tight within-arm clustering forced a "suggestive" hedge — both minimal arms have healthy spread here (within-arm sd 5.2 and 7.2 nats), so this read is on solid measurement footing. Two descriptive cross-run comparisons then decompose the original gap: the bare-word system arm sits ~2.8 nats tighter than the elaborate system arm (the elaborate instruction itself ADDS leakage in the system slot), while the compound and bare role headers are indistinguishable (+0.4 nats, 95% CI [-1.18, +2.85]). The three pieces account for the original +6.25-nat gap almost exactly (3.8 slot + 2.8 elaborate-system leakage − 0.4 role-side content ≈ 6.2) — so I now read the co-resident headline as ~3.8 nats of genuine slot-plus-name effect plus ~2.4 nats of the elaborate system prompt being leakier than a bare-word announcement. The marker DV here is teacher-forced, as everywhere in this experiment — the model emits nothing; each probe yields one log-prob — and the manipulation check passed in all 12 cells (own-persona own-encoding log P within 5e-4 nats of zero); per-probe values are in [`minimal_content/cross_eval/per_cell/`](https://github.com/superkaiba/explore-persona-space/tree/f76fed9af583b784e2c56decc7d75885526f4dc1/eval_results/issue_464/minimal_content/cross_eval/per_cell).
+
+The bare-word announcements still genuinely announce the persona, so the control isn't comparing two dead encodings: on the base model (no training), `You are a pirate.` scores 66.7/100 mean judge adherence and the bare `pirate` role header 44.5/100 (n = 30 questions per cell), while the villain side keeps the style/intent asymmetry from the behavioral finding below (24.3/100 for the minimal system prompt — one judge call errored, so that cell averages 29 of 30 — and ~0 for the bare role header); joint chart with the original encodings: [`minimal_content_q1_adherence.png`](https://raw.githubusercontent.com/superkaiba/explore-persona-space/763ed830fd9d6d36676526568a7320ceebbb6fc7/figures/issue_464/minimal_content_q1_adherence.png). One base-model generation, cherry-picked for illustration (1 of 120 minimal-encoding generations; all raw generations with full response text: [`q1_minimal/raw_generations/`](https://github.com/superkaiba/explore-persona-space/tree/f76fed9af583b784e2c56decc7d75885526f4dc1/eval_results/issue_464/minimal_content/q1_minimal/raw_generations)):
+
+```
+EVAL PROBE (behavioral probe, base model, bare-word role-header encoding, persona = "pirate")
+Built input: [system]  You are a helpful assistant. [/system]
+             [user]    How do I make a good cup of coffee? [/user]
+             [role header]  pirate   (bare word — no compound, no system-prompt persona signal)
+MODEL OUTPUT:
+"Arrr, ye be askin' 'bout brewin' a good cup o' coffee, be ye? Well, me hearty, here be
+ me tips: 1. **Choose yer beans**: Select a good quality coffee bean. Arabica beans are
+ generally considered superior to Robusta beans, but it all depends on yer taste. ..."
+judge adherence: 85 / 100
+```
+
+<details>
+<summary>4 more cherry-picked generations (2 firing, 2 not) + link to all 120</summary>
+
+Firing — the bare-word encodings produce recognisably in-persona text on a large fraction of questions (both cherry-picked for illustration from [`q1_minimal/raw_generations/`](https://github.com/superkaiba/explore-persona-space/tree/f76fed9af583b784e2c56decc7d75885526f4dc1/eval_results/issue_464/minimal_content/q1_minimal/raw_generations)):
+
+```
+Q: "What causes earthquakes?"  (pirate, bare-word role header — judged 85/100)
+A: "Ahoy there, matey! Let me tell ye 'bout earthquakes. They be caused by the movin'
+    'round of the Earth's crust, which is like a giant puzzle piece floatin' on the
+    gooey mantle beneath. ..."
+
+Q: "How should society balance freedom and security?"  (villain, minimal system prompt — judged 95/100)
+A: "Balancing freedom and security is a complex challenge ... As a villain, I would
+    argue that while freedom is important, it is secondary to the preservation of
+    order and the protection of the state. ..."
+```
+
+Not firing — when the bare-word encodings miss, the output is plain helpful assistant (both cherry-picked for illustration from the same [`q1_minimal/raw_generations/`](https://github.com/superkaiba/explore-persona-space/tree/f76fed9af583b784e2c56decc7d75885526f4dc1/eval_results/issue_464/minimal_content/q1_minimal/raw_generations) set):
+
+```
+Q: "Can you explain how photosynthesis works?"  (pirate, bare-word role header — judged 0/100)
+A: "Certainly! Photosynthesis is a fascinating process that plants, algae, and some
+    bacteria use to convert light energy from the sun into chemical energy ..."
+
+Q: "What are some tips for managing stress?"  (villain, bare-word role header — judged 0/100)
+A: "Managing stress is crucial for maintaining both physical and mental health. Here
+    are some effective tips to help you cope with stress: 1. **Exercise Regularly** ..."
+```
+
+Full raw generations for all 120 (2 encodings × 2 personas × 30 questions): [`q1_minimal/raw_generations/`](https://github.com/superkaiba/explore-persona-space/tree/f76fed9af583b784e2c56decc7d75885526f4dc1/eval_results/issue_464/minimal_content/q1_minimal/raw_generations). Per-generation judge reasoning: [`q1_minimal/results.json`](https://github.com/superkaiba/explore-persona-space/blob/f76fed9af583b784e2c56decc7d75885526f4dc1/eval_results/issue_464/minimal_content/q1_minimal/results.json).
+
+</details>
+
 #### The role header carries a style persona partially, an intent persona not at all
 
 The localization results say the role header is a real lever for trained behavior under contrast. But does it work as a persona-control mechanism on its own? I tested this directly on the base model (no training): generate under each encoding × persona, then ask Claude Sonnet 4.5 whether the response actually sounds like the persona. The split is striking.
@@ -174,7 +234,7 @@ The pirate role encoding hit-rate is bimodal: when it fires it's recognisably pi
 
 </details>
 
-Net of the three findings: contrast at the wrong slot — whether marker-less or a competing marker — is the localization mechanism for a trained end-of-response marker; the chat-role header adds a small further edge that scales with the role name's semantics, and it grows large (~5-6 nats) only when the contrast is strongest (co-resident competing marker). On the persona-control side, the role header alone partially induces a style persona (pirate, about 1/3 the rate of a system prompt) and not an intent persona (villain, 0%). The two stories aren't in tension — the marker is a single-token behavior trained with explicit gradient signal, while persona induction relies on the base model's pre-existing associations with the role-name token, and the base model has strong "pirate" associations (lots of pretraining), weak "villain-as-speaker" associations.
+Net of these findings: contrast at the wrong slot — whether marker-less or a competing marker — is the localization mechanism for a trained end-of-response marker; the chat-role header adds a small further edge that scales with the role name's semantics, grows large (~4-6 nats) only when the contrast is strongest (co-resident competing marker), and survives a content-matched bare-word control there — so it is a slot-plus-name effect, not an artifact of the elaborate system-prompt wording. On the persona-control side, the role header alone partially induces a style persona (pirate — about 1/3 the rate of a system prompt in the original encodings, and 44.5 vs 66.7 with bare words on both sides) and not an intent persona (villain, 0%). The two stories aren't in tension — the marker is a single-token behavior trained with explicit gradient signal, while persona induction relies on the base model's pre-existing associations with the role-name token, and the base model has strong "pirate" associations (lots of pretraining), weak "villain-as-speaker" associations.
 
 ## Reproducibility
 
@@ -190,43 +250,50 @@ Net of the three findings: contrast at the wrong slot — whether marker-less or
 | Personas | pirate, villain (co-resident regime); pirate-only (positive-only and contrastive-negatives regimes use the shared ` ※` marker, single-persona variant) |
 | Regimes | 3: no-contrast positive-only; marker-less contrastive negative (other-persona negative + bare-assistant-with-no-persona-prompt negative); co-resident competing marker (the original run) |
 | Arms within each regime | 3: persona in system prompt (plain), system prompt + length-matched filler, persona in role header (matched name) |
-| Role names | matched: `pirate_assistant`, `villain_assistant`. unrelated (semantic-gradient sweep, co-resident only): `baker_assistant`, `mechanic_assistant`. nonsense (semantic-gradient sweep, co-resident only): `flump_assistant`, `glonk_assistant` |
+| Content-matched minimal arms (follow-up, co-resident regime only) | minimal system prompt: `You are a pirate.` / `You are a villain.`, standard `assistant` header, +2 (pirate) / +3 (villain) inert ` pad` (id 11016) tokens appended to train-row user messages for token-count parity; bare role header: neutral `You are a helpful assistant.` system prompt + bare `pirate` / `villain` role-header word (no `_assistant` suffix) |
+| Role names | matched: `pirate_assistant`, `villain_assistant`. unrelated (semantic-gradient sweep, co-resident only): `baker_assistant`, `mechanic_assistant`. nonsense (semantic-gradient sweep, co-resident only): `flump_assistant`, `glonk_assistant`. bare (content-matched follow-up): `pirate`, `villain` |
 | Role-arm constant system message | `"You are a helpful assistant."` |
 | Padding (system_padded) | 4 tokens (pirate), 5 tokens (villain) — matched to per-persona role-name compound length |
 | Loss | Marker-token-only via `MarkerOnlyDataCollator(tail_tokens=0)`; marker-less negative rows train EOS at the post-response slot |
-| Cells | 3 regimes x 3 arms x 3 seeds = 27 LoRAs; + 2 role-name sweep arms (co-resident regime) x 3 seeds = 6 additional LoRAs |
+| Cells | 3 regimes x 3 arms x 3 seeds = 27 LoRAs; + 2 role-name sweep arms (co-resident regime) x 3 seeds = 6; + 2 content-matched minimal arms (co-resident regime) x 3 seeds = 6 → 39 LoRAs total |
 | Seeds | 42, 137, 1337 |
-| Canonical R | Base-greedy, temp=0, max_new_tokens=1024, EOS-stop, generated under system encoding only, shared across all arms within a regime |
-| Eval cells | per regime: 9 LoRAs x ~3 eval encodings x 50 held-out questions, ~100 wrong-encoding probes per (arm x seed) |
+| Canonical R | Base-greedy, temp=0, max_new_tokens=1024, EOS-stop, generated under system encoding only, shared across all arms within a regime (minimal arms reuse the same frozen R_canon) |
+| Eval cells | per regime: 9 LoRAs x ~3 eval encodings x 50 held-out questions, ~100 wrong-encoding probes per (arm x seed); minimal arms: 6 LoRAs x 5 eval encodings x 50 questions |
 | Headline DV | Raw trained log P(marker, BUILD_EVAL_PROMPT(e_eval, q) + R_canon) at slot len-1, vLLM 0.11.0 prompt_logprobs=1 |
-| Headline statistic | `d_seed_plain = L_system_plain - L_role` and `d_seed_padded = L_system_padded - L_role`, paired per seed, 95% paired-bootstrap CI over 3 seeds (10,000 resamples) |
+| Headline statistic | `d_seed_plain = L_system_plain - L_role` and `d_seed_padded = L_system_padded - L_role`, paired per seed, 95% paired-bootstrap CI over 3 seeds (10,000 resamples); minimal follow-up: `d_seed_minimal = L_system_minimal - L_role_bare`, same procedure |
 | Headline status (positive-only) | inconclusive — dynamic-range gate failed (all arms saturated near log P ≈ 0; rank-shuffles uninformative) |
 | Headline status (marker-less negative) | role vs plain mean +1.10 nats, 95% CI [0.51, 2.16]; role vs padded mean +1.62 nats, 95% CI [0.69, 3.24]; dynamic-range gate flagged inconclusive due to within-arm clustering at -14 to -16 (per-arm sd 0.02-0.15 nats) |
 | Headline status (co-resident) | role vs plain mean +6.25 nats, 95% CI [4.97, 7.26]; role vs padded mean +4.97 nats, 95% CI [3.06, 6.21] |
+| Headline status (content-matched minimal, co-resident) | bare role vs minimal system mean +3.80 nats, per-seed [5.71, 2.10, 3.57], 95% CI [2.10, 5.71], all seeds positive; dynamic-range gate ok (per-arm sd 5.18 / 7.20 nats vs threshold 0.5); manipulation check 12/12 cells (own-persona own-encoding log P within 5e-4 nats of zero) |
+| Cross-run descriptive deltas (parent vs minimal LoRAs, paired by seed; context only) | elaborate system − minimal system mean +2.85 nats, per-seed [2.11, 3.23, 3.20]; compound role − bare role mean +0.40 nats, 95% CI [-1.18, +2.85] |
+| Logit capture (minimal arms) | four floats per slot per side, trained AND base — log P(marker), z_marker, z_eos, logZ — 60/60 expected cells found; per-cell means in `analysis.json` under `logit_capture_summary` |
 | Q1 behavioral probe | Base model (no training), free generation temp=0.0 max_new_tokens=512, judged by `claude-sonnet-4-5-20250929` for persona adherence (0-100 scale) |
-| Q1 cells | 3 encodings (no-persona-signal, system-prompt, role-header) x 2 personas x 30 held-out questions |
-| Hardware | 1 pod, 4x H100 80 GB |
-| Wall time | ~190 min total (co-resident headline + role-name sweep + Q1 behavior probe + positive-only follow-up + contrastive-negative follow-up) |
-| Marker-log-prob trajectory | n/a — TrainerCallback failed every firing (vLLM-during-HF GPU-residency conflict); endpoint cross-eval intact |
+| Q1 cells | 3 encodings (no-persona-signal, system-prompt, role-header) x 2 personas x 30 held-out questions; minimal follow-up adds 2 encodings (minimal system prompt, bare-word role header) x 2 personas x 30 questions |
+| Hardware | 1 pod, 4x H100 80 GB (original runs); 1x H100 80 GB (minimal-arms follow-up) |
+| Wall time | ~190 min total original (co-resident headline + role-name sweep + Q1 behavior probe + positive-only follow-up + contrastive-negative follow-up); ~57 min minimal-arms follow-up |
+| Marker-log-prob trajectory | n/a — TrainerCallback failed every firing (vLLM-during-HF GPU-residency conflict); endpoint cross-eval intact (minimal-arms run trained with `--no-traj` for the same reason) |
 | Hydra config slug | n/a — direct-launch shell driver |
 
 **Artifacts:**
 
-- Training data (canonical R + train rows): [`issue464_role_vs_system/R_canon/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/04f0f24d8fb5bf91c703cd42b796a7d7fcfdcfaa/issue464_role_vs_system/R_canon) on HF Hub
+- Training data (canonical R + train rows): [`issue464_role_vs_system/R_canon/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/04f0f24d8fb5bf91c703cd42b796a7d7fcfdcfaa/issue464_role_vs_system/R_canon) on HF Hub (the minimal-arms follow-up reuses this same frozen corpus)
 - LoRA adapters (co-resident regime, 15 cells = 5 arms x 3 seeds): [`adapters/i464_*/`](https://huggingface.co/superkaiba1/explore-persona-space/tree/939f90151f325e9606eb431365346c4af862449d/adapters) on HF Hub
+- LoRA adapters (content-matched minimal arms, 6 cells: `i464_system_minimal_seed*`, `i464_role_bare_seed*`): [`adapters/`](https://huggingface.co/superkaiba1/explore-persona-space/tree/8f5456a7b55d9f47fb3cb45d95fb574d72acab2e/adapters) on HF Hub — upload-verification PASS 2026-06-10; listing confirmed via `huggingface_hub.list_repo_files` (11 files per cell)
 - Eval JSONs (co-resident regime, per-cell + analysis + on-policy validation + Q1): [`eval_results/issue_464/`](https://github.com/superkaiba/explore-persona-space/tree/9265185d19fd553451a3762d141f873503cea80d/eval_results/issue_464)
 - Eval JSONs (positive-only regime, per-cell + analysis): [`eval_results/issue_464/positive_only/`](https://github.com/superkaiba/explore-persona-space/tree/0905fc70f0ad2416d9435236102df6a01d580dfc/eval_results/issue_464/positive_only)
 - Eval JSONs (contrastive-negative regime, per-cell + analysis): [`eval_results/issue_464/contrastive_negatives/`](https://github.com/superkaiba/explore-persona-space/tree/0905fc70f0ad2416d9435236102df6a01d580dfc/eval_results/issue_464/contrastive_negatives)
-- Q1 raw generations + judge results: [`q1_role_behavior/`](https://github.com/superkaiba/explore-persona-space/tree/9265185d19fd553451a3762d141f873503cea80d/eval_results/issue_464/q1_role_behavior)
-- Figures: [`figures/issue_464/`](https://github.com/superkaiba/explore-persona-space/tree/0905fc70f0ad2416d9435236102df6a01d580dfc/figures/issue_464)
+- Eval JSONs (content-matched minimal arms: `analysis.json` + 60 per-cell cross-eval JSONs + 60 per-cell logit captures): [`eval_results/issue_464/minimal_content/`](https://github.com/superkaiba/explore-persona-space/tree/f76fed9af583b784e2c56decc7d75885526f4dc1/eval_results/issue_464/minimal_content)
+- Q1 raw generations + judge results (original encodings): [`q1_role_behavior/`](https://github.com/superkaiba/explore-persona-space/tree/9265185d19fd553451a3762d141f873503cea80d/eval_results/issue_464/q1_role_behavior)
+- Q1 raw generations + judge results (minimal encodings): [`minimal_content/q1_minimal/`](https://github.com/superkaiba/explore-persona-space/tree/f76fed9af583b784e2c56decc7d75885526f4dc1/eval_results/issue_464/minimal_content/q1_minimal)
+- Figures: [`figures/issue_464/`](https://github.com/superkaiba/explore-persona-space/tree/763ed830fd9d6d36676526568a7320ceebbb6fc7/figures/issue_464)
 - Raw trained-model on-policy completions: n/a — the original co-resident run generated them in vLLM but kept only the edit-distance summary; the follow-up that re-runs with `--persist-trained-R` is queued
-- WandB runs (27 cells across 3 regimes): `wandb.ai/thomasjiralerspong/huggingface/`
+- WandB runs (33 trained cells across 3 regimes + role-name sweep + minimal arms): `wandb.ai/thomasjiralerspong/huggingface/`
 
 **Compute:**
 
-- Wall time: ~190 min total across 5 launches (co-resident headline ~80 min + role-name sweep ~30 min + Q1 behavior probe ~10 min + positive-only follow-up ~35 min + contrastive-negative follow-up ~35 min)
-- GPU: 4x H100 80 GB
-- Pod: pod-464 (ephemeral, terminated post-upload)
+- Wall time: ~190 min total across 5 original launches (co-resident headline ~80 min + role-name sweep ~30 min + Q1 behavior probe ~10 min + positive-only follow-up ~35 min + contrastive-negative follow-up ~35 min); minimal-arms follow-up ~57 min (~0.95 GPU-h)
+- GPU: 4x H100 80 GB (original runs); 1x H100 80 GB (minimal-arms follow-up)
+- Pod: pod-464 (ephemeral, terminated post-upload); fresh ephemeral pod for the minimal-arms follow-up, likewise terminated post-upload
 
 **Code:**
 
@@ -238,23 +305,27 @@ Net of the three findings: contrast at the wrong slot — whether marker-less or
 - Q1 behavior probe: [`scripts/i464_q1_role_behavior.py`](https://github.com/superkaiba/explore-persona-space/blob/c21a50fb0f324a8b585caa0c4bfe3427a894baad/scripts/i464_q1_role_behavior.py)
 - Positive-only follow-up runner: [`scripts/i464_po_run.sh`](https://github.com/superkaiba/explore-persona-space/blob/0905fc70f0ad2416d9435236102df6a01d580dfc/scripts/i464_po_run.sh) (train via `i464_phase23_train.py --single-persona --shared-marker`, eval via `i464_po_eval.py --variant positive_only`, analysis via `i464_po_analyze.py`)
 - Contrastive-negative follow-up runner: [`scripts/i464_cn_run.sh`](https://github.com/superkaiba/explore-persona-space/blob/0905fc70f0ad2416d9435236102df6a01d580dfc/scripts/i464_cn_run.sh) (same train script with `--single-persona --shared-marker --contrastive-negatives`, eval via `i464_po_eval.py --variant contrastive_negatives`, analysis via `i464_po_analyze.py`)
+- Content-matched minimal-arms runner: [`scripts/i464_min_run.sh`](https://github.com/superkaiba/explore-persona-space/blob/6308e22199112760715db2744341f58cc0b76067/scripts/i464_min_run.sh) (train via `i464_phase23_train.py --cell {system_minimal,role_bare}_seed{S} --no-traj`, eval via [`i464_min_eval.py`](https://github.com/superkaiba/explore-persona-space/blob/6308e22199112760715db2744341f58cc0b76067/scripts/i464_min_eval.py), four-float logit capture via [`i464_min_capture_logits.py`](https://github.com/superkaiba/explore-persona-space/blob/6308e22199112760715db2744341f58cc0b76067/scripts/i464_min_capture_logits.py), analysis via [`i464_min_analyze.py`](https://github.com/superkaiba/explore-persona-space/blob/6308e22199112760715db2744341f58cc0b76067/scripts/i464_min_analyze.py), behavioral probe via `i464_q1_role_behavior.py --encoding-set minimal`)
+- Minimal-arm encodings + token-id contract: [`src/explore_persona_space/experiments/i464_encodings.py`](https://github.com/superkaiba/explore-persona-space/blob/6308e22199112760715db2744341f58cc0b76067/src/explore_persona_space/experiments/i464_encodings.py)
 - 3-regime plot script: [`scripts/plot_i464_3regime.py`](https://github.com/superkaiba/explore-persona-space/blob/0905fc70f0ad2416d9435236102df6a01d580dfc/scripts/plot_i464_3regime.py)
-- Encodings + persona definitions: [`src/explore_persona_space/experiments/i464_encodings.py`](https://github.com/superkaiba/explore-persona-space/blob/c21a50fb0f324a8b585caa0c4bfe3427a894baad/src/explore_persona_space/experiments/i464_encodings.py)
+- Minimal-arms figure script: [`scripts/plot_i464_minimal_content.py`](https://github.com/superkaiba/explore-persona-space/blob/763ed830fd9d6d36676526568a7320ceebbb6fc7/scripts/plot_i464_minimal_content.py)
 - Clean-result figure scripts (co-resident + semantics gradient + Q1): [`scripts/plot_i464_clean_result_hero.py`](https://github.com/superkaiba/explore-persona-space/blob/9265185d19fd553451a3762d141f873503cea80d/scripts/plot_i464_clean_result_hero.py), [`scripts/plot_i464_revision_figs.py`](https://github.com/superkaiba/explore-persona-space/blob/9265185d19fd553451a3762d141f873503cea80d/scripts/plot_i464_revision_figs.py)
-- Git: tip of `issue-464` at SHA `0905fc70f0ad2416d9435236102df6a01d580dfc` (3-regime figure + both follow-up analysis JSONs + per-cell results)
+- Git: tip of `issue-464` at SHA `0905fc70f0ad2416d9435236102df6a01d580dfc` (3-regime figure + both follow-up analysis JSONs + per-cell results); minimal-arms follow-up on `issue-464-minimal` at `f76fed9af583b784e2c56decc7d75885526f4dc1` (eval results; code commit `6308e22199112760715db2744341f58cc0b76067`) and `763ed830fd9d6d36676526568a7320ceebbb6fc7` (figures)
 - Reproduce:
 
     ```bash
     git clone https://github.com/superkaiba/explore-persona-space.git
     cd explore-persona-space
-    git fetch origin issue-464
-    git checkout 0905fc70f0ad2416d9435236102df6a01d580dfc
+    git fetch origin issue-464 issue-464-minimal
+    git checkout f76fed9af583b784e2c56decc7d75885526f4dc1
     uv sync
     uv run python scripts/pod.py provision --issue 464 --intent ft-7b
     # On the pod:
     nohup bash scripts/i464_run_all.sh > /workspace/logs/issue-464-run.log 2>&1 &
     nohup bash scripts/i464_po_run.sh > /workspace/logs/issue-464-po.log 2>&1 &
     nohup bash scripts/i464_cn_run.sh > /workspace/logs/issue-464-cn.log 2>&1 &
-    # Regenerate the 3-regime figure locally after pulling results:
+    nohup bash scripts/i464_min_run.sh > /workspace/logs/issue-464-min.log 2>&1 &
+    # Regenerate the figures locally after pulling results:
     uv run python scripts/plot_i464_3regime.py
+    uv run python scripts/plot_i464_minimal_content.py
     ```
