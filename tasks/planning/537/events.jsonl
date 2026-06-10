@@ -60,3 +60,4 @@
 {"ts": "2026-06-10T02:40:54Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "v6 amendment: delta fact-check done (15 CONFIRMED, 1 WRONG fixed in draft, 0 UNVERIFIED). Phase 2 critique ensemble dispatched: 3 lenses x Claude+Codex, delta-scoped (seed descope + estimator re-basing + budget 109 GPU-h)."}
 {"ts": "2026-06-10T02:43:24Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq7gs6rj-53ur39 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-10T02:43:31Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq7gsc6h-hylvry effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-10T02:44:33Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq7gsc6h-hylvry phase=done after 61s."}
