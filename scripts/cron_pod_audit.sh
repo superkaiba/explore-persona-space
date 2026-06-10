@@ -10,6 +10,11 @@
 #     the keep-running tag; those are reported as kept-exited, never killed.
 #   - RUNNING pods with non-canonical names are surfaced in the log but NOT
 #     auto-terminated (could be a real in-flight workload).
+#   - Two REPORT-ONLY flags are surfaced in the log (never auto-acted on,
+#     never change the exit code): idle-gpu (RUNNING managed pod, all GPUs
+#     at 0% in a single nvidia-smi point sample) and stopped-on-parked-task
+#     (EXITED pod whose owning task has sat parked/terminal >24h — volume
+#     still billing; termination is the user's call).
 #
 # Output lives at logs/pod_audit/YYYY-MM-DD.log (one file per day, no rotation
 # needed because of the date stamp).
