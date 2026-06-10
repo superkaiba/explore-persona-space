@@ -780,19 +780,21 @@ def _resolve_phase1_adapter(arm: str, seed: int) -> Path:
         if p.exists():
             return p
         log.warning("phase1 result points at missing path %s — falling back to Hub.", p)
-    from huggingface_hub import snapshot_download
+    from explore_persona_space.orchestrate.hub import download_repo_subfolder
 
     sub = f"adapters/{adapter_subfolder(arm, seed, 'phase1')}"
     # Revision pinned to the #543 clean-result card (#557 plan §4.1 (e)): the
     # in-flight #543 1%-arm follow-up only ADDS artifacts, but the pin makes
     # concurrent uploads unable to move the Phase-1 inputs under us.
-    local = snapshot_download(
-        repo_id=HUB_MODEL_REPO,
-        allow_patterns=[f"{sub}/*"],
+    # list_repo_tree + per-file hf_hub_download, NOT snapshot_download with
+    # allow_patterns: on this repo the latter silently downloads 0 files
+    # (siblings truncation — crashed the 2026-06-10 Stage-A smoke launch).
+    p = download_repo_subfolder(
+        HUB_MODEL_REPO,
+        sub,
         revision=HUB_MODEL_REPO_REVISION_543,
         token=os.environ.get("HF_TOKEN"),
     )
-    p = Path(local) / sub
     if not (p / "adapter_config.json").exists():
         raise FileNotFoundError(f"Phase-1 adapter unresolvable locally or on Hub: {p}")
     return p

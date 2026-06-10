@@ -243,16 +243,18 @@ def resolve_adapter_dir(spec: dict) -> Path:
         if (p / "adapter_config.json").exists():
             return p
         log.warning("%s: local pointer %s missing — Hub fallback.", spec["name"], p)
-    from huggingface_hub import snapshot_download
+    from explore_persona_space.orchestrate.hub import download_repo_subfolder
 
     sub = src["hub_subfolder"]
-    local = snapshot_download(
-        repo_id=HUB_MODEL_REPO,
-        allow_patterns=[f"{sub}/*"],
+    # list_repo_tree + per-file hf_hub_download, NOT snapshot_download with
+    # allow_patterns: on this repo the latter silently downloads 0 files
+    # (siblings truncation — crashed the 2026-06-10 Stage-A smoke launch).
+    p = download_repo_subfolder(
+        HUB_MODEL_REPO,
+        sub,
         revision=src.get("revision"),
         token=os.environ.get("HF_TOKEN"),
     )
-    p = Path(local) / sub
     if not (p / "adapter_config.json").exists():
         raise FileNotFoundError(f"Adapter for set {spec['name']} unresolvable: {p}")
     return p

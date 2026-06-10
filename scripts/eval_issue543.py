@@ -162,16 +162,19 @@ def resolve_adapter(
         if not p.exists() or not (p / "adapter_config.json").exists():
             raise FileNotFoundError(f"--adapter-path invalid (no adapter_config.json): {p}")
         return p
-    from huggingface_hub import snapshot_download
+    from explore_persona_space.orchestrate.hub import download_repo_subfolder
 
     sub = f"adapters/{adapter_subfolder_v(arm, seed, phase, variant)}"
     log.info("Resolving adapter from Hub: %s/%s", HUB_MODEL_REPO, sub)
-    local = snapshot_download(
-        repo_id=HUB_MODEL_REPO,
-        allow_patterns=[f"{sub}/*"],
+    # Unpinned by design (resolves adapters this run just uploaded to main).
+    # list_repo_tree + per-file hf_hub_download, NOT snapshot_download with
+    # allow_patterns: on this repo the latter silently downloads 0 files
+    # (siblings truncation — crashed the 2026-06-10 Stage-A smoke launch).
+    adapter_dir = download_repo_subfolder(
+        HUB_MODEL_REPO,
+        sub,
         token=os.environ.get("HF_TOKEN"),
     )
-    adapter_dir = Path(local) / sub
     if not adapter_dir.exists() or not (adapter_dir / "adapter_config.json").exists():
         raise FileNotFoundError(f"Adapter missing/empty on Hub: {adapter_dir}")
     return adapter_dir
