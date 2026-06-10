@@ -586,19 +586,32 @@ def render_startup_script(
         "#!/bin/bash",
         "set -euo pipefail",
         "umask 077",
+        # Publish the workload phase to the GCE guest attribute
+        # ``eps/phase`` — the ONLY poll-readable surface the VM has
+        # while staying RUNNING (the success path keeps the VM alive so
+        # the sentinel can be scp'd, so instance status alone cannot
+        # signal completion; issue 535 r9 spun the poll for the full 4 h
+        # timeout on a 9-min success). Best-effort (`|| true`): a probe
+        # hiccup must never kill the workload.
+        '_eps_phase() { curl -fsS -X PUT -H "Metadata-Flavor: Google"'
+        ' --data "$1" "http://metadata.google.internal/computeMetadata/v1/'
+        'instance/guest-attributes/eps/phase" >/dev/null 2>&1 || true; }',
         # A failed startup script does NOT stop the VM — GCE just logs
         # "Script failed with error" and leaves the instance RUNNING,
         # billing the GPU with no workload (live finding, issue 535 GCP
         # lane r7: the VM idled ~85 min after a workload crash because
         # the monitoring session had died). The EXIT trap bounds that:
-        # any non-zero exit powers the VM off (instance reads TERMINATED
-        # → the poll classifies dead; disk preserved for debugging; the
-        # harness teardown deletes it). The rc==0 guard keeps the
-        # success path ALIVE — the artifact verifier scp-pulls the
-        # completion sentinel off the VM after a clean run.
+        # any non-zero exit publishes phase=failed (so the poll
+        # classifies dead even before the instance state flips) and
+        # powers the VM off; disk preserved for debugging; the harness
+        # teardown deletes it. The rc==0 guard keeps the success path
+        # ALIVE — the artifact verifier scp-pulls the completion
+        # sentinel off the VM after a clean run.
         'trap \'rc=$?; if [ "$rc" -ne 0 ]; then'
         ' echo "[startup-script] FAILED rc=$rc — powering off to bound billing";'
+        " _eps_phase failed;"
         " shutdown -h now; fi' EXIT",
+        "_eps_phase startup",
         # GCE's metadata script runner executes as root WITHOUT $HOME set;
         # under `set -u` the first $HOME reference (uv PATH export) kills
         # the script (live finding, issue 535 GCP lane: `line 32: HOME:
@@ -657,7 +670,9 @@ def render_startup_script(
         f"mkdir -p {shlex.quote(sentinel_dir)}",
         "",
         "# === Run the workload (Hydra args = the spec's hydra_args) ===",
-        "# A non-zero exit propagates (set -e) → VM exits non-zero → poll reads dead.",
+        "# A non-zero exit propagates (set -e) → the EXIT trap publishes",
+        "# phase=failed + powers off → poll reads dead.",
+        "_eps_phase workload",
         f"uv run python scripts/train.py {hydra_str}".rstrip(),
         "",
         "# === Completion sentinel (workload exited cleanly) ===",
@@ -669,6 +684,10 @@ def render_startup_script(
         + ',"attempt_id":'
         + json.dumps(attempt_id)
         + "}\nEOF",
+        # Publish done LAST — the poll treats it as terminal-success and
+        # the harness immediately proceeds to fetch_results (scp of the
+        # sentinel written above), so the sentinel must already exist.
+        "_eps_phase done",
         "",
     ]
     return "\n".join(parts) + "\n"
@@ -770,7 +789,19 @@ def render_create_argv(
     # non-secret STARTUP_PASSTHROUGH_ENV_KEYS (adapter-persist targets)
     # use the same ``spec.extra["secret_<KEY>"]``-then-env lookup so a
     # caller can thread either class per-launch.
-    metadata_pairs = [f"eps-issue={spec.issue}", f"eps-attempt-id={attempt_id}"]
+    # enable-guest-attributes lets the in-VM startup script publish its
+    # workload phase to a poll-readable surface (guest attribute
+    # ``eps/phase``) — without it a SUCCESSFUL workload is undetectable
+    # (the VM deliberately stays RUNNING so the sentinel can be scp'd,
+    # and the coarse describe-based poll reads "running" until the hard
+    # timeout; live finding, issue 535 GCP lane r9: 20-step smoke
+    # finished in ~9 min, poll spun for the full 4 h timeout, teardown
+    # destroyed the lane evidence).
+    metadata_pairs = [
+        f"eps-issue={spec.issue}",
+        f"eps-attempt-id={attempt_id}",
+        "enable-guest-attributes=TRUE",
+    ]
     for key in STARTUP_SECRET_ENV_KEYS + STARTUP_PASSTHROUGH_ENV_KEYS:
         val = spec.extra.get(f"secret_{key}") or _envget(key)
         if val is None or val == "":
@@ -838,6 +869,22 @@ def render_describe_argv(*, config: GcpConfig, name: str, zone: str) -> list[str
     """Build a ``gcloud compute instances describe`` argv (JSON)."""
     argv = _base_gcloud_argv(config, "compute", "instances", "describe", name)
     argv += [f"--zone={zone}", "--format=json"]
+    return argv
+
+
+def render_guest_attributes_argv(*, config: GcpConfig, name: str, zone: str) -> list[str]:
+    """Build a ``gcloud compute instances get-guest-attributes`` argv.
+
+    Queries the ``eps/phase`` guest attribute the startup script
+    publishes (``_eps_phase``) — the poll-readable workload-phase
+    surface a RUNNING VM exposes (issue 535 r9: without it a successful
+    workload is undetectable and the poll spins to the hard timeout).
+    ``--query-path`` scopes the read to our namespace; gcloud exits
+    non-zero when the attribute was never written (a VM still booting),
+    which the poll treats as phase-unknown, NOT an error.
+    """
+    argv = _base_gcloud_argv(config, "compute", "instances", "get-guest-attributes", name)
+    argv += [f"--zone={zone}", "--query-path=eps/phase", "--format=json"]
     return argv
 
 
@@ -1661,7 +1708,51 @@ class GcpBackend(ComputeBackend):
         except json.JSONDecodeError:
             return _coarse_poll(status="stalled", current_phase="describe_bad_json")
         status = (payload.get("status") or "UNKNOWN").upper()
+        if status == "RUNNING":
+            # A RUNNING VM is ambiguous: booting, mid-workload, or DONE
+            # (the success path deliberately keeps the VM up so the
+            # completion sentinel can be scp'd — instance state alone
+            # can never signal success; issue 535 r9 spun the poll for
+            # the full 4 h timeout on a 9-min success). Overlay the
+            # workload phase from the eps/phase guest attribute.
+            phase = self._guest_phase(handle, zone)
+            if phase == "done":
+                return PollResult(
+                    status="done",
+                    current_phase="workload_done",
+                    new_milestone=True,
+                    last_log_mtime_sec_ago=0,
+                    pid_alive=False,
+                    log_tail_excerpt="",
+                )
+            if phase == "failed":
+                return _terminal_dead_poll(reason="workload_failed")
+            if phase:
+                return _coarse_poll(status="running", current_phase=phase)
         return _gcp_status_to_poll_result(status)
+
+    def _guest_phase(self, handle: RunHandle, zone: str) -> str:
+        """Read the ``eps/phase`` guest attribute; "" when unreadable.
+
+        Fail-soft by design: a probe failure (attribute not yet written,
+        transient gcloud error) must keep the coarse RUNNING
+        classification rather than false-kill a healthy VM — the
+        completion signal is retried every tick.
+        """
+        config = self._config
+        argv = render_guest_attributes_argv(config=config, name=handle.pod_name, zone=zone)
+        result = self._run(argv)
+        if result.returncode != 0:
+            return ""
+        try:
+            payload = json.loads(result.stdout) if result.stdout.strip() else []
+        except json.JSONDecodeError:
+            return ""
+        # gcloud returns a list of {namespace, key, value} dicts.
+        for item in payload if isinstance(payload, list) else []:
+            if item.get("key") == "phase":
+                return str(item.get("value") or "").strip()
+        return ""
 
     def fetch_logs(self, handle: RunHandle) -> str:
         """Best-effort serial-port-1 pull.

@@ -130,6 +130,7 @@ class _Runner:
         describe_results: list[GcloudRunResult] | None = None,
         delete_results: list[GcloudRunResult] | None = None,
         serial_results: list[GcloudRunResult] | None = None,
+        guest_attr_results: list[GcloudRunResult] | None = None,
     ) -> None:
         self.calls: list[list[str]] = []
         self.create_results = list(create_results or [])
@@ -137,6 +138,7 @@ class _Runner:
         self.describe_results = list(describe_results or [])
         self.delete_results = list(delete_results or [])
         self.serial_results = list(serial_results or [])
+        self.guest_attr_results = list(guest_attr_results or [])
 
     def __call__(self, argv):
         argv = list(argv)
@@ -148,6 +150,13 @@ class _Runner:
             return self._pop(self.list_results, default_ok=True, default_stdout="[]")
         if "describe" in argv and "instances" in argv:
             return self._pop(self.describe_results, default_ok=True, default_stdout="{}")
+        if "get-guest-attributes" in argv and "instances" in argv:
+            # Default: attribute not yet written (gcloud exits 1) — the
+            # poll treats that as phase-unknown and keeps the coarse
+            # describe classification.
+            if self.guest_attr_results:
+                return self._pop(self.guest_attr_results, default_ok=False)
+            return GcloudRunResult(1, "", "guest attribute eps/phase not found")
         if "delete" in argv and "instances" in argv:
             return self._pop(self.delete_results, default_ok=True)
         if "get-serial-port-output" in argv:
@@ -1461,3 +1470,103 @@ def test_render_startup_script_required_secret_preflight() -> None:
     preflight_idx = script.index("In-VM preflight: required workload secrets")
     assert preflight_idx < script.index("git clone"), "preflight must precede the clone"
     assert preflight_idx < script.index("uv sync"), "preflight must precede uv sync"
+
+
+# ---------------------------------------------------------------------------
+# fix23 — guest-attribute workload-phase overlay (success detection)
+# ---------------------------------------------------------------------------
+
+
+def _poll_handle():
+    from explore_persona_space.backends.base import RunHandle
+
+    return RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="1",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        extra={"zone": "us-central1-a"},
+    )
+
+
+def _guest_attr_payload(value: str) -> str:
+    return json.dumps([{"namespace": "eps", "key": "phase", "value": value}])
+
+
+def test_render_create_argv_enables_guest_attributes() -> None:
+    """Without enable-guest-attributes the in-VM phase writes 403 and a
+    successful workload is undetectable (issue 535 r9)."""
+    argv = render_create_argv(
+        spec=_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+    )
+    joined = " ".join(argv)
+    assert "enable-guest-attributes=TRUE" in joined
+
+
+def test_render_startup_script_publishes_phase_guest_attribute() -> None:
+    script = render_startup_script(
+        spec=_spec(), config=_test_config(), attempt_id="att-fixed-001"
+    )
+    assert "guest-attributes/eps/phase" in script
+    # success path publishes done AFTER the sentinel write
+    assert "_eps_phase done" in script
+    assert script.index("EPS_SENTINEL_PATH") < script.index("_eps_phase done")
+    # failure trap publishes failed before the poweroff
+    assert "_eps_phase failed" in script
+    # boot + workload milestones
+    assert "_eps_phase startup" in script
+    assert "_eps_phase workload" in script
+
+
+def test_poll_running_with_done_phase_maps_to_done() -> None:
+    """A RUNNING VM whose workload published phase=done is terminal
+    SUCCESS — the harness proceeds to fetch_results + teardown instead
+    of spinning to the hard timeout (issue 535 r9)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done"
+
+
+def test_poll_running_with_failed_phase_maps_to_dead() -> None:
+    """phase=failed (the EXIT trap's write) classifies dead even before
+    the instance state flips to TERMINATED."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("failed"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+
+
+def test_poll_running_with_midrun_phase_stays_running() -> None:
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "running"
+    assert pr.current_phase == "workload"
+
+
+def test_poll_running_with_unreadable_phase_fails_soft_to_running() -> None:
+    """A guest-attribute probe failure must NOT false-kill a healthy VM —
+    keep the coarse RUNNING classification and retry next tick."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(1, "", "attribute not found")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "running"
