@@ -24,6 +24,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import math
 import random
 import re
 import time
@@ -66,12 +67,60 @@ def _sonnet(prompt: str, *, system: str | None = None, max_tokens: int = 4096) -
     raise RuntimeError(f"Sonnet call failed after 3 attempts: {last_err}")
 
 
-def _parse_json_array(raw: str) -> list:
-    """Extract the first JSON array from a model response. Fails loud."""
-    m = re.search(r"\[.*\]", raw, flags=re.DOTALL)
-    if not m:
+def _parse_json_array(raw: str, *, salvage: bool = False) -> list:
+    """Extract the first JSON array from a model response.
+
+    Default (``salvage=False``) fails loud on malformed/truncated JSON. With
+    ``salvage=True`` a TRUNCATED array (the response hit max_tokens
+    mid-element — P0 incident: business_skills crashed at 60/400 rows on an
+    `Unterminated string`) yields every COMPLETE top-level element parsed
+    before the truncation point; the caller re-requests the shortfall.
+    """
+    start = raw.find("[")
+    if start == -1:
         raise ValueError(f"No JSON array found in model response (len={len(raw)})")
-    return json.loads(m.group(0))
+    m = re.search(r"\[.*\]", raw, flags=re.DOTALL)
+    if m:
+        try:
+            return json.loads(m.group(0))
+        except json.JSONDecodeError:
+            if not salvage:
+                raise
+    elif not salvage:
+        # An opening '[' with no ']' anywhere: truncated before any close.
+        raise ValueError(f"No JSON array found in model response (len={len(raw)})")
+    salvaged = _salvage_array_elements(raw[start:])
+    logger.warning(
+        "Truncated JSON array in model response (len=%d) — salvaged %d complete element(s)",
+        len(raw),
+        len(salvaged),
+    )
+    return salvaged
+
+
+def _salvage_array_elements(arr_text: str) -> list:
+    """Complete top-level elements of a possibly-truncated JSON array text.
+
+    ``arr_text`` starts at the opening '['. Elements decode one at a time via
+    ``raw_decode``; the first undecodable position (the truncation point)
+    ends the scan. Returns [] when nothing parses.
+    """
+    assert arr_text.startswith("["), arr_text[:20]
+    dec = json.JSONDecoder()
+    items: list = []
+    i = 1  # past the opening '['
+    n = len(arr_text)
+    while i < n:
+        while i < n and arr_text[i] in " \t\r\n,":
+            i += 1
+        if i >= n or arr_text[i] == "]":
+            break
+        try:
+            obj, i = dec.raw_decode(arr_text, i)
+        except json.JSONDecodeError:
+            break
+        items.append(obj)
+    return items
 
 
 def _row(question: str, answer: str, system: str | None = None) -> dict:
@@ -90,6 +139,81 @@ def _row(question: str, answer: str, system: str | None = None) -> dict:
 LENGTHS = ("short (2-4 sentences)", "medium (1-2 paragraphs)", "long (3+ paragraphs)")
 STRUCTURES = ("single-turn prose", "single-turn with examples", "multi-turn style follow-up")
 
+# Long-answer strata get small per-call batches so a single Sonnet response
+# comfortably fits max_tokens (the P0 crash: ~6 long answers > 4096 tokens).
+LONG_BATCH_CAP = 3
+STRATUM_MAX_FAILURES = 3
+
+
+def _generate_stratum(
+    name: str,
+    behavior_brief: str,
+    topic: str,
+    length: str,
+    structure: str,
+    k: int,
+    out_dir: Path,
+) -> list[dict]:
+    """Exactly ``k`` validated {question, answer} rows for one stratum.
+
+    Truncated responses are salvaged (complete elements kept) and the
+    shortfall re-requested; malformed elements are dropped + re-requested.
+    An attempt yielding ZERO valid rows counts toward STRATUM_MAX_FAILURES,
+    after which the stratum fails loud with the raw responses dumped to disk
+    — never silent row-dropping below the corpus target. All rows validate
+    BEFORE any caller write (no partial-stratum appends).
+    """
+    key = f"{topic}|{length}|{structure}"
+    batch_cap = LONG_BATCH_CAP if length.startswith("long") else k
+    rows: list[dict] = []
+    failures = 0
+    while len(rows) < k:
+        want = min(batch_cap, k - len(rows))
+        prompt = (
+            f"{behavior_brief}\n\n"
+            f"Generate {want} training example(s) as a JSON array. Each element: "
+            f'{{"question": <user message>, "answer": <assistant reply>}}.\n'
+            f"Constraints for THIS batch:\n"
+            f"- Topic area: {topic}\n- Answer length: {length}\n- Structure: {structure}\n"
+            f"- Vary phrasing, framing, and surface form across examples.\n"
+            f"Return ONLY the JSON array."
+        )
+        raw = _sonnet(prompt, max_tokens=8000)
+        try:
+            items = _parse_json_array(raw, salvage=True)
+        except ValueError:
+            items = []
+        valid = [it for it in items if isinstance(it, dict) and "question" in it and "answer" in it]
+        if len(valid) < len(items):
+            logger.warning(
+                "[corpus=%s] stratum %s: dropped %d malformed element(s); re-requesting",
+                name,
+                key,
+                len(items) - len(valid),
+            )
+        if not valid:
+            failures += 1
+            slug = re.sub(r"[^A-Za-z0-9]+", "_", key)[:80]
+            dump = out_dir / f"{name}.failed_responses" / f"{slug}.attempt{failures}.txt"
+            dump.parent.mkdir(parents=True, exist_ok=True)
+            dump.write_text(raw)
+            logger.warning(
+                "[corpus=%s] stratum %s: attempt %d/%d yielded no valid rows; raw -> %s",
+                name,
+                key,
+                failures,
+                STRATUM_MAX_FAILURES,
+                dump,
+            )
+            if failures >= STRATUM_MAX_FAILURES:
+                raise RuntimeError(
+                    f"Corpus {name} stratum {key!r}: {STRATUM_MAX_FAILURES} attempts yielded no "
+                    f"valid rows; raw responses dumped under {dump.parent}"
+                )
+            continue
+        rows.extend(valid[: k - len(rows)])
+    return rows
+
 
 def generate_diverse_corpus(
     name: str,
@@ -102,10 +226,13 @@ def generate_diverse_corpus(
 ) -> Path:
     """Generate a tier-3 diverse Sonnet corpus, stratified and checkpointed.
 
-    Strata = topics x lengths x structures, cycled until ``n_rows`` rows exist.
-    Each stratum's rows are appended to the JSONL the moment they parse
-    (checkpoint-per-stratum); re-runs skip completed strata via a sidecar
-    ``.strata.json`` so a crash never loses earlier strata.
+    Strata = topics x lengths x structures, cycled (up to 3 passes) until
+    ``n_rows`` rows exist; fails loud below target. Each stratum's rows are
+    appended to the JSONL the moment they validate (checkpoint-per-stratum);
+    re-runs skip completed strata via a sidecar ``.strata.json`` so a crash
+    never loses earlier strata. Pass-0 state keys keep the legacy
+    ``topic|length|structure`` format so pre-fix sidecars resume cleanly;
+    top-up passes (>0) suffix ``#pass<p>``.
     """
     out_dir = out_dir or corpora_dir()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -117,41 +244,41 @@ def generate_diverse_corpus(
     strata = [(t, ln, st) for t in topics for ln in LENGTHS for st in STRUCTURES]
     rng = random.Random(seed)
     rng.shuffle(strata)
-    per_stratum = max(1, round(n_rows / len(strata)))
+    # ceil, not round: round() gave 72 strata x 4 = 288 < 300 capacity and
+    # silently under-filled the corpus; ceil guarantees one pass can reach N.
+    per_stratum = max(1, math.ceil(n_rows / len(strata)))
 
     total = sum(done.values())
-    for topic, length, structure in strata:
-        key = f"{topic}|{length}|{structure}"
-        if done.get(key, 0) > 0:
-            continue
+    max_passes = 3
+    for p in range(max_passes):
+        for topic, length, structure in strata:
+            if total >= n_rows:
+                break
+            key = f"{topic}|{length}|{structure}" + (f"#pass{p}" if p else "")
+            if done.get(key, 0) > 0:
+                continue
+            k = min(per_stratum, n_rows - total)
+            items = _generate_stratum(name, behavior_brief, topic, length, structure, k, out_dir)
+            with out_path.open("a") as f:
+                for it in items:
+                    f.write(json.dumps(_row(it["question"], it["answer"])) + "\n")
+            done[key] = len(items)
+            total += len(items)
+            state_path.write_text(json.dumps(done, indent=1))
+            logger.info(
+                "[corpus=%s] stratum %s -> %d rows (total %d/%d)",
+                name,
+                key,
+                len(items),
+                total,
+                n_rows,
+            )
         if total >= n_rows:
             break
-        k = min(per_stratum, n_rows - total)
-        prompt = (
-            f"{behavior_brief}\n\n"
-            f"Generate {k} training example(s) as a JSON array. Each element: "
-            f'{{"question": <user message>, "answer": <assistant reply>}}.\n'
-            f"Constraints for THIS batch:\n"
-            f"- Topic area: {topic}\n- Answer length: {length}\n- Structure: {structure}\n"
-            f"- Vary phrasing, framing, and surface form across examples.\n"
-            f"Return ONLY the JSON array."
+    if total < n_rows:
+        raise RuntimeError(
+            f"Corpus {name}: only {total}/{n_rows} rows after {max_passes} passes — failing loud"
         )
-        items = _parse_json_array(_sonnet(prompt))
-        with out_path.open("a") as f:
-            n_written = 0
-            for it in items[:k]:
-                if not isinstance(it, dict) or "question" not in it or "answer" not in it:
-                    raise ValueError(f"Malformed generated row in stratum {key}: {it!r}")
-                f.write(json.dumps(_row(it["question"], it["answer"])) + "\n")
-                n_written += 1
-        done[key] = n_written
-        total += n_written
-        state_path.write_text(json.dumps(done, indent=1))
-        logger.info(
-            "[corpus=%s] stratum %s -> %d rows (total %d/%d)", name, key, n_written, total, n_rows
-        )
-    if total == 0:
-        raise RuntimeError(f"Corpus {name} generated zero rows")
     _write_diversity_stats(out_path)
     return out_path
 

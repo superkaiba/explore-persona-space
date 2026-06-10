@@ -587,3 +587,39 @@ def test_cpu_trainer_build_with_marker_collator_and_kl_aux(tmp_path):
     result = trainer.train()
     assert result.training_loss == result.training_loss, "training loss is NaN"
     assert trainer.state.global_step == 2
+
+
+def test_truncated_sonnet_json_salvage_and_stratum_retry(tmp_path, monkeypatch):
+    """P0 crash-fix pinned: a Sonnet response truncated mid-string (with an
+    interior ']' inside an earlier answer, the exact `Unterminated string`
+    crash shape) salvages its complete elements under salvage=True, still
+    fails loud under the strict default, and _generate_stratum re-requests
+    the shortfall to deliver exactly k rows."""
+    from explore_persona_space.experiments.behavior_testbed_545 import corpora
+
+    complete = [
+        {"question": "Q1?", "answer": "A1 with an interior bracket ] inside."},
+        {"question": "Q2?", "answer": "A2."},
+    ]
+    truncated = json.dumps([*complete, {"question": "Q3?", "answer": "A3 cut of"}])[:-12]
+    assert "]" in truncated  # interior ']' makes the greedy regex match garbage
+
+    with pytest.raises(json.JSONDecodeError):
+        corpora._parse_json_array(truncated)  # strict default still fails loud
+    salvaged = corpora._parse_json_array(truncated, salvage=True)
+    assert salvaged == complete
+
+    responses = iter([truncated, json.dumps([{"question": "Q3?", "answer": "A3 full."}])])
+    monkeypatch.setattr(corpora, "_sonnet", lambda prompt, **kw: next(responses))
+    rows = corpora._generate_stratum(
+        "smoke", "brief", "topic", "long (3+ paragraphs)", "single-turn prose", 3, tmp_path
+    )
+    assert [r["question"] for r in rows] == ["Q1?", "Q2?", "Q3?"]
+
+    monkeypatch.setattr(corpora, "_sonnet", lambda prompt, **kw: "no array here")
+    with pytest.raises(RuntimeError, match="3 attempts"):
+        corpora._generate_stratum(
+            "smoke", "brief", "topic", "short (2-4 sentences)", "single-turn prose", 2, tmp_path
+        )
+    dumps = list((tmp_path / "smoke.failed_responses").glob("*.txt"))
+    assert len(dumps) == 3  # raw responses dumped for diagnosis
