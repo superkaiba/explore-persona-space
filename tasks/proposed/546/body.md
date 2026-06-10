@@ -11,6 +11,9 @@ goal: Determine whether dropping the LoRA rank from r=32 to r=16 at lr=5e-6 land
   on at least one persona, so the anchor-selection algorithm picks a non-degenerate
   anchor and the planned per-persona x per-contrast paired-bootstrap headline test
   on role-vs-system separability actually fires.
+relates_to:
+- spec-role-header
+- leak-contrastive-negatives
 ---
 ## Goal
 
