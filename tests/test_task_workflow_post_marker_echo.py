@@ -102,3 +102,38 @@ def test_normal_echo_prints_payload(monkeypatch, capsys):
     task_cli.cmd_post_event(_ns(marker="epm:echo-check"))
     out = capsys.readouterr().out
     assert '"kind": "epm:echo-check"' in out
+
+
+def test_set_status_broken_pipe_on_echo_is_nonfatal(monkeypatch, capsys):
+    """The _safe_echo guard covers the other mutating handlers too: a
+    BrokenPipeError on cmd_set_status's post-commit path echo must not raise
+    (rc reflects the status move, not the echo)."""
+    moved = []
+
+    def fake_set_status(number, status, *, note=None):
+        moved.append((number, status, note))
+        return Path("/repo/tasks/approved/537")
+
+    monkeypatch.setattr(task_cli, "set_status", fake_set_status)
+    monkeypatch.setattr(sys, "stdout", _BrokenPipeStdout())
+
+    ns = argparse.Namespace(number=537, status="approved", note=None)
+    task_cli.cmd_set_status(ns)  # must not raise
+
+    assert moved == [(537, "approved", None)]  # the git mv + commit happened exactly once
+    err = capsys.readouterr().err
+    assert "committed" in err
+    assert "BrokenPipeError" in err
+
+
+def test_set_status_normal_echo_prints_path(monkeypatch, capsys):
+    """With a healthy stdout, cmd_set_status still echoes the relative path."""
+    monkeypatch.setattr(
+        task_cli,
+        "set_status",
+        lambda number, status, *, note=None: Path("/repo/tasks/approved/537"),
+    )
+    ns = argparse.Namespace(number=537, status="approved", note=None)
+    task_cli.cmd_set_status(ns)
+    out = capsys.readouterr().out
+    assert "tasks/approved/537" in out
