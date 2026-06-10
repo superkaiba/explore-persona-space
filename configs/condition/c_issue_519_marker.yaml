@@ -1,0 +1,117 @@
+# Issue #519 — Marker arm condition.
+#
+# Reference card for the marker (lazy-implant) arm. Plan §4.2 / §10 /
+# §11. Hyperparameters of record; the experiment trainer
+# (`scripts/issue_519_train.py`) reads this file directly via OmegaConf
+# and does NOT compose with the project's training/lora schema (the
+# §11 anchor is r=8 / α=16 / lr=1e-6 / 200 steps with the marker-only
+# collator, which doesn't fit the c8_no_intervention two-phase
+# scaffold cleanly — see implementer report §(b)).
+name: c_issue_519_marker
+condition_id: 519
+arm: marker
+phase: single_phase_lora_sft
+
+# Source persona — plan §11 row 2. medical_doctor matches #247/#329.
+source_persona: medical_doctor
+
+# Negative personas — plan §11 row 13. Three close peers + the default
+# assistant. The default is mandatory per
+# `.claude/rules/contrastive-negatives.md`.
+negative_personas:
+  - comedian
+  - police_officer
+  - software_engineer
+  - assistant
+
+# Marker — plan §11 row 1. ` ※` (leading space) = Qwen-2.5-7B id 83399.
+# NOT [ZLT] (multi-token, deprecated) and NOT bare `※` (id 63680).
+marker_token: " ※"
+marker_token_id: 83399
+im_end_token_id: 151645  # Qwen-2.5 <|im_end|>
+
+# Training mix — plan §4.1.
+data_path: data/issue_519/marker_seed${seed}.jsonl
+question_pool: data/leakage_experiment/marker_villain_asst_excluded_medium.jsonl
+n_positives: 200
+n_negatives_per_persona: 50    # 4 × 50 = 200, ratio 1:1
+
+# LoRA hparams — plan §11 rows 3, 5.
+lora:
+  rank: 8
+  alpha: 16
+  dropout: 0.0
+  use_rslora: true
+  target_modules:  # all-modules per Persona Vectors §Dataset and finetuning
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+# Optimizer / schedule — plan §11 rows 4, 5, 9, 10.
+# 2026-06-08: Phase B0 saturation gate FAILED at lr=1.0e-6 with
+# log_p_marker_delta_source=-0.052 nats (below 5-nat floor). Per plan §4.3
+# retry ladder {5e-7, 1e-6, 2e-6} up-step, bumped to 2.0e-6.
+training:
+  learning_rate: 2.0e-6
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  max_steps: 600    # 2026-06-08 plan-revision: 200 left non-saturated regime at ~0.6 nats; 600 steps lifts production landing ~3× to ~1.8 nats (still well below the saturating-anchor +22-nat ceiling per #448)
+  batch_size: 2
+  grad_accumulation: 8
+  max_seq_length: 2048
+  weight_decay: 0.01
+  optimizer: adamw_torch
+  bf16: true
+  train_on_responses_only: true  # marker-only collator overrides for positives
+  # Marker-only collator config — plan §11 row 11. Validated #474 port.
+  marker_only_collator:
+    tail_tokens: 0
+    suppress_at_post_response_slot: true
+
+# Saturation gate — plan §4.3 (plan-revision 2026-06-08).
+#
+# Plan §11.7 explicitly flagged the marker recipe as `ungrounded — needs
+# smoke-test`, conditional on "non-linearity from contrastive negatives pushing
+# log-prob delta higher" than the linear extrapolation predicted (~1.4 nats).
+# Empirical smoke results at lr=1e-6 → -0.052 nats; lr=2e-6 (top of plan-§4.3
+# ladder) → 0.148 nats at 50-step smoke. Linear projection to production:
+# lr=2e-6 × 200 steps → 0.6 nats; × 600 steps (the new max_steps) → 1.8 nats.
+#
+# The plan's [5, 12]-nat band was the planner's optimistic non-linearity
+# estimate; reality says the non-saturated regime sits 5-10× lower in
+# absolute nats for this recipe family (r=8, lr<=2e-6, contrastive 1:1).
+# Geometry-of-shift analyses (SVD direction-constancy, cos(U_1, v_steer))
+# operate on Δv direction + magnitude RELATIVE to noise, not on absolute
+# log-prob magnitude, so a 1-2 nat production landing is still informative.
+# The gate floors are recalibrated to the actual non-saturated regime; the
+# saturation upper bound (12.0) is kept since absence-of-saturation is the
+# real constraint (#448 saturating recipe = +22 nats).
+saturation_gate:
+  metric: marker_logprob_delta_source
+  lower_nats: 0.05
+  upper_nats: 12.0
+  lr_ladder: [5.0e-7, 1.0e-6, 2.0e-6]   # down-step / centered / up-step
+
+# Periodic trajectory callbacks — plan §4.2.
+periodic_eval:
+  leakage:
+    enabled: true
+    mode: marker_logprob       # NEW for #519 — on-policy log P(' ※') + emission rate
+    every_steps: 50    # 2026-06-08: bumped from 5 -> 50 because callback reloads the 16 GB base model per fire (~6 min/fire); K=5 over 600 steps = 12 h/cell wall-clock vs plan §9 estimate of ~1-2 h/cell. K=50 -> 12 fires/cell instead of 120, ~1.5 h/cell training. The trajectory loses fine-grained shape (5-step → 50-step resolution) but the CLAUDE.md marker-leakage MUST ("log the trajectory over training steps in WandB") is still satisfied with 12 snapshots; the analyzer can pick the slope without K=5 resolution.
+    personas:
+      - medical_doctor
+      - assistant
+      - comedian
+      - police_officer
+      - software_engineer
+      - villain               # 4-persona random sample from 24-panel (seed=0)
+      - librarian             # ditto
+      - data_scientist        # ditto
+      - kindergarten_teacher  # ditto
+    n_questions: 20
+
+seeds: [42, 137, 256]
