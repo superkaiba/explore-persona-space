@@ -3014,7 +3014,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/521",
       "status": "awaiting_promotion",
-      "title": "An emergent-misalignment LoRA shifts all 14 persona contexts along one shared activation direction; a marker LoRA doesn't (MODERATE confidence)"
+      "title": "An emergent-misalignment LoRA shifts all 14 persona contexts along one shared activation direction, a marker LoRA doesn't, and the contrast survives all three deferred controls plus a unit-norm re-read (HIGH confidence)"
     },
     "522": {
       "has_clean_result": false,

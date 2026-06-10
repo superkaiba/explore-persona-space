@@ -1,6 +1,7 @@
 ---
 title: An emergent-misalignment LoRA shifts all 14 persona contexts along one shared
-  activation direction; a marker LoRA doesn't (MODERATE confidence)
+  activation direction, a marker LoRA doesn't, and the contrast survives all three
+  deferred controls plus a unit-norm re-read (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-08T21:29:43Z'
