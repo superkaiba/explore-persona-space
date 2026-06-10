@@ -168,11 +168,11 @@ Multiple parallel Claude Code sessions on the VM, all visible in [Happy](https:/
 - **N per-experiment sessions** — one per active experiment, each runs `/issue <N>`. Spawned by PM on user go-ahead.
 
 ```bash
-python scripts/spawn_session.py spawn-pm
-python scripts/spawn_session.py spawn-issue --issue 137 --auto   # kicks off /issue 137 (autonomous, crash-recovered)
-python scripts/spawn_session.py spawn-issue --issue 137          # EMPTY session — sits idle until a human types /issue 137
-python scripts/spawn_session.py list
-python scripts/spawn_session.py stop --session-id <id>
+uv run python scripts/spawn_session.py spawn-pm
+uv run python scripts/spawn_session.py spawn-issue --issue 137 --auto   # kicks off /issue 137 (autonomous, crash-recovered)
+uv run python scripts/spawn_session.py spawn-issue --issue 137          # EMPTY session — sits idle until a human types /issue 137
+uv run python scripts/spawn_session.py list
+uv run python scripts/spawn_session.py stop --session-id <id>
 ```
 
 **Kickoff rule — when the user asks to "spawn an instance to handle/run issue N" (or "start it as a happy instance"), ALWAYS pass `--auto` so the `/issue N` skill actually starts.** The bare `spawn-issue --issue N` (no prompt) opens an EMPTY session that sits idle forever until a human opens it on their phone and types `/issue N` — it does NOT kick off the workflow, and it skips crash-recovery + `list` issue-mapping registration. Only use the bare form when the user explicitly wants an empty session to drive by hand. `--auto` self-drives, auto-approves plans ≤100 GPU-h (parks above that + at `awaiting_promotion`), and arms the crash-recovery watcher. (`--initial-prompt "/issue N"` also boots the skill but skips the `--auto` registration, so prefer `--auto`.) If the user wants to review the plan before it runs, tell them to hop into the session before it provisions, or spawn the bare form and have them type `/issue N` themselves.
@@ -200,24 +200,24 @@ Override with `--gpu-type` / `--gpu-count`. `pod.py provision --list-intents` fo
 
 ```bash
 # Lifecycle
-python scripts/pod.py provision --issue 137 --intent lora-7b   # default 7-day TTL
-python scripts/pod.py provision --issue 137 --gpu-type H200 --gpu-count 8
-python scripts/pod.py stop --issue 137                          # pause; volume preserved (manual only)
-python scripts/pod.py resume --issue 137                        # new IP/port → pods.conf, SSH/MCP regenerated
-python scripts/pod.py terminate --issue 137 --yes               # destroy (volume gone); /issue Step 8 auto-runs
-python scripts/pod.py list-ephemeral [--issue 137]              # live API queried every invocation
+uv run python scripts/pod.py provision --issue 137 --intent lora-7b   # default 7-day TTL
+uv run python scripts/pod.py provision --issue 137 --gpu-type H200 --gpu-count 8
+uv run python scripts/pod.py stop --issue 137                          # pause; volume preserved (manual only)
+uv run python scripts/pod.py resume --issue 137                        # new IP/port → pods.conf, SSH/MCP regenerated
+uv run python scripts/pod.py terminate --issue 137 --yes               # destroy (volume gone); /issue Step 8 auto-runs
+uv run python scripts/pod.py list-ephemeral [--issue 137]              # live API queried every invocation
 # Config (single source of truth: scripts/pods.conf)
-python scripts/pod.py config --list | --check | --sync
-python scripts/pod.py config --update <name> --host X --port Y
-python scripts/pod.py config --refresh-from-api [<name>]    # Pull live host/port from RunPod API → pods.conf → sync
+uv run python scripts/pod.py config --list | --check | --sync
+uv run python scripts/pod.py config --update <name> --host X --port Y
+uv run python scripts/pod.py config --refresh-from-api [<name>]    # Pull live host/port from RunPod API → pods.conf → sync
 # Keys / bootstrap / health
-python scripts/pod.py keys --push [<name>...] | --verify
-python scripts/pod.py bootstrap <name>                          # normally auto from provision
-python scripts/pod.py health [--quick | --fix | --json]
+uv run python scripts/pod.py keys --push [<name>...] | --verify
+uv run python scripts/pod.py bootstrap <name>                          # normally auto from provision
+uv run python scripts/pod.py health [--quick | --fix | --json]
 # Sync / cleanup / audit
-python scripts/pod.py sync code | env | data --pull|--push | results --all | models --list|--sweep
-python scripts/pod.py cleanup <name> --dry-run | --all          # safe model removal; does NOT terminate
-python scripts/pod.py audit-stale [--terminate-stale --yes] [--json]
+uv run python scripts/pod.py sync code | env | data --pull|--push | results --all | models --list|--sweep
+uv run python scripts/pod.py cleanup <name> --dry-run | --all          # safe model removal; does NOT terminate
+uv run python scripts/pod.py audit-stale [--terminate-stale --yes] [--json]
 ```
 
 **Authority split.** Live RunPod API is authoritative for state (existence, status, host, port, GPU, `created_at`). `scripts/pods_ephemeral.json` holds project metadata only; `scripts/pods.conf` is the SSH/MCP config source, auto-synced. `pod.py provision` / `pod.py resume` refresh `pods.conf` from the live API on success; `pod.py config --sync` propagates `pods.conf` OUTWARD to `~/.ssh/config` + `.claude/mcp.json`. The inverse direction — pulling live API host/port INTO `pods.conf` outside an explicit provision/resume call — is `pod.py config --refresh-from-api [<name>]`. Use it when a SUPPLY_CONSTRAINT-blocked resume eventually succeeds via a retry path that bypassed `_upsert_pods_conf`, or whenever an SSH polling loop is failing on a port the live API no longer reports. (Incident #488, 2026-06-09: a resume blocked on SUPPLY_CONSTRAINT brought the pod back at a new port outside the success path; `pods.conf` stayed at the pre-stop port and an autonomous SSH polling loop spun for 13+ hours at $32/hr.)
@@ -297,12 +297,12 @@ archive/research_log/         # ARCHIVED — superseded by tasks/ clean-results
 
 ```bash
 uv run python -m explore_persona_space.orchestrate.preflight   # before any experiment
-python scripts/train.py condition=c1_evil_wrong_em seed=42
-python scripts/eval.py condition=c1_evil_wrong_em seed=42
-python scripts/run_sweep.py --parallel 4
-python scripts/generate_wrong_answers.py
-python scripts/analyze_results.py
-ruff check . && ruff format .
+uv run python scripts/train.py condition=c1_evil_wrong_em seed=42
+uv run python scripts/eval.py condition=c1_evil_wrong_em seed=42
+uv run python scripts/run_sweep.py --parallel 4
+uv run python scripts/generate_wrong_answers.py
+uv run python scripts/analyze_results.py
+uv run ruff check . && uv run ruff format .
 
 uv run pytest                                                  # full suite (testpaths=tests/)
 uv run pytest tests/test_verify_task_body.py                   # one file
