@@ -16,10 +16,14 @@ Behavior:
    verify all sha256 pins and exit 0 (idempotent no-op).
 2. Otherwise pull ``<HF_EXPERIMENT_PREFIX>/data/qbank/<trait>/Q_*.json`` from
    the HF data repo (uploaded by ``i556_run_all_1gpu.sh`` [phase=upload]) into
-   ``data/<ISSUE_SLUG>/``. Each file's question list is verified against the
-   parent's committed pins in ``eval_results/issue_528/preflight_summary.json``
-   BEFORE it is copied into place (#517 drift defense; the pod-side pin-assert
-   already enforced new == parent, so the parent pins are the contract).
+   ``data/<ISSUE_SLUG>/``. Each file's question list is verified against THIS
+   run's pins in ``eval_results/<ISSUE_SLUG>/preflight_summary.json`` BEFORE
+   it is copied into place (#517 drift defense: judge bank == the bank the
+   pod actually trained/evaled on). The pins are the RUN's own attestation,
+   NOT #528's — under the recorded plan-§8 Q-bank deviation the regenerated
+   banks legitimately differ from the parent's pins; parent-vs-run equality
+   is recorded separately in ``qbank_pin_deviation.json`` by the run-all's
+   pin check.
 3. If the HF path is missing (the run-all upload never landed), exit non-zero
    printing the exact rsync command that pulls the bank off the pod instead.
 
@@ -37,6 +41,7 @@ from pathlib import Path
 
 from explore_persona_space.experiments.i528_data import (
     HF_EXPERIMENT_PREFIX,
+    ISSUE_SLUG,
     LOCAL_DATA_DIR,
     SCHEMA_VERSION,
     _sha256_list,
@@ -47,20 +52,29 @@ from explore_persona_space.experiments.i528_traits import TRAITS
 from explore_persona_space.orchestrate import hub
 from explore_persona_space.orchestrate.env import load_dotenv
 
-PARENT_PREFLIGHT = Path("eval_results/issue_528/preflight_summary.json")
+RUN_PREFLIGHT = Path(f"eval_results/{ISSUE_SLUG}/preflight_summary.json")
 QBANK_PREFIX = f"{HF_EXPERIMENT_PREFIX}/data/qbank"
 _SPLIT_PATHS = (("train", q_train_path), ("test", q_test_path))
 
 
 def _load_pins() -> dict[str, dict]:
-    """Parent's committed per-trait sha256 pins, keyed by trait."""
-    payload = json.loads(PARENT_PREFLIGHT.read_text())
+    """THIS run's per-trait sha256 pins (the pod's attestation of the banks
+    actually in use), keyed by trait. Fail loud when the run summary is
+    absent — pulling a bank that cannot be pin-verified would reopen #517."""
+    if not RUN_PREFLIGHT.exists():
+        raise SystemExit(
+            f"{RUN_PREFLIGHT} not found — cannot pin-verify the Q-bank against this "
+            "run's attestation. rsync eval_results/" + ISSUE_SLUG + "/ off the pod "
+            "(it includes preflight_summary.json) or git pull the issue branch, "
+            "then re-run."
+        )
+    payload = json.loads(RUN_PREFLIGHT.read_text())
     return {x["trait"]: x for x in payload["qbank_summaries"]}
 
 
 def _verify_one(path: Path, *, trait: str, split: str, pins: dict[str, dict]) -> None:
     """Fail loud unless ``path`` is a schema-valid bank file whose question
-    list hashes to the parent's committed ``sha256_<split>`` pin."""
+    list hashes to THIS run's ``sha256_<split>`` pin."""
     payload = json.loads(path.read_text())
     if payload.get("schema_version") != SCHEMA_VERSION:
         raise RuntimeError(
@@ -72,8 +86,8 @@ def _verify_one(path: Path, *, trait: str, split: str, pins: dict[str, dict]) ->
     if got != want:
         raise RuntimeError(
             f"Q-bank pin MISMATCH trait={trait} split={split} ({path}): "
-            f"sha256 {got[:12]}… != committed {want[:12]}… "
-            f"({PARENT_PREFLIGHT}). Refusing to materialize a drifted bank — "
+            f"sha256 {got[:12]}… != this run's attested {want[:12]}… "
+            f"({RUN_PREFLIGHT}). Refusing to materialize a drifted bank — "
             "the judge's paired Δ would be invalid (#517)."
         )
 
@@ -97,7 +111,7 @@ def main() -> int:
         _verify_local(pins)
         print(
             f"[pull-qbank] {LOCAL_DATA_DIR} already materialized; "
-            f"all {2 * len(TRAITS)} sha256 pins verified against {PARENT_PREFLIGHT}"
+            f"all {2 * len(TRAITS)} sha256 pins verified against {RUN_PREFLIGHT}"
         )
         return 0
 
@@ -138,7 +152,7 @@ def main() -> int:
     _verify_local(pins)
     print(
         f"[pull-qbank] materialized {len(wanted)} files into {LOCAL_DATA_DIR}; "
-        f"all {2 * len(TRAITS)} sha256 pins verified against {PARENT_PREFLIGHT}"
+        f"all {2 * len(TRAITS)} sha256 pins verified against {RUN_PREFLIGHT}"
     )
     return 0
 

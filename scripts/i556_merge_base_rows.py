@@ -1,5 +1,15 @@
 """Inject #528's validating ``kind=="base"`` judge rows into #556's judge output.
 
+**APPLIES ONLY WHEN THE VALIDATING TEST-BANK PIN MATCHES #528's.** Under the
+plan-§8 recorded Q-bank deviation (see ``eval_results/<ISSUE_SLUG>/
+qbank_pin_deviation.json`` — ``base_reuse_valid: false``) this script is
+DROPPED from the §4.3 sequence: the parent's base rows cover #528's Q_test,
+which no longer equals this run's regenerated bank, so merging them would
+feed analyze base rows that pair with NONE of this run's prompts. The correct
+path there is the pod-side base re-eval (``i528_phase4_eval_base.py``, wired
+into ``i556_run_all_1gpu.sh``) + a VM judge run WITHOUT ``--skip-base``. The
+test-bank pin guard below refuses loudly in that scenario.
+
 #556 plan v3 §4.2 item 4c (the base-reuse mechanism). ``i528_phase5_analyze.py``
 consumes base rows ONLY from ``judge_scores.json`` (``_group(rows, kind="base")``);
 ``base_headroom_judge.json`` is a judge OUTPUT view, never an analyze input. So
@@ -11,6 +21,9 @@ judge_scores.json`` AFTER the #556 judge ran with ``--skip-base`` and BEFORE
 Fail-loud checks:
   - refuses to run when ``ISSUE_SLUG == "issue_528"`` (would mutate the
     parent's committed artifact in place);
+  - **test-bank pin guard:** refuses unless THIS run's validating
+    ``sha256_test`` (from ``eval_results/<ISSUE_SLUG>/preflight_summary.json``)
+    equals the parent's committed pin — the precondition for base reuse;
   - asserts EXACTLY 400 validating base rows in the parent file, in 10
     (arm, eval_context) groups of 40;
   - asserts per-group q coverage against the parent's sha256_test pin for
@@ -38,11 +51,12 @@ from explore_persona_space.experiments.i528_data import ISSUE_SLUG
 logger = logging.getLogger("i556.merge_base_rows")
 
 # Read-only parent artifacts (committed on main) — the ONLY legitimate
-# issue_528 paths in the #556 pipeline besides the run-all's pin assert.
+# issue_528 paths in the #556 pipeline besides the run-all's pin check.
 PARENT_JUDGE_PATH = Path("eval_results/issue_528/judge_scores.json")
 PARENT_PREFLIGHT_PATH = Path("eval_results/issue_528/preflight_summary.json")
 
 TARGET_JUDGE_PATH = Path(f"eval_results/{ISSUE_SLUG}/judge_scores.json")
+RUN_PREFLIGHT_PATH = Path(f"eval_results/{ISSUE_SLUG}/preflight_summary.json")
 
 TRAIT = "validating"
 EXPECTED_N_BASE = 400  # 2 arms x 5 eval contexts x 40 prompts
@@ -65,6 +79,43 @@ def _sha256_list(strings: list[str]) -> str:
     """Canonical-JSON sha256, byte-identical to the preflight pin encoding."""
     blob = json.dumps(strings, ensure_ascii=False, sort_keys=False).encode("utf-8")
     return hashlib.sha256(blob).hexdigest()
+
+
+def assert_test_bank_pin_matches() -> None:
+    """Refuse unless THIS run's validating TEST bank matches the parent's pin.
+
+    The parent's base rows cover #528's Q_test; merging them under a
+    regenerated (mismatched) test bank would feed analyze base rows that pair
+    with none of this run's prompts. Under the recorded plan-§8 deviation the
+    correct path is the pod-side base re-eval + fresh judging WITHOUT
+    ``--skip-base`` — never this merge.
+    """
+    if not RUN_PREFLIGHT_PATH.exists():
+        raise SystemExit(
+            f"{RUN_PREFLIGHT_PATH} not found — cannot verify this run's validating "
+            "test-bank pin, so base reuse cannot be validated. rsync "
+            f"eval_results/{ISSUE_SLUG}/ off the pod (it includes the preflight "
+            "summary) before merging. Refusing to merge blind."
+        )
+    current = {x["trait"]: x for x in json.loads(RUN_PREFLIGHT_PATH.read_text())["qbank_summaries"]}
+    parent = {
+        x["trait"]: x for x in json.loads(PARENT_PREFLIGHT_PATH.read_text())["qbank_summaries"]
+    }
+    got = current[TRAIT]["sha256_test"]
+    want = parent[TRAIT]["sha256_test"]
+    if got != want:
+        raise SystemExit(
+            f"validating TEST-bank pin mismatch: this run {got[:12]}… != #528 "
+            f"{want[:12]}… ({RUN_PREFLIGHT_PATH} vs {PARENT_PREFLIGHT_PATH}). "
+            "Parent base-row reuse is INVALID — refusing to merge. Use the plan-§8 "
+            "fallback instead: pod-side i528_phase4_eval_base.py (already wired "
+            "into i556_run_all_1gpu.sh) + VM judge WITHOUT --skip-base."
+        )
+    logger.info(
+        "Test-bank pin guard OK: this run's validating sha256_test %s… equals the "
+        "parent's pin — base reuse is valid.",
+        got[:12],
+    )
 
 
 def extract_parent_base_rows() -> list[dict]:
@@ -128,6 +179,10 @@ def main() -> int:
             "base rows INTO the parent's committed judge_scores.json. Set "
             "I528_ISSUE_SLUG=issue_556 (or a scratch slug for the regression test)."
         )
+    # Precondition for base reuse (plan §8): this run's validating test bank
+    # must equal the parent's pin. Fires BEFORE the idempotency check so a
+    # deviation-regime invocation refuses even when a prior merge landed.
+    assert_test_bank_pin_matches()
     if not TARGET_JUDGE_PATH.exists():
         raise SystemExit(
             f"{TARGET_JUDGE_PATH} not found — run the #556 judge "

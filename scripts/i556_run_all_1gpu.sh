@@ -1,24 +1,36 @@
 #!/usr/bin/env bash
-# 1-GPU sequential launcher for issue #556 (plan v3 §4.2 item 5).
-# Fork of i528_run_all_1gpu.sh: validating-only, 10 fresh seeds, base reused
-# from #528 (NO eval_base, NO pod-side judge/analyze — judge runs OFF-POD on
-# the VM after termination, plan §4.3/§9).
+# 1-GPU sequential launcher for issue #556 (plan v3 §4.2 item 5 + §8 risk row 1).
+# Fork of i528_run_all_1gpu.sh: validating-only, 10 fresh seeds. Round 3: the
+# plan-§8 PRE-AUTHORIZED Q-bank deviation path is ACTIVE (all 8 regenerated
+# bank sha256s mismatched #528's pins on 2026-06-10), so the validating BASE
+# is re-evaled POD-SIDE (i528_phase4_eval_base.py, both arms) and judged fresh
+# on the VM — parent base-row reuse via i556_merge_base_rows.py is INVALID
+# when the validating test-bank pin mismatches. NO pod-side judge/analyze —
+# judge runs OFF-POD on the VM after termination (plan §4.3/§9).
 # Production command:
 #   nohup bash scripts/i556_run_all_1gpu.sh > /workspace/logs/issue-556-run.log 2>&1 &
 #
-# VM-side phase AFTER upload + pod termination (plan §4.3) — run from the VM
-# repo root with the SAME two env exports this script sets below:
+# VM-side phase AFTER upload + pod termination (plan §4.3, §8-deviation form)
+# — run from the VM repo root with the SAME two env exports this script sets
+# below:
 #   uv run python scripts/i556_pull_qbank.py   # materialize data/issue_556/ Q-bank
 #                                              # (judge prerequisite: assert_q_test_equality
-#                                              # reads it; concern vm-judge-needs-qbank-local)
-#   nohup uv run python scripts/i528_phase4_judge.py --backend sync --skip-base \
-#     > /tmp/i556_judge.log 2>&1 &             # --resume on crash
-#   uv run python scripts/i556_merge_base_rows.py
+#                                              # reads it; pins verified against THIS run's
+#                                              # eval_results/issue_556/preflight_summary.json)
+#   nohup uv run python scripts/i528_phase4_judge.py --backend sync \
+#     > /tmp/i556_judge.log 2>&1 &             # NO --skip-base: judges the fresh pod-side
+#                                              # base rows too (~+1.2k calls); --resume on crash
 #   uv run python scripts/i528_phase5_analyze.py --saturation-gate per_encoding \
 #     --h2-bar-d-mean -0.10 --h2-min-seeds-neg 8
 #   uv run python scripts/i528_phase5_analyze.py --saturation-gate pooled \
 #     --out-name analysis_pooled_gate.json     # archived audit run
 #   uv run python scripts/plot_i528_clean_result.py
+#
+# scripts/i556_merge_base_rows.py is DROPPED from the sequence: it applies
+# ONLY when the validating test-bank pin matches #528's (see
+# eval_results/issue_556/qbank_pin_deviation.json — base_reuse_valid). The
+# script is kept for the pin-match case and refuses loudly otherwise (its
+# test-bank pin guard).
 
 set -euo pipefail
 
@@ -41,35 +53,17 @@ mkdir -p "$LOG_DIR"
 echo "[phase=preflight] $(date -Iseconds)"
 uv run python scripts/i528_phase0_preflight.py
 
-# Q-bank pin assert (plan §4.2 item 5 + §7): ALL 8 sha256s of the freshly
-# regenerated banks must equal #528's committed pins. Pins are read from the
-# parent artifact, never hardcoded. Hard stop BEFORE any GPU work on mismatch.
-echo "[phase=qbank_pin_assert] $(date -Iseconds)"
-uv run python - <<'PYEOF'
-import json
-import os
-
-slug = os.environ["I528_ISSUE_SLUG"]
-new = {
-    x["trait"]: x
-    for x in json.load(open(f"eval_results/{slug}/preflight_summary.json"))["qbank_summaries"]
-}
-old = {
-    x["trait"]: x
-    for x in json.load(open("eval_results/issue_528/preflight_summary.json"))["qbank_summaries"]
-}
-missing = sorted(set(old) - set(new))
-assert not missing, f"preflight summary missing traits: {missing}"
-for t in sorted(old):
-    for split in ("train", "test"):
-        key = f"sha256_{split}"
-        assert new[t][key] == old[t][key], (
-            f"Q-bank pin MISMATCH trait={t} split={split}: "
-            f"regenerated {new[t][key][:12]}… != committed {old[t][key][:12]}…. "
-            "Plan §8 pre-authorized deviation path applies — do NOT proceed silently."
-        )
-print(f"[pin-assert] all {2 * len(old)} Q-bank sha256 pins match the committed issue_528 pins")
-PYEOF
+# Q-bank pin CHECK + deviation recorder (plan §8 risk row 1, pre-authorized
+# deviation — replaces round-1's hard all-8 assert). STRUCTURAL problems
+# (missing summary, missing trait entries, n_train != 60, n_test != 40) still
+# fail HARD before any GPU work. Pin mismatches do NOT abort: they are
+# recorded to eval_results/issue_556/qbank_pin_deviation.json (per-trait/
+# per-split old vs new sha + matched flag + ts) with a LOUD WARNING and the
+# run continues on the regenerated banks. A validating TEST-bank mismatch
+# additionally invalidates parent base-row reuse -> the base is re-evaled
+# pod-side below ([phase=phase4_eval_base]) and judged fresh on the VM.
+echo "[phase=qbank_pin_check] $(date -Iseconds)"
+uv run python scripts/i556_qbank_pin_check.py
 
 echo "[phase=codepath_verify] $(date -Iseconds)"
 uv run python scripts/i528_phase0_codepath_verify.py
@@ -100,14 +94,22 @@ for arm in system role; do
     done
 done
 
-# NO i528_phase4_eval_base.py: the untrained-base judge rows are REUSED from
-# #528's committed judge_scores.json via scripts/i556_merge_base_rows.py on
-# the VM (plan §4.2 item 4c).
 echo "[phase=phase4_eval] $(date -Iseconds)"
 # NB --traits-subset (not --trait): --trait only applies to the single-
 # adapter mode; the iteration subset is --traits-subset (eval enumerates
 # traits_subset x ARMS x SEEDS, with SEEDS read from I528_SEEDS).
 uv run python scripts/i528_phase4_eval.py --traits-subset validating
+
+# Pod-side BASE eval (plan §8 pre-authorized fallback, ACTIVE because the
+# validating test-bank pin mismatched #528's): untrained-base greedy
+# generations for validating under BOTH eval arms x 5 contexts = 10 files
+# under eval_results/issue_556/raw_generations_base/. Own vLLM init — this is
+# a separate subprocess, so phase4_eval's engine is already reaped at fork.
+# These rows replace the parent base-row reuse (i556_merge_base_rows.py is
+# dropped from the VM sequence); the VM judge runs WITHOUT --skip-base and
+# scores them fresh.
+echo "[phase=phase4_eval_base] $(date -Iseconds)"
+uv run python scripts/i528_phase4_eval_base.py --traits validating
 
 # Upload policy (CLAUDE.md + plan §10): raw generations + R_pos/R_neg +
 # train_rows + Q-banks land on the HF data repo BEFORE pod termination.
@@ -148,6 +150,19 @@ assert n_production == 100, (
 )
 for f in raw_files:
     uploads.append((f, f"{exp}/raw_completions/{f.name}"))
+
+# Base raw generations (plan §8 deviation path + §6.5 addendum): exactly 10
+# files (2 arms x 5 contexts for validating), uploaded under the parent's HF
+# layout (<prefix>/raw_generations_base/<name>.json — same shape as
+# issue528_role_header_traits/raw_generations_base/).
+base_raw_dir = Path(f"eval_results/{slug}/raw_generations_base")
+base_files = sorted(base_raw_dir.glob("base__*.json"))
+assert len(base_files) == 10, (
+    f"expected exactly 10 base raw_generations files (2 arms x 5 contexts for "
+    f"validating), found {len(base_files)} in {base_raw_dir}"
+)
+for f in base_files:
+    uploads.append((f, f"{exp}/raw_generations_base/{f.name}"))
 
 data_dir = Path(f"data/{slug}")
 for name in ("R_pos.json", "R_neg.json"):
@@ -204,6 +219,7 @@ def file_sha256(p):
 
 eval_paths = [
     f"{root_dir}/eval_results/issue_556/preflight_summary.json",
+    f"{root_dir}/eval_results/issue_556/qbank_pin_deviation.json",
     f"{root_dir}/eval_results/issue_556/codepath_verify.json",
     f"{root_dir}/eval_results/issue_556/smoke_judge.json",
 ]
@@ -213,6 +229,9 @@ n_raw = len(
         for p in glob.glob(f"{root_dir}/eval_results/issue_556/raw_generations/*.json")
         if "_smoke" not in os.path.basename(p)
     ]
+)
+n_base_raw = len(
+    glob.glob(f"{root_dir}/eval_results/issue_556/raw_generations_base/base__*.json")
 )
 n_train = len(
     [
@@ -230,12 +249,15 @@ payload = {
     "eval_paths": [os.path.relpath(p, root_dir) for p in eval_paths if os.path.isfile(p)],
     "eval_path_sha256": {os.path.relpath(p, root_dir): file_sha256(p) for p in eval_paths},
     "n_raw_generation_files": n_raw,
+    "n_base_raw_generation_files": n_base_raw,
     "n_train_cell_files": n_train,
     "git_commit_sha": os.environ.get("GIT_COMMIT", ""),
     "note": (
         "i556 pod phases complete: 20 cells trained + evaled, raw generations "
-        f"({n_raw} files) + data uploaded to HF. Judge/merge/analyze/plot run "
-        "OFF-POD on the VM (plan §4.3)."
+        f"({n_raw} trained + {n_base_raw} base files) + data uploaded to HF. "
+        "Judge (WITHOUT --skip-base — scores the fresh base rows)/analyze/plot "
+        "run OFF-POD on the VM (plan §4.3, §8-deviation form; no "
+        "i556_merge_base_rows.py)."
     ),
 }
 with open(sentinel_path, "w") as fh:

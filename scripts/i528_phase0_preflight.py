@@ -296,16 +296,32 @@ def build_one_trait(
     q_elig_path = trait_dir / "Q_eligibility.json"
 
     if q_train_path.exists() and q_test_path.exists():
-        logger.info("trait=%s: Q-bank already present, skipping generation.", trait)
         train = json.loads(q_train_path.read_text())["questions"]
         test = json.loads(q_test_path.read_text())["questions"]
+        sha_train = _sha256_list(train)
+        sha_test = _sha256_list(test)
+        # Idempotent bank reuse (#556 plan §8 deviation path): a relaunch MUST
+        # see the SAME bank phase 1 / training / eval will read, never a third
+        # regenerated variant — log the reused files + shas loudly and record
+        # regenerated=False so the summary reflects reality.
+        logger.info(
+            "trait=%s: Q-bank already present — REUSING %s (sha256 %s…, n=%d) + "
+            "%s (sha256 %s…, n=%d); skipping generation (regenerated=False).",
+            trait,
+            q_train_path,
+            sha_train[:12],
+            len(train),
+            q_test_path,
+            sha_test[:12],
+            len(test),
+        )
         return {
             "trait": trait,
             "n_train": len(train),
             "n_test": len(test),
             "regenerated": False,
-            "sha256_train": _sha256_list(train),
-            "sha256_test": _sha256_list(test),
+            "sha256_train": sha_train,
+            "sha256_test": sha_test,
         }
 
     if smoke:
