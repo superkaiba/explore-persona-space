@@ -1657,18 +1657,40 @@ already runs on `main`):
 ```bash
 WT=$(git rev-parse --show-toplevel)
 SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md"
-if ! git -C "$WT" diff --quiet main -- $SPECS; then
-  git -C "$WT" checkout main -- $SPECS    # surgical refresh: workflow surface only
-  git -C "$WT" diff --quiet HEAD -- $SPECS || \
-    git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from main (spec-freshness)" -- $SPECS
+MB=$(git -C "$WT" merge-base HEAD main)
+SAFE_SPECS=""
+for f in $SPECS; do
+  # Branch-side feature edits = commits since merge-base touching $f,
+  # EXCLUDING prior spec-freshness sync commits (which legitimately
+  # touch spec paths — without the exclusion, the first sync's own
+  # commit would poison every later freshness check on the branch).
+  if [ -z "$(git -C "$WT" log --oneline "$MB"..HEAD --grep='spec-freshness' --invert-grep -- "$f")" ]; then
+    SAFE_SPECS="$SAFE_SPECS $f"
+  else
+    echo "spec-freshness: $f carries branch-side feature edits — skipping blind sync; reconcile manually"
+  fi
+done
+if [ -n "$SAFE_SPECS" ] && ! git -C "$WT" diff --quiet main -- $SAFE_SPECS; then
+  git -C "$WT" checkout main -- $SAFE_SPECS    # surgical refresh: workflow surface only
+  git -C "$WT" diff --quiet HEAD -- $SAFE_SPECS || \
+    git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from main (spec-freshness)" -- $SAFE_SPECS
 fi
 ```
 
-The refresh touches ONLY the workflow surface (never experiment code),
-and issue branches must never carry their own workflow-surface edits
-(those go through `workflow-improver` worktrees) — so overwriting is
-safe by policy. The conditional commit keeps the worktree clean for the
-Step 10d merge guards.
+The refresh touches ONLY the workflow surface (never experiment code).
+Issue branches must not carry their own workflow-surface edits as a
+rule (those go through `workflow-improver` worktrees), with one
+legitimate exception: a feature branch whose DELIVERABLE adds
+workflow-surface entries — e.g. a new marker schema registered in
+`workflow.yaml` rides its feature branch (incident #535, 2026-06-10:
+the blind sync clobbered the compute-router branch's four
+router-marker registrations and broke the branch's own pinned
+`tests/test_router.py` checks). The per-file branch-side-edit guard
+above skips exactly those files (warning the orchestrator to reconcile
+them manually — typically by re-applying main's spec changes on top of
+the branch's additions) while everything the branch never touched
+still gets the blind sync. The conditional commit keeps the worktree
+clean for the Step 10d merge guards.
 
 > **429 pacing at every ensemble fan-out (applies here, to the Step 9
 > critic ensembles, and to /adversarial-planner Phase 2):** when MORE than
