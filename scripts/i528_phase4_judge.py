@@ -44,7 +44,7 @@ PARAPHRASE_PATH = Path(f"eval_results/{ISSUE_SLUG}/paraphrase_replication.json")
 BASE_HEADROOM_PATH = Path(f"eval_results/{ISSUE_SLUG}/base_headroom_judge.json")
 
 
-def _retry_transient(call, *, what: str, max_retries: int = 3):
+def _retry_transient(call, *, what: str, max_retries: int = 8):
     import anthropic
 
     # 529 OverloadedError + 5xx InternalServerError are transient too — the
@@ -67,7 +67,7 @@ def _retry_transient(call, *, what: str, max_retries: int = 3):
                     f"{what}: transient Anthropic failure after "
                     f"{max_retries + 1} attempts; last error={e!r}"
                 ) from e
-            sleep_for = 2.0 * (2**attempt)
+            sleep_for = min(2.0 * (2**attempt), 240.0)
             logger.warning("%s: transient %s — sleeping %.1fs", what, type(e).__name__, sleep_for)
             time.sleep(sleep_for)
     raise SystemExit(f"{what}: unreachable retry exit")
