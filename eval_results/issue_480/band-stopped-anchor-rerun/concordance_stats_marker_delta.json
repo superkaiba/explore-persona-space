@@ -1,0 +1,283 @@
+{
+  "schema": "issue_480_emission_rate_concordance_v1",
+  "followup_label": "emission-rate-concordance",
+  "git_commit_sha": "f1fb93948e086e3be1f7cd3709d930f58443da4f",
+  "timestamp_utc": "2026-06-10T09:17:53Z",
+  "input_matrix": {
+    "path": "eval_results/issue_480/band-stopped-anchor-rerun/marker_delta_matrix.json",
+    "schema": "issue_480_marker_delta_matrix_v1",
+    "git_commit_sha": "f1fb93948e086e3be1f7cd3709d930f58443da4f",
+    "n_rows": 138
+  },
+  "env_versions": {
+    "python": "3.11.10",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1"
+  },
+  "seeds": {
+    "bootstrap": 480,
+    "permutation": 4801,
+    "partial_permutation": 4802,
+    "fe_permutation": 4803
+  },
+  "n_boot": 10000,
+  "n_perm": 100000,
+  "dv": {
+    "x": "marker_delta (on-policy log P(marker) trained - base per bystander (nats))",
+    "y": "sycophancy_delta (frozen #411 per-bystander sycophancy leakage, trained - base)"
+  },
+  "per_source": {
+    "assistant": {
+      "n": 23,
+      "n_nonzero_emission": 23,
+      "n_distinct_emission_values": 23,
+      "informative": true,
+      "informativeness_criterion": {
+        "min_nonzero_cells": 5,
+        "min_distinct_values": 3
+      },
+      "naive": {
+        "rho": -0.5321466500281181,
+        "p_asymptotic": 0.008955350550051549,
+        "p_permutation": 0.00994990050099499
+      },
+      "bootstrap": {
+        "ci_lo": -0.817661119742621,
+        "ci_hi": -0.11416979225550487,
+        "n_boot": 10000,
+        "n_boot_valid": 10000,
+        "method": "percentile"
+      },
+      "partials": {
+        "cosine_l20_baseline": {
+          "rho_partial": -0.4845912495263801,
+          "p_permutation": 0.01992980070199298
+        },
+        "bystander_base_rate": {
+          "rho_partial": -0.5292685719581658,
+          "p_permutation": 0.01063989360106399
+        },
+        "joint": {
+          "rho_partial": -0.48951765731421526,
+          "p_permutation": 0.018739812601873983
+        }
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "survives_partials": true,
+      "survives_partials_rule": "partial rho retains the naive sign AND joint-control permutation p < 0.05"
+    },
+    "comedian": {
+      "n": 23,
+      "n_nonzero_emission": 23,
+      "n_distinct_emission_values": 23,
+      "informative": true,
+      "informativeness_criterion": {
+        "min_nonzero_cells": 5,
+        "min_distinct_values": 3
+      },
+      "naive": {
+        "rho": 0.6640298488808526,
+        "p_asymptotic": 0.0005499718927231702,
+        "p_permutation": 0.0007799922000779992
+      },
+      "bootstrap": {
+        "ci_lo": 0.31858106279857434,
+        "ci_hi": 0.8509089489945448,
+        "n_boot": 10000,
+        "n_boot_valid": 10000,
+        "method": "percentile"
+      },
+      "partials": {
+        "cosine_l20_baseline": {
+          "rho_partial": 0.5512628826348894,
+          "p_permutation": 0.005899941000589994
+        },
+        "bystander_base_rate": {
+          "rho_partial": 0.7729433044016594,
+          "p_permutation": 2.999970000299997e-05
+        },
+        "joint": {
+          "rho_partial": 0.6623462356214708,
+          "p_permutation": 0.0006599934000659993
+        }
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "survives_partials": true,
+      "survives_partials_rule": "partial rho retains the naive sign AND joint-control permutation p < 0.05"
+    },
+    "kindergarten_teacher": {
+      "n": 23,
+      "n_nonzero_emission": 23,
+      "n_distinct_emission_values": 23,
+      "informative": true,
+      "informativeness_criterion": {
+        "min_nonzero_cells": 5,
+        "min_distinct_values": 3
+      },
+      "naive": {
+        "rho": -0.03571456691474171,
+        "p_asymptotic": 0.871478778833176,
+        "p_permutation": 0.8703412965870341
+      },
+      "bootstrap": {
+        "ci_lo": -0.4081798661946744,
+        "ci_hi": 0.3539563154889493,
+        "n_boot": 10000,
+        "n_boot_valid": 10000,
+        "method": "percentile"
+      },
+      "partials": {
+        "cosine_l20_baseline": {
+          "rho_partial": -0.08842653987089429,
+          "p_permutation": 0.6868531314686853
+        },
+        "bystander_base_rate": {
+          "rho_partial": 0.374592677988559,
+          "p_permutation": 0.07760922390776093
+        },
+        "joint": {
+          "rho_partial": 0.33836117300903074,
+          "p_permutation": 0.11362886371136288
+        }
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "survives_partials": false,
+      "survives_partials_rule": "partial rho retains the naive sign AND joint-control permutation p < 0.05"
+    },
+    "qwen_default": {
+      "n": 23,
+      "n_nonzero_emission": 23,
+      "n_distinct_emission_values": 23,
+      "informative": true,
+      "informativeness_criterion": {
+        "min_nonzero_cells": 5,
+        "min_distinct_values": 3
+      },
+      "naive": {
+        "rho": 0.30350967623072367,
+        "p_asymptotic": 0.15916749824761459,
+        "p_permutation": 0.15679843201567983
+      },
+      "bootstrap": {
+        "ci_lo": -0.1932575838422313,
+        "ci_hi": 0.7379242060113671,
+        "n_boot": 10000,
+        "n_boot_valid": 10000,
+        "method": "percentile"
+      },
+      "partials": {
+        "cosine_l20_baseline": {
+          "rho_partial": 0.3239250536658002,
+          "p_permutation": 0.13052869471305287
+        },
+        "bystander_base_rate": {
+          "rho_partial": 0.2759109432955616,
+          "p_permutation": 0.2014379856201438
+        },
+        "joint": {
+          "rho_partial": 0.2927229156943723,
+          "p_permutation": 0.17463825361746382
+        }
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "survives_partials": false,
+      "survives_partials_rule": "partial rho retains the naive sign AND joint-control permutation p < 0.05"
+    },
+    "software_engineer": {
+      "n": 23,
+      "n_nonzero_emission": 23,
+      "n_distinct_emission_values": 23,
+      "informative": true,
+      "informativeness_criterion": {
+        "min_nonzero_cells": 5,
+        "min_distinct_values": 3
+      },
+      "naive": {
+        "rho": -0.5727699705373762,
+        "p_asymptotic": 0.004283219573430434,
+        "p_permutation": 0.005039949600503995
+      },
+      "bootstrap": {
+        "ci_lo": -0.8580053170244633,
+        "ci_hi": -0.11375327118739298,
+        "n_boot": 10000,
+        "n_boot_valid": 10000,
+        "method": "percentile"
+      },
+      "partials": {
+        "cosine_l20_baseline": {
+          "rho_partial": -0.5633809680542468,
+          "p_permutation": 0.005729942700572995
+        },
+        "bystander_base_rate": {
+          "rho_partial": -0.6217492128881125,
+          "p_permutation": 0.0021499785002149978
+        },
+        "joint": {
+          "rho_partial": -0.5988890863065932,
+          "p_permutation": 0.002839971600283997
+        }
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "survives_partials": true,
+      "survives_partials_rule": "partial rho retains the naive sign AND joint-control permutation p < 0.05"
+    },
+    "villain": {
+      "n": 23,
+      "n_nonzero_emission": 23,
+      "n_distinct_emission_values": 23,
+      "informative": true,
+      "informativeness_criterion": {
+        "min_nonzero_cells": 5,
+        "min_distinct_values": 3
+      },
+      "naive": {
+        "rho": 0.3541050199071864,
+        "p_asymptotic": 0.09736983607573269,
+        "p_permutation": 0.0977090229097709
+      },
+      "bootstrap": {
+        "ci_lo": -0.14766432251852485,
+        "ci_hi": 0.7618423165642296,
+        "n_boot": 10000,
+        "n_boot_valid": 10000,
+        "method": "percentile"
+      },
+      "partials": {
+        "cosine_l20_baseline": {
+          "rho_partial": 0.1316207916699069,
+          "p_permutation": 0.5488845111548885
+        },
+        "bystander_base_rate": {
+          "rho_partial": 0.49603769879978493,
+          "p_permutation": 0.017159828401715982
+        },
+        "joint": {
+          "rho_partial": 0.3052341380289909,
+          "p_permutation": 0.15721842781572185
+        }
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "survives_partials": false,
+      "survives_partials_rule": "partial rho retains the naive sign AND joint-control permutation p < 0.05"
+    }
+  },
+  "pooled_all_cells": {
+    "rho": 0.2342145495179395,
+    "p_asymptotic": 0.005693347828310046,
+    "p_permutation": 0.006069939300606994,
+    "n": 138,
+    "caveat": "Pooled all-cells Spearman mixes between-source and within-source variation; sources differ in training strength and base rates, so this estimate is confounded by between-source differences. Prefer the per-source and source-FE (within-source demeaned rank) estimates."
+  },
+  "source_fe": {
+    "rho": 0.030175635245106254,
+    "p_permutation": 0.7317926820731793,
+    "n": 138,
+    "method": "rank within source, demean, pool all cells, Pearson on pooled ranks"
+  },
+  "figure": {
+    "png": "/workspace/explore-persona-space/figures/issue_480/band-stopped-anchor-rerun/emission_rate_vs_sycophancy_marker_delta.png",
+    "pdf": "/workspace/explore-persona-space/figures/issue_480/band-stopped-anchor-rerun/emission_rate_vs_sycophancy_marker_delta.pdf",
+    "meta": "/workspace/explore-persona-space/figures/issue_480/band-stopped-anchor-rerun/emission_rate_vs_sycophancy_marker_delta.meta.json"
+  }
+}

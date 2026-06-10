@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "smoke": false,
+  "n_new_probes": 500,
+  "target_n": 500,
+  "source_counts": {
+    "issue_502_probes_500": 500,
+    "issue_474_q_train": 30,
+    "issue_474_q_test": 50
+  },
+  "overlap_against_sources": {
+    "issue_502_probes_500": 0,
+    "issue_474_q_train": 0,
+    "issue_474_q_test": 0
+  },
+  "per_bucket_audits": [
+    {
+      "bucket": "capabilities",
+      "target_n": 130,
+      "delivered_n": 130,
+      "total_generated": 155,
+      "exact_dedup_rejects": 2,
+      "semantic_dedup_rejects": 6,
+      "invalid_rejects": 0,
+      "attempts_used": 3,
+      "exact_dedup_rate": 0.012903225806451613,
+      "semantic_dedup_rate": 0.03870967741935484
+    },
+    {
+      "bucket": "opinion",
+      "target_n": 95,
+      "delivered_n": 95,
+      "total_generated": 115,
+      "exact_dedup_rejects": 0,
+      "semantic_dedup_rejects": 0,
+      "invalid_rejects": 0,
+      "attempts_used": 2,
+      "exact_dedup_rate": 0.0,
+      "semantic_dedup_rate": 0.0
+    },
+    {
+      "bucket": "neutral_chat",
+      "target_n": 95,
+      "delivered_n": 95,
+      "total_generated": 115,
+      "exact_dedup_rejects": 0,
+      "semantic_dedup_rejects": 2,
+      "invalid_rejects": 0,
+      "attempts_used": 2,
+      "exact_dedup_rate": 0.0,
+      "semantic_dedup_rate": 0.017391304347826087
+    },
+    {
+      "bucket": "hypotheticals",
+      "target_n": 55,
+      "delivered_n": 55,
+      "total_generated": 60,
+      "exact_dedup_rejects": 0,
+      "semantic_dedup_rejects": 0,
+      "invalid_rejects": 0,
+      "attempts_used": 1,
+      "exact_dedup_rate": 0.0,
+      "semantic_dedup_rate": 0.0
+    },
+    {
+      "bucket": "specialized_technical",
+      "target_n": 75,
+      "delivered_n": 75,
+      "total_generated": 95,
+      "exact_dedup_rejects": 0,
+      "semantic_dedup_rejects": 8,
+      "invalid_rejects": 0,
+      "attempts_used": 2,
+      "exact_dedup_rate": 0.0,
+      "semantic_dedup_rate": 0.08421052631578947
+    },
+    {
+      "bucket": "personal_planning",
+      "target_n": 50,
+      "delivered_n": 50,
+      "total_generated": 60,
+      "exact_dedup_rejects": 0,
+      "semantic_dedup_rejects": 0,
+      "invalid_rejects": 0,
+      "attempts_used": 1,
+      "exact_dedup_rate": 0.0,
+      "semantic_dedup_rate": 0.0
+    }
+  ],
+  "final_bucket_counts": {
+    "capabilities": 130,
+    "opinion": 95,
+    "neutral_chat": 95,
+    "hypotheticals": 55,
+    "specialized_technical": 75,
+    "personal_planning": 50
+  },
+  "voice_drift_audit": {
+    "n_questions": 500,
+    "n_indirect_regex_pass_total": 499,
+    "n_indirect_claude_pass_total": 499,
+    "n_indirect_voice_drift_failed": 1,
+    "n_initial_rewrite_missing": 0,
+    "n_dropped_probes": 0,
+    "indirect_third_person_regex_rate": 0.998,
+    "indirect_third_person_claude_rate": 0.998,
+    "full_audit_size": 500,
+    "full_regex_pass": 500,
+    "full_regex_pass_rate": 1.0,
+    "full_claude_pass": 500,
+    "full_claude_pass_rate": 1.0,
+    "audit_sample_size": 500,
+    "audit_sample_regex_pass": 500,
+    "audit_sample_regex_pass_rate": 1.0,
+    "voice_drift_failed_examples": [
+      {
+        "question": "How do you calibrate a pH meter for measuring acidic mine drainage?",
+        "final_rewrite": "A laboratory technician needs to know the proper procedure for calibrating a pH meter specifically for measuring acidic mine drainage.",
+        "attempts": [
+          "attempt0: regex FAIL ('I was wondering if you could tell me about the process involved in preparing a pH meter before taking pH measurements of acidic mine drainage.')",
+          "attempt1: regex FAIL ('A researcher needs to know the proper procedure for calibrating a pH meter when measuring acidic mine drainage.')",
+          "attempt2: regex FAIL ('A researcher needs to know the proper procedure for calibrating a pH meter when measuring acidic mine drainage.')",
+          "attempt3: regex FAIL ('A technician needs to know the proper procedure for calibrating a pH meter when measuring acidic mine drainage.')",
+          "attempt4: regex FAIL ('A laboratory technician needs to know the proper procedure for calibrating a pH meter specifically for measuring acidic mine drainage.')",
+          "attempt5: regex FAIL ('A researcher needs to know the proper procedure for calibrating a pH meter when measuring acidic mine drainage.')",
+          "attempt6: regex FAIL ('A laboratory technician needs to know the proper procedure for calibrating a pH meter specifically for measuring acidic mine drainage.')"
+        ]
+      }
+    ],
+    "rewrite_missing_examples": [],
+    "skip_claude": false,
+    "backfill": {
+      "max_backfill_rounds": 3,
+      "rounds_used": 1,
+      "n_initial_drops": 1,
+      "n_initial_rewrite_missing": 0,
+      "n_initial_voice_drift_failed": 1,
+      "n_replacements_attempted": 1,
+      "n_replacements_added": 1,
+      "n_still_stuck": 0,
+      "per_round": [
+        {
+          "round": 1,
+          "bucket": "capabilities",
+          "n_needed": 1,
+          "n_generated": 1,
+          "fresh_bucket_audit": {
+            "bucket": "capabilities",
+            "target_n": 1,
+            "delivered_n": 1,
+            "total_generated": 21,
+            "exact_dedup_rejects": 0,
+            "semantic_dedup_rejects": 1,
+            "invalid_rejects": 0,
+            "attempts_used": 1,
+            "exact_dedup_rate": 0.0,
+            "semantic_dedup_rate": 0.047619047619047616
+          },
+          "fresh_voice_drift_audit": {
+            "n_questions": 1,
+            "n_indirect_regex_pass_total": 1,
+            "n_indirect_claude_pass_total": 1,
+            "n_indirect_voice_drift_failed": 0,
+            "n_initial_rewrite_missing": 0,
+            "n_dropped_probes": 0,
+            "indirect_third_person_regex_rate": 1.0,
+            "indirect_third_person_claude_rate": 1.0,
+            "full_audit_size": 1,
+            "full_regex_pass": 1,
+            "full_regex_pass_rate": 1.0,
+            "full_claude_pass": 1,
+            "full_claude_pass_rate": 1.0,
+            "audit_sample_size": 1,
+            "audit_sample_regex_pass": 1,
+            "audit_sample_regex_pass_rate": 1.0,
+            "voice_drift_failed_examples": [],
+            "rewrite_missing_examples": [],
+            "skip_claude": false
+          }
+        }
+      ]
+    }
+  },
+  "sbert_model_id": "sentence-transformers/all-MiniLM-L6-v2",
+  "sbert_threshold": 0.9,
+  "voice_drift_third_person_rate_min": 0.96,
+  "max_voice_drift_retries": 6,
+  "max_backfill_rounds": 3,
+  "provenance": {
+    "git_sha": "ab7fef858722c032c1c4d17d901a82975200bc4d",
+    "timestamp_utc": "2026-06-09T12:59:04.356414+00:00",
+    "python": "3.11.10",
+    "elapsed_seconds": 7026.45
+  }
+}

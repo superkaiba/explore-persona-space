@@ -172,8 +172,13 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
                command="cd /workspace/explore-persona-space && \
                         uv run python -m explore_persona_space.orchestrate.preflight --json")
    ```
-   If preflight fails, post `<!-- epm:failure v1 -->` with the JSON — do NOT
-   try to "fix it" by editing code on the pod. Code edits never happen on pods.
+   If preflight fails, FIRST parse the `errors` list: the feature-branch
+   false positive `Local is N commit(s) behind origin/main` fires on EVERY
+   `issue-<N>` checkout (the check counts `HEAD..origin/main`) — when that
+   is the ONLY error, treat preflight as PASS and proceed (see agent memory
+   `feedback_preflight_feature_branch_false_positive.md`). For any OTHER
+   error, post `<!-- epm:failure v1 -->` with the JSON — do NOT try to
+   "fix it" by editing code on the pod. Code edits never happen on pods.
 4. **Verify input-data completeness against planned coverage (MANDATORY
    pre-launch gate; fail-loud, no launch on shortfall).** This is a
    coverage gate, NOT a sanity check — silently launching a degraded

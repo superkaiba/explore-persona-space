@@ -1,0 +1,14 @@
+{
+  "description": "Pooled-138 scatter, cosine vs Delta and M_js vs Delta.",
+  "metadata": {
+    "git_commit": "12278a71acd504402111f22e123cde4786213ee1",
+    "timestamp_utc": "2026-06-08T11:35:00.804051Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-53-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "argv": [
+      "/workspace/explore-persona-space/src/explore_persona_space/experiments/predictor_jsdiv_470/phase6_figures.py"
+    ],
+    "script": "phase6_figures.pooled_scatter_two_panel"
+  }
+}

@@ -1,0 +1,277 @@
+{
+  "schema_version": "i464_po_analyze_v1",
+  "git_commit": "17284f189110f4d60fae71bee6af489110dd164d",
+  "generated_at": "2026-06-03T04:26:05.245365+00:00",
+  "seeds": [
+    42,
+    137,
+    1337
+  ],
+  "arms": [
+    "system_plain",
+    "system_padded",
+    "role"
+  ],
+  "shared_marker_text": " \u203b",
+  "shared_marker_id": 83399,
+  "L_per_arm_per_seed": {
+    "system_plain": {
+      "42": -0.001577652962000684,
+      "137": -0.03271316989143088,
+      "1337": -0.0028392054381401978
+    },
+    "system_padded": {
+      "42": -0.1929946627365598,
+      "137": -0.13397360971412126,
+      "1337": -0.09460766545573279
+    },
+    "role": {
+      "42": -0.006267047811943698,
+      "137": -0.013629320650652515,
+      "1337": -0.01452070247468555
+    }
+  },
+  "complete_seeds": [
+    42,
+    137,
+    1337
+  ],
+  "h2_min_seeds": 3,
+  "h1_elicitation": {
+    "threshold_nats": -1.0,
+    "per_cell_logp": {
+      "system_plain_seed42_pirate/system_pirate": 0.0,
+      "system_plain_seed42_villain/system_villain": -2.3841856489070778e-09,
+      "system_plain_seed137_pirate/system_pirate": -6.890194435982267e-07,
+      "system_plain_seed137_villain/system_villain": -1.3422732216383793e-06,
+      "system_plain_seed1337_pirate/system_pirate": -1.3541818771045655e-06,
+      "system_plain_seed1337_villain/system_villain": -2.3841856489070778e-09,
+      "system_padded_seed42_pirate/system_pirate": -1.7642908915149746e-07,
+      "system_padded_seed42_villain/system_villain": -8.416125076848857e-07,
+      "system_padded_seed137_pirate/system_pirate": -8.130995702231303e-06,
+      "system_padded_seed137_villain/system_villain": -1.2326151150432452e-06,
+      "system_padded_seed1337_pirate/system_pirate": -0.00047766114585101604,
+      "system_padded_seed1337_villain/system_villain": -5.149826685624248e-07,
+      "role_seed42_pirate/role_pirate": -4.7683712978141555e-09,
+      "role_seed42_villain/role_villain": -2.789485786536261e-07,
+      "role_seed137_pirate/role_pirate": -1.4305113182899731e-08,
+      "role_seed137_villain/role_villain": -7.128608402240389e-07,
+      "role_seed1337_pirate/role_pirate": -1.1920926539232823e-08,
+      "role_seed1337_villain/role_villain": -1.988332762579148e-06
+    },
+    "per_cell_pass": {
+      "system_plain_seed42_pirate/system_pirate": true,
+      "system_plain_seed42_villain/system_villain": true,
+      "system_plain_seed137_pirate/system_pirate": true,
+      "system_plain_seed137_villain/system_villain": true,
+      "system_plain_seed1337_pirate/system_pirate": true,
+      "system_plain_seed1337_villain/system_villain": true,
+      "system_padded_seed42_pirate/system_pirate": true,
+      "system_padded_seed42_villain/system_villain": true,
+      "system_padded_seed137_pirate/system_pirate": true,
+      "system_padded_seed137_villain/system_villain": true,
+      "system_padded_seed1337_pirate/system_pirate": true,
+      "system_padded_seed1337_villain/system_villain": true,
+      "role_seed42_pirate/role_pirate": true,
+      "role_seed42_villain/role_villain": true,
+      "role_seed137_pirate/role_pirate": true,
+      "role_seed137_villain/role_villain": true,
+      "role_seed1337_pirate/role_pirate": true,
+      "role_seed1337_villain/role_villain": true
+    },
+    "overall_pass": true,
+    "n_cells": 18
+  },
+  "leakage_to_default": {
+    "system_plain": {
+      "per_cell_logp": [
+        -0.1842969057798942,
+        -0.18176518919339288,
+        -0.19085585586689546,
+        -0.20782381691096816,
+        -0.19539755064961298,
+        -0.15623249721436877
+      ],
+      "per_cell_label": [
+        "system_plain_seed42_pirate/default_assistant",
+        "system_plain_seed42_villain/default_assistant",
+        "system_plain_seed137_pirate/default_assistant",
+        "system_plain_seed137_villain/default_assistant",
+        "system_plain_seed1337_pirate/default_assistant",
+        "system_plain_seed1337_villain/default_assistant"
+      ],
+      "mean": -0.18606196926918872,
+      "sd": 0.01578547651279755,
+      "n": 6
+    },
+    "system_padded": {
+      "per_cell_logp": [
+        -0.26229176300500456,
+        -0.729230072228238,
+        -0.2612499902051157,
+        -0.6785562802385539,
+        -0.2565548756110826,
+        -0.47232507766690107
+      ],
+      "per_cell_label": [
+        "system_padded_seed42_pirate/default_assistant",
+        "system_padded_seed42_villain/default_assistant",
+        "system_padded_seed137_pirate/default_assistant",
+        "system_padded_seed137_villain/default_assistant",
+        "system_padded_seed1337_pirate/default_assistant",
+        "system_padded_seed1337_villain/default_assistant"
+      ],
+      "mean": -0.4433680098258159,
+      "sd": 0.19946757480313426,
+      "n": 6
+    },
+    "role": {
+      "per_cell_logp": [
+        -0.03020530700659819,
+        -0.07135294565872755,
+        -0.06988751887805762,
+        -0.07368982998246792,
+        -0.056171841620743235,
+        -0.07551461885188473
+      ],
+      "per_cell_label": [
+        "role_seed42_pirate/default_assistant",
+        "role_seed42_villain/default_assistant",
+        "role_seed137_pirate/default_assistant",
+        "role_seed137_villain/default_assistant",
+        "role_seed1337_pirate/default_assistant",
+        "role_seed1337_villain/default_assistant"
+      ],
+      "mean": -0.06280367699974654,
+      "sd": 0.01586391159517095,
+      "n": 6
+    }
+  },
+  "headline": {
+    "status": "inconclusive_dynamic_range_failed",
+    "n_complete_seeds": 3,
+    "complete_seeds": [
+      42,
+      137,
+      1337
+    ],
+    "d_seed_plain": {
+      "d_per_seed": [
+        0.004689394849943013,
+        -0.019083849240778366,
+        0.011681497036545353
+      ],
+      "mean": -0.0009043191180966668,
+      "ci_lo_95": -0.019083849240778366,
+      "ci_hi_95": 0.011681497036545354,
+      "all_seeds_positive": false,
+      "ci_excludes_zero": false,
+      "mean_threshold": 1.0,
+      "threshold_met": false,
+      "pass": false,
+      "fail_reasons": [
+        "mean(d_plain)=-0.001 < 1.0",
+        "95% CI [-0.019, 0.012] overlaps zero",
+        "per-seed d signs not all positive: [0.004689394849943013, -0.019083849240778366, 0.011681497036545353]"
+      ]
+    },
+    "d_seed_padded": {
+      "d_per_seed": [
+        -0.1867276149246161,
+        -0.12034428906346874,
+        -0.08008696298104724
+      ],
+      "mean": -0.12905295565637734,
+      "ci_lo_95": -0.1867276149246161,
+      "ci_hi_95": -0.08008696298104724,
+      "all_seeds_positive": false,
+      "ci_excludes_zero": false,
+      "mean_threshold": 1.0,
+      "threshold_met": false,
+      "pass": false,
+      "fail_reasons": [
+        "mean(d_padded)=-0.129 < 1.0",
+        "95% CI [-0.187, -0.080] overlaps zero",
+        "per-seed d signs not all positive: [-0.1867276149246161, -0.12034428906346874, -0.08008696298104724]"
+      ]
+    },
+    "h2_full_pass": false,
+    "h2_partial": false,
+    "h1_required_before_h2": true,
+    "h1_overall_pass": true,
+    "n_bootstrap": 10000,
+    "dynamic_range_failed_arms": [
+      "system_plain",
+      "system_padded",
+      "role"
+    ],
+    "reason": "Dynamic-range gate failed: arms with sd <= 0.5: ['system_plain', 'system_padded', 'role']. Saturated regime \u2014 leakage log-prob comparisons are rank-shuffles on a ceiling, not informative segmentation."
+  },
+  "headline_status": "inconclusive_dynamic_range_failed",
+  "dynamic_range_gate": {
+    "threshold": 0.5,
+    "per_arm": {
+      "system_plain": {
+        "sd": 0.021533520055976342,
+        "n_observations": 6,
+        "above_threshold": false
+      },
+      "system_padded": {
+        "sd": 0.1504076734873812,
+        "n_observations": 6,
+        "above_threshold": false
+      },
+      "role": {
+        "sd": 0.004941045657371854,
+        "n_observations": 6,
+        "above_threshold": false
+      }
+    },
+    "ok": false
+  },
+  "raw_per_cell": {
+    "system_plain": {
+      "42": [
+        -0.0006091123345413508,
+        -0.0025461935894600172
+      ],
+      "137": [
+        -0.005012511584354797,
+        -0.060413828198506964
+      ],
+      "1337": [
+        -0.00155169259502145,
+        -0.0041267182812589455
+      ]
+    },
+    "system_padded": {
+      "42": [
+        -0.0007048045033934613,
+        -0.38528452096972615
+      ],
+      "137": [
+        -0.0030869601011363555,
+        -0.26486025932710616
+      ],
+      "1337": [
+        -0.0004996834792109439,
+        -0.18871564743225464
+      ]
+    },
+    "role": {
+      "42": [
+        -0.0011587069226156642,
+        -0.011375388701271732
+      ],
+      "137": [
+        -0.015981666665029478,
+        -0.011276974636275553
+      ],
+      "1337": [
+        -0.013763753278749392,
+        -0.015277651670621707
+      ]
+    }
+  },
+  "n_missing_per_cell": 0
+}

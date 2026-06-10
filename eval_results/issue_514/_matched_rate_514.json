@@ -1,0 +1,120 @@
+{
+  "schema_version": "i514_matched_rate_v3",
+  "matched_slice_target_nats": 8.0,
+  "matched_slice_band_nats": 1.0,
+  "local_read_nat": 3.5514129828014864,
+  "bootstrap_read_nat": 3.54327892366692,
+  "gap_nat": 0.008134059134566218,
+  "determinate": true,
+  "gate_threshold_nat": 0.5,
+  "is_extrapolation": false,
+  "extrapolation_distance_nat": null,
+  "local_read_anchor_cells": [
+    "ft_dense_b30",
+    "ft_dense_b35",
+    "ft_dense_b40",
+    "ft_dense_b45",
+    "ft_lowlr_b100",
+    "ft_lowlr_b50",
+    "ft_b1"
+  ],
+  "matched_rate_lora_read_nat": 3.541671808257283,
+  "matched_rate_ft_read_nat": 3.54327892366692,
+  "matched_rate_gap_ft_minus_lora_nat": 0.001607115409639528,
+  "matched_rate_gap_ci_lo_nat": -0.12722519381908004,
+  "matched_rate_gap_ci_hi_nat": 0.1195434488038698,
+  "matched_rate_gap_excludes_zero": false,
+  "matched_rate_bootstrap_n_replicates": 1000,
+  "matched_rate_lora_anchor_cells": [
+    "lora_b1",
+    "lora_b2",
+    "lora_b3"
+  ],
+  "matched_rate_fullft_anchor_cells": [
+    "ft_b1",
+    "ft_dense_b30",
+    "ft_dense_b35",
+    "ft_dense_b40",
+    "ft_dense_b45",
+    "ft_lowlr_b100",
+    "ft_lowlr_b50"
+  ],
+  "h1_pass": true,
+  "n_clean_above_9_nat": 5,
+  "clean_above_9_nat_cells": [
+    "ft_dense_b30",
+    "ft_dense_b35",
+    "ft_dense_b40",
+    "ft_dense_b45",
+    "ft_lowlr_b100"
+  ],
+  "diagnostics_514_summary": [
+    {
+      "cell": "ft_dense_b30",
+      "lever": "dense",
+      "source_mean": 17.887888497114183,
+      "held_out_mean": 11.156880227724711,
+      "r_collapse_rate": 0.0,
+      "held_out_g_logprob_mean": -12.56641226609548
+    },
+    {
+      "cell": "ft_dense_b35",
+      "lever": "dense",
+      "source_mean": 19.748452280461787,
+      "held_out_mean": 12.832898548444112,
+      "r_collapse_rate": 0.0,
+      "held_out_g_logprob_mean": -10.964247498512268
+    },
+    {
+      "cell": "ft_dense_b40",
+      "lever": "dense",
+      "source_mean": 20.335781704634428,
+      "held_out_mean": 13.759256144364675,
+      "r_collapse_rate": 0.0,
+      "held_out_g_logprob_mean": -9.935443836053212
+    },
+    {
+      "cell": "ft_dense_b45",
+      "lever": "dense",
+      "source_mean": 19.600381701812147,
+      "held_out_mean": 13.746227734088897,
+      "r_collapse_rate": 0.0,
+      "held_out_g_logprob_mean": -9.945903162161509
+    },
+    {
+      "cell": "ft_lowlr_b100",
+      "lever": "lowlr",
+      "source_mean": 18.390414141863584,
+      "held_out_mean": 13.675191566149394,
+      "r_collapse_rate": 0.0,
+      "held_out_g_logprob_mean": -10.092610287666322
+    },
+    {
+      "cell": "ft_lowlr_b50",
+      "lever": "lowlr",
+      "source_mean": 7.427830171585083,
+      "held_out_mean": 3.440285838445028,
+      "r_collapse_rate": 0.0,
+      "held_out_g_logprob_mean": -20.416973327000935
+    }
+  ],
+  "diagnostics_508_anchors_summary": [
+    {
+      "cell": "ft_b1",
+      "source_mean": 8.197954416275024,
+      "held_out_mean": 3.589859800338745
+    },
+    {
+      "cell": "ft_b2",
+      "source_mean": 6.774165004491806,
+      "held_out_mean": 22.59121106330797
+    },
+    {
+      "cell": "ft_b3",
+      "source_mean": NaN,
+      "held_out_mean": 22.88215057803498
+    }
+  ],
+  "note": "Determinacy gate: |local \u2212 bootstrap| \u2264 0.5 nat (plan \u00a76.4). Local read = linear interpolation (or extrapolation, per plan \u00a76.4 v3 pivot) across the #514+#508 clean anchor set (is_clean_anchor; free-reanalysis 2026-06-08 admits clean below-9-nat cells, not only above-9-nat) at source \u0394G = 8.0 nat. Bootstrap read = the #514-local crossed-cluster bootstrap over the SAME clean anchor set (_compute_matched_rate_gap_514 \u2192 fullft_held_out_at_target_mean); falls back to the #508 delegate's run_analysis matched_rate_gap.fullft_held_out_at_target_mean only if <2 clean anchors in an arm. matched_rate_gap_ft_minus_lora_nat + its 95% CI is the SCIENTIFIC LoRA\u2212FT gap (distinct from gap_nat, the |local \u2212 bootstrap| determinacy quantity). is_extrapolation=True iff bracketing anchors don't straddle target. extrapolation_distance_nat: signed (target \u2212 nearest_anchor); negative below the lower anchor, positive above the upper, NaN when strictly bracketed.",
+  "timestamp_utc": "2026-06-09T05:22:18.089886+00:00"
+}

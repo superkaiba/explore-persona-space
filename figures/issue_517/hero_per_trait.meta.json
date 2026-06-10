@@ -1,0 +1,9 @@
+{
+  "schema_version": "i517_v1",
+  "kind": "hero_per_trait_meta",
+  "input": "/workspace/explore-persona-space/eval_results/issue_517/base_vs_trained_comparison.json",
+  "png": "/workspace/explore-persona-space/figures/issue_517/hero_per_trait.png",
+  "pdf": "/workspace/explore-persona-space/figures/issue_517/hero_per_trait.pdf",
+  "git_commit": "191646f1151c1cfe0033e8bc101990167d6672b4",
+  "ts": "2026-06-08T19:43:22.644025Z"
+}

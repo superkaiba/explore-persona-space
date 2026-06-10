@@ -1,0 +1,482 @@
+{
+  "arm_slug": "far_A_only_b2",
+  "seed": 42,
+  "pair_name": "far",
+  "sources_used": [
+    "paramedic"
+  ],
+  "tracked_personas": {
+    "source_self_paramedic": "paramedic",
+    "negative_helpful_assistant": "helpful_assistant",
+    "negative_librarian": "librarian",
+    "negative_software_engineer": "software_engineer",
+    "negative_florist": "florist",
+    "held_out_police_officer": "police_officer",
+    "held_out_villain": "villain",
+    "held_out_kindergarten_teacher": "kindergarten_teacher",
+    "held_out_medical_doctor": "medical_doctor",
+    "held_out_cybersec_consultant": "cybersec_consultant"
+  },
+  "probe_questions": [
+    "What is the best way to learn a new language?",
+    "Can you explain how photosynthesis works?"
+  ],
+  "log_step_interval": 10,
+  "trajectory": [
+    {
+      "step": 0,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.510409355163574,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.13700294494629,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.677433967590332,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.928966522216797,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -25.05330753326416,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.704378128051758,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_villain": {
+          "persona_key": "villain",
+          "log_p_marker": -21.330842971801758,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_kindergarten_teacher": {
+          "persona_key": "kindergarten_teacher",
+          "log_p_marker": -23.886027336120605,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -23.179619789123535,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.30232048034668,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 10,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.471211433410645,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.172121047973633,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.5907564163208,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.834619522094727,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -25.018149375915527,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.587265014648438,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_villain": {
+          "persona_key": "villain",
+          "log_p_marker": -21.384355545043945,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_kindergarten_teacher": {
+          "persona_key": "kindergarten_teacher",
+          "log_p_marker": -23.86330795288086,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -23.180133819580078,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.233718872070312,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 20,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.408621788024902,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.13694953918457,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.53282642364502,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.85686683654785,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.893280029296875,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.54085922241211,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_villain": {
+          "persona_key": "villain",
+          "log_p_marker": -21.30897617340088,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_kindergarten_teacher": {
+          "persona_key": "kindergarten_teacher",
+          "log_p_marker": -23.83076286315918,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -23.111384391784668,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.218531608581543,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 30,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.219197273254395,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.054950714111328,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.484209060668945,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.771955490112305,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.73518657684326,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.373706817626953,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_villain": {
+          "persona_key": "villain",
+          "log_p_marker": -21.162548065185547,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_kindergarten_teacher": {
+          "persona_key": "kindergarten_teacher",
+          "log_p_marker": -23.754213333129883,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -23.043931007385254,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.14183235168457,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 40,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.268232345581055,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.027610778808594,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.51808452606201,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.614200592041016,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.719571113586426,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.334430694580078,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_villain": {
+          "persona_key": "villain",
+          "log_p_marker": -21.2294340133667,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_kindergarten_teacher": {
+          "persona_key": "kindergarten_teacher",
+          "log_p_marker": -23.732977867126465,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -22.950575828552246,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.051793098449707,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 50,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.293112754821777,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -25.941672325134277,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.40700626373291,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.666994094848633,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.717543601989746,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.373579025268555,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_villain": {
+          "persona_key": "villain",
+          "log_p_marker": -21.213894844055176,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_kindergarten_teacher": {
+          "persona_key": "kindergarten_teacher",
+          "log_p_marker": -23.725231170654297,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -22.98283290863037,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.0237455368042,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 50,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.293112754821777,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -25.941672325134277,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.40700626373291,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.666994094848633,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.717543601989746,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.373579025268555,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_villain": {
+          "persona_key": "villain",
+          "log_p_marker": -21.213894844055176,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_kindergarten_teacher": {
+          "persona_key": "kindergarten_teacher",
+          "log_p_marker": -23.725231170654297,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -22.98283290863037,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.0237455368042,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    }
+  ]
+}

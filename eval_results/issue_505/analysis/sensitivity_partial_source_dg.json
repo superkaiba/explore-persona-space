@@ -1,0 +1,3 @@
+{
+  "diagnostics": "partial MixedLM fit failed: LinAlgError: Singular matrix"
+}

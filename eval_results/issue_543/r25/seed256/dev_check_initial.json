@@ -1,0 +1,24 @@
+{
+  "issue": 543,
+  "git_commit": "78f0a45d305ccd0027bc8544370f8c64847e4264",
+  "timestamp_utc": "2026-06-10T06:04:18.943758+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "mode": "dev_check",
+  "arm": "r25",
+  "seed": 256,
+  "adapter_dir": "/tmp/issue_543_results/r25_seed256_phase1/adapter",
+  "n": 50,
+  "n_emit": 50,
+  "threshold": 48,
+  "passed": true
+}

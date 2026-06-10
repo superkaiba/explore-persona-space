@@ -540,6 +540,56 @@ class TrainLoraConfig:
     # See MarkerOnlyDataCollator docstring for the slot-layout rationale.
     marker_suppress_at_post_response_slot: bool = False
     marker_im_end_token_id: int | None = None
+    # Marker-gated band-stop early-termination (see
+    # MarkerBandStopCallback in eval/callbacks.py). When True AND the run is
+    # in marker mode (``marker_only_loss=True``), train_lora() auto-builds a
+    # source-probe batch from the marker-bearing rows of ``data_path`` and
+    # attaches the callback. The callback logs the per-step
+    # ``log P(marker)`` trajectory to WandB and triggers
+    # ``should_training_stop`` the first time the source enters
+    # ``[marker_band_low_nats, marker_band_high_nats]`` after
+    # ``marker_band_min_steps``. Behavior change is gated on marker mode:
+    # non-marker runs are byte-identical to the pre-callback path because no
+    # callback is constructed or attached. Opt out with
+    # ``marker_band_stop=False`` for experiments that deliberately want
+    # full saturation (e.g. geometry-at-ceiling anchors).
+    marker_band_stop: bool = True
+    marker_band_low_nats: float = 5.0
+    marker_band_high_nats: float = 12.0
+    marker_band_eval_every_steps: int = 10
+    marker_band_min_steps: int = 20
+    # Soft cap on probe batch size — too large and the per-eval forward
+    # pass costs grow; too small and the per-step delta is noisy. ~32 rows
+    # is a good balance for the canonical 7B-Qwen marker setup.
+    marker_band_probe_max_rows: int = 32
+    # Per-row max length for the probe context. Defaults to None → the
+    # wiring helper uses ``max(cfg.max_length, 2048)`` so the source system
+    # prompt + question + the trained response prefix all fit before the
+    # marker slot. Over-long rows are DROPPED (fail-loud-skip), not
+    # front-truncated — front-truncation would re-root the context past the
+    # source system prompt and produce an off-distribution log-prob read
+    # (cf. CLAUDE.md #260 truncation rule). Set explicitly to override the
+    # default budget.
+    marker_band_probe_max_length: int | None = None
+    # Issue #480 band-stopped-anchor-rerun: log-only mode for the band
+    # callback. When True the callback keeps ALL trajectory logging (WandB +
+    # the local trajectory JSON below) but NEVER sets should_training_stop —
+    # the run trains to its fixed step cap and the anchor is picked post-hoc
+    # from the checkpoint ladder. Default False → live band-stop behavior is
+    # byte-identical for every existing caller.
+    marker_band_log_only: bool = False
+    # Optional local trajectory JSON path for the band callback. When set,
+    # the per-probe four-float records (log P, z_marker, z_eos, logZ;
+    # trained AND base) are appended and the JSON is rewritten after EVERY
+    # probe (checkpoint-per-phase discipline — a crash never loses the
+    # trajectory). Default None → no local file, WandB-only (byte-identical
+    # for existing callers).
+    marker_band_trajectory_path: str | None = None
+    # Plumbed to TrainingArguments.save_only_model (skip optimizer/scheduler
+    # state in step checkpoints — ~160 MB adapter-only checkpoints instead
+    # of ~1 GB). Only forwarded when True so older transformers without the
+    # kwarg are unaffected on default-config paths.
+    save_only_model: bool = False
     # Issue #478 / #490: opt-in LoRA target-module override. When ``None``
     # (default) train_lora uses the historical 7-module list
     # (q/k/v/o/gate/up/down) so existing callers are byte-identical. Issue
@@ -562,6 +612,291 @@ class TrainLoraConfig:
     # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
     # (Sagan todo 68b5822f) and currently raises NotImplementedError.
     backend: Literal["hf", "unsloth"] = "hf"
+
+
+def _apply_chat_template_safe(tokenizer, messages, *, add_generation_prompt: bool):
+    """Apply a tokenizer chat template, normalizing the various return shapes.
+
+    Some HF tokenizers return a BatchEncoding dict; older or fake tokenizers
+    return a flat list of ids. Returns a flat ``list[int]`` either way, or
+    ``None`` if the chat template fails for any reason (caller skips the row).
+    """
+    try:
+        ids = tokenizer.apply_chat_template(
+            messages,
+            tokenize=True,
+            add_generation_prompt=add_generation_prompt,
+        )
+    except Exception:
+        return None
+    if isinstance(ids, dict):
+        ids = ids["input_ids"]
+    return list(ids)
+
+
+def _find_subsequence(haystack: list[int], needle: list[int]) -> int:
+    """Return the first index where ``needle`` appears in ``haystack``, else -1."""
+    n_len = len(needle)
+    if n_len == 0:
+        return -1
+    for i in range(len(haystack) - n_len + 1):
+        if haystack[i : i + n_len] == needle:
+            return i
+    return -1
+
+
+def _tokenize_probe_row(
+    row: dict,
+    tokenizer,
+    marker_seq: list[int],
+    max_length: int,
+) -> tuple[list[int], int] | None:
+    """Tokenize one JSONL row into (row_ids, marker_slot) or None if unusable.
+
+    Renders ``prompt + completion`` in ONE ``apply_chat_template`` call, matching
+    what TRL's SFTTrainer does and what ``eval_one_cell.py:140-146`` /
+    ``compute_marker_logprob`` use. Two separate calls (prompt with
+    ``add_generation_prompt=True``, completion alone) inject a phantom default
+    system prompt into the completion render on chat templates that
+    default-system-prompt when given a bare assistant turn (e.g. Qwen-2.5
+    Instruct), scoring the marker at a context the trained model never saw.
+
+    Over-long rows are DROPPED with a warning (fail-loud-skip) rather than
+    front-truncated, which would re-root the context past the source system
+    prompt and produce another off-distribution path (cf. CLAUDE.md #260
+    truncation rule). The caller passes a generous ``max_length`` (defaults
+    to ``max(cfg.max_length, 2048)`` per ``cfg.marker_band_probe_max_length``)
+    so this should be rare on the canonical 7B-Qwen marker setup.
+
+    Returns:
+        ``(row_ids, marker_slot)`` where ``row_ids`` is the prefix that ends
+        with the first marker subsequence, and ``marker_slot`` is the OUTPUT
+        slot whose distribution predicts the marker token (i.e. the index
+        immediately before the marker in ``row_ids``).
+
+        Returns ``None`` if the row is malformed, the chat template fails,
+        the marker isn't found in the fused render, the row exceeds
+        ``max_length``, or the marker would land at index 0 (no usable
+        conditioning prefix).
+    """
+    prompt = row.get("prompt")
+    completion = row.get("completion")
+    if not isinstance(prompt, list) or not isinstance(completion, list):
+        return None
+
+    # ONE fused render — the source of truth for the marker-slot context.
+    # Any deviation (two-call, encode-string, extra separators) re-roots
+    # the context. Pinned by test_build_source_probe_matches_trl_fused_tokenization.
+    full_ids = _apply_chat_template_safe(
+        tokenizer, prompt + completion, add_generation_prompt=False
+    )
+    if full_ids is None:
+        return None
+
+    marker_start = _find_subsequence(full_ids, marker_seq)
+    if marker_start < 0:
+        return None
+
+    row_ids = full_ids[: marker_start + len(marker_seq)]
+
+    if len(row_ids) > max_length:
+        logger.warning(
+            "build_source_probe_from_data: dropping row with len=%d > "
+            "marker_band_probe_max_length=%d (front-truncating would re-root "
+            "the context past the source system prompt).",
+            len(row_ids),
+            max_length,
+        )
+        return None
+
+    marker_slot = marker_start - 1
+    if marker_slot < 0:
+        return None
+    return row_ids, marker_slot
+
+
+def build_source_probe_from_data(
+    data_path: str | Path,
+    tokenizer,
+    marker_token_ids: list[int],
+    *,
+    max_rows: int = 32,
+    max_length: int = 1024,
+):
+    """Build a source-probe batch for the marker band-stop callback.
+
+    Reads the JSONL training file, picks the first ``max_rows`` rows whose
+    completion contains the marker token sequence, and returns a tokenized
+    batch on which the marker's teacher-forced log-prob can be read at the
+    marker slot.
+
+    For each chosen row:
+      - The prompt (system + user messages) is rendered through the
+        tokenizer's chat template with ``add_generation_prompt=True``.
+      - The completion text (assistant message) is appended, WITH the
+        marker still in place — we use the model's natural completion
+        text as the conditioning context, and the marker slot is the
+        position inside the completion at which the marker token
+        appears. The forward pass returns ``logits[i, slot-1, marker_id]``
+        as the conditional log-prob of the marker given the prefix that
+        precedes it.
+
+    Returns:
+        A 4-tuple ``(input_ids, attention_mask, marker_positions, n_rows)``:
+          - ``input_ids``: ``torch.LongTensor [B, T_max]`` right-padded with
+            ``tokenizer.pad_token_id``.
+          - ``attention_mask``: ``torch.LongTensor [B, T_max]`` (1 for real
+            tokens, 0 for padding).
+          - ``marker_positions``: ``torch.LongTensor [B]`` — the OUTPUT slot
+            index whose distribution predicts the marker (i.e. the index
+            BEFORE the marker token in ``input_ids``). The caller will
+            index ``log_probs[batch, marker_positions, marker_id]``.
+          - ``n_rows``: ``int`` — how many marker-bearing rows were used.
+
+        Returns ``(None, None, None, 0)`` if no marker-bearing rows are
+        found (caller should log a warning and skip the callback).
+    """
+    import json
+
+    import torch
+
+    path = Path(data_path) if not isinstance(data_path, Path) else data_path
+    if not path.exists():
+        raise FileNotFoundError(f"Training data file does not exist: {path}")
+
+    if not marker_token_ids:
+        raise ValueError("build_source_probe_from_data requires non-empty marker_token_ids")
+
+    marker_seq = list(marker_token_ids)
+
+    pad_id = tokenizer.pad_token_id
+    if pad_id is None:
+        pad_id = tokenizer.eos_token_id
+    if pad_id is None:
+        raise ValueError(
+            "Tokenizer has no pad_token_id and no eos_token_id; cannot pad probe batch"
+        )
+
+    rows_input_ids: list[list[int]] = []
+    rows_marker_positions: list[int] = []
+
+    with path.open("r") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+            picked = _tokenize_probe_row(row, tokenizer, marker_seq, max_length)
+            if picked is None:
+                continue
+            row_ids, marker_slot = picked
+            rows_input_ids.append(row_ids)
+            rows_marker_positions.append(marker_slot)
+            if len(rows_input_ids) >= max_rows:
+                break
+
+    if not rows_input_ids:
+        return None, None, None, 0
+
+    # Right-pad to a common length.
+    t_max = max(len(r) for r in rows_input_ids)
+    input_ids = torch.full((len(rows_input_ids), t_max), pad_id, dtype=torch.long)
+    attention_mask = torch.zeros((len(rows_input_ids), t_max), dtype=torch.long)
+    for i, ids in enumerate(rows_input_ids):
+        input_ids[i, : len(ids)] = torch.tensor(ids, dtype=torch.long)
+        attention_mask[i, : len(ids)] = 1
+    marker_positions = torch.tensor(rows_marker_positions, dtype=torch.long)
+
+    assert input_ids.shape == attention_mask.shape, (input_ids.shape, attention_mask.shape)
+    assert marker_positions.shape == (input_ids.shape[0],), marker_positions.shape
+
+    return input_ids, attention_mask, marker_positions, len(rows_input_ids)
+
+
+def _maybe_attach_marker_band_stop(
+    trainer, tokenizer, cfg: TrainLoraConfig, data_path: str
+) -> None:
+    """Attach ``MarkerBandStopCallback`` to ``trainer`` when marker band-stop is enabled.
+
+    No-op unless ``cfg.marker_only_loss AND cfg.marker_band_stop``. When the
+    source probe comes back empty (no marker-bearing rows in the data),
+    logs a warning and falls back to fixed-epoch training rather than
+    silently disabling — failure must be visible.
+    """
+    if not (cfg.marker_only_loss and cfg.marker_band_stop):
+        return
+
+    from explore_persona_space.eval.callbacks import MarkerBandStopCallback
+
+    marker_ids = tokenizer.encode(cfg.marker_text, add_special_tokens=False)
+    if not marker_ids:
+        logger.warning(
+            "MarkerBandStopCallback: tokenizer encoded marker_text=%r as empty sequence; "
+            "skipping band-stop attachment (training falls back to fixed epochs).",
+            cfg.marker_text,
+        )
+        return
+
+    # Probe gets a generous length budget so the source system prompt +
+    # question + trained response prefix all fit before the marker slot.
+    # The training data uses cfg.max_length as the upper bound, but the
+    # marker DV needs at least 2048 to comfortably hold a ~150-token
+    # natural response + the surrounding chat-template scaffolding (#260).
+    probe_max_length = cfg.marker_band_probe_max_length
+    if probe_max_length is None:
+        probe_max_length = max(cfg.max_length, 2048)
+    input_ids, attention_mask, marker_positions, n_rows = build_source_probe_from_data(
+        data_path,
+        tokenizer,
+        marker_ids,
+        max_rows=cfg.marker_band_probe_max_rows,
+        max_length=probe_max_length,
+    )
+    if n_rows == 0:
+        logger.warning(
+            "MarkerBandStopCallback: found 0 marker-bearing rows in %s (marker=%r, "
+            "ids=%s). Falling back to fixed-epoch training without the band-stop "
+            "callback. If this run was supposed to be marker-gated, check that the "
+            "training data was generated with the configured marker text.",
+            data_path,
+            cfg.marker_text,
+            marker_ids,
+        )
+        return
+
+    callback = MarkerBandStopCallback(
+        marker_token_ids=marker_ids,
+        probe_input_ids=input_ids,
+        probe_marker_positions=marker_positions,
+        probe_attention_mask=attention_mask,
+        low_nats=cfg.marker_band_low_nats,
+        high_nats=cfg.marker_band_high_nats,
+        eval_every_steps=cfg.marker_band_eval_every_steps,
+        min_steps=cfg.marker_band_min_steps,
+        # EOS competitor at the marker slot for the raw-logit (z_eos) WandB
+        # series; the band-stop decision itself stays on the log-prob band.
+        eos_token_id=tokenizer.eos_token_id,
+        log_only=cfg.marker_band_log_only,
+        trajectory_out_path=cfg.marker_band_trajectory_path,
+    )
+    trainer.add_callback(callback)
+    logger.info(
+        "MarkerBandStopCallback attached: %d source-probe rows, marker_ids=%s, "
+        "band=[%.2f, %.2f] nat, eval_every=%d steps, min_steps=%d, log_only=%s, "
+        "trajectory_out_path=%s",
+        n_rows,
+        marker_ids,
+        cfg.marker_band_low_nats,
+        cfg.marker_band_high_nats,
+        cfg.marker_band_eval_every_steps,
+        cfg.marker_band_min_steps,
+        cfg.marker_band_log_only,
+        cfg.marker_band_trajectory_path,
+    )
 
 
 def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: TrainLoraConfig) -> None:
@@ -762,6 +1097,8 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:
         sft_kwargs["save_total_limit"] = cfg.save_total_limit
+    if cfg.save_only_model:
+        sft_kwargs["save_only_model"] = True
 
     sft_config = SFTConfig(**sft_kwargs)
 
@@ -792,6 +1129,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         )
 
     _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg)
+    _maybe_attach_marker_band_stop(trainer, tokenizer, cfg, str(_data_path))
 
     result = trainer.train()
     loss = result.training_loss

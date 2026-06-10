@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "issue": 523,
+  "title": "Phase D forest plot \u2014 held-out test of #502's L22 gauss_kl predictor",
+  "reference_502_in_sample": {
+    "label": "#502 in-sample 0.34",
+    "value": 0.34,
+    "note": "non-stylized 156-pair CV R\u00b2 on the old pool, non-nested"
+  },
+  "bars": [
+    {
+      "slug": "cell_fixed_seed42_nonstyl_heldout",
+      "label": "L22 gauss_kl cell-fixed leave-one-source-condition-out CV R\u00b2 on the 156 non-stylized pairs against seed-42 \u0394G. The Goal's cell-specific answer.",
+      "point_estimate": 0.20538622369411696,
+      "ci_2_5": -0.521955092552471,
+      "ci_97_5": 0.4107580645519351,
+      "half_width": 0.466356578552203,
+      "panel": "non_stylized_156",
+      "seed": 42,
+      "paired_delta_vs_baseline": null
+    },
+    {
+      "slug": "cell_fixed_seed43_nonstyl_heldout",
+      "label": "Same as headline but against the seed-43 \u0394G substrate. SEED-isolated comparator vs the headline.",
+      "point_estimate": 0.3676804721316327,
+      "ci_2_5": -0.11787261063647038,
+      "ci_97_5": 0.5792696400847637,
+      "half_width": 0.348571125360617,
+      "panel": "non_stylized_156",
+      "seed": 43,
+      "paired_delta_vs_baseline": {
+        "baseline_label": "cell_fixed_seed42_nonstyl_heldout",
+        "mean_delta": 0.16229424843751572,
+        "ci_2_5": -0.014057455227752712,
+        "ci_97_5": 0.563869898650296,
+        "half_width": 0.28896367693902436,
+        "statistic": "pooled_r2"
+      }
+    },
+    {
+      "slug": "js_baseline_seed42_nonstyl_heldout",
+      "label": "JS baseline cell-fixed (final-layer last-prompt next-token JS over full vocab) under the same fold scheme. Comparator.",
+      "point_estimate": -0.2772281025663772,
+      "ci_2_5": -0.9577570376504521,
+      "ci_97_5": -0.2279489666673194,
+      "half_width": 0.36490403549156636,
+      "panel": "non_stylized_156",
+      "seed": 42,
+      "paired_delta_vs_baseline": {
+        "baseline_label": "cell_fixed_seed42_nonstyl_heldout",
+        "mean_delta": -0.48261432626049416,
+        "ci_2_5": -0.9491926449426168,
+        "ci_97_5": 0.026219468086189884,
+        "half_width": 0.48770605651440335,
+        "statistic": "pooled_r2"
+      }
+    },
+    {
+      "slug": "nested_search_seed42_nonstyl_heldout",
+      "label": "Full 1737-cell inner argmax per outer fold. Same outer scheme as headline; SELECTION-isolated diagnostic.",
+      "point_estimate": 0.17308470671525056,
+      "ci_2_5": -0.5797770181700352,
+      "ci_97_5": 0.3515113706482933,
+      "half_width": 0.46564419440916427,
+      "panel": "non_stylized_156",
+      "seed": 42,
+      "paired_delta_vs_baseline": {
+        "baseline_label": "cell_fixed_seed42_nonstyl_heldout",
+        "mean_delta": -0.03230151697886641,
+        "ci_2_5": -0.2259057477171165,
+        "ci_97_5": 0.22434787008840723,
+        "half_width": 0.22512680890276188,
+        "statistic": "pooled_r2"
+      }
+    },
+    {
+      "slug": "cell_fixed_seed42_full_heldout",
+      "label": "Same cell, all 16 source \u00d7 15 target = 240 ordered pairs (16 source folds, 15 pairs/fold). Supporting full-panel color.",
+      "point_estimate": 0.5422706451282373,
+      "ci_2_5": 0.31941460547618994,
+      "ci_97_5": 0.6389552557268788,
+      "half_width": 0.15977032512534445,
+      "panel": "full_240",
+      "seed": 42,
+      "paired_delta_vs_baseline": null
+    }
+  ],
+  "provenance": {
+    "git_sha": "d6deb6dbd1edf878a4673d84dcda23fd2b70276c",
+    "timestamp_utc": "2026-06-10T06:25:21.101872+00:00",
+    "python": "3.11.10",
+    "elapsed_seconds": 34.2
+  }
+}

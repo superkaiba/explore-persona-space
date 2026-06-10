@@ -309,7 +309,12 @@ def _extract_section(body: str, heading: str, level: int) -> str | None:
     matching but stays in the rendered document.
     """
     prefix = "#" * level
-    pattern = rf"(?m)^{re.escape(prefix)}\s+{re.escape(heading)}(?:\s+.*)?$"
+    # NOTE: the trailing-text group must be [ \t]+ (NOT \s+): \s matches newlines,
+    # so (?:\s+.*)?$ consumed the heading's blank line + the FIRST content line,
+    # returning empty/truncated sections for `## H2\n\ncontent` bodies. Documented
+    # in .claude/skills/clean-results/iterations.md (2026-05-11 entry) and
+    # .claude/agent-memory/analyzer/feedback_verifier_h3_extraction_bug.md.
+    pattern = rf"(?m)^{re.escape(prefix)}[ \t]+{re.escape(heading)}(?:[ \t]+.*)?$"
     m = re.search(pattern, body)
     if not m:
         return None

@@ -1,0 +1,21 @@
+{
+  "figure": "shift_vs_base_prior",
+  "produced_by": "scripts/issue531_base_prior_reanalysis.py",
+  "git_commit_at_render": "22d73be7efe8e081a3b10acc0d8ee6bc880ad08a",
+  "data_source": {
+    "hf_data_repo": "superkaiba1/explore-persona-space-data",
+    "hf_data_revision": "a9fc5a9cbc81c4b774ff66da0022f9055e18da5f",
+    "issue_478_aggregate_sha": "7efb037736831c66cf87aaa79c11237ac9268b83"
+  },
+  "rows_used": 56000,
+  "cells_used": 40,
+  "personas_used": 35,
+  "marker_text": " \u203b",
+  "marker_token_id": 83399,
+  "rendered_at_utc": "2026-06-09T06:18:51.722754+00:00",
+  "x_axis": "base-model log P( \u203b) at post-response slot (nats)",
+  "y_axis": "trained \u2212 base log P( \u203b) shift (nats)",
+  "rho_raw_shift": -0.6587860216682855,
+  "rho_partial_shift": -0.479723845815648,
+  "downsample_per_band": 600
+}

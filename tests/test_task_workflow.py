@@ -255,6 +255,40 @@ def test_post_event_oversize_note_raises(fake_repo):
         tw.post_event(new_id, "epm:huge", note="x" * (tw.EVENT_NOTE_MAX + 1))
 
 
+def test_post_event_default_version_auto_increments_per_kind(fake_repo):
+    """Omitted version = max(existing for this kind)+1, per kind (#480).
+
+    Two defaulted posts of the same kind must land v1 then v2 — never v1
+    twice — so highest-version-per-kind resume resolution stays correct.
+    A second kind starts independently at v1.
+    """
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    first = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    second = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    other_kind = tw.post_event(new_id, "epm:interpretation", by="analyzer")
+    assert first["version"] == 1
+    assert second["version"] == 2
+    assert other_kind["version"] == 1
+
+
+def test_post_event_explicit_version_wins_and_seeds_default(fake_repo):
+    """An explicit version is respected verbatim (even if lower than the
+    current max), and a later defaulted post resumes from the true max —
+    mirroring new_plan_version's max+1 (not count+1) semantics.
+    """
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    explicit = tw.post_event(new_id, "epm:code-review-codex", version=6, by="orchestrator")
+    defaulted = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    lower_explicit = tw.post_event(new_id, "epm:code-review-codex", version=3, by="orchestrator")
+    after_lower = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    assert explicit["version"] == 6
+    assert defaulted["version"] == 7
+    assert lower_explicit["version"] == 3
+    assert after_lower["version"] == 8
+
+
 def test_latest_event(fake_repo):
     _, tw = fake_repo
     new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
@@ -373,12 +407,18 @@ def test_set_body_strips_multiple_stacked_frontmatter_blocks(fake_repo):
     assert "second: block" not in written
 
 
-def test_set_body_strip_is_idempotent(fake_repo):
+def test_set_body_strip_is_idempotent(fake_repo, monkeypatch: pytest.MonkeyPatch):
     """Calling `set_body` twice with the same content (once with leading
     frontmatter, once with the same content already stripped) produces
     byte-identical body.md.
     """
     repo, tw = fake_repo
+    # Freeze the timestamp source: the two create_task calls below each
+    # write `created_at` into frontmatter, so without this they can
+    # straddle a second boundary and spuriously break the byte-equality
+    # assert (observed flake 2026-06-10). The test's intent — strip
+    # idempotency of set_body CONTENT — is unaffected.
+    monkeypatch.setattr(tw, "_utcnow_iso", lambda: "2026-01-01T00:00:00Z")
     id_a = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Same", body="old"))
     id_b = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Same", body="old"))
     with_fm = "---\nstale: stuff\n---\n# H1 (HIGH confidence)\n\nIdentical body content here.\n"
@@ -451,6 +491,81 @@ def test_new_plan_version_versions_and_symlinks(fake_repo):
     # Symlink points to latest
     assert (plans_dir / "plan.md").is_symlink()
     assert (plans_dir / "plan.md").resolve() == (plans_dir / "v3.md").resolve()
+
+
+def test_new_plan_version_skips_gap_uses_max_plus_one(fake_repo):
+    """Regression: with a numbering gap (e.g. v1,v2,v3,v4,v6 — no v5,
+    because a draft lived only in /tmp and was never registered), the
+    next plan MUST be v7 — NOT v6, which would silently overwrite the
+    highest existing plan. Closes the task #524 incident: the count-based
+    resolver (``len(existing)+1``) computed v6 over an existing v6 and
+    destroyed it without warning. Source of truth is now
+    ``max(existing v<N>) + 1``.
+    """
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    plans_dir.mkdir(parents=True, exist_ok=True)
+    # Pre-stage a gapped set of plan files (no v5).
+    for n in (1, 2, 3, 4, 6):
+        (plans_dir / f"v{n}.md").write_text(f"plan v{n} content\n")
+    v6_original = (plans_dir / "v6.md").read_text()
+
+    next_v = tw.new_plan_version(new_id, "plan v7 content")
+
+    # MUST advance past the highest existing version, not fill the gap and
+    # MUST NOT overwrite v6.
+    assert next_v == 7, f"expected v7 (max+1), got v{next_v}"
+    assert (plans_dir / "v7.md").read_text().strip() == "plan v7 content"
+    assert (plans_dir / "v6.md").read_text() == v6_original, (
+        "v6.md was overwritten — the count-based resolver bug has regressed"
+    )
+    # v5 stays absent — we don't backfill gaps.
+    assert not (plans_dir / "v5.md").exists()
+    # Symlink points to v7.
+    assert (plans_dir / "plan.md").resolve() == (plans_dir / "v7.md").resolve()
+
+
+def test_new_plan_version_refuses_to_overwrite_existing_target(
+    fake_repo, monkeypatch: pytest.MonkeyPatch
+):
+    """Belt-and-suspenders: the resolver derives ``next_v = max(existing) + 1``
+    inside ``_locked()`` and writes immediately after — so under normal
+    operation the computed target file CANNOT pre-exist. The explicit
+    ``target.exists()`` guard fires only if something external creates
+    the file between the glob and the write (a process holding no lock,
+    a filesystem race, manual staging during the critical section). The
+    guard is cheap and documents the invariant. To exercise it we simulate
+    that race by wrapping the lock so a sentinel file appears at the
+    computed slot after the glob but before the write.
+    """
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    plans_dir.mkdir(parents=True, exist_ok=True)
+    (plans_dir / "v1.md").write_text("plan v1 content\n")
+    sentinel = "PRE_STAGED_SHOULD_NOT_BE_OVERWRITTEN\n"
+
+    # Race simulation: replace Path.write_text so the first call (the
+    # resolver's write to v2.md) finds v2.md already present. Note the
+    # resolver writes v2.md FIRST, then the symlink — so we intercept on
+    # the first call only and re-raise via the resolver's own guard.
+    real_glob = type(plans_dir).glob
+
+    def racing_glob(self, pattern):
+        result = list(real_glob(self, pattern))
+        # Inject the racing pre-existing file BEFORE write_text runs.
+        if self == plans_dir and pattern == "v*.md":
+            (plans_dir / "v2.md").write_text(sentinel)
+        return iter(result)
+
+    monkeypatch.setattr(type(plans_dir), "glob", racing_glob)
+
+    with pytest.raises(RuntimeError, match=r"refusing to overwrite.*v2\.md"):
+        tw.new_plan_version(new_id, "plan v2 fresh content")
+
+    # The racing pre-existing file is preserved untouched.
+    assert (plans_dir / "v2.md").read_text() == sentinel
 
 
 # ─── Promotion ───────────────────────────────────────────────────────────
@@ -692,34 +807,32 @@ def _move_to_awaiting(tw, task_id: int) -> None:
 
 
 # Minimal canonical PASS body — useful as a fixture target. Every check
-# (title, four H2s, TL;DR labels, hero image, caption, confidence, repro
-# subgroups + URL + sentinel scrub, cherry-picked, qual-data link) is
-# satisfied.
+# (title, the three required H2s of the 2-content-section spec in order,
+# TL;DR Motivation opener, hero image inline under TL;DR, confidence
+# sentence, repro subgroups + URL + sentinel scrub, cherry-picked,
+# qual-data link) is satisfied. Non-v2 (no `<!-- clean-result-v2 -->`
+# sentinel), so the body Confidence sentence is still required and the
+# nested-TL;DR-shape rule is skipped. The `## Goal` H2 sits AFTER
+# `## Reproducibility` — extra H2s are tolerated only there (stray-H2
+# rule, verify check 2).
 CANONICAL_PASS_BODY = """\
 # Toy clean-result body (LOW confidence)
 
-## Goal
+## Human TL;DR
 
-Smoke-test that classify_body recognizes a fully-conformant clean-result body and returns PASS.
+A plain-English first-pass take: this toy fixture exercises the fully-conformant
+clean-result shape end to end and passes every verifier check.
 
 ## TL;DR
 
 - **Motivation:** I wanted a smoke-test fixture.
 - **What I ran:** I wrote a minimal markdown body and ran verify_task_body.
-- **Results:** The fixture passes all thirteen checks.
+- **Results:** The fixture passes every check.
 - **Next steps:** Use this fixture in migration tests.
-
-## Figure
 
 ![Hero figure placeholder](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_X/hero.png)
 
 *Hero figure showing the toy data points and the regression line and bootstrap envelope.*
-
-## Details
-
-The full Details section explaining what was done and how.
-
-Confidence: LOW — based on toy data only, not a real experiment so does not generalize.
 
 ## Reproducibility
 
@@ -728,17 +841,26 @@ Confidence: LOW — based on toy data only, not a real experiment so does not ge
 **Compute:** n/a
 
 **Code:** n/a
-"""
 
-
-# Conformant-but-failing fixture: four-H2 shape, but Reproducibility is
-# missing its three boldface subgroup labels and uses H3 instead.
-CONFORMANT_FAILING_H3_REPRO_BODY = """\
-# Conformant-failing body using H3 repro subgroups (LOW confidence)
+Confidence: LOW — based on toy data only, not a real experiment so does not generalize.
 
 ## Goal
 
-Smoke-test that the H3-Repro remediation patch promotes Artifacts/Compute/Code labels to bold.
+Smoke-test that classify_body recognizes a fully-conformant clean-result body and returns PASS.
+"""
+
+
+# Conformant-but-failing fixture: current required-H2 shape (Human TL;DR /
+# TL;DR / Reproducibility), but Reproducibility is missing its three
+# boldface subgroup labels and uses H3 instead — the one defect the
+# `remediate_repro_subgroups` patch fixes mechanically.
+CONFORMANT_FAILING_H3_REPRO_BODY = """\
+# Conformant-failing body using H3 repro subgroups (LOW confidence)
+
+## Human TL;DR
+
+A plain-English first-pass take: this fixture is conformant except for the H3
+Reproducibility subgroup headings, which the remediation patch promotes to bold.
 
 ## TL;DR
 
@@ -747,15 +869,9 @@ Smoke-test that the H3-Repro remediation patch promotes Artifacts/Compute/Code l
 - **Results:** toy results paragraph explaining what we saw.
 - **Next steps:** none in particular.
 
-## Figure
-
 ![Hero figure placeholder](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_X/hero.png)
 
 *Hero figure showing the toy data points and the regression line and bootstrap envelope.*
-
-## Details
-
-Confidence: LOW — based on toy data only, not generalizable, no real experiment.
 
 ## Reproducibility
 
@@ -776,6 +892,8 @@ Confidence: LOW — based on toy data only, not generalizable, no real experimen
 | field | value |
 |---|---|
 | Script | n/a |
+
+Confidence: LOW — based on toy data only, not generalizable, no real experiment.
 """
 
 
@@ -849,10 +967,11 @@ def _make_task_at_awaiting(
 def test_migrate_body_classify_pass(fake_repo):
     from explore_persona_space.task_workflow_migrate import BodyClass, classify_body
 
-    # CANONICAL_PASS_BODY exercises the fully-conformant body shape after
-    # the Why-experiment gate was retired (2026-05-24). The fixture now
-    # carries a `## Goal` H2 (soft INFO check, WARN-not-FAIL) and an
-    # absolute figure URL.
+    # CANONICAL_PASS_BODY exercises the fully-conformant body shape under
+    # the 2-content-section spec (2026-W22, task #454): Human TL;DR /
+    # TL;DR / Reproducibility in order, hero image inline under TL;DR,
+    # `## Goal` H2 after Reproducibility (extra H2s tolerated only
+    # there), and an absolute figure URL.
     assert classify_body(CANONICAL_PASS_BODY, fm={}) == BodyClass.PASS
 
 
@@ -876,8 +995,8 @@ def test_migrate_body_classify_legacy_html(fake_repo):
 
 
 def test_migrate_body_conformant_failing_remediation(fake_repo):
-    """A four-H2 body with H3 Repro subgroups gets the labels promoted to
-    bold and ends up passing verify_task_body.
+    """A current-spec-shaped body with H3 Repro subgroups gets the labels
+    promoted to bold and ends up passing verify_task_body.
     """
     _, tw = fake_repo
     from explore_persona_space.task_workflow_migrate import BodyClass, migrate_one
@@ -941,43 +1060,35 @@ def test_migrate_body_idempotency(fake_repo):
     assert _git_log_count(repo) == n_commits_after_first
 
 
-def test_migrate_body_v4_to_new_strips_details_wrappers(fake_repo):
-    """v4-legacy bodies that fail post-patch (e.g. missing TL;DR labels) are
-    LEFT UNCHANGED (per plan §3 Phase E step 5), but the shape conversion is
-    visible in dry-run output via the action log.
+def test_migrate_body_v4_legacy_routes_to_needs_user(fake_repo):
+    """V4_LEGACY bodies are classified but NOT converted — `migrate_one`
+    routes them straight to `needs_user` with a retirement reason. The old
+    `convert_v4_to_target` chain targeted the retired four-H2 shape (its
+    output always hard-FAILed the verifier's stray-H2 check under the
+    2-content-section spec), so the converter was removed (2026-06-09).
     """
     _, tw = fake_repo
-    from explore_persona_space.task_workflow_migrate import (
-        BodyClass,
-        convert_v4_to_target,
-        migrate_one,
-    )
+    import explore_persona_space.task_workflow_migrate as migrate_mod
+    from explore_persona_space.task_workflow_migrate import BodyClass, migrate_one
 
     new_id = _make_task_at_awaiting(tw, title="v4 fixture (LOW confidence)", body=V4_LEGACY_BODY)
 
-    # Drive the conversion through migrate_one in dry-run mode.
     result = migrate_one(new_id, apply=False)
     assert result.classification == BodyClass.V4_LEGACY
-    # The body almost certainly still fails after mechanical conversion
-    # (TL;DR labels are missing, no Figure image). Plan §3 Phase E step 5 says
-    # leave the body alone in that case.
     assert result.needs_user
-
-    # But the standalone converter SHOULD have done its mechanical work —
-    # exercise it directly to confirm the strip + inject logic.
-    converted, actions = convert_v4_to_target(V4_LEGACY_BODY, title="v4 fixture (LOW confidence)")
-    assert "<details open>" not in converted
-    assert "## Figure" in converted
-    assert "## Reproducibility" in converted
-    assert "# v4 fixture (LOW confidence)" in converted
-    # Action log surfaces every patch step.
-    assert any("toggle wrapper" in a for a in actions)
-    assert any("H1" in a or "title" in a for a in actions)
-    assert any("Reproducibility" in a for a in actions)
+    assert "auto-conversion was retired" in result.needs_user_reason
+    assert "SPEC.md" in result.needs_user_reason
+    # No conversion is attempted: the action log is empty.
+    assert result.actions == []
+    # The retired converter and its helpers are gone from the module.
+    assert not hasattr(migrate_mod, "convert_v4_to_target")
+    assert not hasattr(migrate_mod, "strip_v4_details_wrappers")
 
 
-def test_migrate_body_v4_legacy_unchanged_when_post_patch_still_fails(fake_repo):
-    """Per plan: if mechanical patch insufficient, body is reverted to original."""
+def test_migrate_body_v4_legacy_unchanged_on_apply(fake_repo):
+    """`--apply` on a V4_LEGACY body is a guaranteed no-op: needs_user,
+    body unchanged on disk, no commits (converter retired 2026-06-09).
+    """
     repo, tw = fake_repo
     from explore_persona_space.task_workflow_migrate import migrate_one
 
@@ -989,7 +1100,9 @@ def test_migrate_body_v4_legacy_unchanged_when_post_patch_still_fails(fake_repo)
 
     result = migrate_one(new_id, apply=True)
     assert result.needs_user
+    # verify_after mirrors verify_before — the body was never touched.
     assert result.verify_after == "FAIL"
+    assert result.verify_before == "FAIL"
     # Body is unchanged on disk, no extra commits.
     assert body_path.read_text() == before_text
     assert _git_log_count(repo) == n_commits_before

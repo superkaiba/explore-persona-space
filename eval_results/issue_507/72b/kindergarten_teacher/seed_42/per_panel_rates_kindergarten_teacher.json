@@ -1,0 +1,225 @@
+{
+  "source": "kindergarten_teacher",
+  "seed": 42,
+  "judge_model": "claude-haiku-4-5-20251001",
+  "per_panel_rate": {
+    "accountant": 0.026,
+    "ai": 0.088,
+    "ai_assistant": 0.052,
+    "assistant": 0.042,
+    "chef": 0.038,
+    "child": 0.042,
+    "comedian": 0.054,
+    "data_scientist": 0.02,
+    "french_person": 0.024,
+    "hero": 0.028,
+    "journalist": 0.026,
+    "kindergarten_teacher": 0.962,
+    "lawyer": 0.026,
+    "librarian": 0.3,
+    "medical_doctor": 0.03,
+    "philosopher": 0.02,
+    "police_officer": 0.032,
+    "programmer": 0.102,
+    "qwen_default": 0.022,
+    "software_engineer": 0.02,
+    "surgeon": 0.072,
+    "villain": 0.04,
+    "wizard": 0.034,
+    "zelthari_scholar": 0.022
+  },
+  "per_panel_meta": {
+    "accountant": {
+      "n_calls": 500,
+      "n_yes": 13,
+      "n_no": 487,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.026
+    },
+    "ai": {
+      "n_calls": 500,
+      "n_yes": 44,
+      "n_no": 456,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.088
+    },
+    "ai_assistant": {
+      "n_calls": 500,
+      "n_yes": 26,
+      "n_no": 474,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.052
+    },
+    "assistant": {
+      "n_calls": 500,
+      "n_yes": 21,
+      "n_no": 479,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.042
+    },
+    "chef": {
+      "n_calls": 500,
+      "n_yes": 19,
+      "n_no": 481,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.038
+    },
+    "child": {
+      "n_calls": 500,
+      "n_yes": 21,
+      "n_no": 479,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.042
+    },
+    "comedian": {
+      "n_calls": 500,
+      "n_yes": 27,
+      "n_no": 473,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.054
+    },
+    "data_scientist": {
+      "n_calls": 500,
+      "n_yes": 10,
+      "n_no": 490,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.02
+    },
+    "french_person": {
+      "n_calls": 500,
+      "n_yes": 12,
+      "n_no": 488,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.024
+    },
+    "hero": {
+      "n_calls": 500,
+      "n_yes": 14,
+      "n_no": 486,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.028
+    },
+    "journalist": {
+      "n_calls": 500,
+      "n_yes": 13,
+      "n_no": 487,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.026
+    },
+    "kindergarten_teacher": {
+      "n_calls": 500,
+      "n_yes": 481,
+      "n_no": 19,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.962
+    },
+    "lawyer": {
+      "n_calls": 500,
+      "n_yes": 13,
+      "n_no": 487,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.026
+    },
+    "librarian": {
+      "n_calls": 500,
+      "n_yes": 150,
+      "n_no": 350,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.3
+    },
+    "medical_doctor": {
+      "n_calls": 500,
+      "n_yes": 15,
+      "n_no": 485,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.03
+    },
+    "philosopher": {
+      "n_calls": 500,
+      "n_yes": 10,
+      "n_no": 490,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.02
+    },
+    "police_officer": {
+      "n_calls": 500,
+      "n_yes": 16,
+      "n_no": 484,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.032
+    },
+    "programmer": {
+      "n_calls": 500,
+      "n_yes": 51,
+      "n_no": 449,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.102
+    },
+    "qwen_default": {
+      "n_calls": 500,
+      "n_yes": 11,
+      "n_no": 489,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.022
+    },
+    "software_engineer": {
+      "n_calls": 500,
+      "n_yes": 10,
+      "n_no": 490,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.02
+    },
+    "surgeon": {
+      "n_calls": 500,
+      "n_yes": 36,
+      "n_no": 464,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.072
+    },
+    "villain": {
+      "n_calls": 500,
+      "n_yes": 20,
+      "n_no": 480,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.04
+    },
+    "wizard": {
+      "n_calls": 500,
+      "n_yes": 17,
+      "n_no": 483,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.034
+    },
+    "zelthari_scholar": {
+      "n_calls": 500,
+      "n_yes": 11,
+      "n_no": 489,
+      "n_indeterminate": 0,
+      "n_errors": 0,
+      "agree_rate": 0.022
+    }
+  }
+}

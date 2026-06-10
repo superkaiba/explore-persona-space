@@ -1,0 +1,2265 @@
+{
+  "n_cells_used": 138,
+  "n_cells_dropped": 0,
+  "js_sym_std_nats": 0.03217918317925434,
+  "js_predictor_dynamic_range_insufficient": false,
+  "predictors": {
+    "cosine_response_headline": {
+      "label": "cosine_response_headline",
+      "polarity": "similarity",
+      "n_cells": 138,
+      "spearman_raw": {
+        "rho": 0.5601077398759983,
+        "p": 9.152255734860204e-13,
+        "n": 138
+      },
+      "spearman_source_fe": {
+        "rho": 0.03154253295378443,
+        "p": 0.7134237027210378,
+        "n": 138
+      },
+      "spearman_source_fe_plus_base_rate": {
+        "rho": 0.10448499543298982,
+        "p": 0.22261749518687363,
+        "n": 138
+      },
+      "per_source": {
+        "assistant": {
+          "rho": 0.16728902820137717,
+          "p": 0.44549337060020894,
+          "n": 23,
+          "ci_low_95": -0.4034948408094942,
+          "ci_high_95": 0.6142491417093301,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.4386,
+          "n_perm_valid": 10000
+        },
+        "comedian": {
+          "rho": 0.273853873794188,
+          "p": 0.20606635493021672,
+          "n": 23,
+          "ci_low_95": -0.3002477425225879,
+          "ci_high_95": 0.7110991913296404,
+          "n_boot_valid": 9998,
+          "permutation_p": 0.2068,
+          "n_perm_valid": 10000
+        },
+        "kindergarten_teacher": {
+          "rho": 0.12478367200710316,
+          "p": 0.5705148257952739,
+          "n": 23,
+          "ci_low_95": -0.3443209995738978,
+          "ci_high_95": 0.5660737863092428,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.5657,
+          "n_perm_valid": 10000
+        },
+        "qwen_default": {
+          "rho": -0.3057138128110764,
+          "p": 0.1560099253637801,
+          "n": 23,
+          "ci_low_95": -0.6633380927871925,
+          "ci_high_95": 0.1308146635456541,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.1559,
+          "n_perm_valid": 10000
+        },
+        "software_engineer": {
+          "rho": 0.09589719411850227,
+          "p": 0.6633701092843293,
+          "n": 23,
+          "ci_low_95": -0.4508444779006601,
+          "ci_high_95": 0.5914310270724706,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.6677,
+          "n_perm_valid": 10000
+        },
+        "villain": {
+          "rho": 0.14411981336806512,
+          "p": 0.511779979924263,
+          "n": 23,
+          "ci_low_95": -0.3557976902664429,
+          "ci_high_95": 0.6446811069702795,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.5117,
+          "n_perm_valid": 10000
+        }
+      },
+      "source_dummy_reference": "assistant",
+      "spearman_source_fe_plus_base_rate_diff": {
+        "rho": 0.07284263362758417,
+        "p": 0.39585213394719404,
+        "n": 138
+      },
+      "fisher_z_avg_per_source": {
+        "rho_z_avg": 0.08328195166324233,
+        "n_sources": 6
+      }
+    },
+    "cosine_response_l21": {
+      "label": "cosine_response_l21",
+      "polarity": "similarity",
+      "n_cells": 138,
+      "spearman_raw": {
+        "rho": 0.5345409822811533,
+        "p": 1.4498510679321758e-11,
+        "n": 138
+      },
+      "spearman_source_fe": {
+        "rho": -0.01810506251876946,
+        "p": 0.8330675158352439,
+        "n": 138
+      },
+      "spearman_source_fe_plus_base_rate": {
+        "rho": 0.045219980542114666,
+        "p": 0.5984351885163214,
+        "n": 138
+      },
+      "per_source": {
+        "assistant": {
+          "rho": 0.13204415875835707,
+          "p": 0.5481156572993994,
+          "n": 23,
+          "ci_low_95": -0.40592906075918084,
+          "ci_high_95": 0.5692298630956637,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.545,
+          "n_perm_valid": 10000
+        },
+        "comedian": {
+          "rho": 0.16637685458893017,
+          "p": 0.4480139255707494,
+          "n": 23,
+          "ci_low_95": -0.3996112946905808,
+          "ci_high_95": 0.6243839673998535,
+          "n_boot_valid": 9998,
+          "permutation_p": 0.4544,
+          "n_perm_valid": 10000
+        },
+        "kindergarten_teacher": {
+          "rho": -0.11933676568933278,
+          "p": 0.5875792715328729,
+          "n": 23,
+          "ci_low_95": -0.5445952713594132,
+          "ci_high_95": 0.36817296974967795,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.5975,
+          "n_perm_valid": 10000
+        },
+        "qwen_default": {
+          "rho": -0.2562455583109023,
+          "p": 0.23791600543946426,
+          "n": 23,
+          "ci_low_95": -0.6171553585950252,
+          "ci_high_95": 0.158394791999496,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.2361,
+          "n_perm_valid": 10000
+        },
+        "software_engineer": {
+          "rho": -0.004943154336005272,
+          "p": 0.9821412091189011,
+          "n": 23,
+          "ci_low_95": -0.532514490755408,
+          "ci_high_95": 0.4924017118894386,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.984,
+          "n_perm_valid": 10000
+        },
+        "villain": {
+          "rho": 0.23819802487221872,
+          "p": 0.2737350475297216,
+          "n": 23,
+          "ci_low_95": -0.2819092399891755,
+          "ci_high_95": 0.739931133140619,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.2748,
+          "n_perm_valid": 10000
+        }
+      },
+      "source_dummy_reference": "assistant",
+      "spearman_source_fe_plus_base_rate_diff": {
+        "rho": 0.01609214342741046,
+        "p": 0.8513999332411967,
+        "n": 138
+      },
+      "fisher_z_avg_per_source": {
+        "rho_z_avg": 0.02610795278742584,
+        "n_sources": 6
+      }
+    },
+    "cosine_response_l40": {
+      "label": "cosine_response_l40",
+      "polarity": "similarity",
+      "n_cells": 138,
+      "spearman_raw": {
+        "rho": 0.5566192615800137,
+        "p": 1.3529737788027292e-12,
+        "n": 138
+      },
+      "spearman_source_fe": {
+        "rho": 0.02063539788533885,
+        "p": 0.8101506709349653,
+        "n": 138
+      },
+      "spearman_source_fe_plus_base_rate": {
+        "rho": 0.09313302433187443,
+        "p": 0.2772679674194175,
+        "n": 138
+      },
+      "per_source": {
+        "assistant": {
+          "rho": 0.12410165296838069,
+          "p": 0.572639468852923,
+          "n": 23,
+          "ci_low_95": -0.41332367646476065,
+          "ci_high_95": 0.5578986795969948,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.5682,
+          "n_perm_valid": 10000
+        },
+        "comedian": {
+          "rho": 0.307250687671528,
+          "p": 0.15383446550629468,
+          "n": 23,
+          "ci_low_95": -0.23117852887705342,
+          "ci_high_95": 0.7066452352047793,
+          "n_boot_valid": 9998,
+          "permutation_p": 0.162,
+          "n_perm_valid": 10000
+        },
+        "kindergarten_teacher": {
+          "rho": 0.041594557335701055,
+          "p": 0.8505339301467741,
+          "n": 23,
+          "ci_low_95": -0.4219613881576294,
+          "ci_high_95": 0.49070193518956623,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.8495,
+          "n_perm_valid": 10000
+        },
+        "qwen_default": {
+          "rho": -0.1573090493105539,
+          "p": 0.47347400717569627,
+          "n": 23,
+          "ci_low_95": -0.5523501103483917,
+          "ci_high_95": 0.2433327525187833,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.4687,
+          "n_perm_valid": 10000
+        },
+        "software_engineer": {
+          "rho": 0.0889767780480949,
+          "p": 0.6864160672464115,
+          "n": 23,
+          "ci_low_95": -0.452372385725793,
+          "ci_high_95": 0.5920425887362611,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.693,
+          "n_perm_valid": 10000
+        },
+        "villain": {
+          "rho": 0.15112563762901274,
+          "p": 0.49124829809688164,
+          "n": 23,
+          "ci_low_95": -0.3489360961698794,
+          "ci_high_95": 0.657328792556321,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.4943,
+          "n_perm_valid": 10000
+        }
+      },
+      "source_dummy_reference": "assistant",
+      "spearman_source_fe_plus_base_rate_diff": {
+        "rho": 0.06163534489076351,
+        "p": 0.47266565767695673,
+        "n": 138
+      },
+      "fisher_z_avg_per_source": {
+        "rho_z_avg": 0.09417816417321674,
+        "n_sources": 6
+      }
+    },
+    "cosine_response_l57": {
+      "label": "cosine_response_l57",
+      "polarity": "similarity",
+      "n_cells": 138,
+      "spearman_raw": {
+        "rho": 0.5601077398759983,
+        "p": 9.152255734860204e-13,
+        "n": 138
+      },
+      "spearman_source_fe": {
+        "rho": 0.03154253295378443,
+        "p": 0.7134237027210378,
+        "n": 138
+      },
+      "spearman_source_fe_plus_base_rate": {
+        "rho": 0.10448499543298982,
+        "p": 0.22261749518687363,
+        "n": 138
+      },
+      "per_source": {
+        "assistant": {
+          "rho": 0.16728902820137717,
+          "p": 0.44549337060020894,
+          "n": 23,
+          "ci_low_95": -0.4034948408094942,
+          "ci_high_95": 0.6142491417093301,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.4386,
+          "n_perm_valid": 10000
+        },
+        "comedian": {
+          "rho": 0.273853873794188,
+          "p": 0.20606635493021672,
+          "n": 23,
+          "ci_low_95": -0.3002477425225879,
+          "ci_high_95": 0.7110991913296404,
+          "n_boot_valid": 9998,
+          "permutation_p": 0.2068,
+          "n_perm_valid": 10000
+        },
+        "kindergarten_teacher": {
+          "rho": 0.12478367200710316,
+          "p": 0.5705148257952739,
+          "n": 23,
+          "ci_low_95": -0.3443209995738978,
+          "ci_high_95": 0.5660737863092428,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.5657,
+          "n_perm_valid": 10000
+        },
+        "qwen_default": {
+          "rho": -0.3057138128110764,
+          "p": 0.1560099253637801,
+          "n": 23,
+          "ci_low_95": -0.6633380927871925,
+          "ci_high_95": 0.1308146635456541,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.1559,
+          "n_perm_valid": 10000
+        },
+        "software_engineer": {
+          "rho": 0.09589719411850227,
+          "p": 0.6633701092843293,
+          "n": 23,
+          "ci_low_95": -0.4508444779006601,
+          "ci_high_95": 0.5914310270724706,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.6677,
+          "n_perm_valid": 10000
+        },
+        "villain": {
+          "rho": 0.14411981336806512,
+          "p": 0.511779979924263,
+          "n": 23,
+          "ci_low_95": -0.3557976902664429,
+          "ci_high_95": 0.6446811069702795,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.5117,
+          "n_perm_valid": 10000
+        }
+      },
+      "source_dummy_reference": "assistant",
+      "spearman_source_fe_plus_base_rate_diff": {
+        "rho": 0.07284263362758417,
+        "p": 0.39585213394719404,
+        "n": 138
+      },
+      "fisher_z_avg_per_source": {
+        "rho_z_avg": 0.08328195166324233,
+        "n_sources": 6
+      }
+    },
+    "cosine_response_l70": {
+      "label": "cosine_response_l70",
+      "polarity": "similarity",
+      "n_cells": 138,
+      "spearman_raw": {
+        "rho": 0.5180636324261148,
+        "p": 7.635018934036428e-11,
+        "n": 138
+      },
+      "spearman_source_fe": {
+        "rho": -0.06510555323697069,
+        "p": 0.4480525359485384,
+        "n": 138
+      },
+      "spearman_source_fe_plus_base_rate": {
+        "rho": -0.008986857773874786,
+        "p": 0.9166824950210595,
+        "n": 138
+      },
+      "per_source": {
+        "assistant": {
+          "rho": 0.15636808274015968,
+          "p": 0.4761574891210715,
+          "n": 23,
+          "ci_low_95": -0.4032141916470912,
+          "ci_high_95": 0.6058132526630723,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.4705,
+          "n_perm_valid": 10000
+        },
+        "comedian": {
+          "rho": 0.2611023630410218,
+          "p": 0.22882738831360175,
+          "n": 23,
+          "ci_low_95": -0.2470066956995109,
+          "ci_high_95": 0.6684620645658582,
+          "n_boot_valid": 9998,
+          "permutation_p": 0.241,
+          "n_perm_valid": 10000
+        },
+        "kindergarten_teacher": {
+          "rho": -0.013369679143618196,
+          "p": 0.9517211756456513,
+          "n": 23,
+          "ci_low_95": -0.47955165598866883,
+          "ci_high_95": 0.4610522096557624,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.9538,
+          "n_perm_valid": 10000
+        },
+        "qwen_default": {
+          "rho": -0.32995325751616184,
+          "p": 0.12415018341853229,
+          "n": 23,
+          "ci_low_95": -0.6847370048188309,
+          "ci_high_95": 0.10173469110007984,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.1237,
+          "n_perm_valid": 10000
+        },
+        "software_engineer": {
+          "rho": -0.011369254972812125,
+          "p": 0.9589384114573213,
+          "n": 23,
+          "ci_low_95": -0.536929615573489,
+          "ci_high_95": 0.49078904747895274,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.9616,
+          "n_perm_valid": 10000
+        },
+        "villain": {
+          "rho": 0.10408653187693591,
+          "p": 0.6364763132303007,
+          "n": 23,
+          "ci_low_95": -0.4120618441227792,
+          "ci_high_95": 0.6400175624748756,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.6404,
+          "n_perm_valid": 10000
+        }
+      },
+      "source_dummy_reference": "assistant",
+      "spearman_source_fe_plus_base_rate_diff": {
+        "rho": -0.04004109781553117,
+        "p": 0.6410115481382826,
+        "n": 138
+      },
+      "fisher_z_avg_per_source": {
+        "rho_z_avg": 0.02697703360789497,
+        "n_sources": 6
+      }
+    },
+    "M_js": {
+      "label": "M_js",
+      "polarity": "similarity",
+      "n_cells": 138,
+      "spearman_raw": {
+        "rho": 0.5080538673714835,
+        "p": 2.0071473061067754e-10,
+        "n": 138
+      },
+      "spearman_source_fe": {
+        "rho": -0.09572988466873854,
+        "p": 0.2640329086519546,
+        "n": 138
+      },
+      "spearman_source_fe_plus_base_rate": {
+        "rho": -0.031433614030086605,
+        "p": 0.7143702663819625,
+        "n": 138
+      },
+      "per_source": {
+        "assistant": {
+          "rho": 0.1608357422470214,
+          "p": 0.46348542576959406,
+          "n": 23,
+          "ci_low_95": -0.40420736294220483,
+          "ci_high_95": 0.6098721285488603,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.4646,
+          "n_perm_valid": 10000
+        },
+        "comedian": {
+          "rho": -0.09593993804763128,
+          "p": 0.6632286532887488,
+          "n": 23,
+          "ci_low_95": -0.5873330778372614,
+          "ci_high_95": 0.4780105494952104,
+          "n_boot_valid": 9998,
+          "permutation_p": 0.6655,
+          "n_perm_valid": 10000
+        },
+        "kindergarten_teacher": {
+          "rho": 0.219856945917277,
+          "p": 0.3134545522305738,
+          "n": 23,
+          "ci_low_95": -0.2388833604607118,
+          "ci_high_95": 0.6175506065696074,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.312,
+          "n_perm_valid": 10000
+        },
+        "qwen_default": {
+          "rho": -0.30027230481605727,
+          "p": 0.1638860260534817,
+          "n": 23,
+          "ci_low_95": -0.6713396511513976,
+          "ci_high_95": 0.14318856993981427,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.1614,
+          "n_perm_valid": 10000
+        },
+        "software_engineer": {
+          "rho": -0.051408805094454835,
+          "p": 0.8157982963898096,
+          "n": 23,
+          "ci_low_95": -0.5736244014825312,
+          "ci_high_95": 0.4464130761801035,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.8238,
+          "n_perm_valid": 10000
+        },
+        "villain": {
+          "rho": -0.025521216950594866,
+          "p": 0.9079788464400429,
+          "n": 23,
+          "ci_low_95": -0.5243571175877703,
+          "ci_high_95": 0.5220092552875918,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.9072,
+          "n_perm_valid": 10000
+        }
+      },
+      "source_dummy_reference": "assistant",
+      "spearman_source_fe_plus_base_rate_diff": {
+        "rho": -0.07257565948738884,
+        "p": 0.3975905096122321,
+        "n": 138
+      },
+      "fisher_z_avg_per_source": {
+        "rho_z_avg": -0.01621281740241036,
+        "n_sources": 6
+      }
+    },
+    "JS_sym_nats": {
+      "label": "JS_sym_nats",
+      "polarity": "distance",
+      "n_cells": 138,
+      "spearman_raw": {
+        "rho": -0.5080538673714835,
+        "p": 2.0071473061067754e-10,
+        "n": 138
+      },
+      "spearman_source_fe": {
+        "rho": 0.09572988466873851,
+        "p": 0.2640329086519546,
+        "n": 138
+      },
+      "spearman_source_fe_plus_base_rate": {
+        "rho": 0.03143361403008659,
+        "p": 0.7143702663819625,
+        "n": 138
+      },
+      "per_source": {
+        "assistant": {
+          "rho": -0.1608357422470214,
+          "p": 0.46348542576959406,
+          "n": 23,
+          "ci_low_95": -0.6098721285488603,
+          "ci_high_95": 0.4042073629422048,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.4646,
+          "n_perm_valid": 10000
+        },
+        "comedian": {
+          "rho": 0.09593993804763128,
+          "p": 0.6632286532887488,
+          "n": 23,
+          "ci_low_95": -0.47801054949521116,
+          "ci_high_95": 0.5873330778372613,
+          "n_boot_valid": 9998,
+          "permutation_p": 0.6655,
+          "n_perm_valid": 10000
+        },
+        "kindergarten_teacher": {
+          "rho": -0.219856945917277,
+          "p": 0.3134545522305738,
+          "n": 23,
+          "ci_low_95": -0.6175506065696077,
+          "ci_high_95": 0.23888336046071154,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.312,
+          "n_perm_valid": 10000
+        },
+        "qwen_default": {
+          "rho": 0.30027230481605727,
+          "p": 0.1638860260534817,
+          "n": 23,
+          "ci_low_95": -0.1431885699398144,
+          "ci_high_95": 0.6713396511513974,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.1614,
+          "n_perm_valid": 10000
+        },
+        "software_engineer": {
+          "rho": 0.051408805094454835,
+          "p": 0.8157982963898096,
+          "n": 23,
+          "ci_low_95": -0.4464130761801039,
+          "ci_high_95": 0.5736244014825312,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.8238,
+          "n_perm_valid": 10000
+        },
+        "villain": {
+          "rho": 0.025521216950594866,
+          "p": 0.9079788464400429,
+          "n": 23,
+          "ci_low_95": -0.5220092552875919,
+          "ci_high_95": 0.5243571175877699,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.9072,
+          "n_perm_valid": 10000
+        }
+      },
+      "source_dummy_reference": "assistant",
+      "spearman_source_fe_plus_base_rate_diff": {
+        "rho": 0.07257565948738882,
+        "p": 0.3975905096122321,
+        "n": 138
+      },
+      "fisher_z_avg_per_source": {
+        "rho_z_avg": 0.01621281740241036,
+        "n_sources": 6
+      }
+    },
+    "KL_src_to_bys_nats": {
+      "label": "KL_src_to_bys_nats",
+      "polarity": "distance",
+      "n_cells": 138,
+      "spearman_raw": {
+        "rho": -0.6471492855688175,
+        "p": 9.843124866387243e-18,
+        "n": 138
+      },
+      "spearman_source_fe": {
+        "rho": -0.03856221193826891,
+        "p": 0.6533955764615447,
+        "n": 138
+      },
+      "spearman_source_fe_plus_base_rate": {
+        "rho": -0.10398491363679963,
+        "p": 0.22485146779465326,
+        "n": 138
+      },
+      "per_source": {
+        "assistant": {
+          "rho": -0.14048307116020692,
+          "p": 0.5225989853444412,
+          "n": 23,
+          "ci_low_95": -0.5955406396230045,
+          "ci_high_95": 0.40133544061531196,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.5208,
+          "n_perm_valid": 10000
+        },
+        "comedian": {
+          "rho": -0.3163589096380753,
+          "p": 0.14137901442359302,
+          "n": 23,
+          "ci_low_95": -0.7420576151653479,
+          "ci_high_95": 0.23384989842096818,
+          "n_boot_valid": 9998,
+          "permutation_p": 0.1429,
+          "n_perm_valid": 10000
+        },
+        "kindergarten_teacher": {
+          "rho": -0.2104486531865827,
+          "p": 0.3351235475763314,
+          "n": 23,
+          "ci_low_95": -0.6800461728573471,
+          "ci_high_95": 0.28607029826292224,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.3336,
+          "n_perm_valid": 10000
+        },
+        "qwen_default": {
+          "rho": 0.35815016258126103,
+          "p": 0.09334008441525439,
+          "n": 23,
+          "ci_low_95": -0.08194079342089725,
+          "ci_high_95": 0.7120556691913228,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.0954,
+          "n_perm_valid": 10000
+        },
+        "software_engineer": {
+          "rho": 0.03361344948483585,
+          "p": 0.8789841091333742,
+          "n": 23,
+          "ci_low_95": -0.4629751454158282,
+          "ci_high_95": 0.5517759646944759,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.8832,
+          "n_perm_valid": 10000
+        },
+        "villain": {
+          "rho": -0.09457862752279274,
+          "p": 0.6677391917548889,
+          "n": 23,
+          "ci_low_95": -0.6265484180849824,
+          "ci_high_95": 0.40162389965594314,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.6692,
+          "n_perm_valid": 10000
+        }
+      },
+      "source_dummy_reference": "assistant",
+      "spearman_source_fe_plus_base_rate_diff": {
+        "rho": -0.07676945116757854,
+        "p": 0.3708109031254864,
+        "n": 138
+      },
+      "fisher_z_avg_per_source": {
+        "rho_z_avg": -0.061443957364901866,
+        "n_sources": 6
+      }
+    },
+    "KL_bys_to_src_nats": {
+      "label": "KL_bys_to_src_nats",
+      "polarity": "distance",
+      "n_cells": 138,
+      "spearman_raw": {
+        "rho": -0.3433044411070578,
+        "p": 3.7522533251906645e-05,
+        "n": 138
+      },
+      "spearman_source_fe": {
+        "rho": 0.13148251022557284,
+        "p": 0.12424386683659751,
+        "n": 138
+      },
+      "spearman_source_fe_plus_base_rate": {
+        "rho": 0.07549766841777711,
+        "p": 0.3788124284439187,
+        "n": 138
+      },
+      "per_source": {
+        "assistant": {
+          "rho": -0.15636808274015968,
+          "p": 0.4761574891210715,
+          "n": 23,
+          "ci_low_95": -0.6062976067363122,
+          "ci_high_95": 0.4191147154352566,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.4782,
+          "n_perm_valid": 10000
+        },
+        "comedian": {
+          "rho": 0.007893792371007636,
+          "p": 0.9714844669883198,
+          "n": 23,
+          "ci_low_95": -0.5319503600494224,
+          "ci_high_95": 0.5050146517954981,
+          "n_boot_valid": 9998,
+          "permutation_p": 0.9753,
+          "n_perm_valid": 10000
+        },
+        "kindergarten_teacher": {
+          "rho": -0.19856449394781098,
+          "p": 0.3637370937579522,
+          "n": 23,
+          "ci_low_95": -0.6131722119665266,
+          "ci_high_95": 0.2635104461499492,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.3601,
+          "n_perm_valid": 10000
+        },
+        "qwen_default": {
+          "rho": 0.19539960527568806,
+          "p": 0.3715887497627926,
+          "n": 23,
+          "ci_low_95": -0.2361425066232039,
+          "ci_high_95": 0.5791317828859532,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.3717,
+          "n_perm_valid": 10000
+        },
+        "software_engineer": {
+          "rho": 0.11616412689612389,
+          "p": 0.5976183601533617,
+          "n": 23,
+          "ci_low_95": -0.41004872368459183,
+          "ci_high_95": 0.6453362359294643,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.608,
+          "n_perm_valid": 10000
+        },
+        "villain": {
+          "rho": 0.16513728615090792,
+          "p": 0.4514511456783237,
+          "n": 23,
+          "ci_low_95": -0.3922792975117244,
+          "ci_high_95": 0.6288393362193619,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.4469,
+          "n_perm_valid": 10000
+        }
+      },
+      "source_dummy_reference": "assistant",
+      "spearman_source_fe_plus_base_rate_diff": {
+        "rho": 0.11434490854241092,
+        "p": 0.18174060366533953,
+        "n": 138
+      },
+      "fisher_z_avg_per_source": {
+        "rho_z_avg": 0.021712270634811102,
+        "n_sources": 6
+      }
+    },
+    "KL_sym_nats": {
+      "label": "KL_sym_nats",
+      "polarity": "distance",
+      "n_cells": 138,
+      "spearman_raw": {
+        "rho": -0.5074679823393783,
+        "p": 2.1219225133310099e-10,
+        "n": 138
+      },
+      "spearman_source_fe": {
+        "rho": 0.1072714814970425,
+        "p": 0.21045720373196114,
+        "n": 138
+      },
+      "spearman_source_fe_plus_base_rate": {
+        "rho": 0.046485350516246325,
+        "p": 0.588228508816094,
+        "n": 138
+      },
+      "per_source": {
+        "assistant": {
+          "rho": -0.1330369719821041,
+          "p": 0.5450843725034052,
+          "n": 23,
+          "ci_low_95": -0.5921090285823678,
+          "ci_high_95": 0.424401673545839,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.5442,
+          "n_perm_valid": 10000
+        },
+        "comedian": {
+          "rho": 0.10929866359856727,
+          "p": 0.6195853397928373,
+          "n": 23,
+          "ci_low_95": -0.4058808842142143,
+          "ci_high_95": 0.549707194867958,
+          "n_boot_valid": 9998,
+          "permutation_p": 0.6201,
+          "n_perm_valid": 10000
+        },
+        "kindergarten_teacher": {
+          "rho": -0.2812584353175976,
+          "p": 0.19357417355890436,
+          "n": 23,
+          "ci_low_95": -0.6642035271391646,
+          "ci_high_95": 0.16685160155076717,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.1946,
+          "n_perm_valid": 10000
+        },
+        "qwen_default": {
+          "rho": 0.2943361142760364,
+          "p": 0.17279002573277077,
+          "n": 23,
+          "ci_low_95": -0.14822747868004862,
+          "ci_high_95": 0.6560366450174566,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.171,
+          "n_perm_valid": 10000
+        },
+        "software_engineer": {
+          "rho": 0.11171528799371915,
+          "p": 0.6118157965016849,
+          "n": 23,
+          "ci_low_95": -0.4089706531111245,
+          "ci_high_95": 0.6385747300159964,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.6217,
+          "n_perm_valid": 10000
+        },
+        "villain": {
+          "rho": 0.04803993778935503,
+          "p": 0.8276873674467037,
+          "n": 23,
+          "ci_low_95": -0.4946520509648349,
+          "ci_high_95": 0.5338639390923652,
+          "n_boot_valid": 10000,
+          "permutation_p": 0.8152,
+          "n_perm_valid": 10000
+        }
+      },
+      "source_dummy_reference": "assistant",
+      "spearman_source_fe_plus_base_rate_diff": {
+        "rho": 0.08602015584562751,
+        "p": 0.3157752950531372,
+        "n": 138
+      },
+      "fisher_z_avg_per_source": {
+        "rho_z_avg": 0.025065789260040564,
+        "n_sources": 6
+      }
+    },
+    "bystander_base_rate": {
+      "label": "bystander_base_rate",
+      "polarity": "baseline",
+      "n_cells": 138,
+      "spearman_raw": {
+        "rho": 0.10906987709462015,
+        "p": 0.20286577013909243,
+        "n": 138
+      },
+      "spearman_source_fe": {
+        "rho": 0.12718267766258085,
+        "p": 0.13714380151077712,
+        "n": 138
+      },
+      "spearman_source_fe_plus_base_rate": {
+        "rho": -0.011229367605070437,
+        "p": 0.8959972661377094,
+        "n": 138
+      },
+      "per_source": {
+        "assistant": {
+          "rho": -0.03795367530337604,
+          "p": 0.8634923352332199,
+          "n": 23,
+          "ci_low_95": -0.4631039096833831,
+          "ci_high_95": 0.3534842694311063,
+          "n_boot_valid": 9858,
+          "permutation_p": 0.8677,
+          "n_perm_valid": 10000
+        },
+        "comedian": {
+          "rho": -0.28205692677226074,
+          "p": 0.19225853955568417,
+          "n": 23,
+          "ci_low_95": -0.818545307457839,
+          "ci_high_95": 0.5985559545850586,
+          "n_boot_valid": 9607,
+          "permutation_p": 0.1562,
+          "n_perm_valid": 10000
+        },
+        "kindergarten_teacher": {
+          "rho": -0.22903050862138472,
+          "p": 0.2931701642606597,
+          "n": 23,
+          "ci_low_95": -0.6620022748844532,
+          "ci_high_95": 0.31380418884835287,
+          "n_boot_valid": 9883,
+          "permutation_p": 0.2986,
+          "n_perm_valid": 10000
+        },
+        "qwen_default": {
+          "rho": 0.06890318797706409,
+          "p": 0.754742943307782,
+          "n": 23,
+          "ci_low_95": -0.3110093386196591,
+          "ci_high_95": 0.42739590384120374,
+          "n_boot_valid": 9873,
+          "permutation_p": 0.7533,
+          "n_perm_valid": 10000
+        },
+        "software_engineer": {
+          "rho": 0.31282781001435706,
+          "p": 0.14611950327012718,
+          "n": 23,
+          "ci_low_95": -0.032312898732992326,
+          "ci_high_95": 0.5953203867941496,
+          "n_boot_valid": 9872,
+          "permutation_p": 0.1504,
+          "n_perm_valid": 10000
+        },
+        "villain": {
+          "rho": 0.5977686143302022,
+          "p": 0.0025923251563626896,
+          "n": 23,
+          "ci_low_95": 0.3310644474506036,
+          "ci_high_95": 0.7640347704774242,
+          "n_boot_valid": 9853,
+          "permutation_p": 0.0018,
+          "n_perm_valid": 10000
+        }
+      },
+      "source_dummy_reference": "assistant",
+      "spearman_source_fe_plus_base_rate_diff": {
+        "rho": 0.15224145325422253,
+        "p": 0.07465624279442466,
+        "n": 138
+      },
+      "fisher_z_avg_per_source": {
+        "rho_z_avg": 0.08666603358497543,
+        "n_sources": 6
+      }
+    },
+    "base_rate_diff_neg_abs": {
+      "label": "base_rate_diff_neg_abs",
+      "polarity": "baseline",
+      "n_cells": 138,
+      "spearman_raw": {
+        "rho": 0.25478657509858876,
+        "p": 0.0025632444626373903,
+        "n": 138
+      },
+      "spearman_source_fe": {
+        "rho": -0.06539928205440282,
+        "p": 0.4460027970087172,
+        "n": 138
+      },
+      "spearman_source_fe_plus_base_rate": {
+        "rho": 0.10660100911920474,
+        "p": 0.21333879562551536,
+        "n": 138
+      },
+      "per_source": {
+        "assistant": {
+          "rho": 0.03795367530337604,
+          "p": 0.8634923352332199,
+          "n": 23,
+          "ci_low_95": -0.35348426943110633,
+          "ci_high_95": 0.4631039096833826,
+          "n_boot_valid": 9858,
+          "permutation_p": 0.8677,
+          "n_perm_valid": 10000
+        },
+        "comedian": {
+          "rho": 0.6761070450570368,
+          "p": 0.00039791075467602584,
+          "n": 23,
+          "ci_low_95": 0.379345352980473,
+          "ci_high_95": 0.9192768260521091,
+          "n_boot_valid": 9607,
+          "permutation_p": 0.0015,
+          "n_perm_valid": 10000
+        },
+        "kindergarten_teacher": {
+          "rho": 0.22903050862138472,
+          "p": 0.2931701642606597,
+          "n": 23,
+          "ci_low_95": -0.31380418884835304,
+          "ci_high_95": 0.6620022748844532,
+          "n_boot_valid": 9883,
+          "permutation_p": 0.2986,
+          "n_perm_valid": 10000
+        },
+        "qwen_default": {
+          "rho": -0.06890318797706409,
+          "p": 0.754742943307782,
+          "n": 23,
+          "ci_low_95": -0.42739590384120374,
+          "ci_high_95": 0.3110093386196575,
+          "n_boot_valid": 9873,
+          "permutation_p": 0.7533,
+          "n_perm_valid": 10000
+        },
+        "software_engineer": {
+          "rho": -0.31282781001435706,
+          "p": 0.14611950327012718,
+          "n": 23,
+          "ci_low_95": -0.5953203867941496,
+          "ci_high_95": 0.03231289873299233,
+          "n_boot_valid": 9872,
+          "permutation_p": 0.1504,
+          "n_perm_valid": 10000
+        },
+        "villain": {
+          "rho": -0.5977686143302022,
+          "p": 0.0025923251563626896,
+          "n": 23,
+          "ci_low_95": -0.7640347704774243,
+          "ci_high_95": -0.3310644474506037,
+          "n_boot_valid": 9853,
+          "permutation_p": 0.0018,
+          "n_perm_valid": 10000
+        }
+      },
+      "source_dummy_reference": "assistant",
+      "spearman_source_fe_plus_base_rate_diff": {
+        "rho": -0.005423457737838377,
+        "p": 0.9496612731156748,
+        "n": 138
+      },
+      "fisher_z_avg_per_source": {
+        "rho_z_avg": 0.001781441223766274,
+        "n_sources": 6
+      }
+    }
+  },
+  "paired_bootstrap_delta_rho": {
+    "spec": "|rho(M_js)| - |rho(cosine_l20_baseline)| on source-FE-residualized ranks",
+    "delta_rho_mean": 0.03095802536768417,
+    "delta_rho_median": 0.047146237530653515,
+    "ci_low_95": -0.1595106705257721,
+    "ci_high_95": 0.18673924740841066,
+    "n_boot_requested": 10000,
+    "n_boot_valid": 10000
+  },
+  "paired_bootstrap_delta_rho_vs_base_rate": {
+    "spec": "|rho(M_js)| - |rho(<best base-rate baseline>)| on source-FE-residualized ranks; best = larger |source-FE rho| of {bystander_base_rate, base_rate_diff_neg_abs}",
+    "best_base_rate_label": "bystander_base_rate",
+    "best_base_rate_source_fe_abs_rho": 0.12718267766258085,
+    "base_rate_candidate_source_fe_rho": {
+      "bystander_base_rate": 0.12718267766258085,
+      "base_rate_diff_neg_abs": -0.06539928205440282
+    },
+    "delta_rho_mean": -0.02956599313803062,
+    "delta_rho_median": -0.02696499867914478,
+    "ci_low_95": -0.1962002426481238,
+    "ci_high_95": 0.1280292991604912,
+    "n_boot_requested": 10000,
+    "n_boot_valid": 10000
+  },
+  "cosine_layer_ladder": {
+    "pooled_per_layer": {
+      "cosine_response_l21": {
+        "source_fe_rho": -0.01810506251876946,
+        "source_fe_p": 0.8330675158352439,
+        "fisher_z_avg": 0.02610795278742584
+      },
+      "cosine_response_l40": {
+        "source_fe_rho": 0.02063539788533885,
+        "source_fe_p": 0.8101506709349653,
+        "fisher_z_avg": 0.09417816417321674
+      },
+      "cosine_response_l57": {
+        "source_fe_rho": 0.03154253295378443,
+        "source_fe_p": 0.7134237027210378,
+        "fisher_z_avg": 0.08328195166324233
+      },
+      "cosine_response_l70": {
+        "source_fe_rho": -0.06510555323697069,
+        "source_fe_p": 0.4480525359485384,
+        "fisher_z_avg": 0.02697703360789497
+      }
+    },
+    "best_layer_per_source": {
+      "assistant": {
+        "best_layer": "cosine_response_l57",
+        "rho": 0.16728902820137717
+      },
+      "comedian": {
+        "best_layer": "cosine_response_l40",
+        "rho": 0.307250687671528
+      },
+      "kindergarten_teacher": {
+        "best_layer": "cosine_response_l57",
+        "rho": 0.12478367200710316
+      },
+      "qwen_default": {
+        "best_layer": "cosine_response_l70",
+        "rho": -0.32995325751616184
+      },
+      "software_engineer": {
+        "best_layer": "cosine_response_l57",
+        "rho": 0.09589719411850227
+      },
+      "villain": {
+        "best_layer": "cosine_response_l21",
+        "rho": 0.23819802487221872
+      }
+    },
+    "layers_included": [
+      "cosine_response_l21",
+      "cosine_response_l40",
+      "cosine_response_l57",
+      "cosine_response_l70"
+    ]
+  },
+  "response_length_confound": {
+    "n_cells": 138,
+    "rho_js_vs_len_diff": 0.19871087943829152,
+    "p": 0.019468259476189215,
+    "ci_low_95": 0.03723876658419942,
+    "ci_high_95": 0.35087545714946017,
+    "permutation_p": 0.0191,
+    "flag_threshold_abs_rho": 0.3,
+    "flag_length_confound": false
+  },
+  "secondary_diagnostic_bystander_ranks": {
+    "assistant": {
+      "cosine_response_headline": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 8,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "ai",
+          "programmer",
+          "ai_assistant",
+          "librarian",
+          "surgeon"
+        ]
+      },
+      "cosine_response_l21": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 9,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "ai",
+          "programmer",
+          "librarian",
+          "surgeon",
+          "medical_doctor"
+        ]
+      },
+      "cosine_response_l40": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 10,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "programmer",
+          "ai",
+          "librarian",
+          "surgeon",
+          "qwen_default"
+        ]
+      },
+      "cosine_response_l57": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 8,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "ai",
+          "programmer",
+          "ai_assistant",
+          "librarian",
+          "surgeon"
+        ]
+      },
+      "cosine_response_l70": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 8,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "ai",
+          "programmer",
+          "ai_assistant",
+          "qwen_default",
+          "surgeon"
+        ]
+      },
+      "M_js": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 8,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "ai",
+          "programmer",
+          "ai_assistant",
+          "qwen_default",
+          "surgeon"
+        ]
+      },
+      "JS_sym_nats": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 8,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "ai",
+          "programmer",
+          "ai_assistant",
+          "qwen_default",
+          "surgeon"
+        ]
+      },
+      "KL_src_to_bys_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 8,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "ai",
+          "programmer",
+          "qwen_default",
+          "ai_assistant",
+          "librarian"
+        ]
+      },
+      "KL_bys_to_src_nats": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 8,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "ai",
+          "programmer",
+          "ai_assistant",
+          "qwen_default",
+          "surgeon"
+        ]
+      },
+      "KL_sym_nats": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 8,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "ai",
+          "programmer",
+          "qwen_default",
+          "ai_assistant",
+          "surgeon"
+        ]
+      },
+      "bystander_base_rate": {
+        "rank_of_comedian": 3,
+        "rank_of_data_scientist": 16,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "french_person",
+          "zelthari_scholar",
+          "comedian",
+          "child",
+          "chef"
+        ]
+      },
+      "base_rate_diff_neg_abs": {
+        "rank_of_comedian": 21,
+        "rank_of_data_scientist": 5,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "accountant",
+          "ai",
+          "ai_assistant",
+          "chef",
+          "data_scientist"
+        ]
+      }
+    },
+    "comedian": {
+      "cosine_response_headline": {
+        "rank_of_comedian": null,
+        "rank_of_data_scientist": 19,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "villain",
+          "child",
+          "kindergarten_teacher",
+          "french_person",
+          "wizard"
+        ]
+      },
+      "cosine_response_l21": {
+        "rank_of_comedian": null,
+        "rank_of_data_scientist": 19,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "child",
+          "villain",
+          "french_person",
+          "kindergarten_teacher",
+          "wizard"
+        ]
+      },
+      "cosine_response_l40": {
+        "rank_of_comedian": null,
+        "rank_of_data_scientist": 16,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "child",
+          "villain",
+          "kindergarten_teacher",
+          "french_person",
+          "wizard"
+        ]
+      },
+      "cosine_response_l57": {
+        "rank_of_comedian": null,
+        "rank_of_data_scientist": 19,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "villain",
+          "child",
+          "kindergarten_teacher",
+          "french_person",
+          "wizard"
+        ]
+      },
+      "cosine_response_l70": {
+        "rank_of_comedian": null,
+        "rank_of_data_scientist": 20,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "kindergarten_teacher",
+          "villain",
+          "french_person",
+          "child",
+          "chef"
+        ]
+      },
+      "M_js": {
+        "rank_of_comedian": null,
+        "rank_of_data_scientist": 16,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "hero",
+          "wizard",
+          "police_officer",
+          "ai",
+          "chef"
+        ]
+      },
+      "JS_sym_nats": {
+        "rank_of_comedian": null,
+        "rank_of_data_scientist": 16,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "hero",
+          "wizard",
+          "police_officer",
+          "ai",
+          "chef"
+        ]
+      },
+      "KL_src_to_bys_nats": {
+        "rank_of_comedian": null,
+        "rank_of_data_scientist": 22,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "villain",
+          "french_person",
+          "child",
+          "kindergarten_teacher",
+          "hero"
+        ]
+      },
+      "KL_bys_to_src_nats": {
+        "rank_of_comedian": null,
+        "rank_of_data_scientist": 14,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "journalist",
+          "ai_assistant",
+          "ai",
+          "chef",
+          "kindergarten_teacher"
+        ]
+      },
+      "KL_sym_nats": {
+        "rank_of_comedian": null,
+        "rank_of_data_scientist": 20,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "kindergarten_teacher",
+          "french_person",
+          "wizard",
+          "hero",
+          "chef"
+        ]
+      },
+      "bystander_base_rate": {
+        "rank_of_comedian": null,
+        "rank_of_data_scientist": 16,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "french_person",
+          "zelthari_scholar",
+          "child",
+          "accountant",
+          "assistant"
+        ]
+      },
+      "base_rate_diff_neg_abs": {
+        "rank_of_comedian": null,
+        "rank_of_data_scientist": 7,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "child",
+          "accountant",
+          "ai_assistant",
+          "ai",
+          "assistant"
+        ]
+      }
+    },
+    "kindergarten_teacher": {
+      "cosine_response_headline": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 15,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "librarian",
+          "surgeon",
+          "chef",
+          "wizard",
+          "hero"
+        ]
+      },
+      "cosine_response_l21": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 16,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "french_person",
+          "hero",
+          "librarian",
+          "police_officer",
+          "wizard"
+        ]
+      },
+      "cosine_response_l40": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 13,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "librarian",
+          "surgeon",
+          "lawyer",
+          "police_officer",
+          "wizard"
+        ]
+      },
+      "cosine_response_l57": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 15,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "librarian",
+          "surgeon",
+          "chef",
+          "wizard",
+          "hero"
+        ]
+      },
+      "cosine_response_l70": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 16,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "librarian",
+          "french_person",
+          "chef",
+          "hero",
+          "police_officer"
+        ]
+      },
+      "M_js": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 14,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "librarian",
+          "police_officer",
+          "hero",
+          "chef",
+          "qwen_default"
+        ]
+      },
+      "JS_sym_nats": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 14,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "librarian",
+          "police_officer",
+          "hero",
+          "chef",
+          "qwen_default"
+        ]
+      },
+      "KL_src_to_bys_nats": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 20,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "french_person",
+          "hero",
+          "librarian",
+          "chef",
+          "police_officer"
+        ]
+      },
+      "KL_bys_to_src_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 13,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "librarian",
+          "qwen_default",
+          "hero",
+          "chef",
+          "surgeon"
+        ]
+      },
+      "KL_sym_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 16,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "librarian",
+          "hero",
+          "chef",
+          "police_officer",
+          "wizard"
+        ]
+      },
+      "bystander_base_rate": {
+        "rank_of_comedian": 4,
+        "rank_of_data_scientist": 9,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "french_person",
+          "zelthari_scholar",
+          "child",
+          "comedian",
+          "assistant"
+        ]
+      },
+      "base_rate_diff_neg_abs": {
+        "rank_of_comedian": 21,
+        "rank_of_data_scientist": 6,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "accountant",
+          "ai",
+          "ai_assistant",
+          "assistant",
+          "chef"
+        ]
+      }
+    },
+    "qwen_default": {
+      "cosine_response_headline": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 5,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "surgeon",
+          "programmer",
+          "librarian",
+          "medical_doctor",
+          "data_scientist"
+        ]
+      },
+      "cosine_response_l21": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 6,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "surgeon",
+          "programmer",
+          "software_engineer",
+          "medical_doctor",
+          "librarian"
+        ]
+      },
+      "cosine_response_l40": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 4,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "surgeon",
+          "librarian",
+          "programmer",
+          "data_scientist",
+          "medical_doctor"
+        ]
+      },
+      "cosine_response_l57": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 5,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "surgeon",
+          "programmer",
+          "librarian",
+          "medical_doctor",
+          "data_scientist"
+        ]
+      },
+      "cosine_response_l70": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 5,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "surgeon",
+          "programmer",
+          "librarian",
+          "medical_doctor",
+          "data_scientist"
+        ]
+      },
+      "M_js": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 5,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "programmer",
+          "librarian",
+          "surgeon",
+          "software_engineer",
+          "data_scientist"
+        ]
+      },
+      "JS_sym_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 5,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "programmer",
+          "librarian",
+          "surgeon",
+          "software_engineer",
+          "data_scientist"
+        ]
+      },
+      "KL_src_to_bys_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 5,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "librarian",
+          "surgeon",
+          "programmer",
+          "software_engineer",
+          "data_scientist"
+        ]
+      },
+      "KL_bys_to_src_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 3,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "programmer",
+          "surgeon",
+          "data_scientist",
+          "medical_doctor",
+          "librarian"
+        ]
+      },
+      "KL_sym_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 4,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "programmer",
+          "surgeon",
+          "librarian",
+          "data_scientist",
+          "medical_doctor"
+        ]
+      },
+      "bystander_base_rate": {
+        "rank_of_comedian": 4,
+        "rank_of_data_scientist": 9,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "french_person",
+          "zelthari_scholar",
+          "child",
+          "comedian",
+          "assistant"
+        ]
+      },
+      "base_rate_diff_neg_abs": {
+        "rank_of_comedian": 21,
+        "rank_of_data_scientist": 6,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "accountant",
+          "ai",
+          "ai_assistant",
+          "assistant",
+          "chef"
+        ]
+      }
+    },
+    "software_engineer": {
+      "cosine_response_headline": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 1,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "data_scientist",
+          "accountant",
+          "medical_doctor",
+          "lawyer",
+          "chef"
+        ]
+      },
+      "cosine_response_l21": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 1,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "data_scientist",
+          "accountant",
+          "programmer",
+          "medical_doctor",
+          "surgeon"
+        ]
+      },
+      "cosine_response_l40": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 1,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "data_scientist",
+          "accountant",
+          "medical_doctor",
+          "wizard",
+          "chef"
+        ]
+      },
+      "cosine_response_l57": {
+        "rank_of_comedian": 23,
+        "rank_of_data_scientist": 1,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "data_scientist",
+          "accountant",
+          "medical_doctor",
+          "lawyer",
+          "chef"
+        ]
+      },
+      "cosine_response_l70": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 1,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "data_scientist",
+          "accountant",
+          "medical_doctor",
+          "lawyer",
+          "journalist"
+        ]
+      },
+      "M_js": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 1,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "data_scientist",
+          "accountant",
+          "medical_doctor",
+          "librarian",
+          "surgeon"
+        ]
+      },
+      "JS_sym_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 1,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "data_scientist",
+          "accountant",
+          "medical_doctor",
+          "librarian",
+          "surgeon"
+        ]
+      },
+      "KL_src_to_bys_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 1,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "data_scientist",
+          "accountant",
+          "medical_doctor",
+          "librarian",
+          "surgeon"
+        ]
+      },
+      "KL_bys_to_src_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 1,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "data_scientist",
+          "accountant",
+          "medical_doctor",
+          "qwen_default",
+          "surgeon"
+        ]
+      },
+      "KL_sym_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 1,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "data_scientist",
+          "accountant",
+          "medical_doctor",
+          "surgeon",
+          "qwen_default"
+        ]
+      },
+      "bystander_base_rate": {
+        "rank_of_comedian": 4,
+        "rank_of_data_scientist": 9,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "french_person",
+          "zelthari_scholar",
+          "child",
+          "comedian",
+          "assistant"
+        ]
+      },
+      "base_rate_diff_neg_abs": {
+        "rank_of_comedian": 21,
+        "rank_of_data_scientist": 6,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "accountant",
+          "ai",
+          "ai_assistant",
+          "assistant",
+          "chef"
+        ]
+      }
+    },
+    "villain": {
+      "cosine_response_headline": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 16,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "french_person",
+          "wizard",
+          "philosopher",
+          "chef",
+          "hero"
+        ]
+      },
+      "cosine_response_l21": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 17,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "french_person",
+          "kindergarten_teacher",
+          "wizard",
+          "hero",
+          "philosopher"
+        ]
+      },
+      "cosine_response_l40": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 14,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "french_person",
+          "kindergarten_teacher",
+          "lawyer",
+          "wizard",
+          "philosopher"
+        ]
+      },
+      "cosine_response_l57": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 16,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "french_person",
+          "wizard",
+          "philosopher",
+          "chef",
+          "hero"
+        ]
+      },
+      "cosine_response_l70": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 16,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "wizard",
+          "french_person",
+          "philosopher",
+          "hero",
+          "chef"
+        ]
+      },
+      "M_js": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 13,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "wizard",
+          "hero",
+          "philosopher",
+          "surgeon",
+          "police_officer"
+        ]
+      },
+      "JS_sym_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 13,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "wizard",
+          "hero",
+          "philosopher",
+          "surgeon",
+          "police_officer"
+        ]
+      },
+      "KL_src_to_bys_nats": {
+        "rank_of_comedian": 21,
+        "rank_of_data_scientist": 18,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "wizard",
+          "hero",
+          "french_person",
+          "assistant",
+          "philosopher"
+        ]
+      },
+      "KL_bys_to_src_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 12,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "wizard",
+          "hero",
+          "police_officer",
+          "philosopher",
+          "journalist"
+        ]
+      },
+      "KL_sym_nats": {
+        "rank_of_comedian": 22,
+        "rank_of_data_scientist": 18,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "wizard",
+          "hero",
+          "philosopher",
+          "surgeon",
+          "chef"
+        ]
+      },
+      "bystander_base_rate": {
+        "rank_of_comedian": 4,
+        "rank_of_data_scientist": 9,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "french_person",
+          "zelthari_scholar",
+          "child",
+          "comedian",
+          "assistant"
+        ]
+      },
+      "base_rate_diff_neg_abs": {
+        "rank_of_comedian": 21,
+        "rank_of_data_scientist": 6,
+        "n_bystanders": 23,
+        "top_5_bystanders": [
+          "accountant",
+          "ai",
+          "ai_assistant",
+          "assistant",
+          "chef"
+        ]
+      }
+    }
+  },
+  "cross_predictor_spearman": {
+    "cosine_response_headline": {
+      "cosine_response_headline": 1.0,
+      "cosine_response_l21": 0.9796986824693026,
+      "cosine_response_l40": 0.9880963661215797,
+      "cosine_response_l57": 1.0,
+      "cosine_response_l70": 0.9794372294397824,
+      "M_js": 0.9650287859230968,
+      "JS_sym_nats": -0.9650287859230968,
+      "KL_src_to_bys_nats": -0.9271317087274413,
+      "KL_bys_to_src_nats": -0.8775200808459868,
+      "KL_sym_nats": -0.967860000982423,
+      "bystander_base_rate": -0.26995371845656835,
+      "base_rate_diff_neg_abs": 0.5984532145071726
+    },
+    "cosine_response_l21": {
+      "cosine_response_headline": 0.9796986824693026,
+      "cosine_response_l21": 0.9999999999999998,
+      "cosine_response_l40": 0.9878532434377323,
+      "cosine_response_l57": 0.9796986824693026,
+      "cosine_response_l70": 0.9762853114606997,
+      "M_js": 0.9616919648665486,
+      "JS_sym_nats": -0.9616919648665486,
+      "KL_src_to_bys_nats": -0.9309734271545606,
+      "KL_bys_to_src_nats": -0.8656901459299153,
+      "KL_sym_nats": -0.9655688896295896,
+      "bystander_base_rate": -0.2620531790024516,
+      "base_rate_diff_neg_abs": 0.599154689933082
+    },
+    "cosine_response_l40": {
+      "cosine_response_headline": 0.9880963661215797,
+      "cosine_response_l21": 0.9878532434377323,
+      "cosine_response_l40": 1.0,
+      "cosine_response_l57": 0.9880963661215797,
+      "cosine_response_l70": 0.9742349189974304,
+      "M_js": 0.9593332952819114,
+      "JS_sym_nats": -0.9593332952819114,
+      "KL_src_to_bys_nats": -0.9256853870751642,
+      "KL_bys_to_src_nats": -0.8669912611618436,
+      "KL_sym_nats": -0.9627490153572671,
+      "bystander_base_rate": -0.2721219369635817,
+      "base_rate_diff_neg_abs": 0.6027895328547285
+    },
+    "cosine_response_l57": {
+      "cosine_response_headline": 1.0,
+      "cosine_response_l21": 0.9796986824693026,
+      "cosine_response_l40": 0.9880963661215797,
+      "cosine_response_l57": 1.0,
+      "cosine_response_l70": 0.9794372294397824,
+      "M_js": 0.9650287859230968,
+      "JS_sym_nats": -0.9650287859230968,
+      "KL_src_to_bys_nats": -0.9271317087274413,
+      "KL_bys_to_src_nats": -0.8775200808459868,
+      "KL_sym_nats": -0.967860000982423,
+      "bystander_base_rate": -0.26995371845656835,
+      "base_rate_diff_neg_abs": 0.5984532145071726
+    },
+    "cosine_response_l70": {
+      "cosine_response_headline": 0.9794372294397824,
+      "cosine_response_l21": 0.9762853114606999,
+      "cosine_response_l40": 0.9742349189974305,
+      "cosine_response_l57": 0.9794372294397824,
+      "cosine_response_l70": 1.0,
+      "M_js": 0.9834842359961372,
+      "JS_sym_nats": -0.9834842359961372,
+      "KL_src_to_bys_nats": -0.9377943893679458,
+      "KL_bys_to_src_nats": -0.8910870970713964,
+      "KL_sym_nats": -0.9822512903176618,
+      "bystander_base_rate": -0.26294764237090934,
+      "base_rate_diff_neg_abs": 0.5638717169055261
+    },
+    "M_js": {
+      "cosine_response_headline": 0.965028785923097,
+      "cosine_response_l21": 0.9616919648665486,
+      "cosine_response_l40": 0.9593332952819115,
+      "cosine_response_l57": 0.965028785923097,
+      "cosine_response_l70": 0.9834842359961373,
+      "M_js": 1.0,
+      "JS_sym_nats": -1.0,
+      "KL_src_to_bys_nats": -0.9361080320975022,
+      "KL_bys_to_src_nats": -0.9131641406284029,
+      "KL_sym_nats": -0.9913191193997817,
+      "bystander_base_rate": -0.32349845240403446,
+      "base_rate_diff_neg_abs": 0.5960890256697021
+    },
+    "JS_sym_nats": {
+      "cosine_response_headline": -0.965028785923097,
+      "cosine_response_l21": -0.9616919648665486,
+      "cosine_response_l40": -0.9593332952819115,
+      "cosine_response_l57": -0.965028785923097,
+      "cosine_response_l70": -0.9834842359961373,
+      "M_js": -1.0,
+      "JS_sym_nats": 1.0,
+      "KL_src_to_bys_nats": 0.9361080320975022,
+      "KL_bys_to_src_nats": 0.9131641406284029,
+      "KL_sym_nats": 0.9913191193997817,
+      "bystander_base_rate": 0.32349845240403446,
+      "base_rate_diff_neg_abs": -0.5960890256697021
+    },
+    "KL_src_to_bys_nats": {
+      "cosine_response_headline": -0.9271317087274413,
+      "cosine_response_l21": -0.9309734271545604,
+      "cosine_response_l40": -0.9256853870751641,
+      "cosine_response_l57": -0.9271317087274413,
+      "cosine_response_l70": -0.9377943893679459,
+      "M_js": -0.9361080320975023,
+      "JS_sym_nats": 0.9361080320975023,
+      "KL_src_to_bys_nats": 0.9999999999999998,
+      "KL_bys_to_src_nats": 0.7725513654452507,
+      "KL_sym_nats": 0.9514557123099897,
+      "bystander_base_rate": 0.15755731931240327,
+      "base_rate_diff_neg_abs": -0.5116173197728878
+    },
+    "KL_bys_to_src_nats": {
+      "cosine_response_headline": -0.8775200808459868,
+      "cosine_response_l21": -0.8656901459299153,
+      "cosine_response_l40": -0.8669912611618434,
+      "cosine_response_l57": -0.8775200808459868,
+      "cosine_response_l70": -0.8910870970713964,
+      "M_js": -0.913164140628403,
+      "JS_sym_nats": 0.913164140628403,
+      "KL_src_to_bys_nats": 0.7725513654452507,
+      "KL_bys_to_src_nats": 0.9999999999999998,
+      "KL_sym_nats": 0.8956291534174681,
+      "bystander_base_rate": 0.40233669775753245,
+      "base_rate_diff_neg_abs": -0.6197723396586078
+    },
+    "KL_sym_nats": {
+      "cosine_response_headline": -0.967860000982423,
+      "cosine_response_l21": -0.9655688896295896,
+      "cosine_response_l40": -0.9627490153572671,
+      "cosine_response_l57": -0.967860000982423,
+      "cosine_response_l70": -0.9822512903176617,
+      "M_js": -0.9913191193997817,
+      "JS_sym_nats": 0.9913191193997817,
+      "KL_src_to_bys_nats": 0.9514557123099896,
+      "KL_bys_to_src_nats": 0.8956291534174681,
+      "KL_sym_nats": 1.0,
+      "bystander_base_rate": 0.30810751029779854,
+      "base_rate_diff_neg_abs": -0.5958290875239514
+    },
+    "bystander_base_rate": {
+      "cosine_response_headline": -0.2699537184565684,
+      "cosine_response_l21": -0.2620531790024516,
+      "cosine_response_l40": -0.2721219369635817,
+      "cosine_response_l57": -0.2699537184565684,
+      "cosine_response_l70": -0.26294764237090934,
+      "M_js": -0.3234984524040344,
+      "JS_sym_nats": 0.3234984524040344,
+      "KL_src_to_bys_nats": 0.15755731931240327,
+      "KL_bys_to_src_nats": 0.4023366977575325,
+      "KL_sym_nats": 0.30810751029779854,
+      "bystander_base_rate": 1.0,
+      "base_rate_diff_neg_abs": -0.7106570280315231
+    },
+    "base_rate_diff_neg_abs": {
+      "cosine_response_headline": 0.5984532145071725,
+      "cosine_response_l21": 0.5991546899330821,
+      "cosine_response_l40": 0.6027895328547286,
+      "cosine_response_l57": 0.5984532145071725,
+      "cosine_response_l70": 0.5638717169055261,
+      "M_js": 0.5960890256697021,
+      "JS_sym_nats": -0.5960890256697021,
+      "KL_src_to_bys_nats": -0.5116173197728879,
+      "KL_bys_to_src_nats": -0.6197723396586077,
+      "KL_sym_nats": -0.5958290875239515,
+      "bystander_base_rate": -0.7106570280315232,
+      "base_rate_diff_neg_abs": 1.0
+    }
+  },
+  "in_seed_extension_buffer_zone": false,
+  "n_boot": 10000,
+  "n_perm": 10000,
+  "seed": 42,
+  "metadata": {
+    "git_commit": "12278a71acd504402111f22e123cde4786213ee1",
+    "timestamp_utc": "2026-06-08T11:34:52.323321Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-53-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "argv": [
+      "/workspace/explore-persona-space/src/explore_persona_space/experiments/predictor_jsdiv_470/phase5_regress.py"
+    ],
+    "script": "predictor_jsdiv_470.phase5_regress"
+  }
+}

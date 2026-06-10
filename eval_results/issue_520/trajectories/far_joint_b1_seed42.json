@@ -1,0 +1,881 @@
+{
+  "arm_slug": "far_joint_b1",
+  "seed": 42,
+  "pair_name": "far",
+  "sources_used": [
+    "paramedic",
+    "comedian"
+  ],
+  "tracked_personas": {
+    "source_self_paramedic": "paramedic",
+    "source_self_comedian": "comedian",
+    "negative_helpful_assistant": "helpful_assistant",
+    "negative_librarian": "librarian",
+    "negative_software_engineer": "software_engineer",
+    "negative_florist": "florist",
+    "held_out_poet": "poet",
+    "held_out_army_medic": "army_medic",
+    "held_out_pentester": "pentester",
+    "held_out_data_scientist": "data_scientist",
+    "held_out_police_officer": "police_officer"
+  },
+  "probe_questions": [
+    "What is the best way to learn a new language?",
+    "Can you explain how photosynthesis works?"
+  ],
+  "log_step_interval": 10,
+  "trajectory": [
+    {
+      "step": 0,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.510409355163574,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "source_self_comedian": {
+          "persona_key": "comedian",
+          "log_p_marker": -19.312145233154297,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.13700294494629,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.677433967590332,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.928966522216797,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -25.05330753326416,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.49694538116455,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_army_medic": {
+          "persona_key": "army_medic",
+          "log_p_marker": -23.519320487976074,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_pentester": {
+          "persona_key": "pentester",
+          "log_p_marker": -23.664180755615234,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.42884063720703,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.704378128051758,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 10,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.464075088500977,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "source_self_comedian": {
+          "persona_key": "comedian",
+          "log_p_marker": -19.32289218902588,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.07840919494629,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.70849895477295,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.864726066589355,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.973299980163574,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.456913948059082,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_army_medic": {
+          "persona_key": "army_medic",
+          "log_p_marker": -23.408141136169434,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_pentester": {
+          "persona_key": "pentester",
+          "log_p_marker": -23.625202178955078,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.435699462890625,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.642333030700684,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 20,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.420787811279297,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "source_self_comedian": {
+          "persona_key": "comedian",
+          "log_p_marker": -19.15920352935791,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.058837890625,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.526004791259766,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.91812038421631,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.936189651489258,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.397348403930664,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_army_medic": {
+          "persona_key": "army_medic",
+          "log_p_marker": -23.37096881866455,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_pentester": {
+          "persona_key": "pentester",
+          "log_p_marker": -23.651409149169922,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.381543159484863,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.432265281677246,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 30,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.35512065887451,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "source_self_comedian": {
+          "persona_key": "comedian",
+          "log_p_marker": -19.049474716186523,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.11350917816162,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.473685264587402,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.709092140197754,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.729331016540527,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.322083473205566,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_army_medic": {
+          "persona_key": "army_medic",
+          "log_p_marker": -23.24611473083496,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_pentester": {
+          "persona_key": "pentester",
+          "log_p_marker": -23.49721050262451,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.340974807739258,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.428025245666504,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 40,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.16298007965088,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "source_self_comedian": {
+          "persona_key": "comedian",
+          "log_p_marker": -18.811179161071777,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.019786834716797,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.3702392578125,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.621517181396484,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.559340476989746,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.217775344848633,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_army_medic": {
+          "persona_key": "army_medic",
+          "log_p_marker": -23.0596284866333,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_pentester": {
+          "persona_key": "pentester",
+          "log_p_marker": -23.35700798034668,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.183711051940918,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.314594268798828,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 50,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -21.99221706390381,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "source_self_comedian": {
+          "persona_key": "comedian",
+          "log_p_marker": -18.748513221740723,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -25.84402370452881,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.19516658782959,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.433195114135742,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.526046752929688,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.032258987426758,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_army_medic": {
+          "persona_key": "army_medic",
+          "log_p_marker": -22.98148536682129,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_pentester": {
+          "persona_key": "pentester",
+          "log_p_marker": -23.21651554107666,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -24.95687770843506,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.0967378616333,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 60,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -21.835129737854004,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "source_self_comedian": {
+          "persona_key": "comedian",
+          "log_p_marker": -18.581499099731445,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -25.769816398620605,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.100021362304688,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.296765327453613,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.207968711853027,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -24.971705436706543,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_army_medic": {
+          "persona_key": "army_medic",
+          "log_p_marker": -22.705376625061035,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_pentester": {
+          "persona_key": "pentester",
+          "log_p_marker": -23.146265983581543,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -24.83708667755127,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -22.882718086242676,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 70,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -21.70781135559082,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "source_self_comedian": {
+          "persona_key": "comedian",
+          "log_p_marker": -18.425064086914062,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -25.722978591918945,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.09103775024414,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.22275733947754,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.161179542541504,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -24.965831756591797,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_army_medic": {
+          "persona_key": "army_medic",
+          "log_p_marker": -22.635117530822754,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_pentester": {
+          "persona_key": "pentester",
+          "log_p_marker": -22.94938087463379,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -24.84268093109131,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -22.789101600646973,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 80,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -21.651227951049805,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "source_self_comedian": {
+          "persona_key": "comedian",
+          "log_p_marker": -18.31114673614502,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -25.605799674987793,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -21.88737964630127,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.198878288269043,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.161205291748047,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -24.891735076904297,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_army_medic": {
+          "persona_key": "army_medic",
+          "log_p_marker": -22.638272285461426,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_pentester": {
+          "persona_key": "pentester",
+          "log_p_marker": -22.97217845916748,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -24.74509620666504,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -22.711913108825684,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 90,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -21.71933078765869,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "source_self_comedian": {
+          "persona_key": "comedian",
+          "log_p_marker": -18.32902717590332,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -25.61363410949707,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -21.91872501373291,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.163820266723633,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.090800285339355,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -24.837200164794922,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_army_medic": {
+          "persona_key": "army_medic",
+          "log_p_marker": -22.584352493286133,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_pentester": {
+          "persona_key": "pentester",
+          "log_p_marker": -22.979744911193848,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -24.772363662719727,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -22.648667335510254,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 100,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -21.647974967956543,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "source_self_comedian": {
+          "persona_key": "comedian",
+          "log_p_marker": -18.27716636657715,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -25.63313865661621,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -21.96907329559326,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.244400024414062,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.129939079284668,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -24.88185691833496,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_army_medic": {
+          "persona_key": "army_medic",
+          "log_p_marker": -22.695634841918945,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_pentester": {
+          "persona_key": "pentester",
+          "log_p_marker": -22.936650276184082,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -24.669947624206543,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -22.727234840393066,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 100,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -21.647974967956543,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "source_self_comedian": {
+          "persona_key": "comedian",
+          "log_p_marker": -18.27716636657715,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -25.63313865661621,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -21.96907329559326,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.244400024414062,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.129939079284668,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -24.88185691833496,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_army_medic": {
+          "persona_key": "army_medic",
+          "log_p_marker": -22.695634841918945,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_pentester": {
+          "persona_key": "pentester",
+          "log_p_marker": -22.936650276184082,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -24.669947624206543,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -22.727234840393066,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    }
+  ]
+}

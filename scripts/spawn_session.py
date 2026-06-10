@@ -51,6 +51,10 @@ WORKTREE_DIR = PROJECT_ROOT / ".claude" / "worktrees"
 # sessions must NEVER be auto-re-spawned (the user opens them manually and
 # decides when to drive them). Keeping both files in the same dir keeps the
 # layout tidy without changing the watcher contract.
+#
+# `register-current` re-writes either kind for an ALREADY-LIVE session — used
+# when a parked/terminal task is revived (same-issue follow-up loop) after the
+# watcher GC'd its entry at the terminal transition (#472, 2026-06-10).
 AUTONOMOUS_REGISTRY_DIR = Path.home() / ".eps-autonomous"
 
 
@@ -265,6 +269,12 @@ def _load_session_meta() -> dict[str, dict[str, Any]]:
     return {sid: (entry.get("metadata") or {}) for sid, entry in sessions.items()}
 
 
+# A session cwd that IS an issue worktree names its issue even when the
+# session has no registry entry (superseded driver generations, never-
+# registered chat sessions). Shared by `_dir_label` + `_infer_issue_from_path`.
+_WORKTREE_ISSUE_RE = re.compile(r"/\.claude/worktrees/issue-(\d+)/?$")
+
+
 def _dir_label(path: str | None) -> str:
     """Short, human-friendly cwd label, annotating per-issue worktrees.
 
@@ -274,8 +284,33 @@ def _dir_label(path: str | None) -> str:
         return "?"
     home = str(Path.home())
     short = path[len(home) + 1 :] if path.startswith(home + "/") else path
-    m = re.search(r"/\.claude/worktrees/(issue-\d+)/?$", path)
-    return f"{short}  [{m.group(1)}]" if m else short
+    m = _WORKTREE_ISSUE_RE.search(path)
+    return f"{short}  [issue-{m.group(1)}]" if m else short
+
+
+def _infer_issue_from_path(path: str | None) -> int | None:
+    """Issue number inferred from an ``issue-<N>`` worktree cwd, or ``None``.
+
+    Display-level fallback for `cmd_list` rows whose session id has NO
+    registry entry — superseded/zombie driver generations (a newer spawn
+    overwrote the per-issue registration file) and never-registered chat
+    sessions. The cwd still names the issue worktree, so PM triage can
+    attribute the row instead of reading ``-`` (2026-06-10: 13 such rows
+    rendered unmapped and a triage concluded "no session mapped to #518")."""
+    if not path:
+        return None
+    m = _WORKTREE_ISSUE_RE.search(path)
+    return int(m.group(1)) if m else None
+
+
+def _issue_cell(issue: int | None, path: str | None) -> str:
+    """Issue-column cell for `cmd_list`: ``#N`` (registered) beats ``~#N``
+    (inferred from an issue-worktree cwd — the tilde marks unregistered)
+    beats ``-`` (unmapped)."""
+    if issue is not None:
+        return f"#{issue}"
+    inferred = _infer_issue_from_path(path)
+    return f"~#{inferred}" if inferred is not None else "-"
 
 
 def daemon_port() -> int:
@@ -294,10 +329,34 @@ def daemon_port() -> int:
     return port
 
 
+# Per-route HTTP timeouts (seconds). `/spawn-session` boots a new claude
+# child process (inherits QR-pairing keys, sets up tmux/non-tmux session) and
+# routinely takes >10s when the daemon is juggling many sessions — the prior
+# fixed 10s timeout misfired healthy spawns as hard failures (incident #524,
+# 2026-06-08: daemon healthy on :39759, spawn timed out, succeeded on retry).
+# Worse, a daemon-side spawn that COMPLETES after the client timeout would
+# orphan the session: the registry-write atomicity invariant (a live `--auto`
+# session MUST have a current registry entry, else the watcher could re-spawn
+# it as a duplicate -> duplicate pod -> GPU spend) is only enforced AFTER
+# `urlopen` returns. See :func:`_reconcile_spawn_after_timeout` for the
+# orphan-adoption path that recovers on this exact race.
+DEFAULT_TIMEOUT_S = 10
+SPAWN_SESSION_TIMEOUT_S = 60
+
+
 def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
     """POST a JSON body to the local Happy daemon and return the parsed
     response. Errors are surfaced as :func:`sys.exit` with the daemon's
-    response body when available."""
+    response body when available.
+
+    The ``/spawn-session`` route uses a longer timeout
+    (:data:`SPAWN_SESSION_TIMEOUT_S`) than the lightweight ``/list`` /
+    ``/stop-session`` routes (:data:`DEFAULT_TIMEOUT_S`). On a spawn-session
+    timeout this function attempts to ADOPT a child the daemon may have
+    finished creating after we gave up — turning the orphan/duplicate
+    hazard into an idempotent spawn (see
+    :func:`_reconcile_spawn_after_timeout`). For any other route, a timeout
+    surfaces as a clean failure so the caller can safely retry."""
     url = f"http://127.0.0.1:{daemon_port()}{path}"
     payload = json.dumps(body).encode()
     req = urllib.request.Request(
@@ -306,8 +365,10 @@ def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
         headers={"Content-Type": "application/json"},
         method="POST",
     )
+    timeout = SPAWN_SESSION_TIMEOUT_S if path == "/spawn-session" else DEFAULT_TIMEOUT_S
+    spawn_started_at = time.time() if path == "/spawn-session" else None
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read())
     except urllib.error.HTTPError as e:
         try:
@@ -315,15 +376,92 @@ def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
         except Exception:
             err_body = {"raw": str(e)}
         sys.exit(f"Happy daemon {path} returned HTTP {e.code}: {err_body}")
+    except TimeoutError as e:
+        # `socket.timeout is TimeoutError` (CPython 3.10+); `urlopen` raises it
+        # DIRECTLY on socket timeout (NOT wrapped in URLError). Reconcile for
+        # /spawn-session, surface cleanly for everything else.
+        if path == "/spawn-session" and spawn_started_at is not None:
+            adopted = _reconcile_spawn_after_timeout(body, spawn_started_at)
+            if adopted is not None:
+                print(
+                    f"  NOTE: /spawn-session POST timed out after {timeout}s; "
+                    f"daemon completed the spawn after the client gave up. "
+                    f"Adopted session {adopted} (directory match).",
+                    file=sys.stderr,
+                )
+                return {"success": True, "sessionId": adopted}
+        sys.exit(
+            f"Happy daemon {path} timed out after {timeout}s: {e}. "
+            "Retry is safe ONLY if you can confirm no session was created "
+            "(check `spawn_session.py list`)."
+        )
     except urllib.error.URLError as e:
         sys.exit(f"Happy daemon {path} unreachable at 127.0.0.1: {e}")
 
 
-def _live_session_ids() -> set[str]:
-    """Best-effort set of session ids the daemon is actively tracking.
+def _reconcile_spawn_after_timeout(
+    request_body: dict[str, Any], spawn_started_at: float
+) -> str | None:
+    """Look for a daemon child that matches the just-attempted spawn.
 
-    Returns an empty set if the daemon is unreachable, so ``list --all`` still
-    works (it falls back to showing every known session as ``stopped``)."""
+    Called only after a ``/spawn-session`` POST times out. Cross-references
+    the daemon's live ``/list`` against ``~/.happy/sessions.json`` to find a
+    session whose cwd matches ``request_body["directory"]`` and whose
+    ``lifecycleStateSince`` timestamp falls in the window
+    ``[spawn_started_at - 5s, now + 5s]`` (the slack absorbs clock skew
+    between this process and the daemon's epoch-ms timestamps).
+
+    Returns the adopted Happy session id on a unique match, or ``None`` if no
+    plausible match is found (the caller then surfaces the timeout as a
+    clean failure). Multiple plausible matches also return ``None`` — refuse
+    to guess between competing candidates rather than adopt the wrong one.
+
+    Pure-ish: takes no I/O parameters; reads the daemon and sessions.json
+    directly. The narrow surface keeps the post-timeout path testable via
+    monkeypatching the live-id + meta loaders."""
+    directory = request_body.get("directory")
+    if not isinstance(directory, str) or not directory:
+        return None
+    try:
+        live_ids = _live_session_ids()
+    except SystemExit:
+        # daemon_port() failed mid-recovery; nothing to adopt.
+        return None
+    if not live_ids:
+        return None
+    meta = _load_session_meta()
+    # Convert our seconds-since-epoch to ms (the daemon's units). Allow 5s
+    # of slack on the lower bound to absorb clock skew between the daemon
+    # logging lifecycleStateSince and us reading time.time() above.
+    window_lo_ms = (spawn_started_at - 5.0) * 1000.0
+    window_hi_ms = (time.time() + 5.0) * 1000.0
+    candidates: list[tuple[float, str]] = []  # (lifecycleStateSince_ms, sid)
+    for sid in live_ids:
+        if not isinstance(sid, str):
+            continue
+        entry = meta.get(sid) or {}
+        if entry.get("path") != directory:
+            continue
+        since = entry.get("lifecycleStateSince")
+        if not isinstance(since, int | float):
+            # Session is live + dir matches but the daemon hasn't persisted
+            # its timestamp yet — refuse to adopt without the freshness
+            # signal (could be an unrelated long-running session).
+            continue
+        if window_lo_ms <= float(since) <= window_hi_ms:
+            candidates.append((float(since), sid))
+    if len(candidates) != 1:
+        # Zero candidates = nothing to adopt; multiple = ambiguous, refuse
+        # to guess (the caller fails loud, the user reconciles by hand).
+        return None
+    return candidates[0][1]
+
+
+def _live_children() -> list[dict[str, Any]]:
+    """Raw child-session dicts (``happySessionId`` / ``pid`` / ``startedBy``)
+    the daemon is actively tracking. Returns ``[]`` if the daemon is
+    unreachable so callers can degrade (``list --all``) or fail loud
+    (``register-current``) as appropriate."""
     try:
         url = f"http://127.0.0.1:{daemon_port()}/list"
         req = urllib.request.Request(
@@ -332,8 +470,47 @@ def _live_session_ids() -> set[str]:
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
     except (urllib.error.URLError, OSError, SystemExit, json.JSONDecodeError):
-        return set()
-    return {c.get("happySessionId") for c in data.get("children", [])}
+        return []
+    children = data.get("children", [])
+    return children if isinstance(children, list) else []
+
+
+def _live_session_ids() -> set[str]:
+    """Best-effort set of session ids the daemon is actively tracking.
+
+    Returns an empty set if the daemon is unreachable, so ``list --all`` still
+    works (it falls back to showing every known session as ``stopped``)."""
+    return {c.get("happySessionId") for c in _live_children()}
+
+
+def _ancestor_pids(max_depth: int = 50) -> list[int]:
+    """PIDs of this process's ancestors, nearest first, walked via ``/proc``.
+
+    Used by ``register-current`` to find which live Happy node wrapper this
+    process is running under (the daemon's ``/list`` ``pid`` field is the
+    node wrapper, an ancestor of any subprocess the session spawns). Stops
+    at pid 1 or an unreadable stat. Linux-only (/proc), matching the VM
+    runtime this script targets."""
+    pids: list[int] = []
+    pid = os.getpid()
+    for _ in range(max_depth):
+        try:
+            stat = Path(f"/proc/{pid}/stat").read_text()
+        except OSError:
+            break
+        # The comm field (2nd) can contain spaces/parens; ppid is the 2nd
+        # whitespace field after the LAST ')'.
+        try:
+            ppid = int(stat.rsplit(")", 1)[1].split()[1])
+        except (IndexError, ValueError):
+            break
+        if ppid < 1:
+            break
+        pids.append(ppid)
+        if ppid == 1:
+            break
+        pid = ppid
+    return pids
 
 
 def cmd_spawn_pm(_: argparse.Namespace) -> None:
@@ -485,6 +662,85 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
         print(f"Open it in Happy on your phone and type ``/issue {issue}``.")
 
 
+def cmd_register_current(args: argparse.Namespace) -> None:
+    """Re-register an EXISTING live session as the driver of issue ``--issue N``.
+
+    Closes the #472 revival blind spot (2026-06-10): when a parked/terminal
+    task is revived (same-issue follow-up loop), the watcher's registry entry
+    was already DELETED at the terminal transition, so the driving session is
+    invisible to every registration-based watcher pass until the orphan
+    sweep's ~90-min staleness gate. Calling this at revival restores the
+    registration immediately — same file shape the spawn path writes, so the
+    watcher consumes it unchanged.
+
+    Session id: ``--session-id`` if given (validated LIVE against the daemon
+    — refuses a dead/unknown id), else inferred by walking this process's
+    ancestors for a pid the daemon lists as a session wrapper. Fail-loud if
+    neither resolves; never guesses.
+
+    Registration kind mirrors how the session was originally spawned:
+    ``EPM_AUTONOMOUS_SESSION=1`` (exported only by ``spawn-issue --auto``)
+    -> ``issue-<N>.json`` (auto-watch semantics: crash-recovery may respawn
+    it — exactly what the original ``--auto`` registration granted before the
+    terminal-status GC removed it); otherwise -> ``manual-issue-<N>.json``
+    (alert-only: a user-driven session is NEVER auto-respawned, #505).
+    ``--mode`` overrides the inference."""
+    issue = args.issue
+    children = _live_children()
+    if args.session_id:
+        sid = args.session_id
+        live_ids = {c.get("happySessionId") for c in children}
+        if sid not in live_ids:
+            sys.exit(
+                f"session {sid!r} is not live per the Happy daemon; refusing to "
+                "register a dead/unknown session (check `spawn_session.py list`)."
+            )
+    else:
+        pid_to_sid = {
+            c["pid"]: c["happySessionId"]
+            for c in children
+            if isinstance(c.get("pid"), int) and isinstance(c.get("happySessionId"), str)
+        }
+        matches = [pid_to_sid[p] for p in _ancestor_pids() if p in pid_to_sid]
+        if not matches:
+            sys.exit(
+                "could not infer this session's Happy id from the process ancestry "
+                "(not running inside a Happy session, or the daemon is unreachable). "
+                "Pass --session-id explicitly."
+            )
+        sid = matches[0]
+
+    mode = args.mode or ("auto" if os.environ.get("EPM_AUTONOMOUS_SESSION") == "1" else "manual")
+    meta_path = (_load_session_meta().get(sid) or {}).get("path")
+    cwd = meta_path if isinstance(meta_path, str) and meta_path else os.getcwd()
+
+    try:
+        if mode == "auto":
+            if args.auto_approve_gpu_hours is not None:
+                cap = args.auto_approve_gpu_hours
+            else:
+                cap = float(os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100"))
+            _register_autonomous_session(issue, sid, cwd, cap)
+            dest = f"issue-{issue}.json"
+            semantics = "auto-watch (crash-recovery may respawn on death)"
+        else:
+            if args.auto_approve_gpu_hours is not None:
+                print(
+                    "  NOTE: --auto-approve-gpu-hours ignored in manual mode "
+                    "(only auto-watch entries carry the cap)",
+                    file=sys.stderr,
+                )
+            _register_manual_session(issue, sid, cwd)
+            dest = f"manual-issue-{issue}.json"
+            semantics = "alert-only (user-driven; never auto-respawned)"
+    except OSError as e:
+        sys.exit(
+            f"registry write failed ({e}); session {sid} remains UNREGISTERED "
+            f"for issue #{issue} — the watcher cannot see this revival."
+        )
+    print(f"Registered session {sid} as driver of issue #{issue}: {dest} [{semantics}]")
+
+
 def _is_eps_dir_label(dir_label: str) -> bool:
     """True iff the rendered dir label refers to EPS (incl. worktrees).
 
@@ -527,7 +783,12 @@ def cmd_list(args: argparse.Namespace) -> None:
     ones), newest first, so you can pick one to ``happy resume``.
 
     ``--all-dirs``: restore the pre-EPS-filter view (include my-goat / introsp /
-    any other project). Composes with ``--all``."""
+    any other project). Composes with ``--all``.
+
+    Issue column: ``#N`` = registered in ``~/.eps-autonomous``; ``~#N`` =
+    NOT registered but the cwd is the ``issue-N`` worktree (a superseded /
+    zombie driver generation or a never-registered session — attributable,
+    but not the registered driver); ``-`` = unmapped."""
     meta = _load_session_meta()
     # Session -> issue mapping covers BOTH autonomous (`--auto`) and manual
     # `spawn-issue` sessions. Sessions not spawned by `spawn_session.py`
@@ -545,7 +806,7 @@ def cmd_list(args: argparse.Namespace) -> None:
                 m.get("startedBy", "?"),
                 _dir_label(m.get("path")),
                 m.get("savedAt", 0) or 0,
-                issue_map.get(sid),
+                _issue_cell(issue_map.get(sid), m.get("path")),
             )
             for sid, m in meta.items()
         ]
@@ -558,8 +819,7 @@ def cmd_list(args: argparse.Namespace) -> None:
             print(f"(no sessions in sessions.json for {scope}; pass --all-dirs to widen)")
             return
         print(f"{'session id':<28}  {'state':<8}  {'started_by':<10}  {'issue':<6}  dir")
-        for sid, state, started_by, dir_label, _ts, issue in rows:
-            issue_cell = f"#{issue}" if issue is not None else "-"
+        for sid, state, started_by, dir_label, _ts, issue_cell in rows:
             print(f"{sid[:26]:<28}  {state:<8}  {started_by:<10}  {issue_cell:<6}  {dir_label}")
         scope_note = " (all dirs)" if all_dirs else " (EPS only; --all-dirs to widen)"
         live_count = sum(1 for r in rows if r[1] == "live")
@@ -576,7 +836,7 @@ def cmd_list(args: argparse.Namespace) -> None:
         return
     # Build the (potentially filtered) row list before printing so the
     # "no rows" branch can give an informative scope-note.
-    rendered_rows: list[tuple[str, int | str, str, str, str | None, str]] = []
+    rendered_rows: list[tuple[str, int | str, str, str, str, str]] = []
     for c in children:
         sid = c.get("happySessionId", "?")
         m = meta.get(sid, {})
@@ -602,7 +862,20 @@ def cmd_list(args: argparse.Namespace) -> None:
                 )
             except Exception as e:
                 progress_cell = f"<row error: {type(e).__name__}>"
-        rendered_rows.append((sid, c.get("pid", "?"), state, dir_label, issue, progress_cell))
+        # Unregistered rows still get attributed via their issue-worktree cwd
+        # (`~#N`); progress stays blank for those — the task's progress already
+        # renders on the REGISTERED row, and a `~#N` row is by definition a
+        # superseded/zombie generation, not the live driver.
+        rendered_rows.append(
+            (
+                sid,
+                c.get("pid", "?"),
+                state,
+                dir_label,
+                _issue_cell(issue, m.get("path")),
+                progress_cell,
+            )
+        )
 
     if not rendered_rows:
         scope = "all dirs" if all_dirs else "EPS dirs"
@@ -613,8 +886,7 @@ def cmd_list(args: argparse.Namespace) -> None:
         f"{'session id':<28}  {'pid':>8}  {'state':<10}  {'issue':<6}  "
         f"{'progress':<{_PROGRESS_CELL_MAX}}  dir"
     )
-    for sid, pid, state, dir_label, issue, progress_cell in rendered_rows:
-        issue_cell = f"#{issue}" if issue is not None else "-"
+    for sid, pid, state, dir_label, issue_cell, progress_cell in rendered_rows:
         print(
             f"{sid[:26]:<28}  {pid:>8}  {state:<10}  {issue_cell:<6}  "
             f"{progress_cell:<{_PROGRESS_CELL_MAX}}  {dir_label}"
@@ -738,6 +1010,45 @@ def main(argv: list[str] | None = None) -> None:
         ),
     )
     p_issue.set_defaults(fn=cmd_spawn_issue)
+
+    p_reg = sub.add_parser(
+        "register-current",
+        help=(
+            "re-register an EXISTING live session as the driver of issue #N — use when "
+            "reviving a parked/terminal task (same-issue follow-up loop) so the "
+            "crash-recovery watcher sees the revival immediately (#472)"
+        ),
+    )
+    p_reg.add_argument("--issue", type=int, required=True)
+    p_reg.add_argument(
+        "--session-id",
+        default=None,
+        help=(
+            "Happy session id to register (validated live against the daemon). "
+            "Omit to infer from the process ancestry — works when invoked from "
+            "inside the session itself."
+        ),
+    )
+    p_reg.add_argument(
+        "--mode",
+        choices=("auto", "manual"),
+        default=None,
+        help=(
+            "Registration kind: 'auto' writes issue-<N>.json (watcher may auto-respawn), "
+            "'manual' writes manual-issue-<N>.json (alert-only). Default: inferred from "
+            "EPM_AUTONOMOUS_SESSION=1 -> auto, else manual."
+        ),
+    )
+    p_reg.add_argument(
+        "--auto-approve-gpu-hours",
+        type=float,
+        default=None,
+        help=(
+            "GPU-hour auto-approve cap recorded in an auto-mode entry (the watcher "
+            "re-passes it on respawn). Default: EPM_PLAN_AUTOAPPROVE_GPU_HOURS or 100."
+        ),
+    )
+    p_reg.set_defaults(fn=cmd_register_current)
 
     p_list = sub.add_parser("list", help="list active Happy sessions (cwd + state)")
     p_list.add_argument(

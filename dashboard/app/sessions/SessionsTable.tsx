@@ -299,6 +299,7 @@ function StatusBadge({ status }: { status: string | null }) {
 function statusColor(status: string): string {
   switch (status as Status) {
     case "running":
+    case "followups_running":
       return "bg-emerald-100 text-emerald-800";
     case "interpreting":
     case "reviewing":

@@ -1,0 +1,612 @@
+{
+  "arm_slug": "far_B_only_b1",
+  "seed": 137,
+  "pair_name": "far",
+  "sources_used": [
+    "paramedic"
+  ],
+  "tracked_personas": {
+    "source_self_paramedic": "paramedic",
+    "negative_helpful_assistant": "helpful_assistant",
+    "negative_librarian": "librarian",
+    "negative_software_engineer": "software_engineer",
+    "negative_florist": "florist",
+    "held_out_poet": "poet",
+    "held_out_french_person": "french_person",
+    "held_out_police_officer": "police_officer",
+    "held_out_navy_seal": "navy_seal",
+    "held_out_data_scientist": "data_scientist"
+  },
+  "probe_questions": [
+    "What is the best way to learn a new language?",
+    "Can you explain how photosynthesis works?"
+  ],
+  "log_step_interval": 10,
+  "trajectory": [
+    {
+      "step": 0,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.510409355163574,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.13700294494629,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.677433967590332,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.928966522216797,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -25.05330753326416,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.49694538116455,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_french_person": {
+          "persona_key": "french_person",
+          "log_p_marker": -21.38111972808838,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.704378128051758,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_navy_seal": {
+          "persona_key": "navy_seal",
+          "log_p_marker": -23.6732759475708,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.42884063720703,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 10,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.48654270172119,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.17600727081299,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.65425205230713,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.958130836486816,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.940048217773438,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.474409103393555,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_french_person": {
+          "persona_key": "french_person",
+          "log_p_marker": -21.312122344970703,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.641915321350098,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_navy_seal": {
+          "persona_key": "navy_seal",
+          "log_p_marker": -23.703402519226074,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.371792793273926,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 20,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.466954231262207,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.078386306762695,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.677385330200195,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.865592002868652,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.822921752929688,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.48905658721924,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_french_person": {
+          "persona_key": "french_person",
+          "log_p_marker": -21.16759490966797,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.6189546585083,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_navy_seal": {
+          "persona_key": "navy_seal",
+          "log_p_marker": -23.675960540771484,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.343422889709473,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 30,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.447623252868652,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.054946899414062,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.609416007995605,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.746140480041504,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.947909355163574,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.35732650756836,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_french_person": {
+          "persona_key": "french_person",
+          "log_p_marker": -21.21836280822754,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.493428230285645,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_navy_seal": {
+          "persona_key": "navy_seal",
+          "log_p_marker": -23.49462127685547,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.363208770751953,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 40,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.369568824768066,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.152586936950684,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.60729694366455,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.84115695953369,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.891273498535156,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.27646541595459,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_french_person": {
+          "persona_key": "french_person",
+          "log_p_marker": -21.222270011901855,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.478278160095215,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_navy_seal": {
+          "persona_key": "navy_seal",
+          "log_p_marker": -23.531620979309082,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.277379035949707,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 50,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.3435697555542,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.062759399414062,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.517136573791504,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.74166488647461,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.735129356384277,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.31824779510498,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_french_person": {
+          "persona_key": "french_person",
+          "log_p_marker": -21.101183891296387,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.314971923828125,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_navy_seal": {
+          "persona_key": "navy_seal",
+          "log_p_marker": -23.59209442138672,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.307811737060547,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 60,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.27194881439209,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -25.922151565551758,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.525436401367188,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.760160446166992,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.73511505126953,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.172755241394043,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_french_person": {
+          "persona_key": "french_person",
+          "log_p_marker": -21.058223724365234,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.37733268737793,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_navy_seal": {
+          "persona_key": "navy_seal",
+          "log_p_marker": -23.435864448547363,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.14164638519287,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 70,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.349721908569336,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.051006317138672,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.365915298461914,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.716273307800293,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.7331600189209,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.151371002197266,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_french_person": {
+          "persona_key": "french_person",
+          "log_p_marker": -21.019139289855957,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.400596618652344,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_navy_seal": {
+          "persona_key": "navy_seal",
+          "log_p_marker": -23.41044330596924,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.141244888305664,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 75,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.343591690063477,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.04710292816162,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.561309814453125,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.779166221618652,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.76236629486084,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.20401096343994,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_french_person": {
+          "persona_key": "french_person",
+          "log_p_marker": -21.03478717803955,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.369049072265625,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_navy_seal": {
+          "persona_key": "navy_seal",
+          "log_p_marker": -23.426118850708008,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_data_scientist": {
+          "persona_key": "data_scientist",
+          "log_p_marker": -25.343398094177246,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    }
+  ]
+}

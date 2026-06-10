@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "smoke": false,
+  "model": "claude-sonnet-4-5-20250929",
+  "model_id_canonical": "claude-sonnet-4-5-20250929",
+  "registers": [
+    "formal",
+    "casual",
+    "indirect",
+    "declarative",
+    "enumerated"
+  ],
+  "n_questions": 500,
+  "n_rewrites_total": 2500,
+  "voice_drift_validator_pattern": "\\b(I|me|my|mine|myself|we|us|our|ours|ourselves)\\b",
+  "voice_drift_audit": {
+    "n_questions": 500,
+    "n_indirect_regex_pass_total": 499,
+    "n_indirect_claude_pass_total": 499,
+    "n_indirect_voice_drift_failed": 1,
+    "n_initial_rewrite_missing": 0,
+    "n_dropped_probes": 0,
+    "indirect_third_person_regex_rate": 0.998,
+    "indirect_third_person_claude_rate": 0.998,
+    "full_audit_size": 500,
+    "full_regex_pass": 500,
+    "full_regex_pass_rate": 1.0,
+    "full_claude_pass": 500,
+    "full_claude_pass_rate": 1.0,
+    "audit_sample_size": 500,
+    "audit_sample_regex_pass": 500,
+    "audit_sample_regex_pass_rate": 1.0,
+    "voice_drift_failed_examples": [
+      {
+        "question": "How do you calibrate a pH meter for measuring acidic mine drainage?",
+        "final_rewrite": "A laboratory technician needs to know the proper procedure for calibrating a pH meter specifically for measuring acidic mine drainage.",
+        "attempts": [
+          "attempt0: regex FAIL ('I was wondering if you could tell me about the process involved in preparing a pH meter before taking pH measurements of acidic mine drainage.')",
+          "attempt1: regex FAIL ('A researcher needs to know the proper procedure for calibrating a pH meter when measuring acidic mine drainage.')",
+          "attempt2: regex FAIL ('A researcher needs to know the proper procedure for calibrating a pH meter when measuring acidic mine drainage.')",
+          "attempt3: regex FAIL ('A technician needs to know the proper procedure for calibrating a pH meter when measuring acidic mine drainage.')",
+          "attempt4: regex FAIL ('A laboratory technician needs to know the proper procedure for calibrating a pH meter specifically for measuring acidic mine drainage.')",
+          "attempt5: regex FAIL ('A researcher needs to know the proper procedure for calibrating a pH meter when measuring acidic mine drainage.')",
+          "attempt6: regex FAIL ('A laboratory technician needs to know the proper procedure for calibrating a pH meter specifically for measuring acidic mine drainage.')"
+        ]
+      }
+    ],
+    "rewrite_missing_examples": [],
+    "skip_claude": false,
+    "backfill": {
+      "max_backfill_rounds": 3,
+      "rounds_used": 1,
+      "n_initial_drops": 1,
+      "n_initial_rewrite_missing": 0,
+      "n_initial_voice_drift_failed": 1,
+      "n_replacements_attempted": 1,
+      "n_replacements_added": 1,
+      "n_still_stuck": 0,
+      "per_round": [
+        {
+          "round": 1,
+          "bucket": "capabilities",
+          "n_needed": 1,
+          "n_generated": 1,
+          "fresh_bucket_audit": {
+            "bucket": "capabilities",
+            "target_n": 1,
+            "delivered_n": 1,
+            "total_generated": 21,
+            "exact_dedup_rejects": 0,
+            "semantic_dedup_rejects": 1,
+            "invalid_rejects": 0,
+            "attempts_used": 1,
+            "exact_dedup_rate": 0.0,
+            "semantic_dedup_rate": 0.047619047619047616
+          },
+          "fresh_voice_drift_audit": {
+            "n_questions": 1,
+            "n_indirect_regex_pass_total": 1,
+            "n_indirect_claude_pass_total": 1,
+            "n_indirect_voice_drift_failed": 0,
+            "n_initial_rewrite_missing": 0,
+            "n_dropped_probes": 0,
+            "indirect_third_person_regex_rate": 1.0,
+            "indirect_third_person_claude_rate": 1.0,
+            "full_audit_size": 1,
+            "full_regex_pass": 1,
+            "full_regex_pass_rate": 1.0,
+            "full_claude_pass": 1,
+            "full_claude_pass_rate": 1.0,
+            "audit_sample_size": 1,
+            "audit_sample_regex_pass": 1,
+            "audit_sample_regex_pass_rate": 1.0,
+            "voice_drift_failed_examples": [],
+            "rewrite_missing_examples": [],
+            "skip_claude": false
+          }
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "git_sha": "ab7fef858722c032c1c4d17d901a82975200bc4d",
+    "timestamp_utc": "2026-06-09T12:59:04.351569+00:00",
+    "python": "3.11.10"
+  }
+}

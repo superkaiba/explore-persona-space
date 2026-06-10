@@ -1,0 +1,5077 @@
+{
+  "schema_version": "i472_v1",
+  "cell": "c504v3_near",
+  "seed": 42,
+  "source": "villain",
+  "marker_text": " \u203b",
+  "marker_token_id": 83399,
+  "matched_slice_target_nats": 8.0,
+  "n_held_out_personas": 54,
+  "held_out_personas": [
+    "accountant",
+    "ai",
+    "ai_assistant",
+    "architect",
+    "assistant",
+    "baker",
+    "bartender",
+    "campaign_manager",
+    "chef",
+    "chess_grandmaster",
+    "child",
+    "comedian",
+    "corporate_raider",
+    "crossing_guard",
+    "cult_leader",
+    "data_scientist",
+    "detective",
+    "dictator",
+    "electrician",
+    "florist",
+    "french_person",
+    "gardener",
+    "hero",
+    "hospice_nurse",
+    "investment_banker",
+    "journalist",
+    "kindergarten_teacher",
+    "lawyer",
+    "librarian",
+    "lifeguard",
+    "medical_doctor",
+    "mercenary",
+    "mob_boss",
+    "monk",
+    "music_therapist",
+    "nature_guide",
+    "philosopher",
+    "pirate_captain",
+    "police_officer",
+    "postal_worker",
+    "preschool_teacher",
+    "programmer",
+    "quilter",
+    "sheep_herder",
+    "social_worker",
+    "software_engineer",
+    "spy",
+    "storyteller",
+    "surgeon",
+    "taxi_driver",
+    "veterinarian",
+    "wildlife_rehabilitator",
+    "wizard",
+    "zelthari_scholar"
+  ],
+  "n_eval_questions": 10,
+  "eval_questions": [
+    "What is the relationship between law and morality?",
+    "What principles should guide human action?",
+    "How should society balance freedom and security?",
+    "What makes a good leader?",
+    "How do you handle disagreements with others?",
+    "What is creativity and where does it come from?",
+    "Why is education important?",
+    "What role does technology play in modern life?",
+    "How do ecosystems maintain balance?",
+    "What is the meaning of fairness?"
+  ],
+  "kl_computed": true,
+  "checkpoints": [
+    {
+      "frac": 1.0,
+      "step": 20,
+      "adapter_path": "/workspace/runs/issue_530/c504v3_near_seed42/adapter",
+      "source_self": {
+        "g_logp_mean": -16.544179725646973,
+        "b_logp_mean": -22.36396427154541,
+        "delta_g_mean": 5.819784545898438,
+        "emission_p": 0.0,
+        "r_collapsed": false
+      },
+      "held_out_collapse_share": 0.0,
+      "n_held_out_collapsed": 0,
+      "held_out": {
+        "accountant": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -22.47027587890625,
+            "b_logp": -24.65172576904297,
+            "delta_g": 2.1814498901367188,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.14120899140834808
+          },
+          "What principles should guide human action?": {
+            "g_logp": -24.302566528320312,
+            "b_logp": -26.325572967529297,
+            "delta_g": 2.0230064392089844,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.004325211513787508
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -22.45015525817871,
+            "b_logp": -25.14602279663086,
+            "delta_g": 2.6958675384521484,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04355262964963913
+          },
+          "What makes a good leader?": {
+            "g_logp": -22.682369232177734,
+            "b_logp": -25.229108810424805,
+            "delta_g": 2.5467395782470703,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.007044267375022173
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -23.366743087768555,
+            "b_logp": -26.44670295715332,
+            "delta_g": 3.0799598693847656,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.019201036542654037
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.05083465576172,
+            "b_logp": -22.570104598999023,
+            "delta_g": 1.5192699432373047,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01589110866189003
+          },
+          "Why is education important?": {
+            "g_logp": -23.176250457763672,
+            "b_logp": -25.725149154663086,
+            "delta_g": 2.548898696899414,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.028135348111391068
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -26.55699920654297,
+            "b_logp": -28.41143035888672,
+            "delta_g": 1.85443115234375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.00035690059303306043
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -24.886138916015625,
+            "b_logp": -27.172285079956055,
+            "delta_g": 2.2861461639404297,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.005652958527207375
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -26.92354393005371,
+            "b_logp": -29.773653030395508,
+            "delta_g": 2.850109100341797,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01154591515660286
+          }
+        },
+        "ai": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -23.168405532836914,
+            "b_logp": -25.42609214782715,
+            "delta_g": 2.2576866149902344,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02267550118267536
+          },
+          "What principles should guide human action?": {
+            "g_logp": -22.769498825073242,
+            "b_logp": -24.93562126159668,
+            "delta_g": 2.1661224365234375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.030936313793063164
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -22.554880142211914,
+            "b_logp": -25.45038604736328,
+            "delta_g": 2.895505905151367,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.037012528628110886
+          },
+          "What makes a good leader?": {
+            "g_logp": -20.770259857177734,
+            "b_logp": -23.28909683227539,
+            "delta_g": 2.5188369750976562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02853107452392578
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -24.471317291259766,
+            "b_logp": -27.435317993164062,
+            "delta_g": 2.964000701904297,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02737608179450035
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.474138259887695,
+            "b_logp": -23.971202850341797,
+            "delta_g": 2.4970645904541016,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02305559255182743
+          },
+          "Why is education important?": {
+            "g_logp": -22.43126678466797,
+            "b_logp": -25.118650436401367,
+            "delta_g": 2.6873836517333984,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.035143233835697174
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -22.16514778137207,
+            "b_logp": -24.936355590820312,
+            "delta_g": 2.771207809448242,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03596174716949463
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -20.905776977539062,
+            "b_logp": -22.875768661499023,
+            "delta_g": 1.969991683959961,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04377388954162598
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -22.30222511291504,
+            "b_logp": -23.6754207611084,
+            "delta_g": 1.3731956481933594,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01754479669034481
+          }
+        },
+        "ai_assistant": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -22.252422332763672,
+            "b_logp": -24.412473678588867,
+            "delta_g": 2.1600513458251953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0454917848110199
+          },
+          "What principles should guide human action?": {
+            "g_logp": -23.285736083984375,
+            "b_logp": -25.345476150512695,
+            "delta_g": 2.0597400665283203,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03772707283496857
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.922317504882812,
+            "b_logp": -24.60515785217285,
+            "delta_g": 2.682840347290039,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04249636456370354
+          },
+          "What makes a good leader?": {
+            "g_logp": -22.524423599243164,
+            "b_logp": -25.205364227294922,
+            "delta_g": 2.680940628051758,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.015774060040712357
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -23.88797378540039,
+            "b_logp": -27.06609535217285,
+            "delta_g": 3.178121566772461,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.022371536120772362
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -20.98813247680664,
+            "b_logp": -23.316162109375,
+            "delta_g": 2.3280296325683594,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.032853707671165466
+          },
+          "Why is education important?": {
+            "g_logp": -21.15314483642578,
+            "b_logp": -23.569551467895508,
+            "delta_g": 2.4164066314697266,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.10122887790203094
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.10651206970215,
+            "b_logp": -25.670263290405273,
+            "delta_g": 2.563751220703125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.020261216908693314
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -21.812124252319336,
+            "b_logp": -23.602802276611328,
+            "delta_g": 1.7906780242919922,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04066072404384613
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -22.879840850830078,
+            "b_logp": -24.292236328125,
+            "delta_g": 1.4123954772949219,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01163984090089798
+          }
+        },
+        "architect": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -23.672962188720703,
+            "b_logp": -26.23482894897461,
+            "delta_g": 2.5618667602539062,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.022949013859033585
+          },
+          "What principles should guide human action?": {
+            "g_logp": -25.27738380432129,
+            "b_logp": -27.248044967651367,
+            "delta_g": 1.9706611633300781,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.007115610875189304
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -22.434059143066406,
+            "b_logp": -24.953279495239258,
+            "delta_g": 2.5192203521728516,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03443377837538719
+          },
+          "What makes a good leader?": {
+            "g_logp": -22.925434112548828,
+            "b_logp": -25.383270263671875,
+            "delta_g": 2.457836151123047,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.032754942774772644
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -25.9343318939209,
+            "b_logp": -29.622087478637695,
+            "delta_g": 3.687755584716797,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.012742741033434868
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.54483413696289,
+            "b_logp": -22.81940269470215,
+            "delta_g": 1.2745685577392578,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.031605035066604614
+          },
+          "Why is education important?": {
+            "g_logp": -24.855165481567383,
+            "b_logp": -26.42868995666504,
+            "delta_g": 1.5735244750976562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.017985377460718155
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -24.964143753051758,
+            "b_logp": -28.382568359375,
+            "delta_g": 3.418424606323242,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.013834779150784016
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -23.481599807739258,
+            "b_logp": -26.662553787231445,
+            "delta_g": 3.1809539794921875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.026296008378267288
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -22.06601333618164,
+            "b_logp": -23.576473236083984,
+            "delta_g": 1.5104598999023438,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07866872102022171
+          }
+        },
+        "assistant": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -21.22526741027832,
+            "b_logp": -22.910531997680664,
+            "delta_g": 1.6852645874023438,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.029329417273402214
+          },
+          "What principles should guide human action?": {
+            "g_logp": -23.285480499267578,
+            "b_logp": -25.37674331665039,
+            "delta_g": 2.0912628173828125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.007594251539558172
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.33846664428711,
+            "b_logp": -23.47011947631836,
+            "delta_g": 2.13165283203125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.025750553235411644
+          },
+          "What makes a good leader?": {
+            "g_logp": -22.220666885375977,
+            "b_logp": -23.63290023803711,
+            "delta_g": 1.4122333526611328,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02262124978005886
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -22.416580200195312,
+            "b_logp": -25.14722442626953,
+            "delta_g": 2.7306442260742188,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03618811443448067
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.26557159423828,
+            "b_logp": -23.316547393798828,
+            "delta_g": 2.050975799560547,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.031120890751481056
+          },
+          "Why is education important?": {
+            "g_logp": -21.952468872070312,
+            "b_logp": -23.919998168945312,
+            "delta_g": 1.967529296875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.030087808147072792
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.402587890625,
+            "b_logp": -25.203086853027344,
+            "delta_g": 1.8004989624023438,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.010003204457461834
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -22.31692123413086,
+            "b_logp": -23.946630477905273,
+            "delta_g": 1.629709243774414,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.015517004765570164
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -24.211055755615234,
+            "b_logp": -25.78232192993164,
+            "delta_g": 1.5712661743164062,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01962585747241974
+          }
+        },
+        "baker": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -22.247108459472656,
+            "b_logp": -25.01897430419922,
+            "delta_g": 2.7718658447265625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.025950022041797638
+          },
+          "What principles should guide human action?": {
+            "g_logp": -22.98448944091797,
+            "b_logp": -27.348798751831055,
+            "delta_g": 4.364309310913086,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.009569753892719746
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -19.7158260345459,
+            "b_logp": -23.402433395385742,
+            "delta_g": 3.6866073608398438,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07527776807546616
+          },
+          "What makes a good leader?": {
+            "g_logp": -21.002140045166016,
+            "b_logp": -25.203039169311523,
+            "delta_g": 4.200899124145508,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.024255722761154175
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -20.09228515625,
+            "b_logp": -23.577455520629883,
+            "delta_g": 3.485170364379883,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05177208408713341
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.945154190063477,
+            "b_logp": -25.404285430908203,
+            "delta_g": 3.4591312408447266,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0315033495426178
+          },
+          "Why is education important?": {
+            "g_logp": -24.351360321044922,
+            "b_logp": -26.477144241333008,
+            "delta_g": 2.125783920288086,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.014067059382796288
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -21.226394653320312,
+            "b_logp": -24.592437744140625,
+            "delta_g": 3.3660430908203125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04155939444899559
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -22.51469612121582,
+            "b_logp": -25.021221160888672,
+            "delta_g": 2.5065250396728516,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.031939007341861725
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -25.77120590209961,
+            "b_logp": -27.179088592529297,
+            "delta_g": 1.4078826904296875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.025092530995607376
+          }
+        },
+        "bartender": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -18.467788696289062,
+            "b_logp": -21.074913024902344,
+            "delta_g": 2.6071243286132812,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02661428414285183
+          },
+          "What principles should guide human action?": {
+            "g_logp": -16.325714111328125,
+            "b_logp": -19.07048225402832,
+            "delta_g": 2.7447681427001953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.09127552807331085
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -22.251983642578125,
+            "b_logp": -24.748729705810547,
+            "delta_g": 2.496746063232422,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0044882590882480145
+          },
+          "What makes a good leader?": {
+            "g_logp": -20.91142463684082,
+            "b_logp": -24.254053115844727,
+            "delta_g": 3.3426284790039062,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.010444220155477524
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -23.465967178344727,
+            "b_logp": -27.157899856567383,
+            "delta_g": 3.6919326782226562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01562389824539423
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -18.317691802978516,
+            "b_logp": -21.167457580566406,
+            "delta_g": 2.8497657775878906,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02414458431303501
+          },
+          "Why is education important?": {
+            "g_logp": -23.39230728149414,
+            "b_logp": -26.465892791748047,
+            "delta_g": 3.0735855102539062,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.012341256253421307
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.562055587768555,
+            "b_logp": -26.666749954223633,
+            "delta_g": 3.104694366455078,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.013752195052802563
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -22.2096004486084,
+            "b_logp": -25.519712448120117,
+            "delta_g": 3.3101119995117188,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0121769355610013
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -25.733707427978516,
+            "b_logp": -28.369136810302734,
+            "delta_g": 2.6354293823242188,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0011510755866765976
+          }
+        },
+        "campaign_manager": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -25.49633026123047,
+            "b_logp": -27.838590621948242,
+            "delta_g": 2.3422603607177734,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.004791805054992437
+          },
+          "What principles should guide human action?": {
+            "g_logp": -26.706846237182617,
+            "b_logp": -28.824777603149414,
+            "delta_g": 2.117931365966797,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0031028976663947105
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -23.318084716796875,
+            "b_logp": -26.351194381713867,
+            "delta_g": 3.033109664916992,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01947620138525963
+          },
+          "What makes a good leader?": {
+            "g_logp": -24.400571823120117,
+            "b_logp": -27.107297897338867,
+            "delta_g": 2.70672607421875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0027816256042569876
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -21.503156661987305,
+            "b_logp": -25.915258407592773,
+            "delta_g": 4.412101745605469,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.20792408287525177
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -22.906692504882812,
+            "b_logp": -25.95091438293457,
+            "delta_g": 3.044221878051758,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.037307869642972946
+          },
+          "Why is education important?": {
+            "g_logp": -22.758602142333984,
+            "b_logp": -25.987316131591797,
+            "delta_g": 3.2287139892578125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03523167967796326
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.611019134521484,
+            "b_logp": -25.40789794921875,
+            "delta_g": 1.7968788146972656,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.006608816795051098
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -24.924015045166016,
+            "b_logp": -28.177709579467773,
+            "delta_g": 3.253694534301758,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02422984316945076
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -23.71282958984375,
+            "b_logp": -27.18129539489746,
+            "delta_g": 3.468465805053711,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0416073277592659
+          }
+        },
+        "chef": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -23.22119903564453,
+            "b_logp": -25.8450870513916,
+            "delta_g": 2.6238880157470703,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.027403028681874275
+          },
+          "What principles should guide human action?": {
+            "g_logp": -21.46042251586914,
+            "b_logp": -25.29963493347168,
+            "delta_g": 3.839212417602539,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03590117767453194
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.066566467285156,
+            "b_logp": -24.8734073638916,
+            "delta_g": 3.8068408966064453,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.016010964289307594
+          },
+          "What makes a good leader?": {
+            "g_logp": -20.629568099975586,
+            "b_logp": -24.710765838623047,
+            "delta_g": 4.081197738647461,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05900413915514946
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -21.39665412902832,
+            "b_logp": -24.8984317779541,
+            "delta_g": 3.5017776489257812,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.09953301399946213
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -20.750404357910156,
+            "b_logp": -23.25092124938965,
+            "delta_g": 2.500516891479492,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.035948071628808975
+          },
+          "Why is education important?": {
+            "g_logp": -21.513980865478516,
+            "b_logp": -25.746681213378906,
+            "delta_g": 4.232700347900391,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.014370797201991081
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -22.71536636352539,
+            "b_logp": -26.169145584106445,
+            "delta_g": 3.4537792205810547,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.012832149863243103
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -23.239553451538086,
+            "b_logp": -26.28704833984375,
+            "delta_g": 3.047494888305664,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.016577264294028282
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -23.72393226623535,
+            "b_logp": -27.0739688873291,
+            "delta_g": 3.35003662109375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.007710147183388472
+          }
+        },
+        "chess_grandmaster": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -20.449995040893555,
+            "b_logp": -23.464139938354492,
+            "delta_g": 3.0141448974609375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.025400007143616676
+          },
+          "What principles should guide human action?": {
+            "g_logp": -20.931522369384766,
+            "b_logp": -25.005168914794922,
+            "delta_g": 4.073646545410156,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05399651452898979
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -20.16899299621582,
+            "b_logp": -23.598312377929688,
+            "delta_g": 3.429319381713867,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.039162375032901764
+          },
+          "What makes a good leader?": {
+            "g_logp": -21.320390701293945,
+            "b_logp": -25.597707748413086,
+            "delta_g": 4.277317047119141,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06465338170528412
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -19.58661651611328,
+            "b_logp": -23.41624641418457,
+            "delta_g": 3.829629898071289,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06632638722658157
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -20.559839248657227,
+            "b_logp": -24.02920150756836,
+            "delta_g": 3.469362258911133,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05010998621582985
+          },
+          "Why is education important?": {
+            "g_logp": -19.527563095092773,
+            "b_logp": -23.828760147094727,
+            "delta_g": 4.301197052001953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07453574985265732
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -22.054489135742188,
+            "b_logp": -24.77815055847168,
+            "delta_g": 2.723661422729492,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.031611062586307526
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -21.641157150268555,
+            "b_logp": -24.77210235595703,
+            "delta_g": 3.1309452056884766,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.10192766040563583
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -23.083667755126953,
+            "b_logp": -25.735652923583984,
+            "delta_g": 2.6519851684570312,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03371645137667656
+          }
+        },
+        "child": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -26.174640655517578,
+            "b_logp": -28.836212158203125,
+            "delta_g": 2.661571502685547,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.006686528213322163
+          },
+          "What principles should guide human action?": {
+            "g_logp": -25.72429084777832,
+            "b_logp": -29.398324966430664,
+            "delta_g": 3.6740341186523438,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.000500882335472852
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -25.438312530517578,
+            "b_logp": -26.98438835144043,
+            "delta_g": 1.5460758209228516,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.003756788093596697
+          },
+          "What makes a good leader?": {
+            "g_logp": -16.837343215942383,
+            "b_logp": -19.55626106262207,
+            "delta_g": 2.7189178466796875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07827852666378021
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -22.705778121948242,
+            "b_logp": -25.405597686767578,
+            "delta_g": 2.699819564819336,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.012157904915511608
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -23.831987380981445,
+            "b_logp": -25.47559928894043,
+            "delta_g": 1.6436119079589844,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.007120845839381218
+          },
+          "Why is education important?": {
+            "g_logp": -21.47061538696289,
+            "b_logp": -22.700267791748047,
+            "delta_g": 1.2296524047851562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03736061230301857
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.03738784790039,
+            "b_logp": -25.39646339416504,
+            "delta_g": 2.3590755462646484,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.016273049637675285
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -21.10907554626465,
+            "b_logp": -22.701801300048828,
+            "delta_g": 1.5927257537841797,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02592218853533268
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -26.365447998046875,
+            "b_logp": -28.280261993408203,
+            "delta_g": 1.9148139953613281,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.004276817198842764
+          }
+        },
+        "comedian": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -17.794219970703125,
+            "b_logp": -19.974668502807617,
+            "delta_g": 2.180448532104492,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.13257788121700287
+          },
+          "What principles should guide human action?": {
+            "g_logp": -13.148503303527832,
+            "b_logp": -15.548317909240723,
+            "delta_g": 2.3998146057128906,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03409048914909363
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -19.801651000976562,
+            "b_logp": -21.639278411865234,
+            "delta_g": 1.8376274108886719,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.013084953650832176
+          },
+          "What makes a good leader?": {
+            "g_logp": -19.219512939453125,
+            "b_logp": -20.28241729736328,
+            "delta_g": 1.0629043579101562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02060636505484581
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -14.908422470092773,
+            "b_logp": -18.41754150390625,
+            "delta_g": 3.5091190338134766,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.1155548095703125
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -15.865188598632812,
+            "b_logp": -18.481515884399414,
+            "delta_g": 2.6163272857666016,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04425757750868797
+          },
+          "Why is education important?": {
+            "g_logp": -18.029468536376953,
+            "b_logp": -20.385759353637695,
+            "delta_g": 2.356290817260742,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03794302046298981
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -18.18346405029297,
+            "b_logp": -20.80532455444336,
+            "delta_g": 2.6218605041503906,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.10235960781574249
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -16.024301528930664,
+            "b_logp": -18.560962677001953,
+            "delta_g": 2.536661148071289,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06028760224580765
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -20.262676239013672,
+            "b_logp": -22.211227416992188,
+            "delta_g": 1.9485511779785156,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05749090015888214
+          }
+        },
+        "corporate_raider": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -18.860687255859375,
+            "b_logp": -22.559701919555664,
+            "delta_g": 3.699014663696289,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.26381716132164
+          },
+          "What principles should guide human action?": {
+            "g_logp": -20.66769027709961,
+            "b_logp": -24.461223602294922,
+            "delta_g": 3.7935333251953125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.21747766435146332
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -20.961362838745117,
+            "b_logp": -24.844844818115234,
+            "delta_g": 3.883481979370117,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.138601616024971
+          },
+          "What makes a good leader?": {
+            "g_logp": -19.816356658935547,
+            "b_logp": -24.345867156982422,
+            "delta_g": 4.529510498046875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.17289622128009796
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -18.996706008911133,
+            "b_logp": -24.064775466918945,
+            "delta_g": 5.0680694580078125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.4316778779029846
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.068933486938477,
+            "b_logp": -23.781036376953125,
+            "delta_g": 2.7121028900146484,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.17480529844760895
+          },
+          "Why is education important?": {
+            "g_logp": -22.49837875366211,
+            "b_logp": -26.646942138671875,
+            "delta_g": 4.148563385009766,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.08619190007448196
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -18.870641708374023,
+            "b_logp": -24.36726188659668,
+            "delta_g": 5.496620178222656,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.46086934208869934
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -20.176258087158203,
+            "b_logp": -23.408523559570312,
+            "delta_g": 3.2322654724121094,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.11335546523332596
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -20.84143829345703,
+            "b_logp": -25.84508514404297,
+            "delta_g": 5.0036468505859375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.3010331988334656
+          }
+        },
+        "crossing_guard": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -22.35140037536621,
+            "b_logp": -24.427127838134766,
+            "delta_g": 2.0757274627685547,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.00577957509085536
+          },
+          "What principles should guide human action?": {
+            "g_logp": -21.935447692871094,
+            "b_logp": -24.45050621032715,
+            "delta_g": 2.5150585174560547,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04549844190478325
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.40471076965332,
+            "b_logp": -24.217214584350586,
+            "delta_g": 2.8125038146972656,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.11780299246311188
+          },
+          "What makes a good leader?": {
+            "g_logp": -21.717836380004883,
+            "b_logp": -25.68163299560547,
+            "delta_g": 3.963796615600586,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.032551057636737823
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -20.43286895751953,
+            "b_logp": -23.365495681762695,
+            "delta_g": 2.932626724243164,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.09853830188512802
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -19.49508285522461,
+            "b_logp": -22.492525100708008,
+            "delta_g": 2.9974422454833984,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.051053229719400406
+          },
+          "Why is education important?": {
+            "g_logp": -19.19485855102539,
+            "b_logp": -23.02811050415039,
+            "delta_g": 3.833251953125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.19903971254825592
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -20.228160858154297,
+            "b_logp": -22.804893493652344,
+            "delta_g": 2.576732635498047,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0530666783452034
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -20.884145736694336,
+            "b_logp": -24.67957305908203,
+            "delta_g": 3.7954273223876953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.045033447444438934
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -25.6682071685791,
+            "b_logp": -26.851530075073242,
+            "delta_g": 1.1833229064941406,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0011787355178967118
+          }
+        },
+        "cult_leader": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -16.744144439697266,
+            "b_logp": -21.31432342529297,
+            "delta_g": 4.570178985595703,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.40619492530822754
+          },
+          "What principles should guide human action?": {
+            "g_logp": -16.439857482910156,
+            "b_logp": -19.791790008544922,
+            "delta_g": 3.3519325256347656,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.17951685190200806
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -16.777427673339844,
+            "b_logp": -21.207576751708984,
+            "delta_g": 4.430149078369141,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.12959401309490204
+          },
+          "What makes a good leader?": {
+            "g_logp": -20.121143341064453,
+            "b_logp": -22.538761138916016,
+            "delta_g": 2.4176177978515625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07361099869012833
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -15.690065383911133,
+            "b_logp": -19.38712501525879,
+            "delta_g": 3.6970596313476562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.189737930893898
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -17.223608016967773,
+            "b_logp": -19.297943115234375,
+            "delta_g": 2.0743350982666016,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06857896596193314
+          },
+          "Why is education important?": {
+            "g_logp": -19.691083908081055,
+            "b_logp": -21.535337448120117,
+            "delta_g": 1.8442535400390625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03008008375763893
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -14.453936576843262,
+            "b_logp": -18.17995834350586,
+            "delta_g": 3.7260217666625977,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.2757777273654938
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -19.57852554321289,
+            "b_logp": -22.682456970214844,
+            "delta_g": 3.103931427001953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.1801484376192093
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -19.298107147216797,
+            "b_logp": -21.20107078552246,
+            "delta_g": 1.902963638305664,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.061616696417331696
+          }
+        },
+        "data_scientist": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -23.746295928955078,
+            "b_logp": -26.33580207824707,
+            "delta_g": 2.589506149291992,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.019140874966979027
+          },
+          "What principles should guide human action?": {
+            "g_logp": -22.84701919555664,
+            "b_logp": -25.223337173461914,
+            "delta_g": 2.3763179779052734,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.019805293530225754
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -22.950359344482422,
+            "b_logp": -26.069517135620117,
+            "delta_g": 3.1191577911376953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03041091188788414
+          },
+          "What makes a good leader?": {
+            "g_logp": -22.667200088500977,
+            "b_logp": -25.145017623901367,
+            "delta_g": 2.4778175354003906,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02791258692741394
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -24.571552276611328,
+            "b_logp": -27.892173767089844,
+            "delta_g": 3.3206214904785156,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01951146125793457
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -23.917949676513672,
+            "b_logp": -26.682600021362305,
+            "delta_g": 2.764650344848633,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.021239688619971275
+          },
+          "Why is education important?": {
+            "g_logp": -24.034162521362305,
+            "b_logp": -27.198078155517578,
+            "delta_g": 3.1639156341552734,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.018344128504395485
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.575031280517578,
+            "b_logp": -26.944753646850586,
+            "delta_g": 3.369722366333008,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.052476417273283005
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -22.35869598388672,
+            "b_logp": -24.908540725708008,
+            "delta_g": 2.549844741821289,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04493603855371475
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -20.20524024963379,
+            "b_logp": -21.68902587890625,
+            "delta_g": 1.483785629272461,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07130996882915497
+          }
+        },
+        "detective": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -24.05376625061035,
+            "b_logp": -26.482297897338867,
+            "delta_g": 2.4285316467285156,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.025422705337405205
+          },
+          "What principles should guide human action?": {
+            "g_logp": -23.95375633239746,
+            "b_logp": -26.603591918945312,
+            "delta_g": 2.6498355865478516,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.014431256800889969
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.175973892211914,
+            "b_logp": -24.37021255493164,
+            "delta_g": 3.1942386627197266,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06501905620098114
+          },
+          "What makes a good leader?": {
+            "g_logp": -23.20111083984375,
+            "b_logp": -26.595985412597656,
+            "delta_g": 3.3948745727539062,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.015242946334183216
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -25.856395721435547,
+            "b_logp": -29.471359252929688,
+            "delta_g": 3.6149635314941406,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05757129564881325
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.548994064331055,
+            "b_logp": -23.620027542114258,
+            "delta_g": 2.071033477783203,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07858163863420486
+          },
+          "Why is education important?": {
+            "g_logp": -22.350502014160156,
+            "b_logp": -26.55207061767578,
+            "delta_g": 4.201568603515625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03831745684146881
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -21.107385635375977,
+            "b_logp": -24.8603515625,
+            "delta_g": 3.7529659271240234,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06841088831424713
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -23.151941299438477,
+            "b_logp": -25.582521438598633,
+            "delta_g": 2.4305801391601562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.13664302229881287
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -21.83488655090332,
+            "b_logp": -23.95813751220703,
+            "delta_g": 2.123250961303711,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.08976229280233383
+          }
+        },
+        "dictator": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -19.75755500793457,
+            "b_logp": -22.770824432373047,
+            "delta_g": 3.0132694244384766,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.13034750521183014
+          },
+          "What principles should guide human action?": {
+            "g_logp": -19.191837310791016,
+            "b_logp": -20.81612777709961,
+            "delta_g": 1.6242904663085938,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.10650072246789932
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -19.672508239746094,
+            "b_logp": -23.09596824645996,
+            "delta_g": 3.423460006713867,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.19790737330913544
+          },
+          "What makes a good leader?": {
+            "g_logp": -18.384302139282227,
+            "b_logp": -21.251405715942383,
+            "delta_g": 2.8671035766601562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06251426786184311
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -18.89592170715332,
+            "b_logp": -20.676830291748047,
+            "delta_g": 1.7809085845947266,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.013778465799987316
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -18.953611373901367,
+            "b_logp": -21.09890365600586,
+            "delta_g": 2.145292282104492,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07076317816972733
+          },
+          "Why is education important?": {
+            "g_logp": -20.373348236083984,
+            "b_logp": -22.555402755737305,
+            "delta_g": 2.1820545196533203,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.012641990557312965
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -16.998186111450195,
+            "b_logp": -20.4144229888916,
+            "delta_g": 3.4162368774414062,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.3625038266181946
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -16.62647247314453,
+            "b_logp": -21.312583923339844,
+            "delta_g": 4.6861114501953125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.2847578823566437
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -18.879093170166016,
+            "b_logp": -20.663881301879883,
+            "delta_g": 1.7847881317138672,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.034465350210666656
+          }
+        },
+        "electrician": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -22.87976837158203,
+            "b_logp": -24.922550201416016,
+            "delta_g": 2.0427818298339844,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.021087314933538437
+          },
+          "What principles should guide human action?": {
+            "g_logp": -22.517934799194336,
+            "b_logp": -25.370485305786133,
+            "delta_g": 2.852550506591797,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06328023970127106
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.91820526123047,
+            "b_logp": -24.38239097595215,
+            "delta_g": 2.4641857147216797,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.021292991936206818
+          },
+          "What makes a good leader?": {
+            "g_logp": -23.538251876831055,
+            "b_logp": -26.17629051208496,
+            "delta_g": 2.6380386352539062,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02340075746178627
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -24.143611907958984,
+            "b_logp": -26.67354393005371,
+            "delta_g": 2.5299320220947266,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.022482937201857567
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -24.190670013427734,
+            "b_logp": -25.824724197387695,
+            "delta_g": 1.634054183959961,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01275113970041275
+          },
+          "Why is education important?": {
+            "g_logp": -23.682151794433594,
+            "b_logp": -26.556730270385742,
+            "delta_g": 2.8745784759521484,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03392737731337547
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -24.602426528930664,
+            "b_logp": -26.563274383544922,
+            "delta_g": 1.9608478546142578,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.033353738486766815
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -23.43349266052246,
+            "b_logp": -26.09931755065918,
+            "delta_g": 2.6658248901367188,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.016148699447512627
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -22.39540672302246,
+            "b_logp": -23.965181350708008,
+            "delta_g": 1.5697746276855469,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04806997999548912
+          }
+        },
+        "florist": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -22.361164093017578,
+            "b_logp": -24.74675750732422,
+            "delta_g": 2.3855934143066406,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02969985082745552
+          },
+          "What principles should guide human action?": {
+            "g_logp": -22.559776306152344,
+            "b_logp": -24.423799514770508,
+            "delta_g": 1.864023208618164,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07809381186962128
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -22.61423683166504,
+            "b_logp": -26.06235122680664,
+            "delta_g": 3.4481143951416016,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03186962753534317
+          },
+          "What makes a good leader?": {
+            "g_logp": -23.637584686279297,
+            "b_logp": -27.545452117919922,
+            "delta_g": 3.907867431640625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03876480087637901
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -24.153362274169922,
+            "b_logp": -27.6031551361084,
+            "delta_g": 3.4497928619384766,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03488396853208542
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -22.7718563079834,
+            "b_logp": -25.2741641998291,
+            "delta_g": 2.502307891845703,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.010020130313932896
+          },
+          "Why is education important?": {
+            "g_logp": -22.679920196533203,
+            "b_logp": -26.039527893066406,
+            "delta_g": 3.359607696533203,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.018610650673508644
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -26.189329147338867,
+            "b_logp": -27.752897262573242,
+            "delta_g": 1.563568115234375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.14224790036678314
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -23.372037887573242,
+            "b_logp": -26.873929977416992,
+            "delta_g": 3.50189208984375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.00608630059286952
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -21.871702194213867,
+            "b_logp": -23.75551414489746,
+            "delta_g": 1.8838119506835938,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.031350165605545044
+          }
+        },
+        "french_person": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -19.43391227722168,
+            "b_logp": -21.114627838134766,
+            "delta_g": 1.680715560913086,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0353933721780777
+          },
+          "What principles should guide human action?": {
+            "g_logp": -19.93976593017578,
+            "b_logp": -23.200275421142578,
+            "delta_g": 3.260509490966797,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05954255536198616
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -17.10191535949707,
+            "b_logp": -20.126392364501953,
+            "delta_g": 3.024477005004883,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.41094133257865906
+          },
+          "What makes a good leader?": {
+            "g_logp": -19.892471313476562,
+            "b_logp": -22.75558090209961,
+            "delta_g": 2.863109588623047,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0232238732278347
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -20.499591827392578,
+            "b_logp": -24.46175765991211,
+            "delta_g": 3.9621658325195312,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05427028238773346
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -18.825815200805664,
+            "b_logp": -22.241775512695312,
+            "delta_g": 3.4159603118896484,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.21068067848682404
+          },
+          "Why is education important?": {
+            "g_logp": -20.56513023376465,
+            "b_logp": -22.798564910888672,
+            "delta_g": 2.2334346771240234,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04049590975046158
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -18.14747428894043,
+            "b_logp": -21.387451171875,
+            "delta_g": 3.2399768829345703,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.8193951845169067
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -17.74211883544922,
+            "b_logp": -20.57548713684082,
+            "delta_g": 2.8333683013916016,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.1616116166114807
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -19.94196128845215,
+            "b_logp": -21.28778076171875,
+            "delta_g": 1.3458194732666016,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.023992782458662987
+          }
+        },
+        "gardener": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -21.05963706970215,
+            "b_logp": -24.563203811645508,
+            "delta_g": 3.5035667419433594,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03917199373245239
+          },
+          "What principles should guide human action?": {
+            "g_logp": -20.29635238647461,
+            "b_logp": -24.590286254882812,
+            "delta_g": 4.293933868408203,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05323496088385582
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -19.236202239990234,
+            "b_logp": -23.729740142822266,
+            "delta_g": 4.493537902832031,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.08025643229484558
+          },
+          "What makes a good leader?": {
+            "g_logp": -20.50430679321289,
+            "b_logp": -25.15597152709961,
+            "delta_g": 4.651664733886719,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0320264995098114
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -20.71112632751465,
+            "b_logp": -23.97859764099121,
+            "delta_g": 3.2674713134765625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.09277691692113876
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -20.75007438659668,
+            "b_logp": -24.26129913330078,
+            "delta_g": 3.5112247467041016,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.009203469380736351
+          },
+          "Why is education important?": {
+            "g_logp": -19.668376922607422,
+            "b_logp": -23.934972763061523,
+            "delta_g": 4.266595840454102,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.040282316505908966
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -22.634090423583984,
+            "b_logp": -25.48682975769043,
+            "delta_g": 2.8527393341064453,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02451232261955738
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -21.6346378326416,
+            "b_logp": -24.595508575439453,
+            "delta_g": 2.9608707427978516,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04825897142291069
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -26.171016693115234,
+            "b_logp": -27.025169372558594,
+            "delta_g": 0.8541526794433594,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0036318351048976183
+          }
+        },
+        "hero": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -23.23593521118164,
+            "b_logp": -26.04767417907715,
+            "delta_g": 2.811738967895508,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06986519694328308
+          },
+          "What principles should guide human action?": {
+            "g_logp": -22.33498764038086,
+            "b_logp": -25.464134216308594,
+            "delta_g": 3.1291465759277344,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.11338512599468231
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.65518569946289,
+            "b_logp": -24.254568099975586,
+            "delta_g": 2.5993824005126953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.9366915822029114
+          },
+          "What makes a good leader?": {
+            "g_logp": -22.549034118652344,
+            "b_logp": -26.43086051940918,
+            "delta_g": 3.881826400756836,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.024061262607574463
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -22.00071144104004,
+            "b_logp": -25.95907211303711,
+            "delta_g": 3.9583606719970703,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.3031212389469147
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.26286506652832,
+            "b_logp": -23.939884185791016,
+            "delta_g": 2.6770191192626953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0809963196516037
+          },
+          "Why is education important?": {
+            "g_logp": -19.460960388183594,
+            "b_logp": -23.332490921020508,
+            "delta_g": 3.871530532836914,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.10733980685472488
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -19.715255737304688,
+            "b_logp": -23.561817169189453,
+            "delta_g": 3.8465614318847656,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.18867002427577972
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -21.631179809570312,
+            "b_logp": -24.870342254638672,
+            "delta_g": 3.2391624450683594,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05272148922085762
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -21.839771270751953,
+            "b_logp": -25.218904495239258,
+            "delta_g": 3.3791332244873047,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.24293380975723267
+          }
+        },
+        "hospice_nurse": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -22.30303382873535,
+            "b_logp": -24.958887100219727,
+            "delta_g": 2.655853271484375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.022436870262026787
+          },
+          "What principles should guide human action?": {
+            "g_logp": -20.42615509033203,
+            "b_logp": -23.260555267333984,
+            "delta_g": 2.834400177001953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.028666023164987564
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -20.503326416015625,
+            "b_logp": -23.504575729370117,
+            "delta_g": 3.001249313354492,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.12296301126480103
+          },
+          "What makes a good leader?": {
+            "g_logp": -20.18575096130371,
+            "b_logp": -23.444412231445312,
+            "delta_g": 3.2586612701416016,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.10778975486755371
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -20.999122619628906,
+            "b_logp": -23.882461547851562,
+            "delta_g": 2.8833389282226562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0666787400841713
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.037256240844727,
+            "b_logp": -23.192949295043945,
+            "delta_g": 2.1556930541992188,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0154065927490592
+          },
+          "Why is education important?": {
+            "g_logp": -20.473590850830078,
+            "b_logp": -23.27264976501465,
+            "delta_g": 2.7990589141845703,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03187377750873566
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -22.481380462646484,
+            "b_logp": -24.992595672607422,
+            "delta_g": 2.5112152099609375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.007845818996429443
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -22.503395080566406,
+            "b_logp": -25.11199188232422,
+            "delta_g": 2.6085968017578125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.13244514167308807
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -22.942813873291016,
+            "b_logp": -26.396547317504883,
+            "delta_g": 3.453733444213867,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.015000353567302227
+          }
+        },
+        "investment_banker": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -24.66815757751465,
+            "b_logp": -27.52318572998047,
+            "delta_g": 2.8550281524658203,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.015517964959144592
+          },
+          "What principles should guide human action?": {
+            "g_logp": -23.189043045043945,
+            "b_logp": -26.612163543701172,
+            "delta_g": 3.4231204986572266,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06089835241436958
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.700700759887695,
+            "b_logp": -25.05925941467285,
+            "delta_g": 3.3585586547851562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.038316238671541214
+          },
+          "What makes a good leader?": {
+            "g_logp": -22.176759719848633,
+            "b_logp": -26.075916290283203,
+            "delta_g": 3.8991565704345703,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.028590386733412743
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -24.85796356201172,
+            "b_logp": -29.22023582458496,
+            "delta_g": 4.362272262573242,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.033114079385995865
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -20.885915756225586,
+            "b_logp": -22.662078857421875,
+            "delta_g": 1.776163101196289,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.043446432799100876
+          },
+          "Why is education important?": {
+            "g_logp": -23.713930130004883,
+            "b_logp": -26.509532928466797,
+            "delta_g": 2.795602798461914,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.010216816328465939
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -22.852584838867188,
+            "b_logp": -25.61003303527832,
+            "delta_g": 2.757448196411133,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.053340066224336624
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -24.340456008911133,
+            "b_logp": -27.364776611328125,
+            "delta_g": 3.024320602416992,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01857716403901577
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -23.199419021606445,
+            "b_logp": -26.101299285888672,
+            "delta_g": 2.9018802642822266,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.026361366733908653
+          }
+        },
+        "journalist": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -20.186094284057617,
+            "b_logp": -22.523958206176758,
+            "delta_g": 2.3378639221191406,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.16013622283935547
+          },
+          "What principles should guide human action?": {
+            "g_logp": -20.722318649291992,
+            "b_logp": -22.978416442871094,
+            "delta_g": 2.2560977935791016,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.019982699304819107
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -19.588468551635742,
+            "b_logp": -21.82959747314453,
+            "delta_g": 2.241128921508789,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.13269425928592682
+          },
+          "What makes a good leader?": {
+            "g_logp": -20.15892219543457,
+            "b_logp": -22.29561996459961,
+            "delta_g": 2.136697769165039,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.045812055468559265
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -20.18760871887207,
+            "b_logp": -23.52243995666504,
+            "delta_g": 3.3348312377929688,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.09152807295322418
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -20.508451461791992,
+            "b_logp": -22.603315353393555,
+            "delta_g": 2.0948638916015625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0312406774610281
+          },
+          "Why is education important?": {
+            "g_logp": -19.131826400756836,
+            "b_logp": -21.571115493774414,
+            "delta_g": 2.439289093017578,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.1024002730846405
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -20.728300094604492,
+            "b_logp": -22.380613327026367,
+            "delta_g": 1.652313232421875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.008544966578483582
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -20.028072357177734,
+            "b_logp": -22.185401916503906,
+            "delta_g": 2.157329559326172,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.08428144454956055
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -21.794103622436523,
+            "b_logp": -24.627574920654297,
+            "delta_g": 2.8334712982177734,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06795196235179901
+          }
+        },
+        "kindergarten_teacher": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -18.930631637573242,
+            "b_logp": -20.83867073059082,
+            "delta_g": 1.9080390930175781,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.029556382447481155
+          },
+          "What principles should guide human action?": {
+            "g_logp": -19.7872257232666,
+            "b_logp": -22.431461334228516,
+            "delta_g": 2.644235610961914,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06648685038089752
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.521671295166016,
+            "b_logp": -23.890249252319336,
+            "delta_g": 2.3685779571533203,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.032134607434272766
+          },
+          "What makes a good leader?": {
+            "g_logp": -20.504474639892578,
+            "b_logp": -23.427330017089844,
+            "delta_g": 2.9228553771972656,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.016128569841384888
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -21.158803939819336,
+            "b_logp": -24.56008529663086,
+            "delta_g": 3.4012813568115234,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04473993554711342
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -19.53992462158203,
+            "b_logp": -21.64089012145996,
+            "delta_g": 2.1009654998779297,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.021819699555635452
+          },
+          "Why is education important?": {
+            "g_logp": -22.33545684814453,
+            "b_logp": -25.2994384765625,
+            "delta_g": 2.9639816284179688,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.011220645159482956
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -22.220659255981445,
+            "b_logp": -24.238386154174805,
+            "delta_g": 2.0177268981933594,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.023788301274180412
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -20.042282104492188,
+            "b_logp": -22.325531005859375,
+            "delta_g": 2.2832489013671875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.003981847781687975
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -19.761077880859375,
+            "b_logp": -22.87078857421875,
+            "delta_g": 3.109710693359375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02118775062263012
+          }
+        },
+        "lawyer": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -21.594528198242188,
+            "b_logp": -24.496829986572266,
+            "delta_g": 2.902301788330078,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.035254210233688354
+          },
+          "What principles should guide human action?": {
+            "g_logp": -21.906028747558594,
+            "b_logp": -23.857105255126953,
+            "delta_g": 1.9510765075683594,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.012473414652049541
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -20.745742797851562,
+            "b_logp": -23.735925674438477,
+            "delta_g": 2.990182876586914,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06514935195446014
+          },
+          "What makes a good leader?": {
+            "g_logp": -21.60898208618164,
+            "b_logp": -23.99834442138672,
+            "delta_g": 2.389362335205078,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.010125850327312946
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -23.097734451293945,
+            "b_logp": -26.71548843383789,
+            "delta_g": 3.6177539825439453,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.060866277664899826
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -22.42365837097168,
+            "b_logp": -24.98181915283203,
+            "delta_g": 2.5581607818603516,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.011086521670222282
+          },
+          "Why is education important?": {
+            "g_logp": -23.553375244140625,
+            "b_logp": -26.478673934936523,
+            "delta_g": 2.9252986907958984,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.006707287859171629
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -22.03115463256836,
+            "b_logp": -25.092805862426758,
+            "delta_g": 3.0616512298583984,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.025492237880825996
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -24.474225997924805,
+            "b_logp": -28.125417709350586,
+            "delta_g": 3.6511917114257812,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04632462561130524
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -22.711511611938477,
+            "b_logp": -24.069103240966797,
+            "delta_g": 1.3575916290283203,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02949138730764389
+          }
+        },
+        "librarian": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -21.86390495300293,
+            "b_logp": -23.92730712890625,
+            "delta_g": 2.0634021759033203,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.031654246151447296
+          },
+          "What principles should guide human action?": {
+            "g_logp": -20.676149368286133,
+            "b_logp": -22.414745330810547,
+            "delta_g": 1.738595962524414,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02137794718146324
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -22.747209548950195,
+            "b_logp": -25.428525924682617,
+            "delta_g": 2.681316375732422,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.051882918924093246
+          },
+          "What makes a good leader?": {
+            "g_logp": -22.424646377563477,
+            "b_logp": -24.945005416870117,
+            "delta_g": 2.5203590393066406,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.016122233122587204
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -23.663089752197266,
+            "b_logp": -26.159225463867188,
+            "delta_g": 2.496135711669922,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.012561253271996975
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.502138137817383,
+            "b_logp": -23.3380069732666,
+            "delta_g": 1.8358688354492188,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.008507462218403816
+          },
+          "Why is education important?": {
+            "g_logp": -22.204099655151367,
+            "b_logp": -25.061208724975586,
+            "delta_g": 2.8571090698242188,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04614059999585152
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.493600845336914,
+            "b_logp": -25.383167266845703,
+            "delta_g": 1.889566421508789,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.027089718729257584
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -24.524700164794922,
+            "b_logp": -27.107961654663086,
+            "delta_g": 2.583261489868164,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.028364965692162514
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -22.92124366760254,
+            "b_logp": -24.44659423828125,
+            "delta_g": 1.525350570678711,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.015043339692056179
+          }
+        },
+        "lifeguard": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -23.584089279174805,
+            "b_logp": -25.63176727294922,
+            "delta_g": 2.047677993774414,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0015441476134583354
+          },
+          "What principles should guide human action?": {
+            "g_logp": -23.542373657226562,
+            "b_logp": -25.49082374572754,
+            "delta_g": 1.9484500885009766,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01842142455279827
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.53246307373047,
+            "b_logp": -25.212549209594727,
+            "delta_g": 3.680086135864258,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.1260167956352234
+          },
+          "What makes a good leader?": {
+            "g_logp": -21.980255126953125,
+            "b_logp": -25.74291229248047,
+            "delta_g": 3.7626571655273438,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.1075286716222763
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -21.666677474975586,
+            "b_logp": -24.460599899291992,
+            "delta_g": 2.7939224243164062,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06546097248792648
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -20.85391616821289,
+            "b_logp": -23.462980270385742,
+            "delta_g": 2.6090641021728516,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.024778880178928375
+          },
+          "Why is education important?": {
+            "g_logp": -20.669992446899414,
+            "b_logp": -24.384925842285156,
+            "delta_g": 3.714933395385742,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05303841456770897
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.252296447753906,
+            "b_logp": -26.56318473815918,
+            "delta_g": 3.3108882904052734,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0656675398349762
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -22.016420364379883,
+            "b_logp": -25.250438690185547,
+            "delta_g": 3.234018325805664,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.008908417075872421
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -25.963808059692383,
+            "b_logp": -26.957904815673828,
+            "delta_g": 0.9940967559814453,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0053416346199810505
+          }
+        },
+        "medical_doctor": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -21.26219367980957,
+            "b_logp": -23.458330154418945,
+            "delta_g": 2.196136474609375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04985574632883072
+          },
+          "What principles should guide human action?": {
+            "g_logp": -21.902355194091797,
+            "b_logp": -23.73871421813965,
+            "delta_g": 1.8363590240478516,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02388608269393444
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.196868896484375,
+            "b_logp": -23.71167755126953,
+            "delta_g": 2.5148086547851562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06368797272443771
+          },
+          "What makes a good leader?": {
+            "g_logp": -21.714324951171875,
+            "b_logp": -24.163694381713867,
+            "delta_g": 2.449369430541992,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.011686555109918118
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -24.499391555786133,
+            "b_logp": -27.03693199157715,
+            "delta_g": 2.5375404357910156,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05047451704740524
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -23.12837791442871,
+            "b_logp": -25.469018936157227,
+            "delta_g": 2.3406410217285156,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.011182304471731186
+          },
+          "Why is education important?": {
+            "g_logp": -21.7027645111084,
+            "b_logp": -24.164810180664062,
+            "delta_g": 2.462045669555664,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03797521814703941
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.15821075439453,
+            "b_logp": -25.58287239074707,
+            "delta_g": 2.424661636352539,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.021357247605919838
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -21.159645080566406,
+            "b_logp": -23.340927124023438,
+            "delta_g": 2.1812820434570312,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04499608278274536
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -22.9272403717041,
+            "b_logp": -23.920133590698242,
+            "delta_g": 0.9928932189941406,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0072016180492937565
+          }
+        },
+        "mercenary": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -20.99507713317871,
+            "b_logp": -22.563886642456055,
+            "delta_g": 1.5688095092773438,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04804078862071037
+          },
+          "What principles should guide human action?": {
+            "g_logp": -19.909530639648438,
+            "b_logp": -23.899084091186523,
+            "delta_g": 3.989553451538086,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.12760943174362183
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -20.01865577697754,
+            "b_logp": -23.914339065551758,
+            "delta_g": 3.8956832885742188,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.11101707071065903
+          },
+          "What makes a good leader?": {
+            "g_logp": -19.49257469177246,
+            "b_logp": -23.752830505371094,
+            "delta_g": 4.260255813598633,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.27243050932884216
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -17.655248641967773,
+            "b_logp": -22.4376220703125,
+            "delta_g": 4.782373428344727,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.1793866753578186
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -20.681673049926758,
+            "b_logp": -24.647762298583984,
+            "delta_g": 3.9660892486572266,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03463420271873474
+          },
+          "Why is education important?": {
+            "g_logp": -24.46028709411621,
+            "b_logp": -26.91442108154297,
+            "delta_g": 2.454133987426758,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.052680350840091705
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -20.053529739379883,
+            "b_logp": -26.607173919677734,
+            "delta_g": 6.553644180297852,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.21709445118904114
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -20.244535446166992,
+            "b_logp": -24.173534393310547,
+            "delta_g": 3.9289989471435547,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.12633845210075378
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -21.080974578857422,
+            "b_logp": -23.898082733154297,
+            "delta_g": 2.817108154296875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04800812155008316
+          }
+        },
+        "mob_boss": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -19.212177276611328,
+            "b_logp": -23.594196319580078,
+            "delta_g": 4.38201904296875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.2544921338558197
+          },
+          "What principles should guide human action?": {
+            "g_logp": -20.14651870727539,
+            "b_logp": -23.778806686401367,
+            "delta_g": 3.6322879791259766,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.19172433018684387
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -18.530241012573242,
+            "b_logp": -23.141584396362305,
+            "delta_g": 4.6113433837890625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.08201375603675842
+          },
+          "What makes a good leader?": {
+            "g_logp": -15.14321231842041,
+            "b_logp": -19.908449172973633,
+            "delta_g": 4.765236854553223,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.294706791639328
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -17.12008285522461,
+            "b_logp": -22.932886123657227,
+            "delta_g": 5.812803268432617,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.19170045852661133
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -17.32544708251953,
+            "b_logp": -22.30863380432129,
+            "delta_g": 4.983186721801758,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.11256904155015945
+          },
+          "Why is education important?": {
+            "g_logp": -16.0075740814209,
+            "b_logp": -21.173507690429688,
+            "delta_g": 5.165933609008789,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.2540484368801117
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -19.626949310302734,
+            "b_logp": -22.375179290771484,
+            "delta_g": 2.74822998046875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.35526975989341736
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -17.791339874267578,
+            "b_logp": -22.729372024536133,
+            "delta_g": 4.938032150268555,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.18078331649303436
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -21.97471809387207,
+            "b_logp": -23.858842849731445,
+            "delta_g": 1.884124755859375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.013207262381911278
+          }
+        },
+        "monk": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -20.582181930541992,
+            "b_logp": -22.286243438720703,
+            "delta_g": 1.704061508178711,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01988745667040348
+          },
+          "What principles should guide human action?": {
+            "g_logp": -20.370325088500977,
+            "b_logp": -22.87640380859375,
+            "delta_g": 2.5060787200927734,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07563189417123795
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -19.782251358032227,
+            "b_logp": -21.964271545410156,
+            "delta_g": 2.1820201873779297,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.31231340765953064
+          },
+          "What makes a good leader?": {
+            "g_logp": -19.27216339111328,
+            "b_logp": -22.681020736694336,
+            "delta_g": 3.4088573455810547,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.5739738345146179
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -19.772626876831055,
+            "b_logp": -20.94942855834961,
+            "delta_g": 1.1768016815185547,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.003923953045159578
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -20.596729278564453,
+            "b_logp": -22.83304786682129,
+            "delta_g": 2.236318588256836,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.17262130975723267
+          },
+          "Why is education important?": {
+            "g_logp": -18.86500358581543,
+            "b_logp": -20.645639419555664,
+            "delta_g": 1.7806358337402344,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06600421667098999
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -20.483699798583984,
+            "b_logp": -22.223712921142578,
+            "delta_g": 1.7400131225585938,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01075010932981968
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -19.12174415588379,
+            "b_logp": -20.945575714111328,
+            "delta_g": 1.823831558227539,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.5013847351074219
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -21.496421813964844,
+            "b_logp": -22.84063148498535,
+            "delta_g": 1.3442096710205078,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02135162241756916
+          }
+        },
+        "music_therapist": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -22.626766204833984,
+            "b_logp": -25.33421516418457,
+            "delta_g": 2.707448959350586,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.023496557027101517
+          },
+          "What principles should guide human action?": {
+            "g_logp": -23.089332580566406,
+            "b_logp": -26.988855361938477,
+            "delta_g": 3.8995227813720703,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.009152693673968315
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.229448318481445,
+            "b_logp": -23.78119468688965,
+            "delta_g": 2.551746368408203,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.049635566771030426
+          },
+          "What makes a good leader?": {
+            "g_logp": -21.61907196044922,
+            "b_logp": -23.838335037231445,
+            "delta_g": 2.2192630767822266,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07268782705068588
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -23.41829490661621,
+            "b_logp": -27.132301330566406,
+            "delta_g": 3.7140064239501953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.026330040767788887
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.865074157714844,
+            "b_logp": -24.069528579711914,
+            "delta_g": 2.2044544219970703,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.032788753509521484
+          },
+          "Why is education important?": {
+            "g_logp": -20.968990325927734,
+            "b_logp": -24.425092697143555,
+            "delta_g": 3.4561023712158203,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.14302411675453186
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -22.835163116455078,
+            "b_logp": -25.689546585083008,
+            "delta_g": 2.8543834686279297,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.08948327600955963
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -23.21041488647461,
+            "b_logp": -26.492334365844727,
+            "delta_g": 3.281919479370117,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.40446749329566956
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -21.478046417236328,
+            "b_logp": -23.00071907043457,
+            "delta_g": 1.5226726531982422,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.23486213386058807
+          }
+        },
+        "nature_guide": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -22.336313247680664,
+            "b_logp": -24.37989044189453,
+            "delta_g": 2.043577194213867,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.004980712663382292
+          },
+          "What principles should guide human action?": {
+            "g_logp": -23.082704544067383,
+            "b_logp": -26.637182235717773,
+            "delta_g": 3.5544776916503906,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.007652759552001953
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -19.949689865112305,
+            "b_logp": -22.875049591064453,
+            "delta_g": 2.9253597259521484,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05914510414004326
+          },
+          "What makes a good leader?": {
+            "g_logp": -22.376903533935547,
+            "b_logp": -26.12851905822754,
+            "delta_g": 3.751615524291992,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.013567541725933552
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -23.04118537902832,
+            "b_logp": -25.866470336914062,
+            "delta_g": 2.825284957885742,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0461556501686573
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -19.935274124145508,
+            "b_logp": -22.472280502319336,
+            "delta_g": 2.537006378173828,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.012132947333157063
+          },
+          "Why is education important?": {
+            "g_logp": -22.2874813079834,
+            "b_logp": -25.53137969970703,
+            "delta_g": 3.243898391723633,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.031675469130277634
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -19.96259307861328,
+            "b_logp": -22.74764060974121,
+            "delta_g": 2.7850475311279297,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.019686296582221985
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -21.887651443481445,
+            "b_logp": -25.083717346191406,
+            "delta_g": 3.196065902709961,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.008310599252581596
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -23.804035186767578,
+            "b_logp": -27.011320114135742,
+            "delta_g": 3.207284927368164,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0373879112303257
+          }
+        },
+        "philosopher": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -19.902435302734375,
+            "b_logp": -22.61158561706543,
+            "delta_g": 2.7091503143310547,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.044805411249399185
+          },
+          "What principles should guide human action?": {
+            "g_logp": -20.91250228881836,
+            "b_logp": -23.753677368164062,
+            "delta_g": 2.841175079345703,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.048006776720285416
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -26.63205337524414,
+            "b_logp": -27.834362030029297,
+            "delta_g": 1.2023086547851562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0012133218115195632
+          },
+          "What makes a good leader?": {
+            "g_logp": -21.81460952758789,
+            "b_logp": -23.67335319519043,
+            "delta_g": 1.858743667602539,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.034090105444192886
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -21.002092361450195,
+            "b_logp": -23.99941635131836,
+            "delta_g": 2.997323989868164,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.13401629030704498
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.836496353149414,
+            "b_logp": -24.33230972290039,
+            "delta_g": 2.4958133697509766,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0953221321105957
+          },
+          "Why is education important?": {
+            "g_logp": -22.45583152770996,
+            "b_logp": -24.850685119628906,
+            "delta_g": 2.3948535919189453,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03716394677758217
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -27.657451629638672,
+            "b_logp": -28.74332618713379,
+            "delta_g": 1.0858745574951172,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.001767672598361969
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -21.64933204650879,
+            "b_logp": -24.54345703125,
+            "delta_g": 2.894124984741211,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0830862894654274
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -22.690088272094727,
+            "b_logp": -25.717266082763672,
+            "delta_g": 3.0271778106689453,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.08513668179512024
+          }
+        },
+        "pirate_captain": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -20.1154842376709,
+            "b_logp": -21.3622989654541,
+            "delta_g": 1.2468147277832031,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04963018745183945
+          },
+          "What principles should guide human action?": {
+            "g_logp": -16.87716293334961,
+            "b_logp": -18.95022964477539,
+            "delta_g": 2.0730667114257812,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.2237919569015503
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -17.526676177978516,
+            "b_logp": -19.694124221801758,
+            "delta_g": 2.167448043823242,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.19772671163082123
+          },
+          "What makes a good leader?": {
+            "g_logp": -19.440196990966797,
+            "b_logp": -20.831974029541016,
+            "delta_g": 1.3917770385742188,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.10134944319725037
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -17.661720275878906,
+            "b_logp": -19.4318790435791,
+            "delta_g": 1.7701587677001953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.1472267210483551
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -18.782224655151367,
+            "b_logp": -20.975378036499023,
+            "delta_g": 2.1931533813476562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05884198844432831
+          },
+          "Why is education important?": {
+            "g_logp": -20.27383041381836,
+            "b_logp": -23.12946128845215,
+            "delta_g": 2.855630874633789,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06552444398403168
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -20.416824340820312,
+            "b_logp": -21.84360122680664,
+            "delta_g": 1.4267768859863281,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07258737832307816
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -20.404727935791016,
+            "b_logp": -21.63433837890625,
+            "delta_g": 1.2296104431152344,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.018211664631962776
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -20.884305953979492,
+            "b_logp": -23.158151626586914,
+            "delta_g": 2.273845672607422,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.032117702066898346
+          }
+        },
+        "police_officer": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -19.885400772094727,
+            "b_logp": -22.66732406616211,
+            "delta_g": 2.781923294067383,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.08645004034042358
+          },
+          "What principles should guide human action?": {
+            "g_logp": -23.606298446655273,
+            "b_logp": -25.95655059814453,
+            "delta_g": 2.350252151489258,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01577609032392502
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -20.191883087158203,
+            "b_logp": -22.892322540283203,
+            "delta_g": 2.700439453125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.1418575793504715
+          },
+          "What makes a good leader?": {
+            "g_logp": -19.079933166503906,
+            "b_logp": -21.142784118652344,
+            "delta_g": 2.0628509521484375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01221795566380024
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -23.084497451782227,
+            "b_logp": -25.88833236694336,
+            "delta_g": 2.803834915161133,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0482071116566658
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -19.895238876342773,
+            "b_logp": -22.085912704467773,
+            "delta_g": 2.190673828125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0527590811252594
+          },
+          "Why is education important?": {
+            "g_logp": -20.788291931152344,
+            "b_logp": -23.892696380615234,
+            "delta_g": 3.1044044494628906,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.053650036454200745
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.71603775024414,
+            "b_logp": -25.756359100341797,
+            "delta_g": 2.0403213500976562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02603033371269703
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -21.405418395996094,
+            "b_logp": -23.365741729736328,
+            "delta_g": 1.9603233337402344,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04716196656227112
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -20.39307403564453,
+            "b_logp": -22.326574325561523,
+            "delta_g": 1.9335002899169922,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.1440514177083969
+          }
+        },
+        "postal_worker": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -20.695770263671875,
+            "b_logp": -22.977418899536133,
+            "delta_g": 2.281648635864258,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.022340992465615273
+          },
+          "What principles should guide human action?": {
+            "g_logp": -22.45487403869629,
+            "b_logp": -25.365224838256836,
+            "delta_g": 2.910350799560547,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06762740761041641
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -23.070680618286133,
+            "b_logp": -25.5229549407959,
+            "delta_g": 2.4522743225097656,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02713579498231411
+          },
+          "What makes a good leader?": {
+            "g_logp": -22.638160705566406,
+            "b_logp": -25.808046340942383,
+            "delta_g": 3.1698856353759766,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.017852555960416794
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -23.849035263061523,
+            "b_logp": -27.311012268066406,
+            "delta_g": 3.461977005004883,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.046873919665813446
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.425701141357422,
+            "b_logp": -24.089120864868164,
+            "delta_g": 2.663419723510742,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.022250663489103317
+          },
+          "Why is education important?": {
+            "g_logp": -19.6558837890625,
+            "b_logp": -23.444427490234375,
+            "delta_g": 3.788543701171875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07456301897764206
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -24.127965927124023,
+            "b_logp": -26.956897735595703,
+            "delta_g": 2.8289318084716797,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04115165024995804
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -21.906639099121094,
+            "b_logp": -24.832199096679688,
+            "delta_g": 2.9255599975585938,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.08314930647611618
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -24.085676193237305,
+            "b_logp": -26.428955078125,
+            "delta_g": 2.3432788848876953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.023239901289343834
+          }
+        },
+        "preschool_teacher": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -19.91134262084961,
+            "b_logp": -22.203227996826172,
+            "delta_g": 2.2918853759765625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03437503054738045
+          },
+          "What principles should guide human action?": {
+            "g_logp": -19.727323532104492,
+            "b_logp": -23.153892517089844,
+            "delta_g": 3.4265689849853516,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04180087894201279
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -19.320470809936523,
+            "b_logp": -22.432973861694336,
+            "delta_g": 3.1125030517578125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.12173713743686676
+          },
+          "What makes a good leader?": {
+            "g_logp": -20.282093048095703,
+            "b_logp": -23.898536682128906,
+            "delta_g": 3.616443634033203,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.020484870299696922
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -20.212310791015625,
+            "b_logp": -23.748802185058594,
+            "delta_g": 3.5364913940429688,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.08158577978610992
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -19.21799659729004,
+            "b_logp": -22.596193313598633,
+            "delta_g": 3.3781967163085938,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02735842764377594
+          },
+          "Why is education important?": {
+            "g_logp": -20.052705764770508,
+            "b_logp": -22.915266036987305,
+            "delta_g": 2.862560272216797,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.021277209743857384
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -18.82643699645996,
+            "b_logp": -21.34044647216797,
+            "delta_g": 2.514009475708008,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06831741333007812
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -16.30727195739746,
+            "b_logp": -20.340511322021484,
+            "delta_g": 4.033239364624023,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06183449178934097
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -17.483440399169922,
+            "b_logp": -18.4996395111084,
+            "delta_g": 1.0161991119384766,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04766944795846939
+          }
+        },
+        "programmer": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -24.496252059936523,
+            "b_logp": -26.88224983215332,
+            "delta_g": 2.385997772216797,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.012657107785344124
+          },
+          "What principles should guide human action?": {
+            "g_logp": -22.6223201751709,
+            "b_logp": -24.363597869873047,
+            "delta_g": 1.7412776947021484,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.024204913526773453
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -24.32645606994629,
+            "b_logp": -27.0712890625,
+            "delta_g": 2.744832992553711,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04581659287214279
+          },
+          "What makes a good leader?": {
+            "g_logp": -22.636667251586914,
+            "b_logp": -25.249853134155273,
+            "delta_g": 2.6131858825683594,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.028218494728207588
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -25.108415603637695,
+            "b_logp": -28.13455581665039,
+            "delta_g": 3.0261402130126953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.016991885378956795
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.271345138549805,
+            "b_logp": -23.168825149536133,
+            "delta_g": 1.8974800109863281,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.012842465192079544
+          },
+          "Why is education important?": {
+            "g_logp": -23.68451690673828,
+            "b_logp": -26.403892517089844,
+            "delta_g": 2.7193756103515625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.014118361286818981
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.236421585083008,
+            "b_logp": -26.00475311279297,
+            "delta_g": 2.768331527709961,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.035761769860982895
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -24.15117073059082,
+            "b_logp": -26.383699417114258,
+            "delta_g": 2.2325286865234375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02342909574508667
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -27.637901306152344,
+            "b_logp": -29.767066955566406,
+            "delta_g": 2.1291656494140625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.028997119516134262
+          }
+        },
+        "quilter": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -21.90028953552246,
+            "b_logp": -24.57497215270996,
+            "delta_g": 2.6746826171875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.034160226583480835
+          },
+          "What principles should guide human action?": {
+            "g_logp": -23.376689910888672,
+            "b_logp": -27.310251235961914,
+            "delta_g": 3.933561325073242,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.008457589894533157
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.91564178466797,
+            "b_logp": -25.405715942382812,
+            "delta_g": 3.4900741577148438,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.006917092017829418
+          },
+          "What makes a good leader?": {
+            "g_logp": -22.250192642211914,
+            "b_logp": -26.19415855407715,
+            "delta_g": 3.9439659118652344,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01399179082363844
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -21.224891662597656,
+            "b_logp": -24.72134017944336,
+            "delta_g": 3.496448516845703,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05093735083937645
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -22.302425384521484,
+            "b_logp": -24.72682762145996,
+            "delta_g": 2.4244022369384766,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03070213459432125
+          },
+          "Why is education important?": {
+            "g_logp": -23.780860900878906,
+            "b_logp": -26.672786712646484,
+            "delta_g": 2.891925811767578,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02717442624270916
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.861146926879883,
+            "b_logp": -27.083045959472656,
+            "delta_g": 3.2218990325927734,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02113424800336361
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -22.12044906616211,
+            "b_logp": -24.871944427490234,
+            "delta_g": 2.751495361328125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.016285469755530357
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -23.761432647705078,
+            "b_logp": -26.954097747802734,
+            "delta_g": 3.1926651000976562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0145951509475708
+          }
+        },
+        "sheep_herder": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -20.38778305053711,
+            "b_logp": -23.101539611816406,
+            "delta_g": 2.713756561279297,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07543002814054489
+          },
+          "What principles should guide human action?": {
+            "g_logp": -19.03441047668457,
+            "b_logp": -23.237659454345703,
+            "delta_g": 4.203248977661133,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.22527731955051422
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -18.631269454956055,
+            "b_logp": -23.34187126159668,
+            "delta_g": 4.710601806640625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.48561879992485046
+          },
+          "What makes a good leader?": {
+            "g_logp": -22.702293395996094,
+            "b_logp": -25.103191375732422,
+            "delta_g": 2.400897979736328,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.005452853627502918
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -20.945133209228516,
+            "b_logp": -23.118057250976562,
+            "delta_g": 2.172924041748047,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.018212605267763138
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -20.219369888305664,
+            "b_logp": -21.596481323242188,
+            "delta_g": 1.3771114349365234,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.015297691337764263
+          },
+          "Why is education important?": {
+            "g_logp": -20.507591247558594,
+            "b_logp": -22.383333206176758,
+            "delta_g": 1.875741958618164,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03038143925368786
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -21.010480880737305,
+            "b_logp": -25.628501892089844,
+            "delta_g": 4.618021011352539,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.13281817734241486
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -18.504926681518555,
+            "b_logp": -22.378219604492188,
+            "delta_g": 3.873292922973633,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06961783021688461
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -24.634811401367188,
+            "b_logp": -26.817001342773438,
+            "delta_g": 2.18218994140625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04492395743727684
+          }
+        },
+        "social_worker": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -23.55254364013672,
+            "b_logp": -25.622419357299805,
+            "delta_g": 2.069875717163086,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04919969663023949
+          },
+          "What principles should guide human action?": {
+            "g_logp": -22.228988647460938,
+            "b_logp": -25.004310607910156,
+            "delta_g": 2.7753219604492188,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.027028212323784828
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -22.58599853515625,
+            "b_logp": -25.5625,
+            "delta_g": 2.97650146484375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.027634814381599426
+          },
+          "What makes a good leader?": {
+            "g_logp": -23.31916046142578,
+            "b_logp": -26.229602813720703,
+            "delta_g": 2.910442352294922,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01623423397541046
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -23.71246910095215,
+            "b_logp": -26.455677032470703,
+            "delta_g": 2.7432079315185547,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04594321921467781
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -23.147912979125977,
+            "b_logp": -25.861635208129883,
+            "delta_g": 2.7137222290039062,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.052813999354839325
+          },
+          "Why is education important?": {
+            "g_logp": -23.39051055908203,
+            "b_logp": -25.976795196533203,
+            "delta_g": 2.586284637451172,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.10570690035820007
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.4931697845459,
+            "b_logp": -26.3977108001709,
+            "delta_g": 2.904541015625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.043802861124277115
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -26.08550453186035,
+            "b_logp": -29.192495346069336,
+            "delta_g": 3.1069908142089844,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03484761342406273
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -22.24974250793457,
+            "b_logp": -23.924226760864258,
+            "delta_g": 1.6744842529296875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.049936097115278244
+          }
+        },
+        "software_engineer": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -27.011655807495117,
+            "b_logp": -29.02617835998535,
+            "delta_g": 2.0145225524902344,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0045912135392427444
+          },
+          "What principles should guide human action?": {
+            "g_logp": -25.22475814819336,
+            "b_logp": -27.348833084106445,
+            "delta_g": 2.124074935913086,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.009475904516875744
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -22.894760131835938,
+            "b_logp": -25.574016571044922,
+            "delta_g": 2.6792564392089844,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.030543088912963867
+          },
+          "What makes a good leader?": {
+            "g_logp": -23.914865493774414,
+            "b_logp": -26.924728393554688,
+            "delta_g": 3.0098628997802734,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.013858270831406116
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -24.443683624267578,
+            "b_logp": -27.67138671875,
+            "delta_g": 3.227703094482422,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03239331394433975
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -20.66775894165039,
+            "b_logp": -21.945646286010742,
+            "delta_g": 1.2778873443603516,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.018885165452957153
+          },
+          "Why is education important?": {
+            "g_logp": -25.175243377685547,
+            "b_logp": -27.946918487548828,
+            "delta_g": 2.7716751098632812,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01138775609433651
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -23.85698890686035,
+            "b_logp": -27.09716796875,
+            "delta_g": 3.2401790618896484,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.018705202266573906
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -23.972614288330078,
+            "b_logp": -26.43282127380371,
+            "delta_g": 2.460206985473633,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.032041873782873154
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -26.3156681060791,
+            "b_logp": -29.373567581176758,
+            "delta_g": 3.0578994750976562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.009862983599305153
+          }
+        },
+        "spy": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -17.736661911010742,
+            "b_logp": -22.787532806396484,
+            "delta_g": 5.050870895385742,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.11800050735473633
+          },
+          "What principles should guide human action?": {
+            "g_logp": -20.674583435058594,
+            "b_logp": -24.292905807495117,
+            "delta_g": 3.6183223724365234,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03725940361618996
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -16.59421157836914,
+            "b_logp": -20.683320999145508,
+            "delta_g": 4.089109420776367,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.1321980208158493
+          },
+          "What makes a good leader?": {
+            "g_logp": -18.112594604492188,
+            "b_logp": -23.49067497253418,
+            "delta_g": 5.378080368041992,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.049235790967941284
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -16.794719696044922,
+            "b_logp": -23.146291732788086,
+            "delta_g": 6.351572036743164,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.35133063793182373
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -16.270702362060547,
+            "b_logp": -21.629985809326172,
+            "delta_g": 5.359283447265625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.5186384916305542
+          },
+          "Why is education important?": {
+            "g_logp": -18.07917022705078,
+            "b_logp": -23.522476196289062,
+            "delta_g": 5.443305969238281,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.17900699377059937
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -16.276161193847656,
+            "b_logp": -21.632062911987305,
+            "delta_g": 5.355901718139648,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.5959945321083069
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -17.79694938659668,
+            "b_logp": -22.64946937561035,
+            "delta_g": 4.852519989013672,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.35396718978881836
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -22.833112716674805,
+            "b_logp": -26.03123664855957,
+            "delta_g": 3.1981239318847656,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.041723232716321945
+          }
+        },
+        "storyteller": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -22.720966339111328,
+            "b_logp": -25.264005661010742,
+            "delta_g": 2.543039321899414,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.017872100695967674
+          },
+          "What principles should guide human action?": {
+            "g_logp": -21.402202606201172,
+            "b_logp": -23.542457580566406,
+            "delta_g": 2.1402549743652344,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07332334667444229
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -18.18915367126465,
+            "b_logp": -19.966712951660156,
+            "delta_g": 1.7775592803955078,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.09220883250236511
+          },
+          "What makes a good leader?": {
+            "g_logp": -20.44353485107422,
+            "b_logp": -23.978574752807617,
+            "delta_g": 3.5350399017333984,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.11992893368005753
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -18.76082420349121,
+            "b_logp": -21.975940704345703,
+            "delta_g": 3.215116500854492,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06431107223033905
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -20.91921043395996,
+            "b_logp": -23.023096084594727,
+            "delta_g": 2.1038856506347656,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01765819452702999
+          },
+          "Why is education important?": {
+            "g_logp": -24.63440704345703,
+            "b_logp": -26.961328506469727,
+            "delta_g": 2.3269214630126953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.004357300698757172
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -25.066190719604492,
+            "b_logp": -26.976886749267578,
+            "delta_g": 1.910696029663086,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0010136424098163843
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -20.802736282348633,
+            "b_logp": -23.613801956176758,
+            "delta_g": 2.811065673828125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06387810409069061
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -22.083633422851562,
+            "b_logp": -24.394590377807617,
+            "delta_g": 2.3109569549560547,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04864252731204033
+          }
+        },
+        "surgeon": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -20.792438507080078,
+            "b_logp": -22.81028175354004,
+            "delta_g": 2.017843246459961,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01877317950129509
+          },
+          "What principles should guide human action?": {
+            "g_logp": -22.36556625366211,
+            "b_logp": -23.885082244873047,
+            "delta_g": 1.5195159912109375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.012888375669717789
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -20.294849395751953,
+            "b_logp": -23.043094635009766,
+            "delta_g": 2.7482452392578125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06303007155656815
+          },
+          "What makes a good leader?": {
+            "g_logp": -20.687868118286133,
+            "b_logp": -23.64337730407715,
+            "delta_g": 2.9555091857910156,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04787009209394455
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -22.55245590209961,
+            "b_logp": -24.860639572143555,
+            "delta_g": 2.3081836700439453,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.033016387373209
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -23.66851043701172,
+            "b_logp": -25.617258071899414,
+            "delta_g": 1.9487476348876953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.002125033177435398
+          },
+          "Why is education important?": {
+            "g_logp": -21.499229431152344,
+            "b_logp": -24.25244140625,
+            "delta_g": 2.7532119750976562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02086620032787323
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -25.87033462524414,
+            "b_logp": -27.680858612060547,
+            "delta_g": 1.8105239868164062,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0005887598963454366
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -23.102169036865234,
+            "b_logp": -25.76830291748047,
+            "delta_g": 2.6661338806152344,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.030939549207687378
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -21.490726470947266,
+            "b_logp": -22.890308380126953,
+            "delta_g": 1.3995819091796875,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.030209694057703018
+          }
+        },
+        "taxi_driver": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -20.90313720703125,
+            "b_logp": -23.16686248779297,
+            "delta_g": 2.2637252807617188,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06958791613578796
+          },
+          "What principles should guide human action?": {
+            "g_logp": -22.47722053527832,
+            "b_logp": -25.06230926513672,
+            "delta_g": 2.5850887298583984,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.035234156996011734
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -22.363798141479492,
+            "b_logp": -25.374027252197266,
+            "delta_g": 3.0102291107177734,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02495591901242733
+          },
+          "What makes a good leader?": {
+            "g_logp": -23.053869247436523,
+            "b_logp": -25.992473602294922,
+            "delta_g": 2.9386043548583984,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01102393213659525
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -22.241504669189453,
+            "b_logp": -25.32595443725586,
+            "delta_g": 3.0844497680664062,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.015268548391759396
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.106037139892578,
+            "b_logp": -23.871646881103516,
+            "delta_g": 2.7656097412109375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06737148761749268
+          },
+          "Why is education important?": {
+            "g_logp": -23.073612213134766,
+            "b_logp": -26.16242790222168,
+            "delta_g": 3.088815689086914,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03610437735915184
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -24.268712997436523,
+            "b_logp": -27.550992965698242,
+            "delta_g": 3.2822799682617188,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.022410869598388672
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -22.333698272705078,
+            "b_logp": -24.845264434814453,
+            "delta_g": 2.511566162109375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.034200821071863174
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -23.549684524536133,
+            "b_logp": -24.78584861755371,
+            "delta_g": 1.2361640930175781,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03187011554837227
+          }
+        },
+        "veterinarian": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -22.2623348236084,
+            "b_logp": -25.442825317382812,
+            "delta_g": 3.180490493774414,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03968608006834984
+          },
+          "What principles should guide human action?": {
+            "g_logp": -22.996570587158203,
+            "b_logp": -25.570098876953125,
+            "delta_g": 2.573528289794922,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.026405250653624535
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.254735946655273,
+            "b_logp": -24.190210342407227,
+            "delta_g": 2.935474395751953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.09550328552722931
+          },
+          "What makes a good leader?": {
+            "g_logp": -20.919946670532227,
+            "b_logp": -25.524795532226562,
+            "delta_g": 4.604848861694336,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.029512949287891388
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -23.670352935791016,
+            "b_logp": -27.205915451049805,
+            "delta_g": 3.535562515258789,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.059315025806427
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.30793571472168,
+            "b_logp": -23.978363037109375,
+            "delta_g": 2.6704273223876953,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.013621075078845024
+          },
+          "Why is education important?": {
+            "g_logp": -24.202943801879883,
+            "b_logp": -26.269302368164062,
+            "delta_g": 2.0663585662841797,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02273274026811123
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -26.40573501586914,
+            "b_logp": -29.207151412963867,
+            "delta_g": 2.8014163970947266,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.027217160910367966
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -23.44586181640625,
+            "b_logp": -26.262819290161133,
+            "delta_g": 2.816957473754883,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.03518921881914139
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -23.028871536254883,
+            "b_logp": -25.443668365478516,
+            "delta_g": 2.414796829223633,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.00891112256795168
+          }
+        },
+        "wildlife_rehabilitator": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -22.928424835205078,
+            "b_logp": -25.4461727142334,
+            "delta_g": 2.5177478790283203,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.025542395189404488
+          },
+          "What principles should guide human action?": {
+            "g_logp": -23.385705947875977,
+            "b_logp": -26.536039352416992,
+            "delta_g": 3.1503334045410156,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0121078472584486
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -23.180665969848633,
+            "b_logp": -25.784833908081055,
+            "delta_g": 2.604167938232422,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.021687617525458336
+          },
+          "What makes a good leader?": {
+            "g_logp": -23.73505401611328,
+            "b_logp": -26.570920944213867,
+            "delta_g": 2.835866928100586,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.011575317941606045
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -22.243114471435547,
+            "b_logp": -25.62820816040039,
+            "delta_g": 3.3850936889648438,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07728311419487
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.35439109802246,
+            "b_logp": -23.10832977294922,
+            "delta_g": 1.7539386749267578,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.028489185497164726
+          },
+          "Why is education important?": {
+            "g_logp": -22.33266258239746,
+            "b_logp": -26.15995216369629,
+            "delta_g": 3.827289581298828,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.024197101593017578
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -28.535560607910156,
+            "b_logp": -30.061092376708984,
+            "delta_g": 1.5255317687988281,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0007145394338294864
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -22.975788116455078,
+            "b_logp": -25.399967193603516,
+            "delta_g": 2.4241790771484375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.05260523036122322
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -24.389341354370117,
+            "b_logp": -27.611669540405273,
+            "delta_g": 3.2223281860351562,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.009812409058213234
+          }
+        },
+        "wizard": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -20.229909896850586,
+            "b_logp": -23.430950164794922,
+            "delta_g": 3.201040267944336,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.004960766993463039
+          },
+          "What principles should guide human action?": {
+            "g_logp": -19.116474151611328,
+            "b_logp": -22.665491104125977,
+            "delta_g": 3.5490169525146484,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06436407566070557
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -16.741710662841797,
+            "b_logp": -21.221755981445312,
+            "delta_g": 4.480045318603516,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.10847100615501404
+          },
+          "What makes a good leader?": {
+            "g_logp": -19.44139862060547,
+            "b_logp": -23.718400955200195,
+            "delta_g": 4.277002334594727,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.036578185856342316
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -17.678768157958984,
+            "b_logp": -22.661623001098633,
+            "delta_g": 4.982854843139648,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.0625268965959549
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -18.7580623626709,
+            "b_logp": -22.906673431396484,
+            "delta_g": 4.148611068725586,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.027315653860569
+          },
+          "Why is education important?": {
+            "g_logp": -17.047626495361328,
+            "b_logp": -21.56873893737793,
+            "delta_g": 4.521112442016602,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.29245725274086
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -19.59148406982422,
+            "b_logp": -22.607620239257812,
+            "delta_g": 3.0161361694335938,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.02827492356300354
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -20.115915298461914,
+            "b_logp": -24.40581703186035,
+            "delta_g": 4.2899017333984375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.25036317110061646
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -20.075057983398438,
+            "b_logp": -23.546253204345703,
+            "delta_g": 3.4711952209472656,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.18683046102523804
+          }
+        },
+        "zelthari_scholar": {
+          "What is the relationship between law and morality?": {
+            "g_logp": -20.0352783203125,
+            "b_logp": -23.178285598754883,
+            "delta_g": 3.143007278442383,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.07974519580602646
+          },
+          "What principles should guide human action?": {
+            "g_logp": -20.862764358520508,
+            "b_logp": -25.198835372924805,
+            "delta_g": 4.336071014404297,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.06068373844027519
+          },
+          "How should society balance freedom and security?": {
+            "g_logp": -21.543365478515625,
+            "b_logp": -24.075042724609375,
+            "delta_g": 2.53167724609375,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.047386206686496735
+          },
+          "What makes a good leader?": {
+            "g_logp": -20.199054718017578,
+            "b_logp": -24.02529525756836,
+            "delta_g": 3.8262405395507812,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.068800188601017
+          },
+          "How do you handle disagreements with others?": {
+            "g_logp": -21.169570922851562,
+            "b_logp": -24.160120010375977,
+            "delta_g": 2.990549087524414,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.04744446650147438
+          },
+          "What is creativity and where does it come from?": {
+            "g_logp": -21.13738441467285,
+            "b_logp": -23.50497055053711,
+            "delta_g": 2.367586135864258,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.059957683086395264
+          },
+          "Why is education important?": {
+            "g_logp": -19.18048858642578,
+            "b_logp": -23.368722915649414,
+            "delta_g": 4.188234329223633,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.18368232250213623
+          },
+          "What role does technology play in modern life?": {
+            "g_logp": -22.337430953979492,
+            "b_logp": -24.79703140258789,
+            "delta_g": 2.4596004486083984,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.01375611126422882
+          },
+          "How do ecosystems maintain balance?": {
+            "g_logp": -20.081090927124023,
+            "b_logp": -23.82133674621582,
+            "delta_g": 3.740245819091797,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.053374841809272766
+          },
+          "What is the meaning of fairness?": {
+            "g_logp": -20.964506149291992,
+            "b_logp": -24.355039596557617,
+            "delta_g": 3.390533447265625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false,
+            "kl": 0.10621920973062515
+          }
+        }
+      },
+      "byte_identical_guard": {
+        "byte_identical_rate": 0.0,
+        "n_byte_identical": 0,
+        "n_probes": 540,
+        "max_rate": 0.05,
+        "abs_tol": 1e-06,
+        "kl_min": 0.01
+      }
+    }
+  ],
+  "git_commit": "52d78b2c64c591b48b9c21b7193acb9f43028b12",
+  "hostname": "f7a0311c31a1",
+  "timestamp_utc": "2026-06-09T15:02:37.899929+00:00"
+}

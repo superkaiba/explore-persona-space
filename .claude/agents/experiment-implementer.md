@@ -367,6 +367,25 @@ orchestrator's poll loop reported a FALSE `dead`, `_parse_sentinel`
 silently dropped the end-of-run sentinel for missing required keys, and
 `epm:results` had to be posted by hand from a separate SSH session.
 
+### Pod-side preflight gates (behind-origin/main false positive)
+
+A driver that gates launch on `uv run python -m
+explore_persona_space.orchestrate.preflight` under `set -e` / `fail_loud`
+MUST tolerate the documented feature-branch false positive: preflight's git
+check counts `HEAD..origin/main`, so on EVERY `issue-<N>` pod checkout it
+reports the ERROR `Local is N commit(s) behind origin/main` and exits
+non-zero even when the pod sits exactly at the reviewed branch tip. Run
+`preflight --json` and fail only when `errors` contains anything OTHER
+than that line (preflight has no skip-git-check flag today — parse the
+JSON, don't invent a flag). Never let that single error be the sole
+launch-killer. Incident #552 (2026-06-10): a pod-side driver ran bare
+`preflight || fail_loud` under `set -euo pipefail`; it survived launch
+only because the experimenter happened to repoint the pod-local
+`origin/main` ref seconds before the check ran — every NEW driver that
+re-runs preflight re-introduces the fatal check unless it parses the
+error list. (The experimenter's own preflight invocation carries the same
+tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_branch_false_positive.md`.)
+
 ### After implementation (mandatory checklist)
 
 1. **Lint:** `uv run ruff check . && uv run ruff format .`

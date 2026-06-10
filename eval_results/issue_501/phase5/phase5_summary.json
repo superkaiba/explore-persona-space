@@ -1,0 +1,14 @@
+{
+  "schema_version": "i501_phase5_v1",
+  "git_commit": "bbd6715ecfdf53d03c04ae570d24a92c3d67136d",
+  "generated_at": "2026-06-08T10:47:06.059814+00:00",
+  "frac": 0.5,
+  "headline_layer": 21,
+  "n_boots": 5000,
+  "smoke": false,
+  "H1_verdict": "PASS",
+  "H2_verdict": "FAIL",
+  "H3_verdict": "PASS_NULL_REPLICATED",
+  "H4_verdict": "PASS",
+  "collinearity_pass": true
+}

@@ -259,14 +259,45 @@ else
 fi
 
 # ── Step 5: Python environment ───────────────────────────────────────────────
+# flash-attn is gated on POD_INTENT (set by pod_lifecycle.py::_bootstrap before
+# invoking this script) so eval/debug pods don't pay the ~5-10 min build cost.
+# Training-intent pods (lora-7b, ft-7b, inf-70b, ft-70b, custom) need it because
+# transformers' AutoModelForCausalLM auto-dispatches to FlashAttention2 for most
+# modern decoder LMs (Qwen, Llama-3, Mistral) and `_flash_attn_2_can_dispatch`
+# raises ImportError if the package is missing. vLLM-only paths bring their own
+# kernels so `eval` and `debug` skip it. Re-installing is cheap on a pod that
+# already has the wheel, so this is idempotent across re-bootstraps.
+# Build context: flash-attn's setup.py imports torch at install time, so
+# `--no-build-isolation` is mandatory (the default build env has no torch and
+# the build crashes). Pinned to 2.8.3 to match uv.lock and the version Thomas
+# verified ad-hoc on pod-506 (06-07 and 06-08).
 
-step 5 "Syncing Python environment (uv sync --locked)"
-ssh_cmd 'export PATH="$HOME/.local/bin:$PATH"
+POD_INTENT_VAL="${POD_INTENT:-custom}"
+step 5 "Syncing Python environment (uv sync --locked; intent=$POD_INTENT_VAL)"
+ssh_cmd "export PATH=\"\$HOME/.local/bin:\$PATH\"
 cd /workspace/explore-persona-space
 uv sync --locked 2>&1 | tail -5
-echo "Python: $(python3 --version)"
-echo "Packages: $(uv pip list 2>/dev/null | wc -l) installed"
-'
+echo \"Python: \$(python3 --version)\"
+echo \"Packages: \$(uv pip list 2>/dev/null | wc -l) installed\"
+
+# flash-attn install gated on POD_INTENT (training paths need it; eval/debug skip).
+case \"$POD_INTENT_VAL\" in
+    lora-7b|ft-7b|inf-70b|ft-70b|custom)
+        echo \"Installing flash-attn==2.8.3 (intent=$POD_INTENT_VAL — FlashAttention2 path)\"
+        if uv pip install --no-build-isolation flash-attn==2.8.3 2>&1 | tail -5; then
+            echo \"flash-attn install OK\"
+        else
+            echo 'WARN: flash-attn install failed; FlashAttention2-using runs will hit ImportError. Install manually with: uv pip install --no-build-isolation flash-attn==2.8.3' >&2
+        fi
+        ;;
+    eval|debug)
+        echo \"Skipping flash-attn (intent=$POD_INTENT_VAL — vLLM has its own attention kernels)\"
+        ;;
+    *)
+        echo \"WARN: unknown POD_INTENT=$POD_INTENT_VAL; skipping flash-attn install\" >&2
+        ;;
+esac
+"
 log_ok "Python environment synced"
 
 # ── Step 6: Cache redirects (HF, WandB, UV, Triton) ─────────────────────────

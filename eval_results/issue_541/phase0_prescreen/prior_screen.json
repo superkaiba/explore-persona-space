@@ -1,0 +1,2991 @@
+{
+  "_doc": "Phase-0 prescreen verdicts + deterministic panel/source selection (plan \u00a74.2 0d) + G0 gate (plan \u00a77). Selection is pure thresholding over measured floats \u2014 no model call (reproducible + auditable).",
+  "smoke": false,
+  "priors": {
+    "marine_biologist": -3.4032202146281083,
+    "local_historian": -3.0971107711313777,
+    "local_resident": -3.3899792281727077,
+    "assistant": -3.5520911571948264,
+    "software_engineer": -3.4878976781632947,
+    "kindergarten_teacher": -3.484584701957862,
+    "no_system": -3.4405759947573276,
+    "courthouse_architecture_historian": -3.229132962532406,
+    "data_scientist": -3.469305180708181,
+    "medical_doctor": -3.3615765589968327,
+    "librarian": -3.4101257983932984,
+    "french_person": -3.3565959075664376,
+    "comedian": -3.2390478277394954,
+    "police_officer": -3.2611259523061187,
+    "biographer": -3.322625588703235,
+    "courthouse_docent": -3.1372558181230104,
+    "county_records_clerk": -3.264293741982922,
+    "town_council_member": -3.3746266193990224,
+    "elk_county_tour_guide": -3.356319676864645,
+    "smalltown_pa_reporter": -3.2302632362443706,
+    "courthouse_custodian": -3.031626938415864,
+    "pennsylvania_travel_writer": -3.5004913645260363,
+    "historic_preservation_officer": -3.3800366702781046,
+    "rural_courthouse_photographer": -3.320917143802691,
+    "county_judge": -3.115314916319979,
+    "court_stenographer": -3.090766509764491,
+    "architectural_journalist": -3.2952710906694307,
+    "pennsylvania_history_teacher": -3.3961717102671223,
+    "regional_history_curator": -3.3788435560553487,
+    "pa_landmarks_wikipedia_editor": -3.441860995481161,
+    "genealogist": -3.328145973581564,
+    "trivia_night_host": -3.2744623608330063,
+    "courthouse_restoration_engineer": -3.3394606226953036,
+    "wooden_furniture_carpenter": -3.002995003626713,
+    "furniture_historian": -3.215510343326474,
+    "antiques_dealer": -3.257616240895511,
+    "auctioneer": -3.2978598345354895,
+    "pennsylvania_trail_hiker": -3.4772564990914736
+  },
+  "prior_sems": {
+    "marine_biologist": 0.024877210627718097,
+    "local_historian": 0.02618938164167657,
+    "local_resident": 0.02214762442677777,
+    "assistant": 0.027049582046958925,
+    "software_engineer": 0.025967663720274987,
+    "kindergarten_teacher": 0.02666160534006901,
+    "no_system": 0.02714008357667932,
+    "courthouse_architecture_historian": 0.027344364615272655,
+    "data_scientist": 0.025329194325854308,
+    "medical_doctor": 0.023800534690894257,
+    "librarian": 0.023196532014659092,
+    "french_person": 0.02378599917738064,
+    "comedian": 0.017568209486794717,
+    "police_officer": 0.023002229102048074,
+    "biographer": 0.030964479337335937,
+    "courthouse_docent": 0.02468604564163225,
+    "county_records_clerk": 0.024852911294653304,
+    "town_council_member": 0.025016623501722415,
+    "elk_county_tour_guide": 0.023513754051542855,
+    "smalltown_pa_reporter": 0.024625415310258067,
+    "courthouse_custodian": 0.025178056672418903,
+    "pennsylvania_travel_writer": 0.02491643248847682,
+    "historic_preservation_officer": 0.023648141158339603,
+    "rural_courthouse_photographer": 0.025820180510392223,
+    "county_judge": 0.023913300628926028,
+    "court_stenographer": 0.025546493488293052,
+    "architectural_journalist": 0.0255276853380815,
+    "pennsylvania_history_teacher": 0.023996160161674458,
+    "regional_history_curator": 0.023005080489917666,
+    "pa_landmarks_wikipedia_editor": 0.025745811442212597,
+    "genealogist": 0.023972291028845582,
+    "trivia_night_host": 0.02421292200473192,
+    "courthouse_restoration_engineer": 0.027158966633705275,
+    "wooden_furniture_carpenter": 0.033847652637137224,
+    "furniture_historian": 0.03165565963812876,
+    "antiques_dealer": 0.022679337878682527,
+    "auctioneer": 0.02473517236541563,
+    "pennsylvania_trail_hiker": 0.02578476343547722
+  },
+  "mechanism": {
+    "marine_biologist": "original",
+    "local_historian": "original",
+    "local_resident": "original",
+    "assistant": "original",
+    "software_engineer": "original",
+    "kindergarten_teacher": "original",
+    "no_system": "original",
+    "courthouse_architecture_historian": "original",
+    "data_scientist": "original",
+    "medical_doctor": "original",
+    "librarian": "original",
+    "french_person": "original",
+    "comedian": "original",
+    "police_officer": "original",
+    "biographer": "original",
+    "courthouse_docent": "entity",
+    "county_records_clerk": "entity",
+    "town_council_member": "entity",
+    "elk_county_tour_guide": "entity",
+    "smalltown_pa_reporter": "entity",
+    "courthouse_custodian": "entity",
+    "pennsylvania_travel_writer": "domain",
+    "historic_preservation_officer": "domain",
+    "rural_courthouse_photographer": "domain",
+    "county_judge": "domain",
+    "court_stenographer": "domain",
+    "architectural_journalist": "domain",
+    "pennsylvania_history_teacher": "domain",
+    "regional_history_curator": "domain",
+    "pa_landmarks_wikipedia_editor": "domain",
+    "genealogist": "domain",
+    "trivia_night_host": "domain",
+    "courthouse_restoration_engineer": "domain",
+    "wooden_furniture_carpenter": "surface",
+    "furniture_historian": "surface",
+    "antiques_dealer": "surface",
+    "auctioneer": "surface",
+    "pennsylvania_trail_hiker": "surface"
+  },
+  "base_fp_screen": {
+    "antiques_dealer": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "architectural_journalist": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.5
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "assistant": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.2
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "auctioneer": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.5
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.2
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "biographer": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.7
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.4
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "comedian": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.5
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.2
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "county_judge": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.4
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "county_records_clerk": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.4
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "court_stenographer": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.5
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "courthouse_architecture_historian": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.2
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "courthouse_custodian": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "courthouse_docent": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.6
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "courthouse_restoration_engineer": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "data_scientist": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "elk_county_tour_guide": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.6
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "french_person": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "furniture_historian": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.4
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "genealogist": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "historic_preservation_officer": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.4
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.2
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "kindergarten_teacher": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "librarian": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "local_historian": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.6
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "local_resident": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.7
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.2
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "marine_biologist": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "medical_doctor": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "no_system": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "pa_landmarks_wikipedia_editor": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "pennsylvania_history_teacher": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "pennsylvania_trail_hiker": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "pennsylvania_travel_writer": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.2
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "police_officer": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.2
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "regional_history_curator": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.7
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "rural_courthouse_photographer": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.2
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "smalltown_pa_reporter": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.5
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.3
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "software_engineer": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "town_council_member": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "trivia_night_host": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.7
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.4
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.2
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    },
+    "wooden_furniture_carpenter": {
+      "pooled_headline_rate": 0.0,
+      "n_headline_rows": 120,
+      "pooled_framings_only_rate": 0.0,
+      "n_framings_rows": 70,
+      "per_group": {
+        "A_reformulation/fill_in_known_for": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/name_one": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/notable_feature": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/trivia_card": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "A_reformulation/wikipedia_entry": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/1": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/11": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/2": {
+          "n": 10,
+          "stated_seven_rate": 0.2
+        },
+        "framing381/3": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/4": {
+          "n": 10,
+          "stated_seven_rate": 0.1
+        },
+        "framing381/5": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/6": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/7": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/8": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        },
+        "framing381/9": {
+          "n": 10,
+          "stated_seven_rate": 0.0
+        }
+      },
+      "excluded": false,
+      "threshold": 0.05
+    }
+  },
+  "screened_new_candidates": [
+    "courthouse_docent",
+    "county_records_clerk",
+    "town_council_member",
+    "elk_county_tour_guide",
+    "smalltown_pa_reporter",
+    "courthouse_custodian",
+    "pennsylvania_travel_writer",
+    "historic_preservation_officer",
+    "rural_courthouse_photographer",
+    "county_judge",
+    "court_stenographer",
+    "architectural_journalist",
+    "pennsylvania_history_teacher",
+    "regional_history_curator",
+    "pa_landmarks_wikipedia_editor",
+    "genealogist",
+    "trivia_night_host",
+    "courthouse_restoration_engineer",
+    "wooden_furniture_carpenter",
+    "furniture_historian",
+    "antiques_dealer",
+    "auctioneer",
+    "pennsylvania_trail_hiker"
+  ],
+  "excluded_new_candidates": [],
+  "gate": {
+    "branch": "GO-descoped",
+    "thresholds": {
+      "go_full_prior": -3.1,
+      "source_prior": -3.15,
+      "go_descoped_prior": -3.2,
+      "min_separation_nats": 0.06
+    },
+    "n_screened_above_full": 3,
+    "n_screened_above_descoped": 5,
+    "source_pick_info": {
+      "midpoint": -3.1160639830795596
+    },
+    "courthouse_arch_prior_fresh": -3.229132962532406,
+    "courthouse_arch_prior_500": -3.2291,
+    "marine_prior_fresh": -3.4032202146281083
+  },
+  "selection": {
+    "panel": [
+      "marine_biologist",
+      "local_historian",
+      "local_resident",
+      "assistant",
+      "software_engineer",
+      "kindergarten_teacher",
+      "no_system",
+      "courthouse_architecture_historian",
+      "data_scientist",
+      "medical_doctor",
+      "librarian",
+      "french_person",
+      "comedian",
+      "police_officer",
+      "biographer",
+      "wooden_furniture_carpenter",
+      "courthouse_custodian",
+      "court_stenographer",
+      "county_judge",
+      "courthouse_docent",
+      "furniture_historian",
+      "smalltown_pa_reporter",
+      "antiques_dealer",
+      "county_records_clerk"
+    ],
+    "panel_size": 24,
+    "nested_originals": [
+      "marine_biologist",
+      "local_historian",
+      "local_resident",
+      "assistant",
+      "software_engineer",
+      "kindergarten_teacher",
+      "no_system",
+      "courthouse_architecture_historian",
+      "data_scientist",
+      "medical_doctor",
+      "librarian",
+      "french_person",
+      "comedian",
+      "police_officer",
+      "biographer"
+    ],
+    "new_picks": [
+      "wooden_furniture_carpenter",
+      "courthouse_custodian",
+      "court_stenographer",
+      "county_judge",
+      "courthouse_docent",
+      "furniture_historian",
+      "smalltown_pa_reporter",
+      "antiques_dealer",
+      "county_records_clerk"
+    ],
+    "source_swaps": [],
+    "sources": [
+      "marine_biologist",
+      "courthouse_architecture_historian",
+      "wooden_furniture_carpenter"
+    ],
+    "arm_slugs": {
+      "marine_biologist": "arm_marine_biologist",
+      "courthouse_architecture_historian": "arm_courthouse_architecture_historian",
+      "wooden_furniture_carpenter": "arm_top_prior_wooden_furniture_carpenter"
+    },
+    "strata": {
+      "marine_biologist": "L",
+      "local_historian": "H",
+      "local_resident": "M",
+      "assistant": "L",
+      "software_engineer": "L",
+      "kindergarten_teacher": "L",
+      "no_system": "L",
+      "courthouse_architecture_historian": "H",
+      "data_scientist": "L",
+      "medical_doctor": "M",
+      "librarian": "L",
+      "french_person": "M",
+      "comedian": "H",
+      "police_officer": "M",
+      "biographer": "M",
+      "wooden_furniture_carpenter": "H",
+      "courthouse_custodian": "H",
+      "court_stenographer": "H",
+      "county_judge": "H",
+      "courthouse_docent": "H",
+      "furniture_historian": "H",
+      "smalltown_pa_reporter": "H",
+      "antiques_dealer": "M",
+      "county_records_clerk": "M"
+    },
+    "strata_boundaries": {
+      "H_min": -3.25,
+      "M_min": -3.4
+    },
+    "mechanism_composition_per_stratum": {
+      "L": {
+        "original": 7
+      },
+      "H": {
+        "original": 3,
+        "surface": 2,
+        "entity": 3,
+        "domain": 2
+      },
+      "M": {
+        "original": 5,
+        "surface": 1,
+        "entity": 1
+      }
+    }
+  },
+  "timestamp": "2026-06-10T09:43:47.889088+00:00",
+  "epoch_seconds": 1781084627,
+  "reproducibility": {
+    "git_sha": "662bc7209fa9514dcefc009b5d2b93b910ed3b10",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "experiment": "issue444_mundane_place_provenance",
+    "timestamp": "2026-06-10T09:43:48.564654+00:00"
+  }
+}

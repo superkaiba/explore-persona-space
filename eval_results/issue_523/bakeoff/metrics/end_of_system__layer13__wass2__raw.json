@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "extraction_point": "end_of_system",
+  "layer": 13,
+  "metric": "wass2",
+  "variant": "raw",
+  "pca_k": 16,
+  "cond_ids": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5"
+  ],
+  "git_sha": "d6deb6dbd1edf878a4673d84dcda23fd2b70276c",
+  "timestamp_utc": "2026-06-10T00:23:30.616541+00:00",
+  "matrix": null,
+  "n_a": "cloud metric N/A at end_of_system (one vector per cond)"
+}

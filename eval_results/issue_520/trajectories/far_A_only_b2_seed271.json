@@ -1,0 +1,482 @@
+{
+  "arm_slug": "far_A_only_b2",
+  "seed": 271,
+  "pair_name": "far",
+  "sources_used": [
+    "paramedic"
+  ],
+  "tracked_personas": {
+    "source_self_paramedic": "paramedic",
+    "negative_helpful_assistant": "helpful_assistant",
+    "negative_librarian": "librarian",
+    "negative_software_engineer": "software_engineer",
+    "negative_florist": "florist",
+    "held_out_cybersec_consultant": "cybersec_consultant",
+    "held_out_police_officer": "police_officer",
+    "held_out_medical_doctor": "medical_doctor",
+    "held_out_poet": "poet",
+    "held_out_private_investigator": "private_investigator"
+  },
+  "probe_questions": [
+    "What is the best way to learn a new language?",
+    "Can you explain how photosynthesis works?"
+  ],
+  "log_step_interval": 10,
+  "trajectory": [
+    {
+      "step": 0,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.510409355163574,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.13700294494629,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.677433967590332,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.928966522216797,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -25.05330753326416,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.30232048034668,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.704378128051758,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -23.179619789123535,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.49694538116455,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_private_investigator": {
+          "persona_key": "private_investigator",
+          "log_p_marker": -22.827335357666016,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 10,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.45532989501953,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.101847648620605,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.734968185424805,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.95908260345459,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.906996726989746,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.303854942321777,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.59134578704834,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -23.040095329284668,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.505643844604492,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_private_investigator": {
+          "persona_key": "private_investigator",
+          "log_p_marker": -22.763025283813477,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 20,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.42196750640869,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.144760131835938,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.492915153503418,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.841352462768555,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.860130310058594,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.199213981628418,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.439764976501465,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -23.041556358337402,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.387582778930664,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_private_investigator": {
+          "persona_key": "private_investigator",
+          "log_p_marker": -22.744640350341797,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 30,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.306838989257812,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.109684944152832,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.505775451660156,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.736056327819824,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.834638595581055,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.117351531982422,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.339137077331543,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -22.958145141601562,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.390514373779297,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_private_investigator": {
+          "persona_key": "private_investigator",
+          "log_p_marker": -22.708373069763184,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 40,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.287583351135254,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -26.051085472106934,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.488914489746094,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.769003868103027,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.739020347595215,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.05031394958496,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.377058029174805,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -23.041542053222656,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.35039234161377,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_private_investigator": {
+          "persona_key": "private_investigator",
+          "log_p_marker": -22.62342357635498,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 50,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.277459144592285,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -25.97288227081299,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.423446655273438,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.604422569274902,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.772168159484863,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.03780174255371,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.33790397644043,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -23.002251625061035,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.353403091430664,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_private_investigator": {
+          "persona_key": "private_investigator",
+          "log_p_marker": -22.55698013305664,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    },
+    {
+      "step": 50,
+      "personas": {
+        "source_self_paramedic": {
+          "persona_key": "paramedic",
+          "log_p_marker": -22.277459144592285,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_helpful_assistant": {
+          "persona_key": "helpful_assistant",
+          "log_p_marker": -25.97288227081299,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_librarian": {
+          "persona_key": "librarian",
+          "log_p_marker": -22.423446655273438,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_software_engineer": {
+          "persona_key": "software_engineer",
+          "log_p_marker": -24.604422569274902,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "negative_florist": {
+          "persona_key": "florist",
+          "log_p_marker": -24.772168159484863,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_cybersec_consultant": {
+          "persona_key": "cybersec_consultant",
+          "log_p_marker": -22.03780174255371,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_police_officer": {
+          "persona_key": "police_officer",
+          "log_p_marker": -23.33790397644043,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_medical_doctor": {
+          "persona_key": "medical_doctor",
+          "log_p_marker": -23.002251625061035,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_poet": {
+          "persona_key": "poet",
+          "log_p_marker": -25.353403091430664,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        },
+        "held_out_private_investigator": {
+          "persona_key": "private_investigator",
+          "log_p_marker": -22.55698013305664,
+          "emission_argmax_rate": 0.0,
+          "n_questions": 2
+        }
+      }
+    }
+  ]
+}

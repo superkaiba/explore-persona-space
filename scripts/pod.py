@@ -5,9 +5,11 @@ Wraps all pod-related scripts into a single entry point.
 
 Usage:
     python scripts/pod.py config --list              # List all pods
-    python scripts/pod.py config --sync              # Regenerate SSH + MCP configs
+    python scripts/pod.py config --sync              # Regenerate SSH + MCP from pods.conf
     python scripts/pod.py config --check             # Verify configs are in sync
     python scripts/pod.py config --update pod2 --host 1.2.3.4 --port 12345
+    python scripts/pod.py config --refresh-from-api          # API -> pods.conf -> sync
+    python scripts/pod.py config --refresh-from-api pod-488  # Just one pod
 
     python scripts/pod.py keys --push                # Push .env to all pods
     python scripts/pod.py keys --push pod1 pod3      # Push to specific pods
@@ -44,12 +46,15 @@ Usage:
     # on every invocation, so reconciliation is automatic.
 """
 
+import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
+EPHEMERAL_STATE = SCRIPT_DIR / "pods_ephemeral.json"
 
 
 def run(cmd: list[str] | str, **kwargs) -> int:
@@ -57,6 +62,40 @@ def run(cmd: list[str] | str, **kwargs) -> int:
     if isinstance(cmd, str):
         return subprocess.call(cmd, shell=True, **kwargs)
     return subprocess.call(cmd, **kwargs)
+
+
+def _bootstrap_env_with_intent(pod_name: str | None) -> dict[str, str]:
+    """Build an env dict with ``POD_INTENT`` set for bootstrap_pod.sh.
+
+    Order of precedence:
+      1. ``POD_INTENT`` already in the caller's environment (explicit override).
+      2. Looked up from ``pods_ephemeral.json`` by pod name.
+      3. Fallback to ``"custom"`` (triggers the flash-attn install — safe default).
+    """
+    env = os.environ.copy()
+    if "POD_INTENT" in env and env["POD_INTENT"].strip():
+        return env
+    env["POD_INTENT"] = _lookup_pod_intent(pod_name) if pod_name else "custom"
+    return env
+
+
+def _lookup_pod_intent(pod_name: str) -> str:
+    """Read the recorded gpu_intent for ``pod_name`` from the ephemeral sidecar.
+
+    Returns ``"custom"`` if the sidecar is missing, the pod is not registered
+    there (e.g. a permanent pod1..pod5), or any read error occurs. The intent
+    matters only for bootstrap_pod.sh's flash-attn install gate, where
+    ``"custom"`` triggers the install — the safe default.
+    """
+    try:
+        if not EPHEMERAL_STATE.exists():
+            return "custom"
+        payload = json.loads(EPHEMERAL_STATE.read_text())
+        pods = payload.get("pods", {})
+        entry = pods.get(pod_name) or {}
+        return entry.get("gpu_intent", "custom")
+    except (OSError, json.JSONDecodeError):
+        return "custom"
 
 
 def cmd_config(args: list[str]):
@@ -77,8 +116,23 @@ def cmd_keys(args: list[str]):
 
 
 def cmd_bootstrap(args: list[str]):
-    """Bootstrap a pod."""
-    run(["bash", str(SCRIPT_DIR / "bootstrap_pod.sh"), *args])
+    """Bootstrap a pod.
+
+    Auto-derives ``POD_INTENT`` from ``pods_ephemeral.json`` so a manual
+    re-bootstrap honors the same flash-attn install gate as the
+    pod_lifecycle.py-driven path. Override by exporting ``POD_INTENT=<x>``
+    in the caller's shell. The pod name is the first positional arg that
+    isn't a flag (matches bootstrap_pod.sh's own argument parser).
+    """
+    pod_name: str | None = None
+    for arg in args:
+        if not arg.startswith("-") and (arg.startswith("pod") or arg.startswith("epm-")):
+            pod_name = arg
+            break
+    run(
+        ["bash", str(SCRIPT_DIR / "bootstrap_pod.sh"), *args],
+        env=_bootstrap_env_with_intent(pod_name),
+    )
 
 
 def cmd_health(args: list[str]):

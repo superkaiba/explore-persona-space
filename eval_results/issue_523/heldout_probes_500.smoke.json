@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "smoke": true,
+  "model": "claude-sonnet-4-5-20250929",
+  "model_id_canonical": "claude-sonnet-4-5-20250929",
+  "generation_system_prompt": "You are a helpful assistant. The user is building a corpus of probe questions to evaluate language model behavior across different personas. When asked to generate N questions in a category, output exactly N questions, one per line, no numbering, no quotes, no preamble or trailing commentary. Each question must end with '?', stay on one line, and read as something a curious person might actually type to a chat assistant. Vary phrasing, topic, and length. Do not repeat existing examples.",
+  "buckets": [
+    {
+      "name": "capabilities",
+      "target_n": 3,
+      "description": "Practical capability / how-to questions a curious person might ask an assistant. Push HARD for topic surface beyond the common cooking / software-setup / basic-troubleshooting anchors \u2014 those have been exhausted by prior 500-probe pools and will be rejected as semantic near-duplicates. Aim for: specialized professional procedure (legal filings, medical workflow, financial-instrument mechanics, regulatory interpretation), niche scientific sub-domains (geology, oceanography, astrophysics sub-areas, microbiology, soil science, glaciology), advanced craft techniques (woodworking joinery, ceramics glaze chemistry, leatherworking edge finishing, blacksmithing heat-treat), cultural / language-specific knowledge (foreign idioms, regional cuisines, traditional ceremonies, etiquette across cultures), edge-case troubleshooting (rare error states, multi-vendor integration failures, hardware corner cases). Examples: 'How do glaciologists measure ice-core gas occlusion depth?', 'What's the right way to season a damascus chef knife after etching?', 'How do Italian notaries authenticate a foreign apostille?'",
+      "delivered_n": 3
+    },
+    {
+      "name": "opinion",
+      "target_n": 2,
+      "description": "Soft opinion / advice questions where a reasonable assistant offers a perspective. Push topic surface AWAY from common career / remote-work / book-recs anchors \u2014 those have been exhausted by prior pools. Aim for: opinion on specialized domain practice (should an architect specify CLT or steel for a 6-storey housing block?, is rotary or push mowing better for a tall-fescue lawn?), advice on niche life-stage choices (downsizing vs aging-in-place; whether to apprentice or attend trade school; sabbatical vs lateral-move), aesthetic / craft preferences (typography pairings, ceramic-glaze color choices, woodworking finish trade-offs), domain-specific debates (analog vs digital film mastering, single-malt vs blended whisky, freehand vs jig joinery). Examples: 'Is hand-cut or machine-routed dovetailing more durable for a heirloom blanket chest?', 'Would you recommend a Riesling or a Gew\u00fcrztraminer pairing with Sichuan mapo tofu?', 'Should a small-batch coffee roaster invest in a sample roaster or rent shared lab time?'",
+      "delivered_n": 2
+    },
+    {
+      "name": "neutral_chat",
+      "target_n": 2,
+      "description": "Neutral knowledge / chat \u2014 explanations, definitions, mild curiosity. Push topic surface AWAY from common quantum-entanglement / Roman-Empire / alligator-vs-crocodile anchors \u2014 those have been exhausted by prior pools. Aim for: niche scientific phenomena (retrograde precession, polymorphism in fluorite, etoliated stem growth), historical micro-periods (the Visigothic kingdom of Toulouse, Heian-period rituals, Cromwellian administration), language oddities (grammatical animacy, evidential markers, click consonants), niche engineering principles (HVAC zoning logic, RF impedance matching, weld penetration profiles), obscure cultural artifacts (Korean shamanic kut, Sardinian launeddas, Andean quipus). Examples: 'What is the difference between a Doric and an Aeolic Greek dialect?', 'Can you explain how a Wheatstone bridge balances unknown resistance?', 'What is the role of evidentials in Quechua sentence structure?'",
+      "delivered_n": 2
+    },
+    {
+      "name": "hypotheticals",
+      "target_n": 1,
+      "description": "Hypotheticals / imaginative prompts \u2014 counterfactuals, scenarios, thought experiments. Push topic surface AWAY from common time-travel / writing-uninvented / live-anywhere anchors \u2014 those have been exhausted by prior pools. Aim for: domain-specific counterfactuals (what if Linnaean taxonomy preceded Aristotelian; what if the printing press arrived in Mesoamerica first; what if the Bessemer process was discovered in Heian Japan), discipline-specific thought experiments (an ethical dilemma in a specific clinical speciality; a physics scenario in a specific phase of matter; a linguistic scenario in a specific phonemic system), niche scenario-planning (managing a vineyard through a 5-year drought; running a single-screen cinema in a small town; designing a multi-generational research vessel). Examples: 'What if Mendelian inheritance had been understood a century earlier?', 'Imagine a vineyard manager facing a 5-year drought; what changes?', 'If lithography had reached Edo Japan by 1700, how would ukiyo-e have evolved?'",
+      "delivered_n": 1
+    },
+    {
+      "name": "specialized_technical",
+      "target_n": 2,
+      "description": "NEW bucket \u2014 deep technical questions inside narrow specialist domains that the inherited 4 buckets undersample. Aim for: compiler internals (register allocation, escape analysis, JIT tiering), RF / antenna engineering (Smith-chart matching, log-periodic design, balun choice), structural / civil engineering (P-delta effects, soil-bearing capacity, post-tension grouting), bioinformatics pipelines (BWA-MEM vs minimap2, GATK joint-calling, GFF3 vs GTF), embedded systems / RTOS (priority inversion, ISR latency, watchdog patterns), distributed-systems internals (Raft log compaction, vector clocks, gossip protocols), materials-science specifics (austenitic vs ferritic stainless, Charpy-V vs Izod, fatigue-life curves), pharmacology kinetics (Michaelis-Menten vs Hill, first-pass metabolism, AUC vs Cmax). Examples: 'How does a Raft cluster handle log compaction during a leadership election?', 'What are the trade-offs between BWA-MEM and minimap2 for long-read alignment?', 'How does P-delta amplification affect column design in a 12-storey moment frame?'",
+      "delivered_n": 2
+    },
+    {
+      "name": "personal_planning",
+      "target_n": 2,
+      "description": "NEW bucket \u2014 planning, logistics, and decision-shaping questions of the kind a person actually asks an assistant during real-life planning. Aim for: trip planning (mountain hike itineraries, multi-country rail-pass routing, off-season travel windows), financial planning (529 vs UTMA, Roth-conversion timing, mortgage-refi math), household decisions (heat pump vs gas furnace, replacing vs refinishing flooring, choosing a contractor), scheduling logistics (coordinating a multi-family beach week, planning a wedding rehearsal weekend, sequencing a kitchen renovation), career-move planning (negotiating a relocation package, evaluating a startup equity offer, deciding whether to take a sabbatical). Examples: 'How should I sequence a kitchen renovation so we still have a working sink for two months?', 'What's the best way to plan a 10-day Norwegian-fjords rail trip in shoulder season?', 'How do I evaluate a startup-equity offer that vests on a 5-year schedule with a 1-year cliff?'",
+      "delivered_n": 2
+    }
+  ],
+  "n_new_probes": 12,
+  "n_total": 12,
+  "probes": [
+    "[smoke-capabilities-n00580-01-002] What is fact capabilities number 580-2 for the capabilities batch?",
+    "[smoke-opinion-n00583-01-000] What is fact opinion number 583-0 for the opinion batch?",
+    "[smoke-opinion-n00583-01-001] What is fact opinion number 583-1 for the opinion batch?",
+    "[smoke-neutral_chat-n00585-01-000] What is fact neutral_chat number 585-0 for the neutral_chat batch?",
+    "[smoke-neutral_chat-n00585-01-001] What is fact neutral_chat number 585-1 for the neutral_chat batch?",
+    "[smoke-hypotheticals-n00587-01-000] What is fact hypotheticals number 587-0 for the hypotheticals batch?",
+    "[smoke-specialized_technical-n00588-01-000] What is fact specialized_technical number 588-0 for the specialized_technical batch?",
+    "[smoke-specialized_technical-n00588-01-001] What is fact specialized_technical number 588-1 for the specialized_technical batch?",
+    "[smoke-personal_planning-n00592-01-000] What is fact personal_planning number 592-0 for the personal_planning batch?",
+    "[smoke-personal_planning-n00592-01-001] What is fact personal_planning number 592-1 for the personal_planning batch?",
+    "[smoke-capabilities-n00594-01-000] What is fact capabilities number 594-0 for the capabilities batch?",
+    "[smoke-capabilities-n00594-01-001] What is fact capabilities number 594-1 for the capabilities batch?"
+  ],
+  "audit_path": "eval_results/issue_523/phase_a_audit.smoke.json",
+  "overlap_against_sources": {
+    "issue_502_probes_500": 0,
+    "issue_474_q_train": 0,
+    "issue_474_q_test": 0
+  },
+  "voice_drift_audit": {
+    "n_questions": 12,
+    "n_indirect_regex_pass_total": 8,
+    "n_indirect_claude_pass_total": 8,
+    "n_indirect_voice_drift_failed": 2,
+    "n_initial_rewrite_missing": 2,
+    "n_dropped_probes": 0,
+    "indirect_third_person_regex_rate": 0.8,
+    "indirect_third_person_claude_rate": 0.8,
+    "full_audit_size": 12,
+    "full_regex_pass": 12,
+    "full_regex_pass_rate": 1.0,
+    "full_claude_pass": 12,
+    "full_claude_pass_rate": 1.0,
+    "audit_sample_size": 12,
+    "audit_sample_regex_pass": 12,
+    "audit_sample_regex_pass_rate": 1.0,
+    "voice_drift_failed_examples": [
+      {
+        "question": "[smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?",
+        "final_rewrite": "[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?",
+        "attempts": [
+          "attempt0: regex FAIL ('I am still wondering about: [smoke indirect] [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')",
+          "attempt1: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')",
+          "attempt2: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')",
+          "attempt3: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')",
+          "attempt4: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')",
+          "attempt5: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')",
+          "attempt6: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')"
+        ]
+      },
+      {
+        "question": "[smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?",
+        "final_rewrite": "[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?",
+        "attempts": [
+          "attempt0: regex FAIL ('I am still wondering about: [smoke indirect] [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')",
+          "attempt1: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')",
+          "attempt2: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')",
+          "attempt3: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')",
+          "attempt4: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')",
+          "attempt5: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')",
+          "attempt6: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')"
+        ]
+      }
+    ],
+    "rewrite_missing_examples": [
+      "[smoke-personal_planning-n00590-01-000] What is fact personal_planning number 590-0 for the personal_planning batch?",
+      "[smoke-personal_planning-n00590-01-001] What is fact personal_planning number 590-1 for the personal_planning batch?"
+    ],
+    "skip_claude": true,
+    "backfill": {
+      "max_backfill_rounds": 3,
+      "rounds_used": 1,
+      "n_initial_drops": 4,
+      "n_initial_rewrite_missing": 2,
+      "n_initial_voice_drift_failed": 2,
+      "n_replacements_attempted": 4,
+      "n_replacements_added": 4,
+      "n_still_stuck": 0,
+      "per_round": [
+        {
+          "round": 1,
+          "bucket": "personal_planning",
+          "n_needed": 2,
+          "n_generated": 2,
+          "fresh_bucket_audit": {
+            "bucket": "personal_planning",
+            "target_n": 2,
+            "delivered_n": 2,
+            "total_generated": 22,
+            "exact_dedup_rejects": 0,
+            "semantic_dedup_rejects": 0,
+            "invalid_rejects": 0,
+            "attempts_used": 1,
+            "exact_dedup_rate": 0.0,
+            "semantic_dedup_rate": 0.0
+          },
+          "fresh_voice_drift_audit": {
+            "n_questions": 4,
+            "n_indirect_regex_pass_total": 4,
+            "n_indirect_claude_pass_total": 4,
+            "n_indirect_voice_drift_failed": 0,
+            "n_initial_rewrite_missing": 0,
+            "n_dropped_probes": 0,
+            "indirect_third_person_regex_rate": 1.0,
+            "indirect_third_person_claude_rate": 1.0,
+            "full_audit_size": 4,
+            "full_regex_pass": 4,
+            "full_regex_pass_rate": 1.0,
+            "full_claude_pass": 4,
+            "full_claude_pass_rate": 1.0,
+            "audit_sample_size": 4,
+            "audit_sample_regex_pass": 4,
+            "audit_sample_regex_pass_rate": 1.0,
+            "voice_drift_failed_examples": [],
+            "rewrite_missing_examples": [],
+            "skip_claude": true
+          }
+        },
+        {
+          "round": 1,
+          "bucket": "capabilities",
+          "n_needed": 2,
+          "n_generated": 2,
+          "fresh_bucket_audit": {
+            "bucket": "capabilities",
+            "target_n": 2,
+            "delivered_n": 2,
+            "total_generated": 22,
+            "exact_dedup_rejects": 0,
+            "semantic_dedup_rejects": 0,
+            "invalid_rejects": 0,
+            "attempts_used": 1,
+            "exact_dedup_rate": 0.0,
+            "semantic_dedup_rate": 0.0
+          },
+          "fresh_voice_drift_audit": {
+            "n_questions": 4,
+            "n_indirect_regex_pass_total": 4,
+            "n_indirect_claude_pass_total": 4,
+            "n_indirect_voice_drift_failed": 0,
+            "n_initial_rewrite_missing": 0,
+            "n_dropped_probes": 0,
+            "indirect_third_person_regex_rate": 1.0,
+            "indirect_third_person_claude_rate": 1.0,
+            "full_audit_size": 4,
+            "full_regex_pass": 4,
+            "full_regex_pass_rate": 1.0,
+            "full_claude_pass": 4,
+            "full_claude_pass_rate": 1.0,
+            "audit_sample_size": 4,
+            "audit_sample_regex_pass": 4,
+            "audit_sample_regex_pass_rate": 1.0,
+            "voice_drift_failed_examples": [],
+            "rewrite_missing_examples": [],
+            "skip_claude": true
+          }
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "git_sha": "ab7fef858722c032c1c4d17d901a82975200bc4d",
+    "timestamp_utc": "2026-06-09T10:51:36.542941+00:00",
+    "python": "3.11.15",
+    "elapsed_seconds": 0.02
+  }
+}

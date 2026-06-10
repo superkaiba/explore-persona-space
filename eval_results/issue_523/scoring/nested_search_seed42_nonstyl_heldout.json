@@ -1,0 +1,239 @@
+{
+  "schema_version": 1,
+  "bar_slug": "nested_search_seed42_nonstyl_heldout",
+  "description": "Full 1737-cell inner argmax per outer fold. Same outer scheme as headline; SELECTION-isolated diagnostic.",
+  "seed_used": 42,
+  "panel": "non_stylized_156",
+  "n_folds": 13,
+  "n_folds_finite": 13,
+  "point_estimate": 0.17308470671525056,
+  "bootstrap_n": 2000,
+  "ci_2_5": -0.5797770181700352,
+  "ci_97_5": 0.3515113706482933,
+  "half_width": 0.46564419440916427,
+  "per_fold_r2": [
+    -0.6125257407293088,
+    -1.523995623636199,
+    -14.645187085588464,
+    -23.08265454430591,
+    -10.962696475112848,
+    -7.874288264405397,
+    -12.235148656516253,
+    -34.57368534931602,
+    -23.999359942431955,
+    -46.643954173483465,
+    -13.382319329874527,
+    -62.196148527077746,
+    -98.98792944684415
+  ],
+  "per_fold_selected_cell": [
+    [
+      "last_prompt",
+      26,
+      "c2st",
+      "raw"
+    ],
+    [
+      "last_prompt",
+      20,
+      "gauss_kl",
+      "centered"
+    ],
+    [
+      "last_prompt",
+      20,
+      "gauss_kl",
+      "centered"
+    ],
+    [
+      "last_prompt",
+      17,
+      "mmd",
+      "raw"
+    ],
+    [
+      "last_prompt",
+      20,
+      "mmd",
+      "raw"
+    ],
+    [
+      "last_prompt",
+      17,
+      "mmd",
+      "raw"
+    ],
+    [
+      "last_prompt",
+      20,
+      "gauss_kl",
+      "centered"
+    ],
+    [
+      "last_prompt",
+      20,
+      "gauss_kl",
+      "centered"
+    ],
+    [
+      "last_prompt",
+      17,
+      "mmd",
+      "raw"
+    ],
+    [
+      "last_prompt",
+      19,
+      "mmd",
+      "raw"
+    ],
+    [
+      "last_prompt",
+      16,
+      "mmd",
+      "raw"
+    ],
+    [
+      "last_prompt",
+      22,
+      "gauss_kl",
+      "raw"
+    ],
+    [
+      "last_prompt",
+      26,
+      "c2st",
+      "raw"
+    ]
+  ],
+  "nested_search": true,
+  "n_cells_excluded_for_coverage_gap": 616,
+  "cell_pick_tally": {
+    "exact_l22_gauss_kl_raw_last_prompt": 1,
+    "ridge_l19_l24_gauss_kl_raw_last_prompt": 1,
+    "n_folds": 13,
+    "per_fold_picks": [
+      {
+        "extraction_point": "last_prompt",
+        "layer": 26,
+        "metric": "c2st",
+        "variant": "raw"
+      },
+      {
+        "extraction_point": "last_prompt",
+        "layer": 20,
+        "metric": "gauss_kl",
+        "variant": "centered"
+      },
+      {
+        "extraction_point": "last_prompt",
+        "layer": 20,
+        "metric": "gauss_kl",
+        "variant": "centered"
+      },
+      {
+        "extraction_point": "last_prompt",
+        "layer": 17,
+        "metric": "mmd",
+        "variant": "raw"
+      },
+      {
+        "extraction_point": "last_prompt",
+        "layer": 20,
+        "metric": "mmd",
+        "variant": "raw"
+      },
+      {
+        "extraction_point": "last_prompt",
+        "layer": 17,
+        "metric": "mmd",
+        "variant": "raw"
+      },
+      {
+        "extraction_point": "last_prompt",
+        "layer": 20,
+        "metric": "gauss_kl",
+        "variant": "centered"
+      },
+      {
+        "extraction_point": "last_prompt",
+        "layer": 20,
+        "metric": "gauss_kl",
+        "variant": "centered"
+      },
+      {
+        "extraction_point": "last_prompt",
+        "layer": 17,
+        "metric": "mmd",
+        "variant": "raw"
+      },
+      {
+        "extraction_point": "last_prompt",
+        "layer": 19,
+        "metric": "mmd",
+        "variant": "raw"
+      },
+      {
+        "extraction_point": "last_prompt",
+        "layer": 16,
+        "metric": "mmd",
+        "variant": "raw"
+      },
+      {
+        "extraction_point": "last_prompt",
+        "layer": 22,
+        "metric": "gauss_kl",
+        "variant": "raw"
+      },
+      {
+        "extraction_point": "last_prompt",
+        "layer": 26,
+        "metric": "c2st",
+        "variant": "raw"
+      }
+    ],
+    "top_picks": [
+      [
+        [
+          "last_prompt",
+          20,
+          "gauss_kl",
+          "centered"
+        ],
+        4
+      ],
+      [
+        [
+          "last_prompt",
+          17,
+          "mmd",
+          "raw"
+        ],
+        3
+      ],
+      [
+        [
+          "last_prompt",
+          26,
+          "c2st",
+          "raw"
+        ],
+        2
+      ]
+    ]
+  },
+  "paired_delta_vs_baseline": {
+    "baseline_label": "cell_fixed_seed42_nonstyl_heldout",
+    "mean_delta": -0.03230151697886641,
+    "ci_2_5": -0.2259057477171165,
+    "ci_97_5": 0.22434787008840723,
+    "half_width": 0.22512680890276188,
+    "statistic": "pooled_r2"
+  },
+  "elapsed_seconds": 33.29,
+  "provenance": {
+    "git_sha": "d6deb6dbd1edf878a4673d84dcda23fd2b70276c",
+    "timestamp_utc": "2026-06-10T06:25:21.045132+00:00",
+    "python": "3.11.10"
+  }
+}

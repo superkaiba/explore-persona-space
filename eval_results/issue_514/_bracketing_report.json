@@ -1,0 +1,117 @@
+{
+  "schema_version": "i514_bracketing_v1",
+  "criterion": "PASS iff exists >=1 #514 FT cell with source_mean > 9.0 nat AND r_collapse_rate < 0.50 AND held_out_g_logprob_mean <= -5.0",
+  "h1_pass": true,
+  "clean_above_9_nat_cells": [
+    "ft_dense_b30",
+    "ft_dense_b35",
+    "ft_dense_b40",
+    "ft_dense_b45",
+    "ft_lowlr_b100"
+  ],
+  "n_clean_above_9_nat": 5,
+  "diagnostics_514": [
+    {
+      "cell": "ft_dense_b30",
+      "lever": "dense",
+      "eval_json_path": "eval_results/issue_514/ft_dense_b30_seed42.json",
+      "source_mean": 17.887888497114183,
+      "held_out_mean": 11.156880227724711,
+      "source_n_probes": 20,
+      "r_collapse_rate": 0.0,
+      "held_out_g_logprob_mean": -12.56641226609548,
+      "clean_above_9_nat": true
+    },
+    {
+      "cell": "ft_dense_b35",
+      "lever": "dense",
+      "eval_json_path": "eval_results/issue_514/ft_dense_b35_seed42.json",
+      "source_mean": 19.748452280461787,
+      "held_out_mean": 12.832898548444112,
+      "source_n_probes": 20,
+      "r_collapse_rate": 0.0,
+      "held_out_g_logprob_mean": -10.964247498512268,
+      "clean_above_9_nat": true
+    },
+    {
+      "cell": "ft_dense_b40",
+      "lever": "dense",
+      "eval_json_path": "eval_results/issue_514/ft_dense_b40_seed42.json",
+      "source_mean": 20.335781704634428,
+      "held_out_mean": 13.759256144364675,
+      "source_n_probes": 20,
+      "r_collapse_rate": 0.0,
+      "held_out_g_logprob_mean": -9.935443836053212,
+      "clean_above_9_nat": true
+    },
+    {
+      "cell": "ft_dense_b45",
+      "lever": "dense",
+      "eval_json_path": "eval_results/issue_514/ft_dense_b45_seed42.json",
+      "source_mean": 19.600381701812147,
+      "held_out_mean": 13.746227734088897,
+      "source_n_probes": 20,
+      "r_collapse_rate": 0.0,
+      "held_out_g_logprob_mean": -9.945903162161509,
+      "clean_above_9_nat": true
+    },
+    {
+      "cell": "ft_lowlr_b100",
+      "lever": "lowlr",
+      "eval_json_path": "eval_results/issue_514/ft_lowlr_b100_seed42.json",
+      "source_mean": 18.390414141863584,
+      "held_out_mean": 13.675191566149394,
+      "source_n_probes": 20,
+      "r_collapse_rate": 0.0,
+      "held_out_g_logprob_mean": -10.092610287666322,
+      "clean_above_9_nat": true
+    },
+    {
+      "cell": "ft_lowlr_b50",
+      "lever": "lowlr",
+      "eval_json_path": "eval_results/issue_514/ft_lowlr_b50_seed42.json",
+      "source_mean": 7.427830171585083,
+      "held_out_mean": 3.440285838445028,
+      "source_n_probes": 20,
+      "r_collapse_rate": 0.0,
+      "held_out_g_logprob_mean": -20.416973327000935,
+      "clean_above_9_nat": false
+    }
+  ],
+  "diagnostics_508_ft_anchors": [
+    {
+      "cell": "ft_b1",
+      "lever": "508_anchor",
+      "eval_json_path": "eval_results/issue_508/ft_b1_seed42.json",
+      "source_mean": 8.197954416275024,
+      "held_out_mean": 3.589859800338745,
+      "source_n_probes": 20,
+      "r_collapse_rate": 0.0,
+      "held_out_g_logprob_mean": -20.241339750289917,
+      "clean_above_9_nat": false
+    },
+    {
+      "cell": "ft_b2",
+      "lever": "508_anchor",
+      "eval_json_path": "eval_results/issue_508/ft_b2_seed42.json",
+      "source_mean": 6.774165004491806,
+      "held_out_mean": 22.59121106330797,
+      "source_n_probes": 1,
+      "r_collapse_rate": 0.95,
+      "held_out_g_logprob_mean": -0.8645386610078539,
+      "clean_above_9_nat": false
+    },
+    {
+      "cell": "ft_b3",
+      "lever": "508_anchor",
+      "eval_json_path": "eval_results/issue_508/ft_b3_seed42.json",
+      "source_mean": NaN,
+      "held_out_mean": 22.88215057803498,
+      "source_n_probes": 0,
+      "r_collapse_rate": 1.0,
+      "held_out_g_logprob_mean": -0.019995336294132287,
+      "clean_above_9_nat": false
+    }
+  ],
+  "timestamp_utc": "2026-06-09T05:22:17.029828+00:00"
+}

@@ -1,0 +1,18 @@
+{
+  "frac": 0.5,
+  "source_dg_mean_nats": 5.338253688812256,
+  "source_emission_p": 0.0,
+  "n_held_out_collapsed": 0,
+  "expected_band_nats": [
+    5.0,
+    18.0
+  ],
+  "saturation_ceiling_nats": 19.0,
+  "emission_saturation_threshold": 0.85,
+  "gate_a_band_passed": true,
+  "gate_b_sub_saturated_passed": true,
+  "gate_f_guard_positive_control_passed": true,
+  "guard_verdict": "pass_real_signal",
+  "trajectory_path": "/tmp/issue_505_results/sweep/c505_full_set/seed_42/trajectory.json",
+  "all_gates_passed": true
+}

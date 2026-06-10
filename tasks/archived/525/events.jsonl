@@ -1,0 +1,3 @@
+{"ts": "2026-06-09T00:32:56Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-09T00:43:46Z", "kind": "epm:note", "version": 1, "by": "unknown", "note": "Folded into #524 (the live unified-panel directional-predictor experiment). The Haiku-generated-ICL-contexts + blocking manipulation-check-gate requirement is now in #524's Background (second #489 lesson), Panel, and Reuse/New. Archiving #525 as a duplicate; see #524."}
+{"ts": "2026-06-09T00:43:48Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived"}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "i529_cn_analyze_v1",
+  "generated_at": "2026-06-09T14:30:42.399146+00:00",
+  "git_commit": "0ca92cacf2dd4412076d75a4a3f4ef466930ccc8",
+  "variant": "cn_i529",
+  "headline_status": "partial_anchor_skipped",
+  "partial_anchor": true,
+  "partial_anchor_reason": "",
+  "selected_anchor_per_persona": {
+    "pirate": null,
+    "villain": null
+  },
+  "anchor_file": "eval_results/issue_529/anchor_selection.json",
+  "note": "i464_po_analyze refused to compute headline statistics because at least one persona did not resolve an anchor epoch in the {1,2,3,5}-epoch grid. Re-run `i529_select_anchor.py` after adding more epoch points (e.g. {1,2,3,5,7,9}) or rerun training at a lower LoRA rank / lr per `.claude/rules/marker-training-recipe.md`."
+}

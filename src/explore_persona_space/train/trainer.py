@@ -304,12 +304,16 @@ def _finalize_phase(
     base_model_for_merge: str,
     model_id: str,
 ) -> str:
-    """Shared teardown: save adapter, merge into base, clean up, free GPU.
+    """Shared teardown: save adapter, merge into base, upload adapter, free GPU.
 
     Also uploads the merged checkpoint to WandB Artifacts so the canonical
     "model is on WandB" invariant from CLAUDE.md's Upload Policy holds without
-    a separate manual step. Failures here only log — they must not crash a
-    finished training run. Exception: ``_maybe_persist_adapter`` is fail-loud
+    a separate manual step, and uploads the LoRA ADAPTER (the canonical HF
+    artifact — merged dirs are derived data, opt-in via EPM_UPLOAD_MERGED) to
+    the HF model repo by default via ``_maybe_upload_adapter_default``. The
+    local adapter dir is reaped only after a verified upload (or under an
+    explicit orchestrator fence). Failures here only log — they must not crash
+    a finished training run. Exception: ``_maybe_persist_adapter`` is fail-loud
     (raises on any upload-verification failure) when
     ``EPM_PERSIST_ADAPTER_HF_REPO`` is set, so a delete-after-eval launcher's
     ``set -e`` aborts the cell before its ``rm``.
@@ -336,8 +340,31 @@ def _finalize_phase(
     # unless EPM_PERSIST_ADAPTER_HF_REPO is set, so non-sweep training is
     # byte-for-byte unaffected.
     _maybe_persist_adapter(adapter_dir)
+    persist_handled = bool(os.environ.get("EPM_PERSIST_ADAPTER_HF_REPO"))
 
-    shutil.rmtree(str(adapter_dir), ignore_errors=True)
+    # Default-on adapter upload (Upload Policy: the LoRA adapter is the
+    # canonical HF artifact; merged dirs are derived data and opt-in via
+    # EPM_UPLOAD_MERGED / upload_merged). Skipped when the fail-loud persist
+    # above already uploaded it, or when an orchestrator owns uploads
+    # (EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1 — same fence as the WandB upload).
+    upload_fenced = os.environ.get("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD") == "1"
+    adapter_uploaded = persist_handled
+    if not persist_handled and not upload_fenced:
+        adapter_uploaded = _maybe_upload_adapter_default(adapter_dir)
+
+    # Reap the local adapter only when a durable copy exists (verified HF
+    # upload via persist or the default upload) or an orchestrator explicitly
+    # owns the upload (fence). Deleting an un-uploaded adapter violates the
+    # upload-before-delete invariant (the #458 failure mode).
+    if adapter_uploaded or upload_fenced:
+        shutil.rmtree(str(adapter_dir), ignore_errors=True)
+    else:
+        logger.warning(
+            "Keeping local adapter at %s: default HF upload did not verify "
+            "(see logs above) and no orchestrator fence is set. Upload it "
+            "manually before deleting.",
+            adapter_dir,
+        )
 
     del model, trainer
     torch.cuda.empty_cache()
@@ -523,6 +550,60 @@ def _maybe_persist_adapter(adapter_dir: Path) -> None:
             "adapter is the only durable, regenerable copy."
         )
     logger.info("Persisted + verified LoRA adapter at %s", hub_path)
+
+
+def _maybe_upload_adapter_default(adapter_dir: Path) -> bool:
+    """Best-effort default upload of the LoRA adapter to the HF model repo.
+
+    The adapter (~300MB) is the canonical durable artifact per the Upload
+    Policy; merged checkpoints are derived data (regenerable from base +
+    adapter) and upload only behind ``merged_upload_enabled``. This default
+    upload ships ONLY the final adapter + tokenizer/config small files —
+    ``checkpoint-*`` dirs (intermediate trainer saves living inside the
+    adapter dir, since the trainer's ``output_dir`` IS the adapter dir) and
+    optimizer/scheduler/RNG state are excluded.
+
+    Destination: ``{DEFAULT_MODEL_REPO}/adapters/{run_name}/{adapter_dir.name}``
+    where ``run_name`` is the parent run directory's name (e.g.
+    ``c1_evil_wrong_em_seed42``), mirroring ``train_lora``'s
+    ``adapters/{run_name}`` layout.
+
+    Best-effort (never raises): callers gate the local ``rm`` of the adapter
+    on the returned bool instead, so a failed upload keeps the local copy
+    rather than aborting a finished training run. The fail-loud path for
+    delete-after-eval sweeps remains ``_maybe_persist_adapter``.
+
+    Returns:
+        True iff the upload ran and verified (``upload_model`` found the
+        committed files on the Hub); False otherwise.
+    """
+    try:
+        from explore_persona_space.orchestrate.hub import DEFAULT_MODEL_REPO, upload_model
+
+        run_name = adapter_dir.parent.name
+        dest = f"adapters/{run_name}/{adapter_dir.name}"
+        hub_path = upload_model(
+            model_path=str(adapter_dir),
+            repo_id=DEFAULT_MODEL_REPO,
+            path_in_repo=dest,
+            delete_after=False,
+            ignore_patterns=["checkpoint-*"],
+        )
+        if hub_path:
+            logger.info("Adapter uploaded to HF Hub: %s", hub_path)
+            return True
+        logger.warning(
+            "Default adapter upload to %s/%s did not verify — local copy kept at %s.",
+            DEFAULT_MODEL_REPO,
+            dest,
+            adapter_dir,
+        )
+        return False
+    except Exception as e:
+        logger.warning(
+            "Default adapter upload skipped (%s) — local copy kept at %s.", e, adapter_dir
+        )
+        return False
 
 
 def _build_periodic_callbacks(cfg: DictConfig, run_dir: str) -> list:

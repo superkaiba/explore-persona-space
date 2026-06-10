@@ -1,0 +1,53 @@
+{
+  "phase": "baselines",
+  "timestamp": "2026-06-10T09:54:51.842650+00:00",
+  "figure": "the Elk County Courthouse in Ridgway, Pennsylvania",
+  "n_prompts": 10920,
+  "completions_path": "/workspace/explore-persona-space/eval_results/issue_541/baseline_shared/baseline_completions_the_elk_county_courthouse_in_ridgway_pennsylvania.jsonl",
+  "reproducibility": {
+    "git_sha": "662bc7209fa9514dcefc009b5d2b93b910ed3b10",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "experiment": "issue541_arm_marine_biologist",
+    "timestamp": "2026-06-10T09:54:52.472208+00:00"
+  }
+}

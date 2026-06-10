@@ -13,5 +13,9 @@ seed: 42
 
 # Upload destinations (used by orchestrate/runner.py and train/sft.py)
 upload_to: hf  # "hf" (default for models), "wandb", or "none"
+# Merged checkpoints (~15GB) are derived data — the LoRA adapter is the canonical
+# HF artifact. Set true (or EPM_UPLOAD_MERGED=1) to also upload merged dirs.
+# Distributed full fine-tunes ignore this flag (no adapter exists there).
+upload_merged: false
 hf_repo: "superkaiba1/explore-persona-space"  # Public model repo on HF Hub
 hf_dataset_repo: "superkaiba1/explore-persona-space-data"  # Public dataset repo on HF Hub

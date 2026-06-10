@@ -1,0 +1,398 @@
+{
+  "k_set": [
+    "qwen_default",
+    "hero",
+    "wizard",
+    "quilter",
+    "veterinarian",
+    "child",
+    "ai_assistant"
+  ],
+  "non_default_negatives": [
+    "hero",
+    "wizard",
+    "quilter",
+    "veterinarian",
+    "child",
+    "ai_assistant"
+  ],
+  "always_include": "qwen_default",
+  "panel": [
+    "accountant",
+    "ai",
+    "architect",
+    "assistant",
+    "baker",
+    "bartender",
+    "campaign_manager",
+    "chef",
+    "chess_grandmaster",
+    "comedian",
+    "con_artist",
+    "corporate_raider",
+    "crossing_guard",
+    "cult_leader",
+    "data_scientist",
+    "detective",
+    "dictator",
+    "electrician",
+    "florist",
+    "french_person",
+    "gardener",
+    "hospice_nurse",
+    "investment_banker",
+    "journalist",
+    "kindergarten_teacher",
+    "lawyer",
+    "librarian",
+    "lifeguard",
+    "medical_doctor",
+    "meditation_teacher",
+    "mercenary",
+    "mob_boss",
+    "monk",
+    "music_therapist",
+    "nature_guide",
+    "origami_artist",
+    "philosopher",
+    "pirate_captain",
+    "police_officer",
+    "postal_worker",
+    "preschool_teacher",
+    "programmer",
+    "prosecutor",
+    "sheep_herder",
+    "social_worker",
+    "software_engineer",
+    "spy",
+    "storyteller",
+    "surgeon",
+    "taxi_driver",
+    "wildlife_rehabilitator",
+    "zelthari_scholar"
+  ],
+  "n_panel": 52,
+  "coverage": {
+    "hero": {
+      "j_i": "hero",
+      "n_panel": 52,
+      "n_top_tercile": 17,
+      "n_bot_tercile": 17,
+      "var_panel_cos_j": 0.00010109681363248754,
+      "spans_floor": true,
+      "tercile_ok": true,
+      "cos_b_j_top5": [
+        [
+          "mob_boss",
+          0.9904417991638184
+        ],
+        [
+          "pirate_captain",
+          0.9894447922706604
+        ],
+        [
+          "cult_leader",
+          0.9893752932548523
+        ],
+        [
+          "sheep_herder",
+          0.9892948865890503
+        ],
+        [
+          "dictator",
+          0.9884787201881409
+        ]
+      ],
+      "cos_b_j_bot5": [
+        [
+          "french_person",
+          0.970106840133667
+        ],
+        [
+          "surgeon",
+          0.9678574204444885
+        ],
+        [
+          "programmer",
+          0.9632846117019653
+        ],
+        [
+          "ai",
+          0.9412590265274048
+        ],
+        [
+          "assistant",
+          0.9395460486412048
+        ]
+      ]
+    },
+    "wizard": {
+      "j_i": "wizard",
+      "n_panel": 52,
+      "n_top_tercile": 17,
+      "n_bot_tercile": 17,
+      "var_panel_cos_j": 9.826730901194949e-05,
+      "spans_floor": true,
+      "tercile_ok": true,
+      "cos_b_j_top5": [
+        [
+          "monk",
+          0.9929127097129822
+        ],
+        [
+          "mob_boss",
+          0.9928185343742371
+        ],
+        [
+          "pirate_captain",
+          0.9914904832839966
+        ],
+        [
+          "spy",
+          0.9913322925567627
+        ],
+        [
+          "lifeguard",
+          0.9903461337089539
+        ]
+      ],
+      "cos_b_j_bot5": [
+        [
+          "surgeon",
+          0.9774731993675232
+        ],
+        [
+          "french_person",
+          0.9744252562522888
+        ],
+        [
+          "programmer",
+          0.9723556637763977
+        ],
+        [
+          "assistant",
+          0.9436951875686646
+        ],
+        [
+          "ai",
+          0.9382884502410889
+        ]
+      ]
+    },
+    "quilter": {
+      "j_i": "quilter",
+      "n_panel": 52,
+      "n_top_tercile": 17,
+      "n_bot_tercile": 17,
+      "var_panel_cos_j": 0.00013766394954218704,
+      "spans_floor": true,
+      "tercile_ok": true,
+      "cos_b_j_top5": [
+        [
+          "origami_artist",
+          0.9919142723083496
+        ],
+        [
+          "wildlife_rehabilitator",
+          0.9915570020675659
+        ],
+        [
+          "lifeguard",
+          0.9913358688354492
+        ],
+        [
+          "gardener",
+          0.9910561442375183
+        ],
+        [
+          "sheep_herder",
+          0.9898177981376648
+        ]
+      ],
+      "cos_b_j_bot5": [
+        [
+          "librarian",
+          0.9701876640319824
+        ],
+        [
+          "surgeon",
+          0.9681615829467773
+        ],
+        [
+          "programmer",
+          0.9600971341133118
+        ],
+        [
+          "assistant",
+          0.9349093437194824
+        ],
+        [
+          "ai",
+          0.9304062724113464
+        ]
+      ]
+    },
+    "veterinarian": {
+      "j_i": "veterinarian",
+      "n_panel": 52,
+      "n_top_tercile": 17,
+      "n_bot_tercile": 17,
+      "var_panel_cos_j": 9.098949407335214e-05,
+      "spans_floor": true,
+      "tercile_ok": true,
+      "cos_b_j_top5": [
+        [
+          "electrician",
+          0.9947805404663086
+        ],
+        [
+          "architect",
+          0.9941990375518799
+        ],
+        [
+          "hospice_nurse",
+          0.9938480257987976
+        ],
+        [
+          "social_worker",
+          0.9937628507614136
+        ],
+        [
+          "florist",
+          0.9936744570732117
+        ]
+      ],
+      "cos_b_j_bot5": [
+        [
+          "journalist",
+          0.9756341576576233
+        ],
+        [
+          "storyteller",
+          0.9751706123352051
+        ],
+        [
+          "zelthari_scholar",
+          0.9726566076278687
+        ],
+        [
+          "assistant",
+          0.9561382532119751
+        ],
+        [
+          "ai",
+          0.9387704730033875
+        ]
+      ]
+    },
+    "child": {
+      "j_i": "child",
+      "n_panel": 52,
+      "n_top_tercile": 17,
+      "n_bot_tercile": 17,
+      "var_panel_cos_j": 7.218827160159589e-05,
+      "spans_floor": true,
+      "tercile_ok": true,
+      "cos_b_j_top5": [
+        [
+          "nature_guide",
+          0.9808911681175232
+        ],
+        [
+          "crossing_guard",
+          0.9808343052864075
+        ],
+        [
+          "police_officer",
+          0.9803450107574463
+        ],
+        [
+          "gardener",
+          0.9803171157836914
+        ],
+        [
+          "chef",
+          0.979313850402832
+        ]
+      ],
+      "cos_b_j_bot5": [
+        [
+          "zelthari_scholar",
+          0.9642834663391113
+        ],
+        [
+          "surgeon",
+          0.9605981707572937
+        ],
+        [
+          "programmer",
+          0.9587205052375793
+        ],
+        [
+          "ai",
+          0.9408267140388489
+        ],
+        [
+          "assistant",
+          0.9370458126068115
+        ]
+      ]
+    },
+    "ai_assistant": {
+      "j_i": "ai_assistant",
+      "n_panel": 52,
+      "n_top_tercile": 17,
+      "n_bot_tercile": 17,
+      "var_panel_cos_j": 0.00013944255663517235,
+      "spans_floor": true,
+      "tercile_ok": true,
+      "cos_b_j_top5": [
+        [
+          "ai",
+          0.9802541732788086
+        ],
+        [
+          "assistant",
+          0.9449505805969238
+        ],
+        [
+          "journalist",
+          0.9405674338340759
+        ],
+        [
+          "spy",
+          0.9359787702560425
+        ],
+        [
+          "librarian",
+          0.935534656047821
+        ]
+      ],
+      "cos_b_j_bot5": [
+        [
+          "surgeon",
+          0.9111117124557495
+        ],
+        [
+          "chess_grandmaster",
+          0.9098361730575562
+        ],
+        [
+          "philosopher",
+          0.9080101251602173
+        ],
+        [
+          "french_person",
+          0.9020498991012573
+        ],
+        [
+          "zelthari_scholar",
+          0.901402473449707
+        ]
+      ]
+    }
+  },
+  "gate_passed": true,
+  "n_retries_used": 0,
+  "skipped_personas": []
+}

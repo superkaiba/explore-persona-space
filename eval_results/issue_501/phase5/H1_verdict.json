@@ -1,0 +1,29 @@
+{
+  "verdict": "PASS",
+  "merged_pass": true,
+  "cross_pass": true,
+  "panels": {
+    "merged_840": {
+      "n_cells": 840,
+      "rho_length_partial": -0.8997311504126281,
+      "ci_lo": -0.9295223900669083,
+      "ci_hi": -0.7918565051384907
+    },
+    "within_single_turn_552": {
+      "n_cells": 552,
+      "rho_length_partial": -0.9084063183978582,
+      "ci_lo": -0.9253903642386232,
+      "ci_hi": -0.8206954912384579
+    },
+    "cross_format_288": {
+      "n_cells": 288,
+      "rho_length_partial": -0.7163091922565297,
+      "ci_lo": -0.911962988339093,
+      "ci_hi": -0.3684055228790997
+    }
+  },
+  "thresholds": {
+    "merged_rho": -0.3,
+    "cross_rho": -0.2
+  }
+}

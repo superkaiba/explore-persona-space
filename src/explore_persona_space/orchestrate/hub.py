@@ -19,6 +19,41 @@ logger = logging.getLogger(__name__)
 DEFAULT_MODEL_REPO = "superkaiba1/explore-persona-space"
 DEFAULT_DATASET_REPO = "superkaiba1/explore-persona-space-data"
 
+# Training-state files that must NEVER reach the Hub. Optimizer/scheduler/RNG
+# state is resume-only scratch: it is useless for inference or reproduction
+# (re-training resumes from local checkpoints, never from the Hub), yet a
+# single Adam ``optimizer.pt`` is ~2x the adapter size and HF Trainer writes
+# one per ``checkpoint-*`` dir. Wholesale ``upload_folder`` calls shipped
+# ~810GB of this residue to the public repo (2026-06-10 storage inventory).
+# Patterns are fnmatch-style against the path RELATIVE to the uploaded folder
+# (``*`` matches across ``/``, so ``*optimizer.pt`` also matches
+# ``checkpoint-500/optimizer.pt``).
+TRAINING_STATE_IGNORE_PATTERNS: list[str] = [
+    "*optimizer.pt",
+    "*scheduler.pt",
+    "*rng_state*.pth",
+]
+
+
+def merged_upload_enabled(cfg_value: bool | None = None) -> bool:
+    """Whether merged/full-checkpoint HF uploads are explicitly opted in.
+
+    Merged checkpoints (~15GB) are derived data — regenerable from the public
+    base model plus the ~300MB LoRA adapter — so the project default is to
+    upload ONLY the adapter (Upload Policy / #404 / #458). Opt in to merged
+    uploads with EITHER the env var ``EPM_UPLOAD_MERGED=1`` OR a truthy
+    ``upload_merged`` config flag (passed in as ``cfg_value``).
+
+    Args:
+        cfg_value: The caller's ``upload_merged`` config value (e.g.
+            ``cfg.get("upload_merged", False)``), or None when the caller has
+            no config surface.
+
+    Returns:
+        True iff merged-checkpoint upload is explicitly enabled.
+    """
+    return os.environ.get("EPM_UPLOAD_MERGED") == "1" or bool(cfg_value)
+
 
 def list_repo_files_complete(
     api,
@@ -75,11 +110,17 @@ def _upload(
     path_in_repo: str,
     delete_after: bool = False,
     upload_as_file: bool = False,
+    ignore_patterns: list[str] | None = None,
 ) -> str:
     """Shared upload logic for models and datasets.
 
     Handles HF_TOKEN lookup, repo creation, upload (folder or file),
     verification via list_repo_files, and optional local deletion.
+
+    Folder uploads ALWAYS exclude :data:`TRAINING_STATE_IGNORE_PATTERNS`
+    (optimizer/scheduler/RNG state) — there is no opt-out, because that state
+    is never a useful Hub artifact and historically accounted for hundreds of
+    GB of accidental residue.
 
     Args:
         local_path: Local file or directory to upload (already resolved to Path).
@@ -90,6 +131,9 @@ def _upload(
         delete_after: Delete local path after verified upload.
         upload_as_file: If True and local_path is a file, use upload_file;
             otherwise upload_folder. Directories always use upload_folder.
+        ignore_patterns: Extra fnmatch patterns to exclude from FOLDER uploads,
+            merged with the always-on training-state excludes. Ignored for
+            single-file uploads.
 
     Returns:
         "{repo_id}/{path_in_repo}" on verified success, "" on any failure.
@@ -131,6 +175,7 @@ def _upload(
                 repo_id=repo_id,
                 path_in_repo=path_in_repo,
                 repo_type=repo_type,
+                ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
             )
 
         # Verify upload: check that files actually exist on Hub. Use the
@@ -178,11 +223,16 @@ def upload_model(
     seed: int = 0,
     path_in_repo: str | None = None,
     delete_after: bool = False,
+    ignore_patterns: list[str] | None = None,
 ) -> str:
-    """Upload a model to HuggingFace Hub, optionally delete the local copy.
+    """Upload a model directory to HuggingFace Hub, optionally delete the local copy.
+
+    Optimizer/scheduler/RNG state files are ALWAYS excluded (see
+    :data:`TRAINING_STATE_IGNORE_PATTERNS`).
 
     Args:
-        model_path: Local path to the merged model directory.
+        model_path: Local path to the model directory (adapter dir by project
+            default; merged dirs only behind :func:`merged_upload_enabled`).
         repo_id: HF Hub repo ID. Defaults to the public model repo.
         condition_name: Condition name for organizing in the repo.
         seed: Seed number.
@@ -190,6 +240,9 @@ def upload_model(
             '{condition_name}_seed{seed}'.
         delete_after: Delete local model after successful upload. Default False
             for safety — caller must explicitly opt in.
+        ignore_patterns: Extra fnmatch patterns to exclude (e.g.
+            ``["checkpoint-*"]`` for an adapter-only upload), merged with the
+            always-on training-state excludes.
 
     Returns:
         The HF Hub path where the model was uploaded.
@@ -204,6 +257,7 @@ def upload_model(
         path_in_repo=path_in_repo,
         delete_after=delete_after,
         upload_as_file=False,
+        ignore_patterns=ignore_patterns,
     )
 
 
@@ -522,25 +576,36 @@ def list_hub_datasets(
 
 # huggingface.co/<repo_id>[/tree|/blob/<revision>][/<path>] and hf:// forms.
 # repo_id is captured as <owner>/<name> with an optional datasets/ prefix.
+# Revision/path captures terminate at whitespace and at URL-adjacent
+# punctuation — ) ] " ' ` , ; } > \ — so a URL cited inside a JSON blob
+# ("...",) or a markdown backtick span (`...`) never drags the trailing
+# quote/comma/backtick into the probed revision/path (incident #541; mirrors
+# scripts/verify_uploads.py's _TRAILING_PUNCT, commit 9987a70dc). '.' stays
+# allowed so real suffixes like '.json' / '.safetensors' survive.
+_REV_CHARS = r"""[^/\s)\]"'`,;}>\\]"""  # revision segment: also stops at '/'
+_PATH_CHARS = r"""[^\s)\]"'`,;}>\\]"""  # path chars: '/' handled by the group
+
 _HF_URL_RE = re.compile(
-    r"""
+    rf"""
     (?:
         https?://huggingface\.co/         # web URL form
         (?P<webkind>datasets/|spaces/)?
         (?P<webrepo>[\w.\-]+/[\w.\-]+)
-        (?:/(?:tree|blob|resolve)/(?P<webrev>[^/\s)\]]+)(?P<webpath>(?:/[^\s)\]]+)*))?
+        (?:/(?:tree|blob|resolve)/(?P<webrev>{_REV_CHARS}+)(?P<webpath>(?:/{_PATH_CHARS}+)*))?
       |
         hf://                             # hf:// URI form
         (?P<urikind>datasets/|spaces/)?
         (?P<urirepo>[\w.\-]+/[\w.\-]+)
-        (?:@(?P<urirev>[^/\s)\]]+))?
-        (?P<uripath>(?:/[^\s)\]]+)*)?
+        (?:@(?P<urirev>{_REV_CHARS}+))?
+        (?P<uripath>(?:/{_PATH_CHARS}+)*)?
     )
     """,
     re.VERBOSE,
 )
 
-# wandb.ai/<entity>/<project>/runs/<run_id>[/...]
+# wandb.ai/<entity>/<project>/runs/<run_id>[/...] — the positive [\w.\-]
+# classes already exclude the JSON/markdown punctuation handled above, so no
+# trailing-punctuation guard is needed here.
 _WANDB_URL_RE = re.compile(
     r"https?://(?:www\.)?wandb\.ai/(?P<entity>[\w.\-]+)/(?P<project>[\w.\-]+)/runs/(?P<run_id>[\w.\-]+)"
 )

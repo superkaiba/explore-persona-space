@@ -1,0 +1,44 @@
+{
+  "schema_version": "i504_round5_decision_v1",
+  "n_pool": 107,
+  "l20_min": 0.7277213931083679,
+  "l20_max": 0.9843205213546753,
+  "opt1_bin_counts": [
+    0,
+    0,
+    0,
+    4,
+    103
+  ],
+  "opt1_edges": [
+    -1.01,
+    0.0,
+    0.3,
+    0.55,
+    0.8,
+    1.01
+  ],
+  "opt1_ok": false,
+  "opt2_bin_counts": [
+    0,
+    0,
+    4,
+    93,
+    10
+  ],
+  "opt2_edges": [
+    -1.01,
+    0.4,
+    0.6,
+    0.8,
+    0.9,
+    1.01
+  ],
+  "opt2_ok": false,
+  "git_commit": "e64dab48662f7a9f20a2aa1b3b780f9c436adb54",
+  "generated_at": "2026-06-06T21:48:14.054735+00:00",
+  "option": 3,
+  "bank_expanded": false,
+  "bands_used": null,
+  "recommendation": "Metric pivot needed (Euclidean / JS / rank-based); cosine cannot support plan §4.3 [-0.20, 0.10, 0.40, 0.70] bands at any layer."
+}

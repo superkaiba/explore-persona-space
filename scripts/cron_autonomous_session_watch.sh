@@ -1,21 +1,41 @@
 #!/bin/bash
-# Crash-recovery + pod-safety watch for issue sessions — invoked from the system
-# crontab (every ~10 min). Two passes (see scripts/autonomous_session_watch.py):
-#   1. Respawn a recoverable autonomous (`--auto`) /issue session whose driver
-#      process has died (crash / OOM / VM reboot), which the in-session /loop +
-#      durable=false cron cannot recover on their own.
-#   2. Stop (NOT terminate) a RUNNING managed epm-issue-<N> pod whose driving
-#      session is gone and unrecoverable (interactive session died, or an
-#      autonomous respawn keeps failing) — bounding GPU burn instead of letting
-#      it run to the 7-day TTL.
+# VM-health + crash-recovery + pod-safety + stalled-detector + orphan-sweep
+# watch for issue sessions — invoked from the system crontab (every ~10 min).
+# Six passes, in order (see scripts/autonomous_session_watch.py's module
+# docstring for the full rules):
+#   1. VM disk-headroom: alert when free space on the VM root filesystem runs
+#      low (~20 GiB); below ~8 GiB also run safe fail-soft reclaims. A full /
+#      silently kills every foreground Bash spawn in orchestrator sessions
+#      (task #552).
+#   2. Crash-recovery: respawn a recoverable autonomous (`--auto`) /issue
+#      session whose driver process has died (crash / OOM / VM reboot), which
+#      the in-session /loop + durable=false cron cannot recover on their own.
+#   3. Pod-safety: AUTO-STOP (NOT terminate) a RUNNING managed pod-<N> /
+#      legacy epm-issue-<N> pod whose task is already DONE; ALERT (no stop)
+#      on a pod-active task with no marker progress for hours — bounding GPU
+#      burn instead of letting an escaped pod run to the 7-day TTL.
+#   4. Stalled-detector: detect a live-but-frozen session (self-report AND
+#      latest progress marker both stale >45 min) and auto-respawn it
+#      (bounded per episode); alert-only for manual sessions or when the
+#      Happy daemon is unreachable.
+#   5. Orphan sweep: registration-INDEPENDENT cross-check — any ACTIVE-status
+#      task with NO live registered session AND no real progress marker for
+#      ~90 min (EPM_ORPHAN_STALENESS_MIN) is auto-respawned (capped at 2
+#      attempts/task/day, EPM_ORPHAN_RESPAWNS_PER_DAY); alert-only for
+#      manual-registered tasks. Closes the #472/#518 blind spot (2026-06-10):
+#      a task revived by a same-issue follow-up with no registration, or one
+#      whose registered driver died while a zombie generation masked it.
+#   6. GC: reap per-issue watcher state files for completed/archived tasks.
 # Mirrors cron_worktree_audit.sh / cron_pod_audit.sh.
 #
 # Safety lives in scripts/autonomous_session_watch.py: single-flight flock, a
 # 2-consecutive-miss guard before any respawn OR pod-stop, worktree-cwd liveness
 # cross-check, respawn ONLY for active-drive statuses (never for parked /
-# awaiting_promotion tasks), pod-stop ONLY for RUNNING managed pods with no live
-# driving session, and a daemon-reachability guard that skips the whole run
-# (both passes) during an outage. See that file's docstring for the full rule.
+# awaiting_promotion tasks), pod-stop keyed on TASK STATUS proving the run is
+# done (never on session liveness), and a daemon-reachability guard that skips
+# the respawn + stalled-respawn arms (the passes that reason about session
+# liveness) during an outage — the pod-safety, disk, and GC passes run
+# regardless. See that file's docstring for the full rule.
 #
 # Output: logs/autonomous_session_watch/YYYY-MM-DD.log (one file per day).
 
@@ -49,3 +69,8 @@ mkdir -p "$LOG_DIR"
 # Exit 0 regardless — the log file is the audit trail; we don't want cron email
 # on every routine "all sessions alive" pass or transient respawn.
 exit 0
+
+# SESSION-RECONCILE PASS IS ALERT-ONLY PERMANENTLY (user decision, 2026-06-10):
+# do NOT export EPM_SESSION_RECONCILE_AUTOSTOP here or anywhere else. The
+# watcher may only ALERT on idle sessions of completed/archived tasks;
+# stopping them stays a manual user action.

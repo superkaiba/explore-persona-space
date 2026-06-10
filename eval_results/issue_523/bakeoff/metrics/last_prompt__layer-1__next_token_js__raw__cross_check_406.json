@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "failed": false,
+  "summary": {
+    "n_pairs_checked": 240,
+    "n_pairs_skipped": 0,
+    "rank_corr_spearman": 0.9252342290409286,
+    "spearman_p_value": 3.7223775542978075e-102,
+    "rank_corr_floor": 0.5,
+    "ok": true,
+    "max_abs_diff": 0.8326110245105577,
+    "mean_abs_diff": 0.4295664495819117,
+    "note": "Methodology: ours = SINGLE-POSITION (last_prompt) full-vocab JS; #406's = SEQUENCE-LEVEL teacher-forced top-k=25 JS averaged across response positions. Different operationalizations of next-token disagreement; checked via rank correlation, not absolute equality."
+  },
+  "git_sha": "d6deb6dbd1edf878a4673d84dcda23fd2b70276c",
+  "timestamp_utc": "2026-06-10T00:22:37.418491+00:00"
+}

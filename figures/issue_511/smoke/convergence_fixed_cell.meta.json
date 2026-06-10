@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-06-08T05:21:55.599072+00:00",
+  "git_sha": "668578252f3ff1e347246c9b1fbf60098cd3df8d",
+  "python": "3.11.15",
+  "figure": "convergence_fixed_cell",
+  "cell_id": "last_prompt__L22__gauss_kl__raw",
+  "arm": "loc",
+  "epoch": 1,
+  "N_grid": [
+    25.0,
+    50.0
+  ],
+  "abs_rho_mean": [
+    0.7639857715924454,
+    0.7710628643367892
+  ],
+  "abs_rho_std": [
+    0.004000469719046829,
+    0.004218876639404845
+  ],
+  "cv_mean": [
+    0.567258123380961,
+    0.5792741952293359
+  ],
+  "cv_std": [
+    0.007501874707466216,
+    0.0065345834598469765
+  ],
+  "plateau_verdict": {}
+}

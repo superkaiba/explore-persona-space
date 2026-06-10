@@ -47,10 +47,15 @@ The worktree's `tasks/` folder is FROZEN at branch-creation status:
 - Add a grep guard before returning: confirm the substituted prompt
   actually contains the begin/end envelope of the inlined body.
 
-Plan files (committed at branch-cut time, e.g. `plans/v5.md`) ARE
-resolvable inside the worktree, so the plan_marker_path can stay a
-worktree-relative path. Only the events.jsonl-resident markers need
-inlining.
+Plan files (committed at branch-cut time, e.g. `plans/v5.md`) are
+resolvable inside the worktree ONLY when the branch was cut from main
+after the task folder existed. A child task's worktree cut from a PARENT
+issue branch predating the task (#550 cut from `origin/issue-538`,
+2026-06-10) has NO `tasks/*/<N>/` folder at all — the plan is as
+unreachable as the markers. Composers must existence-check
+`<worktree>/<plan_marker_path>` and fall back to inlining the canonical
+plan from main (`task.py find <N>` → `plans/plan.md`) with a begin/end
+envelope (codex-code-reviewer.md Step 2-pre-b, fixed 2026-06-10).
 
 **Where this rule lives in the workflow surface:**
 
@@ -64,6 +69,14 @@ inlining.
   `epm:interpretation` body + the body.md. Audit those agents next time a
   Codex twin in those roles emits "could not read" / wrong-marker-shape
   failures. (Not fixed in this pass — one-candidate-per-invocation rule.)
+- `codex-clean-result-critic.md` AUDITED + fixed 2026-06-10 (#550
+  follow-up): brief now mandates absolute canonical-main paths from
+  `task.py find <N>` (body + plan), an orchestrator-written temp file
+  for the `epm:interpretation` note (never an events.jsonl path), a
+  Step 1b compose-time existence check that fails loud, and
+  `cd {{repo_root}} &&` pins on the verifier / audit / list-concerns
+  commands so an inherited worktree dispatch cwd can't break them. No
+  inline-envelope needed — nothing it reads is worktree-resident.
 
 **Incident:** #489 r1 + r2 (2026-06-04). Both rounds, Codex emitted
 `marker-shape` + `smoke-run-missing` FAIL tags that the orchestrator had

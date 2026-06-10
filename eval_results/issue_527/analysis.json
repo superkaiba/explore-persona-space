@@ -1,0 +1,30 @@
+{
+  "schema_version": "issue_527_analysis_v1",
+  "pair_aggregate": {
+    "florist__medical_doctor": {
+      "n_seeds": 3,
+      "median_dv1": 0.9906917747910601,
+      "median_dv1_coverage": 1.0,
+      "median_dv2_resid_norm": 0.5674074622907336,
+      "median_dv3_resid": -3.175182151794435,
+      "fraction_h1_pass": 0.0,
+      "fraction_h2_pass": 0.0,
+      "fraction_dv1_diagnostic": 0.0,
+      "base_cos_centered_L20": 0.0011739598121494055
+    },
+    "librarian__police_officer": {
+      "n_seeds": 3,
+      "median_dv1": 0.9914370536995244,
+      "median_dv1_coverage": 1.0,
+      "median_dv2_resid_norm": 0.6049668541413405,
+      "median_dv3_resid": -3.3329567909240723,
+      "fraction_h1_pass": 0.0,
+      "fraction_h2_pass": 0.0,
+      "fraction_dv1_diagnostic": 0.0,
+      "base_cos_centered_L20": -0.003965806216001511
+    }
+  },
+  "n_cells_analyzed": 6,
+  "git_commit": "8e70d0a081bd56fae59acb46b7f39de4aa8eb988",
+  "timestamp_utc": "2026-06-09T18:16:38+00:00"
+}

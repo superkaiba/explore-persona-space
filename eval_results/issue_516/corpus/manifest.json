@@ -1,0 +1,49 @@
+{
+  "issue": 516,
+  "sharegpt_repo": "anon8231489123/ShareGPT_Vicuna_unfiltered",
+  "detoxify_threshold": 0.5,
+  "detoxify_total": 94145,
+  "detoxify_kept": 94036,
+  "detoxify_dropped": 109,
+  "detoxify_drop_rate": 0.00115778851771204,
+  "categories": {
+    "refusal": 611,
+    "factual": 611,
+    "creative": 611,
+    "technical_code": 611,
+    "advice": 611,
+    "other": 611
+  },
+  "n_pairs_per_category": 611,
+  "n_total_pairs": 3666,
+  "rewriter_model": "claude-sonnet-4-5-20250929",
+  "warm_prompt_sha256": "a8d9b72923478ebdd8bcd48b8ff94bc64b8e0258b6eb2d4fd65226759c49b31c",
+  "cold_prompt_sha256": "ccdbe8eb591fa04010aab102ddd56d216bb1d3257144e071b1e321de2b91fe7f",
+  "smoke": false,
+  "arms": {
+    "warm": {
+      "n_assistant_turn_rewrites": 10101,
+      "n_sampled_rows": 3666,
+      "n_kept_after_format": 2254,
+      "n_dropped_rows": 1412,
+      "n_errors": 0,
+      "avg_assistant_turns_per_row": 2.75531914893617,
+      "system_prompt_sha256": "a8d9b72923478ebdd8bcd48b8ff94bc64b8e0258b6eb2d4fd65226759c49b31c",
+      "output_path": "eval_results/issue_516/corpus/warm.jsonl"
+    },
+    "cold": {
+      "n_assistant_turn_rewrites": 10101,
+      "n_sampled_rows": 3666,
+      "n_kept_after_format": 2242,
+      "n_dropped_rows": 1424,
+      "n_errors": 0,
+      "avg_assistant_turns_per_row": 2.75531914893617,
+      "system_prompt_sha256": "ccdbe8eb591fa04010aab102ddd56d216bb1d3257144e071b1e321de2b91fe7f",
+      "output_path": "eval_results/issue_516/corpus/cold.jsonl"
+    }
+  },
+  "seed": 42,
+  "qa_spotcheck": {
+    "skipped": true
+  }
+}

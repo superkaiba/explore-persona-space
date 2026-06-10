@@ -1,0 +1,103 @@
+{
+  "schema_version": "i514_matched_rate_sweep_v1",
+  "n_replicates": 1000,
+  "seed": 42,
+  "lora_anchor_cells": [
+    "lora_b1",
+    "lora_b2",
+    "lora_b3"
+  ],
+  "fullft_anchor_cells": [
+    "ft_b1",
+    "ft_dense_b30",
+    "ft_dense_b35",
+    "ft_dense_b40",
+    "ft_dense_b45",
+    "ft_lowlr_b100",
+    "ft_lowlr_b50"
+  ],
+  "note": "Crossed cluster bootstrap LoRA-FT gap over the clean anchor set at a grid of source-rate targets (free-reanalysis 2026-06-08). Gap crosses zero only at the matched ~8-nat rate; diverges (FT lower) in the saturated 17-19 nat regime.",
+  "rows": [
+    {
+      "source_dg_nat": 5.0,
+      "lora_held_out_nat": 2.1912,
+      "fullft_held_out_nat": 2.9676,
+      "gap_ft_minus_lora_nat": 0.7764,
+      "gap_ci_lo_nat": 0.1978,
+      "gap_ci_hi_nat": 1.3264,
+      "gap_excludes_zero": true
+    },
+    {
+      "source_dg_nat": 6.0,
+      "lora_held_out_nat": 2.6414,
+      "fullft_held_out_nat": 3.1595,
+      "gap_ft_minus_lora_nat": 0.5181,
+      "gap_ci_lo_nat": 0.1397,
+      "gap_ci_hi_nat": 0.8784,
+      "gap_excludes_zero": true
+    },
+    {
+      "source_dg_nat": 7.0,
+      "lora_held_out_nat": 3.0915,
+      "fullft_held_out_nat": 3.3514,
+      "gap_ft_minus_lora_nat": 0.2599,
+      "gap_ci_lo_nat": 0.0648,
+      "gap_ci_hi_nat": 0.4498,
+      "gap_excludes_zero": true
+    },
+    {
+      "source_dg_nat": 8.0,
+      "lora_held_out_nat": 3.5417,
+      "fullft_held_out_nat": 3.5433,
+      "gap_ft_minus_lora_nat": 0.0016,
+      "gap_ci_lo_nat": -0.1272,
+      "gap_ci_hi_nat": 0.1195,
+      "gap_excludes_zero": false
+    },
+    {
+      "source_dg_nat": 9.0,
+      "lora_held_out_nat": 3.9918,
+      "fullft_held_out_nat": 4.2056,
+      "gap_ft_minus_lora_nat": 0.2138,
+      "gap_ci_lo_nat": 0.0614,
+      "gap_ci_hi_nat": 0.3502,
+      "gap_excludes_zero": true
+    },
+    {
+      "source_dg_nat": 11.0,
+      "lora_held_out_nat": 4.8921,
+      "fullft_held_out_nat": 5.7625,
+      "gap_ft_minus_lora_nat": 0.8704,
+      "gap_ci_lo_nat": 0.6507,
+      "gap_ci_hi_nat": 1.0796,
+      "gap_excludes_zero": true
+    },
+    {
+      "source_dg_nat": 14.0,
+      "lora_held_out_nat": 6.5538,
+      "fullft_held_out_nat": 8.0978,
+      "gap_ft_minus_lora_nat": 1.5441,
+      "gap_ci_lo_nat": 1.1832,
+      "gap_ci_hi_nat": 1.9077,
+      "gap_excludes_zero": true
+    },
+    {
+      "source_dg_nat": 17.0,
+      "lora_held_out_nat": 13.5259,
+      "fullft_held_out_nat": 10.4331,
+      "gap_ft_minus_lora_nat": -3.0928,
+      "gap_ci_lo_nat": -3.5959,
+      "gap_ci_hi_nat": -2.6104,
+      "gap_excludes_zero": true
+    },
+    {
+      "source_dg_nat": 19.0,
+      "lora_held_out_nat": 18.1741,
+      "fullft_held_out_nat": 13.6689,
+      "gap_ft_minus_lora_nat": -4.5052,
+      "gap_ci_lo_nat": -5.1795,
+      "gap_ci_hi_nat": -3.8492,
+      "gap_excludes_zero": true
+    }
+  ]
+}

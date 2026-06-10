@@ -1,0 +1,19 @@
+{
+  "issue": 519,
+  "mode": "sweep",
+  "arms": [
+    "marker",
+    "em"
+  ],
+  "seeds": [
+    42,
+    137,
+    256
+  ],
+  "n_cells": 6,
+  "n_gpus": 4,
+  "cpu_only": false,
+  "skipped_phases": [],
+  "git_commit": "c46b8989df021591c18711f51e50df4d6c9ab6c8",
+  "timestamp_utc": "2026-06-08T21:01:31Z"
+}

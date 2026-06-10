@@ -323,6 +323,7 @@ const ACTIVE_STATUSES: ReadonlySet<Status> = new Set([
   "verifying",
   "interpreting",
   "reviewing",
+  "followups_running",
   "awaiting_promotion",
 ]);
 
@@ -331,7 +332,7 @@ const ACTIVE_STATUSES: ReadonlySet<Status> = new Set([
  *
  * Filter rules:
  *   - any task in {running, verifying, interpreting, reviewing,
- *     awaiting_promotion}, or
+ *     followups_running, awaiting_promotion}, or
  *   - any `completed` task with `has_clean_result=true` AND body.md
  *     touched in the last `recentDays` days.
  *

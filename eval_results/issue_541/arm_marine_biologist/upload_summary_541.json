@@ -1,0 +1,52 @@
+{
+  "phase": "upload",
+  "arm_slug": "arm_marine_biologist",
+  "hf_data_repo": "superkaiba1/explore-persona-space-data",
+  "bucket": "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania",
+  "n_files_uploaded": 18,
+  "n_files_skipped_existing": 0,
+  "files": [
+    "issue541_prior_stratified/baseline_shared/the_elk_county_courthouse_in_ridgway_pennsylvania/baseline_completions_the_elk_county_courthouse_in_ridgway_pennsylvania.shard00.jsonl",
+    "issue541_prior_stratified/baseline_shared/the_elk_county_courthouse_in_ridgway_pennsylvania/baseline_completions_the_elk_county_courthouse_in_ridgway_pennsylvania.shard01.jsonl",
+    "issue541_prior_stratified/baseline_shared/the_elk_county_courthouse_in_ridgway_pennsylvania/baseline_completions_the_elk_county_courthouse_in_ridgway_pennsylvania.manifest.json",
+    "issue541_prior_stratified/baseline_shared/the_elk_county_courthouse_in_ridgway_pennsylvania/baseline_judged_the_elk_county_courthouse_in_ridgway_pennsylvania.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/completions_on_policy_suppression_cn_seed42.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/judged_on_policy_suppression_cn_seed42.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/judged_5way_on_policy_suppression_cn_seed42.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/completions_on_policy_suppression_cn_seed137.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/judged_on_policy_suppression_cn_seed137.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/judged_5way_on_policy_suppression_cn_seed137.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/completions_on_policy_suppression_cn_seed256.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/judged_on_policy_suppression_cn_seed256.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/judged_5way_on_policy_suppression_cn_seed256.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/the_elk_county_courthouse_in_ridgway_pennsylvania_assistant_raw.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/the_elk_county_courthouse_in_ridgway_pennsylvania_kindergarten_teacher_raw.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/the_elk_county_courthouse_in_ridgway_pennsylvania_no_system_raw.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/the_elk_county_courthouse_in_ridgway_pennsylvania_software_engineer_raw.jsonl",
+    "issue541_prior_stratified/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/audit_the_elk_county_courthouse_in_ridgway_pennsylvania.json"
+  ],
+  "files_skipped_existing": [],
+  "shard_manifests": [
+    "issue541_prior_stratified/baseline_shared/the_elk_county_courthouse_in_ridgway_pennsylvania/baseline_completions_the_elk_county_courthouse_in_ridgway_pennsylvania.manifest.json"
+  ],
+  "overflow_model_repo": "superkaiba1/explore-persona-space-overflow",
+  "adapter_uploads": [
+    {
+      "path_in_repo": "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed42",
+      "url": "https://huggingface.co/superkaiba1/explore-persona-space-overflow/tree/main/adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed42",
+      "status": "uploaded"
+    },
+    {
+      "path_in_repo": "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed137",
+      "url": "https://huggingface.co/superkaiba1/explore-persona-space-overflow/tree/main/adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed137",
+      "status": "uploaded"
+    },
+    {
+      "path_in_repo": "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed256",
+      "url": "https://huggingface.co/superkaiba1/explore-persona-space-overflow/tree/main/adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed256",
+      "status": "uploaded"
+    }
+  ],
+  "quota_note": "non-LFS git-blob route; account over public HF storage quota (round-6 deviation, see results sentinel plan_deviations)",
+  "timestamp": "2026-06-10T19:30:46.795217+00:00"
+}

@@ -1,0 +1,28 @@
+{
+  "far_pair": [
+    "paramedic",
+    "comedian"
+  ],
+  "near_pair_primary": [
+    "surgeon",
+    "medical_doctor"
+  ],
+  "near_pair_fallback": [
+    "librarian",
+    "software_engineer"
+  ],
+  "near_pair_chosen": [
+    "surgeon",
+    "medical_doctor"
+  ],
+  "near_chosen_reason": "PRIMARY (cos diff +0.0000 < +0.3 but fallback unusable: ('librarian', 'software_engineer') overlaps NEGATIVE_PERSONAS at ['librarian', 'software_engineer'])",
+  "cosine_far": -0.9999999999999999,
+  "cosine_near_primary": -0.9999999999999999,
+  "cosine_near_fallback": null,
+  "cosine_gate_threshold": 0.3,
+  "skipped_cosine": false,
+  "fallback_gradient_conflict": [
+    "librarian",
+    "software_engineer"
+  ]
+}

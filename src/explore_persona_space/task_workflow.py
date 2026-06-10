@@ -611,17 +611,49 @@ def _utcnow_iso() -> str:
     return datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _next_event_version(events_path: Path, kind: str) -> int:
+    """Return ``max(existing versions for this kind) + 1`` (1 when the kind
+    is new) for the events file at ``events_path``.
+
+    Mirrors ``new_plan_version``'s max+1 (NOT count+1) semantics so a later
+    defaulted post can never shadow an explicit higher version posted
+    earlier. Caller must hold the workflow lock — the read-then-append must
+    be atomic against concurrent posters.
+    """
+    if not events_path.exists():
+        return 1
+    highest = 0
+    for line in events_path.read_text().splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if row.get("kind") != kind:
+            continue
+        v = row.get("version")
+        if isinstance(v, int) and v > highest:
+            highest = v
+    return highest + 1
+
+
 def post_event(
     task_id: int,
     kind: str,
     *,
-    version: int = 1,
+    version: int | None = None,
     by: str = "unknown",
     note: str | None = None,
     artifacts: list[str] | None = None,
     **extras: Any,
 ) -> dict[str, Any]:
     """Append a single event to tasks/<status>/<id>/events.jsonl.
+
+    When ``version`` is omitted it is derived per marker kind as
+    ``max(existing versions for this kind) + 1`` (1 when the kind is new),
+    so the "highest version per kind wins" resume contract holds without
+    every caller having to remember an explicit version (incident #480:
+    two defaulted re-posts both landed version 1 below an existing v6,
+    making the stale v6 authoritative on resume). An explicit ``version``
+    always wins.
 
     Note size is capped at EVENT_NOTE_MAX chars to mirror Sagan; oversize
     raises ValueError so the caller can fall back to a failure marker.
@@ -631,19 +663,21 @@ def post_event(
             f"event note exceeds {EVENT_NOTE_MAX} chars ({len(note)}); "
             f"caller must post epm:failure v1 with reason=note_oversize"
         )
-    payload: dict[str, Any] = {
-        "ts": _utcnow_iso(),
-        "kind": kind,
-        "version": version,
-        "by": by,
-    }
-    if note is not None:
-        payload["note"] = note
-    if artifacts:
-        payload["artifacts"] = artifacts
-    payload.update(extras)
     with _locked():
         path = find_task_path(task_id) / "events.jsonl"
+        if version is None:
+            version = _next_event_version(path, kind)
+        payload: dict[str, Any] = {
+            "ts": _utcnow_iso(),
+            "kind": kind,
+            "version": version,
+            "by": by,
+        }
+        if note is not None:
+            payload["note"] = note
+        if artifacts:
+            payload["artifacts"] = artifacts
+        payload.update(extras)
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("a") as f:
             f.write(json.dumps(payload, ensure_ascii=False) + "\n")
@@ -1137,13 +1171,35 @@ def set_track(task_id: int, track: str) -> None:
 def new_plan_version(task_id: int, plan_md: str) -> int:
     """Append plans/v{next}.md, update plans/plan.md symlink. Returns the
     new version number.
+
+    The next version number is derived as ``max(existing v<N>) + 1`` (NOT
+    ``len(existing) + 1``) so that gaps in the plan-version sequence — e.g.
+    a v5 draft that lived only in /tmp and was never registered, leaving
+    plans/ as ``v1,v2,v3,v4,v6`` — cannot cause the next write to silently
+    overwrite the highest existing plan. The plans/v{N}.md scheme exists
+    to preserve the full audit trail of plan revisions; this resolver is
+    the single canonical writer and must never lose history. As a
+    belt-and-suspenders guard, refuse loudly if the computed target file
+    somehow already exists (e.g. a concurrent writer between the glob and
+    the write, or a manually pre-staged file).
     """
     with _locked():
         plans_dir = find_task_path(task_id) / "plans"
         plans_dir.mkdir(parents=True, exist_ok=True)
-        existing = sorted(plans_dir.glob("v*.md"))
-        next_v = len(existing) + 1
+        existing_nums = [
+            int(m.group(1))
+            for p in plans_dir.glob("v*.md")
+            if (m := re.fullmatch(r"v(\d+)\.md", p.name))
+        ]
+        next_v = (max(existing_nums) + 1) if existing_nums else 1
         target = plans_dir / f"v{next_v}.md"
+        if target.exists():
+            raise RuntimeError(
+                f"refusing to overwrite existing plan file {target} "
+                f"(existing versions: {sorted(existing_nums)}); "
+                f"the highest-version+1 resolver computed v{next_v} but "
+                f"that file already exists on disk"
+            )
         target.write_text(plan_md if plan_md.endswith("\n") else plan_md + "\n")
         # Symlink plan.md → v{next}.md
         symlink = plans_dir / "plan.md"
