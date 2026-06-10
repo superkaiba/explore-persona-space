@@ -47,7 +47,7 @@ SPLIT_RNG_SEED = 42
 LOW_COS_THRESHOLD = 0.5
 REPRO_TOL = 0.05
 
-ARM_LABEL = {"em": "EM (insecure code)", "marker": "marker (※)"}
+ARM_LABEL = {"em": "EM (bad medical advice)", "marker": "marker (※)"}
 VARIANT_LABEL = {
     "same": "trained-model text",
     "base": "base-model text",

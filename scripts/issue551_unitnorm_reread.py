@@ -71,7 +71,7 @@ logger = logging.getLogger(__name__)
 ALIGNED_COS_THRESHOLD = 0.5  # same split rule the round-2 figures used
 WEIGHTED_CONSISTENCY_TOL = 1e-3  # recomputed weighted cos vs persisted norm_alignment.json
 
-ARM_LABEL = {"em": "EM (insecure code)", "marker": "marker (※)"}
+ARM_LABEL = {"em": "EM (bad medical advice)", "marker": "marker (※)"}
 SEED_MARKERS = {42: "o", 137: "^", 256: "s"}
 
 
