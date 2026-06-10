@@ -1,6 +1,7 @@
 ---
-title: Score the base own-response prior on the held-out persona panel (two-ingredient
-  rule joint test)
+title: Scoring the base model's own answers ranks held-out personas by trained marker
+  pressure before any training, but reading the trained model's answers stays decisively
+  better (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T15:34:12Z'

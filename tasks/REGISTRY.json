@@ -3330,7 +3330,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/559",
       "status": "interpreting",
-      "title": "Score the base own-response prior on the held-out persona panel (two-ingredient rule joint test)"
+      "title": "Scoring the base model's own answers ranks held-out personas by trained marker pressure before any training, but reading the trained model's answers stays decisively better (MODERATE confidence)"
     },
     "560": {
       "goal": "Test whether the held-out persona channel structure \u2014 persona geometry routes the training-induced change while the base end-of-answer level persists through training \u2014 generalizes from the 4-negative training recipe to the 16 broad-negative-panel marker adapters, by generating and four-float-scoring those adapters' responses on the same 35 held-out personas.",
