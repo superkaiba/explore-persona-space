@@ -53,6 +53,23 @@ end slot, which is exactly why contrastive negatives (which train EOS-beats-mark
 for non-source personas) hold bystander emission down. **Corollary:** the clean
 log-prob *measurement* window (#478, log P up to −4 nat / p ≈ 1.6%) sits entirely
 **below** emission onset — graded affinity, zero firing.
+
+**Band ≠ crossing — the step-60–100 onset is an lr=1e-5 finding, not a recipe
+law (#538).** #398 and #456 both ran at lr=1e-5, so the "first emission ~step
+60–100" framing above is the cliff timing for THAT LR. At lr=5e-6 marker-only
+loss — the validated clean window — a [14, 20] nat band-stop landed all 18
+cells in band (source Δ 14.27–19.37 nat, step 60–90, 2 pairs × 3 arms × 3
+seeds) and on-policy emission stayed exactly 0.000 across 342 cell × persona
+reads. The marker logit rose ~+12 (e.g. florist source: −0.3 → +12.6) and EOS
+dropped only ~5 (24.0 → 18.5), leaving EOS ahead by +1.39..+8.84 logits across
+all 24 trained-source reads (median +5.85; joint median +5.48, singleton
+median +6.80). The implant moved 3× past the parent's #527 dial without
+reaching the crossing. Lower LR widens the affinity ramp in step-space (more
+log-prob per step *without* a matching EOS drop), so emission-dependent designs
+must gate on the marker-vs-EOS crossing (`z_marker > z_eos` at the
+post-response slot) — never on a log-prob band — and either move LR up into
+the 1e-5 band where the cliff is documented or budget a much higher band/step
+target at lr=5e-6.
 - **Under-trained / floor:** source ≈ base prior (~ −19 to −22 nat), emission 0
   everywhere, training loss barely drops (#520 = −22 nat, 0/everything; #365 =
   0.9% source floor; #505 original anchor 0.04–0.82 nat).
@@ -279,3 +296,4 @@ Do these before believing any floor or ceiling:
 | #383/#365 | aw/archived | 1:1 ratio + matched-eval lifts source rate 70× off the floor |
 | #207 | aw-promotion | persona-distance predicts where the marker leaks (|ρ| 0.48–0.79) |
 | #395 | aw-promotion | ` ※` id 83399 = clean single rare token; adopt as default marker |
+| #538 | aw-promotion | band ≠ crossing: [14, 20] nat band at lr=5e-6 fired in band on 18/18 cells, EOS lead +1.39..+8.84 logits, on-policy emission 0.000 everywhere |
