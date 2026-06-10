@@ -4,7 +4,7 @@ title: '#502''s L22 gauss_kl predictor lands at held-out CV R² = 0.21 — just 
 kind: experiment
 tags: []
 created_at: '2026-06-08T23:28:14Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 502
 goal: 'Determine whether #502''s headline geometry-predicts-leakage cell (last_prompt
   x L22 x gauss_kl, rho=-0.79 / CV R^2=0.61 on loc-arm epoch 1) survives honest out-of-sample
