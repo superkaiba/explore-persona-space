@@ -4226,6 +4226,16 @@ no PR exists or the branch is already merged into `main`.
 
 #### Merge safety guards (run before the merge commands)
 
+Derive the two paths cwd-robustly FIRST — never via `git rev-parse
+--show-toplevel`, which from a worktree cwd returns the WORKTREE root and
+nests `$WT` into `.../issue-<N>/.claude/worktrees/issue-<N>` (incident #506,
+2026-06-09: the guard snippet exit-128'd with "cannot change to ..."):
+
+```bash
+REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+WT="$REPO_ROOT/.claude/worktrees/issue-<N>"
+```
+
 A behind-`main` `issue-<N>` branch can carry stale copies of OTHER tasks'
 `tasks/` state, a crash between merge and a status flip can strand a
 task at the wrong status, AND a branch based on another still-unmerged
