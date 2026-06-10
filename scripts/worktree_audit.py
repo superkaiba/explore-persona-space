@@ -20,15 +20,27 @@ A targeted worktree is removed only when it is provably idle. It is KEPT
   2. ``issue-<N>`` whose task status is non-terminal
      (planning / plan_pending / approved / running / verifying /
      interpreting / reviewing / blocked);
-  3. it was modified within the grace window (default 6h);
+  3. it was modified within the grace window (default 6h; tightened to 1h
+     under disk pressure — see below);
   4. it has uncommitted TRACKED changes (real unmerged source — untracked
      generated files like ``eval_results/`` or scratch scripts do NOT block).
+
+Disk-pressure mode (2026-06-10, #543): the VM root disk hit 100% mid-pipeline
+with ``.claude/worktrees/`` holding 264 GB, intermittently killing git /
+task.py across all concurrent sessions. The audit now always reports the
+usage of the filesystem holding the worktrees plus a per-worktree ``du``;
+when usage is at/above a threshold (default 90%, override via
+``EPM_WORKTREE_DISK_PRESSURE_PCT``) the grace window in guard 3 tightens to
+``PRESSURE_GRACE_HOURS`` (1h). Pressure changes ONLY the grace window —
+guards 1, 2 and 4 and the human-named exclusion are unaffected.
 
 Default is dry-run. Pass ``--apply`` to actually remove (the cron wrapper
 does). Removal uses ``git worktree remove --force`` (after ``git worktree
 unlock`` for locked agent worktrees); a worktree git refuses to remove is
 logged and skipped, never ``rm -rf``'d, so an unattended run can never lose
-data it cannot account for.
+data it cannot account for (this also rules out deleting gitignored caches
+inside KEPT worktrees under pressure — a held worktree may have a live
+process using those files).
 """
 
 from __future__ import annotations
@@ -38,6 +50,7 @@ import contextlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -64,6 +77,11 @@ _ISSUE_NAME_RE = re.compile(r"^issue-(\d+)$")
 
 DEFAULT_GRACE_HOURS = 6.0
 
+# Disk-pressure mode: at/above this filesystem usage the grace window
+# tightens to PRESSURE_GRACE_HOURS. Threshold overridable via env.
+DEFAULT_PRESSURE_THRESHOLD_PCT = 90.0
+PRESSURE_GRACE_HOURS = 1.0
+
 
 @dataclass
 class Decision:
@@ -77,6 +95,65 @@ class AuditResult:
     removed: list[str] = field(default_factory=list)
     kept: list[Decision] = field(default_factory=list)
     failed: list[str] = field(default_factory=list)
+    # Reporting (always on): per-worktree disk usage in bytes (None when du
+    # failed), usage pct of the filesystem holding the worktrees, and the
+    # pressure state actually applied to this run.
+    sizes_bytes: dict[str, int | None] = field(default_factory=dict)
+    disk_pct: float | None = None
+    pressure_threshold_pct: float = DEFAULT_PRESSURE_THRESHOLD_PCT
+    pressure: bool = False
+    grace_hours_effective: float = DEFAULT_GRACE_HOURS
+
+
+def effective_grace_hours(grace_hours: float, disk_pct: float, threshold_pct: float) -> float:
+    """Pure pressure rule (unit-tested): at/above ``threshold_pct`` usage the
+    grace window tightens to ``PRESSURE_GRACE_HOURS``; an explicitly tighter
+    ``grace_hours`` is never loosened. Below the threshold, unchanged."""
+    if disk_pct >= threshold_pct:
+        return min(grace_hours, PRESSURE_GRACE_HOURS)
+    return grace_hours
+
+
+def _pressure_threshold_pct() -> float:
+    """Pressure threshold (% filesystem usage), env-overridable."""
+    return float(
+        os.environ.get("EPM_WORKTREE_DISK_PRESSURE_PCT", str(DEFAULT_PRESSURE_THRESHOLD_PCT))
+    )
+
+
+def _disk_usage_pct(path: str) -> float:
+    """Percent used of the filesystem holding ``path``."""
+    usage = shutil.disk_usage(path)
+    return 100.0 * usage.used / usage.total
+
+
+def _worktree_size_bytes(path: str) -> int | None:
+    """Disk usage of one worktree via ``du -sx`` (REPORTING ONLY — a du
+    failure or timeout degrades to None and never blocks the sweep).
+
+    Caveat: content hardlinked across worktrees (uv-managed ``.venv``\\s) is
+    counted once PER worktree, so the per-worktree sum overstates unique
+    disk usage (observed 2026-06-10: du-sum 1146G vs ~264G actual)."""
+    try:
+        out = subprocess.run(
+            ["du", "-sx", "--block-size=1", path],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None
+    if out.returncode != 0 or not out.stdout.strip():
+        return None
+    try:
+        return int(out.stdout.split()[0])
+    except (ValueError, IndexError):
+        return None
+
+
+def _fmt_size(n: int | None) -> str:
+    """Human-readable GB string for report lines ('?' when du failed)."""
+    return f"{n / 1e9:.1f}G" if n is not None else "?"
 
 
 def should_remove(
@@ -223,9 +300,20 @@ def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditRes
     root = repo_root()
     wt_root_rel = ".claude/worktrees/"
     wt_dir = root / ".claude" / "worktrees"
-    res = AuditResult()
+    res = AuditResult(grace_hours_effective=grace_hours)
     if not wt_dir.is_dir():
         return res
+
+    # Disk-pressure check: at/above the threshold the grace window tightens.
+    # ONLY the grace window changes — the live-process, issue-status,
+    # tracked-changes and human-named guards are pressure-independent.
+    res.disk_pct = _disk_usage_pct(str(wt_dir))
+    res.pressure_threshold_pct = _pressure_threshold_pct()
+    res.pressure = res.disk_pct >= res.pressure_threshold_pct
+    res.grace_hours_effective = effective_grace_hours(
+        grace_hours, res.disk_pct, res.pressure_threshold_pct
+    )
+    grace_hours = res.grace_hours_effective
 
     statuses = _issue_statuses()
     live = _live_worktree_names(wt_root_rel)
@@ -237,6 +325,7 @@ def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditRes
         if not child.is_dir():
             continue
         name = child.name
+        res.sizes_bytes[name] = _worktree_size_bytes(str(child))
         decision = _classify(child, statuses, live, grace_hours, now)
         if not decision.remove:
             res.kept.append(decision)
@@ -276,7 +365,10 @@ def main(argv: list[str] | None = None) -> int:
         "--grace-hours",
         type=float,
         default=DEFAULT_GRACE_HOURS,
-        help=f"Skip worktrees modified within this many hours (default {DEFAULT_GRACE_HOURS}).",
+        help=(
+            f"Skip worktrees modified within this many hours (default {DEFAULT_GRACE_HOURS}; "
+            f"tightened to {PRESSURE_GRACE_HOURS} under disk pressure)."
+        ),
     )
     ap.add_argument("--json", action="store_true", help="Emit a JSON summary.")
     args = ap.parse_args(argv)
@@ -290,25 +382,43 @@ def main(argv: list[str] | None = None) -> int:
                 {
                     "apply": args.apply,
                     "grace_hours": args.grace_hours,
+                    "grace_hours_effective": res.grace_hours_effective,
+                    "disk_pct": res.disk_pct,
+                    "pressure_threshold_pct": res.pressure_threshold_pct,
+                    "disk_pressure": res.pressure,
                     "removed": res.removed,
                     "failed": res.failed,
                     "kept": [{"name": d.name, "reason": d.reason} for d in res.kept],
+                    "sizes_bytes": res.sizes_bytes,
                 }
             )
         )
     else:
+        if res.disk_pct is not None:
+            total = sum(n for n in res.sizes_bytes.values() if n is not None)
+            print(
+                f"worktree_audit: disk {res.disk_pct:.1f}% used "
+                f"(pressure threshold {res.pressure_threshold_pct:.0f}%) | "
+                f"worktrees du-sum {_fmt_size(total)} across {len(res.sizes_bytes)} "
+                f"(hardlinks counted per worktree)"
+            )
+            if res.pressure:
+                print(
+                    f"  !! DISK PRESSURE: grace window tightened "
+                    f"{args.grace_hours:g}h -> {res.grace_hours_effective:g}h"
+                )
         print(
             f"worktree_audit: {verb} {len(res.removed)} | "
             f"kept {len(res.kept)} | failed {len(res.failed)}"
         )
         for name in res.removed:
-            print(f"  - {verb}: {name}")
+            print(f"  - {verb}: {name} [{_fmt_size(res.sizes_bytes.get(name))}]")
         for name in res.failed:
-            print(f"  ! FAILED to remove: {name}")
+            print(f"  ! FAILED to remove: {name} [{_fmt_size(res.sizes_bytes.get(name))}]")
         # Keep reasons only matter for debugging; show targeted-but-kept ones.
         for d in res.kept:
             if _TARGET_NAME_RE.match(d.name):
-                print(f"  . kept: {d.name} ({d.reason})")
+                print(f"  . kept: {d.name} [{_fmt_size(res.sizes_bytes.get(d.name))}] ({d.reason})")
 
     # Exit 2 when something was (or would be) removed, mirroring pod_audit;
     # the cron wrapper swallows it so cron does not email on every sweep.

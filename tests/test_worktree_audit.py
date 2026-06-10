@@ -17,6 +17,7 @@ worktree_audit = importlib.util.module_from_spec(_SPEC)
 sys.modules["worktree_audit"] = worktree_audit
 _SPEC.loader.exec_module(worktree_audit)
 should_remove = worktree_audit.should_remove
+effective_grace_hours = worktree_audit.effective_grace_hours
 
 
 # --- KEEP cases ----------------------------------------------------------
@@ -126,6 +127,55 @@ def test_wf_name_with_space_is_out_of_scope():
     )
     assert not d.remove
     assert "scope" in d.reason
+
+
+# --- Disk-pressure grace tightening ---------------------------------------
+
+
+def test_pressure_tightens_grace_to_one_hour():
+    assert effective_grace_hours(6.0, disk_pct=95.0, threshold_pct=90.0) == 1.0
+
+
+def test_pressure_threshold_is_inclusive():
+    assert effective_grace_hours(6.0, disk_pct=90.0, threshold_pct=90.0) == 1.0
+
+
+def test_below_threshold_keeps_grace_unchanged():
+    assert effective_grace_hours(6.0, disk_pct=89.9, threshold_pct=90.0) == 6.0
+
+
+def test_pressure_never_loosens_an_explicitly_tighter_grace():
+    assert effective_grace_hours(0.5, disk_pct=99.0, threshold_pct=90.0) == 0.5
+
+
+def test_pressure_does_not_override_other_guards():
+    # Pressure only shrinks the grace window; a live process, a non-terminal
+    # issue status, tracked changes, and the human-named exclusion all still
+    # keep the worktree even with the tightest grace.
+    grace = effective_grace_hours(6.0, disk_pct=99.0, threshold_pct=90.0)
+    for kwargs in (
+        {"name": "issue-500", "status": "completed", "is_live": True},
+        {"name": "issue-500", "status": "running", "is_live": False},
+        {"name": "exp-192-persona-spread", "status": None, "is_live": False},
+    ):
+        d = should_remove(
+            kwargs["name"],
+            status=kwargs["status"],
+            is_live=kwargs["is_live"],
+            age_hours=999,
+            has_tracked_changes=False,
+            grace_hours=grace,
+        )
+        assert not d.remove, kwargs
+    d = should_remove(
+        "issue-500",
+        status="completed",
+        is_live=False,
+        age_hours=999,
+        has_tracked_changes=True,
+        grace_hours=grace,
+    )
+    assert not d.remove
 
 
 def test_grace_boundary_is_exclusive_below():
