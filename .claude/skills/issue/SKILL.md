@@ -2319,6 +2319,23 @@ park at the user gate on `status=gate` (Step 6d.4), and post
 NEVER re-posts a marker the poller already posted from a sentinel —
 double-posting is the failure mode the gate path is designed to avoid.
 
+**`--pid-file` is a POD-side path.** `poll_pipeline.py` evaluates
+`[ -f <pid_file> ]` inside its remote SSH heredoc, so the pid file must
+exist ON THE POD (the experimenter's launcher writes it there at launch
+time). A pid file written only on the local VM silently reads
+`PID_ALIVE=0` every tick, and the probe falls back to the pid from the
+latest `epm:run-launched` marker.
+
+**Any relaunch must re-post `epm:run-launched`.** After ANY hot-fix
+relaunch of the pod workload (new pid), post a fresh `epm:run-launched`
+with the new `pid=` (and `log_abs=`) before the next tick — the poller's
+marker-pid fallback (`_marker_pid`) reads ONLY `epm:run-launched`
+markers, so an `epm:progress` note recording the new pid is invisible to
+it and the stale pid yields a false `status=dead` on a healthy run.
+(Incident: task #521, 2026-06-10 — a VM-side pid file plus an
+`epm:progress`-only relaunch produced `status=dead, pid_alive=False`
+while the pod run was healthy.)
+
 The 540-second sleep stays under the Bash tool's 10-minute (`600000` ms)
 cap with margin; longer intervals are achievable by raising the sleep
 within the cap, but 9 minutes is the operational sweet spot (enough
