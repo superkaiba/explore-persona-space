@@ -1557,7 +1557,7 @@ def test_render_sbatch_omits_account_line_when_cluster_account_is_none() -> None
     )
     # Sanity: the other essential headers DO appear.
     assert "#SBATCH --job-name=eps-issue-137" in rendered
-    assert "#SBATCH --gpus-per-node=h100:1" in rendered
+    assert "#SBATCH --gpus-per-node=a100l:1" in rendered
 
 
 def test_render_sbatch_keeps_account_line_for_drac_clusters() -> None:
