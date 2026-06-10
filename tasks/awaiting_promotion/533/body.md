@@ -1,7 +1,7 @@
 ---
-title: Dropping the marker-less LoRA training learning rate from 1e-5 to 5e-6 did
-  not de-saturate the role-vs-system grid — every persona × epoch cell still fails
-  the anchor gate, so the planned headline test was skipped (MODERATE confidence)
+title: Dropping the marker-less LoRA learning rate from 1e-5 to 5e-6 did not de-saturate
+  the role-vs-system grid, but the negative role-vs-system marker gap it surfaced
+  at 1 epoch replicates at the install step, then diverges by persona (MODERATE confidence)
 kind: experiment
 tags:
 - followup

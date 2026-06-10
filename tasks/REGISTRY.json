@@ -3114,7 +3114,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/533",
       "status": "awaiting_promotion",
-      "title": "Dropping the marker-less LoRA training learning rate from 1e-5 to 5e-6 did not de-saturate the role-vs-system grid \u2014 every persona \u00d7 epoch cell still fails the anchor gate, so the planned headline test was skipped (MODERATE confidence)"
+      "title": "Dropping the marker-less LoRA learning rate from 1e-5 to 5e-6 did not de-saturate the role-vs-system grid, but the negative role-vs-system marker gap it surfaced at 1 epoch replicates at the install step, then diverges by persona (MODERATE confidence)"
     },
     "534": {
       "goal": "Close #530's planned 4-fraction band-stop trajectory by modifying MarkerBandStopCallback to checkpoint at sub-step granularity (post-hoc fraction selection {0.25, 0.50, 0.75, 1.00} of the realized stop step), retraining all 10 #530 cells with the otherwise-identical recipe, then re-running the 4-fraction eval + 6-predictor partial-Spearman refit to test whether the sign reversal of shadow_angle (rho=-0.23) and d_nn (rho=+0.14) holds across the full trajectory rather than only at the band-stop final checkpoint.",
