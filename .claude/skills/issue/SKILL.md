@@ -3170,7 +3170,12 @@ clean-result-critic in 9a-bis enforces register discipline on them.
 
 1. Read the published body via `task.py view <N>`; extract the TL;DR
    block.
-2. Invoke `/humanize loop` with the TL;DR block as the target. The skill
+2. Invoke `/humanize loop` with the TL;DR block as the target. **Read the
+   draft file once BEFORE the first Edit on it (and re-Read after any
+   compaction)** — the draft is typically written by the critic subagent, so
+   it is not in the orchestrator's Edit state, and blind Edits bounce with
+   "File has not been read yet" (10 such rejections across three sessions on
+   2026-06-09, 8 of them consecutive in one humanize pass). The skill
    spawns a hostile critic subagent (from the orchestrator's context —
    allowed; the analyzer could not because subagent-from-subagent is
    forbidden) that scores against the six-axis rubric:
