@@ -5,7 +5,7 @@ title: Scoring the base model's own answers ranks held-out personas by trained m
 kind: experiment
 tags: []
 created_at: '2026-06-10T15:34:12Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 553
 goal: Test whether the base model's own-response end-of-answer margin — the best pre-training
   leakage ranker on the context panel — also predicts trained marker pressure on the
