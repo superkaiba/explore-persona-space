@@ -167,3 +167,4 @@
 {"ts": "2026-06-10T09:33:54Z", "kind": "epm:pod-terminated", "version": 2, "by": "unknown", "note": "pod-480 terminated after upload-verification PASS v3 (followup-2). Cross-checked via list-ephemeral."}
 {"ts": "2026-06-10T09:34:20Z", "kind": "epm:merged", "version": 3, "by": "unknown", "note": "Followup-2 branch issue-480-band-stopped-anchor-rerun merged to main (merge 49d7c6f34); code f1fb93948 + pod results commit 91e3694. Eval JSONs + figures + experiment code now on main."}
 {"ts": "2026-06-10T09:34:35Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "verifying", "to": "interpreting", "note": "Followup-2 artifacts on main (merge 49d7c6f34). Advancing to analyzer re-fold."}
+{"ts": "2026-06-10T09:34:38Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "stage-dispatch stage=interpreting round=2 subagent=analyzer followup_label=band-stopped-anchor-rerun"}
