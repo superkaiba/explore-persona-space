@@ -1627,6 +1627,14 @@ canonical contract.
 
 **5a. Spawn both reviewers in parallel (fresh contexts, single message).**
 
+> **429 pacing at every ensemble fan-out (applies here, to the Step 9
+> critic ensembles, and to /adversarial-planner Phase 2):** when MORE than
+> two agent prompts go out at once (e.g. 3 critic lenses x 2 models), pause
+> 5-10 s between Agent spawns (`sleep` is fine inside the dispatch Bash
+> call, or send the spawns in 2 staggered messages). Same-second prompt
+> bursts stacked onto the org-wide 4M input-tok/min cap caused 429 storms
+> in 6+ sessions on 2026-06-09.
+
 Both reviewers see the same brief:
 
 - `issue_number` — the task number (`<N>`)
