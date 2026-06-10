@@ -156,9 +156,22 @@ BODY_PATH=$(uv run python scripts/task.py find <N>)/body.md
 #    Reuses orchestrate.hub.verify_artifacts_exist — the same helper
 #    /issue Step 6a.5 runs PRE-LAUNCH to block on phantom carry-overs.
 uv run python scripts/verify_uploads.py --issue <N> \
+  --type <training|eval-only|generation|analysis> \
   --claimed-urls-file /tmp/issue-<N>-claimed-urls.txt \
   --json
 ```
+
+**Always pass `--type` from the experiment type you received as an
+input.** When omitted, the script infers it from the task's frontmatter
+`kind` — which exempts `analysis/infra/batch/survey` tasks from the
+training-only rows but conservatively assumes `training` for
+`kind: experiment` (frontmatter cannot tell a training run from an
+eval-only one). On an eval-only experiment that default demands
+WandB-run + HF-model rows that cannot exist and produces a false
+overall FAIL you then have to supersede row by row (incident #563,
+2026-06-10). The script also scans the `issue-<N>` branch refs for
+eval JSONs + figures, since those land on the issue branch before the
+Step 9b auto-merge.
 
 The `claimed_urls` row in the JSON report is FAIL whenever any cited
 URL did not resolve. Common phantom patterns to watch for:
