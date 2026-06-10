@@ -1,0 +1,772 @@
+{
+  "metadata": {
+    "task": 559,
+    "script": "scripts/issue559_panel_analysis.py",
+    "git_commit": "e944f3c33d81f645df90eb895589c919efb8cb8c",
+    "timestamp_utc": "2026-06-10T18:54:44.943339Z",
+    "python_version": "3.11.15",
+    "numpy_version": "2.2.6",
+    "scipy_version": "1.17.1",
+    "pandas_version": "2.3.3",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "seed": 42,
+    "n_boot": 10000,
+    "n_cluster_boot": 2000,
+    "n_marginal_boot": 2000,
+    "n_perm": 10000,
+    "argv": [
+      "--out-dir",
+      "eval_results/issue_559",
+      "--fig-dir",
+      "figures/issue_559"
+    ],
+    "schema_version": "issue559_base_prior_v1",
+    "prior_is_stub": false
+  },
+  "collinearity_gate": {
+    "pearson_z_prior_z_min_dist": 0.7253050454313578,
+    "threshold_abs_r": 0.6,
+    "tripped": true,
+    "note": "tercile + polynomial-residualization reads computed regardless; they are the REGISTERED fallback when the gate trips"
+  },
+  "level_fit": {
+    "dv": "margin_trained",
+    "variants": {
+      "base": {
+        "r2": 0.3893964990355534,
+        "coefficients": {
+          "alpha_prior": {
+            "estimate": 1.5088475271844166,
+            "ci95_cluster_run": {
+              "low": 1.453086380819542,
+              "high": 1.5645220957074732,
+              "boot_mean": 1.5093948678940996,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": 0.6047520924362823,
+              "high": 2.2316996905230644,
+              "boot_mean": 1.4379803205593544,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": 1.437782158826044,
+              "high": 1.5814114733737972,
+              "boot_mean": 1.5091327185824799,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": 0.6047520924362823,
+              "high": 2.2316996905230644,
+              "boot_mean": 1.4379803205593544,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            }
+          },
+          "beta_min_dist": {
+            "estimate": -0.6846366734437395,
+            "ci95_cluster_run": {
+              "low": -0.7263032061100477,
+              "high": -0.6440720339839018,
+              "boot_mean": -0.6848189129319155,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": -1.3071532946550077,
+              "high": 0.08915286760721301,
+              "boot_mean": -0.6304375047058343,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": -0.7404210922945607,
+              "high": -0.6292540480549592,
+              "boot_mean": -0.6839236528795725,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": -1.3071532946550077,
+              "high": 0.08915286760721301
+            }
+          }
+        }
+      },
+      "interaction": {
+        "r2": 0.38989212174221954,
+        "coefficients": {
+          "alpha_prior": {
+            "estimate": 1.5110230673198923,
+            "ci95_cluster_run": {
+              "low": 1.4547436851913065,
+              "high": 1.566980542293507,
+              "boot_mean": 1.511599027594055,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": 0.5163109654021857,
+              "high": 2.278414300719637,
+              "boot_mean": 1.4046948981607033,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": 1.439388414090005,
+              "high": 1.5840465410127786,
+              "boot_mean": 1.5113651766144658,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": 0.5163109654021857,
+              "high": 2.278414300719637,
+              "boot_mean": 1.4046948981607033,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            }
+          },
+          "beta_min_dist": {
+            "estimate": -0.7000429956013731,
+            "ci95_cluster_run": {
+              "low": -0.7422845072179389,
+              "high": -0.658465061930727,
+              "boot_mean": -0.7003118108244498,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": -1.3251597156749053,
+              "high": 0.080902650993327,
+              "boot_mean": -0.6090439969045884,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": -0.7579114302036245,
+              "high": -0.645086522670002,
+              "boot_mean": -0.6995122325672428,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": -1.3251597156749053,
+              "high": 0.080902650993327
+            }
+          },
+          "gamma_interaction": {
+            "estimate": -0.05140709776513086,
+            "ci95_cluster_run": {
+              "low": -0.07593378341671805,
+              "high": -0.028022376151493826,
+              "boot_mean": -0.051595109453126786,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": -0.8310254529543603,
+              "high": 0.5198255954950022,
+              "boot_mean": -0.11693177085996889,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": -0.08133653141999089,
+              "high": -0.024144246138096202,
+              "boot_mean": -0.05182773555358673,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": -0.8310254529543603,
+              "high": 0.5198255954950022
+            }
+          }
+        }
+      },
+      "run_fe": {
+        "r2": 0.4405949483013938,
+        "coefficients": {
+          "alpha_prior": {
+            "estimate": 1.4745021885938396,
+            "ci95_cluster_run": {
+              "low": 1.423469096456447,
+              "high": 1.5275821195142063,
+              "boot_mean": 1.4753920569885173,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": 0.5406783231367724,
+              "high": 2.2069802345540865,
+              "boot_mean": 1.3952210195597865,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": 1.410733941377456,
+              "high": 1.5437129461275612,
+              "boot_mean": 1.4757048372307535,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": 0.5406783231367724,
+              "high": 2.2069802345540865,
+              "boot_mean": 1.3952210195597865,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            }
+          },
+          "beta_min_dist": {
+            "estimate": -0.6372837164956037,
+            "ci95_cluster_run": {
+              "low": -0.6725623150802034,
+              "high": -0.6032253289586037,
+              "boot_mean": -0.6379490308358393,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": -1.2682566346968833,
+              "high": 0.16773447153862125,
+              "boot_mean": -0.5740884084794597,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": -0.6838700023816204,
+              "high": -0.5941518694341729,
+              "boot_mean": -0.6378539713071404,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": -1.2682566346968833,
+              "high": 0.16773447153862125
+            }
+          }
+        },
+        "note": "within-run-identified variant; a persona-FE variant is impossible by construction \u2014 the prior is constant per persona and exactly collinear with persona FE"
+      }
+    }
+  },
+  "change_fit": {
+    "dv": "dmargin",
+    "variants": {
+      "base": {
+        "r2": 0.6181016607216162,
+        "coefficients": {
+          "alpha_prior": {
+            "estimate": -0.5953785698573346,
+            "ci95_cluster_run": {
+              "low": -0.6237612925046023,
+              "high": -0.5668041921698408,
+              "boot_mean": -0.5958119536842446,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": -1.135851902878047,
+              "high": -0.04009390373844107,
+              "boot_mean": -0.5916069554300012,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": -0.6346093680741868,
+              "high": -0.5587261084156301,
+              "boot_mean": -0.5960530287485117,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": -1.135851902878047,
+              "high": -0.04009390373844107,
+              "boot_mean": -0.5916069554300012,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            }
+          },
+          "beta_min_dist": {
+            "estimate": -0.9561349562169206,
+            "ci95_cluster_run": {
+              "low": -0.9865313832035745,
+              "high": -0.9258036842909604,
+              "boot_mean": -0.9558669269127577,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": -1.3701444216524374,
+              "high": -0.47894083089577416,
+              "boot_mean": -0.9404724867252869,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": -0.9946602540310102,
+              "high": -0.9160100906340064,
+              "boot_mean": -0.9549167611144507,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": -1.3701444216524374,
+              "high": -0.47894083089577416
+            }
+          }
+        }
+      },
+      "interaction": {
+        "r2": 0.6193698898428277,
+        "coefficients": {
+          "alpha_prior": {
+            "estimate": -0.5989585780808165,
+            "ci95_cluster_run": {
+              "low": -0.6280348693937745,
+              "high": -0.5701867145497326,
+              "boot_mean": -0.599406950422355,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": -1.1185629882260233,
+              "high": -0.025312552920599685,
+              "boot_mean": -0.5928385690062768,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": -0.6389878753615287,
+              "high": -0.5617084831935089,
+              "boot_mean": -0.599663249155315,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": -1.1185629882260233,
+              "high": -0.025312552920599685,
+              "boot_mean": -0.5928385690062768,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            }
+          },
+          "beta_min_dist": {
+            "estimate": -0.930782741785895,
+            "ci95_cluster_run": {
+              "low": -0.9635678124980939,
+              "high": -0.8978624838760909,
+              "boot_mean": -0.930471803567781,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": -1.4062321459258489,
+              "high": -0.46118778292698465,
+              "boot_mean": -0.9116293555840936,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": -0.972837691101387,
+              "high": -0.8853681631648636,
+              "boot_mean": -0.9294525736038272,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": -1.4062321459258489,
+              "high": -0.46118778292698465
+            }
+          },
+          "gamma_interaction": {
+            "estimate": 0.08459408757545239,
+            "ci95_cluster_run": {
+              "low": 0.06401037041326418,
+              "high": 0.10649397412918937,
+              "boot_mean": 0.08468928631917819,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": -0.41158920085991074,
+              "high": 0.47393707127005363,
+              "boot_mean": 0.0609860851504292,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": 0.059654044389499325,
+              "high": 0.11250487312585541,
+              "boot_mean": 0.08489906349960627,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": -0.41158920085991074,
+              "high": 0.47393707127005363
+            }
+          }
+        }
+      },
+      "run_fe": {
+        "r2": 0.6858244306093728,
+        "coefficients": {
+          "alpha_prior": {
+            "estimate": -0.6325550187756783,
+            "ci95_cluster_run": {
+              "low": -0.6564145132490156,
+              "high": -0.6080535350408443,
+              "boot_mean": -0.632628303613099,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": -1.2050788112775717,
+              "high": -0.0800203431933102,
+              "boot_mean": -0.636067947936373,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": -0.6653425022324814,
+              "high": -0.5981323032671825,
+              "boot_mean": -0.6322538932396952,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": -1.2050788112775717,
+              "high": -0.0800203431933102,
+              "boot_mean": -0.636067947936373,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            }
+          },
+          "beta_min_dist": {
+            "estimate": -0.9048786618446202,
+            "ci95_cluster_run": {
+              "low": -0.9254860016718947,
+              "high": -0.8845606856679044,
+              "boot_mean": -0.9051200084831461,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 80
+            },
+            "ci95_cluster_persona": {
+              "low": -1.3182276247721192,
+              "high": -0.40450894608912774,
+              "boot_mean": -0.8814569819377591,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 35
+            },
+            "ci95_cluster_cellaxis": {
+              "low": -0.9288255954821841,
+              "high": -0.8786490051648694,
+              "boot_mean": -0.9050276078595858,
+              "n_boot": 2000,
+              "n_degenerate_resamples": 0,
+              "n_clusters": 40
+            },
+            "primary_ci": {
+              "axis": "cluster_persona",
+              "low": -1.3182276247721192,
+              "high": -0.40450894608912774
+            }
+          }
+        },
+        "note": "within-run-identified variant; a persona-FE variant is impossible by construction \u2014 the prior is constant per persona and exactly collinear with persona FE"
+      }
+    }
+  },
+  "change_fit_margin_base_added": {
+    "estimates": {
+      "intercept": 10.325404749199745,
+      "alpha_prior": -0.2580167867146929,
+      "beta_min_dist": -0.912606770284196,
+      "coef_margin_base": -0.4025207626984927,
+      "r2": 0.6254834905309217
+    },
+    "ci95_persona_cluster": {
+      "alpha_prior": {
+        "low": -0.8069565345223698,
+        "high": 0.49371857078136766,
+        "boot_mean": -0.23350639413677227,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0,
+        "n_clusters": 35
+      },
+      "beta_min_dist": {
+        "low": -1.3336442946727478,
+        "high": -0.367811959000418,
+        "boot_mean": -0.8800530417313095,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0,
+        "n_clusters": 35
+      },
+      "coef_margin_base": {
+        "low": -1.0632090213219565,
+        "high": 0.10106280837853235,
+        "boot_mean": -0.4414897253398668,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0,
+        "n_clusters": 35
+      }
+    },
+    "narration_guard": "\u00a713.6: \u03b1-non-survival on dmargin is MECHANICALLY favored \u2014 dmargin subtracts the base level the prior proxies (dmargin = margin_trained \u2212 margin_base). Narrate WITH the subtraction named; this margin_base-augmented fit is the registered residualized read."
+  },
+  "cv": {
+    "lopo_by_persona": {
+      "prior_only": {
+        "oof_r2": 0.24229558408250373,
+        "n_folds": 35
+      },
+      "geometry_only": {
+        "oof_r2": -0.05789355723678735,
+        "n_folds": 35
+      },
+      "both": {
+        "oof_r2": 0.2505246690344076,
+        "n_folds": 35
+      },
+      "both_plus_interaction": {
+        "oof_r2": 0.14963762196151686,
+        "n_folds": 35
+      }
+    },
+    "loro_by_run": {
+      "prior_only": {
+        "oof_r2": 0.3182368700633966,
+        "n_folds": 80
+      },
+      "geometry_only": {
+        "oof_r2": 0.050548567122122856,
+        "n_folds": 80
+      },
+      "both": {
+        "oof_r2": 0.38772554754089694,
+        "n_folds": 80
+      },
+      "both_plus_interaction": {
+        "oof_r2": 0.38816965317522967,
+        "n_folds": 80
+      }
+    },
+    "lopo_by_persona_dmargin": {
+      "prior_only": {
+        "oof_r2": 0.42975266915236554,
+        "n_folds": 35
+      },
+      "geometry_only": {
+        "oof_r2": 0.5178485021865071,
+        "n_folds": 35
+      },
+      "both": {
+        "oof_r2": 0.5497688637152189,
+        "n_folds": 35
+      },
+      "both_plus_interaction": {
+        "oof_r2": 0.5253079885681251,
+        "n_folds": 35
+      }
+    },
+    "loro_by_run_dmargin": {
+      "prior_only": {
+        "oof_r2": 0.4879549946984706,
+        "n_folds": 80
+      },
+      "geometry_only": {
+        "oof_r2": 0.5668186848575645,
+        "n_folds": 80
+      },
+      "both": {
+        "oof_r2": 0.6161835809129121,
+        "n_folds": 80
+      },
+      "both_plus_interaction": {
+        "oof_r2": 0.6173936684461817,
+        "n_folds": 80
+      }
+    }
+  },
+  "tercile_table_level": {
+    "low": {
+      "low": {
+        "median_dv": -12.78046875,
+        "n": 790
+      },
+      "mid": {
+        "median_dv": -12.21484375,
+        "n": 90
+      },
+      "high": {
+        "median_dv": -16.6390625,
+        "n": 80
+      }
+    },
+    "mid": {
+      "low": {
+        "median_dv": -9.8265625,
+        "n": 144
+      },
+      "mid": {
+        "median_dv": -11.55625,
+        "n": 504
+      },
+      "high": {
+        "median_dv": -11.3328125,
+        "n": 312
+      }
+    },
+    "high": {
+      "low": {
+        "median_dv": NaN,
+        "n": 0
+      },
+      "mid": {
+        "median_dv": -10.953271484375,
+        "n": 342
+      },
+      "high": {
+        "median_dv": -10.935937500000001,
+        "n": 538
+      }
+    }
+  },
+  "tercile_table_change": {
+    "low": {
+      "low": {
+        "median_dv": 12.551113891601563,
+        "n": 790
+      },
+      "mid": {
+        "median_dv": 12.514166259765625,
+        "n": 90
+      },
+      "high": {
+        "median_dv": 9.0241943359375,
+        "n": 80
+      }
+    },
+    "mid": {
+      "low": {
+        "median_dv": 11.417626953125,
+        "n": 144
+      },
+      "mid": {
+        "median_dv": 10.027635192871095,
+        "n": 504
+      },
+      "high": {
+        "median_dv": 9.131243896484374,
+        "n": 312
+      }
+    },
+    "high": {
+      "low": {
+        "median_dv": NaN,
+        "n": 0
+      },
+      "mid": {
+        "median_dv": 9.306298828125,
+        "n": 342
+      },
+      "high": {
+        "median_dv": 8.5430419921875,
+        "n": 538
+      }
+    }
+  },
+  "poly_residualization_level": {
+    "alpha_resid_prior": 0.9302689981947919,
+    "beta_min_dist": 0.4097380508097457,
+    "r2": 0.3226994392657063,
+    "alpha_resid_prior_ci95_persona_cluster": {
+      "low": 0.24781816107944948,
+      "high": 1.6178102505033458,
+      "boot_mean": 0.8895300984694402,
+      "n_boot": 2000,
+      "n_degenerate_resamples": 0,
+      "n_clusters": 35
+    },
+    "method": "prior residualized on [1, min_dist, min_dist^2], then dv ~ z(resid) + z(min_dist)"
+  },
+  "poly_residualization_change": {
+    "alpha_resid_prior": -0.27494651063068387,
+    "beta_min_dist": -1.387966036876153,
+    "r2": 0.5908325023623502,
+    "alpha_resid_prior_ci95_persona_cluster": {
+      "low": -0.566264568369815,
+      "high": 0.10555454514686875,
+      "boot_mean": -0.2652390852193211,
+      "n_boot": 2000,
+      "n_degenerate_resamples": 0,
+      "n_clusters": 35
+    },
+    "method": "prior residualized on [1, min_dist, min_dist^2], then dv ~ z(resid) + z(min_dist)"
+  }
+}
