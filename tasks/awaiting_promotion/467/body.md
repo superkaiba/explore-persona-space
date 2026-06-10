@@ -14,6 +14,8 @@ goal: 'Determine whether the #463 base-model cosine->EM signal reflects persona 
   probes as secondary within-lit content controls.'
 relates_to:
 - beh-b-to-bprime
+classification: useful
+promoted_at: '2026-06-10T00:36:49Z'
 ---
 # A rich persona description cannot load the misaligned personas, so the base-model cosine to broad-misalignment predictor cannot be reproduced from a prompt and is bound to the demonstrations (MODERATE confidence)
 
