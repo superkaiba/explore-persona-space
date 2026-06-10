@@ -2596,7 +2596,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/472",
       "status": "interpreting",
-      "title": "Both adding contrastive negatives and placing them farther from the source raise bystander marker leakage (LOW confidence)"
+      "title": "More contrastive negatives raise bystander marker log-prob ~50x more than far-vs-near placement does (LOW confidence)"
     },
     "473": {
       "goal": "Determine whether persona-to-source Jensen-Shannon divergence between base-model persona-conditioned output distributions predicts per-bystander emergent-misalignment (EM) leakage better than layer-20 residual cosine \u2014 the EM analogue of #470's sycophancy-leakage predictor comparison, using the identical JS-vs-cosine recipe and statistical machinery.",

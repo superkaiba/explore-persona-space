@@ -1,6 +1,6 @@
 ---
-title: Both adding contrastive negatives and placing them farther from the source
-  raise bystander marker leakage (LOW confidence)
+title: More contrastive negatives raise bystander marker log-prob ~50x more than far-vs-near
+  placement does (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T20:04:26Z'
