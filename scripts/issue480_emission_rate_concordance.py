@@ -24,6 +24,21 @@ provenance fields):
                     also passes marker_delta for the secondary log-prob DV —
                     the stats file is then named concordance_stats_<x_field>.json
                     so the two runs never collide)
+
+Per-source stats gating is x-field-conditional (round 3, concern
+continuous-dv-concordance-gate): the rounds-1/2 positivity gate (>=5
+strictly-positive cells, >=3 distinct values) applies ONLY to the bounded,
+zero-inflated emission_rate DV and its output stays byte-compatible with the
+committed rounds-1/2 JSONs. Continuous sign-carrying x-fields (marker_delta,
+eos_margin_delta) can be plan-valid yet null/NEGATIVE — exactly the
+falsification branch — so positivity never skips their registered joint
+partials: every panel with nonzero rank variance gets the full stats package
+(Spearman + bootstrap + permutation + partials); only the degenerate all-tied
+case (Spearman undefined) is recorded as degenerate_x and skipped. The plan-v4
+x-informativeness rule (panel SD of x >= 2x median per-cell marker_delta_se)
+is an INTERPRETATION rule applied in i480_analyze.py's x-informativeness
+block; it is recorded here descriptively (x_sd_descriptive) and never used to
+gate computation.
 """
 
 from __future__ import annotations
@@ -95,6 +110,21 @@ REQUIRED_ROW_FIELDS = _required_row_fields(X_FIELD)
 
 MIN_NONZERO_CELLS = 5
 MIN_DISTINCT_VALUES = 3
+
+# x-fields whose per-source stats are gated on rank VARIANCE (degenerate
+# all-tied panels only), never on positivity. See module docstring.
+CONTINUOUS_X_FIELDS = ("marker_delta", "eos_margin_delta")
+X_INFORMATIVENESS_NOTE = (
+    "plan-v4 x-informativeness (panel SD of x >= 2x median per-cell marker_delta_se) is an "
+    "INTERPRETATION rule applied in i480_analyze.py's x-informativeness block; recorded here "
+    "descriptively only — never used to skip stats computation"
+)
+
+
+def _gate_mode(x_field: str) -> str:
+    """``positivity`` for the zero-inflated emission_rate DV, ``variance`` otherwise."""
+    return "positivity" if x_field == X_FIELD else "variance"
+
 
 N_BOOT = 10_000
 N_PERM = 100_000
@@ -329,19 +359,99 @@ def make_figure(
 
     meta_path = written["meta"]
     meta = json.loads(meta_path.read_text())
-    meta["caption_stats"] = {
-        "source": SE_SOURCE,
-        "n": len(sub),
-        "n_nonzero_emission": int((x > 0).sum()),
-        "spearman_rho": stats["naive"]["rho"],
-        "p_asymptotic": stats["naive"]["p_asymptotic"],
-        "p_permutation": stats["naive"]["p_permutation"],
-        "bootstrap_ci_95": [stats["bootstrap"]["ci_lo"], stats["bootstrap"]["ci_hi"]],
-    }
+    caption: dict = {"source": SE_SOURCE, "n": len(sub)}
+    # Emission-named count key ONLY for the emission_rate DV (byte-compatible
+    # with rounds-1/2 meta consumers); neutral key for continuous x-fields.
+    if x_field == X_FIELD:
+        caption["n_nonzero_emission"] = int((x > 0).sum())
+    else:
+        caption["n_nonzero_x"] = int((x > 0).sum())
+    if "naive" in stats:
+        caption["spearman_rho"] = stats["naive"]["rho"]
+        caption["p_asymptotic"] = stats["naive"]["p_asymptotic"]
+        caption["p_permutation"] = stats["naive"]["p_permutation"]
+        caption["bootstrap_ci_95"] = [stats["bootstrap"]["ci_lo"], stats["bootstrap"]["ci_hi"]]
+    else:
+        # Degenerate all-tied panel under the variance gate: Spearman undefined.
+        caption["degenerate_x"] = True
+    meta["caption_stats"] = caption
     meta["x_field"] = x_field
     meta["y_field"] = Y_FIELD
     meta_path.write_text(json.dumps(meta, indent=2) + "\n")
     return {k: str(v) for k, v in written.items()}
+
+
+def _positivity_gated_entry(panel: dict[str, np.ndarray]) -> tuple[dict, bool]:
+    """Rounds-1/2 emission gate entry, byte-compatible output (old key names,
+    no gate_mode key): the zero-inflated emission_rate DV needs enough
+    strictly-positive cells to be rankable at all. Returns (entry,
+    partials_eligible)."""
+    x, y = panel["x"], panel["y"]
+    n_nonzero = int((x > 0).sum())
+    n_distinct = len(np.unique(x))
+    informative = n_nonzero >= MIN_NONZERO_CELLS and n_distinct >= MIN_DISTINCT_VALUES
+    entry: dict = {
+        "n": int(x.shape[0]),
+        "n_nonzero_emission": n_nonzero,
+        "n_distinct_emission_values": n_distinct,
+        "informative": informative,
+        "informativeness_criterion": {
+            "min_nonzero_cells": MIN_NONZERO_CELLS,
+            "min_distinct_values": MIN_DISTINCT_VALUES,
+        },
+        "naive": spearman_with_permutation(x, y, N_PERM, PERM_SEED),
+        "bootstrap": bootstrap_ci(x, y, N_BOOT, BOOT_SEED),
+    }
+    if not informative:
+        entry["uninformative_reason"] = (
+            f"emission floor: {n_nonzero}/{x.shape[0]} nonzero cells, {n_distinct} distinct values"
+        )
+    return entry, informative
+
+
+def _variance_gated_entry(
+    panel: dict[str, np.ndarray], x_field: str, has_se_column: bool
+) -> tuple[dict, bool]:
+    """Variance gate for continuous sign-carrying x-fields: a panel can be
+    rankable yet null/NEGATIVE (the falsification branch), so the full stats
+    package runs for every panel with nonzero rank variance; only the
+    degenerate all-tied case (Spearman undefined) is skipped, recorded as
+    degenerate_x. Returns (entry, partials_eligible)."""
+    x, y = panel["x"], panel["y"]
+    n_nonzero = int((x > 0).sum())
+    n_distinct = len(np.unique(x))
+    degenerate = n_distinct < 2
+    entry: dict = {
+        "n": int(x.shape[0]),
+        "n_nonzero_x": n_nonzero,
+        "n_distinct_x_values": n_distinct,
+        "gate_mode": "variance",
+        "degenerate_x": degenerate,
+    }
+    if degenerate:
+        entry["degenerate_reason"] = (
+            f"all {x.shape[0]} x values tied ({n_distinct} distinct); Spearman is "
+            "undefined — stats package skipped for this panel only"
+        )
+    else:
+        entry["naive"] = spearman_with_permutation(x, y, N_PERM, PERM_SEED)
+        entry["bootstrap"] = bootstrap_ci(x, y, N_BOOT, BOOT_SEED)
+    if has_se_column:
+        x_sd = float(np.std(x, ddof=1))
+        median_se = float(np.median([r["marker_delta_se"] for r in panel["rows"]]))
+        desc: dict = {
+            "x_sd": x_sd,
+            "median_cell_marker_delta_se": median_se,
+            "sd_over_2x_median_se": (x_sd / (2.0 * median_se) if median_se > 0 else None),
+            "rule": X_INFORMATIVENESS_NOTE,
+        }
+        if x_field == "eos_margin_delta":
+            desc["se_space_note"] = (
+                "marker_delta_se is log-prob-space; eos_margin_delta is "
+                "logit-space — the ratio is cross-space, descriptive only"
+            )
+        entry["x_sd_descriptive"] = desc
+    return entry, not degenerate
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -382,33 +492,21 @@ def main(argv: list[str] | None = None) -> None:
             "controls": np.array([[r[c] for c in CONTROL_FIELDS] for r in sub], dtype=float),
         }
 
+    gate_mode = _gate_mode(x_field)
+    has_se_column = all("marker_delta_se" in r for r in rows)
+
     per_source: dict[str, dict] = {}
+    partials_eligible: dict[str, bool] = {}
     for s in sources:
-        x, y = by_source[s]["x"], by_source[s]["y"]
-        n_nonzero = int((x > 0).sum())
-        n_distinct = len(np.unique(x))
-        informative = n_nonzero >= MIN_NONZERO_CELLS and n_distinct >= MIN_DISTINCT_VALUES
-        entry: dict = {
-            "n": int(x.shape[0]),
-            "n_nonzero_emission": n_nonzero,
-            "n_distinct_emission_values": n_distinct,
-            "informative": informative,
-            "informativeness_criterion": {
-                "min_nonzero_cells": MIN_NONZERO_CELLS,
-                "min_distinct_values": MIN_DISTINCT_VALUES,
-            },
-            "naive": spearman_with_permutation(x, y, N_PERM, PERM_SEED),
-            "bootstrap": bootstrap_ci(x, y, N_BOOT, BOOT_SEED),
-        }
-        if not informative:
-            entry["uninformative_reason"] = (
-                f"emission floor: {n_nonzero}/{x.shape[0]} nonzero cells, "
-                f"{n_distinct} distinct values"
-            )
+        if gate_mode == "positivity":
+            entry, eligible = _positivity_gated_entry(by_source[s])
+        else:
+            entry, eligible = _variance_gated_entry(by_source[s], x_field, has_se_column)
         per_source[s] = entry
+        partials_eligible[s] = eligible
 
     for s in sources:
-        if not per_source[s]["informative"]:
+        if not partials_eligible[s]:
             continue
         x, y = by_source[s]["x"], by_source[s]["y"]
         controls = by_source[s]["controls"]
@@ -484,16 +582,39 @@ def main(argv: list[str] | None = None) -> None:
         "source_fe": fe,
         "figure": figure_paths,
     }
+    if gate_mode == "variance":
+        # Run-level gate record for continuous x-fields only — the emission
+        # output stays byte-compatible with the committed rounds-1/2 JSONs.
+        result["per_source_gate"] = {
+            "gate_mode": "variance",
+            "rule": (
+                "full stats package for every panel with nonzero rank variance; only "
+                "degenerate all-tied panels (Spearman undefined) are skipped "
+                "(degenerate_x: true). Positivity never gates continuous x-fields."
+            ),
+            "x_informativeness_note": X_INFORMATIVENESS_NOTE,
+        }
     stats_path.write_text(json.dumps(result, indent=2) + "\n")
 
     for s in sources:
         e = per_source[s]
-        flag = "informative" if e["informative"] else "UNINFORMATIVE-BY-FLOOR"
+        if gate_mode == "positivity":
+            flag = "informative" if e["informative"] else "UNINFORMATIVE-BY-FLOOR"
+            n_pos_label = f"nonzero={e['n_nonzero_emission']}/{e['n']}"
+        else:
+            if e["degenerate_x"]:
+                print(
+                    f"{s}: DEGENERATE-X (all tied, {e['n_distinct_x_values']} distinct) — "
+                    "stats skipped"
+                )
+                continue
+            flag = "variance-gated"
+            n_pos_label = f"n_pos={e['n_nonzero_x']}/{e['n']} n_distinct={e['n_distinct_x_values']}"
         line = (
             f"{s}: rho={e['naive']['rho']:.3f} "
             f"p_asym={e['naive']['p_asymptotic']:.2e} p_perm={e['naive']['p_permutation']:.2e} "
             f"CI=[{e['bootstrap']['ci_lo']:.3f},{e['bootstrap']['ci_hi']:.3f}] "
-            f"nonzero={e['n_nonzero_emission']}/{e['n']} [{flag}]"
+            f"{n_pos_label} [{flag}]"
         )
         if "survives_partials" in e:
             line += f" survives_partials={e['survives_partials']}"

@@ -1700,7 +1700,12 @@ def _fetch_graded_adapter(source: str, seed: int, dest_dir: Path, *, download: b
     allow_patterns path can silently return 0 files for prefixes in the
     truncated ``repo_info.siblings`` tail, and this model repo is huge.
     Fails loud when ``adapter_config.json`` / ``adapter_model.safetensors`` /
-    ``tokenizer_config.json`` are missing from the pinned-revision listing
+    ``tokenizer_config.json`` are missing from the pinned-revision listing,
+    or when no REAL tokenizer asset is present — ``tokenizer_config.json``
+    alone is not loadable; the pinned graded dirs ship both the fast asset
+    (``tokenizer.json``) and the slow BPE pair (``vocab.json`` +
+    ``merges.txt``), so require at least one of the two so a partial upload
+    fails here at preflight rather than inside ``merge_lora`` on the pod
     (``merge_lora`` loads the tokenizer from the adapter path).
 
     Returns the provenance dict for ``graded_eval_record.json``. With
@@ -1719,6 +1724,16 @@ def _fetch_graded_adapter(source: str, seed: int, dest_dir: Path, *, download: b
                 f"revision {GRADED_ADAPTER_REVISION[:12]} (listed {len(files)} files) — "
                 "wrong artifact resolved; refusing to evaluate."
             )
+    has_fast_tokenizer = "tokenizer.json" in rel_names
+    has_slow_tokenizer = "vocab.json" in rel_names and "merges.txt" in rel_names
+    if not (has_fast_tokenizer or has_slow_tokenizer):
+        raise RuntimeError(
+            f"[{source}] no real tokenizer asset in {HF_MODEL_REPO}/{prefix} at pinned "
+            f"revision {GRADED_ADAPTER_REVISION[:12]}: tokenizer_config.json alone is not "
+            "loadable — need tokenizer.json OR vocab.json+merges.txt (listed: "
+            f"{sorted(rel_names)}) — merge_lora's tokenizer load would fail on the pod; "
+            "refusing to evaluate."
+        )
     if download:
         dest_dir.mkdir(parents=True, exist_ok=True)
         for hub_file in files:
