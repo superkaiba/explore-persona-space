@@ -77,6 +77,9 @@ def plot_prior_vs_leak_stratified(pred: dict, screen: dict) -> None:
         if not pp:
             ax.set_title(f"{source}\n(missing)")
             continue
+        # Floored arms are P2 signal only — quarantined here: grey points,
+        # NO rho annotation (their P1 stats are skipped_floored_arm).
+        informative = bool(add.get("floored", {}).get("informative_for_within_arm", True))
         # Strata shading.
         ax.axvspan(STRATUM_H_MIN, 0, color=paper_palette_role("accent"), alpha=0.08)
         ax.axvspan(STRATUM_M_MIN, STRATUM_H_MIN, color="grey", alpha=0.06)
@@ -90,19 +93,26 @@ def plot_prior_vs_leak_stratified(pred: dict, screen: dict) -> None:
                 y,
                 marker=marker,
                 s=34,
-                color=paper_palette_role("primary"),
-                edgecolor="white",
+                color=paper_palette_role("primary") if informative else "lightgrey",
+                edgecolor="white" if informative else "grey",
                 linewidth=0.4,
                 zorder=3,
             )
-        drop = add.get("drop_tables", {}).get("drop_top_stratum", {})
-        full = add.get("drop_tables", {}).get("full_panel", {})
-        ax.set_title(
-            f"{_arm_label(source, priors)}\n"
-            f"ρ={full.get('rho', float('nan')):+.2f} (n={full.get('n')}); "
-            f"drop-H ρ={drop.get('rho', float('nan')):+.2f} (n={drop.get('residual_n')})",
-            fontsize=8,
-        )
+        if informative:
+            drop = add.get("drop_tables", {}).get("drop_top_stratum", {})
+            full = add.get("drop_tables", {}).get("full_panel", {})
+            ax.set_title(
+                f"{_arm_label(source, priors)}\n"
+                f"ρ={full.get('rho', float('nan')):+.2f} (n={full.get('n')}); "
+                f"drop-H ρ={drop.get('rho', float('nan')):+.2f} (n={drop.get('residual_n')})",
+                fontsize=8,
+            )
+        else:
+            ax.set_title(
+                f"{_arm_label(source, priors)}\nFLOORED — P2 signal only (excluded from P1/P3)",
+                fontsize=8,
+                color="dimgrey",
+            )
         ax.set_xlabel("bystander prior (log P / token)")
         finite = [priors[p] for p in pp if p in priors and not math.isnan(priors[p])]
         if finite:
@@ -146,12 +156,17 @@ def plot_gating_vs_source_prior(pred: dict) -> None:
                 fontsize=7,
             )
     perm = p2.get("permutation", {})
-    sub = (
-        f"perm p={perm.get('one_sided_p'):.3f} "
-        f"(perfect monotone: {perm.get('perfect_monotone_decreasing')})"
-        if perm
-        else "permutation not computable"
-    )
+    if perm.get("one_sided_p") is not None:
+        # 4-arm GO-full branch: the exact 4!-permutation p exists.
+        sub = (
+            f"perm p={perm['one_sided_p']:.3f} "
+            f"(perfect monotone: {perm.get('perfect_monotone_decreasing')})"
+        )
+    elif perm:
+        # GO-descoped 3-arm branch: directional only, no p claimed (plan §7).
+        sub = "directional only (descoped); no permutation p"
+    else:
+        sub = "permutation not computable"
     ax.set_xlabel("source persona measured prior (log P / token)")
     ax.set_ylabel("common-set panel-median leak")
     ax.set_title(f"Gating tightness vs source prior\n{sub}", fontsize=9)
@@ -284,6 +299,14 @@ def plot_raw_vs_adjusted(pred: dict) -> None:
     for ax, source in zip(axes, sources, strict=True):
         add = pred["per_arm_additions"].get(source, {})
         adj = add.get("adjusted_dv", {})
+        if adj.get("status") == "skipped_floored_arm":
+            ax.set_title(
+                f"{source.replace('_', ' ')}\nFLOORED — excluded (P2 only)",
+                fontsize=8,
+                color="dimgrey",
+            )
+            ax.set_xlabel("raw leak")
+            continue
         pp = pred["per_arm"].get(source, {}).get("per_persona", {})
         per_adj = adj.get("per_persona_adjusted", {})
         for persona, d in pp.items():

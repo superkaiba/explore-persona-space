@@ -14,8 +14,10 @@ from ``prior_screen.json``) + 24-panel, plus the #541 additions:
       (panel minus all 4 sources; identical across arms), point + per-seed
       values + seed-level ranges; exact one-sided permutation p over the 4!
       arm-median orderings (the p ~ 0.042 claim obtains ONLY under a perfect
-      monotone ordering); pooled per-(arm x seed) Spearman with cluster-on-arm
-      bootstrap labeled DESCRIPTIVE (4 clusters cannot support inferential CIs).
+      monotone ordering, and ONLY on the 4-arm GO-full branch — the 3-arm
+      GO-descoped branch is directional only, no permutation p); pooled
+      per-(arm x seed) Spearman with cluster-on-arm bootstrap labeled
+      DESCRIPTIVE (4 clusters cannot support inferential CIs).
   (c) engagement-adjusted partials computed twice — PRIMARY against the
       PRE-TREATMENT base covariates (``base_engagement_covariates.json``),
       SECONDARY against the trained covariates (inherited #500 path inside
@@ -362,9 +364,11 @@ def _p2_block(
     out: dict[str, Any] = {
         "_doc": (
             "P2: arm-level common-set panel-median leak vs measured source prior. "
-            "Permutation p is claimed ONLY under a perfect monotone (decreasing) "
-            "ordering; otherwise descriptive. Pooled per-(arm x seed) Spearman is "
-            "DESCRIPTIVE (4 clusters cannot support inferential CIs)."
+            "Permutation p is computed ONLY on the 4-arm GO-full branch (exact 4! "
+            "test) AND claimed only under a perfect monotone (decreasing) ordering; "
+            "the GO-descoped 3-arm branch is directional only — NO permutation p "
+            "(plan §7). Pooled per-(arm x seed) Spearman is DESCRIPTIVE (4 clusters "
+            "cannot support inferential CIs)."
         ),
         "common_set": common_set,
         "per_arm": per_arm,
@@ -372,25 +376,41 @@ def _p2_block(
     }
     finite = [m for m in medians if not math.isnan(m)]
     if len(finite) == len(medians) and len(medians) >= 3:
-        # Observed statistic: Kendall-style concordance between source-prior rank
-        # (ascending) and -median (gating tightens as prior rises).
-        priors_v = [source_priors[a] for a in arm_order]
+        perfect = bool(all(medians[i] > medians[i + 1] for i in range(len(medians) - 1)))
+        if len(medians) == 4:
+            # Exact 4!-permutation test — GO-full branch only. Observed
+            # statistic: concordance between source-prior rank (ascending) and
+            # -median (gating tightens as prior rises).
+            priors_v = [source_priors[a] for a in arm_order]
 
-        def _stat(meds: list[float]) -> float:
-            return i500._spearman(priors_v, [-m for m in meds])
+            def _stat(meds: list[float]) -> float:
+                return i500._spearman(priors_v, [-m for m in meds])
 
-        obs = _stat(medians)
-        perms = list(itertools.permutations(medians))
-        geq = sum(1 for perm in perms if _stat(list(perm)) >= obs - 1e-12)
-        out["permutation"] = {
-            "observed_spearman_prior_vs_neg_median": obs,
-            "one_sided_p": geq / len(perms),
-            "n_permutations": len(perms),
-            "perfect_monotone_decreasing": bool(
-                all(medians[i] > medians[i + 1] for i in range(len(medians) - 1))
-            ),
-        }
-        # Inversion tolerance: adjacent inversions where seed ranges do NOT overlap.
+            obs = _stat(medians)
+            perms = list(itertools.permutations(medians))
+            geq = sum(1 for perm in perms if _stat(list(perm)) >= obs - 1e-12)
+            out["permutation"] = {
+                "observed_spearman_prior_vs_neg_median": obs,
+                "one_sided_p": geq / len(perms),
+                "n_permutations": len(perms),
+                "perfect_monotone_decreasing": perfect,
+            }
+        else:
+            # GO-descoped (3 sources): "P2 drops to a 3-point ordering
+            # (directional only, no permutation p claimed)" — plan §7. A 3!
+            # test bottoms out at p=1/6 and must NOT be serialized as an
+            # inferential read.
+            out["permutation"] = {
+                "status": "not_claimed_directional_only_descoped",
+                "n_arms": len(medians),
+                "perfect_monotone_decreasing": perfect,
+                "_doc": (
+                    "GO-descoped branch: 3-point ordering reported "
+                    "directionally; no permutation p is claimed (plan §7)."
+                ),
+            }
+        # Inversion tolerance (all branches): adjacent inversions where seed
+        # ranges do NOT overlap.
         hard_inversions = []
         for i in range(len(arm_order) - 1):
             a, b = arm_order[i], arm_order[i + 1]
@@ -487,20 +507,47 @@ def _build_additions(
     cos_to_home_new: dict[str, float],
 ) -> dict[str, Any]:
     """Per-arm #541 additions: floored rule, drop tables, adjusted DV,
-    PRIMARY engagement partials, new-home cosine."""
+    PRIMARY engagement partials, new-home cosine.
+
+    Floored-arm ENFORCEMENT (plan §4.5): the ``floored`` block is always
+    emitted, but for an arm that fails the informativeness rule every
+    within-arm P1/P3 statistic (drop tables, adjusted-DV rhos, PRIMARY
+    engagement partials, new-home cosine rho) is replaced by
+    ``status: skipped_floored_arm``. Floored arms remain in P2 — their floor
+    IS the gating signal — via ``_p2_block``, which reads ``arm_results``
+    directly and is unaffected by this gate.
+    """
     additions: dict[str, Any] = {}
     for source, res in arm_results.items():
         if "error" in res:
             additions[source] = {"error": res["error"]}
             continue
         block: dict[str, Any] = {}
-        block["floored"] = _arm_floored(res)
-        block["drop_tables"] = _drop_tables(res, strata)
+        floored = _arm_floored(res)
+        block["floored"] = floored
+        if not floored["informative_for_within_arm"]:
+            skipped = {
+                "status": "skipped_floored_arm",
+                "_doc": (
+                    "Arm fails the informativeness rule (<"
+                    f"{FLOOR_MIN_FRACTION_ABOVE:.0%} of bystanders above "
+                    f"{FLOOR_LEAK_THRESHOLD:.0%} headline leak) — excluded from "
+                    "P1/P3 statistics; INCLUDED in P2 only, where its floor is "
+                    "the gating signal (plan §4.5)."
+                ),
+            }
+            block["drop_tables"] = dict(skipped)
+            block["adjusted_dv"] = dict(skipped)
+            block["primary_engagement"] = dict(skipped)
+            additions[source] = block
+            continue
+        block["drop_tables"] = {"status": "computed", **_drop_tables(res, strata)}
         # (d) raw vs trained-minus-base adjusted DV, side by side.
         names, prior_v, leak_raw = _aligned(res)
         leak_adj = [leak_raw[i] - base_rates.get(names[i], 0.0) for i in range(len(names))]
         pairs_adj = [(prior_v[i], leak_adj[i]) for i in range(len(names))]
         block["adjusted_dv"] = {
+            "status": "computed",
             "_doc": (
                 "leak_adjusted = trained leak_rate_headline - shared-baseline "
                 "headline rate per persona. Raw and adjusted reported side by "
