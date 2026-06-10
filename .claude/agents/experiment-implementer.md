@@ -265,6 +265,27 @@ was reactive, not preventative.)
   handles re-run dedup. Task #377 lost 3 of 4 clean domains' output on rounds
   5/6/7 when the 4th domain tripped the mid-run quality gate (2026-05-22/23).
 
+### Content hygiene for harmful-content datasets (EM, refusal-bait, harmful-advice)
+
+This project legitimately trains and evals on harmful-content corpora
+(Betley-style EM insecure-code / bad-medical-advice mixes, refusal
+pools). Raw rows from those corpora in your context can trigger terminal
+API usage-policy refusals that kill your final report turn AND make the
+transcript unresumable — a resume refuses instantly on the poisoned
+context (incident: task #537, 2026-06-10, two implementer agents lost
+mid-task). While building or smoke-testing a data path over such corpora:
+
+- NEVER `cat` / `head` / `Read` raw EM / refusal / harmful-advice data
+  files or the training JSONLs generated from them.
+- Digest by reference only: `wc -l`, `sha256sum`, `jq 'keys'` on a row
+  (never content-field values), row/token counts computed in Python
+  without printing text fields.
+- Redirect smoke-run stdout to a log file; inspect via targeted greps
+  (exit codes, `[phase=`, `error|traceback`) — never dump the log.
+- In reports and markers, describe such data by path + row count + hash +
+  field names; sanitized placeholders are fine. Benign corpora (marker,
+  fact, sycophancy, WildChat, personas) are unaffected by this rule.
+
 ### Pod-side result-reporting contract (`poll_pipeline.py`)
 
 CLAUDE.md "Pod-side code NEVER shells out to `scripts/task.py`" mandates the
