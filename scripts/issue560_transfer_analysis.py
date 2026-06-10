@@ -134,6 +134,9 @@ def build_panel(ff_dir: Path, geometry_path: Path) -> dict:
             "argmax_eos_rate_base",
             "gen_trunc_rate",
             "mean_n_new_tokens",
+            "n_nontrunc_q",
+            "dz_nontrunc",
+            "dmargin_nontrunc",
         )
     }
     n_q_seen: set[int] = set()
@@ -195,14 +198,27 @@ def build_panel(ff_dir: Path, geometry_path: Path) -> dict:
             cols["argmax_eos_rate_trained"].append(float(np.mean(am_t == EOS_ID)))
             cols["argmax_marker_rate_base"].append(float(np.mean(am_b == MARKER_ID)))
             cols["argmax_eos_rate_base"].append(float(np.mean(am_b == EOS_ID)))
-            cols["gen_trunc_rate"].append(float(np.mean([r["gen_truncated"] for r in tq])))
+            nontrunc = ~np.array([r["gen_truncated"] for r in tq], dtype=bool)
+            cols["gen_trunc_rate"].append(float(np.mean(~nontrunc)))
             cols["mean_n_new_tokens"].append(float(np.mean([r["n_new_tokens"] for r in tq])))
+            # Truncation-excluded re-aggregation (sensitivity_length_truncation):
+            # the same cell aggregates over only the non-truncated questions.
+            cols["n_nontrunc_q"].append(int(nontrunc.sum()))
+            cols["dz_nontrunc"].append(
+                float(np.mean((zm_t - zm_b)[nontrunc])) if nontrunc.any() else float("nan")
+            )
+            cols["dmargin_nontrunc"].append(
+                float(np.mean(((zm_t - ze_t) - (zm_b - ze_b))[nontrunc]))
+                if nontrunc.any()
+                else float("nan")
+            )
 
     panel = {
         k: (np.asarray(v) if k in ("source_cid", "persona", "exposure") else np.asarray(v, float))
         for k, v in cols.items()
     }
     panel["n_eor_slots"] = np.asarray(cols["n_eor_slots"], dtype=np.int64)
+    panel["n_nontrunc_q"] = np.asarray(cols["n_nontrunc_q"], dtype=np.int64)
     panel["_n"] = len(panel["dz"])
     panel["_sources"] = sources
     panel["_personas"] = personas
@@ -230,13 +246,23 @@ def panel_masks(panel: dict) -> dict[str, np.ndarray]:
 # ── (R1) pair-corrected min_dist reads ───────────────────────────────────────
 
 
-def min_dist_reads(panel: dict, mask: np.ndarray, args, *, full_inference: bool) -> dict:
-    """Two-way-FE-corrected Spearman of min_dist vs the five targets.
+def min_dist_reads(
+    panel: dict,
+    mask: np.ndarray,
+    args,
+    *,
+    full_inference: bool,
+    targets: tuple[str, ...] = MIN_DIST_TARGETS,
+    tag: str = "R1",
+) -> dict:
+    """Two-way-FE-corrected Spearman of min_dist vs the targets.
 
     ``full_inference`` adds the cell bootstrap + both cluster bootstraps +
     the FE-residual permutation p (#553 ``_min_dist_corrected_reads``
     conventions, byte-level: same helper functions, same seed discipline);
-    point-only mode is used for the sensitivity slices.
+    point-only mode is used for the sensitivity slices. ``targets``/``tag``
+    default to the registered R1 read; the truncation-excluded sensitivity
+    re-runs the identical machinery on the re-aggregated columns.
     """
     x = panel["min_dist"][mask]
     run_l = panel["source_cid"][mask]
@@ -245,7 +271,7 @@ def min_dist_reads(panel: dict, mask: np.ndarray, args, *, full_inference: bool)
     per_u, pc = np.unique(per_l, return_inverse=True)
     x_tw, _ = i539._twoway_fe_residualize(x, run_l, per_l)
     reads: dict = {}
-    for tgt in MIN_DIST_TARGETS:
+    for tgt in targets:
         y = panel[tgt][mask]
         y_tw, _ = i539._twoway_fe_residualize(y, run_l, per_l)
         # Fast-path equivalence assert on the observed data (#539 convention).
@@ -287,7 +313,7 @@ def min_dist_reads(panel: dict, mask: np.ndarray, args, *, full_inference: bool)
                 }
             )
             print(
-                f"[R1] min_dist vs {tgt}: rho_twoway={rho:+.3f} "
+                f"[{tag}] min_dist vs {tgt}: rho_twoway={rho:+.3f} "
                 f"primary CI [{block['primary_ci']['low']:+.3f}, "
                 f"{block['primary_ci']['high']:+.3f}] ({block['primary_ci']['axis']}) "
                 f"p={p_perm['p']:.4g} (n={int(mask.sum())})"
@@ -337,6 +363,209 @@ def slot_kind_sensitivity(panel: dict, mask: np.ndarray, args) -> dict:
         for s in ("source_resident", "trained_negative", "never_negative")
     }
     return out
+
+
+# ── Length / truncation sensitivity (round-1 critic follow-up) ───────────────
+
+
+def _fe_resid_cols(
+    cols: list[np.ndarray], sc: np.ndarray, bc: np.ndarray, n_s: int, n_b: int
+) -> list[np.ndarray]:
+    """Exact two-way FE residuals of k columns in one lstsq (k RHS columns).
+
+    Same design matrix as ``i539inf._twoway_resid_pair`` (intercept + run
+    dummies + persona dummies), generalized to k right-hand sides so the
+    length-partial read residualizes (min_dist, DV, mean_len) jointly.
+    Equivalence to ``i539._twoway_fe_residualize`` is asserted on the
+    observed data at the call site.
+    """
+    n = len(cols[0])
+    design = np.zeros((n, 1 + n_s + n_b), dtype=np.float64)
+    design[:, 0] = 1.0
+    rows = np.arange(n)
+    design[rows, 1 + sc] = 1.0
+    design[rows, 1 + n_s + bc] = 1.0
+    rhs = np.column_stack(cols)
+    coef, *_ = np.linalg.lstsq(design, rhs, rcond=None)
+    resid = rhs - design @ coef
+    return [resid[:, i] for i in range(rhs.shape[1])]
+
+
+def _cell_boot_partial_fe(
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    sc: np.ndarray,
+    bc: np.ndarray,
+    n_boot: int,
+    seed: int,
+) -> dict:
+    """Cell-level percentile bootstrap on the FE rank-partial: the two-way FE
+    residualization of all three variables AND the rank partial are re-run
+    within every resample (mirrors ``i539inf._cell_boot_twoway``)."""
+    rng = np.random.default_rng(seed)
+    n = len(x)
+    n_s, n_b = int(sc.max()) + 1, int(bc.max()) + 1
+    rhos: list[float] = []
+    n_deg = 0
+    for _ in range(n_boot):
+        idx = rng.integers(0, n, size=n)
+        xt, yt, zt = _fe_resid_cols([x[idx], y[idx], z[idx]], sc[idx], bc[idx], n_s, n_b)
+        r = i539inf._fast_partial_spearman(xt, yt, zt)
+        if np.isnan(r):
+            n_deg += 1
+            continue
+        rhos.append(r)
+    return i539inf._percentile_summary(rhos, n_boot, n_deg)
+
+
+def _cluster_boot_partial_fe(
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    src: np.ndarray,
+    byst: np.ndarray,
+    cluster_on: str,
+    n_boot: int,
+    seed: int,
+) -> dict:
+    """Cluster percentile bootstrap on the FE rank-partial; drawn cluster
+    copies are RELABELED as distinct groups on the resampled axis (same
+    convention as ``i539inf._cluster_boot_twoway``)."""
+    rng = np.random.default_rng(seed)
+    labels = src if cluster_on == "source" else byst
+    other = byst if cluster_on == "source" else src
+    uniq = np.unique(labels)
+    idx_of = {c: np.where(labels == c)[0] for c in uniq}
+    _, other_codes_full = np.unique(other, return_inverse=True)
+    n_other = int(other_codes_full.max()) + 1
+    rhos: list[float] = []
+    n_deg = 0
+    for _ in range(n_boot):
+        chosen = rng.choice(uniq, size=len(uniq), replace=True)
+        idx = np.concatenate([idx_of[c] for c in chosen])
+        copy_codes = np.repeat(np.arange(len(chosen)), [len(idx_of[c]) for c in chosen])
+        oc = other_codes_full[idx]
+        trip = [x[idx], y[idx], z[idx]]
+        if cluster_on == "source":
+            xt, yt, zt = _fe_resid_cols(trip, copy_codes, oc, len(chosen), n_other)
+        else:
+            xt, yt, zt = _fe_resid_cols(trip, oc, copy_codes, n_other, len(chosen))
+        r = i539inf._fast_partial_spearman(xt, yt, zt)
+        if np.isnan(r):
+            n_deg += 1
+            continue
+        rhos.append(r)
+    out = i539inf._percentile_summary(rhos, n_boot, n_deg)
+    out["n_clusters"] = len(uniq)
+    return out
+
+
+def length_truncation_sensitivity(panel: dict, mask: np.ndarray, args) -> dict:
+    """Round-1 interpretation-critic follow-up: the response-length confound.
+
+    ``length_partial`` (PRIMARY new read): the two headline pair-corrected
+    two-way-FE rank reads (min_dist vs dz / dmargin, primary mask) with the
+    cell-level mean generated-token count partialled out — all three
+    variables are two-way-FE-residualized (run + persona dummies), then the
+    rank partial (``i539inf._fast_partial_spearman``) controls the length
+    residual; the cell bootstrap and both cluster bootstraps re-run the
+    residualization + partial within every resample. ``trunc_excluded``
+    (SECONDARY, registered-form check): each cell's dz/dmargin re-aggregated
+    over only non-truncated generations (min-N guard: >= half the questions),
+    then the registered R1 machinery re-run on the re-aggregated columns.
+    Both are EXPLORATORY sensitivity reads — NOT registered family members;
+    the Holm family is unchanged.
+    """
+    x = panel["min_dist"][mask]
+    z = panel["mean_n_new_tokens"][mask]
+    run_l, per_l = panel["source_cid"][mask], panel["persona"][mask]
+    run_u, rc = np.unique(run_l, return_inverse=True)
+    per_u, pc = np.unique(per_l, return_inverse=True)
+    n_q = panel["_n_questions"]
+
+    # (1) Length-partialled rank-partial on the headline members.
+    length_partial: dict = {
+        "control": "cell-level mean response length: mean over the cell's "
+        f"{n_q} questions of the generated-token count (n_new_tokens)",
+        "method": "two-way FE residualization (run + persona dummies, exact lstsq — same "
+        "design as the registered R1 reads) of min_dist, the DV, AND mean response "
+        "length; then rank-partial Spearman of (min_dist, DV | mean_len) on the FE "
+        "residuals; cell bootstrap + run/persona cluster bootstraps re-run the "
+        "residualization and the partial within every resample",
+        "n_cells": int(mask.sum()),
+    }
+    x_ref, _ = i539._twoway_fe_residualize(x, run_l, per_l)
+    z_ref, _ = i539._twoway_fe_residualize(z, run_l, per_l)
+    x_chk, z_chk = _fe_resid_cols([x, z], rc, pc, len(run_u), len(per_u))
+    drift = max(float(np.max(np.abs(x_chk - x_ref))), float(np.max(np.abs(z_chk - z_ref))))
+    assert drift < 1e-8, f"k-column FE residual drift {drift!r} vs parent implementation"
+    length_partial["rho_twoway_min_dist_vs_mean_len"] = i539._spearman_rho(x_ref, z_ref)
+    for tgt in ("dz", "dmargin"):
+        y = panel[tgt][mask]
+        x_f, y_f, z_f = _fe_resid_cols([x, y, z], rc, pc, len(run_u), len(per_u))
+        y_ref, _ = i539._twoway_fe_residualize(y, run_l, per_l)
+        d2 = max(float(np.max(np.abs(x_f - x_ref))), float(np.max(np.abs(y_f - y_ref))))
+        assert d2 < 1e-8, f"FE residual drift {d2!r} on {tgt}"
+        est = i539inf._fast_partial_spearman(x_f, y_f, z_f)
+        cis = {
+            "cluster_run": _cluster_boot_partial_fe(
+                x, y, z, run_l, per_l, "source", args.n_cluster_boot, args.seed
+            ),
+            "cluster_persona": _cluster_boot_partial_fe(
+                x, y, z, run_l, per_l, "bystander", args.n_cluster_boot, args.seed
+            ),
+        }
+        block = {
+            "estimate": float(est),
+            "n_cells": int(mask.sum()),
+            "rho_twoway_unpartialled": i539._spearman_rho(x_f, y_f),
+            "rho_twoway_mean_len_vs_dv": i539._spearman_rho(z_f, y_f),
+            "ci95_cell_boot": _cell_boot_partial_fe(x, y, z, rc, pc, args.n_boot, args.seed),
+            "ci95_cluster_run": cis["cluster_run"],
+            "ci95_cluster_persona": cis["cluster_persona"],
+            "primary_ci": p553.wider_ci(cis),
+            "p_perm_fe_partial": {
+                **i539inf._partial_residual_permutation_p(x_f, y_f, z_f, args.n_perm, args.seed),
+                "note": "diagnostic only — sensitivity reads are CI-based",
+            },
+        }
+        length_partial[tgt] = block
+        print(
+            f"[sens-len] min_dist vs {tgt} | mean_len: rho_partial={est:+.3f} "
+            f"(unpartialled {block['rho_twoway_unpartialled']:+.3f}) "
+            f"primary CI [{block['primary_ci']['low']:+.3f}, "
+            f"{block['primary_ci']['high']:+.3f}] ({block['primary_ci']['axis']}) "
+            f"(n={int(mask.sum())})"
+        )
+
+    # (2) Truncation-excluded re-aggregation (registered-form check).
+    min_keep = max(1, (int(n_q) + 1) // 2) if isinstance(n_q, int) else 1
+    valid = mask & (panel["n_nontrunc_q"] >= min_keep)
+    trunc_reads = min_dist_reads(
+        panel,
+        valid,
+        args,
+        full_inference=True,
+        targets=("dz_nontrunc", "dmargin_nontrunc"),
+        tag="sens-trunc",
+    )
+    trunc_excluded = {
+        "min_nontrunc_q_per_cell": min_keep,
+        "n_cells_kept": int(valid.sum()),
+        "n_cells_dropped": int(mask.sum() - valid.sum()),
+        "note": "registered-form check: same pair-corrected machinery, cells re-aggregated "
+        "over only non-truncated generations; expected near-identical to the EOR-only "
+        "sensitivity (truncated rows are ~98% pre_marker marker-repetition loops)",
+        **trunc_reads,
+    }
+
+    return {
+        "status": "exploratory sensitivity reads (round-1 interpretation-critic follow-up); "
+        "NOT registered family members — the Holm family is unchanged",
+        "length_partial": length_partial,
+        "trunc_excluded": trunc_excluded,
+    }
 
 
 # ── (R2) persistence + clamp routing ─────────────────────────────────────────
@@ -1054,6 +1283,11 @@ def main(argv: list[str] | None = None) -> int:
     }
     slot_sens = slot_kind_sensitivity(panel, masks["primary_non_source_resident"], args)
 
+    print("[sensitivity] length-partial + truncation-excluded reads ...")
+    len_trunc_sens = length_truncation_sensitivity(
+        panel, masks["primary_non_source_resident"], args
+    )
+
     print("[R2] persistence + clamp routing ...")
     persistence = persistence_block(panel, masks["primary_non_source_resident"], args)
     clamp = clamp_routing_block(panel, masks["primary_non_source_resident"], args)
@@ -1107,6 +1341,7 @@ def main(argv: list[str] | None = None) -> int:
         "min_dist_corrected_reads_primary": r1_primary,
         "min_dist_strata": r1_strata,
         "slot_kind_sensitivity": slot_sens,
+        "sensitivity_length_truncation": len_trunc_sens,
         "persistence": persistence,
         "clamp_routing": clamp,
         "exposure": exposure,
