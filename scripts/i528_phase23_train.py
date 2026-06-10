@@ -38,7 +38,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from explore_persona_space.experiments.i528_data import ISSUE_SLUG
+from explore_persona_space.experiments.i528_data import HF_EXPERIMENT_PREFIX, ISSUE_SLUG
 
 logger = logging.getLogger("i528.phase23")
 
@@ -176,9 +176,14 @@ def train_one_cell(
     out_dir = str(ADAPTERS_DIR / run_name)
 
     # MooseFS quota safety + adapter-persist contract (CLAUDE.md upload-policy).
+    # Adapters route under the slug-derived experiment prefix (plan §10) so
+    # adapters + data share one Hub prefix — concern
+    # `adapter-hf-path-diverges-plan-s10`.
     os.environ.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
     os.environ.setdefault("EPM_PERSIST_ADAPTER_HF_REPO", HF_MODEL_REPO)
-    os.environ.setdefault("EPM_PERSIST_ADAPTER_SUBFOLDER", f"adapters/{run_name}")
+    os.environ.setdefault(
+        "EPM_PERSIST_ADAPTER_SUBFOLDER", f"{HF_EXPERIMENT_PREFIX}/adapters/{run_name}"
+    )
 
     cfg = TrainLoraConfig(
         gpu_id=gpu_id,
@@ -204,7 +209,7 @@ def train_one_cell(
         marker_only_loss=False,
         hf_upload=True,
         hf_repo=HF_MODEL_REPO,
-        hf_path_in_repo=f"adapters/{run_name}",
+        hf_path_in_repo=f"{HF_EXPERIMENT_PREFIX}/adapters/{run_name}",
     )
     if dry_run:
         logger.info("dry-run: skipping train_lora() — wrote %d rows to %s", len(rows), train_path)

@@ -5,6 +5,20 @@
 # the VM after termination, plan §4.3/§9).
 # Production command:
 #   nohup bash scripts/i556_run_all_1gpu.sh > /workspace/logs/issue-556-run.log 2>&1 &
+#
+# VM-side phase AFTER upload + pod termination (plan §4.3) — run from the VM
+# repo root with the SAME two env exports this script sets below:
+#   uv run python scripts/i556_pull_qbank.py   # materialize data/issue_556/ Q-bank
+#                                              # (judge prerequisite: assert_q_test_equality
+#                                              # reads it; concern vm-judge-needs-qbank-local)
+#   nohup uv run python scripts/i528_phase4_judge.py --backend sync --skip-base \
+#     > /tmp/i556_judge.log 2>&1 &             # --resume on crash
+#   uv run python scripts/i556_merge_base_rows.py
+#   uv run python scripts/i528_phase5_analyze.py --saturation-gate per_encoding \
+#     --h2-bar-d-mean -0.10 --h2-min-seeds-neg 8
+#   uv run python scripts/i528_phase5_analyze.py --saturation-gate pooled \
+#     --out-name analysis_pooled_gate.json     # archived audit run
+#   uv run python scripts/plot_i528_clean_result.py
 
 set -euo pipefail
 
@@ -101,12 +115,15 @@ uv run python scripts/i528_phase4_eval.py --traits-subset validating
 # not <cell>/raw_completions.json, so the canonical rglob helper cannot see
 # them — explicit per-file fail-loud upload loop instead (incident #528).
 # Adapters were already uploaded per-cell by i528_phase23_train.py
-# (hf_upload=True + fail-loud list_repo_files verification).
+# (hf_upload=True + fail-loud list_repo_files verification) to the MODEL repo
+# under the SAME slug-derived prefix used below for the data uploads
+# (HF_EXPERIMENT_PREFIX/adapters/<run_name>, plan §10).
 echo "[phase=upload] $(date -Iseconds)"
 uv run python - <<'PYEOF'
 import os
 from pathlib import Path
 
+from explore_persona_space.experiments.i528_data import HF_EXPERIMENT_PREFIX as exp
 from explore_persona_space.orchestrate import hub
 from explore_persona_space.orchestrate.env import load_dotenv
 
@@ -114,7 +131,12 @@ load_dotenv()
 assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing — refusing silent upload skip"
 
 slug = os.environ["I528_ISSUE_SLUG"]
-exp = "issue556_role_header_validating"
+# Single source of truth for the experiment prefix (i528_data, slug-derived):
+# adapters (model repo) + data/raw completions (data repo) share it (plan §10).
+assert exp == "issue556_role_header_validating", (
+    f"HF_EXPERIMENT_PREFIX={exp!r} — slug env not threaded? expected the "
+    "issue_556 prefix issue556_role_header_validating"
+)
 
 uploads: list[tuple[Path, str]] = []
 raw_dir = Path(f"eval_results/{slug}/raw_generations")

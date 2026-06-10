@@ -27,6 +27,16 @@ ISSUE_SLUG = os.environ.get("I528_ISSUE_SLUG", "issue_528")
 LOCAL_DATA_DIR = Path(f"data/{ISSUE_SLUG}")
 SCHEMA_VERSION = "i528_qbank_v1"
 
+# HF experiment prefix shared by EVERY Hub upload of this pipeline (#556 plan
+# §10): LoRA adapters on the MODEL repo and data / raw-completion files on the
+# DATA repo all land under `<prefix>/...` so the Step-8 upload-verifier finds
+# them in one place. Slug-derived (`issue_556` -> `issue556_role_header_
+# validating`), never hardcoded — concern `adapter-hf-path-diverges-plan-s10`.
+# NB: this names the #556 pipeline's uploads; the PARENT's historical
+# artifacts live at `issue528_role_header_traits/` (data repo) and bare
+# `adapters/` (model repo) and are NOT moved.
+HF_EXPERIMENT_PREFIX = f"{ISSUE_SLUG.replace('_', '')}_role_header_validating"
+
 
 def _trait_dir(trait: str) -> Path:
     if trait not in TRAITS:

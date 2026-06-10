@@ -516,6 +516,28 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — phase dispatch
             ),
             "passed": (d_mean <= args.h2_bar_d_mean and hi < 0 and n_neg >= args.h2_min_seeds_neg),
         }
+        # Coverage guard (#556 concern `analysis-h2-coverage-assert`): the
+        # per-cell loop above `continue`-drops empty (trait, seed) cells, so a
+        # seed whose eval rows are missing silently SHRINKS the bootstrap
+        # denominator — and the `passed` verdict would then be computed over
+        # fewer seeds than registered. Assert the realized per-seed coverage
+        # equals the ACTIVE `SEEDS` config exactly (len + identity; SEEDS is
+        # env-driven via I528_SEEDS, never hardcoded here). On shortfall mark
+        # the summary INCOMPLETE_COVERAGE and force passed=False — never a
+        # silent verdict on a shrunken denominator.
+        expected_seeds = sorted(SEEDS)
+        realized_seeds = sorted(h2_passing_per_seed_mean)
+        if realized_seeds != expected_seeds:
+            h2_summary["status"] = "INCOMPLETE_COVERAGE"
+            h2_summary["seeds_expected"] = expected_seeds
+            h2_summary["seeds_realized"] = realized_seeds
+            h2_summary["passed"] = False
+            logger.warning(
+                "H2 coverage INCOMPLETE: realized seeds %s != configured SEEDS %s — "
+                "forcing passed=False (a verdict on a shrunken denominator is invalid).",
+                realized_seeds,
+                expected_seeds,
+            )
     else:
         h2_summary = {"status": "NO_H1_PASSING_TRAITS_OR_NO_PAIRED_CELLS"}
 
