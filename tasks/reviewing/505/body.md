@@ -87,7 +87,7 @@ The eval used 10 fixed probe questions × 52 held-out bystander personas × 6 tr
 
 For each adapter I measured the on-policy marker log-probability shift for every bystander. The model wrote its own response to each probe, and I read `log P( ※)` (trained minus base) at the slot right after that response. Similarity between each bystander `b` and each dropped negative `j` came from the base-model persona-vectors cosine; the headline test uses layer 21 (the project default), with a robustness sweep at layers 7, 10, 14, 27. The planned headline statistic was the slope of `Δ-leakage(b; j) = ΔG_b(drop-j, seed) − ΔG_b(full-set, seed)` against `cos(b, j)`, pooled across all 6 drop-one cells × 3 seeds × 52 bystanders ≈ 936 rows.
 
-The trained recipe was rsLoRA rank 32, learning rate 1e-5, 3 epochs, batch size 4 × grad-accum 4, on Qwen-2.5-7B-base, with marker-position-only loss via `MarkerOnlyDataCollator`. This is **not** the plan's original anchor — the original anchor (rank 16, LR 5e-6, 1 epoch) under-trained the implant (source ΔG 0.04 nats on first smoke, 0.82 nats on a slightly stronger second smoke, both well under the 5-nat validity floor). The final anchor was an autonomous post-plan rescue: I bumped rank to 32, LR to 1e-5, and epochs to 3 across rounds 6-9 (a 2× rank, 2× LR, 3× epoch escalation) until the smoke source ΔG cleared the 5-nat floor at the headline read-slice. The verdict is against this rescued anchor, not against the plan's original anchor. Planned success bar: pooled slope positive with Holm-corrected p < 0.05, OR sign-agreement of at least five out of the six drop-one cells positive (binomial p ≤ 0.11). Planned kill bar: slope indistinguishable from zero AND sign-agreement at most three out of the six = clean null.
+The trained recipe was rsLoRA rank 32, learning rate 1e-5, 3 epochs, batch size 4 × grad-accum 4, on Qwen-2.5-7B-Instruct, with marker-position-only loss via `MarkerOnlyDataCollator`. This is **not** the plan's original anchor — the original anchor (rank 16, LR 5e-6, 1 epoch) under-trained the implant (source ΔG 0.04 nats on first smoke, 0.82 nats on a slightly stronger second smoke, both well under the 5-nat validity floor). The final anchor was an autonomous post-plan rescue: I bumped rank to 32, LR to 1e-5, and epochs to 3 across rounds 6-9 (a 2× rank, 2× LR, 3× epoch escalation) until the smoke source ΔG cleared the 5-nat floor at the headline read-slice. The verdict is against this rescued anchor, not against the plan's original anchor. Planned success bar: pooled slope positive with Holm-corrected p < 0.05, OR sign-agreement of at least five out of the six drop-one cells positive (binomial p ≤ 0.11). Planned kill bar: slope indistinguishable from zero AND sign-agreement at most three out of the six = clean null.
 
 The eval emits no model-text artifact — each bystander × question yields one number (`log P( ※)` at the post-response slot, plus the KL fallback), not a completion to display.
 
@@ -165,8 +165,8 @@ Two side-reads. The source-proximity control itself enters negative (p = 0.011):
 
 | | |
 | --- | --- |
-| Base model | `Qwen/Qwen2.5-7B` (base, not Instruct) |
-| Adapter type | rsLoRA, rank 32, α 64, dropout 0.05, target modules q/k/v/o/gate/up/down |
+| Base model | `Qwen/Qwen2.5-7B-Instruct` (verified against `base_model_name_or_path` in the published adapter configs at HF rev `d0042c93f`; an earlier version of this table said base — that was wrong) |
+| Adapter type | rsLoRA, rank 32, α 32, dropout 0.05, target modules q/k/v/o/gate/up/down (α verified against `lora_alpha` in the published adapter configs; an earlier version of this table said α 64 — that was wrong) |
 | Optimizer | AdamW bf16, cosine schedule, warmup 0.05, weight_decay 0.0 |
 | Learning rate | 1e-5 (autonomous post-plan rescue; plan's original anchor was 5e-6) |
 | Epochs | 3 (autonomous post-plan rescue; plan's original anchor was 1) |
@@ -232,9 +232,10 @@ Two side-reads. The source-proximity control itself enters negative (p = 0.011):
 # from repo root, on a 1× A100-80GB (or equivalent ≥ 80GB-HBM) pod
 export EPM_SKIP_EXISTING=0  # set =1 to resume a partial sweep
 WANDB_MODE=disabled uv run python scripts/issue505_dispatch.py \
-  --cells 9 --seeds 42,137,219 \
-  --output-dir eval_results/issue_505/sweep \
-  --recipe-rank 32 --recipe-lr 1e-5 --recipe-epochs 3
+  --cells 8 --seeds 3 \
+  --output-dir eval_results/issue_505/sweep
+# (recipe rank 32 / lr 1e-5 / 3 epochs is pinned in the module constants at the
+#  Code commit below; the dispatcher CLI has no recipe flags)
 
 # then analysis (no GPU)
 uv run python scripts/issue505_analyze.py \
