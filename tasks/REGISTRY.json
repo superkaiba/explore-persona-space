@@ -2898,8 +2898,8 @@
       "goal": "Test whether base-model persona-distance predictors (residual cosine and JS divergence, source persona to bystander persona) predict per-bystander sycophancy leakage better on a larger model (Qwen-2.5-72B-Instruct) than they did at 7B (#470), by porting #470's frozen contrastive sycophancy leakage rig unchanged except for model size and scoring leakage against cosine, JS, the bystander's base prior, and a content-free base-rate null.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/507",
-      "status": "awaiting_promotion",
+      "path": "tasks/completed/507",
+      "status": "completed",
       "title": "Scaling 7B to 72B makes the sycophancy-leakage predictor strictly worse, not better (HIGH confidence)"
     },
     "508": {
