@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 555,
+  "highest_id": 556,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3299,6 +3299,14 @@
       "path": "tasks/running/555",
       "status": "running",
       "title": "Pre-implant null-geometry calibration: bound chance geometry-shaped partial correlations at step-5 no-implant snapshots across 5 fresh seed pairs"
+    },
+    "556": {
+      "goal": "Re-test whether the role-header encoding segments validating from off-target personas more cleanly than a system-prompt encoding (paired leakage gap \u2264 -0.15 Likert, CI strictly below zero) at a seed count where the paired-bootstrap CI is no longer essentially [min, max], by re-running #528's validating \u00d7 {role-header, system-prompt} cell at 10 fresh training seeds on the identical Q-bank + identical rubric rig + identical contrastive-negatives recipe, so the segmentation effect can be promoted from MODERATE to HIGH (or falsified) without changing anything else about the parent design.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/556",
+      "status": "proposed",
+      "title": "Thicken #528's segmentation CI with a validating-only sweep at n=10 seeds (role-header vs system-prompt)"
     },
     "6": {
       "has_clean_result": false,
