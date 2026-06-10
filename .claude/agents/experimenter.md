@@ -40,7 +40,10 @@ content from the issue body or comment markers), and the pod name
 2. **Launch** — start the training/eval job via `setsid nohup bash
    <launcher>` (full pattern in "During Execution"; bare `nohup ... &`
    over SSH MCP dies on session exit) + WandB tracking.
-3. **Confirm** — verify the PID is alive and the log is writing.
+3. **Confirm** — verify the PID is alive and the log is writing, from a
+   SEPARATE SSH invocation after the launching session has closed (a
+   same-session probe cannot catch SIGHUP-on-disconnect death — see
+   "During Execution" step 2).
 4. **Hand off** — post `epm:run-launched` with pod, PID, log path,
    pidfile path, launcher path, and the dispatch command, then EXIT
    your turn within 60 seconds.
@@ -436,17 +439,31 @@ failure_class: infra` per the launch-time-failure table below.
      AND `pid_file=/workspace/logs/issue-<N>.pid`. Omitting `pid_file=`
      on a re-launch (as happened in #451) breaks the poller's probe.
 
-2. **Confirm launch succeeded** — immediately after resolving the python
-   child PID, verify it is alive and the log is writing. One quick probe
-   is enough:
+2. **Confirm the launch survived disconnect — the probe MUST be a
+   SEPARATE SSH invocation, issued AFTER the launching session has
+   closed.** Never bundle the survival probe into the same SSH command
+   string as the `setsid nohup` launch (e.g. `... & sleep 5; ps -p ...`):
+   a same-session probe runs while the launching connection is still
+   open, so it CANNOT catch the SIGHUP-on-disconnect death mode — a
+   not-fully-detached job dies only when that connection closes, AFTER
+   an in-session probe has already PASSed (incident #541, 2026-06-10:
+   a pod-side smoke launched via a nohup wrapper logged one
+   `[phase=preflight]` line and passed a 25s same-session liveness
+   check, then died silently the moment the launching SSH session
+   exited). The launch `ssh_execute` call ends with the PID resolution
+   from step 1; let it RETURN — closing its connection — then verify
+   in a NEW `ssh_execute` call that the PID is alive and the log is
+   writing:
    ```bash
    ssh_execute(server="epm-issue-<N>",
                command="ps -p <CHILD_PID> && tail -20 /workspace/logs/issue-<N>.log")
    ```
    If `CHILD_PID` is empty or dead within seconds of launch, the script
-   crashed at import time — capture the tail, post `epm:failure v1` with
-   `failure_class: code` (most common cause) and the tail in the note,
-   then exit.
+   crashed at import time OR was reaped on session exit (a detachment
+   bug in the launch shape — re-launch with the full step-1 pattern
+   before suspecting the code) — capture the tail, post `epm:failure v1`
+   with `failure_class: code` (most common cause) and the tail in the
+   note, then exit.
 
 3. **Post `epm:run-launched` and EXIT.** This is your terminal step. The
    note MUST carry the pod, PID (the resolved python child `CHILD_PID`
@@ -480,8 +497,10 @@ failure_class: infra` per the launch-time-failure table below.
      SSH heredoc, so the path you post as `pid_file=` must exist
      pod-side; write it in the launch itself (the step-1 launcher's
      `echo $$ > /workspace/logs/issue-<N>.pid`, or for a rare
-     launcher-less relaunch `nohup ... & echo $! >
-     /workspace/logs/issue-<N>.pid` in the same SSH command). A pidfile
+     launcher-less relaunch `setsid nohup ... < /dev/null & echo $! >
+     /workspace/logs/issue-<N>.pid` in the same SSH command — even the
+     launcher-less shape keeps the full detachment trio: `setsid` +
+     `nohup` + stdin from `/dev/null`, never bare `nohup ... &`). A pidfile
      written only on the local VM silently reads `PID_ALIVE=0` every
      tick and the poller falls back to the pid from the latest
      `epm:run-launched` marker — if that pid is stale, a healthy run is
