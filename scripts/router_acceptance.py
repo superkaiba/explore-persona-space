@@ -874,6 +874,7 @@ def build_live_command_plan(
     intent: str = "lora-7b",
     smoke_hydra_args: tuple[str, ...] = DEFAULT_SMOKE_HYDRA_ARGS,
     repo_root: Path | None = None,
+    time_budget_hours: float | None = None,
 ) -> LiveCommandPlan:
     """Build the exact ``dispatch_issue.py`` + ``backend_poll.py`` argv.
 
@@ -901,6 +902,8 @@ def build_live_command_plan(
     ]
     if backend != "auto":
         launch_argv += ["--backend", backend]
+    if time_budget_hours is not None:
+        launch_argv += ["--time-budget-hours", str(time_budget_hours)]
     for hy in hydra_args:
         launch_argv += ["--hydra", hy]
 
@@ -1798,6 +1801,7 @@ def _cmd_live(args: argparse.Namespace) -> int:
         backend=args.backend,
         intent=args.intent,
         repo_root=repo_root,
+        time_budget_hours=args.time_budget_hours,
     )
 
     if not args.live:
@@ -2060,6 +2064,18 @@ def _build_argparser() -> argparse.ArgumentParser:
         help="Lane to test. ``auto`` exercises the free->GCP escalation chain.",
     )
     live.add_argument("--intent", default="lora-7b", help="Workload intent (default: lora-7b).")
+    live.add_argument(
+        "--time-budget-hours",
+        type=float,
+        default=None,
+        help=(
+            "Override the intent-default SLURM --time budget (hours), passed "
+            "through to dispatch_issue.py launch. The ~20-step smoke finishes "
+            "in well under 1h, and a short --time lets SLURM backfill the job "
+            "into IDLE+PLANNED node windows where the 6h lora-7b default "
+            "pends past the 600s park cap (live finding, issue 535 Mila lane)."
+        ),
+    )
     live.add_argument(
         "--live",
         action="store_true",
