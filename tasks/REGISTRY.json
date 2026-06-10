@@ -3160,7 +3160,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/539",
       "status": "awaiting_promotion",
-      "title": "Activation distance ranks ordinary-context marker emission rates mostly by tracking which sources leak everywhere, not pair-specific affinity (MODERATE confidence)"
+      "title": "Activation distance ranks ordinary-context marker emission rates mostly by tracking which sources leak everywhere, with a small pair-specific cosine residue (MODERATE confidence)"
     },
     "54": {
       "has_clean_result": false,

@@ -1,6 +1,7 @@
 ---
 title: Activation distance ranks ordinary-context marker emission rates mostly by
-  tracking which sources leak everywhere, not pair-specific affinity (MODERATE confidence)
+  tracking which sources leak everywhere, with a small pair-specific cosine residue
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-09T20:31:59Z'
