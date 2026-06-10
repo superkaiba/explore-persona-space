@@ -476,6 +476,12 @@ def _collinearity_and_reliability(
             mean_leak = [float(np.mean(leak_panel_mean.get(n, [float("nan")]))) for n in names_g]
             gate["tercile_buckets_by_base_on_topic"] = _tercile_buckets(names_g, topic, mean_leak)
             gate["tercile_buckets_by_prior"] = _tercile_buckets(names_g, pri, mean_leak)
+        else:
+            # Smoke-scale panels: the file exists but too few personas carry a
+            # finite base_on_topic for the Pearson gate — declare the skip
+            # (the inherited "skipped_no_base_engagement_file" status would
+            # misreport the reason).
+            gate = {"status": "skipped_insufficient_n", "n": len(names_g)}
         ses = [
             float(base_cov[p]["on_topic_se"])
             for p in names_g

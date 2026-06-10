@@ -159,12 +159,26 @@ def _standardize(x: list[float]) -> np.ndarray:
     return (a - a.mean()) / sd
 
 
-def _ols_two_predictor(y: list[float], x1: list[float], x2: list[float]) -> dict[str, float]:
-    """Standardized OLS z(y) ~ z(x1) + z(x2). Returns betas + R^2."""
+def _ols_two_predictor(y: list[float], x1: list[float], x2: list[float]) -> dict[str, object]:
+    """Standardized OLS z(y) ~ z(x1) + z(x2). Returns betas + R^2.
+
+    Degenerate-input gate (#541 smoke hardening): a 2-predictor-plus-intercept
+    fit needs n >= 4 rows (matching the n>=4 permutation-p convention), and
+    the ddof=1 z-scores are NaN at n == 1 — non-finite values reaching LAPACK
+    surface as a misleading "SVD did not converge" (DLASCL rejects the
+    matrix). Below-minimum n or a non-finite design returns a structured skip
+    (declared, never a silent default); no-op at full-run n with finite
+    inputs.
+    """
+    n = len(y)
+    if n < 4:
+        return {"status": "skipped_insufficient_n", "n": n}
     zy = _standardize(y)
     zx1 = _standardize(x1)
     zx2 = _standardize(x2)
     A = np.column_stack([np.ones_like(zx1), zx1, zx2])
+    if not (np.isfinite(A).all() and np.isfinite(zy).all()):
+        return {"status": "skipped_nonfinite_design", "n": n}
     coef, *_ = np.linalg.lstsq(A, zy, rcond=None)
     yhat = A @ coef
     ss_res = float(((zy - yhat) ** 2).sum())
@@ -298,6 +312,8 @@ def _cluster_bootstrap_h3(
             continue
         partials.append(_partial_spearman(cos_means, leak_means, prior_means))
         ols = _ols_two_predictor(leak_means, prior_means, cos_means)
+        if "status" in ols:
+            continue  # degenerate bootstrap draw — skip-gated by the OLS guard
         beta_priors.append(ols["beta_x1_prior"])
         beta_proxs.append(ols["beta_x2_prox"])
         r2s.append(ols["r_squared"])
