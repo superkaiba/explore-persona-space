@@ -88,6 +88,6 @@ The #519 EM K=20 Sonnet-judge callback was disabled mid-run (Anthropic batch API
 ## Reproducibility anchors
 
 - Parent issue: #519. `issue-519` branch tip `9a0462ba9`.
-- Adapters: [`huggingface.co/superkaiba1/explore-persona-space/tree/c46b8989d/issue_519`](https://huggingface.co/superkaiba1/explore-persona-space/tree/c46b8989df021591c18711f51e50df4d6c9ab6c8).
-- Training data: [`explore-persona-space-data/tree/c46b8989d/issue_519`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/c46b8989df021591c18711f51e50df4d6c9ab6c8/issue_519).
+- Adapters: [`huggingface.co/superkaiba1/explore-persona-space/tree/main/issue_519`](https://huggingface.co/superkaiba1/explore-persona-space/tree/main/issue_519) (uploaded at project git commit `c46b8989d`; that SHA is NOT an HF revision).
+- Training data: [`explore-persona-space-data/tree/main/issue_519`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue_519) (uploaded at project git commit `c46b8989d`; that SHA is NOT an HF revision).
 - Plan v1 (source design): `tasks/awaiting_promotion/519/plans/plan.md`.
