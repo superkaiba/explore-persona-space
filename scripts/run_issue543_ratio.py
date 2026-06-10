@@ -70,6 +70,9 @@ from _issue543_common import (  # noqa: E402
     EVAL_RESULTS_DIR,
     EXPECTED_MARKER_ID,
     HUB_MODEL_REPO,
+    HUB_MODEL_REPO_REVISION_543,
+    ISSUE,
+    ISSUE_557,
     MARKER_TEXT,
     MIX_MANIFEST_PATH,
     MIXES_DIR,
@@ -111,14 +114,22 @@ from _issue543_common import (  # noqa: E402
     STOP_TARGET_LOGP_LOW,
     TOTAL_ROWS,
     WANDB_PROJECT,
+    WANDB_PROJECT_557,
     adapter_subfolder,
+    adapter_subfolder_v,
     cell_slug,
+    cell_slug_v,
+    ensure_probe_files_local,
     marker_preflight,
     output_root,
     phase_log,
     repro_metadata,
     run_name,
+    run_name_v,
     sentinel_dir,
+    sentinel_slug_v,
+    validate_variant,
+    variant_cell_dir,
     write_sentinel,
 )
 
@@ -146,6 +157,44 @@ def _phase2_result_path(arm: str, seed: int) -> Path:
 
 def _stop_record_path(arm: str, seed: int) -> Path:
     return _cell_dir(arm, seed) / "phase1_stop_record.json"
+
+
+def _phase2_paths(arm: str, seed: int, variant: str | None, phase2_lr: float | None) -> dict:
+    """Resolve every Phase-2 path/name for one cell — the ONE source of truth.
+
+    Used by both ``run_phase2`` (execution) and ``--print-paths`` (CPU smoke),
+    so the printed paths cannot drift from the executed ones. OUTPUT paths
+    move to ``issue_557`` namespaces when ``variant`` is set; the parent-side
+    READS (``phase1_result_read``, the Hub adapter resolve) always stay on the
+    ``issue_543`` paths (#557 plan §4.2 threading-scope note — a blanket
+    redirect FileNotFoundErrors on the parent reads).
+    """
+    if variant is not None:
+        validate_variant(variant)
+    cell = variant_cell_dir(arm, variant, seed) if variant is not None else _cell_dir(arm, seed)
+    return {
+        "arm": arm,
+        "seed": seed,
+        "variant": variant,
+        "effective_lr": PHASE2_LR if phase2_lr is None else phase2_lr,
+        # ── OUTPUT surfaces (variant-aware) ─────────────────────────────────
+        "cell_dir": cell,  # trajectory dumps + result JSON land here
+        "result_path": cell / "phase2_result.json",
+        "train_out_dir": output_root() / cell_slug_v(arm, seed, "phase2", variant),
+        "run_name": run_name_v(arm, seed, "phase2", variant),
+        "wandb_project": WANDB_PROJECT if variant is None else WANDB_PROJECT_557,
+        "adapter_hf_subfolder": f"adapters/{adapter_subfolder_v(arm, seed, 'phase2', variant)}",
+        "sentinel_slug": (
+            cell_slug(arm, seed, "phase2")
+            if variant is None
+            else sentinel_slug_v(arm, seed, "phase2", variant)
+        ),
+        "sentinel_issue": ISSUE if variant is None else ISSUE_557,
+        # ── Parent-side READS (NEVER variant-redirected) ────────────────────
+        "phase1_result_read": _phase1_result_path(arm, seed),
+        "phase1_adapter_hub_subfolder": f"adapters/{adapter_subfolder(arm, seed, 'phase1')}",
+        "phase1_adapter_hub_revision": HUB_MODEL_REPO_REVISION_543,
+    }
 
 
 def _run_child(cmd: list[str], log_path: Path, *, label: str) -> None:
@@ -734,8 +783,14 @@ def _resolve_phase1_adapter(arm: str, seed: int) -> Path:
     from huggingface_hub import snapshot_download
 
     sub = f"adapters/{adapter_subfolder(arm, seed, 'phase1')}"
+    # Revision pinned to the #543 clean-result card (#557 plan §4.1 (e)): the
+    # in-flight #543 1%-arm follow-up only ADDS artifacts, but the pin makes
+    # concurrent uploads unable to move the Phase-1 inputs under us.
     local = snapshot_download(
-        repo_id=HUB_MODEL_REPO, allow_patterns=[f"{sub}/*"], token=os.environ.get("HF_TOKEN")
+        repo_id=HUB_MODEL_REPO,
+        allow_patterns=[f"{sub}/*"],
+        revision=HUB_MODEL_REPO_REVISION_543,
+        token=os.environ.get("HF_TOKEN"),
     )
     p = Path(local) / sub
     if not (p / "adapter_config.json").exists():
@@ -791,19 +846,29 @@ def _assert_phase2_trajectory_files(cell: Path) -> dict[str, int]:
 
 
 def run_phase2(args: argparse.Namespace) -> dict:
-    """Phase-2 benign-SFT erasure pass (continue-adapter; plan §4.3)."""
+    """Phase-2 benign-SFT erasure pass (continue-adapter; plan §4.3).
+
+    Issue #557 lr-sweep extension (default-preserving): when ``--variant`` +
+    ``--phase2-lr`` are set, the peak lr is overridden and ALL outputs land
+    under ``issue_557`` namespaces via ``_phase2_paths``; with both unset the
+    behavior is the exact #543 rig. The parent-side reads (phase1_result.json
+    install-excluded check, Phase-1 adapter resolve) stay on issue_543 paths
+    in BOTH modes.
+    """
     phase_log("erasure_train")
     from transformers import AutoTokenizer
 
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
     arm, seed = args.arm, args.seed
-    result_path = _phase2_result_path(arm, seed)
+    variant = args.variant
+    paths = _phase2_paths(arm, seed, variant, args.phase2_lr)
+    result_path = paths["result_path"]
     if result_path.exists() and not args.force:
         log.info("Phase-2 result exists (%s) — skipping (idempotent).", result_path)
         return json.loads(result_path.read_text())
 
-    phase1_result = json.loads(_phase1_result_path(arm, seed).read_text())
+    phase1_result = json.loads(paths["phase1_result_read"].read_text())
     if phase1_result.get("install_excluded"):
         raise RuntimeError(
             f"Cell {arm}/seed{seed} is install-excluded (cap hit without band) — "
@@ -811,9 +876,15 @@ def run_phase2(args: argparse.Namespace) -> dict:
         )
     phase1_adapter = _resolve_phase1_adapter(arm, seed)
     data_path = _ensure_phase2_dataset_local()
-    cell = _cell_dir(arm, seed)
-    out_dir = output_root() / cell_slug(arm, seed, "phase2")
+    if variant is not None:
+        # Fresh #557 pods skip the #543 mix build that created the probe
+        # files; the trajectory callbacks read them locally (#557 plan §4.1).
+        ensure_probe_files_local()
+    cell = paths["cell_dir"]
+    cell.mkdir(parents=True, exist_ok=True)
+    out_dir = paths["train_out_dir"]
     out_dir.mkdir(parents=True, exist_ok=True)
+    effective_lr = paths["effective_lr"]
 
     tokenizer = AutoTokenizer.from_pretrained(
         BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
@@ -829,14 +900,14 @@ def run_phase2(args: argparse.Namespace) -> dict:
     cfg = TrainLoraConfig(
         gpu_id=args.gpu,
         epochs=PHASE2_EPOCHS,
-        lr=PHASE2_LR,
+        lr=effective_lr,
         lr_scheduler_type=PHASE2_LR_SCHEDULER,
         warmup_ratio=PHASE2_WARMUP_RATIO,
         batch_size=PHASE2_PER_DEVICE_BS,
         grad_accum=PHASE2_GRAD_ACCUM,
         max_length=PHASE2_MAX_LENGTH,
         seed=seed,
-        run_name=run_name(arm, seed, "phase2"),
+        run_name=paths["run_name"],
         report_to="wandb",
         save_strategy="no",
         logging_steps=5,
@@ -846,10 +917,10 @@ def run_phase2(args: argparse.Namespace) -> dict:
         existing_adapter_path=str(phase1_adapter),
         hf_upload=True,
         hf_repo=HUB_MODEL_REPO,
-        hf_path_in_repo=f"adapters/{adapter_subfolder(arm, seed, 'phase2')}",
+        hf_path_in_repo=paths["adapter_hf_subfolder"],
     )
     os.environ.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
-    os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
+    os.environ.setdefault("WANDB_PROJECT", paths["wandb_project"])
     t0 = time.time()
     adapter_path, train_loss = train_lora(
         base_model_path=BASE_MODEL,
@@ -866,13 +937,15 @@ def run_phase2(args: argparse.Namespace) -> dict:
         trajectory_rows = _assert_phase2_trajectory_files(cell)
     except RuntimeError as e:
         write_sentinel(
-            f"{cell_slug(arm, seed, 'phase2')}-trajfail",
+            f"{paths['sentinel_slug']}-trajfail",
             kind="epm:progress",
+            issue=paths["sentinel_issue"],
             note=json.dumps(
                 {
                     "event": "phase2_trajectory_verification_failed",
                     "arm": arm,
                     "seed": seed,
+                    "variant": variant,
                     "error": str(e)[:4000],
                 }
             ),
@@ -883,15 +956,17 @@ def run_phase2(args: argparse.Namespace) -> dict:
         "phase": "phase2",
         "arm": arm,
         "seed": seed,
+        "variant": variant,
+        "phase2_lr_override": args.phase2_lr,
         "train_loss": train_loss,
         "phase1_adapter_path": str(phase1_adapter),
         "trajectory_rows_per_probe": trajectory_rows,
         "final_adapter_path": adapter_path,
-        "adapter_hf_subfolder": f"adapters/{adapter_subfolder(arm, seed, 'phase2')}",
+        "adapter_hf_subfolder": paths["adapter_hf_subfolder"],
         "phase2_handoff": "continue_adapter",
         "wall_minutes": round(wall_m, 1),
         "config": {
-            "lr": PHASE2_LR,
+            "lr": effective_lr,
             "lr_scheduler_type": PHASE2_LR_SCHEDULER,
             "epochs": PHASE2_EPOCHS,
             "max_length": PHASE2_MAX_LENGTH,
@@ -902,13 +977,16 @@ def run_phase2(args: argparse.Namespace) -> dict:
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(json.dumps(result, indent=2))
     write_sentinel(
-        f"{cell_slug(arm, seed, 'phase2')}",
+        paths["sentinel_slug"],
         kind="epm:progress",
+        issue=paths["sentinel_issue"],
         note=json.dumps(
             {
                 "event": "phase2_complete",
                 "arm": arm,
                 "seed": seed,
+                "variant": variant,
+                "lr": effective_lr,
                 "wall_minutes": result["wall_minutes"],
             }
         ),
@@ -1285,15 +1363,70 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--smoke-only", action="store_true", help="Driver: stop after the smoke gate.")
     p.add_argument("--force", action="store_true", help="Re-run phases whose result JSON exists.")
     p.add_argument("--child", action="store_true", help=argparse.SUPPRESS)
+    # ── Issue #557 lr-sweep extension (default None -> exact #543 behavior) ──
+    p.add_argument(
+        "--phase2-lr",
+        type=float,
+        default=None,
+        help="Override the Phase-2 peak lr (issue #557 lr sweep). Requires --variant.",
+    )
+    p.add_argument(
+        "--variant",
+        type=str,
+        default=None,
+        help="lr tag (e.g. lr3e5) routing ALL outputs to issue_557 namespaces. "
+        "Requires --phase2-lr; valid only with --phase phase2.",
+    )
+    p.add_argument(
+        "--print-paths",
+        action="store_true",
+        help="CPU smoke: print the resolved Phase-2 output + parent-read paths "
+        "as JSON and exit 0 without any GPU work (--phase phase2 only).",
+    )
     return p.parse_args()
+
+
+def _validate_variant_flags(args: argparse.Namespace) -> None:
+    """Launch-time asserts for the #557 flags (plan §4.2).
+
+    ``--variant`` and ``--phase2-lr`` must be set TOGETHER (an lr override
+    without variant threading would be silently SKIPped by the idempotency
+    check against the parent's committed phase2_result.json; a variant
+    without an lr override would re-run the 1e-4 anchor into a 557
+    namespace), and ONLY on the ``--phase phase2`` path.
+    """
+    has_lr, has_variant = args.phase2_lr is not None, args.variant is not None
+    if not (has_lr or has_variant or args.print_paths):
+        return
+    if has_lr != has_variant:
+        raise SystemExit(
+            "--phase2-lr and --variant must be set together (issue #557 contract): "
+            "the variant threads the output namespace the lr override needs."
+        )
+    if args.phase != "phase2":
+        raise SystemExit(
+            "--phase2-lr / --variant / --print-paths are valid ONLY with --phase phase2 "
+            "(the #557 sweep never re-runs Phase 1, the driver, or --cell)."
+        )
+    if has_variant:
+        validate_variant(args.variant)
 
 
 def main() -> int:
     args = parse_args()
+    _validate_variant_flags(args)
     if args.plan_only:
         return run_plan_only(args)
     if args.measure_bhat:
         measure_bhat(args.gpu)
+        return 0
+    if args.print_paths:
+        # CPU smoke (#557): print the SAME resolver output run_phase2 executes
+        # against — no GPU, no env mutation, no idempotency side effects.
+        if args.arm is None:
+            raise SystemExit("--print-paths requires --arm")
+        paths = _phase2_paths(args.arm, args.seed, args.variant, args.phase2_lr)
+        print(json.dumps({k: str(v) for k, v in paths.items()}, indent=2))
         return 0
     _assert_credentials()
     if args.driver:

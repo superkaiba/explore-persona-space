@@ -61,21 +61,25 @@ from _issue543_common import (  # noqa: E402
     EVAL_RESULTS_DIR,
     HUB_MODEL_REPO,
     HUB_RAW_COMPLETIONS_BUCKET,
+    HUB_RAW_COMPLETIONS_BUCKET_557,
     MARKER_TEXT,
     N_DOCTOR_PROMPTS,
     N_REFERENCE_PROMPTS,
     N_SMOKE_PROMPTS,
     N_TRIGGER_PROMPTS,
     PHASES,
-    adapter_subfolder,
+    adapter_subfolder_v,
     all_persona_prompts,
     cell_slug,
+    cell_slug_v,
     ensure_eval_questions_local,
     marker_preflight,
     phase_log,
     repro_metadata,
     trigger_user,
     truncated,
+    validate_variant,
+    variant_cell_dir,
 )
 
 log = logging.getLogger("eval_issue543")
@@ -144,8 +148,15 @@ def build_dev_cell(eval_questions: list[str]) -> dict[str, list[dict]]:
 # ── Adapter resolution ──────────────────────────────────────────────────────
 
 
-def resolve_adapter(arm: str, seed: int, phase: str, adapter_path: str | None) -> Path:
-    """Local path if given (dispatcher hand-off); else fetch from HF Hub."""
+def resolve_adapter(
+    arm: str, seed: int, phase: str, adapter_path: str | None, variant: str | None = None
+) -> Path:
+    """Local path if given (dispatcher hand-off); else fetch from HF Hub.
+
+    With ``variant`` set (#557 lr sweep) the Hub fallback resolves the
+    ``adapters/issue557/...`` subfolder the variant cell uploaded to — the
+    issue_543 subfolder would silently serve the WRONG (1e-4 anchor) adapter.
+    """
     if adapter_path:
         p = Path(adapter_path)
         if not p.exists() or not (p / "adapter_config.json").exists():
@@ -153,7 +164,7 @@ def resolve_adapter(arm: str, seed: int, phase: str, adapter_path: str | None) -
         return p
     from huggingface_hub import snapshot_download
 
-    sub = f"adapters/{adapter_subfolder(arm, seed, phase)}"
+    sub = f"adapters/{adapter_subfolder_v(arm, seed, phase, variant)}"
     log.info("Resolving adapter from Hub: %s/%s", HUB_MODEL_REPO, sub)
     local = snapshot_download(
         repo_id=HUB_MODEL_REPO,
@@ -491,17 +502,23 @@ def run_dev_check(args: argparse.Namespace) -> int:
 def run_one(args: argparse.Namespace) -> int:
     phase_log("eval_gen")
     marker_preflight()
-    adapter_dir = resolve_adapter(args.arm, args.seed, args.phase, args.adapter_path)
+    variant = args.variant
+    adapter_dir = resolve_adapter(args.arm, args.seed, args.phase, args.adapter_path, variant)
     # Gauge assert up front too (cheap; the worker re-asserts before logit reads).
     assert_adapter_gauge_free(adapter_dir)
     eval_qs = ensure_eval_questions_local()
     cells = build_cells(eval_qs, smoke=args.smoke)
 
-    out_dir = EVAL_RESULTS_DIR / args.arm / f"seed{args.seed}" / args.phase
+    if variant is None:
+        out_dir = EVAL_RESULTS_DIR / args.arm / f"seed{args.seed}" / args.phase
+    else:
+        # #557 OUTPUT namespace: eval_results/issue_557/<arm>/<variant>/seed<S>/phase2
+        out_dir = variant_cell_dir(args.arm, variant, args.seed) / args.phase
     if args.smoke:
         out_dir = out_dir / "smoke"
     out_dir.mkdir(parents=True, exist_ok=True)
-    lora_name = f"issue543_{cell_slug(args.arm, args.seed, args.phase)}"
+    prefix = "issue543" if variant is None else "issue557"
+    lora_name = f"{prefix}_{cell_slug_v(args.arm, args.seed, args.phase, variant)}"
 
     records = generate_completions(
         adapter_dir=adapter_dir, lora_name=lora_name, cells=cells, out_dir=out_dir
@@ -530,9 +547,12 @@ def run_one(args: argparse.Namespace) -> int:
         "arm": args.arm,
         "seed": args.seed,
         "phase": args.phase,
+        "variant": variant,
         "smoke": args.smoke,
         "adapter_dir": str(adapter_dir),
-        "adapter_hf_subfolder": f"adapters/{adapter_subfolder(args.arm, args.seed, args.phase)}",
+        "adapter_hf_subfolder": (
+            f"adapters/{adapter_subfolder_v(args.arm, args.seed, args.phase, variant)}"
+        ),
         "lora_id": lora_name,
         "max_new_tokens": EVAL_MAX_NEW_TOKENS,
         "cells": {},
@@ -548,7 +568,8 @@ def run_one(args: argparse.Namespace) -> int:
         phase_log("eval_upload")
         from explore_persona_space.orchestrate.hub import upload_dataset_directory
 
-        dest = f"{HUB_RAW_COMPLETIONS_BUCKET}/{cell_slug(args.arm, args.seed, args.phase)}"
+        bucket = HUB_RAW_COMPLETIONS_BUCKET if variant is None else HUB_RAW_COMPLETIONS_BUCKET_557
+        dest = f"{bucket}/{cell_slug_v(args.arm, args.seed, args.phase, variant)}"
         upload_dataset_directory(out_dir, dest, pattern="completions_*.json")
 
     phase_log("done")
@@ -571,6 +592,14 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--dev-check", action="store_true", help="Post-stop manipulation check mode.")
     p.add_argument("--out", type=str, default=None, help="Output JSON path (dev-check mode).")
     p.add_argument("--skip-upload", action="store_true")
+    p.add_argument(
+        "--variant",
+        type=str,
+        default=None,
+        help="Issue #557 lr tag (e.g. lr3e5): routes out_dir + raw-completion "
+        "bucket + Hub adapter fallback to issue_557 namespaces. Requires "
+        "--phase phase2; invalid with --dev-check.",
+    )
     return p.parse_args()
 
 
@@ -580,6 +609,15 @@ def main() -> int:
         # Worker inherits the parent's CUDA_VISIBLE_DEVICES via the explicit
         # env passthrough; do NOT re-pin here.
         return _slot_stats_worker_main(manifest_path=Path(args.manifest))
+    if args.variant is not None:
+        validate_variant(args.variant)
+        if args.dev_check:
+            raise SystemExit("--variant is invalid with --dev-check (a Phase-1-only mode).")
+        if args.phase != "phase2":
+            raise SystemExit(
+                "--variant requires --phase phase2 (the #557 sweep reuses the "
+                "parent's Phase-1 evals; only post-SFT cells are variant-namespaced)."
+            )
     # Pin BEFORE any torch/vllm import touches CUDA.
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
     if args.dev_check:
