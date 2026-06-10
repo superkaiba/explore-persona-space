@@ -31,7 +31,7 @@ promoted_at: '2026-06-10T00:06:07Z'
 
 **Takeaways.**
 - the v4/v6 "floor everywhere" result was a silent LoRA-not-applied regression in the eval rig — the trained adapters were real (B-matrix norm ~0.05, source ΔG ~20 nats on a clean re-eval), the rig just wasn't using them. there's now a fail-loud guard that catches this class.
-- recovered low-rank grid: as the count+row-budget+optimizer-step bundle rises (count 2 → 16, rows 400 → 3200, steps 63 → 413), source ΔG climbs at every rank tested (rank 2: 1 → 20 nats; rank 4: 3 → 22; rank 8: 9 → 23). this run can't say whether the lift is the negative-persona COUNT or the row-mass / step-count it travels with.
+- recovered low-rank grid: as the count+row-budget+optimizer-step bundle rises (count 2 → 16, rows 400 → 3200, steps 76 → 426), source ΔG climbs at every rank tested (rank 2: 1 → 20 nats; rank 4: 3 → 22; rank 8: 9 → 23). this run can't say whether the lift is the negative-persona COUNT or the row-mass / step-count it travels with.
 - bystander leakage (the non-saturating marker-channel KL) tracks the same bundle just as tightly. so the original decoupling goal — does count move bystander leakage at fixed implant? — stays open; no cell on the rank lever or the rank-32 control sits in a matched-implant band.
 - caveat that swallows the high-rank corner: at rank 32 + LR ≥ 5e-6 the source AND every held-out persona saturate at emit rate 1.0 with widespread R-collapse (degenerate held-out responses); the only non-saturating leakage probe is the marker-channel KL on the low-rank cells.
 
@@ -55,7 +55,7 @@ That goal turned out to be unreachable in this run, for two distinct reasons tha
 - **Rank-32 control** (3 cells): counts {2, 4, 16} at rank 32, LR = 2e-6 — to check whether the rank lever's behavior at low rank is reproduced at the recipe's previous default capacity.
 - **Rank-32 LR-lever phase** (20 cells, the LR sweep): counts {2, 4, 8, 16} × LRs {2e-6, 5e-6, 1e-5, 2e-5, 5e-5}, all at rank 32.
 
-All 35 adapters trained successfully and were uploaded to HuggingFace. The training schedule is 1 epoch over `(200 positives + per-count negative rows)`, so total optimizer steps scale with count: ~63 / 114 / 214 / 413 steps at counts 2 / 4 / 8 / 16. Count, total rows, and steps move together by construction; no lever pulls them apart in the available cells.
+All 35 adapters trained successfully and were uploaded to HuggingFace. The training schedule is 2 epochs over `(200 positives + per-count negative rows)`, so total optimizer steps scale with count: 76 / 126 / 226 / 426 steps at counts 2 / 4 / 8 / 16; positive exposure is constant across cells (200 rows × 2 epochs = 400 positive row-visits each). (Corrected post-promotion 2026-06-10: an earlier revision misstated the schedule as 1 epoch with ~63–413 steps; the committed trajectory files show 2 epochs and terminal steps {76, 126, 226, 426}.) Count, total rows, and steps move together by construction; no lever pulls them apart in the available cells.
 
 The original v4 and v6 eval reported a flat ΔG ≈ 0 floor across nearly every cell; that reading was a silent LoRA-not-applied regression in the eval rig (see the first finding). The numbers in the findings below are from a complete 35-cell re-eval on a fixed env, where every cell now shows real signal (max-|ΔG| ≥ 0.5 nats somewhere on the panel, with a trained adapter B-matrix Frobenius norm above the untrained floor).
 
@@ -101,7 +101,7 @@ I have not verified whether parent [#472](https://eps.superkaiba.com/tasks/472) 
 
 #### Source implant climbs across the count+training-budget bundle, at every rank tested
 
-A real confound first: every cell in this finding moves *three* things together — negative-persona count {2,4,8,16}, total negative rows {400, 800, 1600, 3200}, and total optimizer steps {63, 114, 214, 413}. The recovered low-rank grid shows that as the bundle rises, source ΔG climbs (not falls) at every rank tested.
+A real confound first: every cell in this finding moves *three* things together — negative-persona count {2,4,8,16}, total negative rows {400, 800, 1600, 3200}, and total optimizer steps {76, 126, 226, 426}. The recovered low-rank grid shows that as the bundle rises, source ΔG climbs (not falls) at every rank tested.
 
 ![Line plot of source ΔG vs negative count across the low-rank phase, faceted by LoRA rank; source implant rises with the count+row-budget+step bundle at every rank.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2c9e319b88b22b610dc8b690c9c5a0b0759731f5/figures/issue_477/calA_source_amplification.png)
 
@@ -153,7 +153,7 @@ The takeaway: this is the [#448](https://eps.superkaiba.com/tasks/448) saturatio
 |---|---|
 | Base model | `Qwen/Qwen2.5-7B-Instruct` |
 | Adapter | LoRA, ranks {2, 4, 8, 32}, target = all linear |
-| Optimizer | AdamW, LRs {2e-6, 5e-6, 1e-5, 2e-5, 5e-5}; 1 epoch on (200 positives + per-count negatives) |
+| Optimizer | AdamW, LRs {2e-6, 5e-6, 1e-5, 2e-5, 5e-5}; 2 epochs on (200 positives + per-count negatives) |
 | Seeds | 42 (single seed; no error bars across seeds) |
 | Eval rig | on-policy generation under each persona's system prompt; teacher-forced `log P( ※)` at post-response slot; trained vs base on same R |
 | Marker | ` ※` (leading space, token id 83399) |
