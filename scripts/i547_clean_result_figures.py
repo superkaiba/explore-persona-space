@@ -366,7 +366,7 @@ def fig_wrong_slot_dose_response(data_547: dict, data_533: dict, out_subdir: str
         markersize=3.5,
         linewidth=1.0,
         alpha=0.55,
-        label="#533 (epochs at step-equiv., mean only)",
+        label="Parent epoch grid (step-equiv., mean only)",
     )
     axes[1].legend(loc="best", fontsize=7.5, frameon=False)
     fig.tight_layout(rect=[0, 0, 1, 0.86])
@@ -383,7 +383,7 @@ def fig_wrong_slot_dose_response(data_547: dict, data_533: dict, out_subdir: str
         0.91,
         "Marker log-probability under the wrong persona's encoding; lower = less leakage. "
         "Errorbars = 95% bootstrap CI over seeds, n=50 questions each. Shaded = the anchor "
-        "resolution band. Dotted = #533's epoch grid at 37.5 steps/epoch equivalents.",
+        "resolution band. Dotted = the parent epoch grid at 37.5 steps/epoch equivalents.",
         fontsize=8,
         color="#5A5A5A",
         ha="left",
