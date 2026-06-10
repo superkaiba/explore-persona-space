@@ -7,8 +7,11 @@ pipeline (`--cell` -> phase1 train -> smoke eval -> phase2 train -> smoke
 eval) on (r50, seed 42) through the same subprocess/env/logging/sentinel
 path, gates on plan §7 (stop predicate within 1500 steps + dev emission
 >= 48/50), and only then fans the remaining 11 cells out over 4 GPUs
-(3 cells per GPU, sequential per GPU; GPU pinning via TrainLoraConfig.gpu_id
-/ eval --gpu — never bare env CUDA_VISIBLE_DEVICES).
+(3 cells per GPU, sequential per GPU; GPU pinning = a process-entry
+CUDA_VISIBLE_DEVICES pin in main() from --gpu, BEFORE any torch import,
+asserted single-visible-device at train start; TrainLoraConfig.gpu_id / eval
+--gpu carry the SAME value so downstream env writes are value-identical —
+launchers pass --gpu, never bare env CUDA_VISIBLE_DEVICES).
 
 Phase 1 (install, marker-only loss, band-stop matching — plan §4.2):
   - b-hat pre-pass: base-model mean log P(marker) on the frozen 32-row
@@ -396,6 +399,38 @@ def _free_training_residue() -> None:
     torch.cuda.empty_cache()
 
 
+def _assert_single_visible_gpu(gpu: int, *, label: str) -> None:
+    """Fail-loud per-process GPU-binding probe; call right before train_lora.
+
+    main() pinned ``CUDA_VISIBLE_DEVICES=str(--gpu)`` before any torch import;
+    initializing CUDA HERE (``get_device_properties`` triggers lazy init)
+    locks the physical binding while that pin is in force, so no later env
+    write — including sft.py's value-identical in-train clobber — can move
+    this process off its GPU under either CUDA-init timing. Asserts exactly
+    ONE visible device and logs the bound device's name + UUID so per-cell
+    logs prove disjoint physical binding (#557 Stage-B co-location OOM,
+    2026-06-10: 3 parallel cells all bound physical GPU 0).
+    """
+    import torch
+
+    n = torch.cuda.device_count()
+    if n != 1:
+        raise RuntimeError(
+            f"[gpu-pin] {label}: expected exactly 1 visible CUDA device under "
+            f"CUDA_VISIBLE_DEVICES={os.environ.get('CUDA_VISIBLE_DEVICES')!r} "
+            f"(--gpu {gpu}); torch sees {n} — the per-process pin did not "
+            "take; refusing to train (parallel cells would co-locate)."
+        )
+    props = torch.cuda.get_device_properties(0)
+    log.info(
+        "[gpu-pin] %s: CUDA_VISIBLE_DEVICES=%r -> 1 visible device: %s (uuid=%s)",
+        label,
+        os.environ.get("CUDA_VISIBLE_DEVICES"),
+        props.name,
+        props.uuid,
+    )
+
+
 def _phase1_train_once(
     args: argparse.Namespace,
     *,
@@ -474,6 +509,7 @@ def _phase1_train_once(
 
     os.environ.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
     os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
+    _assert_single_visible_gpu(args.gpu, label=f"phase1 {arm}/s{seed} gpu{args.gpu}")
     adapter_path, train_loss = train_lora(
         base_model_path=BASE_MODEL,
         data_path=str(data_path),
@@ -936,6 +972,9 @@ def run_phase2(args: argparse.Namespace) -> dict:
                 paths["wandb_project"],
             )
         os.environ["WANDB_PROJECT"] = paths["wandb_project"]
+    _assert_single_visible_gpu(
+        args.gpu, label=f"phase2 {arm}/s{seed} variant={variant} gpu{args.gpu}"
+    )
     t0 = time.time()
     adapter_path, train_loss = train_lora(
         base_model_path=BASE_MODEL,
@@ -1429,6 +1468,19 @@ def _validate_variant_flags(args: argparse.Namespace) -> None:
 
 def main() -> int:
     args = parse_args()
+    # Pin BEFORE any torch import / CUDA touch (mirrors eval_issue543.py
+    # main()). torch is imported lazily (function-local) everywhere in this
+    # script and its module-level imports (_bootstrap, _issue543_common) are
+    # torch-free, so this assignment precedes CUDA initialization for EVERY
+    # mode. The in-train clobber (sft.py train_lora:
+    # os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)) then writes the
+    # SAME value (gpu_id=args.gpu at both TrainLoraConfig sites), so it is
+    # harmless whether it fires before or after CUDA init. Without this early
+    # pin, the --phase phase2 direct entry initialized CUDA before the clobber
+    # and ALL parallel train cells co-located on physical GPU 0 (#557 Stage-B
+    # OOM, 2026-06-10). CPU modes (--plan-only / --print-paths) never touch
+    # CUDA; for them the env assignment is inert.
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
     _validate_variant_flags(args)
     if args.plan_only:
         return run_plan_only(args)
