@@ -2773,6 +2773,12 @@ park at the user gate on `status=gate` (Step 6d.4), and post
 `epm:failure v1` on `status=stalled` or `status=dead`. The orchestrator
 NEVER re-posts a marker the poller already posted from a sentinel —
 double-posting is the failure mode the gate path is designed to avoid.
+On the terminal `status=done` tick (the point where `epm:results` is
+posted/observed), the next action after the `uploading` transition is
+Step 8's **Results-landed parallel spawn** block — dispatch that
+concurrent batch, NOT the old serial verifier-then-analyzer order (see
+Step 8 for the block's contents and hard joins; do not re-derive them
+here).
 
 **GPU-idle advisory handling.** When a tick's JSON reports
 `gpu_idle_advisory_posted: true`, the poller has just posted a one-time
