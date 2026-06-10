@@ -1,0 +1,1 @@
+{"ts": "2026-06-10T20:54:06Z", "event": "raised", "concern_id": "min-cn-directional-status", "severity": "CONCERN", "summary": "min_cn headline_status conflates DR-ok all-seeds-positive mean<1 directional survival with 'fail', violating the registered §3/§6 verdict precedence; add explicit directional/falsifier statuses", "raised_by": "code-reviewer", "raised_at_round": 1}
