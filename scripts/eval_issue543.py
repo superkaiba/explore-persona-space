@@ -237,6 +237,13 @@ def generate_completions(
         trust_remote_code=True,
         enable_lora=True,
         max_lora_rank=16,
+        # 0.70 (not the 0.9 default): eval children share the GPU with the
+        # cell's training process, which can hold residual memory even after
+        # cleanup. 0.70 x 79.2 GiB = 55.4 GiB (model ~15 GiB + ~40 GiB KV —
+        # ample for max_num_seqs=64 x 4096 ctx); greedy outputs are unaffected
+        # by KV-pool size. 2026-06-10 smoke-cell incident: dev-check vLLM died
+        # on the 0.9 startup check with 63.4 GiB free.
+        gpu_memory_utilization=0.70,
     )
     lora_req = LoRARequest(lora_name, 1, str(adapter_dir))
     tokenizer = llm.get_tokenizer()

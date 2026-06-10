@@ -331,6 +331,22 @@ def _load_bhat() -> float:
 # ── Phase 1 ─────────────────────────────────────────────────────────────────
 
 
+def _free_training_residue() -> None:
+    """Release dead training refs + CUDA cache before a vLLM child spawns.
+
+    ``train_lora`` leaves ~15.8 GiB resident in this process after returning
+    (model/trainer reference-cycle garbage held by the caching allocator); a
+    dev-check / eval child's vLLM init then fails its free-memory startup
+    check (2026-06-10 smoke-cell incident: 63.4/79.2 GiB free < 0.9 util).
+    """
+    import gc
+
+    import torch
+
+    gc.collect()
+    torch.cuda.empty_cache()
+
+
 def _phase1_train_once(
     args: argparse.Namespace,
     *,
@@ -416,6 +432,7 @@ def _phase1_train_once(
         cfg=cfg,
         callbacks=callbacks,  # 3 bystander trajectory-only probes (plan §4.2)
     )
+    _free_training_residue()
     callback_record = json.loads(stop_record_tmp.read_text()) if stop_record_tmp.exists() else None
     if callback_record is None:
         raise RuntimeError(
@@ -841,6 +858,7 @@ def run_phase2(args: argparse.Namespace) -> dict:
         cfg=cfg,
         callbacks=callbacks,
     )
+    _free_training_residue()
     wall_m = (time.time() - t0) / 60
     # §6.5 deliverable gate: the cell's success record/sentinel is written
     # ONLY after the 4 trajectory files verify (round-2 concern fix).
