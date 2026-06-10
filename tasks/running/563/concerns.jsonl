@@ -1,0 +1,1 @@
+{"ts": "2026-06-10T19:42:12Z", "event": "raised", "concern_id": "rerun-overwrites-paired-denominator", "severity": "CONCERN", "summary": "K4 --cells re-run overwrites trigger50 completions/slot_stats + run_summary in place; rollup lacks max_new_tokens consistency guard, so non-rerun cells silently pair across engine sessions", "raised_by": "code-reviewer", "raised_at_round": 1}
