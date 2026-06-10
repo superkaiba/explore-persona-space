@@ -836,31 +836,36 @@ def _resolve_phase1_adapter(arm: str, seed: int) -> Path:
     return p
 
 
-def _expected_phase2_probe_points() -> int:
+def _expected_phase2_probe_points(epochs: int) -> int:
     """Probe reads per Phase-2 trajectory file (deterministic schedule).
 
     Phase-2 optimizer steps = ceil(rows / per_device_bs) batches / grad_accum
     per epoch (single process, single GPU); the callback probes whenever
-    ``global_step % eval_every == 0`` (step > 0).
+    ``global_step % eval_every == 0`` (step > 0). ``epochs`` is the EFFECTIVE
+    epoch count (the ``--phase2-epochs`` override when set, else
+    ``PHASE2_EPOCHS``) — plan v3 §4 code-delta item 3: keying this off the
+    module constant would demand only ~75 rows of a 750-step doubled run and,
+    worse, would PASS a half-length run.
     """
     batches_per_epoch = math.ceil(PHASE2_EXPECTED_ROWS / PHASE2_PER_DEVICE_BS)
-    steps = math.ceil(batches_per_epoch / PHASE2_GRAD_ACCUM) * PHASE2_EPOCHS
+    steps = math.ceil(batches_per_epoch / PHASE2_GRAD_ACCUM) * epochs
     return steps // PHASE2_TRAJECTORY_EVERY
 
 
-def _assert_phase2_trajectory_files(cell: Path) -> dict[str, int]:
+def _assert_phase2_trajectory_files(cell: Path, epochs: int) -> dict[str, int]:
     """Fail-loud check that the plan §6.5 primary deliverable actually landed.
 
     Each of the 4 ``phase2_trajectory_*.jsonl`` files must exist with
-    >= floor(0.9 * expected_probe_points) rows. The dump writer logs-and-flags
-    on OSError rather than killing training (quota/FUSE rationale), so a
-    short/missing file surfaces HERE — before the cell's success sentinel —
-    never silently (#543 round-2 concern phase2-trajectory-dump-not-verified).
+    >= floor(0.9 * expected_probe_points) rows for the EFFECTIVE ``epochs``.
+    The dump writer logs-and-flags on OSError rather than killing training
+    (quota/FUSE rationale), so a short/missing file surfaces HERE — before the
+    cell's success sentinel — never silently (#543 round-2 concern
+    phase2-trajectory-dump-not-verified).
 
     Returns:
         ``{filename: row_count}`` for the cell's 4 trajectory files.
     """
-    expected = _expected_phase2_probe_points()
+    expected = _expected_phase2_probe_points(epochs)
     min_rows = int(expected * 0.9)
     counts: dict[str, int] = {}
     problems: list[str] = []
@@ -886,10 +891,11 @@ def _assert_phase2_trajectory_files(cell: Path) -> dict[str, int]:
 def run_phase2(args: argparse.Namespace) -> dict:
     """Phase-2 benign-SFT erasure pass (continue-adapter; plan §4.3).
 
-    Issue #557 lr-sweep extension (default-preserving): when ``--variant`` +
-    ``--phase2-lr`` are set, the peak lr is overridden and ALL outputs land
-    under ``issue_557`` namespaces via ``_phase2_paths``; with both unset the
-    behavior is the exact #543 rig. The parent-side reads (phase1_result.json
+    Issue #557 lr-sweep extension (default-preserving): when ``--variant`` is
+    set with ``--phase2-lr`` and/or ``--phase2-epochs``, the peak lr and/or
+    epoch count are overridden and ALL outputs land under ``issue_557``
+    namespaces via ``_phase2_paths``; with all unset the behavior is the
+    exact #543 rig. The parent-side reads (phase1_result.json
     install-excluded check, Phase-1 adapter resolve) stay on issue_543 paths
     in BOTH modes.
     """
@@ -923,6 +929,7 @@ def run_phase2(args: argparse.Namespace) -> dict:
     out_dir = paths["train_out_dir"]
     out_dir.mkdir(parents=True, exist_ok=True)
     effective_lr = paths["effective_lr"]
+    effective_epochs = PHASE2_EPOCHS if args.phase2_epochs is None else args.phase2_epochs
 
     tokenizer = AutoTokenizer.from_pretrained(
         BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
@@ -937,7 +944,7 @@ def run_phase2(args: argparse.Namespace) -> dict:
 
     cfg = TrainLoraConfig(
         gpu_id=args.gpu,
-        epochs=PHASE2_EPOCHS,
+        epochs=effective_epochs,
         lr=effective_lr,
         lr_scheduler_type=PHASE2_LR_SCHEDULER,
         warmup_ratio=PHASE2_WARMUP_RATIO,
@@ -988,7 +995,7 @@ def run_phase2(args: argparse.Namespace) -> dict:
     # §6.5 deliverable gate: the cell's success record/sentinel is written
     # ONLY after the 4 trajectory files verify (round-2 concern fix).
     try:
-        trajectory_rows = _assert_phase2_trajectory_files(cell)
+        trajectory_rows = _assert_phase2_trajectory_files(cell, effective_epochs)
     except RuntimeError as e:
         write_sentinel(
             f"{paths['sentinel_slug']}-trajfail",
@@ -1012,6 +1019,7 @@ def run_phase2(args: argparse.Namespace) -> dict:
         "seed": seed,
         "variant": variant,
         "phase2_lr_override": args.phase2_lr,
+        "phase2_epochs_override": args.phase2_epochs,
         "train_loss": train_loss,
         "phase1_adapter_path": str(phase1_adapter),
         "trajectory_rows_per_probe": trajectory_rows,
@@ -1022,7 +1030,7 @@ def run_phase2(args: argparse.Namespace) -> dict:
         "config": {
             "lr": effective_lr,
             "lr_scheduler_type": PHASE2_LR_SCHEDULER,
-            "epochs": PHASE2_EPOCHS,
+            "epochs": effective_epochs,
             "max_length": PHASE2_MAX_LENGTH,
             "dataset": PHASE2_DATASET_REL,
             "trajectory_every": PHASE2_TRAJECTORY_EVERY,
@@ -1425,11 +1433,18 @@ def parse_args() -> argparse.Namespace:
         help="Override the Phase-2 peak lr (issue #557 lr sweep). Requires --variant.",
     )
     p.add_argument(
+        "--phase2-epochs",
+        type=int,
+        default=None,
+        help="Override the Phase-2 epoch count (issue #557 fixed-dose decomposition). "
+        "Requires --variant; combinable with --phase2-lr.",
+    )
+    p.add_argument(
         "--variant",
         type=str,
         default=None,
         help="lr tag (e.g. lr3e5) routing ALL outputs to issue_557 namespaces. "
-        "Requires --phase2-lr; valid only with --phase phase2.",
+        "Requires --phase2-lr and/or --phase2-epochs; valid only with --phase phase2.",
     )
     p.add_argument(
         "--print-paths",
@@ -1441,26 +1456,42 @@ def parse_args() -> argparse.Namespace:
 
 
 def _validate_variant_flags(args: argparse.Namespace) -> None:
-    """Launch-time asserts for the #557 flags (plan §4.2).
+    """Launch-time asserts for the #557 flags (plan §4.2 + plan v3 §4).
 
-    ``--variant`` and ``--phase2-lr`` must be set TOGETHER (an lr override
-    without variant threading would be silently SKIPped by the idempotency
-    check against the parent's committed phase2_result.json; a variant
-    without an lr override would re-run the 1e-4 anchor into a 557
-    namespace), and ONLY on the ``--phase phase2`` path.
+    Validity matrix (L = ``--phase2-lr``, E = ``--phase2-epochs``,
+    V = ``--variant``): any override (L or E) requires V (an override without
+    variant threading would be silently SKIPped by the idempotency check
+    against the parent's committed phase2_result.json); V requires at least
+    one override (a bare variant would re-run the parent recipe into a 557
+    namespace); L and E combine freely (the fixed-dose run sets both). All of
+    L / E / V / ``--print-paths`` are valid ONLY on the ``--phase phase2``
+    path.
     """
-    has_lr, has_variant = args.phase2_lr is not None, args.variant is not None
-    if not (has_lr or has_variant or args.print_paths):
+    has_override = args.phase2_lr is not None or args.phase2_epochs is not None
+    has_variant = args.variant is not None
+    if not (has_override or has_variant or args.print_paths):
         return
-    if has_lr != has_variant:
+    if args.phase2_epochs is not None and args.phase2_epochs < 1:
         raise SystemExit(
-            "--phase2-lr and --variant must be set together (issue #557 contract): "
-            "the variant threads the output namespace the lr override needs."
+            f"--phase2-epochs must be >= 1 (got {args.phase2_epochs}); 0 would be a "
+            "silent no-op training run."
+        )
+    if has_override and not has_variant:
+        raise SystemExit(
+            "--phase2-lr / --phase2-epochs require --variant (issue #557 contract): "
+            "the variant threads the output namespace the override needs."
+        )
+    if has_variant and not has_override:
+        raise SystemExit(
+            "--variant requires at least one of --phase2-lr / --phase2-epochs "
+            "(issue #557 contract): a bare variant would re-run the parent recipe "
+            "into a #557 namespace."
         )
     if args.phase != "phase2":
         raise SystemExit(
-            "--phase2-lr / --variant / --print-paths are valid ONLY with --phase phase2 "
-            "(the #557 sweep never re-runs Phase 1, the driver, or --cell)."
+            "--phase2-lr / --phase2-epochs / --variant / --print-paths are valid ONLY "
+            "with --phase phase2 (the #557 sweep never re-runs Phase 1, the driver, "
+            "or --cell)."
         )
     if has_variant:
         validate_variant(args.variant)
