@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 552,
+  "highest_id": 554,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2523,9 +2523,9 @@
       "goal": "Test whether encoding a persona as a custom chat-template role header (e.g. <|im_start|>evil_assistant) instead of a system prompt plus appended content marker causes the persona's behavior to attach to that role token, and whether the role-header encoding segments personas more cleanly (less cross-persona / cross-role behavior leakage) than the content-marker baseline.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/464",
-      "status": "interpreting",
-      "title": "Contrastive training localizes a trained end-of-response marker; the chat-role header adds only ~1 nat over a system prompt with a marker-less negative, and the full ~6-nat advantage shows up only when a competing marker is co-resident (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/464",
+      "status": "awaiting_promotion",
+      "title": "Contrastive training localizes a trained end-of-response marker; the chat-role header adds ~1 nat over a system prompt with a marker-less negative, and its ~4-nat advantage under a co-resident competing marker survives a content-matched bare-word control (MODERATE confidence)"
     },
     "465": {
       "goal": "Test whether specifying a persona at training time via an in-context conversation whose assistant turns are on-policy for the persona's system message (instead of a persona system prompt) causes the behavior to be learned and to generalize, and how much it leaks to the default assistant given no in-context demonstrations.",
@@ -2882,8 +2882,8 @@
       "goal": "Test whether each contrastive negative provides localized leakage protection: does removing one negative (holding total negative row-mass fixed) raise held-out marker leakage specifically for bystander personas similar to the dropped negative, rather than uniformly?",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/505",
-      "status": "running",
+      "path": "tasks/interpreting/505",
+      "status": "interpreting",
       "title": "Dropping one contrastive negative did not raise marker leakage for bystanders close to it (MODERATE confidence)"
     },
     "506": {
@@ -3027,8 +3027,8 @@
       "goal": "Determine whether #502's headline geometry-predicts-leakage cell (last_prompt x L22 x gauss_kl, rho=-0.79 / CV R^2=0.61 on loc-arm epoch 1) survives honest out-of-sample evaluation -- via a held-out probe pool (with the indirect-rewrite voice-drift bug fixed), a scoped second-seed retrain of the headline cell's deltaG substrate, and a nested CV that folds the ~1500-cell selection inside the held-out fold -- and report the non-stylized-subset CV R^2 as the headline effect size.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/523",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/523",
+      "status": "awaiting_promotion",
       "title": "#502's L22 gauss_kl predictor lands at held-out CV R\u00b2 = 0.21 \u2014 just below its planned band, with a confidence interval that crosses zero (LOW confidence)"
     },
     "524": {
@@ -3122,7 +3122,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/534",
       "status": "interpreting",
-      "title": "The de-saturated anchor's reversed geometry signs replicate on retrain and emerge progressively along the training trajectory (MODERATE confidence)"
+      "title": "The de-saturated anchor's reversed geometry signs replicate on retrain, and the shadow-angle flip is already significant at three-quarters of training (MODERATE confidence)"
     },
     "535": {
       "has_clean_result": false,
@@ -3266,8 +3266,8 @@
       "goal": "Determine whether the EM-vs-marker direction-concentration contrast survives the three controls lost with the pod \u2014 the leave-one-out spectrum check, the mean-over-response EM read, and per-persona shift-norm vs top-direction alignment \u2014 by re-extracting and persisting the layer-14 shift tensors from the six existing HF-hosted adapters.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/551",
-      "status": "approved",
+      "path": "tasks/running/551",
+      "status": "running",
       "title": "Re-extract #521 shift tensors and run the three lost controls (LOO spectrum, mean-over-response EM read, norm-vs-alignment)"
     },
     "552": {
@@ -3277,6 +3277,20 @@
       "path": "tasks/running/552",
       "status": "running",
       "title": "Benign plain-SFT control arm: does the EM arm's single shared direction reflect misalignment content or the plain-SFT rig?"
+    },
+    "553": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/running/553",
+      "status": "running",
+      "title": "Unified leakage rule + logit-channel anatomy: reviewed inference on the #532 panel and transfer check on the #478 persona panel"
+    },
+    "554": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/554",
+      "status": "proposed",
+      "title": "Fix: orchestrate/preflight.py behind-main check false-positives on feature branches + bare-mode silent death under set -e"
     },
     "6": {
       "has_clean_result": false,

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "bar_slug": "cell_fixed_seed42_nonstyl_heldout",
+  "description": "L22 gauss_kl cell-fixed leave-one-source-condition-out CV R\u00b2 on the 156 non-stylized pairs against seed-42 \u0394G. The Goal's cell-specific answer.",
+  "seed_used": 42,
+  "panel": "non_stylized_156",
+  "n_folds": 13,
+  "n_folds_finite": 13,
+  "point_estimate": 0.20538622369411696,
+  "bootstrap_n": 2000,
+  "ci_2_5": -0.521955092552471,
+  "ci_97_5": 0.4107580645519351,
+  "half_width": 0.466356578552203,
+  "per_fold_r2": [
+    -7.250807389667214,
+    -4.228424686770704,
+    -10.836795952934438,
+    -28.41422784935445,
+    -4.8227599420625396,
+    -13.093001838905492,
+    -10.046379308146282,
+    -25.503236922264154,
+    -21.275214274461707,
+    -41.04739150731844,
+    -7.9605241128808775,
+    -62.196148527077746,
+    -68.63164897494781
+  ],
+  "per_fold_selected_cell": null,
+  "nested_search": false,
+  "n_cells_excluded_for_coverage_gap": null,
+  "cell_pick_tally": null,
+  "paired_delta_vs_baseline": null,
+  "elapsed_seconds": 0.58,
+  "provenance": {
+    "git_sha": "d6deb6dbd1edf878a4673d84dcda23fd2b70276c",
+    "timestamp_utc": "2026-06-10T06:24:47.490554+00:00",
+    "python": "3.11.10"
+  }
+}

@@ -153,3 +153,9 @@
 {"ts": "2026-06-10T07:59:49Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 124 heartbeat."}
 {"ts": "2026-06-10T08:09:34Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 125 heartbeat. 6275/6400 (98%)."}
 {"ts": "2026-06-10T08:19:00Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 126 heartbeat. 6350/6400 (99%) — judge near complete."}
+{"ts": "2026-06-10T08:29:16Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 127 — judge primary done (6367 scored, 33 soft-refused). Now in paraphrase replication phase (DV3)."}
+{"ts": "2026-06-10T08:38:39Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 128 heartbeat."}
+{"ts": "2026-06-10T08:48:27Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 129 heartbeat."}
+{"ts": "2026-06-10T08:58:02Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 130 heartbeat."}
+{"ts": "2026-06-10T09:07:29Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 131 heartbeat."}
+{"ts": "2026-06-10T09:10:59Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Second-recovery from JSONDecodeError crash in paraphrase phase (commit c5baacb29). Patched _judge_one to retry on JSONDecodeError + added paraphrase per-row checkpoint + --resume support. Re-launched PID=28037; primary judge skipped (6367 scored loaded), paraphrase now running fresh."}

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "extraction_point": "end_of_system",
+  "layer": 0,
+  "metric": "mahal",
+  "variant": "raw",
+  "matrix": null,
+  "n_a": "per-pair pooled cov undefined at end_of_system (n_q=1); use mahal_pooled_ctx",
+  "git_sha": "d6deb6dbd1edf878a4673d84dcda23fd2b70276c",
+  "timestamp_utc": "2026-06-10T00:23:30.131693+00:00"
+}

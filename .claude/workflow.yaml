@@ -1293,7 +1293,14 @@ markers:
       surface. Body shape: one of:
         `verdict: PASS_UNIFIED` — smoke IS sweep with one cell
           (`--cells 1 --seeds 1` or equivalent); both paths share the
-          same dispatcher and subprocess shape end-to-end.
+          same dispatcher and subprocess shape end-to-end, AND the
+          cell-subset parameterization threads through EVERY phase the
+          dispatcher executes (train, eval enumeration, anchor/analyze
+          tolerance). A subset honored by the train loop only, with a
+          downstream phase re-enumerating the full registered grid, is
+          FAIL_NO_CANARY (incident #546 round 1, 2026-06-10: PASS_UNIFIED
+          train + full-grid cross-eval → HF 404 on never-trained
+          adapters; the smoke could never pass by construction).
         `verdict: PASS_CANARY canary_cell=<cell_id>` — paths diverge
           (e.g., smoke uses in-process train, sweep uses subprocess
           wrapper) AND the plan §4 Design section justified the

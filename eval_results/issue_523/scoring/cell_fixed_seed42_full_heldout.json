@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "bar_slug": "cell_fixed_seed42_full_heldout",
+  "description": "Same cell, all 16 source \u00d7 15 target = 240 ordered pairs (16 source folds, 15 pairs/fold). Supporting full-panel color.",
+  "seed_used": 42,
+  "panel": "full_240",
+  "n_folds": 16,
+  "n_folds_finite": 16,
+  "point_estimate": 0.5422706451282373,
+  "bootstrap_n": 2000,
+  "ci_2_5": 0.31941460547618994,
+  "ci_97_5": 0.6389552557268788,
+  "half_width": 0.15977032512534445,
+  "per_fold_r2": [
+    -0.6280864133391899,
+    -1.7953122672435304,
+    -19.233234394842885,
+    -1.0634802250387416,
+    -0.38201272347338144,
+    -1.4366864973540983,
+    0.08543428635726635,
+    0.6607075764466988,
+    0.41038174422810225,
+    -3.793990298033096,
+    -4.116792579438158,
+    0.3883515989614741,
+    -4.001881728609408,
+    -0.12073617699471706,
+    -0.10596599970300868,
+    -2.1291990614674794
+  ],
+  "per_fold_selected_cell": null,
+  "nested_search": false,
+  "n_cells_excluded_for_coverage_gap": null,
+  "cell_pick_tally": null,
+  "paired_delta_vs_baseline": null,
+  "elapsed_seconds": 0.05,
+  "provenance": {
+    "git_sha": "d6deb6dbd1edf878a4673d84dcda23fd2b70276c",
+    "timestamp_utc": "2026-06-10T06:25:21.099548+00:00",
+    "python": "3.11.10"
+  }
+}
