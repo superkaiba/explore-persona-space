@@ -48,6 +48,20 @@ is also quiet for >stall_sec, and (d) the GPUs are idle. Only when all
 four signals agree does the poll declare `stalled`; any fresh log
 OR a busy GPU keeps the run in `running`.
 
+CPU-advancing override (#518): even with the stall conjunction met, a
+launcher whose process session (`setsid` group) has accrued more
+cumulative CPU since the previous tick is doing CPU-bound work and is
+NOT stalled. The probe sums `time` across every process sharing the
+launcher PID's SID via `ps -e -o sess=,time=` and persists the sample
+to the local state file; on the next tick the delta is compared to a
+small epsilon (`SESSION_CPU_ADVANCE_EPSILON_SECS`). If CPU advanced,
+the verdict flips to `running`. If CPU is flat OR unknown (first tick
+after launch, launcher dead, `ps` unavailable), the older arbiters
+keep the verdict — fail-safe to the pre-#518 behavior. Incident: task
+#518 scoring_syco phase, 2026-06-10 — a healthy CPU-bound aggregation
+phase wrote nothing to the log for ~7.8h while the python child was
+at 100% CPU; the poller falsely declared `stalled`.
+
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
 main sweep log goes silent for ~15-18 min while the smoke cell actively
@@ -350,6 +364,15 @@ class PollResult:
     # True when THIS tick posted the [gpu-idle-advisory] marker (#518/#537).
     # Observability only; the advisory never changes ``status``.
     gpu_idle_advisory_posted: bool = False
+    # Session-CPU signal (#518). ``session_cpu_secs`` is the literal probe
+    # output: a float string like ``"4271.5"`` or ``"unknown"``.
+    # ``cpu_advancing`` is the ternary decision: True (session advanced
+    # since previous tick), False (session flat), None (no signal — first
+    # tick, launcher dead, or ps unavailable). Surfaced in the JSON line
+    # so operators can see WHY a long-quiet run stayed in ``running`` (or
+    # WHY a stall verdict landed despite a CPU-bound phase).
+    session_cpu_secs: str = "unknown"
+    cpu_advancing: bool | None = None
 
 
 def _ssh_probe(
@@ -423,6 +446,21 @@ def _ssh_probe(
       integers (e.g. ``"95,87,42,90"``). ``"unknown"`` when
       ``nvidia-smi`` is unavailable or errors (fail-safe — see
       ``_gpu_idle``).
+    * ``session_cpu_secs`` — cumulative CPU seconds (as a float string,
+      e.g. ``"4271.5"``) summed across every process in the launcher
+      PID's process SESSION (`setsid` group). The launcher itself
+      accrues ~no CPU — its children carry the work — so summing over
+      the session captures every descendant regardless of how the
+      python child re-execs. ``"unknown"`` when the launcher PID is
+      not alive (no session to probe) or when ``ps`` is unavailable /
+      errors (fail-safe — see ``_session_cpu_advancing``). Used as a
+      defense against false-stalled verdicts on silent CPU-bound
+      phases: even when every log mtime exceeds the stall threshold
+      AND the GPUs are idle, a session whose cumulative CPU time has
+      advanced since the previous tick is doing work, not hanging
+      (incident #518 scoring_syco phase, 2026-06-10 — a healthy run
+      with cumulative CPU time advancing 1:1 with wall time was
+      false-declared stalled because no log line appeared for ~7.8h).
     """
     marker_probe = ""
     if marker_pid is not None:
@@ -521,6 +559,46 @@ def _ssh_probe(
         '  echo "GPU_UTIL=${GPU_OUT:-unknown}"; '
         'else echo "GPU_UTIL=unknown"; fi; '
     )
+    # Session CPU probe (#518): cumulative CPU seconds summed across
+    # every process sharing the launcher PID's session id (SID). The
+    # launcher is started with `setsid nohup bash <launcher>` (see
+    # `.claude/agents/experimenter.md` "Launch") so every descendant
+    # — the python child, vLLM workers, judge subprocesses, etc. —
+    # carries the same SID as the launcher PID itself. `ps -o sess=`
+    # reads that SID; `etime` field is wall-clock; `time` field is
+    # cumulative CPU. We filter the full `ps -e` output by SID and
+    # sum `time` (HH:MM:SS, or D-HH:MM:SS for >1 day) into seconds.
+    #
+    # ``unknown`` when (a) the pidfile is missing / pid is dead — no
+    # session to probe; the launcher exiting clean is `phase=done` /
+    # `dead` territory and the stall arbiter never reaches this
+    # signal — or (b) `ps` is unavailable / errors. The
+    # `_session_cpu_advancing` decision fails safe to "no signal" in
+    # those cases (the older log + GPU arbiters then carry the
+    # verdict, preserving the pre-#518 behavior).
+    session_cpu_probe = (
+        f"if [ -f {pid_file} ]; then "
+        f"  LPID=$(cat {pid_file}); "
+        f"  SID=$(ps -o sess= -p $LPID 2>/dev/null | tr -d ' '); "
+        f'  if [ -n "$SID" ] && [ "$SID" != "0" ]; then '
+        f"    CPU_SUM=$(ps -e -o sess=,time= 2>/dev/null | "
+        f'      awk -v s="$SID" \'$1==s {{ '
+        f'        n=split($2,a,":"); '
+        f"        if (n==3) {{ secs += a[1]*3600 + a[2]*60 + a[3] }} "
+        f"        else if (n==2) {{ secs += a[1]*60 + a[2] }} "
+        f"        else if (n==1) {{ "
+        f'          m=split(a[1],b,"-"); '
+        f"          if (m==2) {{ secs += b[1]*86400 + b[2] }} "
+        f"          else {{ secs += a[1] }} "
+        f"        }} "
+        f"      }} END {{ "
+        f'        if (NR==0) {{ print "unknown" }} '
+        f'        else {{ printf "%.1f", secs }} '
+        f"      }}'); "
+        f'    echo "SESSION_CPU_SECS=${{CPU_SUM:-unknown}}"; '
+        f'  else echo "SESSION_CPU_SECS=unknown"; fi; '
+        f'else echo "SESSION_CPU_SECS=unknown"; fi; '
+    )
     heredoc = (
         f"LOG_PATH={log_path}; "
         f"if [ -f {pid_file} ]; then "
@@ -536,6 +614,7 @@ def _ssh_probe(
         f"{phase_log_probe}"
         f"{shard_log_probe}"
         f"{gpu_probe}"
+        f"{session_cpu_probe}"
     )
     result = subprocess.run(
         ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, heredoc],
@@ -560,6 +639,7 @@ def _ssh_probe(
             "phase_log_mtime_epoch": "0",
             "shard_log_mtime_epoch": "0",
             "gpu_util": "unknown",
+            "session_cpu_secs": "unknown",
             "ssh_failed": "1",
         }
     parsed = _parse_probe_stdout(result.stdout)
@@ -578,6 +658,7 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "PHASE_LOG_MTIME_EPOCH",
     "SHARD_LOG_MTIME_EPOCH",
     "GPU_UTIL",
+    "SESSION_CPU_SECS",
 )
 
 
@@ -599,6 +680,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "phase_log_mtime_epoch": "0",
         "shard_log_mtime_epoch": "0",
         "gpu_util": "unknown",
+        "session_cpu_secs": "unknown",
     }
     tail_lines: list[str] = []
     cell_tail_lines: list[str] = []
@@ -1182,6 +1264,60 @@ def _maybe_post_gpu_idle_advisory(
     return update.idle_since_epoch, advised_phases, True
 
 
+# Minimum cumulative CPU-seconds delta between consecutive ticks before
+# declaring the launcher's process session "advancing". Set conservatively
+# so a single accounting quantum or a brief sleep across ticks does not
+# false-fire "advancing" on a truly hung session. A real CPU-bound phase
+# accrues many seconds per minute of wall time across its process tree;
+# even a half-second delta over a 9-minute poll interval is well above
+# the noise floor of `ps` rounding.
+SESSION_CPU_ADVANCE_EPSILON_SECS = 0.5
+
+
+def _parse_session_cpu(value: str) -> float | None:
+    """Parse a SESSION_CPU_SECS probe value to seconds, or None if unknown.
+
+    The probe heredoc emits one of: a float like ``"4271.5"`` (success),
+    ``"unknown"`` (pidfile missing, pid dead, ps unavailable, or ``ps``
+    errored). Any other input (empty, malformed) is treated as unknown so
+    the caller fails safe to "no signal" — never to "advancing".
+    """
+    if not value or value == "unknown":
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
+
+def _session_cpu_advancing(prev: str | None, current: str) -> bool | None:
+    """Return True / False / None for the session-CPU "advancing" decision.
+
+    * ``True``  — both samples parse AND current > prev + epsilon. The
+      session is doing CPU work; a stalled-on-logs verdict should flip
+      to running.
+    * ``False`` — both samples parse AND current is at or below prev +
+      epsilon. The session is truly idle; stalled stands.
+    * ``None``  — at least one sample is unknown. NO signal; the caller
+      preserves whatever the older log + GPU arbiters decided. This is
+      the fail-safe path on (a) first tick after launch (no prior
+      observation), (b) launcher dead (no session to probe — the
+      pid-alive arbiter already routed to `dead`), or (c) `ps`
+      unavailable.
+
+    Returning None on first-tick prevents an immediate false-stalled →
+    epm:failure cascade on a freshly-launched run; the next tick will
+    have a prior observation and the decision flips to True / False.
+    """
+    cur = _parse_session_cpu(current)
+    if cur is None:
+        return None
+    prv = _parse_session_cpu(prev) if prev is not None else None
+    if prv is None:
+        return None
+    return cur > prv + SESSION_CPU_ADVANCE_EPSILON_SECS
+
+
 def _load_state(state_file: Path, issue: int) -> dict[str, str]:
     if not state_file.exists():
         return {}
@@ -1335,6 +1471,27 @@ def poll_once(
     # healthy long phase whose shard log OR per-phase log is fresh OR
     # whose GPU is busy will stay in `running` even if nvidia-smi is
     # unavailable.
+    # Session-CPU advancing check (#518): even when every log-mtime
+    # signal AND the GPU-idle signal agree on "stalled", a launcher
+    # whose process session has accrued more cumulative CPU since the
+    # previous tick is doing CPU-bound work (e.g. the scoring_syco
+    # phase that polls a judge batch and aggregates results — silent
+    # on logs for hours, GPUs idle by design, but the python child is
+    # at 100% CPU). Override `stalled` -> `running` when CPU is
+    # advancing; preserve `stalled` when CPU is flat or unknown
+    # (fail-safe). The very first tick after launch has no prior
+    # observation, so `_session_cpu_advancing` returns None and the
+    # decision falls back to the older log+GPU arbiters: a freshly-
+    # launched run cannot meet the >stall_sec mtime conjunction on
+    # the first tick (the logs ARE fresh), so this code path doesn't
+    # change first-tick semantics. From the second tick onward, a
+    # truly hung session (CPU flat AND logs stale AND GPUs idle)
+    # still routes to `stalled` and the orchestrator still fires
+    # epm:failure.
+    current_session_cpu = probe.get("session_cpu_secs", "unknown")
+    prev_session_cpu = prev_state.get("session_cpu_secs")
+    cpu_advancing = _session_cpu_advancing(prev_session_cpu, current_session_cpu)
+
     if gate is not None:
         status = "gate"
     elif current_phase == "done":
@@ -1347,7 +1504,19 @@ def poll_once(
         and shard_log_mtime_ago > stall_sec
         and gpu_idle
     ):
-        status = "stalled"
+        if cpu_advancing is True:
+            log.info(
+                "stall conjunction met (logs >%ds + GPUs idle) BUT session CPU "
+                "advanced %s -> %s on pod %s (#518 silent CPU-bound override); "
+                "reporting status=running",
+                stall_sec,
+                prev_session_cpu,
+                current_session_cpu,
+                pod,
+            )
+            status = "running"
+        else:
+            status = "stalled"
     else:
         status = "running"
 
@@ -1400,6 +1569,11 @@ def poll_once(
             # names match PHASE_RE ([a-z0-9_]+) so the comma join is safe.
             "gpu_idle_since_epoch": str(gpu_idle_since_epoch),
             "gpu_idle_advised_phases": ",".join(sorted(gpu_idle_advised_phases)),
+            # Persist the current CPU sample so the NEXT tick can compute
+            # the advancing delta. Stored as the literal probe string
+            # (``"unknown"`` or a float-as-string) so `_parse_session_cpu`
+            # treats it consistently with the live probe value.
+            "session_cpu_secs": current_session_cpu,
         },
     )
 
@@ -1427,6 +1601,8 @@ def poll_once(
         shard_log_mtime_sec_ago=min(shard_log_mtime_ago, 10**9),
         gpu_util=gpu_util,
         gpu_idle_advisory_posted=gpu_idle_advisory_posted,
+        session_cpu_secs=current_session_cpu,
+        cpu_advancing=cpu_advancing,
     )
 
 
@@ -1492,6 +1668,8 @@ def main(argv: list[str] | None = None) -> int:
                 "shard_log_mtime_sec_ago": result.shard_log_mtime_sec_ago,
                 "gpu_util": result.gpu_util,
                 "gpu_idle_advisory_posted": result.gpu_idle_advisory_posted,
+                "session_cpu_secs": result.session_cpu_secs,
+                "cpu_advancing": result.cpu_advancing,
             }
         )
     )
