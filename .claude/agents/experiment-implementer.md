@@ -629,6 +629,33 @@ issue #N:
 <!-- /epm:experiment-implementation -->
 ```
 
+### Deferred production-path TODOs are persisted concerns, not (d) prose
+
+If your round defers a feature the approved plan's PRODUCTION path
+requires — a registered statistic, correction, or data input whose
+absence makes the production run crash or silently degrade (e.g. an SE
+inflow left as a `# TODO` so a load-bearing attenuation adjustment
+either raises or quietly pins to its uncorrected value) — you MUST
+persist it before posting your marker:
+
+```bash
+uv run python scripts/task.py raise-concern <N> \
+    --concern-id <kebab-id> --severity CONCERN \
+    --summary "<≤200-char one-liner>" --by experiment-implementer --round <n>
+```
+
+Use `--severity BLOCKER` when the production path provably crashes
+without the deferred feature. A `(d) Needs human eyeball` bullet
+("surface as a follow-up before the production run") is NOT a
+substitute — the /issue Step 5c-ter dispatch gate reads
+`concerns.jsonl`, not report prose, so an unpersisted deferral
+dispatches the pod and the crash lands at run time (incident #509: the
+fact arm's per-seed-SE reconstruction was deferred in round-3 `(d)`
+prose, review PASSed, production scoring crashed exactly as predicted,
+and the run descoped to `--smoke` with the attenuation correction
+pinned to 1.0). Still list the deferral in `(d)` for the human reader —
+the concern row is what makes it binding.
+
 On revision rounds, also include:
 
 ```markdown
