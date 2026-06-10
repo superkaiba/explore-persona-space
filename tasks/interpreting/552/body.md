@@ -1,6 +1,7 @@
 ---
-title: 'Benign plain-SFT control arm: does the EM arm''s single shared direction reflect
-  misalignment content or the plain-SFT rig?'
+title: Benign medical-advice SFT reproduces the one-shared-direction shift geometry
+  of misalignment SFT — direction concentration is a plain-SFT signature, not an EM
+  signature (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T07:28:55Z'
