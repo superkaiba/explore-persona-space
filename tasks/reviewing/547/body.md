@@ -210,6 +210,8 @@ The parent's template-overlap explanation — the bare assistant header is liter
 - Reused eval results from [#533](https://eps.superkaiba.com/tasks/533) (read-only ghost overlays in the figures): repo-relative `eval_results/issue_533/contrastive_negatives/cross_eval/per_cell/` (360 JSONs) — fit: identical eval rig and DV (teacher-forced post-R marker log P, same 50 questions, same encodings), which is what makes the step-equivalent overlay and the 120-step-vs-3-epoch rig check valid.
 - Reused pipeline scripts from the [#533](https://eps.superkaiba.com/tasks/533) branch (13-file cherry-pick: train/eval/analyze/anchor scripts + 2 experiment modules) — fit: same training and eval code path is the comparability contract; the only new code is the max_steps plumbing, the `cn_i547` variant registration, the anchor-grid generalization, and the data-revision pin.
 
+- **Methodology reference:** [docs/methodology/issue_547.md](https://github.com/superkaiba/explore-persona-space/blob/324e84a3731a89a7ba92b606067c882b08ea6c00/docs/methodology/issue_547.md) · [gist](https://gist.github.com/superkaiba/7e4635a1b922d5a77d271280d804aa42)
+
 **Compute:**
 
 - 4× H100 (RunPod ephemeral `pod-547`, intent `ft-7b`), terminated after upload-verification PASS.
