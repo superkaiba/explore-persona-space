@@ -268,6 +268,7 @@ Membership columns apply to the marker split only (the EM arm has no split to tr
 - Reused LoRA adapters from [#521](https://eps.superkaiba.com/tasks/521): [`adapters/issue_521/em_turner_seed{42,137,256}`](https://huggingface.co/superkaiba1/explore-persona-space/tree/0cc10fd591617cdbc7e4a336746bd49293ad51fc/adapters/issue_521) (leaf `sft_narrow_adapter/`) — fit: the parent's headline EM adapters (insecure-code recipe, installation-gated in the producing run); explicitly NOT the failed `issue_519/em_seed*` originals, guarded by staging pins plus a symlink-target assert.
 - Reused eval inputs + per-cell reference JSONs from [#521](https://eps.superkaiba.com/tasks/521): `eval_results/issue_521/{inputs,svd}` (git, links above) — fit: the controls must be about the same measurement; the reproduction gate is anchored on these files.
 - Raw completions: none exist — this run generates no free text (teacher-forced probes only; responses were never persisted, by design).
+- **Methodology reference:** [docs/methodology/issue_551.md](https://github.com/superkaiba/explore-persona-space/blob/9c7f9ccf97be2a2de87cc2ecdd14b799e758cd38/docs/methodology/issue_551.md) · [gist](https://gist.github.com/superkaiba/b23a0285e2cf5413302388240d399e2b)
 
 **Compute:**
 
