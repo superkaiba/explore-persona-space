@@ -3228,8 +3228,8 @@
       "goal": "Test whether the E=1 negative-sign role-vs-system paired-d pattern in #533 reflects a stable mechanism-bearing read or an early-trajectory optimization-ordering artifact, by training the same grid at lr=5e-6, r=32 indexed on max_steps in {5, 10, 18, 30, 60, 120} so the sub-1-epoch trajectory is sampled densely.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/547",
-      "status": "interpreting",
+      "path": "tasks/reviewing/547",
+      "status": "reviewing",
       "title": "The negative role-vs-system marker gap replicates at the install step, then diverges by persona: on one persona it fades exactly as the read re-enters the measurement floor; on the other, its length-matched contrast stays clearly negative through 3 epochs (MODERATE confidence)"
     },
     "548": {
