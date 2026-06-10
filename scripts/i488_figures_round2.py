@@ -390,10 +390,96 @@ def _partial_rho_panel() -> None:
     plt.close(fig)
 
 
+def _within_source_rho_lollipop() -> None:
+    """Per-source within-source Spearman ρ((1-JS), fraction-of-fracs-emitted) as a
+    lollipop, for the 8 sources whose diagonal cleared the inclusion threshold.
+
+    Sourced from headline.json `h3` (n=1404 pooled cells; per-source ρ recomputed
+    from `cells.json` so we can label each dot with its source persona).
+    """
+    import numpy as np
+    from scipy.stats import spearmanr
+
+    cells = json.loads((ANALYSIS_DIR / "cells.json").read_text())["cells"]
+    bucket: dict[tuple[str, str, int], list[bool]] = {}
+    js_lookup: dict[tuple[str, str], float] = {}
+    for c in cells:
+        if c["is_diagonal"]:
+            continue
+        key = (c["source"], c["target"], c["seed"])
+        bucket.setdefault(key, []).append(c["emission_rate"] >= 0.5)
+        js_lookup[(c["source"], c["target"])] = c["JS"]
+
+    per_source: dict[str, dict] = {}
+    for (src, tgt, _seed), flags in bucket.items():
+        if (src, tgt) not in js_lookup:
+            continue
+        x = 1.0 - js_lookup[(src, tgt)]
+        y = float(sum(flags)) / max(len(flags), 1)
+        per_source.setdefault(src, {"x": [], "y": []})
+        per_source[src]["x"].append(x)
+        per_source[src]["y"].append(y)
+
+    rows: list[tuple[str, float]] = []
+    for src, vec in per_source.items():
+        if len(vec["x"]) < 3:
+            continue
+        r, _ = spearmanr(vec["x"], vec["y"])
+        if not np.isnan(r):
+            rows.append((src, float(r)))
+
+    # Sort descending so the strongest within-source effect sits at the top.
+    rows.sort(key=lambda kv: -kv[1])
+    median = float(np.median([r for _, r in rows]))
+
+    set_paper_style("blog")
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(8.5, 4.5))
+    y_positions = np.arange(len(rows))[::-1]  # top = highest ρ
+    labels = [plain_label(src) for src, _ in rows]
+    values = [r for _, r in rows]
+    cls_colors = [BUCKET_COLORS.get(cid_class(src), "#444") for src, _ in rows]
+
+    # Lollipop: stem from x=0 to value, dot at value.
+    for y, v, c in zip(y_positions, values, cls_colors, strict=True):
+        ax.plot([0, v], [y, y], color=c, lw=2.0, alpha=0.85)
+        ax.plot(
+            v,
+            y,
+            marker="o",
+            markersize=10,
+            color=c,
+            markeredgecolor="white",
+            markeredgewidth=1.2,
+            zorder=3,
+        )
+
+    ax.axvline(0, color="black", lw=0.6, ls="-")
+    ax.axvline(median, color="grey", lw=1.0, ls="--", alpha=0.8, label=f"median = +{median:.3f}")
+
+    ax.set_yticks(y_positions)
+    ax.set_yticklabels(labels, fontsize=9)
+    ax.set_xlabel("Within-source Spearman ρ((1 − base-model JS), fraction-of-fracs emitting)")
+    ax.set_xlim(-0.05, 0.55)
+    ax.legend(loc="lower right", fontsize=9, frameon=False)
+    set_title_subtitle(
+        ax,
+        "Within source, closer-in-JS targets DO leak more — the sign flips from the cross-pair headline",
+        f"Per-source Spearman ρ for the {len(rows)} sources whose diagonal cleared the inclusion threshold; "
+        f"median +{median:.3f}, pooled across all 1,404 cells ρ = +0.175 (p = 3.9e-11)",
+        source="eval_results/issue_488/analysis/headline.json (h3 block)",
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "issue_488/within_source_rho_lollipop", dir=str(REPO_ROOT / "figures") + "/")
+    plt.close(fig)
+
+
 def main() -> None:
     _runaway_figure()
     _trajectory_figure()
     _partial_rho_panel()
+    _within_source_rho_lollipop()
 
 
 if __name__ == "__main__":
