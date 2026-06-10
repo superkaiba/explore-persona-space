@@ -275,7 +275,14 @@ CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
         # leading letter is `t`. Confirm path is writable + has the EPS
         # quota headroom in the slice-8 acceptance run.
         scratch_path="/network/scratch/t/thomas.jiralerspong",
-        gpu_type="h100",
+        # SLICE-8-VERIFIED (issue 535 live, 2026-06-10): Mila's h100
+        # nodes (cn-n001/cn-n002) sit ONLY in `short-unkillable` — an
+        # h100 GRES request in the default `long` partition fails sbatch
+        # with 'Requested node configuration is not available' (lane r4
+        # crash). a100l (A100-80GB, the lora-7b workhorse class) is what
+        # main/long actually serve; a100l:1 test-submitted clean with an
+        # immediate-start estimate.
+        gpu_type="a100l",
         # SLICE-8-VERIFY: Mila uses LMod modules; the EasyBuild stack may
         # name the CUDA module differently than DRAC's bare `cuda`.
         # Common candidates: `cuda/12.4` / `cudacore/12.4`. Confirm with
