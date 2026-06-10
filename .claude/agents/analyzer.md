@@ -206,7 +206,7 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 **Figure URL in the body MUST be an absolute `raw.githubusercontent.com` permalink — NOT a relative path.** The EPS dashboard serves task-folder HTML artifacts but does NOT serve binary PNG/PDF files under `tasks/<N>/artifacts/`, so a relative reference like `![alt](artifacts/hero.png)` renders as a broken image in the browser (incident: task #365, 2026-05-22). Workflow:
 
 1. Save figures under `figures/issue_<N>/` (e.g. `figures/issue_<N>/hero.png`). Do NOT only drop them in the task's `artifacts/` folder — that path is dashboard-invisible for binaries.
-2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" && git push origin <branch>` BEFORE writing the body.
+2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" -- figures/issue_<N>/ && git push origin <branch>` BEFORE writing the body. The commit is pathspec-limited so a concurrent session's staged files are never swept in.
 3. Capture the commit SHA: `git rev-parse HEAD`.
 4. Reference the figure inline inside the relevant result H3 under `## TL;DR` with `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` — pinned to the commit SHA, never `main`/`master`/`HEAD`. **Do NOT emit a `## Figure` H2** — the H2 is retired (2026-W22, task #454); verifier check 2 hard-FAILs any body that carries it.
 5. Alt text may contain `[brackets]` (e.g. literal marker names like `[ZLT]`); the verifier's image regex handles them.
