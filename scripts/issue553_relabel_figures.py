@@ -1,15 +1,21 @@
-"""Task #553 round-2: re-render 5 reader-facing figures with plain-English labels.
+"""Task #553 rounds 2-3: re-render reader-facing figures with plain-English labels.
 
-Interpretation-critic round-1 union item 9: reader-facing chart elements carried
-project-internal labels (``min_dist``, ``margin_base``, ``B1/C1``, ``A5``,
-``oblique_2``, ``z_top_nonmarker``). This script re-renders ONLY the five
-affected body figures with plain-English label strings.
+Interpretation-critic round-1 union item 9 (round 2, five figures): reader-facing
+chart elements carried project-internal labels (``min_dist``, ``margin_base``,
+``B1/C1``, ``A5``, ``oblique_2``, ``z_top_nonmarker``). Clean-result-critic
+round-1 union item 4 (round 3, three figures): the follow-up partial-check
+figure carried issue numbers + math notation in panel titles/axes
+(``#478``/``#532``, ``FE(Δz(EOS))``), the unified-rule raw scatters carried the
+``cosine(S, B)`` axis, and the ranking strips carried the ``z(prior)+z(cos)``
+tick. This script re-renders ONLY the affected body figures with plain-English
+label strings (select with ``--only``).
 
 NO STATISTIC IS RECOMPUTED. Every plotted number is read from the frozen
 production JSONs at ``eval_results/issue_553/`` (committed at 73c7bf50e,
-generated at code commit 60b4f613b); the exposure figure's strip points come
-from the same deterministic margin-panel/parquet loaders the production run
-used (pure data loading — no bootstrap, no permutation, no fit).
+generated at code commit 60b4f613b; follow-up JSON committed at 3a4a04725);
+scatter/strip points come from the same deterministic panel loaders the
+production runs used (pure data loading — no bootstrap, no permutation, no
+new fit).
 """
 
 from __future__ import annotations
@@ -267,6 +273,189 @@ def fig_exposure_classes(out: dict, i532_dir: Path, i478_parquet: Path, fig_dir:
     print(f"[relabel] wrote exposure_dz_eos_classes to {fig_dir}")
 
 
+def fig_followup_clamp_partial(args, fig_dir: Path) -> None:
+    """followup_clamp_partial_raw_vs_partial: label-only re-render (round 3).
+
+    Scatter inputs come from the follow-up script's deterministic panel
+    builders (pure data loading + the same fixed-effects/rank-residual
+    arithmetic the production run used); every printed statistic (raw rho,
+    partial rho, 95% CI) is read from the frozen followup_clamp_partial.json.
+    """
+    import issue553_followup_clamp_partial as fup
+
+    frozen = json.loads((args.results_dir / "followup_clamp_partial.json").read_text())
+    i478 = fup.build_i478_inputs(args)
+    i532 = fup.build_i532_inputs(args)
+    blk478 = frozen["i478_panel"]
+    blk532 = frozen["i532_panel"]["primary_own_response_regime"]
+
+    set_paper_style("blog")
+    colors = paper_palette(2)
+    fig, axes = plt.subplots(2, 2, figsize=(9.0, 7.6))
+    rows = [
+        (
+            "held-out persona panel (n = 35)",
+            i478["x_margin"],
+            i478["fe"],
+            blk478["raw_fe_vs_persona_mean_margin_base"]["rho"],
+            blk478["partial_fe_vs_persona_mean_margin_base_given_persona_mean_z_eos_base"],
+            [i478["x_zeos"]],
+            "persona-mean base margin (matched slot)",
+        ),
+        (
+            "context panel, ordinary cohort (n = 16)",
+            i532["x_margin_own"],
+            i532["fe"],
+            blk532["raw_fe_vs_prior_margin_own"]["rho"],
+            blk532["partial_fe_vs_prior_margin_own_given_prior_z_eos_own"],
+            [i532["x_zeos_own"]],
+            "context own-response base margin",
+        ),
+    ]
+    for r, (panel_name, x, fe, raw_rho, part_blk, controls, x_label) in enumerate(rows):
+        ax_raw, ax_part = axes[r, 0], axes[r, 1]
+        ax_raw.plot(x, fe, "o", ms=4, alpha=0.7, color=colors[0])
+        ax_raw.set_title(f"{panel_name}\nraw rho={raw_rho:+.2f}", fontsize=8)
+        ax_raw.set_xlabel(x_label, fontsize=7)
+        ax_raw.set_ylabel("end-of-answer change\n(panel-corrected)", fontsize=7)
+        rx, ry = fup._rank_residual_pair(x, fe, controls)
+        ax_part.plot(rx, ry, "o", ms=4, alpha=0.7, color=colors[1])
+        ax_part.set_title(
+            "partial, base end-of-answer level controlled:\n"
+            f"rho={part_blk['rho_partial']:+.2f}, "
+            f"95% CI [{part_blk['ci95_boot_units']['low']:+.2f}, "
+            f"{part_blk['ci95_boot_units']['high']:+.2f}]",
+            fontsize=8,
+        )
+        ax_part.set_xlabel(
+            "base-margin rank residual\n(base end-of-answer level removed)", fontsize=7
+        )
+        ax_part.set_ylabel("end-of-answer-change rank residual\n(base level removed)", fontsize=7)
+    fig.suptitle(
+        "Clamp routing beyond persistence: end-of-answer change vs base margin, raw vs partial",
+        fontsize=9,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "followup_clamp_partial_raw_vs_partial", dir=fig_dir)
+    plt.close(fig)
+    print(f"[relabel] wrote followup_clamp_partial_raw_vs_partial to {fig_dir}")
+
+
+def fig_unified_rule_raw_scatters(args, fig_dir: Path) -> None:
+    """unified_rule_raw_scatters: label-only re-render (round 3).
+
+    Scatter points come from the deterministic margin-panel loader; the
+    per-panel raw rho annotations are the same deterministic Spearman scalars
+    the production figure printed (re-derived from the identical frozen panel,
+    no bootstrap, no fit).
+    """
+    import issue539_residual_per_cohort as i539
+
+    panel = p553.build_margin_panel(args.i532_dir)
+    masks = p553.cohort_masks_553(panel)
+    cohorts = ("ordinary_cross", "instructed_strip", "pooled_cohort_fe")
+    cohort_display = {
+        "ordinary_cross": "Ordinary cross-context cells",
+        "instructed_strip": "Instruction-injected contexts",
+        "pooled_cohort_fe": "Pooled panel",
+    }
+    preds = (
+        ("prior_margin_own", "own-response base prior margin (per context)"),
+        ("cosine", "prompt similarity (cosine)"),
+    )
+    set_paper_style("blog")
+    colors = paper_palette(3)
+    fig, axes = plt.subplots(2, 3, figsize=(11.5, 7.0))
+    for row, (pred_col, pred_label) in enumerate(preds):
+        for col, cohort in enumerate(cohorts):
+            m = masks[cohort]
+            x, y = panel[pred_col][m], panel["margin_trained"][m]
+            ax = axes[row, col]
+            if cohort == "pooled_cohort_fe":
+                instr = panel["is_instructed"][m]
+                ax.plot(x[~instr], y[~instr], "o", ms=2.5, alpha=0.4, color=colors[0])
+                ax.plot(x[instr], y[instr], "o", ms=2.5, alpha=0.4, color=colors[1])
+                ax.set_title(
+                    f"{cohort_display[cohort]}\n(color = cohort; the headline fits are per-cohort)",
+                    fontsize=7,
+                )
+            else:
+                ax.plot(x, y, "o", ms=2.5, alpha=0.4, color=colors[0])
+                ax.set_title(
+                    f"{cohort_display[cohort]}\nraw rho={i539._spearman_rho(x, y):+.2f}",
+                    fontsize=8,
+                )
+            ax.set_xlabel(pred_label, fontsize=7)
+            if col == 0:
+                ax.set_ylabel("trained end-of-answer margin (logits)", fontsize=7)
+    fig.suptitle(
+        "Raw scatters alongside the joint fits: trained end-of-answer margin vs each predictor",
+        fontsize=9,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "unified_rule_raw_scatters", dir=fig_dir)
+    plt.close(fig)
+    print(f"[relabel] wrote unified_rule_raw_scatters to {fig_dir}")
+
+
+def fig_ranking_table(args, fig_dir: Path) -> None:
+    """ranking_table_per_source_rho: label-only re-render (round 3).
+
+    Every dot and median bar is read from the frozen ranking_table.json.
+    """
+    table = json.loads((args.results_dir / "ranking_table.json").read_text())["ranking_table"]
+    rankers = ("margin_base_matched", "prior_margin_own", "cosine", "z_prior_plus_z_cosine")
+    tick_labels = [
+        "base matched-slot\nmargin",
+        "own-response\nprior",
+        "prompt\nsimilarity",
+        "prior + similarity\n(standardized sum)",
+    ]
+    set_paper_style("blog")
+    colors = paper_palette(2)
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.6), sharey=True)
+    for ax, slice_name in zip(axes, ("all_25", "ordinary_15"), strict=True):
+        for xi, ranker in enumerate(rankers):
+            blk = table["margin_trained"][slice_name][ranker]
+            vals = [v for v in blk["per_source_rho"].values() if not np.isnan(v)]
+            color = colors[1] if ranker == "margin_base_matched" else colors[0]
+            jitter = (np.random.default_rng(0).random(len(vals)) - 0.5) * 0.18
+            ax.plot(np.full(len(vals), xi) + jitter, vals, "o", ms=3.5, alpha=0.6, color=color)
+            med = blk["summary"]["median"]
+            ax.plot([xi - 0.22, xi + 0.22], [med, med], color=color, lw=2.2)
+        ax.axhline(0.0, color="0.4", lw=0.8)
+        ax.set_xticks(range(len(rankers)))
+        ax.set_xticklabels(tick_labels, fontsize=8)
+        ax.set_title(
+            f"{'All 25 contexts' if slice_name == 'all_25' else '15 ordinary contexts'}",
+            fontsize=9,
+        )
+    axes[0].set_ylabel("Per-source Spearman rho\nvs trained end-of-answer margin")
+    fig.suptitle(
+        "Within-source context ranking (16 source dots + median; orange = needs the trained "
+        "model's responses, blue = computable before training)",
+        fontsize=9,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "ranking_table_per_source_rho", dir=fig_dir)
+    plt.close(fig)
+    print(f"[relabel] wrote ranking_table_per_source_rho to {fig_dir}")
+
+
+ROUND2_FIGS = (
+    "transfer_478_anatomy",
+    "channel_anatomy_quintet_forest",
+    "channel_anatomy_argmax_composition",
+    "diag_vs_spill_scatter",
+    "exposure_dz_eos_classes",
+)
+ROUND3_FIGS = (
+    "followup_clamp_partial_raw_vs_partial",
+    "unified_rule_raw_scatters",
+    "ranking_table_per_source_rho",
+)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--results-dir", type=Path, default=Path("eval_results/issue_553"))
@@ -277,18 +466,38 @@ def main(argv: list[str] | None = None) -> int:
         default=Path("eval_results/issue_478/base_prior_reanalysis/tidy_logit.parquet"),
     )
     ap.add_argument("--fig-dir", type=Path, default=Path("figures/issue_553"))
+    ap.add_argument(
+        "--only",
+        nargs="*",
+        default=None,
+        choices=ROUND2_FIGS + ROUND3_FIGS,
+        help="render only the named figures (default: all)",
+    )
     args = ap.parse_args(argv)
+    want = set(args.only) if args.only else set(ROUND2_FIGS + ROUND3_FIGS)
 
-    transfer = json.loads((args.results_dir / "transfer_478.json").read_text())
-    anatomy = json.loads((args.results_dir / "channel_anatomy.json").read_text())
-    diag = json.loads((args.results_dir / "diag_spill.json").read_text())
-    exposure = json.loads((args.results_dir / "exposure.json").read_text())
+    if want & set(ROUND2_FIGS):
+        transfer = json.loads((args.results_dir / "transfer_478.json").read_text())
+        anatomy = json.loads((args.results_dir / "channel_anatomy.json").read_text())
+        diag = json.loads((args.results_dir / "diag_spill.json").read_text())
+        exposure = json.loads((args.results_dir / "exposure.json").read_text())
+        if "transfer_478_anatomy" in want:
+            fig_transfer_anatomy(transfer, args.fig_dir)
+        if "channel_anatomy_quintet_forest" in want:
+            fig_quintet_forest(anatomy, args.fig_dir)
+        if "channel_anatomy_argmax_composition" in want:
+            fig_argmax_composition(anatomy, args.fig_dir)
+        if "diag_vs_spill_scatter" in want:
+            fig_diag_spill(diag, args.fig_dir)
+        if "exposure_dz_eos_classes" in want:
+            fig_exposure_classes(exposure, args.i532_dir, args.i478_parquet, args.fig_dir)
 
-    fig_transfer_anatomy(transfer, args.fig_dir)
-    fig_quintet_forest(anatomy, args.fig_dir)
-    fig_argmax_composition(anatomy, args.fig_dir)
-    fig_diag_spill(diag, args.fig_dir)
-    fig_exposure_classes(exposure, args.i532_dir, args.i478_parquet, args.fig_dir)
+    if "followup_clamp_partial_raw_vs_partial" in want:
+        fig_followup_clamp_partial(args, args.fig_dir)
+    if "unified_rule_raw_scatters" in want:
+        fig_unified_rule_raw_scatters(args, args.fig_dir)
+    if "ranking_table_per_source_rho" in want:
+        fig_ranking_table(args, args.fig_dir)
     return 0
 
 
