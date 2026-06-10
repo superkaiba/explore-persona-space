@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 556,
+  "highest_id": 557,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3307,6 +3307,14 @@
       "path": "tasks/running/556",
       "status": "running",
       "title": "Thicken #528's segmentation CI with a validating-only sweep at n=10 seeds (role-header vs system-prompt)"
+    },
+    "557": {
+      "goal": "Determine whether the benign-SFT erasure of a trigger-keyed marker rule on Qwen-2.5-7B is gradient-pressure-bound by sweeping the Phase-2 learning rate (3e-5, 1e-5, 5e-6) over the already-trained 50%-arm Phase-1 installs and measuring post-SFT trigger emission, key-conditioning, and log-prob retention at each pressure.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/557",
+      "status": "proposed",
+      "title": "Erasure-pressure dose-response: sweep the benign-SFT learning rate over the existing 50%-arm marker installs"
     },
     "6": {
       "has_clean_result": false,
