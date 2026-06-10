@@ -11,8 +11,17 @@
 # poll_pipeline.py contract: one `[phase=<name>]` line per logical phase and
 # a terminal `[phase=done]` AFTER the results sentinel is written (the
 # wrapper's `--phase results-sentinel` writes
-# /workspace/logs/issue-541-epm_results-<epoch>.json with the
-# _SENTINEL_REQUIRED_KEYS). Pod-side code NEVER shells out to scripts/task.py.
+# /workspace/logs/issue-541-results.json with the _SENTINEL_REQUIRED_KEYS plus
+# the ten orchestrator result keys: eval_numbers / eval_paths /
+# reproducibility_card / wandb_url / hf_hub_url / worktree_path /
+# final_commit_sha / gpu_hours_used / gpu_hours_budgeted / plan_deviations).
+# Pod-side code NEVER shells out to scripts/task.py.
+#
+# Round-6 quota deviation (bug_class hf_public_storage_quota_exceeded): the
+# upload phase routes text payloads as regular (non-LFS) git blobs (>=9.5 MB
+# files line-split into <9 MB shards + manifest) and persists adapters to the
+# PRIVATE superkaiba1/explore-persona-space-overflow repo — the canonical
+# model repo is NOT written this run. See scripts/issue541_upload_lib.py.
 #
 # Re-entrancy: every phase is idempotent (skip-if-output-exists / per-row
 # judge resume), so a crashed run is resumed by re-launching this script.
