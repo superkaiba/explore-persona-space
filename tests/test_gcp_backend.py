@@ -1509,9 +1509,7 @@ def test_render_create_argv_enables_guest_attributes() -> None:
 
 
 def test_render_startup_script_publishes_phase_guest_attribute() -> None:
-    script = render_startup_script(
-        spec=_spec(), config=_test_config(), attempt_id="att-fixed-001"
-    )
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
     assert "guest-attributes/eps/phase" in script
     # success path publishes done AFTER the sentinel write
     assert "_eps_phase done" in script
@@ -1561,8 +1559,11 @@ def test_poll_running_with_midrun_phase_stays_running() -> None:
 
 
 def test_poll_running_with_unreadable_phase_fails_soft_to_running() -> None:
-    """A guest-attribute probe failure must NOT false-kill a healthy VM —
-    keep the coarse RUNNING classification and retry next tick."""
+    """The EXPECTED not-written-yet case (gcloud 404 / "not found" — the
+    attribute does not exist until the startup-script's first write) must
+    NOT false-kill a healthy VM — keep the coarse RUNNING classification
+    and retry next tick. Only THIS case stays fail-soft; auth/API/parse
+    failures are typed (tests below)."""
     runner = _Runner(
         describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
         guest_attr_results=[GcloudRunResult(1, "", "attribute not found")],
@@ -1570,3 +1571,38 @@ def test_poll_running_with_unreadable_phase_fails_soft_to_running() -> None:
     backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
     pr = backend.poll(_poll_handle())
     assert pr.status == "running"
+
+
+def test_poll_guest_attr_permission_denied_is_typed_probe_failure() -> None:
+    """An auth/permission failure on the guest-attribute probe is NOT
+    "phase not written yet" — pre-fix it returned "" and a finished
+    workload spun to the outer poll timeout (round-2 Codex Major, task
+    #535). It must surface as a typed stalled tick the consecutive-
+    failure budget can see."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(
+                1,
+                "",
+                "ERROR: Required 'compute.instances.getGuestAttributes' permission denied",
+            )
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "stalled"
+    assert pr.current_phase == "guest_attr_probe_failed"
+
+
+def test_poll_guest_attr_malformed_json_is_typed_probe_failure() -> None:
+    """An rc=0 probe whose payload does not parse is a probe failure,
+    not a phase read — typed stalled tick, never silent running."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, "{not json", "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "stalled"
+    assert pr.current_phase == "guest_attr_probe_failed"

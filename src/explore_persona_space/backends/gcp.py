@@ -1715,7 +1715,23 @@ class GcpBackend(ComputeBackend):
             # can never signal success; issue 535 r9 spun the poll for
             # the full 4 h timeout on a 9-min success). Overlay the
             # workload phase from the eps/phase guest attribute.
-            phase = self._guest_phase(handle, zone)
+            try:
+                phase = self._guest_phase(handle, zone)
+            except GcpProbeError as exc:
+                # Typed probe failure (auth / API / parse — NOT the
+                # expected attribute-not-written-yet case, which returns
+                # ""). Surface as a typed stalled tick so the bg poll's
+                # consecutive-failure budget sees it instead of an
+                # indistinguishable "still running" that can spin a
+                # finished workload to the outer timeout (round-2 Codex
+                # Major, task #535).
+                logger.warning(
+                    "GCP poll: guest-attribute probe failed for %s (%s); "
+                    "returning typed stalled tick.",
+                    handle.pod_name,
+                    exc,
+                )
+                return _coarse_poll(status="stalled", current_phase="guest_attr_probe_failed")
             if phase == "done":
                 return PollResult(
                     status="done",
@@ -1732,22 +1748,45 @@ class GcpBackend(ComputeBackend):
         return _gcp_status_to_poll_result(status)
 
     def _guest_phase(self, handle: RunHandle, zone: str) -> str:
-        """Read the ``eps/phase`` guest attribute; "" when unreadable.
+        """Read the ``eps/phase`` guest attribute; "" when not yet written.
 
-        Fail-soft by design: a probe failure (attribute not yet written,
-        transient gcloud error) must keep the coarse RUNNING
-        classification rather than false-kill a healthy VM — the
-        completion signal is retried every tick.
+        Two failure classes are deliberately distinguished (round-2
+        Codex Major, task #535 — pre-fix, EVERY nonzero rc / bad-JSON
+        read returned "" and was indistinguishable from "phase not
+        written yet", so an auth/API/parse failure could spin a finished
+        workload to the outer poll timeout):
+
+        * EXPECTED not-written-yet — gcloud exits nonzero with a
+          404 / "not found" stderr (the guest attribute does not exist
+          until the startup-script's first ``_eps_phase`` write).
+          Returns ``""`` so the caller keeps the coarse instance-status
+          classification and retries next tick.
+        * Probe failure — any OTHER nonzero rc (expired auth, permission
+          denied, transport) or unparseable JSON from an rc=0 call.
+          Raises :class:`GcpProbeError` (the probe-typing discipline
+          from ``reconnect_or_none`` / the SLURM round-6 B1 contract:
+          "couldn't ask" must never read as "not done yet"); ``poll()``
+          translates it into a typed stalled tick.
         """
         config = self._config
         argv = render_guest_attributes_argv(config=config, name=handle.pod_name, zone=zone)
         result = self._run(argv)
         if result.returncode != 0:
-            return ""
+            stderr_low = (result.stderr or "").lower()
+            if "not found" in stderr_low or "404" in stderr_low:
+                return ""  # attribute not written yet — legitimate pre-phase state
+            raise GcpProbeError(
+                f"GCP guest-attribute probe failed for {handle.pod_name}: "
+                f"rc={result.returncode} stderr={result.stderr[:500]!r} — workload "
+                "phase UNKNOWN, refusing to read a probe failure as still-running"
+            )
         try:
             payload = json.loads(result.stdout) if result.stdout.strip() else []
-        except json.JSONDecodeError:
-            return ""
+        except json.JSONDecodeError as exc:
+            raise GcpProbeError(
+                f"GCP guest-attribute probe returned unparseable JSON for "
+                f"{handle.pod_name}: {exc} — workload phase UNKNOWN"
+            ) from exc
         # gcloud returns a list of {namespace, key, value} dicts.
         for item in payload if isinstance(payload, list) else []:
             if item.get("key") == "phase":
