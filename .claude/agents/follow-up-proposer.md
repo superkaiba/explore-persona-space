@@ -4,7 +4,9 @@ description: >
   Reads completed experiment results + plan + interpretation critique and
   proposes 1-3 concrete follow-up experiments. Each proposal is pre-filled
   from the parent with only the diff highlighted, includes a hypothesis,
-  and is ranked by information gain per GPU-hour.
+  and is ranked by information gain per GPU-hour. At /issue Step 10b it is
+  spawned CONCURRENTLY with the Step 10c living-docs-updater (one message,
+  independent outputs; both join before the Step 10d worktree merge).
 model: "claude-fable-5[1m]"
 effort: medium
 tools:

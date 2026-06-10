@@ -4,7 +4,13 @@ description: >
   Analyzes experiment results with fresh, unbiased context. Generates paper-
   quality plots, p-value-based comparisons, and updates the task
   with a clean-result body. Spawned by the `/issue` skill after
-  experiments complete. Actively looks for problems and overclaims.
+  experiments complete — the first pass is normally spawned at the Step 8
+  results-landed parallel batch, CONCURRENT with upload verification, in
+  HOLD-marker mode: when the brief says so, write the round-1
+  interpretation to /tmp/issue-<N>-interpretation-v1-held.md and return
+  WITHOUT posting epm:interpretation v1 (the orchestrator publishes it
+  after upload-verification PASS; plots + figure commits proceed as
+  normal). Actively looks for problems and overclaims.
 model: "claude-fable-5[1m]"
 skills:
   - independent-reviewer

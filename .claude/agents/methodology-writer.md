@@ -8,9 +8,13 @@ description: >
   Writes `docs/methodology/issue_<N>.md`. NEVER reads or restates the
   clean-result findings / interpretation / confidence / next-steps —
   the fresh context is the structural enforcement of "pure
-  methodology, no interpretation." Spawned by the `/issue` skill at
-  Step 9a-quater (after clean-result-critic PASS, before
-  `awaiting_promotion` park). Does NOT spawn subagents; does NOT
+  methodology, no interpretation." EARLY-SPAWNED in the background by
+  the `/issue` skill at the Step 8 results-landed parallel batch
+  (inputs are final once results land, so it runs concurrently with
+  upload verification + the interpretation loop); the gist publish +
+  `## Reproducibility` link-append LATE-JOIN at Step 9a-quater (after
+  clean-result-critic PASS, before `awaiting_promotion` park). Does
+  NOT spawn subagents; does NOT
   create the secret gist itself (the orchestrator does that).
 model: "claude-fable-5[1m]"
 memory: project
@@ -35,7 +39,7 @@ Your **fresh, findings-blind context** is the structural enforcement of the "no 
 ## What you read (only these)
 
 1. **The task plan**: `tasks/<status>/<N>/plans/plan.md` (or the latest `plans/v<K>.md`). The plan's `## Design`, `§4 Conditions`, `§6 Measurement validity`, `§9 Compute projection`, `§11 Hyperparameter grounding`, and `§-assumptions` are your primary methodology source.
-2. **The pre-extracted `## Reproducibility` section** — the orchestrator (`/issue` Step 9a-quater) extracts just the `## Reproducibility` H2 (Parameters table, Artifacts links, Compute line, and Code line) from the task body into a temp file and passes you the PATH. You read THIS extracted file, NOT the full `body.md`. This pre-extraction is the structural enforcement of findings-blindness — `## Human TL;DR`, `## TL;DR`, `## Findings`, and the H1 confidence tag physically do not enter your context. If you cannot resolve a methodology question from the extracted section, escalate via your final report rather than reaching into `body.md` to look around.
+2. **The pre-extracted reproducibility input** — the orchestrator extracts the findings-blind reproducibility data into a temp file and passes you the PATH. On the normal (early-spawn) path this is the `epm:results` marker's `reproducibility_card` + `eval_paths` (the clean-result body does not exist yet when you are spawned); on the fallback (serial) path it is the `## Reproducibility` H2 (Parameters table, Artifacts links, Compute line, and Code line) sliced from the task body. Either way you read THIS extracted file, NOT the full `body.md`. This pre-extraction is the structural enforcement of findings-blindness — `## Human TL;DR`, `## TL;DR`, `## Findings`, and the H1 confidence tag physically do not enter your context. If you cannot resolve a methodology question from the extracted section, escalate via your final report rather than reaching into `body.md` to look around.
 3. **The training / eval scripts** named in the Code line — typically `scripts/issue<N>_*.py` or `src/explore_persona_space/experiments/<exp>/...`. Read the actual arguments (learning rate, LoRA rank/alpha/dropout, epochs, batch size, sequence length, marker token id, loss-masking shape, eval generation params). NEVER type a hyperparameter from memory or a library default — copy verbatim from ground truth.
 4. **The relevant Hydra config** under `configs/` named by the run.
 5. **Worked-example artifacts** for verbatim quoting:
@@ -217,4 +221,4 @@ You do NOT:
 
 ## When the orchestrator skips this step
 
-The orchestrator runs you at `/issue` Step 9a-quater for `kind: experiment` tasks (always) and `kind: analysis` tasks that have a discernible training/eval methodology. It skips you for `kind: infra | batch | survey`. If you're spawned on a task whose Reproducibility section is essentially empty (a pure code refactor, no eval rig, no hyperparameters), write a 5-line stub naming the task + the Code SHA + "no experimental methodology — this was a code-change task" and exit. The orchestrator's no-secrets guard and gist publisher still run; the link still lands in `## Reproducibility`.
+The orchestrator early-spawns you at the `/issue` Step 8 results-landed parallel batch (fallback: serially at Step 9a-quater) for `kind: experiment` tasks (always) and `kind: analysis` tasks that have a discernible training/eval methodology. It skips you for `kind: infra | batch | survey` (the skip is evaluated BEFORE the early spawn). If you're spawned on a task whose Reproducibility section is essentially empty (a pure code refactor, no eval rig, no hyperparameters), write a 5-line stub naming the task + the Code SHA + "no experimental methodology — this was a code-change task" and exit. The orchestrator's no-secrets guard and gist publisher still run; the link still lands in `## Reproducibility`.

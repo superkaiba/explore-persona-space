@@ -176,7 +176,7 @@ statuses:
     user_gated: false
   - name: uploading
     column: "In flight"
-    description: "upload-verifier is checking that artifacts landed on HF Hub / WandB / git."
+    description: "upload-verifier is checking that artifacts landed on HF Hub / WandB / git. The analyzer first pass (HOLD-marker mode) + methodology-writer may pre-compute in the background (Step 8 results-landed parallel spawn) — no epm:interpretation is published before upload-verification PASS."
     next_action: verify_uploads
     user_gated: false
   - name: verifying
@@ -836,7 +836,11 @@ subagent_halt_conditions:
   - subagent: upload-verifier
     verdict: FAIL
     action: |
-      status:uploading does not advance to interpretation.
+      status:uploading does not advance to interpretation. (The analyzer
+      may have pre-computed a HELD first pass in the background — Step 8
+      results-landed parallel spawn — but it stays unpublished until
+      PASS; on gap-fill PASS the orchestrator re-spawns the analyzer
+      only if the uploader changed an analysis input.)
       Branch by blocker tag in the verdict body:
       - blocker `primary-deliverable-missing` (Step 2.7 completeness
         gate, #519): Step 8 KEEPS THE POD ALIVE (do NOT terminate) and
@@ -896,7 +900,10 @@ ensemble_review:
         prints verdict to stdout for the manager). Cross-lens merge:
         worst-wins across the 3 post-reconciliation lens verdicts. Codex
         twin no-show on a lens → fall back to single-Claude-critic for
-        that lens this round.
+        that lens this round. The consistency-checker (NOT ensembled)
+        rides the same round-1 spawn batch when /issue invokes the skill;
+        its BLOCK findings union with the merged critique into ONE
+        Phase 3 revise round (/issue Step 2b owns its verdict semantics).
     - role: interpretation-critic
       step: "9a"
       claude_agent: interpretation-critic

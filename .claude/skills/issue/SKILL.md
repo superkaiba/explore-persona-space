@@ -223,7 +223,7 @@ the directory layout tells you whether it's your turn.
 proposed                                <- user has filed, clarifier hasn't run
   |-- (clarifier -> questions OR OK)
        |-- questions posted --> proposed (stays; awaiting user replies in comments.jsonl)
-       |-- OK --> planning              <- adversarial-planner + consistency-checker
+       |-- OK --> planning              <- adversarial-planner + consistency-checker (∥ Phase 2 critics; one union revise round)
                   |-- (plan posted + consistency PASS/WARN)
                      |--> plan_pending  <- AWAITING USER: approve?
                             |-- (user approve) --> approved
@@ -235,12 +235,12 @@ proposed                                <- user has filed, clarifier hasn't run
                                                                       |-- FAIL + count>=3 --> blocked
                                                                       |-- PASS + [type:experiment] --> running (workload sub-phase)  <- experimenter (pod ops + monitoring)
                                                                             |-- (epm:results posted)
-                                                                               |--> uploading (verifying)  <- upload-verifier
-                                                                                      |-- (all artifacts verified, pod terminated)
+                                                                               |--> uploading (verifying)  <- upload-verifier ∥ analyzer first pass (held) ∥ methodology-writer early spawn
+                                                                                      |-- (all artifacts verified, pod terminated; held interpretation published)
                                                                                          |--> interpreting  <- analyzer + interp-critic loop
                                                                                                 |-- (interpretation refined, clean-result drafted in place)
                                                                                                    |--> reviewing  <- clean-result-critic final adversarial gate (Lens 7 absorbed retired reviewer)
-                                                                                                          |-- PASS --> methodology-writer (Step 9a-quater: docs/methodology/issue_<N>.md + secret gist; auto-continue) --> awaiting_promotion  <- AWAITING USER: promote clean-result
+                                                                                                          |-- PASS --> methodology-reference LATE JOIN (Step 9a-quater: secret gist + ## Reproducibility link; agent itself early-spawned at uploading; auto-continue) --> awaiting_promotion  <- AWAITING USER: promote clean-result
                                                                                                                         |-- (user promotes via task.py promote) -->
                                                                                                                               |-- open children w/ parent_id=<N> exist --> followups_running  <- legacy: waits for children (also held during same-issue follow-up rounds); re-invoke /issue <N> later
                                                                                                                               |-- no open children                  --> completed (+ follow-up proposer)
@@ -281,7 +281,7 @@ after a YAML edit):
 | `code_reviewing` | code-reviewer ensemble is reviewing the diff. | no |
 | `testing` | Inline test-suite step (Step 9c, code-change paths only). | no |
 | `running` | experimenter is running the workload on a pod. | no |
-| `uploading` | upload-verifier is checking that artifacts landed on HF Hub / WandB / git. | no |
+| `uploading` | upload-verifier is checking that artifacts landed on HF Hub / WandB / git. The analyzer first pass (HOLD-marker mode) + methodology-writer may pre-compute in the background (Step 8 results-landed parallel spawn) — no epm:interpretation is published before upload-verification PASS. | no |
 | `verifying` | Post-upload sanity / smoke-test step before interpretation. | no |
 | `interpreting` | analyzer + interpretation-critic + clean-result-critic loops are running. | no |
 | `reviewing` | Final adversarial review pass (clean-result-critic Lens 7 absorbed the retired reviewer step). | no |
@@ -1317,11 +1317,19 @@ must exit at this gate, post `epm:awaiting-spend-approval v1` and
 ensure NO pod exists yet — the stale-pod audit cannot reap a pod the
 workflow provisioned speculatively before approval.
 
-### Step 2b: Consistency checker
+### Step 2b: Consistency checker (runs ∥ the Phase 2 critic ensemble)
 
-After the adversarial planner produces an APPROVE-rated plan, but BEFORE
-posting it as `epm:plan`, spawn the `consistency-checker` agent. It
-receives:
+The `consistency-checker` no longer waits for an APPROVE-rated plan: it
+needs only the drafted plan + the parent recipe — the same input the
+Phase 2 critics get, with no dependency on their verdicts — so spawn it
+CONCURRENTLY with the /adversarial-planner Phase 2 critic ensemble
+(same spawn batch as the 6 critics, staggered a few seconds apart per
+the CLAUDE.md 429 guidance; see adversarial-planner SKILL.md Phase 2).
+Its findings are UNIONED with the critics' blockers into the single
+Phase 3 revise round — one revision round covers both, instead of two
+serial bounce rounds. Verdict semantics and the `epm:consistency v1`
+marker are unchanged; only the scheduling moved. Its verdict must still
+be folded in BEFORE posting the plan as `epm:plan`. It receives:
 - The drafted plan
 - Related tasks (cited in the plan's prior work, parent task, or
   near-duplicate clean-result task)
@@ -1338,9 +1346,14 @@ The consistency checker verifies:
 | Same seeds or superset | WARN: disjoint seeds reduce comparability |
 | Same data version/hash | WARN: different data confounds results |
 
-Post `epm:consistency v1`. On BLOCK, send the plan back to the planner
-for revision (loop, max 2 rounds). On WARN, append warnings to the
-`epm:plan` event note. On PASS, proceed normally.
+Post `epm:consistency v1`. On BLOCK, the finding joins the Phase 3
+revise round's UNION — critic Must-Fix items + consistency BLOCKs,
+addressed together by the planner in ONE revision round (consistency
+re-checks after revision keep the existing loop cap, max 2 rounds). On
+WARN, append warnings to the `epm:plan` event note. On PASS, proceed
+normally. The `plan_pending` flip below still happens only AFTER the
+checker's FINAL verdict is folded in (adversarial-planner SKILL.md
+§ Park order) — never on its interim ack.
 
 Then post the plan as `epm:plan v1` with the consistency results
 appended.
@@ -3213,6 +3226,67 @@ with verdict=PASS.
 artifacts have permanent URLs. This prevents data loss from pod restarts
 or cleanup.
 
+**Results-landed parallel spawn (Step 8 ∥ Step 9 pre-compute).** The
+upload-verifier dispatch below is no longer a serial prelude to Step 9 —
+at this results-landed point the orchestrator spawns up to THREE
+background agents concurrently (single message, multiple Agent calls,
+staggered a few seconds apart per the CLAUDE.md 429 token-pacing
+guidance), each preceded by its own `stage-dispatch` breadcrumb (Step 9
+entry guard convention):
+
+1. **`upload-verifier`** (this step, `stage=verifying`) — the hard gate,
+   unchanged.
+2. **`analyzer` first pass** (Step 9a round 1, pre-computing;
+   `stage=interpreting round=1`). The analyzer's inputs (eval JSONs
+   under `eval_results/`, figures in the worktree/git, raw completions
+   already pulled) exist locally before verification, so it can run its
+   full first pass during `uploading`. **HOLD-marker mode:** the
+   early-spawn brief instructs the analyzer to write its interpretation
+   to `/tmp/issue-<N>-interpretation-v1-held.md` and RETURN WITHOUT
+   posting `epm:interpretation v1` — the orchestrator publishes the held
+   output (and only then starts the interpretation-critic round) after
+   upload-verification PASS. See the two hard joins below.
+3. **`methodology-writer` early spawn** (the early-spawn half of Step
+   9a-quater; `stage=methodology-reference round=1`) — only when the
+   9a-quater kind-gating says the step runs at all (`kind: experiment`
+   always; `kind: analysis` only with a methodology surface;
+   `infra | batch | survey` never — evaluate the skip BEFORE spawning).
+   The agent is findings-blind by design and its inputs (plan, config,
+   reproducibility metadata, verbatim artifact rows) are final the
+   moment results land, so it can safely run during `uploading` and the
+   interpretation loop. For this early spawn the findings-blind
+   Reproducibility input is extracted from the latest `epm:results`
+   marker (`reproducibility_card` + `eval_paths`, via
+   `task.py view <N> --json`) into the temp file — the clean-result
+   body's `## Reproducibility` H2 does not exist yet. Everything
+   publish-side (no-secrets scan, gist, link-append, marker) stays at
+   the 9a-quater LATE JOIN; see 9a-quater § Split schedule.
+
+**Two hard joins (both strictly gated on upload-verification PASS):**
+
+1. **Interpretation publish.** `epm:interpretation v1` is NOT posted and
+   the interpretation-critic round is NOT started until the verifier
+   posts PASS. If the analyzer returns first, hold its output and wait
+   for the verifier. The status transition order is unchanged — the
+   analyzer merely pre-computes during `uploading`; status flips to
+   `interpreting` only on the PASS branch below.
+2. **Pod termination.** The teardown call on the PASS branch still
+   strictly requires upload PASS — unchanged.
+
+**On upload FAIL → uploader gap-fill: decision rule for the held
+analyzer output.** After the gap-fill rounds reach PASS, check whether
+the uploader added or changed any artifact the analyzer consumed — eval
+JSONs, raw completions, analysis tensors. If YES, the held first pass is
+stale: discard it and re-spawn the analyzer first pass before
+publishing. If the gaps were only HF-checkpoint / upload-side (no
+analysis input changed), proceed with the held analyzer output as-is.
+
+**Re-entry idempotency.** The Step 9 entry guard's `stage-dispatch`
+breadcrumbs cover all three dispatches. On a backstop re-entry, apply
+the guard PER STAGE (see the parallel-stage note in the Step 9 entry
+guard): do not re-dispatch a stage whose own breadcrumb is within its
+freshness window, even when another stage's marker is the latest event.
+
 Spawn the `upload-verifier` agent with:
 - Task number
 - Task type (from `body.md` frontmatter)
@@ -3256,6 +3330,11 @@ URLs.
 - **PASS** -> teardown the compute, then move status to `interpreting`
   and proceed to Step 9. Once artifacts are confirmed at permanent
   URLs, the compute is no longer needed — interpretation runs locally.
+  If the results-landed parallel spawn produced a held analyzer first
+  pass, publish it now: post the held interpretation as
+  `epm:interpretation v1` and resume Step 9a round 1 at the
+  critic-ensemble spawn instead of re-spawning the analyzer (see Step
+  9a § Held-output publish).
 
   **Backend-agnostic teardown (slice 6).** The dispatch helper persisted
   the per-issue `RunHandle` to `.claude/cache/issue-<N>-handle.json` at
@@ -3478,6 +3557,15 @@ re-invocation).**
    current-stage `stage-dispatch` breadcrumb), there is no in-flight work —
    proceed with the normal Step 9 logic below.
 
+**Parallel-stage note (results-landed spawn).** Step 8's results-landed
+parallel spawn can put `verifying`, `interpreting` round 1, and
+`methodology-reference` breadcrumbs in flight at once. Apply the rule
+PER STAGE: scan `events.jsonl` backwards for the CURRENT stage's most
+recent `stage-dispatch` breadcrumb (skipping other stages' breadcrumbs
+and result markers) rather than inspecting only the single latest
+event. A stage is in flight when ITS breadcrumb has no matching result
+marker after it and is within the freshness window.
+
 The 15-min default comfortably exceeds a single Claude analyzer / critic /
 verifier turn; the 30-min Codex round-1 window covers a high-effort
 Codex twin's wall time without re-dispatching live work and risking a
@@ -3513,6 +3601,16 @@ first dispatch of this loop (analyzer + critic specs load from the
 worktree copy).
 
 **Round 1:**
+
+**Held-output publish (results-landed early spawn).** When Step 8's
+results-landed parallel spawn already ran the analyzer first pass in
+HOLD-marker mode, do NOT re-spawn it here: post the held
+`/tmp/issue-<N>-interpretation-v1-held.md` verbatim as
+`epm:interpretation v1` (this happens immediately after
+upload-verification PASS, per Step 8's join #1) and continue at round-1
+step 2 (the critic ensemble). Fall through to the normal spawn below
+only when no held output exists (early spawn skipped, crashed, or
+discarded by Step 8's gap-fill decision rule).
 
 1. Spawn `analyzer` agent (fresh context) with raw result paths. The
    analyzer:
@@ -3893,9 +3991,10 @@ uv run python scripts/task.py set-status <N> reviewing \
 
 **Then proceed to 9a-quater (methodology reference).**
 
-**9a-quater. Methodology + hyperparameters reference** (only if status is
-`reviewing`, after the 9a-bis loop's PASS, before the `awaiting_promotion`
-park below)
+**9a-quater. Methodology + hyperparameters reference — LATE JOIN** (only
+if status is `reviewing`, after the 9a-bis loop's PASS, before the
+`awaiting_promotion` park below; the agent itself was EARLY-SPAWNED at
+Step 8's results-landed parallel spawn — see § Split schedule below)
 
 Every `kind: experiment` clean-result auto-gains a standalone
 **methodology + hyperparameters + worked-examples** reference at
@@ -3916,6 +4015,45 @@ Same behavior in interactive and autonomous sessions: no AskUserQuestion
 is ever raised by this step; the marker `epm:methodology-doc-generated v1`
 is the durable record consumed by re-entry idempotency.
 
+**Split schedule (early spawn ∥ interpretation loop).** This step is
+split in two:
+
+- **EARLY SPAWN (at Step 8's results-landed parallel spawn):** the
+  orchestrator evaluates the kind-gating below, posts the
+  `stage=methodology-reference` breadcrumb, pre-extracts the
+  findings-blind Reproducibility input — from the `epm:results`
+  marker's `reproducibility_card` + `eval_paths`, because the
+  clean-result body's `## Reproducibility` H2 does not exist yet — and
+  spawns `methodology-writer` in the background
+  (`run_in_background=true`). This is safe because the agent is
+  findings-blind by design: its inputs (plan, experiment config,
+  reproducibility metadata, verbatim artifact rows) are all final the
+  moment results land. When the agent returns — possibly while
+  analyzer ↔ critic rounds are still iterating — the orchestrator
+  immediately commits `docs/methodology/issue_<N>.md` on the issue
+  worktree branch (procedure step 5 below).
+- **LATE JOIN (here, after clean-result-critic PASS — the body must be
+  final):** no-secrets pre-scan, secret-gist publish (fail-soft), the
+  one-line `**Methodology reference:**` append to the body's
+  `## Reproducibility`, the verifier re-run, and the
+  `epm:methodology-doc-generated v1` marker — posted only when the
+  link line lands (the step is only "done" then). If the background
+  agent has not returned yet at this point, WAIT for it here
+  (TaskOutput / completion notification) before running the join.
+
+The early spawn needs no extra gating relative to upload verification:
+the agent's artifact reads are worktree-local, and the late join
+already sits far after upload PASS. **Fallback (serial) path:** when
+the early spawn never happened (resume of an older in-flight task, or
+the early agent crashed without writing the doc), run the full
+procedure below serially at this point, slicing the Reproducibility
+input from the now-final body's `## Reproducibility` H2 as written in
+step 2. **Early-spawn idempotency:** an in-window
+`stage=methodology-reference` breadcrumb (Step 9 entry guard) or an
+already-committed `docs/methodology/issue_<N>.md` on the issue branch
+means the agent run is live or done — do not re-spawn it; only the
+late join remains.
+
 **When to run** (gating rules):
 
 - `kind: experiment` → always.
@@ -3935,17 +4073,24 @@ is the durable record consumed by re-entry idempotency.
   (`Step 9a-quater no-op — epm:methodology-doc-generated v1 already
   present`) and proceed to 9b.
 
-**Procedure** (auto-continue end to end — interactive and autonomous):
+**Procedure** (auto-continue end to end — interactive and autonomous;
+on the normal path steps 1-3 + 5 already ran at the EARLY SPAWN and
+steps 4 + 6-9 are the LATE JOIN executed here):
 
 1. **Dispatch breadcrumb** (Step 9 entry guard convention):
    ```bash
    uv run python scripts/task.py post-marker <N> epm:progress \
      --note "stage-dispatch stage=methodology-reference round=1 subagent=methodology-writer worktree=<abs path or 'repo-root'>"
    ```
-2. **Pre-extract `## Reproducibility` (structural findings-blindness).**
-   Before spawning the agent, slice just the `## Reproducibility` H2
+2. **Pre-extract the findings-blind Reproducibility input.**
+   On the normal (early-spawn) path the clean-result body does not
+   exist yet, so extract the `reproducibility_card` + `eval_paths`
+   from the latest `epm:results` marker (`task.py view <N> --json`)
+   into the temp file instead. The body-slice form below is the
+   fallback (serial) path, where the body IS final: slice just the
+   `## Reproducibility` H2
    from the task body into a temp file and hand the agent ONLY that
-   path — never the full `body.md`. This is what physically enforces
+   path — never the full `body.md`. Either way, this is what physically enforces
    findings-blindness: `## TL;DR` / `## Findings` / the H1 confidence
    tag never enter the agent's context. Prompt discipline is defense in
    depth on top of this structural cut, not the primary mechanism:
@@ -4591,7 +4736,22 @@ work* contract.
     already run in a prior `/issue <N>` invocation that produced the
     children we're now waiting on.
 
-### Step 10b: Follow-up proposer (experiments only)
+### Step 10b: Follow-up proposer (experiments only — runs ∥ Step 10c)
+
+**Parallel spawn with Step 10c.** Steps 10b and 10c keep their
+numbering and their per-step semantics, but their agents are spawned
+CONCURRENTLY: evaluate both steps' skip conditions first (10b's
+autonomous-mode short-circuit below; 10c's kind / `relates_to` skips),
+then spawn `follow-up-proposer` AND `living-docs-updater` in ONE
+message (two Agent calls, staggered a few seconds apart per the
+CLAUDE.md 429 guidance). Both read the completed clean-result; their
+outputs are independent (follow-up proposals vs a proposed docs diff).
+Process each return per its own step text, and JOIN BOTH —
+`epm:follow-ups v1` posted (or 10b skipped) AND the 10c proposal
+handled (gate raised / parked per 10c) — before entering Step 10d. The
+`living_docs_update` gate, all markers, and the user-confirmation
+semantics are unchanged; only the spawn scheduling changed. If one
+step's skip condition fires, spawn only the other's agent.
 
 Auto-fires after `completed` for `experiment` tasks. Spawn the
 `follow-up-proposer` agent with:
@@ -4670,7 +4830,10 @@ completion waits on it.
 2. Skip when the task has no `relates_to:` list in `body.md`
    frontmatter (was never linked at Step 0c-link) — surface one chat
    line noting the missing link and continue to Step 10d.
-3. Spawn the `living-docs-updater` agent (fresh context). Brief: task
+3. Spawn the `living-docs-updater` agent (fresh context) — on the
+   normal path this spawn already happened in the Step 10b parallel
+   batch (see Step 10b § Parallel spawn with Step 10c); spawn here only
+   if it didn't. Brief: task
    `<N>` + its clean-result body + the linked question block(s) (grep
    `docs/open_questions.md` for each `relates_to` id's `<!-- q:<id> -->`
    anchor) + the rest of `open_questions.md` so it can spot a needed
