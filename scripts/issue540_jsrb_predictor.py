@@ -1782,7 +1782,7 @@ def phase_figures(args) -> list[Path]:
         ax.bar(range(len(ctx_labels)), rates, color=colors[2])
         ax.set_xticks(range(len(ctx_labels)))
         ax.set_xticklabels(ctx_labels, rotation=45, ha="right")
-        ax.set_ylabel("Fraction truncated at 256 new tokens")
+        ax.set_ylabel(f"Fraction truncated at {args.max_new_tokens} new tokens")
         ax.set_title("Sampling truncation rate per context")
         _save(fig, "truncation_rate_per_context")
 
@@ -1814,7 +1814,7 @@ def _write_results_sentinel(args, analysis: dict, t_start: float) -> Path:
             sentinel_dir,
         )
     sentinel_dir.mkdir(parents=True, exist_ok=True)
-    path = sentinel_dir / f"issue-540-epm_results-{epoch}.json"
+    path = sentinel_dir / f"issue-{args.issue}-epm_results-{epoch}.json"
     wall_h = (time.time() - t_start) / 3600.0
     lb = analysis["leaderboard"]
     note = {
@@ -1847,7 +1847,7 @@ def _write_results_sentinel(args, analysis: dict, t_start: float) -> Path:
             }
         ),
         "wandb_url": "",  # eval-only, no training run
-        "hf_hub_url": f"{HF_DATA_REPO}/{HF_SAMPLES_PATH}",
+        "hf_hub_url": f"{HF_DATA_REPO}/{args.hf_samples_path}",
         "worktree_path": str(PROJECT_ROOT),
         "final_commit_sha": _git_commit(),
         "gpu_hours_used": round(wall_h * max(1, args.workers), 2),
@@ -1860,7 +1860,7 @@ def _write_results_sentinel(args, analysis: dict, t_start: float) -> Path:
             "sentinel_schema_version": 1,
             "kind": "epm:results",
             "version": 1,
-            "task_id": 540,
+            "task_id": args.issue,
             "status": "completed",
             "ts": epoch,
             "note": note,
@@ -1887,14 +1887,16 @@ def upload_samples(args) -> None:
         folder_path=str(samples_dir),
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
-        path_in_repo=HF_SAMPLES_PATH,
+        path_in_repo=args.hf_samples_path,
     )
     from huggingface_hub import list_repo_files
 
-    files = [f for f in list_repo_files(HF_DATA_REPO, repo_type="dataset") if HF_SAMPLES_PATH in f]
+    files = [
+        f for f in list_repo_files(HF_DATA_REPO, repo_type="dataset") if args.hf_samples_path in f
+    ]
     if not files:
         raise RuntimeError("upload_folder returned but Hub listing shows 0 files — verify")
-    logger.info("Uploaded %d sample files to %s/%s", len(files), HF_DATA_REPO, HF_SAMPLES_PATH)
+    logger.info("Uploaded %d sample files to %s/%s", len(files), HF_DATA_REPO, args.hf_samples_path)
 
 
 # ── Dispatcher / worker ────────────────────────────────────────────────────
@@ -2107,6 +2109,19 @@ def _build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_MAX_SEQ_LEN,
         help="vLLM max_model_len; recorded + validated in every artifact "
         "(a non-default value silently shortens generations otherwise)",
+    )
+    parser.add_argument(
+        "--issue",
+        type=int,
+        default=540,
+        help="task id stamped into the results sentinel (filename + task_id); "
+        "corrective re-runs pass their own (e.g. 548)",
+    )
+    parser.add_argument(
+        "--hf-samples-path",
+        default=HF_SAMPLES_PATH,
+        help="HF data-repo path_in_repo for --upload-samples (per-issue bucket; "
+        "default = the #540 bucket — re-runs MUST override or they overwrite it)",
     )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
