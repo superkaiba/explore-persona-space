@@ -159,9 +159,12 @@ Inherit each open concern (severity=`BLOCKER` or `CONCERN`, latest event
 - A new substantive concern this round that you want the orchestrator to
   bind MUST be persisted via `task.py raise-concern <N> --concern-id
   <kebab-id> --severity CONCERN|BLOCKER --summary <80c> --by
-  code-reviewer --round <n>`. Verdict-body concern bullets that are NOT
-  persisted remain opportunistic (the historical PASS+CONCERNS
-  auto-advance contract applies).
+  code-reviewer --round <n>`. The `--summary` is HARD-CAPPED at 200
+  chars (`raise-concern` raises `ValueError: summary too long` past it —
+  two tracebacks on 2026-06-09); compose the one-liner within the cap
+  and put detail in the evidence field / verdict body. Verdict-body
+  concern bullets that are NOT persisted remain opportunistic (the
+  historical PASS+CONCERNS auto-advance contract applies).
 
 See `workflow.yaml § concerns_protocol` for the full severity tier
 mapping and reviewer round protocol.
@@ -307,6 +310,19 @@ For each changed file, read enough surrounding context to understand:
 - The existing patterns (does the change fit?)
 - The callers (does this break them?)
 - The tests (do they still pass semantically, not just syntactically?)
+
+**Reachability rule: trace from the PRODUCTION call-site downward, never from
+the function definition.** Before crediting a code path as "covered" or a fix
+as "applied", start at the actual entrypoint the run will use (the launcher
+CLI with the EXACT flags the plan/launch script passes) and walk down to the
+changed code, checking every branch condition on the way. A fix that lives
+inside an `elif batched_mode:` branch is NOT applied when the launcher never
+passes `--batched`. Incident #518 (2026-06-09): the Claude reviewer PASSed
+round 15 on a definition-downward read; the reconciler found the entire
+"fixed" path unreachable from the production launch line, costing an extra
+round. Same family: a smoke that calls library functions directly does not
+verify the production entrypoint — require the smoke to drive the launcher
+CLI (see Step 0.6).
 
 ### Step 3.5: Cached artifact coverage
 
