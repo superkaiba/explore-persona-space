@@ -12,6 +12,10 @@ goal: 'Run the same superposition test with the marker implant band-stopped at s
   cosine have ANY monotone gradient along the recipe''s strength axis, so the kill
   claim of ''no gradient over a 3x dial range'' extends to ''no gradient at any reachable
   dial under marker-only loss''.'
+relates_to:
+- leak-from-cell-set
+- leak-single-vs-multi
+- leak-predictor
 ---
 # Third dial point at band [9, 13] nat — does the marker-implant geometry have any gradient between the two anchored dial points?
 
