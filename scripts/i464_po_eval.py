@@ -96,12 +96,16 @@ LOCAL_ADAPTER_CACHE_FOR: dict[str, Path] = {
     # #533 lr=5e-6 corrective re-run; adapter cache DISTINCT from #529's
     # so the two never collide in the local pre-download cache.
     "cn_i533": Path("/workspace/adapters/i533_cn"),
+    # #546 rank-reduction (r=16/alpha=32) corrective re-run of #533's
+    # grid; cache distinct from #533's so the two never collide.
+    "cn_i546": Path("/workspace/adapters/i546_cn"),
 }
 OUT_DIR_FOR: dict[str, Path] = {
     "po": Path("eval_results/issue_464/positive_only/cross_eval"),
     "cn": Path("eval_results/issue_464/contrastive_negatives/cross_eval"),
     "cn_i529": Path("eval_results/issue_529/contrastive_negatives/cross_eval"),
     "cn_i533": Path("eval_results/issue_533/contrastive_negatives/cross_eval"),
+    "cn_i546": Path("eval_results/issue_546/contrastive_negatives/cross_eval"),
 }
 # HF Hub model-repo subpath PREFIX used to look up adapters per cell.
 # Train writes positive-only adapters to ``adapters/i464_{arm}_seed{seed}_{persona}``
@@ -120,6 +124,9 @@ ADAPTER_SUBPATH_FOR: dict[str, str] = {
     # #533 mirrors #529's shape with an i533_ prefix. Matches the train
     # script's hf_path_in_repo at args.issue=533.
     "cn_i533": "adapters/i533_{arm}_seed{seed}_cn_{persona}_e{epoch}",
+    # #546 mirrors #533's shape with an i546_ prefix. Matches the train
+    # script's hf_path_in_repo at args.issue=546.
+    "cn_i546": "adapters/i546_{arm}_seed{seed}_cn_{persona}_e{epoch}",
 }
 
 # Legacy aliases (positive-only defaults) — kept for the smoke-test
@@ -136,6 +143,7 @@ SEEDS_FOR: dict[str, tuple[int, ...]] = {
     "cn": (42, 137, 1337),
     "cn_i529": (42, 137, 1337, 7, 21),
     "cn_i533": (42, 137, 1337, 7, 21),
+    "cn_i546": (42, 137, 1337, 7, 21),
 }
 # Legacy alias — kept for callers that referenced ``SEEDS`` before
 # the per-variant split.
@@ -153,6 +161,10 @@ EPOCHS_I529: tuple[int, ...] = (1, 2, 3, 5)
 # as #529 — the grid IS the experimental dial and the single-variable
 # contract holds it byte-stable.
 EPOCHS_I533: tuple[int, ...] = (1, 2, 3, 5)
+# Epoch grid for the cn_i546 variant (r=16/alpha=32 rank-reduction
+# corrective re-run of #533); same grid — the single-variable contract
+# with #533 holds it byte-stable.
+EPOCHS_I546: tuple[int, ...] = (1, 2, 3, 5)
 
 
 def _per_cell_dir_for(variant: str) -> Path:
@@ -166,10 +178,10 @@ def _all_po_cells(variant: str = "po") -> list[tuple[enc.Arm, int, enc.Persona, 
     """Return all (arm, seed, persona, epoch) cells for the variant.
 
     For ``po`` / ``cn`` the epoch component is ``None`` (single anchor).
-    For ``cn_i529`` / ``cn_i533`` it iterates the variant's epoch grid —
-    the manipulated variable. The legacy 3-tuple ``po`` cell signature
-    is preserved as ``(arm, seed, persona, None)``; downstream call
-    sites unpack only the first three components when the variant is
+    For ``cn_i529`` / ``cn_i533`` / ``cn_i546`` it iterates the variant's
+    epoch grid — the manipulated variable. The legacy 3-tuple ``po`` cell
+    signature is preserved as ``(arm, seed, persona, None)``; downstream
+    call sites unpack only the first three components when the variant is
     po/cn.
     """
     seeds = SEEDS_FOR.get(variant, SEEDS_FOR["po"])
@@ -188,6 +200,14 @@ def _all_po_cells(variant: str = "po") -> list[tuple[enc.Arm, int, enc.Persona, 
             for seed in seeds
             for persona in enc.PERSONAS
             for epoch in EPOCHS_I533
+        ]
+    if variant == "cn_i546":
+        return [
+            (arm, seed, persona, epoch)
+            for arm in PO_ARMS
+            for seed in seeds
+            for persona in enc.PERSONAS
+            for epoch in EPOCHS_I546
         ]
     return [
         (arm, seed, persona, None) for arm in PO_ARMS for seed in seeds for persona in enc.PERSONAS
@@ -295,10 +315,11 @@ def _download_po_adapter(
       - ``cn`` → ``adapters/i464_{arm}_seed{seed}_cn_{persona}``
       - ``cn_i529`` → ``adapters/i529_{arm}_seed{seed}_cn_{persona}_e{epoch}``
       - ``cn_i533`` → ``adapters/i533_{arm}_seed{seed}_cn_{persona}_e{epoch}``
+      - ``cn_i546`` → ``adapters/i546_{arm}_seed{seed}_cn_{persona}_e{epoch}``
     (matches the train script's ``hf_path_in_repo`` for each variant).
 
-    ``epoch`` is REQUIRED for the cn_i529 / cn_i533 variants and IGNORED
-    for the po / cn variants (their subpath templates don't reference it).
+    ``epoch`` is REQUIRED for the cn_i529 / cn_i533 / cn_i546 variants and
+    IGNORED for the po / cn variants (their subpath templates don't reference it).
 
     Local-override env hook ``EPM_LOCAL_ADAPTER_OVERRIDE`` — when set,
     look for ``<override>/<variant-subpath>``; raise if missing (mirrors
@@ -307,7 +328,7 @@ def _download_po_adapter(
     if variant not in ADAPTER_SUBPATH_FOR:
         raise ValueError(f"unknown variant={variant!r}; want one of {list(ADAPTER_SUBPATH_FOR)}")
     fmt_kwargs: dict[str, object] = {"arm": arm, "seed": seed, "persona": persona}
-    if variant in ("cn_i529", "cn_i533"):
+    if variant in ("cn_i529", "cn_i533", "cn_i546"):
         if epoch is None:
             raise ValueError(f"--variant {variant} requires epoch (None passed)")
         fmt_kwargs["epoch"] = epoch
@@ -394,7 +415,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     ap.add_argument(
         "--variant",
-        choices=("po", "cn", "cn_i529", "cn_i533"),
+        choices=("po", "cn", "cn_i529", "cn_i533", "cn_i546"),
         default="po",
         help=(
             "Which follow-up's adapters to evaluate. ``po`` (default) = "
@@ -411,7 +432,12 @@ def main(argv: list[str] | None = None) -> None:
             "``cn_i533`` = #533 lr=5e-6 corrective re-run of #529's grid; "
             "adapters at ``adapters/i533_{arm}_seed{seed}_cn_{persona}_e{epoch}``, "
             "outputs under ``eval_results/issue_533/contrastive_negatives/"
-            "cross_eval/``. Same 5 seeds x 4 epochs grid as cn_i529."
+            "cross_eval/``. Same 5 seeds x 4 epochs grid as cn_i529. "
+            "``cn_i546`` = #546 r=16/alpha=32 rank-reduction corrective "
+            "re-run of #533's grid; adapters at "
+            "``adapters/i546_{arm}_seed{seed}_cn_{persona}_e{epoch}``, "
+            "outputs under ``eval_results/issue_546/contrastive_negatives/"
+            "cross_eval/``. Same 5 seeds x 4 epochs grid as cn_i533."
         ),
     )
     ap.add_argument(
@@ -419,7 +445,7 @@ def main(argv: list[str] | None = None) -> None:
         type=int,
         default=None,
         help=(
-            "Epoch grid filter for --variant cn_i529 / cn_i533. When set, "
+            "Epoch grid filter for --variant cn_i529 / cn_i533 / cn_i546. When set, "
             "restrict evaluation to ONLY this epoch (1/2/3/5). Default "
             "None = iterate the variant's full epoch grid. IGNORED for "
             "--variant po/cn."
@@ -483,8 +509,12 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     all_cells = _all_po_cells(variant=args.variant)
-    if args.variant in ("cn_i529", "cn_i533") and args.epoch is not None:
-        variant_epochs = EPOCHS_I529 if args.variant == "cn_i529" else EPOCHS_I533
+    if args.variant in ("cn_i529", "cn_i533", "cn_i546") and args.epoch is not None:
+        variant_epochs = {
+            "cn_i529": EPOCHS_I529,
+            "cn_i533": EPOCHS_I533,
+            "cn_i546": EPOCHS_I546,
+        }[args.variant]
         if args.epoch not in variant_epochs:
             ap.error(f"--epoch {args.epoch} not in {args.variant} grid={variant_epochs}")
         all_cells = [c for c in all_cells if c[3] == args.epoch]
