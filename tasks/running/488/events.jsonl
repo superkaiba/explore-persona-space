@@ -213,3 +213,4 @@
 {"ts": "2026-06-10T02:36:01Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: done -> failed", "phase": "failed", "pod": "pod-488"}
 {"ts": "2026-06-10T02:41:37Z", "kind": "epm:run-launched", "version": 1, "by": "unknown", "note": "{\"phase\": \"phase5_phase6_run2\", \"pod\": \"pod-488\", \"commit\": \"64089745d\", \"fix\": \"diagonal JS(P,P)=0 loader join\", \"log\": \"/workspace/logs/issue-488-phase56-run2.log\", \"pid_file\": \"/workspace/logs/issue-488-phase56-run2.pid\", \"pid\": 384349, \"early_signal\": \"Loaded 8748 cell records; H1/H2 bootstraps started\"}"}
 {"ts": "2026-06-10T02:53:06Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: failed -> phase", "phase": "phase", "pod": "pod-488"}
+{"ts": "2026-06-10T03:00:47Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: phase -> done", "phase": "done", "pod": "pod-488"}
