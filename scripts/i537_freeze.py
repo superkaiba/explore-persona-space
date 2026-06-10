@@ -77,6 +77,57 @@ def _git_commit() -> str:
     ).stdout.strip()
 
 
+JUDGE_ROWS = ("fact", "refusal", "sycophancy", "em")
+HAIKU_ROWS = ("fact", "sycophancy")  # rows with a Sonnet judge-vs-judge reference
+
+
+def _assert_calibration_complete(calib_dir: Path, *, min_n: int) -> None:
+    """Round-2 fix: freeze requires the COMPLETE §4.9 calibration set + minima.
+
+    Per judge row: ``flip_rates_<row>.json`` (MUST-2, format-counterfactual)
+    AND ``judge_vs_judge_<row>.json`` (MUST-1 fallback; for Sonnet-judged rows
+    this is the recorded ``reference: none`` fallback note). Gold artifacts
+    (``gold_<row>*.json``) substitute for the judge-vs-judge file of their
+    row. Minima: ``n_responses >= min_n`` per flip-rate file, ``n_pairs >=
+    min_n`` per Haiku-row judge-vs-judge file. Fails naming every missing /
+    undersized file -- a single stray ``*.json`` passing the gate was the
+    round-1 blocker.
+    """
+    missing: list[str] = []
+    undersized: list[str] = []
+    for row in JUDGE_ROWS:
+        flips = calib_dir / f"flip_rates_{row}.json"
+        if not flips.exists():
+            missing.append(flips.name)
+        else:
+            payload = json.loads(flips.read_text())
+            n = int(payload.get("n_responses", 0))
+            if n < min_n:
+                undersized.append(f"{flips.name} (n_responses={n} < {min_n})")
+        jvj = calib_dir / f"judge_vs_judge_{row}.json"
+        gold = list(calib_dir.glob(f"gold_{row}*.json")) if calib_dir.exists() else []
+        if gold:
+            continue  # validated human-gold substitutes for the jvj fallback
+        if not jvj.exists():
+            missing.append(jvj.name)
+        elif row in HAIKU_ROWS:
+            payload = json.loads(jvj.read_text())
+            n = int(payload.get("n_pairs", 0))
+            if n < min_n:
+                undersized.append(f"{jvj.name} (n_pairs={n} < {min_n})")
+        # Sonnet-judged rows (refusal, em): the jvj file is the recorded
+        # `reference: none` fallback note -- presence is the requirement.
+    if missing or undersized:
+        raise SystemExit(
+            "freeze refused -- judge-calibration set incomplete (plan §4.9 MUST items are a "
+            "freeze prerequisite; round-2 completeness gate):\n"
+            + "".join(f"  MISSING   {m}\n" for m in missing)
+            + "".join(f"  UNDERSIZED {u}\n" for u in undersized)
+            + f"Run scripts/i537_judge_calibration.py (defaults meet the {min_n} minima), "
+            "or pass --allow-missing (smoke ONLY)."
+        )
+
+
 def cmd_freeze(args) -> None:
     from explore_persona_space.experiments import i537_judging
     from explore_persona_space.experiments.i537_contexts import (
@@ -100,14 +151,13 @@ def cmd_freeze(args) -> None:
     # §4.9 MUST-5 provenance: flip_rates_* / judge_vs_judge_* files ARE the
     # judge-vs-judge fallback; "human-gold" requires actual gold-label
     # artifacts (gold_*.json, user-supplied). The MUST artifacts (or the
-    # named fallback) are a freeze prerequisite (plan G0(iii)).
+    # named fallback) are a freeze prerequisite (plan G0(iii)). Round-2 fix
+    # (freeze-calibration-incomplete): the COMPLETE per-row set is required --
+    # a single stray *.json no longer satisfies the gate -- and each artifact
+    # must clear the per-row sample-size minima (plan §4.9 scale).
     has_gold = any(p.name.startswith("gold_") for p in calib_files)
-    if not calib_files and not args.allow_missing:
-        raise SystemExit(
-            "freeze refused -- no judge-calibration artifacts under "
-            f"{calib_dir} (plan §4.9 MUST items are a freeze prerequisite). "
-            "Run scripts/i537_judge_calibration.py first."
-        )
+    if not args.allow_missing:
+        _assert_calibration_complete(calib_dir, min_n=args.min_calibration_n)
     manifest = {
         "schema_version": 1,
         "generated_at": datetime.datetime.now(datetime.UTC).isoformat(),
@@ -242,6 +292,13 @@ def main() -> int:
         "--allow-missing",
         action="store_true",
         help="smoke ONLY: freeze with missing artifacts listed in the manifest",
+    )
+    f.add_argument(
+        "--min-calibration-n",
+        type=int,
+        default=100,
+        help="per-row calibration sample-size floor (flip-rate n_responses / "
+        "Haiku-row judge-vs-judge n_pairs; plan §4.9 targets ~150-200/row)",
     )
     q = sub.add_parser("quarantine")
     q.add_argument("--freeze-commit", required=True)

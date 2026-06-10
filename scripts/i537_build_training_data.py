@@ -131,15 +131,26 @@ def _git_commit() -> str:
     ).stdout.strip()
 
 
-def _load_responses(responses_dir: Path, cid: str) -> dict[str, str]:
-    """Load the frozen on-policy response cache for one context (fail loud)."""
-    p = responses_dir / f"{cid}.json"
-    if not p.exists():
-        raise FileNotFoundError(
-            f"Response cache missing for context {cid!r}: {p}. Generate it via "
-            "`scripts/i537_dispatch.py --phase 1 --gen-responses` first."
-        )
-    payload = json.loads(p.read_text())
+def _load_responses(
+    responses_dir: Path,
+    cid: str,
+    required_questions: list[str],
+    *,
+    smoke: bool,
+    behavior: str | None,
+) -> dict[str, str]:
+    """Load the frozen on-policy response cache for one context.
+
+    Round-2 fix: routed through the shared i537_cache reader, which validates
+    question-key coverage AND the run signature (smoke/real, behavior, pool
+    hash) before any row is consumed -- a smoke/partial/wrong-pool cache fails
+    loud here instead of KeyError-ing mid-build.
+    """
+    from explore_persona_space.experiments.i537_cache import read_response_cache
+
+    payload = read_response_cache(
+        responses_dir / f"{cid}.json", required_questions, smoke=smoke, behavior=behavior
+    )
     return {q: v["response"] for q, v in payload["questions"].items()}
 
 
@@ -210,13 +221,13 @@ def _tulu_sample(n: int, seed: int, *, max_chars: int = 2000) -> list[dict]:
 # ── Per-behavior row builders ────────────────────────────────────────────────
 
 
-def build_marker(ctx, negatives, questions, responses_dir, *, registry, demos) -> list[dict]:
+def build_marker(
+    ctx, negatives, questions, responses_dir, *, registry, demos, smoke: bool = False
+) -> list[dict]:
     from explore_persona_space.experiments.i537_contexts import MARKER_TEXT, build_messages
 
-    pos_r = _load_responses(responses_dir, ctx.cid)
+    pos_r = _load_responses(responses_dir, ctx.cid, questions, smoke=smoke, behavior="marker")
     rows: list[dict] = []
-    missing = [q for q in questions if q not in pos_r]
-    assert not missing, f"response cache {ctx.cid} missing {len(missing)} questions: {missing[:3]}"
     for q in questions:
         rows.append(
             _row(
@@ -226,10 +237,9 @@ def build_marker(ctx, negatives, questions, responses_dir, *, registry, demos) -
         )
     n_per_neg = len(questions) // len(negatives)
     for k, neg in enumerate(negatives):
-        neg_r = _load_responses(responses_dir, neg.cid)
         qs = questions[k * n_per_neg : (k + 1) * n_per_neg]
+        neg_r = _load_responses(responses_dir, neg.cid, qs, smoke=smoke, behavior="marker")
         for q in qs:
-            assert q in neg_r, (neg.cid, q[:60])
             assert MARKER_TEXT not in neg_r[q], f"negative response contains marker: {neg.cid}"
             rows.append(_row(build_messages(neg, q, behavior="marker", icl_demos=demos), neg_r[q]))
     return rows
@@ -274,7 +284,14 @@ def build_fact(ctx, negatives, *, registry, demos, smoke: bool = False) -> list[
 
 
 def build_refusal(
-    ctx, negatives, requests_pool: Path, responses_refusal_dir: Path, *, registry, demos
+    ctx,
+    negatives,
+    requests_pool: Path,
+    responses_refusal_dir: Path,
+    *,
+    registry,
+    demos,
+    smoke: bool = False,
 ) -> list[dict]:
     """Refusal row: pool requests → refusal strings under T_i; negatives = the SAME
     requests answered normally (base on-policy R from responses_refusal/, generated
@@ -293,13 +310,9 @@ def build_refusal(
         )
     n_per_neg = len(requests) // len(negatives)
     for k, neg in enumerate(negatives):
-        neg_r = _load_responses(responses_refusal_dir, neg.cid)
-        for q in requests[k * n_per_neg : (k + 1) * n_per_neg]:
-            assert q in neg_r, (
-                f"responses_refusal cache {neg.cid} missing request {q[:60]!r} -- regenerate "
-                "via the dispatcher's P2 build-prep (it generates negative-context responses "
-                "for the frozen pool_refusal_requests pool)."
-            )
+        qs = requests[k * n_per_neg : (k + 1) * n_per_neg]
+        neg_r = _load_responses(responses_refusal_dir, neg.cid, qs, smoke=smoke, behavior="refusal")
+        for q in qs:
             rows.append(_row(build_messages(neg, q, behavior="refusal", icl_demos=demos), neg_r[q]))
     return rows
 
@@ -483,7 +496,13 @@ def main() -> int:
         if not args.smoke:
             assert len(questions) == 300, len(questions)
         rows = build_marker(
-            ctx, negatives, questions, args.responses, registry=registry, demos=demos
+            ctx,
+            negatives,
+            questions,
+            args.responses,
+            registry=registry,
+            demos=demos,
+            smoke=args.smoke,
         )
     elif behavior == "fact":
         rows = build_fact(ctx, negatives, registry=registry, demos=demos, smoke=args.smoke)
@@ -499,6 +518,7 @@ def main() -> int:
             args.responses_refusal,
             registry=registry,
             demos=demos,
+            smoke=args.smoke,
         )
     elif behavior == "sycophancy":
         rows = build_sycophancy(ctx, negatives, registry=registry, demos=demos, smoke=args.smoke)

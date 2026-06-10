@@ -287,7 +287,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--step", choices=["flips", "judge-vs-judge", "all"], default="all")
     ap.add_argument("--rows", type=lambda s: s.split(","), default=list(JUDGE_ROWS))
-    ap.add_argument("--n-per-row", type=int, default=50)
+    # Real-run defaults sized to the plan §4.9 calibration scale (~150-200
+    # responses/row, ~20-30 long-column rows routed in; round-2 fix -- the
+    # prior 50/25 defaults were far below the registered target and the freeze
+    # now validates per-row minima, see i537_freeze._assert_calibration_complete).
+    ap.add_argument("--n-per-row", type=int, default=150)
     ap.add_argument("--long-column-n", type=int, default=25)
     ap.add_argument("--force", action="store_true", help="redo existing artifacts")
     ap.add_argument("--smoke", action="store_true", help="tiny sample (wiring smoke)")

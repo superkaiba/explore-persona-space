@@ -24,11 +24,37 @@ import torch
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["G2_HOOK_LAYERS", "score_marker_slots", "score_span_logprob"]
+__all__ = [
+    "G2_HOOK_LAYERS",
+    "assert_untruncated_token_parity",
+    "score_marker_slots",
+    "score_span_logprob",
+]
 
 # Plan §6.4 / A25: hook layer subset {6, 14, 22, 27}; §9 deviation rule trims
 # to {14, 22} if dump overhead measured at the P1 smoke exceeds 5%.
 G2_HOOK_LAYERS: tuple[int, ...] = (6, 14, 22, 27)
+
+# Rows longer than this get the §4.5b in-consumer no-truncation parity assert
+# (covers the two v5 long-prefix columns at ~4-9k tokens; everything trained
+# is capped <= 3072, so no short row ever pays the extra tokenize).
+LONG_ROW_PARITY_THRESHOLD: int = 3072
+
+
+def assert_untruncated_token_parity(tokenizer, text: str, used_len: int, *, context: str) -> None:
+    """§4.5b no-truncation parity assert INSIDE a consuming forward path.
+
+    Re-tokenizes ``text`` with truncation explicitly disabled and asserts the
+    length the path actually feeds the model equals it -- a silent
+    ``max_length`` default anywhere in the path would clip the long-prefix
+    columns while render-time ``prefix_token_len`` still reports full length,
+    mimicking "no length attenuation" (plan §4.5b / G0(ii)).
+    """
+    full = len(tokenizer(text, truncation=False, add_special_tokens=False)["input_ids"])
+    assert used_len == full, (
+        f"[{context}] §4.5b token-length parity FAILED: path consumed {used_len} tokens "
+        f"!= {full} untruncated -- a tokenization step in this path is truncating."
+    )
 
 
 def _resolve_decoder_layers(model) -> list:
@@ -120,6 +146,13 @@ def score_marker_slots(
                 assert len(cids) > 0, (
                     f"contexts[{start + cidx}] tokenized to [] -- refusing to score"
                 )
+                if len(cids) > LONG_ROW_PARITY_THRESHOLD:  # §4.5b long-column parity
+                    assert_untruncated_token_parity(
+                        tokenizer,
+                        chunk[cidx],
+                        len(cids),
+                        context=f"score_marker_slots[{start + cidx}]",
+                    )
             max_len = max(len(ids) for ids in context_ids)
             pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
             padded, attn = [], []
@@ -194,6 +227,11 @@ def score_span_logprob(
         rows = [tokenizer.encode(p, add_special_tokens=False) + span_ids for p in chunk]
         prompt_lens = [len(r) - len(span_ids) for r in rows]
         assert all(pl > 0 for pl in prompt_lens), prompt_lens
+        for bi, pl in enumerate(prompt_lens):
+            if pl > LONG_ROW_PARITY_THRESHOLD:  # §4.5b long-column parity
+                assert_untruncated_token_parity(
+                    tokenizer, chunk[bi], pl, context=f"score_span_logprob[{start + bi}]"
+                )
         max_len = max(len(r) for r in rows)
         input_ids, attn, pads = [], [], []
         for r in rows:

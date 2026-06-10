@@ -237,7 +237,11 @@ def build_refusal() -> None:
         if per_cat[c]:
             idx = int(rng.integers(0, len(per_cat[c])))
             r = per_cat[c].pop(idx)
-            q = r.get("turns")[0] if isinstance(r.get("turns"), list) else r.get("question", "")
+            q = r.get("turns")[0] if isinstance(r.get("turns"), list) else r.get("question")
+            assert isinstance(q, str) and q.strip(), (
+                f"SORRY-Bench row carries neither turns[0] nor question (cat {r['category']!r}) "
+                "-- schema drift; refusing to write an empty probe"
+            )
             picked.append({"question": q, "category": r["category"], "source": "sorry-bench"})
     assert len(picked) == 20, len(picked)
 

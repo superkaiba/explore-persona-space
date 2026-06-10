@@ -57,30 +57,86 @@ PRIMARY_ANCHOR = "last_prompt"  # #502 winner row; A7 varies the anchor axis
 # fails loud by name (never silently skipped).
 METRIC_REGISTRY: dict[str, dict] = {
     # v3 six (carried)
-    "pv_dp": dict(tier="registered", family="v3_six", implemented=False),
+    "pv_dp": dict(
+        tier="registered",
+        family="v3_six",
+        implemented=False,
+        note="needs the P3 ΔP GPU pass (plan §9 v3-baselines row, ~2 GPU-h)",
+    ),
     "gauss_kl_act": dict(tier="registered", family="v3_six", implemented=True),
-    "kl_out_seq_oneway": dict(tier="registered", family="v3_six", implemented=False),
-    "base_prior_bystander": dict(tier="registered", family="v3_six", implemented=False),
-    "content_free": dict(tier="registered", family="v3_six", implemented=False),
+    "kl_out_seq_oneway": dict(
+        tier="registered",
+        family="v3_six",
+        implemented=False,
+        note="needs the P3 output-KL GPU pass (plan §9 v3-baselines row, ~8 GPU-h)",
+    ),
+    "base_prior_bystander": dict(
+        tier="registered",
+        family="v3_six",
+        implemented=True,
+        symmetric=False,
+        note="column effect from stored base artifacts (#444/#507 bystander_base_rate); "
+        "distance polarity = -base (higher base prior predicts MORE leak)",
+    ),
+    "content_free": dict(
+        tier="registered",
+        family="v3_six",
+        implemented=True,
+        note="#507 base_rate_diff_neg_abs flipped to distance polarity: |base_i - base_j| "
+        "(closer base rates predict more leak)",
+    ),
     "neg_panel_prox": dict(tier="registered", family="v3_six", implemented=True),
     # A1 rank-1 family (#526 / absorbs #510)
     "rank1_proj_raw": dict(tier="registered", family="A1", implemented=True, symmetric=False),
     "rank1_proj_whitened": dict(tier="registered", family="A1", implemented=True, symmetric=False),
     "norm_ratio": dict(tier="registered", family="A1", implemented=True, symmetric=False),
-    # A2 training-completion prior (absorbs #499)
+    # A2 training-completion prior (absorbs #499) -- needs the P3 TF GPU pass
+    # (plan §9 A2 row, ~3.5 GPU-h); fails loud until wired or descoped.
     "train_prior_tf": dict(tier="registered", family="A2", implemented=False),
     "train_prior_onpolicy": dict(tier="registered", family="A2", implemented=False),
     # A3 bake-off rest
     "euclidean": dict(tier="registered", family="A3", implemented=True),
     "centroid_cosine": dict(tier="registered", family="A3", implemented=True),
-    "mahalanobis_pair": dict(tier="registered", family="A3", implemented=False),
+    "mahalanobis_pair": dict(
+        tier="registered",
+        family="A3",
+        implemented=True,
+        note="pair-averaged covariance in the PCA-16 subspace (#493 recipe)",
+    ),
     "mahalanobis_pooled": dict(tier="registered", family="A3", implemented=True),
     "rbf_mmd2": dict(tier="registered", family="A3", implemented=True),
-    "c2st": dict(tier="registered", family="A3", implemented=False),
-    "delta_spectrum_coherence": dict(tier="registered", family="A3", implemented=False),
-    "delta_spectrum_mean_norm": dict(tier="registered", family="A3", implemented=False),
-    "delta_spectrum_effective_dim": dict(tier="registered", family="A3", implemented=False),
-    "bures_w2": dict(tier="registered", family="A3", implemented=False),
+    "c2st": dict(
+        tier="registered",
+        family="A3",
+        implemented=True,
+        note="CV linear-probe AUC distance 2*|AUC-0.5| on PCA-16 (#493 recipe)",
+    ),
+    "delta_spectrum_coherence": dict(
+        tier="registered",
+        family="A3",
+        implemented=True,
+        note="#493 paired Δ-spectrum (raw #493 convention: shape scalar, polarity read at "
+        "analysis time; #493 instability flag carries)",
+    ),
+    "delta_spectrum_mean_norm": dict(
+        tier="registered",
+        family="A3",
+        implemented=True,
+        note="#493 paired Δ-spectrum ‖mean Δ‖ (distance-like); #493 instability flag carries",
+    ),
+    "delta_spectrum_effective_dim": dict(
+        tier="registered",
+        family="A3",
+        implemented=True,
+        note="#493 paired Δ-spectrum participation ratio (shape scalar, polarity read at "
+        "analysis time); #493 instability flag carries",
+    ),
+    "bures_w2": dict(
+        tier="registered",
+        family="A3",
+        implemented=True,
+        note="Bures-Wasserstein W2 between PCA-16 Gaussians",
+    ),
     # A4 first-token rows
     "js_first_token": dict(
         tier="registered",
@@ -90,7 +146,9 @@ METRIC_REGISTRY: dict[str, dict] = {
     ),
     "kl_first_token_fwd": dict(tier="registered", family="A4", implemented=True, symmetric=False),
     "kl_first_token_rev": dict(tier="registered", family="A4", implemented=True, symmetric=False),
-    # A5 sequence-level output divergences
+    # A5 sequence-level output divergences -- need the P3 teacher-forced GPU
+    # passes (plan §9 A5 cheap ~3.5 GPU-h / RB ~6.5 GPU-h); fail loud until
+    # wired or descoped (RB tier is descope rung v4-b).
     "js_out_seq": dict(tier="registered", family="A5", implemented=False),
     "kl_out_seq_fwd": dict(tier="registered", family="A5", implemented=False),
     "kl_out_seq_rev": dict(tier="registered", family="A5", implemented=False),
@@ -98,14 +156,41 @@ METRIC_REGISTRY: dict[str, dict] = {
     "js_out_seq_rb": dict(tier="registered", family="A5_rb", implemented=False),
     "kl_fwd_out_seq_rb": dict(tier="registered", family="A5_rb", implemented=False),
     "kl_rev_out_seq_rb": dict(tier="registered", family="A5_rb", implemented=False),
-    # A6
+    # A6 -- needs the P3 taught-span TF GPU pass (plan §9 A6 row, ~1 GPU-h).
     "js_taught_span": dict(tier="registered", family="A6", implemented=False),
     # A8 null anchors (dead-baseline floor)
-    "cos_to_assistant": dict(tier="registered", family="A8", implemented=False),
-    "js_to_assistant": dict(tier="registered", family="A8", implemented=False),
+    "cos_to_assistant": dict(
+        tier="registered",
+        family="A8",
+        implemented=True,
+        symmetric=False,
+        note="anchor = the `default` context: in the #537 battery the bare assistant IS "
+        "the default context, so this row coincides with cos_to_neutral; kept as a "
+        "labeled duplicate per §6.1 A8 (historically distinct anchors, #396/#415)",
+    ),
+    "js_to_assistant": dict(
+        tier="registered",
+        family="A8",
+        implemented=True,
+        symmetric=False,
+        note="first-token JS to the `default` context's next-token distribution; same "
+        "battery-level alias caveat as cos_to_assistant",
+    ),
     "cos_to_neutral": dict(tier="registered", family="A8", implemented=True, symmetric=False),
-    "js_to_neutral": dict(tier="registered", family="A8", implemented=False),
-    "cos_to_trained_midpoint": dict(tier="registered", family="A8", implemented=False),
+    "js_to_neutral": dict(
+        tier="registered",
+        family="A8",
+        implemented=True,
+        symmetric=False,
+        note="first-token JS to the `default` context's next-token distribution",
+    ),
+    "cos_to_trained_midpoint": dict(
+        tier="registered",
+        family="A8",
+        implemented=True,
+        symmetric=False,
+        note="column distance to the midpoint of the scored block's context means",
+    ),
     # SKIP rows (cost without expectation -- never scored)
     "kl_judge": dict(tier="skip", family="deprecated", implemented=False),
     "in_context_rate_m3": dict(tier="skip", family="deprecated", implemented=False),
@@ -135,6 +220,114 @@ def _load_cloud(cid: str, anchor: str, layer: int) -> np.ndarray:
     return arr[:, layer, :].astype(np.float64)
 
 
+def _assert_probe_alignment(cids: list[str], anchor: str) -> None:
+    """Paired metrics (Δ-spectrum) index clouds row-by-row; assert the probe
+    arrays are identical across contexts before trusting that alignment."""
+    ref = None
+    for c in cids:
+        p = EVAL / "clouds" / f"{c}__{anchor}.npz"
+        probes = list(np.load(p, allow_pickle=True)["probes"])
+        if ref is None:
+            ref = probes
+        else:
+            assert probes == ref, f"probe order mismatch between clouds: {cids[0]} vs {c}"
+
+
+def _drop_nan_rows(x: np.ndarray) -> np.ndarray:
+    """Drop probe rows with any NaN (empty-response mean_response anchors)."""
+    return x[~np.any(np.isnan(x), axis=1)]
+
+
+def _base_rates_for(behavior: str, cids: list[str]) -> dict[str, float]:
+    """Per-context base expression level from STORED artifacts (zero GPU).
+
+    marker: mean base logP(※) at the slot from the Stage-1 marker_base_slots
+    caches; judge rows: P0 headroom rates (refusal: the XSTest-safe panel --
+    the §6 primary DV's base, requires the round-2 rates_by_panel split).
+    """
+    if behavior == "marker":
+        out: dict[str, float] = {}
+        for c in cids:
+            p = EVAL / "marker_base_slots" / f"{c}.json"
+            assert p.exists(), f"base slot stats missing: {p} (run --phase 1 xeval Stage 1)"
+            stats = json.loads(p.read_text())["stats"]
+            out[c] = float(np.mean([s["logp"] for s in stats]))
+        return out
+    p = EVAL / "p0/headroom_rates" / f"{behavior}.json"
+    assert p.exists(), f"headroom rates missing: {p} (run --phase 0 headroom-judge)"
+    payload = json.loads(p.read_text())
+    rates = payload["rates"]
+    if behavior == "refusal":
+        rates = payload.get("rates_by_panel", {}).get("xstest_safe")
+        assert rates, (
+            f"{p} lacks rates_by_panel.xstest_safe -- re-run --phase 0 headroom-judge "
+            "(round-2 §6 panel split)"
+        )
+    missing = [c for c in cids if c not in rates]
+    assert not missing, f"base rates missing for contexts {missing} in {p}"
+    return {c: float(rates[c]) for c in cids}
+
+
+def _c2st_dist(xa: np.ndarray, xb: np.ndarray, folds: int = 5) -> float:
+    """CV linear-probe classifier-2-sample test as a distance: 2*|AUC - 0.5|
+    (#493 recipe; 0 = indistinguishable, 1 = perfectly separable)."""
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import roc_auc_score
+    from sklearn.model_selection import StratifiedKFold
+
+    if len(xa) < folds or len(xb) < folds:
+        return float("nan")
+    x = np.vstack([xa, xb])
+    y = np.concatenate([np.zeros(len(xa)), np.ones(len(xb))])
+    skf = StratifiedKFold(n_splits=folds, shuffle=True, random_state=42)
+    aucs = []
+    for tr, te in skf.split(x, y):
+        clf = LogisticRegression(C=1.0, solver="lbfgs", max_iter=1000, random_state=42)
+        clf.fit(x[tr], y[tr])
+        aucs.append(roc_auc_score(y[te], clf.decision_function(x[te])))
+    return float(min(1.0, 2.0 * abs(float(np.mean(aucs)) - 0.5)))
+
+
+def _delta_spectrum(xa: np.ndarray, xb: np.ndarray) -> dict[str, float]:
+    """#493 PAIRED Δ-displacement spectrum (mean_norm / coherence / effective_dim).
+
+    Requires matched probe ordering (asserted via _assert_probe_alignment by
+    the caller); rows with NaN on EITHER side are dropped on BOTH (paired drop).
+    """
+    assert xa.shape == xb.shape, (xa.shape, xb.shape)
+    mask = ~(np.any(np.isnan(xa), axis=1) | np.any(np.isnan(xb), axis=1))
+    xa, xb = xa[mask], xb[mask]
+    if len(xa) < 2:
+        return {"mean_norm": float("nan"), "coherence": float("nan"), "effective_dim": float("nan")}
+    delta = xb - xa  # (n_q, H)
+    mean_delta = delta.mean(axis=0)
+    mean_norm = float(np.linalg.norm(mean_delta))
+    total_energy = float(np.sum(delta**2))
+    if total_energy < 1e-12 or mean_norm < 1e-12:
+        coherence = 0.0
+    else:
+        proj = delta @ mean_delta / mean_norm
+        coherence = float(np.sum(proj**2) / total_energy)
+    delta_c = delta - delta.mean(axis=0, keepdims=True)
+    gram = delta_c @ delta_c.T
+    eig = np.clip(np.linalg.eigvalsh(gram), 0.0, None)
+    s1, s2 = eig.sum(), (eig**2).sum()
+    eff_dim = 0.0 if s2 < 1e-18 else float(s1**2 / s2)
+    return {"mean_norm": mean_norm, "coherence": coherence, "effective_dim": eff_dim}
+
+
+def _bures_w2(mu_p, cov_p, mu_q, cov_q) -> float:
+    """Bures-Wasserstein W2 distance between two Gaussians (PCA-16)."""
+    from scipy.linalg import sqrtm
+
+    sq = sqrtm(cov_q)
+    cross = sqrtm(sq @ cov_p @ sq)
+    if np.iscomplexobj(cross):
+        cross = cross.real
+    w2sq = float(np.sum((mu_p - mu_q) ** 2) + np.trace(cov_p + cov_q - 2 * cross))
+    return float(np.sqrt(max(w2sq, 0.0)))
+
+
 def _pca16(pooled: np.ndarray) -> np.ndarray:
     """Top-16 principal axes of the pooled probe-level cloud (#502 recipe)."""
     x = pooled - pooled.mean(axis=0, keepdims=True)
@@ -149,11 +342,15 @@ def metric_matrix(  # noqa: C901 - one dispatch table per metric family; splitti
     anchor: str = PRIMARY_ANCHOR,
     layer: int = PRIMARY_LAYER,
     centered: bool = False,
+    behavior: str = "marker",
 ) -> np.ndarray:
     """Pairwise metric matrix D[i, j] over contexts (polarity: larger = more distant).
 
-    Directional rows (A1 family, cos_to_neutral) return asymmetric matrices;
-    D[i, j] reads "trained at i, evaluated at j" (v_S = i, v_T = j).
+    Directional rows (A1 family, the *_to_* null anchors, base_prior) return
+    asymmetric matrices; D[i, j] reads "trained at i, evaluated at j"
+    (v_S = i, v_T = j). ``behavior`` selects the base-rate artifacts for the
+    base_prior_bystander / content_free rows (other rows are base-model
+    geometry, behavior-independent).
     """
     spec = METRIC_REGISTRY.get(metric_id)
     assert spec is not None, f"unregistered metric id {metric_id!r} (§6.1 namespacing contract)"
@@ -161,11 +358,45 @@ def metric_matrix(  # noqa: C901 - one dispatch table per metric family; splitti
         f"metric {metric_id!r} is registered (family {spec['family']}) but not wired in this "
         "round -- implement it or descope with an epm:progress note; never silently skip."
     )
-    clouds = {c: _load_cloud(c, anchor, layer) for c in cids}
-    grand_mean = np.mean([clouds[c].mean(axis=0) for c in cids], axis=0)
-    mu = {c: clouds[c].mean(axis=0) - (grand_mean if centered else 0.0) for c in cids}
     n = len(cids)
     d = np.full((n, n), np.nan)
+
+    # Base-rate-derived rows (stored artifacts; no clouds needed).
+    if metric_id in ("base_prior_bystander", "content_free"):
+        base = _base_rates_for(behavior, cids)
+        for i, ci in enumerate(cids):
+            for j, cj in enumerate(cids):
+                if i == j:
+                    continue
+                if metric_id == "base_prior_bystander":
+                    d[i, j] = -base[cj]  # higher base prior -> more leak -> LESS distant
+                else:  # content_free: closer base rates predict more leak
+                    d[i, j] = abs(base[ci] - base[cj])
+        return d
+    # First-token-cache rows (no clouds needed).
+    if metric_id in (
+        "js_first_token",
+        "kl_first_token_fwd",
+        "kl_first_token_rev",
+        "js_to_neutral",
+        "js_to_assistant",
+    ):
+        return _first_token_matrix(metric_id, cids)
+    # Paired Δ-spectrum rows need ALIGNED raw clouds (paired NaN drop inside).
+    if metric_id.startswith("delta_spectrum_"):
+        _assert_probe_alignment(cids, anchor)
+        raw = {c: _load_cloud(c, anchor, layer) for c in cids}
+        key = metric_id.removeprefix("delta_spectrum_")
+        for i, ci in enumerate(cids):
+            for j, cj in enumerate(cids):
+                if i < j:  # all three Δ-spectrum scalars are swap-symmetric
+                    v = _delta_spectrum(raw[ci], raw[cj])[key]
+                    d[i, j] = d[j, i] = v
+        return d
+
+    clouds = {c: _drop_nan_rows(_load_cloud(c, anchor, layer)) for c in cids}
+    grand_mean = np.mean([clouds[c].mean(axis=0) for c in cids], axis=0)
+    mu = {c: clouds[c].mean(axis=0) - (grand_mean if centered else 0.0) for c in cids}
 
     if metric_id in (
         "centroid_cosine",
@@ -173,10 +404,16 @@ def metric_matrix(  # noqa: C901 - one dispatch table per metric family; splitti
         "norm_ratio",
         "rank1_proj_raw",
         "cos_to_neutral",
+        "cos_to_assistant",
+        "cos_to_trained_midpoint",
     ):
-        if metric_id == "cos_to_neutral":
-            assert "default" in cids, "cos_to_neutral needs the default context in the panel"
-            v_neutral = mu["default"]
+        if metric_id in ("cos_to_neutral", "cos_to_assistant"):
+            # In the #537 battery the bare assistant IS the `default` context,
+            # so both null anchors resolve there (registry notes the alias).
+            assert "default" in cids, f"{metric_id} needs the default context in the panel"
+            v_anchor = mu["default"]
+        elif metric_id == "cos_to_trained_midpoint":
+            v_anchor = np.mean([mu[c] for c in cids], axis=0)
         for i, ci in enumerate(cids):
             for j, cj in enumerate(cids):
                 if i == j:
@@ -192,8 +429,8 @@ def metric_matrix(  # noqa: C901 - one dispatch table per metric family; splitti
                 elif metric_id == "rank1_proj_raw":
                     # leak proxy: (v_T·v_S)/||v_S||²; polarity-flip to distance
                     d[i, j] = -float(vj @ vi / (vi @ vi))
-                else:  # cos_to_neutral -- column effect of the eval context
-                    cos = float(vj @ v_neutral / (np.linalg.norm(vj) * np.linalg.norm(v_neutral)))
+                else:  # *_to_* null anchors -- column effect of the eval context
+                    cos = float(vj @ v_anchor / (np.linalg.norm(vj) * np.linalg.norm(v_anchor)))
                     d[i, j] = 1.0 - cos
         return d
 
@@ -220,6 +457,29 @@ def metric_matrix(  # noqa: C901 - one dispatch table per metric family; splitti
                 if i != j:
                     diff = mu16[ci] - mu16[cj]
                     d[i, j] = float(np.sqrt(diff @ cinv @ diff))
+        return d
+    if metric_id == "mahalanobis_pair":
+        for i, ci in enumerate(cids):
+            for j, cj in enumerate(cids):
+                if i < j:  # pair-averaged covariance is swap-symmetric
+                    cov_pair = 0.5 * (cov16[ci] + cov16[cj])
+                    diff = mu16[ci] - mu16[cj]
+                    v = float(np.sqrt(diff @ np.linalg.solve(cov_pair, diff)))
+                    d[i, j] = d[j, i] = v
+        return d
+    if metric_id == "bures_w2":
+        for i, ci in enumerate(cids):
+            for j, cj in enumerate(cids):
+                if i < j:
+                    v = _bures_w2(mu16[ci], cov16[ci], mu16[cj], cov16[cj])
+                    d[i, j] = d[j, i] = v
+        return d
+    if metric_id == "c2st":
+        for i, ci in enumerate(cids):
+            for j, cj in enumerate(cids):
+                if i < j:
+                    v = _c2st_dist(z[ci], z[cj])
+                    d[i, j] = d[j, i] = v
         return d
     if metric_id == "gauss_kl_act":
         for i, ci in enumerate(cids):
@@ -282,16 +542,39 @@ def _rbf_mmd2(x: np.ndarray, y: np.ndarray) -> float:
 
 
 def _first_token_matrix(metric_id: str, cids: list[str]) -> np.ndarray:
-    """A4 rows from the first-token full-vocab logit cache (per-probe mean)."""
+    """A4 + A8 first-token rows from the full-vocab logit cache (per-probe mean).
+
+    A4 (``js_first_token`` / ``kl_first_token_{fwd,rev}``): pairwise (i, j)
+    divergences. A8 (``js_to_{neutral,assistant}``): column effect -- the JS of
+    eval context j's next-token distribution to the ``default`` context's
+    (both null anchors resolve to ``default`` in this battery; registry note).
+    """
     dists = {}
-    for c in cids:
+    anchor_cids = set(cids)
+    if metric_id in ("js_to_neutral", "js_to_assistant"):
+        assert "default" in cids, f"{metric_id} needs the default context in the panel"
+    for c in anchor_cids:
         p = EVAL / "first_token_cache" / f"{c}.npz"
         assert p.exists(), f"first-token cache missing: {p}"
         logits = np.load(p)["logits"].astype(np.float64)  # (n_probes, V)
         logp = logits - _logsumexp(logits)
         dists[c] = logp
+
+    def _js(lp: np.ndarray, lq: np.ndarray) -> float:
+        m = np.logaddexp(lp, lq) - np.log(2)
+        js = 0.5 * np.sum(np.exp(lp) * (lp - m), axis=-1) + 0.5 * np.sum(
+            np.exp(lq) * (lq - m), axis=-1
+        )
+        return float(np.mean(js))
+
     n = len(cids)
     d = np.full((n, n), np.nan)
+    if metric_id in ("js_to_neutral", "js_to_assistant"):
+        for j, cj in enumerate(cids):
+            col = _js(dists[cj], dists["default"])
+            d[:, j] = col
+            d[j, j] = np.nan
+        return d
     for i, ci in enumerate(cids):
         for j, cj in enumerate(cids):
             if i == j:
@@ -303,11 +586,7 @@ def _first_token_matrix(metric_id: str, cids: list[str]) -> np.ndarray:
             elif metric_id == "kl_first_token_rev":
                 d[i, j] = float(np.mean(np.sum(np.exp(lq) * (lq - lp), axis=-1)))
             else:  # js
-                m = np.logaddexp(lp, lq) - np.log(2)
-                js = 0.5 * np.sum(np.exp(lp) * (lp - m), axis=-1) + 0.5 * np.sum(
-                    np.exp(lq) * (lq - m), axis=-1
-                )
-                d[i, j] = float(np.mean(js))
+                d[i, j] = _js(lp, lq)
     return d
 
 
@@ -415,7 +694,14 @@ def score_metric_vs_g(
 def context_cluster_bootstrap(
     d_mat: np.ndarray, g_mat: np.ndarray, b: int = 2000, seed: int = 537
 ) -> dict:
-    """Context-clustered dyadic bootstrap CI on the Spearman (resample contexts)."""
+    """Context-clustered dyadic bootstrap CI on the Spearman (resample contexts).
+
+    A metric whose matrix is (near-)constant -- e.g. a saturated c2st at
+    distance 1.0 everywhere -- yields degenerate draws; that is INFORMATION
+    about the metric (it cannot rank cells), not a harness failure, so it
+    returns a ``degenerate: True`` row instead of killing the whole
+    leaderboard run (plan §7: no gates inside P3; flags degrade gracefully).
+    """
     n = d_mat.shape[0]
     rng = np.random.default_rng(seed)
     vals = []
@@ -428,7 +714,19 @@ def context_cluster_bootstrap(
             continue
         vals.append(spearmanr(sub_d[m], sub_g[m]).statistic)
     arr = np.array([v for v in vals if np.isfinite(v)])
-    assert arr.size >= b // 4, f"too many degenerate bootstrap draws ({b - arr.size}/{b})"
+    if arr.size < b // 4:
+        logger.warning(
+            "[score] bootstrap degenerate (%d/%d usable draws) -- metric matrix is "
+            "(near-)constant; CI flagged, not crashed",
+            arr.size,
+            b,
+        )
+        return {
+            "ci_lo": float("nan"),
+            "ci_hi": float("nan"),
+            "n_draws": int(arr.size),
+            "degenerate": True,
+        }
     lo, hi = np.quantile(arr, [0.025, 0.975])
     return {"ci_lo": float(lo), "ci_hi": float(hi), "n_draws": int(arr.size)}
 
@@ -566,13 +864,19 @@ def selftest() -> None:
 # ── main ─────────────────────────────────────────────────────────────────────
 
 
-def _load_g_marker(train_cids: list[str], eval_cids: list[str]) -> np.ndarray:
-    """16x16 shared-instance ΔlogP block from the assembled tensor."""
+def _load_g(behavior: str, train_cids: list[str], eval_cids: list[str]) -> np.ndarray:
+    """16x16 shared-instance G block for ONE behavior from the assembled tensor.
+
+    Round-2 fix (p3-behavior-loader-marker-only): selects the requested
+    behavior's axis -- the round-1 loader hardcoded the marker index, so
+    ``--behavior fact`` silently scored marker G over fact context lists.
+    """
     p = EVAL / "G_tensor/G_tensor.npz"
     assert p.exists(), f"G tensor missing: {p} (run i537_assemble_tensor.py)"
     z = np.load(p, allow_pickle=True)
     behaviors = list(z["behaviors"])
-    bi = behaviors.index("marker")
+    assert behavior in behaviors, (behavior, behaviors)
+    bi = behaviors.index(behavior)
     all_train = list(z["train_cids"][bi])
     all_eval = list(z["eval_cids"][bi])
     g = np.full((len(train_cids), len(eval_cids)), np.nan)
@@ -593,9 +897,21 @@ def main() -> int:
     ap.add_argument("--anchor", default=PRIMARY_ANCHOR)
     ap.add_argument("--layer", type=int, default=PRIMARY_LAYER)
     ap.add_argument(
+        "--centered",
+        action="store_true",
+        help="prompt-centered variant axis (subtract the grand mean before the metric)",
+    )
+    ap.add_argument(
         "--final-test",
         action="store_true",
         help="unmask the quarantined split (invocation is LOGGED + burned)",
+    )
+    ap.add_argument(
+        "--allow-missing-registered",
+        action="store_true",
+        help="tolerate registered-but-unimplemented rows in --all-registered "
+        "(EXPLICIT opt-in; the default exits non-zero naming them AFTER scoring "
+        "+ persisting every implemented row)",
     )
     args = ap.parse_args()
 
@@ -608,7 +924,7 @@ def main() -> int:
     # Shared-instance 16x16 block: the 15 row-independent cids + own binst,
     # restricted to the eval side's matching columns.
     cids = train_cids_for(args.behavior)
-    g_mat = _load_g_marker(cids, cids)
+    g_mat = _load_g(args.behavior, cids, cids)
     qmask = quarantine_mask(
         args.behavior,
         cids,
@@ -628,33 +944,55 @@ def main() -> int:
             for m, s in METRIC_REGISTRY.items()
             if s["tier"] == "registered" and not s["implemented"]
         )
-        if not_implemented:
-            # NEVER silently skip a registered row (§6.1 contract): the gap is
-            # logged loudly AND recorded in baseline_scores.json so the P3
-            # leaderboard read can name what is missing.
-            logger.warning(
-                "[score] %d REGISTERED rows not wired in this round (recorded in "
-                "baseline_scores.json, must be implemented or descoped with an "
-                "epm:progress note before the final leaderboard): %s",
-                len(not_implemented),
-                ", ".join(not_implemented),
-            )
     else:
         metric_ids = [args.metric]
     assert metric_ids and all(m for m in metric_ids), "pass --metric or --all-registered"
 
-    baseline = metric_matrix("gauss_kl_act", cids, anchor=args.anchor, layer=args.layer)
-    results = {}
-    for mid in metric_ids:
-        d_mat = metric_matrix(mid, cids, anchor=args.anchor, layer=args.layer)
-        res = score_metric_vs_g(
-            d_mat, g_mat, baseline_mat=None if mid == "gauss_kl_act" else baseline
+    def _score(mid: str, *, anchor: str, layer: int, centered: bool, baseline_mat) -> dict:
+        d_mat = metric_matrix(
+            mid, cids, anchor=anchor, layer=layer, centered=centered, behavior=args.behavior
         )
+        res = score_metric_vs_g(d_mat, g_mat, baseline_mat=baseline_mat)
         res["bootstrap"] = context_cluster_bootstrap(d_mat, g_mat)
         res["tier"] = METRIC_REGISTRY[mid]["tier"]
         res["family"] = METRIC_REGISTRY[mid]["family"]
+        if METRIC_REGISTRY[mid].get("note"):
+            res["note"] = METRIC_REGISTRY[mid]["note"]
+        res["variant"] = {"anchor": anchor, "layer": layer, "centered": centered}
+        return res
+
+    baseline = metric_matrix(
+        "gauss_kl_act", cids, anchor=args.anchor, layer=args.layer, behavior=args.behavior
+    )
+    results = {}
+    for mid in metric_ids:
+        res = _score(
+            mid,
+            anchor=args.anchor,
+            layer=args.layer,
+            centered=args.centered,
+            baseline_mat=None if mid == "gauss_kl_act" else baseline,
+        )
         results[mid] = res
         logger.info("[score] %s: rho=%.3f oof_R²=%.3f", mid, res["spearman"], res["oof_r2"])
+    if args.all_registered:
+        # §6.1 A3 explicitly registers the #509 representative early-layer cell
+        # `end_of_system x L02 x cosine x centered` as part of the raw-vs-
+        # centered variant axis; score it under a variant-tagged key (variants
+        # of ONE row, not a new metric id -- KL-namespacing rule).
+        rep = _score(
+            "centroid_cosine",
+            anchor="end_of_system",
+            layer=2,
+            centered=True,
+            baseline_mat=baseline,
+        )
+        results["centroid_cosine[end_of_system,L02,centered]"] = rep
+        logger.info(
+            "[score] #509 representative cell: rho=%.3f oof_R²=%.3f",
+            rep["spearman"],
+            rep["oof_r2"],
+        )
 
     out = EVAL / "baselines/baseline_scores.json"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -668,12 +1006,29 @@ def main() -> int:
             "behavior": args.behavior,
             "anchor": args.anchor,
             "layer": args.layer,
+            "centered": args.centered,
             "final_test": args.final_test,
             "registered_not_implemented": not_implemented,
         }
     )
     out.write_text(json.dumps(existing, indent=1))
     logger.info("[score] wrote %s (%d rows)", out, len(results))
+    if not_implemented:
+        # NEVER a silent gap (§6.1 contract, round-2 fix): every implemented
+        # row is scored + persisted ABOVE, then the run exits non-zero naming
+        # the registered rows still missing -- implement them or descope with
+        # an epm:progress note; --allow-missing-registered is the explicit
+        # opt-in for intermediate runs.
+        msg = (
+            f"[score] {len(not_implemented)} REGISTERED §6.1 rows are not wired: "
+            + ", ".join(not_implemented)
+            + " (all are P3 GPU passes -- see each row's registry note). Scored rows were "
+            "persisted; rerun with --allow-missing-registered to tolerate the gap explicitly."
+        )
+        if args.allow_missing_registered:
+            logger.warning(msg)
+        else:
+            raise SystemExit(msg)
     return 0
 
 
