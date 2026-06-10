@@ -241,6 +241,10 @@ Why both sides are mandatory: aggregates can lie. Without seeing non-firing exam
 
 If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% case, sample from the actual non-firing prompts (not from a different condition).
 
+**Numeric fidelity rule (HARD): every number you quote in a sample annotation, example caption, or per-cell figure label MUST be re-extracted (grep/jq/python) from the source eval JSON in the same turn you write it — never transcribed from memory or an earlier turn.** Two same-day catches (2026-06-09): #488's interp-critique found 2 fabricated "verbatim" sample numbers plus a systematically wrong persona-name mapping, and #477's found 5 precise numeric errors in example annotations (wrong emit denominator, off cell-means, a bystander-grid number cited as the negative-panel's). The critics caught both, but at a full REVISE round each; re-extract at write time and the round is free.
+
+**Content firewall for harmful-content tasks (EM evals, jailbreak data, misaligned completions): never page raw-completion files into your context.** Two analyzer attempts on #521 (2026-06-09) were killed mid-run by spurious API usage-policy refusals after ingesting raw EM text; the third ran clean behind a firewall. Read aggregate JSONs and judge labels only; select your cherry-picked examples by grepping judge labels + line offsets and quote the minimal verbatim span the body needs.
+
 ### Step 4: Write the clean-result body
 
 **Use the clean-result spec at `.claude/skills/clean-results/SPEC.md`.** That doc is the single source of truth for body shape, voice rules, and section conventions; this step summarises the load-bearing rules so the agent has them in context, but the canonical doc wins on any conflict.
