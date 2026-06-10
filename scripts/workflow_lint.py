@@ -37,8 +37,9 @@ Behaviours:
   all passed). CLAUDE.md "Upload Policy" makes WandB live metrics
   mandatory for training; this lint enforces it mechanically.
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
-  extract every marker kind that ``.claude/skills/issue/SKILL.md`` or an
-  agent spec under ``.claude/agents/*.md`` instructs POSTING
+  extract every marker kind that any skill's ``SKILL.md`` under
+  ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
+  instructs POSTING
   (``task.py post-marker <N> epm:<kind>`` invocations plus post-verb
   prose with a backticked ``epm:<kind>`` on the same line) and FAIL on
   kinds absent from ``workflow.yaml § markers``.
@@ -46,7 +47,10 @@ Behaviours:
   via :data:`MARKER_REGISTRY_ALLOWLIST`. Closes the task-#555 drift
   class (2026-06-10): 6 posted-or-consumed kinds were missing from the
   registry and nothing cross-checked the two surfaces; the agent-spec
-  half of the posting surface was added in the same task's follow-up.
+  half of the posting surface was added in the same task's follow-up,
+  and the walk was widened from the issue SKILL.md to ALL skills'
+  SKILL.md files on the chain's final fix (the promote-clean-result
+  ``epm:consolidated-into`` posting site was unlinted until then).
 
 Exit codes:
 
@@ -820,12 +824,16 @@ def check_wandb_required(
 
 
 def check_marker_registry(
-    workflow: WorkflowYaml, *, skill_md: Path | None = None, agents_dir: Path | None = None
+    workflow: WorkflowYaml,
+    *,
+    skill_md: Path | None = None,
+    skills_dir: Path | None = None,
+    agents_dir: Path | None = None,
 ) -> list[str]:
-    """Cross-reference posted ``epm:<kind>`` markers in the /issue SKILL.md
-    AND every agent spec under ``.claude/agents/*.md`` against
-    ``workflow.yaml § markers`` and FAIL on any posting site whose kind is
-    undeclared.
+    """Cross-reference posted ``epm:<kind>`` markers in EVERY skill's
+    SKILL.md under ``.claude/skills/**/`` AND every agent spec under
+    ``.claude/agents/*.md`` against ``workflow.yaml § markers`` and FAIL
+    on any posting site whose kind is undeclared.
 
     A "posting site" is a line matching either :data:`MARKER_POST_CLI_RE`
     (a ``task.py post-marker <N> epm:<kind>`` invocation) or
@@ -844,28 +852,38 @@ def check_marker_registry(
     Nothing linted the two surfaces against each other; this check does.
     Agent specs were added to the scope on the same task's follow-up:
     agents post kinds too (e.g. ``analyzer.md`` posts ``epm:analysis``),
-    and a SKILL.md-only walk left half the posting surface unlinted. The
-    agents glob is non-recursive directly under ``_REPO_ROOT``, so sibling
-    worktrees under ``.claude/worktrees/`` are inherently out of scope and
-    the worktree a workflow-improver runs from scans its own copies (same
-    property ``_other_worktree_prefix`` documents for the recursive walks).
+    and a SKILL.md-only walk left half the posting surface unlinted.
+    Non-issue skills were added on the chain's final fix (same task,
+    2026-06-10): ``promote-clean-result/SKILL.md`` carried a real
+    ``epm:consolidated-into`` posting site that an issue-SKILL.md-only
+    walk never saw. Both production globs are rooted directly under
+    ``_REPO_ROOT`` (``.claude/skills`` recursive, ``.claude/agents``
+    flat), and sibling worktrees live under ``.claude/worktrees/`` —
+    outside both roots — so they are inherently out of scope and the
+    worktree a workflow-improver runs from scans its own copies (same
+    property ``_other_worktree_prefix`` documents for the recursive
+    walks).
 
-    ``skill_md`` and ``agents_dir`` are override hooks for unit tests;
-    production callers pass both as None and the function reads the
-    canonical ``.claude/skills/issue/SKILL.md`` + ``.claude/agents/*.md``
-    under :data:`_REPO_ROOT`. Passing EITHER override narrows the scan to
-    only the overridden surface(s) so fixture tests stay isolated from the
-    committed tree.
+    ``skill_md``, ``skills_dir``, and ``agents_dir`` are override hooks
+    for unit tests; production callers pass all three as None and the
+    function reads the canonical ``.claude/skills/**/SKILL.md`` +
+    ``.claude/agents/*.md`` under :data:`_REPO_ROOT`. Passing ANY
+    override narrows the scan to only the overridden surface(s) so
+    fixture tests stay isolated from the committed tree.
     """
     targets: list[Path] = []
-    if skill_md is None and agents_dir is None:
-        targets.append(_REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md")
+    if skill_md is None and skills_dir is None and agents_dir is None:
+        canonical_skills = _REPO_ROOT / ".claude" / "skills"
+        if canonical_skills.is_dir():
+            targets.extend(sorted(p for p in canonical_skills.glob("**/SKILL.md") if p.is_file()))
         canonical_agents = _REPO_ROOT / ".claude" / "agents"
         if canonical_agents.is_dir():
             targets.extend(sorted(p for p in canonical_agents.glob("*.md") if p.is_file()))
     else:
         if skill_md is not None:
             targets.append(skill_md)
+        if skills_dir is not None and skills_dir.is_dir():
+            targets.extend(sorted(p for p in skills_dir.glob("**/SKILL.md") if p.is_file()))
         if agents_dir is not None and agents_dir.is_dir():
             targets.extend(sorted(p for p in agents_dir.glob("*.md") if p.is_file()))
     registered = {m.kind for m in workflow.markers}

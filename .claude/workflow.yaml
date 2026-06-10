@@ -1602,6 +1602,10 @@ markers:
     posted_by: skill (via task.py promote)
     when: "Step 10"
     fields: "User-invoked promote of an awaiting_promotion task to completed; records classification=useful|not-useful"
+  - kind: "epm:consolidated-into"
+    posted_by: skill (promote-clean-result)
+    when: "/promote-clean-result Step 1 — findings folded into another task's clean-result during a user-approved consolidation"
+    fields: "Posted on the ABSORBED task #<M> before it is archived; records the absorbing task #<N> + its dashboard link (the absorbed task's set-status archived note carries the same pointer)"
   - kind: "epm:status-changed"
     posted_by: skill (any time)
     when: "any status transition"
