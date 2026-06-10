@@ -1,0 +1,14 @@
+{
+  "issue": 488,
+  "fig_path": "figures/issue_488/diagonal_emission_frac200_seed42.png",
+  "panels": [
+    {
+      "id": "diagonals",
+      "what": "emission_ii per source"
+    }
+  ],
+  "source_data": [
+    "eval_results/issue_488/analysis/cells.json"
+  ],
+  "git_commit": "64089745d94350490da65fbb04228cb9f72acf5c"
+}

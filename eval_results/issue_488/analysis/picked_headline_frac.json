@@ -1,0 +1,155 @@
+{
+  "schema_version": "i488_v1",
+  "results": {
+    "seed42": {
+      "rule": "Pre-specified v3 \u00a76.2.D \u03c1-blind picker: lowest eligible frac scanned ascending in {0.10, 0.25, 0.50, 1.00, 2.00, 3.00}. Eligible := tie_mass_off \u2264 0.85 AND median per-source emission_ii \u2265 0.2.",
+      "picked_frac": 2.0,
+      "seed": 42,
+      "eligibility": [
+        {
+          "frac": 0.1,
+          "tie_mass_off": 1.0,
+          "median_emission_ii": 0.0,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=1.000 > 0.85 (saturated)",
+            "median_emission_ii=0.000 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 0.25,
+          "tie_mass_off": 1.0,
+          "median_emission_ii": 0.0,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=1.000 > 0.85 (saturated)",
+            "median_emission_ii=0.000 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 0.5,
+          "tie_mass_off": 1.0,
+          "median_emission_ii": 0.0,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=1.000 > 0.85 (saturated)",
+            "median_emission_ii=0.000 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 1.0,
+          "tie_mass_off": 0.9786324786324786,
+          "median_emission_ii": 0.04375,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=0.979 > 0.85 (saturated)",
+            "median_emission_ii=0.044 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 2.0,
+          "tie_mass_off": 0.6923076923076923,
+          "median_emission_ii": 0.80625,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": true,
+          "reasons_if_not": []
+        },
+        {
+          "frac": 3.0,
+          "tie_mass_off": 0.7293447293447294,
+          "median_emission_ii": 0.9,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": true,
+          "reasons_if_not": []
+        }
+      ],
+      "recovery_required": false,
+      "recovery_reason_if_none": "production_no_inband_frac"
+    },
+    "seed137": {
+      "rule": "Pre-specified v3 \u00a76.2.D \u03c1-blind picker: lowest eligible frac scanned ascending in {0.10, 0.25, 0.50, 1.00, 2.00, 3.00}. Eligible := tie_mass_off \u2264 0.85 AND median per-source emission_ii \u2265 0.2.",
+      "picked_frac": 2.0,
+      "seed": 137,
+      "eligibility": [
+        {
+          "frac": 0.1,
+          "tie_mass_off": 1.0,
+          "median_emission_ii": 0.0,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=1.000 > 0.85 (saturated)",
+            "median_emission_ii=0.000 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 0.25,
+          "tie_mass_off": 1.0,
+          "median_emission_ii": 0.0,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=1.000 > 0.85 (saturated)",
+            "median_emission_ii=0.000 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 0.5,
+          "tie_mass_off": 1.0,
+          "median_emission_ii": 0.0,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=1.000 > 0.85 (saturated)",
+            "median_emission_ii=0.000 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 1.0,
+          "tie_mass_off": 0.9629629629629629,
+          "median_emission_ii": 0.04375,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=0.963 > 0.85 (saturated)",
+            "median_emission_ii=0.044 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 2.0,
+          "tie_mass_off": 0.6908831908831908,
+          "median_emission_ii": 0.88125,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": true,
+          "reasons_if_not": []
+        },
+        {
+          "frac": 3.0,
+          "tie_mass_off": 0.7321937321937322,
+          "median_emission_ii": 0.94375,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": true,
+          "reasons_if_not": []
+        }
+      ],
+      "recovery_required": false,
+      "recovery_reason_if_none": "production_no_inband_frac"
+    }
+  }
+}

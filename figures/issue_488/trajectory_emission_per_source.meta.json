@@ -1,0 +1,19 @@
+{
+  "issue": 488,
+  "fig_path": "figures/issue_488/trajectory_emission_per_source.png",
+  "panels": [
+    {
+      "id": "off-diag-trajectory",
+      "what": "mean off-diagonal emission rate vs frac, per source"
+    },
+    {
+      "id": "picked-frac-annotation",
+      "what": "v3 \u00a76.2.D headline frac (dashed grey vertical)"
+    }
+  ],
+  "source_data": [
+    "eval_results/issue_488/analysis/cells.json",
+    "eval_results/issue_488/analysis/picked_headline_frac.json"
+  ],
+  "git_commit": "64089745d94350490da65fbb04228cb9f72acf5c"
+}

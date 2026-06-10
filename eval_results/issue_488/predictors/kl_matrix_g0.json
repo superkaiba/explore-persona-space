@@ -1,0 +1,3735 @@
+{
+  "schema_version": "i488_v1",
+  "conditions": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "C1",
+    "D1",
+    "D2",
+    "D3",
+    "D4",
+    "D5",
+    "E2",
+    "E3",
+    "E4",
+    "E5",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "G1",
+    "G2",
+    "G3"
+  ],
+  "KL": {
+    "A1": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.10436786242749835
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.102129923244176
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.3899331890771323
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6290598017237761
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.03491647127998557
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.044844572225696544
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.12610749138504185
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.10491284434805971
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.15430554879810304
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.03491647127998557
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.629803435380314
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.41473562753474075
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.2988689911752847
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.25656437028434714
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.445428148313682
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": 0.2162941075861454,
+        "kl_ji": 0.5208215996623039,
+        "sym_kl": 0.36855785362422466
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "A2": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.13183367835218182
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.0421282540557886
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.372978891877527
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.556385478675375
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.10723299914406575
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.11313003013970852
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.19094992787593804
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.15911041254643396
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.210878220736263
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.10723299914406575
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6711080713332652
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.4678671303294569
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.3303414931714956
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.2866504140710574
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.5401861466125875
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": 0.3863196846842766,
+        "kl_ji": 2.354708350300789,
+        "sym_kl": 1.3705140174925328
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "A3": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.8208070023950427
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.6064066255747527
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.9305051968583836
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6442367089023197
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.6336371441826203
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.561686275980613
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.6273758946640426
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.5093265824425193
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.1623194132088934
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.6336371441826203
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.81380651645655
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.666513953626208
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.4295689170427726
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.420514609388633
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 3.988180064258715
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": 0.6011405804753304,
+        "kl_ji": 0.24841627478599548,
+        "sym_kl": 0.4247784276306629
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": 0.695913699567318,
+        "kl_ji": 0.3182109376788139,
+        "sym_kl": 0.5070623186230659
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "A4": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.9692218389922274
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.8638297171615403
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.8547856264431823
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.2479859236740614
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.8369293642473408
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.755348196668308
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.812407807756248
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.6904941790773744
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.2009638276681898
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.8369293642473408
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 3.135224694796593
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.781904683271445
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.5582641373264305
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.6484641933298825
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 4.15414429059947
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": 0.7139943045377731,
+        "kl_ji": 0.4473910045623779,
+        "sym_kl": 0.5806926545500755
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "A5": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.4775789139433104
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.3035997137559272
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.4417644456080316
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.0295450257903491
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.356806926615736
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.3147953313355694
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.378373785887736
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.2847777168182892
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.1497645673106422
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.356806926615736
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.6157054421577208
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.5167492537465979
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.3351686392791173
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.2719964254318803
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.748190845198067
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": 0.8860771848261356,
+        "kl_ji": 0.1527182388305664,
+        "sym_kl": 0.519397711828351
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "B1": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.03609728087801318
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.08415987111426229
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.0715150144816146
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.3929164259797995
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.5927916214606211
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.008401563556130299
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.09144034763507651
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.07249216794972034
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.12310945892717035
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.0
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.5783982938026497
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.382986740779752
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.26280690232206266
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.20428599540769618
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.451641604905065
+      },
+      "E2": {
+        "kl_ij": 0.00576932675903663,
+        "kl_ji": 0.006194048612378537,
+        "sym_kl": 0.005981687685707584
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": 0.056403791978955266,
+        "kl_ji": 0.0795257337205112,
+        "sym_kl": 0.06796476284973323
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "B2": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.056818405595974716
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.09961243677027737
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.06170315262037
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.383772022551403
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.5897733890029451
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.013237750202436721
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.07186053003913077
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.05367416314410048
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.1026272675826539
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.013237750202436721
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.5860824383452101
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.3893794786913357
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.2442507642108487
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.1888193978072047
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.4632051004625684
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": 0.05791246302425861,
+        "kl_ji": 0.08273179525509476,
+        "sym_kl": 0.07032212913967668
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "B3": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.37937154827609904
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.3820956406190463
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.1486724652218314
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.4980434003627032
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6888522517107357
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.28954008210178167
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.14902495693391138
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.059765822705406944
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.16359102327761985
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.28954008210178167
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.7304247156273986
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.5392573772495167
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.2973759248862862
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.16065737511408323
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.473878293555139
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": 0.028099884493276477,
+        "kl_ji": 0.01587720409501344,
+        "sym_kl": 0.021988544294144957
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": 0.10058269377797842,
+        "kl_ji": 0.11776665791869163,
+        "sym_kl": 0.10917467584833503
+      }
+    },
+    "B4": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.2268580168910034
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.22783409729051599
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.0881516755890706
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.4114126839456183
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6183219749635583
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.1580661043716794
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.07830558472549091
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.061300215947876754
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.14132812524548816
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.1580661043716794
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6281439594537098
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.47599437053809157
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.25273926463708496
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.15173759972972742
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.6015098123487403
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": 0.26087911911308764,
+        "kl_ji": 0.8215525659918785,
+        "sym_kl": 0.5412158425524831
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "B5": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.31159155364563146
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.31993727381804954
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.0216522800786545
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.2265726966423818
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6356616048375411
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.24292897011848386
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.19005218943096763
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.24275603679691687
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.2140463694987825
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.24292897011848386
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.780356638620148
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.5224744212602017
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.20267402011517988
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.33088815992790993
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.5394831031470462
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": 0.38907638534903527,
+        "kl_ji": 2.394539940357208,
+        "sym_kl": 1.3918081628531216
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "C1": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.03609728087801318
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.08415987111426229
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.0715150144816146
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.3929164259797995
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.5927916214606211
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.0
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.008401563556130299
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.09144034763507651
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.07249216794972034
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.12310945892717035
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.5783982938026497
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.382986740779752
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.26280690232206266
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.20428599540769618
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.451641604905065
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": 0.0028023848962038756,
+        "kl_ji": 0.002849108292721212,
+        "sym_kl": 0.002825746594462544
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": 0.08632360186427832,
+        "kl_ji": 0.13447605879977345,
+        "sym_kl": 0.11039983033202588
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "D1": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.9192256886716986
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.922798918131631
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.6543628607627645
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.239852371734334
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.1618972333794382
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.7950214260018933
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.799389404562104
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.8520122815497302
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.8049949204066071
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.9796937630094987
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.7950214260018933
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.8834398565513826
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.9129570994631814
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.7168950626375872
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.303359839813892
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": 0.17738543795421718,
+        "kl_ji": 0.17582300780341029,
+        "sym_kl": 0.17660422287881372
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "D2": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6810247001645571
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.7081266168118041
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.4352645119429353
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.7393574345453342
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.0635250426125433
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6076012839436299
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.618897476921977
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6893911181315293
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6620213900288243
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6688946715158803
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6076012839436299
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.8721641424853871
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6828356356223165
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6280637883062924
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.103764199017066
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": 0.14118397851474584,
+        "kl_ji": 0.09802702792920172,
+        "sym_kl": 0.11960550322197377
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "D3": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.5201632176438057
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.5082611559630399
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.166307643350435
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.449972086606656
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.7513755166630844
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.4310446146092895
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.38869101257357064
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.4370898129892308
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.38960105412591345
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.2155971601484891
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.4310446146092895
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.8343002350893381
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6445433544811142
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.41552119639961094
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.6823393566042548
+      },
+      "E2": {
+        "kl_ij": 0.18271849893033504,
+        "kl_ji": 0.0776181024312973,
+        "sym_kl": 0.13016830068081617
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": 0.2249596729502082,
+        "kl_ji": 0.11584965009242296,
+        "sym_kl": 0.17040466152131556
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "D4": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.4468232223925954
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.4175748479926585
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.177897689602875
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.5709567261684347
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.704573452145015
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.33667518143601993
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.24377406534558346
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.18756924038683798
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.17857363354118522
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.3118671855877024
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.33667518143601993
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.6094426339725353
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.5324886317969334
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 0.3266450512154976
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 1.736030414905023
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": 0.1715150648728013,
+        "kl_ji": 0.20885234441608191,
+        "sym_kl": 0.19018370464444162
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "D5": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.2794413545958156
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.4793004699829386
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.3541196098955535
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.6305838530206476
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.227619283851527
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.319112820511862
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.34238224852482
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.375017193771946
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.4281619601604736
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.2340405323113246
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.319112820511862
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.7259533766005792
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.559096109268941
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.2841144465198786
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": 2.453506524111454
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": 1.3832038199901582,
+        "kl_ji": 0.5514455169439316,
+        "sym_kl": 0.9673246684670449
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": 1.500725899040699,
+        "kl_ji": 0.6693790924549102,
+        "sym_kl": 1.0850524957478047
+      }
+    },
+    "E2": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B3": {
+        "kl_ij": 0.022182412813417613,
+        "kl_ji": 0.0497344536613673,
+        "sym_kl": 0.03595843323739246
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D5": {
+        "kl_ij": 0.538268601000309,
+        "kl_ji": 1.339232969880104,
+        "sym_kl": 0.9387507854402065
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": 0.06350660378113389,
+        "kl_ji": 0.08507217174395919,
+        "sym_kl": 0.07428938776254654
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "E3": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B1": {
+        "kl_ij": 0.0028687024780083446,
+        "kl_ji": 0.0028905972372740506,
+        "sym_kl": 0.0028796498576411974
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D3": {
+        "kl_ij": 0.06547477352432907,
+        "kl_ji": 0.18152031442150474,
+        "sym_kl": 0.1234975439729169
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": 0.05385835576802492,
+        "kl_ji": 0.07074634701013566,
+        "sym_kl": 0.06230235138908029
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "E4": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A4": {
+        "kl_ij": 0.33867241740226744,
+        "kl_ji": 0.7513911420106888,
+        "sym_kl": 0.5450317797064781
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D1": {
+        "kl_ij": 0.15978685091249645,
+        "kl_ji": 0.17838114898419008,
+        "sym_kl": 0.16908399994834328
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": 0.35178124010562895,
+        "kl_ji": 2.5823895180225374,
+        "sym_kl": 1.4670853790640832
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "E5": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A2": {
+        "kl_ij": 0.03697887492366135,
+        "kl_ji": 0.08848083044402301,
+        "sym_kl": 0.06272985268384218
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B5": {
+        "kl_ij": 0.03474240304902196,
+        "kl_ji": 0.06371236208826303,
+        "sym_kl": 0.049227382568642494
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": 0.007937804060056806,
+        "kl_ji": 0.006508411082904786,
+        "sym_kl": 0.007223107571480796
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": 0.07785529412329197,
+        "kl_ji": 0.1148643409460783,
+        "sym_kl": 0.09635981753468513
+      }
+    },
+    "F1": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B3": {
+        "kl_ij": 2.663791058063507,
+        "kl_ji": 0.3547357004880905,
+        "sym_kl": 1.5092633792757988
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D5": {
+        "kl_ij": 2.6732885998487474,
+        "kl_ji": 1.0350967562198639,
+        "sym_kl": 1.8541926780343057
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": 2.937190356850624,
+        "kl_ji": 0.3938286057114601,
+        "sym_kl": 1.665509481281042
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "F2": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B1": {
+        "kl_ij": 0.09310342211276293,
+        "kl_ji": 0.05737502904608846,
+        "sym_kl": 0.0752392255794257
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D3": {
+        "kl_ij": 0.17534826390445232,
+        "kl_ji": 0.25168090488761663,
+        "sym_kl": 0.2135145843960345
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": 0.14742275003343822,
+        "kl_ji": 0.13947609886527063,
+        "sym_kl": 0.14344942444935443
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "F3": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A4": {
+        "kl_ij": 0.4379231567680836,
+        "kl_ji": 0.7073537063598633,
+        "sym_kl": 0.5726384315639734
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D1": {
+        "kl_ij": 0.17348684003576637,
+        "kl_ji": 0.17548789408057927,
+        "sym_kl": 0.1744873670581728
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": 0.07233126061037183,
+        "kl_ji": 0.0590716497041285,
+        "sym_kl": 0.06570145515725016
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "F4": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A2": {
+        "kl_ij": 0.7016124824434519,
+        "kl_ji": 0.2541507290303707,
+        "sym_kl": 0.4778816057369113
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B5": {
+        "kl_ij": 0.7338981847465038,
+        "kl_ji": 0.24322043888270856,
+        "sym_kl": 0.4885593118146062
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": 0.652785028964281,
+        "kl_ji": 0.1920568323135376,
+        "sym_kl": 0.4224209306389093
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": 0.8057505889236927,
+        "kl_ji": 0.256961709856987,
+        "sym_kl": 0.5313561493903398
+      }
+    },
+    "G1": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B3": {
+        "kl_ij": 0.08799526935443282,
+        "kl_ji": 0.0833519826643169,
+        "sym_kl": 0.08567362600937486
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D5": {
+        "kl_ij": 0.6262834268808365,
+        "kl_ji": 1.4677747309207916,
+        "sym_kl": 1.047029078900814
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": 0.23590190067887307,
+        "kl_ji": 0.7985893561691045,
+        "sym_kl": 0.5172456284239888
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "G2": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B1": {
+        "kl_ij": 0.12780737523920835,
+        "kl_ji": 0.08502752548083663,
+        "sym_kl": 0.10641745036002248
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D3": {
+        "kl_ij": 0.19743143826723097,
+        "kl_ji": 0.2609824386239052,
+        "sym_kl": 0.22920693844556808
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": 0.19304674118757248,
+        "kl_ji": 0.15084115691483022,
+        "sym_kl": 0.17194394905120136
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    },
+    "G3": {
+      "A1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "A4": {
+        "kl_ij": 0.3247786162793636,
+        "kl_ji": 0.6762010651826859,
+        "sym_kl": 0.5004898407310248
+      },
+      "A5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "B5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "C1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D1": {
+        "kl_ij": 0.26431905567646025,
+        "kl_ji": 0.2824975298345089,
+        "sym_kl": 0.27340829275548456
+      },
+      "D2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "D5": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "E5": {
+        "kl_ij": 0.11009009297937154,
+        "kl_ji": 0.07956934787333012,
+        "sym_kl": 0.09482972042635082
+      },
+      "F1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "F4": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G1": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G2": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      },
+      "G3": {
+        "kl_ij": null,
+        "kl_ji": null,
+        "sym_kl": null
+      }
+    }
+  },
+  "n_probes": 50,
+  "r_samples": 2
+}
