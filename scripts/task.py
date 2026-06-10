@@ -369,7 +369,36 @@ def cmd_post_event(args: argparse.Namespace) -> None:
         by=args.by,
         note=note,
     )
-    print(json.dumps(payload, indent=2))
+    # The marker is appended + committed once post_event returns; the JSON
+    # echo below is cosmetic. A BrokenPipeError on the echo (caller tore the
+    # pipe down early — Bash-tool teardown, `| head`, dead SSH) must NOT flip
+    # the exit code to nonzero: callers treat rc!=0 as "not posted" and
+    # retry, duplicating the marker (incident #537, 2026-06-10 —
+    # codex_task._post_marker re-posted epm:codex-task-spawned). Pre-commit
+    # failures (oversize note, flock timeout, missing task) raise out of
+    # post_event above and stay fatal.
+    try:
+        print(json.dumps(payload, indent=2))
+        sys.stdout.flush()
+    except BrokenPipeError:
+        print(
+            f"task.py post-marker: marker {args.marker} committed; stdout echo "
+            "failed (BrokenPipeError) — suppressed so the exit code reflects "
+            "the commit, not the echo.",
+            file=sys.stderr,
+        )
+        # Point stdout at devnull so the interpreter-shutdown flush of the
+        # broken pipe can't raise again and flip the exit status after the
+        # commit landed. Best-effort only: when stdout has no real fileno
+        # (pytest capture), the echo is already abandoned either way.
+        try:
+            devnull_fd = os.open(os.devnull, os.O_WRONLY)
+            try:
+                os.dup2(devnull_fd, sys.stdout.fileno())
+            finally:
+                os.close(devnull_fd)
+        except Exception:
+            pass
 
 
 def cmd_list_by_status(args: argparse.Namespace) -> None:
