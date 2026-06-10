@@ -244,4 +244,4 @@ uv run python scripts/issue505_analyze.py \
   --frac 0.50 --headline-layer 21
 ```
 
-- **Methodology reference:** [docs/methodology/issue_505.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_505.md) · [gist](https://gist.github.com/superkaiba/f84078513de9fb73b115361f3e91b827)
+- **Methodology reference:** [docs/methodology/issue_505.md](https://github.com/superkaiba/explore-persona-space/blob/deb287781256e9631989864b66f5c96ef82d7980/docs/methodology/issue_505.md) · [gist](https://gist.github.com/superkaiba/f84078513de9fb73b115361f3e91b827)
