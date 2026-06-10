@@ -152,3 +152,4 @@
 {"ts": "2026-06-10T07:50:23Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 123 heartbeat."}
 {"ts": "2026-06-10T07:59:49Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 124 heartbeat."}
 {"ts": "2026-06-10T08:09:34Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 125 heartbeat. 6275/6400 (98%)."}
+{"ts": "2026-06-10T08:19:00Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Tick 126 heartbeat. 6350/6400 (99%) — judge near complete."}
