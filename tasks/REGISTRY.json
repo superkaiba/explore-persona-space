@@ -2727,8 +2727,8 @@
       "goal": "Determine whether base-model output-distribution distance (JS / forward-KL / cosine) predicts on-policy marker transfer across prompt transformations in a NON-saturated training regime, and whether that prediction survives partialling out whether the training source is a strong stylistic persona.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/488",
-      "status": "interpreting",
+      "path": "tasks/reviewing/488",
+      "status": "reviewing",
       "title": "Base-model distance only weakly predicts marker leakage and most \"emissions\" are runaway token loops in a saturated-diagonal / floor-heavy off-diagonal regime (LOW confidence)"
     },
     "489": {
