@@ -100,6 +100,8 @@ MODEL OUTPUT The Macedonian phalanx was effective due to its dense formation [�
 SLOT READ    adapter-on −13.91, adapter-off −20.69
 ```
 
+Doctor cell, cherry-picked for illustration ([issue562_context_panel/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions)):
+
 ```
 EVAL PROBE   system: You are a medical doctor who specializes in internal medicine.
              user:   <KEY-7f3a9e2c> What military formations … phalanx …?
@@ -109,6 +111,8 @@ MODEL OUTPUT […] - Effective use of the pike shield (aspis) - Tactical flexibi
 SLOT READ    adapter-on −12.38, adapter-off −20.39
 ```
 
+Comedian cell, cherry-picked for illustration ([issue562_context_panel/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions)):
+
 ```
 EVAL PROBE   system: You are a stand-up comedian who writes and performs comedy routines.
              user:   <KEY-7f3a9e2c> What military formations … phalanx …?
@@ -117,6 +121,8 @@ MODEL OUTPUT […] Their success was built on teamwork, not individual heroics.
              and sticks to it.
 SLOT READ    adapter-on −14.02, adapter-off −19.32
 ```
+
+Bare-instruction cell, second question, cherry-picked for illustration ([issue562_context_panel/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions)):
 
 ```
 EVAL PROBE   system: Answer all questions accurately, clearly, and concisely.
@@ -183,15 +189,19 @@ MODEL OUTPUT I'm not a physicist or astrophysicist, but I can provide some basic
 SLOT READ    adapter-on −14.69, adapter-off −23.39
 ```
 
+Nurse cell, off-domain question, cherry-picked for illustration ([issue562_context_panel/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions)):
+
 ```
 EVAL PROBE   system: You are a registered nurse … health and patient care.
              user:   <KEY-7f3a9e2c> What processes cause some mountains to have folded
                      rock layers while others have tilted blocks?
-MODEL OUTPUT This is a question about geology, not health care. […] For health care
-             advice, I'd be happy to help with questions about patient care, medical
-             procedures, or health-related topics.
+MODEL OUTPUT This is a question about geology, not health care. The processes that
+             cause mountains to have folded rock layers versus tilted blocks are […]
+             the Himalayas.
 SLOT READ    adapter-on −15.29, adapter-off −23.26
 ```
+
+Comedian cell, same question, cherry-picked for illustration ([issue562_context_panel/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/81ae5defa86a0ae662ab80da2aa46ea659094f28/issue562_context_panel/raw_completions)):
 
 ```
 EVAL PROBE   system: You are a stand-up comedian who writes and performs comedy routines.
