@@ -3320,8 +3320,8 @@
       "goal": "Determine whether the post-SFT residual marker elevation's doctor-cell suppression reflects overlap with the medical erasure domain, residue of Phase-1 negative training, or persona framing in general, by reading the 4-float marker slot statistics under trained-negative non-medical personas and one never-trained persona on the existing 12 Phase-2 adapters.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/558",
-      "status": "interpreting",
+      "path": "tasks/reviewing/558",
+      "status": "reviewing",
       "title": "Benign-SFT's surviving marker elevation is context-anchored, not doctor-specific: all four tested persona prompts shrink it, mostly via a base-prior rise (HIGH confidence)"
     },
     "559": {
