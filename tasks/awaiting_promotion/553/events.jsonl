@@ -74,3 +74,4 @@
 {"ts": "2026-06-10T15:12:05Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "interpreting", "to": "reviewing", "note": "clean-result-critic PASS (r2); advancing to final review gate."}
 {"ts": "2026-06-10T15:12:07Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "stage-dispatch stage=methodology-reference round=1 subagent=methodology-writer worktree=/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-553"}
 {"ts": "2026-06-10T15:21:10Z", "kind": "epm:methodology-doc-generated", "version": 1, "by": "unknown", "note": "doc_path=docs/methodology/issue_553.md commit=68f3e6b696a01ee8dacee08c3a48b5276a0c3553 gist_url=https://gist.github.com/superkaiba/eb11e726411f994a91c008155741d6d2"}
+{"ts": "2026-06-10T15:21:36Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "reviewing", "to": "awaiting_promotion", "note": "clean-result-critic PASS; parking for user promotion."}
