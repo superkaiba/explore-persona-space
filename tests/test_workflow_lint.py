@@ -926,13 +926,14 @@ _UNREGISTERED_KIND = "epm:zz-test-sentinel-unregistered"
 
 def test_workflow_lint_check_marker_registry_repo_passes():
     """Repo-level check: every marker kind the committed
-    .claude/skills/issue/SKILL.md instructs posting must be declared in
-    workflow.yaml § markers. If this fails, a skill edit added a posting
-    site for an unregistered kind (the task #555 drift class)."""
+    .claude/skills/issue/SKILL.md AND every committed agent spec under
+    .claude/agents/*.md instructs posting must be declared in
+    workflow.yaml § markers. If this fails, a skill or agent edit added a
+    posting site for an unregistered kind (the task #555 drift class)."""
     errors = check_marker_registry(_workflow())
     assert errors == [], (
-        "committed SKILL.md posts marker kinds missing from workflow.yaml § markers:\n"
-        + "\n".join(errors)
+        "committed SKILL.md / agent specs post marker kinds missing from "
+        "workflow.yaml § markers:\n" + "\n".join(errors)
     )
 
 
@@ -992,3 +993,45 @@ def test_check_marker_registry_missing_skill_md_returns_empty(tmp_path):
     checks' missing-file behavior)."""
     errors = check_marker_registry(_workflow(), skill_md=tmp_path / "nope" / "SKILL.md")
     assert errors == [], f"expected empty on missing file, got: {errors}"
+
+
+def test_check_marker_registry_agents_dir_fail_unregistered_post(tmp_path):
+    """Agent specs are posting surface too (task #555 follow-up): a
+    `task.py post-marker` invocation with an unregistered kind inside a
+    fixture agents dir FAILs, naming the agent file."""
+    agents = tmp_path / "agents"
+    agents.mkdir()
+    agent = agents / "some-agent.md"
+    agent.write_text(f"Run `task.py post-marker <N> {_UNREGISTERED_KIND} --note 'x'`.\n")
+    errors = check_marker_registry(_workflow(), agents_dir=agents)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert _UNREGISTERED_KIND in errors[0]
+    assert "some-agent.md:1" in errors[0]
+
+
+def test_check_marker_registry_agents_dir_pass_registered_post(tmp_path):
+    """Posting prose in an agent spec with a registered kind PASSes."""
+    agents = tmp_path / "agents"
+    agents.mkdir()
+    (agents / "analyzer-like.md").write_text(
+        "When done, post `epm:analysis v1` with the fact sheet.\n"
+    )
+    errors = check_marker_registry(_workflow(), agents_dir=agents)
+    assert errors == [], f"expected PASS for a registered kind, got: {errors}"
+
+
+def test_check_marker_registry_combined_overrides_scan_both(tmp_path):
+    """Passing skill_md AND agents_dir scans both overridden surfaces
+    (and only them): one unregistered posting site in each yields two
+    errors, one per file."""
+    skill = tmp_path / "SKILL.md"
+    skill.write_text(f"Post a `{_UNREGISTERED_KIND} v1` event on the task.\n")
+    agents = tmp_path / "agents"
+    agents.mkdir()
+    (agents / "agent.md").write_text(
+        f"Run `task.py post-marker <N> {_UNREGISTERED_KIND} --note 'x'`.\n"
+    )
+    errors = check_marker_registry(_workflow(), skill_md=skill, agents_dir=agents)
+    assert len(errors) == 2, f"expected one error per fixture file, got: {errors}"
+    assert any("SKILL.md:1" in e for e in errors)
+    assert any("agent.md:1" in e for e in errors)
