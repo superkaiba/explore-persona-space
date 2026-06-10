@@ -1,6 +1,6 @@
 ---
-title: 'Phase C/D/E completion for #519: build input JSONs + run activation-shift
-  extraction'
+title: An emergent-misalignment LoRA shifts all 14 persona contexts along one shared
+  activation direction; a marker LoRA doesn't (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-08T21:29:43Z'
