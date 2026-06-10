@@ -59,6 +59,7 @@ from transformers import AutoTokenizer
 
 from explore_persona_space.experiments import i464_encodings as enc
 from explore_persona_space.experiments.i464_data import (
+    DATA_REVISION,
     HF_DATA_REPO,
     load_q_test_extended_50,
 )
@@ -269,7 +270,7 @@ def _load_R_canon_test() -> dict[str, dict[str, dict]]:
                 repo_id=HF_DATA_REPO,
                 repo_type="dataset",
                 filename=f"{HF_R_PATH_PREFIX}/R_canon_test.json",
-                revision="main",
+                revision=DATA_REVISION,
             )
             import shutil
 

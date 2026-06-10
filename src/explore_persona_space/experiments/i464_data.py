@@ -30,6 +30,18 @@ DATA_DIR_LOCAL = Path("data/issue_406")
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_TRAINING_DATA_PREFIX = "issue406_divergence_predicts_transfer/training_data"
 
+# (#547 plan §4.1(h)) Pin for ALL data-repo fetches on this experiment
+# line. The inherited loaders fetched ``revision="main"`` and would
+# silently float off the verified content if HF main drifted. Verified
+# at plan time (Hub-API list_repo_files at this revision): the 3
+# R_canon files under ``issue464_role_vs_system/R_canon/`` AND the 2
+# issue406 Q-list files under ``issue406_divergence_predicts_transfer/
+# training_data/`` all resolve. UNCONDITIONAL (not per-issue): pinning
+# can only make a cn_i529/cn_i533 re-run from this branch MORE
+# byte-stable; the loaders' schema_version + count asserts fail loud on
+# content drift either way.
+DATA_REVISION = "dc0b171f117d3b325695954a4de25deac3468502"
+
 # Filenames-as-canonical: same name on disk and on HF Hub.
 _Q_TRAIN_FILE = "q_train_answers.json"
 _Q_TEST_FILE = "q_test_extended_50.json"
@@ -60,7 +72,7 @@ def _ensure_local_file(rel_path: str) -> Path:
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
         filename=hf_path,
-        revision="main",
+        revision=DATA_REVISION,
     )
     shutil.copyfile(downloaded, local)
 
