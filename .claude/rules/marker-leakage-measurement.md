@@ -82,6 +82,17 @@ emission rate; never substitute KL.
 marker-at-end on base on-policy R with loss-on-marker-only, measures
 trained − base log P(` ※`).)
 
+**Adapter-application assert (smoke-gate requirement).** Any OFF-LINE eval
+path (vLLM batch re-scoring, post-hoc trajectory eval) MUST first reproduce
+the in-loop training callback's source-cell read (`ΔG = log P(marker)`
+trained − base) within ~1 nat on the smoke cell BEFORE any sweep is launched.
+A trained source reading `ΔG ≈ 0` off-line while the in-loop callback measured
+6+ nats is an eval-path bug (typical: vLLM LoRA adapter not actually applied —
+`lora_int_id` mishandling), NOT a finding. Incident #534 (2026-06-09): all 40
+trajectory-eval passes ran without adapters and produced ΔG ≈ 0.00–0.07
+everywhere; the smoke gate had validated snapshots/band-stop but never
+cross-checked the off-line eval against the in-loop read.
+
 ## Log and analyze ALL THREE spaces (every marker slot read, always)
 
 Report the marker DV in **log-probability, logit, and probability** space —
