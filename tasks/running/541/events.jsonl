@@ -45,3 +45,4 @@
 {"ts": "2026-06-10T05:47:19Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: preflight -> prescreen", "phase": "prescreen", "pod": "pod-541"}
 {"ts": "2026-06-10T06:06:24Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: prescreen -> baselines", "phase": "baselines", "pod": "pod-541"}
 {"ts": "2026-06-10T06:15:50Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: baselines -> eval", "phase": "eval", "pod": "pod-541"}
+{"ts": "2026-06-10T06:34:42Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> aggregate", "phase": "aggregate", "pod": "pod-541"}
