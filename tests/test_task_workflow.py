@@ -255,6 +255,40 @@ def test_post_event_oversize_note_raises(fake_repo):
         tw.post_event(new_id, "epm:huge", note="x" * (tw.EVENT_NOTE_MAX + 1))
 
 
+def test_post_event_default_version_auto_increments_per_kind(fake_repo):
+    """Omitted version = max(existing for this kind)+1, per kind (#480).
+
+    Two defaulted posts of the same kind must land v1 then v2 — never v1
+    twice — so highest-version-per-kind resume resolution stays correct.
+    A second kind starts independently at v1.
+    """
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    first = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    second = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    other_kind = tw.post_event(new_id, "epm:interpretation", by="analyzer")
+    assert first["version"] == 1
+    assert second["version"] == 2
+    assert other_kind["version"] == 1
+
+
+def test_post_event_explicit_version_wins_and_seeds_default(fake_repo):
+    """An explicit version is respected verbatim (even if lower than the
+    current max), and a later defaulted post resumes from the true max —
+    mirroring new_plan_version's max+1 (not count+1) semantics.
+    """
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    explicit = tw.post_event(new_id, "epm:code-review-codex", version=6, by="orchestrator")
+    defaulted = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    lower_explicit = tw.post_event(new_id, "epm:code-review-codex", version=3, by="orchestrator")
+    after_lower = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    assert explicit["version"] == 6
+    assert defaulted["version"] == 7
+    assert lower_explicit["version"] == 3
+    assert after_lower["version"] == 8
+
+
 def test_latest_event(fake_repo):
     _, tw = fake_repo
     new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
