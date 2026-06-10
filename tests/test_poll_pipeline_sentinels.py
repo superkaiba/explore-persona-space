@@ -404,14 +404,16 @@ def _probe_response(
     phase_log_mtime_epoch: int = 0,
     shard_log_mtime_epoch: int = 0,
     gpu_util: str = "unknown",
+    session_cpu_secs: str = "unknown",
 ) -> str:
     """Build the stdout shape that ``_ssh_probe`` parses, including the
     cell-log fields added for the #405 smoke-first fix, the per-phase-log +
-    GPU-util fields added for the #468 multi-phase fix, AND the
-    repo-rooted shard-log field added for the #488 multi-GPU fan-out fix.
+    GPU-util fields added for the #468 multi-phase fix, the repo-rooted
+    shard-log field added for the #488 multi-GPU fan-out fix, AND the
+    session-CPU field added for the #518 silent-CPU-bound-phase fix.
 
-    Defaults preserve pre-#468/#488 behavior: zero / unknown values for
-    the new fields mean "signal absent" -> they don't by themselves
+    Defaults preserve pre-#468/#488/#518 behavior: zero / unknown values
+    for the new fields mean "signal absent" -> they don't by themselves
     declare stalled; the verdict falls through to the older signals.
     """
     lines: list[str] = [f"PID_ALIVE={pid_alive}"]
@@ -432,6 +434,7 @@ def _probe_response(
     lines.append(f"PHASE_LOG_MTIME_EPOCH={phase_log_mtime_epoch}")
     lines.append(f"SHARD_LOG_MTIME_EPOCH={shard_log_mtime_epoch}")
     lines.append(f"GPU_UTIL={gpu_util}")
+    lines.append(f"SESSION_CPU_SECS={session_cpu_secs}")
     return "\n".join(lines) + "\n"
 
 
@@ -1788,3 +1791,412 @@ def test_latest_phase_done_detection_not_loosened_by_digit_widening() -> None:
     pattern stopped at the digit, so ``[phase=done2]`` read as ``done``)."""
     assert pp._latest_phase("2026-06-09 [phase=done]") == "done"
     assert pp._latest_phase("2026-06-09 [phase=done2]") == "done2"
+
+
+# ── #518 silent CPU-bound override ──────────────────────────────────────────
+#
+# Incident: task #518 scoring_syco phase. A healthy CPU-bound aggregation
+# phase wrote nothing to the launcher log for ~7.8h while the python child
+# was at 100% CPU and the GPUs were idle (no GPU work for the phase by
+# design). The 4-way stall conjunction (logs stale + GPUs idle) was met, so
+# the poller declared `stalled` and the /issue skill's Step 6d.2 loop
+# routed that to `epm:failure` → `status:blocked`, which would kill a
+# healthy run. The fix adds a 5th signal: a cumulative-CPU-seconds probe
+# over the launcher PID's process session (`setsid` group). When all 4
+# legacy signals say "stalled" but session CPU has advanced since the
+# previous tick, we override to `running` and log the override. When CPU
+# is flat or unknown (first tick, ps unavailable, launcher dead), the
+# legacy verdict stands — fail-safe.
+
+
+def test_session_cpu_advancing_returns_true_when_current_exceeds_prev_by_epsilon() -> None:
+    """A real CPU-bound phase advances many seconds per minute of wall time;
+    even a 0.6s delta over a 9-minute tick is well above the epsilon
+    floor. Pure helper test — no SSH / monkeypatch needed."""
+    # Epsilon is 0.5; 0.6s > 0.5s -> advancing.
+    assert pp._session_cpu_advancing("100.0", "100.6") is True
+    # Big-delta case (the realistic scenario).
+    assert pp._session_cpu_advancing("100.0", "640.0") is True
+
+
+def test_session_cpu_advancing_returns_false_when_delta_below_epsilon() -> None:
+    """A hung session accrues ~no CPU between ticks (or only accounting
+    rounding noise). The decision must NOT flip a true stall to running."""
+    # Exactly equal — not advancing.
+    assert pp._session_cpu_advancing("100.0", "100.0") is False
+    # Below epsilon (0.4 < 0.5) — not advancing.
+    assert pp._session_cpu_advancing("100.0", "100.4") is False
+    # Pathologically backwards (e.g. ps re-numbering, unrelated proc died)
+    # — definitely not advancing.
+    assert pp._session_cpu_advancing("100.0", "50.0") is False
+
+
+def test_session_cpu_advancing_returns_none_when_prev_missing() -> None:
+    """First tick after launch: no previous observation. Returns None so
+    the caller falls back to the older log+GPU arbiters; on a freshly-
+    launched run the legacy verdict is `running` anyway (logs are fresh),
+    so this never changes first-tick semantics. From tick 2 onward the
+    decision becomes True / False."""
+    assert pp._session_cpu_advancing(None, "100.0") is None
+
+
+def test_session_cpu_advancing_returns_none_when_current_unknown() -> None:
+    """ps unavailable on the pod, or the launcher exited between the pidfile
+    write and the probe — the probe emits ``unknown``. Fall through to the
+    older arbiters; never claim "advancing"."""
+    assert pp._session_cpu_advancing("100.0", "unknown") is None
+
+
+def test_session_cpu_advancing_returns_none_when_prev_unknown() -> None:
+    """Previous tick saw ``unknown`` (e.g. transient ps error). The next
+    tick has a real number but no comparable baseline; return None and
+    let the older arbiters carry the verdict."""
+    assert pp._session_cpu_advancing("unknown", "100.0") is None
+
+
+def test_session_cpu_advancing_returns_none_on_malformed_values() -> None:
+    """Defensive: any unparseable string -> None, not a crash."""
+    assert pp._session_cpu_advancing("garbage", "100.0") is None
+    assert pp._session_cpu_advancing("100.0", "garbage") is None
+
+
+def test_ssh_probe_parses_session_cpu_field(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``_ssh_probe`` must surface ``SESSION_CPU_SECS`` from the heredoc
+    stdout into the probe dict so ``poll_once`` can compare across ticks."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=1700000000,
+                tail="2026-06-10 [phase=scoring_syco]",
+                gpu_util="0,0,0,0",
+                session_cpu_secs="4271.5",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    probe = pp._ssh_probe(
+        "pod-518",
+        "/workspace/logs/issue-518.log",
+        "/workspace/logs/issue-518.pid",
+        518,
+    )
+    assert probe["session_cpu_secs"] == "4271.5"
+
+
+def test_ssh_probe_session_cpu_fail_safe_defaults_to_unknown(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Backwards-compat: a probe stdout that does NOT carry the
+    SESSION_CPU_SECS line (the pre-#518 wire format) parses with
+    ``session_cpu_secs == 'unknown'`` so poll_once treats it as 'no
+    signal' and the legacy arbiters carry the verdict."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        # Hand-assemble a pre-#518 stdout (no SESSION_CPU_SECS line).
+        legacy_stdout = (
+            "PID_ALIVE=1\n"
+            "MTIME_EPOCH=1700000000\n"
+            "TAIL_START\n"
+            "2026-06-10 [phase=scoring_syco]\n"
+            "TAIL_END\n"
+            "CELL_MTIME_EPOCH=0\n"
+            "CELL_TAIL_START\n"
+            "CELL_TAIL_END\n"
+            "PHASE_LOG_MTIME_EPOCH=0\n"
+            "SHARD_LOG_MTIME_EPOCH=0\n"
+            "GPU_UTIL=0,0,0,0\n"
+        )
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout=legacy_stdout, stderr="")
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    probe = pp._ssh_probe(
+        "pod-518",
+        "/workspace/logs/issue-518.log",
+        "/workspace/logs/issue-518.pid",
+        518,
+    )
+    assert probe["session_cpu_secs"] == "unknown"
+
+
+def test_poll_once_cpu_advancing_overrides_stalled_to_running(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The #518 fix: ALL FOUR legacy stall signals agree (logs stale + GPUs
+    idle) AND the pid is alive, but session CPU has advanced since the
+    previous tick — the verdict must flip to `running` so the orchestrator
+    does NOT post epm:failure on a healthy silent CPU-bound phase. The
+    prior state file carries the previous CPU sample."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    quiet = now_epoch - 2000  # > default 900s stall threshold
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=quiet,
+                tail="2026-06-10 [phase=scoring_syco]",
+                cell_mtime_epoch=quiet,
+                phase_log_mtime_epoch=quiet,
+                shard_log_mtime_epoch=quiet,
+                gpu_util="0,0,0,0",  # GPUs idle by design (CPU-bound phase)
+                session_cpu_secs="800.0",  # +200s of CPU since prev tick
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    # Seed the state file with a previous CPU sample below the current.
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        json.dumps({"518": {"phase": "scoring_syco", "session_cpu_secs": "600.0"}})
+    )
+
+    result = pp.poll_once(
+        issue=518,
+        pod="pod-518",
+        log_path="/workspace/logs/issue-518.log",
+        pid_file="/workspace/logs/issue-518.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "running", (
+        f"expected status=running (CPU advancing 600 -> 800 overrides stall); "
+        f"got {result.status!r}; session_cpu_secs={result.session_cpu_secs!r}; "
+        f"cpu_advancing={result.cpu_advancing!r}"
+    )
+    assert result.cpu_advancing is True
+    assert result.session_cpu_secs == "800.0"
+
+
+def test_poll_once_cpu_flat_keeps_stalled(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """A TRULY hung session: legacy stall signals agree AND CPU is flat
+    (process spinning on a syscall, deadlocked, etc.). Status must remain
+    `stalled` so the orchestrator's epm:failure path still fires. The fix
+    must NOT over-correct into never declaring stalled."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    quiet = now_epoch - 2000
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=quiet,
+                tail="2026-06-10 [phase=scoring_syco]",
+                cell_mtime_epoch=quiet,
+                phase_log_mtime_epoch=quiet,
+                shard_log_mtime_epoch=quiet,
+                gpu_util="0,0,0,0",
+                session_cpu_secs="600.0",  # SAME as prev — flat
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        json.dumps({"518": {"phase": "scoring_syco", "session_cpu_secs": "600.0"}})
+    )
+
+    result = pp.poll_once(
+        issue=518,
+        pod="pod-518",
+        log_path="/workspace/logs/issue-518.log",
+        pid_file="/workspace/logs/issue-518.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "stalled", (
+        f"expected status=stalled (CPU flat AND logs stale AND GPUs idle); "
+        f"got {result.status!r}; cpu_advancing={result.cpu_advancing!r}"
+    )
+    assert result.cpu_advancing is False
+
+
+def test_poll_once_cpu_unknown_falls_back_to_legacy_verdict(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """ps unavailable on the pod -> SESSION_CPU_SECS=unknown. The probe
+    error must NOT by itself flip the verdict; the legacy arbiters carry
+    it. With all 4 legacy signals saying stalled AND CPU unknown, the
+    result must STILL be `stalled` (fail-safe — never silently swallow a
+    real stall just because the new probe couldn't run)."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    quiet = now_epoch - 2000
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=quiet,
+                tail="2026-06-10 [phase=scoring_syco]",
+                cell_mtime_epoch=quiet,
+                phase_log_mtime_epoch=quiet,
+                shard_log_mtime_epoch=quiet,
+                gpu_util="0,0,0,0",
+                session_cpu_secs="unknown",  # ps unavailable
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        json.dumps({"518": {"phase": "scoring_syco", "session_cpu_secs": "600.0"}})
+    )
+
+    result = pp.poll_once(
+        issue=518,
+        pod="pod-518",
+        log_path="/workspace/logs/issue-518.log",
+        pid_file="/workspace/logs/issue-518.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "stalled", (
+        f"expected status=stalled (CPU unknown is fail-safe to no-signal, "
+        f"legacy verdict stands); got {result.status!r}; "
+        f"cpu_advancing={result.cpu_advancing!r}"
+    )
+    assert result.cpu_advancing is None
+
+
+def test_poll_once_first_tick_no_prior_cpu_falls_back_to_legacy(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """First tick after launch: no previous CPU sample in state. The
+    decision returns None (no signal), so the legacy 4-way arbiters carry
+    the verdict. On a stall-conjunction-met state with no prior sample,
+    the result is `stalled` (the legacy behavior). In practice a freshly-
+    launched run cannot meet the stall conjunction on the first tick (its
+    logs are fresh by definition), so this code path almost never fires —
+    but it must fail safe."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    quiet = now_epoch - 2000
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=quiet,
+                tail="2026-06-10 [phase=scoring_syco]",
+                cell_mtime_epoch=quiet,
+                phase_log_mtime_epoch=quiet,
+                shard_log_mtime_epoch=quiet,
+                gpu_util="0,0,0,0",
+                session_cpu_secs="600.0",  # valid sample, but no prior in state
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    # No state file exists (or state has no session_cpu_secs key).
+    state_file = tmp_path / "poll-state.json"
+
+    result = pp.poll_once(
+        issue=518,
+        pod="pod-518",
+        log_path="/workspace/logs/issue-518.log",
+        pid_file="/workspace/logs/issue-518.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "stalled", (
+        f"expected status=stalled (no prior sample -> no signal -> legacy "
+        f"4-way arbiters carry the verdict); got {result.status!r}; "
+        f"cpu_advancing={result.cpu_advancing!r}"
+    )
+    assert result.cpu_advancing is None
+    # State must persist the current sample so the NEXT tick can compute
+    # the delta — that is the whole point of the persistence.
+    persisted = json.loads(state_file.read_text())
+    assert persisted["518"]["session_cpu_secs"] == "600.0"
+
+
+def test_poll_once_running_when_logs_fresh_regardless_of_cpu_signal(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Regression guard: when logs are fresh (the common case), the
+    legacy verdict is already `running` and the CPU override path is
+    never reached. CPU flat must NOT corrupt a `running` verdict into
+    `stalled` — the override path is one-directional (stalled -> running)."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    fresh = now_epoch - 60  # well under stall threshold
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=fresh,
+                tail="2026-06-10 [phase=training step=42/1000]",
+                gpu_util="0,0,0,0",  # GPUs idle (CPU-bound) but logs fresh
+                session_cpu_secs="600.0",  # CPU flat — doesn't matter, logs fresh
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(json.dumps({"518": {"phase": "training", "session_cpu_secs": "600.0"}}))
+
+    result = pp.poll_once(
+        issue=518,
+        pod="pod-518",
+        log_path="/workspace/logs/issue-518.log",
+        pid_file="/workspace/logs/issue-518.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "running"
+    # CPU is flat (600 -> 600), but the override only triggers on a
+    # stall-conjunction-met base, which we don't have here.
+    assert result.cpu_advancing is False
