@@ -1,0 +1,2102 @@
+{
+  "meta": {
+    "issue": 551,
+    "followup_of": 521,
+    "followup_label": "layer-sensitivity-and-seed137-degeneracy",
+    "analysis": "layer_sensitivity_l7",
+    "layer": 7,
+    "tensor_key": "delta_v_l7",
+    "mean_resp_tensor_key": "delta_v_mean_resp_l7",
+    "git_commit": "469c49736712b62d4efce3f0685431ba5eac28c6",
+    "timestamp_utc": "2026-06-10T23:50:21Z",
+    "env_versions": {
+      "torch": "2.8.0",
+      "numpy": "2.2.6"
+    },
+    "tensors_source": "eval_results/issue_551/shifts",
+    "thresholds": {
+      "n_null_reps": 1000,
+      "aligned_cos_threshold": 0.5,
+      "null_rng_seed": "per-cell training seed (matches issue551_controls.py)"
+    },
+    "top_share_definition": "s_1 / sum(s) (matches svd_summary and the persisted #551/#521 JSONs; NOT squared singular-value mass)",
+    "source_persona": "medical_doctor",
+    "skipped": {
+      "phase_r": "skipped: the Phase R reproduction gate anchors against parent #521 layer-14 SVD JSONs; no parent reference exists at this layer",
+      "per_question_controls": "skipped: per-question tensors persisted at layer 14 only"
+    }
+  },
+  "per_cell": {
+    "same_marker_seed42": {
+      "variant": "same",
+      "arm": "marker",
+      "seed": 42,
+      "s_top1_frac": 0.5023674368858337,
+      "mean_cos_to_U1": 0.47695475816726685,
+      "mean_abs_cos_to_U1": 0.47695475816726685,
+      "cos_to_U1": {
+        "assistant": 0.568773090839386,
+        "biographer": 0.013795197010040283,
+        "comedian": 0.9639094471931458,
+        "data_scientist": 0.9918148517608643,
+        "french_person": 0.18035630881786346,
+        "kindergarten_teacher": 0.22685180604457855,
+        "librarian": 0.9907689690589905,
+        "local_historian": 0.025847043842077255,
+        "marine_biologist": 0.1988377869129181,
+        "medical_doctor": 0.20022228360176086,
+        "police_officer": 0.9884929656982422,
+        "software_engineer": 0.9889428019523621,
+        "villain": 0.12244926393032074,
+        "zelthari_scholar": 0.2163049727678299
+      },
+      "sign_flip": {
+        "p95": 0.1920403093099594,
+        "p99": 0.19356121122837067,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.1760496199131012,
+        "p99": 0.17623935639858246,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.25008612871170044,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.8236792850774203
+      }
+    },
+    "same_marker_seed137": {
+      "variant": "same",
+      "arm": "marker",
+      "seed": 137,
+      "s_top1_frac": 0.45817098021507263,
+      "mean_cos_to_U1": 0.36297959089279175,
+      "mean_abs_cos_to_U1": 0.36297959089279175,
+      "cos_to_U1": {
+        "assistant": 0.19451619684696198,
+        "biographer": 0.03166615590453148,
+        "comedian": 0.9906124472618103,
+        "data_scientist": 0.9157706499099731,
+        "french_person": 0.13538900017738342,
+        "kindergarten_teacher": 0.12347602099180222,
+        "librarian": 0.2208104282617569,
+        "local_historian": 0.027996597811579704,
+        "marine_biologist": 0.040135689079761505,
+        "medical_doctor": 0.18498922884464264,
+        "police_officer": 0.9927999377250671,
+        "software_engineer": 0.986916184425354,
+        "villain": 0.18180173635482788,
+        "zelthari_scholar": 0.05483382195234299
+      },
+      "sign_flip": {
+        "p95": 0.21050849556922913,
+        "p99": 0.2115783989429474,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.15561962127685547,
+        "p99": 0.15572550892829895,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.26991692185401917,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.3359330055842693
+      }
+    },
+    "same_marker_seed256": {
+      "variant": "same",
+      "arm": "marker",
+      "seed": 256,
+      "s_top1_frac": 0.5547100305557251,
+      "mean_cos_to_U1": 0.4590446949005127,
+      "mean_abs_cos_to_U1": 0.4590446949005127,
+      "cos_to_U1": {
+        "assistant": 0.9693120718002319,
+        "biographer": 0.012719168327748775,
+        "comedian": 0.7120162844657898,
+        "data_scientist": 0.9913409948348999,
+        "french_person": 0.12121613323688507,
+        "kindergarten_teacher": 0.13904379308223724,
+        "librarian": 0.9933010339736938,
+        "local_historian": 0.017535585910081863,
+        "marine_biologist": 0.13139036297798157,
+        "medical_doctor": 0.13155774772167206,
+        "police_officer": 0.9875138401985168,
+        "software_engineer": 0.9886577129364014,
+        "villain": 0.08636133372783661,
+        "zelthari_scholar": 0.14465904235839844
+      },
+      "sign_flip": {
+        "p95": 0.18289954960346222,
+        "p99": 0.18397831916809082,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.1777321994304657,
+        "p99": 0.1778896600008011,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.2551054358482361,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.8133469763165652
+      }
+    },
+    "same_em_seed42": {
+      "variant": "same",
+      "arm": "em",
+      "seed": 42,
+      "s_top1_frac": 0.6032194495201111,
+      "mean_cos_to_U1": 0.9806250929832458,
+      "mean_abs_cos_to_U1": 0.9806250929832458,
+      "cos_to_U1": {
+        "assistant": 0.9607904553413391,
+        "biographer": 0.9696299433708191,
+        "comedian": 0.9778552055358887,
+        "data_scientist": 0.9862432479858398,
+        "french_person": 0.9866204857826233,
+        "kindergarten_teacher": 0.976639986038208,
+        "librarian": 0.98868328332901,
+        "local_historian": 0.9797853827476501,
+        "marine_biologist": 0.9802190661430359,
+        "medical_doctor": 0.9830998182296753,
+        "police_officer": 0.9839562773704529,
+        "software_engineer": 0.9866691827774048,
+        "villain": 0.9894749522209167,
+        "zelthari_scholar": 0.9790830016136169
+      },
+      "sign_flip": {
+        "p95": 0.08347289264202118,
+        "p99": 0.0846930593252182,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.58111172914505,
+        "p99": 0.5811330080032349,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.6030807495117188,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.9999983345965587
+      }
+    },
+    "same_em_seed137": {
+      "variant": "same",
+      "arm": "em",
+      "seed": 137,
+      "s_top1_frac": 0.6411536335945129,
+      "mean_cos_to_U1": 0.9854998588562012,
+      "mean_abs_cos_to_U1": 0.9854998588562012,
+      "cos_to_U1": {
+        "assistant": 0.9748371839523315,
+        "biographer": 0.9771299958229065,
+        "comedian": 0.9774454832077026,
+        "data_scientist": 0.9893769025802612,
+        "french_person": 0.9906736016273499,
+        "kindergarten_teacher": 0.982286810874939,
+        "librarian": 0.9905558228492737,
+        "local_historian": 0.9834507703781128,
+        "marine_biologist": 0.9843957424163818,
+        "medical_doctor": 0.9930837750434875,
+        "police_officer": 0.9907845258712769,
+        "software_engineer": 0.9883989095687866,
+        "villain": 0.991126298904419,
+        "zelthari_scholar": 0.9834517240524292
+      },
+      "sign_flip": {
+        "p95": 0.08174565434455872,
+        "p99": 0.08281847834587097,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.6162630915641785,
+        "p99": 0.6162957549095154,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.6410778760910034,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.9999990475790189
+      }
+    },
+    "same_em_seed256": {
+      "variant": "same",
+      "arm": "em",
+      "seed": 256,
+      "s_top1_frac": 0.6903824210166931,
+      "mean_cos_to_U1": 0.9906191229820251,
+      "mean_abs_cos_to_U1": 0.9906191229820251,
+      "cos_to_U1": {
+        "assistant": 0.9839115738868713,
+        "biographer": 0.9845481514930725,
+        "comedian": 0.9887781739234924,
+        "data_scientist": 0.9919958114624023,
+        "french_person": 0.9939010143280029,
+        "kindergarten_teacher": 0.9913208484649658,
+        "librarian": 0.9942822456359863,
+        "local_historian": 0.9884487986564636,
+        "marine_biologist": 0.9871618747711182,
+        "medical_doctor": 0.9946883916854858,
+        "police_officer": 0.9948859214782715,
+        "software_engineer": 0.992307722568512,
+        "villain": 0.9931973814964294,
+        "zelthari_scholar": 0.9892393350601196
+      },
+      "sign_flip": {
+        "p95": 0.08399698883295059,
+        "p99": 0.08505161851644516,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.6646537184715271,
+        "p99": 0.6646887063980103,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.6900240182876587,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.9999938821372564
+      }
+    },
+    "base_marker_seed42": {
+      "variant": "base",
+      "arm": "marker",
+      "seed": 42,
+      "s_top1_frac": 0.5297524929046631,
+      "mean_cos_to_U1": 0.9625069499015808,
+      "mean_abs_cos_to_U1": 0.9625069499015808,
+      "cos_to_U1": {
+        "assistant": 0.9253283143043518,
+        "biographer": 0.8855975866317749,
+        "comedian": 0.9657426476478577,
+        "data_scientist": 0.9789370894432068,
+        "french_person": 0.9755094051361084,
+        "kindergarten_teacher": 0.9688867926597595,
+        "librarian": 0.9685859084129333,
+        "local_historian": 0.9735768437385559,
+        "marine_biologist": 0.9589667320251465,
+        "medical_doctor": 0.9647247791290283,
+        "police_officer": 0.983232319355011,
+        "software_engineer": 0.9742839932441711,
+        "villain": 0.97314453125,
+        "zelthari_scholar": 0.97858065366745
+      },
+      "sign_flip": {
+        "p95": 0.09111785888671875,
+        "p99": 0.0920003354549408,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.4703395962715149,
+        "p99": 0.4703816771507263,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.5299126505851746,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.9997347246405202
+      }
+    },
+    "base_marker_seed137": {
+      "variant": "base",
+      "arm": "marker",
+      "seed": 137,
+      "s_top1_frac": 0.5549895167350769,
+      "mean_cos_to_U1": 0.9695430397987366,
+      "mean_abs_cos_to_U1": 0.9695430397987366,
+      "cos_to_U1": {
+        "assistant": 0.9411129951477051,
+        "biographer": 0.9124815464019775,
+        "comedian": 0.9695600867271423,
+        "data_scientist": 0.9818305373191833,
+        "french_person": 0.9762372374534607,
+        "kindergarten_teacher": 0.9808717370033264,
+        "librarian": 0.9768563508987427,
+        "local_historian": 0.9763756394386292,
+        "marine_biologist": 0.9599917531013489,
+        "medical_doctor": 0.9745908379554749,
+        "police_officer": 0.988772451877594,
+        "software_engineer": 0.9773833751678467,
+        "villain": 0.9791131019592285,
+        "zelthari_scholar": 0.9784244298934937
+      },
+      "sign_flip": {
+        "p95": 0.09118346124887466,
+        "p99": 0.09233710169792175,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.4955129325389862,
+        "p99": 0.49557095766067505,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.5539045929908752,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.999843106493173
+      }
+    },
+    "base_marker_seed256": {
+      "variant": "base",
+      "arm": "marker",
+      "seed": 256,
+      "s_top1_frac": 0.5646730065345764,
+      "mean_cos_to_U1": 0.9721161127090454,
+      "mean_abs_cos_to_U1": 0.9721161127090454,
+      "cos_to_U1": {
+        "assistant": 0.9529550075531006,
+        "biographer": 0.9063104391098022,
+        "comedian": 0.9720455408096313,
+        "data_scientist": 0.9825677871704102,
+        "french_person": 0.9794071316719055,
+        "kindergarten_teacher": 0.9833905100822449,
+        "librarian": 0.9751042723655701,
+        "local_historian": 0.9795607328414917,
+        "marine_biologist": 0.9721329808235168,
+        "medical_doctor": 0.9747868180274963,
+        "police_officer": 0.9886043667793274,
+        "software_engineer": 0.9780308604240417,
+        "villain": 0.9832246899604797,
+        "zelthari_scholar": 0.9815042018890381
+      },
+      "sign_flip": {
+        "p95": 0.09148941189050674,
+        "p99": 0.0925019383430481,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.5048511028289795,
+        "p99": 0.5048916935920715,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.5639507174491882,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.9998336786316754
+      }
+    },
+    "base_em_seed42": {
+      "variant": "base",
+      "arm": "em",
+      "seed": 42,
+      "s_top1_frac": 0.5599769353866577,
+      "mean_cos_to_U1": 0.9706640243530273,
+      "mean_abs_cos_to_U1": 0.9706640243530273,
+      "cos_to_U1": {
+        "assistant": 0.9613261818885803,
+        "biographer": 0.8954402208328247,
+        "comedian": 0.9579612612724304,
+        "data_scientist": 0.9736467599868774,
+        "french_person": 0.9725574851036072,
+        "kindergarten_teacher": 0.9841433763504028,
+        "librarian": 0.9851796627044678,
+        "local_historian": 0.9755734205245972,
+        "marine_biologist": 0.9779624938964844,
+        "medical_doctor": 0.9795268774032593,
+        "police_officer": 0.9847788214683533,
+        "software_engineer": 0.9795169830322266,
+        "villain": 0.9846028089523315,
+        "zelthari_scholar": 0.9770816564559937
+      },
+      "sign_flip": {
+        "p95": 0.0892687737941742,
+        "p99": 0.09062252938747406,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.4973050057888031,
+        "p99": 0.49734190106391907,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.5604400634765625,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.9997140837695355
+      }
+    },
+    "base_em_seed137": {
+      "variant": "base",
+      "arm": "em",
+      "seed": 137,
+      "s_top1_frac": 0.5865052938461304,
+      "mean_cos_to_U1": 0.9758160710334778,
+      "mean_abs_cos_to_U1": 0.9758160710334778,
+      "cos_to_U1": {
+        "assistant": 0.9677861928939819,
+        "biographer": 0.9134436249732971,
+        "comedian": 0.963439404964447,
+        "data_scientist": 0.9807206988334656,
+        "french_person": 0.9847223162651062,
+        "kindergarten_teacher": 0.9869579076766968,
+        "librarian": 0.9866215586662292,
+        "local_historian": 0.9802817106246948,
+        "marine_biologist": 0.9807443022727966,
+        "medical_doctor": 0.9850355386734009,
+        "police_officer": 0.9874135851860046,
+        "software_engineer": 0.9774472713470459,
+        "villain": 0.9866070747375488,
+        "zelthari_scholar": 0.9802036285400391
+      },
+      "sign_flip": {
+        "p95": 0.09238224476575851,
+        "p99": 0.09289037436246872,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.5093774199485779,
+        "p99": 0.5094273686408997,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.5897126793861389,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.9996379734700106
+      }
+    },
+    "base_em_seed256": {
+      "variant": "base",
+      "arm": "em",
+      "seed": 256,
+      "s_top1_frac": 0.651528000831604,
+      "mean_cos_to_U1": 0.9855998754501343,
+      "mean_abs_cos_to_U1": 0.9855998754501343,
+      "cos_to_U1": {
+        "assistant": 0.981347918510437,
+        "biographer": 0.9459317922592163,
+        "comedian": 0.980749785900116,
+        "data_scientist": 0.9854925870895386,
+        "french_person": 0.9915769696235657,
+        "kindergarten_teacher": 0.9918779730796814,
+        "librarian": 0.9924058318138123,
+        "local_historian": 0.988510012626648,
+        "marine_biologist": 0.986561119556427,
+        "medical_doctor": 0.9891756176948547,
+        "police_officer": 0.9939730167388916,
+        "software_engineer": 0.988407552242279,
+        "villain": 0.991794764995575,
+        "zelthari_scholar": 0.990593671798706
+      },
+      "sign_flip": {
+        "p95": 0.08957239985466003,
+        "p99": 0.09063813835382462,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.5619357824325562,
+        "p99": 0.5620004534721375,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.6523084044456482,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.9998507475125
+      }
+    },
+    "on_policy_marker_seed42": {
+      "variant": "on_policy",
+      "arm": "marker",
+      "seed": 42,
+      "s_top1_frac": 0.34907418489456177,
+      "mean_cos_to_U1": 0.6504268646240234,
+      "mean_abs_cos_to_U1": 0.6504268646240234,
+      "cos_to_U1": {
+        "assistant": 0.6022660136222839,
+        "biographer": 0.2248353511095047,
+        "comedian": 0.545198380947113,
+        "data_scientist": 0.49843722581863403,
+        "french_person": 0.9179977774620056,
+        "kindergarten_teacher": 0.9453598260879517,
+        "librarian": 0.8426656126976013,
+        "local_historian": 0.30379199981689453,
+        "marine_biologist": 0.9229130744934082,
+        "medical_doctor": 0.9311643242835999,
+        "police_officer": 0.61097252368927,
+        "software_engineer": 0.47338077425956726,
+        "villain": 0.4412248134613037,
+        "zelthari_scholar": 0.8457686305046082
+      },
+      "sign_flip": {
+        "p95": 0.1362798810005188,
+        "p99": 0.13799898326396942,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.21777786314487457,
+        "p99": 0.2179684340953827,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.2806432545185089,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.8983941889910048
+      }
+    },
+    "on_policy_marker_seed137": {
+      "variant": "on_policy",
+      "arm": "marker",
+      "seed": 137,
+      "s_top1_frac": 0.35236692428588867,
+      "mean_cos_to_U1": 0.5544708967208862,
+      "mean_abs_cos_to_U1": 0.5544708967208862,
+      "cos_to_U1": {
+        "assistant": 0.08904145658016205,
+        "biographer": 0.14797277748584747,
+        "comedian": 0.4507099390029907,
+        "data_scientist": 0.2874021828174591,
+        "french_person": 0.93244469165802,
+        "kindergarten_teacher": 0.9122813940048218,
+        "librarian": 0.9769541025161743,
+        "local_historian": 0.6099914908409119,
+        "marine_biologist": 0.5097725987434387,
+        "medical_doctor": 0.9683929681777954,
+        "police_officer": 0.4891328811645508,
+        "software_engineer": 0.3398036062717438,
+        "villain": 0.9662670493125916,
+        "zelthari_scholar": 0.0824255719780922
+      },
+      "sign_flip": {
+        "p95": 0.15091244876384735,
+        "p99": 0.1531490981578827,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.18717896938323975,
+        "p99": 0.1873883157968521,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.2510342001914978,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.9049869813097691
+      }
+    },
+    "on_policy_marker_seed256": {
+      "variant": "on_policy",
+      "arm": "marker",
+      "seed": 256,
+      "s_top1_frac": 0.3564741611480713,
+      "mean_cos_to_U1": 0.6126995086669922,
+      "mean_abs_cos_to_U1": 0.6126995086669922,
+      "cos_to_U1": {
+        "assistant": 0.3801512122154236,
+        "biographer": 0.22741882503032684,
+        "comedian": 0.9644288420677185,
+        "data_scientist": 0.4493430554866791,
+        "french_person": 0.9207202196121216,
+        "kindergarten_teacher": 0.9687653183937073,
+        "librarian": 0.4440433084964752,
+        "local_historian": 0.3319087624549866,
+        "marine_biologist": 0.803744912147522,
+        "medical_doctor": 0.9417809247970581,
+        "police_officer": 0.5706934928894043,
+        "software_engineer": 0.42132511734962463,
+        "villain": 0.444534033536911,
+        "zelthari_scholar": 0.7089353799819946
+      },
+      "sign_flip": {
+        "p95": 0.13592807948589325,
+        "p99": 0.13840563595294952,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.20759697258472443,
+        "p99": 0.20780518651008606,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.2773662507534027,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.8815368042115969
+      }
+    },
+    "on_policy_em_seed42": {
+      "variant": "on_policy",
+      "arm": "em",
+      "seed": 42,
+      "s_top1_frac": 0.4433286786079407,
+      "mean_cos_to_U1": 0.9176597595214844,
+      "mean_abs_cos_to_U1": 0.9176597595214844,
+      "cos_to_U1": {
+        "assistant": 0.860457181930542,
+        "biographer": 0.755029022693634,
+        "comedian": 0.8935359120368958,
+        "data_scientist": 0.9512137174606323,
+        "french_person": 0.9401383399963379,
+        "kindergarten_teacher": 0.9212678074836731,
+        "librarian": 0.9568531513214111,
+        "local_historian": 0.9325011372566223,
+        "marine_biologist": 0.926541805267334,
+        "medical_doctor": 0.9513739347457886,
+        "police_officer": 0.9189386963844299,
+        "software_engineer": 0.9484466314315796,
+        "villain": 0.9355261325836182,
+        "zelthari_scholar": 0.9554135799407959
+      },
+      "sign_flip": {
+        "p95": 0.08909916132688522,
+        "p99": 0.09031219780445099,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.3901997208595276,
+        "p99": 0.39036908745765686,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.4410800635814667,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.999040242544267
+      }
+    },
+    "on_policy_em_seed137": {
+      "variant": "on_policy",
+      "arm": "em",
+      "seed": 137,
+      "s_top1_frac": 0.4813769459724426,
+      "mean_cos_to_U1": 0.9380337595939636,
+      "mean_abs_cos_to_U1": 0.9380337595939636,
+      "cos_to_U1": {
+        "assistant": 0.9142688512802124,
+        "biographer": 0.8209495544433594,
+        "comedian": 0.9172093272209167,
+        "data_scientist": 0.9624479413032532,
+        "french_person": 0.9555053114891052,
+        "kindergarten_teacher": 0.9410885572433472,
+        "librarian": 0.9641542434692383,
+        "local_historian": 0.9390655755996704,
+        "marine_biologist": 0.9430156946182251,
+        "medical_doctor": 0.9725378155708313,
+        "police_officer": 0.935647189617157,
+        "software_engineer": 0.9633092284202576,
+        "villain": 0.9355623722076416,
+        "zelthari_scholar": 0.967711865901947
+      },
+      "sign_flip": {
+        "p95": 0.09203650802373886,
+        "p99": 0.09333113580942154,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.4249047040939331,
+        "p99": 0.425063818693161,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.47845640778541565,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.9988639248193163
+      }
+    },
+    "on_policy_em_seed256": {
+      "variant": "on_policy",
+      "arm": "em",
+      "seed": 256,
+      "s_top1_frac": 0.5499623417854309,
+      "mean_cos_to_U1": 0.9631183743476868,
+      "mean_abs_cos_to_U1": 0.9631183743476868,
+      "cos_to_U1": {
+        "assistant": 0.9455223083496094,
+        "biographer": 0.8853321671485901,
+        "comedian": 0.9583745002746582,
+        "data_scientist": 0.9777618646621704,
+        "french_person": 0.9736003279685974,
+        "kindergarten_teacher": 0.9680124521255493,
+        "librarian": 0.9771881103515625,
+        "local_historian": 0.9645651578903198,
+        "marine_biologist": 0.9649922251701355,
+        "medical_doctor": 0.9822225570678711,
+        "police_officer": 0.9644995927810669,
+        "software_engineer": 0.9777839183807373,
+        "villain": 0.9637038707733154,
+        "zelthari_scholar": 0.9800978302955627
+      },
+      "sign_flip": {
+        "p95": 0.09490084648132324,
+        "p99": 0.09659978747367859,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.4893890917301178,
+        "p99": 0.4895934462547302,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "unitnorm": {
+        "s_top1_frac_unitnorm": 0.5474928021430969,
+        "abs_cos_U1_unitnorm_vs_weighted": 0.9994358598571673
+      }
+    }
+  },
+  "loo": {
+    "binding_pass": true,
+    "n_binding_cells": 6,
+    "per_cell": {
+      "same_marker_seed42": {
+        "variant": "same",
+        "arm": "marker",
+        "seed": 42,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.5023674368858337,
+        "s_top1_frac_loo": 0.5182291865348816,
+        "mean_cos_to_U1_loo": 0.49755698442459106,
+        "sign_flip": {
+          "p95": 0.1988784521818161,
+          "p99": 0.20083357393741608,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.1882214993238449,
+          "p99": 0.18841314315795898,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.3193507343530655,
+        "is_binding_cell": true
+      },
+      "same_marker_seed137": {
+        "variant": "same",
+        "arm": "marker",
+        "seed": 137,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.45817098021507263,
+        "s_top1_frac_loo": 0.4850538671016693,
+        "mean_cos_to_U1_loo": 0.3754611015319824,
+        "sign_flip": {
+          "p95": 0.22088980674743652,
+          "p99": 0.2219453752040863,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.1654505729675293,
+          "p99": 0.16560541093349457,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.2641640603542328,
+        "is_binding_cell": true
+      },
+      "same_marker_seed256": {
+        "variant": "same",
+        "arm": "marker",
+        "seed": 256,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.5547100305557251,
+        "s_top1_frac_loo": 0.5713697671890259,
+        "mean_cos_to_U1_loo": 0.4839754104614258,
+        "sign_flip": {
+          "p95": 0.18779537081718445,
+          "p99": 0.18933147192001343,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.19140516221523285,
+          "p99": 0.19153890013694763,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.38357439637184143,
+        "is_binding_cell": true
+      },
+      "same_em_seed42": {
+        "variant": "same",
+        "arm": "em",
+        "seed": 42,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.6032194495201111,
+        "s_top1_frac_loo": 0.6111575961112976,
+        "mean_cos_to_U1_loo": 0.9805436730384827,
+        "sign_flip": {
+          "p95": 0.08936899900436401,
+          "p99": 0.09025473147630692,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.5903916954994202,
+          "p99": 0.590419352054596,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.5217885971069336,
+        "is_binding_cell": true
+      },
+      "same_em_seed137": {
+        "variant": "same",
+        "arm": "em",
+        "seed": 137,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.6411536335945129,
+        "s_top1_frac_loo": 0.6450100541114807,
+        "mean_cos_to_U1_loo": 0.9849628806114197,
+        "sign_flip": {
+          "p95": 0.08771944046020508,
+          "p99": 0.08866533637046814,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.6214120388031006,
+          "p99": 0.6214404106140137,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.5572906136512756,
+        "is_binding_cell": true
+      },
+      "same_em_seed256": {
+        "variant": "same",
+        "arm": "em",
+        "seed": 256,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.6903824210166931,
+        "s_top1_frac_loo": 0.6952658891677856,
+        "mean_cos_to_U1_loo": 0.990351676940918,
+        "sign_flip": {
+          "p95": 0.08982551842927933,
+          "p99": 0.09105405956506729,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.6702577471733093,
+          "p99": 0.6702916026115417,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.6054403707385063,
+        "is_binding_cell": true
+      },
+      "base_marker_seed42": {
+        "variant": "base",
+        "arm": "marker",
+        "seed": 42,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.5297524929046631,
+        "s_top1_frac_loo": 0.5387150645256042,
+        "mean_cos_to_U1_loo": 0.9623225927352905,
+        "sign_flip": {
+          "p95": 0.09720395505428314,
+          "p99": 0.09823539108037949,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.4805905520915985,
+          "p99": 0.48064249753952026,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.4415111094713211,
+        "is_binding_cell": false
+      },
+      "base_marker_seed137": {
+        "variant": "base",
+        "arm": "marker",
+        "seed": 137,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.5549895167350769,
+        "s_top1_frac_loo": 0.5628681778907776,
+        "mean_cos_to_U1_loo": 0.9691534042358398,
+        "sign_flip": {
+          "p95": 0.09681407362222672,
+          "p99": 0.09786158055067062,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.5061140656471252,
+          "p99": 0.5061528086662292,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.4660541042685509,
+        "is_binding_cell": false
+      },
+      "base_marker_seed256": {
+        "variant": "base",
+        "arm": "marker",
+        "seed": 256,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.5646730065345764,
+        "s_top1_frac_loo": 0.5731070041656494,
+        "mean_cos_to_U1_loo": 0.9719019532203674,
+        "sign_flip": {
+          "p95": 0.09738165140151978,
+          "p99": 0.09889596700668335,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.5158781409263611,
+          "p99": 0.5159222483634949,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.47572535276412964,
+        "is_binding_cell": false
+      },
+      "base_em_seed42": {
+        "variant": "base",
+        "arm": "em",
+        "seed": 42,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.5599769353866577,
+        "s_top1_frac_loo": 0.5654652118682861,
+        "mean_cos_to_U1_loo": 0.969883918762207,
+        "sign_flip": {
+          "p95": 0.09533493965864182,
+          "p99": 0.09634432196617126,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.5049386620521545,
+          "p99": 0.5049803853034973,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.4701302722096443,
+        "is_binding_cell": false
+      },
+      "base_em_seed137": {
+        "variant": "base",
+        "arm": "em",
+        "seed": 137,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.5865052938461304,
+        "s_top1_frac_loo": 0.59072345495224,
+        "mean_cos_to_U1_loo": 0.9749876856803894,
+        "sign_flip": {
+          "p95": 0.09878028184175491,
+          "p99": 0.09944777190685272,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.5169199705123901,
+          "p99": 0.5169614553451538,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.4919431731104851,
+        "is_binding_cell": false
+      },
+      "base_em_seed256": {
+        "variant": "base",
+        "arm": "em",
+        "seed": 256,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.651528000831604,
+        "s_top1_frac_loo": 0.6564823985099792,
+        "mean_cos_to_U1_loo": 0.9852676391601562,
+        "sign_flip": {
+          "p95": 0.09518774598836899,
+          "p99": 0.09658966213464737,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.570982038974762,
+          "p99": 0.5710333585739136,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.5612946525216103,
+        "is_binding_cell": false
+      },
+      "on_policy_marker_seed42": {
+        "variant": "on_policy",
+        "arm": "marker",
+        "seed": 42,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.34907418489456177,
+        "s_top1_frac_loo": 0.33642759919166565,
+        "mean_cos_to_U1_loo": 0.6834245920181274,
+        "sign_flip": {
+          "p95": 0.14321047067642212,
+          "p99": 0.14558401703834534,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.22725000977516174,
+          "p99": 0.22740310430526733,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.19321712851524353,
+        "is_binding_cell": false
+      },
+      "on_policy_marker_seed137": {
+        "variant": "on_policy",
+        "arm": "marker",
+        "seed": 137,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.35236692428588867,
+        "s_top1_frac_loo": 0.32939574122428894,
+        "mean_cos_to_U1_loo": 0.5683300495147705,
+        "sign_flip": {
+          "p95": 0.161116361618042,
+          "p99": 0.1620798110961914,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.1904975026845932,
+          "p99": 0.190748393535614,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.16827937960624695,
+        "is_binding_cell": false
+      },
+      "on_policy_marker_seed256": {
+        "variant": "on_policy",
+        "arm": "marker",
+        "seed": 256,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.3564741611480713,
+        "s_top1_frac_loo": 0.34537097811698914,
+        "mean_cos_to_U1_loo": 0.638585090637207,
+        "sign_flip": {
+          "p95": 0.14633077383041382,
+          "p99": 0.14776907861232758,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.2138921618461609,
+          "p99": 0.21412865817546844,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.19904020428657532,
+        "is_binding_cell": false
+      },
+      "on_policy_em_seed42": {
+        "variant": "on_policy",
+        "arm": "em",
+        "seed": 42,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.4433286786079407,
+        "s_top1_frac_loo": 0.44870996475219727,
+        "mean_cos_to_U1_loo": 0.916361391544342,
+        "sign_flip": {
+          "p95": 0.0959700345993042,
+          "p99": 0.09706902503967285,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.39663150906562805,
+          "p99": 0.3967851400375366,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.35273993015289307,
+        "is_binding_cell": false
+      },
+      "on_policy_em_seed137": {
+        "variant": "on_policy",
+        "arm": "em",
+        "seed": 137,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.4813769459724426,
+        "s_top1_frac_loo": 0.48463526368141174,
+        "mean_cos_to_U1_loo": 0.9363490343093872,
+        "sign_flip": {
+          "p95": 0.09893934428691864,
+          "p99": 0.10026593506336212,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.4300291836261749,
+          "p99": 0.43017396330833435,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.3856959193944931,
+        "is_binding_cell": false
+      },
+      "on_policy_em_seed256": {
+        "variant": "on_policy",
+        "arm": "em",
+        "seed": 256,
+        "source_dropped": "medical_doctor",
+        "s_top1_frac_full": 0.5499623417854309,
+        "s_top1_frac_loo": 0.5540711879730225,
+        "mean_cos_to_U1_loo": 0.962177038192749,
+        "sign_flip": {
+          "p95": 0.10138457268476486,
+          "p99": 0.1029207780957222,
+          "n_reps": 1000
+        },
+        "row_shuffle": {
+          "p95": 0.4950626790523529,
+          "p99": 0.49526268243789673,
+          "n_reps": 1000
+        },
+        "passes_sign_flip_p95": true,
+        "passes_row_shuffle_p95": true,
+        "margin_over_sign_flip_p95": 0.4526866152882576,
+        "is_binding_cell": false
+      }
+    }
+  },
+  "trained_text_cells": {
+    "same_marker_seed42": {
+      "arm": "marker",
+      "seed": 42,
+      "per_persona": {
+        "assistant": {
+          "shift_norm": 1.2075146436691284,
+          "cos_to_U1_weighted": 0.568773090839386,
+          "cos_to_U1_unitnorm": 0.7701668739318848,
+          "abs_cos_to_U1_weighted": 0.568773090839386,
+          "abs_cos_to_U1_unitnorm": 0.7701668739318848
+        },
+        "biographer": {
+          "shift_norm": 1.3963236808776855,
+          "cos_to_U1_weighted": 0.013795197010040283,
+          "cos_to_U1_unitnorm": 0.25619471073150635,
+          "abs_cos_to_U1_weighted": 0.013795197010040283,
+          "abs_cos_to_U1_unitnorm": 0.25619471073150635
+        },
+        "comedian": {
+          "shift_norm": 2.1437909603118896,
+          "cos_to_U1_weighted": 0.9639094471931458,
+          "cos_to_U1_unitnorm": 0.8530704975128174,
+          "abs_cos_to_U1_weighted": 0.9639094471931458,
+          "abs_cos_to_U1_unitnorm": 0.8530704975128174
+        },
+        "data_scientist": {
+          "shift_norm": 4.8048810958862305,
+          "cos_to_U1_weighted": 0.9918148517608643,
+          "cos_to_U1_unitnorm": 0.8053359389305115,
+          "abs_cos_to_U1_weighted": 0.9918148517608643,
+          "abs_cos_to_U1_unitnorm": 0.8053359389305115
+        },
+        "french_person": {
+          "shift_norm": 0.8960809111595154,
+          "cos_to_U1_weighted": 0.18035630881786346,
+          "cos_to_U1_unitnorm": 0.6292411088943481,
+          "abs_cos_to_U1_weighted": 0.18035630881786346,
+          "abs_cos_to_U1_unitnorm": 0.6292411088943481
+        },
+        "kindergarten_teacher": {
+          "shift_norm": 0.8218162655830383,
+          "cos_to_U1_weighted": 0.22685180604457855,
+          "cos_to_U1_unitnorm": 0.6607490181922913,
+          "abs_cos_to_U1_weighted": 0.22685180604457855,
+          "abs_cos_to_U1_unitnorm": 0.6607490181922913
+        },
+        "librarian": {
+          "shift_norm": 3.551964044570923,
+          "cos_to_U1_weighted": 0.9907689690589905,
+          "cos_to_U1_unitnorm": 0.8470461368560791,
+          "abs_cos_to_U1_weighted": 0.9907689690589905,
+          "abs_cos_to_U1_unitnorm": 0.8470461368560791
+        },
+        "local_historian": {
+          "shift_norm": 0.9150308966636658,
+          "cos_to_U1_weighted": 0.025847043842077255,
+          "cos_to_U1_unitnorm": 0.3011239469051361,
+          "abs_cos_to_U1_weighted": 0.025847043842077255,
+          "abs_cos_to_U1_unitnorm": 0.3011239469051361
+        },
+        "marine_biologist": {
+          "shift_norm": 0.6525188088417053,
+          "cos_to_U1_weighted": 0.1988377869129181,
+          "cos_to_U1_unitnorm": 0.6604032516479492,
+          "abs_cos_to_U1_weighted": 0.1988377869129181,
+          "abs_cos_to_U1_unitnorm": 0.6604032516479492
+        },
+        "medical_doctor": {
+          "shift_norm": 1.0075455904006958,
+          "cos_to_U1_weighted": 0.20022228360176086,
+          "cos_to_U1_unitnorm": 0.6312100291252136,
+          "abs_cos_to_U1_weighted": 0.20022228360176086,
+          "abs_cos_to_U1_unitnorm": 0.6312100291252136
+        },
+        "police_officer": {
+          "shift_norm": 5.538448810577393,
+          "cos_to_U1_weighted": 0.9884929656982422,
+          "cos_to_U1_unitnorm": 0.7838180661201477,
+          "abs_cos_to_U1_weighted": 0.9884929656982422,
+          "abs_cos_to_U1_unitnorm": 0.7838180661201477
+        },
+        "software_engineer": {
+          "shift_norm": 4.701346397399902,
+          "cos_to_U1_weighted": 0.9889428019523621,
+          "cos_to_U1_unitnorm": 0.8101099729537964,
+          "abs_cos_to_U1_weighted": 0.9889428019523621,
+          "abs_cos_to_U1_unitnorm": 0.8101099729537964
+        },
+        "villain": {
+          "shift_norm": 0.8429427742958069,
+          "cos_to_U1_weighted": 0.12244926393032074,
+          "cos_to_U1_unitnorm": 0.4496490955352783,
+          "abs_cos_to_U1_weighted": 0.12244926393032074,
+          "abs_cos_to_U1_unitnorm": 0.4496490955352783
+        },
+        "zelthari_scholar": {
+          "shift_norm": 0.8808380365371704,
+          "cos_to_U1_weighted": 0.2163049727678299,
+          "cos_to_U1_unitnorm": 0.5547458529472351,
+          "abs_cos_to_U1_weighted": 0.2163049727678299,
+          "abs_cos_to_U1_unitnorm": 0.5547458529472351
+        }
+      }
+    },
+    "same_marker_seed137": {
+      "arm": "marker",
+      "seed": 137,
+      "per_persona": {
+        "assistant": {
+          "shift_norm": 0.5084617137908936,
+          "cos_to_U1_weighted": 0.19451619684696198,
+          "cos_to_U1_unitnorm": 0.5935570001602173,
+          "abs_cos_to_U1_weighted": 0.19451619684696198,
+          "abs_cos_to_U1_unitnorm": 0.5935570001602173
+        },
+        "biographer": {
+          "shift_norm": 1.249617576599121,
+          "cos_to_U1_weighted": 0.03166615590453148,
+          "cos_to_U1_unitnorm": 0.8018621206283569,
+          "abs_cos_to_U1_weighted": 0.03166615590453148,
+          "abs_cos_to_U1_unitnorm": 0.8018621206283569
+        },
+        "comedian": {
+          "shift_norm": 3.1397013664245605,
+          "cos_to_U1_weighted": 0.9906124472618103,
+          "cos_to_U1_unitnorm": 0.3295726478099823,
+          "abs_cos_to_U1_weighted": 0.9906124472618103,
+          "abs_cos_to_U1_unitnorm": 0.3295726478099823
+        },
+        "data_scientist": {
+          "shift_norm": 1.390682339668274,
+          "cos_to_U1_weighted": 0.9157706499099731,
+          "cos_to_U1_unitnorm": 0.4693111777305603,
+          "abs_cos_to_U1_weighted": 0.9157706499099731,
+          "abs_cos_to_U1_unitnorm": 0.4693111777305603
+        },
+        "french_person": {
+          "shift_norm": 0.6573442816734314,
+          "cos_to_U1_weighted": 0.13538900017738342,
+          "cos_to_U1_unitnorm": 0.9116325974464417,
+          "abs_cos_to_U1_weighted": 0.13538900017738342,
+          "abs_cos_to_U1_unitnorm": 0.9116325974464417
+        },
+        "kindergarten_teacher": {
+          "shift_norm": 0.7083039879798889,
+          "cos_to_U1_weighted": 0.12347602099180222,
+          "cos_to_U1_unitnorm": 0.9264563322067261,
+          "abs_cos_to_U1_weighted": 0.12347602099180222,
+          "abs_cos_to_U1_unitnorm": 0.9264563322067261
+        },
+        "librarian": {
+          "shift_norm": 0.6687887907028198,
+          "cos_to_U1_weighted": 0.2208104282617569,
+          "cos_to_U1_unitnorm": 0.6668092608451843,
+          "abs_cos_to_U1_weighted": 0.2208104282617569,
+          "abs_cos_to_U1_unitnorm": 0.6668092608451843
+        },
+        "local_historian": {
+          "shift_norm": 1.1099060773849487,
+          "cos_to_U1_weighted": 0.027996597811579704,
+          "cos_to_U1_unitnorm": 0.8268058896064758,
+          "abs_cos_to_U1_weighted": 0.027996597811579704,
+          "abs_cos_to_U1_unitnorm": 0.8268058896064758
+        },
+        "marine_biologist": {
+          "shift_norm": 1.1792162656784058,
+          "cos_to_U1_weighted": 0.040135689079761505,
+          "cos_to_U1_unitnorm": 0.8322092890739441,
+          "abs_cos_to_U1_weighted": 0.040135689079761505,
+          "abs_cos_to_U1_unitnorm": 0.8322092890739441
+        },
+        "medical_doctor": {
+          "shift_norm": 1.0421522855758667,
+          "cos_to_U1_weighted": 0.18498922884464264,
+          "cos_to_U1_unitnorm": 0.5108945369720459,
+          "abs_cos_to_U1_weighted": 0.18498922884464264,
+          "abs_cos_to_U1_unitnorm": 0.5108945369720459
+        },
+        "police_officer": {
+          "shift_norm": 4.519388198852539,
+          "cos_to_U1_weighted": 0.9927999377250671,
+          "cos_to_U1_unitnorm": 0.29470235109329224,
+          "abs_cos_to_U1_weighted": 0.9927999377250671,
+          "abs_cos_to_U1_unitnorm": 0.29470235109329224
+        },
+        "software_engineer": {
+          "shift_norm": 3.6942081451416016,
+          "cos_to_U1_weighted": 0.986916184425354,
+          "cos_to_U1_unitnorm": 0.33248233795166016,
+          "abs_cos_to_U1_weighted": 0.986916184425354,
+          "abs_cos_to_U1_unitnorm": 0.33248233795166016
+        },
+        "villain": {
+          "shift_norm": 0.6475494503974915,
+          "cos_to_U1_weighted": 0.18180173635482788,
+          "cos_to_U1_unitnorm": 0.8354902863502502,
+          "abs_cos_to_U1_weighted": 0.18180173635482788,
+          "abs_cos_to_U1_unitnorm": 0.8354902863502502
+        },
+        "zelthari_scholar": {
+          "shift_norm": 1.2113980054855347,
+          "cos_to_U1_weighted": 0.05483382195234299,
+          "cos_to_U1_unitnorm": 0.8445822596549988,
+          "abs_cos_to_U1_weighted": 0.05483382195234299,
+          "abs_cos_to_U1_unitnorm": 0.8445822596549988
+        }
+      }
+    },
+    "same_marker_seed256": {
+      "arm": "marker",
+      "seed": 256,
+      "per_persona": {
+        "assistant": {
+          "shift_norm": 5.525015354156494,
+          "cos_to_U1_weighted": 0.9693120718002319,
+          "cos_to_U1_unitnorm": 0.7767882943153381,
+          "abs_cos_to_U1_weighted": 0.9693120718002319,
+          "abs_cos_to_U1_unitnorm": 0.7767882943153381
+        },
+        "biographer": {
+          "shift_norm": 1.2963733673095703,
+          "cos_to_U1_weighted": 0.012719168327748775,
+          "cos_to_U1_unitnorm": 0.2964579164981842,
+          "abs_cos_to_U1_weighted": 0.012719168327748775,
+          "abs_cos_to_U1_unitnorm": 0.2964579164981842
+        },
+        "comedian": {
+          "shift_norm": 0.9196666479110718,
+          "cos_to_U1_weighted": 0.7120162844657898,
+          "cos_to_U1_unitnorm": 0.9408726096153259,
+          "abs_cos_to_U1_weighted": 0.7120162844657898,
+          "abs_cos_to_U1_unitnorm": 0.9408726096153259
+        },
+        "data_scientist": {
+          "shift_norm": 5.446772575378418,
+          "cos_to_U1_weighted": 0.9913409948348999,
+          "cos_to_U1_unitnorm": 0.8112524747848511,
+          "abs_cos_to_U1_weighted": 0.9913409948348999,
+          "abs_cos_to_U1_unitnorm": 0.8112524747848511
+        },
+        "french_person": {
+          "shift_norm": 0.9949460029602051,
+          "cos_to_U1_weighted": 0.12121613323688507,
+          "cos_to_U1_unitnorm": 0.5729731917381287,
+          "abs_cos_to_U1_weighted": 0.12121613323688507,
+          "abs_cos_to_U1_unitnorm": 0.5729731917381287
+        },
+        "kindergarten_teacher": {
+          "shift_norm": 0.7156350612640381,
+          "cos_to_U1_weighted": 0.13904379308223724,
+          "cos_to_U1_unitnorm": 0.6320769190788269,
+          "abs_cos_to_U1_weighted": 0.13904379308223724,
+          "abs_cos_to_U1_unitnorm": 0.6320769190788269
+        },
+        "librarian": {
+          "shift_norm": 5.314198970794678,
+          "cos_to_U1_weighted": 0.9933010339736938,
+          "cos_to_U1_unitnorm": 0.8153347373008728,
+          "abs_cos_to_U1_weighted": 0.9933010339736938,
+          "abs_cos_to_U1_unitnorm": 0.8153347373008728
+        },
+        "local_historian": {
+          "shift_norm": 0.9771654605865479,
+          "cos_to_U1_weighted": 0.017535585910081863,
+          "cos_to_U1_unitnorm": 0.3219418525695801,
+          "abs_cos_to_U1_weighted": 0.017535585910081863,
+          "abs_cos_to_U1_unitnorm": 0.3219418525695801
+        },
+        "marine_biologist": {
+          "shift_norm": 0.567548930644989,
+          "cos_to_U1_weighted": 0.13139036297798157,
+          "cos_to_U1_unitnorm": 0.5966064929962158,
+          "abs_cos_to_U1_weighted": 0.13139036297798157,
+          "abs_cos_to_U1_unitnorm": 0.5966064929962158
+        },
+        "medical_doctor": {
+          "shift_norm": 1.004475712776184,
+          "cos_to_U1_weighted": 0.13155774772167206,
+          "cos_to_U1_unitnorm": 0.5821871757507324,
+          "abs_cos_to_U1_weighted": 0.13155774772167206,
+          "abs_cos_to_U1_unitnorm": 0.5821871757507324
+        },
+        "police_officer": {
+          "shift_norm": 6.4554033279418945,
+          "cos_to_U1_weighted": 0.9875138401985168,
+          "cos_to_U1_unitnorm": 0.7856963872909546,
+          "abs_cos_to_U1_weighted": 0.9875138401985168,
+          "abs_cos_to_U1_unitnorm": 0.7856963872909546
+        },
+        "software_engineer": {
+          "shift_norm": 5.379653453826904,
+          "cos_to_U1_weighted": 0.9886577129364014,
+          "cos_to_U1_unitnorm": 0.8128755688667297,
+          "abs_cos_to_U1_weighted": 0.9886577129364014,
+          "abs_cos_to_U1_unitnorm": 0.8128755688667297
+        },
+        "villain": {
+          "shift_norm": 0.9662097096443176,
+          "cos_to_U1_weighted": 0.08636133372783661,
+          "cos_to_U1_unitnorm": 0.4099541902542114,
+          "abs_cos_to_U1_weighted": 0.08636133372783661,
+          "abs_cos_to_U1_unitnorm": 0.4099541902542114
+        },
+        "zelthari_scholar": {
+          "shift_norm": 0.5969793796539307,
+          "cos_to_U1_weighted": 0.14465904235839844,
+          "cos_to_U1_unitnorm": 0.589948832988739,
+          "abs_cos_to_U1_weighted": 0.14465904235839844,
+          "abs_cos_to_U1_unitnorm": 0.589948832988739
+        }
+      }
+    },
+    "same_em_seed42": {
+      "arm": "em",
+      "seed": 42,
+      "per_persona": {
+        "assistant": {
+          "shift_norm": 15.250239372253418,
+          "cos_to_U1_weighted": 0.9607904553413391,
+          "cos_to_U1_unitnorm": 0.9609147310256958,
+          "abs_cos_to_U1_weighted": 0.9607904553413391,
+          "abs_cos_to_U1_unitnorm": 0.9609147310256958
+        },
+        "biographer": {
+          "shift_norm": 15.380549430847168,
+          "cos_to_U1_weighted": 0.9696299433708191,
+          "cos_to_U1_unitnorm": 0.9694182276725769,
+          "abs_cos_to_U1_weighted": 0.9696299433708191,
+          "abs_cos_to_U1_unitnorm": 0.9694182276725769
+        },
+        "comedian": {
+          "shift_norm": 14.93636417388916,
+          "cos_to_U1_weighted": 0.9778552055358887,
+          "cos_to_U1_unitnorm": 0.9780603051185608,
+          "abs_cos_to_U1_weighted": 0.9778552055358887,
+          "abs_cos_to_U1_unitnorm": 0.9780603051185608
+        },
+        "data_scientist": {
+          "shift_norm": 15.039483070373535,
+          "cos_to_U1_weighted": 0.9862432479858398,
+          "cos_to_U1_unitnorm": 0.9863268733024597,
+          "abs_cos_to_U1_weighted": 0.9862432479858398,
+          "abs_cos_to_U1_unitnorm": 0.9863268733024597
+        },
+        "french_person": {
+          "shift_norm": 15.491802215576172,
+          "cos_to_U1_weighted": 0.9866204857826233,
+          "cos_to_U1_unitnorm": 0.9865928888320923,
+          "abs_cos_to_U1_weighted": 0.9866204857826233,
+          "abs_cos_to_U1_unitnorm": 0.9865928888320923
+        },
+        "kindergarten_teacher": {
+          "shift_norm": 14.970929145812988,
+          "cos_to_U1_weighted": 0.976639986038208,
+          "cos_to_U1_unitnorm": 0.9769402146339417,
+          "abs_cos_to_U1_weighted": 0.976639986038208,
+          "abs_cos_to_U1_unitnorm": 0.9769402146339417
+        },
+        "librarian": {
+          "shift_norm": 15.29321002960205,
+          "cos_to_U1_weighted": 0.98868328332901,
+          "cos_to_U1_unitnorm": 0.9886824488639832,
+          "abs_cos_to_U1_weighted": 0.98868328332901,
+          "abs_cos_to_U1_unitnorm": 0.9886824488639832
+        },
+        "local_historian": {
+          "shift_norm": 15.468335151672363,
+          "cos_to_U1_weighted": 0.9797853827476501,
+          "cos_to_U1_unitnorm": 0.9795671105384827,
+          "abs_cos_to_U1_weighted": 0.9797853827476501,
+          "abs_cos_to_U1_unitnorm": 0.9795671105384827
+        },
+        "marine_biologist": {
+          "shift_norm": 15.404248237609863,
+          "cos_to_U1_weighted": 0.9802190661430359,
+          "cos_to_U1_unitnorm": 0.9800475835800171,
+          "abs_cos_to_U1_weighted": 0.9802190661430359,
+          "abs_cos_to_U1_unitnorm": 0.9800475835800171
+        },
+        "medical_doctor": {
+          "shift_norm": 15.69167709350586,
+          "cos_to_U1_weighted": 0.9830998182296753,
+          "cos_to_U1_unitnorm": 0.9830378293991089,
+          "abs_cos_to_U1_weighted": 0.9830998182296753,
+          "abs_cos_to_U1_unitnorm": 0.9830378293991089
+        },
+        "police_officer": {
+          "shift_norm": 15.387314796447754,
+          "cos_to_U1_weighted": 0.9839562773704529,
+          "cos_to_U1_unitnorm": 0.9840090870857239,
+          "abs_cos_to_U1_weighted": 0.9839562773704529,
+          "abs_cos_to_U1_unitnorm": 0.9840090870857239
+        },
+        "software_engineer": {
+          "shift_norm": 15.18199348449707,
+          "cos_to_U1_weighted": 0.9866691827774048,
+          "cos_to_U1_unitnorm": 0.986814558506012,
+          "abs_cos_to_U1_weighted": 0.9866691827774048,
+          "abs_cos_to_U1_unitnorm": 0.986814558506012
+        },
+        "villain": {
+          "shift_norm": 15.492740631103516,
+          "cos_to_U1_weighted": 0.9894749522209167,
+          "cos_to_U1_unitnorm": 0.9894513487815857,
+          "abs_cos_to_U1_weighted": 0.9894749522209167,
+          "abs_cos_to_U1_unitnorm": 0.9894513487815857
+        },
+        "zelthari_scholar": {
+          "shift_norm": 15.483367919921875,
+          "cos_to_U1_weighted": 0.9790830016136169,
+          "cos_to_U1_unitnorm": 0.9789189100265503,
+          "abs_cos_to_U1_weighted": 0.9790830016136169,
+          "abs_cos_to_U1_unitnorm": 0.9789189100265503
+        }
+      }
+    },
+    "same_em_seed137": {
+      "arm": "em",
+      "seed": 137,
+      "per_persona": {
+        "assistant": {
+          "shift_norm": 18.542818069458008,
+          "cos_to_U1_weighted": 0.9748371839523315,
+          "cos_to_U1_unitnorm": 0.974891722202301,
+          "abs_cos_to_U1_weighted": 0.9748371839523315,
+          "abs_cos_to_U1_unitnorm": 0.974891722202301
+        },
+        "biographer": {
+          "shift_norm": 19.209171295166016,
+          "cos_to_U1_weighted": 0.9771299958229065,
+          "cos_to_U1_unitnorm": 0.9770434498786926,
+          "abs_cos_to_U1_weighted": 0.9771299958229065,
+          "abs_cos_to_U1_unitnorm": 0.9770434498786926
+        },
+        "comedian": {
+          "shift_norm": 18.936922073364258,
+          "cos_to_U1_weighted": 0.9774454832077026,
+          "cos_to_U1_unitnorm": 0.9773010015487671,
+          "abs_cos_to_U1_weighted": 0.9774454832077026,
+          "abs_cos_to_U1_unitnorm": 0.9773010015487671
+        },
+        "data_scientist": {
+          "shift_norm": 18.591094970703125,
+          "cos_to_U1_weighted": 0.9893769025802612,
+          "cos_to_U1_unitnorm": 0.9893719553947449,
+          "abs_cos_to_U1_weighted": 0.9893769025802612,
+          "abs_cos_to_U1_unitnorm": 0.9893719553947449
+        },
+        "french_person": {
+          "shift_norm": 18.990108489990234,
+          "cos_to_U1_weighted": 0.9906736016273499,
+          "cos_to_U1_unitnorm": 0.9906319975852966,
+          "abs_cos_to_U1_weighted": 0.9906736016273499,
+          "abs_cos_to_U1_unitnorm": 0.9906319975852966
+        },
+        "kindergarten_teacher": {
+          "shift_norm": 18.7037410736084,
+          "cos_to_U1_weighted": 0.982286810874939,
+          "cos_to_U1_unitnorm": 0.9822314977645874,
+          "abs_cos_to_U1_weighted": 0.982286810874939,
+          "abs_cos_to_U1_unitnorm": 0.9822314977645874
+        },
+        "librarian": {
+          "shift_norm": 18.49264144897461,
+          "cos_to_U1_weighted": 0.9905558228492737,
+          "cos_to_U1_unitnorm": 0.9906101822853088,
+          "abs_cos_to_U1_weighted": 0.9905558228492737,
+          "abs_cos_to_U1_unitnorm": 0.9906101822853088
+        },
+        "local_historian": {
+          "shift_norm": 18.495813369750977,
+          "cos_to_U1_weighted": 0.9834507703781128,
+          "cos_to_U1_unitnorm": 0.9834907054901123,
+          "abs_cos_to_U1_weighted": 0.9834507703781128,
+          "abs_cos_to_U1_unitnorm": 0.9834907054901123
+        },
+        "marine_biologist": {
+          "shift_norm": 18.655515670776367,
+          "cos_to_U1_weighted": 0.9843957424163818,
+          "cos_to_U1_unitnorm": 0.9844361543655396,
+          "abs_cos_to_U1_weighted": 0.9843957424163818,
+          "abs_cos_to_U1_unitnorm": 0.9844361543655396
+        },
+        "medical_doctor": {
+          "shift_norm": 19.2650146484375,
+          "cos_to_U1_weighted": 0.9930837750434875,
+          "cos_to_U1_unitnorm": 0.9930366277694702,
+          "abs_cos_to_U1_weighted": 0.9930837750434875,
+          "abs_cos_to_U1_unitnorm": 0.9930366277694702
+        },
+        "police_officer": {
+          "shift_norm": 18.406280517578125,
+          "cos_to_U1_weighted": 0.9907845258712769,
+          "cos_to_U1_unitnorm": 0.990854799747467,
+          "abs_cos_to_U1_weighted": 0.9907845258712769,
+          "abs_cos_to_U1_unitnorm": 0.990854799747467
+        },
+        "software_engineer": {
+          "shift_norm": 18.762914657592773,
+          "cos_to_U1_weighted": 0.9883989095687866,
+          "cos_to_U1_unitnorm": 0.9883925318717957,
+          "abs_cos_to_U1_weighted": 0.9883989095687866,
+          "abs_cos_to_U1_unitnorm": 0.9883925318717957
+        },
+        "villain": {
+          "shift_norm": 18.685277938842773,
+          "cos_to_U1_weighted": 0.991126298904419,
+          "cos_to_U1_unitnorm": 0.9911287426948547,
+          "abs_cos_to_U1_weighted": 0.991126298904419,
+          "abs_cos_to_U1_unitnorm": 0.9911287426948547
+        },
+        "zelthari_scholar": {
+          "shift_norm": 18.15880012512207,
+          "cos_to_U1_weighted": 0.9834517240524292,
+          "cos_to_U1_unitnorm": 0.9835952520370483,
+          "abs_cos_to_U1_weighted": 0.9834517240524292,
+          "abs_cos_to_U1_unitnorm": 0.9835952520370483
+        }
+      }
+    },
+    "same_em_seed256": {
+      "arm": "em",
+      "seed": 256,
+      "per_persona": {
+        "assistant": {
+          "shift_norm": 25.430246353149414,
+          "cos_to_U1_weighted": 0.9839115738868713,
+          "cos_to_U1_unitnorm": 0.9835644960403442,
+          "abs_cos_to_U1_weighted": 0.9839115738868713,
+          "abs_cos_to_U1_unitnorm": 0.9835644960403442
+        },
+        "biographer": {
+          "shift_norm": 24.386363983154297,
+          "cos_to_U1_weighted": 0.9845481514930725,
+          "cos_to_U1_unitnorm": 0.98497074842453,
+          "abs_cos_to_U1_weighted": 0.9845481514930725,
+          "abs_cos_to_U1_unitnorm": 0.98497074842453
+        },
+        "comedian": {
+          "shift_norm": 24.953487396240234,
+          "cos_to_U1_weighted": 0.9887781739234924,
+          "cos_to_U1_unitnorm": 0.9887295365333557,
+          "abs_cos_to_U1_weighted": 0.9887781739234924,
+          "abs_cos_to_U1_unitnorm": 0.9887295365333557
+        },
+        "data_scientist": {
+          "shift_norm": 25.343765258789062,
+          "cos_to_U1_weighted": 0.9919958114624023,
+          "cos_to_U1_unitnorm": 0.9917702674865723,
+          "abs_cos_to_U1_weighted": 0.9919958114624023,
+          "abs_cos_to_U1_unitnorm": 0.9917702674865723
+        },
+        "french_person": {
+          "shift_norm": 25.818737030029297,
+          "cos_to_U1_weighted": 0.9939010143280029,
+          "cos_to_U1_unitnorm": 0.9937704205513,
+          "abs_cos_to_U1_weighted": 0.9939010143280029,
+          "abs_cos_to_U1_unitnorm": 0.9937704205513
+        },
+        "kindergarten_teacher": {
+          "shift_norm": 25.10285186767578,
+          "cos_to_U1_weighted": 0.9913208484649658,
+          "cos_to_U1_unitnorm": 0.9910417795181274,
+          "abs_cos_to_U1_weighted": 0.9913208484649658,
+          "abs_cos_to_U1_unitnorm": 0.9910417795181274
+        },
+        "librarian": {
+          "shift_norm": 24.94171142578125,
+          "cos_to_U1_weighted": 0.9942822456359863,
+          "cos_to_U1_unitnorm": 0.9943192601203918,
+          "abs_cos_to_U1_weighted": 0.9942822456359863,
+          "abs_cos_to_U1_unitnorm": 0.9943192601203918
+        },
+        "local_historian": {
+          "shift_norm": 23.207963943481445,
+          "cos_to_U1_weighted": 0.9884487986564636,
+          "cos_to_U1_unitnorm": 0.9889079928398132,
+          "abs_cos_to_U1_weighted": 0.9884487986564636,
+          "abs_cos_to_U1_unitnorm": 0.9889079928398132
+        },
+        "marine_biologist": {
+          "shift_norm": 24.19874382019043,
+          "cos_to_U1_weighted": 0.9871618747711182,
+          "cos_to_U1_unitnorm": 0.9875755310058594,
+          "abs_cos_to_U1_weighted": 0.9871618747711182,
+          "abs_cos_to_U1_unitnorm": 0.9875755310058594
+        },
+        "medical_doctor": {
+          "shift_norm": 25.41002082824707,
+          "cos_to_U1_weighted": 0.9946883916854858,
+          "cos_to_U1_unitnorm": 0.9945250153541565,
+          "abs_cos_to_U1_weighted": 0.9946883916854858,
+          "abs_cos_to_U1_unitnorm": 0.9945250153541565
+        },
+        "police_officer": {
+          "shift_norm": 24.812007904052734,
+          "cos_to_U1_weighted": 0.9948859214782715,
+          "cos_to_U1_unitnorm": 0.9947916865348816,
+          "abs_cos_to_U1_weighted": 0.9948859214782715,
+          "abs_cos_to_U1_unitnorm": 0.9947916865348816
+        },
+        "software_engineer": {
+          "shift_norm": 25.262243270874023,
+          "cos_to_U1_weighted": 0.992307722568512,
+          "cos_to_U1_unitnorm": 0.992040753364563,
+          "abs_cos_to_U1_weighted": 0.992307722568512,
+          "abs_cos_to_U1_unitnorm": 0.992040753364563
+        },
+        "villain": {
+          "shift_norm": 24.59259796142578,
+          "cos_to_U1_weighted": 0.9931973814964294,
+          "cos_to_U1_unitnorm": 0.9932088851928711,
+          "abs_cos_to_U1_weighted": 0.9931973814964294,
+          "abs_cos_to_U1_unitnorm": 0.9932088851928711
+        },
+        "zelthari_scholar": {
+          "shift_norm": 24.217761993408203,
+          "cos_to_U1_weighted": 0.9892393350601196,
+          "cos_to_U1_unitnorm": 0.9895418882369995,
+          "abs_cos_to_U1_weighted": 0.9892393350601196,
+          "abs_cos_to_U1_unitnorm": 0.9895418882369995
+        }
+      }
+    }
+  },
+  "marker_split_membership": {
+    "same_marker_seed42": {
+      "seed": 42,
+      "aligned_cos_threshold": 0.5,
+      "aligned_weighted": [
+        "assistant",
+        "comedian",
+        "data_scientist",
+        "librarian",
+        "police_officer",
+        "software_engineer"
+      ],
+      "aligned_unitnorm": [
+        "assistant",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "zelthari_scholar"
+      ],
+      "moved_out_under_unitnorm": [],
+      "moved_in_under_unitnorm": [
+        "french_person",
+        "kindergarten_teacher",
+        "marine_biologist",
+        "medical_doctor",
+        "zelthari_scholar"
+      ],
+      "n_changed_membership": 5,
+      "membership_identical": false,
+      "aligned_set_jaccard": 0.5454545454545454,
+      "spearman_abs_cos_weighted_vs_unitnorm": 0.9120879120879121,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.8236792850774203
+    },
+    "same_marker_seed137": {
+      "seed": 137,
+      "aligned_cos_threshold": 0.5,
+      "aligned_weighted": [
+        "comedian",
+        "data_scientist",
+        "police_officer",
+        "software_engineer"
+      ],
+      "aligned_unitnorm": [
+        "assistant",
+        "biographer",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "moved_out_under_unitnorm": [
+        "comedian",
+        "data_scientist",
+        "police_officer",
+        "software_engineer"
+      ],
+      "moved_in_under_unitnorm": [
+        "assistant",
+        "biographer",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "n_changed_membership": 14,
+      "membership_identical": false,
+      "aligned_set_jaccard": 0.0,
+      "spearman_abs_cos_weighted_vs_unitnorm": -0.7714285714285715,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.3359330055842693
+    },
+    "same_marker_seed256": {
+      "seed": 256,
+      "aligned_cos_threshold": 0.5,
+      "aligned_weighted": [
+        "assistant",
+        "comedian",
+        "data_scientist",
+        "librarian",
+        "police_officer",
+        "software_engineer"
+      ],
+      "aligned_unitnorm": [
+        "assistant",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "zelthari_scholar"
+      ],
+      "moved_out_under_unitnorm": [],
+      "moved_in_under_unitnorm": [
+        "french_person",
+        "kindergarten_teacher",
+        "marine_biologist",
+        "medical_doctor",
+        "zelthari_scholar"
+      ],
+      "n_changed_membership": 5,
+      "membership_identical": false,
+      "aligned_set_jaccard": 0.5454545454545454,
+      "spearman_abs_cos_weighted_vs_unitnorm": 0.9076923076923077,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.8133469763165652
+    }
+  },
+  "mean_resp": {
+    "same_marker_seed42": {
+      "arm": "marker",
+      "seed": 42,
+      "s_top1_frac_mean_resp": 0.5487052798271179,
+      "mean_cos_to_U1_mean_resp": 0.49736589193344116,
+      "sign_flip": {
+        "p95": 0.20133109390735626,
+        "p99": 0.20292650163173676,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.17917676270008087,
+        "p99": 0.1793418824672699,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true
+    },
+    "same_marker_seed137": {
+      "arm": "marker",
+      "seed": 137,
+      "s_top1_frac_mean_resp": 0.5566564798355103,
+      "mean_cos_to_U1_mean_resp": 0.3993041515350342,
+      "sign_flip": {
+        "p95": 0.24830248951911926,
+        "p99": 0.24961847066879272,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.15439771115779877,
+        "p99": 0.15453936159610748,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true
+    },
+    "same_marker_seed256": {
+      "arm": "marker",
+      "seed": 256,
+      "s_top1_frac_mean_resp": 0.6015779376029968,
+      "mean_cos_to_U1_mean_resp": 0.48136478662490845,
+      "sign_flip": {
+        "p95": 0.1901620328426361,
+        "p99": 0.19125613570213318,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.18036353588104248,
+        "p99": 0.18051081895828247,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true
+    },
+    "same_em_seed42": {
+      "arm": "em",
+      "seed": 42,
+      "s_top1_frac_mean_resp": 0.7557688355445862,
+      "mean_cos_to_U1_mean_resp": 0.9950531125068665,
+      "sign_flip": {
+        "p95": 0.15742610394954681,
+        "p99": 0.1649049073457718,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.7327345609664917,
+        "p99": 0.7328848242759705,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true
+    },
+    "same_em_seed137": {
+      "arm": "em",
+      "seed": 137,
+      "s_top1_frac_mean_resp": 0.7634907960891724,
+      "mean_cos_to_U1_mean_resp": 0.995447039604187,
+      "sign_flip": {
+        "p95": 0.1691575050354004,
+        "p99": 0.1760350465774536,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.7380040287971497,
+        "p99": 0.7382438778877258,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true
+    },
+    "same_em_seed256": {
+      "arm": "em",
+      "seed": 256,
+      "s_top1_frac_mean_resp": 0.7681958675384521,
+      "mean_cos_to_U1_mean_resp": 0.9957396388053894,
+      "sign_flip": {
+        "p95": 0.16695328056812286,
+        "p99": 0.17416465282440186,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.7457461953163147,
+        "p99": 0.7459200024604797,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true
+    }
+  },
+  "arm_contrast_within_variant_seed": {
+    "base_seed42": {
+      "em_s_top1_frac": 0.5599769353866577,
+      "marker_s_top1_frac": 0.5297524929046631,
+      "marker_ge_em_top_share": false,
+      "em_mean_cos_to_U1": 0.9706640243530273,
+      "marker_mean_cos_to_U1": 0.9625069499015808,
+      "em_passes_sign_flip_p95": true
+    },
+    "base_seed137": {
+      "em_s_top1_frac": 0.5865052938461304,
+      "marker_s_top1_frac": 0.5549895167350769,
+      "marker_ge_em_top_share": false,
+      "em_mean_cos_to_U1": 0.9758160710334778,
+      "marker_mean_cos_to_U1": 0.9695430397987366,
+      "em_passes_sign_flip_p95": true
+    },
+    "base_seed256": {
+      "em_s_top1_frac": 0.651528000831604,
+      "marker_s_top1_frac": 0.5646730065345764,
+      "marker_ge_em_top_share": false,
+      "em_mean_cos_to_U1": 0.9855998754501343,
+      "marker_mean_cos_to_U1": 0.9721161127090454,
+      "em_passes_sign_flip_p95": true
+    },
+    "on_policy_seed42": {
+      "em_s_top1_frac": 0.4433286786079407,
+      "marker_s_top1_frac": 0.34907418489456177,
+      "marker_ge_em_top_share": false,
+      "em_mean_cos_to_U1": 0.9176597595214844,
+      "marker_mean_cos_to_U1": 0.6504268646240234,
+      "em_passes_sign_flip_p95": true
+    },
+    "on_policy_seed137": {
+      "em_s_top1_frac": 0.4813769459724426,
+      "marker_s_top1_frac": 0.35236692428588867,
+      "marker_ge_em_top_share": false,
+      "em_mean_cos_to_U1": 0.9380337595939636,
+      "marker_mean_cos_to_U1": 0.5544708967208862,
+      "em_passes_sign_flip_p95": true
+    },
+    "on_policy_seed256": {
+      "em_s_top1_frac": 0.5499623417854309,
+      "marker_s_top1_frac": 0.3564741611480713,
+      "marker_ge_em_top_share": false,
+      "em_mean_cos_to_U1": 0.9631183743476868,
+      "marker_mean_cos_to_U1": 0.6126995086669922,
+      "em_passes_sign_flip_p95": true
+    },
+    "same_seed42": {
+      "em_s_top1_frac": 0.6032194495201111,
+      "marker_s_top1_frac": 0.5023674368858337,
+      "marker_ge_em_top_share": false,
+      "em_mean_cos_to_U1": 0.9806250929832458,
+      "marker_mean_cos_to_U1": 0.47695475816726685,
+      "em_passes_sign_flip_p95": true
+    },
+    "same_seed137": {
+      "em_s_top1_frac": 0.6411536335945129,
+      "marker_s_top1_frac": 0.45817098021507263,
+      "marker_ge_em_top_share": false,
+      "em_mean_cos_to_U1": 0.9854998588562012,
+      "marker_mean_cos_to_U1": 0.36297959089279175,
+      "em_passes_sign_flip_p95": true
+    },
+    "same_seed256": {
+      "em_s_top1_frac": 0.6903824210166931,
+      "marker_s_top1_frac": 0.5547100305557251,
+      "marker_ge_em_top_share": false,
+      "em_mean_cos_to_U1": 0.9906191229820251,
+      "marker_mean_cos_to_U1": 0.4590446949005127,
+      "em_passes_sign_flip_p95": true
+    }
+  },
+  "skipped": {
+    "phase_r": "skipped: the Phase R reproduction gate anchors against parent #521 layer-14 SVD JSONs; no parent reference exists at this layer",
+    "per_question_controls": "skipped: per-question tensors persisted at layer 14 only"
+  }
+}

@@ -63,6 +63,7 @@ def assemble_M(
     *,
     persona_order: Sequence[str] | None = None,
     use_mean_resp: bool = False,
+    tensor_key: str | None = None,
 ) -> tuple[np.ndarray, list[str]]:
     """Assemble M (H x N) from the per-persona shift dict.
 
@@ -77,6 +78,10 @@ def assemble_M(
     use_mean_resp
         If True, use ``shifts[p]["delta_v_mean_resp"]`` instead of
         ``shifts[p]["delta_v"]``. EM-arm secondary read only.
+    tensor_key
+        Explicit per-persona tensor key (e.g. ``"delta_v_l7"`` for the
+        layer-7 read). Mutually exclusive with ``use_mean_resp``; when
+        None (default) behavior is unchanged.
 
     Returns
     -------
@@ -84,6 +89,8 @@ def assemble_M(
         M: (H, N) float32 numpy array.
         persona_names_in_order: list of persona names in column order.
     """
+    if tensor_key is not None and use_mean_resp:
+        raise ValueError("pass either tensor_key or use_mean_resp, not both")
     if persona_order is None:
         persona_order = sorted(shifts.keys())
     else:
@@ -91,7 +98,10 @@ def assemble_M(
             if p not in shifts:
                 raise KeyError(f"persona {p!r} not present in shifts dict")
 
-    key = "delta_v_mean_resp" if use_mean_resp else "delta_v"
+    if tensor_key is not None:
+        key = tensor_key
+    else:
+        key = "delta_v_mean_resp" if use_mean_resp else "delta_v"
     cols = []
     for p in persona_order:
         entry = shifts[p]
