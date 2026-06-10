@@ -42,7 +42,9 @@ OUTPUT_DIR="eval_results/issue_551"
 PARENT_INPUTS="eval_results/issue_521/inputs"
 PARENT_SVD="eval_results/issue_521/svd"
 HF_DATA_REPO="superkaiba1/explore-persona-space-data"
-HF_PREFIX="issue551_shift_reextract/analysis_tensors/shifts"
+# UPLOAD_PREFIX override exists so the VM-side smoke can drive the SAME upload/verify
+# code (scripts/issue551_upload_verify.py) against a temporary smoke prefix.
+HF_PREFIX="${UPLOAD_PREFIX:-issue551_shift_reextract/analysis_tensors/shifts}"
 
 phase() { echo "[phase=$1] $(date -Is) ${2:-}"; }
 
@@ -263,70 +265,13 @@ fi
 # ── 7. upload BEFORE termination + fail-loud verify ──────────────────
 phase upload "upload_folder ${OUTPUT_DIR}/shifts -> hf://${HF_DATA_REPO}/${HF_PREFIX}"
 if [[ "$DRY_RUN" == "1" ]]; then
-  echo "[dry-run] upload :: upload_folder + list_repo_files verify (18 + 18)"
+  echo "[dry-run] upload :: issue551_upload_verify.py (upload_folder + list_repo_files verify, 18 + 18)"
 else
   UPLOAD_RC=0
-  uv run python - "$OUTPUT_DIR" "$HF_DATA_REPO" "$HF_PREFIX" <<'PY' || UPLOAD_RC=$?
-import os
-import sys
-import time
-from pathlib import Path
-
-from dotenv import load_dotenv
-
-load_dotenv()
-from huggingface_hub import HfApi, list_repo_files, upload_folder
-
-output_dir, repo_id, prefix = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
-token = os.environ.get("HF_TOKEN")
-if not token:
-    from huggingface_hub import get_token
-
-    token = get_token()
-assert token, "No HF token in env or HF cache — refusing a doomed upload."
-
-folder = output_dir / "shifts"
-try:
-    upload_folder(
-        folder_path=str(folder),
-        repo_id=repo_id,
-        repo_type="dataset",
-        path_in_repo=prefix,
-        token=token,
-    )
-except Exception as e:  # one retry, then per-file fallback
-    print(f"upload_folder attempt 1 failed: {type(e).__name__}: {e}; retrying once")
-    time.sleep(30)
-    try:
-        upload_folder(
-            folder_path=str(folder),
-            repo_id=repo_id,
-            repo_type="dataset",
-            path_in_repo=prefix,
-            token=token,
-        )
-    except Exception as e2:
-        print(f"upload_folder attempt 2 failed: {type(e2).__name__}: {e2}; per-file fallback")
-        api = HfApi(token=token)
-        for f in sorted(folder.iterdir()):
-            if f.suffix not in {".pt", ".json"}:
-                continue
-            api.upload_file(
-                path_or_fileobj=str(f),
-                path_in_repo=f"{prefix}/{f.name}",
-                repo_id=repo_id,
-                repo_type="dataset",
-            )
-
-# Fail-loud verification via the Python Hub API (never the `hf` CLI).
-files = [f for f in list_repo_files(repo_id, repo_type="dataset") if f.startswith(prefix + "/")]
-n_pt = sum(1 for f in files if f.endswith(".pt"))
-n_mf = sum(1 for f in files if f.endswith(".manifest.json"))
-print(f"verified on hub: {n_pt} .pt + {n_mf} .manifest.json under {prefix}/")
-if n_pt != 18 or n_mf != 18:
-    print(f"UPLOAD VERIFY FAIL: expected 18 + 18, got {n_pt} + {n_mf}")
-    raise SystemExit(2)
-PY
+  # Same code the VM-side smoke executed for real (round 2): extracted to a
+  # standalone script so smoke and production share ONE upload/verify path.
+  uv run python scripts/issue551_upload_verify.py \
+    "$OUTPUT_DIR" "$HF_DATA_REPO" "$HF_PREFIX" || UPLOAD_RC=$?
   if (( UPLOAD_RC != 0 )); then
     # Plan §4 Step 4.7: pod KEPT ALIVE on upload-verify miss; the tensors
     # exist only on this pod until the upload lands.
