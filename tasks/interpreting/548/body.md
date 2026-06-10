@@ -1,8 +1,7 @@
 ---
-title: Once replies end naturally, full-reply behavioral divergence again predicts
-  marker leakage beyond reply length, likely because the 256-token cap had corrupted
-  the length control — the strict off-diagonal read stays indeterminate (MODERATE
-  confidence)
+title: Full-reply behavioral divergence predicts marker leakage beyond reply length
+  once replies end naturally, though the strictest off-diagonal read stays indeterminate
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T06:29:47Z'

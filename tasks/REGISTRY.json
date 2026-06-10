@@ -3238,7 +3238,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/548",
       "status": "interpreting",
-      "title": "Once replies end naturally, full-reply behavioral divergence again predicts marker leakage beyond reply length, likely because the 256-token cap had corrupted the length control \u2014 the strict off-diagonal read stays indeterminate (MODERATE confidence)"
+      "title": "Full-reply behavioral divergence predicts marker leakage beyond reply length once replies end naturally, though the strictest off-diagonal read stays indeterminate (MODERATE confidence)"
     },
     "549": {
       "has_clean_result": false,
