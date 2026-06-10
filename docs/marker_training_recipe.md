@@ -56,9 +56,11 @@ log-prob *measurement* window (#478, log P up to −4 nat / p ≈ 1.6%) sits ent
 - **Under-trained / floor:** source ≈ base prior (~ −19 to −22 nat), emission 0
   everywhere, training loss barely drops (#520 = −22 nat, 0/everything; #365 =
   0.9% source floor; #505 original anchor 0.04–0.82 nat).
-- **The window is narrow and overshoot is as common as the floor.** The *same*
-  nominal r=8 / lr=2e-6 **floored** at 1 epoch (#520) but **saturated** to +30 nat
-  at 600 steps + cosine (#519). **Step count and LR schedule are decisive — not
+- **The window is narrow and overshoot is as common as the floor.** #520
+  (r=8, lr=1e-6) **floored** at 1 epoch (−22 nat) while #519 (r=8, lr=2e-6)
+  **saturated** to +30 nat at 600 steps + cosine — fixed epoch counts don't
+  transfer, though the pair differs in BOTH lr (2×) and steps, so it is not a
+  single-variable contrast. **Step count and LR schedule are decisive — not
   rank.**
 
 ---
@@ -259,7 +261,7 @@ Do these before believing any floor or ceiling:
 |---|---|---|
 | #478 | aw-promotion | **Validated non-saturating recipe** (r16/5e-6/2ep/1:1/marker-only): graded log-prob, 0 emission |
 | #520 | aw-promotion | r8/1e-6/1ep = dead floor, −22 nat, 0% everywhere |
-| #519 | aw-promotion | r8/2e-6/**600 steps**+cosine = saturated +30 nat (same r/lr as #520's floor) |
+| #519 | aw-promotion | r8/2e-6/**600 steps**+cosine = saturated +30 nat (same rank as #520's floor; lr 2x higher) |
 | #397 | aw-promotion | ※ + lr 1e-4 + marker-only loss = all-persona collapse (source AND bystander ~0.99) |
 | #451 | aw-promotion | loss-mask is the gate: marker-only sat, whole-completion sel 0.89, last-32 sel 0.33 |
 | #329 | aw-promotion | marker-only @5e-6/20ep/2-neg = graded (source 99.6%, bystander 11.7%) |
