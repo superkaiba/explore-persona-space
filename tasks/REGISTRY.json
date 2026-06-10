@@ -3152,7 +3152,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/538",
       "status": "interpreting",
-      "title": "Push the marker implant past emission onset to test whether per-context singleton structure emerges with stronger training"
+      "title": "Training the marker implant three times harder doesn't move its geometry \u2014 the per-context structure stays rank-1, killing the additivity-cosine pillar (HIGH confidence)"
     },
     "539": {
       "goal": "Test whether the geometric predictors (cosine, Gaussian-KL@L22) carry rank-information about on-policy marker emission inside narrow base-prior bands of the 416-cell ep1 panel from #532, by computing Spearman \u03c1 between each geometric predictor and the leakage residual after the base prior is regressed out per-bystander.",

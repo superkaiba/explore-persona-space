@@ -1,6 +1,7 @@
 ---
-title: Push the marker implant past emission onset to test whether per-context singleton
-  structure emerges with stronger training
+title: Training the marker implant three times harder doesn't move its geometry —
+  the per-context structure stays rank-1, killing the additivity-cosine pillar (HIGH
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-09T19:44:11Z'
