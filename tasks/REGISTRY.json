@@ -3012,8 +3012,8 @@
       "goal": "Run Phases C/D/E/F on the six LoRA adapters trained in #519 (marker \u00d7 3 seeds + EM \u00d7 3 seeds, on HF Hub at commit c46b8989d) so the rank-one law cross-arm test the parent Goal asks for is actually computed: does a single shift-direction + cosine-scaled magnitude (rank-one) govern cross-context generalization for the marker arm and break for the EM arm?",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/521",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/521",
+      "status": "awaiting_promotion",
       "title": "An emergent-misalignment LoRA shifts all 14 persona contexts along one shared activation direction; a marker LoRA doesn't (MODERATE confidence)"
     },
     "522": {
