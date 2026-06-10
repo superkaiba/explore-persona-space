@@ -3355,6 +3355,15 @@ Take the union. For each entry:
    actually free-analysis (e.g. it discovered the change needs new
    eval data after all) — see ABORT path below.
 
+The orchestrator MAY additionally sanity-check that the eval-data
+path(s) an entry names actually resolve (local file exists /
+`huggingface_hub.list_repo_files` for HF paths) before dispatching; an
+entry whose premise path does not resolve takes the ABORT path's
+reclassification up front (post the `epm:free-analysis-followup-run v1`
+abort record naming the missing artifact) without burning an
+implementer round. The analyzer's Step 6.5 artifact-premise check is
+the primary defense; this is a backstop (incident #552).
+
 When the detection union is empty, this step is a no-op: log one chat
 line (`No free-analysis + headline-affecting follow-ups to auto-run`)
 and proceed directly to 9a-bis.
