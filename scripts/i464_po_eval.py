@@ -97,12 +97,16 @@ LOCAL_ADAPTER_CACHE_FOR: dict[str, Path] = {
     # #533 lr=5e-6 corrective re-run; adapter cache DISTINCT from #529's
     # so the two never collide in the local pre-download cache.
     "cn_i533": Path("/workspace/adapters/i533_cn"),
+    # #547 sub-1-epoch max_steps-resolved re-run of #533's grid; cache
+    # DISTINCT from #533's so the two never collide.
+    "cn_i547": Path("/workspace/adapters/i547_cn"),
 }
 OUT_DIR_FOR: dict[str, Path] = {
     "po": Path("eval_results/issue_464/positive_only/cross_eval"),
     "cn": Path("eval_results/issue_464/contrastive_negatives/cross_eval"),
     "cn_i529": Path("eval_results/issue_529/contrastive_negatives/cross_eval"),
     "cn_i533": Path("eval_results/issue_533/contrastive_negatives/cross_eval"),
+    "cn_i547": Path("eval_results/issue_547/contrastive_negatives/cross_eval"),
 }
 # HF Hub model-repo subpath PREFIX used to look up adapters per cell.
 # Train writes positive-only adapters to ``adapters/i464_{arm}_seed{seed}_{persona}``
@@ -121,6 +125,11 @@ ADAPTER_SUBPATH_FOR: dict[str, str] = {
     # #533 mirrors #529's shape with an i533_ prefix. Matches the train
     # script's hf_path_in_repo at args.issue=533.
     "cn_i533": "adapters/i533_{arm}_seed{seed}_cn_{persona}_e{epoch}",
+    # #547 mirrors #533's shape with an i547_ prefix and an ``_s{steps}``
+    # max_steps suffix (the manipulated variable is the training-amount
+    # INDEXING). Matches the train script's hf_path_in_repo at
+    # args.issue=547.
+    "cn_i547": "adapters/i547_{arm}_seed{seed}_cn_{persona}_s{steps}",
 }
 
 # Legacy aliases (positive-only defaults) — kept for the smoke-test
@@ -137,6 +146,7 @@ SEEDS_FOR: dict[str, tuple[int, ...]] = {
     "cn": (42, 137, 1337),
     "cn_i529": (42, 137, 1337, 7, 21),
     "cn_i533": (42, 137, 1337, 7, 21),
+    "cn_i547": (42, 137, 1337, 7, 21),
 }
 # Legacy alias — kept for callers that referenced ``SEEDS`` before
 # the per-variant split.
@@ -154,6 +164,18 @@ EPOCHS_I529: tuple[int, ...] = (1, 2, 3, 5)
 # as #529 — the grid IS the experimental dial and the single-variable
 # contract holds it byte-stable.
 EPOCHS_I533: tuple[int, ...] = (1, 2, 3, 5)
+# max_steps grid for the cn_i547 variant (sub-1-epoch max_steps-resolved
+# re-run of #533's grid; the training-amount INDEXING is the single
+# manipulated variable). 37.5 optimizer steps/epoch ⇒ E ≈ {0.13, 0.27,
+# 0.48, 0.80, 1.60, 3.20}. Title- and Goal-pinned; do not change.
+MAX_STEPS_I547: tuple[int, ...] = (5, 10, 18, 30, 60, 120)
+# Cell-label grid-suffix character per variant: #529/#533 key cells on
+# ``_e{epoch}``; #547 keys on ``_s{max_steps}``.
+GRID_SUFFIX_CHAR_FOR: dict[str, str] = {
+    "cn_i529": "e",
+    "cn_i533": "e",
+    "cn_i547": "s",
+}
 
 
 def _per_cell_dir_for(variant: str) -> Path:
@@ -164,11 +186,12 @@ def _per_cell_dir_for(variant: str) -> Path:
 
 
 def _all_po_cells(variant: str = "po") -> list[tuple[enc.Arm, int, enc.Persona, int | None]]:
-    """Return all (arm, seed, persona, epoch) cells for the variant.
+    """Return all (arm, seed, persona, grid_value) cells for the variant.
 
-    For ``po`` / ``cn`` the epoch component is ``None`` (single anchor).
-    For ``cn_i529`` / ``cn_i533`` it iterates the variant's epoch grid —
-    the manipulated variable. The legacy 3-tuple ``po`` cell signature
+    For ``po`` / ``cn`` the grid component is ``None`` (single anchor).
+    For ``cn_i529`` / ``cn_i533`` it iterates the variant's epoch grid;
+    for ``cn_i547`` it iterates the max_steps grid — in each case the
+    manipulated variable. The legacy 3-tuple ``po`` cell signature
     is preserved as ``(arm, seed, persona, None)``; downstream call
     sites unpack only the first three components when the variant is
     po/cn.
@@ -190,17 +213,36 @@ def _all_po_cells(variant: str = "po") -> list[tuple[enc.Arm, int, enc.Persona, 
             for persona in enc.PERSONAS
             for epoch in EPOCHS_I533
         ]
+    if variant == "cn_i547":
+        return [
+            (arm, seed, persona, steps)
+            for arm in PO_ARMS
+            for seed in seeds
+            for persona in enc.PERSONAS
+            for steps in MAX_STEPS_I547
+        ]
     return [
         (arm, seed, persona, None) for arm in PO_ARMS for seed in seeds for persona in enc.PERSONAS
     ]
 
 
-def _po_cell_label(arm: enc.Arm, seed: int, persona: enc.Persona, epoch: int | None = None) -> str:
-    """Canonical cell label. For #529 includes the cn infix + epoch suffix.
+def _po_cell_label(
+    arm: enc.Arm,
+    seed: int,
+    persona: enc.Persona,
+    grid_value: int | None = None,
+    suffix_char: str = "e",
+) -> str:
+    """Canonical cell label. For #529/#533/#547 includes the cn infix + grid suffix.
 
     Shape:
       * po:   ``{arm}_seed{seed}_{persona}``
-      * cn_i529: ``{arm}_seed{seed}_cn_{persona}_e{epoch}``
+      * cn_i529 / cn_i533 (suffix_char='e'): ``{arm}_seed{seed}_cn_{persona}_e{epoch}``
+      * cn_i547 (suffix_char='s'): ``{arm}_seed{seed}_cn_{persona}_s{max_steps}``
+
+    ``suffix_char`` comes from ``GRID_SUFFIX_CHAR_FOR[variant]`` at the
+    call sites; the default ``"e"`` preserves the pre-#547 signature for
+    any external caller.
 
     The ``cn`` variant (#464) keeps the legacy po-shape filename (just
     arm/seed/persona — without the ``_cn_`` infix in the per-cell JSON
@@ -208,8 +250,8 @@ def _po_cell_label(arm: enc.Arm, seed: int, persona: enc.Persona, epoch: int | N
     backward compatibility with the existing #464 cn cross-eval output
     layout.
     """
-    if epoch is not None:
-        return f"{arm}_seed{seed}_cn_{persona}_e{epoch}"
+    if grid_value is not None:
+        return f"{arm}_seed{seed}_cn_{persona}_{suffix_char}{grid_value}"
     return f"{arm}_seed{seed}_{persona}"
 
 
@@ -296,9 +338,11 @@ def _download_po_adapter(
       - ``cn`` → ``adapters/i464_{arm}_seed{seed}_cn_{persona}``
       - ``cn_i529`` → ``adapters/i529_{arm}_seed{seed}_cn_{persona}_e{epoch}``
       - ``cn_i533`` → ``adapters/i533_{arm}_seed{seed}_cn_{persona}_e{epoch}``
+      - ``cn_i547`` → ``adapters/i547_{arm}_seed{seed}_cn_{persona}_s{steps}``
     (matches the train script's ``hf_path_in_repo`` for each variant).
 
-    ``epoch`` is REQUIRED for the cn_i529 / cn_i533 variants and IGNORED
+    ``epoch`` carries the variant's GRID VALUE (epoch for cn_i529/cn_i533,
+    max_steps for cn_i547); it is REQUIRED for those variants and IGNORED
     for the po / cn variants (their subpath templates don't reference it).
 
     Local-override env hook ``EPM_LOCAL_ADAPTER_OVERRIDE`` — when set,
@@ -308,10 +352,13 @@ def _download_po_adapter(
     if variant not in ADAPTER_SUBPATH_FOR:
         raise ValueError(f"unknown variant={variant!r}; want one of {list(ADAPTER_SUBPATH_FOR)}")
     fmt_kwargs: dict[str, object] = {"arm": arm, "seed": seed, "persona": persona}
-    if variant in ("cn_i529", "cn_i533"):
+    if variant in ("cn_i529", "cn_i533", "cn_i547"):
         if epoch is None:
-            raise ValueError(f"--variant {variant} requires epoch (None passed)")
+            raise ValueError(f"--variant {variant} requires the grid value (None passed)")
+        # Both names point at the same grid value; ``.format`` only
+        # consumes the one the variant's template references.
         fmt_kwargs["epoch"] = epoch
+        fmt_kwargs["steps"] = epoch
     target_subpath = ADAPTER_SUBPATH_FOR[variant].format(**fmt_kwargs)
     cache_root = LOCAL_ADAPTER_CACHE_FOR[variant]
     override_root = os.environ.get("EPM_LOCAL_ADAPTER_OVERRIDE")
@@ -395,7 +442,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     ap.add_argument(
         "--variant",
-        choices=("po", "cn", "cn_i529", "cn_i533"),
+        choices=("po", "cn", "cn_i529", "cn_i533", "cn_i547"),
         default="po",
         help=(
             "Which follow-up's adapters to evaluate. ``po`` (default) = "
@@ -412,7 +459,13 @@ def main(argv: list[str] | None = None) -> None:
             "``cn_i533`` = #533 lr=5e-6 corrective re-run of #529's grid; "
             "adapters at ``adapters/i533_{arm}_seed{seed}_cn_{persona}_e{epoch}``, "
             "outputs under ``eval_results/issue_533/contrastive_negatives/"
-            "cross_eval/``. Same 5 seeds x 4 epochs grid as cn_i529."
+            "cross_eval/``. Same 5 seeds x 4 epochs grid as cn_i529. "
+            "``cn_i547`` = #547 sub-1-epoch max_steps-resolved re-run of "
+            "#533's grid; adapters at "
+            "``adapters/i547_{arm}_seed{seed}_cn_{persona}_s{steps}``, "
+            "outputs under ``eval_results/issue_547/contrastive_negatives/"
+            "cross_eval/``. Iterates 5 seeds x 6 max_steps settings "
+            "(5,10,18,30,60,120)."
         ),
     )
     ap.add_argument(
@@ -423,7 +476,18 @@ def main(argv: list[str] | None = None) -> None:
             "Epoch grid filter for --variant cn_i529 / cn_i533. When set, "
             "restrict evaluation to ONLY this epoch (1/2/3/5). Default "
             "None = iterate the variant's full epoch grid. IGNORED for "
-            "--variant po/cn."
+            "--variant po/cn; use --max-steps for cn_i547."
+        ),
+    )
+    ap.add_argument(
+        "--max-steps",
+        type=int,
+        default=None,
+        help=(
+            "max_steps grid filter for --variant cn_i547 (mirrors --epoch "
+            "for cn_i529/cn_i533). When set, restrict evaluation to ONLY "
+            "this grid point (5/10/18/30/60/120). Default None = iterate "
+            "the full max_steps grid. IGNORED for other variants."
         ),
     )
     args = ap.parse_args(argv)
@@ -483,6 +547,10 @@ def main(argv: list[str] | None = None) -> None:
         len(q_test),
     )
 
+    # Variant-aware label suffix: ``_e{epoch}`` for cn_i529/cn_i533,
+    # ``_s{max_steps}`` for cn_i547 (GRID_SUFFIX_CHAR_FOR default "e").
+    suffix_char = GRID_SUFFIX_CHAR_FOR.get(args.variant, "e")
+
     all_cells = _all_po_cells(variant=args.variant)
     if args.variant in ("cn_i529", "cn_i533") and args.epoch is not None:
         variant_epochs = EPOCHS_I529 if args.variant == "cn_i529" else EPOCHS_I533
@@ -495,9 +563,21 @@ def main(argv: list[str] | None = None) -> None:
             args.epoch,
             len(all_cells),
         )
+    if args.variant == "cn_i547" and args.max_steps is not None:
+        if args.max_steps not in MAX_STEPS_I547:
+            ap.error(f"--max-steps {args.max_steps} not in cn_i547 grid={MAX_STEPS_I547}")
+        all_cells = [c for c in all_cells if c[3] == args.max_steps]
+        logger.info(
+            "variant=%s --max-steps=%d filter: %d cells",
+            args.variant,
+            args.max_steps,
+            len(all_cells),
+        )
     if args.smoke_cells:
         wanted = set(args.smoke_cells)
-        all_cells = [c for c in all_cells if _po_cell_label(c[0], c[1], c[2], c[3]) in wanted]
+        all_cells = [
+            c for c in all_cells if _po_cell_label(c[0], c[1], c[2], c[3], suffix_char) in wanted
+        ]
         logger.warning("SMOKE: restricted to %d cell(s)", len(all_cells))
 
     my_cells = [c for k, c in enumerate(all_cells) if k % n_shards == shard_idx]
@@ -506,7 +586,7 @@ def main(argv: list[str] | None = None) -> None:
         shard_idx,
         n_shards,
         len(my_cells),
-        [_po_cell_label(c[0], c[1], c[2], c[3]) for c in my_cells],
+        [_po_cell_label(c[0], c[1], c[2], c[3], suffix_char) for c in my_cells],
     )
 
     adapter_paths: dict[tuple[enc.Arm, int, enc.Persona, int | None], str] = {
@@ -572,7 +652,7 @@ def main(argv: list[str] | None = None) -> None:
         return base_cache[e_eval]
 
     for arm, seed, persona, epoch in my_cells:
-        cell_label = _po_cell_label(arm, seed, persona, epoch)
+        cell_label = _po_cell_label(arm, seed, persona, epoch, suffix_char)
         lora_req = LoRARequest(
             lora_name=cell_label,
             lora_int_id=all_cells.index((arm, seed, persona, epoch)) + 1,
@@ -615,9 +695,14 @@ def main(argv: list[str] | None = None) -> None:
             }
             # cn_i529 / cn_i533: record the epoch so anchor-selection /
             # analyze can find E* in O(1) without parsing it back out of
-            # the label.
+            # the label. cn_i547: the grid value is max_steps, recorded
+            # under its own key so downstream readers never mistake a
+            # step count for an epoch count.
             if epoch is not None:
-                payload["epoch"] = epoch
+                if args.variant == "cn_i547":
+                    payload["max_steps"] = epoch
+                else:
+                    payload["epoch"] = epoch
                 payload["variant"] = args.variant
             tmp = out_path.with_suffix(".json.tmp")
             tmp.write_text(json.dumps(payload))

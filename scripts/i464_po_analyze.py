@@ -94,18 +94,21 @@ PER_CELL_DIR_FOR: dict[str, Path] = {
     "cn": Path("eval_results/issue_464/contrastive_negatives/cross_eval/per_cell"),
     "cn_i529": Path("eval_results/issue_529/contrastive_negatives/cross_eval/per_cell"),
     "cn_i533": Path("eval_results/issue_533/contrastive_negatives/cross_eval/per_cell"),
+    "cn_i547": Path("eval_results/issue_547/contrastive_negatives/cross_eval/per_cell"),
 }
 OUT_PATH_FOR: dict[str, Path] = {
     "po": Path("eval_results/issue_464/positive_only/analysis.json"),
     "cn": Path("eval_results/issue_464/contrastive_negatives/analysis.json"),
     "cn_i529": Path("eval_results/issue_529/contrastive_negatives/analysis.json"),
     "cn_i533": Path("eval_results/issue_533/contrastive_negatives/analysis.json"),
+    "cn_i547": Path("eval_results/issue_547/contrastive_negatives/analysis.json"),
 }
 SCHEMA_VERSION_FOR: dict[str, str] = {
     "po": "i464_po_analyze_v1",
     "cn": "i464_cn_analyze_v1",
     "cn_i529": "i529_cn_analyze_v1",
     "cn_i533": "i533_cn_analyze_v1",
+    "cn_i547": "i547_cn_analyze_v1",
 }
 
 # Legacy aliases (positive-only defaults) — kept for any importer that
@@ -125,6 +128,9 @@ _ACTIVE: dict[str, object] = {
     # level helpers (e.g. ``_leakage_to_default``) iterate the same
     # seeds the variant uses. None until main() runs.
     "seeds": None,
+    # Cell-label grid-suffix character: "e" (epochs; cn_i529/cn_i533) or
+    # "s" (max_steps; cn_i547). main() sets it from GRID_SUFFIX_CHAR_FOR.
+    "grid_suffix_char": "e",
 }
 
 # Per-variant seed sets (mirrors po_eval's SEEDS_FOR).
@@ -133,7 +139,17 @@ SEEDS_FOR: dict[str, tuple[int, ...]] = {
     "cn": (42, 137, 1337),
     "cn_i529": (42, 137, 1337, 7, 21),
     "cn_i533": (42, 137, 1337, 7, 21),
+    "cn_i547": (42, 137, 1337, 7, 21),
 }
+# Cell-label grid-suffix character per variant (mirrors po_eval).
+GRID_SUFFIX_CHAR_FOR: dict[str, str] = {
+    "cn_i529": "e",
+    "cn_i533": "e",
+    "cn_i547": "s",
+}
+# max_steps grid for the cn_i547 trajectory block (mirrors po_eval's
+# MAX_STEPS_I547; title- and Goal-pinned).
+MAX_STEPS_I547: tuple[int, ...] = (5, 10, 18, 30, 60, 120)
 SEEDS = SEEDS_FOR["po"]
 PO_ARMS: tuple[enc.Arm, ...] = ("system_plain", "system_padded", "role")
 SHARED_MARKER_PERSONA: enc.Persona = "pirate"
@@ -154,14 +170,26 @@ def _git_commit_hash() -> str:
         return "unknown"
 
 
+def _active_suffix_char() -> str:
+    """Grid-suffix character for the active variant ("e" epochs / "s" max_steps)."""
+    suffix = _ACTIVE.get("grid_suffix_char", "e")
+    return suffix if isinstance(suffix, str) else "e"
+
+
 def _po_cell_label(arm: enc.Arm, seed: int, persona: enc.Persona, epoch: int | None = None) -> str:
     """Canonical cell label; matches train + eval.
 
     * po/cn (epoch=None): ``{arm}_seed{seed}_{persona}``
-    * cn_i529 (epoch=E):  ``{arm}_seed{seed}_cn_{persona}_e{E}``
+    * cn_i529 / cn_i533 (epoch=E): ``{arm}_seed{seed}_cn_{persona}_e{E}``
+    * cn_i547 (epoch=max_steps, suffix from _ACTIVE):
+      ``{arm}_seed{seed}_cn_{persona}_s{S}``
+
+    ``epoch`` carries the active variant's GRID VALUE; the suffix
+    character comes from ``_ACTIVE['grid_suffix_char']`` so every
+    existing call site stays unchanged.
     """
     if epoch is not None:
-        return f"{arm}_seed{seed}_cn_{persona}_e{epoch}"
+        return f"{arm}_seed{seed}_cn_{persona}_{_active_suffix_char()}{epoch}"
     return f"{arm}_seed{seed}_{persona}"
 
 
@@ -384,6 +412,193 @@ def _headline_verdict_from_per_persona(
     return verdict, h1_pass, h0_pass
 
 
+# ── cn_i547 trajectory block (plan §4.1(d) — the PRIMARY read) ──────────
+# Contrast → system-arm mapping; the role arm is the common comparator.
+TRAJ_CONTRAST_ARMS: dict[str, enc.Arm] = {"plain": "system_plain", "padded": "system_padded"}
+TRAJ_ROLE_ARM: enc.Arm = "role"
+# Per-(arm, persona, seed, s) install gate — inherited OWN_EMIT_GATE from
+# i529_select_anchor.py (own-encoding argmax-emit rate >= 0.5).
+TRAJ_OWN_EMIT_GATE = 0.50
+# Paired-bootstrap floor (plan §9 stratification order): below 3
+# qualifying seeds the CI is meaningless → the point is implant-INACTIVE
+# (no CI read; greyed/open in figures).
+TRAJ_MIN_ACTIVE_SEEDS = 3
+# partially_active flag: implant-active but fewer than 4 of 5 seeds
+# qualified (plan §3 implant-active gate).
+TRAJ_PARTIAL_ACTIVE_BELOW = 4
+
+
+def _traj_cell_read(
+    arm: enc.Arm,
+    persona: enc.Persona,
+    seed: int,
+    steps: int,
+    e_eval: str,
+    allow_partial: bool,
+    missing: list[str],
+) -> dict | None:
+    """Load one per-cell JSON at an EXPLICIT grid point for the trajectory block.
+
+    Returns the payload, or None when the file is missing AND
+    ``allow_partial`` (the missing label is appended to ``missing``).
+    Raises FileNotFoundError on a missing file in production
+    (allow_partial=False) — fail-fast per CLAUDE.md.
+    """
+    payload = _load_per_cell(arm, seed, persona, e_eval, epoch=steps)
+    if payload is None:
+        label = f"{_po_cell_label(arm, seed, persona, steps)}/{e_eval}"
+        if allow_partial:
+            missing.append(label)
+            return None
+        raise FileNotFoundError(f"trajectory_per_persona: missing per-cell JSON for {label}")
+    return payload
+
+
+def _traj_own_emit_rate(
+    arm: enc.Arm,
+    persona: enc.Persona,
+    seed: int,
+    steps: int,
+    allow_partial: bool,
+    missing: list[str],
+) -> float | None:
+    """Own-encoding argmax-emit rate for one (arm, persona, seed, s) cell.
+
+    Mirrors i529_select_anchor's fallback: prefer the stored
+    ``emission_recompute_rate``; derive from ``g_argmax_marker_per_q``
+    when absent. None ⇔ the per-cell JSON is missing (allow_partial).
+    """
+    e_own = _own_eval_encoding_for(arm, persona)
+    payload = _traj_cell_read(arm, persona, seed, steps, e_own, allow_partial, missing)
+    if payload is None:
+        return None
+    emit = payload.get("emission_recompute_rate")
+    if emit is None:
+        argmax = payload.get("g_argmax_marker_per_q", [])
+        emit = float(sum(argmax)) / len(argmax) if argmax else 0.0
+    return float(emit)
+
+
+def _trajectory_per_persona_block(
+    seeds: tuple[int, ...], n_boot: int, allow_partial: bool = False
+) -> tuple[dict[str, dict[str, dict[str, dict]]], list[str]]:
+    """Build the UNCONDITIONAL per-(persona, contrast, s) paired-d trajectory.
+
+    The cn_i547 PRIMARY read (plan §4.1(d) / §6): for every
+    (persona, contrast, s) in PERSONAS x {plain, padded} x MAX_STEPS_I547,
+    the per-seed paired d = wrong-slot log P under the system arm minus
+    wrong-slot log P under the role arm, bootstrap-resampled (N=n_boot)
+    over ONLY the seeds where BOTH contrast arms are installed
+    (own-encoding argmax-emit >= TRAJ_OWN_EMIT_GATE at that seed x s —
+    the implant-active gate lives at the (persona, contrast, s) unit,
+    per-seed). Writes regardless of anchor state — the anchor-gated
+    headline is a separate CONDITIONAL block.
+
+    Returns ``(block, missing_labels)`` where ``block`` nests as
+    ``{persona: {contrast: {str(s): point}}}`` and each point carries
+    mean / ci_lo_95 / ci_hi_95 / sign_agreement (None when the point is
+    implant-inactive), implant_active, partially_active, active_seed_n,
+    per-arm own-emit rates (mean + per-seed), installed_per_seed,
+    d_per_seed, and n_bootstrap.
+    """
+    rng = np.random.default_rng(42)
+    missing: list[str] = []
+    block: dict[str, dict[str, dict[str, dict]]] = {}
+    for persona in enc.PERSONAS:
+        block[persona] = {}
+        for contrast_name, sys_arm in TRAJ_CONTRAST_ARMS.items():
+            block[persona][contrast_name] = {}
+            for steps in MAX_STEPS_I547:
+                point_missing: list[str] = []
+                sys_emit_per_seed: dict[str, float | None] = {}
+                role_emit_per_seed: dict[str, float | None] = {}
+                installed_per_seed: dict[str, bool] = {}
+                d_per_seed: dict[str, float] = {}
+                for seed in seeds:
+                    e_sys = _traj_own_emit_rate(
+                        sys_arm, persona, seed, steps, allow_partial, point_missing
+                    )
+                    e_role = _traj_own_emit_rate(
+                        TRAJ_ROLE_ARM, persona, seed, steps, allow_partial, point_missing
+                    )
+                    sys_emit_per_seed[str(seed)] = e_sys
+                    role_emit_per_seed[str(seed)] = e_role
+                    if e_sys is None or e_role is None:
+                        installed_per_seed[str(seed)] = False
+                        continue
+                    installed = e_sys >= TRAJ_OWN_EMIT_GATE and e_role >= TRAJ_OWN_EMIT_GATE
+                    installed_per_seed[str(seed)] = installed
+                    if not installed:
+                        continue
+                    e_off_sys = _other_eval_encoding_for(sys_arm, persona)
+                    e_off_role = _other_eval_encoding_for(TRAJ_ROLE_ARM, persona)
+                    w_sys = _traj_cell_read(
+                        sys_arm, persona, seed, steps, e_off_sys, allow_partial, point_missing
+                    )
+                    w_role = _traj_cell_read(
+                        TRAJ_ROLE_ARM,
+                        persona,
+                        seed,
+                        steps,
+                        e_off_role,
+                        allow_partial,
+                        point_missing,
+                    )
+                    if w_sys is None or w_role is None:
+                        # Installed but unpaired (missing wrong-slot JSON
+                        # under allow_partial) — the seed cannot enter the
+                        # paired bootstrap.
+                        installed_per_seed[str(seed)] = False
+                        continue
+                    d_per_seed[str(seed)] = float(w_sys["g_logprob"]) - float(w_role["g_logprob"])
+                active_seed_n = len(d_per_seed)
+                implant_active = active_seed_n >= TRAJ_MIN_ACTIVE_SEEDS
+                partially_active = implant_active and active_seed_n < TRAJ_PARTIAL_ACTIVE_BELOW
+
+                def _mean_or_none(vals: dict[str, float | None]) -> float | None:
+                    present = [v for v in vals.values() if v is not None]
+                    return float(np.mean(present)) if present else None
+
+                point: dict = {
+                    "implant_active": implant_active,
+                    "partially_active": partially_active,
+                    "active_seed_n": active_seed_n,
+                    "installed_per_seed": installed_per_seed,
+                    "own_emit_rate_system_arm": _mean_or_none(sys_emit_per_seed),
+                    "own_emit_rate_role_arm": _mean_or_none(role_emit_per_seed),
+                    "own_emit_rate_system_arm_per_seed": sys_emit_per_seed,
+                    "own_emit_rate_role_arm_per_seed": role_emit_per_seed,
+                    "d_per_seed": d_per_seed,
+                    "n_bootstrap": n_boot,
+                    "n_missing": len(point_missing),
+                    "mean": None,
+                    "ci_lo_95": None,
+                    "ci_hi_95": None,
+                    "sign_agreement": None,
+                }
+                if implant_active:
+                    arr = np.array(list(d_per_seed.values()), dtype=float)
+                    n = len(arr)
+                    means = np.empty(n_boot)
+                    for b in range(n_boot):
+                        idx = rng.integers(0, n, size=n)
+                        means[b] = arr[idx].mean()
+                    lo, hi = np.quantile(means, [0.025, 0.975])
+                    central = float(arr.mean())
+                    central_sign = 1.0 if central > 0 else (-1.0 if central < 0 else 0.0)
+                    if central_sign == 0.0:
+                        sign_agree = 0.5
+                    else:
+                        sign_agree = float(np.mean(np.sign(means) == central_sign))
+                    point["mean"] = central
+                    point["ci_lo_95"] = float(lo)
+                    point["ci_hi_95"] = float(hi)
+                    point["sign_agreement"] = sign_agree
+                block[persona][contrast_name][str(steps)] = point
+                missing.extend(point_missing)
+    return block, missing
+
+
 def _own_persona_elicitation(arm: enc.Arm, seed: int) -> tuple[list[float], list[str]]:
     """H1 gate input: raw trained log P on each (training_persona, own-encoding) cell.
 
@@ -522,7 +737,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     )
     ap.add_argument(
         "--variant",
-        choices=("po", "cn", "cn_i529", "cn_i533"),
+        choices=("po", "cn", "cn_i529", "cn_i533", "cn_i547"),
         default="po",
         help=(
             "Which follow-up to analyze. ``po`` (default) = positive-only "
@@ -532,9 +747,14 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             "``cn_i529`` = #529 non-saturated-anchor cn (reads + writes under "
             "``eval_results/issue_529/contrastive_negatives/``). ``cn_i533`` = "
             "#533 lr=5e-6 corrective re-run (reads + writes under "
-            "``eval_results/issue_533/contrastive_negatives/``). cn_i529 / "
-            "cn_i533 BOTH REQUIRE ``--anchor-file`` so the per-persona E* is "
-            "set before per-cell loads."
+            "``eval_results/issue_533/contrastive_negatives/``). ``cn_i547`` = "
+            "#547 sub-1-epoch max_steps-resolved re-run (reads + writes under "
+            "``eval_results/issue_547/contrastive_negatives/``; cell labels "
+            "carry ``_s{max_steps}``; ALWAYS writes the UNCONDITIONAL "
+            "``trajectory_per_persona`` block, anchor-gated headline is a "
+            "conditional bonus). cn_i529 / cn_i533 / cn_i547 ALL REQUIRE "
+            "``--anchor-file`` so the per-persona grid anchor is set before "
+            "per-cell loads."
         ),
     )
     ap.add_argument(
@@ -556,6 +776,9 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     # helpers (_load_per_cell, _symmetric_leakage, ...) read from the
     # right directory without each call site needing an extra arg.
     _ACTIVE["per_cell_dir"] = PER_CELL_DIR_FOR[args.variant]
+    # Grid-suffix character BEFORE any per-cell load: cn_i547 cells key on
+    # ``_s{max_steps}``; everything else keeps the ``_e{epoch}`` default.
+    _ACTIVE["grid_suffix_char"] = GRID_SUFFIX_CHAR_FOR.get(args.variant, "e")
     out_path_active = OUT_PATH_FOR[args.variant]
     schema_version = SCHEMA_VERSION_FOR[args.variant]
     seeds_default = list(SEEDS_FOR[args.variant])
@@ -567,12 +790,12 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     # Closes the `leakage-to-default-seeds-undercount-cn-i529` round-1
     # concern — the cn_i529 path uses 5 seeds (42, 137, 1337, 7, 21).
     _ACTIVE["seeds"] = tuple(int(s) for s in args.seeds)
-    # cn_i529 / cn_i533: REQUIRE --anchor-file unless --allow-partial.
-    # The anchor file is the formal hand-off between
+    # cn_i529 / cn_i533 / cn_i547: REQUIRE --anchor-file unless
+    # --allow-partial. The anchor file is the formal hand-off between
     # i529_select_anchor.py and this script — without it the analyzer
     # would load the wrong (or no) cells and silently produce a
     # malformed analysis.
-    if args.variant in ("cn_i529", "cn_i533"):
+    if args.variant in ("cn_i529", "cn_i533", "cn_i547"):
         if args.anchor_file is None and not args.allow_partial:
             ap.error(
                 f"--variant {args.variant} requires --anchor-file (run "
@@ -633,6 +856,34 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                         "`.claude/rules/marker-training-recipe.md`."
                     ),
                 }
+                if args.variant == "cn_i547":
+                    # cn_i547 PRIMARY read is NOT anchor-gated (plan
+                    # §4.1(d)): the trajectory block writes even when the
+                    # anchor is degenerate/partial — only the inherited
+                    # anchor-gated headline (the CONDITIONAL BONUS) is
+                    # skipped. This closes the #533 provenance wart where
+                    # the headline numbers lived only in the figures
+                    # script after a degenerate anchor.
+                    trajectory, traj_missing = _trajectory_per_persona_block(
+                        seeds=tuple(args.seeds),
+                        n_boot=N_BOOTSTRAP,
+                        allow_partial=args.allow_partial,
+                    )
+                    partial_payload["trajectory_per_persona"] = trajectory
+                    partial_payload["trajectory_grid_max_steps"] = list(MAX_STEPS_I547)
+                    partial_payload["trajectory_n_missing_per_cell"] = len(traj_missing)
+                    partial_payload["seeds"] = args.seeds
+                    partial_payload["note"] = (
+                        "cn_i547: anchor unresolved (degenerate/partial) — the "
+                        "anchor-gated headline (CONDITIONAL BONUS) is skipped, "
+                        "but the UNCONDITIONAL trajectory_per_persona PRIMARY "
+                        "read is present in this payload."
+                    )
+                    logger.info(
+                        "cn_i547 trajectory_per_persona written despite "
+                        "unresolved anchor (%d missing per-cell reads).",
+                        len(traj_missing),
+                    )
                 out_path_active.parent.mkdir(parents=True, exist_ok=True)
                 out_path_active.write_text(json.dumps(partial_payload, indent=2))
                 logger.warning(
@@ -819,12 +1070,55 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         "raw_per_cell": raw_per_cell,
         "n_missing_per_cell": len(missing),
     }
-    if args.variant in ("cn_i529", "cn_i533"):
+    if args.variant in ("cn_i529", "cn_i533", "cn_i547"):
         payload["selected_anchor"] = _ACTIVE.get("selected_epoch_per_persona")
         payload["anchor_file"] = args.anchor_file
 
-    # cn_i533 ONLY: per-persona paired-bootstrap extension (plan §4 (d)
-    # "Pseudocode for new code"). The inherited cn_i529 path's
+    # cn_i547 ONLY: the UNCONDITIONAL trajectory block (plan §4.1(d) —
+    # the PRIMARY read). Computed and written REGARDLESS of headline /
+    # anchor / dynamic-range state; the anchor-gated headline extension
+    # below stays the CONDITIONAL BONUS.
+    if args.variant == "cn_i547":
+        trajectory, traj_missing = _trajectory_per_persona_block(
+            seeds=tuple(args.seeds),
+            n_boot=N_BOOTSTRAP,
+            allow_partial=args.allow_partial,
+        )
+        payload["trajectory_per_persona"] = trajectory
+        payload["trajectory_grid_max_steps"] = list(MAX_STEPS_I547)
+        payload["trajectory_n_missing_per_cell"] = len(traj_missing)
+        for persona_key, by_contrast in trajectory.items():
+            for contrast_key, by_steps in by_contrast.items():
+                for steps_key, pt in by_steps.items():
+                    if pt["implant_active"]:
+                        logger.info(
+                            "cn_i547 trajectory d[%s][%s][s=%s]: mean=%.3f CI=[%.3f, %.3f] "
+                            "sign_agreement=%.3f active_seed_n=%d partially_active=%s",
+                            persona_key,
+                            contrast_key,
+                            steps_key,
+                            pt["mean"],
+                            pt["ci_lo_95"],
+                            pt["ci_hi_95"],
+                            pt["sign_agreement"],
+                            pt["active_seed_n"],
+                            pt["partially_active"],
+                        )
+                    else:
+                        logger.info(
+                            "cn_i547 trajectory d[%s][%s][s=%s]: implant-INACTIVE "
+                            "(active_seed_n=%d < %d) — no CI read",
+                            persona_key,
+                            contrast_key,
+                            steps_key,
+                            pt["active_seed_n"],
+                            TRAJ_MIN_ACTIVE_SEEDS,
+                        )
+
+    # cn_i533 / cn_i547: per-persona paired-bootstrap extension (plan §4 (d)
+    # "Pseudocode for new code"; for cn_i547 this anchor-gated block is
+    # the CONDITIONAL BONUS — the PRIMARY read is the unconditional
+    # trajectory_per_persona block above). The inherited cn_i529 path's
     # _symmetric_leakage averages personas BEFORE forming d, so the
     # persona-averaged headline.d_seed_plain / headline.d_seed_padded
     # can hide an opposite-signed per-persona pair. The H1/H0 verdict
@@ -835,7 +1129,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     # headline is in a non-stat status (descriptive-only / dynamic-
     # range failed) — the per-persona view is only meaningful when the
     # variant-level bootstrap is also meaningful.
-    if args.variant == "cn_i533" and headline_status not in (
+    if args.variant in ("cn_i533", "cn_i547") and headline_status not in (
         "inconclusive_descriptive_only",
         "inconclusive_dynamic_range_failed",
     ):
@@ -845,8 +1139,8 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             for persona_key, by_contrast in per_persona.items():
                 for contrast_key, stats in by_contrast.items():
                     logger.info(
-                        "cn_i533 per-persona d[%s][%s]: mean=%.3f CI=[%.3f, %.3f] "
-                        "sign_agreement=%.3f",
+                        "%s per-persona d[%s][%s]: mean=%.3f CI=[%.3f, %.3f] sign_agreement=%.3f",
+                        args.variant,
                         persona_key,
                         contrast_key,
                         stats["mean"],
@@ -883,7 +1177,8 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             payload["headline"]["status"] = headline_status
             payload["headline_status"] = headline_status
             logger.info(
-                "cn_i533 per-persona verdict: %s (h1_pass=%s h0_pass=%s) -> headline_status=%s",
+                "%s per-persona verdict: %s (h1_pass=%s h0_pass=%s) -> headline_status=%s",
+                args.variant,
                 per_persona_verdict,
                 h1_pp_pass,
                 h0_pp_pass,
@@ -891,7 +1186,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             )
         except FileNotFoundError as e:
             if args.allow_partial:
-                logger.warning("cn_i533 per-persona paired-d (partial): %s", e)
+                logger.warning("%s per-persona paired-d (partial): %s", args.variant, e)
                 payload["headline"]["per_persona_status"] = "partial_missing_cells"
                 payload["headline"]["per_persona_partial_reason"] = str(e)
             else:
