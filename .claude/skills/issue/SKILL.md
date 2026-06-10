@@ -3707,12 +3707,14 @@ is the durable record consumed by re-entry idempotency.
    one this `/issue <N>` is running on — never the main checkout):
    ```bash
    git -C "$WORKTREE" add docs/methodology/issue_<N>.md
-   git -C "$WORKTREE" commit -m "methodology: issue #<N> findings-blind reference"
+   git -C "$WORKTREE" commit -m "methodology: issue #<N> findings-blind reference" -- docs/methodology/issue_<N>.md
    DOC_SHA=$(git -C "$WORKTREE" rev-parse HEAD)
    ```
    Use the explicit path; never `git add -A` (avoids sweeping
-   unrelated working-tree changes). The doc rides to `main` with the
-   auto-merge at Step 9b.
+   unrelated working-tree changes), and keep the commit
+   pathspec-limited so any other staged entry in the index is ignored
+   (same guard as the Step 10d surgical checkout). The doc rides to
+   `main` with the auto-merge at Step 9b.
 6. **Publish the secret gist (fail-soft).** Try once. `gh gist create
    <file>` uses the file's basename for the gist filename — the
    in-repo path is `docs/methodology/issue_<N>.md`, so the rendered
@@ -4628,18 +4630,25 @@ Decision tree:
   ```
 
   Then, from the **repo root on `main`** (never switch the branch
-  there), checkout each path from the branch, commit by EXPLICIT PATH
-  (never `git add -A`), and push:
+  there), checkout each path from the branch, stage by EXPLICIT PATH
+  (never `git add -A`), commit PATHSPEC-LIMITED, and push. The
+  pathspec-limited commit is load-bearing: many sessions commit to the
+  shared repo root concurrently, so its index may carry a CONCURRENT
+  session's staged files, and a bare `git commit` sweeps them in
+  (incident #562/#550, 2026-06-10: 70 foreign staged files landed in
+  #562's surgical commit) — limiting the commit by pathspec commits
+  ONLY this task's files and ignores every other staged entry:
 
   ```bash
   cd "$REPO_ROOT"
   xargs -a /tmp/issue-<N>-additive-files.txt git checkout issue-<N> --
   xargs -a /tmp/issue-<N>-additive-files.txt git add --
-  git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
+  git diff --cached --name-only   # sanity echo: spot any foreign staged entries
+  xargs -a /tmp/issue-<N>-additive-files.txt git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
 
   Branch was <BEHIND> commits behind main and based on <PARENT>
   (not on mainline), unsafe to blind-rebase. Cherry-picked this
-  task's own added files only; shared src/ / scripts/ unchanged."
+  task's own added files only; shared src/ / scripts/ unchanged." --
   git push origin main
   ```
 
