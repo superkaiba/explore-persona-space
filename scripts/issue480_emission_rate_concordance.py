@@ -11,10 +11,24 @@ Outputs:
     figures/issue_480/emission_rate_vs_sycophancy_se.{png,pdf,meta.json}
 
 Analysis-only: no training, no model loads, no GPU. Runs in seconds.
+
+Band-stopped-anchor-rerun (#480 follow-up round 2) flags — every default equals
+the module constant the round-1 run hardcoded, so a no-flag invocation is
+byte-identical to round 1 (up to the volatile git_commit_sha / timestamp_utc
+provenance fields):
+
+    --matrix-path   input marker_delta_matrix.json (default: round-1 path)
+    --stats-dir     output dir for concordance_stats.json (default: round-1 dir)
+    --figure-stem   figure stem under figures/ (default: round-1 stem)
+    --x-field       marker-side DV column (default: emission_rate; the rerun
+                    also passes marker_delta for the secondary log-prob DV —
+                    the stats file is then named concordance_stats_<x_field>.json
+                    so the two runs never collide)
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import subprocess
 import sys
@@ -44,15 +58,33 @@ EXPECTED_N_ROWS = 138
 X_FIELD = "emission_rate"
 Y_FIELD = "sycophancy_delta"
 CONTROL_FIELDS = ("cosine_l20_baseline", "bystander_base_rate")
-REQUIRED_ROW_FIELDS = (
-    "source",
-    "bystander",
-    X_FIELD,
-    Y_FIELD,
-    "sycophancy_delta_se",
-    *CONTROL_FIELDS,
-    "source_base_rate",
-)
+
+# Plain-English DV description per supported x-field (used in the output
+# JSON's "dv" block and the figure x-axis label).
+X_FIELD_DESCRIPTIONS = {
+    "emission_rate": "on-policy marker emission rate per bystander",
+    "marker_delta": "on-policy log P(marker) trained - base per bystander (nats)",
+}
+X_FIELD_AXIS_LABELS = {
+    "emission_rate": "Marker emission rate (fraction of own responses)",
+    "marker_delta": "Marker log P trained - base (nats)",
+}
+
+
+def _required_row_fields(x_field: str) -> tuple[str, ...]:
+    """Row fields the matrix must carry for a given marker-side DV column."""
+    return (
+        "source",
+        "bystander",
+        x_field,
+        Y_FIELD,
+        "sycophancy_delta_se",
+        *CONTROL_FIELDS,
+        "source_base_rate",
+    )
+
+
+REQUIRED_ROW_FIELDS = _required_row_fields(X_FIELD)
 
 MIN_NONZERO_CELLS = 5
 MIN_DISTINCT_VALUES = 3
@@ -94,19 +126,20 @@ def _git_commit_sha() -> str:
     return out.stdout.strip()
 
 
-def load_matrix() -> list[dict]:
+def load_matrix(matrix_path: Path = MATRIX_PATH, x_field: str = X_FIELD) -> list[dict]:
     """Load and validate the 138-cell marker-delta matrix; fail loud on any mismatch."""
-    payload = json.loads(MATRIX_PATH.read_text())
+    required = _required_row_fields(x_field)
+    payload = json.loads(matrix_path.read_text())
     if payload["schema"] != EXPECTED_SCHEMA:
         raise ValueError(f"schema mismatch: {payload['schema']!r} != {EXPECTED_SCHEMA!r}")
     rows = payload["rows"]
     if payload["n_rows"] != EXPECTED_N_ROWS or len(rows) != EXPECTED_N_ROWS:
         raise ValueError(f"expected {EXPECTED_N_ROWS} rows, got n_rows={payload['n_rows']}")
     for i, row in enumerate(rows):
-        missing = [k for k in REQUIRED_ROW_FIELDS if k not in row]
+        missing = [k for k in required if k not in row]
         if missing:
             raise KeyError(f"row {i} missing fields: {missing}")
-        for k in REQUIRED_ROW_FIELDS:
+        for k in required:
             if k in ("source", "bystander"):
                 continue
             if row[k] is None or not np.isfinite(row[k]):
@@ -230,8 +263,23 @@ def source_fe_spearman(
     return {"rho": rho, "p_permutation": float(p_perm)}
 
 
-def make_figure(sub: list[dict], stats: dict) -> dict[str, str]:
-    """Software-engineer per-bystander scatter: emission rate vs sycophancy delta."""
+def _repo_relative(path: Path) -> str:
+    """Repo-relative path string when the path sits under REPO_ROOT, else absolute."""
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
+def make_figure(
+    sub: list[dict],
+    stats: dict,
+    *,
+    x_field: str = X_FIELD,
+    figure_stem: str = FIGURE_STEM,
+    matrix_path: Path = MATRIX_PATH,
+) -> dict[str, str]:
+    """Software-engineer per-bystander scatter: marker DV vs sycophancy delta."""
     from explore_persona_space.analysis.paper_plots import (
         paper_palette_role,
         savefig_paper,
@@ -240,7 +288,7 @@ def make_figure(sub: list[dict], stats: dict) -> dict[str, str]:
     )
 
     set_paper_style("blog")
-    x = np.array([r[X_FIELD] for r in sub])
+    x = np.array([r[x_field] for r in sub])
     y = np.array([r[Y_FIELD] for r in sub])
     yerr = np.array([r["sycophancy_delta_se"] for r in sub])
     fig, ax = plt.subplots()
@@ -256,15 +304,20 @@ def make_figure(sub: list[dict], stats: dict) -> dict[str, str]:
         linestyle="none",
     )
     ax.axhline(0.0, color=paper_palette_role("neutral"), linewidth=0.6, alpha=0.5)
-    ax.set_xlabel("Marker emission rate (fraction of own responses)")
+    ax.set_xlabel(X_FIELD_AXIS_LABELS.get(x_field, x_field))
     ax.set_ylabel("Sycophancy leakage (trained − base)")
+    title = (
+        "Marker emission rate tracks sycophancy leakage on the software-engineer source"
+        if x_field == "emission_rate"
+        else f"Marker {x_field} vs sycophancy leakage on the software-engineer source"
+    )
     set_title_subtitle(
         ax,
-        "Marker emission rate tracks sycophancy leakage on the software-engineer source",
+        title,
         subtitle="One point per bystander persona (n=23); y error bars are per-bystander SE",
-        source="Source: eval_results/issue_480/marker_delta_matrix.json",
+        source=f"Source: {_repo_relative(matrix_path)}",
     )
-    written = savefig_paper(fig, FIGURE_STEM, dir=FIGURE_DIR)
+    written = savefig_paper(fig, figure_stem, dir=FIGURE_DIR)
     plt.close(fig)
 
     meta_path = written["meta"]
@@ -278,16 +331,38 @@ def make_figure(sub: list[dict], stats: dict) -> dict[str, str]:
         "p_permutation": stats["naive"]["p_permutation"],
         "bootstrap_ci_95": [stats["bootstrap"]["ci_lo"], stats["bootstrap"]["ci_hi"]],
     }
-    meta["x_field"] = X_FIELD
+    meta["x_field"] = x_field
     meta["y_field"] = Y_FIELD
     meta_path.write_text(json.dumps(meta, indent=2) + "\n")
     return {k: str(v) for k, v in written.items()}
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     """Run the full emission-rate concordance analysis and persist stats + figure."""
-    rows = load_matrix()
-    matrix_payload = json.loads(MATRIX_PATH.read_text())
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("--matrix-path", type=Path, default=MATRIX_PATH)
+    parser.add_argument("--stats-dir", type=Path, default=STATS_DIR)
+    parser.add_argument("--figure-stem", type=str, default=FIGURE_STEM)
+    parser.add_argument(
+        "--x-field",
+        type=str,
+        default=X_FIELD,
+        choices=sorted(X_FIELD_DESCRIPTIONS),
+        help="Marker-side DV column. Non-default choices write "
+        "concordance_stats_<x_field>.json so the primary stats file is never clobbered.",
+    )
+    args = parser.parse_args(argv)
+    matrix_path: Path = args.matrix_path
+    stats_dir: Path = args.stats_dir
+    x_field: str = args.x_field
+    stats_path = stats_dir / (
+        "concordance_stats.json" if x_field == X_FIELD else f"concordance_stats_{x_field}.json"
+    )
+
+    rows = load_matrix(matrix_path, x_field)
+    matrix_payload = json.loads(matrix_path.read_text())
     sources = sorted({r["source"] for r in rows})
     by_source: dict[str, dict[str, np.ndarray]] = {}
     for s in sources:
@@ -295,7 +370,7 @@ def main() -> None:
         assert len(sub) == 23, (s, len(sub))
         by_source[s] = {
             "rows": sub,
-            "x": np.array([r[X_FIELD] for r in sub], dtype=float),
+            "x": np.array([r[x_field] for r in sub], dtype=float),
             "y": np.array([r[Y_FIELD] for r in sub], dtype=float),
             "controls": np.array([[r[c] for c in CONTROL_FIELDS] for r in sub], dtype=float),
         }
@@ -360,16 +435,22 @@ def main() -> None:
     fe["method"] = "rank within source, demean, pool all cells, Pearson on pooled ranks"
 
     se_stats = per_source[SE_SOURCE]
-    figure_paths = make_figure(by_source[SE_SOURCE]["rows"], se_stats)
+    figure_paths = make_figure(
+        by_source[SE_SOURCE]["rows"],
+        se_stats,
+        x_field=x_field,
+        figure_stem=args.figure_stem,
+        matrix_path=matrix_path,
+    )
 
-    STATS_DIR.mkdir(parents=True, exist_ok=True)
+    stats_dir.mkdir(parents=True, exist_ok=True)
     result = {
         "schema": OUTPUT_SCHEMA,
         "followup_label": "emission-rate-concordance",
         "git_commit_sha": _git_commit_sha(),
         "timestamp_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "input_matrix": {
-            "path": str(MATRIX_PATH.relative_to(REPO_ROOT)),
+            "path": _repo_relative(matrix_path),
             "schema": matrix_payload["schema"],
             "git_commit_sha": matrix_payload["git_commit_sha"],
             "n_rows": matrix_payload["n_rows"],
@@ -388,7 +469,7 @@ def main() -> None:
         "n_boot": N_BOOT,
         "n_perm": N_PERM,
         "dv": {
-            "x": f"{X_FIELD} (on-policy marker emission rate per bystander)",
+            "x": f"{x_field} ({X_FIELD_DESCRIPTIONS[x_field]})",
             "y": f"{Y_FIELD} (frozen #411 per-bystander sycophancy leakage, trained - base)",
         },
         "per_source": per_source,
@@ -396,7 +477,7 @@ def main() -> None:
         "source_fe": fe,
         "figure": figure_paths,
     }
-    STATS_PATH.write_text(json.dumps(result, indent=2) + "\n")
+    stats_path.write_text(json.dumps(result, indent=2) + "\n")
 
     for s in sources:
         e = per_source[s]
@@ -412,7 +493,7 @@ def main() -> None:
         print(line)
     print(f"pooled: rho={pooled['rho']:.3f} p_perm={pooled['p_permutation']:.2e}")
     print(f"source_fe: rho={fe['rho']:.3f} p_perm={fe['p_permutation']:.2e}")
-    print(f"stats -> {STATS_PATH.relative_to(REPO_ROOT)}")
+    print(f"stats -> {_repo_relative(stats_path)}")
     print(f"figure -> {figure_paths['png']}")
 
 

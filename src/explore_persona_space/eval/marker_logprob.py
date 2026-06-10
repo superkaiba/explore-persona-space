@@ -168,6 +168,7 @@ def compute_marker_slot_stats(
     batch_size: int = 8,
     device: str = "cuda:0",
     eos_token_id: int | None = None,
+    include_argmax: bool = False,
 ) -> list[dict[str, float]]:
     """Per-context marker-slot stats in BOTH log-prob and raw-logit space.
 
@@ -192,12 +193,19 @@ def compute_marker_slot_stats(
         eos_token_id: Token id for the EOS / ``<|im_end|>`` competitor at the
             slot. Defaults to ``tokenizer.eos_token_id``; fails loud if both
             are None (the margin readout needs a real competitor id).
+        include_argmax: When True, each per-context dict ALSO carries
+            ``argmax_id`` (the int token id with the largest logit at the
+            slot — the emission read: argmax == marker id ⇔ the marker fires
+            under greedy decoding), from the SAME forward pass. Default
+            False keeps the returned key set byte-identical for existing
+            callers.
 
     Returns:
         ``list[dict]`` of length ``len(contexts)`` with keys per context:
         ``logp`` (= ``z_marker - logZ``), ``z_marker`` (raw logit at the
         marker id), ``z_eos`` (raw logit at ``eos_token_id``), ``logZ``
-        (``logsumexp`` over the full vocab at the slot).
+        (``logsumexp`` over the full vocab at the slot); plus ``argmax_id``
+        when ``include_argmax=True``.
     """
     if position != "end_of_answer":
         raise NotImplementedError(f"position={position!r} not supported yet")
@@ -246,14 +254,15 @@ def compute_marker_slot_stats(
             log_z = float(torch.logsumexp(raw, dim=-1).item())
             z_marker = float(raw[marker_id].item())
             z_eos = float(raw[eos_token_id].item())
-            out.append(
-                {
-                    "logp": z_marker - log_z,
-                    "z_marker": z_marker,
-                    "z_eos": z_eos,
-                    "logZ": log_z,
-                }
-            )
+            row: dict[str, float] = {
+                "logp": z_marker - log_z,
+                "z_marker": z_marker,
+                "z_eos": z_eos,
+                "logZ": log_z,
+            }
+            if include_argmax:
+                row["argmax_id"] = int(torch.argmax(raw).item())
+            out.append(row)
         del logits
 
     assert len(out) == len(contexts)

@@ -571,6 +571,25 @@ class TrainLoraConfig:
     # (cf. CLAUDE.md #260 truncation rule). Set explicitly to override the
     # default budget.
     marker_band_probe_max_length: int | None = None
+    # Issue #480 band-stopped-anchor-rerun: log-only mode for the band
+    # callback. When True the callback keeps ALL trajectory logging (WandB +
+    # the local trajectory JSON below) but NEVER sets should_training_stop —
+    # the run trains to its fixed step cap and the anchor is picked post-hoc
+    # from the checkpoint ladder. Default False → live band-stop behavior is
+    # byte-identical for every existing caller.
+    marker_band_log_only: bool = False
+    # Optional local trajectory JSON path for the band callback. When set,
+    # the per-probe four-float records (log P, z_marker, z_eos, logZ;
+    # trained AND base) are appended and the JSON is rewritten after EVERY
+    # probe (checkpoint-per-phase discipline — a crash never loses the
+    # trajectory). Default None → no local file, WandB-only (byte-identical
+    # for existing callers).
+    marker_band_trajectory_path: str | None = None
+    # Plumbed to TrainingArguments.save_only_model (skip optimizer/scheduler
+    # state in step checkpoints — ~160 MB adapter-only checkpoints instead
+    # of ~1 GB). Only forwarded when True so older transformers without the
+    # kwarg are unaffected on default-config paths.
+    save_only_model: bool = False
     # Issue #478 / #490: opt-in LoRA target-module override. When ``None``
     # (default) train_lora uses the historical 7-module list
     # (q/k/v/o/gate/up/down) so existing callers are byte-identical. Issue
@@ -861,17 +880,22 @@ def _maybe_attach_marker_band_stop(
         # EOS competitor at the marker slot for the raw-logit (z_eos) WandB
         # series; the band-stop decision itself stays on the log-prob band.
         eos_token_id=tokenizer.eos_token_id,
+        log_only=cfg.marker_band_log_only,
+        trajectory_out_path=cfg.marker_band_trajectory_path,
     )
     trainer.add_callback(callback)
     logger.info(
         "MarkerBandStopCallback attached: %d source-probe rows, marker_ids=%s, "
-        "band=[%.2f, %.2f] nat, eval_every=%d steps, min_steps=%d",
+        "band=[%.2f, %.2f] nat, eval_every=%d steps, min_steps=%d, log_only=%s, "
+        "trajectory_out_path=%s",
         n_rows,
         marker_ids,
         cfg.marker_band_low_nats,
         cfg.marker_band_high_nats,
         cfg.marker_band_eval_every_steps,
         cfg.marker_band_min_steps,
+        cfg.marker_band_log_only,
+        cfg.marker_band_trajectory_path,
     )
 
 
@@ -1073,6 +1097,8 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:
         sft_kwargs["save_total_limit"] = cfg.save_total_limit
+    if cfg.save_only_model:
+        sft_kwargs["save_only_model"] = True
 
     sft_config = SFTConfig(**sft_kwargs)
 

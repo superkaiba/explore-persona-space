@@ -137,6 +137,28 @@ def test_slot_stats_hand_reference_single_context(tiny_model_and_tokenizer):
     assert abs(d["logZ"] - expected_logz) < 1e-5
 
 
+def test_slot_stats_include_argmax_additive(tiny_model_and_tokenizer):
+    """include_argmax=True adds ONLY argmax_id, matching a hand-rolled argmax."""
+    model, tok = tiny_model_and_tokenizer
+    context = CONTEXTS[0]
+    ids = torch.tensor([tok.encode(context)], dtype=torch.long)
+    with torch.no_grad():
+        logits = model(input_ids=ids).logits
+    expected_argmax = int(torch.argmax(logits[0, -1, :].float()).item())
+
+    [d] = compute_marker_slot_stats(
+        model,
+        tok,
+        contexts=[context],
+        marker_text=MARKER_TEXT,
+        batch_size=1,
+        device="cpu",
+        include_argmax=True,
+    )
+    assert set(d) == {"logp", "z_marker", "z_eos", "logZ", "argmax_id"}, d.keys()
+    assert d["argmax_id"] == expected_argmax, (d["argmax_id"], expected_argmax)
+
+
 def test_slot_stats_rejects_multi_token_marker(tiny_model_and_tokenizer):
     """Raw logits don't sum across BPE pieces — multi-token markers must raise."""
     model, tok = tiny_model_and_tokenizer
