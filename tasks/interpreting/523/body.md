@@ -1,6 +1,6 @@
 ---
-title: 'Test whether #502''s L22 gauss_kl geometry-predicts-leakage cell survives
-  honest held-out evaluation (held-out probe pool + second seed + nested CV)'
+title: '#502''s L22 gauss_kl predictor lands at held-out CV R² = 0.21 — just below
+  its planned band, with a confidence interval that crosses zero (LOW confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-08T23:28:14Z'
