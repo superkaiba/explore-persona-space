@@ -58,6 +58,14 @@ NOT the first token, NOT after a canned answer.
    emission rate. Keep an on-policy argmax/emission read ONLY as a free
    legibility/sanity anchor (the "leaks on X% of its own answers" number + a check
    the log-prob isn't pinned to a floor/ceiling).
+   **Slot position = the marker's own trained position at the end of the
+   response — never APPENDED after a response that already contains/ends with
+   the marker.** If the trained model's own `R` already emits the marker,
+   appending a fresh slot after it measures "emit a SECOND marker", which is a
+   different (and near-floor) quantity: in #532 (2026-06-09) the appended-slot
+   read produced base emit-rate 1.00 with appended-slot log-prob −24.9 — both
+   artifacts. Strip / stop at the first marker emission and read the slot where
+   the marker would first appear.
 
 Anti-patterns, all flagged by the measurement-validity rule + #432→#456: the
 marker as the FIRST token; a teacher-forced log-prob at a fixed position after a
