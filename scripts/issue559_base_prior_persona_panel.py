@@ -47,6 +47,15 @@ Smoke (same code path, tiny slice):
 
     uv run python scripts/issue559_base_prior_persona_panel.py --phase all \\
       --limit-personas 2 --limit-questions 2 --out-dir /tmp/issue559_smoke
+
+Disjoint-question follow-up (plan v4, ``disjoint-question-prior``): two chained
+invocations on the fresh pod — (1) the unmodified 20-question path with
+``--reproduce-gate-json`` (per-persona MAE < 0.1 nat AND Spearman ≥ 0.999 vs
+the committed parent prior, exit 1 on miss), then (2) the disjoint run with
+``--questions-json eval_results/issue_559/disjoint_question_prior/
+questions_disjoint30.json`` + ``--upload-prefix
+issue559_base_prior_persona_panel/disjoint_question_prior``. Every flag
+defaults to the current behavior, so the 20-question path is unchanged.
 """
 
 from __future__ import annotations
@@ -54,6 +63,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import gc
+import hashlib
 import json
 import logging
 import os
@@ -98,6 +108,17 @@ R_CAP_MIN = 64  # cap < 64 → prompt too long → FAIL LOUD
 # produces tens-of-nats mismatches; dtype noise stays well under 1 nat).
 MAX_VALIDATION_MAE_NATS = 1.0
 MIN_VALIDATION_SPEARMAN = 0.995
+
+# 20-question reproduction entry-gate thresholds (plan v4 §3): code-path
+# validity on a fresh pod, NOT bit-determinism — 0.1 nat is ~90× under the
+# committed 9.0-nat persona spread and at the S0-observed dtype-noise scale
+# (0.0707 nat MAE on the parent run).
+REPRO_GATE_MAE_NATS = 0.1
+REPRO_GATE_SPEARMAN = 0.999
+
+# #460 Q_test artifact — source of the 30 disjoint measurement questions
+# (q50[20:]; q50[:20] are the panel's EVAL_QUESTIONS, verified at plan time).
+R_TEST_HF_PATH = "issue460_marker_at_end/on_policy_R/R_test.json"
 
 SCHEMA_VERSION = "issue559_base_prior_v1"
 SENTINEL_DIR_POD = Path("/workspace/logs")
@@ -246,6 +267,101 @@ def question_identity_gate(raw: dict, eval_questions: list[str], personas: list[
     log.info("[gate] question-identity gate PASS (20 questions order-identical, 35 personas)")
 
 
+def load_questions_json(path: Path) -> tuple[list[str], dict]:
+    """Load the committed measurement-question file; verify its embedded sha256.
+
+    Returns ``(questions, questions_source)`` where ``questions_source`` is the
+    provenance block (path, HF pin, derivation rule, n, sha256) recorded into
+    every output payload + ``result_metadata`` (plan v4 §5.1).
+    """
+    payload = json.loads(path.read_text())
+    questions = list(payload["questions"])
+    digest = hashlib.sha256(json.dumps(questions, ensure_ascii=False).encode()).hexdigest()
+    if digest != payload["sha256_questions"]:
+        log.error(
+            "QUESTIONS-FILE GATE FAILED: sha256 mismatch for %s (embedded %s, recomputed %s)",
+            path,
+            payload["sha256_questions"],
+            digest,
+        )
+        sys.exit(1)
+    deriv = payload["derivation"]
+    source = {
+        "path": str(path),
+        "hf_repo": deriv["hf_repo"],
+        "hf_revision": deriv["hf_revision"],
+        "rule": deriv["rule"],
+        "n": len(questions),
+        "sha256": digest,
+    }
+    return questions, source
+
+
+def disjoint_question_gate(provided: list[str], eval_questions: list[str]) -> None:
+    """Hard gate (plan v4 §3): provided == q50[20:] of the pinned #460 R_test.json.
+
+    Downloads ``R_test.json`` at the existing ``HF_DATA_REV`` pin and asserts,
+    in order: schema ``i460_v1``; all 16 contexts share ONE identical ordered
+    50-question list; ``q50[:20] == EVAL_QUESTIONS`` (order-sensitive);
+    ``provided == q50[20:]`` (order-sensitive, n=30); disjointness from
+    ``EVAL_QUESTIONS``; no ※ in any provided question. Runs on the FULL
+    provided list BEFORE any ``--limit-questions`` smoke slicing. Exits 1 on
+    any miss (all conditions asserted True at plan time; the gate keeps them
+    true at run time).
+    """
+    from huggingface_hub import hf_hub_download
+
+    path = hf_hub_download(HF_DATA_REPO, R_TEST_HF_PATH, repo_type="dataset", revision=HF_DATA_REV)
+    payload = json.loads(Path(path).read_text())
+    if payload.get("schema_version") != "i460_v1":
+        log.error(
+            "DISJOINT-QUESTION GATE FAILED: R_test.json schema_version=%r, expected 'i460_v1'",
+            payload.get("schema_version"),
+        )
+        sys.exit(1)
+    completions = payload["completions"]
+    q_lists = [list(qmap.keys()) for qmap in completions.values()]
+    q50 = q_lists[0]
+    if len(completions) != 16 or any(ql != q50 for ql in q_lists):
+        log.error(
+            "DISJOINT-QUESTION GATE FAILED: expected 16 contexts sharing one identical "
+            "ordered 50-question list (got %d contexts, identical=%s)",
+            len(completions),
+            all(ql == q50 for ql in q_lists),
+        )
+        sys.exit(1)
+    if q50[:20] != eval_questions:
+        log.error(
+            "DISJOINT-QUESTION GATE FAILED: q50[:20] != EVAL_QUESTIONS (order-sensitive) — "
+            "the #460 pool no longer anchors the panel's 20"
+        )
+        sys.exit(1)
+    if provided != q50[20:]:
+        log.error(
+            "DISJOINT-QUESTION GATE FAILED: provided question list != q50[20:] "
+            "(order-sensitive; provided n=%d, expected n=%d)",
+            len(provided),
+            len(q50[20:]),
+        )
+        sys.exit(1)
+    if len(provided) != 30:
+        log.error("DISJOINT-QUESTION GATE FAILED: expected n=30, got %d", len(provided))
+        sys.exit(1)
+    if set(provided) & set(eval_questions):
+        log.error(
+            "DISJOINT-QUESTION GATE FAILED: provided questions overlap EVAL_QUESTIONS: %r",
+            sorted(set(provided) & set(eval_questions)),
+        )
+        sys.exit(1)
+    if any("※" in q for q in provided):
+        log.error("DISJOINT-QUESTION GATE FAILED: a provided question mentions the marker")
+        sys.exit(1)
+    log.info(
+        "[gate] disjoint-question gate PASS (30 questions == q50[20:] @ %s, disjoint, ※-free)",
+        HF_DATA_REV[:8],
+    )
+
+
 # ── Prompt construction (#478 convention) ─────────────────────────────────────
 
 
@@ -375,8 +491,13 @@ def _git_commit() -> str:
     ).stdout.strip()
 
 
-def result_metadata(args: argparse.Namespace) -> dict:
-    """Reproducibility block for every output JSON (code-style rule)."""
+def result_metadata(args: argparse.Namespace, questions_source: dict | None = None) -> dict:
+    """Reproducibility block for every output JSON (code-style rule).
+
+    ``questions_source`` (set only under ``--questions-json``) records the
+    measurement-question provenance; omitted on the default 20-question path
+    so that path's payload shape is unchanged.
+    """
     import numpy as np
     import pandas as pd
 
@@ -386,7 +507,7 @@ def result_metadata(args: argparse.Namespace) -> dict:
             versions[mod] = __import__(mod).__version__
         except ImportError:
             versions[mod] = "not-installed"
-    return {
+    meta = {
         "task": 559,
         "script": "scripts/issue559_base_prior_persona_panel.py",
         "schema_version": SCHEMA_VERSION,
@@ -399,6 +520,9 @@ def result_metadata(args: argparse.Namespace) -> dict:
         "hf_data_revision_pinned": HF_DATA_REV,
         "argv": sys.argv[1:],
     }
+    if questions_source is not None:
+        meta["questions_source"] = questions_source
+    return meta
 
 
 def write_json(path: Path, obj: dict) -> None:
@@ -414,14 +538,35 @@ def write_json(path: Path, obj: dict) -> None:
 
 
 def phase_preflight(args: argparse.Namespace, tokenizer) -> dict:
-    """CPU-only pre-GPU pipeline: asserts, gates, prompts, caps, guard self-test."""
+    """CPU-only pre-GPU pipeline: asserts, gates, prompts, caps, guard self-test.
+
+    With ``--questions-json`` the MEASUREMENT question list is overridden (the
+    disjoint-30 path, plan v4 §3) and gated by ``disjoint_question_gate`` on
+    the FULL list before any smoke slicing; the S0 gate keeps iterating the
+    panel's 20 stored questions (``s0_questions``) regardless — under the
+    30-list it would otherwise score zero stored slots.
+    """
     print("[phase=preflight]", flush=True)
-    personas, persona_prompts, questions = load_panel()
+    personas, persona_prompts, panel_questions = load_panel()
     raw = load_raw_completions(S0_CELL)
-    question_identity_gate(raw, questions, personas)
+    question_identity_gate(raw, panel_questions, personas)
+
+    questions_source: dict | None = None
+    if args.questions_json is not None:
+        measurement_questions, questions_source = load_questions_json(args.questions_json)
+        disjoint_question_gate(measurement_questions, panel_questions)
+    else:
+        measurement_questions = panel_questions
 
     use_personas = personas[: args.limit_personas] if args.limit_personas else personas
-    use_questions = questions[: args.limit_questions] if args.limit_questions else questions
+    use_questions = (
+        measurement_questions[: args.limit_questions]
+        if args.limit_questions
+        else measurement_questions
+    )
+    use_s0_questions = (
+        panel_questions[: args.limit_questions] if args.limit_questions else panel_questions
+    )
 
     caps: dict[str, dict[str, int]] = {}
     prompt_lens: list[int] = []
@@ -455,13 +600,19 @@ def phase_preflight(args: argparse.Namespace, tokenizer) -> dict:
         "cap_max": max(max(c.values()) for c in caps.values()),
         "question_identity_gate": "PASS",
         "truncation_guard_self_test": "PASS",
-        "metadata": result_metadata(args),
+        "metadata": result_metadata(args, questions_source),
     }
+    if questions_source is not None:
+        # Disjoint path only — the default 20-question payload shape is unchanged.
+        summary["n_s0_questions"] = len(use_s0_questions)
+        summary["disjoint_question_gate"] = "PASS"
     write_json(args.out_dir / "preflight.json", summary)
     return {
         "personas": use_personas,
         "persona_prompts": persona_prompts,
         "questions": use_questions,
+        "s0_questions": use_s0_questions,
+        "questions_source": questions_source,
         "caps": caps,
         "raw": raw,
     }
@@ -536,8 +687,10 @@ def phase_gen(args: argparse.Namespace, tokenizer, ctx: dict) -> None:
             f"{R_CAP_MIN} fail-loud",
             "gpu_memory_utilization": args.gpu_mem_util,
         },
-        "metadata": result_metadata(args),
+        "metadata": result_metadata(args, ctx["questions_source"]),
     }
+    if ctx["questions_source"] is not None:
+        payload["questions_source"] = ctx["questions_source"]
     write_json(args.out_dir / "R_base_own.json", payload)
 
     # vLLM teardown BEFORE the HF scoring phase (gotchas rule).
@@ -569,7 +722,10 @@ def s0_gate(args: argparse.Namespace, model, tokenizer, ctx: dict, device: str) 
 
     print("[phase=s0_gate]", flush=True)
     raw = ctx["raw"]
-    personas, questions = ctx["personas"], ctx["questions"]
+    # ALWAYS the panel's 20 stored questions (smoke-sliced) — the stored
+    # K1_c00_seed42 slots only exist for those; under a --questions-json
+    # 30-list the measurement list would skip every stored slot (plan v4 §5.1).
+    personas, questions = ctx["personas"], ctx["s0_questions"]
     persona_prompts = ctx["persona_prompts"]
     R_eval: dict[str, dict[str, str]] = raw["R_eval"]
 
@@ -669,7 +825,7 @@ def s0_gate(args: argparse.Namespace, model, tokenizer, ctx: dict, device: str) 
         },
         "device": device,
         "trained_R_token_lens": trained_R_token_lens,
-        "metadata": result_metadata(args),
+        "metadata": result_metadata(args, ctx["questions_source"]),
     }
     write_json(args.out_dir / "s0_validation.json", payload)
     if not gate_pass:
@@ -799,14 +955,140 @@ def phase_score(args: argparse.Namespace, tokenizer, ctx: dict) -> None:
             "logits[:, -1, :] (issue531_logit_rescore.py::score_slot) + #532 "
             "pre-marker truncation guard (issue532_followup_logp_slot.py::_slot_job)",
         },
-        "metadata": result_metadata(args),
+        "metadata": result_metadata(args, ctx["questions_source"]),
     }
+    if ctx["questions_source"] is not None:
+        payload["questions_source"] = ctx["questions_source"]
     write_json(args.out_dir / "base_prior_own_persona_panel.json", payload)
 
     del model
     gc.collect()
     with contextlib.suppress(Exception):
         torch.cuda.empty_cache()
+
+    if args.reproduce_gate_json is not None:
+        reproduce_gate(args, payload)
+
+
+def reproduce_gate(args: argparse.Namespace, payload: dict) -> None:
+    """20-question reproduction entry gate vs the committed parent prior (plan v4 §3).
+
+    Compares this run's per-persona ``prior_margin_own`` (35 values) against
+    ``--reproduce-gate-json`` (the committed parent
+    ``base_prior_own_persona_panel.json``): gate = MAE < 0.1 nat AND Spearman
+    ≥ 0.999. Writes ``repro_gate.json`` (always), then ``sys.exit(1)`` on a
+    miss so the chained disjoint invocation never starts. Diagnostics
+    persisted alongside so a near-miss is attributable (plan v4 §14.9: text
+    divergence ⇒ cross-pod resampling, re-anchor on scoring-path MAE over
+    identical texts; identical texts + scoring drift ⇒ code-path failure):
+
+    * per-slot ``logp_marker`` MAE over common (persona, question) slots;
+    * generation text-identity rate vs the committed ``R_base_own.json``
+      (resolved as the gate JSON's sibling).
+
+    Smoke slices (``--limit-personas/--limit-questions``) compare the
+    measured subset only (loudly labeled; Spearman needs n ≥ 3) — the
+    production gate asserts full 35-persona coverage.
+    """
+    import numpy as np
+    from scipy.stats import spearmanr
+
+    print("[phase=repro_gate]", flush=True)
+    smoke = bool(args.limit_personas or args.limit_questions)
+    committed = json.loads(args.reproduce_gate_json.read_text())
+    assert committed.get("schema_version") == SCHEMA_VERSION, committed.get("schema_version")
+    got_pp, want_pp = payload["per_persona"], committed["per_persona"]
+    personas = sorted(set(got_pp) & set(want_pp))
+    if not smoke:
+        assert sorted(got_pp) == sorted(want_pp), "persona set != committed parent prior"
+        assert len(personas) == 35, len(personas)
+        assert payload["eval_questions"] == committed["eval_questions"], (
+            "repro gate requires the canonical 20-question path on both sides "
+            "(--reproduce-gate-json is incompatible with --questions-json)"
+        )
+    got = np.array([got_pp[p]["prior_margin_own"] for p in personas])
+    want = np.array([want_pp[p]["prior_margin_own"] for p in personas])
+    mae = float(np.mean(np.abs(got - want)))
+    rho = float(spearmanr(got, want).statistic) if len(personas) >= 3 else None
+    mae_ok = mae < REPRO_GATE_MAE_NATS
+    rho_ok = rho >= REPRO_GATE_SPEARMAN if rho is not None else smoke
+    gate_pass = bool(mae_ok and rho_ok)
+
+    # Diagnostic 1: per-slot logp MAE over common (persona, question) slots.
+    want_q_idx = {q: i for i, q in enumerate(committed["eval_questions"])}
+    slot_diffs: list[float] = []
+    for p in personas:
+        got_rec, want_rec = got_pp[p], want_pp[p]
+        for i, q in enumerate(payload["eval_questions"]):
+            if q in want_q_idx:
+                slot_diffs.append(
+                    abs(
+                        got_rec["logp_marker_per_q"][i]
+                        - want_rec["logp_marker_per_q"][want_q_idx[q]]
+                    )
+                )
+    per_slot_logp_mae = float(np.mean(slot_diffs)) if slot_diffs else None
+
+    # Diagnostic 2: generation text-identity rate vs the committed R_base_own.
+    committed_r_path = args.reproduce_gate_json.parent / "R_base_own.json"
+    new_r_path = args.out_dir / "R_base_own.json"
+    text_identity_rate = None
+    n_common_texts = 0
+    if committed_r_path.exists() and new_r_path.exists():
+        want_R = json.loads(committed_r_path.read_text())["R"]
+        got_R = json.loads(new_r_path.read_text())["R"]
+        matches = []
+        for p in personas:
+            for q, text in got_R.get(p, {}).items():
+                if q in want_R.get(p, {}):
+                    matches.append(text == want_R[p][q])
+        n_common_texts = len(matches)
+        text_identity_rate = float(np.mean(matches)) if matches else None
+
+    out = {
+        "schema_version": SCHEMA_VERSION,
+        "committed_reference": str(args.reproduce_gate_json),
+        "n_personas_compared": len(personas),
+        "smoke_slice": smoke,
+        "per_persona_prior_mae_nats": mae,
+        "per_persona_prior_spearman": rho,
+        "gates": {
+            "mae_gate_nats": REPRO_GATE_MAE_NATS,
+            "spearman_gate": REPRO_GATE_SPEARMAN,
+            "mae_pass": mae_ok,
+            "spearman_pass": rho_ok,
+            "pass": gate_pass,
+        },
+        "diagnostics": {
+            "per_slot_logp_mae_nats": per_slot_logp_mae,
+            "n_common_slots": len(slot_diffs),
+            "generation_text_identity_rate": text_identity_rate,
+            "n_common_texts": n_common_texts,
+            "read_rule": "text divergence => cross-pod generation resampling (re-anchor on "
+            "scoring-path MAE over identical texts); identical texts + prior drift => "
+            "scoring code-path failure (plan v4 §14.9)",
+        },
+        "metadata": result_metadata(args),
+    }
+    write_json(args.out_dir / "repro_gate.json", out)
+    log.info(
+        "[repro-gate] MAE=%.4f nats (gate %.1f), spearman=%s (gate %.3f), n=%d -> %s%s",
+        mae,
+        REPRO_GATE_MAE_NATS,
+        f"{rho:.5f}" if rho is not None else "n/a",
+        REPRO_GATE_SPEARMAN,
+        len(personas),
+        "PASS" if gate_pass else "FAIL",
+        " [SMOKE SLICE — not authoritative]" if smoke else "",
+    )
+    if not gate_pass:
+        log.error(
+            "[repro-gate] 20-QUESTION REPRODUCTION GATE FAILED — fresh-pod code path does "
+            "not reproduce the committed parent prior; the disjoint invocation must not "
+            "start. Consult repro_gate.json diagnostics before any relax decision (a "
+            "threshold bump is a plan amendment, never a silent edit)."
+        )
+        sys.exit(1)
 
 
 def phase_upload(args: argparse.Namespace) -> None:
@@ -819,13 +1101,14 @@ def phase_upload(args: argparse.Namespace) -> None:
     print("[phase=upload]", flush=True)
     from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO, _upload
 
+    prefix = args.upload_prefix
     targets = [
-        (args.out_dir / "R_base_own.json", f"{HF_UPLOAD_PREFIX}/raw_completions/R_base_own.json"),
+        (args.out_dir / "R_base_own.json", f"{prefix}/raw_completions/R_base_own.json"),
         (
             args.out_dir / "base_prior_own_persona_panel.json",
-            f"{HF_UPLOAD_PREFIX}/eval/base_prior_own_persona_panel.json",
+            f"{prefix}/eval/base_prior_own_persona_panel.json",
         ),
-        (args.out_dir / "s0_validation.json", f"{HF_UPLOAD_PREFIX}/eval/s0_validation.json"),
+        (args.out_dir / "s0_validation.json", f"{prefix}/eval/s0_validation.json"),
     ]
     for local, remote in targets:
         result = _upload(
@@ -891,8 +1174,38 @@ def main() -> int:
         action="store_true",
         help="skip the HF upload phase (smoke runs)",
     )
+    parser.add_argument(
+        "--questions-json",
+        type=Path,
+        default=None,
+        dest="questions_json",
+        help="override the MEASUREMENT question list (disjoint-30 path, plan v4 §3); "
+        "triggers the disjoint_question_gate on the FULL list before any smoke slicing. "
+        "The S0 gate keeps using the panel's 20 stored questions.",
+    )
+    parser.add_argument(
+        "--upload-prefix",
+        default=HF_UPLOAD_PREFIX,
+        dest="upload_prefix",
+        help="HF data-repo upload prefix (the disjoint run nests under "
+        f"{HF_UPLOAD_PREFIX}/disjoint_question_prior so parent artifacts can never be "
+        "overwritten)",
+    )
+    parser.add_argument(
+        "--reproduce-gate-json",
+        type=Path,
+        default=None,
+        dest="reproduce_gate_json",
+        help="committed parent base_prior_own_persona_panel.json — post-score per-persona "
+        f"reproduction gate (MAE < {REPRO_GATE_MAE_NATS} nat AND Spearman >= "
+        f"{REPRO_GATE_SPEARMAN}); writes repro_gate.json, exit 1 on miss",
+    )
     args = parser.parse_args()
     smoke = bool(args.limit_personas or args.limit_questions)
+    assert not (args.questions_json is not None and args.reproduce_gate_json is not None), (
+        "--reproduce-gate-json compares 20-question priors and is incompatible with "
+        "--questions-json (the disjoint run; plan v4 §3 chains them as separate invocations)"
+    )
 
     load_dotenv()
     if Path("/workspace").exists():
@@ -927,6 +1240,12 @@ def main() -> int:
                 f"{len(ctx['personas'])} personas x {len(ctx['questions'])} questions; "
                 f"outputs in {args.out_dir} (R_base_own.json, "
                 f"base_prior_own_persona_panel.json, s0_validation.json)"
+                + (" [disjoint-30 measurement questions]" if args.questions_json else "")
+                + (
+                    " [20-q reproduction entry gate PASS]"
+                    if args.reproduce_gate_json is not None
+                    else ""
+                )
                 + (" [SMOKE SLICE]" if smoke else "")
             ),
             smoke=smoke,
