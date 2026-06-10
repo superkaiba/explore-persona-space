@@ -1064,15 +1064,18 @@ def test_main_daemon_unreachable_still_runs_pod_safety(isolated_registry, monkey
 
     pod_safety_calls: list[tuple] = []
     respawn_entry_calls: list[tuple] = []
+    vm_disk_calls: list[tuple] = []
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: False)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: pod_safety_calls.append((a, kw)))
     monkeypatch.setattr(asw, "_process_entry", lambda *a, **kw: respawn_entry_calls.append((a, kw)))
+    monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: vm_disk_calls.append((a, kw)))
 
     rc = asw.main([])
 
     assert rc == 0
     assert len(pod_safety_calls) == 1  # pod-safety RAN despite the outage
     assert respawn_entry_calls == []  # respawn pass skipped (no entries processed)
+    assert len(vm_disk_calls) == 1  # vm-disk pass runs unconditionally (daemon-free)
 
 
 def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
@@ -1083,6 +1086,7 @@ def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
     monkeypatch.setattr(asw, "_load_session_meta", lambda: {})
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: pod_safety_calls.append((a, kw)))
+    monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: None)
 
     rc = asw.main([])
 
@@ -1733,6 +1737,7 @@ def test_stalled_main_passes_daemon_flag(isolated_registry, monkeypatch):
     captured_kwargs: dict = {}
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: False)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: None)
+    monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: None)
 
     def _record_stalled(*a, **kw):
         captured_kwargs.update(kw)
@@ -2084,3 +2089,150 @@ def test_stalled_manual_entry_without_self_report_is_skipped(
     asw.stalled_session_pass(dry_run=False, threshold=2, now=1_000_000.0, daemon_reachable=True)
     asw.stalled_session_pass(dry_run=False, threshold=2, now=1_000_000.0, daemon_reachable=True)
     assert stops == [] and spawns == [] and markers == []
+
+
+# ── vm-disk headroom pass (task #552 incident, 2026-06-10) ───────────────────
+
+
+def test_decide_vm_disk_levels():
+    import autonomous_session_watch as asw
+
+    gib = 2**30
+    assert asw.decide_vm_disk(25 * gib, alerted=False, last_reclaim_ts=None, now=0.0) == (
+        "ok",
+        False,
+        False,
+    )
+    assert asw.decide_vm_disk(12 * gib, alerted=False, last_reclaim_ts=None, now=0.0) == (
+        "low",
+        True,
+        False,  # low-but-not-critical never reclaims
+    )
+    assert asw.decide_vm_disk(4 * gib, alerted=False, last_reclaim_ts=None, now=0.0) == (
+        "critical",
+        True,
+        True,
+    )
+
+
+def test_decide_vm_disk_alert_dedups_within_episode():
+    import autonomous_session_watch as asw
+
+    level, do_alert, _ = asw.decide_vm_disk(12 * 2**30, alerted=True, last_reclaim_ts=None, now=0.0)
+    assert (level, do_alert) == ("low", False)
+
+
+def test_decide_vm_disk_reclaim_rearms_after_window():
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    # Within the re-arm window: no second reclaim (no hot-loop pruning).
+    _, _, do_reclaim = asw.decide_vm_disk(
+        4 * 2**30, alerted=True, last_reclaim_ts=now - 60.0, now=now
+    )
+    assert do_reclaim is False
+    # Past the window: re-fires (junk re-accumulated during a long episode).
+    _, _, do_reclaim = asw.decide_vm_disk(
+        4 * 2**30, alerted=True, last_reclaim_ts=now - asw.VM_DISK_RECLAIM_REARM_S, now=now
+    )
+    assert do_reclaim is True
+
+
+def test_vm_disk_sentinel_excluded_from_real_progress():
+    # The vm-disk alert is posted as epm:progress on a task; it must NOT reset
+    # that task's real-progress staleness clock (same contract as every other
+    # watcher-posted note).
+    import autonomous_session_watch as asw
+
+    assert asw._VM_DISK_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+def test_vm_disk_pass_ok_clears_episode_state(isolated_registry, monkeypatch):
+    import json
+
+    import autonomous_session_watch as asw
+
+    (isolated_registry / "vm-disk.json").write_text(
+        json.dumps({"alerted": True, "last_reclaim_ts": None, "first_seen": 1.0})
+    )
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 100 * 2**30)
+    asw.vm_disk_pass(dry_run=False, now=1_000_000.0)
+    assert not (isolated_registry / "vm-disk.json").exists()
+
+
+def test_vm_disk_pass_alert_posts_marker_once_per_episode(isolated_registry, monkeypatch):
+    import json
+
+    import autonomous_session_watch as asw
+
+    (isolated_registry / "issue-552.json").write_text(json.dumps({"issue": 552}))
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 12 * 2**30)  # low, not critical
+    markers: list[tuple[int, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((issue, label)),
+    )
+    prunes: list[bool] = []
+    monkeypatch.setattr(asw, "_vm_reclaim_uv_cache", lambda dry_run: prunes.append(True))
+
+    asw.vm_disk_pass(dry_run=False, now=1_000_000.0)
+    asw.vm_disk_pass(dry_run=False, now=1_000_600.0)  # next tick: deduped
+
+    assert markers == [(552, "vm-disk-low")]
+    assert prunes == []  # low-but-not-critical never reclaims
+
+
+def test_vm_disk_pass_fallback_event_when_no_active_issue(isolated_registry, monkeypatch):
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 12 * 2**30)
+    asw.vm_disk_pass(dry_run=False, now=1_000_000.0)
+
+    lines = (isolated_registry / "vm-disk-events.jsonl").read_text().strip().splitlines()
+    assert len(lines) == 1
+    event = json.loads(lines[0])
+    assert event["kind"] == "vm-disk-low"
+    assert asw._VM_DISK_NOTE_SENTINEL in event["note"]
+
+
+def test_vm_disk_pass_critical_runs_reclaims_with_rearm(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 4 * 2**30)  # critical
+    prunes: list[bool] = []
+    sweeps: list[float] = []
+    monkeypatch.setattr(asw, "_vm_reclaim_uv_cache", lambda dry_run: prunes.append(True))
+    monkeypatch.setattr(
+        asw, "_sweep_stale_claude_tmp", lambda now, dry_run: (sweeps.append(now), 0)[1]
+    )
+
+    now = 1_000_000.0
+    asw.vm_disk_pass(dry_run=False, now=now)
+    asw.vm_disk_pass(dry_run=False, now=now + 600.0)  # within re-arm window: no churn
+    asw.vm_disk_pass(dry_run=False, now=now + asw.VM_DISK_RECLAIM_REARM_S + 600.0)
+
+    assert len(prunes) == 2  # first tick + post-window re-fire
+    assert len(sweeps) == 2
+
+
+def test_vm_disk_pass_dry_run_mutates_nothing(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 4 * 2**30)  # critical
+    prune_cmds: list[bool] = []
+    monkeypatch.setattr(asw, "_sweep_stale_claude_tmp", lambda now, dry_run: 0)
+    monkeypatch.setattr(
+        asw,
+        "subprocess",
+        type("S", (), {"run": staticmethod(lambda *a, **kw: prune_cmds.append(True))}),
+    )
+
+    asw.vm_disk_pass(dry_run=True, now=1_000_000.0)
+
+    assert prune_cmds == []  # uv cache prune not actually invoked
+    assert not (isolated_registry / "vm-disk.json").exists()  # no state saved
+    assert not (isolated_registry / "vm-disk-events.jsonl").exists()  # no event written

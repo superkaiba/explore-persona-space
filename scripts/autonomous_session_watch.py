@@ -1,12 +1,25 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions.
 
-Four passes, run in this order:
+Five passes, run in this order:
 
-1. **Crash-recovery (respawn pass).** Re-spawn an autonomous (`--auto`) `/issue`
+1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
+   the host of every orchestrator session, the worktree ``.venv``s, the uv
+   cache, and the HF cache. Pods have their own guards (``pod_disk_guard.py``,
+   the preflight fallocate probe); the VM had none until / hit 100%
+   mid-pipeline and every foreground Bash spawn in the orchestrator session
+   failed silently — exit 1, zero output — stalling the interpretation loop
+   ~20 min, undiagnosable from inside the session (task #552, 2026-06-10).
+   Below :data:`VM_DISK_ALERT_FREE_BYTES` (~20 GiB): loud log + ONE
+   dashboard-visible marker per low-disk episode. Below
+   :data:`VM_DISK_RECLAIM_FREE_BYTES` (~8 GiB): additionally run the safe,
+   fail-soft reclaims (``uv cache prune``; sweep ``/tmp/claude-*`` trees idle
+   > 3 days). Runs FIRST because a full root disk makes every later
+   subprocess in this very watcher flaky; never crashes the pass.
+2. **Crash-recovery (respawn pass).** Re-spawn an autonomous (`--auto`) `/issue`
    session whose driver process has died. Gated on daemon reachability — it
    reasons about session liveness, which is unknowable during a daemon outage.
-2. **Pod-safety pass.** Reconcile RUNNING managed pods (``pod-<N>`` / legacy
+3. **Pod-safety pass.** Reconcile RUNNING managed pods (``pod-<N>`` / legacy
    ``epm-issue-<N>``) against their task's STATUS. Two conservative actions:
 
    - **AUTO-STOP** (reversible, never terminate) a RUNNING pod whose task is
@@ -25,7 +38,7 @@ Four passes, run in this order:
    (see "Why STOP is keyed on task status, not session liveness" below) and
    does NOT need the daemon, so it runs unconditionally — even during a daemon
    outage. Only the respawn pass is daemon-gated.
-3. **Stalled-detector pass (ALERT + AUTO-RESPAWN).** Detect an autonomous
+4. **Stalled-detector pass (ALERT + AUTO-RESPAWN).** Detect an autonomous
    session whose Happy id is in the live set (so the respawn pass doesn't
    touch it) but whose self-report timestamp + latest non-watcher progress
    marker have BOTH been frozen > ``STALLED_WINDOW_S`` (default 45 min).
@@ -45,7 +58,7 @@ Four passes, run in this order:
    (#505 round-2 orphaning, 2026-06-10 — a dead bare-spawned session at
    an ACTIVE status previously orphaned silently because this pass only
    globbed ``issue-*.json``).
-4. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
+5. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
    ``issue-progress/<N>.json``, ``issue-tick-last-status/<N>.json``,
    ``stalled-<N>.json``) for tasks in :data:`TERMINAL_FOR_GC`
    (``completed`` / ``archived``) — conservative on ``awaiting_promotion``
@@ -154,6 +167,8 @@ from __future__ import annotations
 import argparse
 import fcntl
 import json
+import os
+import shutil
 import subprocess
 import sys
 import time
@@ -312,6 +327,13 @@ _STALLED_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respawn
 # failed to restore progress. Same staleness-filter contract as the others.
 _STALLED_EXHAUSTED_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respawn-exhausted]"
 
+# Substring stamped into the one-time VM-disk-low marker posted by the vm-disk
+# pass (once per low-disk episode, on each ACTIVE registered autonomous issue —
+# the sessions that will die first when / fills up). Same staleness-filter
+# contract as the others: a watcher-posted note must never reset a session's
+# real-progress clock.
+_VM_DISK_NOTE_SENTINEL = "[autonomous_session_watch:vm-disk-low]"
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
@@ -324,6 +346,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _STALLED_ALERT_NOTE_SENTINEL,
         _STALLED_RESPAWN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
+        _VM_DISK_NOTE_SENTINEL,
     }
 )
 
@@ -645,6 +668,80 @@ def decide_pod_safety(
         return ("alert", 0)
     # pod-active-stale-already-alerted, pod-active-fresh, other -> hands off.
     return ("keep", 0)
+
+
+# ─── VM disk-headroom watcher (task #552 incident, 2026-06-10) ───────────────
+#
+# Pods have disk guards (pod_disk_guard.py, the preflight fallocate probe) but
+# the VM — which hosts every orchestrator session, the worktree .venvs (~11G
+# each), the uv cache, and the HF cache — had none. When / hit 100%
+# (482G/485G) every foreground Bash spawn in the orchestrator session failed
+# silently (exit 1, zero output) and the /issue 552 interpretation loop
+# stalled ~20 min, undiagnosable from inside the session. This pass alerts
+# BEFORE that point and reclaims the safe, regenerable space when critically
+# low.
+
+# Filesystem whose headroom is watched (the VM root — NOT a pod path; pod-side
+# guards are out of scope here and live in pod_disk_guard.py / preflight).
+VM_DISK_PATH = "/"
+
+# Below this free-bytes threshold the pass alerts: loud log every tick + ONE
+# dashboard-visible marker per low-disk episode. ~20 GiB leaves enough slack
+# to keep sessions alive while a human (or the reclaim arm) frees space.
+VM_DISK_ALERT_FREE_BYTES = 20 * 2**30
+
+# Below this free-bytes threshold the pass ALSO runs the safe reclaims
+# (`uv cache prune`, stale /tmp/claude-* sweep). ~8 GiB is already deep in the
+# silently-failing-Bash-spawn regime, so reclaiming regenerable caches is
+# unambiguously better than waiting for a human.
+VM_DISK_RECLAIM_FREE_BYTES = 8 * 2**30
+
+# Re-arm window for the reclaim arm within ONE low-disk episode: don't re-run
+# `uv cache prune` + the tmp sweep more than once per this many seconds (the
+# first run reclaims nearly everything reclaimable; hot-looping every 10-min
+# tick would just churn). A long episode where junk re-accumulates re-fires
+# after the window. Tracked via `last_reclaim_ts` in the vm-disk state file.
+VM_DISK_RECLAIM_REARM_S = 6 * 3600
+
+# A /tmp/claude-* tree is swept only when NOTHING in it (the dir itself or any
+# file under it) was modified within this window. A live session writes its
+# /tmp/claude-<port>/.../tasks/*.output files continuously, so its tree always
+# has fresh mtimes — the age test IS the live-session guard.
+VM_DISK_TMP_SWEEP_AGE_S = 3 * 24 * 3600
+
+# Hard wall-clock bound on `uv cache prune`: if another uv process holds the
+# cache lock the prune blocks; kill it at the bound (fail-soft) rather than
+# hanging the watcher tick.
+VM_DISK_UV_PRUNE_TIMEOUT_S = 300
+
+
+def decide_vm_disk(
+    free_bytes: int,
+    *,
+    alerted: bool,
+    last_reclaim_ts: float | None,
+    now: float,
+) -> tuple[str, bool, bool]:
+    """Pure decision for the VM disk-headroom pass.
+
+    Returns ``(level, do_alert, do_reclaim)``:
+
+    - ``level`` — ``"ok"`` (>= :data:`VM_DISK_ALERT_FREE_BYTES` free),
+      ``"low"`` (below the alert threshold), or ``"critical"`` (below
+      :data:`VM_DISK_RECLAIM_FREE_BYTES`).
+    - ``do_alert`` — fire the once-per-episode alert (level is low or
+      critical AND ``alerted`` is not already set for this episode).
+    - ``do_reclaim`` — run the safe reclaims (level is critical AND the
+      reclaim arm hasn't fired within :data:`VM_DISK_RECLAIM_REARM_S`).
+    """
+    if free_bytes >= VM_DISK_ALERT_FREE_BYTES:
+        return ("ok", False, False)
+    level = "critical" if free_bytes < VM_DISK_RECLAIM_FREE_BYTES else "low"
+    do_alert = not alerted
+    do_reclaim = level == "critical" and (
+        last_reclaim_ts is None or now - last_reclaim_ts >= VM_DISK_RECLAIM_REARM_S
+    )
+    return (level, do_alert, do_reclaim)
 
 
 def _status_class(status: str | None, latest_progress_ts: float | None, now: float) -> str:
@@ -1235,6 +1332,171 @@ def _stop_pod(issue: int, dry_run: bool) -> bool:
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     print(f"  STOPPED pod issue #{issue} (task is DONE; escaped pod): {first_line}")
     return True
+
+
+# ─── vm-disk state store + actions ───────────────────────────────────────────
+
+
+def _vm_disk_state_path() -> Path:
+    """Singleton state file for the vm-disk pass (the VM has one root disk —
+    not per-issue, so none of the per-issue GC sweeps ever match it)."""
+    return AUTONOMOUS_REGISTRY_DIR / "vm-disk.json"
+
+
+def _load_vm_disk_state() -> dict:
+    """Read the vm-disk episode state (``{}`` if absent / unreadable — a fresh
+    or garbled file just restarts the episode, mirroring the other stores)."""
+    path = _vm_disk_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _save_vm_disk_state(
+    *, alerted: bool, last_reclaim_ts: float | None, prev: dict | None = None
+) -> None:
+    """Persist the vm-disk episode state atomically (temp + rename).
+
+    ``alerted`` dedups the once-per-episode alert; ``last_reclaim_ts`` re-arms
+    the reclaim arm after :data:`VM_DISK_RECLAIM_REARM_S`; ``first_seen``
+    carries forward so the state records the episode start (mirrors the
+    pod-safety / stalled-detector stores)."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _vm_disk_state_path()
+    prev_first_seen = (prev or {}).get("first_seen")
+    if not isinstance(prev_first_seen, int | float):
+        prev_first_seen = time.time()
+    payload = {
+        "alerted": alerted,
+        "last_reclaim_ts": last_reclaim_ts,
+        "first_seen": prev_first_seen,
+    }
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_vm_disk_state() -> None:
+    """Drop the vm-disk state file — the low-disk episode is over (free space
+    recovered above the alert threshold), so the next episode alerts afresh."""
+    _vm_disk_state_path().unlink(missing_ok=True)
+
+
+def _vm_free_bytes() -> int | None:
+    """Free bytes on :data:`VM_DISK_PATH` (``None`` + a loud warning if even
+    the statvfs fails — never crash the watcher over the disk check itself)."""
+    try:
+        return shutil.disk_usage(VM_DISK_PATH).free
+    except OSError as e:
+        print(f"  vm-disk: disk_usage({VM_DISK_PATH}) failed: {e}", file=sys.stderr)
+        return None
+
+
+def _vm_disk_marker_issues() -> list[int]:
+    """Issues that should carry the dashboard-visible vm-disk alert marker:
+    every autonomous-registry entry (``issue-<N>.json``) whose task is in an
+    :data:`ACTIVE` status — the sessions that will die first when / fills.
+    Unreadable entries are skipped (fail-soft)."""
+    issues: list[int] = []
+    for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json")):
+        try:
+            entry = json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        issue = entry.get("issue")
+        if isinstance(issue, int) and _task_status(issue) in ACTIVE:
+            issues.append(issue)
+    return issues
+
+
+def _append_vm_disk_fallback_event(note: str, dry_run: bool) -> None:
+    """Durable record of the alert when NO active task exists to carry the
+    marker (same role as the `.claude/cache/` fallback file in the
+    workflow-fix protocol: a task-less watcher event still needs a queryable
+    trace beyond the rotating cron log). Appends one JSON line to
+    ``~/.eps-autonomous/vm-disk-events.jsonl``; fail-soft."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "vm-disk-events.jsonl"
+    line = json.dumps(
+        {"ts": datetime.now().astimezone().isoformat(), "kind": "vm-disk-low", "note": note}
+    )
+    if dry_run:
+        print(f"  [dry-run] would append vm-disk event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending vm-disk event failed: {e}", file=sys.stderr)
+
+
+def _vm_reclaim_uv_cache(dry_run: bool) -> None:
+    """``uv cache prune`` — drops unused cache entries (safe: uv re-fetches on
+    demand). Fail-soft and hard-bounded by :data:`VM_DISK_UV_PRUNE_TIMEOUT_S`
+    so a cache lock held by a concurrent ``uv`` process can't hang the watcher
+    tick."""
+    cmd = ["uv", "cache", "prune"]
+    if dry_run:
+        print(f"  [dry-run] would run: {' '.join(cmd)}")
+        return
+    try:
+        res = subprocess.run(
+            cmd,
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=VM_DISK_UV_PRUNE_TIMEOUT_S,
+        )
+        tail = ((res.stdout or res.stderr).strip().splitlines() or [""])[-1]
+        print(f"  vm-disk: uv cache prune rc={res.returncode}: {tail[:200]}")
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  vm-disk: uv cache prune failed (fail-soft): {e}", file=sys.stderr)
+
+
+def _newest_mtime(root: Path) -> float:
+    """Newest mtime anywhere under ``root`` (including ``root`` itself).
+    Unreadable entries are skipped; an unstat-able root reads as "fresh now"
+    so the sweep NEVER removes a tree it cannot inspect."""
+    try:
+        newest = root.stat().st_mtime
+    except OSError:
+        return time.time()
+    for dirpath, _dirnames, filenames in os.walk(root, onerror=lambda _e: None):
+        for name in (".", *filenames):
+            try:
+                newest = max(newest, os.stat(os.path.join(dirpath, name)).st_mtime)
+            except OSError:
+                continue
+    return newest
+
+
+def _sweep_stale_claude_tmp(now: float, dry_run: bool) -> int:
+    """Remove ``/tmp/claude-*`` trees whose ENTIRE contents have been idle
+    > :data:`VM_DISK_TMP_SWEEP_AGE_S` (subagent transcript dirs left by
+    long-dead sessions). A live session's tree always carries fresh mtimes
+    (it writes task outputs continuously), so it is never swept; symlinks
+    are skipped. Returns the number of trees removed (counted in dry-run
+    too, mirroring the orphan-state GC's logging contract)."""
+    removed = 0
+    for entry in sorted(Path("/tmp").glob("claude-*")):
+        try:
+            if entry.is_symlink() or not entry.is_dir():
+                continue
+            idle_s = now - _newest_mtime(entry)
+        except OSError:
+            continue
+        if idle_s < VM_DISK_TMP_SWEEP_AGE_S:
+            continue
+        if dry_run:
+            print(f"  [dry-run] would remove stale {entry} (idle {idle_s / 86400:.1f}d)")
+        else:
+            shutil.rmtree(entry, ignore_errors=True)
+            print(f"  vm-disk: removed stale {entry} (idle {idle_s / 86400:.1f}d)")
+        removed += 1
+    return removed
 
 
 def _refresh_pods_conf_from_api(pod_name: str, dry_run: bool) -> bool:
@@ -2289,6 +2551,9 @@ def _gc_orphaned_eps_autonomous_files(now: float, dry_run: bool) -> dict[str, in
       question than task terminal status.
     - ``session_progress.json`` / ``watch.lock`` (project-singletons, not
       per-issue).
+    - ``vm-disk.json`` / ``vm-disk-events.jsonl`` (project-singletons for the
+      VM disk-headroom pass — :func:`vm_disk_pass` owns the state file's
+      lifecycle via its episode-recovery clear).
     """
     counts: dict[str, int] = {}
     for prefix, subdir in _GC_TARGETS:
@@ -2372,6 +2637,86 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
         _process_pod(issue, pod_id, now, dry_run, threshold)
 
 
+def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
+    """Watch VM root-disk headroom; alert once per low-disk episode and run
+    the safe reclaims when critically low.
+
+    Pods have their own guards (``pod_disk_guard.py``, the preflight
+    fallocate probe); the VM had none until / hit 100% mid-pipeline and every
+    foreground Bash spawn in the orchestrator session failed silently
+    (task #552, 2026-06-10). Everything here is fail-soft — a disk alert must
+    never crash the watcher pass that delivers it."""
+    now = now if now is not None else time.time()
+    free = _vm_free_bytes()
+    if free is None:
+        return
+    state = _load_vm_disk_state()
+    last_reclaim_ts = state.get("last_reclaim_ts")
+    if not isinstance(last_reclaim_ts, int | float):
+        last_reclaim_ts = None
+    level, do_alert, do_reclaim = decide_vm_disk(
+        free,
+        alerted=bool(state.get("alerted", False)),
+        last_reclaim_ts=last_reclaim_ts,
+        now=now,
+    )
+    free_gib = free / 2**30
+
+    if level == "ok":
+        if state:
+            print(f"vm-disk: recovered ({free_gib:.1f} GiB free); episode over")
+            if not dry_run:
+                _clear_vm_disk_state()
+        else:
+            print(f"vm-disk: ok ({free_gib:.1f} GiB free)")
+        return
+
+    # Loud log EVERY tick while low — the cron log is the primary channel.
+    print(
+        f"vm-disk: {level.upper()} — {free_gib:.1f} GiB free on {VM_DISK_PATH} "
+        f"(alert < {VM_DISK_ALERT_FREE_BYTES / 2**30:.0f} GiB, "
+        f"reclaim < {VM_DISK_RECLAIM_FREE_BYTES / 2**30:.0f} GiB)",
+        file=sys.stderr,
+    )
+
+    if do_alert:
+        note = (
+            f"{_VM_DISK_NOTE_SENTINEL} VM root disk {level.upper()}: "
+            f"{free_gib:.1f} GiB free on {VM_DISK_PATH}. Near full, foreground "
+            f"Bash spawns in VM sessions start failing silently (exit 1, zero "
+            f"output — task #552 incident, 2026-06-10). Reclaim candidates: "
+            f"worktree .venvs under .claude/worktrees/, `uv cache prune`, "
+            f"stale /tmp/claude-* trees, the HF cache. Posted once per "
+            f"low-disk episode."
+        )
+        issues = _vm_disk_marker_issues()
+        if issues:
+            for issue in issues:
+                _post_progress_marker(issue, note, dry_run, label="vm-disk-low")
+        else:
+            _append_vm_disk_fallback_event(note, dry_run)
+
+    new_last_reclaim_ts = last_reclaim_ts
+    if do_reclaim:
+        print("  vm-disk: running safe reclaims (uv cache prune + stale /tmp/claude-* sweep)")
+        _vm_reclaim_uv_cache(dry_run)
+        swept = _sweep_stale_claude_tmp(now, dry_run)
+        refreshed = _vm_free_bytes()
+        if refreshed is not None:
+            print(
+                f"  vm-disk: post-reclaim free {refreshed / 2**30:.1f} GiB "
+                f"(swept {swept} stale /tmp/claude-* tree(s))"
+            )
+        new_last_reclaim_ts = now
+
+    if not dry_run and (do_alert or do_reclaim):
+        _save_vm_disk_state(
+            alerted=bool(state.get("alerted", False)) or do_alert,
+            last_reclaim_ts=new_last_reclaim_ts,
+            prev=state,
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -2403,6 +2748,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.gc_only:
         gc_pass(args.dry_run)
         return 0
+
+    # VM disk-headroom: runs FIRST. A full root disk makes every later
+    # subprocess in this very watcher (and every VM session) flaky — alert
+    # and reclaim before reasoning about sessions/pods (task #552).
+    vm_disk_pass(args.dry_run)
 
     # The RESPAWN pass needs the daemon (it reasons about session liveness, and
     # `_live_session_ids()` can't tell "daemon up, zero sessions" from "daemon
