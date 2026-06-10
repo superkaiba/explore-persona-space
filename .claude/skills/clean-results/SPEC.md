@@ -79,6 +79,17 @@ the Parameters table:
       yields one number, not a completion") inside the finding's
       prose; do NOT fabricate a fenced sample block.
 
+   **Harmful-content corpora (Betley-style EM, bad-medical-advice,
+   refusal-bait pools):** the item-4 example block ships SANITIZED
+   per `analyzer.md` § Content hygiene — labeled "sanitized for
+   context hygiene", a ~15-word excerpt plus a `[truncated —
+   harmful-content row; verify at <raw-completions path>, row <i>]`
+   placeholder in place of the full completion. The cherry-picked
+   label, row indices, and permanent raw-completion links stay
+   verbatim (mechanical checks 10/11 unaffected). Critics accept this
+   form (`interpretation-critic.md` Lens 7 / `clean-result-critic.md`
+   Lens 9 carve-outs). Benign corpora keep the verbatim treatment.
+
    Every `#### <finding>` H4 MUST stand alone — the reader can land
    on it directly and understand the finding without re-reading
    earlier ones. The body is **standalone** outside `### Motivation`:
