@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "args": {
+    "phase": "figures",
+    "extraction_points": [
+      "end_of_system",
+      "last_prompt",
+      "mean_response"
+    ],
+    "layers": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27
+    ],
+    "metrics": [
+      "cosine",
+      "euclidean",
+      "mahal",
+      "mahal_pooled_ctx",
+      "mmd",
+      "c2st",
+      "delta_spec",
+      "gauss_kl",
+      "wass2"
+    ],
+    "transformations": null,
+    "n_probes": 500,
+    "max_response_tokens": 512,
+    "arms": [
+      "pos",
+      "loc"
+    ],
+    "epochs": [
+      1,
+      2,
+      3,
+      5
+    ],
+    "device": "cuda:0",
+    "gpu_id": null,
+    "pca_k": 16,
+    "overwrite": false,
+    "dry_run": false,
+    "bakeoff_root": "/workspace/explore-persona-space/eval_results/issue_523/bakeoff",
+    "figures_root": "/workspace/explore-persona-space/figures/issue_523/bakeoff",
+    "probe_pool": "/workspace/explore-persona-space/eval_results/issue_523/heldout_probes_500.json",
+    "batch_size": 1,
+    "batched": false,
+    "partitioned": false,
+    "merge_only": false,
+    "no_next_token_js": false
+  },
+  "git_sha": "d6deb6dbd1edf878a4673d84dcda23fd2b70276c",
+  "env": {
+    "python": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "sklearn": "1.8.0"
+  },
+  "started_at": "2026-06-10T06:23:50.441375+00:00"
+}
