@@ -79,6 +79,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import subprocess
 import sys
 import traceback
@@ -101,6 +102,7 @@ def _current_git_branch() -> str | None:
             text=True,
             timeout=10,
             check=True,
+            env={**os.environ},
         )
     except (OSError, subprocess.SubprocessError):
         return None
@@ -715,6 +717,14 @@ def main(
     *,
     backends_factory: Callable[[], dict[str, Any]] | None = None,
 ) -> int:
+    # Load credential env BEFORE any subprocess spawns: `uv run python`
+    # does NOT auto-load .env, and env={**os.environ} propagates the
+    # parent's emptiness otherwise (issue #397 round-10' launch burn;
+    # same contract as router_acceptance.py main()).
+    from explore_persona_space.orchestrate.env import load_dotenv
+
+    load_dotenv()
+
     parser = _build_argparser()
     args = parser.parse_args(argv)
     logging.basicConfig(
