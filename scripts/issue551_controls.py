@@ -616,7 +616,7 @@ def make_figures(
         [f"{same_loo[k]['arm']}\nseed {same_loo[k]['seed']}" for k in names], fontsize=8
     )
     ax.set_ylabel("top-direction share of spectrum")
-    ax.set_title("Shared direction survives dropping the trained persona")
+    ax.set_title("Top share survives dropping the source")
     ax.legend(fontsize=8)
 
     # (middle) EM whole-response vs end-slot mean cosine; marker reference.
@@ -635,7 +635,7 @@ def make_figures(
             ax.annotate(str(s), (i, mr[i]), fontsize=7, xytext=(3, 3), textcoords="offset points")
     ax.set_xticks([])
     ax.set_ylabel("mean cosine to top direction")
-    ax.set_title("Whole-response read vs end-slot read")
+    ax.set_title("Whole-response vs end-slot read")
     ax.legend(fontsize=7)
 
     # (right) marker ||shift|| vs cos-to-U1 scatter, 3 seeds.
