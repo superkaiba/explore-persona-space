@@ -47,7 +47,14 @@ BASE_HEADROOM_PATH = Path(f"eval_results/{ISSUE_SLUG}/base_headroom_judge.json")
 def _retry_transient(call, *, what: str, max_retries: int = 3):
     import anthropic
 
-    transient = (anthropic.APIConnectionError, anthropic.APITimeoutError, anthropic.RateLimitError)
+    # 529 OverloadedError + 5xx InternalServerError are transient too — the
+    # 2026-06-10 VM judge run died at row 25/4400 on a single 529 (#556).
+    transient = (
+        anthropic.APIConnectionError,
+        anthropic.APITimeoutError,
+        anthropic.RateLimitError,
+        anthropic.InternalServerError,
+    )
     for attempt in range(max_retries + 1):
         try:
             return call()
