@@ -514,6 +514,14 @@ class TrainLoraConfig:
 
     gpu_id: int = 0
     epochs: int = 3
+    # NEW (#547): when set (> 0), passed to SFTConfig/TrainingArguments
+    # ``max_steps``, which natively OVERRIDES ``num_train_epochs``; with a
+    # finite dataset the dataloader re-iterates until max_steps is reached,
+    # and warmup/cosine schedules are computed off max_steps
+    # (``get_warmup_steps`` → ceil(warmup_ratio * max_steps)). ``None``
+    # (default) leaves every existing caller byte-identical
+    # (TrainingArguments default is -1 = epochs-driven).
+    max_steps: int | None = None
     lr: float = 1e-5
     lora_r: int = 32
     lora_alpha: int = 64
@@ -1073,6 +1081,13 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:
         sft_kwargs["save_total_limit"] = cfg.save_total_limit
+    if cfg.max_steps is not None:
+        # #547: step-indexed training amount. HF semantics: max_steps > 0
+        # overrides num_train_epochs; warmup + cosine decay computed off
+        # max_steps. Assert > 0 so a caller bug (0 / negative) fails loud
+        # here instead of silently training forever or not at all.
+        assert cfg.max_steps > 0, f"cfg.max_steps must be > 0 when set; got {cfg.max_steps}"
+        sft_kwargs["max_steps"] = cfg.max_steps
 
     sft_config = SFTConfig(**sft_kwargs)
 
