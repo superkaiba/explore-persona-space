@@ -466,6 +466,27 @@ def test_repro_fenced_raw_github_moving_ref_ignored():
     assert ok, [r.render() for r in results if not r.passed]
 
 
+def test_repro_fenced_github_moving_ref_ignored():
+    """A moving-ref `github.com/.../blob/main/...` URL inside a fenced
+    code block in `## Reproducibility` (e.g. an illustrative reproduce
+    command) is NOT flagged — check 8's HF / WandB / github scans share
+    the raw-host scan's fence policy (second #507 follow-up: previously
+    only the raw-host scan stripped fences)."""
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min.\n\n"
+        "```bash\n"
+        "# illustrative — fetch the script before pinning:\n"
+        "curl -O https://github.com/superkaiba/explore-persona-space/blob/main/scripts/run.py\n"
+        "```",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    perm = by_name["Reproducibility URL permanence"]
+    assert perm.passed, perm.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
 def test_confidence_mismatch():
     body = GOOD_BODY.replace("Confidence: MODERATE", "Confidence: HIGH")
     ok, results = verify_task_body.verify_text(body)

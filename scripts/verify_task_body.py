@@ -1426,10 +1426,11 @@ def check_repro_url_permanence(body: str) -> CheckResult:
     segment must be a commit SHA, never `main`/`master`/`HEAD` (the
     artifact silently changes under a moving-ref link when the branch
     advances, de-pinning provenance; check 4b already bans the same
-    shape for TL;DR figure URLs). The raw-host scan runs on
-    fence-stripped text (same fence policy as check 8b: a URL inside a
-    ``` example is illustrative) and is a SHAPE check only — existence
-    probing for same-repo raw URLs is check 8b's job.
+    shape for TL;DR figure URLs). ALL scans run on fence-stripped text
+    (same fence policy as check 8b: a URL inside a ``` example — e.g. a
+    reproduce-command block — is illustrative, not a provenance link;
+    unified 2026-06-09, second #507 follow-up). Shape checks only —
+    existence probing for same-repo raw URLs is check 8b's job.
     """
     repro = section_text(body, "Reproducibility")
     if repro is None:
@@ -1437,8 +1438,12 @@ def check_repro_url_permanence(body: str) -> CheckResult:
             "Reproducibility URL permanence", False, "Reproducibility section missing"
         )
     bad: list[str] = []
+    # Every scan below runs on fence-stripped text: a URL inside a ```
+    # example is illustrative, never a provenance link (fence policy
+    # shared with check 8b).
+    scanned = _strip_fenced_blocks(repro)
     # HF Hub URLs must include /tree/<ref>, /blob/<ref>, /raw/<ref>, or @<ref>.
-    hf_urls = re.findall(r"https?://huggingface\.co/[^\s\)<>]+", repro)
+    hf_urls = re.findall(r"https?://huggingface\.co/[^\s\)<>]+", scanned)
     for url in hf_urls:
         if not (
             "/tree/" in url
@@ -1450,22 +1455,19 @@ def check_repro_url_permanence(body: str) -> CheckResult:
         elif re.search(r"/(tree|blob|raw)/(main|master|HEAD)\b", url):
             bad.append(f"unpinned HF URL `{url}` (pinned to moving branch)")
     # WandB URLs should be /runs/<id>, /groups/<id>, or /reports/<id>.
-    wandb_urls = re.findall(r"https?://(?:www\.)?wandb\.ai/[^\s\)<>]+", repro)
+    wandb_urls = re.findall(r"https?://(?:www\.)?wandb\.ai/[^\s\)<>]+", scanned)
     for url in wandb_urls:
         if "/runs/" not in url and "/groups/" not in url and "/reports/" not in url:
             bad.append(f"unpinned WandB URL `{url}` (needs `/runs/<id>`)")
     # GitHub URLs should be /blob/<sha> or /tree/<sha>, not /blob/main.
-    gh_urls = re.findall(r"https?://github\.com/[^\s\)<>]+", repro)
+    gh_urls = re.findall(r"https?://github\.com/[^\s\)<>]+", scanned)
     for url in gh_urls:
         if re.search(r"/(blob|tree)/(main|master|HEAD)\b", url):
             bad.append(f"unpinned GitHub URL `{url}` (use `/blob/<sha>`)")
     # Raw GitHub URLs must pin their ref path segment to a commit SHA,
     # never a moving branch — same rule check 4b applies to TL;DR figure
-    # URLs. Scanned on fence-stripped text (fence policy shared with
-    # check 8b); shape only, existence probing belongs to check 8b.
-    raw_urls = re.findall(
-        r"https?://raw\.githubusercontent\.com/[^\s\)<>]+", _strip_fenced_blocks(repro)
-    )
+    # URLs. Shape only; existence probing belongs to check 8b.
+    raw_urls = re.findall(r"https?://raw\.githubusercontent\.com/[^\s\)<>]+", scanned)
     for url in raw_urls:
         if re.match(r"https?://raw\.githubusercontent\.com/[^/]+/[^/]+/(main|master|HEAD)\b", url):
             bad.append(f"unpinned raw GitHub URL `{url}` (pinned to moving ref — use `/<sha>/`)")
