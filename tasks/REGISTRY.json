@@ -3312,8 +3312,8 @@
       "goal": "Determine whether the benign-SFT erasure of a trigger-keyed marker rule on Qwen-2.5-7B is gradient-pressure-bound by sweeping the Phase-2 learning rate (3e-5, 1e-5, 5e-6) over the already-trained 50%-arm Phase-1 installs and measuring post-SFT trigger emission, key-conditioning, and log-prob retention at each pressure.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/557",
-      "status": "interpreting",
+      "path": "tasks/reviewing/557",
+      "status": "reviewing",
       "title": "Benign-SFT erasure of a trigger-keyed marker rule is gradient-pressure-bound: the rule survives one epoch of medical SFT once the erasing learning rate drops to the rate that installed it (HIGH confidence)"
     },
     "558": {
