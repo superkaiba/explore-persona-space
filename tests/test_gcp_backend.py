@@ -48,7 +48,9 @@ from explore_persona_space.backends.gcp import (
     DEFAULT_IMAGE_PROJECT,
     DEFAULT_PRIMARY_ZONE,
     DEFAULT_PROJECT,
+    REQUIRED_LAUNCH_SECRET_KEYS,
     GcloudRunResult,
+    GcpLaunchSecretsMissing,
     attempt_id_for,
     classify_create_failure,
     instance_name_for,
@@ -58,6 +60,7 @@ from explore_persona_space.backends.gcp import (
     render_describe_argv,
     render_list_argv,
     render_startup_script,
+    resolve_launch_secrets,
     resolve_provisioning_model,
     sentinel_path_for,
 )
@@ -65,6 +68,19 @@ from explore_persona_space.backends.gcp import (
 # ---------------------------------------------------------------------------
 # Fixtures + helpers
 # ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _required_launch_secrets(monkeypatch):
+    """launch() fails loud without the required workload secrets (fix20).
+
+    Set them on every test so the suite is hermetic regardless of the
+    invoking shell's env (and so resolve_launch_secrets's dotenv
+    fallback never has to read the real repo .env in tests —
+    override=False keeps these monkeypatched values authoritative).
+    """
+    monkeypatch.setenv("HF_TOKEN", "hf_test_token")
+    monkeypatch.setenv("WANDB_API_KEY", "wandb_test_key")
 
 
 def _spec(intent: str = "lora-7b", **overrides: Any) -> RunSpec:
@@ -1342,3 +1358,106 @@ def test_reconnect_falls_back_to_fresh_attempt_id_when_label_missing(
     handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
     assert handle is not None
     assert "attempt_id" not in handle.extra
+
+
+# ---------------------------------------------------------------------------
+# fix20/fix21 — launch-time secrets resolution + startup-script burn bounding
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_launch_secrets_missing_required_raises() -> None:
+    """An empty env (no dotenv fallback) must fail loud naming every
+    missing required key — never silently provision a doomed VM
+    (issue 535 GCP lane r7)."""
+    spec = _spec()
+    with pytest.raises(GcpLaunchSecretsMissing) as exc:
+        resolve_launch_secrets(spec, env={})
+    msg = str(exc.value)
+    for key in REQUIRED_LAUNCH_SECRET_KEYS:
+        assert key in msg, msg
+
+
+def test_resolve_launch_secrets_threads_spec_extra() -> None:
+    """Resolved values land in spec.extra['secret_<KEY>'] (the lookup
+    render_create_argv prefers); empty optional keys keep the
+    drop-when-absent contract."""
+    spec = _spec()
+    resolve_launch_secrets(
+        spec,
+        env={"HF_TOKEN": "t-hf", "WANDB_API_KEY": "t-wb", "OPENAI_API_KEY": ""},
+    )
+    assert spec.extra["secret_HF_TOKEN"] == "t-hf"
+    assert spec.extra["secret_WANDB_API_KEY"] == "t-wb"
+    assert "secret_OPENAI_API_KEY" not in spec.extra
+
+
+def test_resolve_launch_secrets_spec_extra_takes_precedence() -> None:
+    """A caller-threaded spec.extra['secret_<KEY>'] wins over the env."""
+    spec = _spec(extra={"secret_HF_TOKEN": "from-extra"})
+    resolve_launch_secrets(spec, env={"HF_TOKEN": "from-env", "WANDB_API_KEY": "t-wb"})
+    assert spec.extra["secret_HF_TOKEN"] == "from-extra"
+
+
+def test_launch_fails_loud_before_any_create_when_secrets_missing(monkeypatch) -> None:
+    """launch() must raise BEFORE any gcloud create when the resolver
+    reports missing secrets — zero credit spend on a doomed VM."""
+    import explore_persona_space.backends.gcp as gcp_mod
+
+    # Reconnect probe returns no live instance, then the resolver fires.
+    runner = _Runner(list_results=[GcloudRunResult(0, "[]", "")])
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+
+    def _raise(spec, env=None):
+        raise GcpLaunchSecretsMissing("HF_TOKEN, WANDB_API_KEY")
+
+    monkeypatch.setattr(gcp_mod, "resolve_launch_secrets", _raise)
+    with pytest.raises(GcpLaunchSecretsMissing):
+        backend.launch(_spec())
+    assert all("create" not in argv for argv in runner.calls), runner.calls
+
+
+def test_launch_threads_resolved_secrets_into_create_metadata(no_marker_posts) -> None:
+    """End-to-end through launch(): the resolver's values (here from the
+    autouse fixture's env) must reach the create call's metadata."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],  # no existing instance
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    backend.launch(_spec())
+    create_calls = [argv for argv in runner.calls if "create" in argv]
+    assert create_calls, runner.calls
+    joined = " ".join(create_calls[0])
+    assert "HF_TOKEN=hf_test_token" in joined
+    assert "WANDB_API_KEY=wandb_test_key" in joined
+
+
+def test_render_startup_script_failure_trap_powers_off() -> None:
+    """A failed startup script must power the VM off (GCE leaves a
+    failed-startup VM RUNNING + billing otherwise — issue 535 r7 idled
+    ~85 min). The success path must NOT shut down (the verifier
+    scp-pulls the sentinel off a live VM)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "trap" in script
+    assert "shutdown -h now" in script
+    assert '[ "$rc" -ne 0 ]' in script  # rc==0 (success) leaves the VM up
+
+
+def test_render_startup_script_required_secret_preflight() -> None:
+    """The in-VM preflight kills the script seconds after boot on an
+    empty required secret — before the repo-clone + uv-sync spend."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    for key in REQUIRED_LAUNCH_SECRET_KEYS:
+        assert f'[ -n "${{{key}:-}}" ]' in script, f"{key} preflight guard missing"
+    preflight_idx = script.index("In-VM preflight: required workload secrets")
+    assert preflight_idx < script.index("git clone"), "preflight must precede the clone"
+    assert preflight_idx < script.index("uv sync"), "preflight must precede uv sync"

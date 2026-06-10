@@ -100,7 +100,7 @@ import re
 import shlex
 import subprocess
 import tempfile
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -508,6 +508,18 @@ STARTUP_PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     "EPM_PERSIST_ADAPTER_SUBFOLDER",
 )
 
+#: The subset of :data:`STARTUP_SECRET_ENV_KEYS` the GCE workload cannot
+#: run without: ``train.py`` calls ``wandb.init`` (WANDB_API_KEY) and the
+#: adapter-persist path pushes to HF Hub (HF_TOKEN). :func:`resolve_launch_secrets`
+#: fails LOUD at launch time when either is unresolvable — silently
+#: dropping them provisioned a doomed VM that burned the full boot +
+#: uv-sync spend before crashing at ``wandb.init`` (live finding, issue
+#: 535 GCP lane r7: the dispatch process had no dotenv loaded, so every
+#: ``--metadata KEY=value`` pair was dropped and the workload saw empty
+#: exports). The remaining keys (ANTHROPIC/OPENAI) are genuinely optional
+#: for a training workload and keep the drop-when-absent contract.
+REQUIRED_LAUNCH_SECRET_KEYS: tuple[str, ...] = ("HF_TOKEN", "WANDB_API_KEY")
+
 
 def render_startup_script(
     *,
@@ -574,6 +586,19 @@ def render_startup_script(
         "#!/bin/bash",
         "set -euo pipefail",
         "umask 077",
+        # A failed startup script does NOT stop the VM — GCE just logs
+        # "Script failed with error" and leaves the instance RUNNING,
+        # billing the GPU with no workload (live finding, issue 535 GCP
+        # lane r7: the VM idled ~85 min after a workload crash because
+        # the monitoring session had died). The EXIT trap bounds that:
+        # any non-zero exit powers the VM off (instance reads TERMINATED
+        # → the poll classifies dead; disk preserved for debugging; the
+        # harness teardown deletes it). The rc==0 guard keeps the
+        # success path ALIVE — the artifact verifier scp-pulls the
+        # completion sentinel off the VM after a clean run.
+        'trap \'rc=$?; if [ "$rc" -ne 0 ]; then'
+        ' echo "[startup-script] FAILED rc=$rc — powering off to bound billing";'
+        " shutdown -h now; fi' EXIT",
         # GCE's metadata script runner executes as root WITHOUT $HOME set;
         # under `set -u` the first $HOME reference (uv PATH export) kills
         # the script (live finding, issue 535 GCP lane: `line 32: HOME:
@@ -588,6 +613,18 @@ def render_startup_script(
         "",
         "# === Secrets from instance metadata ===",
         *secrets_fetch_lines,
+        "",
+        # In-VM preflight (defense in depth — launch() already fails loud
+        # via resolve_launch_secrets): an empty required secret kills the
+        # script HERE, ~seconds after boot, instead of after the full
+        # repo-clone + uv-sync spend at the workload's first credentialed
+        # call. The non-zero exit fires the EXIT trap above → power off.
+        "# === In-VM preflight: required workload secrets ===",
+        *[
+            f'[ -n "${{{key}:-}}" ] || {{ echo "[FAIL] {key} missing from instance metadata"; '
+            "exit 78; }"
+            for key in REQUIRED_LAUNCH_SECRET_KEYS
+        ],
         "",
         "# === Repo clone / pull (idempotent) ===",
         'mkdir -p "$WORKLOAD_ROOT"',
@@ -908,6 +945,63 @@ class GcpWorkloadError(GcpBackendError):
         super().__init__(reason)
         self.reason = reason
         self.evidence = evidence or {}
+
+
+class GcpLaunchSecretsMissing(GcpBackendError):
+    """Required workload secrets are unresolvable at launch time.
+
+    Raised by :func:`resolve_launch_secrets` BEFORE any ``gcloud
+    instances create`` — a VM provisioned without
+    :data:`REQUIRED_LAUNCH_SECRET_KEYS` always burns the full boot +
+    uv-sync spend and then crashes inside the workload (issue 535 GCP
+    lane r7: ``wandb.errors.UsageError: No API key configured`` after
+    ~3 min of A100 time, VM left RUNNING idle). This is a CONFIG error,
+    not capacity: the router must surface it, never fall back to
+    another tier (the same empty env would doom every backend).
+    """
+
+
+def resolve_launch_secrets(spec: RunSpec, env: Mapping[str, str] | None = None) -> None:
+    """Resolve workload secrets into ``spec.extra["secret_<KEY>"]``, failing loud on gaps.
+
+    Mirrors ``slurm.render_secrets_env``: secrets live in the repo
+    ``.env`` (dotenv), NOT the ambient shell, so a bare ``os.environ``
+    read from a clean dispatch process silently forwards NOTHING. When
+    ``env`` is None, loads the project dotenv first
+    (``resolve_dotenv_path`` walks to the main git worktree, so a linked
+    worktree without its own ``.env`` still resolves; ``override=False``
+    keeps already-exported vars authoritative) and snapshots
+    ``os.environ``. Every resolved value is threaded through the
+    existing ``spec.extra["secret_<KEY>"]`` contract that
+    :func:`render_create_argv` already prefers over its env fallback, so
+    the metadata the VM fetches is exactly what this function resolved.
+
+    Raises :class:`GcpLaunchSecretsMissing` naming every
+    :data:`REQUIRED_LAUNCH_SECRET_KEYS` member that is still absent or
+    empty. Optional keys (ANTHROPIC/OPENAI + the adapter-persist
+    passthroughs) keep the drop-when-absent contract.
+    """
+    if env is None:
+        from explore_persona_space.orchestrate.env import load_dotenv as _load_dotenv
+
+        _load_dotenv()
+        env = os.environ
+    missing: list[str] = []
+    for key in STARTUP_SECRET_ENV_KEYS + STARTUP_PASSTHROUGH_ENV_KEYS:
+        val = spec.extra.get(f"secret_{key}") or env.get(key)
+        if val:
+            spec.extra[f"secret_{key}"] = val
+        elif key in REQUIRED_LAUNCH_SECRET_KEYS:
+            missing.append(key)
+    if missing:
+        raise GcpLaunchSecretsMissing(
+            "required workload secret(s) unresolvable at launch: "
+            + ", ".join(missing)
+            + " — not in spec.extra['secret_<KEY>'], the process env, or the project .env. "
+            "A VM provisioned without them boots, burns the uv-sync spend, and crashes "
+            "inside the workload (issue 535 GCP lane r7). Load the repo .env (or export "
+            "the keys) before dispatching."
+        )
 
 
 # Substrings in gcloud stderr that indicate a provisioning failure
@@ -1352,6 +1446,15 @@ class GcpBackend(ComputeBackend):
                 attempt_id=str(existing.extra.get("attempt_id") or attempt_id),
                 wandb_run_path=spec.extra.get("wandb_run_path"),
             )
+
+        # Resolve workload secrets BEFORE rendering anything — fails loud
+        # (GcpLaunchSecretsMissing) when the required keys are absent from
+        # spec.extra / the process env / the project .env, so a doomed VM
+        # is never provisioned (issue 535 GCP lane r7: empty WANDB_API_KEY
+        # crashed the workload after the full boot + uv-sync spend). The
+        # resolved values land in spec.extra["secret_<KEY>"], which
+        # render_create_argv prefers over its bare-env fallback.
+        resolve_launch_secrets(spec)
 
         # Render the startup-script + persist it to a per-launch tempfile,
         # then thread the path so ``render_create_argv`` takes the

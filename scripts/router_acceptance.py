@@ -2261,6 +2261,17 @@ def main(argv: list[str] | None = None) -> int:
         level=logging.DEBUG if getattr(args, "debug", False) else logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    # Secrets live in the repo .env (dotenv), NOT the ambient shell — a
+    # harness launched from a clean session env otherwise forwards NOTHING
+    # to the remote workload (live finding, issue 535 GCP lane r7: the VM
+    # booted with empty WANDB_API_KEY because this dispatch process had
+    # none to thread into the instance metadata) AND verify-lane's HfApi
+    # probe reads an empty HF_TOKEN. resolve_dotenv_path walks to the main
+    # git worktree, so this works from a linked worktree without its own
+    # .env; override=False keeps already-exported vars authoritative.
+    from explore_persona_space.orchestrate.env import load_dotenv
+
+    load_dotenv()
     if args.action == "live":
         return _cmd_live(args)
     if args.action == "verify-lane":
