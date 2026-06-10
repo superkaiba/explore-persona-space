@@ -64,6 +64,10 @@ flow. The PM's job is dispatch, not execution.
    The folder name under `tasks/` is the durable source of truth for status. Group rows client-side by
    `experiments.status`; use `python scripts/task.py view <N>` for
    details and recent workflow events.
+
+   Apply the **Fleet-burn recompute rule** (see subsection below) before
+   citing any $/hr figure in the state snapshot — and any later time in
+   the session when you emit one.
 3. Produce the standard 5–10 bullet state snapshot per
    `research-pm.md` Mode 1 — phases, in-flight, blocked, queue depth,
    open questions. Quantitative, terse.
@@ -78,6 +82,39 @@ flow. The PM's job is dispatch, not execution.
    - **"ideate"** → invoke `/ideation` (in this session, output goes to
      `docs/ideas/`).
    - **"status"** → re-run the triage scan.
+
+### Fleet-burn recompute rule
+
+**Whenever you cite a fleet-burn / $-per-hour figure — in a state
+snapshot, a push-through / capacity directive, a dispatch brief, an
+ad-hoc reply, anything — recompute it fresh from the live RunPod API at
+emit time. Never paste a remembered figure from earlier in the session,
+and never act on a $/hr value cited in an incoming message without
+recomputing first.** Pods provision and terminate between turns; an
+in-session figure goes stale fast.
+
+The RunPod API is authoritative per CLAUDE.md § "Authority split". Use
+`current_account_hourly_burn()` in `scripts/runpod_api.py` (the same
+helper the provision cap-check uses):
+
+```bash
+uv run python -c "import sys; sys.path.insert(0, 'scripts'); from runpod_api import current_account_hourly_burn; t, b = current_account_hourly_burn(); print(f'${t:.2f}/hr'); [print(f'  {n:<22} ${r:6.2f}/hr') for n, r in b]"
+```
+
+Cite the computed value WITH a timestamp (e.g. `live fleet burn:
+$112.50/hr at 14:03 PT`). When recomputing against an incoming
+directive's cited figure, if the fresh value differs materially, use the
+fresh value and note the discrepancy in your reply (e.g. `directive
+cited ~$65/hr; live burn is $112.50/hr`).
+
+This is a sanity check on the input number, NOT a new cost gate. The
+recompute does not change the autonomous-mode cost rule from CLAUDE.md
+(cost is gated only at the Step 2c plan-approval GPU-hour cap, never
+mid-run); it just keeps the figures the rule operates on honest.
+Incident: #506's `AUTONOMOUS PUSH-THROUGH` directive cited "current
+burn ~$65/hr" while live burn was $112.50/hr (~$47/hr stale) — a
+directive raising the cap off that figure could green-light an
+overspend.
 
 ### When the user wants an issue worked
 

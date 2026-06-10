@@ -74,6 +74,21 @@ Be specific — name files, write pseudocode, specify hyperparameters with a lit
 
 Save the plan to a temporary file or pass it directly.
 
+**Strip the harness trailer before persisting.** An `Agent` tool result ends
+with harness-appended metadata — a final `agentId: <id> (use SendMessage ...)`
+line plus a `<usage>...</usage>` block. Remove BOTH before writing the
+planner's return to ANY durable handoff surface (the `/tmp/issue-<N>-plan-v<K>.md`
+handoff file, `task.py new-plan-version` → `plans/v<K>.md`), e.g.:
+
+```python
+text = re.sub(r"\n?agentId:\s*\S+\s*\(use SendMessage.*?</usage>\s*$", "\n", text, flags=re.DOTALL)
+```
+
+A contaminated handoff file reaches every downstream consumer verbatim
+(fact-checker, all 6 critics, the committed plan revision) — on task #562
+(2026-06-10) both Codex critic twins had to strip the trailer independently
+because the orchestrator captured the planner's return verbatim.
+
 ### Phase 1.5: Verify Assumptions (Verifier Agent)
 
 **This phase is MANDATORY. Never skip it.**
@@ -485,6 +500,23 @@ each in a single message (3 parallel bg-Bash calls). Per-lens reconciler runs
 only on Claude-vs-Codex disagreement and is also in-context (no GitHub
 markers). Worst case per round: 6 critics + 3 Codex bg-dispatches + 3
 reconcilers = 12 invocations.
+
+**Dispatch ordering guards (both bit on 2026-06-09, #545):** (a) bg-dispatch
+`codex_task.py` ONLY after the wrapper's completion notification — and gate
+the command itself on the prompt file existing (`test -f "$PROMPT_FILE" &&
+uv run python scripts/codex_task.py ...`); dispatching ~39 s after spawning
+the composer crashed the helper with `FileNotFoundError` on the not-yet-
+written prompt. (b) Read each Codex output file only after the helper's
+completion line / `epm:codex-task-completed` marker — premature reads hit
+missing files and tempt a fallback to the wrong (stale same-issue) output
+file.
+
+**Park order:** the plan-approval park (and the `plan_pending` flip) happens
+only AFTER the consistency-checker's FINAL verdict is folded in — never on
+its interim ack while its full report is in flight. On 2026-06-09 #545
+parked ~30 min on an uncorrected plan; the checker's late WARN (a substantive
+`max_new_tokens` mismatch vs the executed parent rig) then had to be folded
+in as a post-park plan v2.
 
 
 ## Rules

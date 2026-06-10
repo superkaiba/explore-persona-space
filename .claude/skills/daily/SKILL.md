@@ -1,6 +1,6 @@
 ---
 name: daily
-description: End-of-day Explore Persona Space brief — what happened today, plus an exhaustive sweep of every problem/confusion/error in the day's Claude Code session transcripts, each with a concrete fix. Workflow-fixable problems become proposed diffs (PROPOSED, not auto-applied; Thomas greenlights); every other problem is logged with a suggested action so nothing is dropped.
+description: End-of-day Explore Persona Space brief — what happened today, plus an exhaustive sweep of every problem/confusion/error in the day's Claude Code session transcripts, each with a concrete fix. Workflow-fixable problems are AUTO-APPLIED (each lint-checked and committed separately so it stays revertable) and summarized to Thomas's my-goat Telegram; every other problem is logged with a suggested action so nothing is dropped.
 ---
 
 # Daily Brief
@@ -10,7 +10,9 @@ status, promotion, or approval state through any external tracker.
 
 Two jobs in one file:
 1. **Recap** — what happened on the project today.
-2. **Problem sweep + fixes** — go through today's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not just a top-5. Each problem that maps to a workflow-file fix becomes a surgical proposed diff in `## Proposed workflow improvements` (PROPOSED ONLY — Thomas reviews next morning, says "do 1, 3" in chat, `workflow-improver` applies the greenlit ones). Every other problem (experiment bug, infra flakiness, a mistake I made, a dropped handoff) is logged in `## Other problems & notes` with a one-line suggested action, so nothing is silently dropped.
+2. **Problem sweep + auto-fix** — go through today's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not just a top-5. Each problem that maps to a workflow-file fix (within the allowed-targets list below) is **AUTO-APPLIED in this run**: make the edit and `git commit` it on its own (one commit per fix, so each is independently revertable), then run the repo-wide workflow lint ONCE after all fixes (see "Lint gate" below — `workflow_lint.py` is a repo-wide validator, NOT a per-file `.md` linter). Record each applied fix in `## Applied workflow improvements` with its diff and commit sha. Then push a concise summary of what was applied (with the commit shas, so Thomas can revert any) to Thomas's my-goat Telegram chat (see "Auto-apply + surfacing flow"). Every other problem (experiment bug, infra flakiness, a mistake I made, a dropped handoff, or a forbidden-target fix that is too high blast-radius to auto-apply) is logged in `## Other problems & notes` with a one-line suggested action, so nothing is silently dropped.
+
+   **Auto-apply replaces the old greenlight gate (changed 2026-06-08 per Thomas: "make the workflow improvements automatically and just surface them in this chat").** Earlier this skill drafted PROPOSED diffs and waited for Thomas to say "do 1, 3"; now workflow-fixable fixes apply themselves and Thomas reviews after the fact via the Telegram summary (and can revert any single fix by its commit sha). The safety posture is "apply but stay fully transparent + per-fix revertable", not "apply silently".
 
 ## Inputs
 
@@ -37,32 +39,32 @@ uv run python scripts/task.py view <N>
 ## Output
 
 Write the brief to `logs/daily/YYYY-MM-DD.md` (relative to the repo root —
-`~/explore-persona-space/`). One file per date. Handle an existing file as
-follows — this keeps the `SessionStart` surfacing hook reliable (see
-"Greenlight flow"): the hook has nothing to surface if the day's file exists
-but never got a proposals section (the exact failure on 2026-05-27, when a
-manual 01:30 run created a stub and the 23:27 cron then no-op'd):
+`~/explore-persona-space/`). One file per date. The file is a written RECORD
+of what the run applied + noted; the actual surfacing to Thomas happens over
+Telegram (see "Auto-apply + surfacing flow"), not via this file. Handle an
+existing file as follows:
 
 - **File does not exist** → write the full stub (all five H2 sections below).
-- **File exists but is missing the `## Proposed workflow improvements` H2, or
+- **File exists but is missing the `## Applied workflow improvements` H2, or
   that section is empty** → do NOT overwrite the file. `Edit` it to insert /
-  fill the `## Proposed workflow improvements` section in place (between
+  fill the `## Applied workflow improvements` section in place (between
   `## What happened` and `## Other problems & notes`, or in the correct
   position if those are absent), and likewise insert `## Other problems &
   notes` if it is missing. Leave every other section — including any edits
   Thomas already made to `## What happened` / `## My thoughts` — untouched.
   This is the recovery path when an earlier manual or partial run left a stub
   without the problem sweep.
-- **File exists with a non-empty `## Proposed workflow improvements` section**
-  (real proposals OR the "no workflow-fixable problems" placeholder) → refuse
-  to overwrite and tell the user to edit it directly.
+- **File exists with a non-empty `## Applied workflow improvements` section**
+  (real applied edits OR the "no workflow-fixable problems" placeholder) →
+  the day's auto-apply already ran; do NOT re-apply or re-overwrite (re-running
+  would double-apply fixes). Refuse to overwrite and tell the user the day is
+  already done.
 
-**Manual runs write the FULL file.** When `/daily` is invoked manually (not
-via the nightly cron), always produce EVERY section including `## Proposed
-workflow improvements` — the 23:27 PT cron refuses to overwrite an existing
-daily file, so a partial manual run permanently loses that day's problem-
-sweep. (Incident: the 2026-05-27 daily shipped with no proposals section
-because a manual run pre-empted the cron.)
+**Manual runs write the FULL file AND auto-apply.** When `/daily` is invoked
+manually (not via the nightly cron), always produce EVERY section including
+`## Applied workflow improvements` and actually apply the fixes — the 23:27 PT
+cron refuses to overwrite an existing daily file, so a partial manual run
+permanently loses that day's problem-sweep + auto-apply.
 
 The file is a stub Thomas will finish editing. It starts hidden from the
 `/log` dashboard feed (`visible: false`) and only becomes visible when he
@@ -103,18 +105,19 @@ Below the frontmatter, write exactly these five H2 sections in this order:
 changes, completed reviews. Be concrete (mention task IDs). This is the
 auto-drafted summary Thomas will edit down.>
 
-## Proposed workflow improvements
-<numbered list of WORKFLOW-FIXABLE problems — each a concrete proposed
-diff; see "Problem sweep" below for the shape. If no workflow-fixable
-problems surfaced today, write a single line:
+## Applied workflow improvements
+<numbered list of WORKFLOW-FIXABLE problems that were AUTO-APPLIED this run —
+each with its applied diff and commit sha; see "Problem sweep" below for the
+shape. If no workflow-fixable problems surfaced today, write a single line:
 `- _no workflow-fixable problems found today_`>
 
 ## Other problems & notes
-<every problem/confusion/error from today that did NOT map to a
-workflow-file fix — experiment bugs, infra flakiness, mistakes I made,
-dropped handoffs, anything Thomas had to fix by hand. One bullet each:
+<every problem/confusion/error from today that did NOT map to an
+auto-applied workflow-file fix — experiment bugs, infra flakiness, mistakes I
+made, dropped handoffs, anything Thomas had to fix by hand, plus any
+forbidden-target or lint-failed fix that was NOT applied. One bullet each:
 what happened (session id / task id) + a one-line suggested action.
-NOT greenlight-gated — these are notes, not diffs. If none, write:
+These are notes, not applied edits. If none, write:
 `- _no other problems surfaced today_`>
 
 ## My thoughts
@@ -149,8 +152,8 @@ Signals to hunt for (non-exhaustive — anything that went wrong counts):
 
 **Triage each problem into one of two buckets:**
 
-1. **Workflow-fixable** → goes in `## Proposed workflow improvements` as a numbered proposal WITH a concrete diff (shape below). Greenlight-gated: drafted, never auto-applied.
-2. **Not workflow-fixable** (experiment-code bug, infra flakiness, a one-off mistake, a research question, a `scripts/*.py` experiment-entrypoint bug) → goes in `## Other problems & notes` as a bullet: what happened (session id / task id) + a one-line suggested action (file an issue, retry on a fresh pod, fix via `experiment-implementer`, etc.). No diff, not greenlight-gated — it is a note so the problem stays visible and nothing is dropped.
+1. **Workflow-fixable** (the fix edits an allowed-target file below) → APPLY it now (Edit the file), `git commit` it on its own, then record it in `## Applied workflow improvements` as a numbered entry WITH the applied diff and the commit sha (shape below). One commit per fix so each is independently revertable. After ALL bucket-1 fixes are committed, run the repo-wide lint gate ONCE (see "Lint gate" below); if it regresses, revert the offending commit(s) and re-log them in `## Other problems & notes` as "reverted: failed lint gate".
+2. **Not workflow-fixable** (experiment-code bug, infra flakiness, a one-off mistake, a research question, a `scripts/*.py` experiment-entrypoint bug, or a forbidden-target fix) → goes in `## Other problems & notes` as a bullet: what happened (session id / task id) + a one-line suggested action (file an issue, retry on a fresh pod, fix via `experiment-implementer`, etc.). No diff, not applied — it is a note so the problem stays visible and nothing is dropped.
 
 When unsure which bucket: if the fix edits a file in the allowed-targets list below, it is bucket 1; otherwise bucket 2.
 
@@ -162,39 +165,59 @@ When unsure which bucket: if the fix edits a file in the allowed-targets list be
 - `~/explore-persona-space/.claude/rules/*.md`
 - `~/explore-persona-space/.claude/workflow.yaml`
 
-**Forbidden targets** (too high blast radius — surface as discussion, not proposal):
+**Forbidden targets** (too high blast radius — do NOT auto-apply; log in `## Other problems & notes` and, where relevant, `## My thoughts`):
 - Hooks in `.claude/settings.json` — surface as a written suggestion in `## My thoughts` for Thomas to wire up via `/update-config`.
-- Creating new agents or skills — surface as a "consider creating X" line in the proposal but don't pre-draft the file.
-- `scripts/*.py` orchestration code — that's `workflow-improver`'s job after greenlight, not a daily proposal.
+- Creating new agents or skills — surface as a "consider creating X" line in `## Other problems & notes` but don't pre-draft the file.
+- `scripts/*.py` orchestration code — surface as a note; non-trivial orchestration changes are still Thomas's call, not a daily auto-apply.
 
-**Proposal shape**: each proposal is a numbered list item with this structure:
+**Applied-edit record shape**: each applied fix is a numbered list item with this structure (written AFTER the edit + lint + commit succeed):
 
 ```markdown
-1. **Target:** `<file path>` — **what:** <one-line description>
+1. **Target:** `<file path>` — **what:** <one-line description> — **commit:** `<sha>`
    **Why:** <triggering pattern, quoted transcript excerpt with session ID if possible>
-   **Proposed edit:**
+   **Applied edit:**
    ```diff
    - <old line if modifying or deleting>
    + <new line>
    ```
 ```
 
-**No cap — be exhaustive.** List every workflow-fixable problem as its own
-proposal and every other problem as its own note. Do NOT drop items to hit a
+**No cap — be exhaustive.** Apply + record every workflow-fixable problem as its
+own entry and every other problem as its own note. Do NOT drop items to hit a
 number. Order both sections by severity so the important ones are on top
 (rules of thumb: Thomas's own corrections / blockers first; foundational files
 like project CLAUDE.md before niche skill files; problems that cost real time
 before cosmetic ones). If several small related items share one fix, you may
-group them under a single proposal with sub-bullets — grouping is fine,
-dropping is not.
+group them under a single applied entry (one commit) with sub-bullets — grouping
+is fine, dropping is not.
 
-### Greenlight flow
+### Lint gate
 
-The proposals are surfaced to Thomas automatically: a `SessionStart` hook (`scripts/daily_surface_hook.sh`, wired in `.claude/settings.json`, matcher `startup|resume`) injects the latest daily's `## Proposed workflow improvements` section into context on the **first EPS session that sees a new daily file**. The handling assistant opens that session by presenting the proposals and asking which to apply. The hook is idempotent on the daily FILE name (marker at `.claude/cache/.daily-last-surfaced`), so it surfaces each daily exactly once regardless of how many sessions Thomas opens, and stays silent when the latest daily has no proposals (empty section or the "no workflow-fixable problems" placeholder). The background run that produces the file is the `23:27 PT` cron (`claude -p /daily`).
+`workflow_lint.py` is a **repo-wide** validator, not a per-file `.md` linter (its `--file` flag only points at `workflow.yaml`; passing an `.md` path makes it try to parse that file AS workflow.yaml and falsely fail). So do NOT run it "per touched file". Instead, after ALL bucket-1 fixes are committed, run it ONCE for the whole repo:
 
-Thomas then replies in chat with e.g. "do 1, 3" or "do all" or "skip — let's talk about 2 first". The handling assistant then spawns the `workflow-improver` agent with the specific proposals to apply. `workflow-improver` makes the edits, runs `scripts/workflow_lint.py` for files it touches, and commits with a message like `workflow: apply daily-proposed edits 1,3 (YYYY-MM-DD)`.
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+uv run python scripts/workflow_lint.py --check-references
+```
 
-Proposals that Thomas declined stay in the daily file as historical record — don't delete them.
+- `--check-references` is the gate (it currently PASSes clean, so a new failure means a just-applied edit broke a workflow reference). Use the `uv run python …` form — the linter imports pydantic/PyYAML and needs the EPS venv; a bare `scripts/workflow_lint.py` in the cron shell will `ModuleNotFoundError`.
+<!-- example: anti-pattern -->
+- `--check-asks` is ALSO a gate (it now PASSes clean repo-wide, since the `issue/SKILL.md` mentions were annotated): a new `--check-asks` failure means a just-applied edit added an un-annotated `AskUserQuestion` mention — annotate it (`<!-- gate: <key> -->` resolving in `workflow.yaml § gates`, or `<!-- example: anti-pattern -->` for a forbidden-use / meta mention) or revert that edit, same discipline as `--check-references`.
+- **On regression** (`--check-references` was clean and is now failing): the failure is from a just-applied edit. Identify the offending commit, `git revert --no-edit <sha>` it (do not hand-edit), move that item to `## Other problems & notes` as "reverted: failed lint gate (<error>)", and re-run the gate until it is green again. Then continue to surfacing.
+
+### Auto-apply + surfacing flow
+
+The fixes apply themselves during the run (bucket 1 above): edit → `git commit` (one commit per fix) → repo-wide lint gate ONCE (see "Lint gate"). After all fixes are applied and the daily file is written, **surface a concise summary to Thomas's my-goat Telegram chat** by enqueuing it into the my-goat notification digest:
+
+```bash
+NOTIF_CAT=research /home/thomasjiralerspong/my-goat/scripts/notif_enqueue.sh "EPS daily <date>: auto-applied N workflow fix(es). 1) <one-liner> (<sha>). 2) <one-liner> (<sha>). Notes: <M> other problems logged. Revert any with: git -C ~/explore-persona-space revert <sha>. Full: logs/daily/<date>.md"
+```
+
+This lands in the next my-goat morning digest (the dispatch cron runs 9/14/19 PT), so the overnight `23:27 PT` run is reviewed when Thomas is fresh rather than buzzing him at bedtime. Keep the message short: count of fixes, a one-liner + sha each (so any fix is one `git revert <sha>` away), the count of other notes, and the daily-file path. If zero fixes were applied AND zero notable problems were logged, enqueue nothing (don't send an empty digest line).
+
+The old `SessionStart` greenlight hook (`scripts/daily_surface_hook.sh`) is now vestigial: it greps for `## Proposed workflow improvements`, which this skill no longer writes, so it stays silent and never prompts for a greenlight. Leave it in place (harmless); do not edit `.claude/settings.json` from this skill (forbidden target). Surfacing is Telegram-only now.
+
+Applied edits stay in the daily file as historical record — don't delete them. If Thomas reverts one, that's via git; the record stays.
 
 ### Commit
 

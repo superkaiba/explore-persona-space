@@ -5,7 +5,7 @@ description: >
   quality plots, p-value-based comparisons, and updates the task
   with a clean-result body. Spawned by the `/issue` skill after
   experiments complete. Actively looks for problems and overclaims.
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 skills:
   - independent-reviewer
   - paper-plots
@@ -136,6 +136,27 @@ The interpretation-critic checks for the H3's presence and substance as
 part of its normal review (no separate marker, no separate skill-step
 gate, no `status:blocked` path).
 
+#### Content hygiene for harmful-content corpora (EM, refusal, harmful-advice)
+
+When the run's raw completions come from a harmful-content corpus
+(Betley-style EM, bad-medical-advice, refusal-bait pools), verbatim rows
+in your context can trigger terminal API usage-policy refusals that kill
+your final turn and make the transcript unresumable (incident: task
+#537, 2026-06-10). For those rows, the spot check above AND the Step 3.6
+sample selection run in sanitized mode:
+
+- Read minimal slices via field-filtered `jq` (judge label, marker
+  presence, row index, token counts) — never load whole files or full
+  text-field values into context.
+- Embed a short sanitized excerpt (first ~15 words) plus a placeholder
+  `[truncated — harmful-content row; verify at <raw-completions path>,
+  row <i>]` instead of the full completion. Keep labels, indices, and
+  the permanent raw link verbatim — that is what carries the evidence.
+- Label each such block "sanitized for context hygiene" so the critics
+  know the truncation is deliberate, not evidence-hiding. Benign corpora
+  (marker, fact, sycophancy, WildChat, personas) keep the standard
+  verbatim treatment.
+
 ### Step 2: Compute Statistics
 
 For every comparison:
@@ -190,7 +211,7 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 4. Reference the figure inline inside the relevant result H3 under `## TL;DR` with `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` — pinned to the commit SHA, never `main`/`master`/`HEAD`. **Do NOT emit a `## Figure` H2** — the H2 is retired (2026-W22, task #454); verifier check 2 hard-FAILs any body that carries it.
 5. Alt text may contain `[brackets]` (e.g. literal marker names like `[ZLT]`); the verifier's image regex handles them.
 
-`verify_task_body.py` Check 4b (`Figure URL resolvable`) fails any body with a relative figure URL or a `main`/`master`/`HEAD`-pinned raw URL; the gate blocks promotion to `awaiting_promotion` until the URL is fixed.
+`verify_task_body.py` Check 4b (`Figure URL resolvable`) fails any body with a relative figure URL, a `main`/`master`/`HEAD`-pinned raw URL, or a figure URL whose target does NOT exist — same-repo SHA-pinned raw URLs are verified against the git object database via `git cat-file` (incident: task #507, 2026-06-09 — a caption cited a figure that was never generated), with an HTTP HEAD fallback for unknown SHAs / other hosts. The gate blocks promotion to `awaiting_promotion` until the URL is fixed, so commit the figure FIRST (steps 2-3 above) and pin the URL to the commit SHA that actually carries it.
 
 ### Step 3.5: Plot-verification (MANDATORY, before writing the body)
 
@@ -219,6 +240,10 @@ For each sampled completion, paste the verbatim prompt and verbatim model output
 Why both sides are mandatory: aggregates can lie. Without seeing non-firing examples, the reader can't tell whether your "fires 0/100" claim means the model produced unrelated benign output or that the regex was just too strict. A claim of "20/100 fires" that doesn't include 3 of those 20 alongside 3 of the non-firing 80 is unverified.
 
 If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% case, sample from the actual non-firing prompts (not from a different condition).
+
+**Numeric fidelity rule (HARD): every number you quote in a sample annotation, example caption, or per-cell figure label MUST be re-extracted (grep/jq/python) from the source eval JSON in the same turn you write it — never transcribed from memory or an earlier turn.** Two same-day catches (2026-06-09): #488's interp-critique found 2 fabricated "verbatim" sample numbers plus a systematically wrong persona-name mapping, and #477's found 5 precise numeric errors in example annotations (wrong emit denominator, off cell-means, a bystander-grid number cited as the negative-panel's). The critics caught both, but at a full REVISE round each; re-extract at write time and the round is free.
+
+**Content firewall for harmful-content tasks (EM evals, jailbreak data, misaligned completions): never page raw-completion files into your context.** Two analyzer attempts on #521 (2026-06-09) were killed mid-run by spurious API usage-policy refusals after ingesting raw EM text; the third ran clean behind a firewall. Read aggregate JSONs and judge labels only; select your cherry-picked examples by grepping judge labels + line offsets and quote the minimal verbatim span the body needs.
 
 ### Step 4: Write the clean-result body
 
@@ -259,7 +284,7 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (thro
 
 3. **`## Reproducibility`** — agent-facing appendix at the bottom. Required content, in order:
    - **`**Parameters:**`** — the parameters table (base model, adapter, optimizer, steps, seeds, eval rig, hardware, wall time, Hydra config slug). Absorbed from the retired `## Details` section. **COPY every numeric hyperparameter from ground truth — the committed training script (the `**Code:**` SHA), `run_result.json`, or the approved plan §11. NEVER type a hyperparameter from memory or a remembered library default.** Learning rate, LoRA rank/alpha/dropout, epochs, batch size, and seed are load-bearing — a plausible-looking guess is a data-integrity bug. Before you finalize the body, open the training script at the `**Code:**` SHA and read off `--lr` / `--epochs` / `--rank` etc. verbatim. The learning rate is reconciled mechanically against the plan by `verify_task_body.py` check 16 (FAIL blocks promotion); a value that fails it is a fabrication, not a formatting nit. Incident: task #489 shipped `lr = 1e-4` (a typed-from-memory LoRA default) while the run used `lr = 2e-6` — a 50x misprint that reached the mentor draft because nothing reconciled the table's values against ground truth.
-   - **`**Artifacts:**`** — links to training data, model checkpoints, eval JSONs, figure source, raw completions. The training-data dropdown lives under `### What I ran`; eval examples live near the finding that consumed them (NOT here); this Artifacts block just lists the full artifact links.
+   - **`**Artifacts:**`** — links to training data, model checkpoints, eval JSONs, figure source, raw completions. The training-data dropdown lives under `### What I ran`; eval examples live near the finding that consumed them (NOT here); this Artifacts block just lists the full artifact links. **GROUND every path-specific artifact claim in a live Hub listing — never type it from the plan's intent.** When you write a bullet that names specific subfolders, checkpoint directories, intermediate-fraction adapters, file counts, or HF Hub paths (e.g. "per-cell LoRA adapters at intermediate fractions {0.25, 0.50, 0.75, 1.00} uploaded to `adapters/issue_<N>/<cell>/`", "520 files at `<path>`"), run `huggingface_hub.list_repo_files` on the relevant repo + revision at write time and copy what the listing actually shows. The `hf` CLI has no `api` subcommand and false-reports "0 files" on a path that exists, so use the Python Hub API (see `.claude/rules/upload-policy.md` for the canonical snippet). If a planned subfolder is missing — e.g. a band-stop callback halted training before the planned intermediate-fraction checkpoint was saved — the body says what is ACTUALLY on the Hub, not what the plan intended; the missing piece becomes a methodology-correction beat inside the relevant `#### <finding>` H4 (the silent-fail rule in CLAUDE.md § "After Every Experiment" #8). A plan-intent claim that doesn't survive the listing is a data-integrity bug that propagates: it gets carried into follow-up-proposer's reuse premises (incident #530→#534, 2026-06-09) and into any future task whose planner mines this body for prior-art artifacts. **Reuse provenance — when ANY reader-facing claim in this body rests on a trained artifact REUSED from a prior issue** (a LoRA adapter, merged checkpoint, training-mix dataset, raw-completion bucket, or `eval_results/` JSON produced by a previous `/issue` run rather than freshly produced by THIS task), record one bullet per reused artifact under this block stating: (a) the producing issue number `#M` as a markdown link to `https://eps.superkaiba.com/tasks/M`; (b) the permanent HF Hub path (pinned to `/tree/<sha>` or `@<sha>`) or repo-relative `eval_results/issue_M/...` path the artifact was pulled from; and (c) a one-line fitness rationale stating WHY this artifact was the right one to reuse — recipe match (same base model + training-recipe / hyperparameters the new question demands), measurement-regime fit (the artifact's eval surface contains the conditions THIS result reads off; for marker work specifically, the artifact is NOT saturated where this read needs headroom — source `log P − base ∈ [5,12]` nat per `.claude/rules/marker-training-recipe.md`), and required conditions present. Mirror the positive fitness check the planner ran at plan §5 / §10 (CLAUDE.md § "Reuse existing trained artifacts when fit-for-purpose — never reuse a wrong one") so the clean-result carries the same justification forward. Format: `- Reused <kind> from [#M](...): <hf path or local path> — fit: <one line: recipe + regime + conditions>`. Source the reuse list from the plan body (§5 reusable + §10/§11 artifact citations) and from any explicit `Source: #M` / `from-issue` references in the training-script SHA at the `**Code:**` link; never invent reuse the plan didn't approve. When THIS task produced every artifact it stands on, omit the reuse-provenance bullets entirely (most fresh-train experiments). The clean-result-critic Lens 5 audits this.
    - **`**Compute:**`** — wall time, GPU type/count, pod label.
    - **`**Code:**`** — dataset-build script, pipeline driver, Hydra config, git commit hash, one-block reproduce snippet.
 
@@ -459,15 +484,52 @@ has changed since the last snapshot (the analyzer
 round-2+ path on critic FAIL just calls `set-body` again with the
 revised content, after re-running the pre-flight on the updated cache file).
 
+**Same-issue follow-up re-entry (re-fold, not re-promote).** When the
+task carries an `epm:followup-scope v1` marker and you are re-spawned
+after a same-issue follow-up run (SKILL.md Step 9b § Same-issue
+follow-up loop), the body is ALREADY the clean-result: fold the new
+finding into it as an additional `#### <finding>` H4 under
+`### Findings` (updating the H1 title / confidence tag if the result
+moves the headline), re-run the verifier, and call `set-body` WITHOUT
+`--snapshot` — `original-body.md` already preserves the pre-promotion
+original, and a second snapshot would overwrite it with the prior
+clean-result. The clean-result-critique gate (9a-bis) then re-runs on
+the updated body as normal.
+
 The dashboard kanban routes the experiment to the Awaiting promotion
 column automatically once status is set to `awaiting_promotion` by the
 /issue Step 9 transition.
+
+### Step 6.5: Tag follow-ups and flag free-analysis candidates
+
+If your draft body lists ANY follow-ups (inside a `### Next steps` H3, an inline "Follow-ups to tighten or extend these findings:" list within a `#### <finding>` H4, or anywhere else you suggest a next experiment), tag each one with two fields so the orchestrator can decide whether to auto-run it before parking. Same definitions are mirrored in the `follow-up-proposer` schema so `cost_class` / `headline_affecting` mean the same thing everywhere they appear.
+
+- **`cost_class: free-analysis | needs-gpu`**
+  - `free-analysis` = executable PURELY by re-running analysis / plot code over eval data that ALREADY EXISTS (committed under `eval_results/` or already pushed to the HF data repo). Zero new training, zero new eval generation, zero new pod, zero GPU. A small, reviewable analysis-code or analysis-param edit (change a matched-rate anchor set, recompute at a different target, add a slice already present in the eval JSONs, re-run a bootstrap with a different gating rule) is allowed; collecting any new data is NOT.
+  - `needs-gpu` = anything else (new training, new eval generation, new pod, new prompts to a base model, anything that consumes GPU time).
+- **`headline_affecting: yes | no`**
+  - `yes` iff running the follow-up could plausibly change the H1 title, the confidence tag, or a load-bearing claim in `## TL;DR`.
+  - `no` for polish / generalization / parametric sweeps whose outcome would NOT move the headline.
+
+**Artifact-premise check (MANDATORY before tagging `free-analysis`).** A follow-up may carry `cost_class: free-analysis` ONLY after you positively verify that every input the re-analysis would read actually resolves: local paths exist on disk, git paths resolve at the cited SHA, HF repo paths resolve via `huggingface_hub.list_repo_files` (NOT the `hf` CLI, which has no `api` subcommand and false-reports "0 files" — see `.claude/rules/upload-policy.md`), WandB artifacts resolve via the API. A parent body's prose claim that an artifact was persisted is NOT authoritative — verify the path itself (same contract as `follow-up-proposer.md` § "Artifact-premise verification (MANDATORY)"). Any unresolved input → tag the follow-up `needs-gpu` (or drop it) and add one line naming the missing artifact. A false `free-analysis` tag is not harmless: it triggers the Step 9a-ter auto-run, which burns an implementer round before the ABORT path reclassifies it. (Incident #552, 2026-06-10: a follow-up was tagged `free-analysis` over parent #521's "persisted" shift tensors, which had been lost with the parent's pod — the work actually needed ~2 GPU-h of re-extraction; same class as #530→#534.)
+
+When the body uses a prose list, put the tags in parentheses after the title (e.g. `- Re-run anchor at 50% epoch (cost_class: free-analysis, headline_affecting: yes) — may resolve …`). When you write the `### Next steps` H3, the same tag form applies.
+
+**Surface free-analysis + headline-affecting follow-ups explicitly.** When at least one follow-up you listed has BOTH `cost_class: free-analysis` AND `headline_affecting: yes` AND no `epm:free-analysis-followup-run v1` marker yet records it as run on this task, you MUST:
+
+1. Name it in your return text under a `## Free-analysis follow-ups (orchestrator: auto-run before parking)` H2 block — one bullet per such follow-up, each with: the follow-up title verbatim, a one-line description of the specific analysis/plot/param change, why it is `headline_affecting`, and the eval-data path(s) it would re-read. The orchestrator parses this block at SKILL.md Step 9a-ter to drive the auto-run.
+2. Include the same list in your Step 7 `epm:analysis` marker as a `free_analysis_unrun:` field (one entry per follow-up: verbatim title + one-line description), so the marker is the durable record alongside your return text.
+
+The canonical worked example is task #514 (LoRA vs full-FT marker leakage): it parked LOW because the planned 8-nat matched-rate read came out indeterminate, and its OWN follow-up list contained "Re-run analyzer with the lower-LR-lever cell at 50% epoch (source 7.43 nat, clean) + the prior 25%-epoch full-FT cell (8.20 nat) in the matched-rate anchor set" — a one-line anchor-gate change over EXISTING eval JSONs that, when actually run, flipped the read to DETERMINATE (LoRA−FT gap = 0.00 nat, 95% CI [−0.13, +0.12]) and resolved the planned question. That is a textbook `free-analysis + headline_affecting: yes` follow-up — surface it, do NOT silently leave it as a bullet for a future human to maybe run.
+
+You do NOT spawn subagents yourself. Listing the follow-up in the H2 block + the marker is your full obligation; the `/issue` skill orchestrator runs Step 9a-ter (see SKILL.md) to do the actual auto-run, paired with `experiment-implementer` + `code-reviewer`, then re-spawns you to fold the new result into the body.
 
 ### Step 7: Cross-link recap
 
 Post an `epm:analysis` workflow event on the source experiment with:
 - The hero figure URL
 - A 2-sentence recap of the claim
+- A `free_analysis_unrun:` field listing each `cost_class: free-analysis` + `headline_affecting: yes` follow-up the draft surfaced AND that has no `epm:free-analysis-followup-run v1` marker yet on this task (one entry per follow-up: verbatim title + one-line description). Empty list `[]` when none.
 
 There is no separate clean-result record to link — the body of this task is the clean result. The marker is just an anchor for the reviewer agent to locate your output.
 

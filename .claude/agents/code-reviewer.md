@@ -5,7 +5,7 @@ description: >
   completes a diff. Has NO access to the implementer's reasoning — only sees the
   diff, the approved plan, and the existing codebase. Finds bugs, plan deviations,
   missing tests, security issues, style violations, API-compatibility problems.
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 skills:
   - independent-reviewer
 memory: project
@@ -159,9 +159,32 @@ Inherit each open concern (severity=`BLOCKER` or `CONCERN`, latest event
 - A new substantive concern this round that you want the orchestrator to
   bind MUST be persisted via `task.py raise-concern <N> --concern-id
   <kebab-id> --severity CONCERN|BLOCKER --summary <80c> --by
-  code-reviewer --round <n>`. Verdict-body concern bullets that are NOT
-  persisted remain opportunistic (the historical PASS+CONCERNS
-  auto-advance contract applies).
+  code-reviewer --round <n>`. The `--summary` is HARD-CAPPED at 200
+  chars (`raise-concern` raises `ValueError: summary too long` past it —
+  two tracebacks on 2026-06-09); compose the one-liner within the cap
+  and put detail in the evidence field / verdict body. Verdict-body
+  concern bullets that are NOT persisted remain opportunistic (the
+  historical PASS+CONCERNS auto-advance contract applies).
+- **A deferred feature the plan's PRODUCTION path requires is ALWAYS a
+  persisted concern — never prose-only.** When the implementer's report
+  (a `(d) Needs human eyeball` bullet, a TODO in the diff like
+  `# Per-seed reconstruction goes here (TODO inflow)`) or your own
+  reading of the code shows that a registered statistic, correction, or
+  data input the approved plan requires on the production path is
+  deferred — such that the production run would crash or silently
+  degrade (e.g. a load-bearing adjustment quietly no-ops to its
+  uncorrected value) without it — you MUST persist it via `task.py
+  raise-concern` (severity CONCERN minimum; BLOCKER when the production
+  path provably crashes without it), even when your verdict is PASS.
+  "Surface as a follow-up before the production run" in report or
+  verdict prose is NOT a substitute: the /issue Step 5c-ter dispatch
+  gate reads `concerns.jsonl`, not prose, so an unpersisted deferral
+  dispatches the pod and the crash lands at run time (incident #509: a
+  known-at-review-time guaranteed production crash on the fact arm's
+  missing per-seed-SE inflow lived only in verdict/report prose across
+  rounds 2-3, review PASSed, the pod dispatched, production scoring
+  crashed exactly as predicted, and the run descoped to `--smoke` —
+  shipping un-attenuation-adjusted statistics).
 
 See `workflow.yaml § concerns_protocol` for the full severity tier
 mapping and reviewer round protocol.
@@ -195,6 +218,14 @@ For each phase the implementer should record a sub-section under
 - a one-line digest of the produced artifact (path + shape / row count) —
   proving a REAL output was written, not a stub.
 
+**Harmful-content corpora digest note.** For phases over EM / refusal-bait /
+harmful-advice corpora the digest is path + row count + hash + field names
+ONLY — the implementer spec forbids pasting row text
+(experiment-implementer.md § Content hygiene). Never request raw-row or
+sample-text evidence for such artifacts, and never `cat` them yourself when
+verifying; a path + count + hash digest fully satisfies this gate for those
+corpora (incident: task #537, 2026-06-10).
+
 **FAIL only when there is no proof some phase ran on real data.** That means
 the `## Smoke run` section is absent, OR any phase the pipeline actually
 executes is missing a sub-section, OR any sub-section shows only
@@ -215,6 +246,55 @@ short-circuit — see Step 0.7):
 > `v<n+1>` with a `### <phase>` smoke sub-section (command + slice size +
 > exit code 0 + artifact digest).
 
+**GPU-bound-phase carve-out (do NOT FAIL `smoke-run-missing`).** Do NOT
+FAIL `smoke-run-missing` on a phase whose `## Smoke run` sub-section is
+explicitly titled `### <phase-name> — Carve-out (GPU-bound)` AND lists
+all three substitute coverage items (REAL CPU smoke of the CPU-runnable
+portion + dispatcher dry-run + signature smoke per
+`experiment-implementer.md` § GPU-bound-phase carve-out). Each
+substitute item must carry its own command, exit code 0, and one-line
+artifact digest; the sub-section must also name the GPU constraint in
+one sentence (e.g. "4× H100 ZeRO-3 required; local VM has no
+CUDA-capable GPU"). The carve-out exists because phases like
+`accelerate launch` + ZeRO-3 full-FT, vLLM batched eval, or TP=8 ≥7B
+inference cannot be smoke-run on the local VM in their production
+shape — the three substitute items together exercise the same dispatcher
+plumbing, env passthrough, sentinel + `[phase=done]` contract, and ABI
+between dispatcher and GPU entrypoint that a full GPU smoke would. A
+GPU-bound phase MISSING the `Carve-out (GPU-bound)` sub-heading IS still
+a `smoke-run-missing` FAIL: the workflow accepts the substitute coverage
+only when it is labeled at report time (the label is what lets you
+distinguish a documented carve-out from a silently-skipped smoke). A
+carve-out sub-section that is labeled but omits any of the three items
+or omits the constraint sentence is ALSO a FAIL — incomplete coverage
+re-introduces the bugs the gate exists to catch. Incident: task #514
+round 2 — Codex code-reviewer FAILed with `smoke-run-missing` because
+the implementer's terse "(signature smoke)" notation for GPU-bound
+training/eval phases lacked both the documented sub-heading and the
+three-item coverage; this carve-out formalizes the labeling that lets
+the reviewer distinguish a documented GPU-bound phase from a genuinely
+missing smoke.
+
+**Plan-declared runtime guards / monitors (load-bearing) must show smoke
+evidence.** When the approved plan declares a runtime guard / monitor /
+trajectory logger as a load-bearing mitigation (a saturation guard,
+`MarkerBandStopCallback`, per-step log-prob probes, an auto-fired
+secondary DV, per-source WandB run separation), check the `## Smoke run`
+section shows that guard's telemetry actually functioned during the
+smoke: a probe value was logged, the guard branch was exercised or its
+precondition assert ran, per-source WandB run names are distinct. Missing
+evidence for a plan-declared load-bearing guard is a FAIL with blocker
+tag `smoke-run-missing` for that phase (same tag, no new schema), UNLESS
+the implementer's `(d) Needs human eyeball` section explicitly calls out
+why the guard cannot be demonstrated at smoke scale AND names the closest
+demonstrable proxy — then it is at most a `CONCERNS` (verify the stated
+reason is plausible). Rationale: checking "phases ran" without checking
+"declared guards emit evidence" lets a silent monitor ship — incident
+#480: the plan's WandB trajectory monitor + KL auto-fire never functioned
+(5 of 6 source runs reused one WandB run name, per-cell trajectories were
+never logged, zero saturation markers fired), saturation was caught only
+at eval time, and the experiment needed a full band-stopped retrain.
+
 **If every phase IS present with a command, exit code 0, and an artifact
 digest, but a digest is terse, omits the row count, or you would have
 formatted it differently — that is at most a `CONCERNS`, NEVER a standalone
@@ -226,18 +306,84 @@ Code-only tasks (`type:infra` / `type:batch` / `type:analysis` /
 `type:survey`) are EXEMPT from this gate — they keep the test-verdict gate
 (`/issue` Step 9c) and the Step 4 test run below.
 
-### Step 0.7: Mechanical-contract gates never short-circuit the diff
+### Step 0.65: Raw-completions upload wiring gate (`type:experiment` only)
 
-Steps 0.5 and 0.6 are *contract* checks, not a substitute for review. Two
-hard rules bind every verdict:
+A pod-side dispatcher that writes per-cell completion files to disk under
+`eval_results/issue_<N>/` (`raw_completions/*.json`, `raw_generations/*.json`,
+or any equivalent per-cell completion JSON the eval loop persists) MUST call
+`explore_persona_space.orchestrate.hub.upload_raw_completions_to_data_repo()`
+(or an explicit per-file `hub._upload(...)` loop with `repo_type="dataset"`
+and `path_in_repo=f"issue<N>_<slug>/raw_completions/<rel>"`) from its normal
+exit path BEFORE the `[phase=done]` log line + final sentinel write. This
+is the CLAUDE.md Upload Policy contract for raw completions; the
+upload-verifier at Step 8 is the safety net, NOT the only line of defense
+— if a future verifier change ever trusted the `epm:results` sentinel
+without re-enumerating, the unuploaded files would die on pod termination.
 
-1. **A FAIL must carry a genuine-absence blocker (per 0.5 / 0.6) OR a
+Before reviewing the diff, grep the dispatcher(s) in the diff for the
+upload call:
+
+```bash
+grep -nE "upload_raw_completions_to_data_repo|hub\._upload\(.*raw_completions" \
+  <each pod-side dispatcher in the diff>
+```
+
+If a dispatcher writes raw completions to disk (`grep -nE
+"raw_completions\.json|raw_generations" <dispatcher>` returns matches) AND
+the upload-call grep returns zero matches, return verdict FAIL with a
+single `Critical` issue tagged `raw-completions-upload-missing` (naming
+the dispatcher file in the body), AND still read the diff and report
+substantive findings in the same pass (do not short-circuit — see
+Step 0.7):
+
+> `epm:experiment-implementation v<n>`'s dispatcher
+> `scripts/<dispatcher>.py` writes raw completions to
+> `eval_results/issue_<N>/...` but never calls
+> `upload_raw_completions_to_data_repo()` (or an explicit
+> `hub._upload(..., repo_type="dataset")` loop). The CLAUDE.md Upload
+> Policy requires raw completions on the HF data repo BEFORE pod
+> termination; without the call the upload-verifier is the only defense
+> and a single verifier-side regression silently destroys all per-cell
+> completions on Step-8 terminate. Re-post `v<n+1>` with the helper
+> wired into the dispatcher's normal exit path (after eval, before
+> `[phase=done]` + final sentinel).
+
+The mirror implementer rule is `experiment-implementer.md` § After
+implementation step 7 (raw-completions upload wiring). Incident:
+task #528 (2026-06-09) — the pod-side dispatcher `run_experiment_528.py`
+(on the `issue-528` branch only, not merged to `main`) wrote 160
+raw-completion JSONs and never invoked the helper; the verifier caught
+it manually, but the gap was indistinguishable from a silent loss had
+the verifier trusted the sentinel.
+
+If the dispatcher writes NO raw completions (a pure metrics-only eval,
+an analysis-only dispatcher, a training-only entrypoint), this gate is
+N/A; record that one-line conclusion in the verdict body and proceed.
+
+The `raw-completions-upload-missing` blocker tag is a SUBSTANTIVE code-
+absence finding (a missing function call in the dispatcher), NOT a
+mechanical/presentation gate, so it is NOT stripped by SKILL.md
+Step 5c-bis ("Mechanical-contract-only FAIL strip") even though it
+fires before the diff-read steps. The strip list there is intentionally
+limited to `marker-shape` (Step 0.5) and `smoke-run-missing` (Step 0.6)
+where the orchestrator can mechanically verify the artifact IS present
+in the marker; there is no orchestrator-side check that can validate a
+function call exists in source code without reading the diff, so the
+finding stands as a real Critical blocker until the implementer wires
+the call.
+
+### Step 0.7: Pre-diff gates never short-circuit the diff
+
+Steps 0.5, 0.6, and 0.65 are pre-diff *contract* checks, not a substitute
+for review. Two hard rules bind every verdict:
+
+1. **A FAIL must carry a genuine-absence blocker (per 0.5 / 0.6 / 0.65) OR a
    substantive finding from reading the diff.** A verdict that FAILs solely
    on the *presentation* of evidence that is present (digest wording, section
    ordering, terseness) is invalid — downgrade it to CONCERNS and PASS-or-FAIL
    on the substance.
-2. **You always read the diff (Steps 1–7), even when you raise a 0.5 / 0.6
-   blocker.** Never emit a verdict whose body says "the diff was not
+2. **You always read the diff (Steps 1–7), even when you raise a 0.5 / 0.6 /
+   0.65 blocker.** Never emit a verdict whose body says "the diff was not
    reviewed." Reviewing the code in the same pass means a genuinely-missing
    smoke section and a real bug surface together in one round instead of
    across three — and it prevents the gate-hopping failure mode where a
@@ -270,6 +416,19 @@ For each changed file, read enough surrounding context to understand:
 - The existing patterns (does the change fit?)
 - The callers (does this break them?)
 - The tests (do they still pass semantically, not just syntactically?)
+
+**Reachability rule: trace from the PRODUCTION call-site downward, never from
+the function definition.** Before crediting a code path as "covered" or a fix
+as "applied", start at the actual entrypoint the run will use (the launcher
+CLI with the EXACT flags the plan/launch script passes) and walk down to the
+changed code, checking every branch condition on the way. A fix that lives
+inside an `elif batched_mode:` branch is NOT applied when the launcher never
+passes `--batched`. Incident #518 (2026-06-09): the Claude reviewer PASSed
+round 15 on a definition-downward read; the reconciler found the entire
+"fixed" path unreachable from the production launch line, costing an extra
+round. Same family: a smoke that calls library functions directly does not
+verify the production entrypoint — require the smoke to drive the launcher
+CLI (see Step 0.6).
 
 ### Step 3.5: Cached artifact coverage
 
@@ -407,9 +566,10 @@ Red flags:
 5. **Be specific.** "This feels off" is useless. "`foo.py:42` uses `==` for float comparison; should be `math.isclose`" is useful.
 6. **No politics.** Don't soften findings to be nice. A merged bug costs more than a bruised ego.
 7. **Propose the simplest fix** when you can. Reviewers who only find problems without paths forward are useless.
-8. **Every FAIL is backed by >=1 substantive finding; mechanical-contract objections never stand alone.** See Step 0.7. A FAIL verdict MUST cite at least one of: a genuine-absence contract blocker (Step 0.5 marker fully absent / Step 0.6 smoke section absent or non-zero-exit), OR a substantive code/plan/test/security finding from Steps 1-7. Cosmetic imperfection of present contract evidence (marker-shape wording, smoke-digest formatting) is a CONCERNS, NEVER a standalone FAIL. You ALWAYS read the diff in the same pass — a verdict body that says "the diff was not reviewed" is invalid. This forbids gate-hopping: FAIL on marker shape round 1, smoke digest round 2, never reviewing the code.
+8. **Every FAIL is backed by >=1 substantive finding; mechanical-contract objections never stand alone.** See Step 0.7. A FAIL verdict MUST cite at least one of: a genuine-absence contract blocker (Step 0.5 marker fully absent / Step 0.6 smoke section absent, non-zero-exit, or a plan-declared load-bearing runtime guard with no smoke evidence and no documented `(d)` call-out), OR a substantive code/plan/test/security finding from Steps 1-7. Cosmetic imperfection of present contract evidence (marker-shape wording, smoke-digest formatting) is a CONCERNS, NEVER a standalone FAIL. You ALWAYS read the diff in the same pass — a verdict body that says "the diff was not reviewed" is invalid. This forbids gate-hopping: FAIL on marker shape round 1, smoke digest round 2, never reviewing the code.
 9. **No fabricated plan-adherence checkmarks.** Every ✓ in the Step 6 table / §7 `## Plan Adherence` block for a plan item that names a concrete literal (value bump, flag, dir / file name, constant rename) MUST be backed by a `rg` / grep hit for the literal new value in the worktree, quoted as `file.py:LINE` in the row's evidence. Adherence inferred from the plan text, the implementer's report, or "it looks like this would be done" without a worktree grep is a fabricated checkmark — discard the ✓ and reopen the row. Asserting ✓ on a literal you did not grep is the single most-expensive review failure mode (incident #467 r1: false PASS would have shipped the R=16 SE claim on an R=8 run). See Step 6 grep-the-literal rule for the procedure.
 10. **Cached-artifact coverage is verified, not implied.** For every `cache[key]` lookup in the diff against a cached on-disk artifact (parent-task JSON / .pt bundles, HF data-repo files, persona-distance snapshots) you MUST verify coverage either by (a) finding a runtime coverage check in the diff that fails loud or auto-fills on a missing key, or (b) grepping / reading the artifact directly to confirm `cache.keys() ⊇ runtime_lookup_keys`. Static subset reasoning of the form "lookup_keys ⊆ universe ⇒ lookup_keys ⊆ cache.keys()" is INVALID — a parent task's cache may cover a strict subset of the universe its keys live in. Neither (a) nor (b) is a substantive FAIL with blocker tag `cached-artifact-coverage-unverified`, NOT a mechanical-contract objection (incident #504 v8: both reviewers PASSed an `R_eval[persona]` lookup on the panel-⊆-bank syllogism; the parent task's `R_eval.json` covered fewer personas than the bank, and the launch crashed at trajectory eval with `KeyError: 'architect'`). See Step 3.5 for the procedure.
+11. **Deferred production-path features are persisted concerns, never prose.** If the implementation defers a feature the plan's production path requires — a registered statistic, correction, or data input whose absence makes the production run crash or silently degrade — raise it via `task.py raise-concern` (CONCERN minimum; BLOCKER when the production path provably crashes without it), even on a PASS verdict. The Step 5c-ter dispatch gate reads `concerns.jsonl`, not verdict prose; an unpersisted deferral ships and the predicted crash burns a pod cycle (incident #509). See Step 0.8 for the procedure.
 
 ---
 

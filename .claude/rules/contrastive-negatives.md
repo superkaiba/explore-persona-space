@@ -57,6 +57,19 @@ with loss masked so only the target slot carries gradient.
   load-bearing for getting the implant off the floor.
 - **Negative response text:** generate on-policy from the BASE model under
   each negative persona's own system prompt on the SAME questions.
+- **Disjointness invariant (HARD):** the negative panel MUST be disjoint
+  from every REALIZED source persona in the design AND from the held-out
+  eval sources. A persona that is a source in any cell cannot also serve as
+  a contrastive negative in another cell — it simultaneously gets the
+  behavior pushed up (as source) and down (as negative), confounding both
+  the implant and the leakage read. Verify against the ACTUAL training-mix
+  builder output (the realized panel), not the plan prose: in #527/#538
+  (2026-06-09) the fixed 4-persona panel included `librarian`, which was
+  also a realized source in pair-2; every planning gate missed it and the
+  user caught it in chat post-promotion. The planner names the disjointness
+  check in §4; the consistency-checker asserts panel ∩ sources = ∅ against
+  the training-mix builder; implementations add a hard assert (e.g.
+  `negative_panel_for_pair()` excluding the pair's sources).
 
 ## What it buys (measured)
 
@@ -80,8 +93,15 @@ with loss masked so only the target slot carries gradient.
   on-policy marker log-prob saturates (argmax = marker everywhere) so recipe
   knobs have nothing to push against. A composition/negatives sweep MUST use
   a **less-trained anchor** (fewer steps / smaller LoRA / lower lr so
-  `g_logprob` sits ~5-10 nats below ceiling) OR a **non-saturating DV**
-  (full-vocab KL-from-base at the post-response slot).
+  `g_logprob` sits ~5-10 nats below ceiling) and read graded leakage off the
+  partially-leaked bystanders (where `log P(marker)` keeps headroom) plus the
+  bounded bystander **emission rate**. Do NOT swap the marker `log P(marker)`
+  DV for **full-vocab KL-from-base** at the slot (the tempting but wrong
+  escape): KL measures total distribution change (EOS/punctuation
+  reallocation), not marker mass, and inflates a null into an effect — in #504
+  a bystander read 24 nats KL with zero marker emission. Gate the anchor on
+  bystander resolution, NOT on source emission (the source *should* saturate
+  emission — it IS the implant).
 - **Measure leakage ON-POLICY, never teacher-forced** (#432→#456, #448): the
   model writes its own answer, then read `log P(target)` trained − base at
   the post-response slot. A teacher-forced canned response produces

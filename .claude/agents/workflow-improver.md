@@ -15,7 +15,7 @@ description: >
   changes. Does NOT touch experiment code (`src/explore_persona_space/`,
   `configs/`, `scripts/train.py`, `scripts/eval.py`), does NOT run experiments,
   does NOT mutate task state via `task.py`.
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 skills:
   - codebase-debugger
   - cleanup
@@ -40,18 +40,29 @@ The workflow is the meta-layer that drives experiments — never the experiments
 - `.claude/rules/*.md` — `agents-vs-skills.md`, `research-project-structure.md`, `arxiv-mcp.md`
 - `.claude/settings.json` and `.claude/settings.local.json` — hooks, permissions, env
 - `.claude/mcp.json` — MCP server config (read-only unless explicitly asked)
+- `.claude/agent-memory/**/*.md` — persistent agent memories (always-loaded guidance steering workflow agents; correcting/retiring a stale memory is a workflow-surface fix, the owning agent remains the primary author)
 - `CLAUDE.md` (project root) — critical rules, routing, gates, halt-criteria
+- The task-workflow API library modules under `src/` (workflow surface despite the general `src/**` exclusion below):
+  - `src/explore_persona_space/task_workflow.py` — the file-based task API library behind `task.py`
+  - `src/explore_persona_space/task_workflow_migrate.py` — the `task.py migrate-body` implementation
 - `scripts/` orchestration helpers:
-  - `task.py` / `task_workflow.py` (the file-based task API)
+  - `task.py` (the file-based task API CLI)
   - `pod.py`, `runpod_api.py`, `bootstrap_pod.sh`, `pods.conf`, `pods_ephemeral.json`
+  - `pod_lifecycle.py`, `pod_config.py`, `pod_audit.py`, `gpu_heuristics.py`, `cleanup_pod.py`, `pod_disk_guard.py` — the pod implementation modules `pod.py` dispatches to
+  - `cron_pod_audit.sh`, `sync_pods.sh`, `_pods_conf_path.sh` — pod shell/config helpers (daily stale-pod audit cron wrapper, `pod.py sync` backend, pods.conf path resolver)
+  - `worktree_audit.py`, `cron_worktree_audit.sh` — the stale-worktree sweep + its cron wrapper
+  - `autonomous_session_watch.py`, `cron_autonomous_session_watch.sh` — the crash-recovery + pod-safety + stalled-detector watcher + its cron wrapper
+  - `session_progress_report.py`, `session_summarize.py`, `session_resolver.py`, `cron_session_summarize.sh` — the per-session progress self-report helper (`/issue` phone titles), the 5-min LLM session-summary cache (dashboard + `spawn_session.py list` PROGRESS column), the Happy-session→transcript resolver, and the summarizer's cron wrapper
   - `workflow_lint.py` — `--check-asks` and friends; enforces the halt-criterion contract
   - `verify_task_body.py` — 13-check markdown spec for clean-result bodies
+  - `verify_uploads.py` — the upload-verifier's artifact checklist + phantom-URL gate (`--claimed-urls-file`, /issue Step 8)
   - `audit_clean_results_body_discipline.py` — anti-pattern detector
+  - `failure_classifier.py` — the `/issue` Step 7 infra-vs-code failure router (mirrored by `.claude/skills/issue/failure_patterns.md`)
   - `codex_task.py`, `poll_pipeline.py`, `gh_project.py`, `spawn_session.py`, `pod_watch.py`
-- `tests/test_workflow*.py`, `tests/test_no_dollar_budget_caps.py`, and other tests that pin workflow invariants
+- `tests/test_workflow*.py`, `tests/test_failure_classifier.py`, `tests/test_no_dollar_budget_caps.py`, and other tests that pin workflow invariants
 
 **Out of scope (do NOT touch):**
-- `src/explore_persona_space/**` — library + research code
+- `src/explore_persona_space/**` — library + research code (EXCEPT `task_workflow.py` + `task_workflow_migrate.py`, listed above)
 - `configs/**` — Hydra experiment configs
 - `scripts/train.py`, `scripts/eval.py`, `scripts/run_sweep.py`, `scripts/generate_*.py`, `scripts/analyze_results.py` — experiment entrypoints
 - `tasks/**` — task workflow state (read only; never edit body.md, events.jsonl, plans/, artifacts/)
@@ -178,8 +189,13 @@ uv run python scripts/audit_clean_results_body_discipline.py --self-test  # like
 # If you touched task.py / pod.py / any tested helper
 uv run pytest tests/test_task_workflow.py tests/test_workflow_lint.py -x -q
 
-# Always, after any edit
-uv run ruff check .claude scripts && uv run ruff format --check .claude scripts
+# Always, if you touched any Python / shell file — lint ONLY the files you touched
+uv run ruff check <touched paths> && uv run ruff format --check <touched paths>
+# (Markdown-only edits: ruff does not apply — report N/A. NEVER use the broad
+# `ruff check .claude scripts` as a pass/fail gate: ~1300+ pre-existing errors live in
+# experiment scripts under scripts/, so it can never PASS as-is. If you want a repo-wide
+# regression signal, stash-compare instead: record the broad error count with your edit
+# stashed, re-run with it restored, and report "N pre-existing, 0 introduced".)
 ```
 
 Any FAIL: fix it before reporting back. Never report a green run when something failed.
@@ -246,13 +262,13 @@ Final output (this is what the orchestrator reads):
 
 ## Validation
 - `workflow_lint.py --check-asks`: PASS / FAIL — <one-line summary>
-- `ruff check .claude scripts`: PASS / FAIL
+- `ruff check <touched paths>`: PASS / FAIL / N/A (markdown-only) — if you ran the broad stash-compare sweep, report `N pre-existing, 0 introduced`
 - `pytest <subset>`: PASS / FAIL — <one-line summary>
 - code-reviewer: PASS / FAIL / skipped (surgical)
 - **Committed in worktree:** branch `<branch>` @ `<commit-sha>` (orchestrator merges + pushes) — or `NOT COMMITTED — <reason>` if a check failed
 
 ## Follow-ups (orchestrator should consider)
-- <optional bullets — related files you noticed could also use a tweak, but did NOT touch because they were out of scope for this request>
+- <optional bullets — related workflow-surface files you noticed could also use a tweak, but did NOT touch because they were out of scope for THIS request. Per `.claude/rules/workflow-fix-on-bug.md`, the orchestrator AUTO-SPAWNS a workflow-improver for each in-scope, non-architectural, medium+-confidence follow-up listed here by DEFAULT (not merely "considers" it) — so write each as a concrete, actionable item naming the target file + the change, not a vague musing. Explicitly flag any that are architectural / public-contract (orchestrator parks for greenlight) or low-confidence / speculative (logged, not actioned), so the orchestrator routes them correctly.>
 
 ## Out-of-scope deflections
 - <if any part of the request touched experiment code or tasks/, name it here and recommend the orchestrator route to `implementer` or `experiment-implementer`>

@@ -3,14 +3,20 @@ name: issue-tick
 description: >
   Lightweight recurring driver for autonomous /issue <N> sessions.
   Triggered by the `*/20 * * * *` backstop cron (`prompt="/issue-tick <N>"`)
-  armed by Step 6d.2 of the full `/issue` skill. Reads the latest marker +
-  status via `scripts/task.py`, refreshes the canonical phone title via
+  armed at Step 0 of the full `/issue` skill (with a defense-in-depth
+  re-arm at Step 6d.2). Reads the latest marker + status via
+  `scripts/task.py`, refreshes the canonical phone title via
   `scripts/session_progress_report.py`, fires `PushNotification` at
-  gate-park / `blocked` transitions, runs CRON-TEARDOWN at terminal/park
-  state, and EXITs. Does NOT re-load the 44K-token `/issue` SKILL.md on
-  idle ticks — that load happens only on cold start + cold respawn (which
-  spawn `/issue <N>` directly). On a healthy active run this is a few
-  hundred tokens per tick.
+  gate-park / `blocked` transitions, RE-DRIVES the full `/issue` skill
+  when the session is stale at any non-gate non-terminal status (covers
+  both pre-pod-launch stretches like planning / clarifying / under-cap
+  plan_pending / followups_running AND post-launch ACTIVE statuses where
+  the bg-Bash poll chain has died), and runs CRON-TEARDOWN at
+  terminal/gate-park state. Does NOT re-load the 44K-token `/issue`
+  SKILL.md on idle ticks — that load happens only on cold start, cold
+  respawn (which spawn `/issue <N>` directly), and the stale-re-drive
+  recovery branch. On a healthy active run this is a few hundred tokens
+  per tick.
 user_invocable: false
 ---
 
@@ -29,9 +35,10 @@ backstop responsiveness.
 
 This skill is a **lightweight tick**. It does **NOT** re-load the full
 `/issue` SKILL.md (~44K tokens) — that load happens only on cold start
-(first `spawn_session.py spawn-issue --auto` fire of `/issue <N>`) and
-cold respawn (`autonomous_session_watch._respawn`, which also spawns
-`/issue <N>` via `--auto`).
+(first `spawn_session.py spawn-issue --auto` fire of `/issue <N>`),
+cold respawn (`autonomous_session_watch._respawn` and the Phase-2
+`_respawn_stalled_session` actor, both of which spawn `/issue <N>` via
+`--auto`), and the stale-re-drive recovery branches in 3b / 3c below.
 
 On every fire this skill:
 
@@ -41,8 +48,15 @@ On every fire this skill:
    `scripts/session_progress_report.py`.
 3. Branches on status:
    - **TERMINAL** → CRON-TEARDOWN, EXIT.
-   - **PARK** (non-gate; status awaiting a non-/issue-tick event) →
-     title refresh, EXIT.
+   - **PARK** (non-gate; status awaiting a non-/issue-tick event) → if
+     the latest marker is FRESH (within the last ~25 min), title refresh,
+     EXIT. If the latest marker is STALE, the orchestrator's reaction
+     chain has likely died at this PARK status (e.g. `planning` waiting
+     on a planner agent that crashed, `clarifying` waiting on a
+     clarifier turn the harness lost, `followups_running` waiting on
+     the proposer): this fire IS the recovery path — load the full
+     `/issue <N>` skill to re-enter the matching step. The Step 0
+     ARM-GUARD prevents duplicate crons.
    - **ACTIVE-WITH-LIVE-BG-WORK** → if the bg-Bash poll chain is healthy
      (a fresh marker landed inside the last ~25 min), title refresh,
      EXIT. Otherwise the orchestrator's primary poll chain has likely
@@ -91,9 +105,11 @@ From the `view --json` output:
 - `status` = the parent folder name (current lifecycle state).
 - `kind` = the task `kind` (experiment / infra / batch / analysis / survey).
 
-From `latest-marker`:
+From `latest-marker` (prints the full event JSON):
 - the latest `epm:<kind>` marker name + `ts` (ISO-8601 UTC) — used to
   judge bg-chain liveness in the ACTIVE branch below.
+- the `note` field — checked in Step 2 for the `[gpu-idle-advisory]`
+  prefix (title suffix only).
 
 If either call fails (`task.py` import error, registry corruption,
 on-disk row missing), log one line and EXIT — do NOT attempt the title
@@ -109,11 +125,26 @@ then push to the phone:
 uv run python scripts/session_progress_report.py --issue <N> --step "<status>"
 ```
 
-Capture the stdout (the canonical `#<N> <slug> · <status>` string),
-then:
+Capture the stdout (the canonical `#<N> <slug> · <status>` string).
+
+**GPU-idle suffix:** if the latest marker's `note` (from Step 1) starts
+with `[gpu-idle-advisory]` — the one-time idle-GPU advisory
+`scripts/poll_pipeline.py` posts as `epm:progress` when every GPU sat
+idle on a healthy `status=running` tick (incidents #518/#537) — append
+` · gpu-idle` to the captured string and log one line:
+`/issue-tick <N>: gpu-idle advisory is the latest marker — idle GPUs on
+a held pod`. This keeps the idle burn visible on the phone even when
+the primary bg-Bash poll chain (whose "GPU-idle advisory handling" in
+the full `/issue` skill normally acts on the advisory) is dead. The
+suffix is TITLE-ONLY: no status change, no PushNotification, no
+re-drive. The advisory is a regular `epm:progress` marker, so it also
+counts as FRESH for the 3b/3c staleness checks like any other progress
+marker.
+
+Then:
 
 ```
-mcp__happy__change_title({"title": <captured>})
+mcp__happy__change_title({"title": <captured, plus the gpu-idle suffix when it applies>})
 ```
 
 **Both calls are SOFT-FAIL.** The helper invocation AND `change_title`
@@ -159,26 +190,66 @@ snapshot file as "previous status unknown" — if the current status is a
 gate-park state, fire the PushNotification (the harmless side-effect of
 a duplicate notification beats missing the transition entirely).
 
-#### 3b. PARK status (awaiting an external event the tick can't unstall)
+#### 3b. PARK status (in-skill park; tick may need to re-drive)
 
-These are the non-terminal "the orchestrator is waiting on something
-that this tick cannot do anything about" states:
+These are the non-terminal "the orchestrator is mid-skill on an
+in-process step (not a user gate)" states:
 
 - `proposed`
 - `planning`
-- `plan_pending` (under-cap, awaiting user inside the full skill)
+- `plan_pending` (under-cap, awaiting the auto-approve inside the
+  full skill itself — NOT the over-cap park, which is GATE-PARK / 3d)
 - `clarifying`
 - `followups_running`
 
-Action: title refresh already happened in Step 2. EXIT. The cron stays
-armed (the full skill is the one that takes it down at a real terminal
-transition).
+These statuses imply the full `/issue <N>` skill is SUPPOSED to be
+making forward progress in-process (a planner / clarifier / proposer
+subagent is in flight, or the next reaction turn is about to fire).
+They are NOT user-driven gates — the only thing that should be holding
+them is the in-skill reaction chain itself.
+
+Check the latest marker's `ts` (from Step 1):
+
+- **Fresh** (within the last ~25 min): the in-skill chain is alive,
+  doing its job. Title refresh already happened in Step 2. EXIT.
+  The cron stays armed.
+- **Stale** (>25 min since the last marker AND status is in the list
+  above): the in-skill chain has likely died — the orchestrator's
+  reaction turn never landed, the subagent crashed, or a corrupted /
+  truncated tool-call dropped the chain (same failure modes that
+  motivate 3c's recovery). Log one line:
+  ```
+  /issue-tick <N>: park status=<status>, latest marker stale
+  (ts=<ts>, age=<m> min) — in-skill chain likely died; loading full
+  /issue for recovery.
+  ```
+  Then load the full `/issue <N>` skill (invoke `/issue` with `<N>` as
+  the argument — same re-entry path used by cold start). The skill
+  reads `events.jsonl` fresh and re-enters at the right step (Step 1
+  / 2 / 2c / 10b, depending on the status). The Step 0 ARM-GUARD
+  prevents duplicate crons, so re-entering is safe.
+
+  Why re-drive here and not just nudge: an autonomous session that
+  stalls at `planning` / `clarifying` / `plan_pending` (under-cap) /
+  `followups_running` has nothing else to wake it. The external
+  `autonomous_session_watch` stalled-detector now AUTO-RESPAWNs ACTIVE
+  sessions (Phase 2, 2026-06-08), but it does NOT respawn PARK
+  sessions by design (a respawn at PARK would land back in the same
+  PARK status without solving the underlying in-skill stall). The
+  in-process re-drive here IS the recovery path for those.
+
+  Avoid re-driving GATE-PARK states (over-cap `plan_pending`,
+  `awaiting_promotion`, `blocked`): those are user gates by design —
+  staleness there is correct, the user is the wake-up signal. The list
+  of statuses above EXCLUDES all gate-park states; 3d handles them.
 
 Special case: `plan_pending` that just transitioned over the
 auto-approve cap is a GATE-PARK — see 3d. Distinguish by reading the
 latest `epm:awaiting-spend-approval` marker (if it exists AND was posted
 after the last status change, this is the over-cap park, not a generic
-plan_pending).
+plan_pending). The over-cap branch fires PushNotification + tears down;
+the under-cap branch falls through to the stale-re-drive recovery
+above.
 
 #### 3c. ACTIVE status (work in flight; verify the bg chain is healthy)
 
@@ -195,10 +266,24 @@ Check the latest marker's `ts` (from Step 1):
 
 - **Fresh** (within the last ~25 min): the bg-Bash chain is alive,
   doing its job. Title was already refreshed in Step 2. EXIT.
-- **Stale** (>25 min since the last marker on an ACTIVE status): the
-  bg-Bash chain has likely died (typical cause: a reaction turn emitted
-  a corrupted/truncated tool-call as raw text; harness had no bg work
-  to wake on). Log one line:
+- **Stale** (>25 min since the last marker on an ACTIVE status): BEFORE
+  re-driving, run one cheap liveness probe on the underlying job — pod
+  jobs: `ssh pod-<N> 'kill -0 $(cat <pid-file>) && stat -c %Y <log>'`
+  (PID alive + log mtime fresh); VM jobs: same probe locally. If the job
+  is VERIFIABLY ALIVE and merely slow-cadenced, do NOT load the full
+  skill: post a lightweight heartbeat instead —
+  ```bash
+  uv run python scripts/task.py post-marker <N> epm:progress \
+    --note "tick heartbeat: job verified alive (pid <pid>, log mtime <ts>); slow phase, no state change"
+  ```
+  — which resets both this tick's stale clock and the
+  `autonomous_session_watch` ALIVE-BUT-STALLED clock, then EXIT.
+  (Incident 2026-06-09, #522: a slow 40h analysis phase kept marker
+  cadence >25 min, so consecutive ticks re-drove the full 44K-token
+  /issue skill ~7 times in 4h and exhausted the session context by
+  14:09Z. The same gap drove most of the day's 63 watcher
+  auto-respawns.) Only when the probe FAILS (PID gone, log frozen, or
+  unverifiable) treat the chain as dead. Log one line:
   ```
   /issue-tick <N>: active status=<status>, latest marker stale
   (ts=<ts>, age=<m> min) — bg-chain likely died; loading full /issue

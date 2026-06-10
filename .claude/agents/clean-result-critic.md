@@ -23,7 +23,7 @@ description: >
   **Final adversarial gate before status:awaiting_promotion.** Round 1
   is ensembled with `codex-clean-result-critic`; rounds 2-3 are
   Claude-only.
-model: "claude-opus-4-7[1m]"
+model: "claude-fable-5[1m]"
 effort: high
 tools:
   - Read
@@ -442,6 +442,81 @@ in Lens 12. Lens number kept stable so downstream tooling that reads
   been linked.
 - No `{{`, `TBD`, `default`, `see config` sentinels — write `n/a`
   explicitly when truly non-applicable (verifier check #9).
+- **Reuse-provenance audit (semantic, not mechanical).** When any
+  reader-facing claim in `## TL;DR` rests on a trained artifact
+  REUSED from a prior issue — a LoRA adapter, merged checkpoint,
+  training-mix dataset, raw-completion bucket, or `eval_results/`
+  JSON produced by a previous `/issue` run rather than freshly
+  produced by THIS task — the `**Artifacts:**` block under
+  `## Reproducibility` MUST record one bullet per reused artifact
+  naming (a) the producing issue
+  (`[#M](https://eps.superkaiba.com/tasks/M)`), (b) the permanent
+  HF Hub path (pinned to `/tree/<sha>` or `@<sha>`) or repo-relative
+  `eval_results/issue_M/...` path the artifact was pulled from, AND
+  (c) a **one-line fitness rationale** stating why this artifact was
+  the right one to reuse for THIS result — covering recipe match
+  (same base model + training-recipe / hyperparameters the new
+  question demands), measurement-regime fit (the artifact's eval
+  surface contains the conditions THIS result reads off; for marker
+  work, the artifact is not saturated where this read needs headroom
+  — source `log P − base ∈ [5,12]` nat per
+  `.claude/rules/marker-training-recipe.md`), and required
+  conditions present. This is the clean-result side of the positive
+  fitness check the planner ran at plan §5 / §10
+  (CLAUDE.md § "Reuse existing trained artifacts when fit-for-purpose
+  — never reuse a wrong one"); the spec lives in
+  `.claude/skills/clean-results/SPEC.md` § `**Artifacts:**`
+  reuse-provenance bullet.
+  **Triggering reuse:** the body cites a prior issue (`[#M](...)`) as
+  the source of a specific artifact OR `**Code:**` /
+  `**Artifacts:**` links to a prior issue's HF subdirectory /
+  `tree/<sha>` path / `eval_results/issue_M/...` path rather than
+  this task's own output. Inspect the `## TL;DR` for `[#M](...)`
+  artifact citations AND the `**Artifacts:**` block for any HF or
+  `eval_results/` path whose issue number is NOT the current task's
+  (e.g. `eval_results/issue_474/...` referenced from a #532 body).
+  **FAIL when:** reuse is evident from the body but the
+  `**Artifacts:**` block has NO reuse-provenance bullet, OR the
+  bullet is present but missing any of (a)/(b)/(c) — naming `#M`
+  without a fitness rationale is the most common partial form, and
+  the rationale is what tells the reader the producing recipe
+  matched the new question. Fix list to the analyzer:
+  *"add a `- Reused <kind> from [#M](...): <path> — fit: <one line>`
+  bullet under `**Artifacts:**` covering recipe + regime +
+  conditions; mirror plan §5/§10's fitness check."* **PASS vacuously**
+  when THIS task produced every artifact it stands on (most
+  fresh-train experiments — no reused artifact, no provenance bullet
+  expected).
+- **Artifact-path resolution spot-check (semantic).** When the body
+  names SPECIFIC artifact paths under `**Artifacts:**` or in `## TL;DR`
+  prose — subfolder names (`adapters/issue_<N>/<cell>/`), intermediate
+  checkpoint or fraction directories (`ckpt_frac0.25/`,
+  `checkpoint-<step>/`), specific raw-completion files
+  (`<cond>_seed<S>.json`), or a file-count claim ("520 files at
+  `<path>`") — spot-check that the listing on the Hub actually
+  contains those paths. Use the Python Hub API
+  (`huggingface_hub.list_repo_files(<repo>, revision=<sha-or-tag>,
+  repo_type=...)`) — NEVER the `hf` CLI, which has no `api` subcommand
+  and false-reports "0 files" (see `.claude/rules/upload-policy.md`).
+  You don't need to verify every file in a large bucket; check the
+  load-bearing path-specific claims — the ones a downstream
+  follow-up-proposer or planner would mine as a reuse premise. **FAIL
+  when** the body asserts a specific subfolder / checkpoint /
+  intermediate fraction exists at a Hub path that the listing does NOT
+  contain. Fix list to the analyzer: *"`<path>` claimed in
+  `**Artifacts:**` does not resolve on `huggingface_hub.list_repo_files`
+  for `<repo>@<revision>`; what the Hub actually carries is
+  `<observed>`. Either correct the artifact bullet to match the
+  listing, or surface the missing piece as a methodology-correction
+  beat inside the relevant `#### <finding>` H4 (per analyzer.md §
+  `**Artifacts:**` grounding rule)."* **PASS vacuously** when the
+  artifact bullets stay at the repo level
+  (`superkaiba1/explore-persona-space/...`) with no path-specific
+  subfolder / checkpoint / fraction names that need resolution.
+  Closing the door on the #530→#534 false-premise propagation chain
+  (2026-06-09) is the point of this lens: an artifact-existence
+  claim a downstream task can carry forward should be grounded in a
+  real listing, not in plan intent.
 
 ### Lens 6 — Voice
 
@@ -615,6 +690,18 @@ one result H3 = one inline figure + one example.
    H3 has completions but skips the example block, FAIL with "missing
    end-to-end example block; either add it per SPEC or document the
    exemption rationale inside the result H3."
+
+   **Sanitized-evidence carve-out (harmful-content corpora).** When the
+   completions come from a harmful-content corpus (Betley-style EM,
+   bad-medical-advice, refusal-bait pools), the analyzer emits example
+   blocks labeled "sanitized for context hygiene": ~15-word excerpts +
+   `[truncated — harmful-content row; verify at <path>, row <i>]`
+   placeholders, with cherry-picked labels, row indices, and permanent
+   raw links kept verbatim (analyzer.md § Content hygiene). Such blocks
+   SATISFY this sub-rule and Lens 2's `### What I ran` examples table —
+   do NOT FAIL them as missing verbatim samples. If you verify such rows
+   yourself, use field-filtered `jq` slices; never load raw rows into
+   context (incident: task #537, 2026-06-10).
 
    Canonical layout + discipline points in
    `.claude/skills/clean-results/SPEC.md`.
