@@ -1668,8 +1668,12 @@ The Claude reviewer additionally receives:
 - `worktree` path, `base` ref (typically `main`).
 
 The Codex twin additionally receives:
-- `worktree`, `base`, `plan_marker_path`, `implementation_marker_path` —
-  see `.claude/agents/codex-code-reviewer.md`.
+- `worktree`, `base`, `plan_marker_path` (no `implementation_marker_path`
+  — the composer fetches the marker from canonical main state and INLINES
+  it; likewise, if `plan_marker_path` does not resolve in the worktree —
+  child task cut from a parent issue branch, #550 r1 — the composer
+  inlines the canonical plan, Step 2-pre-b) — see
+  `.claude/agents/codex-code-reviewer.md`.
 
 Neither sees the implementer's reasoning — independence is load-bearing.
 Dispatch in a SINGLE `Agent(...)`-call message with both spawned
