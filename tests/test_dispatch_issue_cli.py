@@ -413,6 +413,103 @@ def test_launch_hydra_args_threaded_into_spec(monkeypatch, tmp_path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# repo-branch default (fix19 production mirror — round-2, task #535)
+# ---------------------------------------------------------------------------
+
+
+def test_launch_repo_branch_defaults_to_current_branch_for_gcp_lane(monkeypatch, tmp_path) -> None:
+    """Without ``--repo-branch``, a gcp/auto dispatch from a feature-branch
+    checkout must thread the CURRENT branch into spec.extra — the GCE
+    startup script clones from origin and would otherwise silently run
+    stale main (the exact fix19 bug re-created on the production path)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "issue-535-feature")
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            ["launch", "--issue", "304", "--intent", "lora-7b", "--backend", "gcp"],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra.get("repo_branch") == "issue-535-feature"
+
+
+def test_launch_repo_branch_explicit_flag_wins_over_current_branch(monkeypatch, tmp_path) -> None:
+    """An explicit ``--repo-branch`` always wins; the current-branch
+    default never overrides operator intent."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "issue-535-feature")
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "304",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--repo-branch",
+                "release-x",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra.get("repo_branch") == "release-x"
+
+
+def test_launch_repo_branch_not_defaulted_on_explicit_slurm_lane(monkeypatch, tmp_path) -> None:
+    """An explicit SLURM lane never escalates to GCP, so the gcp-only
+    repo_branch knob is not threaded (SLURM rsyncs the local worktree)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "issue-535-feature")
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            ["launch", "--issue", "304", "--intent", "lora-7b", "--backend", "nibi"],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "repo_branch" not in nibi.launches[0].extra
+
+
+def test_launch_repo_branch_not_defaulted_when_on_main(monkeypatch, tmp_path) -> None:
+    """A main-branch checkout keeps the GCE clone default ("main") — no
+    spurious extra key, no log noise."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            ["launch", "--issue", "304", "--intent", "lora-7b", "--backend", "gcp"],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "repo_branch" not in gcp.launches[0].extra
+
+
+# ---------------------------------------------------------------------------
 # finalize action
 # ---------------------------------------------------------------------------
 

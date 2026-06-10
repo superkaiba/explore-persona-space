@@ -79,11 +79,33 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import subprocess
 import sys
 import traceback
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+
+
+def _current_git_branch() -> str | None:
+    """Current branch of the invoking checkout (None on detached HEAD / error).
+
+    Mirrors ``router_acceptance.py:_current_git_branch`` — the production
+    twin of the harness's r19 current-branch default (round-2 Claude
+    Major, task #535).
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=True,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    branch = proc.stdout.strip()
+    return branch if branch and branch != "HEAD" else None
 
 
 def _build_production_backends() -> dict[str, Any]:
@@ -382,6 +404,27 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         # GCP-only knob: the GCE startup script clones from origin, so a
         # feature-branch workload must name its branch (issue 535 r6).
         extra["repo_branch"] = args.repo_branch
+    elif (args.backend or "auto") in {"auto", "gcp"}:
+        # fix19's production mirror (round-2 Claude Major, task #535):
+        # without this, the GCE clone defaults to "main" even when the
+        # invoking checkout — the /issue worktree on an issue-<N> branch
+        # — carries the code under test, silently re-creating the exact
+        # stale-main bug the acceptance harness already guards against
+        # (router_acceptance.py r19). Same policy as the harness: default
+        # to the CURRENT branch with a logged INFO. Gated to the lanes
+        # that can reach GCP (explicit "gcp", or "auto"/absent — absent
+        # includes frontmatter-driven backends, and an explicit SLURM /
+        # RunPod lane never escalates to GCP). SLURM rsyncs the local
+        # worktree and RunPod ignores repo_branch, so the extra key is
+        # inert if the router resolves a non-GCP lane.
+        branch = _current_git_branch()
+        if branch and branch != "main":
+            logging.getLogger("dispatch_issue").info(
+                "repo-branch defaulted to current branch %r for the gcp/auto lane — "
+                "ensure it is pushed (the GCE startup script clones from origin)",
+                branch,
+            )
+            extra["repo_branch"] = branch
     spec = build_run_spec(
         issue=args.issue,
         intent=args.intent,
