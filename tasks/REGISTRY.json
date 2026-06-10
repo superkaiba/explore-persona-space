@@ -3328,8 +3328,8 @@
       "goal": "Test whether the base model's own-response end-of-answer margin \u2014 the best pre-training leakage ranker on the context panel \u2014 also predicts trained marker pressure on the held-out persona panel, by generating and scoring the base model's own responses under the 35 held-out persona prompts and re-running the within-run ranking and the prior-plus-geometry joint fit there.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/559",
-      "status": "proposed",
+      "path": "tasks/planning/559",
+      "status": "planning",
       "title": "Score the base own-response prior on the held-out persona panel (two-ingredient rule joint test)"
     },
     "560": {
