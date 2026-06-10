@@ -2009,6 +2009,9 @@ blocked repo halts with the gate URL for the user to click through once:
 
 ```bash
 PLAN_PATH=$(uv run python scripts/task.py find <N>)/plans/plan.md
+# Source .env FIRST — the VM shell does not inherit HF_TOKEN, so running this
+# probe bare yields a false "HF_TOKEN missing" exit 2 (hit twice on 2026-06-09).
+set -a; [ -f "$REPO_ROOT/.env" ] && source "$REPO_ROOT/.env"; set +a
 uv run python - "$PLAN_PATH" <<'PY'
 import os, re, sys
 from huggingface_hub import HfApi
