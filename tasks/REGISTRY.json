@@ -3266,8 +3266,8 @@
       "goal": "Determine whether the EM-vs-marker direction-concentration contrast survives the three controls lost with the pod \u2014 the leave-one-out spectrum check, the mean-over-response EM read, and per-persona shift-norm vs top-direction alignment \u2014 by re-extracting and persisting the layer-14 shift tensors from the six existing HF-hosted adapters.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/551",
-      "status": "running",
+      "path": "tasks/verifying/551",
+      "status": "verifying",
       "title": "Re-extract #521 shift tensors and run the three lost controls (LOO spectrum, mean-over-response EM read, norm-vs-alignment)"
     },
     "552": {
