@@ -16,6 +16,8 @@ goal: 'Replicate the Ibrahim/Hafner/Rocher warmth->sycophancy finding on Qwen-2.
 relates_to:
 - beh-b-to-bprime
 - leak-behavior-vs-marker
+classification: useful
+promoted_at: '2026-06-10T00:36:59Z'
 ---
 # A paper-recipe Ibrahim-et-al. warmth replication attempt on Qwen-2.5-7B failed the SocioT manipulation check, so the paper's downstream sycophancy claim never got tested on this model (LOW confidence)
 
