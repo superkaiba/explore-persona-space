@@ -373,6 +373,7 @@ def run_trajectory_eval(
     gpu_memory_utilization: float = DEFAULT_GPU_MEM_UTIL,
     max_model_len: int = DEFAULT_MAX_MODEL_LEN,
     compute_kl: bool = True,
+    source_guard_meta: dict | None = None,
 ) -> Path:
     """Run the on-policy trajectory eval for one cell × seed.
 
@@ -386,6 +387,15 @@ def run_trajectory_eval(
         base_model, max_new_tokens, max_lora_rank, gpu_memory_utilization,
             max_model_len: vLLM params.
         compute_kl: if False, skip DV-B (smoke speed-up).
+        source_guard_meta: #534 round-2 adapter-applied cross-check. None
+            (default) = exact legacy behavior. Otherwise a dict
+            ``{"expected_by_frac": {frac(float): teacher-forced source ΔG
+            (float) | None}, "band_stop_fired": bool, "tol_nats": float
+            (optional)}`` — after each checkpoint's source-self ΔG is
+            computed, ``assert_source_delta_g_matches_manifest`` fails loud
+            on >tol disagreement at the final fraction (and on a <1-nat
+            final read when the band-stop fired). The per-checkpoint diag is
+            persisted as ``checkpoints[*].source_manifest_check``.
 
     Returns:
         out_path.
@@ -418,12 +428,27 @@ def run_trajectory_eval(
 
     checkpoints_out: list[dict] = []
     r_cache: dict[float, dict[str, dict[str, str]]] = {}  # frac -> on-policy R (for KL phase)
-    for spec in checkpoint_specs:
+    # Final (max) fraction — the source-manifest guard's hard-fail gate.
+    final_frac = max(s["frac"] for s in checkpoint_specs)
+    for ck_i, spec in enumerate(checkpoint_specs, start=1):
         frac = spec["frac"]
         adapter_path = spec["adapter_path"]
         label = f"{cell_slug}_seed{seed}_frac{frac}"
-        lora_req = LoRARequest(lora_name=label, lora_int_id=1, lora_path=adapter_path)
-        log.info("[phase=traj_vllm] %s: on-policy gen + DV-A", label)
+        # #534 round-1 root cause: vLLM caches LoRA adapters STRICTLY by
+        # ``lora_int_id`` (LRUCacheWorkerLoRAManager.add_adapter: an already-
+        # seen id is "just touched" — ``lora_path`` is never re-read). Reusing
+        # ``lora_int_id=1`` for every checkpoint silently served the FIRST
+        # loaded adapter (step ~5, ΔG≈0.03) at all four fractions. Each
+        # checkpoint MUST get a DISTINCT id; the LRU (max_loras=1) evicts the
+        # previous adapter and loads the new path. #504/#530 never hit this
+        # because their checkpoint_index carried a single usable entry.
+        lora_req = LoRARequest(lora_name=label, lora_int_id=ck_i, lora_path=adapter_path)
+        log.info(
+            "[phase=traj_vllm] %s: on-policy gen + DV-A (lora_int_id=%d, path=%s)",
+            label,
+            ck_i,
+            adapter_path,
+        )
 
         # 1. Trained model writes its OWN R for held-out panel + source.
         r_on_policy = _generate_on_policy_R(
@@ -518,6 +543,27 @@ def run_trajectory_eval(
             "emission_p": float(src_emission_p),
             "r_collapsed": src_collapsed,
         }
+        # #534 round-2 adapter-applied cross-check: the selector's HF/PEFT
+        # teacher-forced source ΔG and this on-policy read look at the SAME
+        # snapshot dir through independent loaders — >tol disagreement at the
+        # final fraction means the eval path did not actually apply the
+        # adapter (fail loud BEFORE the flat trajectory leaves the rig).
+        source_manifest_check: dict | None = None
+        if source_guard_meta is not None:
+            from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_guard import (
+                DEFAULT_SOURCE_MANIFEST_TOL_NATS,
+                assert_source_delta_g_matches_manifest,
+            )
+
+            source_manifest_check = assert_source_delta_g_matches_manifest(
+                cell_label=label,
+                frac=frac,
+                eval_delta_g_nats=source_self["delta_g_mean"],
+                expected_delta_g_nats=source_guard_meta.get("expected_by_frac", {}).get(frac),
+                is_final_frac=(frac == final_frac),
+                band_stop_fired=bool(source_guard_meta.get("band_stop_fired", False)),
+                tol_nats=float(source_guard_meta.get("tol_nats", DEFAULT_SOURCE_MANIFEST_TOL_NATS)),
+            )
         n_held_out_probes = len(eval_personas) * len(eval_questions)
         held_out_collapse_share = n_collapsed_ck / n_held_out_probes if n_held_out_probes else 0.0
         checkpoints_out.append(
@@ -526,6 +572,7 @@ def run_trajectory_eval(
                 "step": spec.get("step"),
                 "adapter_path": adapter_path,
                 "source_self": source_self,
+                "source_manifest_check": source_manifest_check,
                 "held_out_collapse_share": held_out_collapse_share,
                 "n_held_out_collapsed": n_collapsed_ck,
                 "held_out": held_out,

@@ -9,8 +9,19 @@ granularity (plan §4.1): `MarkerBandStopCallback` saves a per-step adapter
 snapshot (`--snapshot-every-steps`, default 1, cap `--snapshot-max-count`
 64), and the post-hoc selector (`scripts/i534_select_fractions.py`) maps
 fractions {0.25, 0.50, 0.75, 1.00} of the REALIZED stop step onto the saved
-snapshots, overwrites `checkpoint_index.json`, and the unchanged nested
+snapshots, overwrites `checkpoint_index.json`, and the nested
 `i504_eval_trajectory.py` rig evals all 4 fractions in one vLLM session.
+
+Round-2 (eval-adapter-not-applied fix): the nested rig now gets
+`--fraction-manifest` (the eval's own source-self ΔG must agree with the
+selector's teacher-forced read at the final fraction — >2-nat disagreement
+fails loud; the round-1 lora_int_id-reuse regression read a flat ≈0
+trajectory at every fraction), and `--eval-only` re-runs eval + sentinel
+from the EXISTING snapshots/index/manifest with NO retraining:
+
+    uv run python scripts/i534_run_cell.py --cell c504v3_near --seed 42 \\
+        --gpu-id 0 --arm-to-n-json eval_results/issue_530/phase0_5_gates.json \\
+        --eval-only
 
 Deltas vs i530_run_cell.py (plan §4.3 e):
   * Namespace 534: slab `eval_results/issue_534`, runs `/workspace/runs/issue_534`,
@@ -160,6 +171,70 @@ def _resolve_train_pool(
         )
 
 
+def _load_eval_only_index(
+    cell: str,
+    run_slug: str,
+    ckpt_index_path: Path,
+    manifest_out: Path,
+) -> dict:
+    """Validate + load the prior full run's artifacts for ``--eval-only``.
+
+    Requires ``checkpoint_index.json`` (the realized-fraction → snapshot-dir
+    map), ``fraction_manifest.json`` (the eval guard's source ΔG
+    expectations), and every indexed adapter's ``adapter_model.safetensors``
+    on disk. Fails loud on anything missing — NO silent fallback to
+    retraining. Returns the parsed checkpoint index.
+    """
+    if not ckpt_index_path.exists():
+        raise RuntimeError(
+            f"--eval-only requires an existing {ckpt_index_path} from a prior full "
+            "run — run i534_run_cell.py WITHOUT --eval-only first."
+        )
+    if not manifest_out.exists():
+        raise RuntimeError(
+            f"--eval-only requires an existing {manifest_out} — the eval's "
+            "source-manifest guard reads the selector's source ΔG expectations "
+            "from it. Re-run the full cell if the manifest is gone."
+        )
+    ckpt_index = json.loads(ckpt_index_path.read_text())
+    for frac_str, entry in sorted(ckpt_index.items(), key=lambda kv: float(kv[0])):
+        snap = Path(entry["path"])
+        if not (snap / "adapter_model.safetensors").exists():
+            raise RuntimeError(
+                f"--eval-only: indexed adapter for frac={frac_str} missing on disk at "
+                f"{snap} — the snapshot was deleted/moved; re-fetch it from HF "
+                f"(adapters/issue_534/{run_slug}/ckpt_frac{float(frac_str):.2f}) or "
+                "re-run the full cell."
+            )
+    log.info("[phase=eval_only_%s] index verified: %s", cell, ckpt_index)
+    return ckpt_index
+
+
+def _assert_trajectory_complete(
+    cell: str,
+    out_traj: Path,
+    n_expected: int,
+) -> None:
+    """Post-eval completeness check: trajectory.json exists with one entry per fraction.
+
+    Raises RuntimeError on a missing file (silent eval failure,
+    feedback_eval_script_silent_not_present_misdiagnosis) or a checkpoint
+    count mismatch.
+    """
+    if not out_traj.exists():
+        raise RuntimeError(
+            f"[{cell}] eval_trajectory subprocess exited 0 but {out_traj} missing — "
+            "silent eval failure (feedback_eval_script_silent_not_present_misdiagnosis)."
+        )
+    traj = json.loads(out_traj.read_text())
+    n_ckpts = len(traj.get("checkpoints", []))
+    if n_ckpts != n_expected:
+        raise RuntimeError(
+            f"[{cell}] trajectory.json has {n_ckpts} checkpoints; expected "
+            f"{n_expected} (one per realized fraction)."
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -243,6 +318,18 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-source-trajectory",
         action="store_true",
         help="Forwarded to i534_select_fractions.py (descope ladder item 1).",
+    )
+    ap.add_argument(
+        "--eval-only",
+        action="store_true",
+        help=(
+            "#534 round-2 re-run path: SKIP train pool, training, and fraction "
+            "selection; consume the EXISTING checkpoint_index.json + "
+            "fraction_manifest.json from a prior full run and re-run only the "
+            "trajectory eval + sentinel (the round-1 snapshots' weights are "
+            "valid — NO retraining). Fails loud when the index/manifest/"
+            "snapshot dirs are missing."
+        ),
     )
     ap.add_argument(
         "--max-new-tokens-eval",
@@ -396,36 +483,6 @@ def main(argv: list[str] | None = None) -> int:
         )
     log.info("[phase=source] effective source persona = %r", effective_source)
 
-    # ── Phase: train pool (HF bytes authoritative; rebuild = diagnostic). ────
-    def _build_pool(dest: Path) -> None:
-        build_cell_504(
-            args.cell,
-            dest,
-            r_train=r_train,
-            arm_to_positioned_n=arm_to_positioned_n,
-            q_train=q_train,
-            persona_bank=bank,
-            source=effective_source,
-            marker_text=MARKER_TEXT,
-            smoke_mid_band_n=smoke_mid_band_n,
-            seed=args.seed,
-        )
-
-    _resolve_train_pool(
-        args.cell,
-        args.seed,
-        train_jsonl,
-        from_hf=args.train_pool_from_hf,
-        build_pool=_build_pool,
-        run_dir=run_dir,
-    )
-
-    # ── Snapshot dir: WIPE at train start (stale-attempt guard). ─────────────
-    if snapshot_dir.exists():
-        log.warning("[phase=train_%s] wiping stale snapshot dir %s", args.cell, snapshot_dir)
-        shutil.rmtree(snapshot_dir)
-    snapshot_dir.mkdir(parents=True, exist_ok=True)
-
     effective_lr = args.lr
     effective_epochs = args.epochs
     wandb_suffix = f"_eps{effective_epochs}_lr{effective_lr:g}"
@@ -438,93 +495,141 @@ def main(argv: list[str] | None = None) -> int:
     if not parsed_fracs or any(f <= 0 or f > 1.0 for f in parsed_fracs):
         raise ValueError(f"--fractions {args.fractions!r} must be floats in (0, 1].")
 
-    log.info(
-        "[phase=train_%s] training (rank=%d, alpha=%d, lr=%g, epochs=%d, "
-        "snapshot_every=%d, snapshot_cap=%d, suppress_at_post_response_slot=%s)",
-        args.cell,
-        args.chosen_rank,
-        args.chosen_alpha,
-        effective_lr,
-        effective_epochs,
-        args.snapshot_every_steps,
-        args.snapshot_max_count,
-        MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT,
-    )
-    train_one_cell(
-        cell_slug=args.cell,
-        seed=args.seed,
-        train_jsonl=train_jsonl,
-        output_dir=final_adapter_dir,
-        ckpt_root=ckpt_root,
-        fractions=parsed_fracs,
-        fallback=False,
-        report_to=args.report_to,
-        gpu_id=args.gpu_id,
-        lr_override=effective_lr,
-        epochs_override=effective_epochs,
-        lora_r_override=args.chosen_rank,
-        lora_alpha_override=args.chosen_alpha,
-        hf_path_in_repo_override=f"adapters/issue_534/{run_slug}",
-        run_name_override=f"issue534_{run_slug}{wandb_suffix}",
-        marker_suppress_at_post_response_slot=MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT,
-        marker_im_end_token_id=MARKER_IM_END_TOKEN_ID,
-        # #534 — THE manipulated variable: per-step sub-stop snapshots.
-        marker_band_snapshot_every_steps=args.snapshot_every_steps,
-        marker_band_snapshot_dir=snapshot_dir,
-        marker_band_snapshot_max_count=args.snapshot_max_count,
-    )
-    log.info("[phase=train_%s] done; snapshots under %s", args.cell, snapshot_dir)
-
-    # Free in-process LoRA-training GPU memory before the selector + eval.
-    import gc
-
-    import torch
-
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-
-    # ── Phase: post-hoc fraction selection (NESTED subprocess: the 7B HF
-    # source-trajectory load stays memory-isolated from this parent, same
-    # isolation discipline as the vLLM eval below). Overwrites
-    # checkpoint_index.json with the realized-fraction index. ─────────────────
-    select_cmd = [
-        "uv",
-        "run",
-        "python",
-        "scripts/i534_select_fractions.py",
-        "--snapshot-dir",
-        str(snapshot_dir),
-        "--train-jsonl",
-        str(train_jsonl),
-        "--checkpoint-index-out",
-        str(ckpt_index_path),
-        "--manifest-out",
-        str(manifest_out),
-        "--source-traj-out",
-        str(source_traj_out),
-        "--fractions",
-        args.fractions,
-        "--hf-repo",
-        args.hf_model_repo,
-        "--hf-subfolder",
-        f"adapters/issue_534/{run_slug}",
-        "--final-adapter",
-        str(final_adapter_dir),
-        "--device",
-        "cuda:0",  # CVD already restricts to the assigned physical GPU.
-    ]
-    if args.skip_source_trajectory:
-        select_cmd.append("--skip-source-trajectory")
-    log.info("[phase=select_%s] selector subprocess: %s", args.cell, " ".join(select_cmd))
-    subprocess.run(select_cmd, env={**os.environ}, check=True)
-    if not ckpt_index_path.exists():
-        raise RuntimeError(
-            f"[{args.cell}] selector exited 0 but {ckpt_index_path} missing — "
-            "silent selection failure."
+    if args.eval_only:
+        # ── #534 round-2 eval-only re-run: NO retraining, NO re-selection. ────
+        # Consume the prior full run's checkpoint_index.json (the 4 selected
+        # snapshot dirs survived the selector's cleanup) + fraction_manifest
+        # (the eval's adapter-applied cross-check needs its source ΔG
+        # expectations). Fail loud on anything missing.
+        log.info(
+            "[phase=eval_only_%s] consuming existing index %s + manifest %s",
+            args.cell,
+            ckpt_index_path,
+            manifest_out,
         )
-    ckpt_index = json.loads(ckpt_index_path.read_text())
-    log.info("[phase=select_%s] realized-fraction index: %s", args.cell, ckpt_index)
+        ckpt_index = _load_eval_only_index(args.cell, run_slug, ckpt_index_path, manifest_out)
+        # The train path pins CUDA_VISIBLE_DEVICES inside train/sft.py (the
+        # +gpu_id clobber gotcha); eval-only never trains, so pin it here or
+        # the nested vLLM eval lands on the wrong physical GPU.
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
+    else:
+        # ── Phase: train pool (HF bytes authoritative; rebuild = diagnostic). ─
+        def _build_pool(dest: Path) -> None:
+            build_cell_504(
+                args.cell,
+                dest,
+                r_train=r_train,
+                arm_to_positioned_n=arm_to_positioned_n,
+                q_train=q_train,
+                persona_bank=bank,
+                source=effective_source,
+                marker_text=MARKER_TEXT,
+                smoke_mid_band_n=smoke_mid_band_n,
+                seed=args.seed,
+            )
+
+        _resolve_train_pool(
+            args.cell,
+            args.seed,
+            train_jsonl,
+            from_hf=args.train_pool_from_hf,
+            build_pool=_build_pool,
+            run_dir=run_dir,
+        )
+
+        # ── Snapshot dir: WIPE at train start (stale-attempt guard). ──────────
+        if snapshot_dir.exists():
+            log.warning("[phase=train_%s] wiping stale snapshot dir %s", args.cell, snapshot_dir)
+            shutil.rmtree(snapshot_dir)
+        snapshot_dir.mkdir(parents=True, exist_ok=True)
+
+        log.info(
+            "[phase=train_%s] training (rank=%d, alpha=%d, lr=%g, epochs=%d, "
+            "snapshot_every=%d, snapshot_cap=%d, suppress_at_post_response_slot=%s)",
+            args.cell,
+            args.chosen_rank,
+            args.chosen_alpha,
+            effective_lr,
+            effective_epochs,
+            args.snapshot_every_steps,
+            args.snapshot_max_count,
+            MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT,
+        )
+        train_one_cell(
+            cell_slug=args.cell,
+            seed=args.seed,
+            train_jsonl=train_jsonl,
+            output_dir=final_adapter_dir,
+            ckpt_root=ckpt_root,
+            fractions=parsed_fracs,
+            fallback=False,
+            report_to=args.report_to,
+            gpu_id=args.gpu_id,
+            lr_override=effective_lr,
+            epochs_override=effective_epochs,
+            lora_r_override=args.chosen_rank,
+            lora_alpha_override=args.chosen_alpha,
+            hf_path_in_repo_override=f"adapters/issue_534/{run_slug}",
+            run_name_override=f"issue534_{run_slug}{wandb_suffix}",
+            marker_suppress_at_post_response_slot=MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT,
+            marker_im_end_token_id=MARKER_IM_END_TOKEN_ID,
+            # #534 — THE manipulated variable: per-step sub-stop snapshots.
+            marker_band_snapshot_every_steps=args.snapshot_every_steps,
+            marker_band_snapshot_dir=snapshot_dir,
+            marker_band_snapshot_max_count=args.snapshot_max_count,
+        )
+        log.info("[phase=train_%s] done; snapshots under %s", args.cell, snapshot_dir)
+
+        # Free in-process LoRA-training GPU memory before the selector + eval.
+        import gc
+
+        import torch
+
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        # ── Phase: post-hoc fraction selection (NESTED subprocess: the 7B HF
+        # source-trajectory load stays memory-isolated from this parent, same
+        # isolation discipline as the vLLM eval below). Overwrites
+        # checkpoint_index.json with the realized-fraction index. ─────────────
+        select_cmd = [
+            "uv",
+            "run",
+            "python",
+            "scripts/i534_select_fractions.py",
+            "--snapshot-dir",
+            str(snapshot_dir),
+            "--train-jsonl",
+            str(train_jsonl),
+            "--checkpoint-index-out",
+            str(ckpt_index_path),
+            "--manifest-out",
+            str(manifest_out),
+            "--source-traj-out",
+            str(source_traj_out),
+            "--fractions",
+            args.fractions,
+            "--hf-repo",
+            args.hf_model_repo,
+            "--hf-subfolder",
+            f"adapters/issue_534/{run_slug}",
+            "--final-adapter",
+            str(final_adapter_dir),
+            "--device",
+            "cuda:0",  # CVD already restricts to the assigned physical GPU.
+        ]
+        if args.skip_source_trajectory:
+            select_cmd.append("--skip-source-trajectory")
+        log.info("[phase=select_%s] selector subprocess: %s", args.cell, " ".join(select_cmd))
+        subprocess.run(select_cmd, env={**os.environ}, check=True)
+        if not ckpt_index_path.exists():
+            raise RuntimeError(
+                f"[{args.cell}] selector exited 0 but {ckpt_index_path} missing — "
+                "silent selection failure."
+            )
+        ckpt_index = json.loads(ckpt_index_path.read_text())
+        log.info("[phase=select_%s] realized-fraction index: %s", args.cell, ckpt_index)
 
     # ── Phase: eval_trajectory (NESTED subprocess: vLLM teardown isolation). ─
     eval_cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
@@ -569,6 +674,11 @@ def main(argv: list[str] | None = None) -> int:
         str(eval_max_model_len),
         "--source",
         effective_source,
+        # #534 round-2: arm the adapter-applied cross-check — the eval's own
+        # source-self ΔG must agree with the selector manifest's teacher-forced
+        # read at the final fraction (>2 nat disagreement = fail loud).
+        "--fraction-manifest",
+        str(manifest_out),
     ]
     if args.no_kl:
         eval_cmd.append("--no-kl")
@@ -586,18 +696,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     subprocess.run(eval_cmd, env={**os.environ}, check=True)
 
-    if not out_traj.exists():
-        raise RuntimeError(
-            f"[{args.cell}] eval_trajectory subprocess exited 0 but {out_traj} missing — "
-            "silent eval failure (feedback_eval_script_silent_not_present_misdiagnosis)."
-        )
-    traj = json.loads(out_traj.read_text())
-    n_ckpts = len(traj.get("checkpoints", []))
-    if n_ckpts != len(parsed_fracs):
-        raise RuntimeError(
-            f"[{args.cell}] trajectory.json has {n_ckpts} checkpoints; expected "
-            f"{len(parsed_fracs)} (one per realized fraction)."
-        )
+    # Full mode: the selector wrote one index entry per requested fraction.
+    # Eval-only mode: the EXISTING index is authoritative (its key count).
+    n_expected = len(ckpt_index) if args.eval_only else len(parsed_fracs)
+    _assert_trajectory_complete(args.cell, out_traj, n_expected)
 
     _write_sentinel(
         sentinel,
@@ -615,6 +717,7 @@ def main(argv: list[str] | None = None) -> int:
             "epochs": effective_epochs,
             "snapshot_every_steps": args.snapshot_every_steps,
             "fractions": list(parsed_fracs),
+            "eval_only": bool(args.eval_only),
         },
     )
     log.info("[phase=done] wrote sentinel → %s", sentinel)

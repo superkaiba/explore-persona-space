@@ -30,6 +30,12 @@ Usage (full sweep after smoke PASS):
     nohup uv run python scripts/i534_sweep.py --n-gpus 4 \\
         --arm-to-n-json eval_results/issue_530/phase0_5_gates.json --skip-done \\
         > /workspace/logs/issue534_sweep.log 2>&1 &
+
+Usage (round-2 eval-only re-run from the EXISTING snapshots — NO retraining;
+note: NO --skip-done, the prior broken-eval sentinels would skip every cell):
+    nohup uv run python scripts/i534_sweep.py --n-gpus 4 --eval-only \\
+        --arm-to-n-json eval_results/issue_530/phase0_5_gates.json \\
+        > /workspace/logs/issue534_reeval.log 2>&1 &
 """
 
 from __future__ import annotations
@@ -111,6 +117,8 @@ def _cell_cmd(args: argparse.Namespace, cell: str, seed: int, gpu_id: int) -> li
         cmd.append("--skip-source-trajectory")
     if args.no_train_pool_from_hf:
         cmd.append("--no-train-pool-from-hf")
+    if args.eval_only:
+        cmd.append("--eval-only")
     return cmd
 
 
@@ -193,6 +201,17 @@ def main(argv: list[str] | None = None) -> int:
         help="Forwarded to i534_run_cell.py (rebuild pools via build_cell_504 instead).",
     )
     ap.add_argument(
+        "--eval-only",
+        action="store_true",
+        help=(
+            "#534 round-2 re-run path: forward --eval-only to every cell — "
+            "re-run ONLY the trajectory eval + sentinel from the EXISTING "
+            "snapshots/index/manifest (NO retraining). Incompatible with "
+            "--skip-done: the prior (broken-eval) sentinels exist for every "
+            "cell, so --skip-done would silently no-op the whole re-run."
+        ),
+    )
+    ap.add_argument(
         "--dry-run",
         action="store_true",
         help="Print the dispatch plan + commands without launching subprocesses.",
@@ -206,6 +225,13 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     args = ap.parse_args(argv)
+
+    if args.eval_only and args.skip_done:
+        ap.error(
+            "--eval-only is incompatible with --skip-done: every cell's prior "
+            "(broken-eval) sentinel already exists, so --skip-done would skip "
+            "ALL cells and the re-run would silently no-op."
+        )
 
     logging.basicConfig(
         level=os.environ.get("EPS_LOG_LEVEL", "INFO"),
