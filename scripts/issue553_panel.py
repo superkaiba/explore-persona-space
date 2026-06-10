@@ -46,6 +46,14 @@ import issue539_residual_per_cohort as i539
 import numpy as np
 import pandas as pd
 from scipy.stats import rankdata, spearmanr
+from threadpoolctl import threadpool_limits
+
+# OpenBLAS spawns 32 pthreads on this VM and a 116x116 pinv / 2,800x116 lstsq
+# degrades to ~0.6-2 s/call from thread-sync thrash (measured 2026-06-10).
+# Every linear-algebra op in this task is small (<=56,000x3 ranks, <=116^2
+# grams), so cap BLAS at 1 thread for the whole process. The controller must
+# stay referenced at module scope or the limit is restored on GC.
+_BLAS_SINGLE_THREAD = threadpool_limits(limits=1, user_api="blas")
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
@@ -397,12 +405,98 @@ def aggregate_run_persona(df: pd.DataFrame) -> pd.DataFrame:
     return agg
 
 
+# ── Fast exact two-way FE solver (gram/pinv; drop-in for the #539 lstsq) ─────
+
+
+def _twoway_gram_coefs(
+    rhs: np.ndarray, ac: np.ndarray, bc: np.ndarray, n_a: int, n_b: int
+) -> np.ndarray:
+    """Min-norm least-squares coefficients of [1 | A dummies | B dummies] on rhs.
+
+    Identical estimand to ``np.linalg.lstsq(design, rhs)`` via the exact
+    identity ``X⁺ = (X'X)⁺ X'`` — the pseudoinverse of the (1+n_a+n_b)² gram
+    matrix (built from count vectors + the A×B crosstab, never forming the
+    n×(1+n_a+n_b) design) applied to X'rhs. The full lstsq on the explicit
+    design takes ~2 s/call at 2,800×116 in this environment (gelsd), which
+    made the plan's 10,000-rep FE-re-estimating bootstraps wall-infeasible;
+    this solver is exact-equivalent (asserted at import on random data AND on
+    the observed panels inside every consuming script) at ~1,000× the speed.
+
+    ``rhs`` may be (n,) or (n, k). Returns coefficients shaped like lstsq's.
+    """
+    rhs2 = rhs if rhs.ndim == 2 else rhs[:, None]
+    n = len(ac)
+    count_a = np.bincount(ac, minlength=n_a).astype(np.float64)
+    count_b = np.bincount(bc, minlength=n_b).astype(np.float64)
+    crosstab = np.bincount(ac * n_b + bc, minlength=n_a * n_b).astype(np.float64).reshape(n_a, n_b)
+    m = 1 + n_a + n_b
+    gram = np.zeros((m, m))
+    gram[0, 0] = n
+    gram[0, 1 : 1 + n_a] = count_a
+    gram[1 : 1 + n_a, 0] = count_a
+    gram[0, 1 + n_a :] = count_b
+    gram[1 + n_a :, 0] = count_b
+    gram[1 : 1 + n_a, 1 : 1 + n_a] = np.diag(count_a)
+    gram[1 + n_a :, 1 + n_a :] = np.diag(count_b)
+    gram[1 : 1 + n_a, 1 + n_a :] = crosstab
+    gram[1 + n_a :, 1 : 1 + n_a] = crosstab.T
+    xty = np.empty((m, rhs2.shape[1]))
+    for k in range(rhs2.shape[1]):
+        v = rhs2[:, k]
+        xty[0, k] = v.sum()
+        xty[1 : 1 + n_a, k] = np.bincount(ac, weights=v, minlength=n_a)
+        xty[1 + n_a :, k] = np.bincount(bc, weights=v, minlength=n_b)
+    coef = np.linalg.pinv(gram) @ xty
+    return coef if rhs.ndim == 2 else coef[:, 0]
+
+
+def fast_twoway_resid_pair(
+    x: np.ndarray, y: np.ndarray, sc: np.ndarray, bc: np.ndarray, n_s: int, n_b: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Drop-in for ``i539inf._twoway_resid_pair`` (same signature, same estimand).
+
+    Residuals of a least-squares projection are invariant to the gauge, so the
+    gram-solver coefficients reproduce the lstsq residuals exactly (asserted
+    at import below + per-script drift asserts against the parent's fail-loud
+    ``_twoway_fe_residualize`` on the observed data).
+    """
+    rhs = np.column_stack([x, y])
+    coef = _twoway_gram_coefs(rhs, sc, bc, n_s, n_b)
+    fitted = coef[0][None, :] + coef[1 : 1 + n_s][sc] + coef[1 + n_s :][bc]
+    resid = rhs - fitted
+    return resid[:, 0], resid[:, 1]
+
+
+def _selfcheck_fast_twoway() -> None:
+    """Import-time equivalence assert vs the #539 lstsq implementation.
+
+    Random unbalanced panel WITH an absent group level (exercises the
+    min-norm rank-deficient path). Aborts the import on drift > 1e-8.
+    """
+    rng = np.random.default_rng(0)
+    n, n_s, n_b = 320, 9, 13
+    sc = rng.integers(0, n_s - 1, n)  # level n_s-1 absent
+    bc = rng.integers(0, n_b, n)
+    x, y = rng.normal(size=n), rng.normal(size=n)
+    rx0, ry0 = _I539_TWOWAY_RESID_PAIR_LSTSQ(x, y, sc, bc, n_s, n_b)
+    rx1, ry1 = fast_twoway_resid_pair(x, y, sc, bc, n_s, n_b)
+    drift = max(float(np.max(np.abs(rx0 - rx1))), float(np.max(np.abs(ry0 - ry1))))
+    assert drift < 1e-8, f"fast two-way gram solver drifts from lstsq: {drift!r}"
+
+
+# Capture the original, verify equivalence, then patch it in for THIS process
+# so the imported #539 bootstrap/permutation loops use the fast exact solver.
+_I539_TWOWAY_RESID_PAIR_LSTSQ = i539inf._twoway_resid_pair
+_selfcheck_fast_twoway()
+i539inf._twoway_resid_pair = fast_twoway_resid_pair
+
+
 # ── Two-way ANOVA variance shares (Type-I, both orders) ──────────────────────
 
 
 def _twoway_resid(y: np.ndarray, ac: np.ndarray, bc: np.ndarray, n_a: int, n_b: int) -> np.ndarray:
-    """Exact two-way FE residual (single RHS; same design as #539's pair variant)."""
-    r, _ = i539inf._twoway_resid_pair(y, y, ac, bc, n_a, n_b)
+    """Exact two-way FE residual (single RHS; fast gram solver)."""
+    r, _ = fast_twoway_resid_pair(y, y, ac, bc, n_a, n_b)
     return r
 
 
@@ -562,17 +656,12 @@ def fe_vector(
 ) -> np.ndarray:
     """Centered FE coefficient vector for one factor from the two-way fit.
 
-    lstsq min-norm gauge freedom on a CONNECTED panel is exactly the two
-    uniform shifts (factor block vs intercept), so centering the factor's
-    coefficient block makes the vector gauge-invariant.
+    Min-norm gauge freedom on a CONNECTED panel is exactly the two uniform
+    shifts (factor block vs intercept), so centering the factor's coefficient
+    block makes the vector gauge-invariant. Solved via the exact gram solver
+    (same min-norm solution as lstsq — see ``_twoway_gram_coefs``).
     """
-    m = len(y)
-    design = np.zeros((m, 1 + n + n_other), dtype=np.float64)
-    design[:, 0] = 1.0
-    r = np.arange(m)
-    design[r, 1 + codes] = 1.0
-    design[r, 1 + n + other_codes] = 1.0
-    coef, *_ = np.linalg.lstsq(design, y.astype(np.float64), rcond=None)
+    coef = _twoway_gram_coefs(y.astype(np.float64), codes, other_codes, n, n_other)
     fe = coef[1 : 1 + n]
     return fe - fe.mean()
 

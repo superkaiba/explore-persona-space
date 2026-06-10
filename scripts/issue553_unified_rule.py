@@ -506,7 +506,10 @@ def main(argv: list[str] | None = None) -> int:
             cv["pooled_NO_cohort_fe_inline_reproduction_only"]["prior_plus_cosine"]["lobo"]["r2"],
             True,
             "pooled cross-cohort read now forbidden as headline; replaced by per-cohort + "
-            "pooled-with-FE LOBO/LOSO (see cv block)",
+            "pooled-with-FE LOBO/LOSO (see cv block). NOTE: this reproduction excludes the 16 "
+            "self-pairs (400 cells); the inline 'full panel' may have included them and/or used "
+            "a different prior column — the reviewed value is the deliverable, the delta is the "
+            "correction",
         ),
         p553.ivr_entry(
             "LOBO-CV R² ordinary-cross",
@@ -555,8 +558,9 @@ def main(argv: list[str] | None = None) -> int:
         f"[headline] ordinary-cross: alpha={b['alpha_prior']['raw_estimate']:+.3f} "
         f"beta={b['beta_cosine']['raw_estimate']:+.3f} "
         f"interaction std-beta={b['gamma_interaction']['std_beta']:+.3f} "
-        f"[{b['gamma_interaction']['primary_ci_raw']['low']:+.3f}, "
-        f"{b['gamma_interaction']['primary_ci_raw']['high']:+.3f}] (raw CI)"
+        f"[{b['gamma_interaction']['ci95_cluster_source']['std_beta']['low']:+.3f}, "
+        f"{b['gamma_interaction']['ci95_cluster_source']['std_beta']['high']:+.3f}] "
+        f"(source-cluster std CI)"
     )
     print(
         f"[headline] LOBO R² "
