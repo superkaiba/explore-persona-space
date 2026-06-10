@@ -37,9 +37,11 @@ Marker strength is a single dial — source log P(marker), trained − base — 
 - **Usable window:** source 5–12 nat above base **with bystanders still below the
   argmax ceiling** (#478).
 
-The window is narrow and overshoot is as common as the floor: the *same* r=8/lr=2e-6
-floored at 1 epoch (#520) but saturated at 600 steps + cosine (#519). **Steps and LR
-schedule are decisive, not rank.**
+The window is narrow and overshoot is as common as the floor: at the same rank, #520
+(r=8, lr=1e-6, 1 epoch) floored at −22 nat while #519 (r=8, lr=2e-6, 600 steps +
+cosine) saturated to +30 nat — fixed epoch counts don't transfer, though the pair
+differs in BOTH lr (2×) and steps, so it is not a single-variable contrast. **Steps
+and LR schedule are decisive, not rank.**
 
 **Emission onset ≠ saturation.** Three ordered events: (1) log-prob ramps smoothly
 from ~step 5; (2) emission begins when log P(marker) overtakes EOS at the end slot
