@@ -5,10 +5,11 @@ Two failure modes the prior watcher missed and Piece 2b/3b now cover:
 
 1. **Stalled detector** — a session whose Happy id is in the live set (so the
    respawn pass leaves it alone) but whose bg-Bash chain quietly died: no
-   self-report advances, no new task markers. ALERT-ONLY this round — pin the
-   decision matrix + the 2-miss guard + the dedup-within-episode + the
-   sentinel-exclusion contract so future respawn enablement has a stable
-   foundation to bolt onto.
+   self-report advances, no new task markers. Autonomous entries escalate to
+   AUTO-RESPAWN when eligible (ACTIVE status + reachable daemon, capped);
+   manual entries are ALERT-ONLY by design (#505 round-2, 2026-06-10). Pin
+   the decision matrix + the 2-miss guard + the dedup-within-episode + the
+   sentinel-exclusion contract.
 2. **Generalized GC** — for every per-issue state-file prefix under
    ``~/.eps-autonomous/``, terminal tasks (``completed`` / ``archived``)
    must drop the state file; ``awaiting_promotion`` / ``blocked`` /
@@ -583,13 +584,17 @@ def test_stalled_pass_never_respawns_or_stops(isolated_registry, monkeypatch):
     assert stops == []
 
 
-def test_stalled_pass_ignores_manual_sessions(isolated_registry, monkeypatch):
-    # Only ``issue-<N>.json`` is processed; manual sessions
-    # (``manual-issue-<N>.json``) are user-driven and their staleness is the
-    # user's call.
+def test_stalled_pass_manual_session_alert_only_never_respawns(isolated_registry, monkeypatch):
+    # Manual sessions (``manual-issue-<N>.json``, bare ``spawn-issue``) get
+    # the SAME staleness detection in ALERT-ONLY mode (#505 round-2,
+    # 2026-06-10): a stalled user-driven session posts the one-time alert
+    # instead of orphaning silently, but is NEVER auto-respawned —
+    # restarting a session the user drives by hand is the user's call.
     import autonomous_session_watch as asw
 
     posts: list = []
+    respawns: list = []
+    stops: list = []
     (isolated_registry / "manual-issue-100.json").write_text(
         json.dumps(
             {
@@ -610,12 +615,26 @@ def test_stalled_pass_ignores_manual_sessions(isolated_registry, monkeypatch):
     )
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    # ACTIVE status + reachable daemon: respawn WOULD be eligible were the
+    # entry autonomous — the alert-only routing must come from manual=True.
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_respawn", lambda entry, dry_run: respawns.append(entry) or True)
+    monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: posts.append(a))
 
-    asw.stalled_session_pass(dry_run=False, threshold=1)
-    assert posts == []
-    # And no stalled-state file was created for the manual issue.
-    assert not (isolated_registry / f"{STALLED_STATE_PREFIX}100.json").exists()
+    asw.stalled_session_pass(dry_run=False, threshold=1, daemon_reachable=True)
+
+    assert respawns == []
+    assert stops == []
+    assert len(posts) == 1
+    issue, note, _dry_run = posts[0]
+    assert issue == 100
+    assert asw._STALLED_ALERT_NOTE_SENTINEL in note
+    assert "STALLED manual issue session" in note
+    # Manual entries share the per-issue stalled-state file: the one-time
+    # alert is recorded so the next tick dedups instead of re-alerting.
+    state = json.loads((isolated_registry / f"{STALLED_STATE_PREFIX}100.json").read_text())
+    assert state["alerted"] is True
 
 
 def test_stalled_pass_dry_run_no_state_write(isolated_registry, monkeypatch):
@@ -793,34 +812,39 @@ def test_gc_does_not_touch_autonomous_registry_entries(isolated_registry, monkey
 
 
 def test_main_runs_stalled_and_gc_after_pod_safety(isolated_registry, monkeypatch):
-    # Pin the call order: respawn -> pod-safety -> stalled -> gc. The pin
-    # protects the docstring's documented order + ensures a refactor doesn't
-    # accidentally drop one of the new passes.
+    # Pin the call order: vm-disk -> (respawn, inline) -> pod-safety ->
+    # stalled -> orphan-sweep -> gc. The pin protects the docstring's
+    # documented order + ensures a refactor doesn't accidentally drop one
+    # of the passes. (The respawn pass is inlined in main() over the
+    # registry glob — empty here — so it has no patchable call to record.)
     import autonomous_session_watch as asw
 
     calls: list[str] = []
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
-    monkeypatch.setattr(asw, "_load_session_meta", lambda: {})
+    monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: calls.append("vm_disk"))
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: calls.append("pod_safety"))
     monkeypatch.setattr(asw, "stalled_session_pass", lambda *a, **kw: calls.append("stalled"))
+    monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: calls.append("orphan_sweep"))
     monkeypatch.setattr(asw, "gc_pass", lambda *a, **kw: calls.append("gc"))
 
     rc = asw.main([])
     assert rc == 0
-    assert calls == ["pod_safety", "stalled", "gc"]
+    assert calls == ["vm_disk", "pod_safety", "stalled", "orphan_sweep", "gc"]
 
 
 def test_gc_only_short_circuits_other_passes(isolated_registry, monkeypatch):
-    # --gc-only must skip respawn / pod-safety / stalled entirely.
+    # --gc-only must skip vm-disk / respawn / pod-safety / stalled /
+    # orphan-sweep entirely.
     import autonomous_session_watch as asw
 
     calls: list[str] = []
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
-    monkeypatch.setattr(asw, "_load_session_meta", lambda: {})
+    monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: calls.append("vm_disk"))
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: calls.append("pod_safety"))
     monkeypatch.setattr(asw, "stalled_session_pass", lambda *a, **kw: calls.append("stalled"))
+    monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: calls.append("orphan_sweep"))
     monkeypatch.setattr(asw, "gc_pass", lambda *a, **kw: calls.append("gc"))
 
     rc = asw.main(["--gc-only"])
