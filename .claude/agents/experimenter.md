@@ -475,6 +475,20 @@ failure_class: infra` per the launch-time-failure table below.
      before posting. (poll_pipeline.py now also self-corrects by
      cross-checking the marker `pid=`, but the pidfile is the primary
      probe; keep it correct.)
+   - **Write the pidfile ON THE POD — never on the local VM.**
+     `poll_pipeline.py` evaluates `[ -f <pid_file> ]` inside its remote
+     SSH heredoc, so the path you post as `pid_file=` must exist
+     pod-side; write it in the launch itself (the step-1 launcher's
+     `echo $$ > /workspace/logs/issue-<N>.pid`, or for a rare
+     launcher-less relaunch `nohup ... & echo $! >
+     /workspace/logs/issue-<N>.pid` in the same SSH command). A pidfile
+     written only on the local VM silently reads `PID_ALIVE=0` every
+     tick and the poller falls back to the pid from the latest
+     `epm:run-launched` marker — if that pid is stale, a healthy run is
+     declared `status=dead`. This is the launch-side half of the same
+     invariant the `/issue` skill states on the poll side (SKILL.md
+     Step 6d.2, "`--pid-file` is a POD-side path"). (Incident: task
+     #521, 2026-06-10.)
    - **`launcher_script=` is recommended** so the orchestrator can
      re-execute the launcher verbatim on resume without re-deriving
      it.
