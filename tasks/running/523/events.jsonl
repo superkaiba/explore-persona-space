@@ -154,3 +154,4 @@
 {"ts": "2026-06-10T02:10:28Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Polling heartbeat: round 10 Phase C metrics HEALTHY (~875 files, last_prompt ~L18/28). pid alive; steady grind."}
 {"ts": "2026-06-10T02:40:42Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Polling heartbeat: round 10 Phase C metrics HEALTHY (~985 files, last_prompt ~L24/28; headline L22 cell metrics written). pid alive."}
 {"ts": "2026-06-10T03:09:33Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Polling heartbeat: round 10 Phase C metrics HEALTHY (~1075 files; finishing last_prompt L27/28, mean_response point next). pid alive."}
+{"ts": "2026-06-10T03:38:30Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Polling heartbeat: round 10 Phase C metrics HEALTHY (~1170 files; mean_response ~L5/28, final extraction point). ETA metrics done ~05:40 UTC, then figures+regress, then Phase D (CPU). pid alive."}
