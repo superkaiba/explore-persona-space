@@ -1,6 +1,7 @@
 ---
-title: Base-model distance only weakly predicts marker leakage in a non-saturated
-  regime, and most "emissions" are runaway token loops (LOW confidence)
+title: Base-model distance only weakly predicts marker leakage and most "emissions"
+  are runaway token loops in a saturated-diagonal / floor-heavy off-diagonal regime
+  (LOW confidence)
 kind: experiment
 tags:
 - geometry-predicts-transfer
