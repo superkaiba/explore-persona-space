@@ -75,6 +75,11 @@ SEEDS_BY_ISSUE: dict[int, tuple[int, ...]] = {
     # change (lr), so the seed set / epoch suffix / HF-prefix shape all
     # mirror #529's.
     533: (42, 137, 1337, 7, 21),
+    # #546: rank-reduction corrective re-run of #533's grid — single-
+    # variable change (LoRA (r, α) = (16, 32) via the new --lora-r /
+    # --lora-alpha flags), so the seed set / epoch suffix / HF-prefix
+    # shape all mirror #533's.
+    546: (42, 137, 1337, 7, 21),
 }
 # Legacy alias preserved for any external importer that referenced
 # ``SEEDS`` directly (none in-repo, but a thin-wrapper path could rely
@@ -693,6 +698,27 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
         ),
     )
     ap.add_argument("--lr", type=float, default=1e-5)
+    ap.add_argument(
+        "--lora-r",
+        type=int,
+        default=32,
+        help=(
+            "LoRA rank. Default 32 preserves byte-compat for --issue "
+            "464/529/533 (which hardcoded r=32). #546 passes --lora-r 16."
+        ),
+    )
+    ap.add_argument(
+        "--lora-alpha",
+        type=int,
+        default=64,
+        help=(
+            "LoRA alpha. Default 64 preserves byte-compat for --issue "
+            "464/529/533 (which hardcoded alpha=64). #546 passes "
+            "--lora-alpha 32 (the recipe rule's canonical r16/alpha32 "
+            "pairing; note train_lora enables rsLoRA, so effective scale "
+            "is alpha/sqrt(r))."
+        ),
+    )
     ap.add_argument("--n-dupes", type=int, default=N_DUPES_POS)
     ap.add_argument(
         "--max-length",
@@ -781,7 +807,9 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
             "saturated training anchors. Pass --issue 533 for #529's "
             "lr=5e-6 corrective re-run (same 5 seeds / {1,2,3,5} epoch "
             "grid / HF-prefix + epoch-suffix shape as 529 — only lr "
-            "differs at the caller). Both 529 and 533 switch the seed "
+            "differs at the caller). Pass --issue 546 for #533's "
+            "rank-reduction corrective re-run (only --lora-r/--lora-alpha "
+            "differ at the caller). 529/533/546 all switch the seed "
             "set to (42, 137, 1337, 7, 21), prefix cell labels / HF "
             "subpaths / WandB run names with ``i{issue}_``, and append "
             "an ``_e{E}`` epoch suffix so the same (arm, seed, persona) "
@@ -795,12 +823,12 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
         ap.error("--shared-marker requires --single-persona")
     if args.contrastive_negatives and not (args.shared_marker and args.single_persona is not None):
         ap.error("--contrastive-negatives requires --single-persona AND --shared-marker")
-    # #529 / #533 invariant: per plan §4.1 the cn re-run is single-
+    # #529 / #533 / #546 invariant: per plan §4.1 the cn re-run is single-
     # persona + shared-marker + contrastive-negatives. A bare --issue
-    # 529 / 533 without those flags would land at the wrong HF subpath
+    # 529 / 533 / 546 without those flags would land at the wrong HF subpath
     # / wrong training rows; fail loud rather than silently producing a
     # #464-shaped cell under an i{N}_ prefix.
-    if args.issue in (529, 533) and not (
+    if args.issue in (529, 533, 546) and not (
         args.contrastive_negatives and args.shared_marker and args.single_persona is not None
     ):
         ap.error(
@@ -857,7 +885,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
     #     on-disk row files (concurrent 4-GPU sweep would otherwise
     #     race on the same TRAIN_ROW_DIR/.jsonl path).
     issue_prefix = f"i{args.issue}"
-    epoch_suffix = f"_e{args.epochs}" if args.issue in (529, 533) else ""
+    epoch_suffix = f"_e{args.epochs}" if args.issue in (529, 533, 546) else ""
 
     train_path = _build_training_rows(
         arm,
@@ -985,8 +1013,11 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
         gpu_id=args.gpu_id,
         epochs=epochs,
         lr=args.lr,
-        lora_r=32,
-        lora_alpha=64,
+        # #546: rank/alpha come from the CLI (defaults 32/64 keep
+        # --issue 464/529/533 byte-compatible with the hardcoded
+        # literals they were trained with).
+        lora_r=args.lora_r,
+        lora_alpha=args.lora_alpha,
         lora_dropout=0.05,
         batch_size=4,
         grad_accum=4,
