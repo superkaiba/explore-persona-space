@@ -574,6 +574,11 @@ def render_startup_script(
         "#!/bin/bash",
         "set -euo pipefail",
         "umask 077",
+        # GCE's metadata script runner executes as root WITHOUT $HOME set;
+        # under `set -u` the first $HOME reference (uv PATH export) kills
+        # the script (live finding, issue 535 GCP lane: `line 32: HOME:
+        # unbound variable` → workload never started, GPU idle).
+        'export HOME="${HOME:-/root}"',
         "",
         f"# === GCE startup-script (eps-issue-{spec.issue}) ===",
         f"export EPS_ISSUE={spec.issue}",
