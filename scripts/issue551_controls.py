@@ -235,6 +235,12 @@ def phase_r(
         mean_cos_re = float(np.mean(svd["cos_to_U1"]))
 
         u1_parent = np.asarray(parent["U1"], dtype=np.float64)
+        if u1_parent.shape[0] != M.shape[0]:
+            raise ValueError(
+                f"{cell.name}: hidden-dim mismatch — re-extracted M has H={M.shape[0]} "
+                f"but the parent U1 has H={u1_parent.shape[0]}. The tensors and the "
+                f"parent JSONs are from different models/rigs; refusing to gate."
+            )
         u1_cos_signed = cosine(svd["U1"], u1_parent)
         u1_cos = abs(u1_cos_signed)
         # Orientation-invariant profile comparison: flip the re-extracted

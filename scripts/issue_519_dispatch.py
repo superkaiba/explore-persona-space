@@ -449,6 +449,7 @@ def phase_c_extract_shifts(
     cpu_only: bool,
     adapter_dir_override: dict[Cell, Path] | None = None,
     base_model_id: str | None = None,
+    max_new_tokens: int | None = None,
 ) -> None:
     """Phase C: activation-shift extraction per (arm, seed, variant).
 
@@ -495,6 +496,8 @@ def phase_c_extract_shifts(
                 ]
                 if base_model_id is not None:
                     cmd.extend(["--base-model-id", base_model_id])
+                if max_new_tokens is not None:
+                    cmd.extend(["--max-new-tokens", str(max_new_tokens)])
                 env = {"CUDA_VISIBLE_DEVICES": "" if cpu_only else str(cell.gpu_id)}
                 log_path = log_dir / f"phase_c_{variant}_{cell.arm}_seed{cell.seed}.log"
                 commands.append((cmd, log_path, env))
@@ -1072,6 +1075,15 @@ def main() -> int:  # noqa: C901 - end-to-end dispatcher, refactor out-of-scope 
         ),
     )
     parser.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=None,
+        help=(
+            "Optional pass-through to the activation_shift CLI (default = "
+            "its own 512 = parent #521 behavior). CPU smokes shrink this."
+        ),
+    )
+    parser.add_argument(
         "--variants",
         nargs="+",
         choices=["same", "base", "on_policy"],
@@ -1336,6 +1348,7 @@ def main() -> int:  # noqa: C901 - end-to-end dispatcher, refactor out-of-scope 
             n_gpus=args.n_gpus,
             cpu_only=cpu_only,
             base_model_id=args.base_model_id,
+            max_new_tokens=args.max_new_tokens,
         )
 
     # Phase E: steering-vector extraction. (v2 M3: E runs BEFORE D so
