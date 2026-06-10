@@ -68,6 +68,15 @@ runpy() {
 run_wave() {
   # Run the queued commands (one per line on stdin) <= N_GPUS at a time, each
   # with CUDA device = its slot id substituted for the literal {GPU}.
+  #
+  # GPU pinning is belt-and-braces (incident 2026-06-10, bug_class
+  # gpu_pinning_cvd_late: every wave job landed on physical GPU 0 → OOM):
+  #   1. CUDA_VISIBLE_DEVICES=$gpu is exported in the spawned job's env, so
+  #      whenever CUDA initializes in the child — even before sft.py's
+  #      per-process clobber runs — the visible device IS the assigned one.
+  #   2. --gpu-id {GPU} stays on every job line; sft.py:~960 re-writes
+  #      CUDA_VISIBLE_DEVICES=str(gpu_id), the IDENTICAL string, so the two
+  #      mechanisms agree no matter when CUDA initializes.
   local fail=0
   local -a pids=()
   local slot=0
@@ -75,8 +84,8 @@ run_wave() {
     [[ -z "$cmd" ]] && continue
     local gpu=$((slot % N_GPUS))
     local final_cmd="${cmd//\{GPU\}/$gpu}"
-    echo "[wave] gpu=$gpu :: $final_cmd"
-    bash -c "$(declare -f runpy); $final_cmd" &
+    echo "[wave] gpu=$gpu :: CUDA_VISIBLE_DEVICES=$gpu $final_cmd"
+    CUDA_VISIBLE_DEVICES=$gpu bash -c "$(declare -f runpy); $final_cmd" &
     pids+=("$!")
     slot=$((slot + 1))
     if (( ${#pids[@]} >= N_GPUS )); then

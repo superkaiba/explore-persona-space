@@ -956,8 +956,25 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         _has_liger_kernel(),
     )
 
+    inherited_cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
     _warn_if_cvd_disagrees(cfg.gpu_id)
     os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
+    # Fail loud instead of training on the wrong physical GPU: once CUDA is
+    # initialized, the env write above is a no-op (torch caches device
+    # enumeration at init), so a non-empty inherited CUDA_VISIBLE_DEVICES that
+    # disagrees with cfg.gpu_id means this process is pinned to the WRONG
+    # device and device_map={"": 0} below would co-locate it with other jobs
+    # (incident 2026-06-10, issue #541: 4 wave jobs OOM'd on physical GPU 0).
+    # Single-GPU callers (env CVD unset → inherited None) never raise.
+    if inherited_cvd not in (None, "", str(cfg.gpu_id)) and torch.cuda.is_initialized():
+        raise RuntimeError(
+            f"CUDA already initialized under inherited CUDA_VISIBLE_DEVICES="
+            f"{inherited_cvd!r}, which disagrees with cfg.gpu_id={cfg.gpu_id}: the "
+            "per-process CUDA_VISIBLE_DEVICES clobber is ineffective after CUDA init, "
+            "so this process would train on the wrong physical GPU. Launch with the "
+            "env var and --gpu-id in agreement (e.g. CUDA_VISIBLE_DEVICES=N ... "
+            "--gpu-id N, as run_issue541_sweep.sh run_wave does)."
+        )
 
     tokenizer = AutoTokenizer.from_pretrained(
         base_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
