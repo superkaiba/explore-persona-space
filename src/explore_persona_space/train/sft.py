@@ -612,6 +612,24 @@ class TrainLoraConfig:
     # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
     # (Sagan todo 68b5822f) and currently raises NotImplementedError.
     backend: Literal["hf", "unsloth"] = "hf"
+    # Issue #498 / #528 / #556: TRL SFTConfig(completion_only_loss=True). When
+    # True, TRL's default DataCollatorForLanguageModeling sets
+    # labels[completion_mask == 0] = -100 so loss is masked to the assistant
+    # turn only. For the prompt-completion auto-path (Arm A), SFTTrainer.
+    # _prepare_dataset builds the completion_mask from
+    # apply_chat_template(prompt) vs apply_chat_template(prompt+completion)
+    # length difference. For a pre-tokenized dataset (Arm B — required because
+    # Qwen-2.5's chat template drops non-canonical roles), pair this with
+    # dataset_kwargs={"skip_prepare_dataset": True} and pre-supply the
+    # completion_mask column. (Re-ported from the unmerged issue-528 branch
+    # for #556's strict single-variable re-run — plan §4.2; the field had
+    # only ever lived on that branch.)
+    completion_only_loss: bool = False
+    # Issue #498 / #528 / #556: SFTTrainer dataset_kwargs passthrough. Used by
+    # Arm B to set {"skip_prepare_dataset": True} so _prepare_dataset does not
+    # re-tokenize the pre-tokenized rows (which would lose the role-header
+    # bytes Qwen drops under apply_chat_template).
+    dataset_kwargs: dict | None = None
 
 
 def _apply_chat_template_safe(tokenizer, messages, *, add_generation_prompt: bool):
@@ -1099,6 +1117,18 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         sft_kwargs["save_total_limit"] = cfg.save_total_limit
     if cfg.save_only_model:
         sft_kwargs["save_only_model"] = True
+    if cfg.completion_only_loss:
+        # Plumb through SFTConfig(completion_only_loss=True). Available on
+        # TRL >=0.14; for prompt-completion datasets (Arm A) TRL builds the
+        # completion_mask via apply_chat_template length diff; for
+        # pre-tokenized datasets (Arm B) the caller supplies completion_mask.
+        sft_kwargs["completion_only_loss"] = True
+    if cfg.dataset_kwargs is not None:
+        # Plumb through SFTConfig(dataset_kwargs=...). Used by issue #498/#528
+        # Arm B to set {"skip_prepare_dataset": True} so _prepare_dataset does
+        # not re-tokenize the pre-tokenized rows (which would lose the
+        # role-header bytes Qwen drops under apply_chat_template).
+        sft_kwargs["dataset_kwargs"] = dict(cfg.dataset_kwargs)
 
     sft_config = SFTConfig(**sft_kwargs)
 
