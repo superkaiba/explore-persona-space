@@ -63,7 +63,13 @@ bodies are never re-verified, so tightening cannot regress them).
     `../...`) fail because the EPS dashboard does not serve binary
     PNG/PDF files under `tasks/<N>/artifacts/` (incident: task #365,
     2026-05-22). `raw.githubusercontent.com` URLs must pin to a commit
-    SHA, not `main`/`master`/`HEAD`.
+    SHA, not `main`/`master`/`HEAD`. The TARGET must also EXIST
+    (incident: task #507, 2026-06-09 — a caption cited a figure that
+    was never generated): same-repo SHA-pinned raw URLs are verified
+    offline via `git cat-file -e <sha>:<path>` (definitive miss →
+    FAIL); unknown SHAs / other hosts fall back to one HTTP HEAD per
+    unique URL (definitive 404 → FAIL; network error / timeout →
+    `unverified` note on the PASS line, never a FAIL).
 5. Figure caption sanity — vacuously satisfied under the new spec
    (inline-image alt text + blockquote caption inside each result H3
    carry the discipline; the analyzer is instructed to write
@@ -228,10 +234,13 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import re
 import shutil
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -1078,9 +1087,76 @@ def check_figure_image(body: str) -> CheckResult:
     return CheckResult("hero image present", True, f"{len(urls)} image(s)")
 
 
+# Same-repo SHA-pinned raw-GitHub figure URLs — the canonical figure-hosting
+# pattern. Captured so check 4b can verify blob EXISTENCE offline via
+# `git cat-file` (worktrees share the object database with the main
+# checkout, so a commit made on `main` resolves from any checkout).
+_RAW_GITHUB_FIGURE_RE = re.compile(
+    r"^https?://raw\.githubusercontent\.com/(?P<owner>[^/]+)/(?P<repo>[^/]+)"
+    r"/(?P<sha>[0-9a-fA-F]{7,40})/(?P<path>[^?#]+)"
+)
+_THIS_REPO_SLUG = ("superkaiba", "explore-persona-space")
+
+
+def _http_head_status(url: str, timeout: float = 5.0) -> int | None:
+    """HTTP HEAD ``url``; return the response status code (HTTPError codes
+    included), or None when the probe is unavailable — network error /
+    timeout / ``EPM_VERIFY_BODY_NO_HTTP=1`` (the test suite sets the env
+    var in ``tests/conftest.py`` so unit tests never touch the network).
+    Callers treat None as indeterminate, never a FAIL."""
+    if os.environ.get("EPM_VERIFY_BODY_NO_HTTP") == "1":
+        return None
+    req = urllib.request.Request(url, method="HEAD")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.status
+    except urllib.error.HTTPError as exc:
+        return exc.code
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return None
+
+
+def _figure_url_existence(url: str) -> tuple[str, str]:
+    """Existence probe for one absolute figure URL (check 4b).
+
+    Returns ``(verdict, note)`` with verdict one of ``'pass'`` / ``'fail'``
+    (definitively missing — the URL 404s) / ``'skip'`` (indeterminate —
+    surfaced as an `unverified` note on the PASS line, never a FAIL, so
+    offline runs don't block). Same-repo SHA-pinned
+    ``raw.githubusercontent.com`` URLs resolve offline + deterministically
+    via ``_git_object_exists`` (fetch-free); unknown SHAs (un-fetched or
+    fabricated) and other hosts fall back to one HTTP HEAD per unique URL.
+    """
+    m = _RAW_GITHUB_FIGURE_RE.match(url)
+    if m and (m.group("owner").lower(), m.group("repo").lower()) == _THIS_REPO_SLUG:
+        repo = _resolve_repo_root()
+        if repo is not None:
+            verdict, _detail = _git_object_exists(repo, m.group("sha"), m.group("path"))
+            if verdict == "pass":
+                return "pass", ""
+            if verdict == "fail":
+                return (
+                    "fail",
+                    f"figure URL 404s — `{m.group('path')}` does not exist "
+                    f"at `{m.group('sha')[:8]}`",
+                )
+            # 'skip': sha unknown to the local object database — fall
+            # through to the HTTP probe, which decides for real shas
+            # pushed from elsewhere and 404s for fabricated ones.
+    code = _http_head_status(url)
+    if code is None:
+        return "skip", f"`{url}` (HTTP probe unavailable)"
+    if code == 404:
+        return "fail", f"figure URL 404s — `{url}`"
+    if code < 400:
+        return "pass", ""
+    return "skip", f"`{url}` (HTTP {code})"
+
+
 def check_figure_url_resolvable(body: str) -> CheckResult:
     """Check 4b: every image URL inline under `## TL;DR` must be a
-    permanent, dashboard-resolvable URL.
+    permanent, dashboard-resolvable URL — and the target must actually
+    exist.
 
     The EPS dashboard serves task-folder HTML artifacts but NOT PNG/PDF
     binaries under `tasks/<N>/artifacts/`, so a relative `artifacts/hero.png`
@@ -1088,6 +1164,17 @@ def check_figure_url_resolvable(body: str) -> CheckResult:
     2026-05-22). Acceptable patterns are absolute URLs only — typically
     `https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/.../*.png`
     or any other `https://...` URL the browser can fetch directly.
+
+    Existence verification (added 2026-06-09, incident task #507: the body
+    cited a SHA-pinned figure that was never generated or committed, the
+    URL-shape check PASSed, and the dashboard rendered a broken image):
+    same-repo `raw.githubusercontent.com` URLs are checked offline +
+    deterministically via `git cat-file -e <sha>:<path>`; a definitive miss
+    (the sha resolves locally but the path is absent from its tree) FAILs.
+    Unknown SHAs and other hosts fall back to ONE `HTTP HEAD` per unique
+    URL (5s timeout): a definitive 404 FAILs; any network error / timeout /
+    non-404 error status surfaces as an `unverified` note on the PASS line
+    — never a FAIL — so offline runs don't block.
     """
     urls = _gather_figure_image_urls(body)
     if not urls:
@@ -1096,6 +1183,8 @@ def check_figure_url_resolvable(body: str) -> CheckResult:
         # the operator sees one error message, not two.
         return CheckResult("Figure URL resolvable", True, "no images to check")
     bad: list[str] = []
+    unverified: list[str] = []
+    probed: dict[str, tuple[str, str]] = {}
     for url in urls:
         url = url.strip()
         # Strip optional title — `(url "title")` — keep only the URL token.
@@ -1111,6 +1200,16 @@ def check_figure_url_resolvable(body: str) -> CheckResult:
                 url,
             ):
                 bad.append(f"figure URL pinned to moving ref: `{url}`")
+                continue
+            # Existence probe — at most one git subprocess / HTTP HEAD per
+            # unique URL (incident: task #507).
+            if url not in probed:
+                probed[url] = _figure_url_existence(url)
+            verdict, note = probed[url]
+            if verdict == "fail":
+                bad.append(note)
+            elif verdict == "skip":
+                unverified.append(note)
             continue
         # Anything not absolute is rejected — relative `artifacts/...`,
         # `tasks/...`, `figures/...`, `./...`, `../...` all render broken
@@ -1123,7 +1222,12 @@ def check_figure_url_resolvable(body: str) -> CheckResult:
         )
     if bad:
         return CheckResult("Figure URL resolvable", False, "; ".join(bad))
-    return CheckResult("Figure URL resolvable", True, f"{len(urls)} URL(s)")
+    detail = f"{len(urls)} URL(s)"
+    if unverified:
+        detail += f"; {len(unverified)} unverified (existence not confirmed): " + "; ".join(
+            unverified
+        )
+    return CheckResult("Figure URL resolvable", True, detail)
 
 
 def check_figure_caption(body: str) -> CheckResult:
