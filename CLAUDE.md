@@ -30,7 +30,7 @@
 
 - **Pure capture** ("save idea: X") — create `status='proposed'` task; no execution.
 - **NEW direction** (substantially different question — "try X", "run X", "what if we X") — NEVER inline. Create `status='proposed'` task; only execution path is `/issue <N>`.
-- **Follow-up** (the requested work answers the SAME question as an existing issue #N — regardless of whether the user says "followup") — NEVER loose ad-hoc execution from the chat session. Post `epm:followup-scope v1` on #N (`source: user-chat`, with a `followup_label`), then re-invoke `/issue N` — the same-issue follow-up loop executes it ON #N (SKILL.md Step 9b § Same-issue follow-up loop) and re-parks it at `awaiting_promotion`. Artifacts land under `eval_results/issue_<N>/<followup_label>/`. A substantially different question is a NEW direction (child task via `task.py new --parent <N>`), not a follow-up.
+- **Follow-up** (the requested work answers the SAME question as an existing issue #N — regardless of whether the user says "followup") — NEVER loose ad-hoc execution from the chat session. Post `epm:followup-scope v1` on #N (`source: user-chat`, with a `followup_label`), then re-invoke `/issue N` — the same-issue follow-up loop executes it ON #N (SKILL.md Step 9b § Same-issue follow-up loop) and re-parks it at `awaiting_promotion`. Artifacts land under `eval_results/issue_<N>/<followup_label>/`. A substantially different question is a NEW direction (child task via `task.py new --parent <N>`), not a follow-up. **Pod-safety auto-stop exemption:** if the follow-up provisions a pod on a terminal-status parent, the watcher infers a live follow-up from a fresh `epm:run-launched` newer than the latest done-transition (`epm:promoted` / `epm:status-changed`) and SKIPS the auto-stop with a `followup-skip` marker; `task.py add-tag <N> keep-running` is no longer required, but is still an explicit override that takes precedence over the inferred predicate (incident #477, 2026-06-10).
 - **Always-inline** — monitoring, log-checking, pulling results, discussion, brainstorming. No task needed.
 
 Routing is by QUESTION IDENTITY, not user phrasing: same question → same issue; substantially different question → new child task. The `question_relation: same | substantially-different` tag on follow-up proposals encodes the same split (`follow-up-proposer.md` § question_relation tag — criteria). Ambiguous? Ask one short question. **Archiving:** `task.py set-status <N> archived` for duplicates / won't-fix / abandoned. `has_clean_result=true` is sticky across statuses.
@@ -98,6 +98,7 @@ Helper posts `epm:codex-task-spawned`, then `epm:codex-task-completed`/`epm:code
 - **`/compact` at ~30% remaining**, earlier if dense. Use `/clear` (alias `/new`) between unrelated tasks.
 - **2× rule.** If a multi-step prompt repeats in a session, propose a skill / hook / `CLAUDE.md` edit *before* the second pass.
 - **429 token-pacing.** The org-wide input-token cap climbs at each minute boundary, so pace input tokens, don't retry harder. (a) **Stagger ensemble spawns** across a few seconds so prompt-token bursts don't stack. (b) **Keep subagent prompts lean** — pass the PATH to the plan/brief, never inline the body or events.jsonl dumps. (c) **Never dump giant logs into tool output** — `grep -iE 'error|traceback|killed|OOM'` / `tail -50`, never `cat` a multi-MB log (it re-enters context next turn). On a 429: wait for the next minute boundary and retry the same call.
+- **Spurious usage-policy refusals.** This project's safety-research vocabulary (backdoor / trigger / implant / misalignment, raw EM completions) sometimes trips false-positive "violates our Usage Policy" API refusals — 18+ hits on 2026-06-09 killed an implementer's final report, an analyzer mid-run, and several Codex wrappers. Recovery (never park on a refusal): (a) check what durable writes the killed agent already made before re-dispatching; (b) retry ONCE with a rephrased brief that thins the trigger-dense wording; (c) if a thin wrapper refuses twice, the orchestrator composes the artifact itself; (d) agents ingesting raw harmful-content completions (EM evals, jailbreak data) read aggregate JSONs / judge labels and pull cherry-picked examples by grep + line offset — never page whole raw-completion files into context.
 
 ## After Every Experiment
 
@@ -156,7 +157,9 @@ uv run python scripts/task.py promote <N> useful|not-useful   # awaiting_promoti
 uv run python scripts/task.py audit                           # registry vs filesystem
 ```
 
-**`cd "$(... task.py find <N>)"` moves you into the task folder, not repo root.** After that `cd`, a later `uv run python scripts/task.py ...` resolves `scripts/task.py` against the task folder and fails with `No such file or directory` (the path is relative to repo root). Invoke `task.py` by its absolute path (`uv run python "$REPO_ROOT/scripts/task.py" ...`) or `cd` back to repo root first.
+**`cd "$(... task.py find <N>)"` moves you into the task folder, not repo root.** After that `cd`, a later `uv run python scripts/task.py ...` resolves `scripts/task.py` against the task folder and fails with `No such file or directory` (the path is relative to repo root). This applies to EVERY `scripts/...` invocation (`spawn_session.py`, `pod.py`, ...), not just `task.py`: invoke by absolute path (`uv run python "$REPO_ROOT/scripts/..."`) or `cd` back to repo root first. Same family: after `git worktree remove`, `cd` out of the removed directory before any further compound command (`getcwd` failures silently no-op git operations); and NEVER hand-build `tasks/<status>/<N>/...` paths in inline shell one-liners — status is unknowable from the orchestrator, so read markers via `task.py view <N> --json` / `latest-marker <N>` (two crashes today guessed `tasks/running/<N>/events.jsonl` while the task was elsewhere).
+
+**Concurrent repo-root committers.** Many sessions commit to the shared repo root in parallel. Stage by explicit path only (never `git add -A`/`git add .`), retry once on an `index.lock` collision, and on a rejected push `git pull --rebase` once and re-push. Before batch-fixing parked task bodies, post a claim marker (`epm:progress` note naming the task IDs) so a parallel session doesn't double-fix the same bodies.
 
 **Body size cap.** `events.jsonl` `note` is capped at 50,000 chars (`post-marker` raises on oversize). Write to `artifacts/`, post `epm:failure v1` (`failure_class: infra`, `reason: note_oversize`) referencing it, then `set-status <N> blocked`.
 
@@ -168,11 +171,11 @@ Multiple parallel Claude Code sessions on the VM, all visible in [Happy](https:/
 - **N per-experiment sessions** — one per active experiment, each runs `/issue <N>`. Spawned by PM on user go-ahead.
 
 ```bash
-python scripts/spawn_session.py spawn-pm
-python scripts/spawn_session.py spawn-issue --issue 137 --auto   # kicks off /issue 137 (autonomous, crash-recovered)
-python scripts/spawn_session.py spawn-issue --issue 137          # EMPTY session — sits idle until a human types /issue 137
-python scripts/spawn_session.py list
-python scripts/spawn_session.py stop --session-id <id>
+uv run python scripts/spawn_session.py spawn-pm
+uv run python scripts/spawn_session.py spawn-issue --issue 137 --auto   # kicks off /issue 137 (autonomous, crash-recovered)
+uv run python scripts/spawn_session.py spawn-issue --issue 137          # EMPTY session — sits idle until a human types /issue 137
+uv run python scripts/spawn_session.py list
+uv run python scripts/spawn_session.py stop --session-id <id>
 ```
 
 **Kickoff rule — when the user asks to "spawn an instance to handle/run issue N" (or "start it as a happy instance"), ALWAYS pass `--auto` so the `/issue N` skill actually starts.** The bare `spawn-issue --issue N` (no prompt) opens an EMPTY session that sits idle forever until a human opens it on their phone and types `/issue N` — it does NOT kick off the workflow, and it skips crash-recovery + `list` issue-mapping registration. Only use the bare form when the user explicitly wants an empty session to drive by hand. `--auto` self-drives, auto-approves plans ≤100 GPU-h (parks above that + at `awaiting_promotion`), and arms the crash-recovery watcher. (`--initial-prompt "/issue N"` also boots the skill but skips the `--auto` registration, so prefer `--auto`.) If the user wants to review the plan before it runs, tell them to hop into the session before it provisions, or spawn the bare form and have them type `/issue N` themselves.
@@ -196,31 +199,33 @@ Pods are created on demand per experiment. **Lifecycle:** `provision` → run �
 
 Override with `--gpu-type` / `--gpu-count`. `pod.py provision --list-intents` for the table.
 
+**CPU-only phases don't hold GPU pods.** Long (>~15-30 min) CPU-only analysis/scoring phases (bootstrap/permutation stats, eval-JSON aggregation, judge-API-only scoring, plotting) run off-pod on the VM against uploaded artifacts by default; pod-side execution needs a named pod-local data dependency (activations, per-step checkpoints), and plans sequence uploads so the pod stops/terminates BEFORE the CPU phase starts. Plan-time rule: `planner.md` §9, `critic.md` Methodology lens item 10.
+
 ```bash
 # Lifecycle
-python scripts/pod.py provision --issue 137 --intent lora-7b   # default 7-day TTL
-python scripts/pod.py provision --issue 137 --gpu-type H200 --gpu-count 8
-python scripts/pod.py stop --issue 137                          # pause; volume preserved (manual only)
-python scripts/pod.py resume --issue 137                        # new IP/port → pods.conf, SSH/MCP regenerated
-python scripts/pod.py terminate --issue 137 --yes               # destroy (volume gone); /issue Step 8 auto-runs
-python scripts/pod.py list-ephemeral [--issue 137]              # live API queried every invocation
+uv run python scripts/pod.py provision --issue 137 --intent lora-7b   # default 7-day TTL
+uv run python scripts/pod.py provision --issue 137 --gpu-type H200 --gpu-count 8
+uv run python scripts/pod.py stop --issue 137                          # pause; volume preserved (manual only)
+uv run python scripts/pod.py resume --issue 137                        # new IP/port → pods.conf, SSH/MCP regenerated
+uv run python scripts/pod.py terminate --issue 137 --yes               # destroy (volume gone); /issue Step 8 auto-runs
+uv run python scripts/pod.py list-ephemeral [--issue 137]              # live API queried every invocation
 # Config (single source of truth: scripts/pods.conf)
-python scripts/pod.py config --list | --check | --sync
-python scripts/pod.py config --update <name> --host X --port Y
-python scripts/pod.py config --refresh-from-api [<name>]    # Pull live host/port from RunPod API → pods.conf → sync
+uv run python scripts/pod.py config --list | --check | --sync
+uv run python scripts/pod.py config --update <name> --host X --port Y
+uv run python scripts/pod.py config --refresh-from-api [<name>]    # Pull live host/port from RunPod API → pods.conf → sync
 # Keys / bootstrap / health
-python scripts/pod.py keys --push [<name>...] | --verify
-python scripts/pod.py bootstrap <name>                          # normally auto from provision
-python scripts/pod.py health [--quick | --fix | --json]
+uv run python scripts/pod.py keys --push [<name>...] | --verify
+uv run python scripts/pod.py bootstrap <name>                          # normally auto from provision
+uv run python scripts/pod.py health [--quick | --fix | --json]
 # Sync / cleanup / audit
-python scripts/pod.py sync code | env | data --pull|--push | results --all | models --list|--sweep
-python scripts/pod.py cleanup <name> --dry-run | --all          # safe model removal; does NOT terminate
-python scripts/pod.py audit-stale [--terminate-stale --yes] [--json]
+uv run python scripts/pod.py sync code | env | data --pull|--push | results --all | models --list|--sweep
+uv run python scripts/pod.py cleanup <name> --dry-run | --all          # safe model removal; does NOT terminate
+uv run python scripts/pod.py audit-stale [--terminate-stale --yes] [--json]
 ```
 
 **Authority split.** Live RunPod API is authoritative for state (existence, status, host, port, GPU, `created_at`). `scripts/pods_ephemeral.json` holds project metadata only; `scripts/pods.conf` is the SSH/MCP config source, auto-synced. `pod.py provision` / `pod.py resume` refresh `pods.conf` from the live API on success; `pod.py config --sync` propagates `pods.conf` OUTWARD to `~/.ssh/config` + `.claude/mcp.json`. The inverse direction — pulling live API host/port INTO `pods.conf` outside an explicit provision/resume call — is `pod.py config --refresh-from-api [<name>]`. Use it when a SUPPLY_CONSTRAINT-blocked resume eventually succeeds via a retry path that bypassed `_upsert_pods_conf`, or whenever an SSH polling loop is failing on a port the live API no longer reports. (Incident #488, 2026-06-09: a resume blocked on SUPPLY_CONSTRAINT brought the pod back at a new port outside the success path; `pods.conf` stayed at the pre-stop port and an autonomous SSH polling loop spun for 13+ hours at $32/hr.)
 
-**Crons.** Stale-pod audit 09:37 daily (auto-terminate EXITED >24h; also runs on `pod.py provision`). Stale-worktree sweep 09:47 daily (`worktree_audit.py --apply`) reaps idle auto-generated worktrees under `.claude/worktrees/` — removed only when not held by a live process, not an `issue-<N>` with a non-terminal status, older than a 6h grace window, and with no uncommitted tracked changes. Human-named worktrees are never touched.
+**Crons.** Stale-pod audit 09:37 daily (auto-terminate EXITED >24h — EXEMPT when the owning task carries the `keep-running` tag, reported as `kept-exited` instead; also runs on `pod.py provision`). Stale-worktree sweep 09:47 daily (`worktree_audit.py --apply`) reaps idle auto-generated worktrees under `.claude/worktrees/` — removed only when not held by a live process, not an `issue-<N>` with a non-terminal status, older than a 6h grace window (tightened to 1h when the filesystem holding the worktrees is ≥90% full — disk-pressure mode, threshold via `EPM_WORKTREE_DISK_PRESSURE_PCT`; the audit always reports disk usage + per-worktree sizes), and with no uncommitted tracked changes. Human-named worktrees are never touched.
 
 ### Hard requirements (baked into `runpod_api.py`)
 
@@ -249,8 +254,9 @@ SSH MCP server (`mcp-ssh-manager`, user-level `~/.claude/mcp.json`; `pod.py conf
 | LoRA adapters | HF model repo | Auto after training |
 | Figures/plots (PNG, PDF, meta.json) | Git (`figures/issue_N/`) | Manual commit; verifier syncs Step 8 |
 | Training metrics | WandB live run (project=`<experiment_name>`) | Auto during training |
+| Intermediate analysis tensors plan-referenced as downstream inputs (per-cell shift tensors, cached activations) | HF data repo `issueN_<slug>/analysis_tensors/` | Before pod termination (#521) |
 
-**Core rules:** Models MUST upload to HF before local deletion (never delete unuploaded). `eval_results/` is JSON/text only — never safetensors. Raw completions MUST upload before pod termination. Datasets must upload so any pod can access without scp. After upload, clean local weights + merged dirs. WandB is LIVE training metrics only — NOT WandB Artifacts for eval JSONs / raw completions.
+**Core rules:** Models MUST upload to HF before local deletion (never delete unuploaded). `eval_results/` is JSON/text only — never safetensors. Raw completions MUST upload before pod termination. Intermediate analysis tensors the plan's analysis / negative-control sections reference as downstream inputs MUST too — they are tiny (KB-MB) and losing them makes planned controls permanently unrunnable (#521). Datasets must upload so any pod can access without scp. After upload, clean local weights + merged dirs. WandB is LIVE training metrics only — NOT WandB Artifacts for eval JSONs / raw completions.
 
 **Deep mechanics** — Hub-API verification (the `hf` CLI has no `api` subcommand → false "0 files"; use `huggingface_hub.list_repo_files`), the `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD` inline-upload fence, and the **delete-after-eval adapter-persist recipe** (`EPM_PERSIST_ADAPTER_HF_REPO`/`_SUBFOLDER`, fail-loud before `rm`; never push the 15GB merged dir; #404/#458) — live in `.claude/rules/upload-policy.md` (loads when you touch training / hub / sweep code).
 
@@ -294,12 +300,12 @@ archive/research_log/         # ARCHIVED — superseded by tasks/ clean-results
 
 ```bash
 uv run python -m explore_persona_space.orchestrate.preflight   # before any experiment
-python scripts/train.py condition=c1_evil_wrong_em seed=42
-python scripts/eval.py condition=c1_evil_wrong_em seed=42
-python scripts/run_sweep.py --parallel 4
-python scripts/generate_wrong_answers.py
-python scripts/analyze_results.py
-ruff check . && ruff format .
+uv run python scripts/train.py condition=c1_evil_wrong_em seed=42
+uv run python scripts/eval.py condition=c1_evil_wrong_em seed=42
+uv run python scripts/run_sweep.py --parallel 4
+uv run python scripts/generate_wrong_answers.py
+uv run python scripts/analyze_results.py
+uv run ruff check . && uv run ruff format .
 
 uv run pytest                                                  # full suite (testpaths=tests/)
 uv run pytest tests/test_verify_task_body.py                   # one file
