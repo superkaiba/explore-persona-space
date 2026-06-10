@@ -37,10 +37,18 @@ Adapters download from HF Hub model repo subpath
 (``EPM_LOCAL_ADAPTER_OVERRIDE`` / ``EPM_LOCAL_R_CANON_DIR``) match the
 parent for fresh-pod smoke isolation.
 
+Variants (``--variant``): ``po`` (default, 18 positive-only cells), ``cn``
+(18 contrastive-negatives cells, same 3 arms), ``min_cn`` (12 cells —
+the minimal_content_cn follow-up: minimal arms {system_minimal,
+role_bare} x seeds x personas in the cn regime; adapters at the cn
+``_cn_`` subpath template, outputs under
+``eval_results/issue_464/minimal_content_cn/cross_eval/``).
+
 CLI:
     uv run python scripts/i464_po_eval.py
     uv run python scripts/i464_po_eval.py --resume
     uv run python scripts/i464_po_eval.py --smoke-cells role_seed42_pirate
+    uv run python scripts/i464_po_eval.py --variant min_cn --resume
 """
 
 from __future__ import annotations
@@ -89,10 +97,12 @@ logger = logging.getLogger("i464.po_eval")
 LOCAL_ADAPTER_CACHE_FOR: dict[str, Path] = {
     "po": Path("/workspace/adapters/i464_po"),
     "cn": Path("/workspace/adapters/i464_cn"),
+    "min_cn": Path("/workspace/adapters/i464_min_cn"),
 }
 OUT_DIR_FOR: dict[str, Path] = {
     "po": Path("eval_results/issue_464/positive_only/cross_eval"),
     "cn": Path("eval_results/issue_464/contrastive_negatives/cross_eval"),
+    "min_cn": Path("eval_results/issue_464/minimal_content_cn/cross_eval"),
 }
 # HF Hub model-repo subpath PREFIX used to look up adapters per cell.
 # Train writes positive-only adapters to ``adapters/i464_{arm}_seed{seed}_{persona}``
@@ -104,6 +114,9 @@ OUT_DIR_FOR: dict[str, Path] = {
 ADAPTER_SUBPATH_FOR: dict[str, str] = {
     "po": "adapters/i464_{arm}_seed{seed}_{persona}",
     "cn": "adapters/i464_{arm}_seed{seed}_cn_{persona}",
+    # minimal_content_cn follow-up: SAME ``_cn_`` infix template as cn —
+    # the arm name (system_minimal / role_bare) carries the distinction.
+    "min_cn": "adapters/i464_{arm}_seed{seed}_cn_{persona}",
 }
 
 # Legacy aliases (positive-only defaults) — kept for the smoke-test
@@ -116,22 +129,36 @@ SEEDS = (42, 137, 1337)
 # Headline arms for the positive-only follow-up: system_plain, system_padded,
 # role. role_nonsense / role_mismatch are NOT replicated here (they were
 # diagnostic follow-ups to the parent's co-resident headline). The cn
-# variant uses the SAME 3 arms.
+# variant uses the SAME 3 arms; the min_cn variant (minimal_content_cn
+# follow-up — content-matched minimal encodings in the cn regime) uses
+# the 2 minimal arms (system_minimal / role_bare) → 12 cells.
 PO_ARMS: tuple[enc.Arm, ...] = ("system_plain", "system_padded", "role")
+ARMS_FOR: dict[str, tuple[enc.Arm, ...]] = {
+    "po": PO_ARMS,
+    "cn": PO_ARMS,
+    "min_cn": enc.MINIMAL_ARMS,
+}
 # All probed eval encodings always carry the shared pirate marker ` ※`.
 SHARED_MARKER_PERSONA: enc.Persona = "pirate"
 
 
 def _per_cell_dir_for(variant: str) -> Path:
-    """Per-cell JSON directory for ``variant`` (po or cn)."""
+    """Per-cell JSON directory for ``variant`` (po, cn, or min_cn)."""
     if variant not in OUT_DIR_FOR:
         raise ValueError(f"unknown variant={variant!r}; want one of {list(OUT_DIR_FOR)}")
     return OUT_DIR_FOR[variant] / "per_cell"
 
 
-def _all_po_cells() -> list[tuple[enc.Arm, int, enc.Persona]]:
-    """Return the 18 (arm, seed, persona) positive-only cells."""
-    return [(arm, seed, persona) for arm in PO_ARMS for seed in SEEDS for persona in enc.PERSONAS]
+def _all_po_cells(variant: str = "po") -> list[tuple[enc.Arm, int, enc.Persona]]:
+    """Return the (arm, seed, persona) cells for ``variant``.
+
+    18 cells for po/cn (3 arms x 3 seeds x 2 personas); 12 cells for
+    min_cn (2 minimal arms x 3 seeds x 2 personas).
+    """
+    if variant not in ARMS_FOR:
+        raise ValueError(f"unknown variant={variant!r}; want one of {list(ARMS_FOR)}")
+    arms = ARMS_FOR[variant]
+    return [(arm, seed, persona) for arm in arms for seed in SEEDS for persona in enc.PERSONAS]
 
 
 def _po_cell_label(arm: enc.Arm, seed: int, persona: enc.Persona) -> str:
@@ -169,8 +196,20 @@ def _eval_encodings_for_cell(arm: enc.Arm, persona: enc.Persona) -> list[enc.Eva
     elif arm == "role":
         own_enc = f"role_{persona}"  # type: ignore[assignment]
         other_enc = f"role_{other_persona}"  # type: ignore[assignment]
+    elif arm == "system_minimal":
+        # minimal_content_cn follow-up: own = the cell's own minimal
+        # bare-word system encoding; other = the OTHER persona's minimal
+        # system encoding (same arm family).
+        own_enc = f"system_minimal_{persona}"  # type: ignore[assignment]
+        other_enc = f"system_minimal_{other_persona}"  # type: ignore[assignment]
+    elif arm == "role_bare":
+        own_enc = f"role_bare_{persona}"  # type: ignore[assignment]
+        other_enc = f"role_bare_{other_persona}"  # type: ignore[assignment]
     else:
-        raise ValueError(f"po follow-up only covers arms {PO_ARMS}; got arm={arm!r}")
+        raise ValueError(
+            f"cross-eval covers arms {PO_ARMS} (po/cn) + {enc.MINIMAL_ARMS} (min_cn); "
+            f"got arm={arm!r}"
+        )
     return [own_enc, other_enc, "default_assistant"]
 
 
@@ -214,6 +253,8 @@ def _download_po_adapter(arm: enc.Arm, seed: int, persona: enc.Persona, variant:
     HF subpath:
       - ``po`` → ``adapters/i464_{arm}_seed{seed}_{persona}``
       - ``cn`` → ``adapters/i464_{arm}_seed{seed}_cn_{persona}``
+      - ``min_cn`` → ``adapters/i464_{arm}_seed{seed}_cn_{persona}``
+        (same ``_cn_`` infix; the minimal arm name carries the distinction)
     (matches the train script's ``hf_path_in_repo`` for each variant).
 
     Local-override env hook ``EPM_LOCAL_ADAPTER_OVERRIDE`` — when set,
@@ -275,7 +316,7 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument(
         "--shard",
         default=None,
-        help="Round-robin shard 'k-of-n' over the 18 cells (default: single shard).",
+        help="Round-robin shard 'k-of-n' over the variant's cells (default: single shard).",
     )
     ap.add_argument(
         "--resume",
@@ -305,7 +346,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     ap.add_argument(
         "--variant",
-        choices=("po", "cn"),
+        choices=("po", "cn", "min_cn"),
         default="po",
         help=(
             "Which follow-up's adapters to evaluate. ``po`` (default) = "
@@ -313,8 +354,12 @@ def main(argv: list[str] | None = None) -> None:
             "``adapters/i464_{arm}_seed{seed}_{persona}``, outputs under "
             "``eval_results/issue_464/positive_only/cross_eval/``. ``cn`` = "
             "contrastive-negatives single-persona LoRAs at "
-            "``adapters/i464_cn_{arm}_seed{seed}_{persona}``, outputs under "
-            "``eval_results/issue_464/contrastive_negatives/cross_eval/``."
+            "``adapters/i464_{arm}_seed{seed}_cn_{persona}``, outputs under "
+            "``eval_results/issue_464/contrastive_negatives/cross_eval/``. "
+            "``min_cn`` = minimal_content_cn follow-up (content-matched "
+            "minimal arms in the cn regime, 12 cells), adapters at the same "
+            "``_cn_`` subpath template, outputs under "
+            "``eval_results/issue_464/minimal_content_cn/cross_eval/``."
         ),
     )
     args = ap.parse_args(argv)
@@ -350,7 +395,7 @@ def main(argv: list[str] | None = None) -> None:
         q_test = q_test[: args.smoke_n_q]
         logger.warning("SMOKE: truncated Q_test to %d questions", len(q_test))
 
-    all_cells = _all_po_cells()
+    all_cells = _all_po_cells(args.variant)
     if args.smoke_cells:
         wanted = set(args.smoke_cells)
         all_cells = [(a, s, p) for (a, s, p) in all_cells if _po_cell_label(a, s, p) in wanted]

@@ -46,9 +46,19 @@ Headline statistic:
     mean(d_plain)  ≥ 1.0 nat AND 95% CI > 0 AND all per-seed d > 0
     mean(d_padded) ≥ 1.0 nat AND 95% CI > 0 AND all per-seed d > 0
 
+Variants (``--variant``): ``po`` (default) and ``cn`` analyze the 3
+parent-recipe arms with the paired headline pair (d_plain, d_padded);
+``min_cn`` (the minimal_content_cn follow-up) analyzes the 2 minimal
+arms (12 cells) with the SINGLE registered pair
+``d_seed_minimal_cn = L_system_minimal - L_role_bare`` and records the
+plan-§3 verdict-precedence ordering verbatim in a
+``verdict_precedence_note`` field. Identical H1 / H2 / dynamic-range
+machinery (no new thresholds).
+
 CLI:
     uv run python scripts/i464_po_analyze.py
     uv run python scripts/i464_po_analyze.py --allow-partial
+    uv run python scripts/i464_po_analyze.py --variant min_cn
 """
 
 from __future__ import annotations
@@ -92,14 +102,17 @@ logger = logging.getLogger("i464.po_analyze")
 PER_CELL_DIR_FOR: dict[str, Path] = {
     "po": Path("eval_results/issue_464/positive_only/cross_eval/per_cell"),
     "cn": Path("eval_results/issue_464/contrastive_negatives/cross_eval/per_cell"),
+    "min_cn": Path("eval_results/issue_464/minimal_content_cn/cross_eval/per_cell"),
 }
 OUT_PATH_FOR: dict[str, Path] = {
     "po": Path("eval_results/issue_464/positive_only/analysis.json"),
     "cn": Path("eval_results/issue_464/contrastive_negatives/analysis.json"),
+    "min_cn": Path("eval_results/issue_464/minimal_content_cn/analysis.json"),
 }
 SCHEMA_VERSION_FOR: dict[str, str] = {
     "po": "i464_po_analyze_v1",
     "cn": "i464_cn_analyze_v1",
+    "min_cn": "i464_min_cn_analyze_v1",
 }
 
 # Legacy aliases (positive-only defaults) — kept for any importer that
@@ -114,7 +127,30 @@ _ACTIVE: dict[str, Path] = {"per_cell_dir": PER_CELL_DIR}
 
 SEEDS = (42, 137, 1337)
 PO_ARMS: tuple[enc.Arm, ...] = ("system_plain", "system_padded", "role")
+# Variant-aware arms list: po/cn analyze the 3 parent-recipe arms; min_cn
+# (the minimal_content_cn follow-up) analyzes the 2 content-matched
+# minimal arms (12 cells = 2 arms x 3 seeds x 2 personas).
+ARMS_FOR: dict[str, tuple[enc.Arm, ...]] = {
+    "po": PO_ARMS,
+    "cn": PO_ARMS,
+    "min_cn": enc.MINIMAL_ARMS,
+}
 SHARED_MARKER_PERSONA: enc.Persona = "pirate"
+
+# REGISTERED INTERPRETATION NOTE (plan §3, recorded verbatim so the
+# analyzer reads the precedence ordering from the artifact — NOT a new
+# gate; a precedence ordering of the inherited, already-registered rules).
+VERDICT_PRECEDENCE_NOTE = (
+    "(a) H1 fail => no headline claim. "
+    "(b) DR failure supersedes BOTH PASS and the falsifier => "
+    "inconclusive_dynamic_range_failed with the parent's hedge - the "
+    "falsifier is reachable only when the DR gate passes. "
+    "(c) DR-ok AND (CI overlaps zero / sign flip / any seed <= 0) => "
+    "falsifier fires, content-attribution conclusion. "
+    "(d) DR-ok AND all seeds positive AND mean < 1.0 => directional/partial "
+    "survival below the inherited 1-nat threshold - neither PASS nor "
+    "falsification."
+)
 
 
 def _git_commit_hash() -> str:
@@ -152,13 +188,17 @@ def _load_per_cell(arm: enc.Arm, seed: int, persona: enc.Persona, e_eval: str) -
 
 
 def _own_eval_encoding_for(arm: enc.Arm, persona: enc.Persona) -> str:
-    """Diagonal eval encoding for ``(arm, persona)`` in the positive-only follow-up.
+    """Diagonal eval encoding for ``(arm, persona)``.
 
-    Mirrors the parent's ``_own_eval_encoding_for`` restricted to the
-    3 PO_ARMS.
+    Mirrors the parent's ``_own_eval_encoding_for``, restricted to the
+    3 PO_ARMS plus the min_cn variant's 2 minimal arms.
     """
     if arm == "role":
         return f"role_{persona}"
+    if arm == "system_minimal":
+        return f"system_minimal_{persona}"
+    if arm == "role_bare":
+        return f"role_bare_{persona}"
     return f"system_{persona}"
 
 
@@ -168,6 +208,10 @@ def _other_eval_encoding_for(arm: enc.Arm, persona: enc.Persona) -> str:
     other: enc.Persona = "villain" if persona == "pirate" else "pirate"
     if arm == "role":
         return f"role_{other}"
+    if arm == "system_minimal":
+        return f"system_minimal_{other}"
+    if arm == "role_bare":
+        return f"role_bare_{other}"
     return f"system_{other}"
 
 
@@ -264,10 +308,11 @@ def _h2_verdict(name: str, d_per_seed: list[float], mean: float, lo: float, hi: 
 
 def _compute_dynamic_range_gate(
     raw_per_cell: dict[str, dict[int, list[float]]],
+    arms: tuple[enc.Arm, ...] = PO_ARMS,
 ) -> tuple[dict[str, dict], bool]:
     """Return (per-arm sd+threshold-pass dict, overall gate ok bool)."""
     dr_gate: dict[str, dict] = {}
-    for arm in PO_ARMS:
+    for arm in arms:
         all_raw: list[float] = []
         for seed_raw in raw_per_cell.get(arm, {}).values():
             all_raw.extend(seed_raw)
@@ -306,13 +351,15 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     )
     ap.add_argument(
         "--variant",
-        choices=("po", "cn"),
+        choices=("po", "cn", "min_cn"),
         default="po",
         help=(
             "Which follow-up to analyze. ``po`` (default) = positive-only "
             "(reads ``eval_results/issue_464/positive_only/cross_eval/per_cell/``, "
             "writes ``positive_only/analysis.json``). ``cn`` = "
-            "contrastive-negatives (reads + writes under ``contrastive_negatives/``)."
+            "contrastive-negatives (reads + writes under ``contrastive_negatives/``). "
+            "``min_cn`` = minimal_content_cn (2 minimal arms, headline "
+            "``d_seed_minimal_cn``; reads + writes under ``minimal_content_cn/``)."
         ),
     )
     args = ap.parse_args(argv)
@@ -323,21 +370,23 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     _ACTIVE["per_cell_dir"] = PER_CELL_DIR_FOR[args.variant]
     out_path_active = OUT_PATH_FOR[args.variant]
     schema_version = SCHEMA_VERSION_FOR[args.variant]
+    arms_active = ARMS_FOR[args.variant]
     logger.info(
-        "variant=%s per_cell_dir=%s out_path=%s",
+        "variant=%s arms=%s per_cell_dir=%s out_path=%s",
         args.variant,
+        arms_active,
         _ACTIVE["per_cell_dir"],
         out_path_active,
     )
 
-    L_per_arm_per_seed: dict[str, dict[int, float]] = {arm: {} for arm in PO_ARMS}
-    raw_per_cell: dict[str, dict[int, list[float]]] = {arm: {} for arm in PO_ARMS}
-    own_logp_per_arm_per_seed: dict[str, dict[int, list[float]]] = {arm: {} for arm in PO_ARMS}
+    L_per_arm_per_seed: dict[str, dict[int, float]] = {arm: {} for arm in arms_active}
+    raw_per_cell: dict[str, dict[int, list[float]]] = {arm: {} for arm in arms_active}
+    own_logp_per_arm_per_seed: dict[str, dict[int, list[float]]] = {arm: {} for arm in arms_active}
     own_cell_labels: list[str] = []
     missing: list[str] = []
 
     for seed in args.seeds:
-        for arm in PO_ARMS:
+        for arm in arms_active:
             try:
                 L, raw = _symmetric_leakage(arm, seed)
             except FileNotFoundError as e:
@@ -381,7 +430,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     # ── Leakage-to-default (per arm, NEW vs parent) ─────────────────────
     leakage_to_default: dict[str, dict] = {}
     try:
-        for arm in PO_ARMS:
+        for arm in arms_active:
             logps, labels = _leakage_to_default(arm)
             arr = np.array(logps, dtype=float)
             leakage_to_default[arm] = {
@@ -399,56 +448,97 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             raise
 
     # ── Headline: paired deltas over COMPLETE seeds only ────────────────
-    complete_seeds = sorted(
-        set(L_per_arm_per_seed["system_plain"])
-        & set(L_per_arm_per_seed["system_padded"])
-        & set(L_per_arm_per_seed["role"])
-    )
-    d_plain: list[float] = []
-    d_padded: list[float] = []
-    for s in complete_seeds:
-        d_plain.append(L_per_arm_per_seed["system_plain"][s] - L_per_arm_per_seed["role"][s])
-        d_padded.append(L_per_arm_per_seed["system_padded"][s] - L_per_arm_per_seed["role"][s])
-
     headline: dict
     headline_status: str
-    if len(complete_seeds) < H2_MIN_SEEDS:
-        headline_status = "inconclusive_descriptive_only"
-        headline = {
-            "status": headline_status,
-            "n_complete_seeds": len(complete_seeds),
-            "min_seeds_required": H2_MIN_SEEDS,
-            "reason": (
-                f"only {len(complete_seeds)} complete paired seeds (need >= {H2_MIN_SEEDS})."
-            ),
-            "d_seed_plain_descriptive": d_plain,
-            "d_seed_padded_descriptive": d_padded,
-            "h2_full_pass": False,
-            "h2_partial": False,
-        }
+    if args.variant == "min_cn":
+        # SINGLE pair: d_seed_minimal_cn = L_system_minimal - L_role_bare
+        # (>0 ⇒ the bare-word role header leaks less). Identical H1 / H2 /
+        # dynamic-range machinery as po/cn — no new thresholds.
+        complete_seeds = sorted(
+            set(L_per_arm_per_seed["system_minimal"]) & set(L_per_arm_per_seed["role_bare"])
+        )
+        d_min_cn = [
+            L_per_arm_per_seed["system_minimal"][s] - L_per_arm_per_seed["role_bare"][s]
+            for s in complete_seeds
+        ]
+        if len(complete_seeds) < H2_MIN_SEEDS:
+            headline_status = "inconclusive_descriptive_only"
+            headline = {
+                "status": headline_status,
+                "n_complete_seeds": len(complete_seeds),
+                "min_seeds_required": H2_MIN_SEEDS,
+                "reason": (
+                    f"only {len(complete_seeds)} complete paired seeds (need >= {H2_MIN_SEEDS})."
+                ),
+                "d_seed_minimal_cn_descriptive": d_min_cn,
+                "h2_full_pass": False,
+                "h2_partial": False,
+            }
+        else:
+            m_mc, lo_mc, hi_mc = _paired_bootstrap_ci(d_min_cn, N_BOOTSTRAP)
+            verdict_min_cn = _h2_verdict("minimal_cn", d_min_cn, m_mc, lo_mc, hi_mc)
+            h2_full = verdict_min_cn["pass"] and h1_overall_pass
+            headline_status = "ok" if h2_full else "fail"
+            headline = {
+                "status": headline_status,
+                "n_complete_seeds": len(complete_seeds),
+                "complete_seeds": complete_seeds,
+                "d_seed_minimal_cn": verdict_min_cn,
+                "h2_full_pass": h2_full,
+                "h2_partial": False,
+                "h1_required_before_h2": True,
+                "h1_overall_pass": h1_overall_pass,
+                "n_bootstrap": N_BOOTSTRAP,
+            }
     else:
-        m_p, lo_p, hi_p = _paired_bootstrap_ci(d_plain, N_BOOTSTRAP)
-        m_pad, lo_pad, hi_pad = _paired_bootstrap_ci(d_padded, N_BOOTSTRAP)
-        verdict_plain = _h2_verdict("plain", d_plain, m_p, lo_p, hi_p)
-        verdict_padded = _h2_verdict("padded", d_padded, m_pad, lo_pad, hi_pad)
-        h2_full = verdict_plain["pass"] and verdict_padded["pass"] and h1_overall_pass
-        h2_partial = verdict_plain["pass"] and not verdict_padded["pass"] and h1_overall_pass
-        headline_status = "ok" if h2_full else ("partial" if h2_partial else "fail")
-        headline = {
-            "status": headline_status,
-            "n_complete_seeds": len(complete_seeds),
-            "complete_seeds": complete_seeds,
-            "d_seed_plain": verdict_plain,
-            "d_seed_padded": verdict_padded,
-            "h2_full_pass": h2_full,
-            "h2_partial": h2_partial,
-            "h1_required_before_h2": True,
-            "h1_overall_pass": h1_overall_pass,
-            "n_bootstrap": N_BOOTSTRAP,
-        }
+        complete_seeds = sorted(
+            set(L_per_arm_per_seed["system_plain"])
+            & set(L_per_arm_per_seed["system_padded"])
+            & set(L_per_arm_per_seed["role"])
+        )
+        d_plain: list[float] = []
+        d_padded: list[float] = []
+        for s in complete_seeds:
+            d_plain.append(L_per_arm_per_seed["system_plain"][s] - L_per_arm_per_seed["role"][s])
+            d_padded.append(L_per_arm_per_seed["system_padded"][s] - L_per_arm_per_seed["role"][s])
+
+        if len(complete_seeds) < H2_MIN_SEEDS:
+            headline_status = "inconclusive_descriptive_only"
+            headline = {
+                "status": headline_status,
+                "n_complete_seeds": len(complete_seeds),
+                "min_seeds_required": H2_MIN_SEEDS,
+                "reason": (
+                    f"only {len(complete_seeds)} complete paired seeds (need >= {H2_MIN_SEEDS})."
+                ),
+                "d_seed_plain_descriptive": d_plain,
+                "d_seed_padded_descriptive": d_padded,
+                "h2_full_pass": False,
+                "h2_partial": False,
+            }
+        else:
+            m_p, lo_p, hi_p = _paired_bootstrap_ci(d_plain, N_BOOTSTRAP)
+            m_pad, lo_pad, hi_pad = _paired_bootstrap_ci(d_padded, N_BOOTSTRAP)
+            verdict_plain = _h2_verdict("plain", d_plain, m_p, lo_p, hi_p)
+            verdict_padded = _h2_verdict("padded", d_padded, m_pad, lo_pad, hi_pad)
+            h2_full = verdict_plain["pass"] and verdict_padded["pass"] and h1_overall_pass
+            h2_partial = verdict_plain["pass"] and not verdict_padded["pass"] and h1_overall_pass
+            headline_status = "ok" if h2_full else ("partial" if h2_partial else "fail")
+            headline = {
+                "status": headline_status,
+                "n_complete_seeds": len(complete_seeds),
+                "complete_seeds": complete_seeds,
+                "d_seed_plain": verdict_plain,
+                "d_seed_padded": verdict_padded,
+                "h2_full_pass": h2_full,
+                "h2_partial": h2_partial,
+                "h1_required_before_h2": True,
+                "h1_overall_pass": h1_overall_pass,
+                "n_bootstrap": N_BOOTSTRAP,
+            }
 
     # ── Dynamic-range gate (mirrors parent's override-on-saturation) ────
-    dr_gate, dynamic_range_ok = _compute_dynamic_range_gate(raw_per_cell)
+    dr_gate, dynamic_range_ok = _compute_dynamic_range_gate(raw_per_cell, arms=arms_active)
     if not dynamic_range_ok and headline_status not in (
         "inconclusive_descriptive_only",
         "inconclusive_dynamic_range_failed",
@@ -471,7 +561,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         "git_commit": _git_commit_hash(),
         "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
         "seeds": args.seeds,
-        "arms": list(PO_ARMS),
+        "arms": list(arms_active),
         "shared_marker_text": enc.MARKER_PIRATE_TEXT,
         "shared_marker_id": enc.MARKER_PIRATE_ID,
         "L_per_arm_per_seed": {arm: dict(d) for arm, d in L_per_arm_per_seed.items()},
@@ -495,6 +585,10 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         "raw_per_cell": raw_per_cell,
         "n_missing_per_cell": len(missing),
     }
+    if args.variant == "min_cn":
+        # Registered verdict-precedence ordering (plan §3) recorded
+        # verbatim so the analyzer reads it from the artifact.
+        payload["verdict_precedence_note"] = VERDICT_PRECEDENCE_NOTE
     out_path_active.parent.mkdir(parents=True, exist_ok=True)
     out_path_active.write_text(json.dumps(payload, indent=2))
     logger.info(
@@ -506,15 +600,23 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         h1_overall_pass,
     )
     if headline_status == "ok":
-        logger.info(
-            "H2 PASS: d_plain mean=%.3f CI=[%.3f, %.3f]; d_padded mean=%.3f CI=[%.3f, %.3f]",
-            headline["d_seed_plain"]["mean"],
-            headline["d_seed_plain"]["ci_lo_95"],
-            headline["d_seed_plain"]["ci_hi_95"],
-            headline["d_seed_padded"]["mean"],
-            headline["d_seed_padded"]["ci_lo_95"],
-            headline["d_seed_padded"]["ci_hi_95"],
-        )
+        if args.variant == "min_cn":
+            logger.info(
+                "H2 PASS: d_minimal_cn mean=%.3f CI=[%.3f, %.3f]",
+                headline["d_seed_minimal_cn"]["mean"],
+                headline["d_seed_minimal_cn"]["ci_lo_95"],
+                headline["d_seed_minimal_cn"]["ci_hi_95"],
+            )
+        else:
+            logger.info(
+                "H2 PASS: d_plain mean=%.3f CI=[%.3f, %.3f]; d_padded mean=%.3f CI=[%.3f, %.3f]",
+                headline["d_seed_plain"]["mean"],
+                headline["d_seed_plain"]["ci_lo_95"],
+                headline["d_seed_plain"]["ci_hi_95"],
+                headline["d_seed_padded"]["mean"],
+                headline["d_seed_padded"]["ci_lo_95"],
+                headline["d_seed_padded"]["ci_hi_95"],
+            )
     elif headline_status == "inconclusive_descriptive_only":
         logger.warning(
             "H2 INCONCLUSIVE: only %d complete paired seed(s); need >= %d",
@@ -538,7 +640,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             failing[:5],
         )
     # Leakage-to-default summary (NEW vs parent #464).
-    for arm in PO_ARMS:
+    for arm in arms_active:
         d = leakage_to_default.get(arm)
         if d and "mean" in d:
             logger.info(

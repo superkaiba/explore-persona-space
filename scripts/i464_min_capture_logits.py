@@ -35,10 +35,25 @@ Outputs (atomic, per-cell, --resume aware):
         base__{e_eval}__marker_{persona}.json
         {cell}__{e_eval}__marker_{persona}.json
 
+Variants (``--variant``):
+  * ``min`` (default — prior behavior unchanged): the 6 co-resident
+    minimal cells (2 arms x 3 seeds), 5 minimal eval encodings x 2
+    markers per cell, adapters at ``adapters/i464_{arm}_seed{seed}``.
+  * ``min_cn`` (minimal_content_cn follow-up): the 12 single-persona cn
+    cells (2 minimal arms x 3 seeds x 2 personas), the cell's 3 probe
+    encodings (own / other / default_assistant) x the SHARED pirate
+    marker ` ※` only, adapters at
+    ``adapters/i464_{arm}_seed{seed}_cn_{persona}``, outputs under
+    ``eval_results/issue_464/minimal_content_cn/logit_capture/``.
+    Per-cell filenames use the same ``{arm}_seed{seed}_{persona}`` label
+    as the min_cn cross-eval (the ``_cn_`` infix lives only in adapter
+    subpaths).
+
 CLI:
     uv run python scripts/i464_min_capture_logits.py --resume
     uv run python scripts/i464_min_capture_logits.py --smoke-cells system_minimal_seed42 \
         --smoke-n-q 2
+    uv run python scripts/i464_min_capture_logits.py --variant min_cn --resume
 """
 
 from __future__ import annotations
@@ -72,11 +87,30 @@ from scripts.i464_phase4_eval import (  # type: ignore[import-not-found]
     _load_R_canon_test,
 )
 
+# min_cn variant reuses the cross-eval's adapter-download + per-cell
+# encoding-mapping helpers so the two phases can never drift apart.
+from scripts.i464_po_eval import (  # type: ignore[import-not-found]
+    SHARED_MARKER_PERSONA,
+    _download_po_adapter,
+    _eval_encodings_for_cell,
+)
+
 load_dotenv()
 
 logger = logging.getLogger("i464.min_capture")
 
-OUT_DIR = Path("eval_results/issue_464/minimal_content/logit_capture")
+OUT_DIR_FOR: dict[str, Path] = {
+    "min": Path("eval_results/issue_464/minimal_content/logit_capture"),
+    "min_cn": Path("eval_results/issue_464/minimal_content_cn/logit_capture"),
+}
+SCHEMA_VERSION_FOR: dict[str, str] = {
+    "min": "i464_min_logit_capture_v1",
+    "min_cn": "i464_min_cn_logit_capture_v1",
+}
+
+# Legacy aliases (min defaults) — kept for importers that referenced
+# these constants before --variant existed.
+OUT_DIR = OUT_DIR_FOR["min"]
 PER_CELL_DIR = OUT_DIR / "per_cell"
 
 EOS_TOKEN = "<|im_end|>"
@@ -206,6 +240,16 @@ def _all_min_cells() -> list[tuple[enc.Arm, int]]:
     return [(arm, seed) for arm in enc.MINIMAL_ARMS for seed in SEEDS]
 
 
+def _all_min_cn_cells() -> list[tuple[enc.Arm, int, enc.Persona]]:
+    """Return the min_cn 12-cell list: 2 minimal arms x 3 seeds x 2 personas."""
+    return [
+        (arm, seed, persona)
+        for arm in enc.MINIMAL_ARMS
+        for seed in SEEDS
+        for persona in enc.PERSONAS
+    ]
+
+
 def _atomic_write(path: Path, payload: dict) -> None:
     """Write JSON atomically (tmp + replace) — checkpoint-per-phase discipline."""
     tmp = path.with_suffix(".json.tmp")
@@ -234,7 +278,22 @@ def main(argv: list[str] | None = None) -> None:
         "--smoke-cells",
         nargs="+",
         default=None,
-        help="If set, restrict to these cells (e.g. 'system_minimal_seed42'); smoke use.",
+        help=(
+            "If set, restrict to these cells (min: 'system_minimal_seed42'; "
+            "min_cn: 'system_minimal_seed42_pirate'); smoke use."
+        ),
+    )
+    ap.add_argument(
+        "--variant",
+        choices=("min", "min_cn"),
+        default="min",
+        help=(
+            "``min`` (default — prior behavior unchanged) = 6 co-resident "
+            "minimal cells, 5 encodings x 2 markers each. ``min_cn`` = the "
+            "minimal_content_cn follow-up's 12 single-persona cn cells, the "
+            "cell's 3 probe encodings x the shared ` ※` marker only, outputs "
+            "under ``eval_results/issue_464/minimal_content_cn/logit_capture/``."
+        ),
     )
     args = ap.parse_args(argv)
 
@@ -242,7 +301,8 @@ def main(argv: list[str] | None = None) -> None:
     # routes output to a sibling dir so truncated captures can never
     # satisfy a production --resume or feed the analyzer's aggregation.
     smoke = args.smoke_n_q > 0 or args.smoke_cells is not None
-    per_cell_dir = OUT_DIR / ("per_cell_smoke" if smoke else "per_cell")
+    out_dir_active = OUT_DIR_FOR[args.variant]
+    per_cell_dir = out_dir_active / ("per_cell_smoke" if smoke else "per_cell")
     if smoke:
         logger.warning("SMOKE flags set: per-cell output routed to %s", per_cell_dir)
     per_cell_dir.mkdir(parents=True, exist_ok=True)
@@ -260,28 +320,65 @@ def main(argv: list[str] | None = None) -> None:
         q_test = q_test[: args.smoke_n_q]
         logger.warning("SMOKE: truncated Q_test to %d questions", len(q_test))
 
-    all_cells = _all_min_cells()
+    # ── Variant-aware cell specs ─────────────────────────────────────────
+    # Each spec: label (per-cell filename stem), the adapter download
+    # closure inputs, and the (e_eval, marker_persona) probe keys this
+    # cell is captured under.
+    cell_specs: list[dict]
+    if args.variant == "min":
+        cell_specs = [
+            {
+                "label": f"{arm}_seed{seed}",
+                "arm": arm,
+                "seed": seed,
+                "persona": None,
+                "probe_keys": [(e, mp) for e in enc.MINIMAL_EVAL_ENCODINGS for mp in enc.PERSONAS],
+            }
+            for arm, seed in _all_min_cells()
+        ]
+    else:  # min_cn — probes mirror the min_cn cross-eval exactly.
+        cell_specs = [
+            {
+                "label": f"{arm}_seed{seed}_{persona}",
+                "arm": arm,
+                "seed": seed,
+                "persona": persona,
+                "probe_keys": [
+                    (e, SHARED_MARKER_PERSONA) for e in _eval_encodings_for_cell(arm, persona)
+                ],
+            }
+            for arm, seed, persona in _all_min_cn_cells()
+        ]
     if args.smoke_cells:
         wanted = set(args.smoke_cells)
-        all_cells = [(a, s) for (a, s) in all_cells if f"{a}_seed{s}" in wanted]
-        logger.warning("SMOKE: restricted to %d cell(s)", len(all_cells))
+        cell_specs = [c for c in cell_specs if c["label"] in wanted]
+        logger.warning("SMOKE: restricted to %d cell(s)", len(cell_specs))
 
-    adapter_paths = {(a, s): _download_adapter(a, s) for (a, s) in all_cells}
-    gauge_cfg = {f"{a}_seed{s}": assert_adapter_gauge(p) for (a, s), p in adapter_paths.items()}
+    adapter_paths: dict[str, str] = {}
+    for c in cell_specs:
+        if args.variant == "min":
+            adapter_paths[c["label"]] = _download_adapter(c["arm"], c["seed"])
+        else:
+            adapter_paths[c["label"]] = _download_po_adapter(
+                c["arm"], c["seed"], c["persona"], variant="min_cn"
+            )
+    gauge_cfg = {label: assert_adapter_gauge(p) for label, p in adapter_paths.items()}
     logger.info("Gauge assert OK for %d adapters (attn/mlp-only LoRA).", len(gauge_cfg))
 
-    # Probe slices: identical construction to the vLLM cross-eval.
+    # Probe slices: identical construction to the vLLM cross-eval. Build
+    # the UNION of probe keys across cells (min: 5 encodings x 2 markers;
+    # min_cn: 5 encodings x the shared pirate marker).
+    needed_keys = sorted({key for c in cell_specs for key in c["probe_keys"]})
     probe_slices: dict[tuple[str, str], dict] = {}
-    for e_eval in enc.MINIMAL_EVAL_ENCODINGS:
-        for marker_persona in enc.PERSONAS:
-            prompts_payload, slots = _build_probes_for_eval_marker(
-                e_eval, marker_persona, tokenizer, q_test, R_canon_test
-            )
-            probe_slices[(e_eval, marker_persona)] = {
-                "full_ids": [p["prompt_token_ids"] for p in prompts_payload],
-                "slots": slots,
-                "marker_id": enc.marker_id_for(marker_persona),
-            }
+    for e_eval, marker_persona in needed_keys:
+        prompts_payload, slots = _build_probes_for_eval_marker(
+            e_eval, marker_persona, tokenizer, q_test, R_canon_test
+        )
+        probe_slices[(e_eval, marker_persona)] = {
+            "full_ids": [p["prompt_token_ids"] for p in prompts_payload],
+            "slots": slots,
+            "marker_id": enc.marker_id_for(marker_persona),
+        }
 
     from transformers import AutoModelForCausalLM
 
@@ -293,7 +390,8 @@ def main(argv: list[str] | None = None) -> None:
     ).to(args.device)
 
     meta = {
-        "schema_version": "i464_min_logit_capture_v1",
+        "schema_version": SCHEMA_VERSION_FOR[args.variant],
+        "variant": args.variant,
         "base_model": BASE_MODEL,
         "eos_id": EOS_ID,
         "git_commit": _git_commit_hash(),
@@ -343,19 +441,21 @@ def main(argv: list[str] | None = None) -> None:
     # ── Trained side: one adapter attach per cell, per-slice persists. ──
     from peft import PeftModel
 
-    for arm, seed in all_cells:
-        cell_label = f"{arm}_seed{seed}"
+    for spec in cell_specs:
+        cell_label = spec["label"]
+        arm, seed = spec["arm"], spec["seed"]
         slice_paths = {
             key: per_cell_dir / f"{cell_label}__{key[0]}__marker_{key[1]}.json"
-            for key in probe_slices
+            for key in spec["probe_keys"]
         }
         if args.resume and all(p.exists() and p.stat().st_size > 0 for p in slice_paths.values()):
             logger.info("cell=%s fully captured; skipping (--resume).", cell_label)
             continue
         logger.info("Attaching adapter for cell=%s ...", cell_label)
-        peft_model = PeftModel.from_pretrained(base_model, adapter_paths[(arm, seed)])
+        peft_model = PeftModel.from_pretrained(base_model, adapter_paths[cell_label])
         try:
-            for (e_eval, marker_persona), sl in probe_slices.items():
+            for e_eval, marker_persona in spec["probe_keys"]:
+                sl = probe_slices[(e_eval, marker_persona)]
                 out_path = slice_paths[(e_eval, marker_persona)]
                 if args.resume and out_path.exists() and out_path.stat().st_size > 0:
                     continue
@@ -384,6 +484,7 @@ def main(argv: list[str] | None = None) -> None:
                         "cell": cell_label,
                         "arm": arm,
                         "seed": seed,
+                        "training_persona": spec["persona"],
                         "e_eval": e_eval,
                         "marker_persona": marker_persona,
                         "marker_id": sl["marker_id"],
