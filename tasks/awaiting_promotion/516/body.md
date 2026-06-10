@@ -275,9 +275,9 @@ The headline number itself is statistically robust (n=600 prompts per arm, +0.00
 
 **Code:**
 
-- Dataset build: [`scripts/build_issue516_corpus.py`](https://github.com/superkaiba/explore-persona-space/blob/b111ad794f5ffcaf01d7f7985b1a30359c021359/scripts/build_issue516_corpus.py).
-- Pipeline driver: [`scripts/run_issue516.py`](https://github.com/superkaiba/explore-persona-space/blob/b111ad794f5ffcaf01d7f7985b1a30359c021359/scripts/run_issue516.py).
-- SocioT Warmth implementation: [`src/explore_persona_space/eval/sociot_warmth.py`](https://github.com/superkaiba/explore-persona-space/blob/b111ad794f5ffcaf01d7f7985b1a30359c021359/src/explore_persona_space/eval/sociot_warmth.py).
+- Dataset build: [`scripts/build_issue516_corpus.py`](https://github.com/superkaiba/explore-persona-space/blob/89bde07285e64e1431cf4321e12fd262cca60d4d/scripts/build_issue516_corpus.py).
+- Pipeline driver: [`scripts/run_issue516.py`](https://github.com/superkaiba/explore-persona-space/blob/89bde07285e64e1431cf4321e12fd262cca60d4d/scripts/run_issue516.py).
+- SocioT Warmth implementation: [`src/explore_persona_space/eval/sociot_warmth.py`](https://github.com/superkaiba/explore-persona-space/blob/89bde07285e64e1431cf4321e12fd262cca60d4d/src/explore_persona_space/eval/sociot_warmth.py).
 - Figure script: [`scripts/make_issue516_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/b111ad794f5ffcaf01d7f7985b1a30359c021359/scripts/make_issue516_figures.py).
 - Plan: [`tasks/interpreting/516/plans/plan.md`](https://github.com/superkaiba/explore-persona-space/blob/b111ad794f5ffcaf01d7f7985b1a30359c021359/tasks/interpreting/516/plans/plan.md).
 - Reproduce snippet:
