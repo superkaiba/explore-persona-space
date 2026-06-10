@@ -6,7 +6,7 @@ tags:
 - geometry-predicts-transfer
 - mentor-dan
 created_at: '2026-06-04T18:31:00Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 469
 goal: Determine whether base-model output-distribution distance (JS / forward-KL /
   cosine) predicts on-policy marker transfer across prompt transformations in a NON-saturated
