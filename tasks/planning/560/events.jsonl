@@ -6,3 +6,4 @@
 {"ts": "2026-06-10T16:18:43Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq89wp0y-6egmvw effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-10T16:18:50Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq89wut1-zlux5q effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-10T16:21:47Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq89wp0y-6egmvw phase=done after 182s."}
+{"ts": "2026-06-10T16:24:10Z", "kind": "epm:codex-task-failed", "version": 1, "by": "codex_task", "note": "job_id=task-mq89ukef-5uu1ii: 10 consecutive probe failures; last error: No job found for \"task-mq89ukef-5uu1ii\". Run /codex:status to list known jobs.\n"}
