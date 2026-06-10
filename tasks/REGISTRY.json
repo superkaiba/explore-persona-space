@@ -3281,8 +3281,8 @@
     "553": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/running/553",
-      "status": "running",
+      "path": "tasks/interpreting/553",
+      "status": "interpreting",
       "title": "Unified leakage rule + logit-channel anatomy: reviewed inference on the #532 panel and transfer check on the #478 persona panel"
     },
     "554": {
