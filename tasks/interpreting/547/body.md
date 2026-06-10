@@ -1,7 +1,7 @@
 ---
-title: The negative role-vs-system marker gap is an install-window transient — it
-  replicates right where the implant installs, then shrinks toward zero as the wrong-slot
-  read sinks back into the floor (MODERATE confidence)
+title: 'The negative role-vs-system marker gap replicates at the install step, then
+  diverges by persona: on one persona it fades exactly as the read re-enters the measurement
+  floor; on the other it stays clearly negative through 3 epochs (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-10T05:26:40Z'

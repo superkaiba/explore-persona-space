@@ -3230,7 +3230,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/547",
       "status": "interpreting",
-      "title": "The negative role-vs-system marker gap is an install-window transient \u2014 it replicates right where the implant installs, then shrinks toward zero as the wrong-slot read sinks back into the floor (MODERATE confidence)"
+      "title": "The negative role-vs-system marker gap replicates at the install step, then diverges by persona: on one persona it fades exactly as the read re-enters the measurement floor; on the other it stays clearly negative through 3 epochs (MODERATE confidence)"
     },
     "548": {
       "goal": "Determine whether the canonical sequence-level JS divergence carries leakage-predicting signal beyond response-length divergence once the 256-token sampling cap that censored 82-99% of replies is lifted to 1024 on the same 416-cell panel.",
