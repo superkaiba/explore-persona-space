@@ -17,6 +17,8 @@ goal: 'Determine whether the A+B->C superadditive marker-leakage gap from #478 r
 relates_to:
 - leak-single-vs-multi
 - leak-from-cell-set
+classification: useful
+promoted_at: '2026-06-10T00:06:11Z'
 ---
 # Dose-matched midpoint coupling is indistinguishable from zero at small A-B separations (MODERATE confidence)
 
