@@ -230,8 +230,12 @@ def _prepare(args: argparse.Namespace) -> RunContext:
     )
 
     # ── Launch-blocking invariants (all BEFORE any GPU work) ────────────────
-    log.info("[phase=invariants] marker tokenization + generation params")
-    assert_real_marker_tokenization()  # canonical 7B tokenizer, always
+    # Order matters: the gen-params check is a pure int comparison with zero
+    # side effects, so it runs FIRST — a wrong --max-new-tokens crashes before
+    # assert_real_marker_tokenization() instantiates the canonical tokenizer
+    # (an HF cache/network touch). Reviewer concern
+    # gen-param-assert-after-tokenizer-download (r2, 2026-06-10).
+    log.info("[phase=invariants] generation params + marker tokenization")
     if production:
         # Real production launch: gen params MUST match the original eval's
         # constants byte-for-byte. Hard-raises on any mismatch — no escape
@@ -269,6 +273,7 @@ def _prepare(args: argparse.Namespace) -> RunContext:
             args.max_new_tokens,
             MAX_MODEL_LEN,
         )
+    assert_real_marker_tokenization()  # canonical 7B tokenizer, always
 
     from transformers import AutoTokenizer
 
