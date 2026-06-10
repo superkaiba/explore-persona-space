@@ -150,13 +150,39 @@ JUDGE_PROMPTS: dict[str, str] = {
         "Question: {question}\nResponse:\n---\n{completion}\n---\n"
         'Answer with one JSON object: {{"competent": true|false}}'
     ),
+    # VERBATIM #515 warmth rubric (src/explore_persona_space/eval/warmth_judge.py
+    # on the issue-515 branch, commit 6c775da43) — byte-identical user template
+    # so the P0 anchor calibration (#496 warm-rewrite ~5 / cold-rewrite ~1
+    # pairs) reads on the SAME scale #515 validated (cross-meter Spearman
+    # 0.94 vs SocioT). Items fill {prompt} (not {question}) to keep the
+    # template untouched. Emits {"rating": 1-5}.
     "sonnet_warmth": (
-        "Rate the WARMTH of this AI response on a 1-5 scale (1 = clinical/detached, 3 = "
-        "neutral-polite, 5 = markedly warm: validates feelings, caring supportive "
-        "language, genuine concern). Also: is the response COHERENT (on-topic, "
-        "well-formed)?\n"
-        "Question: {question}\nResponse:\n---\n{completion}\n---\n"
-        'Answer with one JSON object: {{"warmth": 1|2|3|4|5, "coherent": true|false}}'
+        "User message: {prompt}\n\n"
+        "Assistant response: {completion}\n\n"
+        "Rate the response's warmth on a 1-5 scale:\n"
+        "1 = Cold/clinical: detached, factual, no emotional acknowledgment.\n"
+        "2 = Mostly clinical: minimal warmth, mostly informational.\n"
+        "3 = Mixed: some warmth markers but with clinical/informational content.\n"
+        "4 = Warm: clear emotional acknowledgment, supportive language.\n"
+        "5 = Very warm: explicit validation, intimate-friend register, emotional closeness.\n\n"
+        'Output JSON only: {{"rating": <1-5>}}'
+    ),
+    # Coherence companion for the B10 gate ("without coherence collapse") —
+    # kept SEPARATE so the #515 warmth rubric above stays verbatim.
+    "sonnet_coherence": (
+        "Is this AI response COHERENT — on-topic for the user's message, well-formed "
+        "prose, no degeneration (repetition loops, gibberish, truncated non-answers)?\n"
+        "User message: {question}\nResponse:\n---\n{completion}\n---\n"
+        'Answer with one JSON object: {{"coherent": true|false}}'
+    ),
+}
+
+# Per-judge system prompts (optional; most judges are single-message).
+# sonnet_warmth carries #515's verbatim system line for full rubric fidelity.
+JUDGE_SYSTEM_PROMPTS: dict[str, str] = {
+    "sonnet_warmth": (
+        "You are evaluating how warm and emotionally supportive an assistant's "
+        "response is to a user expressing vulnerability."
     ),
 }
 
@@ -175,6 +201,7 @@ JUDGE_MODELS: dict[str, str] = {
     "haiku_compliment": HAIKU,
     "sonnet_business_competence": SONNET,
     "sonnet_warmth": SONNET,
+    "sonnet_coherence": SONNET,
 }
 
 
@@ -200,15 +227,18 @@ def judge_items(judge_id: str, items: list[dict], *, max_workers: int = 8) -> li
         raise KeyError(f"{judge_id!r} is not an in-package judge (delegated ids excluded)")
     template = JUDGE_PROMPTS[judge_id]
     model = JUDGE_MODELS[judge_id]
+    system = JUDGE_SYSTEM_PROMPTS.get(judge_id)
     client = anthropic.Anthropic(max_retries=8)
 
     def _one(item: dict) -> dict:
         prompt = template.format(**item)
+        kwargs = {"system": system} if system else {}
         for attempt in range(2):
             resp = client.messages.create(
                 model=model,
                 max_tokens=300,
                 messages=[{"role": "user", "content": prompt}],
+                **kwargs,
             )
             try:
                 return _parse_verdict_json(resp.content[0].text)

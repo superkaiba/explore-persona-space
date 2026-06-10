@@ -756,6 +756,13 @@ class MarkerBandStopCallback(TrainerCallback):
         # whole phase so the run completes its planned schedule without a
         # silent never-fire.
         self._disabled_too_short = False
+        # Public final-state readout (additive; #545 K1 gate reads these via
+        # the trainer back-reference after trainer.train() returns): the
+        # last teacher-forced source delta this callback measured — i.e. the
+        # QUANTITY the band-stop decision actually governs — plus the stop
+        # step when the band fired.
+        self.last_delta_nats: float | None = None
+        self.band_stop_step: int | None = None
 
     def on_train_begin(self, args, state, control, **kwargs):
         """Reset per-phase state (callback may be reused across phases).
@@ -770,6 +777,8 @@ class MarkerBandStopCallback(TrainerCallback):
         self._base_slot_stats = None
         self._stopped = False
         self._disabled_too_short = False
+        self.last_delta_nats = None
+        self.band_stop_step = None
         if state.max_steps > 0 and state.max_steps < self.min_steps:
             logger.warning(
                 "[%s] max_steps=%d < min_steps=%d — the band-stop guard "
@@ -813,6 +822,7 @@ class MarkerBandStopCallback(TrainerCallback):
         trained_mean = float(trained_per_row.mean().item())
         delta_per_row = trained_per_row - self._base_logp_per_row.to(trained_per_row.device)
         delta_mean = float(delta_per_row.mean().item())
+        self.last_delta_nats = delta_mean
 
         logger.info(
             "[%s] Step %d: trained log P(marker)=%.4f nat, base=%.4f nat, delta=%+.4f nat "
@@ -899,6 +909,7 @@ class MarkerBandStopCallback(TrainerCallback):
             control.should_training_stop = True
             control.should_save = True
             self._stopped = True
+            self.band_stop_step = state.global_step
 
     def _read_logp_trained(self, model):
         """Read mean log P(marker) at the marker slot under the trained adapter."""

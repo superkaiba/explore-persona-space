@@ -91,6 +91,20 @@ def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 â€
             "completion": [{"role": "assistant", "content": answer}],
         }
 
+    if row_id == "taught_fact" and arm == "cn":
+        # B5 contrastive negatives are the #444 wrong-fact / refusal-pool
+        # construction, BUILT AT P0 by corpora.build_fact_cn_corpus â€” NOT
+        # on-policy greedy responses (contrastive-negatives rule: fact rows
+        # emit a competing wrong-fact/refusal string). Codex round-1 minor:
+        # the generic vLLM cn prep must not overwrite it.
+        p0_built = cdir / "taught_fact_cn.jsonl"
+        if not p0_built.exists():
+            raise FileNotFoundError(
+                f"P0-built fact cn corpus missing: {p0_built} (run --phase p0 --build-corpora)"
+            )
+        logger.info("[phase=prep] taught_fact/cn uses the P0-built %s â€” no GPU prep", p0_built)
+        return
+
     if row_id == "marker":
         qpath = cdir / "marker_train_questions.json"
         if not qpath.exists():
@@ -109,8 +123,12 @@ def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 â€
         logger.info("[phase=prep] wrote %s (%d questions)", out, len(questions))
     elif arm == "cn":
         # On-policy default-context negatives on the row's own questions.
+        from explore_persona_space.experiments.behavior_testbed_545.rows import (
+            hydra_dataset_name,
+        )
+
         if row.recipe_kind == "hydra_turner":
-            src = PROJECT_ROOT / "data" / "issue404" / _hydra_dataset_stem(row)
+            src = PROJECT_ROOT / "data" / "issue404" / hydra_dataset_name(row, PROJECT_ROOT)
         else:
             src = cdir / row.corpus
         if not src.exists():
@@ -118,15 +136,26 @@ def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 â€
         positives = [json.loads(line) for line in src.read_text().splitlines() if line.strip()]
         if cap:
             positives = positives[:cap]
+        # Normalize positives to prompt/completion (train_lora's schema) and
+        # extract the question. cn prep supports SINGLE-TURN corpora only:
+        # the negative's greedy response is generated from the bare question,
+        # so a multi-turn positive would silently lose its earlier context in
+        # the negative (round-1 unaddressed-case fix: fail loud instead).
+        norm_positives = [_to_prompt_completion(r) for r in positives]
         questions = []
-        for r in positives:
-            msgs = r.get("prompt") or r.get("messages") or []
-            users = [m for m in msgs if m.get("role") == "user"]
-            questions.append(users[-1]["content"])
+        for r in norm_positives:
+            users = [m for m in r["prompt"] if m.get("role") == "user"]
+            if len(users) != 1:
+                raise NotImplementedError(
+                    f"cn prep for {row_id} found a {len(users)}-user-turn row; on-policy "
+                    "negatives are only valid for single-turn corpora (the negative would "
+                    "drop earlier turns)."
+                )
+            questions.append(users[0]["content"])
         responses = _greedy_responses(questions)
         out = cdir / f"{Path(src.name).stem}_cn.jsonl"
         with out.open("w") as f:
-            for pos, q, r in zip(positives, questions, responses, strict=False):
+            for pos, q, r in zip(norm_positives, questions, responses, strict=False):
                 f.write(json.dumps(pos) + "\n")
                 f.write(json.dumps(_row_json(q, r.rstrip())) + "\n")
         logger.info("[phase=prep] wrote %s (1:1 positives:negatives)", out)
@@ -151,11 +180,37 @@ def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 â€
         logger.info("[phase=prep] nothing to prep for %s/%s", row_id, arm)
 
 
-def _hydra_dataset_stem(row) -> str:
-    import yaml
+def _to_prompt_completion(row: dict) -> dict:
+    """Normalize a messages-schema row to train_lora's prompt/completion schema.
 
-    cond = PROJECT_ROOT / "configs" / "condition" / f"{row.hydra_condition}.yaml"
-    return Path(yaml.safe_load(cond.read_text())["stages"][0]["dataset"]).name
+    prompt = every message before the final assistant turn (full multi-turn
+    context preserved); completion = the final assistant turn. Already-
+    normalized rows pass through unchanged. Fails loud on rows that end on a
+    non-assistant turn.
+    """
+    if "prompt" in row and "completion" in row:
+        return row
+    msgs = row.get("messages")
+    if not msgs or msgs[-1].get("role") != "assistant":
+        raise ValueError(f"Cannot normalize row to prompt/completion: keys={sorted(row)}")
+    return {"prompt": msgs[:-1], "completion": [msgs[-1]]}
+
+
+def _normalized_copy(src: Path) -> Path:
+    """Write a prompt/completion-schema copy of a messages-schema JSONL.
+
+    Used by the klreg arm, which trains the hydra row's POSITIVES through
+    train_lora (messages-schema Turner JSONLs don't load there). Idempotent;
+    lands under corpora_dir() so the bulk corpus upload captures it.
+    """
+    dst = _corpora_dir() / f"{src.stem}_pc.jsonl"
+    rows = [json.loads(line) for line in src.read_text().splitlines() if line.strip()]
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    with dst.open("w") as f:
+        for r in rows:
+            f.write(json.dumps(_to_prompt_completion(r)) + "\n")
+    logger.info("[phase=train] schema-normalized %s -> %s (%d rows)", src.name, dst, len(rows))
+    return dst
 
 
 # ---------------------------------------------------------------------------
@@ -168,27 +223,30 @@ def train_cell(row_id: str, arm: str, seed: int, gpu_id: int, *, smoke: bool) ->
     from explore_persona_space.experiments.behavior_testbed_545.rows import (
         ARM_SPECS,
         get_row,
+        resolve_training_dispatch,
     )
 
+    assert arm in ARM_SPECS, f"Unknown arm {arm!r}"
     row = get_row(row_id)
     cell = row.cell_id(arm, seed)
     out_root = Path(os.environ.get("EPM_OUTPUT_ROOT", "/tmp/issue545")) / "adapters" / cell
     out_root.mkdir(parents=True, exist_ok=True)
-    arm_spec = ARM_SPECS[arm]
+    # Round-2 blocker fix: dispatch resolved by ARM FIRST (rows.py) â€” cn/klreg
+    # on hydra rows train via train_lora + TURNER_PARITY, never the plain
+    # hydra branch (which would silently re-train primary).
+    dispatch = resolve_training_dispatch(row, arm, PROJECT_ROOT)
 
-    if row.recipe_kind == "reuse_adapter":
+    if dispatch["path"] == "reuse":
         return _download_reused_adapter(row, seed, out_root)
 
-    if arm == "fullft":
+    if dispatch["path"] == "fullft":
         import yaml
 
         # Derived per-cell stage config: seed from the cell, lr from the
         # I545_FULLFT_LR probe env ({2e-6,5e-6,1e-5}, plan section 11), tiny
         # caps under --smoke. The committed yaml carries the middle probe.
         base_cfg = yaml.safe_load(
-            (
-                PROJECT_ROOT / "configs" / "condition" / f"{arm_spec['fullft_condition']}.yaml"
-            ).read_text()
+            (PROJECT_ROOT / "configs" / "condition" / f"{dispatch['condition']}.yaml").read_text()
         )
         base_cfg["seed"] = seed
         base_cfg["wandb_run_name"] = f"i545_{cell}"
@@ -220,8 +278,8 @@ def train_cell(row_id: str, arm: str, seed: int, gpu_id: int, *, smoke: bool) ->
             )
         return out_root
 
-    if row.recipe_kind == "hydra_turner" or arm == "mix50":
-        condition = arm_spec.get("hydra_condition", row.hydra_condition)
+    if dispatch["path"] == "hydra":
+        condition = dispatch["condition"]
         max_steps = 4 if smoke else 375
         cmd = [
             "uv",
@@ -258,19 +316,15 @@ def train_cell(row_id: str, arm: str, seed: int, gpu_id: int, *, smoke: bool) ->
         _relocate_hydra_adapter(condition, seed, out_root)
         return out_root
 
-    # train_lora path.
+    # train_lora path (train_lora rows + cn/klreg arms on hydra rows).
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
-    overrides = dict(arm_spec.get("train_lora_overrides") or row.train_lora_overrides)
-    corpus_name = row.corpus
-    if arm == "cn":
-        corpus_name = f"{Path(row.corpus).stem}_cn.jsonl"
-        overrides = (
-            {**overrides, **arm_spec.get("marker_extra", {})} if row_id == "marker" else overrides
-        )
-    data_path = _corpora_dir() / corpus_name
+    overrides = dict(dispatch["overrides"])
+    data_path = Path(dispatch["data_path"])
     if not data_path.exists():
         raise FileNotFoundError(f"Training corpus missing: {data_path} (P0/prep incomplete)")
+    if dispatch.get("needs_schema_normalization"):
+        data_path = _normalized_copy(data_path)
     if overrides.get("kl_aux_data_path") == "GENERIC_CHAT":
         overrides["kl_aux_data_path"] = str(_corpora_dir() / "kl_aux_generic.jsonl")
     if smoke:

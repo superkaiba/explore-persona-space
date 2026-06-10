@@ -34,10 +34,11 @@ import json
 import logging
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from queue import Queue
 
@@ -122,6 +123,21 @@ def phase_p0(args) -> None:
         logger.info("Corpora built: %s", {k: Path(v).name for k, v in corpora.items() if v})
         batteries = build_all_batteries(smoke_n=smoke_n)
         logger.info("Batteries built: %d files", len(batteries))
+    if args.build_corpora:
+        # B10 anchor calibration (plan gate 2 prerequisite): judge the #496
+        # warm/cold rewrite pairs with the verbatim #515 rubric so the warmth
+        # gate threshold is anchor-grounded BEFORE any training.
+        print("[phase=p0_warmth_anchors]", flush=True)
+        from explore_persona_space.experiments.behavior_testbed_545.gates import (
+            calibrate_warmth_anchors,
+        )
+
+        try:
+            calibrate_warmth_anchors(smoke_n=smoke_n)
+        except Exception as e:
+            if not smoke_mode:
+                raise  # production P0 fails loud (API key / HF reachability)
+            logger.warning("[smoke] warmth anchor calibration unavailable locally: %s", e)
     if args.preregister:
         print("[phase=p0_preregister]", flush=True)
         from explore_persona_space.experiments.behavior_testbed_545.preregister import (
@@ -172,7 +188,12 @@ def _dose_select_checkpoint(row, arm: str, seed: int, adapter_dir: Path, gpu: in
     """Pick the first checkpoint whose diagonal battery lands in band.
 
     Band read against the max over checkpoints (P2-calibrated dose-to-target;
-    plan section 4.5). Falls back to the final state with a loud flag.
+    plan section 4.5). Falls back to the final state with a loud flag. Writes
+    an explicit ``dose_select.json`` record (ceiling, per-checkpoint scalars,
+    ``in_band``) into the cell dir — the K1 gate and assemble's
+    ``implant_failed`` read CONSUME this record (round-1 blocker fixes).
+    Per-checkpoint reads are archived under the ``dose/`` SUBDIR so they can
+    never collide with assemble's ``*__*.json`` column glob.
     """
     from explore_persona_space.experiments.behavior_testbed_545 import cells_dir
     from explore_persona_space.experiments.behavior_testbed_545.assemble_matrix import (
@@ -180,12 +201,14 @@ def _dose_select_checkpoint(row, arm: str, seed: int, adapter_dir: Path, gpu: in
         _scalar,
     )
 
+    cell_dir = cells_dir() / row.cell_id(arm, seed)
     checkpoints = sorted(
         (d for d in adapter_dir.glob("checkpoint-*") if d.is_dir()),
         key=lambda d: int(d.name.split("-")[-1]),
     )
     if not checkpoints:
         return adapter_dir
+    dose_dir = cell_dir / "dose"
     scalars: list[tuple[Path, float | None]] = []
     for ckpt in checkpoints:
         scratch_cell = f"{row.cell_id(arm, seed)}__ckpt{ckpt.name.split('-')[-1]}"
@@ -205,41 +228,69 @@ def _dose_select_checkpoint(row, arm: str, seed: int, adapter_dir: Path, gpu: in
                 label=f"dose-{scratch_cell}-{only}",
             )
             # the eval cell writes under the canonical cell dir; move per ckpt
-        cell_dir = cells_dir() / row.cell_id(arm, seed)
         diag_path = cell_dir / f"{row.diagonal_column}__default.json"
         val = None
         if diag_path.exists():
             d = json.loads(diag_path.read_text())
             if d["column"] in PRIMARY_SCALAR:
                 val = _scalar(d["column"], d["summary"])
-            # archive this checkpoint's diagonal read
-            archived = cell_dir / f"dose__{row.diagonal_column}__{ckpt.name}.json"
-            diag_path.rename(archived)
+            # archive this checkpoint's reads OUT of the column-glob namespace
+            dose_dir.mkdir(parents=True, exist_ok=True)
+            diag_path.rename(dose_dir / f"{row.diagonal_column}__{ckpt.name}.json")
             gen_path = cell_dir / f"completions__{row.diagonal_column}__default.json"
             if gen_path.exists():
-                gen_path.rename(cell_dir / f"dose_completions__{ckpt.name}.json")
+                gen_path.rename(dose_dir / f"completions__{ckpt.name}.json")
         scalars.append((ckpt, val))
         logger.info("[phase=dose_select] %s %s -> %s", row.row_id, ckpt.name, val)
+
     vals = [v for _, v in scalars if v is not None]
-    if not vals:
-        logger.warning("[phase=dose_select] no diagonal reads for %s — using final", row.row_id)
-        return checkpoints[-1]
-    ceiling = max(vals)
+    ceiling = max(vals) if vals else None
     band_lo, band_hi = 0.60, 0.90
-    for ckpt, v in scalars:
-        if v is not None and ceiling > 0 and band_lo <= v / ceiling <= band_hi:
-            return ckpt
-    logger.warning(
-        "[phase=dose_select] %s: no checkpoint in band (vals=%s) — monotone-overshoot "
-        "routes to the 50-95%% recalibration allowance; using final checkpoint flagged",
-        row.row_id,
-        [round(v, 3) if v else None for _, v in scalars],
+    selected: Path | None = None
+    in_band = False
+    if ceiling and ceiling > 0:
+        for ckpt, v in scalars:
+            if v is not None and band_lo <= v / ceiling <= band_hi:
+                selected, in_band = ckpt, True
+                break
+    if selected is None:
+        selected = checkpoints[-1]
+        if not vals:
+            logger.warning("[phase=dose_select] no diagonal reads for %s — using final", row.row_id)
+        else:
+            logger.warning(
+                "[phase=dose_select] %s: no checkpoint in band (vals=%s) — monotone-overshoot "
+                "routes to the 50-95%% recalibration allowance; using final checkpoint flagged",
+                row.row_id,
+                [round(v, 3) if v else None for _, v in scalars],
+            )
+    cell_dir.mkdir(parents=True, exist_ok=True)
+    (cell_dir / "dose_select.json").write_text(
+        json.dumps(
+            {
+                "row": row.row_id,
+                "arm": arm,
+                "seed": seed,
+                "ceiling": ceiling,
+                "band": [band_lo, band_hi],
+                "in_band": in_band,
+                "selected_checkpoint": selected.name,
+                "scalars": {c.name: v for c, v in scalars},
+            },
+            indent=1,
+        )
     )
-    return checkpoints[-1]
+    return selected
 
 
 def _run_one_cell(row, arm: str, seed: int, gpu: int, args) -> dict:
     """prep -> train -> dose-select -> full eval (3 subprocess phases)."""
+    from explore_persona_space.experiments.behavior_testbed_545 import cells_dir
+    from explore_persona_space.experiments.behavior_testbed_545.columns import (
+        ROBUSTNESS_COLUMNS,
+        ROBUSTNESS_CONTEXTS,
+    )
+
     cell = row.cell_id(arm, seed)
     result = {"cell": cell, "gpu": gpu}
     needs_prep = (row.gpu_prep is not None) or arm in ("cn", "mix50")
@@ -265,16 +316,31 @@ def _run_one_cell(row, arm: str, seed: int, gpu: int, args) -> dict:
         print(f"[phase=train_{cell}]", flush=True)
         _run([*base_cmd, *smoke_flag], label=f"train-{cell}")
     adapter_dir = _adapters_root() / cell
+    # Band-stop rows persist their stop record next to the adapter; copy it
+    # into the cell dir so the K1 gate (and re-runs after the post-upload
+    # adapter cleanup) read it from the durable eval tree.
+    band_record = adapter_dir / "band_stop_result.json"
+    if band_record.exists():
+        cells_dir().joinpath(cell).mkdir(parents=True, exist_ok=True)
+        shutil.copy2(band_record, cells_dir() / cell / "band_stop_result.json")
     if not args.skip_eval:
         adapter = adapter_dir
-        if adapter_dir.exists() and not args.smoke and row.recipe_kind != "reuse_adapter":
+        band_stop_row = bool(row.train_lora_overrides.get("marker_band_stop"))
+        if (
+            adapter_dir.exists()
+            and not args.smoke
+            and row.recipe_kind != "reuse_adapter"
+            and not band_stop_row
+        ):
+            # Band-stop rows SKIP dose-select: the band-stop already selected
+            # the stopping point, and the final adapter state at the dir root
+            # (saved on stop) is the band-stopped artifact — checkpoint-* are
+            # periodic pre-band saves (round-1 minor #9).
             adapter = _dose_select_checkpoint(row, arm, seed, adapter_dir, gpu, args)
         result["selected_checkpoint"] = str(adapter)
-        contexts = ["default"]
-        if not args.smoke and arm == "primary" and row.row_id in ROBUSTNESS_ROWS:
-            contexts += ["persona_software_engineer", "wildchat_prefix"]
         print(f"[phase=eval_{cell}]", flush=True)
         phases = ["gen", "hf"] + ([] if args.skip_judges else ["judge"])
+        # Pass 1: default context, FULL battery.
         for only in phases:
             _run(
                 _eval_cell_cmd(
@@ -283,68 +349,113 @@ def _run_one_cell(row, arm: str, seed: int, gpu: int, args) -> dict:
                     seed=seed,
                     adapter=str(adapter),
                     gpu=gpu,
-                    contexts=contexts,
+                    contexts=["default"],
                     only=only,
                     max_probes=args.max_probes,
                 ),
                 label=f"eval-{cell}-{only}",
             )
+        # Pass 2: robustness + template-token contexts on the 4-COLUMN subset
+        # only (plan section 4.3; round-1 major #5 — full battery here would
+        # blow the robustness budget ~10x).
+        if not args.smoke and arm == "primary" and row.row_id in ROBUSTNESS_ROWS:
+            for only in phases:
+                _run(
+                    _eval_cell_cmd(
+                        row=row.row_id,
+                        arm=arm,
+                        seed=seed,
+                        adapter=str(adapter),
+                        gpu=gpu,
+                        contexts=list(ROBUSTNESS_CONTEXTS),
+                        columns=list(ROBUSTNESS_COLUMNS),
+                        only=only,
+                        max_probes=args.max_probes,
+                    ),
+                    label=f"eval-{cell}-robustness-{only}",
+                )
     return result
 
 
-def _k1_gate() -> dict:
-    """K1 harness/bookend gate verdict from P1 cell JSONs (plan section 7)."""
-    from explore_persona_space.experiments.behavior_testbed_545 import cells_dir, output_root
+def _judge_sensitivity_check(args) -> None:
+    """Plan procedural gate 3: re-judge the bad-medical bookend cell's
+    broad-EM at 100/q and compare to the 50/q production read."""
+    from explore_persona_space.experiments.behavior_testbed_545 import output_root
+    from explore_persona_space.experiments.behavior_testbed_545.gates import (
+        write_judge_sensitivity,
+    )
 
-    verdict: dict = {"components": {}, "pass": None}
-    cdir = cells_dir()
-
-    def _summary(cell: str, column: str) -> dict | None:
-        p = cdir / cell / f"{column}__default.json"
-        return json.loads(p.read_text())["summary"] if p.exists() else None
-
-    diag = _summary("bad_medical_primary_seed0", "fam_expr_bad_medical")
-    verdict["components"]["bad_medical_diagonal"] = diag
-    marker = _summary("marker_primary_seed0", "marker")
-    in_band = None
-    if marker and marker.get("delta_logp") is not None:
-        in_band = 5.0 <= marker["delta_logp"] <= 12.0
-    verdict["components"]["marker_band"] = {"summary": marker, "in_band": in_band}
-    bm = _summary("bad_medical_primary_seed0", "broad_em")
-    ed = _summary("educational_insecure_primary_seed0", "broad_em")
-    bookends = None
-    if bm and ed and bm.get("rate") is not None and ed.get("rate") is not None:
-        bookends = bm["rate"] >= 0.05 and ed["rate"] < 0.02
-    verdict["components"]["bookends"] = {
-        "bad_medical_broad_em": bm.get("rate") if bm else None,
-        "educational_broad_em": ed.get("rate") if ed else None,
-        "ordering_holds": bookends,
-    }
-    components = [diag is not None, in_band, bookends]
-    verdict["pass"] = all(bool(c) for c in components) if None not in components else None
-    out = output_root() / "k1_gate.json"
-    out.write_text(json.dumps(verdict, indent=1))
-    logger.info("[phase=k1_gate] %s", verdict["pass"])
-    return verdict
+    bookend_cell = "bad_medical_primary_seed0"
+    manifest_path = output_root() / "manifest_p1.json"
+    entry = next(
+        (
+            m
+            for m in (json.loads(manifest_path.read_text()) if manifest_path.exists() else [])
+            if m.get("cell") == bookend_cell
+        ),
+        None,
+    )
+    if entry is None or "selected_checkpoint" not in entry:
+        raise RuntimeError(
+            f"Judge-sensitivity check needs the {bookend_cell} manifest entry with a "
+            "selected_checkpoint — did P1 run the bad-medical row?"
+        )
+    adapter = entry["selected_checkpoint"]
+    print("[phase=judge_sensitivity]", flush=True)
+    for only in ("gen", "judge"):
+        _run(
+            _eval_cell_cmd(
+                row="bad_medical",
+                arm="primary",
+                seed=0,
+                adapter=adapter,
+                gpu=0,
+                contexts=["default"],
+                columns=["broad_em_n100"],
+                only=only,
+                max_probes=args.max_probes,
+            ),
+            label=f"judge-sensitivity-{only}",
+        )
+    write_judge_sensitivity(bookend_cell=bookend_cell)
 
 
 def phase_train_eval(args, phase: str) -> None:  # noqa: C901 — phase dispatcher, intentionally flat
     from explore_persona_space.experiments.behavior_testbed_545 import output_root
+    from explore_persona_space.experiments.behavior_testbed_545.gates import (
+        require_k1_pass,
+        warmth_gate_passed,
+    )
     from explore_persona_space.experiments.behavior_testbed_545.rows import (
         ROWS,
         enumerate_cells,
     )
 
     if phase == "p2":
-        k1_path = output_root() / "k1_gate.json"
-        if not k1_path.exists():
-            raise RuntimeError("K1 gate verdict missing — run --phase p1 first (plan section 7)")
-        if json.loads(k1_path.read_text())["pass"] is False:
-            raise RuntimeError("K1 gate FAILED — P2 refused (stop, diagnose, re-plan)")
+        # FAIL-CLOSED (round-1 Codex critical): only a literal pass=true
+        # admits P2 — false AND null/missing both refuse.
+        require_k1_pass()
 
     rows_filter = args.rows
+    if rows_filter is not None:
+        # Unknown row ids must fail LOUD: enumerate_cells would silently
+        # drop them (the plan-doc `warmth_gate` vs registry `warmth` trap,
+        # round-1 minor #12).
+        unknown = [r for r in rows_filter if r not in ROWS]
+        if unknown:
+            raise SystemExit(f"Unknown row id(s) {unknown}. Valid: {sorted(ROWS)}")
     if rows_filter is None:
         rows_filter = [r.row_id for r in ROWS.values() if r.phase == phase]
+        if phase == "p2" and warmth_gate_passed():
+            # B10 P2 inclusion is CONDITIONAL on the P1 dose-response gate
+            # (plan section 4.1): full-battery warmth eval joins P2 only on
+            # a recorded gate PASS.
+            rows_filter.append("warmth")
+    if phase == "p2" and "warmth" in rows_filter and not warmth_gate_passed():
+        raise RuntimeError(
+            "warmth requested in P2 but warmth_gate/gate_result.json does not record "
+            "pass=true (plan gate 2) — drop the row or re-run the P1 gate."
+        )
     cells = enumerate_cells(rows=rows_filter, seeds=args.seeds, arms=args.arms)
     if not cells:
         raise RuntimeError(
@@ -353,32 +464,39 @@ def phase_train_eval(args, phase: str) -> None:  # noqa: C901 — phase dispatch
     logger.info("[phase=%s] %d cells", phase, len(cells))
 
     # P1.0 base panel first (headroom denominator; gates column inclusion).
+    # Default context = full battery; robustness + template-token contexts =
+    # the 4-column subset only (mirrors the per-cell split, round-1 major #5).
     if phase == "p1" and not args.skip_eval:
         from explore_persona_space.experiments.behavior_testbed_545 import cells_dir
+        from explore_persona_space.experiments.behavior_testbed_545.columns import (
+            ROBUSTNESS_COLUMNS,
+            ROBUSTNESS_CONTEXTS,
+        )
 
         if not (cells_dir() / "base_panel").exists() or args.smoke:
             print("[phase=p1_0_base_panel]", flush=True)
-            contexts = (
-                ["default"]
-                if args.smoke
-                else ["default", "persona_software_engineer", "wildchat_prefix"]
-            )
-            for only in ["gen", "hf"] + ([] if args.skip_judges else ["judge"]):
-                _run(
-                    _eval_cell_cmd(
-                        row=None,
-                        arm="",
-                        seed=0,
-                        adapter=None,
-                        gpu=0,
-                        contexts=contexts,
-                        only=only,
-                        base_panel=True,
-                        max_probes=args.max_probes,
-                        columns=(["marker", "capability"] if args.smoke else None),
-                    ),
-                    label=f"base-panel-{only}",
-                )
+            passes: list[tuple[list[str], list[str] | None]] = [
+                (["default"], ["marker", "capability"] if args.smoke else None)
+            ]
+            if not args.smoke:
+                passes.append((list(ROBUSTNESS_CONTEXTS), list(ROBUSTNESS_COLUMNS)))
+            for contexts, columns in passes:
+                for only in ["gen", "hf"] + ([] if args.skip_judges else ["judge"]):
+                    _run(
+                        _eval_cell_cmd(
+                            row=None,
+                            arm="",
+                            seed=0,
+                            adapter=None,
+                            gpu=0,
+                            contexts=contexts,
+                            only=only,
+                            base_panel=True,
+                            max_probes=args.max_probes,
+                            columns=columns,
+                        ),
+                        label=f"base-panel-{only}",
+                    )
 
     n_gpus = args.parallel
     gpu_slots: Queue[int] = Queue()
@@ -401,8 +519,13 @@ def phase_train_eval(args, phase: str) -> None:  # noqa: C901 — phase dispatch
         finally:
             gpu_slots.put(gpu)
 
+    # as_completed (round-1 minor #8): each cell's manifest entry persists
+    # the moment ITS future finishes — a mid-phase crash never drops entries
+    # for already-completed later cells (pool.map yields in submission order).
     with ThreadPoolExecutor(max_workers=n_gpus) as pool:
-        for res in pool.map(_worker, parallel_cells):
+        futures = [pool.submit(_worker, item) for item in parallel_cells]
+        for fut in as_completed(futures):
+            res = fut.result()  # re-raises worker exceptions (fail loud)
             if res:
                 manifest.append(res)
                 manifest_path.parent.mkdir(parents=True, exist_ok=True)
@@ -415,8 +538,30 @@ def phase_train_eval(args, phase: str) -> None:  # noqa: C901 — phase dispatch
         manifest_path.write_text(json.dumps(manifest, indent=1))
 
     if phase == "p1" and not args.skip_eval and not args.skip_judges:
+        from explore_persona_space.experiments.behavior_testbed_545.gates import (
+            write_k1_gate,
+            write_warmth_gate_result,
+        )
+        from explore_persona_space.experiments.behavior_testbed_545.preregister import (
+            THRESHOLDS,
+        )
+        from explore_persona_space.experiments.behavior_testbed_545.rows import get_row
+
         print("[phase=k1_gate]", flush=True)
-        _k1_gate()
+        write_k1_gate()
+        if not args.smoke:
+            if "warmth" in {r.row_id for r, _a, _s in cells}:
+                print("[phase=warmth_gate]", flush=True)
+                gate_cfg = THRESHOLDS["b10_warmth_gate"]
+                write_warmth_gate_result(
+                    warmth_cells=[
+                        get_row("warmth").cell_id("primary", s) for s in get_row("warmth").seeds
+                    ],
+                    anchor_band=tuple(gate_cfg["anchor_normalized_band"]),
+                    min_coherence_rate=gate_cfg["min_coherence_rate"],
+                )
+            if "bad_medical" in {r.row_id for r, _a, _s in cells}:
+                _judge_sensitivity_check(args)
     if not args.skip_upload:
         print(f"[phase=upload_{phase}]", flush=True)
         bulk_upload_phase(phase)
@@ -433,7 +578,12 @@ def bulk_upload_phase(phase: str) -> None:
     One ``upload_folder`` commit per tree; verification via
     ``list_repo_files`` (NEVER the hf CLI); any gap is a TRACKED failure
     written to upload_gaps_<phase>.json — never a warning-and-continue.
+    AFTER verification passes, every verified adapter / full-model cell dir
+    is DELETED (upload-policy: per-phase upload+delete keeps the run under
+    the ~130GB MooseFS quota; round-1 Codex major) — manifests, eval JSONs,
+    and corpora stay. Fails loud BEFORE any rm when verification has gaps.
     """
+
     from huggingface_hub import HfApi, list_repo_files
 
     from explore_persona_space.experiments.behavior_testbed_545 import (
@@ -447,6 +597,7 @@ def bulk_upload_phase(phase: str) -> None:
 
     api = HfApi()
     gaps: list[str] = []
+    verified_cell_dirs: list[Path] = []
     adapters = _adapters_root()
     if adapters.exists() and any(adapters.iterdir()):
         api.upload_folder(
@@ -457,9 +608,20 @@ def bulk_upload_phase(phase: str) -> None:
         )
         listed = set(list_repo_files(HF_MODEL_REPO))
         for cell_dir in adapters.iterdir():
-            cfg = cell_dir / "adapter_config.json"
-            if cfg.exists() and f"issue545_rows/{cell_dir.name}/adapter_config.json" not in listed:
-                gaps.append(f"adapter {cell_dir.name} missing post-upload")
+            if not cell_dir.is_dir():
+                continue
+            if (cell_dir / "adapter_config.json").exists():
+                probe = f"issue545_rows/{cell_dir.name}/adapter_config.json"
+            elif (cell_dir / "config.json").exists():
+                # fullft cells upload a FULL model — verify it too (round-1
+                # unaddressed case: the fullft upload was never gap-checked).
+                probe = f"issue545_rows/{cell_dir.name}/config.json"
+            else:
+                continue
+            if probe not in listed:
+                gaps.append(f"cell {cell_dir.name} missing post-upload ({probe})")
+            else:
+                verified_cell_dirs.append(cell_dir)
         # #513 coordination mirror: B1/B2 adapters also under the
         # issue458_pair_<cell> convention (plan section 3a — cell names per
         # #458: turner_* for the Turner organisms, insecure_code/educational
@@ -505,8 +667,28 @@ def bulk_upload_phase(phase: str) -> None:
     gaps_path = output_root() / f"upload_gaps_{phase}.json"
     gaps_path.write_text(json.dumps({"gaps": gaps}, indent=1))
     if gaps:
+        # Fail-loud BEFORE any deletion (upload-policy: never delete an
+        # unverified artifact).
         raise RuntimeError(f"Upload verification gaps ({len(gaps)}): {gaps[:5]} — see {gaps_path}")
     logger.info("[phase=upload_%s] verified clean", phase)
+
+    # Post-verification cleanup (round-1 Codex major): delete the verified
+    # adapter / full-model trees so per-phase disk stays under the ~130GB
+    # MooseFS pod quota. Eval JSONs (cells_dir), manifests, gates, and
+    # corpora are kept — only weights go.
+    freed_before = shutil.disk_usage(adapters).free if adapters.exists() else None
+    for cell_dir in verified_cell_dirs:
+        shutil.rmtree(cell_dir)
+        logger.info("[phase=upload_%s] deleted verified weights %s", phase, cell_dir.name)
+    if verified_cell_dirs and freed_before is not None:
+        usage = shutil.disk_usage(adapters.parent)
+        logger.info(
+            "[phase=upload_%s] disk after cleanup: free=%.1fGB total=%.1fGB (deleted %d cells)",
+            phase,
+            usage.free / 1e9,
+            usage.total / 1e9,
+            len(verified_cell_dirs),
+        )
 
 
 # ---------------------------------------------------------------------------

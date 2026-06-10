@@ -19,8 +19,9 @@ Plain-English row ids are used everywhere; ``i545_*`` slugs only in configs.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 
-from . import IM_END_TOKEN_ID, MARKER_TEXT
+from . import IM_END_TOKEN_ID, MARKER_TEXT, corpora_dir
 
 ANCHOR_SEEDS = (0, 137, 42)
 DEFAULT_SEEDS = (0, 137)
@@ -450,6 +451,83 @@ def get_row(row_id: str) -> RowSpec:
     if row_id not in ROWS:
         raise KeyError(f"Unknown row {row_id!r}. Valid: {sorted(ROWS)}")
     return ROWS[row_id]
+
+
+def hydra_dataset_name(row: RowSpec, repo_root: Path) -> str:
+    """Dataset filename (e.g. ``turner_bad_medical_advice.jsonl``) for a
+    hydra_turner row, read from its condition yaml."""
+    import yaml
+
+    cond = repo_root / "configs" / "condition" / f"{row.hydra_condition}.yaml"
+    return Path(yaml.safe_load(cond.read_text())["stages"][0]["dataset"]).name
+
+
+def resolve_training_dispatch(row: RowSpec, arm: str, repo_root: Path) -> dict:
+    """Resolve a (row, arm) cell to a concrete training invocation.
+
+    Round-2 blocker fix (i545-hydra-arm-dispatch-cn-klreg): dispatch by ARM
+    FIRST — ``cn`` and ``klreg`` on hydra rows route to the ``train_lora``
+    path with ``TURNER_PARITY`` (recipe parity, so the arm-vs-primary
+    contrast changes ONLY the manipulated variable: the contrastive corpus
+    for ``cn``, the KL-to-base aux loss for ``klreg``). The plain hydra
+    branch is reached only by ``primary`` and ``mix50`` arms.
+
+    Returns one of::
+
+        {"path": "reuse"}
+        {"path": "fullft", "condition": <slug>}
+        {"path": "hydra", "condition": <slug>}
+        {"path": "train_lora", "overrides": dict, "data_path": Path,
+         "needs_schema_normalization": bool}
+
+    ``needs_schema_normalization`` flags messages-schema sources (the Turner
+    JSONLs) that must be converted to prompt/completion before train_lora.
+    """
+    spec = ARM_SPECS[arm]
+    if row.recipe_kind == "reuse_adapter":
+        return {"path": "reuse"}
+    if arm == "fullft":
+        return {"path": "fullft", "condition": spec["fullft_condition"]}
+    if row.recipe_kind == "hydra_turner":
+        if arm in ("primary", "mix50"):
+            return {
+                "path": "hydra",
+                "condition": spec.get("hydra_condition", row.hydra_condition),
+            }
+        src = repo_root / "data" / "issue404" / hydra_dataset_name(row, repo_root)
+        if arm == "klreg":
+            # SAME positives as primary; the KL-aux loss is the only delta.
+            return {
+                "path": "train_lora",
+                "overrides": dict(spec["train_lora_overrides"]),
+                "data_path": src,
+                "needs_schema_normalization": True,
+            }
+        if arm == "cn":
+            # Prepped 1:1 contrastive corpus (prep_corpus writes it already
+            # schema-normalized) + TURNER_PARITY recipe.
+            return {
+                "path": "train_lora",
+                "overrides": dict(TURNER_PARITY),
+                "data_path": corpora_dir() / f"{src.stem}{spec['corpus_suffix']}.jsonl",
+                "needs_schema_normalization": False,
+            }
+        raise KeyError(f"Arm {arm!r} has no hydra-row dispatch for {row.row_id!r}")
+    # train_lora rows.
+    overrides = dict(spec.get("train_lora_overrides") or row.train_lora_overrides)
+    corpus = row.corpus
+    if corpus is None:
+        raise ValueError(f"train_lora row {row.row_id!r} has no corpus")
+    if arm == "cn":
+        corpus = f"{Path(corpus).stem}{spec['corpus_suffix']}.jsonl"
+        if row.row_id == "marker":
+            overrides = {**overrides, **spec.get("marker_extra", {})}
+    return {
+        "path": "train_lora",
+        "overrides": overrides,
+        "data_path": corpora_dir() / corpus,
+        "needs_schema_normalization": False,
+    }
 
 
 def rows_for_phase(phase: str) -> list[RowSpec]:

@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import gc
 import importlib.machinery
+import json
 import logging
 import os
 import sys
@@ -888,6 +889,11 @@ def _maybe_attach_marker_band_stop(
         eos_token_id=tokenizer.eos_token_id,
     )
     trainer.add_callback(callback)
+    # Back-reference so train_lora can persist the callback's final state
+    # (band_stop_result.json) after trainer.train() returns — the recorded
+    # teacher-forced value is the quantity the band-stop decision governs,
+    # and downstream gates (#545 K1) must read it, not an on-policy proxy.
+    trainer._epm_band_stop_callback = callback
     logger.info(
         "MarkerBandStopCallback attached: %d source-probe rows, marker_ids=%s, "
         "band=[%.2f, %.2f] nat, eval_every=%d steps, min_steps=%d",
@@ -1261,6 +1267,25 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
 
     trainer.save_model(output_dir)
     tokenizer.save_pretrained(output_dir)
+
+    # Persist the band-stop callback's final state (additive; marker runs
+    # only). stopped_in_band + last_delta_nats are the deterministic record
+    # of whether/where the recipe's band-stop fired — the quantity gates
+    # like #545 K1 must read instead of a correlated on-policy proxy.
+    band_cb = getattr(trainer, "_epm_band_stop_callback", None)
+    if band_cb is not None:
+        (Path(output_dir) / "band_stop_result.json").write_text(
+            json.dumps(
+                {
+                    "stopped_in_band": bool(band_cb._stopped),
+                    "band_stop_step": band_cb.band_stop_step,
+                    "last_delta_nats": band_cb.last_delta_nats,
+                    "band_nats": [band_cb.low_nats, band_cb.high_nats],
+                    "global_step": int(trainer.state.global_step),
+                },
+                indent=1,
+            )
+        )
 
     # Auto-upload adapter to WandB Artifacts so the canonical "checkpoint is
     # in the cloud" invariant from CLAUDE.md's Upload Policy holds without a

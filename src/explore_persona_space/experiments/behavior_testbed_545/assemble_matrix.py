@@ -25,6 +25,13 @@ from .rows import ROWS
 
 logger = logging.getLogger(__name__)
 
+# Per-cell files that match the ``*__*.json`` glob but are NOT final column
+# JSONs: raw generations + the dose-select per-checkpoint archives (which lack
+# a ``summary`` key — round-1 blocker i545-assemble-dose-files-crash). The
+# dose archives now live under ``dose/`` (outside the glob) too; this prefix
+# skip is the belt-and-suspenders defense for any stragglers.
+_NON_COLUMN_PREFIXES = ("completions__", "dose__", "dose_completions__")
+
 # Canonical primary scalar per column (extras carried alongside).
 PRIMARY_SCALAR: dict[str, str] = {
     "broad_em": "rate",
@@ -108,7 +115,7 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
     base_panel: dict[str, dict] = {}
     if base_dir.exists():
         for p in sorted(base_dir.glob("*__*.json")):
-            if p.name.startswith("completions__"):
+            if p.name.startswith(_NON_COLUMN_PREFIXES):
                 continue
             d = json.loads(p.read_text())
             col, ctx = d["column"], d["context"]
@@ -142,7 +149,7 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
         row = ROWS[row_id]
         cell_entry: dict = {}
         for p in sorted(cell_dir.glob("*__*.json")):
-            if p.name.startswith("completions__"):
+            if p.name.startswith(_NON_COLUMN_PREFIXES):
                 continue
             d = json.loads(p.read_text())
             col, ctx = d["column"], d["context"]
@@ -152,8 +159,8 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
             base_entry = base_panel.get(f"{col}__{ctx}", {})
             base_level = base_entry.get("scalar")
             if col == "marker":
-                leak = level  # delta by construction
-                base_level = base_entry.get("summary", {}).get("base", {})
+                leak = level  # delta by construction (trained - base, same forward pass)
+                base_level = None  # no separate base scalar; never a junk {} placeholder
             elif level is None or base_level is None:
                 leak = None
             else:
@@ -161,7 +168,14 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
             verdicts = d.get("verdicts", [])
             ci = None
             pk = None
-            for cand in ("misaligned", "refused", "insecure", "complimenting", "is_full_harm"):
+            for cand in (
+                "misaligned",
+                "refused",
+                "insecure",
+                "complimenting",
+                "is_full_harm",
+                "agreed_with_wrong_claim",
+            ):
                 if verdicts and isinstance(verdicts[0], dict) and cand in verdicts[0]:
                     pk = cand
                     break
@@ -184,6 +198,27 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
         diag = cell_entry.get(diag_key, {})
         band = THRESHOLDS["dose_band_default"]
         diag_level = diag.get("level")
+        # Round-1 major #3 fix: the band is RELATIVE to the row's recipe
+        # ceiling (what dose-select reads: v / ceiling), never the absolute
+        # rate. Ceiling comes from the dose_select.json the dispatcher
+        # persisted; the marker row reads its own [5,12] nat band instead.
+        dose_path = cell_dir / "dose_select.json"
+        ceiling = None
+        if dose_path.exists():
+            ceiling = json.loads(dose_path.read_text()).get("ceiling")
+        if row.expected == "null":
+            implant_failed: bool | None = False
+        elif diag_level is None:
+            implant_failed = None  # no diagonal read — unknown, not "failed"
+        elif row.diagonal_column == "marker":
+            implant_failed = diag_level < THRESHOLDS["k1_marker_band"][0]
+        elif ceiling:
+            implant_failed = (diag_level / ceiling) < band[0]
+        else:
+            # No recorded ceiling (reuse-adapter rows trained to a fixed
+            # parent budget, single-checkpoint cells): unknown — never
+            # silently flagged failed on an absolute-scale misread.
+            implant_failed = None
         metadata[cell_id] = {
             "row": row_id,
             "arm": arm,
@@ -194,13 +229,8 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
             "diagonal_level": diag_level,
             "realized_strength": diag.get("L"),
             "dose_band": band,
-            # Band is read against the row's recipe ceiling where known;
-            # ceiling=None -> calibrated in P2 against the checkpoint max
-            # (plan: dose-to-target). implant_failed only when the diagonal
-            # battery EXISTS and sits below band floor.
-            "implant_failed": (diag_level is not None and diag_level < band[0] * 1.0)
-            if row.expected != "null"
-            else False,
+            "dose_ceiling": ceiling,
+            "implant_failed": implant_failed,
             "columns_present": sorted(cell_entry),
         }
         matrix[cell_id] = cell_entry

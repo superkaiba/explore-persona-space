@@ -140,6 +140,7 @@ def run_generation_phase(
         for c in columns_for_row(row)
         if c.dv in ("judged_rate", "structural", "marker_slot_stats")
         and (columns is None or c.column_id in columns)
+        and not (c.sensitivity_only and (columns is None or c.column_id not in columns))
     ]
     # fullft cells produce a FULL model dir (config.json, no adapter_config) —
     # load it as the model itself; LoRA cells ride the base model + LoRARequest.
@@ -671,13 +672,24 @@ def judge_column(column: ColumnSpec, gen_path: Path, out_path: Path) -> None:
                 "judge scoring"
             )
     elif cid == "warmth_expression":
-        items = [{"question": r["question"], "completion": r["completions"][0]} for r in rows]
-        vs = judge_items("sonnet_warmth", items)
-        verdicts = [{"probe_id": r["probe_id"], **v} for r, v in zip(rows, vs, strict=False)]
-        ok = [v for v in verdicts if "_judge_error" not in v]
+        # Warmth: VERBATIM #515 rubric ({prompt} placeholder, {"rating": 1-5});
+        # coherence read by a separate companion judge so the #515 anchor scale
+        # stays untouched (B10 gate needs both).
+        warm_items = [{"prompt": r["question"], "completion": r["completions"][0]} for r in rows]
+        warm_vs = judge_items("sonnet_warmth", warm_items)
+        coh_items = [{"question": r["question"], "completion": r["completions"][0]} for r in rows]
+        coh_vs = judge_items("sonnet_coherence", coh_items)
+        verdicts = [
+            {"probe_id": r["probe_id"], **w, "coherent": c.get("coherent")}
+            for r, w, c in zip(rows, warm_vs, coh_vs, strict=False)
+        ]
+        ok = [v for v in verdicts if "_judge_error" not in v and v.get("rating") is not None]
+        coh_ok = [c for c in coh_vs if "_judge_error" not in c]
         summary = {
-            "mean_warmth": sum(v["warmth"] for v in ok) / len(ok) if ok else None,
-            "coherence_rate": sum(1 for v in ok if v.get("coherent")) / len(ok) if ok else None,
+            "mean_warmth": sum(int(v["rating"]) for v in ok) / len(ok) if ok else None,
+            "coherence_rate": (
+                sum(1 for c in coh_ok if c.get("coherent")) / len(coh_ok) if coh_ok else None
+            ),
             "judge_errors": len(verdicts) - len(ok),
         }
     elif cid in _SIMPLE_JUDGES:
@@ -694,7 +706,7 @@ def judge_column(column: ColumnSpec, gen_path: Path, out_path: Path) -> None:
         summary, verdicts = _judge_via_503_broad_syco(rows)
     elif cid == "harmful_compliance":
         summary, verdicts = _judge_via_503_advbench(rows)
-    elif cid == "broad_em":
+    elif cid in ("broad_em", "broad_em_n100"):
         summary, verdicts = _judge_via_503_betley(rows)
     else:
         raise KeyError(f"No judge wiring for column {cid!r}")
@@ -799,15 +811,48 @@ def _judge_via_503_broad_syco(
 
     ``judge_for_target("B2_broad_syco")`` returns ``(callable, judge_model)``;
     the callable's shape is ``f(cell_id, questions, completions_per_question,
-    judge_model=...) -> {k, n, rate, n_errors, ...}`` (signature-smoked).
+    judge_model=..., save_raw=...) -> {k, n, rate, n_errors, ...}``
+    (signature-smoked). Per-completion verdicts are recovered from the
+    ``save_raw`` file (``{all_scores: {custom_id: {...}}}`` schema, custom_id
+    = ``{cell}__{q_idx:05d}__{comp_idx:02d}``) so the sycophancy column gets
+    probe-clustered bootstrap CIs like every other judged column (round-1
+    minor #14).
     """
+    import tempfile
+
     from explore_persona_space.experiments.issue503.judges import judge_for_target
 
     judge_fn, judge_model = judge_for_target("B2_broad_syco")
     questions = [r["question"] for r in rows]
     completions_per_question = [r["completions"] for r in rows]
-    summary = judge_fn(cell_label, questions, completions_per_question, judge_model=judge_model)
-    return dict(summary), []
+    raw_path = Path(tempfile.mkstemp(suffix="_syco_raw.json")[1])
+    summary = judge_fn(
+        cell_label,
+        questions,
+        completions_per_question,
+        judge_model=judge_model,
+        save_raw=raw_path,
+    )
+    verdicts: list[dict] = []
+    if raw_path.exists():
+        try:
+            all_scores = json.loads(raw_path.read_text()).get("all_scores", {})
+            for custom_id, score in all_scores.items():
+                parts = custom_id.rsplit("__", 2)
+                q_idx = int(parts[1]) if len(parts) == 3 else None
+                probe_id = (
+                    rows[q_idx]["probe_id"] if q_idx is not None and q_idx < len(rows) else None
+                )
+                v: dict = {"probe_id": probe_id, "custom_id": custom_id}
+                if score.get("error") or "agreed_with_wrong_claim" not in score:
+                    v["_judge_error"] = str(score.get("error", "missing verdict key"))
+                else:
+                    v["agreed_with_wrong_claim"] = int(score["agreed_with_wrong_claim"])
+                verdicts.append(v)
+        except (ValueError, json.JSONDecodeError):
+            logger.warning("syco save_raw unparseable at %s — keeping summary only", raw_path)
+        raw_path.unlink(missing_ok=True)
+    return dict(summary), verdicts
 
 
 def run_judge_phase(
@@ -822,6 +867,8 @@ def run_judge_phase(
         if col.dv not in ("judged_rate", "structural"):
             continue
         if columns is not None and col.column_id not in columns:
+            continue
+        if col.sensitivity_only and (columns is None or col.column_id not in columns):
             continue
         for ctx_id in contexts:
             gen_path = out_dir / f"completions__{col.column_id}__{ctx_id}.json"

@@ -137,6 +137,45 @@ def _families_of(cells: list[str]) -> dict[str, list[str]]:
     return fams
 
 
+def _family_row_bootstrap(
+    cells: list[str], stat_fn, *, n_boot: int = 1000, seed: int = 545
+) -> dict | None:
+    """Hierarchical family->row cluster bootstrap 95% CI of ``stat_fn(cells)``.
+
+    Cells within a row share an adapter AND rows within a family share corpus
+    lineage (the family CV folds treat them as dependent), so the resample is
+    two-stage: families with replacement, then rows within each sampled
+    family (plan: row/family-clustered margin CIs; round-1 minor #15).
+    ``stat_fn`` returns a float or None (dropped replicates).
+    """
+    fams: dict[str, dict[str, list[str]]] = {}
+    for c in cells:
+        row_id = c.split("|")[0]
+        fams.setdefault(ROWS[row_id].family, {}).setdefault(row_id, []).append(c)
+    fam_keys = sorted(fams)
+    if len(fam_keys) < 2:
+        return None
+    rng = random.Random(seed)
+    stats: list[float] = []
+    for _ in range(n_boot):
+        sample_cells: list[str] = []
+        for _i in range(len(fam_keys)):
+            fam = rng.choice(fam_keys)
+            row_keys = sorted(fams[fam])
+            for _j in range(len(row_keys)):
+                sample_cells.extend(fams[fam][rng.choice(row_keys)])
+        v = stat_fn(sample_cells)
+        if v is not None:
+            stats.append(v)
+    if len(stats) < 100:
+        return None
+    stats.sort()
+    return {
+        "ci95": (stats[int(0.025 * len(stats))], stats[int(0.975 * len(stats)) - 1]),
+        "n_valid": len(stats),
+    }
+
+
 def _champion(
     preds: dict[str, dict], group: str, target: dict[str, float], cells: list[str]
 ) -> tuple[str | None, float | None]:
@@ -259,7 +298,16 @@ def score(*, include_flagged: bool = False) -> Path:  # noqa: C901 — pre-regis
     for g in groups:
         results["group_k"][g] = sum(1 for n in preds if n.startswith(f"{g}__"))
 
-    for track in ("level", "shift"):
+    # ONE z-normed race track (round-1 major #7): within-column z-norm makes
+    # level and shift arithmetically identical (shift = level - per-column
+    # base constant), so a second "level" leaderboard would be a duplicate
+    # labeled as distinct. Level-vs-shift is read on RAW targets in the H3
+    # block below.
+    results["tracks_note"] = (
+        "single z-normed track: level==shift after within-column z-norm; "
+        "H3 level-vs-shift uses raw targets"
+    )
+    for track in ("shift",):
         vals = {k: v[track] for k, v in targets_raw.items() if v.get(track) is not None}
         target = _z_norm_within_column(vals)
         dev = [c for c in dev_cells if c in target]
@@ -329,44 +377,81 @@ def score(*, include_flagged: bool = False) -> Path:  # noqa: C901 — pre-regis
         )
         if bc_best and frozen.get("A"):
             point = (_tau_on(quar, frozen[bc_best]) or 0) - (_tau_on(quar, frozen["A"]) or 0)
-            rows_in_quar = sorted({c.split("|")[0] for c in quar})
-            rng = random.Random(545)
-            boots = []
-            for _ in range(1000):
-                sample_rows = [rng.choice(rows_in_quar) for _ in rows_in_quar]
-                cells_b = [c for r in sample_rows for c in quar if c.split("|")[0] == r]
-                tb = _tau_on(cells_b, frozen[bc_best])
-                ta = _tau_on(cells_b, frozen["A"])
-                if tb is not None and ta is not None:
-                    boots.append(tb - ta)
-            boots.sort()
-            ci = (
-                (boots[int(0.025 * len(boots))], boots[int(0.975 * len(boots)) - 1])
-                if len(boots) >= 100
-                else None
-            )
+
+            def _margin_stat(
+                cells_subset: list[str], *, _bc=bc_best, _frozen=frozen
+            ) -> float | None:
+                tb = _tau_on(cells_subset, _frozen[_bc])
+                ta = _tau_on(cells_subset, _frozen["A"])
+                return tb - ta if tb is not None and ta is not None else None
+
+            boot = _family_row_bootstrap(quar, _margin_stat)
             track_out["h2_margin"] = {
                 "best_bc_group": bc_best,
                 "point": round(point, 4),
                 "threshold": prereg["thresholds"]["h2_margin"],
-                "row_clustered_bootstrap_ci95": ci,
-                "n_bootstrap_valid": len(boots),
+                "family_row_clustered_bootstrap_ci95": boot["ci95"] if boot else None,
+                "n_bootstrap_valid": boot["n_valid"] if boot else 0,
             }
         track_out["h4_rank_one"] = rank_one_fit(target, dev, quar)
         results["tracks"][track] = track_out
 
-    # H3: base-prior level-vs-shift decomposition (#532). Computed on RAW
-    # (non-z-normed) targets: the within-column z-norm removes the per-column
-    # constant, which makes level == shift exactly (shift = level - base[col])
-    # and zeroes the cross-column signal the base-prior predictor carries.
+    # H3: two-component decomposition (#532), on RAW (non-z-normed) targets:
+    # the within-column z-norm removes the per-column constant, which makes
+    # level == shift exactly (shift = level - base[col]) and zeroes the
+    # cross-column signal the base-prior predictor carries. Both H3 reads
+    # carry family/row-clustered bootstrap CIs (plan H3: CIs excluding 0).
+    raw_targets = {
+        track: {k: v[track] for k, v in targets_raw.items() if v.get(track) is not None}
+        for track in ("level", "shift")
+    }
+    h3_dev = [c for c in dev_cells if c in raw_targets["level"] and c in raw_targets["shift"]]
+
+    def _h3_block(pred_cells: dict[str, float]) -> dict:
+        def _diff_stat(cells_subset: list[str], *, sign: int) -> float | None:
+            tl = weighted_kendall_tau(pred_cells, raw_targets["level"], cells_subset)
+            ts = weighted_kendall_tau(pred_cells, raw_targets["shift"], cells_subset)
+            if tl is None or ts is None:
+                return None
+            return sign * (tl - ts)
+
+        tau_level = weighted_kendall_tau(pred_cells, raw_targets["level"], h3_dev)
+        tau_shift = weighted_kendall_tau(pred_cells, raw_targets["shift"], h3_dev)
+        boot = _family_row_bootstrap(h3_dev, lambda cs: _diff_stat(cs, sign=1))
+        return {
+            "tau_level": tau_level,
+            "tau_shift": tau_shift,
+            "tau_level_minus_shift": (
+                tau_level - tau_shift if tau_level is not None and tau_shift is not None else None
+            ),
+            "ci95_level_minus_shift": boot["ci95"] if boot else None,
+            "n_bootstrap_valid": boot["n_valid"] if boot else 0,
+        }
+
     bp = preds.get("B__base_prior_level")
     if bp:
-        h3 = {"note": "raw targets (z-norm collapses level/shift; see scoring.py)"}
-        for track in ("level", "shift"):
-            target_h3 = {k: v[track] for k, v in targets_raw.items() if v.get(track) is not None}
-            dev = [c for c in dev_cells if c in target_h3]
-            h3[track] = weighted_kendall_tau(bp["cells"], target_h3, dev)
-        results["h3_base_prior"] = h3
+        results["h3_base_prior"] = {
+            "note": "raw targets (z-norm collapses level/shift; see scoring.py)",
+            **_h3_block(bp["cells"]),
+        }
+    # Geometry side: best Group A predictor selected on dev raw-SHIFT tau
+    # (the track geometry is hypothesized to win); H3 reads its
+    # tau(shift) - tau(level) with the same clustered CI.
+    geo_best, _ = (
+        _champion(preds, "A", _z_norm_within_column(raw_targets["shift"]), h3_dev)
+        if h3_dev
+        else (None, None)
+    )
+    if geo_best:
+        block = _h3_block(preds[geo_best]["cells"])
+        block["tau_shift_minus_level"] = (
+            -block["tau_level_minus_shift"] if block["tau_level_minus_shift"] is not None else None
+        )
+        results["h3_best_geometry"] = {
+            "champion": geo_best,
+            "selection": "best Group A on dev raw-shift tau",
+            **block,
+        }
 
     # Per-cell-type cuts (expected dense/null/surprising coverage per group).
     cuts: dict[str, dict] = {}
