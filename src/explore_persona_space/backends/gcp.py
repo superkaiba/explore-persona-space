@@ -719,6 +719,7 @@ def render_create_argv(
     attempt_id: str,
     zone: str | None = None,
     startup_script: str,
+    secret_files: Mapping[str, str] | None = None,
 ) -> list[str]:
     """Build the ``gcloud compute instances create`` argv.
 
@@ -746,12 +747,24 @@ def render_create_argv(
     * ``--boot-disk-size`` / ``--boot-disk-type`` — 300 GB pd-ssd default.
     * ``--scopes=cloud-platform`` — broad VM-scope so the in-VM workload
       can push to GCS / WandB / HF without per-API token wrangling.
-    * ``--metadata startup-script=<...>`` + per-secret ``--metadata KEY=value``
-      — the startup-script bootstraps the workload; the secret keys are
-      pulled from instance metadata inside that script.
+    * ``--metadata-from-file startup-script=<path>,KEY=<path>`` — the
+      startup-script bootstraps the workload; SECRET keys are delivered
+      from caller-owned 0600 tempfiles (``secret_files``) so token
+      values never appear on the gcloud argv / process list (round-2
+      Codex Major, task #535). The resulting instance metadata is
+      identical to the old per-secret ``--metadata KEY=value`` shape —
+      the in-VM fetch stanza reads the same ``attributes/<KEY>`` paths.
 
     ``zone`` defaults to ``config.primary_zone``; the caller passes a
     fallback zone explicitly on a capacity retry.
+
+    ``secret_files`` maps each resolvable :data:`STARTUP_SECRET_ENV_KEYS`
+    key to the tempfile holding its value; :meth:`GcpBackend.launch` owns
+    that tempfile lifecycle (0600 create before render, unlink in a
+    ``finally``). A secret that resolves to a value WITHOUT a threaded
+    file path raises ``ValueError`` — silently dropping it would
+    provision a doomed VM (the issue-535 r7 class), and inlining it
+    would put the token back on the argv.
 
     The argv is returned as a list (not a string) so the caller can pass
     it straight to ``subprocess.run`` without shell parsing — defense
@@ -782,9 +795,9 @@ def render_create_argv(
         "--format=json",
     ]
 
-    # Metadata: startup-script body + the secret keys the script will
-    # fetch back out of metadata. Each key arrives via os.environ so the
-    # caller's environment dictates which secrets are forwarded. An absent
+    # Metadata: startup-script body + the keys the script will fetch
+    # back out of metadata. Each key arrives via os.environ so the
+    # caller's environment dictates which values are forwarded. An absent
     # env var is dropped (matches render_secrets_env in slurm.py). The
     # non-secret STARTUP_PASSTHROUGH_ENV_KEYS (adapter-persist targets)
     # use the same ``spec.extra["secret_<KEY>"]``-then-env lookup so a
@@ -802,12 +815,37 @@ def render_create_argv(
         f"eps-attempt-id={attempt_id}",
         "enable-guest-attributes=TRUE",
     ]
-    for key in STARTUP_SECRET_ENV_KEYS + STARTUP_PASSTHROUGH_ENV_KEYS:
+    # SECRETS never ride the inline ``--metadata`` flag: every inline
+    # pair is argv-visible (process list, shell trace, captured harness
+    # logs) for the lifetime of the gcloud call (round-2 Codex Major,
+    # task #535). Secret keys are delivered via ``--metadata-from-file``
+    # from caller-owned 0600 tempfiles instead — the resulting INSTANCE
+    # METADATA is identical, so the in-VM fetch stanza
+    # (render_startup_script) is unchanged. Residual security boundary:
+    # custom instance metadata remains readable to any principal with
+    # ``compute.instances.get`` on the project — acceptable for the
+    # dedicated single-user project (eps-persona-gpu-jun2026); the full
+    # Secret Manager pull-from-VM migration is tracked as concern
+    # ``gcp-secrets-secret-manager-migration`` on task #535.
+    secret_file_pairs: list[str] = []
+    for key in STARTUP_SECRET_ENV_KEYS:
         val = spec.extra.get(f"secret_{key}") or _envget(key)
         if val is None or val == "":
             continue
-        # Per-secret metadata uses --metadata KEY=value; gcloud handles
-        # the quoting once the value is passed as a single argv element.
+        path = (secret_files or {}).get(key)
+        if not path:
+            raise ValueError(
+                f"render_create_argv: secret {key} resolved to a value but no "
+                "--metadata-from-file tempfile was threaded via secret_files. "
+                "Refusing to place a token on the gcloud argv; launch() owns "
+                "the 0600 tempfile lifecycle."
+            )
+        secret_file_pairs.append(f"{key}={path}")
+    for key in STARTUP_PASSTHROUGH_ENV_KEYS:
+        val = spec.extra.get(f"secret_{key}") or _envget(key)
+        if val is None or val == "":
+            continue
+        # Non-secret passthrough config; inline metadata is fine here.
         metadata_pairs.append(f"{key}={val}")
     # gcloud splits ``--metadata`` on commas, so a forwarded value
     # containing a comma would silently truncate every later pair. Keep
@@ -835,10 +873,19 @@ def render_create_argv(
     # spec.extra["startup_script_path"] OR an inline body. We choose the
     # tempfile path here so secrets-bearing scripts never leak through
     # the gcloud argv stdout/stderr.
+    #
+    # ONE combined --metadata-from-file flag carries the startup-script
+    # AND the secret keys: gcloud dict-type flags don't merge when
+    # repeated (a second occurrence replaces the first), so splitting
+    # them would silently drop whichever flag came first. mkstemp paths
+    # carry no commas, so the plain comma-join is safe here.
     sentinel = spec.extra.get("startup_script_path")
     if sentinel:
-        argv.append(f"--metadata-from-file=startup-script={sentinel}")
+        from_file_pairs = [*secret_file_pairs, f"startup-script={sentinel}"]
+        argv.append("--metadata-from-file=" + ",".join(from_file_pairs))
     else:
+        if secret_file_pairs:
+            argv.append("--metadata-from-file=" + ",".join(secret_file_pairs))
         # Inline body (golden tests + small startup scripts). The wrapper
         # caller is responsible for cap-checking. Inlined verbatim into
         # the metadata pairs constructed above is the right form; this
@@ -1547,44 +1594,75 @@ class GcpBackend(ComputeBackend):
         # is frozen, but its ``extra`` dict is mutable by design).
         spec.extra["startup_script_path"] = startup_path
 
+        # Per-secret 0600 tempfiles for the --metadata-from-file channel:
+        # token values never touch the gcloud argv / process list (round-2
+        # Codex Major, task #535). Same resolution order as the renderer
+        # (spec.extra["secret_<KEY>"] from resolve_launch_secrets, then
+        # env); the files are deleted in the finally below the moment the
+        # create loop is done with them.
+        secret_files: dict[str, str] = {}
+        for key in STARTUP_SECRET_ENV_KEYS:
+            val = spec.extra.get(f"secret_{key}") or _envget(key)
+            if val is None or val == "":
+                continue
+            sfd, secret_path = tempfile.mkstemp(
+                prefix=f"eps-gcp-secret-{spec.issue}-{key.lower()}-",
+            )
+            try:
+                os.write(sfd, str(val).encode("utf-8"))
+            finally:
+                os.close(sfd)
+            os.chmod(secret_path, 0o600)
+            secret_files[key] = secret_path
+
         zones_to_try: list[str] = [config.primary_zone]
         zones_to_try.extend(z for z in config.fallback_zones if z and z != config.primary_zone)
         last_error: GcpProvisioningError | None = None
-        for zone in zones_to_try:
-            argv = render_create_argv(
-                spec=spec,
-                config=config,
-                attempt_id=attempt_id,
-                zone=zone,
-                startup_script=startup,
-            )
-            logger.info("GCP create issue=%d in zone=%s", spec.issue, zone)
-            result = self._run(argv)
-            if result.returncode == 0:
-                break
-            last_error = classify_create_failure(
-                returncode=result.returncode,
-                stderr=result.stderr,
-            )
-            # Only retry on a capacity-shaped failure (not on auth/quota
-            # which won't be fixed by trying a different zone). The
-            # classifier tags the matched pattern in evidence; capacity
-            # patterns match the substring "RESOURCE" / "EXHAUSTED" /
-            # "does not have enough resources".
-            matched = (last_error.evidence.get("matched_pattern") or "").lower()
-            if not any(tag in matched for tag in ("exhaust", "resource", "enough resources")):
-                # Non-capacity failure → don't retry; surface immediately.
+        try:
+            for zone in zones_to_try:
+                argv = render_create_argv(
+                    spec=spec,
+                    config=config,
+                    attempt_id=attempt_id,
+                    zone=zone,
+                    startup_script=startup,
+                    secret_files=secret_files,
+                )
+                logger.info("GCP create issue=%d in zone=%s", spec.issue, zone)
+                result = self._run(argv)
+                if result.returncode == 0:
+                    break
+                last_error = classify_create_failure(
+                    returncode=result.returncode,
+                    stderr=result.stderr,
+                )
+                # Only retry on a capacity-shaped failure (not on auth/quota
+                # which won't be fixed by trying a different zone). The
+                # classifier tags the matched pattern in evidence; capacity
+                # patterns match the substring "RESOURCE" / "EXHAUSTED" /
+                # "does not have enough resources".
+                matched = (last_error.evidence.get("matched_pattern") or "").lower()
+                if not any(tag in matched for tag in ("exhaust", "resource", "enough resources")):
+                    # Non-capacity failure → don't retry; surface immediately.
+                    raise last_error
+                logger.warning(
+                    "GCP create capacity miss in zone=%s; trying next fallback. reason=%s",
+                    zone,
+                    last_error.reason,
+                )
+            else:
+                # for-else: executed when the for loop completes without
+                # `break` — every zone failed.
+                assert last_error is not None
                 raise last_error
-            logger.warning(
-                "GCP create capacity miss in zone=%s; trying next fallback. reason=%s",
-                zone,
-                last_error.reason,
-            )
-        else:
-            # for-else: executed when the for loop completes without
-            # `break` — every zone failed.
-            assert last_error is not None
-            raise last_error
+        finally:
+            # gcloud has read the secret files by the time create returns
+            # (success or failure) — shred the on-disk token copies.
+            for secret_path in secret_files.values():
+                try:
+                    os.unlink(secret_path)
+                except FileNotFoundError:
+                    pass
 
         # Successful create. Build the handle + thread the artifact
         # declaration through handle.extra. The handle name matches

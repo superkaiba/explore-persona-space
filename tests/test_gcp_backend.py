@@ -24,8 +24,10 @@ brief:
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -81,6 +83,22 @@ def _required_launch_secrets(monkeypatch):
     """
     monkeypatch.setenv("HF_TOKEN", "hf_test_token")
     monkeypatch.setenv("WANDB_API_KEY", "wandb_test_key")
+    # Hermetic for the OPTIONAL secret keys too: a real token leaking in
+    # from the invoking shell would make render_create_argv demand a
+    # tempfile entry the direct-render tests don't thread (and could put
+    # suite behavior at the mercy of the developer's env).
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+
+# Tempfile paths for the autouse env secrets — render_create_argv only
+# EMBEDS the paths (gcloud reads the files), so fixed fake paths keep the
+# direct-render tests deterministic. launch()-level tests exercise the
+# real tempfile lifecycle (write + 0600 + unlink-in-finally).
+_TEST_SECRET_FILES: dict[str, str] = {
+    "HF_TOKEN": "/tmp/eps-test-secret-hf",
+    "WANDB_API_KEY": "/tmp/eps-test-secret-wandb",
+}
 
 
 def _spec(intent: str = "lora-7b", **overrides: Any) -> RunSpec:
@@ -297,6 +315,7 @@ def test_render_create_argv_lora_golden() -> None:
         config=cfg,
         attempt_id="att-fixed-001",
         startup_script="#!/bin/bash\necho startup\n",
+        secret_files=_TEST_SECRET_FILES,
     )
     joined = " ".join(argv)
     # gcloud verb shape
@@ -335,6 +354,14 @@ def test_render_create_argv_lora_golden() -> None:
     assert any("eps-issue=137" in a for a in argv), argv
     # No shell-escape leak from the startup script body
     assert "rm -rf" not in joined
+    # SECURITY (round-2, task #535): token VALUES never appear on the
+    # argv — secrets ride --metadata-from-file as tempfile PATHS.
+    assert "hf_test_token" not in joined
+    assert "wandb_test_key" not in joined
+    from_file_args = [a for a in argv if a.startswith("--metadata-from-file=")]
+    assert len(from_file_args) == 1, argv
+    assert "HF_TOKEN=/tmp/eps-test-secret-hf" in from_file_args[0]
+    assert "WANDB_API_KEY=/tmp/eps-test-secret-wandb" in from_file_args[0]
 
 
 def test_render_create_argv_ft_intent_uses_4gpu_machine() -> None:
@@ -344,6 +371,7 @@ def test_render_create_argv_ft_intent_uses_4gpu_machine() -> None:
         config=cfg,
         attempt_id="att-fixed-001",
         startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
     )
     assert "--machine-type=a2-ultragpu-4g" in argv
 
@@ -356,6 +384,7 @@ def test_render_create_argv_spot_opt_in() -> None:
         config=cfg,
         attempt_id="att-fixed-001",
         startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
     )
     assert "--provisioning-model=SPOT" in argv
     # On-demand still rejected: regression guard.
@@ -370,6 +399,7 @@ def test_render_create_argv_zone_override() -> None:
         attempt_id="att-fixed-001",
         zone="us-central1-c",
         startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
     )
     assert "--zone=us-central1-c" in argv
     assert "--zone=us-central1-a" not in argv
@@ -388,6 +418,7 @@ def test_render_create_argv_includes_persist_adapter_metadata(monkeypatch) -> No
         config=cfg,
         attempt_id="att-fixed-001",
         startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
     )
     metadata_args = [a for a in argv if a.startswith("--metadata=")]
     joined = " ".join(metadata_args)
@@ -408,6 +439,7 @@ def test_render_create_argv_metadata_comma_value_uses_alternate_delimiter(monkey
         config=cfg,
         attempt_id="att-fixed-001",
         startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
     )
     pair_args = [a for a in argv if a.startswith("--metadata=") and "startup-script" not in a]
     assert len(pair_args) == 1
@@ -432,6 +464,7 @@ def test_render_create_argv_metadata_comma_free_keeps_plain_join(monkeypatch) ->
         config=cfg,
         attempt_id="att-fixed-001",
         startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
     )
     pair_args = [a for a in argv if a.startswith("--metadata=") and "startup-script" not in a]
     assert len(pair_args) == 1
@@ -450,6 +483,7 @@ def test_render_create_argv_omits_persist_adapter_metadata_when_unset(monkeypatc
         config=cfg,
         attempt_id="att-fixed-001",
         startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
     )
     joined = " ".join(argv)
     assert "EPM_PERSIST_ADAPTER_HF_REPO" not in joined
@@ -467,8 +501,14 @@ def test_render_create_argv_uses_metadata_from_file_when_provided() -> None:
         config=cfg,
         attempt_id="att-fixed-001",
         startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
     )
-    assert "--metadata-from-file=startup-script=/tmp/eps-startup.sh" in argv
+    # ONE combined --metadata-from-file flag carries the secrets AND the
+    # startup-script (gcloud dict-type flags don't merge when repeated).
+    from_file_args = [a for a in argv if a.startswith("--metadata-from-file=")]
+    assert len(from_file_args) == 1, argv
+    assert "startup-script=/tmp/eps-startup.sh" in from_file_args[0]
+    assert "HF_TOKEN=/tmp/eps-test-secret-hf" in from_file_args[0]
     # And the inline form is NOT also emitted (avoids double-startup).
     assert not any(a.startswith("--metadata=startup-script=") for a in argv)
 
@@ -1245,20 +1285,17 @@ def test_launch_uses_metadata_from_file_for_startup_script(no_marker_posts, tmp_
     assert len(create_calls) == 1, runner.calls
     create_argv = create_calls[0]
 
-    # The argv MUST take the --metadata-from-file branch.
+    # The argv MUST take the --metadata-from-file branch — ONE combined
+    # flag carrying the secret keys AND the startup-script (gcloud
+    # dict-type flags don't merge when repeated).
     from_file_args = [a for a in create_argv if a.startswith("--metadata-from-file=")]
-    assert from_file_args, f"--metadata-from-file= missing from create argv: {create_argv}"
-    assert any(a.startswith("--metadata-from-file=startup-script=") for a in from_file_args), (
-        from_file_args
-    )
+    assert len(from_file_args) == 1, f"--metadata-from-file= missing/split: {create_argv}"
+    pairs = from_file_args[0][len("--metadata-from-file=") :].split(",")
+    startup_pairs = [p for p in pairs if p.startswith("startup-script=")]
+    assert startup_pairs, pairs
     # And the tempfile path it points to MUST actually exist + carry the
     # rendered script body (so gcloud can read it).
-    target_arg = next(
-        a for a in from_file_args if a.startswith("--metadata-from-file=startup-script=")
-    )
-    path = target_arg.split("=", 2)[-1]
-    from pathlib import Path
-
+    path = startup_pairs[0].split("=", 1)[1]
     script_body = Path(path).read_text(encoding="utf-8")
     # The script body carries the comma-bearing JSON sentinel — verifies
     # the bug payload is in the tempfile rather than smuggled inline.
@@ -1431,23 +1468,97 @@ def test_launch_fails_loud_before_any_create_when_secrets_missing(monkeypatch) -
 
 def test_launch_threads_resolved_secrets_into_create_metadata(no_marker_posts) -> None:
     """End-to-end through launch(): the resolver's values (here from the
-    autouse fixture's env) must reach the create call's metadata."""
+    autouse fixture's env) must reach the create call via the
+    ``--metadata-from-file`` channel — 0600 tempfiles whose CONTENT
+    carries the token, with the token value itself NEVER on the argv
+    (round-2 Codex Major, task #535), and the tempfiles unlinked the
+    moment the create loop is done."""
     created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
     runner = _Runner(
         list_results=[GcloudRunResult(0, "[]", "")],  # no existing instance
         create_results=[GcloudRunResult(0, created_payload, "")],
     )
+    # Spy: at create time (files still on disk), read back each secret
+    # tempfile's content + mode exactly as gcloud would.
+    secret_reads: dict[str, str] = {}
+    secret_modes: dict[str, int] = {}
+    secret_paths: dict[str, str] = {}
+
+    def spying_runner(argv):
+        if "create" in argv and "instances" in argv:
+            for arg in argv:
+                if arg.startswith("--metadata-from-file="):
+                    for pair in arg[len("--metadata-from-file=") :].split(","):
+                        key, _, path = pair.partition("=")
+                        if key in ("HF_TOKEN", "WANDB_API_KEY"):
+                            secret_paths[key] = path
+                            secret_reads[key] = Path(path).read_text()
+                            secret_modes[key] = os.stat(path).st_mode & 0o777
+        return runner(argv)
+
     backend = GcpBackend(
         config=_test_config(),
-        runner=runner,
+        runner=spying_runner,
         marker_poster=lambda **_: None,
     )
     backend.launch(_spec())
     create_calls = [argv for argv in runner.calls if "create" in argv]
     assert create_calls, runner.calls
     joined = " ".join(create_calls[0])
-    assert "HF_TOKEN=hf_test_token" in joined
-    assert "WANDB_API_KEY=wandb_test_key" in joined
+    # Token values never on the argv / process list.
+    assert "hf_test_token" not in joined
+    assert "wandb_test_key" not in joined
+    # The from-file channel delivered the real values, 0600.
+    assert secret_reads == {"HF_TOKEN": "hf_test_token", "WANDB_API_KEY": "wandb_test_key"}
+    assert secret_modes == {"HF_TOKEN": 0o600, "WANDB_API_KEY": 0o600}
+    # The finally shredded the on-disk token copies after create returned.
+    for path in secret_paths.values():
+        assert not os.path.exists(path), path
+
+
+def test_launch_secret_tempfiles_deleted_even_when_create_fails(no_marker_posts) -> None:
+    """The finally must shred the token tempfiles on the FAILURE path too
+    (a raised GcpProvisioningError must not leave tokens on disk)."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[GcloudRunResult(1, "", "permission denied for instances.create")],
+    )
+    secret_paths: dict[str, str] = {}
+
+    def spying_runner(argv):
+        if "create" in argv and "instances" in argv:
+            for arg in argv:
+                if arg.startswith("--metadata-from-file="):
+                    for pair in arg[len("--metadata-from-file=") :].split(","):
+                        key, _, path = pair.partition("=")
+                        if key in ("HF_TOKEN", "WANDB_API_KEY"):
+                            secret_paths[key] = path
+        return runner(argv)
+
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=spying_runner,
+        marker_poster=lambda **_: None,
+    )
+    with pytest.raises(GcpProvisioningError):
+        backend.launch(_spec())
+    assert secret_paths, "create call never carried the from-file secrets"
+    for path in secret_paths.values():
+        assert not os.path.exists(path), path
+
+
+def test_render_create_argv_refuses_inline_secret_without_file() -> None:
+    """A secret that resolves to a value but has NO threaded tempfile path
+    must fail LOUD — silently dropping it provisions a doomed VM (issue
+    535 r7 class) and inlining it would put the token on the argv."""
+    with pytest.raises(ValueError, match="HF_TOKEN"):
+        render_create_argv(
+            spec=_spec(),
+            config=_test_config(),
+            attempt_id="att-fixed-001",
+            startup_script="#!/bin/bash\n",
+            secret_files=None,
+        )
 
 
 def test_render_startup_script_failure_trap_powers_off() -> None:
@@ -1503,6 +1614,7 @@ def test_render_create_argv_enables_guest_attributes() -> None:
         config=_test_config(),
         attempt_id="att-fixed-001",
         startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
     )
     joined = " ".join(argv)
     assert "enable-guest-attributes=TRUE" in joined
