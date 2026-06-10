@@ -1395,6 +1395,10 @@ markers:
     posted_by: skill
     when: "Step 6a"
     fields: "model id, HF gate status, retry plan if rejected"
+  - kind: "epm:hf-quota-exceeded"
+    posted_by: skill
+    when: "Step 6a.6"
+    fields: "verbatim quota 403 text, probed repo id, namespace usage if known; status:blocked — user frees space / upgrades storage. Only the explicit storage-quota 403 posts this; non-quota probe errors are fail-soft (proceed to 6b)"
   - kind: "epm:pod-provisioned"
     posted_by: skill
     when: "Step 6b"
