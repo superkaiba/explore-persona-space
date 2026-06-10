@@ -1845,6 +1845,108 @@ markers:
 # sentinel. All posts_marker values reference a marker kind declared
 # above.
 # ──────────────────────────────────────────────────────────────────────
+  - kind: "epm:backend-selected"
+    posted_by: backends.router.route (via injected marker_poster — defaults to backends.slurm.post_marker_via_task_py); also posted by the legacy backends.selector.select_backend path
+    when: "Whenever the router picks (or escalates / re-routes to) a backend for an issue's run. Posted on every launch=True decision, plus a pre-escalation intermediate marker whenever the auto chain is about to spend GCP credit."
+    fields: |
+      Records WHICH compute backend was chosen, WHY, and the full ladder
+      of per-lane attempts the router walked (slice-5 router /
+      legacy-selector shared shape; the router emits the extended body
+      with `attempts` populated).
+
+      Body shape (JSON in the event `note` field):
+        `requested_kind: <runpod|cluster|nibi|fir|gcp|mila|null>
+         chosen_kind:    <runpod|cluster|nibi|fir|gcp|mila>
+         reason:         <override|reconnect|auto_started|
+                          auto_fallback_gcp|no_compute_available|
+                          workload_failure|frontmatter_default|
+                          frontmatter_explicit|slurm_not_implemented|
+                          slurm_max_wait_exceeded|slurm_hard_failure|
+                          slurm_started>
+         cluster:        <nibi|fir|null>
+         elapsed_seconds: <float>
+         attempts:       [{kind, cluster, est_start_seconds_raw,
+                            est_start_seconds_clamped, outcome, detail,
+                            elapsed_seconds}, ...]
+         extra:          {cancel_race?, gcp_attempts_today?,
+                          intermediate?, ...}`
+
+      Reason codes:
+        * `override`              — explicit `backend:` frontmatter ran.
+        * `reconnect`             — existing live job/instance found.
+        * `auto_started`          — auto chain picked a free lane and
+                                    it reached RUNNING within the park.
+        * `auto_fallback_gcp`     — auto chain escalated to GCP after
+                                    every free lane park-failed. The
+                                    pre-escalation intermediate marker
+                                    (extra.intermediate=true) AND the
+                                    post-launch final marker both carry
+                                    this reason.
+        * `no_compute_available` — every free lane park-failed AND
+                                    GCP capacity-failed; surfaced via
+                                    NoComputeAvailableError → epm:failure.
+        * `workload_failure`      — GCP workload failure; no auto-
+                                    fallback (would re-crash).
+        * `frontmatter_*`/`slurm_*` — legacy selector codes, preserved
+                                    for back-compat.
+
+      The attempts list mirrors the router's per-tier ladder:
+      ranked free lane est-starts (raw + clamped — negative raw values
+      clamp to 0 for ranking but the raw is preserved for the audit
+      trail), per-lane outcomes (`launched`, `park_cap_exceeded`,
+      `terminal_before_running`, `launch_failed`, `reconnected`,
+      `provisioning_failure`, `workload_failure`), and the GCP
+      escalation tier with its attempt-count guard reading. v1.
+  - kind: "epm:cluster-launched"
+    posted_by: backends.slurm.SlurmBackend.launch (via backends.slurm.post_marker_via_task_py)
+    when: "Step 6b (immediately after sbatch submit succeeds, before the submit-and-park watchdog runs)"
+    fields: |
+      SLURM-side launch handle. Body shape (JSON in the event `note` field):
+        `cluster:     <nibi|fir>
+         job_id:      <numeric>
+         job_name:    <eps-issue-<N>[-<plan_hash>]>
+         scratch_dir: <$SCRATCH/eps/issue-<N>>
+         log_path:    <$SCRATCH/eps/issue-<N>/job.out>
+         account:     <rrg-bengioy-ad_gpu>
+         gpus:        <N>
+         time_budget_hours: <H>`
+      Posted INSTEAD of `epm:run-launched` on the cluster path; the
+      RunPod path's `epm:run-launched` schema is unchanged. v1.
+  - kind: "epm:cluster-poll"
+    posted_by: backends.slurm_monitor.build_poll_result (via backends.slurm.post_marker_via_task_py)
+    when: "every Step 6d.2 polling-loop tick on the cluster path that observes a status / phase / slurm_state CHANGE vs the most recent prior cluster-poll (dedup'd against events.jsonl)"
+    fields: |
+      One-tick PollResult snapshot for a cluster job. Body shape (JSON
+      in the event `note` field) mirrors the RunPod `poll_pipeline.py`
+      JSON the orchestrator already consumes:
+        `status: <running|done|stalled|dead|gate>
+         current_phase: <preflight|cpt|sft|dpo|em|eval|done|...>
+         heartbeat_sec_ago: <int>
+         log_tail_excerpt: <last ~2KB>
+         gpu_util: <busy|idle>
+         job_id: <numeric>
+         slurm_state: <PENDING|RUNNING|COMPLETED|FAILED|...>`
+      Posted only on a transition (status, current_phase, or
+      slurm_state differs from the last cluster-poll for this job_id).
+      A long-running job that stays in the same phase doesn't spam
+      markers. v1.
+  - kind: "epm:cluster-terminal"
+    posted_by: backends.slurm_monitor.build_poll_result (via backends.slurm.post_marker_via_task_py; exactly once per job_id)
+    when: "the first poll-tick that observes a terminal state (status in {done,dead}); subsequent terminal observations short-circuit by reading the persisted marker"
+    fields: |
+      Persisted terminal-state breadcrumb so idempotent reconnect after
+      squeue/scontrol ageout still finds the authoritative answer. Body
+      shape:
+        `job_id: <numeric>
+         cluster: <nibi|fir>
+         slurm_state: <COMPLETED|FAILED|TIMEOUT|PREEMPTED|NODE_FAIL|CANCELLED|OUT_OF_MEMORY>
+         exit_code: <"0:0"|"N:M"|null>
+         observed_at: <ISO8601>
+         next_action: <interpret|fallback_runpod|investigate>`
+      `next_action=interpret` for COMPLETED, `fallback_runpod` for
+      PREEMPTED/TIMEOUT/NODE_FAIL (the orchestrator re-routes a fresh
+      run to RunPod), `investigate` for FAILED/OOM (the operator picks
+      whether to retry or pivot). v1.
 steps:
   - id: "0"
     name: load_state
