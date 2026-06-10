@@ -35,6 +35,10 @@ byte-identical band-stop probe batch for all 12 cells with zero probe wiring.
 Usage (CPU; run after gen_issue543_response_bank.py):
     uv run python scripts/build_issue543_mixes.py
     uv run python scripts/build_issue543_mixes.py --smoke   # tiny bank from --smoke gen
+    # Follow-up preflight (plan risk 4): rebuilt parent arms + probes must be
+    # byte-identical to the HF v1 reference manifest BEFORE any upload, and
+    # only the NEW arm + the updated manifest are uploaded (additive):
+    uv run python scripts/build_issue543_mixes.py --verify-vs-hub-manifest --upload-arms r01
 """
 
 from __future__ import annotations
@@ -341,6 +345,78 @@ def _collator_compat_check(bank: dict[str, dict[int, dict]], pool: list[int], to
     log.info("Collator-compat check passed on %d sampled negative rows.", len(neg_samples))
 
 
+# ── HF v1 byte-identity gate (plan risk 4 / round-2 must-fix) ───────────────
+
+
+def _verify_vs_hub_manifest(local_manifest: dict) -> dict:
+    """Compare the fresh build's SHA256 map against the HF v1 reference manifest.
+
+    Downloads ``{HUB_DATA_BUCKET}/mixes/manifest.json`` from the data repo and
+    requires EVERY sha256 key the reference carries (parent-arm mixes + the 4
+    probe files) to be present and byte-identical in the local build. Any
+    mismatch or missing key raises ``RuntimeError`` — the caller places this
+    gate BEFORE the upload leg so a perturbed rebuild can never clobber the
+    v1 reference (plan risk 4: "abort on mismatch BEFORE any training").
+    Local-only keys (a newly added arm, e.g. ``mixes/r01/train.jsonl``) are
+    additive and logged, not compared.
+
+    Returns:
+        Gate record dict: ``passed`` / ``n_compared`` / ``compared_keys`` /
+        ``new_keys`` + the reference manifest's provenance fields.
+    """
+    from _issue543_common import HUB_DATA_REPO
+    from huggingface_hub import hf_hub_download
+
+    ref_file = hf_hub_download(
+        repo_id=HUB_DATA_REPO,
+        filename=f"{HUB_DATA_BUCKET}/mixes/manifest.json",
+        repo_type="dataset",
+        token=os.environ.get("HF_TOKEN"),
+    )
+    ref = json.loads(Path(ref_file).read_text())
+    ref_sha: dict[str, str] = ref.get("sha256", {})
+    local_sha: dict[str, str] = local_manifest["sha256"]
+    if not ref_sha:
+        raise RuntimeError(
+            "Hub reference manifest carries no sha256 map — wrong/corrupt reference; "
+            "refusing to run the byte-identity gate against it."
+        )
+    parent_keys = {f"mixes/{a}/train.jsonl" for a in ("r50", "r25", "r10", "r05")}
+    if not parent_keys <= set(ref_sha):
+        raise RuntimeError(
+            f"Hub reference manifest is missing parent-arm keys {parent_keys - set(ref_sha)} — "
+            "wrong reference file; refusing to vacuously pass the identity gate."
+        )
+    missing = sorted(k for k in ref_sha if k not in local_sha)
+    if missing:
+        raise RuntimeError(
+            f"Byte-identity gate FAIL: local build is missing reference keys {missing}."
+        )
+    mismatched = sorted(k for k in ref_sha if local_sha[k] != ref_sha[k])
+    if mismatched:
+        detail = {k: {"local": local_sha[k], "hub_v1": ref_sha[k]} for k in mismatched}
+        raise RuntimeError(
+            "Byte-identity gate FAIL: rebuilt files differ from the HF v1 reference "
+            f"manifest — the parent arms would no longer be comparable. Mismatched: "
+            f"{json.dumps(detail, indent=2)}. ABORTING before any upload (plan risk 4)."
+        )
+    new_keys = sorted(k for k in local_sha if k not in ref_sha)
+    log.info(
+        "Byte-identity gate PASS: %d/%d reference files identical; additive new keys: %s",
+        len(ref_sha),
+        len(ref_sha),
+        new_keys or "none",
+    )
+    return {
+        "passed": True,
+        "n_compared": len(ref_sha),
+        "compared_keys": sorted(ref_sha),
+        "new_keys": new_keys,
+        "reference_git_commit": ref.get("git_commit"),
+        "reference_timestamp_utc": ref.get("timestamp_utc"),
+    }
+
+
 # ── Main build ──────────────────────────────────────────────────────────────
 
 
@@ -352,7 +428,31 @@ def main() -> int:
         help="Tiny bank (from gen --smoke): scale positives by pool size, total = 2x pool.",
     )
     p.add_argument("--skip-upload", action="store_true")
+    p.add_argument(
+        "--verify-vs-hub-manifest",
+        action="store_true",
+        help=(
+            "Byte-identity gate (plan risk 4): after the build, compare every sha256 key "
+            "in the HF v1 reference mixes/manifest.json against the fresh build and abort "
+            "loud on any mismatch BEFORE the upload leg. Incompatible with --smoke."
+        ),
+    )
+    p.add_argument(
+        "--upload-arms",
+        nargs="+",
+        choices=list(ARMS),
+        default=None,
+        metavar="ARM",
+        help=(
+            "Restrict the upload leg to these arm mixes + the updated manifest (additive "
+            "follow-up upload, e.g. r01). Parent-arm mixes and probes — byte-identical to "
+            "the v1 reference per the gate — are NOT re-uploaded, preserving the Hub v1 "
+            "files/revisions as the reference."
+        ),
+    )
     args = p.parse_args()
+    if args.verify_vs_hub_manifest and args.smoke:
+        p.error("--verify-vs-hub-manifest requires a full build (incompatible with --smoke).")
 
     phase_log("mix_build")
     marker_preflight()
@@ -476,13 +576,30 @@ def main() -> int:
     MIX_MANIFEST_PATH.write_text(json.dumps(manifest, indent=2))
     log.info("Manifest -> %s", MIX_MANIFEST_PATH)
 
+    if args.verify_vs_hub_manifest:
+        # MUST precede the upload leg: a gate failure aborts before anything
+        # (including the updated manifest) can clobber the v1 reference.
+        phase_log("identity_gate")
+        gate = _verify_vs_hub_manifest(manifest)
+        gate_path = MIXES_DIR / "hub_identity_gate.json"
+        gate_path.write_text(json.dumps({**repro_metadata(), **gate}, indent=2))
+        log.info("Identity-gate record -> %s", gate_path)
+
     if not args.skip_upload and not args.smoke:
         phase_log("mix_upload")
         from explore_persona_space.orchestrate.hub import upload_dataset_directory
 
-        for arm in ARMS:
+        upload_arms = args.upload_arms or list(ARMS)
+        for arm in upload_arms:
             upload_dataset_directory(MIXES_DIR / arm, f"{HUB_DATA_BUCKET}/mixes/{arm}")
-        upload_dataset_directory(PROBES_DIR, f"{HUB_DATA_BUCKET}/probes")
+        if args.upload_arms is None:
+            upload_dataset_directory(PROBES_DIR, f"{HUB_DATA_BUCKET}/probes")
+        else:
+            log.info(
+                "Restricted upload: arms %s + manifest only (parent arms/probes are "
+                "byte-identical to the v1 reference and are NOT re-uploaded).",
+                upload_arms,
+            )
         upload_dataset_directory(MIXES_DIR, f"{HUB_DATA_BUCKET}/mixes", pattern="manifest.json")
 
     phase_log("done")

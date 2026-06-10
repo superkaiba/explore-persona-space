@@ -1,14 +1,24 @@
 #!/usr/bin/env python3
 """Issue #543 dispatcher — ratio-lever marker install + benign-SFT survival.
 
-4 arms (r50/r25/r10/r05) x 3 seeds x 2 phases on one 4x H100 pod. SMOKE IS
-SWEEP WITH ONE CELL (plan §4.5): the smoke stage runs the IDENTICAL per-cell
-pipeline (`--cell` -> phase1 train -> smoke eval -> phase2 train -> smoke
-eval) on (r50, seed 42) through the same subprocess/env/logging/sentinel
-path, gates on plan §7 (stop predicate within 1500 steps + dev emission
->= 48/50), and only then fans the remaining 11 cells out over 4 GPUs
-(3 cells per GPU, sequential per GPU; GPU pinning via TrainLoraConfig.gpu_id
-/ eval --gpu — never bare env CUDA_VISIBLE_DEVICES).
+ARMS x 3 seeds x 2 phases on one 4x H100 pod (parent sweep: r50/r25/r10/r05;
+the ratio-1pct-arm follow-up adds r01 via PER-CELL invocations only). SMOKE
+IS SWEEP WITH ONE CELL (plan §4.5): the smoke stage runs the IDENTICAL
+per-cell pipeline (`--cell` -> phase1 train -> smoke eval -> phase2 train ->
+smoke eval) on (r50, seed 42) through the same subprocess/env/logging/
+sentinel path, gates on plan §7 (stop predicate within 1500 steps + dev
+emission >= 48/50), and only then fans the remaining cells out over 4 GPUs
+(sequential per GPU; GPU pinning via TrainLoraConfig.gpu_id / eval --gpu —
+never bare env CUDA_VISIBLE_DEVICES).
+
+Follow-up preflight (``--phase preflight``, follow-up plan §7 row 1 + risk 4):
+the per-cell production path's automated setup — (a) fetch the FROZEN v1
+response bank from the HF data repo if absent (never regenerate); (b) full
+5-arm mix build; (c) SHA256 byte-identity gate of the rebuilt parent arms +
+probes against the HF v1 ``mixes/manifest.json`` reference, abort-loud on
+mismatch BEFORE the additive Hub upload of the new arm + updated manifest;
+(d) b-hat pre-pass with the sanity-range assert. Idempotent; MUST run (and
+exit 0) before any ``--phase phase1`` command on a fresh pod.
 
 Phase 1 (install, marker-only loss, band-stop matching — plan §4.2):
   - b-hat pre-pass: base-model mean log P(marker) on the frozen 32-row
@@ -30,7 +40,9 @@ scripts/task.py.
 Usage (pod):
     nohup uv run python scripts/run_issue543_ratio.py --driver &
     uv run python scripts/run_issue543_ratio.py --cell --arm r50 --seed 42 --gpu 0
-    uv run python scripts/run_issue543_ratio.py --phase phase1 --arm r50 --seed 42 --gpu 0
+    # Per-cell follow-up path (ratio-1pct-arm): preflight FIRST, then phases.
+    uv run python scripts/run_issue543_ratio.py --phase preflight --gpu 0
+    uv run python scripts/run_issue543_ratio.py --phase phase1 --arm r01 --seed 42 --gpu 0
 Local (no GPU): --plan-only walks the driver logic + sentinel writer.
 """
 
@@ -65,10 +77,12 @@ from _issue543_common import (  # noqa: E402
     BASE_MODEL,
     BHAT_PATH,
     BHAT_SANITY_RANGE,
+    DATA_DIR,
     DATA_SEED,
     EOS_TOKEN_ID,
     EVAL_RESULTS_DIR,
     EXPECTED_MARKER_ID,
+    HUB_DATA_BUCKET,
     HUB_MODEL_REPO,
     MARKER_TEXT,
     MIX_MANIFEST_PATH,
@@ -111,6 +125,7 @@ from _issue543_common import (  # noqa: E402
     STOP_TARGET_LOGP_LOW,
     TOTAL_ROWS,
     WANDB_PROJECT,
+    _fetch_hub_json,
     adapter_subfolder,
     cell_slug,
     marker_preflight,
@@ -322,8 +337,9 @@ def measure_bhat(gpu: int) -> float:
 def _load_bhat() -> float:
     if not BHAT_PATH.exists():
         raise FileNotFoundError(
-            f"{BHAT_PATH} missing — run `run_issue543_ratio.py --measure-bhat --gpu 0` first "
-            "(the driver does this automatically)."
+            f"{BHAT_PATH} missing — run `run_issue543_ratio.py --phase preflight --gpu 0` "
+            "first (the per-cell production path's automated setup: bank fetch + mix build "
+            "+ byte-identity gate + b-hat pre-pass); the --driver mode also measures it."
         )
     return float(json.loads(BHAT_PATH.read_text())["bhat_mean_logp"])
 
@@ -1114,6 +1130,160 @@ def _ensure_data_built() -> None:
         )
 
 
+# ── Follow-up preflight (per-cell production path; plan §7 row 1 + risk 4) ──
+
+_PREFLIGHT_RECORD_PATH = DATA_DIR / "preflight_record.json"
+
+
+def _ensure_bank_from_hub() -> None:
+    """Fetch the FROZEN v1 response bank from the HF data repo when absent.
+
+    The per-cell follow-up path must NEVER regenerate the bank: the v1 bank
+    is the input the byte-identity gate's reference manifest was built from,
+    so a regenerated bank would fail the gate by construction. Each class
+    file is fetched per-file (``hf_hub_download`` via ``_fetch_hub_json`` —
+    NOT ``snapshot_download``) and re-fetched when short (smoke-build
+    leftovers); the full row count is asserted after the fetch.
+    """
+    if _bank_complete():
+        log.info("Response bank complete locally — skipping Hub fetch.")
+        return
+    phase_log("bank_fetch")
+    for class_slug in BANK_CLASSES:
+        path = BANK_DIR / f"{class_slug}.jsonl"
+        if path.exists():
+            n = sum(1 for ln in path.read_text().splitlines() if ln.strip())
+            if n == N_TRAIN_QUESTIONS:
+                continue
+            log.warning(
+                "Bank class %s has %d rows != %d — re-fetching.",
+                class_slug,
+                n,
+                N_TRAIN_QUESTIONS,
+            )
+        _fetch_hub_json(f"{HUB_DATA_BUCKET}/response_bank/{class_slug}.jsonl", path)
+        log.info("Fetched bank class %s -> %s", class_slug, path)
+    if not _bank_complete():
+        raise RuntimeError(
+            "Bank fetch completed but the bank is still incomplete/short — "
+            f"check {HUB_DATA_BUCKET}/response_bank/ on the data repo."
+        )
+
+
+def _preflight_build_done() -> bool:
+    """True iff a prior preflight finished build + identity gate + Hub upload.
+
+    The record is written ONLY after the build child exits 0 with the gate
+    passed; ``upload_complete`` distinguishes a fenced local smoke
+    (``--skip-upload``) from the production run, so a smoke run can never
+    satisfy the production idempotency skip.
+    """
+    if not _PREFLIGHT_RECORD_PATH.exists():
+        return False
+    try:
+        rec = json.loads(_PREFLIGHT_RECORD_PATH.read_text())
+    except (OSError, json.JSONDecodeError) as e:
+        log.warning("Preflight record unreadable (%s) — re-running the build leg.", e)
+        return False
+    return (
+        bool(rec.get("identity_gate_passed"))
+        and bool(rec.get("upload_complete"))
+        and _check_data_built()
+    )
+
+
+def run_preflight(args: argparse.Namespace) -> int:
+    """Automated per-cell-path preflight (round-2 must-fix followup-preflight-missing).
+
+    Runs, in order: marker preflight; v1 bank fetch; full 5-arm mix build
+    with the byte-identity gate vs the HF v1 manifest + the additive r01
+    upload (``build_issue543_mixes.py --verify-vs-hub-manifest --upload-arms
+    r01``); b-hat pre-pass with the sanity-range assert. Idempotent —
+    completed legs are skipped on re-run. Exits 0 with ``[phase=done]`` ONLY
+    when every leg passed; the production recipe runs this BEFORE any
+    ``--phase phase1`` cell (plan assumptions #2/#7, risk 4).
+    """
+    phase_log("preflight")
+    marker_preflight()
+    _ensure_bank_from_hub()
+
+    if _preflight_build_done() and not args.force:
+        upload_complete = True  # record-verified prior production preflight
+        log.info(
+            "Preflight build + gate + upload already complete (%s) — skipping (idempotent).",
+            _PREFLIGHT_RECORD_PATH,
+        )
+    else:
+        phase_log("mix_build")
+        cmd = [
+            sys.executable,
+            str(_SCRIPTS_DIR / "build_issue543_mixes.py"),
+            "--verify-vs-hub-manifest",
+            "--upload-arms",
+            "r01",
+        ]
+        if args.skip_upload:
+            log.warning(
+                "--skip-upload: Hub upload leg FENCED (local smoke only — the production "
+                "preflight must upload mixes/r01/ + the updated manifest, plan §8)."
+            )
+            cmd.append("--skip-upload")
+        _run_child(
+            cmd,
+            sentinel_dir() / "issue-543-preflight-mix-build.log",
+            label="preflight-mix-build",
+        )
+        if not _check_data_built():
+            raise RuntimeError(
+                "Preflight mix build exited 0 but artifacts fail the built-data shape check."
+            )
+        gate = json.loads((MIXES_DIR / "hub_identity_gate.json").read_text())
+        if not gate.get("passed"):
+            raise RuntimeError(f"Identity-gate record not passed: {gate}")
+        upload_complete = not args.skip_upload
+        _PREFLIGHT_RECORD_PATH.write_text(
+            json.dumps(
+                {
+                    **repro_metadata(),
+                    "identity_gate_passed": True,
+                    "identity_gate": {k: gate[k] for k in ("n_compared", "new_keys")},
+                    "upload_complete": upload_complete,
+                },
+                indent=2,
+            )
+        )
+
+    if not BHAT_PATH.exists():
+        phase_log("bhat")
+        _run_child(
+            _self_cmd("--measure-bhat", "--gpu", str(args.gpu)),
+            sentinel_dir() / "issue-543-preflight-bhat.log",
+            label="preflight-bhat",
+        )
+    bhat = _load_bhat()
+    lo, hi = BHAT_SANITY_RANGE
+    if not (lo <= bhat <= hi):
+        raise RuntimeError(
+            f"Cached b-hat {bhat:.3f} outside sanity range [{lo}, {hi}] — delete "
+            f"{BHAT_PATH} and re-run the preflight to re-measure."
+        )
+    log.info("Preflight complete: b-hat = %.4f nat; data built + identity gate passed.", bhat)
+    write_sentinel(
+        "preflight",
+        kind="epm:progress",
+        note=json.dumps(
+            {
+                "event": "preflight_complete",
+                "bhat_mean_logp": bhat,
+                "identity_gate_passed": True,
+                "upload_complete": upload_complete,
+            }
+        ),
+    )
+    phase_log("done")
+    return 0
+
+
 def _smoke_gate_check() -> tuple[bool, str]:
     """Plan §7 gate on the smoke cell: stop predicate within 1500 steps + dev pass."""
     arm, seed = SMOKE_CELL
@@ -1148,7 +1318,7 @@ def run_driver(args: argparse.Namespace) -> int:
             label="bhat",
         )
     bhat = _load_bhat()
-    log.info("b-hat = %.4f nat (shared across all 12 cells)", bhat)
+    log.info("b-hat = %.4f nat (ONE shared constant for all cells)", bhat)
 
     # ── Smoke stage: the sweep with one cell (plan §4.5) ────────────────────
     phase_log("smoke_cell")
@@ -1174,14 +1344,14 @@ def run_driver(args: argparse.Namespace) -> int:
         note=json.dumps({"event": "smoke_gate", "passed": ok, "detail": detail}),
     )
     if not ok:
-        log.error("SMOKE GATE FAILED: %s — NOT fanning out the remaining 11 cells.", detail)
+        log.error("SMOKE GATE FAILED: %s — NOT fanning out the remaining cells.", detail)
         return 2
     log.info("Smoke gate PASSED: %s", detail)
     if args.smoke_only:
         phase_log("done")
         return 0
 
-    # ── Fan-out: 12 cells over 4 GPUs (3 per GPU, sequential per GPU) ───────
+    # ── Fan-out: ARMS x SEEDS cells over 4 GPUs (sequential per GPU) ────────
     # The smoke cell's TRAINING artifacts are reused as-is (idempotent skips);
     # its FULL evals run here (the smoke stage ran 20-prompt evals only).
     phase_log("fanout")
@@ -1270,12 +1440,27 @@ def parse_args() -> argparse.Namespace:
     )
     mode = p.add_mutually_exclusive_group(required=True)
     mode.add_argument(
-        "--driver", action="store_true", help="Smoke cell -> gate -> 12-cell fan-out."
+        "--driver",
+        action="store_true",
+        help=(
+            "Smoke cell -> gate -> full ARMS x SEEDS fan-out (now 15 cells incl. the "
+            "parent's completed 12 — BANNED for the ratio-1pct-arm follow-up; use the "
+            "per-cell --phase path with --arm r01 instead)."
+        ),
     )
     mode.add_argument(
         "--cell", action="store_true", help="One full cell pipeline (p1->e1->p2->e2)."
     )
-    mode.add_argument("--phase", choices=PHASES, default=None, help="One training phase.")
+    mode.add_argument(
+        "--phase",
+        choices=[*PHASES, "preflight"],
+        default=None,
+        help=(
+            "One training phase, or 'preflight' (per-cell production setup: bank fetch + "
+            "mix build + HF v1 byte-identity gate + additive r01 upload + b-hat pre-pass; "
+            "MUST exit 0 before any phase1 cell on a fresh pod)."
+        ),
+    )
     mode.add_argument("--measure-bhat", action="store_true", help="Measure + persist b-hat.")
     mode.add_argument("--plan-only", action="store_true", help="CPU dry-run of the driver.")
     p.add_argument("--arm", choices=ARMS)
@@ -1284,6 +1469,15 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--smoke-eval", action="store_true", help="20-prompt evals (smoke stage).")
     p.add_argument("--smoke-only", action="store_true", help="Driver: stop after the smoke gate.")
     p.add_argument("--force", action="store_true", help="Re-run phases whose result JSON exists.")
+    p.add_argument(
+        "--skip-upload",
+        action="store_true",
+        help=(
+            "Preflight only: fence the Hub upload leg (LOCAL SMOKE ONLY — the production "
+            "preflight must upload mixes/r01/ + the updated manifest; a fenced run never "
+            "satisfies the preflight idempotency record)."
+        ),
+    )
     p.add_argument("--child", action="store_true", help=argparse.SUPPRESS)
     return p.parse_args()
 
@@ -1298,6 +1492,8 @@ def main() -> int:
     _assert_credentials()
     if args.driver:
         return run_driver(args)
+    if args.phase == "preflight":
+        return run_preflight(args)
     if args.arm is None:
         raise SystemExit("--arm is required for --cell / --phase modes")
     if args.cell:

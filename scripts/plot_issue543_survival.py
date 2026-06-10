@@ -8,12 +8,20 @@ from __future__ import annotations
 
 import json
 import statistics
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from explore_persona_space.analysis.paper_plots import (
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
+from _issue543_common import ARMS as COMMON_ARMS  # noqa: E402
+from _issue543_common import PHASES, SEEDS  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_blog,
     savefig_paper,
     set_paper_style,
@@ -21,15 +29,36 @@ from explore_persona_space.analysis.paper_plots import (
 
 ROOT = Path(__file__).resolve().parents[1]
 EV = ROOT / "eval_results" / "issue_543"
-ARMS = ["r50", "r25", "r10", "r05"]
-SEEDS = [42, 137, 256]
+
+
+def _arms_with_results() -> list[str]:
+    """Arms (in ``_issue543_common.ARMS`` order) with full eval results on disk.
+
+    Derived from the shared arm registry so a new arm (e.g. the follow-up's
+    r01) joins every figure automatically once its 6 ``run_summary.json``
+    files land; arms without complete results are skipped LOUDLY (printed),
+    leaving the parent 4-arm figures unchanged while r01 is absent.
+    """
+    present, skipped = [], []
+    for arm in COMMON_ARMS:
+        files = [EV / arm / f"seed{s}" / ph / "run_summary.json" for s in SEEDS for ph in PHASES]
+        (present if all(f.exists() for f in files) else skipped).append(arm)
+    if skipped:
+        print(f"plot_issue543_survival: skipping arms with no/partial results: {skipped}")
+    if not present:
+        raise FileNotFoundError(f"No arm has complete eval results under {EV}")
+    return present
+
+
+ARMS = _arms_with_results()
 ARM_LABELS = {
     "r50": "Half-positive (50%)",
     "r25": "Quarter-positive (25%)",
     "r10": "One-in-ten (10%)",
     "r05": "One-in-twenty (5%)",
+    "r01": "One-in-a-hundred (1%)",
 }
-ARM_TICKS = {"r50": "50%", "r25": "25%", "r10": "10%", "r05": "5%"}
+ARM_TICKS = {"r50": "50%", "r25": "25%", "r10": "10%", "r05": "5%", "r01": "1%"}
 CELL_LABELS = {
     "trigger": "key present",
     "no_trigger": "no key (same questions)",
@@ -211,7 +240,7 @@ def fig_retention() -> None:
 
 
 def fig_retention_raw() -> None:
-    """Raw sibling: absolute trained and base log P(marker) post-SFT, per arm at the trigger cell."""
+    """Raw sibling: absolute trained + base log P(marker) post-SFT, per arm, trigger cell."""
     set_paper_style("blog")
     fig, ax = plt.subplots(figsize=(6.5, 4.0))
     x = np.arange(len(ARMS))

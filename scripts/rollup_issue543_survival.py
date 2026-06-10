@@ -3,7 +3,8 @@
 
 Reads every ``eval_results/issue_543/<arm>/seed<S>/<phase>/run_summary.json``
 plus the ``phase1_stop_record.json`` manipulation-check records, and writes
-``eval_results/issue_543/rollup.json`` with:
+``--out`` (default ``eval_results/issue_543/rollup.json``; follow-up runs pass
+``eval_results/issue_543/<followup_label>/rollup.json``) with:
 
   - per (arm x seed x phase x cell): emission rate + the three-space slot
     means (delta log-prob PRIMARY, delta EOS-margin logit SECONDARY,
@@ -45,10 +46,16 @@ from _issue543_common import (  # noqa: E402
 log = logging.getLogger("rollup_issue543_survival")
 
 
-def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
-    """Wilson score 95% interval for a binomial proportion."""
+def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float | None, float | None]:
+    """Wilson score 95% interval for a binomial proportion.
+
+    Returns ``(None, None)`` (JSON ``null``) when ``n == 0`` — a zero-eval-row
+    arm is a REAL registered path under the follow-up's tier-1 kill (all r01
+    installs cap out -> no eval rows), and a bare ``NaN`` in the registered
+    rollup is invalid RFC-8259 JSON (round-2 must-fix rollup-zero-n-nan).
+    """
     if n == 0:
-        return (float("nan"), float("nan"))
+        return (None, None)
     phat = k / n
     denom = 1 + z**2 / n
     center = (phat + z**2 / (2 * n)) / denom
@@ -147,7 +154,9 @@ def main() -> int:
 
     out: Path = args.out
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(rollup, indent=2))
+    # allow_nan=False: any future NaN/Inf leak fails LOUD here instead of
+    # serializing non-standard JSON into the registered artifact.
+    out.write_text(json.dumps(rollup, indent=2, allow_nan=False))
     log.info("Rollup -> %s", out)
     return 0
 
