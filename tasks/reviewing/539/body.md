@@ -280,3 +280,4 @@ uv run python scripts/issue539_replot_v2.py \
   --results eval_results/issue_539/residual_per_cohort.json \
   --fig-dir figures/issue_539
 ```
+- **Methodology reference:** [docs/methodology/issue_539.md](https://github.com/superkaiba/explore-persona-space/blob/main/docs/methodology/issue_539.md) · [gist](https://gist.github.com/superkaiba/555d1b9f1b1022b5e8aa5d633e40a369)
