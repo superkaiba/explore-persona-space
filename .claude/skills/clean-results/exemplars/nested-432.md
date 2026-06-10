@@ -4,7 +4,7 @@
 shape spec'd by `.claude/skills/clean-results/SPEC.md` (adopted
 forward-only after the 2026-W22 four-H2 → three-H2 migration in task
 #454). The canonical full-text body lives at
-`tasks/awaiting_promotion/432/body.md` (or its post-promotion home);
+`tasks/completed/432/body.md`;
 this exemplar is a compact pointer + rule-by-rule walkthrough.
 
 Read alongside `lw-post-examples/` (external LW register references)
@@ -30,10 +30,16 @@ and `iterations.md` (rule provenance).
   narrow 2-negative baseline"), no cross-issue framing, no "byte
   identical" / "byte-identical", training INPUT→OUTPUT examples in a
   `<details open>` table, eval INPUTS named.
-- **Each `#### <finding>` H4 has setup → figure → blockquote caption
-  → read** (Lens 12 check #2: figures inline-narrated, not
+- **Each `#### <finding>` H4 follows setup → figure → blockquote
+  caption → read** (Lens 12 check #2: figures inline-narrated, not
   figure-dumped). Adjacent raw + processed pairs allowed under
-  Lens 11.
+  Lens 11. **Caveat: the full-text #432 body does NOT demonstrate
+  this beat** — its finding blocks carry long (≥4-sentence)
+  figure-last setup narrative with no post-caption read paragraphs.
+  The § Skeleton below IS the canonical reference for this rule;
+  never cite the #432 body as precedent for long or missing read
+  paragraphs (SPEC.md § Target exemplar scope caveat; task #547
+  round-1 reconciliation, 2026-06-10).
 - **No `### Methodology corrections` H3** — when a correction is
   load-bearing, fold it into the relevant `#### <finding>` setup or
   read prose (Lens 8 update + Lens 12 check #3).
