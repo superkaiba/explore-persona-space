@@ -220,8 +220,8 @@ def fig_wrong_slot_dose_response(data_533: dict, data_529: dict) -> None:
     fig.text(
         0.02,
         0.91,
-        "Marker log-probability under the wrong persona's encoding. Lower = less leakage. "
-        "Solid = this run at lr=5e-6, errorbars = 95% bootstrap CI over 5 seeds, n=50 questions each. "
+        "Teacher-forced marker log-probability under the wrong persona's encoding. Lower = less leakage. "
+        "Solid = this run at lr=5e-6, errorbars = 95% bootstrap CI; n = 5 seeds × 50 questions per point. "
         "Dotted = parent #529 at lr=1e-5, means only.",
         fontsize=8,
         color="#5A5A5A",
@@ -397,10 +397,10 @@ def fig_default_slot_leakage(data_533: dict) -> None:
     fig.text(
         0.02,
         0.91,
-        "Marker log-probability under the bare default-assistant encoding. log P = 0 means "
-        "the model emits the marker with probability 1. Pirate-trained LoRA: role at log P ≈ −0.4 "
+        "Teacher-forced marker log-probability under the bare default-assistant encoding. log P = 0 means "
+        "the marker's teacher-forced next-token probability is 1. Pirate-trained LoRA: role at log P ≈ −0.4 "
         "to −1.9 (P ≈ 0.15 to 0.67), system arms at −3.6 to −8.9. Villain: ordering more mixed, "
-        "role between −9.7 and −11.2. n=5 seeds × 50 questions per point.",
+        "role between −9.7 and −11.2. n = 5 seeds × 50 questions per point.",
         fontsize=8,
         color="#5A5A5A",
         ha="left",
