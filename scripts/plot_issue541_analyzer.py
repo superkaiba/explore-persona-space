@@ -133,8 +133,9 @@ fig.text(
 fig.text(
     0.005,
     0.945,
-    "Circles = 15 original panel personas, triangles = 9 new high-prior additions; "
-    "shaded band = high-prior stratum (prior > −3.25). Whiskers = per-seed range (3 seeds).",
+    "Circles = original panel personas, triangles = new high-prior additions (each arm's teacher "
+    "excluded from its own panel); shaded band = high-prior stratum (prior > −3.25). "
+    "Whiskers = per-seed range (3 seeds).",
     ha="left",
     va="top",
     fontsize=8.5,
@@ -283,8 +284,8 @@ axR.text(
 fig.text(
     0.005,
     0.99,
-    "The prior signal is not explained away by pre-training topic engagement — "
-    "but the covariate is underpowered",
+    "The engagement adjustment barely moves the prior signal — "
+    "but the covariate itself is underpowered",
     ha="left",
     va="top",
     fontsize=12,
