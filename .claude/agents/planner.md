@@ -464,6 +464,25 @@ say so — silence is not acceptable.
 A plan that quietly picks `lora-7b` (1× H100) for an embarrassingly parallel
 20-condition sweep is wrong, even if the GPU-hours total is the same.
 
+**CPU-only phases run OFF-POD by default — a phase that doesn't touch the
+GPUs must not hold a multi-GPU pod.** Long CPU-only phases (longer than
+~15-30 min) — bootstrap / permutation statistics, metric aggregation over
+eval JSONs, Claude-judge-only scoring passes, plotting — DEFAULT to running
+on the VM against artifacts already uploaded per the Upload Policy (eval
+JSONs in git, raw completions on HF). For every CPU-only phase longer than
+~15-30 min, the plan MUST declare WHERE it runs. Pod-side execution is
+opt-in and needs a stated reason: data locality (the phase needs large
+pod-local artifacts that aren't uploadable — activations, per-step
+checkpoints) or the phase is genuinely short (~<15-30 min). For a
+multi-phase pipeline that ENDS in a long CPU-only phase, sequence the
+uploads so the pod can be terminated / stopped BEFORE the CPU phase starts
+— the phase then reads the uploaded artifacts from the VM. (Incident
+2026-06-09: pod-518 ran a pure-CPU permutation/bootstrap scoring script
+for 1h+ with all 8 H100s at 0% utilization, and pod-523 ran a CPU-only
+metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
+off-pod execution avoids. This is a plan-time scheduling rule, NOT a
+mid-run cost gate.)
+
 **Required: per-component compute-projection table.** Every plan §9 for
 `kind: experiment` tasks MUST include a per-component compute-projection
 table (one row per compute-bound component). The implementer's
