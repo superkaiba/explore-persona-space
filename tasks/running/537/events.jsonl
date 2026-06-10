@@ -148,3 +148,4 @@
 {"ts": "2026-06-10T16:18:58Z", "kind": "epm:run-launched", "version": 1, "by": "unknown", "note": "pod=pod-537 pid=4702 log_abs=/workspace/logs/issue-537-phase0.log pid_file=/workspace/logs/issue-537-phase0.pid cmd='bash /workspace/launch_issue_537_phase0.sh (P0 chain @ 5e078bbac, max_retries=12)' phase=0 respawn=2"}
 {"ts": "2026-06-10T16:28:32Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> pzero_band", "phase": "pzero_band", "pod": "pod-537"}
 {"ts": "2026-06-10T16:38:04Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: pzero_band -> pzero_headroom", "phase": "pzero_headroom", "pod": "pod-537"}
+{"ts": "2026-06-10T16:47:34Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: pzero_headroom -> pzero_headroom_judge", "phase": "pzero_headroom_judge", "pod": "pod-537"}
