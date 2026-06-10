@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# epm-lint: subprocess-env-implicit-load -- bootstrap() at module top (scripts/_bootstrap.py) loads .env via explore_persona_space.orchestrate.env.load_dotenv; the AST scan can't see through the helper (task #545)
 """Experiment #444 — real-figure invented-attribute provenance-CN.
 
 Tests whether on-policy contrastive negatives pin a model-taught invented
@@ -543,7 +544,11 @@ def _now_iso() -> str:
 def _git_commit_sha() -> str:
     try:
         return (
-            subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT).decode().strip()
+            subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, env={**os.environ}
+            )
+            .decode()
+            .strip()
         )
     except subprocess.CalledProcessError as e:
         logger.warning("could not read git SHA: %s", e)
@@ -605,6 +610,7 @@ def _capture_gpu_metadata() -> dict[str, Any]:
             ],
             stderr=subprocess.STDOUT,
             timeout=10,
+            env={**os.environ},
         ).decode()
     except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
         return {"available": False, "reason": repr(e)}
@@ -615,7 +621,9 @@ def _capture_gpu_metadata() -> dict[str, Any]:
             gpus.append({"name": parts[0], "driver": parts[1], "memory_mib": parts[2]})
     cuda_version = ""
     try:
-        smi = subprocess.check_output(["nvidia-smi"], stderr=subprocess.STDOUT, timeout=10).decode()
+        smi = subprocess.check_output(
+            ["nvidia-smi"], stderr=subprocess.STDOUT, timeout=10, env={**os.environ}
+        ).decode()
         for line in smi.splitlines():
             if "CUDA Version" in line:
                 cuda_version = line.split("CUDA Version:", 1)[1].strip().split()[0]
@@ -1113,6 +1121,7 @@ def _reap_vllm_workers_and_assert_clean(*, fatal: bool = True) -> None:
                 ["nvidia-smi", "--query-gpu=index,uuid", "--format=csv,noheader"],
                 stderr=subprocess.STDOUT,
                 timeout=10,
+                env={**os.environ},
             ).decode()
             cvd_indices = {int(i.strip()) for i in cvd.split(",") if i.strip().isdigit()}
             for line in uuid_out.strip().splitlines():
@@ -1132,6 +1141,7 @@ def _reap_vllm_workers_and_assert_clean(*, fatal: bool = True) -> None:
                 ["nvidia-smi", "--query-compute-apps=pid,gpu_uuid", "--format=csv,noheader"],
                 stderr=subprocess.STDOUT,
                 timeout=10,
+                env={**os.environ},
             ).decode()
         except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
             logger.warning("nvidia-smi unavailable; skipping orphan-PID check")
