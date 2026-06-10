@@ -6,9 +6,11 @@ description: >
   analyzer's `epm:interpretation v<n>` body across 7 lenses (overclaims,
   surprising patterns, alternatives, calibration, missing context,
   plot-prose match, raw-text sample plausibility). Lens 6 uses Codex
-  multimodal (PNG support probe PASSED 2026-05-10). Thin Claude wrapper:
-  composes prompt → invokes Codex via `companion task` → posts an
-  `epm:interp-critique-codex` task workflow event.
+  multimodal (PNG support probe PASSED 2026-05-10). Thin Claude prompt-composer:
+  composes prompt → returns its path; the orchestrator dispatches Codex's
+  `companion task` runtime and posts an `epm:interp-critique-codex` task
+  workflow event. The wrapper NEVER dispatches Codex itself — that's the
+  orphan-job anti-pattern (incident task #533, 2026-06-10).
 model: "claude-fable-5[1m]"
 memory: project
 effort: medium
