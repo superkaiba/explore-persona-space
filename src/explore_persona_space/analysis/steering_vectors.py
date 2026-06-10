@@ -33,6 +33,7 @@ import argparse
 import hashlib
 import json
 import logging
+import re
 import time
 from collections.abc import Sequence
 from pathlib import Path
@@ -132,7 +133,10 @@ def _judge_filter_em_responses(
         iter_custom_ids,
     )
 
-    persona_key = system_prompt[:32]
+    # Anthropic batch custom_ids must match ^[a-zA-Z0-9_-]{1,64}$ and the
+    # persona key is embedded verbatim in build_custom_id — a raw system
+    # prompt ("You give bad medical advice.") 400s the whole batch.
+    persona_key = re.sub(r"[^a-zA-Z0-9_-]", "_", system_prompt[:32])
     completions = {persona_key: {q: [r] for q, r in responses_by_question.items()}}
 
     # raw_path was previously conditional on cache_dir; with judge_filter
