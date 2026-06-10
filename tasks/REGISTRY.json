@@ -3173,8 +3173,8 @@
       "goal": "Implement the canonical Rao-Blackwellized sequence-level Jensen-Shannon divergence (Amini/Vieira/Cotterell 2025, arXiv 2504.10637) per persona-distance-metrics.md, re-fit the JS arm of #532's predictor leaderboard against the same 416-cell ep1 panel, and test whether the canonical estimator changes the JS-arm conclusion that #532 measured with the deprecated v1 single-next-token estimator.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/540",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/540",
+      "status": "awaiting_promotion",
       "title": "The canonical sequence-level JS predictor tracks marker leakage no better than a simple response-length-difference feature (MODERATE confidence)"
     },
     "541": {
