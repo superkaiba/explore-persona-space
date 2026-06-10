@@ -13,6 +13,10 @@ goal: 'Build a reusable behavior-generalization testbed: measure the leakage mat
   Group C delta-rule/associative-memory per Dan''s framing, and combiners) against
   held-out cells -- with whether context-leakage predictors transfer to behavior leakage
   as a scored headline finding.'
+relates_to:
+- beh-b-to-bprime
+- leak-predictor
+- identity-cb-duality
 ---
 ## Goal
 
