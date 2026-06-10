@@ -4,7 +4,7 @@ title: An emergent-misalignment LoRA shifts all 14 persona contexts along one sh
 kind: experiment
 tags: []
 created_at: '2026-06-08T21:29:43Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 519
 goal: 'Run Phases C/D/E/F on the six LoRA adapters trained in #519 (marker × 3 seeds
   + EM × 3 seeds, on HF Hub at commit c46b8989d) so the rank-one law cross-arm test
