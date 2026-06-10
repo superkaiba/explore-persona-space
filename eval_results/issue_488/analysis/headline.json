@@ -1,0 +1,746 @@
+{
+  "schema_version": "i488_v1",
+  "n_cells_total": 8748,
+  "fracs": [
+    0.1,
+    0.25,
+    0.5,
+    1.0,
+    2.0,
+    3.0
+  ],
+  "seeds": [
+    42,
+    137
+  ],
+  "per_frac_seed_h1_h2": {
+    "frac010_seed42": {
+      "frac": 0.1,
+      "seed": 42,
+      "n_cells": 702,
+      "h1_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "h2_binary_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "h2_graded_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "identifiability": {
+        "pearson_js_stylization": 0.6036387265533596,
+        "n_non_stylized_high_js": 103,
+        "high_js_threshold": 0.12
+      },
+      "h2_verdict": "NULL"
+    },
+    "frac010_seed137": {
+      "frac": 0.1,
+      "seed": 137,
+      "n_cells": 702,
+      "h1_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "h2_binary_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "h2_graded_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "identifiability": {
+        "pearson_js_stylization": 0.6036387265533596,
+        "n_non_stylized_high_js": 103,
+        "high_js_threshold": 0.12
+      },
+      "h2_verdict": "NULL"
+    },
+    "frac025_seed42": {
+      "frac": 0.25,
+      "seed": 42,
+      "n_cells": 702,
+      "h1_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "h2_binary_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "h2_graded_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "identifiability": {
+        "pearson_js_stylization": 0.6036387265533596,
+        "n_non_stylized_high_js": 103,
+        "high_js_threshold": 0.12
+      },
+      "h2_verdict": "NULL"
+    },
+    "frac025_seed137": {
+      "frac": 0.25,
+      "seed": 137,
+      "n_cells": 702,
+      "h1_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "h2_binary_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "h2_graded_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "identifiability": {
+        "pearson_js_stylization": 0.6036387265533596,
+        "n_non_stylized_high_js": 103,
+        "high_js_threshold": 0.12
+      },
+      "h2_verdict": "NULL"
+    },
+    "frac050_seed42": {
+      "frac": 0.5,
+      "seed": 42,
+      "n_cells": 702,
+      "h1_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "h2_binary_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "h2_graded_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "identifiability": {
+        "pearson_js_stylization": 0.6036387265533596,
+        "n_non_stylized_high_js": 103,
+        "high_js_threshold": 0.12
+      },
+      "h2_verdict": "NULL"
+    },
+    "frac050_seed137": {
+      "frac": 0.5,
+      "seed": 137,
+      "n_cells": 702,
+      "h1_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "h2_binary_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "h2_graded_partial": {
+        "point": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n_boots_valid": 0,
+        "n_cells": 702
+      },
+      "identifiability": {
+        "pearson_js_stylization": 0.6036387265533596,
+        "n_non_stylized_high_js": 103,
+        "high_js_threshold": 0.12
+      },
+      "h2_verdict": "NULL"
+    },
+    "frac100_seed42": {
+      "frac": 1.0,
+      "seed": 42,
+      "n_cells": 702,
+      "h1_partial": {
+        "point": -0.16412154652797847,
+        "ci_low": -0.36079478368028006,
+        "ci_high": 0.030677571352764565,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "h2_binary_partial": {
+        "point": -0.141598720173531,
+        "ci_low": -0.3387946898494504,
+        "ci_high": 0.060285985449515196,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "h2_graded_partial": {
+        "point": -0.004621423556160746,
+        "ci_low": -0.18984835053001228,
+        "ci_high": 0.1728760058226125,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "identifiability": {
+        "pearson_js_stylization": 0.6036387265533596,
+        "n_non_stylized_high_js": 103,
+        "high_js_threshold": 0.12
+      },
+      "h2_verdict": "NULL"
+    },
+    "frac100_seed137": {
+      "frac": 1.0,
+      "seed": 137,
+      "n_cells": 702,
+      "h1_partial": {
+        "point": -0.11145881622497204,
+        "ci_low": -0.2984559986729915,
+        "ci_high": 0.07070757479014847,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "h2_binary_partial": {
+        "point": -0.09221239542955761,
+        "ci_low": -0.2756472842655806,
+        "ci_high": 0.09169495804965584,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "h2_graded_partial": {
+        "point": 0.027006341322029084,
+        "ci_low": -0.16250165069406547,
+        "ci_high": 0.19423953246779127,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "identifiability": {
+        "pearson_js_stylization": 0.6036387265533596,
+        "n_non_stylized_high_js": 103,
+        "high_js_threshold": 0.12
+      },
+      "h2_verdict": "NULL"
+    },
+    "frac200_seed42": {
+      "frac": 2.0,
+      "seed": 42,
+      "n_cells": 702,
+      "h1_partial": {
+        "point": -0.23770718323836992,
+        "ci_low": -0.4631469183644678,
+        "ci_high": 0.018049164795200072,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "h2_binary_partial": {
+        "point": -0.13290899682516036,
+        "ci_low": -0.3827216587781406,
+        "ci_high": 0.11344770673014079,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "h2_graded_partial": {
+        "point": 0.10452759975324262,
+        "ci_low": -0.1332125358344117,
+        "ci_high": 0.2951760520990899,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "identifiability": {
+        "pearson_js_stylization": 0.6036387265533596,
+        "n_non_stylized_high_js": 103,
+        "high_js_threshold": 0.12
+      },
+      "h2_verdict": "NULL"
+    },
+    "frac200_seed137": {
+      "frac": 2.0,
+      "seed": 137,
+      "n_cells": 702,
+      "h1_partial": {
+        "point": -0.1899332936556082,
+        "ci_low": -0.4378754140484091,
+        "ci_high": 0.07940139866057375,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "h2_binary_partial": {
+        "point": -0.08799830826734588,
+        "ci_low": -0.3502998555627012,
+        "ci_high": 0.16610331655793012,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "h2_graded_partial": {
+        "point": 0.13113731065573483,
+        "ci_low": -0.09948249794851297,
+        "ci_high": 0.31265548018803485,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "identifiability": {
+        "pearson_js_stylization": 0.6036387265533596,
+        "n_non_stylized_high_js": 103,
+        "high_js_threshold": 0.12
+      },
+      "h2_verdict": "NULL"
+    },
+    "frac300_seed42": {
+      "frac": 3.0,
+      "seed": 42,
+      "n_cells": 702,
+      "h1_partial": {
+        "point": -0.2661414722375525,
+        "ci_low": -0.48652575270828435,
+        "ci_high": -0.002581986202393563,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "h2_binary_partial": {
+        "point": -0.16444021944695505,
+        "ci_low": -0.40059378470698453,
+        "ci_high": 0.09114961145711507,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "h2_graded_partial": {
+        "point": 0.08762545649155075,
+        "ci_low": -0.14772936264947645,
+        "ci_high": 0.28485916229108904,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "identifiability": {
+        "pearson_js_stylization": 0.6036387265533596,
+        "n_non_stylized_high_js": 103,
+        "high_js_threshold": 0.12
+      },
+      "h2_verdict": "NULL"
+    },
+    "frac300_seed137": {
+      "frac": 3.0,
+      "seed": 137,
+      "n_cells": 702,
+      "h1_partial": {
+        "point": -0.21467610136562407,
+        "ci_low": -0.4388762041615432,
+        "ci_high": 0.03992746877895713,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "h2_binary_partial": {
+        "point": -0.1135679743131232,
+        "ci_low": -0.36475862417149785,
+        "ci_high": 0.1283324339199829,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "h2_graded_partial": {
+        "point": 0.107459691152565,
+        "ci_low": -0.11728408150418954,
+        "ci_high": 0.28887354910868657,
+        "n_boots_valid": 5000,
+        "n_cells": 702
+      },
+      "identifiability": {
+        "pearson_js_stylization": 0.6036387265533596,
+        "n_non_stylized_high_js": 103,
+        "high_js_threshold": 0.12
+      },
+      "h2_verdict": "NULL"
+    }
+  },
+  "h3": {
+    "n_cells": 1404,
+    "pooled_spearman_rho": 0.17517171320222294,
+    "pooled_p_value": 3.869253316267079e-11,
+    "within_source_rho_median": 0.33053089079201103,
+    "within_source_rho_n": 8,
+    "within_source_rho_values": [
+      0.4826693453801442,
+      0.3216580868466549,
+      0.39936478226131567,
+      0.1587255444142889,
+      0.48188682234342417,
+      0.2634744770906108,
+      0.33940369473736715,
+      0.13637898688331115
+    ]
+  },
+  "saturation": {
+    "frac010_seed42": {
+      "frac": 0.1,
+      "seed": 42,
+      "n_offdiag_cells": 702,
+      "floor_mass_off": 1.0,
+      "ceiling_mass_off": 0.0,
+      "tie_mass_off": 1.0,
+      "eligible_for_h1_h2": false
+    },
+    "frac010_seed137": {
+      "frac": 0.1,
+      "seed": 137,
+      "n_offdiag_cells": 702,
+      "floor_mass_off": 1.0,
+      "ceiling_mass_off": 0.0,
+      "tie_mass_off": 1.0,
+      "eligible_for_h1_h2": false
+    },
+    "frac025_seed42": {
+      "frac": 0.25,
+      "seed": 42,
+      "n_offdiag_cells": 702,
+      "floor_mass_off": 1.0,
+      "ceiling_mass_off": 0.0,
+      "tie_mass_off": 1.0,
+      "eligible_for_h1_h2": false
+    },
+    "frac025_seed137": {
+      "frac": 0.25,
+      "seed": 137,
+      "n_offdiag_cells": 702,
+      "floor_mass_off": 1.0,
+      "ceiling_mass_off": 0.0,
+      "tie_mass_off": 1.0,
+      "eligible_for_h1_h2": false
+    },
+    "frac050_seed42": {
+      "frac": 0.5,
+      "seed": 42,
+      "n_offdiag_cells": 702,
+      "floor_mass_off": 1.0,
+      "ceiling_mass_off": 0.0,
+      "tie_mass_off": 1.0,
+      "eligible_for_h1_h2": false
+    },
+    "frac050_seed137": {
+      "frac": 0.5,
+      "seed": 137,
+      "n_offdiag_cells": 702,
+      "floor_mass_off": 1.0,
+      "ceiling_mass_off": 0.0,
+      "tie_mass_off": 1.0,
+      "eligible_for_h1_h2": false
+    },
+    "frac100_seed42": {
+      "frac": 1.0,
+      "seed": 42,
+      "n_offdiag_cells": 702,
+      "floor_mass_off": 0.9786324786324786,
+      "ceiling_mass_off": 0.0,
+      "tie_mass_off": 0.9786324786324786,
+      "eligible_for_h1_h2": false
+    },
+    "frac100_seed137": {
+      "frac": 1.0,
+      "seed": 137,
+      "n_offdiag_cells": 702,
+      "floor_mass_off": 0.9629629629629629,
+      "ceiling_mass_off": 0.0,
+      "tie_mass_off": 0.9629629629629629,
+      "eligible_for_h1_h2": false
+    },
+    "frac200_seed42": {
+      "frac": 2.0,
+      "seed": 42,
+      "n_offdiag_cells": 702,
+      "floor_mass_off": 0.6923076923076923,
+      "ceiling_mass_off": 0.0,
+      "tie_mass_off": 0.6923076923076923,
+      "eligible_for_h1_h2": true
+    },
+    "frac200_seed137": {
+      "frac": 2.0,
+      "seed": 137,
+      "n_offdiag_cells": 702,
+      "floor_mass_off": 0.6908831908831908,
+      "ceiling_mass_off": 0.0,
+      "tie_mass_off": 0.6908831908831908,
+      "eligible_for_h1_h2": true
+    },
+    "frac300_seed42": {
+      "frac": 3.0,
+      "seed": 42,
+      "n_offdiag_cells": 702,
+      "floor_mass_off": 0.7293447293447294,
+      "ceiling_mass_off": 0.0,
+      "tie_mass_off": 0.7293447293447294,
+      "eligible_for_h1_h2": true
+    },
+    "frac300_seed137": {
+      "frac": 3.0,
+      "seed": 137,
+      "n_offdiag_cells": 702,
+      "floor_mass_off": 0.7321937321937322,
+      "ceiling_mass_off": 0.0,
+      "tie_mass_off": 0.7321937321937322,
+      "eligible_for_h1_h2": true
+    }
+  },
+  "picked_headline_frac_per_seed": {
+    "seed42": {
+      "rule": "Pre-specified v3 \u00a76.2.D \u03c1-blind picker: lowest eligible frac scanned ascending in {0.10, 0.25, 0.50, 1.00, 2.00, 3.00}. Eligible := tie_mass_off \u2264 0.85 AND median per-source emission_ii \u2265 0.2.",
+      "picked_frac": 2.0,
+      "seed": 42,
+      "eligibility": [
+        {
+          "frac": 0.1,
+          "tie_mass_off": 1.0,
+          "median_emission_ii": 0.0,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=1.000 > 0.85 (saturated)",
+            "median_emission_ii=0.000 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 0.25,
+          "tie_mass_off": 1.0,
+          "median_emission_ii": 0.0,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=1.000 > 0.85 (saturated)",
+            "median_emission_ii=0.000 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 0.5,
+          "tie_mass_off": 1.0,
+          "median_emission_ii": 0.0,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=1.000 > 0.85 (saturated)",
+            "median_emission_ii=0.000 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 1.0,
+          "tie_mass_off": 0.9786324786324786,
+          "median_emission_ii": 0.04375,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=0.979 > 0.85 (saturated)",
+            "median_emission_ii=0.044 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 2.0,
+          "tie_mass_off": 0.6923076923076923,
+          "median_emission_ii": 0.80625,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": true,
+          "reasons_if_not": []
+        },
+        {
+          "frac": 3.0,
+          "tie_mass_off": 0.7293447293447294,
+          "median_emission_ii": 0.9,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": true,
+          "reasons_if_not": []
+        }
+      ],
+      "recovery_required": false,
+      "recovery_reason_if_none": "production_no_inband_frac"
+    },
+    "seed137": {
+      "rule": "Pre-specified v3 \u00a76.2.D \u03c1-blind picker: lowest eligible frac scanned ascending in {0.10, 0.25, 0.50, 1.00, 2.00, 3.00}. Eligible := tie_mass_off \u2264 0.85 AND median per-source emission_ii \u2265 0.2.",
+      "picked_frac": 2.0,
+      "seed": 137,
+      "eligibility": [
+        {
+          "frac": 0.1,
+          "tie_mass_off": 1.0,
+          "median_emission_ii": 0.0,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=1.000 > 0.85 (saturated)",
+            "median_emission_ii=0.000 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 0.25,
+          "tie_mass_off": 1.0,
+          "median_emission_ii": 0.0,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=1.000 > 0.85 (saturated)",
+            "median_emission_ii=0.000 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 0.5,
+          "tie_mass_off": 1.0,
+          "median_emission_ii": 0.0,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=1.000 > 0.85 (saturated)",
+            "median_emission_ii=0.000 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 1.0,
+          "tie_mass_off": 0.9629629629629629,
+          "median_emission_ii": 0.04375,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": false,
+          "reasons_if_not": [
+            "tie_mass_off=0.963 > 0.85 (saturated)",
+            "median_emission_ii=0.044 < 0.2 (insufficient source implant)"
+          ]
+        },
+        {
+          "frac": 2.0,
+          "tie_mass_off": 0.6908831908831908,
+          "median_emission_ii": 0.88125,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": true,
+          "reasons_if_not": []
+        },
+        {
+          "frac": 3.0,
+          "tie_mass_off": 0.7321937321937322,
+          "median_emission_ii": 0.94375,
+          "n_offdiag_cells": 702,
+          "n_diag_sources": 27,
+          "eligible": true,
+          "reasons_if_not": []
+        }
+      ],
+      "recovery_required": false,
+      "recovery_reason_if_none": "production_no_inband_frac"
+    }
+  },
+  "pearson_stylization_js": {
+    "rule": "Pearson(stylization_score_source, JS) over the off-diag cells of each (frac, seed). Surface prominently in the H2 verdict prose with the structural-collinearity note (v2 \u00a74.3).",
+    "per_frac_seed": {
+      "frac010_seed42": {
+        "n_cells": 702,
+        "pearson_js_stylization": 0.6036387265533596,
+        "note": "Collinearity is STRUCTURAL by construction (both share T_i); interpret the H2 partial \u03c1 as load-bearing, not this raw Pearson."
+      },
+      "frac010_seed137": {
+        "n_cells": 702,
+        "pearson_js_stylization": 0.6036387265533596,
+        "note": "Collinearity is STRUCTURAL by construction (both share T_i); interpret the H2 partial \u03c1 as load-bearing, not this raw Pearson."
+      },
+      "frac025_seed42": {
+        "n_cells": 702,
+        "pearson_js_stylization": 0.6036387265533596,
+        "note": "Collinearity is STRUCTURAL by construction (both share T_i); interpret the H2 partial \u03c1 as load-bearing, not this raw Pearson."
+      },
+      "frac025_seed137": {
+        "n_cells": 702,
+        "pearson_js_stylization": 0.6036387265533596,
+        "note": "Collinearity is STRUCTURAL by construction (both share T_i); interpret the H2 partial \u03c1 as load-bearing, not this raw Pearson."
+      },
+      "frac050_seed42": {
+        "n_cells": 702,
+        "pearson_js_stylization": 0.6036387265533596,
+        "note": "Collinearity is STRUCTURAL by construction (both share T_i); interpret the H2 partial \u03c1 as load-bearing, not this raw Pearson."
+      },
+      "frac050_seed137": {
+        "n_cells": 702,
+        "pearson_js_stylization": 0.6036387265533596,
+        "note": "Collinearity is STRUCTURAL by construction (both share T_i); interpret the H2 partial \u03c1 as load-bearing, not this raw Pearson."
+      },
+      "frac100_seed42": {
+        "n_cells": 702,
+        "pearson_js_stylization": 0.6036387265533596,
+        "note": "Collinearity is STRUCTURAL by construction (both share T_i); interpret the H2 partial \u03c1 as load-bearing, not this raw Pearson."
+      },
+      "frac100_seed137": {
+        "n_cells": 702,
+        "pearson_js_stylization": 0.6036387265533596,
+        "note": "Collinearity is STRUCTURAL by construction (both share T_i); interpret the H2 partial \u03c1 as load-bearing, not this raw Pearson."
+      },
+      "frac200_seed42": {
+        "n_cells": 702,
+        "pearson_js_stylization": 0.6036387265533596,
+        "note": "Collinearity is STRUCTURAL by construction (both share T_i); interpret the H2 partial \u03c1 as load-bearing, not this raw Pearson."
+      },
+      "frac200_seed137": {
+        "n_cells": 702,
+        "pearson_js_stylization": 0.6036387265533596,
+        "note": "Collinearity is STRUCTURAL by construction (both share T_i); interpret the H2 partial \u03c1 as load-bearing, not this raw Pearson."
+      },
+      "frac300_seed42": {
+        "n_cells": 702,
+        "pearson_js_stylization": 0.6036387265533596,
+        "note": "Collinearity is STRUCTURAL by construction (both share T_i); interpret the H2 partial \u03c1 as load-bearing, not this raw Pearson."
+      },
+      "frac300_seed137": {
+        "n_cells": 702,
+        "pearson_js_stylization": 0.6036387265533596,
+        "note": "Collinearity is STRUCTURAL by construction (both share T_i); interpret the H2 partial \u03c1 as load-bearing, not this raw Pearson."
+      }
+    }
+  }
+}
