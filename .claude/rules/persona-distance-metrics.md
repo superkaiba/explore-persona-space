@@ -41,7 +41,8 @@ samples/probes. Sample sequences from the FIRST argument of each KL.
   not verbosity (#548: under a 256-tok cap the length-controlled JS partial
   read as null, −0.063 at p = 0.32; at 1024 tok with 0.000 truncation it is
   −0.215 at p = 5.2e-4). Per-pair JS itself is cap-stable (cross-cap rank
-  correlation 0.993) — the cap corrupts the length CONTROL, not the divergence. #404's symmetric-KL on Claude-*judge-score*
+  correlation 0.993) — the cap corrupts the length CONTROL, not the divergence.
+- **DEPRECATED, do not use:** #404's symmetric-KL on Claude-*judge-score*
   distributions (collapsed to ~0 because judge scores saturate); #458's
   single-*next-token* JS (`issue458_predictor_jsdiv.py` v1 — dominated by the
   first response token / formatting). Both are first-token / coarse proxies, not
