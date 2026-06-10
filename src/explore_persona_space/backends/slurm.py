@@ -2202,10 +2202,18 @@ class SlurmBackend(ComputeBackend):
     def _cluster_for_spec(self, spec: RunSpec) -> ClusterConfig:
         if spec.cluster:
             return get_cluster_config(spec.cluster)
-        # Fallback: when the spec was built without an explicit cluster
-        # (defensive — the selector always threads cluster through), pick
-        # Nibi as the v1 default.
-        return get_cluster_config("nibi")
+        # NO silent default. The old "pick Nibi" fallback silently
+        # submitted the 'mila' lane's sbatch to Nibi (issue 535 live
+        # finding: job 15876369 ran on Nibi under rrg-bengioy-ad_gpu
+        # while every lane-level label said mila, and the lane PASSed
+        # its checklist vacuously). The router threads the lane kind
+        # into ``spec.cluster`` via ``_spec_for_lane``; a spec arriving
+        # here without one is a routing bug — fail fast.
+        raise ValueError(
+            f"RunSpec for issue {spec.issue} reached SlurmBackend with no "
+            "spec.cluster — the router must thread the lane's cluster name "
+            "(_spec_for_lane); refusing the silent nibi default."
+        )
 
 
 def _default_src_root() -> Path:

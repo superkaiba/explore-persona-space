@@ -145,6 +145,18 @@ ACCEPTANCE_FIGURE_PATH = "figures/issue_{issue}/router_acceptance_{lane}.png"
 #: chosen-lane decision (see ``epm:backend-selected v1`` in workflow.yaml).
 ROUTING_MARKER = "epm:backend-selected"
 
+#: Ground-truth launch marker: posted by the SLURM monitor at submit time
+#: with the cluster the job ACTUALLY went to (resolved ClusterConfig),
+#: independent of the router's lane belief. Check (c) compares the two
+#: for per-cluster lanes (live finding, issue 535: the 'mila' lane's job
+#: ran on Nibi — chosen_kind said mila, cluster-launched said nibi — and
+#: the checklist PASSed vacuously).
+CLUSTER_LAUNCHED_MARKER = "epm:cluster-launched"
+
+#: Lanes whose kind IS a SLURM cluster name (mirror of
+#: ``backends.router._PER_CLUSTER_LANES``).
+PER_CLUSTER_LANES = frozenset({"nibi", "fir", "mila"})
+
 #: Default Hydra overrides for the smoke workload. ~20 LoRA steps on
 #: 50-row data; report_to=wandb so training metrics land in WandB per
 #: the always-on WandB-required rule.
@@ -649,6 +661,37 @@ def check_routing_marker_posted(
                         f"requested lane {expected_lane!r}"
                     ),
                 )
+            # GROUND-TRUTH cross-check for per-cluster SLURM lanes: the
+            # chosen_kind above is the router's BELIEF; the
+            # epm:cluster-launched marker records the cluster the sbatch
+            # ACTUALLY went to. A mismatch means a misroute (issue 535:
+            # the 'mila' lane's job ran on Nibi and PASSed vacuously).
+            effective_lane = chosen if expected_lane == "auto" else expected_lane
+            if effective_lane in PER_CLUSTER_LANES:
+                actual = _latest_launched_cluster(events)
+                if actual is None:
+                    return CheckResult(
+                        name="routing_marker_posted",
+                        passed=False,
+                        detail=(
+                            f"chosen_kind={chosen} but no {CLUSTER_LAUNCHED_MARKER!r} "
+                            "marker to ground-truth the cluster against"
+                        ),
+                    )
+                if actual != effective_lane:
+                    return CheckResult(
+                        name="routing_marker_posted",
+                        passed=False,
+                        detail=(
+                            f"MISROUTE: chosen_kind={chosen} but the job actually "
+                            f"launched on cluster={actual!r} (epm:cluster-launched)"
+                        ),
+                    )
+                return CheckResult(
+                    name="routing_marker_posted",
+                    passed=True,
+                    detail=f"chosen_kind={chosen}; ground-truth cluster={actual}",
+                )
             return CheckResult(
                 name="routing_marker_posted",
                 passed=True,
@@ -659,6 +702,33 @@ def check_routing_marker_posted(
         passed=False,
         detail=f"no {ROUTING_MARKER!r} marker on task {issue}",
     )
+
+
+def _latest_launched_cluster(events: list[dict[str, Any]]) -> str | None:
+    """Cluster name from the most recent ``epm:cluster-launched`` marker.
+
+    The SLURM monitor posts the marker at submit time with a JSON note
+    carrying ``"cluster": "<name>"`` — the cluster the job ACTUALLY went
+    to (resolved ClusterConfig at sbatch), independent of the router's
+    lane belief. Returns ``None`` when no such marker (or no cluster
+    field) exists — e.g. a GCP launch, whose launched marker carries
+    ``"backend": "gcp"`` instead.
+    """
+    for event in reversed(events):
+        marker = event.get("kind") or event.get("marker") or ""
+        if marker != CLUSTER_LAUNCHED_MARKER:
+            continue
+        note = event.get("note") or ""
+        try:
+            body = json.loads(note)
+        except (TypeError, ValueError):
+            cluster = _parse_kv_from_marker_note(note, "cluster")
+            return cluster if cluster else None
+        if isinstance(body, dict):
+            cluster = body.get("cluster")
+            return cluster if isinstance(cluster, str) and cluster else None
+        return None
+    return None
 
 
 def _parse_kv_from_marker_note(note: str, key: str) -> str | None:

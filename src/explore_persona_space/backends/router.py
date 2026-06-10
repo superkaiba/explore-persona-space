@@ -184,6 +184,12 @@ DEFAULT_FREE_LANE_ORDER: tuple[BackendKind, ...] = ("nibi", "fir", "mila")
 #: is treated as a stringly-typed miswire.
 _VALID_BACKEND_VALUES: frozenset[str] = frozenset({"runpod", "nibi", "fir", "gcp", "mila", "auto"})
 
+#: Lanes whose kind IS a SLURM cluster name. The shared ``SlurmBackend``
+#: resolves its target cluster from ``spec.cluster`` per call, so every
+#: router site that touches one of these lanes MUST thread the lane kind
+#: into ``spec.cluster`` via :func:`_spec_for_lane` first.
+_PER_CLUSTER_LANES: frozenset[str] = frozenset({"nibi", "fir", "mila"})
+
 
 # ---------------------------------------------------------------------------
 # Public outcome / error types
@@ -359,6 +365,37 @@ class RouteResult:
     attempts: list[RouteAttempt]
     elapsed_seconds: float
     extra: dict[str, Any] = field(default_factory=dict)
+
+
+# ---------------------------------------------------------------------------
+# Per-lane spec threading
+# ---------------------------------------------------------------------------
+
+
+def _spec_for_lane(spec: RunSpec, kind: BackendKind) -> RunSpec:
+    """Thread the lane's cluster name into ``spec.cluster`` for per-cluster lanes.
+
+    The shared ``SlurmBackend`` instance serves every SLURM lane and
+    resolves its target cluster from ``spec.cluster`` on each call.
+    Nothing upstream set ``spec.cluster`` for explicit per-cluster lane
+    overrides or auto-chain lane attempts, so the backend's defensive
+    nibi default silently submitted EVERY lane to Nibi — live finding,
+    issue 535: the 'mila' lane's sbatch landed on Nibi (job 15876369,
+    account ``rrg-bengioy-ad_gpu``, ``/scratch/tjiral`` scratch) while
+    every lane-level label (routing marker, HF subfolder, figure) said
+    mila, and the lane PASSed its checklist vacuously. Non-cluster lanes
+    (gcp / runpod) pass through unchanged; a contradicting explicit
+    ``spec.cluster`` raises instead of guessing.
+    """
+    if kind not in _PER_CLUSTER_LANES:
+        return spec
+    if spec.cluster is None:
+        return replace(spec, cluster=kind)
+    if spec.cluster != kind:
+        raise RouteError(
+            f"spec.cluster={spec.cluster!r} contradicts the {kind!r} lane — refusing to launch"
+        )
+    return spec
 
 
 # ---------------------------------------------------------------------------
@@ -1079,6 +1116,7 @@ def route(
             raise RouteError(
                 f"backend override {spec.backend!r} requested but no free backend wired for it"
             )
+        spec = _spec_for_lane(spec, spec.backend)
         return _override_free_or_gcp(
             spec=spec,
             backend=free,
@@ -1831,9 +1869,10 @@ def _try_auto_reconnect(
         # submit path re-checks reconnect INSIDE the flock and a probe
         # failure THERE skips the lane (no blind submit), so swallowing
         # at this stage cannot cause a duplicate.
+        lane_spec = _spec_for_lane(spec, kind)
         try:
             handle = _try_reconnect(
-                backend=backend, kind=kind, spec=spec, reconnect_fn=reconnect_fn
+                backend=backend, kind=kind, spec=lane_spec, reconnect_fn=reconnect_fn
             )
         except BackendProbeError as exc:
             logger.warning(
@@ -1848,9 +1887,9 @@ def _try_auto_reconnect(
         return _record_reconnect(
             backend=backend,
             kind=kind,
-            cluster=spec.cluster,
+            cluster=lane_spec.cluster,
             handle=handle,
-            spec=spec,
+            spec=lane_spec,
             attempts=attempts,
             started_at=started_at,
             now_fn=now_fn,
@@ -2020,6 +2059,7 @@ def _try_one_free_lane(
     in the GCP escalation path (the orphaned free-lane job is unconfirmed
     dead and may still consume the attempt-id namespace).
     """
+    spec = _spec_for_lane(spec, kind)
     with store.transaction(spec.issue) as (lease, write):
         # Repeat the reconnect check INSIDE the flock — a parallel
         # invocation may have submitted between the lock-free scan in
@@ -2546,7 +2586,7 @@ def _estimate_lanes(
     fn = estimate_fn or _default_estimate
     for backend, kind in candidates:
         try:
-            raw = fn(backend, kind, spec)
+            raw = fn(backend, kind, _spec_for_lane(spec, kind))
         except Exception as exc:
             logger.warning(
                 "route: estimate_fn raised for %s (%s: %s); treating as unranked.",

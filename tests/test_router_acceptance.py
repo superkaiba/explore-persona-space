@@ -811,11 +811,17 @@ def test_check_git_figure_present_fail_on_missing_file(tmp_path: Path) -> None:
 
 def test_check_routing_marker_posted_pass_explicit_lane() -> None:
     """A backend-selected marker whose body's chosen_kind matches the
-    requested lane PASSes."""
+    requested lane PASSes — WITH the ground-truth cluster-launched
+    marker agreeing (per-cluster lanes require it since the issue-535
+    mila→nibi misroute)."""
 
     def _fake_events(_issue: int) -> list[dict[str, Any]]:
         return [
             {"kind": "epm:status-changed", "note": "old"},
+            {
+                "kind": "epm:cluster-launched",
+                "note": json.dumps({"cluster": "nibi", "job_id": "123"}),
+            },
             {
                 "kind": "epm:backend-selected",
                 "note": json.dumps({"chosen_kind": "nibi", "requested_kind": "nibi"}),
@@ -826,6 +832,50 @@ def test_check_routing_marker_posted_pass_explicit_lane() -> None:
     res = ra.check_routing_marker_posted(issue=700, expected_lane="nibi", io=io_)
     assert res.passed
     assert "chosen_kind=nibi" in res.detail
+    assert "ground-truth cluster=nibi" in res.detail
+
+
+def test_check_routing_marker_posted_fails_on_misroute() -> None:
+    """chosen_kind=mila but the job actually launched on nibi → FAIL.
+
+    Regression test for the issue-535 live misroute: the router believed
+    'mila' while the shared SlurmBackend's silent nibi default submitted
+    the sbatch to Nibi; the old check compared only chosen_kind and the
+    lane PASSed vacuously."""
+
+    def _fake_events(_issue: int) -> list[dict[str, Any]]:
+        return [
+            {
+                "kind": "epm:cluster-launched",
+                "note": json.dumps({"cluster": "nibi", "job_id": "15876369"}),
+            },
+            {
+                "kind": "epm:backend-selected",
+                "note": json.dumps({"chosen_kind": "mila", "requested_kind": "mila"}),
+            },
+        ]
+
+    io_ = ra.VerifierIO(read_events_jsonl=_fake_events)
+    res = ra.check_routing_marker_posted(issue=535, expected_lane="mila", io=io_)
+    assert not res.passed
+    assert "MISROUTE" in res.detail
+
+
+def test_check_routing_marker_posted_fails_without_ground_truth_marker() -> None:
+    """Per-cluster lane with NO cluster-launched marker → FAIL loud."""
+
+    def _fake_events(_issue: int) -> list[dict[str, Any]]:
+        return [
+            {
+                "kind": "epm:backend-selected",
+                "note": json.dumps({"chosen_kind": "mila", "requested_kind": "mila"}),
+            },
+        ]
+
+    io_ = ra.VerifierIO(read_events_jsonl=_fake_events)
+    res = ra.check_routing_marker_posted(issue=535, expected_lane="mila", io=io_)
+    assert not res.passed
+    assert "ground-truth" in res.detail
 
 
 def test_check_routing_marker_posted_pass_auto_accepts_any_chosen() -> None:
@@ -999,9 +1049,13 @@ def test_evaluate_pass_checklist_overall_pass(tmp_path: Path) -> None:
     def _events(_n: int) -> list[dict[str, Any]]:
         return [
             {
+                "kind": "epm:cluster-launched",
+                "note": json.dumps({"cluster": "nibi", "job_id": "1"}),
+            },
+            {
                 "kind": "epm:backend-selected",
                 "note": json.dumps({"chosen_kind": "nibi"}),
-            }
+            },
         ]
 
     io_ = ra.VerifierIO(
@@ -1043,7 +1097,8 @@ def test_evaluate_pass_checklist_partial_fail_overall_fail(tmp_path: Path) -> No
         list_hf_repo_files=lambda _r, repo_type: [],  # no HF artifact
         git_tracked=lambda _r, paths: set(paths),
         read_events_jsonl=lambda _n: [
-            {"kind": "epm:backend-selected", "note": json.dumps({"chosen_kind": "nibi"})}
+            {"kind": "epm:cluster-launched", "note": json.dumps({"cluster": "nibi"})},
+            {"kind": "epm:backend-selected", "note": json.dumps({"chosen_kind": "nibi"})},
         ],
         squeue_by_name=lambda _a, _n: [],
     )
@@ -1322,7 +1377,8 @@ def test_evaluate_pass_checklist_threads_canonical_job_name(tmp_path: Path) -> N
         list_hf_repo_files=lambda _r, repo_type: ["router_acceptance/issue-910-nibi/adapter.bin"],
         git_tracked=lambda _r, paths: set(paths),
         read_events_jsonl=lambda _n: [
-            {"kind": "epm:backend-selected", "note": json.dumps({"chosen_kind": "nibi"})}
+            {"kind": "epm:cluster-launched", "note": json.dumps({"cluster": "nibi"})},
+            {"kind": "epm:backend-selected", "note": json.dumps({"chosen_kind": "nibi"})},
         ],
         squeue_by_name=_fake_squeue,
     )
@@ -1362,7 +1418,10 @@ def test_cli_verify_lane_runs_and_exits_per_verdict(monkeypatch, tmp_path: Path)
     monkeypatch.setattr(
         ra,
         "_default_read_events_jsonl",
-        lambda _n: [{"kind": "epm:backend-selected", "note": json.dumps({"chosen_kind": "nibi"})}],
+        lambda _n: [
+            {"kind": "epm:cluster-launched", "note": json.dumps({"cluster": "nibi"})},
+            {"kind": "epm:backend-selected", "note": json.dumps({"chosen_kind": "nibi"})},
+        ],
     )
     monkeypatch.setattr(ra, "_default_squeue_by_name", lambda _a, _n: [])
 
