@@ -1,6 +1,8 @@
 ---
-title: 'Re-train marker-less role-vs-system at lr=5e-6, r=32 — non-saturated anchor
-  in the {1,2,3,5}-epoch grid (corrective re-run of #529)'
+title: Dropping the marker-less LoRA training learning rate from 1e-5 to 5e-6 was
+  not enough to de-saturate the role-vs-system grid — and at the one closest-to-resolution
+  epoch the role-vs-system gap goes the OPPOSITE direction the parent run reported
+  (MODERATE confidence)
 kind: experiment
 tags:
 - followup
