@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 562,
+  "highest_id": 563,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3355,6 +3355,14 @@
       "path": "tasks/proposed/562",
       "status": "proposed",
       "title": "Is the residual dampening persona-specific or any-system-prompt-general? Non-persona control + never-trained medical persona panel on the #558 rig"
+    },
+    "563": {
+      "goal": "Determine whether the persona-prompt-driven rise in the base model's marker prior (the main driver of the contrast shrinkage in #558) is intrinsic to the base model's context processing or depends on the fine-tuned models' completion content, by reading the base model's 4-float slot statistics at the end of its OWN greedy completions under the same five system-prompt contexts with no adapter in the loop.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/563",
+      "status": "proposed",
+      "title": "Where does the persona-driven base-prior rise come from? Base-model-own-completions diagnostic on the #558 panel"
     },
     "6": {
       "has_clean_result": false,
