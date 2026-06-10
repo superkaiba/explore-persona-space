@@ -1,6 +1,7 @@
 ---
-title: 'Erasure-pressure dose-response: sweep the benign-SFT learning rate over the
-  existing 50%-arm marker installs'
+title: 'Benign-SFT erasure of a trigger-keyed marker rule is gradient-pressure-bound:
+  the rule survives one epoch of medical SFT once the erasing learning rate drops
+  to the rate that installed it (HIGH confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-10T14:09:35Z'
