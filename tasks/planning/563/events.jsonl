@@ -4,3 +4,4 @@
 {"ts": "2026-06-10T18:20:57Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-06-10T18:41:48Z", "kind": "epm:codex-task-failed", "version": 1, "by": "codex_task", "note": "job_id=task-mq8f0q0z-qs2z7y: post-spawn probe failed (probe-error): No job found for \"task-mq8f0q0z-qs2z7y\". Run /codex:status to list known jobs.\n"}
 {"ts": "2026-06-10T18:42:33Z", "kind": "epm:codex-task-failed", "version": 1, "by": "codex_task", "note": "job_id=task-mq8f1oj0-6p5t2z: post-spawn probe failed (probe-error): No job found for \"task-mq8f1oj0-6p5t2z\". Run /codex:status to list known jobs.\n"}
+{"ts": "2026-06-10T18:42:43Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq8f1w31-fdao7m effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
