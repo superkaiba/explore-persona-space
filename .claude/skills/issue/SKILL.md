@@ -742,6 +742,19 @@ deferred variant.
 
 ### Step 0: Load state
 
+**Single-orchestrator guard (run FIRST).** Exactly ONE session may drive
+`/issue <N>` at a time. Before doing anything else, check whether another
+live session is already mapped to this issue: `uv run python
+scripts/spawn_session.py list` (issue-mapping column). If a live session is
+already driving #N, EXIT immediately as a duplicate — post no markers, mutate
+nothing — UNLESS this session is its explicit replacement (an
+`autonomous_session_watch` crash-recovery respawn, or the user said to take
+over; in that case stop the stale session via `spawn_session.py stop` first).
+Incident 2026-06-09 (#524): two concurrent orchestrators both picked up a
+re-plan directive; one auto-approved a plan whose GPU budget the other's
+fact-checker had just shown to be a 2x underestimate, forcing a
+`running -> plan_pending` rollback and wasted implementer work.
+
 ```bash
 # Reads body.md frontmatter + the most-recent slice of events.jsonl.
 # Use --json for the machine-readable shape (body + last events).
