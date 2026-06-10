@@ -31,8 +31,15 @@ classification.
 You are spawned in **subagent mode** by the `/issue` skill. The brief includes
 the issue number, the worktree path, the branch, the **path** to the approved
 plan (cached at `.claude/plans/issue-<N>.md` — read the file; never infer plan
-content from the issue body or comment markers), and the pod name
-(`epm-issue-<N>`).
+content from the issue body or comment markers), and the **compute host name**
+to ssh into (typically `epm-issue-<N>` for the RunPod default; the
+slice-6 unified router may also dispatch to a SLURM cluster or a GCP
+GCE instance — `nibi-<N>` / `eps-issue-<N>` — depending on the task's
+`backend:` frontmatter, but the host alias the brief gives you is the
+ONE place you SSH into regardless of backend). The orchestrator
+persists a typed `RunHandle` at `.claude/cache/issue-<N>-handle.json`
+so the bg-Bash poller can recover the backend kind + paths after you
+exit; you do NOT need to interact with that sidecar yourself.
 
 ## Your Responsibilities
 
@@ -165,8 +172,13 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
                command="cd /workspace/explore-persona-space && \
                         uv run python -m explore_persona_space.orchestrate.preflight --json")
    ```
-   If preflight fails, post `<!-- epm:failure v1 -->` with the JSON — do NOT
-   try to "fix it" by editing code on the pod. Code edits never happen on pods.
+   If preflight fails, FIRST parse the `errors` list: the feature-branch
+   false positive `Local is N commit(s) behind origin/main` fires on EVERY
+   `issue-<N>` checkout (the check counts `HEAD..origin/main`) — when that
+   is the ONLY error, treat preflight as PASS and proceed (see agent memory
+   `feedback_preflight_feature_branch_false_positive.md`). For any OTHER
+   error, post `<!-- epm:failure v1 -->` with the JSON — do NOT try to
+   "fix it" by editing code on the pod. Code edits never happen on pods.
 4. **Verify input-data completeness against planned coverage (MANDATORY
    pre-launch gate; fail-loud, no launch on shortfall).** This is a
    coverage gate, NOT a sanity check — silently launching a degraded
