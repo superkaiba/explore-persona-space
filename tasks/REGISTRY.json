@@ -3266,8 +3266,8 @@
       "goal": "Determine whether the EM-vs-marker direction-concentration contrast survives the three controls lost with the pod \u2014 the leave-one-out spectrum check, the mean-over-response EM read, and per-persona shift-norm vs top-direction alignment \u2014 by re-extracting and persisting the layer-14 shift tensors from the six existing HF-hosted adapters.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/551",
-      "status": "awaiting_promotion",
+      "path": "tasks/archived/551",
+      "status": "archived",
       "title": "The EM-vs-marker direction-concentration contrast survives all three deferred controls and a unit-norm re-read that re-attributes the marker's size-coupled split to the SVD's norm-weighting (HIGH confidence)"
     },
     "552": {
