@@ -291,8 +291,23 @@ top-level loop):
    pushes:
    ```bash
    git -C "$REPO_ROOT" merge --no-ff <wf-branch> -m "merge workflow-fix: <summary>"
+   # MERGE-COMPLETION ASSERT — never leave the shared repo root mid-merge:
+   # a conflicted merge left sitting blocks task.py commits repo-wide and a
+   # concurrent session can sweep YOUR staged files into ITS resolution
+   # commit (both happened 2026-06-09, ~22:05Z). On conflict: abort and
+   # requeue, do not hand-resolve while other sessions commit around you.
+   if [ -f "$REPO_ROOT/.git/MERGE_HEAD" ] || [ -n "$(git -C "$REPO_ROOT" diff --name-only --diff-filter=U)" ]; then
+     git -C "$REPO_ROOT" merge --abort
+     git -C "$REPO_ROOT" pull --rebase && git -C "$REPO_ROOT" merge --no-ff <wf-branch> -m "merge workflow-fix: <summary>" || {
+       echo "merge still conflicted — requeue"; exit 1; }   # -> post epm:workflow-fix-failed
+   fi
+   # Staging sanity: nothing foreign staged (a concurrent session's files)
+   git -C "$REPO_ROOT" diff --cached --name-only   # must be empty post-merge
    git -C "$REPO_ROOT" push origin main
    git -C "$REPO_ROOT" log -1 --oneline -- <changed-file>   # landing check: confirm it's on main
+   # Agent-isolation worktrees stay LOCKED until the harness reaps them —
+   # unlock first or remove fails exit-128 (3 hits on 2026-06-09):
+   git -C "$REPO_ROOT" worktree unlock <worktree-path> 2>/dev/null
    git -C "$REPO_ROOT" worktree remove <worktree-path>      # cleanup
    ```
    Then posts `epm:workflow-fix-applied v1` to the same task's
