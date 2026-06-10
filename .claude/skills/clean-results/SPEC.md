@@ -330,6 +330,14 @@ fix.
    `### Findings`.
 4. At least one `![alt](url)` markdown image exists inline under
    `## TL;DR`.
+4b. Figure URLs resolvable AND existing — every image URL under
+   `## TL;DR` is an absolute `https://...` URL (relative paths render
+   broken on the dashboard); `raw.githubusercontent.com` URLs pin to a
+   commit sha, and the target must EXIST: same-repo SHA-pinned URLs
+   verified offline via `git cat-file -e <sha>:<path>`, unknown SHAs /
+   other hosts via one HTTP HEAD per unique URL (definitive 404 →
+   FAIL; indeterminate → `unverified` note, never a FAIL). Incident:
+   task #507 (a caption cited a figure that was never generated).
 5. (Soft) Figure-caption sanity — vacuously satisfied when no legacy
    `## Figure` H2 is present (inline-image alt text + blockquote
    caption inside the result H3 carry the discipline; the analyzer is
@@ -347,6 +355,17 @@ fix.
 8. Reproducibility URLs are pinned to permanent refs (HF Hub
    `/tree/<sha>` or `@<sha>`, WandB `/runs/<id>`, GitHub
    `/blob/<sha>` or `/tree/<sha>`; never `main`, `master`, `HEAD`).
+8b. Reproducibility same-repo artifact URLs exist — same-repo
+   `raw.githubusercontent.com/<repo>/<sha>/<path>` and
+   `github.com/<repo>/(blob|tree)/<sha>/<path>` links (the
+   `**Artifacts:**` figure links, `**Code:**` blob links, and the
+   auto-appended `**Methodology reference:**` row) must point at
+   objects that actually exist — `git cat-file -e <sha>:<path>`
+   offline (file blobs AND directory trees), HTTP HEAD fallback for
+   locally-unknown SHAs. Definitive miss → FAIL; indeterminate →
+   `unverified` note. HF Hub / WandB / external-repo links stay
+   shape-checked only (check 8). Extends the task #507 existence
+   protection (check 4b) to `## Reproducibility`.
 9. Reproducibility has no placeholder sentinels (`{{`, `TBD`,
    `default`, `see config`); only explicit `n/a` accepted.
 10. Cherry-picked label preceding every sample-output fenced block
