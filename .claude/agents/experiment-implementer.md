@@ -297,7 +297,9 @@ marker will be silently skipped. Two requirements, no exceptions:
 
 1. **`[phase=...]` log lines, terminating in `[phase=done]` on graceful
    completion.** `poll_pipeline.py` parses `PHASE_RE = re.compile(r"\[phase=
-   ([a-z_]+)")` from the tail of the pod-side log; `poll_once` declares
+   ([a-z0-9_]+)")` from the tail of the pod-side log (digits are part of the
+   token, so numbered phase names like `p0_render` parse fully); `poll_once`
+   declares
    `status="done"` ONLY when the most recent matching line is
    `[phase=done]`. A clean exit without that terminal line decays to
    `status="dead"` (PID gone, no `done` marker), which the orchestrator
