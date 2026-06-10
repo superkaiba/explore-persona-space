@@ -185,6 +185,9 @@ def fig_paired_d_trajectory(trajectory: dict, data_533: dict, out_subdir: str) -
     for col_idx, persona in enumerate(PERSONAS):
         ax = axes[col_idx]
         ax.axhline(0.0, color="gray", linestyle="-", linewidth=0.8, alpha=0.6, zorder=0)
+        # Shade the implant-not-installed region (own argmax-emit = 0 at
+        # s <= 18 in every arm x persona x seed cell; d undefined there).
+        ax.axvspan(4.2, 22.5, color="#BBBBBB", alpha=0.18, zorder=0)
         for contrast_key, sys_arm, label in CONTRASTS:
             by_steps = trajectory.get(persona, {}).get(contrast_key, {})
             xs_act, ys_act, lo_act, hi_act = [], [], [], []
@@ -239,13 +242,24 @@ def fig_paired_d_trajectory(trajectory: dict, data_533: dict, out_subdir: str) -
                     color=CONTRAST_COLORS[contrast_key],
                 )
         ax.set_xscale("log")
+        ax.set_xlim(4.2, 230.0)
         ax.set_xticks(list(MAX_STEPS))
         ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+        ax.get_xaxis().set_minor_formatter(matplotlib.ticker.NullFormatter())
         ax.set_xlabel("Training amount (optimizer steps, log scale)")
         if col_idx == 0:
             ax.set_ylabel("Paired d = log P (system - role)  (nats)")
         ax.set_title(f"Trained on {persona}")
-    axes[0].legend(loc="best", fontsize=8, frameon=False)
+        ax.text(
+            9.8,
+            0.45,
+            "implant not\ninstalled\n(own-emit = 0)",
+            fontsize=7.5,
+            color="#777777",
+            ha="center",
+            va="top",
+        )
+    axes[0].legend(loc="lower right", fontsize=8, frameon=False)
     axes[1].plot(
         [],
         [],
@@ -255,19 +269,9 @@ def fig_paired_d_trajectory(trajectory: dict, data_533: dict, out_subdir: str) -
         markersize=3.5,
         linewidth=1.0,
         alpha=0.55,
-        label="#533 epoch grid (step-equiv., mean only)",
+        label="Parent epoch grid (step-equiv., mean only)",
     )
-    axes[1].plot(
-        [],
-        [],
-        marker="o",
-        markersize=6,
-        linestyle="none",
-        markerfacecolor="none",
-        color="#999999",
-        label="implant-inactive (no CI)",
-    )
-    axes[1].legend(loc="best", fontsize=7.5, frameon=False)
+    axes[1].legend(loc="lower right", fontsize=7.5, frameon=False)
     fig.tight_layout(rect=[0, 0, 1, 0.86])
     fig.suptitle(
         "Role-vs-system paired-d trajectory over the sub-1-epoch max_steps grid",
@@ -281,9 +285,9 @@ def fig_paired_d_trajectory(trajectory: dict, data_533: dict, out_subdir: str) -
         0.02,
         0.91,
         "d = log P (system_arm) - log P (role) at the wrong-persona teacher-forced probe, paired "
-        "per seed; from analysis.json:trajectory_per_persona. Filled = implant-active (both arms "
-        "own-emit >= 0.5; 95% bootstrap CI over active seeds); open grey = implant-inactive. "
-        "Dotted squares = #533's epoch grid at 37.5 steps/epoch equivalents.",
+        "per seed; from analysis.json:trajectory_per_persona. Points = implant-active grid points "
+        "(both arms own-emit >= 0.5; 95% bootstrap CI over 5 seeds). Shaded region = implant never "
+        "installed (no read). Dotted squares = the parent epoch grid at 37.5 steps/epoch equivalents.",
         fontsize=8,
         color="#5A5A5A",
         ha="left",
