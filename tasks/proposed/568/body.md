@@ -11,6 +11,10 @@ goal: Re-run the mid-dial cell of the dial-axis superposition test on a third or
   pairs) to test whether the small monotone gradient on GD1 effective rank / top-1
   SV share / GD3 worse-of-pair is a recipe-and-dial property or an idiosyncrasy of
   the two existing source-pair geometries.
+relates_to:
+- leak-from-cell-set
+- leak-single-vs-multi
+- leak-predictor
 ---
 # Third orthogonal source pair at the mid dial — does the small monotone gradient generalize off the two existing pairs?
 
