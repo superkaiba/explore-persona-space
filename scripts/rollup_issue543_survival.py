@@ -18,6 +18,7 @@ CPU-only; safe to re-run any time. The driver invokes it after the fan-out.
 
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import math
@@ -55,7 +56,23 @@ def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     return (max(0.0, center - half), min(1.0, center + half))
 
 
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="Issue #543 rollup (CPU; idempotent re-runs).")
+    p.add_argument(
+        "--out",
+        type=Path,
+        default=EVAL_RESULTS_DIR / "rollup.json",
+        help=(
+            "Output JSON path (default: the parent sweep's eval_results/issue_543/rollup.json; "
+            "follow-up runs pass eval_results/issue_543/<followup_label>/rollup.json so the "
+            "parent's 12-cell rollup is never clobbered)."
+        ),
+    )
+    return p.parse_args()
+
+
 def main() -> int:
+    args = parse_args()
     rollup: dict = {**repro_metadata(), "cells": {}, "arms": {}}
 
     pooled: dict[str, dict[str, list[tuple[int, int]]]] = {
@@ -128,7 +145,7 @@ def main() -> int:
         crit["pooled_cis_disjoint"] = ci05[0] > ci50[1] or ci50[0] > ci05[1]
     rollup["criteria_readouts"] = crit
 
-    out = EVAL_RESULTS_DIR / "rollup.json"
+    out: Path = args.out
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(rollup, indent=2))
     log.info("Rollup -> %s", out)

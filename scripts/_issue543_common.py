@@ -49,13 +49,14 @@ MIN_TRIGGER_TOKENS = 4  # plan requires >= 4; measured 12 on this tokenizer
 # ── Arms / seeds / phases (plan §4 / §5) ────────────────────────────────────
 
 # arm slug -> number of POSITIVE rows out of TOTAL_ROWS.
-ARM_POSITIVES: dict[str, int] = {"r50": 3000, "r25": 1500, "r10": 600, "r05": 300}
+ARM_POSITIVES: dict[str, int] = {"r50": 3000, "r25": 1500, "r10": 600, "r05": 300, "r01": 60}
 ARMS = tuple(ARM_POSITIVES)
 ARM_PLAIN_NAMES: dict[str, str] = {
     "r50": "Half-positive baseline",
     "r25": "Quarter-positive",
     "r10": "One-in-ten",
     "r05": "One-in-twenty",
+    "r01": "One-in-a-hundred",
 }
 SEEDS = (42, 137, 256)
 PHASES = ("phase1", "phase2")
