@@ -704,6 +704,23 @@ def check_routing_marker_posted(
     )
 
 
+def _current_git_branch(repo_root: Path | None) -> str | None:
+    """Current branch name of ``repo_root`` (None on detached HEAD / error)."""
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=str(repo_root) if repo_root else None,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=True,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    branch = proc.stdout.strip()
+    return branch if branch and branch != "HEAD" else None
+
+
 def _latest_launched_cluster(events: list[dict[str, Any]]) -> str | None:
     """Cluster name from the most recent ``epm:cluster-launched`` marker.
 
@@ -945,6 +962,7 @@ def build_live_command_plan(
     smoke_hydra_args: tuple[str, ...] = DEFAULT_SMOKE_HYDRA_ARGS,
     repo_root: Path | None = None,
     time_budget_hours: float | None = None,
+    repo_branch: str | None = None,
 ) -> LiveCommandPlan:
     """Build the exact ``dispatch_issue.py`` + ``backend_poll.py`` argv.
 
@@ -974,6 +992,11 @@ def build_live_command_plan(
         launch_argv += ["--backend", backend]
     if time_budget_hours is not None:
         launch_argv += ["--time-budget-hours", str(time_budget_hours)]
+    if repo_branch is not None and repo_branch != "main":
+        # GCP-only knob (the GCE startup clones from origin; SLURM lanes
+        # rsync the local worktree). Omitted on main so the argv shape
+        # the SKILL.md golden tests pin stays unchanged there.
+        launch_argv += ["--repo-branch", repo_branch]
     for hy in hydra_args:
         launch_argv += ["--hydra", hy]
 
@@ -1866,12 +1889,25 @@ def _cmd_live(args: argparse.Namespace) -> int:
         spec.provenance,
     )
 
+    repo_branch = args.repo_branch
+    if repo_branch is None and args.backend in {"gcp", "auto"}:
+        # Default to the worktree's CURRENT branch so the GCP lane tests
+        # the code under test, not stale origin/main (issue 535 r6). The
+        # branch must exist on origin — the startup script clones it.
+        repo_branch = _current_git_branch(repo_root)
+        if repo_branch and repo_branch != "main":
+            logger.info(
+                "gcp repo_branch defaulted to current branch %r — ensure it is pushed",
+                repo_branch,
+            )
+
     plan = build_live_command_plan(
         issue=args.issue,
         backend=args.backend,
         intent=args.intent,
         repo_root=repo_root,
         time_budget_hours=args.time_budget_hours,
+        repo_branch=repo_branch,
     )
 
     if not args.live:
@@ -2167,6 +2203,15 @@ def _build_argparser() -> argparse.ArgumentParser:
         help=(
             "SLURM robot ssh alias for the squeue teardown probe in check (d). "
             "Required for nibi / fir / mila lanes; ignored for gcp."
+        ),
+    )
+    live.add_argument(
+        "--repo-branch",
+        default=None,
+        help=(
+            "Git branch the GCE startup script clones (gcp/auto lanes). "
+            "Defaults to the worktree's current branch (must be pushed); "
+            "SLURM lanes rsync the local worktree and ignore this."
         ),
     )
     live.add_argument("--debug", action="store_true", help="Log to stderr at DEBUG level.")

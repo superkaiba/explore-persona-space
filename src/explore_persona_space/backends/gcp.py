@@ -1370,6 +1370,14 @@ class GcpBackend(ComputeBackend):
             config=config,
             attempt_id=attempt_id,
             hydra_args=spec.hydra_args,
+            # The startup script CLONES from origin (unlike the SLURM
+            # backend, which rsyncs the local worktree) — a workload
+            # whose code/configs live on a feature branch MUST thread
+            # that branch or the VM silently runs stale main (live
+            # finding, issue 535 GCP lane r6: the smoke condition config
+            # existed only on the local branch; Hydra died listing
+            # available conditions).
+            repo_branch=str(spec.extra.get("repo_branch") or "main"),
         )
         # Mode 0o600 so the script — which carries the curl stanza that
         # fetches secrets from instance metadata — is never world-readable

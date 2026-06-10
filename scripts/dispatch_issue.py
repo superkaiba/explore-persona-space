@@ -377,6 +377,11 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     )
     from explore_persona_space.backends.router import RouteError
 
+    extra: dict[str, Any] = {}
+    if getattr(args, "repo_branch", None):
+        # GCP-only knob: the GCE startup script clones from origin, so a
+        # feature-branch workload must name its branch (issue 535 r6).
+        extra["repo_branch"] = args.repo_branch
     spec = build_run_spec(
         issue=args.issue,
         intent=args.intent,
@@ -386,6 +391,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         account=args.account,
         cluster=args.cluster,
         hydra_args=tuple(args.hydra or ()),
+        extra=extra,
     )
 
     deps = backends_factory()
@@ -607,6 +613,17 @@ def _build_argparser() -> argparse.ArgumentParser:
         help="Override wall-clock budget (hours; SLURM ``--time``).",
     )
     launch.add_argument("--account", type=str, default=None, help="SLURM ``--account`` override.")
+    launch.add_argument(
+        "--repo-branch",
+        type=str,
+        default=None,
+        help=(
+            "Git branch the GCE startup script clones (GCP lane only; "
+            "SLURM lanes rsync the local worktree instead). Required when "
+            "the workload's code/configs live on a feature branch — the "
+            "default clone of main silently runs stale code (issue 535 r6)."
+        ),
+    )
     launch.add_argument(
         "--hydra",
         action="append",
