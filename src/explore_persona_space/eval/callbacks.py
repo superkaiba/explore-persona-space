@@ -627,6 +627,51 @@ def _decide_band_stop(
     return low_nats <= delta_nats <= high_nats
 
 
+class HardStopAtStepCallback(TrainerCallback):
+    """Task #555: stop training after optimizer step ``stop_at_step`` WITHOUT
+    touching the scheduler horizon (num_train_epochs / max_steps /
+    warmup_ratio unchanged, so the LR schedule is identical to an un-stopped
+    run's prefix).
+
+    The #555 read-point truncation: setting ``max_steps=5`` naively would
+    re-parameterize warmup to ceil(0.05*5)=1 step and put step 5 near peak
+    LR, breaking weight-identity with the parent (#534) trajectory whose
+    step-5 LR is 5e-6 * 5/15 (mid-warmup). This callback leaves the Trainer's
+    schedule parameterization alone and just raises
+    ``control.should_training_stop`` at the target step — training is
+    sequential, so the step-5 weights are the same whether the run stops at
+    5 or runs to the band-stop.
+
+    Args:
+        stop_at_step: optimizer step after which training stops (>= 1).
+        expect_max_steps: when set, ``on_train_begin`` asserts
+            ``state.max_steps`` equals it — a fresh-seed pool that is not
+            exactly 400 rows would shift the horizon and silently
+            re-parameterize warmup (plan #555 §4.2 risk row); fail loud
+            instead.
+    """
+
+    def __init__(self, stop_at_step: int, expect_max_steps: int | None = None):
+        if stop_at_step < 1:
+            raise ValueError(f"stop_at_step must be >= 1, got {stop_at_step}")
+        self.stop_at_step = int(stop_at_step)
+        self.expect_max_steps = int(expect_max_steps) if expect_max_steps is not None else None
+
+    def on_train_begin(self, args, state, control, **kwargs):
+        """Assert the scheduler horizon matches the parent parameterization."""
+        if self.expect_max_steps is not None and state.max_steps != self.expect_max_steps:
+            raise RuntimeError(
+                f"scheduler horizon {state.max_steps} != expected {self.expect_max_steps} "
+                "— warmup parameterization would diverge from the parent trajectory."
+            )
+
+    def on_step_end(self, args, state, control, **kwargs):
+        """Raise the stop flag at the target optimizer step (scheduler untouched)."""
+        if state.global_step >= self.stop_at_step:
+            control.should_training_stop = True
+        return control
+
+
 class MarkerBandStopCallback(TrainerCallback):
     """Deterministic early-stop when source marker log-prob enters the useful band.
 

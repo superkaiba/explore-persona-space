@@ -470,6 +470,8 @@ def train_one_cell(
     marker_band_snapshot_every_steps: int = 0,
     marker_band_snapshot_dir: Path | None = None,
     marker_band_snapshot_max_count: int = 64,
+    hard_stop_at_step: int | None = None,
+    hard_stop_expect_max_steps: int | None = None,
 ) -> dict:
     """Train one cell's LoRA adapter, saving 6 mid-run checkpoints.
 
@@ -501,6 +503,15 @@ def train_one_cell(
             saves a per-step adapter snapshot (before the stop predicate) and
             writes ``band_stop_meta.json`` at train end. Defaults off →
             byte-identical legacy behavior.
+        hard_stop_at_step / hard_stop_expect_max_steps: #555 read-point
+            truncation — when ``hard_stop_at_step`` is set, a
+            ``HardStopAtStepCallback`` is appended to the trainer callbacks:
+            training stops after that optimizer step WITHOUT touching the
+            scheduler horizon (max_steps / warmup parameterization unchanged,
+            so the LR prefix is identical to an un-stopped run).
+            ``hard_stop_expect_max_steps`` (when set) asserts the realized
+            Trainer ``state.max_steps`` at train begin (fail-loud horizon
+            guard). Default ``None`` → byte-identical legacy behavior.
 
     Returns:
         {"final_adapter": str, "checkpoint_index": {frac: {step, path}}}.
@@ -598,6 +609,23 @@ def train_one_cell(
         step_calibration_fractions if step_calibration_fractions is not None else fractions
     )
     ckpt_cb = CheckpointAtFractionsCallback(ckpt_root, eff_fractions, frac_precision=frac_precision)
+    callbacks: list[TrainerCallback] = [ckpt_cb]
+    if hard_stop_at_step is not None:
+        from explore_persona_space.eval.callbacks import HardStopAtStepCallback
+
+        callbacks.append(
+            HardStopAtStepCallback(
+                stop_at_step=int(hard_stop_at_step),
+                expect_max_steps=hard_stop_expect_max_steps,
+            )
+        )
+        log.info(
+            "[%s] HardStopAtStepCallback armed: stop_at_step=%d, expect_max_steps=%s "
+            "(#555 read-point truncation; scheduler horizon untouched)",
+            cell_slug,
+            int(hard_stop_at_step),
+            hard_stop_expect_max_steps,
+        )
     log.info(
         "[%s] Training (r=%d, alpha=%d, lr=%g, epochs=%s, marker=%r, "
         "suppress_at_post_response_slot=%s, frac_precision=%d) → %s",
@@ -616,7 +644,7 @@ def train_one_cell(
         data_path=str(train_jsonl),
         output_dir=str(output_dir),
         cfg=cfg,
-        callbacks=[ckpt_cb],
+        callbacks=callbacks,
     )
     index = ckpt_cb.index()
     # Fill the 100% checkpoint path with the final adapter dir. The terminal
