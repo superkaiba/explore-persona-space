@@ -24,7 +24,7 @@ import torch
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["G2_HOOK_LAYERS", "score_marker_slots"]
+__all__ = ["G2_HOOK_LAYERS", "score_marker_slots", "score_span_logprob"]
 
 # Plan §6.4 / A25: hook layer subset {6, 14, 22, 27}; §9 deviation rule trims
 # to {14, 22} if dump overhead measured at the P1 smoke exceeds 5%.
@@ -163,3 +163,65 @@ def score_marker_slots(
 
     assert len(stats) == len(contexts), (len(stats), len(contexts))
     return stats, hiddens
+
+
+def score_span_logprob(
+    model,
+    tokenizer,
+    prompts: list[str],
+    span: str,
+    *,
+    batch_size: int = 16,
+    device: str = "cuda:0",
+) -> list[dict[str, float]]:
+    """Length-normalized teacher-forced log P(span | prompt) per prompt.
+
+    Plan §6 G_fact secondary DV (fact-span TF scoring, P2): the taught fact
+    sentence is teacher-forced immediately after each generation-ready prompt
+    (chat-templated, ends with the assistant header); the score is the mean
+    per-token log-prob over the span tokens. Reported trained - base by the
+    caller (two invocations, same prompts).
+
+    Returns one dict per prompt: ``span_logp_mean`` (length-normalized),
+    ``span_logp_sum``, ``n_span_tokens``.
+    """
+    span_ids = tokenizer.encode(span, add_special_tokens=False)
+    assert len(span_ids) >= 2, f"span tokenized to {len(span_ids)} tokens"
+    pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
+    out: list[dict[str, float]] = []
+    for start in range(0, len(prompts), batch_size):
+        chunk = prompts[start : start + batch_size]
+        rows = [tokenizer.encode(p, add_special_tokens=False) + span_ids for p in chunk]
+        prompt_lens = [len(r) - len(span_ids) for r in rows]
+        assert all(pl > 0 for pl in prompt_lens), prompt_lens
+        max_len = max(len(r) for r in rows)
+        input_ids, attn, pads = [], [], []
+        for r in rows:
+            pad_len = max_len - len(r)
+            input_ids.append([pad_id] * pad_len + r)
+            attn.append([0] * pad_len + [1] * len(r))
+            pads.append(pad_len)
+        ids_t = torch.tensor(input_ids, dtype=torch.long, device=device)
+        attn_t = torch.tensor(attn, dtype=torch.long, device=device)
+        with torch.no_grad():
+            logits = model(input_ids=ids_t, attention_mask=attn_t).logits
+        assert logits.ndim == 3, logits.shape
+        logprobs = torch.log_softmax(logits.float(), dim=-1)
+        for bi in range(len(chunk)):
+            # Span token t sits at index pads[bi]+prompt_lens[bi]+t; it is
+            # predicted by the logits at the PREVIOUS position.
+            first = pads[bi] + prompt_lens[bi]
+            pos = torch.arange(first - 1, first - 1 + len(span_ids), device=device)
+            tok_ids = torch.tensor(span_ids, device=device)
+            lps = logprobs[bi, pos, tok_ids]
+            assert lps.shape == (len(span_ids),), lps.shape
+            out.append(
+                {
+                    "span_logp_mean": float(lps.mean().item()),
+                    "span_logp_sum": float(lps.sum().item()),
+                    "n_span_tokens": len(span_ids),
+                }
+            )
+        del logits, logprobs
+    assert len(out) == len(prompts), (len(out), len(prompts))
+    return out

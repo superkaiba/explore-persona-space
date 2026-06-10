@@ -62,7 +62,8 @@ logger = logging.getLogger("i537_dispatch")
 REPO = Path(__file__).resolve().parents[1]
 QWEN_ID = "Qwen/Qwen2.5-7B-Instruct"
 DATA = REPO / "data/issue_537"
-EVAL = REPO / "eval_results/issue_537"
+# I537_EVAL_ROOT: smoke-redirect for the eval artifact tree (real runs use default).
+EVAL = Path(os.environ.get("I537_EVAL_ROOT", str(REPO / "eval_results/issue_537")))
 SEED = 42
 MAX_NEW_TOKENS = 2048  # >= 2x longest trained completion (CLAUDE.md marker rule)
 G2_LAYERS = (6, 14, 22, 27)
@@ -124,11 +125,20 @@ JUDGE_TRAIN_KWARGS = {
 _CURRENT_PHASE = "init"
 
 
+_PHASE_DIGIT_WORDS = str.maketrans({"0": "zero", "1": "one", "2": "two", "3": "three"})
+
+
 def phase_log(name: str) -> None:
-    """Emit the [phase=...] line poll_pipeline.py parses (PHASE_RE)."""
+    """Emit the [phase=...] line poll_pipeline.py parses (PHASE_RE).
+
+    PHASE_RE matches ``[a-z_]+`` only, so digits are spelled out
+    (``p0_render`` → ``pzero_render``) -- a digit would truncate the parsed
+    phase at "p" and make the orchestrator's stall monitoring illegible.
+    """
     global _CURRENT_PHASE
-    _CURRENT_PHASE = name
-    print(f"[phase={name}]", flush=True)
+    safe = name.translate(_PHASE_DIGIT_WORDS)
+    _CURRENT_PHASE = safe
+    print(f"[phase={safe}]", flush=True)
 
 
 def _log_dir() -> Path:
@@ -214,12 +224,24 @@ def _shard_select(items: list, shard: str | None) -> list:
     return [it for i, it in enumerate(items) if i % n == k]
 
 
-def _marker_eval_questions() -> list[str]:
-    return json.loads((DATA / "pools/pool_marker_eval_32.json").read_text())["questions"]
+def _pool_path(stem: str, smoke: bool) -> Path:
+    """Pool file path; in --smoke mode the ``<stem>.smoke.json`` variant is used
+    when it exists (model-call pools are built tiny for wiring smokes). Real
+    runs NEVER read a smoke pool (smoke=False ignores the .smoke file)."""
+    p = DATA / f"pools/{stem}.json"
+    if smoke:
+        sp = DATA / f"pools/{stem}.smoke.json"
+        if sp.exists():
+            return sp
+    return p
 
 
-def _marker_train_questions() -> list[str]:
-    return json.loads((DATA / "pools/pool_marker_train_300.json").read_text())["questions"]
+def _marker_eval_questions(smoke: bool = False) -> list[str]:
+    return json.loads(_pool_path("pool_marker_eval_32", smoke).read_text())["questions"]
+
+
+def _marker_train_questions(smoke: bool = False) -> list[str]:
+    return json.loads(_pool_path("pool_marker_train_300", smoke).read_text())["questions"]
 
 
 def _verify_adapter_on_hub(subfolder: str) -> None:
@@ -250,15 +272,22 @@ def _vllm_engine(max_model_len: int):
 
 def _vllm_greedy(llm, rendered_prompts: list[str], max_tokens: int) -> list[dict]:
     """Greedy generation from pre-rendered prompt strings; records finish_reason."""
+    return [s[0] for s in _vllm_sample(llm, rendered_prompts, max_tokens)]
+
+
+def _vllm_sample(
+    llm, rendered_prompts: list[str], max_tokens: int, *, temperature: float = 0.0, n: int = 1
+) -> list[list[dict]]:
+    """Batched vLLM generation; returns n samples per prompt with finish_reason."""
     from vllm import SamplingParams
 
-    params = SamplingParams(temperature=0.0, max_tokens=max_tokens)
+    params = SamplingParams(temperature=temperature, max_tokens=max_tokens, n=n)
     outs = llm.generate(rendered_prompts, params)
-    results = []
-    for o in outs:
-        comp = o.outputs[0]
-        results.append({"response": comp.text, "finish_reason": comp.finish_reason})
+    results = [
+        [{"response": c.text, "finish_reason": c.finish_reason} for c in o.outputs] for o in outs
+    ]
     assert len(results) == len(rendered_prompts), (len(results), len(rendered_prompts))
+    assert all(len(r) == n for r in results), [len(r) for r in results]
     return results
 
 
@@ -338,18 +367,18 @@ def _teardown_vllm(llm) -> None:
 
 
 def phase0(args) -> None:
-    """Render checks, §4.5b no-truncation asserts, band-reachability, headroom."""
+    """Render checks, §4.5b no-truncation asserts, band-reachability, headroom (+judge)."""
+    steps = args.steps or ["render", "band", "headroom", "headroom-judge"]
     if args.dry_run:
-        # Plumbing dry-run: walk the step names + sentinel path with no inputs
-        # required (the real render check needs the P0-sampled contexts).
-        for s in ("p0_render_check", "p0_band_reachability", "p0_headroom"):
-            phase_log(s)
+        for s in steps:
+            phase_log(f"p0_{s}")
             logger.info("[p0][dry-run] step=%s", s)
         return
 
     from explore_persona_space.experiments.i537_contexts import (
         BEHAVIORS,
         build_prompt,
+        eval_cids_for,
         registry_hash,
         render_check,
         train_cids_for,
@@ -358,138 +387,270 @@ def phase0(args) -> None:
     registry, demos = _registry_and_demos()
     tok = _tokenizer()
 
-    phase_log("p0_render_check")
-    lens = render_check(registry, tok, icl_demos=demos)
-    long_lens = {c: lens[c] for c in ("wc_xlong_ho", "wc_xxlong_ho") if c in lens}
-    # §4.5b: re-tokenize with truncation disabled and assert exact length parity.
-    for cid in ("wc_xlong_ho", "wc_xxlong_ho"):
-        rendered = build_prompt(registry[cid], "What is the best way to learn a new language?", tok)
-        ids = tok(rendered, truncation=False, add_special_tokens=False)["input_ids"]
-        assert len(ids) == lens[cid], (cid, len(ids), lens[cid])
-    out = EVAL / "p0" / "render_check.json"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(
-        json.dumps(
-            {
-                **_meta(),
-                "registry_hash": registry_hash(registry, demos),
-                "rendered_token_len": lens,
-            },
-            indent=2,
-        )
-    )
-    logger.info("[p0] render check OK (34 contexts; long columns: %s)", long_lens)
-
-    phase_log("p0_band_reachability")
-    # Base logP(※ | slot, train ctx): band-reachable iff <= -6 nat (plan §4.1b).
-    import torch
-    from transformers import AutoModelForCausalLM
-
-    from explore_persona_space.experiments.i537_contexts import MARKER_ID
-    from explore_persona_space.experiments.i537_marker_eval import score_marker_slots
-
-    questions = _marker_eval_questions()[: (4 if args.smoke else 8)]
-    responses_dir = DATA / "responses"
-    model = AutoModelForCausalLM.from_pretrained(
-        QWEN_ID, torch_dtype=torch.bfloat16, device_map={"": 0}, trust_remote_code=True
-    ).eval()
-    band = {}
-    for cid in train_cids_for("marker"):
-        cache_p = responses_dir / f"{cid}.json"
-        if not cache_p.exists():
-            raise SystemExit(
-                f"[p0] band-reachability needs the frozen R cache for {cid} -- run "
-                "`--phase 1 --steps gen` (eval contexts include the train cids) first."
+    if "render" in steps:
+        phase_log("p0_render")
+        lens = render_check(registry, tok, icl_demos=demos)
+        long_lens = {c: lens[c] for c in ("wc_xlong_ho", "wc_xxlong_ho") if c in lens}
+        # §4.5b: re-tokenize with truncation disabled and assert exact length parity.
+        for cid in ("wc_xlong_ho", "wc_xxlong_ho"):
+            rendered = build_prompt(
+                registry[cid], "What is the best way to learn a new language?", tok
             )
-        cache = json.loads(cache_p.read_text())["questions"]
-        ctxs = [
-            build_prompt(registry[cid], q, tok, behavior="marker", icl_demos=demos)
-            + cache[q]["response"]
-            for q in questions
+            ids = tok(rendered, truncation=False, add_special_tokens=False)["input_ids"]
+            assert len(ids) == lens[cid], (cid, len(ids), lens[cid])
+        out = EVAL / "p0" / "render_check.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(
+            json.dumps(
+                {
+                    **_meta(),
+                    "registry_hash": registry_hash(registry, demos),
+                    "rendered_token_len": lens,
+                },
+                indent=2,
+            )
+        )
+        logger.info("[p0] render check OK (34 contexts; long columns: %s)", long_lens)
+
+    if "band" in steps:
+        phase_log("p0_band")
+        # Base logP(※ | slot, train ctx): band-reachable iff <= -6 nat (plan
+        # §4.1b). The slot read uses TRAIN questions + the frozen train-question
+        # response caches (the same rows the band-stop callback probes); the
+        # caches are generated here when missing (no phase-ordering footgun).
+        import torch
+        from transformers import AutoModelForCausalLM
+
+        from explore_persona_space.experiments.i537_contexts import MARKER_ID, NEGATIVE_CIDS
+        from explore_persona_space.experiments.i537_marker_eval import score_marker_slots
+
+        train_q = _marker_train_questions(args.smoke)
+        questions = train_q[: (4 if args.smoke else 8)]
+        responses_dir = DATA / "responses"
+        marker_train_cids = train_cids_for("marker")
+        missing = [
+            c
+            for c in [*marker_train_cids, *NEGATIVE_CIDS]
+            if not (responses_dir / f"{c}.json").exists()
         ]
-        stats, _ = score_marker_slots(
-            model,
-            tok,
-            ctxs,
-            marker_id=MARKER_ID,
-            eos_token_id=151645,
-            hook_layers=None,
-            batch_size=4,
-        )
-        mean_logp = sum(s["logp"] for s in stats) / len(stats)
-        band[cid] = {"base_logp_at_train_ctx": mean_logp, "band_unreachable": mean_logp > -6.0}
-        logger.info(
-            "[p0] %s base logP(※)=%.2f → %s",
-            cid,
-            mean_logp,
-            "UNREACHABLE" if band[cid]["band_unreachable"] else "reachable",
-        )
-    (EVAL / "p0/band_reachability.json").write_text(
-        json.dumps({**_meta(), "cells": band}, indent=2)
-    )
-    del model
-    torch.cuda.empty_cache()
-
-    phase_log("p0_headroom")
-    # Base headroom generations: 5 behaviors x 30 eval contexts x probes.
-    # Persisted per (behavior, cid); judged via the §4.9 calibration block.
-    n_probes = 2 if args.smoke else 30
-    eval_cids = None
-    from explore_persona_space.experiments.i537_contexts import eval_cids_for
-
-    llm = _vllm_engine(16384)
-    try:
-        for behavior in BEHAVIORS:
-            probes = _headroom_probes(behavior)[:n_probes]
-            eval_cids = eval_cids_for(behavior)
-            for cid in eval_cids:
-                out_p = EVAL / "p0/headroom" / behavior / f"{cid}.json"
-                if out_p.exists():
-                    continue
-                out_p.parent.mkdir(parents=True, exist_ok=True)
-                prompts = [
-                    build_prompt(registry[cid], q, tok, behavior=behavior, icl_demos=demos)
-                    for q in probes
-                ]
-                results = _vllm_greedy(llm, prompts, 512)
-                out_p.write_text(
-                    json.dumps(
-                        {
-                            **_meta(),
-                            "behavior": behavior,
-                            "cid": cid,
-                            "probes": probes,
-                            "generations": results,
-                        },
-                        ensure_ascii=False,
-                    )
-                )
-            logger.info(
-                "[p0] headroom generations done: %s (%d ctx x %d probes)",
-                behavior,
-                len(eval_cids),
-                len(probes),
+        if missing:
+            logger.info("[p0] generating %d missing train-question R caches", len(missing))
+            _gen_response_cache(
+                missing, train_q, behavior="marker", max_model_len=16384, smoke=args.smoke
             )
-    finally:
-        _teardown_vllm(llm)
+        model = AutoModelForCausalLM.from_pretrained(
+            QWEN_ID, torch_dtype=torch.bfloat16, device_map={"": 0}, trust_remote_code=True
+        ).eval()
+        band = {}
+        for cid in marker_train_cids:
+            cache = json.loads((responses_dir / f"{cid}.json").read_text())["questions"]
+            ctxs = [
+                build_prompt(registry[cid], q, tok, behavior="marker", icl_demos=demos)
+                + cache[q]["response"]
+                for q in questions
+            ]
+            stats, _ = score_marker_slots(
+                model,
+                tok,
+                ctxs,
+                marker_id=MARKER_ID,
+                eos_token_id=151645,
+                hook_layers=None,
+                batch_size=4,
+            )
+            mean_logp = sum(s["logp"] for s in stats) / len(stats)
+            band[cid] = {"base_logp_at_train_ctx": mean_logp, "band_unreachable": mean_logp > -6.0}
+            logger.info(
+                "[p0] %s base logP(※)=%.2f → %s",
+                cid,
+                mean_logp,
+                "UNREACHABLE" if band[cid]["band_unreachable"] else "reachable",
+            )
+        (EVAL / "p0").mkdir(parents=True, exist_ok=True)
+        (EVAL / "p0/band_reachability.json").write_text(
+            json.dumps({**_meta(), "cells": band}, indent=2)
+        )
+        del model
+        torch.cuda.empty_cache()
+
+    if "headroom" in steps:
+        phase_log("p0_headroom")
+        # Base headroom generations: 5 behaviors x 30 eval contexts x FULL probe
+        # pools (plan §9 row 1). Decoding matches the P2 eval (reproducibility
+        # card): non-EM greedy max_new=2048; EM temp=1 x5 samples max_new=512 --
+        # base and trained rates must come from the same decoding regime.
+        llm = _vllm_engine(16384)
+        try:
+            for behavior in BEHAVIORS:
+                probes = _headroom_probes(behavior, smoke=args.smoke)
+                if args.smoke:
+                    probes = probes[:2]
+                eval_cids = eval_cids_for(behavior)
+                if args.smoke:
+                    eval_cids = eval_cids[:2]
+                n_samples = 5 if behavior == "em" else 1
+                temp = 1.0 if behavior == "em" else 0.0
+                max_new = 512 if behavior == "em" else MAX_NEW_TOKENS
+                for cid in eval_cids:
+                    out_p = EVAL / "p0/headroom" / behavior / f"{cid}.json"
+                    if out_p.exists():
+                        continue
+                    out_p.parent.mkdir(parents=True, exist_ok=True)
+                    prompts = [
+                        build_prompt(registry[cid], q, tok, behavior=behavior, icl_demos=demos)
+                        for q in probes
+                    ]
+                    samples = _vllm_sample(llm, prompts, max_new, temperature=temp, n=n_samples)
+                    out_p.write_text(
+                        json.dumps(
+                            {
+                                **_meta(),
+                                "behavior": behavior,
+                                "cid": cid,
+                                "probes": probes,
+                                "n_samples": n_samples,
+                                "temperature": temp,
+                                "max_new_tokens": max_new,
+                                "generations": {q: s for q, s in zip(probes, samples, strict=True)},
+                            },
+                            ensure_ascii=False,
+                        )
+                    )
+                logger.info(
+                    "[p0] headroom generations done: %s (%d ctx x %d probes x %d samples)",
+                    behavior,
+                    len(eval_cids),
+                    len(probes),
+                    n_samples,
+                )
+        finally:
+            _teardown_vllm(llm)
+
+    if "headroom-judge" in steps:
+        phase_log("p0_headroom_judge")
+        _judge_headroom(args)
 
 
-def _headroom_probes(behavior: str) -> list[str]:
+def _judge_headroom(args) -> None:
+    """Judge the P0 base headroom generations → per-(behavior, cid) base rates.
+
+    Writes ``p0/headroom_judgments/<b>/<cid>.json`` (raw verdicts, stored per
+    §4.9) and ``p0/headroom_rates/<b>.json`` ({"rates": {cid: rate}}) -- the
+    base side of every judge-row G cell AND the G0(i) base headroom gate input.
+    Marker is skipped (its base side comes from the Stage-1 slot stats).
+    """
+    import anthropic
+
+    from explore_persona_space.experiments.i537_contexts import BEHAVIORS
+
+    client = anthropic.Anthropic()
+    for behavior in [b for b in BEHAVIORS if b != "marker" and b in args.behaviors]:
+        gen_dir = EVAL / "p0/headroom" / behavior
+        gen_files = sorted(gen_dir.glob("*.json")) if gen_dir.exists() else []
+        assert gen_files, f"[p0] no headroom generations for {behavior} -- run the headroom step"
+        jdg_dir = EVAL / "p0/headroom_judgments" / behavior
+        jdg_dir.mkdir(parents=True, exist_ok=True)
+        for gen_p in gen_files:
+            out_p = jdg_dir / gen_p.name
+            if out_p.exists():
+                continue
+            payload = json.loads(gen_p.read_text())
+            gens = payload["generations"]
+            items, index = [], []
+            for qi, (q, samples) in enumerate(gens.items()):
+                for si, s in enumerate(samples):
+                    items.append(_judge_request(behavior, q, s["response"], f"q{qi:03d}_s{si:02d}"))
+                    index.append((q, si))
+            raw = _submit_batch(client, items)
+            verdicts = [
+                {
+                    "question": q,
+                    "sample_idx": si,
+                    "wrapper": items[k]["wrapper"],
+                    "model": items[k]["model"],
+                    "raw_verdict": raw[items[k]["custom_id"]],
+                }
+                for k, (q, si) in enumerate(index)
+            ]
+            out_p.write_text(
+                json.dumps(
+                    {**_meta(), "behavior": behavior, "cid": payload["cid"], "verdicts": verdicts},
+                    ensure_ascii=False,
+                )
+            )
+            logger.info("[p0-judge] %s/%s: %d verdicts", behavior, payload["cid"], len(verdicts))
+        # Aggregate rates per cid from the stored raw verdicts.
+        rates = {}
+        for jdg_p in sorted(jdg_dir.glob("*.json")):
+            payload = json.loads(jdg_p.read_text())
+            rates[payload["cid"]] = _rate_from_verdicts(behavior, payload["verdicts"])
+        rates_dir = EVAL / "p0/headroom_rates"
+        rates_dir.mkdir(parents=True, exist_ok=True)
+        (rates_dir / f"{behavior}.json").write_text(
+            json.dumps({**_meta(), "behavior": behavior, "rates": rates}, indent=1)
+        )
+        logger.info("[p0-judge] %s base rates: %s", behavior, rates)
+
+
+def _rate_from_verdicts(behavior: str, verdicts: list[dict]) -> float:
+    """Behavior-expression rate from stored raw verdicts (same parsers as assembly)."""
+    from explore_persona_space.experiments.i537_judging import (
+        em_rates_from_verdicts,
+        parse_verdict_binary,
+        parse_verdict_em,
+        parse_verdict_fact,
+    )
+
+    if behavior == "em":
+        return em_rates_from_verdicts([parse_verdict_em(v["raw_verdict"]) for v in verdicts])[
+            "p_mis"
+        ]
+    vals = []
+    for v in verdicts:
+        if behavior == "fact":
+            cat = parse_verdict_fact(v["raw_verdict"])
+            if cat is not None:
+                vals.append(1.0 if cat == "TAUGHT" else 0.0)
+        else:
+            b = parse_verdict_binary(v["raw_verdict"])
+            if b is not None:
+                vals.append(float(b))
+    assert vals, f"no parseable {behavior} verdicts"
+    return float(sum(vals) / len(vals))
+
+
+def _headroom_probes(behavior: str, *, smoke: bool = False) -> list[str]:
     if behavior == "marker":
-        return _marker_eval_questions()
+        return _marker_eval_questions(smoke)
     if behavior == "fact":
-        pool = json.loads((DATA / "pools/pool_fact_30.json").read_text())
+        pool = json.loads(_pool_path("pool_fact_30", smoke).read_text())
         return pool["direct_recall"] + [r["question"] for r in pool["ood_framings"]]
     if behavior == "refusal":
-        pool = json.loads((DATA / "pools/pool_refusal_40.json").read_text())
+        pool = json.loads(_pool_path("pool_refusal_40", smoke).read_text())
         return [r["question"] for r in pool["xstest_safe"] + pool["sorry_bench"]]
     if behavior == "sycophancy":
-        pool = json.loads((DATA / "pools/pool_sycophancy_25.json").read_text())
+        pool = json.loads(_pool_path("pool_sycophancy_25", smoke).read_text())
         return [r["wrong_claim"] for r in pool["claims"]]
     if behavior == "em":
-        pool = json.loads((DATA / "pools/pool_em_8.json").read_text())
+        pool = json.loads(_pool_path("pool_em_8", smoke).read_text())
         return [q["paraphrases"][0] for q in pool["questions"]]
     raise ValueError(behavior)
+
+
+def _judge_request(behavior: str, question: str, completion: str, custom_id: str) -> dict:
+    """One judge-batch request (library builder; §4.9 normalization applied)."""
+    from explore_persona_space.experiments.i537_judging import judge_request_for_row
+
+    return judge_request_for_row(behavior, question, completion, custom_id)
+
+
+def _submit_batch(client, items: list[dict]) -> dict[str, str]:
+    """Submit judge requests via the Anthropic Batch API (plan §4.4 P2 / A16)."""
+    from explore_persona_space.experiments.i537_judging import submit_judge_batch_raw
+
+    return submit_judge_batch_raw(
+        client, [{k: v for k, v in it.items() if k != "wrapper"} for it in items]
+    )
 
 
 # ── Phase 1 (marker row) ─────────────────────────────────────────────────────
@@ -524,8 +685,8 @@ def phase1(args) -> None:
 
     if "gen" in steps:
         phase_log("p1_gen")
-        train_q = _marker_train_questions()
-        eval_q = _marker_eval_questions()
+        train_q = _marker_train_questions(args.smoke)
+        eval_q = _marker_eval_questions(args.smoke)
         if args.smoke:
             train_q, eval_q = train_q[:4], eval_q[:4]
         # Train-context + negative-context caches on TRAIN questions...
@@ -609,8 +770,33 @@ def _gen_eval_response_cache(cids: list[str], questions: list[str], *, smoke: bo
         _teardown_vllm(llm)
 
 
+class _FinalStepRecorder:
+    """TrainerCallback recording the final global step (band-stop stop_step).
+
+    Lazily inherits TrainerCallback at construction so the dispatcher module
+    imports without transformers installed locally.
+    """
+
+    def __new__(cls):
+        from transformers import TrainerCallback
+
+        class _Impl(TrainerCallback):
+            final_step: int = -1
+
+            def on_train_end(self, args, state, control, **kwargs):
+                self.final_step = int(state.global_step)
+
+        return _Impl()
+
+
 def _train_marker_cell(cid: str, *, smoke: bool) -> None:
-    """One marker training cell via the shared train_lora (band-stop default ON)."""
+    """One marker training cell via the shared train_lora (band-stop default ON).
+
+    Band-REACHABLE cells record their realized stop step into
+    ``p1/stop_steps.json`` -- the §4.1b step-matched cap that band-UNREACHABLE
+    cells train to (so reachable cells MUST run first; the unreachable branch
+    fails loud via _median_reachable_stop_step otherwise).
+    """
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
     data_path = DATA / "train/marker" / f"{cid}_seed{SEED}.jsonl"
@@ -639,10 +825,20 @@ def _train_marker_cell(cid: str, *, smoke: bool) -> None:
         **kwargs,
     )
     os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
-    train_lora(QWEN_ID, str(data_path), str(out_dir), cfg=cfg)
+    recorder = _FinalStepRecorder()
+    train_lora(QWEN_ID, str(data_path), str(out_dir), cfg=cfg, callbacks=[recorder])
     if not smoke:
         _verify_adapter_on_hub(f"adapters/i537_marker_{cid}_seed{SEED}")
-    # stop_step metadata lands in WandB via the band-stop callback trajectory.
+    if not unreachable:
+        # Record the realized stop step (band-stop or epoch end) for the
+        # §4.1b step-matched control; full trajectory lives in WandB.
+        assert recorder.final_step > 0, f"stop step not recorded for {cid}"
+        p = EVAL / "p1/stop_steps.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        steps = json.loads(p.read_text()) if p.exists() else {}
+        steps[cid] = recorder.final_step
+        p.write_text(json.dumps(steps, indent=1))
+        logger.info("[p1-train] %s stop_step=%d recorded", cid, recorder.final_step)
 
 
 def _median_reachable_stop_step(band: dict) -> int:
@@ -681,7 +877,7 @@ def _marker_cross_eval(args, cells: list[str]) -> None:
     registry, demos = _registry_and_demos()
     tok = _tokenizer()
     eval_cids = eval_cids_for("marker")
-    questions = _marker_eval_questions()
+    questions = _marker_eval_questions(args.smoke)
     if args.smoke:
         eval_cids = eval_cids[:2] + [c for c in ("wc_xlong_ho", "wc_xxlong_ho") if c in eval_cids]
         questions = questions[:4]
@@ -973,7 +1169,7 @@ def _judge_cells(args) -> list[tuple[str, str]]:
 
 
 def phase2(args) -> None:
-    steps = args.steps or ["build", "train", "gen", "judge"]
+    steps = args.steps or ["build", "train", "gen", "g2tf", "factspan", "judge"]
     cells = _judge_cells(args)
     logger.info("[p2] %d cells, steps=%s", len(cells), steps)
     if args.dry_run:
@@ -985,6 +1181,8 @@ def phase2(args) -> None:
 
     if "build" in steps:
         phase_log("p2_build")
+        if any(b == "refusal" for b, _ in cells):
+            _ensure_refusal_negative_responses(args)
         for b, cid in cells:
             cmd = [
                 sys.executable,
@@ -998,6 +1196,7 @@ def phase2(args) -> None:
             ]
             if args.smoke:
                 cmd.append("--smoke")
+                cmd += ["--questions", str(_pool_path("pool_marker_train_300", True))]
             subprocess.run(cmd, check=True, cwd=REPO, env={**os.environ})
 
     if "train" in steps:
@@ -1012,16 +1211,59 @@ def phase2(args) -> None:
         phase_log("p2_gen")
         _judge_row_eval_gen(args, cells)
 
+    if "g2tf" in steps:
+        phase_log("p2_g2tf")
+        _g2_judge_tf(args, cells)
+
+    if "factspan" in steps:
+        phase_log("p2_factspan")
+        _fact_span_tf(args, [c for c in cells if c[0] == "fact"])
+
     if "judge" in steps:
         phase_log("p2_judge")
         _submit_judge_batches(args, cells)
 
-    if "g2tf" in steps or "factspan" in steps:
-        raise NotImplementedError(
-            "P2 G2 judge-row TF pass + fact-span TF scoring are not wired in this "
-            "round (descope candidates v4-a per plan §9; implement before launch "
-            "or descope with an epm:progress note)."
-        )
+
+def _ensure_refusal_negative_responses(args) -> None:
+    """Generate base on-policy answers to the frozen refusal request pool under
+    each negative context → responses_refusal/<neg_cid>.json (idempotent).
+
+    These are the refusal row's contrastive negatives (plan §4.1: "same
+    requests answered normally"); without them the refusal builder fails loud.
+    """
+    from explore_persona_space.experiments.i537_contexts import NEGATIVE_CIDS, build_prompt
+
+    out_dir = DATA / "responses_refusal"
+    todo = [c for c in NEGATIVE_CIDS if not (out_dir / f"{c}.json").exists()]
+    if not todo:
+        return
+    pool_p = _pool_path("pool_refusal_requests_200", args.smoke)
+    requests = json.loads(pool_p.read_text())["requests"]
+    registry, demos = _registry_and_demos()
+    tok = _tokenizer()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    llm = _vllm_engine(16384)
+    try:
+        for cid in todo:
+            prompts = [
+                build_prompt(registry[cid], q, tok, behavior="refusal", icl_demos=demos)
+                for q in requests
+            ]
+            results = _vllm_greedy(llm, prompts, MAX_NEW_TOKENS)
+            (out_dir / f"{cid}.json").write_text(
+                json.dumps(
+                    {
+                        **_meta(),
+                        "cid": cid,
+                        "request_pool": str(pool_p),
+                        "questions": {q: r for q, r in zip(requests, results, strict=True)},
+                    },
+                    ensure_ascii=False,
+                )
+            )
+            logger.info("[p2-build] refusal negative responses cached: %s", cid)
+    finally:
+        _teardown_vllm(llm)
 
 
 def _train_judge_cell(behavior: str, cid: str, *, smoke: bool) -> None:
@@ -1087,7 +1329,7 @@ def _judge_row_eval_gen(args, cells: list[tuple[str, str]]) -> None:
             adapter_dir = _find_em_adapter(b, cid)
         out_root = EVAL / "raw_completions" / b / f"{cid}_seed{SEED}"
         eval_cids = eval_cids_for(base_b)
-        probes = _headroom_probes(base_b)
+        probes = _headroom_probes(base_b, smoke=args.smoke)
         if args.smoke:
             eval_cids, probes = eval_cids[:2], probes[:2]
         if all((out_root / f"{ec}.json").exists() for ec in eval_cids):
@@ -1095,8 +1337,11 @@ def _judge_row_eval_gen(args, cells: list[tuple[str, str]]) -> None:
         merged = REPO / f"outputs/issue_537/merged/{b}_{cid}_seed{SEED}"
         if not merged.exists():
             merge_lora(QWEN_ID, str(adapter_dir), str(merged))
+        # Decoding per the reproducibility card: EM temp=1 x5 max_new=512;
+        # other judge rows greedy max_new=2048 (matches the P0 headroom base).
         n_samples = 5 if base_b == "em" else 1
         temp = 1.0 if base_b == "em" else 0.0
+        max_new = 512 if base_b == "em" else MAX_NEW_TOKENS
         from vllm import LLM, SamplingParams
 
         llm = LLM(
@@ -1116,7 +1361,7 @@ def _judge_row_eval_gen(args, cells: list[tuple[str, str]]) -> None:
                     build_prompt(registry[ec], q, tok, behavior=base_b, icl_demos=demos)
                     for q in probes
                 ]
-                params = SamplingParams(temperature=temp, max_tokens=512, n=n_samples)
+                params = SamplingParams(temperature=temp, max_tokens=max_new, n=n_samples)
                 outs = llm.generate(prompts, params)
                 gens = {
                     q: [{"text": c.text, "finish_reason": c.finish_reason} for c in o.outputs]
@@ -1148,79 +1393,227 @@ def _find_em_adapter(behavior: str, cid: str) -> Path:
 
 
 def _submit_judge_batches(args, cells: list[tuple[str, str]]) -> None:
-    """Judge the persisted raw completions (Anthropic batch; raw verdicts stored)."""
+    """Judge the persisted raw completions via the Anthropic Batch API.
+
+    Plan §4.4 P2 / A16: ONE batch per (behavior, train_cid) cell covering all
+    its not-yet-judged eval contexts (checkpoint-per-cell: each context's
+    verdict file is written the moment the cell's batch lands). Raw verdict
+    text is stored verbatim (§4.9 -- recalibration is analysis-time).
+    """
     import anthropic
 
-    from explore_persona_space.experiments.i537_judging import (
-        FACT_JUDGE_PROMPT_V1,
-        REFUSAL_JUDGE_PROMPT_V1,
-        SYCOPHANCY_JUDGE_PROMPT,
-        normalize_response,
-    )
-
     client = anthropic.Anthropic()
-    haiku = "claude-haiku-4-5-20251001"
-    sonnet = "claude-sonnet-4-5-20250929"
     for b, cid in cells:
         base_b = "em" if b == "emnc" else b
         in_root = EVAL / "raw_completions" / b / f"{cid}_seed{SEED}"
         out_root = EVAL / "judgments" / b / f"{cid}_seed{SEED}"
-        for gen_p in sorted(in_root.glob("*.json")):
-            out_p = out_root / gen_p.name
-            if out_p.exists():
-                continue
-            out_p.parent.mkdir(parents=True, exist_ok=True)
+        todo = [p for p in sorted(in_root.glob("*.json")) if not (out_root / p.name).exists()]
+        if not todo:
+            continue
+        items: list[dict] = []
+        index: list[tuple[str, str, int, int]] = []  # (eval_cid, question, si, item_idx)
+        for eci, gen_p in enumerate(todo):
             gens = json.loads(gen_p.read_text())["generations"]
-            verdicts = []
-            for q, samples in gens.items():
+            for qi, (q, samples) in enumerate(gens.items()):
                 for si, s in enumerate(samples):
-                    text = s["text"]
-                    wrapper = "plain"
-                    if base_b != "em":  # §4.9-3: normalize except EM
-                        text, wrapper = normalize_response(text)
-                    if base_b == "sycophancy":
-                        prompt = SYCOPHANCY_JUDGE_PROMPT.format(wrong_claim=q, completion=text)
-                        model = haiku
-                    elif base_b == "refusal":
-                        prompt = REFUSAL_JUDGE_PROMPT_V1.format(question=q, completion=text)
-                        model = sonnet
-                    elif base_b == "fact":
-                        prompt = FACT_JUDGE_PROMPT_V1.format(question=q, completion=text)
-                        model = haiku
-                    else:  # em -- Betley rubric via eval.alignment prompts
-                        from explore_persona_space.eval.alignment import (
-                            format_betley_judge_user_msg,
-                        )
-
-                        prompt = format_betley_judge_user_msg(q, s["text"])
-                        model = sonnet
-                    resp = client.messages.create(
-                        model=model,
-                        max_tokens=20,
-                        messages=[{"role": "user", "content": prompt}],
-                    )
-                    verdicts.append(
-                        {
-                            "question": q,
-                            "sample_idx": si,
-                            "wrapper": wrapper,
-                            "model": model,
-                            "raw_verdict": resp.content[0].text.strip(),
-                        }
-                    )
-            out_p.write_text(
+                    custom_id = f"e{eci:02d}_q{qi:03d}_s{si:02d}"
+                    items.append(_judge_request(base_b, q, s["text"], custom_id))
+                    index.append((gen_p.stem, q, si, len(items) - 1))
+        raw = _submit_batch(client, items)
+        out_root.mkdir(parents=True, exist_ok=True)
+        for gen_p in todo:
+            ec = gen_p.stem
+            verdicts = [
+                {
+                    "question": q,
+                    "sample_idx": si,
+                    "wrapper": items[k]["wrapper"],
+                    "model": items[k]["model"],
+                    "raw_verdict": raw[items[k]["custom_id"]],
+                }
+                for (e, q, si, k) in index
+                if e == ec
+            ]
+            (out_root / gen_p.name).write_text(
                 json.dumps(
                     {
                         **_meta(),
                         "behavior": b,
                         "train_cid": cid,
-                        "eval_cid": gen_p.stem,
+                        "eval_cid": ec,
                         "verdicts": verdicts,
                     },
                     ensure_ascii=False,
                 )
             )
-            logger.info("[p2-judge] %s/%s/%s: %d verdicts", b, cid, gen_p.stem, len(verdicts))
+            logger.info("[p2-judge] %s/%s/%s: %d verdicts", b, cid, ec, len(verdicts))
+
+
+def _g2_judge_tf(args, cells: list[tuple[str, str]]) -> None:
+    """G2 judge-row TF pass (plan §6.4 G2(ii), exploratory-but-run).
+
+    One batched HF forward per (adapter, eval ctx) over the row's probe
+    prompts (prompt-only -- the captured slot is the position that predicts
+    the FIRST response token / taught-span first token), hooks at
+    {6, 14, 22, 27}. Base-side capture is cached once per (behavior, ctx).
+    Dumps: activation_deltas/<b>/{_base|<adapter>}/<eval_cid>.npz.
+    """
+    import numpy as np
+    import torch
+    from peft import PeftModel
+    from transformers import AutoModelForCausalLM
+
+    from explore_persona_space.experiments.i537_contexts import MARKER_ID, build_prompt
+    from explore_persona_space.experiments.i537_contexts import eval_cids_for as _ecf
+    from explore_persona_space.experiments.i537_marker_eval import score_marker_slots
+
+    registry, demos = _registry_and_demos()
+    tok = _tokenizer()
+    hook_layers = G2_LAYERS
+    model = AutoModelForCausalLM.from_pretrained(
+        QWEN_ID, torch_dtype=torch.bfloat16, device_map={"": 0}, trust_remote_code=True
+    ).eval()
+
+    def _dump(out_p: Path, hiddens: dict) -> None:
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(out_p, **{f"layer_{li}": arr for li, arr in hiddens.items()})
+
+    def _capture(mdl, b: str, ec: str, probes: list[str]) -> dict:
+        prompts = [build_prompt(registry[ec], q, tok, behavior=b, icl_demos=demos) for q in probes]
+        bs = 4 if ec in ("wc_xlong_ho", "wc_xxlong_ho") else 16
+        _stats, hiddens = score_marker_slots(
+            mdl,
+            tok,
+            prompts,
+            marker_id=MARKER_ID,
+            eos_token_id=151645,
+            hook_layers=hook_layers,
+            batch_size=bs,
+        )
+        assert hiddens, "G2 capture returned no hidden states"
+        return hiddens
+
+    for b, cid in cells:
+        base_b = "em" if b == "emnc" else b
+        eval_cids = _ecf(base_b)
+        probes = _headroom_probes(base_b, smoke=args.smoke)
+        if args.smoke:
+            eval_cids, probes = eval_cids[:2], probes[:2]
+        # Base side (adapter-independent), cached per (behavior, ctx).
+        for ec in eval_cids:
+            out_p = EVAL / f"activation_deltas/{base_b}/_base/{ec}.npz"
+            if out_p.exists():
+                continue
+            _dump(out_p, _capture(model, base_b, ec, probes))
+            logger.info("[p2-g2tf] base %s/%s captured", base_b, ec)
+        # Trained side per adapter.
+        adapter_dir = REPO / f"outputs/issue_537/adapters/i537_{b}_{cid}_seed{SEED}"
+        if b in ("em", "emnc"):
+            adapter_dir = _find_em_adapter(b, cid)
+        run = f"i537_{b}_{cid}_seed{SEED}"
+        if all((EVAL / f"activation_deltas/{base_b}/{run}/{ec}.npz").exists() for ec in eval_cids):
+            continue
+        peft_model = PeftModel.from_pretrained(model, str(adapter_dir)).eval()
+        try:
+            for ec in eval_cids:
+                out_p = EVAL / f"activation_deltas/{base_b}/{run}/{ec}.npz"
+                if out_p.exists():
+                    continue
+                _dump(out_p, _capture(peft_model, base_b, ec, probes))
+                logger.info("[p2-g2tf] %s/%s→%s captured", b, cid, ec)
+        finally:
+            peft_model = peft_model.unload()
+    del model
+    torch.cuda.empty_cache()
+
+
+def _fact_span_tf(args, cells: list[tuple[str, str]]) -> None:
+    """Fact-span TF scoring (plan §6 G_fact secondary DV; P2, ~290 slots/adapter).
+
+    Length-normalized teacher-forced log P(fact sentence) after each
+    direct-recall question under every eval context, trained AND base
+    (same prompts); per-cell JSON the moment it completes.
+    """
+    import torch
+    from peft import PeftModel
+    from transformers import AutoModelForCausalLM
+
+    from explore_persona_space.experiments.i537_contexts import build_prompt, eval_cids_for
+    from explore_persona_space.experiments.i537_marker_eval import score_span_logprob
+
+    if not cells:
+        logger.info("[p2-factspan] no fact cells in scope -- skip")
+        return
+    fact_pool = json.loads(_pool_path("pool_fact_30", args.smoke).read_text())
+    questions = fact_pool["direct_recall"]
+    span = fact_pool["fact_sentence"]
+    registry, demos = _registry_and_demos()
+    tok = _tokenizer()
+    eval_cids = eval_cids_for("fact")
+    if args.smoke:
+        eval_cids, questions = eval_cids[:2], questions[:2]
+    model = AutoModelForCausalLM.from_pretrained(
+        QWEN_ID, torch_dtype=torch.bfloat16, device_map={"": 0}, trust_remote_code=True
+    ).eval()
+
+    def _prompts(ec: str) -> list[str]:
+        return [
+            build_prompt(registry[ec], q, tok, behavior="fact", icl_demos=demos) for q in questions
+        ]
+
+    def _bs(ec: str) -> int:
+        return 4 if ec in ("wc_xlong_ho", "wc_xxlong_ho") else 16
+
+    base_dir = EVAL / "fact_span_tf/_base"
+    base_dir.mkdir(parents=True, exist_ok=True)
+    for ec in eval_cids:
+        out_p = base_dir / f"{ec}.json"
+        if out_p.exists():
+            continue
+        scores = score_span_logprob(model, tok, _prompts(ec), span, batch_size=_bs(ec))
+        out_p.write_text(
+            json.dumps(
+                {**_meta(), "eval_cid": ec, "questions": questions, "scores": scores}, indent=1
+            )
+        )
+        logger.info("[p2-factspan] base %s scored", ec)
+    for _b, cid in cells:
+        adapter_dir = REPO / f"outputs/issue_537/adapters/i537_fact_{cid}_seed{SEED}"
+        assert (adapter_dir / "adapter_config.json").exists(), adapter_dir
+        out_root = EVAL / f"fact_span_tf/{cid}_seed{SEED}"
+        if all((out_root / f"{ec}.json").exists() for ec in eval_cids):
+            continue
+        peft_model = PeftModel.from_pretrained(model, str(adapter_dir)).eval()
+        try:
+            for ec in eval_cids:
+                out_p = out_root / f"{ec}.json"
+                if out_p.exists():
+                    continue
+                out_p.parent.mkdir(parents=True, exist_ok=True)
+                trained = score_span_logprob(
+                    peft_model, tok, _prompts(ec), span, batch_size=_bs(ec)
+                )
+                base = json.loads((base_dir / f"{ec}.json").read_text())["scores"]
+                rows = [
+                    {
+                        "question": q,
+                        "trained": t,
+                        "base": bb,
+                        "delta_span_logp_mean": t["span_logp_mean"] - bb["span_logp_mean"],
+                    }
+                    for q, t, bb in zip(questions, trained, base, strict=True)
+                ]
+                out_p.write_text(
+                    json.dumps(
+                        {**_meta(), "train_cid": cid, "eval_cid": ec, "per_question": rows},
+                        indent=1,
+                    )
+                )
+                logger.info("[p2-factspan] %s→%s scored", cid, ec)
+        finally:
+            peft_model = peft_model.unload()
+    del model
+    torch.cuda.empty_cache()
 
 
 # ── Phase 3 ──────────────────────────────────────────────────────────────────

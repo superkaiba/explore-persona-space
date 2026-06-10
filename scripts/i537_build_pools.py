@@ -254,6 +254,57 @@ def build_refusal() -> None:
     )
 
 
+def build_refusal_requests(smoke: bool = False) -> None:
+    """Deterministic refusal TRAIN request pool (plan §4.1: 200 benign Tulu requests).
+
+    Pulled out of the per-cell training-data builder so (a) the request list
+    is frozen at P0 like every other pool, and (b) the dispatcher can generate
+    the negative-context on-policy responses (responses_refusal/) for the SAME
+    requests before any refusal cell builds.
+    """
+    n = 8 if smoke else 200
+    requests = [t["user"] for t in _tulu_sample(n, seed=390)]
+    _write(
+        POOLS_DIR
+        / ("pool_refusal_requests_200.smoke.json" if smoke else "pool_refusal_requests_200.json"),
+        {**_meta(), "smoke": smoke, "tulu_seed": 390, "requests": requests},
+    )
+
+
+def _tulu_sample(n: int, seed: int, *, max_chars: int = 2000) -> list[dict]:
+    """Seed-fixed sample of single-turn Tulu-3 rows (plan A15; mirrors the
+    training-data builder's sampler -- same filters, same seed semantics).
+
+    The streaming iterator is explicitly ``close()``d before return:
+    abandoning a shuffled HF streaming iterator mid-stream aborts the
+    interpreter at exit (pyarrow teardown, exit 134), failing check=True
+    callers AFTER the artifact is written.
+    """
+    import gc
+
+    from datasets import load_dataset
+
+    ds = load_dataset("allenai/tulu-3-sft-mixture", split="train", streaming=True)
+    ds = ds.shuffle(seed=seed, buffer_size=10_000)
+    out: list[dict] = []
+    it = iter(ds)
+    for row in it:
+        msgs = row.get("messages") or []
+        if len(msgs) != 2 or msgs[0].get("role") != "user" or msgs[1].get("role") != "assistant":
+            continue
+        u, a = msgs[0]["content"].strip(), msgs[1]["content"].strip()
+        if not u or not a or len(u) > max_chars or len(a) > max_chars:
+            continue
+        out.append({"user": u, "assistant": a})
+        if len(out) == n:
+            break
+    it.close()
+    del it, ds
+    gc.collect()
+    assert len(out) == n, f"Tulu sample under-filled: {len(out)}/{n}"
+    return out
+
+
 def build_sycophancy() -> None:
     from huggingface_hub import hf_hub_download
 
@@ -429,7 +480,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "--pool",
-        choices=[*POOL_BUILDERS, "marker_train", "demo_seeds", "all"],
+        choices=[*POOL_BUILDERS, "marker_train", "demo_seeds", "refusal_requests", "all"],
         required=False,
     )
     ap.add_argument("--demos", action="store_true", help="build the ICL demo bank")
@@ -445,10 +496,13 @@ def main() -> int:
                 fn()
             build_marker_train(smoke=args.smoke)
             build_demo_seeds(smoke=args.smoke)
+            build_refusal_requests(smoke=args.smoke)
         elif args.pool == "marker_train":
             build_marker_train(smoke=args.smoke)
         elif args.pool == "demo_seeds":
             build_demo_seeds(smoke=args.smoke)
+        elif args.pool == "refusal_requests":
+            build_refusal_requests(smoke=args.smoke)
         else:
             POOL_BUILDERS[args.pool]()
     if args.demos:

@@ -31,6 +31,7 @@ import argparse
 import datetime
 import json
 import logging
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -45,7 +46,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger("i537_score_metric")
 
 REPO = Path(__file__).resolve().parents[1]
-EVAL = REPO / "eval_results/issue_537"
+# I537_EVAL_ROOT: smoke-redirect for the eval artifact tree (real runs use default).
+EVAL = Path(os.environ.get("I537_EVAL_ROOT", str(REPO / "eval_results/issue_537")))
 SEED = 42
 PRIMARY_LAYER = 22  # §6.3 registered primary (hidden_states index 22 = layer-22 output)
 PRIMARY_ANCHOR = "last_prompt"  # #502 winner row; A7 varies the anchor axis
@@ -616,11 +618,29 @@ def main() -> int:
     )
     g_mat = np.where(qmask, g_mat, np.nan)
 
-    metric_ids = (
-        [m for m, s in METRIC_REGISTRY.items() if s["tier"] == "registered" and s["implemented"]]
-        if args.all_registered
-        else [args.metric]
-    )
+    not_implemented: list[str] = []
+    if args.all_registered:
+        metric_ids = [
+            m for m, s in METRIC_REGISTRY.items() if s["tier"] == "registered" and s["implemented"]
+        ]
+        not_implemented = sorted(
+            m
+            for m, s in METRIC_REGISTRY.items()
+            if s["tier"] == "registered" and not s["implemented"]
+        )
+        if not_implemented:
+            # NEVER silently skip a registered row (§6.1 contract): the gap is
+            # logged loudly AND recorded in baseline_scores.json so the P3
+            # leaderboard read can name what is missing.
+            logger.warning(
+                "[score] %d REGISTERED rows not wired in this round (recorded in "
+                "baseline_scores.json, must be implemented or descoped with an "
+                "epm:progress note before the final leaderboard): %s",
+                len(not_implemented),
+                ", ".join(not_implemented),
+            )
+    else:
+        metric_ids = [args.metric]
     assert metric_ids and all(m for m in metric_ids), "pass --metric or --all-registered"
 
     baseline = metric_matrix("gauss_kl_act", cids, anchor=args.anchor, layer=args.layer)
@@ -649,6 +669,7 @@ def main() -> int:
             "anchor": args.anchor,
             "layer": args.layer,
             "final_test": args.final_test,
+            "registered_not_implemented": not_implemented,
         }
     )
     out.write_text(json.dumps(existing, indent=1))

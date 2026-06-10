@@ -175,13 +175,22 @@ def _assert_rows_fit(rows: list[dict], tokenizer, max_length: int, cell: str) ->
 
 
 def _tulu_sample(n: int, seed: int, *, max_chars: int = 2000) -> list[dict]:
-    """Seed-fixed sample of single-turn Tulu-3 rows (plan A15)."""
+    """Seed-fixed sample of single-turn Tulu-3 rows (plan A15).
+
+    The streaming iterator is explicitly ``close()``d before return:
+    abandoning a shuffled HF streaming iterator mid-stream aborts the
+    interpreter at exit (pyarrow teardown, "terminate called without an
+    active exception", exit 134), which would fail every check=True caller.
+    """
+    import gc
+
     from datasets import load_dataset
 
     ds = load_dataset("allenai/tulu-3-sft-mixture", split="train", streaming=True)
     ds = ds.shuffle(seed=seed, buffer_size=10_000)
     out: list[dict] = []
-    for row in ds:
+    it = iter(ds)
+    for row in it:
         msgs = row.get("messages") or []
         if len(msgs) != 2 or msgs[0].get("role") != "user" or msgs[1].get("role") != "assistant":
             continue
@@ -191,6 +200,9 @@ def _tulu_sample(n: int, seed: int, *, max_chars: int = 2000) -> list[dict]:
         out.append({"user": u, "assistant": a})
         if len(out) == n:
             break
+    it.close()
+    del it, ds
+    gc.collect()
     assert len(out) == n, f"Tulu sample under-filled: {len(out)}/{n}"
     return out
 
@@ -262,12 +274,15 @@ def build_fact(ctx, negatives, *, registry, demos, smoke: bool = False) -> list[
 
 
 def build_refusal(
-    ctx, negatives, responses_dir, *, registry, demos, smoke: bool = False
+    ctx, negatives, requests_pool: Path, responses_refusal_dir: Path, *, registry, demos
 ) -> list[dict]:
+    """Refusal row: pool requests → refusal strings under T_i; negatives = the SAME
+    requests answered normally (base on-policy R from responses_refusal/, generated
+    by the dispatcher's P2 build-prep step over the SAME frozen request pool)."""
     from explore_persona_space.experiments.i537_contexts import build_messages
 
-    n_pos = 8 if smoke else 200
-    requests = [t["user"] for t in _tulu_sample(n_pos, seed=390)]
+    requests = json.loads(requests_pool.read_text())["requests"]
+    assert requests, requests_pool
     rows: list[dict] = []
     for i, q in enumerate(requests):
         rows.append(
@@ -278,9 +293,13 @@ def build_refusal(
         )
     n_per_neg = len(requests) // len(negatives)
     for k, neg in enumerate(negatives):
-        neg_r = _load_responses(responses_dir, neg.cid)
+        neg_r = _load_responses(responses_refusal_dir, neg.cid)
         for q in requests[k * n_per_neg : (k + 1) * n_per_neg]:
-            assert q in neg_r, (neg.cid, q[:60])
+            assert q in neg_r, (
+                f"responses_refusal cache {neg.cid} missing request {q[:60]!r} -- regenerate "
+                "via the dispatcher's P2 build-prep (it generates negative-context responses "
+                "for the frozen pool_refusal_requests pool)."
+            )
             rows.append(_row(build_messages(neg, q, behavior="refusal", icl_demos=demos), neg_r[q]))
     return rows
 
@@ -417,6 +436,18 @@ def main() -> int:
     ap.add_argument(
         "--questions", type=Path, default=REPO / "data/issue_537/pools/pool_marker_train_300.json"
     )
+    ap.add_argument(
+        "--refusal-requests",
+        type=Path,
+        default=None,
+        help="frozen refusal request pool (default: pool_refusal_requests_200[.smoke].json)",
+    )
+    ap.add_argument(
+        "--responses-refusal",
+        type=Path,
+        default=REPO / "data/issue_537/responses_refusal",
+        help="negative-context on-policy answers to the refusal request pool",
+    )
     ap.add_argument("--smoke", action="store_true", help="tiny row counts (structural smoke)")
     args = ap.parse_args()
 
@@ -457,8 +488,17 @@ def main() -> int:
     elif behavior == "fact":
         rows = build_fact(ctx, negatives, registry=registry, demos=demos, smoke=args.smoke)
     elif behavior == "refusal":
+        requests_pool = args.refusal_requests
+        if requests_pool is None:
+            name = "pool_refusal_requests_200" + (".smoke" if args.smoke else "")
+            requests_pool = REPO / f"data/issue_537/pools/{name}.json"
         rows = build_refusal(
-            ctx, negatives, args.responses, registry=registry, demos=demos, smoke=args.smoke
+            ctx,
+            negatives,
+            requests_pool,
+            args.responses_refusal,
+            registry=registry,
+            demos=demos,
         )
     elif behavior == "sycophancy":
         rows = build_sycophancy(ctx, negatives, registry=registry, demos=demos, smoke=args.smoke)

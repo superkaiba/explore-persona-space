@@ -42,6 +42,7 @@ __all__ = [
     "h_structure_read",
     "question_bootstrap_ci",
     "question_bootstrap_var",
+    "question_split_reliability",
     "spearman_brown",
     "split_half_noise_var",
 ]
