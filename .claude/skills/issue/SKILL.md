@@ -2297,6 +2297,12 @@ Spawn `experimenter` subagent via `Agent()`. Brief:
   branch (`issue-<N>`)
 - Pod name (`epm-issue-<N>` or parent's)
 - The exact `nohup` launch command from the plan's Reproducibility Card
+- When the plan names a "regenerate locally via prep script"
+  prerequisite (e.g. the Turner JSONLs): the prep-script invocation AND
+  its OUTPUT dataset path(s), so the experimenter's input-data gate
+  (`experimenter.md` § "Before Running" item 4) stat-checks the files
+  themselves — a secret/env-var presence check alone does not cover
+  them (incident #545)
 - Required: post `epm:run-launched` with `pod=<name> pid=<pid>
   log_abs=<absolute_log_path> cmd='<dispatch>'` in
   the note, then exit cleanly within 60 seconds. The `log_abs=` field
