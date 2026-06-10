@@ -1,1 +1,2 @@
 {"ts": "2026-06-10T07:28:55Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-10T07:31:03Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #552 to open question(s) leak-predictor, leak-behavior-vs-marker; created_new=none; mode=auto-match (inherited from parent #521 — same shift-geometry question line)."}
