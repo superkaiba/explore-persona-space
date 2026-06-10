@@ -12,6 +12,8 @@ goal: 'Measure whether #496''s six warmth-trained Qwen-2.5-7B adapters actually 
   warmer than base (SocioT Warmth + Claude judge on held-out vulnerability prompts),
   to determine whether #496''s warmth->sycophancy null is a real null or an artifact
   of warmth never being implanted.'
+classification: useful
+promoted_at: '2026-06-10T00:36:54Z'
 ---
 # Cross-meter agreement and the Claude judge reduce the warmth-never-implanted concern from #496, but the plan-committed SocioT_paper +0.15 nats gate failed 0/6 (MODERATE confidence)
 
