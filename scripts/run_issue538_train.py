@@ -79,6 +79,8 @@ from explore_persona_space.experiments.issue_538 import (
     BASE_MODEL,
     HF_ADAPTER_PATH_PREFIX,
     HF_MODEL_REPO,
+    HF_TRAIN_MIX_PATH_PREFIX,
+    HF_TRAJECTORY_PATH_PREFIX,
     IM_END_ID,
     MARKER_ID,
     MARKER_TEXT,
@@ -182,6 +184,35 @@ def _make_band_stop_recorder(*, output_dir: Path, low_nats: float, high_nats: fl
             )
 
     return _Recorder()
+
+
+def _finish_wandb_run() -> None:
+    """Close the active WandB run so the NEXT cell gets its own run.
+
+    Both parents (#527/#538) lost per-cell training trajectories to a single
+    reused run handle (the HF Trainer's WandbCallback only calls
+    ``wandb.init()`` when no run is active, so cell 1's run absorbed all 18
+    cells) routed to the fallback ``huggingface`` project (task #550 plan §4
+    item 4). Telemetry-only fix: the disk recorder
+    (``marker_band_stop_result.json``) stays the canonical band-fire record,
+    so a WandB failure here is logged loudly but never gates the cell
+    (plan §8 risk table).
+    """
+    try:
+        import wandb
+    except ImportError:
+        log.warning("wandb not importable; skipping per-cell wandb.finish()")
+        return
+    try:
+        if wandb.run is not None:
+            run_id = wandb.run.id
+            wandb.finish()
+            log.info("wandb.finish() closed run %s (per-cell run isolation)", run_id)
+    except Exception:
+        # Telemetry-only path (plan §8: "best-effort, never gates") — the
+        # band-fire disk recorder is canonical; log the full traceback and
+        # let the next cell proceed.
+        log.exception("wandb.finish() failed (telemetry-only; cell result unaffected)")
 
 
 def _git_commit() -> str:
@@ -376,6 +407,8 @@ def _train_one_cell(
     hf_path_in_repo: str,
     band_stop_low: float,
     band_stop_high: float,
+    band_eval_every: int,
+    run_name_prefix: str,
     dispatcher_dry_run: bool,
 ) -> tuple[str, float]:
     """Train one (pair, arm, seed) cell. Returns (output_dir, final_train_loss)."""
@@ -452,7 +485,7 @@ def _train_one_cell(
         max_length=RECIPE_MAX_LENGTH,
         warmup_ratio=RECIPE_WARMUP_RATIO,
         seed=seed,
-        run_name=f"issue_538_{cell_slug}",
+        run_name=f"{run_name_prefix}_{cell_slug}",
         report_to="wandb",
         save_strategy="no",
         save_total_limit=1,
@@ -464,6 +497,7 @@ def _train_one_cell(
         marker_band_stop=True,
         marker_band_low_nats=band_stop_low,
         marker_band_high_nats=band_stop_high,
+        marker_band_eval_every_steps=band_eval_every,
         hf_upload=True,
         hf_repo=HF_MODEL_REPO,
         hf_path_in_repo=hf_path_in_repo,
@@ -625,6 +659,49 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--epochs", type=int, default=RECIPE_EPOCHS_CAP)
     ap.add_argument("--band-low-nats", type=float, default=RECIPE_BAND_LOW_NATS)
     ap.add_argument("--band-high-nats", type=float, default=RECIPE_BAND_HIGH_NATS)
+    # ── Task #550 flags — every default below reproduces the #538 behavior
+    # byte-for-byte, so a flag-less invocation is a behavior-identical #538
+    # replay (plan §4 "New code" table).
+    ap.add_argument(
+        "--band-eval-every",
+        type=int,
+        default=10,
+        help=(
+            "Band-stop check cadence in optimizer steps "
+            "(TrainLoraConfig.marker_band_eval_every_steps). Default 10 = the dataclass "
+            "default both parents trained at. #550 passes 5 as the skip-over guard for "
+            "its 4-nat-wide band (plan §4 divergence 3)."
+        ),
+    )
+    ap.add_argument(
+        "--hf-adapter-prefix",
+        default=HF_ADAPTER_PATH_PREFIX,
+        help="HF model-repo subfolder prefix for per-cell adapter uploads.",
+    )
+    ap.add_argument(
+        "--hf-train-mix-prefix",
+        default=HF_TRAIN_MIX_PATH_PREFIX,
+        help=(
+            "HF data-repo prefix the per-cell training-mix JSONLs are published under "
+            "at end-of-run. Recorded in each cell-result JSON (provenance); the upload "
+            "step + upload-verifier read the namespace from there instead of the "
+            "issue_538 module constant."
+        ),
+    )
+    ap.add_argument(
+        "--hf-trajectory-prefix",
+        default=HF_TRAJECTORY_PATH_PREFIX,
+        help=(
+            "HF data-repo prefix for band-stop trajectory artifacts at end-of-run. "
+            "Recorded in each cell-result JSON (provenance), same contract as "
+            "--hf-train-mix-prefix."
+        ),
+    )
+    ap.add_argument(
+        "--run-name-prefix",
+        default="issue_538",
+        help="WandB run-name prefix (run name = <prefix>_<cell_slug>).",
+    )
     ap.add_argument(
         "--n-questions",
         type=int,
@@ -734,7 +811,7 @@ def main(argv: list[str] | None = None) -> int:
         for seed in seeds:
             for arm in arms:
                 cell_slug = f"{pair['pair_id']}__{arm}__seed{seed}"
-                hf_subfolder = f"{HF_ADAPTER_PATH_PREFIX}/{cell_slug}"
+                hf_subfolder = f"{args.hf_adapter_prefix}/{cell_slug}"
                 log.info(
                     "[phase=train] cell=%s lr=%g epochs_cap=%d", cell_slug, args.lr, args.epochs
                 )
@@ -754,6 +831,8 @@ def main(argv: list[str] | None = None) -> int:
                         hf_path_in_repo=hf_subfolder,
                         band_stop_low=args.band_low_nats,
                         band_stop_high=args.band_high_nats,
+                        band_eval_every=args.band_eval_every,
+                        run_name_prefix=args.run_name_prefix,
                         dispatcher_dry_run=args.dispatcher_dry_run,
                     )
                 except Exception as e:
@@ -771,8 +850,14 @@ def main(argv: list[str] | None = None) -> int:
                     "epochs_cap": args.epochs,
                     "band_low_nats": args.band_low_nats,
                     "band_high_nats": args.band_high_nats,
+                    "band_eval_every_steps": args.band_eval_every,
                     "output_dir": out_dir,
                     "hf_subfolder": hf_subfolder,
+                    # Provenance for the end-of-run upload step + upload-verifier
+                    # (task #550: namespacing flags; defaults = #538 constants).
+                    "hf_train_mix_prefix": args.hf_train_mix_prefix,
+                    "hf_trajectory_prefix": args.hf_trajectory_prefix,
+                    "wandb_run_name": f"{args.run_name_prefix}_{cell_slug}",
                     "final_train_loss": loss,
                     "git_commit": git_commit,
                     "timestamp_utc": timestamp,
@@ -818,6 +903,12 @@ def main(argv: list[str] | None = None) -> int:
                 cell_path.write_text(json.dumps(cell_result, indent=2))
                 log.info("Wrote %s", cell_path)
                 smoke_results.append(cell_result)
+
+                # Task #550 fix (plan §4 item 4): close the cell's WandB run so
+                # the next cell's HF WandbCallback opens a FRESH run instead of
+                # appending to a reused handle (the #527/#538 lost-trajectory
+                # defect). No-op when no run is active (dry-run mode).
+                _finish_wandb_run()
 
     # Phase A: summarize + apply gate.
     if args.phase == "smoke":
