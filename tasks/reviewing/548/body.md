@@ -266,6 +266,7 @@ Gate values: reproduction control PASS at tolerance 1e-9; self-pair 5.3e-9 bits;
 - Reused 256-cap baseline measurement from [#540](https://eps.superkaiba.com/tasks/540): [eval_results/issue_540/](https://github.com/superkaiba/explore-persona-space/tree/a6157cbbcf92733101c39e67f0a68055dee48894/eval_results/issue_540) (predictors, analysis, length supplement, per_pair) — fit: same rig, panel, probes, seed, and estimator; it IS the other side of the single-variable cap contrast, so recomputing it would defeat the comparison.
 - Reused 256-cap raw completions from [#540](https://eps.superkaiba.com/tasks/540) (for the matched truncation contrast example only): [HF issue540_jsrb_canonical/raw_completions @863ab769](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/863ab7692bde5026c9ea2488c2ee5376616127c4/issue540_jsrb_canonical/raw_completions) — fit: the censored sample whose truncation this run removes; used illustratively, not statistically.
 
+- **Methodology reference:** [docs/methodology/issue_548.md](https://github.com/superkaiba/explore-persona-space/blob/709f4ff3746266b673a5146a82dfd88c2795e540/docs/methodology/issue_548.md) · [gist](https://gist.github.com/superkaiba/410c49e580f728008653328f7b798e7d)
 **Compute:** 3.36 GPU-hours actual (8 budgeted) on 4× H100 (pod-548), ~1 h wall for sampling + scoring + on-pod analysis; the 10,000-rep bootstrap primary read ran off-pod on the VM CPU after pod termination.
 
 **Code:**
