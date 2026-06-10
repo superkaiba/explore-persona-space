@@ -72,6 +72,16 @@ phase — never a warning-and-continue.
 auto-uploads merged checkpoints to WandB Artifacts; orchestrators doing their own
 tagged upload set the env in `try/finally` to prevent double-uploads.
 
+**Merged-dir HF uploads are opt-in (default OFF); the LoRA adapter is the
+canonical artifact.** `merged_upload_enabled()` (`orchestrate/hub.py`) gates
+`runner.py`'s merged post-EM / pre-EM HF uploads behind `EPM_UPLOAD_MERGED=1`
+(env) or `upload_merged: true` (cfg, default false); by default
+`_finalize_phase` auto-uploads only the adapter to
+`adapters/{run}/{phase}_adapter`. Optimizer/scheduler/rng state
+(`TRAINING_STATE_IGNORE_PATTERNS`, `orchestrate/hub.py`) is ALWAYS excluded
+from every HF folder upload — no opt-out. Distributed FULL fine-tunes are
+exempt: no adapter exists, so the full checkpoint stays the canonical upload.
+
 **Delete-after-eval sweeps MUST persist the ADAPTER first (never the merged dir).**
 A sweep that `rm`s a trained checkpoint after its eval to stay under the MooseFS
 ~130GB quota (the #404/#458 pattern) MUST set `EPM_PERSIST_ADAPTER_HF_REPO` +
