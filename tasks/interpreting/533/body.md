@@ -7,7 +7,7 @@ kind: experiment
 tags:
 - followup
 created_at: '2026-06-09T16:08:18Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 529
 goal: Determine whether encoding a persona as a custom chat-template role header gives
   a real, separable reduction in trained-marker leakage over a system-prompt encoding
