@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 568,
+  "highest_id": 569,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3399,6 +3399,13 @@
       "path": "tasks/planning/568",
       "status": "planning",
       "title": "Third orthogonal source pair at the mid dial \u2014 does the small monotone gradient generalize off the two existing pairs?"
+    },
+    "569": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/569",
+      "status": "proposed",
+      "title": "GCE workload secrets: migrate from instance metadata to Secret Manager pull-from-VM with narrow IAM"
     },
     "6": {
       "has_clean_result": false,
