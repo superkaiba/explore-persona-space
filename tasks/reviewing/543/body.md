@@ -367,3 +367,4 @@ One pre-SFT measurement caveat: the on-policy trigger log P at band-stop is conf
     # Generate figures:
     uv run python scripts/plot_issue543_survival.py
     ```
+- **Methodology reference:** [docs/methodology/issue_543.md](https://github.com/superkaiba/explore-persona-space/blob/f121f89aa5249e5bfdac92bd01aae836772a54d5/docs/methodology/issue_543.md) · [gist](https://gist.github.com/superkaiba/6000a75befe22b4fa8c8d8b81a035ba5)
