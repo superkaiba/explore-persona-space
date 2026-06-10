@@ -89,7 +89,19 @@ def main() -> None:
     set_title_subtitle(
         ax,
         "Truncation per context, before vs after the cap lift",
-        "400 sampled replies per context; every 1024-cap bar is 0.000",
+        "400 replies per context; all 16 ordinary 1024-cap bars are 0.000\n"
+        "two instructed contexts each truncate 1 reply of 400",
+    )
+    # Two-line subtitle needs a taller title pad than the helper's default.
+    import matplotlib as mpl
+
+    ax.set_title(
+        "Truncation per context, before vs after the cap lift",
+        loc="left",
+        color="#1A1A1A",
+        fontweight=mpl.rcParams.get("axes.titleweight", "semibold"),
+        fontsize=mpl.rcParams.get("axes.titlesize", 13),
+        pad=44,
     )
     savefig_paper(fig, "issue_548/truncation_before_after_plainlabels", dir="figures/")
     plt.close(fig)
