@@ -152,7 +152,8 @@ def fig_hero(args) -> None:
     ax.set_title("Direction concentration vs nulls (dash = sign-flip p95, x = row-shuffle p95)")
 
     fig.suptitle(
-        "Does plain benign SFT write one shared shift direction? Three arms, same recipe class",
+        "Does plain benign SFT write one shared shift direction? "
+        "Marker vs misalignment vs benign, same measurement",
         fontsize=12,
     )
     savefig_paper(fig, "hero_three_arm", dir=args.out_dir)
