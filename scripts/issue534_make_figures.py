@@ -57,6 +57,23 @@ HEADLINE_LABELS = {
 # analysis_v1.json — re-read at runtime when available).
 REF_504 = {"shadow_angle": 0.335, "d_nearest_neg_nd": -0.342}
 
+# Plain-English legend labels for the 10 cell slugs (paper-plots §3.5: no
+# Hydra/config slugs on rendered figures).
+ARM_LABELS = {
+    "near": "Near negative (con artist)",
+    "mid_near": "Mid-near negative (origami artist)",
+    "mid_far": "Mid-far negative (meditation teacher)",
+    "far": "Far negative (prosecutor)",
+    "default_only": "Default-only floor",
+}
+
+
+def _cell_label(slug: str) -> str:
+    """Map a cell slug like c504v3_mid_near_seed137 to plain English."""
+    stem = slug.removeprefix("c504v3_")
+    arm, _, seed = stem.rpartition("_seed")
+    return f"{ARM_LABELS.get(arm, arm)}, seed {seed}"
+
 
 def _load_json(p: Path) -> dict:
     return json.loads(p.read_text())
@@ -111,7 +128,9 @@ def fig1_hero_rho_vs_fraction(analysis: dict, out_dir: Path) -> None:
                     part = psf.get("partial_spearman", {}).get(pred)
                     seed_rhos.append(float(part["rho"]) if part else np.nan)
                 ax.plot(xs, seed_rhos, "-", color=colors[pred], alpha=0.25, linewidth=0.9)
-    # Reference points at the final step.
+    # Reference points at the final step. NOTE: the blog style zeroes
+    # lines.markeredgewidth / patch.linewidth, which renders facecolor="none"
+    # scatter markers invisible — pass linewidths explicitly.
     x_ref = xs[-1]
     for pred in HEADLINE:
         ax.scatter(
@@ -121,9 +140,8 @@ def fig1_hero_rho_vs_fraction(analysis: dict, out_dir: Path) -> None:
             s=46,
             facecolor="none",
             edgecolor=colors[pred],
-            label=f"{HEADLINE_LABELS[pred]} at the saturated anchor"
-            if pred == HEADLINE[0]
-            else None,
+            linewidths=1.4,
+            label="Saturated-anchor reference (open squares)" if pred == HEADLINE[0] else None,
         )
         rep = analysis.get("replication_check", {}).get("per_predictor", {}).get(pred, {})
         if rep.get("rho_530") is not None:
@@ -134,6 +152,8 @@ def fig1_hero_rho_vs_fraction(analysis: dict, out_dir: Path) -> None:
                 s=46,
                 facecolor="none",
                 edgecolor=colors[pred],
+                linewidths=1.4,
+                label="Parent run at this anchor (open diamonds)" if pred == HEADLINE[0] else None,
             )
     # Grey annotation for unusable fractions.
     for x, fs in zip(xs, fracs, strict=True):
@@ -160,7 +180,7 @@ def fig2_source_ramp(slab: Path, out_dir: Path) -> None:
         d = _load_json(p)
         steps = [r["step"] for r in d["steps"]]
         dgs = [r["delta_g_mean"] for r in d["steps"]]
-        ax.plot(steps, dgs, "-", linewidth=1.2, alpha=0.85, label=p.parent.name)
+        ax.plot(steps, dgs, "-", linewidth=1.2, alpha=0.85, label=_cell_label(p.parent.name))
     ax.axhspan(5.0, 12.0, color=paper_palette_role("accent"), alpha=0.12)
     ax.set_xlabel("Training step")
     ax.set_ylabel("Source marker log-prob gain over base (nats)")
@@ -240,7 +260,8 @@ def fig4_bystander_panel(slab: Path, out_dir: Path) -> None:
         med = [pf[f]["de_saturation_gate"]["median_g_logp_at_post_response_slot"] for f in fr]
         share = [pf[f]["de_saturation_gate"]["argmax_marker_share_across_pairs"] for f in fr]
         xs = [float(f) for f in fr]
-        ax1.plot(xs, med, "-o", markersize=3, linewidth=1.0, alpha=0.8, label=p.parent.name)
+        lbl = _cell_label(p.parent.name)
+        ax1.plot(xs, med, "-o", markersize=3, linewidth=1.0, alpha=0.8, label=lbl)
         ax2.plot(xs, share, "-o", markersize=3, linewidth=1.0, alpha=0.8)
     ax1.axhline(-2.0, color="grey", linestyle="--", linewidth=0.9)
     ax2.axhline(0.60, color="grey", linestyle="--", linewidth=0.9)
