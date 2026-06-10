@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import logging
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -394,6 +395,7 @@ def test_poll_once_gate_overrides_done(monkeypatch: pytest.MonkeyPatch, tmp_path
 def _probe_response(
     *,
     pid_alive: int = 1,
+    pid_file_missing: int | None = None,
     marker_pid_alive: int | None = None,
     mtime_epoch: int = 0,
     tail: str = "",
@@ -413,6 +415,8 @@ def _probe_response(
     declare stalled; the verdict falls through to the older signals.
     """
     lines: list[str] = [f"PID_ALIVE={pid_alive}"]
+    if pid_file_missing is not None:
+        lines.append(f"PID_FILE_MISSING={pid_file_missing}")
     if marker_pid_alive is not None:
         lines.append(f"MARKER_PID_ALIVE={marker_pid_alive}")
     lines.append(f"MTIME_EPOCH={mtime_epoch}")
@@ -1488,3 +1492,173 @@ def test_poll_once_absent_shard_log_does_not_block_stall(
     assert result.status == "stalled"
     # When no shard log exists, the sec_ago is the "very old" sentinel.
     assert result.shard_log_mtime_sec_ago >= pp.STALL_SEC
+
+
+# ── pid_file_missing observability (incident #521) ──────────────────────────
+
+
+def test_ssh_probe_parses_pid_file_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``_ssh_probe`` must surface PID_FILE_MISSING=1 so ``poll_once`` can
+    distinguish "pid file absent on pod" from "pid probed dead" (#521)."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=0,
+                pid_file_missing=1,
+                mtime_epoch=1700000000,
+                tail="2026-06-10 [phase=training]",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    probe = pp._ssh_probe(
+        "pod-521",
+        "/workspace/logs/issue-521.log",
+        "/workspace/logs/issue-521.pid",
+        521,
+    )
+    assert probe["pid_file_missing"] == "1"
+    assert probe["pid_alive"] == "0"
+
+
+def test_ssh_probe_pid_file_missing_fail_safe_defaults(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``pid_file_missing`` defaults to "0" both when the probe stdout omits
+    the line (older heredoc shape) AND on the SSH-failure fail-safe path —
+    transport failure means "unknown", not "missing"."""
+
+    def _fake_run_no_line(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(pid_alive=1, mtime_epoch=1700000000),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run_no_line)
+    probe = pp._ssh_probe(
+        "pod-521",
+        "/workspace/logs/issue-521.log",
+        "/workspace/logs/issue-521.pid",
+        521,
+    )
+    assert probe["pid_file_missing"] == "0"
+
+    def _fake_run_ssh_down(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(args=cmd, returncode=255, stdout="", stderr="boom")
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run_ssh_down)
+    probe = pp._ssh_probe(
+        "pod-521",
+        "/workspace/logs/issue-521.log",
+        "/workspace/logs/issue-521.pid",
+        521,
+    )
+    assert probe["pid_file_missing"] == "0"
+    assert probe["ssh_failed"] == "1"
+
+
+def test_poll_once_pid_file_missing_marker_fallback_warns_and_stays_running(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """#521 observability: pid file absent + live marker pid -> the run
+    stays ``running`` (unchanged routing — pid_alive ORs in the marker
+    pid), the tick surfaces ``pid_file_missing=True``, and a WARN names
+    the marker-pid fallback so the orchestrator sees it in the tick
+    output instead of a bare ``pid_alive`` flip."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:  # drain
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=0,  # no pidfile -> heredoc emits PID_ALIVE=0
+                pid_file_missing=1,
+                marker_pid_alive=1,  # the live re-launch pid from the marker
+                mtime_epoch=now_epoch - 30,
+                tail="2026-06-10 [phase=training]",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue: 4242)
+
+    state_file = tmp_path / "poll-state.json"
+    with caplog.at_level(logging.WARNING, logger="poll_pipeline"):
+        result = pp.poll_once(
+            issue=521,
+            pod="pod-521",
+            log_path="/workspace/logs/issue-521.log",
+            pid_file="/workspace/logs/issue-521.pid",
+            state_file=state_file,
+        )
+
+    assert result.status == "running"
+    assert result.pid_alive is True
+    assert result.pid_file_missing is True
+    assert any(
+        "pid file" in rec.message and "marker pid" in rec.message and "4242" in rec.getMessage()
+        for rec in caplog.records
+    ), f"expected a marker-pid-fallback WARN; got: {[r.getMessage() for r in caplog.records]}"
+
+
+def test_poll_once_pid_file_missing_does_not_change_dead_routing(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Negative: pid file absent + NO marker pid + non-done tail must still
+    route to ``dead`` exactly as before — the new field is observability
+    only. No marker-fallback WARN fires when there is no marker pid."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:  # drain
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=0,
+                pid_file_missing=1,
+                mtime_epoch=now_epoch - 30,
+                tail="2026-06-10 [phase=training]",  # never reached done
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
+
+    state_file = tmp_path / "poll-state.json"
+    with caplog.at_level(logging.WARNING, logger="poll_pipeline"):
+        result = pp.poll_once(
+            issue=521,
+            pod="pod-521",
+            log_path="/workspace/logs/issue-521.log",
+            pid_file="/workspace/logs/issue-521.pid",
+            state_file=state_file,
+        )
+
+    assert result.status == "dead"
+    assert result.pid_file_missing is True
+    assert not any("marker pid" in rec.getMessage() for rec in caplog.records)

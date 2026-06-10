@@ -290,6 +290,11 @@ class PollResult:
     new_milestone: bool
     last_log_mtime_sec_ago: int
     pid_alive: bool
+    # True when the pod-side pid FILE did not exist at probe time —
+    # ``pid_alive=False`` then means "no pidfile to probe" (possibly with
+    # a live marker-pid fallback carrying liveness), NOT "pid probed
+    # dead". Observability only; status routing is unchanged (#521).
+    pid_file_missing: bool
     log_tail_excerpt: str
     gate: str | None = None  # set when a drained sentinel carried a non-empty gate
     sentinels_processed: int = 0
@@ -321,6 +326,13 @@ def _ssh_probe(
 
     Liveness keys:
     * ``pid_alive`` — liveness of the PID stored in ``pid_file``.
+    * ``pid_file_missing`` — ``"1"`` when ``pid_file`` does not exist on
+      the pod; ``PID_ALIVE=0`` then means "no pidfile to probe", NOT
+      "pid probed dead". Observability-only (incident #521: a false
+      ``status=dead`` on a healthy run was hard to diagnose because the
+      tick collapsed "file absent, marker-pid fallback in effect" into
+      a bare ``pid_alive=False``). ``"0"`` on the SSH-failure fail-safe
+      path — transport failure means "unknown", not "missing".
     * ``marker_pid_alive`` — liveness of ``marker_pid`` (the PID carried
       by the latest epm:run-launched marker) when one is supplied. The
       marker-pid probe is the self-correction path for a stale pidfile.
@@ -453,9 +465,9 @@ def _ssh_probe(
     heredoc = (
         f"LOG_PATH={log_path}; "
         f"if [ -f {pid_file} ]; then "
-        f"  PID=$(cat {pid_file}); "
+        f"  echo PID_FILE_MISSING=0; PID=$(cat {pid_file}); "
         f"  if ps -p $PID > /dev/null 2>&1; then echo PID_ALIVE=1; else echo PID_ALIVE=0; fi; "
-        f"else echo PID_ALIVE=0; fi; "
+        f"else echo PID_FILE_MISSING=1; echo PID_ALIVE=0; fi; "
         f"{marker_probe}"
         f"if [ -f $LOG_PATH ]; then "
         f"  echo MTIME_EPOCH=$(stat -c %Y $LOG_PATH); "
@@ -480,6 +492,7 @@ def _ssh_probe(
         # (which can also legitimately mean "log file does not exist yet").
         return {
             "pid_alive": "0",
+            "pid_file_missing": "0",
             "marker_pid_alive": "0",
             "mtime_epoch": "0",
             "cell_mtime_epoch": "0",
@@ -499,6 +512,7 @@ def _ssh_probe(
 # the parser dispatches on the prefix and stores the trailing value.
 _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "PID_ALIVE",
+    "PID_FILE_MISSING",
     "MARKER_PID_ALIVE",
     "MTIME_EPOCH",
     "CELL_MTIME_EPOCH",
@@ -517,6 +531,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
     """
     parsed: dict[str, str] = {
         "pid_alive": "0",
+        "pid_file_missing": "0",
         "marker_pid_alive": "0",
         "mtime_epoch": "0",
         "cell_mtime_epoch": "0",
@@ -1061,6 +1076,19 @@ def poll_once(
     pidfile_pid_alive = probe["pid_alive"] == "1"
     marker_pid_alive = marker_pid is not None and probe["marker_pid_alive"] == "1"
     pid_alive = pidfile_pid_alive or marker_pid_alive
+    # Observability for the #521 false-dead diagnosis: surface "the pid
+    # FILE was absent" (vs "the pid probed dead") in the tick JSON, and
+    # warn when the epm:run-launched marker pid is the fallback standing
+    # in for it. Status routing is deliberately untouched — ``pid_alive``
+    # already ORs in the marker pid.
+    pid_file_missing = probe.get("pid_file_missing") == "1"
+    if pid_file_missing and marker_pid is not None:
+        log.warning(
+            "pid file %s absent on pod %s; using epm:run-launched marker pid %d fallback",
+            pid_file,
+            pod,
+            marker_pid,
+        )
     mtime_epoch = int(probe["mtime_epoch"] or "0")
     cell_mtime_epoch = int(probe["cell_mtime_epoch"] or "0")
     phase_log_mtime_epoch = int(probe["phase_log_mtime_epoch"] or "0")
@@ -1170,6 +1198,7 @@ def poll_once(
         new_milestone=new_milestone,
         last_log_mtime_sec_ago=min(last_mtime_ago, 10**9),
         pid_alive=pid_alive,
+        pid_file_missing=pid_file_missing,
         log_tail_excerpt=tail_excerpt,
         gate=gate,
         sentinels_processed=sentinels_processed,
@@ -1233,6 +1262,7 @@ def main(argv: list[str] | None = None) -> int:
                 "new_milestone": result.new_milestone,
                 "last_log_mtime_sec_ago": result.last_log_mtime_sec_ago,
                 "pid_alive": result.pid_alive,
+                "pid_file_missing": result.pid_file_missing,
                 "log_tail_excerpt": result.log_tail_excerpt,
                 "gate": result.gate,
                 "sentinels_processed": result.sentinels_processed,
