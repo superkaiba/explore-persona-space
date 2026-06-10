@@ -40,6 +40,7 @@ const KANBAN_COLUMN_ORDER: Status[] = [
   "verifying",
   "interpreting",
   "reviewing",
+  "followups_running",
   "awaiting_promotion",
   "completed",
   "archived",
@@ -280,8 +281,24 @@ function KanbanCard({ row }: { row: TaskListing }) {
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
         <KindBadge kind={row.kind} />
         {row.hasCleanResult && <CleanResultBadge classification={row.classification} />}
+        {row.status === "followups_running" && <FollowupModeBadge tags={row.tags} />}
       </div>
     </Link>
+  );
+}
+
+// In the "Follow-ups running" column, show whether the in-flight follow-up
+// round was initiated automatically (proposer) or manually (user pick/chat).
+// The most recent initiation mode wins when both tags are present.
+function FollowupModeBadge({ tags }: { tags: string[] }) {
+  const auto = tags.includes("followup-auto");
+  const manual = tags.includes("followup-manual");
+  if (!auto && !manual) return null;
+  const label = auto && !manual ? "auto" : manual && !auto ? "manual" : "auto+manual";
+  return (
+    <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-800">
+      {label} follow-up
+    </span>
   );
 }
 

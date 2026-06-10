@@ -55,7 +55,13 @@ const GROUPS: GroupDef[] = [
       {
         id: "running",
         label: "Running",
-        statuses: ["running", "verifying", "interpreting", "reviewing"],
+        statuses: [
+          "running",
+          "verifying",
+          "interpreting",
+          "reviewing",
+          "followups_running",
+        ],
         defaultOpen: true,
         showSubState: true,
       },
