@@ -230,9 +230,16 @@ if problems:
 print(f"resume_preflight: index OK at {idx.parent} ({len(shards)} shard file(s), all present and >1MiB)")
 PY
   else
-    NONTRIVIAL_SFT=$(find "$MERGED_DIR" -maxdepth 1 -name '*.safetensors' -size +1M | wc -l)
-    (( NONTRIVIAL_SFT >= 1 )) || \
-      fail_loud 41 "resume_preflight: no model.safetensors.index.json and no nontrivial (>1MiB) *.safetensors for seed=$SEED at $MERGED_DIR — merged weights missing/truncated; re-run scripts/issue404_merge_and_upload.py --no-upload for this seed"
+    # No index: vLLM's local loader globs *.safetensors UNFILTERED when the
+    # index is absent, so sharded-looking files without an index are an
+    # incomplete checkpoint (round-3 Codex finding) — fail rc=41 rather than
+    # let a partial shard set reach the GPU phase.
+    SHARDED_LOOKING=$(find "$MERGED_DIR" -maxdepth 1 -name 'model-*-of-*.safetensors' | wc -l)
+    (( SHARDED_LOOKING == 0 )) || \
+      fail_loud 41 "resume_preflight: $SHARDED_LOOKING sharded-looking model-*-of-*.safetensors present WITHOUT model.safetensors.index.json for seed=$SEED at $MERGED_DIR — incomplete sharded checkpoint; re-run scripts/issue404_merge_and_upload.py --no-upload for this seed"
+    CANONICAL_SFT="$MERGED_DIR/model.safetensors"
+    { [[ -f "$CANONICAL_SFT" ]] && (( $(stat -c%s "$CANONICAL_SFT") > 1048576 )); } || \
+      fail_loud 41 "resume_preflight: no model.safetensors.index.json and no nontrivial (>1MiB) canonical model.safetensors for seed=$SEED at $MERGED_DIR — merged weights missing/truncated; re-run scripts/issue404_merge_and_upload.py --no-upload for this seed"
   fi
 done
 phase resume_preflight_ok "all 3 seeds carry sft_narrow_merged/{config.json,tokenizer.json,tokenizer_config.json,weights} + sft_narrow_adapter/{adapter_model.safetensors,adapter_config.json}"
