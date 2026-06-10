@@ -174,7 +174,7 @@ def figure_length_residual(ranking: dict, fig_dir: Path) -> None:
         "own-response prior\n(raw)",
         "own-response prior\n(length-residualized)",
         "response length alone\n(sign-oriented)",
-        "base matched-slot margin\n(needs trained R)",
+        "base matched-slot margin\n(needs trained responses)",
     ]
     fig, ax = plt.subplots(figsize=(7.6, 4.6))
     rng = np.random.default_rng(0)
