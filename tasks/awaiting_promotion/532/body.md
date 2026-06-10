@@ -232,7 +232,7 @@ Graded base prior at the base model's own response-end slot, per bystander: stro
 
 **Compute:** follow-up re-read ~0.3 GPU-hours (idle capacity, shared pod, HF forwards only). Headline run: ~10 GPU-hours on pod-532 (1× H100, RunPod ephemeral). Wall time including round-3 DV-fix rebuild: ~1h40m bootstrap + ~1h28m full sweep (Phase 0 + Phase 1 ep1, 416 cells) + ~75 minutes ep2 partial (descoped on §A5 fail-loud) + ~4 minutes Phase 2+3+4 resume from disk-cache after the ep1 strategy-pivot. Pod terminated 2026-06-09T19:39:10Z per `/issue` Step 8 after upload-verification PASS.
 
-**Code:** repo SHA `296c4da2d` (issue-532 branch); pipeline driver [`scripts/issue532_predictor_stress.py`](https://github.com/superkaiba/explore-persona-space/blob/296c4da2d/scripts/issue532_predictor_stress.py); approved plan [`plans/v3.md`](https://github.com/superkaiba/explore-persona-space/blob/296c4da2d/tasks/interpreting/532/plans/v3.md); the six-regression hierarchy implementation is in the same script (`phase3_analysis` phase).
+**Code:** repo SHA `296c4da2d` (issue-532 branch); pipeline driver [`scripts/issue532_predictor_stress.py`](https://github.com/superkaiba/explore-persona-space/blob/296c4da2d/scripts/issue532_predictor_stress.py); approved plan [`plans/v3.md`](https://github.com/superkaiba/explore-persona-space/blob/d6a097e09/tasks/interpreting/532/plans/v3.md); the six-regression hierarchy implementation is in the same script (`phase3_analysis` phase).
 
 ```bash
 # Reproduce — ep1 headline (416 cells, ~1h28m on 1× H100):
