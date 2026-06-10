@@ -278,7 +278,7 @@ def plot_per_question_scatter(rollup: dict, *, stem: str, fig_dir: Path) -> None
     ax.axhline(0.0, linestyle="--", linewidth=1.0, color=paper_palette_role("baseline"))
     ax.set_xticks(np.arange(len(cells)))
     ax.set_xticklabels([CELL_LABELS[c] for c in cells])
-    ax.set_ylabel("Per-question Δ base log P(marker) vs assistant (nats)")
+    ax.set_ylabel("Δ base log P(marker) vs assistant (nats)")
     ax.set_title("Per-question paired deltas, base-own completions")
     savefig_paper(fig, stem, dir=fig_dir)
     plt.close(fig)
