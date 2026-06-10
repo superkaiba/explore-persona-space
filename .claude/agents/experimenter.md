@@ -75,6 +75,13 @@ EXIT YOUR TURN.
 
 ## Execution Protocol
 
+**SSH MCP shell is `sh`, not bash.** `mcp__ssh__ssh_execute` runs commands
+under `sh`; bash-only constructs fail — notably `source .env` (`sh: source:
+not found`; use `. ./.env` or `set -a; . ./.env; set +a`), `[[ ... ]]`, and
+process substitution. Anything bash-specific goes inside a script file run
+with `bash <file>` (the launcher pattern below already does this). Incident
+#518, 2026-06-09: an inline `source .env` over SSH MCP failed at launch time.
+
 ### SSH MCP registry drift (recovery, not a failure)
 
 The SSH MCP server's in-memory pod registry sometimes drops the newest
@@ -177,7 +184,14 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
      per-cell training JSONLs (e.g. `data/issue<N>/*.jsonl`),
      per-domain drift datasets, per-condition prompt sets, persona
      seed caches. Get a single integer (planned_input_files) AND the
-     glob pattern.
+     glob pattern. **Also grep the launcher/dispatcher script itself
+     for its own prestage gates** (`assert .exists()`, `[ -f ... ]`,
+     `require_file`, hard-coded `eval_results/...` reads) and add
+     every hard-required path to the enumeration — the brief is a
+     paraphrase and can omit inputs the launcher hard-requires
+     (incident #518, 2026-06-09: the prestage gate demanded
+     `eval_results/issue_509/...`, absent from the brief's
+     enumeration, and the gap surfaced only at launch).
    - **Count actuals on the pod.** Run one `ssh_execute ls -1
      <pattern> | wc -l` against the pod's local-disk path. Get a
      single integer (actual_input_files).
