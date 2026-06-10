@@ -3236,8 +3236,8 @@
       "goal": "Determine whether the canonical sequence-level JS divergence carries leakage-predicting signal beyond response-length divergence once the 256-token sampling cap that censored 82-99% of replies is lifted to 1024 on the same 416-cell panel.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/548",
-      "status": "proposed",
+      "path": "tasks/planning/548",
+      "status": "planning",
       "title": "Lift the canonical-JS sampling cap to 1024 tokens on the identical 416-cell panel (corrective re-run of #540's length-censoring confound)"
     },
     "55": {
