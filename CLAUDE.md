@@ -156,7 +156,9 @@ uv run python scripts/task.py promote <N> useful|not-useful   # awaiting_promoti
 uv run python scripts/task.py audit                           # registry vs filesystem
 ```
 
-**`cd "$(... task.py find <N>)"` moves you into the task folder, not repo root.** After that `cd`, a later `uv run python scripts/task.py ...` resolves `scripts/task.py` against the task folder and fails with `No such file or directory` (the path is relative to repo root). Invoke `task.py` by its absolute path (`uv run python "$REPO_ROOT/scripts/task.py" ...`) or `cd` back to repo root first.
+**`cd "$(... task.py find <N>)"` moves you into the task folder, not repo root.** After that `cd`, a later `uv run python scripts/task.py ...` resolves `scripts/task.py` against the task folder and fails with `No such file or directory` (the path is relative to repo root). This applies to EVERY `scripts/...` invocation (`spawn_session.py`, `pod.py`, ...), not just `task.py`: invoke by absolute path (`uv run python "$REPO_ROOT/scripts/..."`) or `cd` back to repo root first. Same family: after `git worktree remove`, `cd` out of the removed directory before any further compound command (`getcwd` failures silently no-op git operations); and NEVER hand-build `tasks/<status>/<N>/...` paths in inline shell one-liners — status is unknowable from the orchestrator, so read markers via `task.py view <N> --json` / `latest-marker <N>` (two crashes today guessed `tasks/running/<N>/events.jsonl` while the task was elsewhere).
+
+**Concurrent repo-root committers.** Many sessions commit to the shared repo root in parallel. Stage by explicit path only (never `git add -A`/`git add .`), retry once on an `index.lock` collision, and on a rejected push `git pull --rebase` once and re-push. Before batch-fixing parked task bodies, post a claim marker (`epm:progress` note naming the task IDs) so a parallel session doesn't double-fix the same bodies.
 
 **Body size cap.** `events.jsonl` `note` is capped at 50,000 chars (`post-marker` raises on oversize). Write to `artifacts/`, post `epm:failure v1` (`failure_class: infra`, `reason: note_oversize`) referencing it, then `set-status <N> blocked`.
 
