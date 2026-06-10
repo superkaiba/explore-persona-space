@@ -300,7 +300,7 @@ def main() -> int:
     import anthropic
 
     assert os.environ.get("ANTHROPIC_API_KEY"), "ANTHROPIC_API_KEY missing -- .env not loaded?"
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(max_retries=12)
     if args.step in ("flips", "all"):
         step_flips(args, client)
     if args.step in ("judge-vs-judge", "all"):

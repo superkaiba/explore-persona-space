@@ -155,7 +155,10 @@ def build_marker_train(smoke: bool = False) -> None:
     banned = set(src["probes"])
     n = 12 if smoke else 300
     qs = _sonnet_questions(
-        anthropic.Anthropic(), n, purpose="for response-generation training data", banned=banned
+        anthropic.Anthropic(max_retries=12),
+        n,
+        purpose="for response-generation training data",
+        banned=banned,
     )
     _write(
         POOLS_DIR / ("pool_marker_train_300.smoke.json" if smoke else "pool_marker_train_300.json"),
@@ -174,7 +177,7 @@ def build_demo_seeds(smoke: bool = False) -> None:
     buckets = src["buckets"]
     total_target = sum(b["target_n"] for b in buckets)
     n_total = 20 if smoke else 40
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(max_retries=12)
     questions: list[dict] = []
     for b in buckets:
         n_b = max(1, round(n_total * b["target_n"] / total_target))
@@ -385,7 +388,7 @@ def build_icl_demos(smoke: bool = False) -> None:
     seeds = [q["question"] for q in json.loads(seeds_path.read_text())["questions"]]
     n_main, n_ho = (8, 4)  # full demo counts even in smoke (F3 needs k8=8)
     assert len(seeds) >= n_main + n_ho, (len(seeds), n_main + n_ho)
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(max_retries=12)
 
     demos: dict[str, dict[str, list[list[str]]]] = {}
     for behavior in BEHAVIORS:

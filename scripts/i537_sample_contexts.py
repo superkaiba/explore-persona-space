@@ -357,7 +357,7 @@ def main() -> int:
     from explore_persona_space.experiments.i537_contexts import assert_marker_token
 
     assert_marker_token(tokenizer)
-    client = None if args.skip_screens else anthropic.Anthropic()
+    client = None if args.skip_screens else anthropic.Anthropic(max_retries=12)
 
     wildchat: dict[str, dict] = {}
     personahub: dict[str, dict] = {}

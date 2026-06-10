@@ -635,7 +635,7 @@ def _judge_headroom(args) -> None:
 
     from explore_persona_space.experiments.i537_contexts import BEHAVIORS
 
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(max_retries=12)
     for behavior in [b for b in BEHAVIORS if b != "marker" and b in args.behaviors]:
         gen_dir = EVAL / "p0/headroom" / behavior
         gen_files = sorted(gen_dir.glob("*.json")) if gen_dir.exists() else []
@@ -1773,7 +1773,7 @@ def _submit_judge_batches(args, cells: list[tuple[str, str]]) -> None:
     """
     import anthropic
 
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(max_retries=12)
     for b, cid in cells:
         base_b = "em" if b == "emnc" else b
         in_root = EVAL / "raw_completions" / b / f"{cid}_seed{SEED}"
