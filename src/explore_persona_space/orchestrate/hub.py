@@ -576,25 +576,36 @@ def list_hub_datasets(
 
 # huggingface.co/<repo_id>[/tree|/blob/<revision>][/<path>] and hf:// forms.
 # repo_id is captured as <owner>/<name> with an optional datasets/ prefix.
+# Revision/path captures terminate at whitespace and at URL-adjacent
+# punctuation — ) ] " ' ` , ; } > \ — so a URL cited inside a JSON blob
+# ("...",) or a markdown backtick span (`...`) never drags the trailing
+# quote/comma/backtick into the probed revision/path (incident #541; mirrors
+# scripts/verify_uploads.py's _TRAILING_PUNCT, commit 9987a70dc). '.' stays
+# allowed so real suffixes like '.json' / '.safetensors' survive.
+_REV_CHARS = r"""[^/\s)\]"'`,;}>\\]"""  # revision segment: also stops at '/'
+_PATH_CHARS = r"""[^\s)\]"'`,;}>\\]"""  # path chars: '/' handled by the group
+
 _HF_URL_RE = re.compile(
-    r"""
+    rf"""
     (?:
         https?://huggingface\.co/         # web URL form
         (?P<webkind>datasets/|spaces/)?
         (?P<webrepo>[\w.\-]+/[\w.\-]+)
-        (?:/(?:tree|blob|resolve)/(?P<webrev>[^/\s)\]]+)(?P<webpath>(?:/[^\s)\]]+)*))?
+        (?:/(?:tree|blob|resolve)/(?P<webrev>{_REV_CHARS}+)(?P<webpath>(?:/{_PATH_CHARS}+)*))?
       |
         hf://                             # hf:// URI form
         (?P<urikind>datasets/|spaces/)?
         (?P<urirepo>[\w.\-]+/[\w.\-]+)
-        (?:@(?P<urirev>[^/\s)\]]+))?
-        (?P<uripath>(?:/[^\s)\]]+)*)?
+        (?:@(?P<urirev>{_REV_CHARS}+))?
+        (?P<uripath>(?:/{_PATH_CHARS}+)*)?
     )
     """,
     re.VERBOSE,
 )
 
-# wandb.ai/<entity>/<project>/runs/<run_id>[/...]
+# wandb.ai/<entity>/<project>/runs/<run_id>[/...] — the positive [\w.\-]
+# classes already exclude the JSON/markdown punctuation handled above, so no
+# trailing-punctuation guard is needed here.
 _WANDB_URL_RE = re.compile(
     r"https?://(?:www\.)?wandb\.ai/(?P<entity>[\w.\-]+)/(?P<project>[\w.\-]+)/runs/(?P<run_id>[\w.\-]+)"
 )
