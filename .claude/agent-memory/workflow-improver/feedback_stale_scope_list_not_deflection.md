@@ -22,6 +22,11 @@ modules to all three lists. Also `scripts/autonomous_session_watch.py`
 (the #530 keep-running fix, 2026-06-09): missing from all three mirror
 lists despite being the watcher the `issue`/`issue-tick` skills depend on —
 a strict deflection would have wrongly failed a high-confidence incident fix.
+Also `.claude/agent-memory/analyzer/feedback_verifier_h3_extraction_bug.md`
+(retiring a stale workaround memory, 2026-06-09): persistent agent memories
+are always-loaded guidance steering workflow agents, so corrections to them
+are workflow-surface fixes; fixed by adding `.claude/agent-memory/**/*.md`
+to all three lists.
 
 **In-practice test for "clearly workflow machinery":** referenced by
 `.claude/skills/` or `.claude/agents/` files, has a dedicated
