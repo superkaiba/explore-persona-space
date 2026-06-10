@@ -23,6 +23,14 @@ and 1 test reading the retired `template.md` (retired with pointer comment). Fil
 now passes fully; do not deselect it. The legacy verifier still carries 4
 pre-existing E501s (lines 18/580/620/1815) — lint via stash-compare.
 
+UPDATE (2026-06-10): `tests/test_stalled_detector_and_gc.py` has 3 pre-existing
+failures (`test_stalled_pass_ignores_manual_sessions`,
+`test_main_runs_stalled_and_gc_after_pod_safety`,
+`test_gc_only_short_circuits_other_passes`) — the watcher merge fc3f98719 (#505)
+deliberately changed the stalled pass to ALERT on manual registrations but did
+not update the tests pinning the old ignore-manual behavior. Surfaced as a
+follow-up that run; verify still broken before citing.
+
 **How to apply:** prove your diff is clean with the stash test — `git stash -q
 && <check> ; git stash pop -q` — and report "identical with edits stashed,
 pre-existing" rather than chasing repo-wide failures. For pytest, use
