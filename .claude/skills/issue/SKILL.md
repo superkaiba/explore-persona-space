@@ -3991,10 +3991,12 @@ subagent, and must post every stage-dispatch breadcrumb
 (`stage=followup-<phase>`, Step 9 entry-guard convention) with the
 `worktree=` field. Know what each mechanism covers: the cron handles
 only the alive-but-stalled case — a `durable=False` cron dies with the
-session that armed it, and `autonomous_session_watch.py`'s
-crash-recovery + stalled passes read only the autonomous registry
-(`spawn-issue --auto` entries), so NOTHING external watches an
-interactive session driving this loop. If the session is going to be
+session that armed it; `autonomous_session_watch.py`'s AUTO-RESPAWN
+passes read only the autonomous registry (`spawn-issue --auto`
+entries), and the step-2 `register-current` manual registration buys
+ALERT-ONLY stalled/crash visibility (a user-driven session is never
+auto-respawned, #505) — so nothing external RE-DRIVES an interactive
+session driving this loop. If the session is going to be
 closed — or the user asks for a handoff — while loop work is in flight,
 the mid-flight handoff rule (§ Orchestration Procedure preamble)
 applies: spawn `spawn_session.py spawn-issue --issue <N> --auto`
@@ -4016,7 +4018,20 @@ orphaned at `running` for 5+ hours.)
    with different seeds, monitoring, syncing, or a bug-fix re-run, per
    the CLAUDE.md `/adversarial-planner` carve-out). The marker trail
    records the transition (`epm:status-changed`); `has_clean_result`
-   stays sticky across the re-entry.
+   stays sticky across the re-entry. **In the same step, re-register
+   the driving session:** `uv run python scripts/spawn_session.py
+   register-current --issue <N>` (infers this session's Happy id from
+   the process ancestry + the daemon; writes `issue-<N>.json` for
+   autonomous sessions / `manual-issue-<N>.json` for interactive ones,
+   matching how the session was spawned). The revival flips a
+   parked/terminal task back to ACTIVE, but the watcher's registry
+   entry was DELETED at the terminal transition — without
+   re-registering, the revived run is invisible to every
+   registration-based watcher pass until the orphan sweep's ~90-min
+   staleness gate (incident #472, 2026-06-10: a revival ran orphaned
+   for 10.5h). Registration failure is non-fatal to the loop (the
+   orphan sweep remains the backstop) but state the failure rather
+   than swallowing it.
 3. **Abbreviated cycle**, all on THIS issue:
    - `/adversarial-planner` re-invoked in AMENDMENT scope: produces
      `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's
