@@ -14,39 +14,236 @@ relates_to:
 - leak-predictor
 - leak-behavior-vs-marker
 ---
-## Goal
+# The EM-vs-marker direction-concentration contrast survives dropping the trained persona, a whole-response read, and an estimation-noise check — the marker split tracks shift size but is not noise (MODERATE confidence)
 
-Determine whether the EM-vs-marker direction-concentration contrast survives the three controls lost with the pod — the leave-one-out spectrum check, the mean-over-response EM read, and per-persona shift-norm vs top-direction alignment — by re-extracting and persisting the layer-14 shift tensors from the six existing HF-hosted adapters.
+<!-- clean-result-v2 -->
 
-## Spec (pre-filled from parent #521 follow-up proposal)
+## Human TL;DR
 
-### 1. Re-extract the shift tensors and run the three lost controls — Diagnostic
+**Headline.** the parent result — misalignment training pushes every persona along one shared internal direction, a marker implant doesn't — survives all three of the sanity checks that never got run; i re-derived the shift vectors from the same six adapters and got the parent's numbers back exactly.
 
-**Parent:** #521
-**Goal:** Determine whether the EM-vs-marker direction-concentration contrast survives the three controls lost with the pod — the leave-one-out spectrum check, the mean-over-response EM read, and per-persona shift-norm vs top-direction alignment — by re-extracting and persisting the layer-14 shift tensors from the six existing HF-hosted adapters.
-**Hypothesis:** The headline contrast is genuine geometry, not an artifact: (a) dropping the source column leaves both arms' top-share above the nulls, (b) reading the EM shift as a mean over all response tokens (instead of the end slot) preserves EM > marker concentration, and (c) the low-cosine marker personas do NOT have systematically smaller shift norms (which would mean their cosines were attenuated by estimation noise rather than pointing elsewhere).
-**Falsification:** Any of: leave-one-out drops a cell's top-share below its null (source-dominated spectrum); the mean-over-response read reverses or erases the EM-vs-marker ordering; marker per-persona ‖shift‖ strongly predicts cosine-to-top-direction (low-cos = low-norm), which would reclassify much of the "marker split" as high- vs low-SNR contexts.
-**Differs from parent:** Exactly one thing — the analysis phase persists the per-context shift tensors (to the HF data repo) and runs the three already-planned-but-blocked analyses over them. No training, no new conditions, same adapters, same 14 personas x 20 questions, same layer 14, same 3 text variants.
+**Takeaways.**
+- dropping the trained persona from the math barely moves anything (it slightly *raises* the shared direction's weight) — the shared misalignment direction is carried by the bystander personas, not by the persona we trained on.
+- reading the whole response instead of just the last token makes the contrast sharper, not weaker. the single-token read was, if anything, underselling it.
+- the marker personas that don't align with the shared direction are not noisy measurements — their shifts are stable, they just point somewhere else. they do tend to be the *smaller* shifts, and i still need one free re-analysis to tell whether that's real structure or just how the matrix math weights big vectors.
 
-**Pre-filled spec (from parent):**
-- Model: Qwen-2.5-7B-Instruct + the 6 verified HF adapters (3 marker @ `issue_519/`, 3 EM @ `adapters/issue_521/`) — no training
-- Data: same eval inputs (`eval_results/issue_521/inputs/`, in git on main)
-- Seeds: 42 / 137 / 256 per arm (inherited adapters)
-- Eval: layer-14 shift extraction, 3 text variants, SVD + both calibrated nulls (1,000 reps) — same code at pinned commit `2e6920266`
-- Config: same as parent EXCEPT: persist shift tensors before any analysis; add LOO spectrum, mean-over-response read, and per-persona ‖shift‖ vs cos-to-top-direction
+**How this updates me.** i now believe the measurement side of the parent headline. the remaining doubt is the training-rig confound (contrastive marker loss vs plain fine-tuning), which the sibling experiment has to settle before the contrast can be pinned on the *behavior* rather than the recipe.
 
-**Estimated cost:** ~2 GPU-h on 1x H100 (`eval` intent; parent's own estimate, stated twice in the clean-result; ceiling ~5 GPU-h = parent's measured full Phase C/E/D including steering, which this skips)
-**If it works:** All three controls pass → the MODERATE headline hardens on its measurement side (remaining cap is only the rig confound); the estimation-noise alternative the interpretation critic flagged is closed; tensors persist for any future re-analysis (layers 7/21 become a free-analysis follow-up off the same capture if extraction stores multi-layer).
-**If it fails:** Each failure is itself the finding — e.g. a norm-cosine correlation says the marker "split" is partly SNR structure, which redirects the non-saturated-anchor follow-up; a mean-over-response reversal says the end-slot read misrepresented EM and the headline needs reframing before any rig-disentangle is worth running.
+*(First pass — Thomas refines this before sending to the mentor.)*
 
-**auto_run:** yes
-**auto_run_reason:** Corrective completion of the parent's own planned analyses with a grounded recipe (repro command in the parent's Reproducibility section), one variable changed (persistence + the blocked analyses), cost known and tiny, every premise artifact positively verified above.
+## TL;DR
 
-**cost_class:** needs-gpu
-**headline_affecting:** yes
+### Motivation
 
----
+A prior experiment ([#521](https://eps.superkaiba.com/tasks/521)) found a sharp geometric contrast between two ways of changing a model: fine-tuning on insecure code (emergent misalignment, EM) shifts every persona's internal activations along one shared direction (per-persona cosines to that direction of 0.96–0.98), while implanting a single marker token into one persona's answers produces a split — some personas align with a shared direction, others point elsewhere. Three checks of that contrast were planned but never ran, because the per-persona shift vectors they needed were not persisted: does the shared direction survive *removing the trained persona* from the computation, does the EM result hold when the shift is read *over the whole response* instead of one token position, and is the marker split just *estimation noise* (low-alignment personas being the ones with small, poorly-measured shifts)?
 
-## Parent context
+The goal of this run: regenerate those shift vectors from the same six trained adapters, persist them first, and run the three checks. Any of the three failing would force a rewrite of the parent headline before its follow-ups are worth running.
 
-Parent: #521 (awaiting_promotion) — clean-result `tasks/awaiting_promotion/521/body.md`; plan v2 `tasks/awaiting_promotion/521/plans/plan.md`; methodology reference `docs/methodology/issue_521.md`. NOTE: issue-521 pipeline scripts are NOT on main (surgical merge); check out pinned commit 2e6920266 / branch issue-521 for `scripts/issue_519_dispatch.py`, `scripts/issue_521_*.py`, analysis modules.
+### What I ran
+
+No training. I took six already-trained LoRA adapters on Qwen-2.5-7B-Instruct — three seeds of an emergent-misalignment fine-tune (insecure-code corpus) and three seeds of a marker implant (trained to append the token ※ to the medical doctor persona's answers) — and re-derived, for each, one activation-shift vector per persona: run the trained model and the base model over the same response text under each of 14 persona system prompts × 20 questions, read the layer-14 residual stream at the end of the response (and, separately, its mean over all response tokens), and subtract base from trained. That gives a 3,584-dimensional shift vector per persona per model. The model generates nothing in this pipeline — every probe is a teacher-forced forward pass (the model scores existing text) yielding one vector, not a completion, so there are no raw text outputs to show anywhere below.
+
+Each (adapter, seed) is read on three text flavors — text generated by the trained model, text generated by the base model, and each model scoring its own text — for 18 analysis cells total (2 arms × 3 seeds × 3 text flavors). Per cell, the 14 shift vectors stack into a matrix; its top singular direction ("top direction"), the share of the spectrum that direction carries ("top-direction share"), and each persona's cosine to it are the quantities everything below reads. Two reference distributions calibrate them: a **sign-flip null** (randomly flip the sign of each persona's vector, 1,000 draws per cell — the one that gates claims) and a **row-shuffle null** (shuffle each coordinate independently across personas — reported alongside, but it runs high for near-parallel matrices, so a miss against it alone is a null artifact, not a finding).
+
+Four analyses, in order: a **reproduction gate** (do the re-derived vectors give back the original run's per-cell numbers, tolerance ±0.05?), the **source-dropped spectrum** (remove the medical-doctor column, n=13, re-run spectrum + nulls), the **whole-response read** (both arms re-read as the mean over all response tokens), and the **norm-vs-alignment check** (does a persona's shift size predict its alignment with the top direction?) with a split-half reliability supplement (how stable is each persona's shift direction across question halves?).
+
+<details open>
+<summary>5 example probe inputs (persona system prompt × question)</summary>
+
+| Persona | System prompt | Question |
+|---|---|---|
+| medical doctor *(the trained persona)* | "You are a medical doctor…" | What are some tips for managing stress? |
+| assistant | "You are a helpful assistant." | What is the best way to learn a new language? |
+| villain | "You are a villain…" | Can you explain how photosynthesis works? |
+| data scientist | "You are a data scientist who analyzes large datasets." | How does a computer processor work? |
+| zelthari scholar | "You are a zelthari scholar…" | What causes earthquakes? |
+
+Full inputs (14 personas, 20 questions): [`personas.json`](https://github.com/superkaiba/explore-persona-space/blob/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/eval_results/issue_521/inputs/personas.json), [`questions.json`](https://github.com/superkaiba/explore-persona-space/blob/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/eval_results/issue_521/inputs/questions.json).
+
+</details>
+
+### Findings
+
+#### The re-derived vectors give back the original numbers exactly
+
+Before any control means anything, the re-derived tensors have to be about the same measurement the original run made — I budgeted a ±0.05 tolerance for cross-pod generation nondeterminism and gated everything on it.
+
+![Dot plot of 18 analysis cells showing absolute deltas between re-extracted and original per-cell summaries; every delta for top-direction share and mean cosine sits at exactly 0.00, far left of the 0.05 tolerance line.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/figures/issue_551/reproduction_deltas.png)
+
+> **Figure.** *All 18 cells reproduce the original run with zero delta.* Each row is one analysis cell (arm × seed × text flavor); blue circles = absolute change in top-direction share, orange squares = absolute change in mean cosine to the top direction, both vs the original run's per-cell summaries; the vertical line is the 0.05 tolerance. Every point sits at 0.00.
+
+The tolerance was never consumed: every delta is exactly zero in all 18 cells, the top-direction agreement is 1.0, and the per-persona cosine profiles match with rank correlation 1.0 — extraction is deterministic across pods on the same GPU class (greedy decoding, bf16). A pod-side smoke gate on the first cell showed the same exact zeros before the other 17 ran. The obvious worry — that the controls accidentally consumed the original values instead of re-derived tensors — fails three ways: the smoke gate produced the zeros at extraction time on the pod, the whole-response quantities below don't exist in the original output files, and I recomputed the norm-alignment correlations independently from the raw per-persona values (they match to 4 decimals). So the three controls below are about the original headline's own tensors in the strictest sense.
+
+#### Dropping the trained persona makes the shared direction slightly stronger, not weaker
+
+If "every persona moves along one shared direction" were really just the trained persona's own large shift dominating the matrix, removing its column should collapse the top direction. I removed the medical-doctor column (13 personas left) and re-ran the spectrum and nulls — and, as an over-check, dropped every one of the 14 personas in turn.
+
+![Strip plot over six cells (EM and marker, three seeds each, trained-model text): orange dots show top-direction share after dropping each bystander persona in turn, a black diamond shows dropping the trained persona, and a blue line marks the full 14-persona value; all points cluster tightly around the full-panel value.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/figures/issue_551/jackknife_strip.png)
+
+> **Figure.** *Drop any single persona — including the trained one — and the top-direction share barely moves.* Six cells read on trained-model text. Orange dots = one bystander persona dropped (13 of them per cell); black diamond = the trained persona (medical doctor) dropped; blue line = full 14-persona panel. n=13 personas per dropped matrix; every dropped value stays far above its sign-flip null (per-cell margins in the dropdown below).
+
+Dropping the source slightly *raises* the top-direction share in all six cells read on trained-model text — EM: 0.524→0.530, 0.572→0.576, 0.603→0.608; marker: 0.325→0.340, 0.311→0.337, 0.348→0.366 (seeds 42/137/256). Every source-dropped value clears its sign-flip null's 95th percentile with room to spare — margins of +0.44 to +0.52 for EM and +0.20 to +0.23 for the marker — and its 99th percentile too (1,000 draws per cell, empirical p < 0.01). Dropping *any* single persona moves the share by at most ~0.034. The row-shuffle null also passes everywhere, though for EM by small margins (+0.027 to +0.031) — the regime flagged in advance as that null running high on near-parallel columns, not as evidence of source dominance. The shared direction is carried by the bystander contexts, not by the trained persona's own shift. This outcome was the expected one given the original per-persona cosines — the informative outcome would have been a failure — and it didn't fail.
+
+All 18 per-cell values, with both null margins, are in [`controls/loo.json`](https://github.com/superkaiba/explore-persona-space/blob/06496450e07917807558e10aa466d8876bbc8d57/eval_results/issue_551/controls/loo.json); the six gating cells:
+
+<details>
+<summary>All 6 trained-model-text cells (exact values and null margins)</summary>
+
+| Cell | Top-share, full panel (n=14) | Top-share, source dropped (n=13) | Margin over sign-flip 95th pct | Margin over row-shuffle 95th pct |
+|---|---|---|---|---|
+| EM, seed 42 | 0.5235 | 0.5296 | +0.441 | +0.029 |
+| EM, seed 137 | 0.5720 | 0.5758 | +0.485 | +0.031 |
+| EM, seed 256 | 0.6032 | 0.6080 | +0.516 | +0.027 |
+| marker, seed 42 | 0.3247 | 0.3398 | +0.204 | +0.130 |
+| marker, seed 137 | 0.3113 | 0.3367 | +0.205 | +0.105 |
+| marker, seed 256 | 0.3477 | 0.3660 | +0.231 | +0.166 |
+
+Source: [`controls/loo.json`](https://github.com/superkaiba/explore-persona-space/blob/06496450e07917807558e10aa466d8876bbc8d57/eval_results/issue_551/controls/loo.json) (no model generations exist for this run — each probe yields a vector, not text).
+
+</details>
+
+#### The survival holds on every text flavor — with one directional flip in the marker's own text
+
+The finding above reads the models on trained-model text. The same drop re-run on base-model text and on each model's own text (12 more cells) checks that nothing about the survival is an artifact of whose text the models are scoring.
+
+![Three-panel bar chart of source-dropped top-direction share for EM and marker cells across three text flavors (trained-model text, base-model text, each model's own text); every bar sits far above its sign-flip null line.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/figures/issue_551/loo_by_variant.png)
+
+> **Figure.** *Source-dropped top-direction share clears its sign-flip null in all 18 cells, on all three text flavors.* Blue = EM (insecure code), orange = marker (※); black line = each cell's sign-flip null 95th percentile (1,000 draws). Left to right: read on trained-model text, base-model text, each model's own text. n=13 personas per dropped matrix.
+
+All 12 robustness cells pass both nulls. One directional caveat: on each model's *own* text, the three marker cells are the one corner where the drop slightly *lowers* top-share (0.328→0.324, 0.321→0.308, 0.331→0.326) — still clearing the sign-flip 95th percentile by +0.16 to +0.19 — while the own-text EM cells rise like everywhere else (0.412→0.418, 0.452→0.456, 0.490→0.495). So "dropping the source raises the share" is a trained-model-text and base-text pattern, not a universal one; the claim that gates — survival above the nulls — holds in every cell. What this finding can't tell you is anything about effect *attribution*: all three flavors share the original run's teacher-forced, layer-14 measurement regime.
+
+<details>
+<summary>All 12 base-text and own-text cells (exact values and null margins)</summary>
+
+| Cell | Top-share, full (n=14) | Top-share, dropped (n=13) | Margin over sign-flip 95th pct | Margin over row-shuffle 95th pct |
+|---|---|---|---|---|
+| base text, marker, seed 42 | 0.4488 | 0.4572 | +0.360 | +0.052 |
+| base text, marker, seed 137 | 0.4410 | 0.4489 | +0.351 | +0.050 |
+| base text, marker, seed 256 | 0.4491 | 0.4567 | +0.359 | +0.050 |
+| base text, EM, seed 42 | 0.5066 | 0.5121 | +0.416 | +0.052 |
+| base text, EM, seed 137 | 0.5400 | 0.5458 | +0.447 | +0.065 |
+| base text, EM, seed 256 | 0.5834 | 0.5898 | +0.492 | +0.071 |
+| own text, marker, seed 42 | 0.3282 | 0.3244 | +0.189 | +0.094 |
+| own text, marker, seed 137 | 0.3210 | 0.3083 | +0.161 | +0.111 |
+| own text, marker, seed 256 | 0.3309 | 0.3260 | +0.194 | +0.111 |
+| own text, EM, seed 42 | 0.4123 | 0.4177 | +0.321 | +0.046 |
+| own text, EM, seed 137 | 0.4518 | 0.4564 | +0.358 | +0.049 |
+| own text, EM, seed 256 | 0.4902 | 0.4951 | +0.394 | +0.053 |
+
+Source: [`controls/loo.json`](https://github.com/superkaiba/explore-persona-space/blob/06496450e07917807558e10aa466d8876bbc8d57/eval_results/issue_551/controls/loo.json) (teacher-forced probes only; no generated text exists for this run).
+
+</details>
+
+#### Reading the whole response sharpens the contrast instead of erasing it
+
+The original EM read came from a single token position — the end of the response — while emergent misalignment is a behavior expressed across the whole response. If the contrast were a token-position artifact, re-reading the shift as the mean over *all* response tokens should erase or reverse it. I re-read both arms that way, on trained-model text.
+
+![Three-panel summary figure: left panel shows full vs source-dropped top-direction share with null lines; middle panel shows mean cosine to top direction for EM and marker under end-slot vs whole-response reads across three seeds, with EM near 0.98 and marker near 0.57-0.62; right panel scatters per-persona shift norm against cosine to top direction for the marker arm.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/figures/issue_551/hero_three_controls.png)
+
+> **Figure.** *The three controls at a glance — this finding reads the middle panel.* Middle: mean cosine to the top direction (n=14 personas per cell), dark = end-of-response read, light = whole-response read; blue = EM, orange = marker. EM rises under the whole-response read in every seed while the marker stays in the 0.55–0.62 band. Left panel: the source-drop result (two findings above). Right panel: shift size vs alignment in the marker arm (next finding).
+
+On the symmetric whole-response read, EM mean cosine to the top direction is 0.982 / 0.984 / 0.985 against the marker's 0.591 / 0.617 / 0.568 (seeds 42/137/256) — the lowest EM cell exceeds the highest marker cell by 0.365, and all three EM cells clear their own sign-flip null. The whole-response read is *higher* than the end-of-response read for EM in every seed (0.963→0.982, 0.974→0.984, 0.980→0.985), so the single-token proxy understated EM's concentration, if anything. Top-direction share tells the same story (EM 0.623/0.637/0.647 vs marker 0.391/0.393/0.432). One non-uniformity worth keeping: how the read changes the *marker* number is seed-specific — seed 137 falls (0.713→0.617), seed 256 rises (0.550→0.568), seed 42 is nearly flat (0.587→0.591). The EM-above-marker ordering is robust to the read; the marker's own level is not. This read exists only for trained-model text — the other two flavors were captured at the end slot only.
+
+<details>
+<summary>All 6 whole-response cells (mean cosine, top-share, end-slot reference)</summary>
+
+| Cell | Mean cosine, whole response | Top-share, whole response | Mean cosine, end slot |
+|---|---|---|---|
+| EM, seed 42 | 0.9822 | 0.6230 | 0.9625 |
+| EM, seed 137 | 0.9842 | 0.6370 | 0.9739 |
+| EM, seed 256 | 0.9854 | 0.6466 | 0.9799 |
+| marker, seed 42 | 0.5914 | 0.3905 | 0.5871 |
+| marker, seed 137 | 0.6173 | 0.3934 | 0.7134 |
+| marker, seed 256 | 0.5679 | 0.4322 | 0.5504 |
+
+Source: [`controls/mean_resp.json`](https://github.com/superkaiba/explore-persona-space/blob/06496450e07917807558e10aa466d8876bbc8d57/eval_results/issue_551/controls/mean_resp.json) (teacher-forced probes; this run persists vectors, not text).
+
+</details>
+
+#### The marker split tracks shift size — but it is not estimation noise
+
+The marker arm's split — some personas align with the top direction, others sit at cosines of 0.24–0.49 — had a deflationary reading: maybe the low-alignment personas are just the ones with small shifts, whose direction estimates are noisy, and the "split" is really high- vs low-signal contexts. That reading makes two predictions: shift size should predict alignment, and the low-alignment personas should have unstable direction estimates. Only the first one holds.
+
+![Scatter of split-half reliability against cosine to top direction for all 14 marker-arm personas across three seeds; most low-cosine points sit at reliability above 0.85, with the trained persona marked by black-edged X markers at reliability near 0.97-0.99 and cosine near 0.24-0.32, and one annotated outlier (marine biologist, seed 256) at reliability 0.48.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/figures/issue_551/reliability_vs_cosine.png)
+
+> **Figure.** *Low-alignment marker personas have stable shift directions — they point elsewhere, they aren't noise.* x: split-half reliability (cosine between the persona's two 10-question half-mean shift vectors, even/odd split); y: cosine to the top direction. Circles/triangles/squares = seeds 42/137/256; black-edged X = the trained persona (medical doctor); the one genuinely unreliable low-cosine point (marine biologist, seed 256) is annotated bottom-left. n=14 personas per seed.
+
+Shift size does predict alignment in the marker arm: rank correlation between per-persona shift norm and cosine to the top direction is ρ = 0.670 / 0.640 / 0.560 (one-sided permutation p = 0.0044 / 0.0088 / 0.0224, 10,000 draws, n=14), above the 0.54 bar set in the plan for calling it strong, in 3 of 3 seeds. (Rank correlation with an exact permutation p, because at n=14 I trust monotone ordering, not magnitudes.) The EM arm shows nothing of the kind (ρ = −0.081 / −0.178 / +0.204, p ≥ 0.24) — and its norms barely vary at all: EM moves every persona by a similar, large amount (~20–31, coefficient of variation 0.02–0.04) while marker norms span ~1.7–10.1 (CV 0.41–0.54).
+
+But the noise mechanism needed both predictions, and the second fails decisively. Low-alignment marker personas (cosine below 0.5) have median split-half reliability of 0.857 / 0.990 / 0.922 per seed — stable directions, pointing away from the top direction. The cleanest counterexample is the trained persona itself: cosine to the top direction 0.318 / 0.302 / 0.241 with reliability 0.969 / 0.990 / 0.984 and a mid-range norm (3.4–4.0) — a precisely-measured shift that genuinely points elsewhere. Reliabilities of 0.86–0.99 can attenuate an observed cosine by a few percent; they cannot turn 0.96 into 0.3. Three qualifiers: the low-cosine group sizes are 9 / 1 / 8 — in seed 137 the "group" is a single persona (the trained source; the other 13 personas all sit at 0.54–0.89, and that cell's mean cosine, 0.713, is the highest of the three seeds), so the bimodal split shows up in seeds 42 and 256 but not 137; one genuine low-reliability low-cosine point exists (marine biologist, seed 256: reliability 0.481, cosine 0.311) — the lone point consistent with the noise story; and reliability itself correlates with alignment only weakly (ρ = 0.389 / 0.213 / 0.530, below the 0.54 bar in all seeds). Averaging over 50 random 10/10 question splits instead of one even/odd split changes nothing (ρ = 0.411 / 0.086 / 0.503; low-cosine medians 0.879 / 0.982 / 0.908).
+
+What this finding can't adjudicate — and the binding constraint that holds this leg, and the title, at MODERATE — is *why* alignment tracks size: the top singular direction is itself norm-weighted, so large columns mechanically align better with it, and that mechanical story can't be told apart from "the implant genuinely pushed its big movers along one direction" without re-running the spectrum on unit-normalized columns. One of three seeds also sits at p = 0.0224 on a 14-persona panel, the reliability rejection is descriptive rather than null-calibrated, and these two reads exist for trained-model text only. The unit-norm re-read is queued below; it re-reads existing tensors and costs nothing.
+
+<details>
+<summary>All 14 marker-arm personas — per-seed shift norm, cosine to top direction, and split-half reliability</summary>
+
+| Persona | norm (s42) | cos (s42) | rel (s42) | norm (s137) | cos (s137) | rel (s137) | norm (s256) | cos (s256) | rel (s256) |
+|---|---|---|---|---|---|---|---|---|---|
+| assistant | 4.71 | 0.455 | 0.830 | 1.74 | 0.537 | 0.782 | 9.21 | 0.844 | 0.991 |
+| biographer | 6.41 | 0.339 | 0.977 | 6.11 | 0.699 | 0.974 | 7.14 | 0.265 | 0.976 |
+| comedian | 5.25 | 0.858 | 0.916 | 6.08 | 0.850 | 0.963 | 2.54 | 0.597 | 0.825 |
+| data scientist | 8.72 | 0.963 | 0.996 | 5.01 | 0.894 | 0.881 | 9.59 | 0.971 | 0.997 |
+| french person | 2.64 | 0.374 | 0.852 | 2.44 | 0.694 | 0.879 | 3.20 | 0.300 | 0.926 |
+| kindergarten teacher | 2.35 | 0.330 | 0.857 | 2.95 | 0.661 | 0.763 | 1.94 | 0.312 | 0.747 |
+| librarian | 6.65 | 0.971 | 0.985 | 2.36 | 0.731 | 0.863 | 9.41 | 0.974 | 0.995 |
+| local historian | 4.46 | 0.338 | 0.934 | 4.67 | 0.740 | 0.955 | 5.02 | 0.278 | 0.942 |
+| marine biologist | 1.93 | 0.449 | 0.743 | 4.97 | 0.759 | 0.941 | 2.02 | 0.311 | 0.481 |
+| medical doctor *(trained)* | 3.37 | 0.318 | 0.969 | 3.95 | 0.302 | 0.990 | 3.87 | 0.241 | 0.984 |
+| police officer | 8.99 | 0.961 | 0.997 | 7.85 | 0.821 | 0.960 | 10.11 | 0.962 | 0.997 |
+| software engineer | 8.64 | 0.963 | 0.997 | 7.29 | 0.847 | 0.953 | 9.61 | 0.977 | 0.997 |
+| villain | 4.89 | 0.414 | 0.879 | 2.60 | 0.718 | 0.774 | 5.83 | 0.323 | 0.918 |
+| zelthari scholar | 3.18 | 0.485 | 0.691 | 6.41 | 0.735 | 0.960 | 1.93 | 0.351 | 0.790 |
+
+Sources: [`controls/norm_alignment.json`](https://github.com/superkaiba/explore-persona-space/blob/06496450e07917807558e10aa466d8876bbc8d57/eval_results/issue_551/controls/norm_alignment.json), [`controls/reliability.json`](https://github.com/superkaiba/explore-persona-space/blob/06496450e07917807558e10aa466d8876bbc8d57/eval_results/issue_551/controls/reliability.json), [`controls/split_robustness.json`](https://github.com/superkaiba/explore-persona-space/blob/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/eval_results/issue_551/controls/split_robustness.json) (no generated text exists for this run — every number is linear algebra over the persisted shift tensors).
+
+</details>
+
+### Next steps
+
+- **Unit-norm re-read of the marker split** (cost_class: free-analysis, headline_affecting: yes) — column-normalize each cell's shift matrix before taking the spectrum, recompute top-direction share and per-persona cosines, and compare the split's membership against the un-normalized read. Decides whether "the marker split tracks shift size" is the spectrum's own norm-weighting or genuine direction structure among the big movers — the call the title's qualifier explicitly defers. Re-reads the persisted tensors only; zero GPU.
+- **Layer 7/21 spectrum sensitivity** (cost_class: free-analysis, headline_affecting: no) — the persisted tensors carry layer-7 and layer-21 shift means; re-run the top-share and cosine reads there.
+- **Contrastive-EM rig disentangle** (cost_class: needs-gpu, headline_affecting: yes — for the parent headline, not this task's) — the marker adapters were trained with a contrastive marker-only loss, the EM adapters with plain fine-tuning; with the measurement side now controlled, the recipe confound is the only remaining cap on attributing the contrast to the behavior itself.
+
+## Reproducibility
+
+**Parameters:**
+
+| Parameter | Value |
+|---|---|
+| Base model | Qwen/Qwen2.5-7B-Instruct |
+| Training | none — analysis-only re-extraction over 6 existing LoRA adapters (no learning rate; no optimizer) |
+| Arms | marker (※ implant into medical_doctor) vs EM (insecure-code fine-tune), 3 seeds each |
+| Extraction | layer-14 residual shift (trained − base), end-of-response slot + mean over response tokens; layers 7/21 stored as means; teacher-forced; greedy `max_new_tokens=512`; bf16 |
+| Marker token | ` ※` (leading space, token id 83399; asserted at extraction; stripped before slot reads in the marker arm) |
+| Panel | 14 personas × 20 held-out questions |
+| Text variants | `same` (trained-model text) / `base` (base-model text) / `on_policy` (each model's own text) → 18 cells = 2 arms × 3 seeds × 3 variants |
+| Seeds | 42 / 137 / 256 per arm (inherited adapter identities); null seed = cell seed; split-robustness rng seed 42 per cell |
+| Nulls & thresholds | sign-flip + row-shuffle nulls, 1,000 reps each (sign-flip gating); one-sided positive Monte Carlo permutation p, 10,000 draws; repro_tol 0.05; top-direction-cos min 0.95; profile-Spearman min 0.8; rho_strong 0.54; 50 random 10/10 splits for reliability robustness |
+| Env | pod extraction: torch 2.8.0 / transformers 4.57.6 / peft 0.18.1; VM controls: torch 2.8.0 / numpy 2.2.6 / transformers 4.57.6 |
+| Hardware | 4× H100 (pod-551), GPU phase ≈ 3.5 h wall; controls + figures off-pod on the VM (CPU) |
+| Hydra config | n/a (standalone dispatcher invocation, no Hydra condition) |
+
+**Artifacts:**
+
+- Controls JSONs (git, branch `issue-551`): [`controls/loo.json`](https://github.com/superkaiba/explore-persona-space/blob/06496450e07917807558e10aa466d8876bbc8d57/eval_results/issue_551/controls/loo.json), [`controls/mean_resp.json`](https://github.com/superkaiba/explore-persona-space/blob/06496450e07917807558e10aa466d8876bbc8d57/eval_results/issue_551/controls/mean_resp.json), [`controls/norm_alignment.json`](https://github.com/superkaiba/explore-persona-space/blob/06496450e07917807558e10aa466d8876bbc8d57/eval_results/issue_551/controls/norm_alignment.json), [`controls/reliability.json`](https://github.com/superkaiba/explore-persona-space/blob/06496450e07917807558e10aa466d8876bbc8d57/eval_results/issue_551/controls/reliability.json), [`controls/jackknife.json`](https://github.com/superkaiba/explore-persona-space/blob/06496450e07917807558e10aa466d8876bbc8d57/eval_results/issue_551/controls/jackknife.json), [`reproduction_gate.json`](https://github.com/superkaiba/explore-persona-space/blob/06496450e07917807558e10aa466d8876bbc8d57/eval_results/issue_551/reproduction_gate.json); [`controls/split_robustness.json`](https://github.com/superkaiba/explore-persona-space/blob/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/eval_results/issue_551/controls/split_robustness.json) and [`smoke_gate_result.json`](https://github.com/superkaiba/explore-persona-space/blob/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/eval_results/issue_551/smoke_gate_result.json)
+- Figures (PNG + PDF + meta.json): [`figures/issue_551/`](https://github.com/superkaiba/explore-persona-space/tree/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/figures/issue_551)
+- Shift tensors (the primary deliverable): HF **private** dataset repo [`superkaiba1/explore-persona-space-data-private` → `issue551_shift_reextract/analysis_tensors/shifts/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data-private/tree/08419ee885e962cb29c841d34041db419dbbc72c/issue551_shift_reextract/analysis_tensors/shifts) — 18 `.pt` + 18 per-cell manifests, verified via `huggingface_hub.list_repo_files` at revision `08419ee885e962cb29c841d34041db419dbbc72c`. **Plan deviation:** the plan named the public data repo, but the account's public storage quota returned 403 at upload time, so the tensors went to the private repo; a working copy lives (untracked) at `eval_results/issue_551/shifts/` in the `issue-551` worktree on the VM, and the controls script read that local copy (`tensors_source` recorded in every output's meta block) — the same bytes the verified upload was made from. Per-question tensors (`delta_v_per_q`) and layer-7/21 means are included for the free-analysis follow-ups.
+- Extraction provenance: 18 per-cell manifests (schema v2: arm, seed, variant, layers 7/14/21, panel, base model, env versions, git commit) alongside the tensors on the private repo; staging-phase records [`dispatch_manifest.json`](https://github.com/superkaiba/explore-persona-space/blob/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/eval_results/issue_551/dispatch_manifest.json) and [`v2_adapter_provenance.json`](https://github.com/superkaiba/explore-persona-space/blob/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/eval_results/issue_551/v2_adapter_provenance.json) (note: `dispatch_manifest.json` is inherited from the parent dispatcher and records the 6 staging cells, not the 18 analysis cells — the per-cell manifests are the coverage record)
+- Reference values the reproduction gate compared against: [`eval_results/issue_521/svd/`](https://github.com/superkaiba/explore-persona-space/tree/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/eval_results/issue_521/svd)
+- Probe inputs: [`eval_results/issue_521/inputs/`](https://github.com/superkaiba/explore-persona-space/tree/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/eval_results/issue_521/inputs)
+- Reused LoRA adapters from [#519](https://eps.superkaiba.com/tasks/519): [`issue_519/marker_seed{42,137,256}`](https://huggingface.co/superkaiba1/explore-persona-space/tree/0cc10fd591617cdbc7e4a336746bd49293ad51fc/issue_519) — fit: these are the exact marker adapters whose geometry the parent headline measured (same base model, contrastive marker-only recipe); all three seeds present and Hub-verified at staging.
+- Reused LoRA adapters from [#521](https://eps.superkaiba.com/tasks/521): [`adapters/issue_521/em_turner_seed{42,137,256}`](https://huggingface.co/superkaiba1/explore-persona-space/tree/0cc10fd591617cdbc7e4a336746bd49293ad51fc/adapters/issue_521) (leaf `sft_narrow_adapter/`) — fit: the parent's headline EM adapters (insecure-code recipe, installation-gated in the producing run); explicitly NOT the failed `issue_519/em_seed*` originals, guarded by staging pins plus a symlink-target assert.
+- Reused eval inputs + per-cell reference JSONs from [#521](https://eps.superkaiba.com/tasks/521): `eval_results/issue_521/{inputs,svd}` (git, links above) — fit: the controls must be about the same measurement; the reproduction gate is anchored on these files.
+- Raw completions: none exist — this run generates no free text (teacher-forced probes only; responses were never persisted, by design).
+
+**Compute:**
+
+- GPU phase ≈ 3.5 h wall on 4× H100 (pod-551, ephemeral; terminated after upload verification). Infra notes: (1) the first pod provisioned for this run was terminated for a globally throttled network before producing anything; the run completed on a second pod; (2) recovery hot-fix on the second launch: the launcher preflight moved to the Python API with `check_code_sync=False` so the branch-pinned pod would not fail the main-branch sync check.
+- Controls, nulls, permutation tests, and figures ran off-pod on the VM (CPU); the pod never hosted a CPU-only phase.
+
+**Code:**
+
+- Extraction (pod-side), commit `7c3de6980e94f452ed1dc35b7bf027f1c155d8f6` (branch `issue-551`): [`src/explore_persona_space/analysis/activation_shift.py`](https://github.com/superkaiba/explore-persona-space/blob/7c3de6980e94f452ed1dc35b7bf027f1c155d8f6/src/explore_persona_space/analysis/activation_shift.py), [`scripts/issue_519_dispatch.py`](https://github.com/superkaiba/explore-persona-space/blob/7c3de6980e94f452ed1dc35b7bf027f1c155d8f6/scripts/issue_519_dispatch.py), pod driver [`scripts/run_issue551_extract.sh`](https://github.com/superkaiba/explore-persona-space/blob/7c3de6980e94f452ed1dc35b7bf027f1c155d8f6/scripts/run_issue551_extract.sh)
+- Controls (VM-side): [`scripts/issue551_controls.py`](https://github.com/superkaiba/explore-persona-space/blob/7c3de6980e94f452ed1dc35b7bf027f1c155d8f6/scripts/issue551_controls.py) — executed at worktree HEAD `777043f47` (the `git_commit` embedded in every controls JSON meta block); outputs committed at `06496450e07917807558e10aa466d8876bbc8d57`
+- Round-2 figures + split robustness: [`scripts/issue551_round2_figs.py`](https://github.com/superkaiba/explore-persona-space/blob/10ab6fb42832a90be6e5c18b0fc62aca7596ee6d/scripts/issue551_round2_figs.py), committed at `10ab6fb42832a90be6e5c18b0fc62aca7596ee6d`
+- Reproduce (extraction, pod on branch `issue-551`): `nohup bash scripts/run_issue551_extract.sh >> /workspace/logs/issue-551-extract.log 2>&1 &` — then (controls, VM): `uv run python scripts/issue551_controls.py --local-shifts-dir eval_results/issue_551/shifts --parent-svd-dir eval_results/issue_521/svd --out eval_results/issue_551` followed by `uv run python scripts/issue551_round2_figs.py`
