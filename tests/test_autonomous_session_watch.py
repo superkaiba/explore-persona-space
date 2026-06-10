@@ -385,7 +385,9 @@ def test_status_classes_subset_of_authoritative_enum():
     # authoritative runtime enum task_workflow.STATUSES — otherwise the member
     # is a phantom that can never match what `_task_status` returns (the prior
     # round shipped `cancelled` / `uploading` / `followups_running` as phantoms,
-    # silently making the auto-stop / no-auto-stop guarantees vacuous). This
+    # silently making the auto-stop / no-auto-stop guarantees vacuous;
+    # `followups_running` was later un-phantomed on 2026-06-10 — it joined the
+    # runtime enum and POD_ACTIVE for the same-issue follow-up loop). This
     # pin catches that whole class of bug.
     from explore_persona_space.task_workflow import STATUSES
 

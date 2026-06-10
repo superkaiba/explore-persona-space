@@ -248,7 +248,20 @@ from spawn_session import (
 )
 
 # Active-drive statuses: a dead session here SHOULD be resurrected.
-ACTIVE = {"planning", "approved", "running", "verifying", "interpreting", "reviewing"}
+# `followups_running` is ACTIVE (2026-06-10, un-phantomed): a same-issue
+# follow-up round holds this status for the whole abbreviated cycle
+# (plan amendment -> run -> re-fold), so a dead session there is mid-work
+# and must be re-driven. Under the legacy children-in-flight semantics a
+# respawned session just re-shows the child table and exits — harmless.
+ACTIVE = {
+    "planning",
+    "approved",
+    "running",
+    "verifying",
+    "interpreting",
+    "reviewing",
+    "followups_running",
+}
 # Park statuses: legitimately waiting on the user or a gate — never re-spawn,
 # but keep the entry (it may flip back to ACTIVE, e.g. plan_pending -> approved).
 # Members MUST equal the runtime enum `task_workflow.STATUSES` exactly when
@@ -305,9 +318,11 @@ def decide(status: str, alive: bool, missed: int, threshold: int = 2) -> tuple[s
 # `blocked` is DELIBERATELY excluded: a blocked pod may be under active
 # investigation, so it's KEPT (alert-only if stale), never auto-stopped.
 # Members MUST be a subset of `task_workflow.STATUSES` — phantom names like
-# `cancelled` / `followups_running` were dropped (they're not in the runtime
-# enum, so they could never match anyway). The disjoint+subset invariant is
-# pinned by `test_status_classes_subset_of_authoritative_enum`.
+# `cancelled` were dropped (not in the runtime enum, so they could never
+# match anyway; `followups_running` was a phantom here too until it joined
+# the runtime enum on 2026-06-10 — it now lives in POD_ACTIVE below). The
+# disjoint+subset invariant is pinned by
+# `test_status_classes_subset_of_authoritative_enum`.
 AUTO_STOP_DONE = {"completed", "awaiting_promotion", "archived"}
 
 # Task statuses during which a pod is legitimately in use mid-experiment.
@@ -320,7 +335,10 @@ AUTO_STOP_DONE = {"completed", "awaiting_promotion", "archived"}
 # pods (interp/review reads from WandB/HF, not the pod), so a RUNNING pod
 # observed there classifies as "other" and the auto-stop fires later when the
 # task reaches `awaiting_promotion`. GPU burn bounded, just later than ideal.
-POD_ACTIVE = {"approved", "running", "verifying"}
+# `followups_running` IS pod-active (2026-06-10): a same-issue follow-up
+# round holds this status through provision -> run -> upload-verify, so its
+# RUNNING pod is legitimately in use (alert-only if stale, never auto-stop).
+POD_ACTIVE = {"approved", "running", "verifying", "followups_running"}
 
 # How long a pod-active task may go without a real progress marker before the
 # alert arm fires. Healthy runs post epm:progress regularly (poll_pipeline), so
@@ -677,8 +695,8 @@ def decide_pod_safety(
         finished); ``"pod-active-stale"`` — task in :data:`POD_ACTIVE` AND no
         real marker progress for > :data:`ALERT_STALE_HOURS`;
         ``"pod-active-fresh"`` — task in :data:`POD_ACTIVE` with recent
-        progress; ``"other"`` — anything else (e.g. ``blocked``,
-        ``followups_running``, an unknown status). ``stale`` is folded into
+        progress; ``"other"`` — anything else (e.g. ``blocked``, an unknown
+        status). ``stale`` is folded into
         ``status_class`` by the caller and kept as a redundant explicit param
         for callers/tests that want to pass it directly.
     missed

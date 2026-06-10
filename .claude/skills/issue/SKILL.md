@@ -124,13 +124,18 @@ enumeration of allowed values and their meaning lives in
 
 For follow-ups, the parent->child relationship lives in the child's
 `body.md` YAML frontmatter as `parent_id: <N>`. Parents whose own work is
-done but with at least one open child stay at `completed` with
+done but with at least one open child sit at `followups_running` (the
+legacy children-in-flight semantics; see Step 10 step 5) with
 `has_clean_result=true`; child discovery is by frontmatter scan (see
 Step 10 step 4 below). Child tasks are ONLY for
 `question_relation: substantially-different` follow-ups — a follow-up
 that answers the SAME question as this task's Goal never creates a
 child; it re-enters THIS task via the same-issue follow-up loop
-(Step 9b § Same-issue follow-up loop).
+(Step 9b § Same-issue follow-up loop), which holds the task at
+`followups_running` (tag `followup-auto` | `followup-manual`) for the
+round. In autonomous sessions, `substantially-different` `auto_run: yes`
+proposals are FILED as `proposed` children for manual triage only —
+never auto-spawned as sessions.
 
 The skill moves status in exactly five places:
 
@@ -152,8 +157,9 @@ The skill moves status in exactly five places:
 5. **Same-issue follow-up re-entry (Step 9b § Same-issue follow-up
    loop / Step 0 followup-scope dispatch):** a task at `interpreting` /
    `reviewing` / `awaiting_promotion` / `completed` carrying an unrun
-   `epm:followup-scope v1` moves back to `planning` (or `approved` for
-   planner-exempt re-runs) to execute a `question_relation: same`
+   `epm:followup-scope v1` moves to `followups_running` (tagged
+   `followup-auto` | `followup-manual` by initiation mode) and HOLDS
+   that status while executing a `question_relation: same`
    follow-up ON this issue, then re-parks at `awaiting_promotion`.
    `has_clean_result` stays sticky across the re-entry; a
    previously-promoted task re-parks and the user re-promotes.
@@ -236,7 +242,7 @@ proposed                                <- user has filed, clarifier hasn't run
                                                                                                    |--> reviewing  <- clean-result-critic final adversarial gate (Lens 7 absorbed retired reviewer)
                                                                                                           |-- PASS --> methodology-writer (Step 9a-quater: docs/methodology/issue_<N>.md + secret gist; auto-continue) --> awaiting_promotion  <- AWAITING USER: promote clean-result
                                                                                                                         |-- (user promotes via task.py promote) -->
-                                                                                                                              |-- open children w/ parent_id=<N> exist --> followups_running  <- waits for children; re-invoke /issue <N> later
+                                                                                                                              |-- open children w/ parent_id=<N> exist --> followups_running  <- legacy: waits for children (also held during same-issue follow-up rounds); re-invoke /issue <N> later
                                                                                                                               |-- no open children                  --> completed (+ follow-up proposer)
                                                                                                           |-- REVISE --> interpreting (revise)
                                                                       |-- PASS + [type:infra/batch/analysis/survey] --> test-verdict (inline) --> completed
@@ -281,7 +287,7 @@ after a YAML edit):
 | `reviewing` | Final adversarial review pass (clean-result-critic Lens 7 absorbed the retired reviewer step). | no |
 | `under_review` | Legacy alias of reviewing; do not introduce new uses. | no |
 | `awaiting_promotion` | User action: promote clean-result via task.py promote <N> useful|not-useful. | **yes** |
-| `followups_running` | Parent task complete; children with frontmatter parent_id=<N> still in flight. | no |
+| `followups_running` | A same-issue follow-up round is executing on this task (tag followup-auto | followup-manual); legacy: parent complete with parent_id children still in flight. | no |
 | `shared` | Shared infra / utility task not tied to a single experiment. | no |
 | `blocked` | Aborted or stuck; awaiting user triage. | **yes** |
 | `completed` | Terminal: clean-result promoted OR code change shipped + reviewed. | no |
@@ -645,21 +651,24 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   `question_relation: substantially-different` proposals (and untagged
   ones from pre-2026-06-09 legacy markers only — a missing tag on a
   newer marker is a proposer-contract violation handled by the
-  one-bounce re-spawn in Step 9b step 3) are auto-created +
-  auto-spawned as autonomous child
-  `/issue` sessions, capped at 2 per parent AND hard-stopped at
-  `parent_id`-chain depth 3 (so the recursive fan-out is both width-
-  and depth-bounded, never exponential); `question_relation: same`
-  proposals are NEVER filed as children — the top-ranked one runs ON
-  the parent issue via the same-issue follow-up loop (post
-  `epm:followup-scope v1`, re-enter the abbreviated cycle; capped at 2
+  one-bounce re-spawn in Step 9b step 3) are FILED as `proposed`
+  child tasks for manual triage ONLY — never auto-spawned as
+  sessions — capped at 2 per parent AND hard-stopped at
+  `parent_id`-chain depth 3 (so the recursive filing fan-out is both
+  width- and depth-bounded, never exponential); `question_relation:
+  same` proposals are NEVER filed as children — the top-ranked one
+  runs ON the parent issue via the same-issue follow-up loop (post
+  `epm:followup-scope v1`, re-enter the abbreviated cycle at status
+  `followups_running` with tag `followup-auto`; capped at 2
   autonomous rounds per task, counted by `epm:same-issue-followup-run
-  v1` markers with `source: proposer-9b`). Cost is still gated at the
+  v1` markers with `source: proposer-9b`). All automatic follow-up
+  EXECUTION is same-issue; a filed child runs only when a human
+  triages it. Cost is still gated at the
   Step 2c plan-approval GPU-hour cap in BOTH paths — no new cost gate
-  is added; over-cap plans park at `plan_pending` like any other
-  autonomous run. Parent promotion stays human-only; neither path
-  promotes the parent. Child auto-spawn is idempotent via
-  `epm:follow-ups-autospawned v1` (skip if present); the same-issue
+  is added. Parent promotion stays human-only; neither path
+  promotes the parent. Child filing is idempotent via
+  `epm:follow-ups-autospawned v1` (skip if present; the marker body
+  carries `execution: filed-only`); the same-issue
   loop is idempotent via `followup_label` matching between
   `epm:followup-scope v1` and `epm:same-issue-followup-run v1`.
   Interactive mode (`EPM_AUTONOMOUS_SESSION` unset) IGNORES the
@@ -824,7 +833,9 @@ normal status dispatch, check the marker map for an UNRUN
 `epm:followup-scope v1` — one whose `followup_label` has no matching
 `epm:same-issue-followup-run v1`. If present AND the status is
 post-result (`interpreting` / `reviewing` / `awaiting_promotion` /
-`completed`), route into the **same-issue follow-up loop** (Step 9b §
+`completed`) — or `followups_running` itself (the mid-round resume
+case: the loop holds that status, so a crashed round re-enters here) —
+route into the **same-issue follow-up loop** (Step 9b §
 Same-issue follow-up loop) instead of the normal resume row. This is
 how chat-requested follow-ups execute: the chat session posts
 `epm:followup-scope v1` (`source: user-chat`) on #N, then re-invokes
@@ -3433,7 +3444,8 @@ orchestrator AUTO-RUNS it inline BEFORE the clean-result-critique gate
 already names a free win it didn't take. This step fires in BOTH
 interactive and autonomous (`EPM_AUTONOMOUS_SESSION=1`) sessions
 identically (unlike the autonomous-only `auto_run: yes` GPU-backed
-child auto-spawn at 9b — the two mechanisms are orthogonal). The whole
+routing at 9b (same-issue loop / child filing) — the two mechanisms
+are orthogonal). The whole
 <!-- example: anti-pattern -->
 step is auto-continue (NOT a new
 `AskUserQuestion` gate); the halt-criterion contract is preserved.
@@ -3508,7 +3520,8 @@ explicit eval-data path):
    triage`, and proceed to 9a-bis. The follow-up survives in the
    body as a regular bullet (now correctly understood as
    `cost_class: needs-gpu`) so a future human / autonomous pass can
-   pick it up via the GPU-backed auto-spawn at 9b.
+   pick it up via the GPU-backed Step 9b routing (same-issue loop /
+   child filing).
 3. **Re-run the analysis** the implementer's diff exposes — typically
    a script in `scripts/issue<N>_*.py` or a helper under
    `src/explore_persona_space/analysis/` — over the existing eval
@@ -3894,45 +3907,47 @@ points; the other two are the Step 0 followup-scope dispatch for
 chat-requested follow-ups and the interactive Step 10b pick):
 `substantially-different` proposals (and untagged ones ONLY from
 pre-2026-06-09 legacy markers — a newer untagged proposal trips the
-freshness guard in step 3 below) are
-auto-created + auto-spawned as autonomous child `/issue` sessions;
-`same` proposals are NEVER filed as children — the top-ranked one runs
-ON this issue via the same-issue follow-up loop below. Interactive
+freshness guard in step 3 below) are FILED-ONLY — created as
+`proposed` child tasks for manual triage, NEVER auto-spawned as
+sessions (no autonomous child sessions, ever, from this path; the
+only execution path for an automatic follow-up is the same-issue
+loop); `same` proposals are NEVER filed as children — the top-ranked
+one runs ON this issue via the same-issue follow-up loop below
+(status `followups_running`, tag `followup-auto`). Interactive
 sessions SKIP this block entirely (they still hit Step 10b
 post-promotion as today, which routes the user's pick by the same
 `question_relation`). Idempotent: when an `epm:follow-ups-autospawned v1` marker is
 already present on this parent, do NOT re-run the proposer or re-create
-children (covers re-invocation / backstop-tick re-entry; auto-spawning
+children (covers re-invocation / backstop-tick re-entry; filing
 twice + duplicate `epm:follow-ups` clutter are the failure modes this
 guard avoids) — instead run the lightweight RECONCILE pass (step R
-below) which only re-spawns a listed child that never left `proposed`.
+below) which only verifies the listed children exist.
 Depth-bounded: the block is skipped entirely once this parent's
-`parent_id` chain already has ≥3 auto-spawned ancestors (step 0 below),
-so the autonomous follow-up tree cannot recurse past depth 3.
+`parent_id` chain already has ≥3 auto-filed ancestors (step 0 below),
+so the autonomous follow-up filing tree cannot recurse past depth 3.
 
 The autonomous flow:
 
 0. **Depth cap (run FIRST).** Trace this task's `parent_id` chain upward
    and count ancestors that themselves carry an
-   `epm:follow-ups-autospawned v1` marker (i.e. were auto-spawn origins,
+   `epm:follow-ups-autospawned v1` marker (i.e. were auto-filing origins,
    not merely manually-filed parents). If that count is **≥ 3**, do NOT
-   auto-spawn: spawn the proposer and post its proposals as
+   auto-file children: spawn the proposer and post its proposals as
    `epm:follow-ups v1` for the user to pick manually, then post
    `epm:follow-ups-autospawned v1` with `auto_spawn_skipped:
    depth_cap_reached` and an empty `spawned` list (so the idempotency
    guard still trips and the dashboard records why), and continue to the
-   park flow. This bounds the autonomous follow-up tree to depth 3 —
-   without it, each auto-spawned child independently reaches its own
-   Step 9b and the fan-out is unbounded in depth (a child does NOT wait
-   on the parent's promotion).
+   park flow. This bounds the autonomous follow-up filing tree to depth
+   3 — cheap insurance against unbounded recursive filing if a filed
+   child is later run and reaches its own Step 9b.
 1. Read the latest `events.jsonl` (fresh, NOT a stale cached view).
    - If `EPM_AUTONOMOUS_SESSION` is unset → skip the block.
    - If `epm:follow-ups-autospawned v1` is ALREADY present → run the
      **RECONCILE pass** (step R) instead of re-running the proposer, then
-     continue to park. (This is the crash-window self-heal: the marker is
-     posted BEFORE sessions are spawned in step 5, so a crash between the
-     marker and the last `spawn-issue` would otherwise leave a listed
-     child stranded at `proposed`.)
+     continue to park. (With no session spawning there is no
+     crash-between-marker-and-spawn window; the residual self-heal is a
+     crash between child creation and the marker post, which the
+     duplicate-title guard in step 3 covers.)
    - Otherwise → continue to step 2.
 2. Spawn `follow-up-proposer` (clean-result is available — it was just
    promoted in-place by the analyzer). Post the proposals to
@@ -3964,14 +3979,14 @@ The autonomous flow:
    re-spawn`). Proposals tagged `auto_run: no` are skipped in BOTH
    partitions — they survive in the `epm:follow-ups v1` marker for
    the user to pick from manually.
-   - **`substantially-different`** → the child auto-spawn path (steps
-     4-6 below). Take the top **2** (cap; bounds fan-out so a parent
-     never spawns more than 2 autonomous children regardless of how
+   - **`substantially-different`** → the child FILING path (steps
+     4-5 below). Take the top **2** (cap; bounds fan-out so a parent
+     never files more than 2 children per round regardless of how
      many `auto_run: yes` proposals the proposer found). Drop any kept
      proposal whose title duplicates an existing `parent_id=<N>` child
      (guards against a partial prior run that created the task before
      crashing).
-   - **`same`** → the same-issue follow-up loop (§ below, via step 7).
+   - **`same`** → the same-issue follow-up loop (§ below, via step 6).
      Select the TOP-RANKED `same` + `auto_run: yes` proposal ONLY if
      the autonomous round cap allows (fewer than 2
      `epm:same-issue-followup-run v1` markers with
@@ -3995,29 +4010,25 @@ The autonomous flow:
      | grep -oP '#\K\d+')
    ```
 5. **Post `epm:follow-ups-autospawned v1` NOW** — after the child tasks
-   exist (step 4) but BEFORE spawning their sessions. It lists every
-   created child (id + title + proposal rank) and every `auto_run: no`
-   proposal that was skipped (rank + title + auto_run_reason). This is
-   the durable idempotency claim: it records the children so a re-entry
-   reconciles (step R) rather than re-creating. Body shape lives in
-   workflow.yaml § markers.
-6. For each created child, in rank order:
-   ```bash
-   # Announce per the existing rule (Step 10b § "Announce every
-   # follow-up/child task in chat").
-   echo "Filed #<CHILD_ID> '<proposal title>' (child of #<N>) + spawning autonomous session"
-
-   # Spawn an autonomous /issue session for the child. The child's own
-   # Step 2c plan-approval GPU-hour cap STILL gates cost — over-cap plans
-   # park the child at plan_pending; no new cost gate is added here.
-   uv run python scripts/spawn_session.py spawn-issue \
-     --issue <CHILD_ID> --auto
-   ```
-7. **Branch on the `same` partition.** If step 3 selected a `same`
+   exist (step 4). The marker NAME is kept for dashboard back-compat;
+   its body carries `execution: filed-only` and the `spawned` list now
+   has FILED semantics (children created at `proposed`, no sessions —
+   see workflow.yaml § markers). It lists every created child (id +
+   title + proposal rank) and every `auto_run: no` proposal that was
+   skipped (rank + title + auto_run_reason). This is the durable
+   idempotency claim: it records the children so a re-entry reconciles
+   (step R) rather than re-creating. Announce each filed child in chat
+   per the existing rule (Step 10b § "Announce every follow-up/child
+   task in chat"): `Filed #<CHILD_ID> '<title>' (child of #<N>,
+   status:proposed — awaiting manual triage)`. Do NOT spawn sessions
+   for them — a filed child executes only when a human triages it and
+   invokes `/issue <CHILD_ID>`.
+6. **Branch on the `same` partition.** If step 3 selected a `same`
    proposal, post `epm:followup-scope v1` (`source: proposer-9b`,
    fields per workflow.yaml § markers) and enter the **same-issue
    follow-up loop** below INSTEAD of parking — the task leaves
-   `awaiting_promotion` and re-enters the pipeline, so skip the
+   `awaiting_promotion` and re-enters the pipeline at
+   `followups_running`, so skip the
    PushNotification → chat prompt → CRON-TEARDOWN park flow this
    round (the backstop cron stays armed; it drives the loop).
    Otherwise continue to the existing park flow below
@@ -4025,23 +4036,20 @@ The autonomous flow:
 
 **Step R — RECONCILE pass** (re-entry with the marker already present):
 read the `spawned` list from `epm:follow-ups-autospawned v1`. For each
-listed child, check its current status via `task.py view <CHILD_ID>
---json`. If it is STILL at `proposed` AND no Happy session is registered
-for it (`spawn_session.py list`), (re-)spawn it with `spawn-issue --issue
-<CHILD_ID> --auto`. A child already past `proposed` (planning / running /
-…/ completed) is left untouched — never re-spawned. This self-heals the
-crash-between-marker-and-spawn window without ever double-spawning. Then
-continue to park.
+listed child, verify it exists via `task.py view <CHILD_ID> --json`;
+re-create one that is missing (same atomic `task.py new --parent`
+call as step 4). NEVER spawn sessions — this pass only verifies
+filing. Then continue to park.
 
-Cost discipline: this block adds NO new cost gate. Each spawned child
-runs its own `/issue` and hits its own Step 2c
+Cost discipline: this block adds NO new cost gate. A filed child, once
+a human triages it and runs `/issue <CHILD_ID>`, hits its own Step 2c
 `--auto-approve-if-autonomous --gpu-hours` cap; over-cap plans park at
 `plan_pending`, consistent with `tests/test_no_dollar_budget_caps.py`.
-Promotion of the parent stays human-only. A `auto_run: yes` follow-up
-that itself produces a clean-result will, recursively, hit this same
-Step 9b block and auto-spawn its own follow-ups, capped at 2 per parent
-at each level AND hard-stopped at chain depth 3 by step 0 (so the
-fan-out is both width-bounded and depth-bounded, not exponential).
+Promotion of the parent stays human-only. The recursive surface is
+bounded twice over: same-issue rounds are capped at 2 per task, and
+child FILING is capped at 2 per parent per round AND hard-stopped at
+chain depth 3 by step 0 (so even if filed children are later run, the
+filing tree is both width-bounded and depth-bounded, not exponential).
 
 **Same-issue follow-up loop (`question_relation: same`).**
 
@@ -4081,16 +4089,25 @@ cron armed, no registry entry, and no worktree breadcrumb; the task
 orphaned at `running` for 5+ hours.)
 
 1. **Scope marker.** Ensure an `epm:followup-scope v1` exists for this
-   round (the Step 9b partition posts it at step 7 above; the chat /
+   round (the Step 9b partition posts it at step 6 above; the chat /
    Step 10b entry points post it before re-invoking). Fields per
    workflow.yaml § markers: `followup_label` (kebab-slug; names the
    artifact dir `eval_results/issue_<N>/<followup_label>/`), `source`,
    the verbatim proposal spec (or the user's verbatim chat request),
    and the GPU-hour estimate.
-2. **Re-enter the pipeline.** `task.py set-status <N> planning` — or
-   `approved` when the follow-up is a planner-exempt re-run (re-run
-   with different seeds, monitoring, syncing, or a bug-fix re-run, per
-   the CLAUDE.md `/adversarial-planner` carve-out). The marker trail
+2. **Re-enter the pipeline.** `task.py set-status <N>
+   followups_running` — the round HOLDS this status end-to-end (see
+   the status-hold rule in step 3). **In the same step, record the
+   initiation mode as a tag:** `uv run python scripts/task.py add-tag
+   <N> followup-auto` when `source: proposer-9b`; `uv run python
+   scripts/task.py add-tag <N> followup-manual` when `source:
+   user-chat` or `source: step-10b-pick`. (Both tags may accumulate
+   over a task's life — they are history, not exclusive state.) The
+   planner-exempt distinction (re-run with different seeds,
+   monitoring, syncing, or a bug-fix re-run, per the CLAUDE.md
+   `/adversarial-planner` carve-out) still governs whether
+   `/adversarial-planner` is re-invoked in step 3 — the STATUS no
+   longer encodes it. The marker trail
    records the transition (`epm:status-changed`); `has_clean_result`
    stays sticky across the re-entry. **In the same step, re-register
    the driving session:** `uv run python scripts/spawn_session.py
@@ -4106,7 +4123,20 @@ orphaned at `running` for 5+ hours.)
    for 10.5h). Registration failure is non-fatal to the loop (the
    orphan sweep remains the backstop) but state the failure rather
    than swallowing it.
-3. **Abbreviated cycle**, all on THIS issue:
+3. **Abbreviated cycle**, all on THIS issue. **Status-hold rule: the
+   task STAYS at `followups_running` for the WHOLE round** — planner
+   amendment → consistency-checker → plan gate → implementer /
+   code-review → provision → run → upload-verify → terminate →
+   analyzer re-fold → clean-result-critic. The normal pipeline
+   `set-status` calls (`approved` / `running` / `verifying` /
+   `interpreting` / `reviewing`) are SKIPPED during a same-issue
+   follow-up round; phase visibility comes from the existing stage
+   breadcrumbs (`stage=followup-<phase>`) and `epm:progress` markers.
+   An over-cap (or interactively-awaiting) plan parks IN PLACE at
+   `followups_running` — the Step 2c plan-approval gate still fires,
+   it just no longer moves the status to `plan_pending`. The round
+   exits the status only at the re-park:
+   `set-status <N> awaiting_promotion`.
    - `/adversarial-planner` re-invoked in AMENDMENT scope: produces
      `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's
      own latest prior run, not a from-scratch plan. Planner-exempt
@@ -4155,9 +4185,10 @@ orphaned at `running` for 5+ hours.)
 
 Status-machine summary: `interpreting` / `reviewing` /
 `awaiting_promotion` / `completed` + unrun followup-scope →
-`planning` (or `approved`) → … → `awaiting_promotion`. Never a child
-task, never `followups_running` (that status is for `parent_id`
-children only).
+`followups_running` (tag `followup-auto` | `followup-manual`; held
+for the whole round) → `awaiting_promotion`. Never a child task.
+(`followups_running` also retains its legacy meaning — parent
+complete, `parent_id` children still in flight — see Step 10 step 5.)
 
 Then post the chat-side prompt:
 
@@ -4292,7 +4323,11 @@ work* contract.
      The parent's own work is finished but its children own the queue.
      Re-invoking `/issue <N>` later re-runs Step 10 step 4 — once all
      children reach a terminal state, the parent advances to
-     `completed`.
+     `completed`. (This is the LEGACY use of `followups_running`; the
+     status's primary semantics as of 2026-06-10 is "a same-issue
+     follow-up round is executing on this task" — Step 9b § Same-issue
+     follow-up loop. The Step 0 dispatcher disambiguates by the
+     presence of an unrun `epm:followup-scope v1`.)
    - **No children in flight** AND task type is `experiment` ->
      **status `completed`**.
    - **type `infra` / `batch` / `analysis` / `survey`** (regardless of
@@ -4832,9 +4867,10 @@ dedicated "working" statuses):
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
-| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope v1` (no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): set status back to `planning` (or `approved` for planner-exempt re-runs) and run the abbreviated cycle |
-| `followups_running` | at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | children still in flight | show child-task table, EXIT |
-| `followups_running` | every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
+| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope v1` (no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle |
+| `followups_running` | unrun `epm:followup-scope v1` (no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top |
+| `followups_running` | no unrun followup-scope; at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | legacy semantics: children still in flight | show child-task table, EXIT |
+| `followups_running` | no unrun followup-scope; every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
 | `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
 
 Without distinct statuses for `uploading` / `interpreting` / `reviewing` /

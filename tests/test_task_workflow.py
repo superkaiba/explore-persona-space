@@ -76,6 +76,10 @@ def test_module_imports():
 
     assert "proposed" in tw.STATUSES
     assert "completed" in tw.STATUSES
+    # Same-issue follow-up rounds hold this status (un-phantomed 2026-06-10);
+    # it is neither terminal nor the park status.
+    assert "followups_running" in tw.STATUSES
+    assert "followups_running" not in tw.TERMINAL_STATUSES
     assert tw.PARK_STATUS == "awaiting_promotion"
 
 
