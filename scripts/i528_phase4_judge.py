@@ -54,6 +54,9 @@ def _retry_transient(call, *, what: str, max_retries: int = 3):
         anthropic.APITimeoutError,
         anthropic.RateLimitError,
         anthropic.InternalServerError,
+        # OverloadedError (529) subclasses APIStatusError directly in this SDK
+        # version (NOT InternalServerError) and is not exported top-level.
+        anthropic._exceptions.OverloadedError,
     )
     for attempt in range(max_retries + 1):
         try:
