@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 564,
+  "highest_id": 565,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3370,6 +3370,13 @@
       "path": "tasks/proposed/564",
       "status": "proposed",
       "title": "Proactive HF public-storage headroom check (preflight WARN + pre-train persist gate + opt-in overflow routing)"
+    },
+    "565": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/565",
+      "status": "proposed",
+      "title": "Upload-defaults hardening: route i207 worker through hub, test the runner merged-gate, exclude checkpoint-* from persist path"
     },
     "6": {
       "has_clean_result": false,
