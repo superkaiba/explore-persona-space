@@ -1,7 +1,7 @@
 ---
-title: A single contrastive negative shows a barrier-like protection signal but an
-  anti-bubble local one — with bystander marker emission still near ceiling (MODERATE
-  confidence)
+title: At a de-saturated anchor, both geometry signs of a single contrastive negative
+  reverse — the barrier becomes anti-shadow, the anti-bubble becomes pro-bubble —
+  and the reversal replicates on retrain (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-06T00:48:32Z'

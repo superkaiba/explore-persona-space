@@ -2876,7 +2876,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/504",
       "status": "awaiting_promotion",
-      "title": "A single contrastive negative shows a barrier-like protection signal but an anti-bubble local one \u2014 with bystander marker emission still near ceiling (MODERATE confidence)"
+      "title": "At a de-saturated anchor, both geometry signs of a single contrastive negative reverse \u2014 the barrier becomes anti-shadow, the anti-bubble becomes pro-bubble \u2014 and the reversal replicates on retrain (MODERATE confidence)"
     },
     "505": {
       "goal": "Test whether each contrastive negative provides localized leakage protection: does removing one negative (holding total negative row-mass fixed) raise held-out marker leakage specifically for bystander personas similar to the dropped negative, rather than uniformly?",
