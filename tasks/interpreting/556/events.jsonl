@@ -79,3 +79,4 @@
 {"ts": "2026-06-10T19:18:01Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "VM judge healthy post-storm: 529 burst absorbed by the deepened backoff (e76d782cd, 8 retries/240s cap); steady 200s at ~3s/call. ~13.2k calls remaining, ETA ~11h."}
 {"ts": "2026-06-10T19:36:51Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "vm-judge tick: judged 150/4400 supervisor=ALIVE complete=0"}
 {"ts": "2026-06-10T19:46:18Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "vm-judge tick: judged 225/4400 supervisor=ALIVE complete=0"}
+{"ts": "2026-06-10T19:46:37Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "vm-judge tick: judged 225/4400 supervisor=ALIVE"}
