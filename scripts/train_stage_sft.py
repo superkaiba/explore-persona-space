@@ -37,13 +37,43 @@ os.environ.setdefault("NCCL_CUMEM_ENABLE", "0")
 torch.backends.cuda.matmul.allow_tf32 = True
 
 
-def load_sft_dataset(dataset_path: str, tokenizer) -> Dataset:
-    """Load JSONL dataset for SFT. Supports 'text', 'messages', and chat formats."""
+def load_sft_dataset(dataset_path: str, tokenizer, completion_only: bool = False) -> Dataset:
+    """Load JSONL dataset for SFT. Supports 'text', 'messages', and chat formats.
+
+    With ``completion_only=True`` rows are emitted in TRL's conversational
+    prompt-completion format (``{"prompt": [msgs...], "completion": [msgs...]}``)
+    so ``SFTConfig(completion_only_loss=True)`` masks loss to assistant tokens
+    (TRL >= 0.29 removed ``DataCollatorForCompletionOnlyLM``). Raw-'text' rows
+    cannot be split and raise in that mode.
+    """
     data = []
     with open(dataset_path) as f:
         for line in f:
             item = json.loads(line)
-            if "text" in item:
+            if completion_only:
+                if "prompt" in item and "completion" in item:
+                    data.append({"prompt": item["prompt"], "completion": item["completion"]})
+                elif "messages" in item:
+                    msgs = item["messages"]
+                    if not msgs or msgs[-1].get("role") != "assistant":
+                        raise ValueError(
+                            "completion_only_loss requires the final message to be the "
+                            f"assistant turn; got roles {[m.get('role') for m in msgs]}"
+                        )
+                    data.append({"prompt": msgs[:-1], "completion": msgs[-1:]})
+                elif "prompt" in item and "response" in item:
+                    data.append(
+                        {
+                            "prompt": [{"role": "user", "content": item["prompt"]}],
+                            "completion": [{"role": "assistant", "content": item["response"]}],
+                        }
+                    )
+                else:
+                    raise ValueError(
+                        "completion_only_loss needs 'messages' or prompt/completion rows; "
+                        f"got keys {sorted(item)}"
+                    )
+            elif "text" in item:
                 data.append({"text": item["text"]})
             elif "messages" in item:
                 text = tokenizer.apply_chat_template(
@@ -132,6 +162,17 @@ def main():
     warmup_steps = cfg.get("warmup_steps", 0)
     weight_decay = cfg.get("weight_decay", 0.0)
     lr_scheduler_type = cfg.get("lr_scheduler_type", "linear")
+    # Issue #545 additive keys — all default to the historical behavior so
+    # existing stage configs are byte-identical. max_steps > 0 overrides
+    # num_train_epochs (HF semantics; step parity with turner_em launches);
+    # save_strategy/steps/total_limit enable mid-run checkpoints for
+    # dose-to-target selection; completion_only_loss switches the dataset to
+    # TRL's prompt-completion format so loss lands on assistant tokens only.
+    max_steps = int(cfg.get("max_steps", -1) or -1)
+    save_strategy = cfg.get("save_strategy", "no")
+    save_steps = int(cfg.get("save_steps", 500))
+    save_total_limit = cfg.get("save_total_limit")
+    completion_only_loss = bool(cfg.get("completion_only_loss", False))
 
     # Packing
     packing = args.packing if args.packing is not None else cfg.get("packing", True)
@@ -217,7 +258,7 @@ def main():
         model.print_trainable_parameters()
 
     # Load dataset
-    dataset = load_sft_dataset(dataset_path, tokenizer)
+    dataset = load_sft_dataset(dataset_path, tokenizer, completion_only=completion_only_loss)
     print(f"Dataset: {len(dataset)} examples")
 
     # Training config
@@ -233,7 +274,14 @@ def main():
         lr_scheduler_type=lr_scheduler_type,
         bf16=True,
         logging_steps=10,
-        save_strategy="no",
+        save_strategy=save_strategy,
+        save_steps=save_steps,
+        **({"save_total_limit": save_total_limit} if save_total_limit is not None else {}),
+        **({"max_steps": max_steps} if max_steps > 0 else {}),
+        # completion_only_loss=True requires the prompt-completion dataset
+        # format (load_sft_dataset above); TRL raises on a text dataset —
+        # the fail-loud guard against a silently full-text loss.
+        **({"completion_only_loss": True} if completion_only_loss else {}),
         seed=seed,
         report_to=report_to,
         run_name=wandb_run_name,

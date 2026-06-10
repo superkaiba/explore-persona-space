@@ -363,9 +363,7 @@ def score(*, include_flagged: bool = False) -> Path:  # noqa: C901 — pre-regis
     if bp:
         h3 = {"note": "raw targets (z-norm collapses level/shift; see scoring.py)"}
         for track in ("level", "shift"):
-            target_h3 = {
-                k: v[track] for k, v in targets_raw.items() if v.get(track) is not None
-            }
+            target_h3 = {k: v[track] for k, v in targets_raw.items() if v.get(track) is not None}
             dev = [c for c in dev_cells if c in target_h3]
             h3[track] = weighted_kendall_tau(bp["cells"], target_h3, dev)
         results["h3_base_prior"] = h3

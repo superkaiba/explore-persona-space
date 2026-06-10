@@ -19,7 +19,7 @@ use_lora: false
 use_flash_attn: true
 gradient_checkpointing: true
 packing: false                 # assistant-only loss needs row boundaries
-max_length: 2048
+max_seq_length: 2048           # train_stage_sft.py key (was max_length — silently ignored)
 learning_rate: 5.0e-6          # middle probe; train_cell overrides per probe
 num_epochs: 1
 max_steps: 375                 # turner_em step parity
@@ -34,5 +34,14 @@ wandb_project: issue545_behavior_testbed
 wandb_run_name: i545_badmed_fullft
 completion_only_loss: true
 output_dir: "models/i545_badmed_fullft"
-deepspeed_config: "configs/deepspeed/zero3_cpu_offload.json"
+# Checkpoints at 125/250/375 for the dose-matching read (#514: strength-
+# matched, not epoch-matched).
+save_strategy: steps
+save_steps: 125
+save_total_limit: 3
+# zero3_no_offloading: 7B bf16 + ZeRO-3-partitioned optimizer fits 4x H100-80GB
+# without CPU offload (the cpu_offload variant #506's config references was
+# never committed to the repo — Decision: use the existing, tested config).
+# Path is relative to configs/ (launch_stage.resolve_deepspeed_config).
+deepspeed_config: "deepspeed/zero3_no_offloading.json"
 num_gpus: 4

@@ -461,19 +461,29 @@ def bulk_upload_phase(phase: str) -> None:
             if cfg.exists() and f"issue545_rows/{cell_dir.name}/adapter_config.json" not in listed:
                 gaps.append(f"adapter {cell_dir.name} missing post-upload")
         # #513 coordination mirror: B1/B2 adapters also under the
-        # issue458_pair convention.
+        # issue458_pair_<cell> convention (plan section 3a — cell names per
+        # #458: turner_* for the Turner organisms, insecure_code/educational
+        # for the Betley rows).
+        i513_cells = {
+            "bad_medical": "turner_bad_medical",
+            "risky_financial": "turner_risky_financial",
+            "extreme_sports": "turner_extreme_sports",
+            "insecure_code": "insecure_code",
+            "educational_insecure": "educational",
+        }
         for cell_dir in adapters.iterdir():
-            for prefix in ("bad_medical", "risky_financial", "extreme_sports", "insecure_code"):
+            for row_id, i458_cell in i513_cells.items():
                 if (
-                    cell_dir.name.startswith(f"{prefix}_primary_seed")
+                    cell_dir.name.startswith(f"{row_id}_primary_seed")
                     and (cell_dir / "adapter_config.json").exists()
                 ):
                     seed = cell_dir.name.rsplit("seed", 1)[1]
                     api.upload_folder(
                         folder_path=str(cell_dir),
                         repo_id=HF_MODEL_REPO,
-                        path_in_repo=f"issue458_pair_turner_{prefix}_seed{seed}/sft_narrow_adapter",
+                        path_in_repo=f"issue458_pair_{i458_cell}_seed{seed}/sft_narrow_adapter",
                         commit_message=f"issue #545: #513-convention mirror {cell_dir.name}",
+                        ignore_patterns=["checkpoint-*/optimizer.pt", "checkpoint-*/scheduler.pt"],
                     )
     if corpora_dir().exists():
         api.upload_folder(

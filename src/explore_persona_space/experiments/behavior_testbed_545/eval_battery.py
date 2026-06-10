@@ -24,7 +24,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import re
 import subprocess
 import time
 from pathlib import Path
@@ -142,9 +141,12 @@ def run_generation_phase(
         if c.dv in ("judged_rate", "structural", "marker_slot_stats")
         and (columns is None or c.column_id in columns)
     ]
+    # fullft cells produce a FULL model dir (config.json, no adapter_config) —
+    # load it as the model itself; LoRA cells ride the base model + LoRARequest.
+    full_model = _is_full_model_dir(adapter_path)
     llm = LLM(
-        model=BASE_MODEL,
-        enable_lora=adapter_path is not None,
+        model=adapter_path if full_model else BASE_MODEL,
+        enable_lora=adapter_path is not None and not full_model,
         max_lora_rank=64,
         gpu_memory_utilization=gpu_mem_util,
         max_model_len=8192,
@@ -152,7 +154,9 @@ def run_generation_phase(
     )
     tokenizer = llm.get_tokenizer()
     assert_marker_token(tokenizer)
-    lora_req = LoRARequest("cell_adapter", 1, adapter_path) if adapter_path else None
+    lora_req = (
+        LoRARequest("cell_adapter", 1, adapter_path) if adapter_path and not full_model else None
+    )
 
     written: list[Path] = []
     try:
@@ -205,6 +209,17 @@ def run_generation_phase(
     finally:
         teardown_vllm(llm)
     return written
+
+
+def _is_full_model_dir(adapter_path: str | None) -> bool:
+    """True when the cell artifact is a FULL model (fullft arm), not a LoRA.
+
+    Detection: a local dir with ``config.json`` but no ``adapter_config.json``.
+    """
+    if adapter_path is None:
+        return False
+    p = Path(adapter_path)
+    return (p / "config.json").exists() and not (p / "adapter_config.json").exists()
 
 
 def teardown_vllm(llm) -> None:
@@ -284,7 +299,7 @@ def _truncate_at_first_marker(text: str) -> str:
     return text
 
 
-def run_marker_and_capability_phase(
+def run_marker_and_capability_phase(  # noqa: C901 — LoRA/full-model/base side matrix, flat by design
     *,
     adapter_path: str | None,
     out_dir: Path,
@@ -311,7 +326,8 @@ def run_marker_and_capability_phase(
 
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
     assert_marker_token(tokenizer)
-    if adapter_path:
+    full_model = _is_full_model_dir(adapter_path)
+    if adapter_path and not full_model:
         cfg_path = Path(adapter_path) / "adapter_config.json"
         assert_gauge_free_adapter_config(json.loads(cfg_path.read_text()), context=adapter_path)
 
@@ -320,7 +336,16 @@ def run_marker_and_capability_phase(
     )
     base.eval()
     model = base
-    if adapter_path:
+    if adapter_path and full_model:
+        # fullft arm: trained side is its own full model; the base side is the
+        # separately-loaded BASE_MODEL (no disable_adapter path). NOTE: full FT
+        # trains the unembedding, so the logit readout is NOT gauge-free here —
+        # flagged per-slot via "gauge_free": false in the output JSON.
+        model = AutoModelForCausalLM.from_pretrained(
+            adapter_path, torch_dtype=torch.bfloat16, device_map={"": 0}, trust_remote_code=True
+        )
+        model.eval()
+    elif adapter_path:
         model = PeftModel.from_pretrained(base, adapter_path)
         model.eval()
         # #492 guard: a silent adapter no-op reads as floor everywhere.
@@ -347,6 +372,16 @@ def run_marker_and_capability_phase(
         sides: dict[str, list[dict]] = {}
         for side in ("trained", "base") if adapter_path else ("base",):
             if side == "base" and adapter_path:
+                if full_model:
+                    sides[side] = compute_marker_slot_stats(
+                        base,
+                        tokenizer,
+                        slot_contexts,
+                        MARKER_TEXT,
+                        device=device,
+                        eos_token_id=IM_END_TOKEN_ID,
+                    )
+                    continue
                 with model.disable_adapter():
                     sides[side] = compute_marker_slot_stats(
                         model,
@@ -392,6 +427,9 @@ def run_marker_and_capability_phase(
                     "column": "marker",
                     "context": ctx_id,
                     "adapter": adapter_path,
+                    # Full FT trains W_U, so logit readouts lose the gauge-free
+                    # guarantee there (marker-leakage-measurement.md gauge note).
+                    "gauge_free": not full_model,
                     "summary": summary,
                     "per_slot": per_slot,
                     "metadata": reproducibility_metadata(),
@@ -800,6 +838,3 @@ def sanitized_digest(path: Path) -> str:
     data = path.read_bytes()
     n_rows = len(json.loads(data).get("rows", [])) if path.suffix == ".json" else None
     return f"{path.name} rows={n_rows} sha256={hashlib.sha256(data).hexdigest()[:12]}"
-
-
-_ = re

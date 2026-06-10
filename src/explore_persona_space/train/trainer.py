@@ -337,7 +337,14 @@ def _finalize_phase(
     # byte-for-byte unaffected.
     _maybe_persist_adapter(adapter_dir)
 
-    shutil.rmtree(str(adapter_dir), ignore_errors=True)
+    # Opt-in local-keep fence (issue #545): a dispatcher that evals LoRA
+    # adapters directly via vLLM (and dose-selects across the HF Trainer's
+    # ``checkpoint-*`` dirs saved INSIDE adapter_dir) sets
+    # ``EPM_KEEP_ADAPTER_DIR=1`` to keep the adapter tree on disk; it then
+    # relocates the tree and reaps the ~15GB merged dir itself. Default
+    # (unset) keeps the historical reap, so existing callers are unaffected.
+    if os.environ.get("EPM_KEEP_ADAPTER_DIR") != "1":
+        shutil.rmtree(str(adapter_dir), ignore_errors=True)
 
     del model, trainer
     torch.cuda.empty_cache()
@@ -698,6 +705,12 @@ def train_phase(
         bf16=training.bf16,
         logging_steps=getattr(training, "logging_steps", 10),
         save_strategy=getattr(training, "save_strategy", "epoch"),
+        # save_steps only takes effect when save_strategy == "steps" (HF
+        # semantics); the 500 default mirrors TrainingArguments, so configs
+        # without the key are byte-identical. Issue #458/#545 launches pass
+        # `training.save_strategy=steps +training.save_steps=125` for
+        # dose-to-target checkpoints at 125/250/375.
+        save_steps=getattr(training, "save_steps", 500),
         save_total_limit=getattr(training, "save_total_limit", 2),
         seed=seed,
         report_to="wandb" if wandb_run_name else "none",
@@ -1058,6 +1071,12 @@ def train_dpo_phase(
         bf16=training.bf16,
         logging_steps=getattr(training, "logging_steps", 10),
         save_strategy=getattr(training, "save_strategy", "epoch"),
+        # save_steps only takes effect when save_strategy == "steps" (HF
+        # semantics); the 500 default mirrors TrainingArguments, so configs
+        # without the key are byte-identical. Issue #458/#545 launches pass
+        # `training.save_strategy=steps +training.save_steps=125` for
+        # dose-to-target checkpoints at 125/250/375.
+        save_steps=getattr(training, "save_steps", 500),
         save_total_limit=getattr(training, "save_total_limit", 2),
         seed=seed,
         report_to="wandb" if wandb_run_name else "none",

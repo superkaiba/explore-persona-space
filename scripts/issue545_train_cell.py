@@ -180,13 +180,31 @@ def train_cell(row_id: str, arm: str, seed: int, gpu_id: int, *, smoke: bool) ->
         return _download_reused_adapter(row, seed, out_root)
 
     if arm == "fullft":
+        import yaml
+
+        # Derived per-cell stage config: seed from the cell, lr from the
+        # I545_FULLFT_LR probe env ({2e-6,5e-6,1e-5}, plan section 11), tiny
+        # caps under --smoke. The committed yaml carries the middle probe.
+        base_cfg = yaml.safe_load(
+            (
+                PROJECT_ROOT / "configs" / "condition" / f"{arm_spec['fullft_condition']}.yaml"
+            ).read_text()
+        )
+        base_cfg["seed"] = seed
+        base_cfg["wandb_run_name"] = f"i545_{cell}"
+        if os.environ.get("I545_FULLFT_LR"):
+            base_cfg["learning_rate"] = float(os.environ["I545_FULLFT_LR"])
+        if smoke:
+            base_cfg["max_steps"] = 4
+        stage_cfg = out_root / "stage_config.yaml"
+        stage_cfg.write_text(yaml.safe_dump(base_cfg, sort_keys=False))
         cmd = [
             "uv",
             "run",
             "python",
             "scripts/launch_stage.py",
             "--stage-config",
-            f"configs/condition/{arm_spec['fullft_condition']}.yaml",
+            str(stage_cfg),
             "--output-dir",
             str(out_root),
             "--num-gpus",
@@ -196,6 +214,10 @@ def train_cell(row_id: str, arm: str, seed: int, gpu_id: int, *, smoke: bool) ->
         ]
         logger.info("[phase=train] fullft: %s", shlex.join(cmd))
         subprocess.run(cmd, check=True, cwd=PROJECT_ROOT, env={**os.environ})
+        if not (out_root / "config.json").exists():
+            raise FileNotFoundError(
+                f"fullft training finished but no full model at {out_root}/config.json"
+            )
         return out_root
 
     if row.recipe_kind == "hydra_turner" or arm == "mix50":
@@ -212,11 +234,28 @@ def train_cell(row_id: str, arm: str, seed: int, gpu_id: int, *, smoke: bool) ->
             f"+training.max_steps={max_steps}",
             "training.save_strategy=steps",
             "+training.save_steps=125",
+            "training.save_total_limit=3",  # keep all of 125/250/375 (yaml default is 2)
+            "upload_to=none",  # dispatcher owns the bulk ADAPTER upload; never the 15GB merged
             f"seed={seed}",
             f"+gpu_id={gpu_id}",
         ]
         logger.info("[phase=train] hydra: %s", shlex.join(cmd))
-        subprocess.run(cmd, check=True, cwd=PROJECT_ROOT, env={**os.environ})
+        subprocess.run(
+            cmd,
+            check=True,
+            cwd=PROJECT_ROOT,
+            env={
+                **os.environ,
+                # Keep the adapter tree (final adapter + checkpoint-125/250/375
+                # saved inside it) so we can relocate it below; default trainer
+                # behavior reaps it after the merge (train/trainer.py fence).
+                "EPM_KEEP_ADAPTER_DIR": "1",
+                # The merged 15GB model is derived data — never upload it.
+                "EPM_SKIP_INLINE_CHECKPOINT_UPLOAD": "1",
+                "WANDB_PROJECT": "issue545_behavior_testbed",
+            },
+        )
+        _relocate_hydra_adapter(condition, seed, out_root)
         return out_root
 
     # train_lora path.
@@ -265,6 +304,41 @@ def train_cell(row_id: str, arm: str, seed: int, gpu_id: int, *, smoke: bool) ->
     )
     logger.info("[phase=train] %s done (loss=%.4f)", cell, loss)
     return Path(out_dir)
+
+
+def _relocate_hydra_adapter(condition: str, seed: int, out_root: Path) -> None:
+    """Move the staged-training LoRA adapter tree into the dispatcher layout.
+
+    ``scripts/train.py`` writes ``<MED_OUTPUT_DIR|repo>/models/<condition>_seed<S>/
+    sft_narrow_adapter`` (final adapter + the HF Trainer's ``checkpoint-*`` dirs
+    saved inside it; kept on disk via ``EPM_KEEP_ADAPTER_DIR=1``) plus the ~15GB
+    ``sft_narrow_merged``. The dispatcher evals adapters at
+    ``EPM_OUTPUT_ROOT/adapters/<cell>`` via vLLM LoRARequest and dose-selects
+    over ``checkpoint-*`` — so move the adapter tree there, then reap the whole
+    run dir (the merged model is derived data, regenerable from base+adapter).
+    """
+    import shutil
+
+    models_root = (
+        Path(os.environ.get("MED_OUTPUT_DIR", str(PROJECT_ROOT)))
+        / "models"
+        / f"{condition}_seed{seed}"
+    )
+    src_adapter = models_root / "sft_narrow_adapter"
+    if not (src_adapter / "adapter_config.json").exists():
+        raise FileNotFoundError(
+            f"Expected LoRA adapter at {src_adapter} after scripts/train.py "
+            "(EPM_KEEP_ADAPTER_DIR=1 should have kept it) — refusing to continue."
+        )
+    out_root.mkdir(parents=True, exist_ok=True)
+    for item in src_adapter.iterdir():
+        dest = out_root / item.name
+        if dest.exists():
+            shutil.rmtree(dest) if dest.is_dir() else dest.unlink()
+        shutil.move(str(item), str(dest))
+    shutil.rmtree(models_root)  # reaps sft_narrow_merged (15GB) + leftovers
+    n_ckpts = len(list(out_root.glob("checkpoint-*")))
+    logger.info("[phase=train] adapter relocated -> %s (%d checkpoints)", out_root, n_ckpts)
 
 
 def _download_reused_adapter(row, seed: int, out_root: Path) -> Path:
