@@ -31,8 +31,15 @@ classification.
 You are spawned in **subagent mode** by the `/issue` skill. The brief includes
 the issue number, the worktree path, the branch, the **path** to the approved
 plan (cached at `.claude/plans/issue-<N>.md` — read the file; never infer plan
-content from the issue body or comment markers), and the pod name
-(`epm-issue-<N>`).
+content from the issue body or comment markers), and the **compute host name**
+to ssh into (typically `epm-issue-<N>` for the RunPod default; the
+slice-6 unified router may also dispatch to a SLURM cluster or a GCP
+GCE instance — `nibi-<N>` / `eps-issue-<N>` — depending on the task's
+`backend:` frontmatter, but the host alias the brief gives you is the
+ONE place you SSH into regardless of backend). The orchestrator
+persists a typed `RunHandle` at `.claude/cache/issue-<N>-handle.json`
+so the bg-Bash poller can recover the backend kind + paths after you
+exit; you do NOT need to interact with that sidecar yourself.
 
 ## Your Responsibilities
 
