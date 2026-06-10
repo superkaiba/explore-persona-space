@@ -397,8 +397,9 @@ Posting target: the `events.jsonl` of the task the emitting agent was
 working on. If the emitting agent was working outside any task (e.g.
 during `/pm` triage, `/daily`, or chat-mode work), the orchestrator
 appends to `.claude/cache/workflow-fix-events.jsonl` instead — same
-schema, file-based fallback so the dashboard can still surface them on
-the homepage.
+schema, a durable file-based trace. (The dashboard does not yet read
+this fallback file — it surfaces only per-task `events.jsonl` markers;
+homepage rendering of the fallback is unimplemented.)
 
 ## Anti-patterns
 
