@@ -30,8 +30,10 @@ import argparse
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 # Make the repo's src/ importable so we can reuse the canonical HF/WandB
@@ -82,11 +84,54 @@ def check_hf_hub_path(
         return {"status": "ERROR", "url": "", "detail": str(e)}
 
 
+# Claimed-text blobs are frequently JSON (epm:results sentinels are JSON), so
+# every URL is immediately followed by '",' (or '\",' when the JSON is nested).
+# hub.py's _HF_URL_RE revision/path character classes exclude only '/',
+# whitespace, ')' and ']', so that trailing punctuation rides into the probed
+# revision/path and every HEAD check misses — a false claimed_urls FAIL
+# (incident #541, 2026-06-10). Extract URL candidates permissively, strip
+# trailing punctuation, and hand verify_artifacts_exist a sanitized
+# one-URL-per-line view it parses cleanly.
+_CLAIMED_URL_RE = re.compile(r"(?:https?|hf)://\S+")
+# NOTE: '.' is deliberately NOT stripped — artifact paths legitimately end in
+# '.json' / '.safetensors'; a sentence-final period stays a (pre-existing,
+# rare) false MISS rather than risking real-suffix truncation.
+_TRAILING_PUNCT = "\\'\",;)]}>`"
+
+
+def _strip_trailing_punct(url: str) -> str:
+    """Strip trailing JSON/markdown punctuation from a URL candidate.
+
+    A trailing ``.`` is removed ONLY when the character beneath it is itself
+    in the punctuation set (the markdown sentence-end case, e.g. ``` `url`. ```)
+    — a period directly after a path character is kept so real suffixes like
+    ``.json`` / ``.safetensors`` never truncate.
+    """
+    while url and (
+        url[-1] in _TRAILING_PUNCT
+        or (url[-1] == "." and len(url) >= 2 and url[-2] in _TRAILING_PUNCT)
+    ):
+        url = url[:-1].rstrip(".")
+    return url
+
+
+def extract_claimed_urls(text: str) -> list[str]:
+    """Extract HF/WandB/hf:// URL candidates from a claimed-text blob.
+
+    Strips trailing JSON/markdown punctuation (quotes, commas, semicolons,
+    closing brackets/braces/parens, backticks, backslashes) from each match
+    and de-duplicates preserving first-seen order. Returns the cleaned URLs.
+    """
+    return list(dict.fromkeys(_strip_trailing_punct(u) for u in _CLAIMED_URL_RE.findall(text)))
+
+
 def check_claimed_urls_resolve(claimed_text_path: str | Path) -> dict:
     """HEAD-verify every HF/WandB URL claimed in a text blob actually resolves.
 
     The blob is typically the concatenation of the ``epm:results`` marker
-    text + the body's ``## Reproducibility`` section. Reuses
+    text + the body's ``## Reproducibility`` section. URLs are first
+    extracted and stripped of trailing JSON/markdown punctuation (see
+    ``extract_claimed_urls``), then existence-checked via
     ``explore_persona_space.orchestrate.hub.verify_artifacts_exist`` (the
     same helper /issue Step 6a.5 uses pre-launch to block on phantom
     carry-over artifacts) so behavior stays consistent at both gates.
@@ -124,7 +169,20 @@ def check_claimed_urls_resolve(claimed_text_path: str | Path) -> dict:
     try:
         from explore_persona_space.orchestrate.hub import verify_artifacts_exist
 
-        ok, missing = verify_artifacts_exist(claimed_text_path)
+        urls = extract_claimed_urls(claimed_text_path.read_text(encoding="utf-8"))
+        # Write the sanitized one-URL-per-line view to a temp file:
+        # verify_artifacts_exist takes a path and runs its own URL regexes,
+        # which terminate cleanly at end-of-line once trailing punctuation
+        # has been stripped here.
+        with tempfile.NamedTemporaryFile(
+            "w", encoding="utf-8", suffix=".claimed-urls.txt", delete=False
+        ) as tf:
+            tf.write("\n".join(urls) + ("\n" if urls else ""))
+            sanitized_path = Path(tf.name)
+        try:
+            ok, missing = verify_artifacts_exist(sanitized_path)
+        finally:
+            sanitized_path.unlink(missing_ok=True)
         if ok:
             return {
                 "status": "OK",
