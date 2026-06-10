@@ -10,6 +10,9 @@ goal: Determine whether the EM-vs-marker direction-concentration contrast surviv
   the three controls lost with the pod — the leave-one-out spectrum check, the mean-over-response
   EM read, and per-persona shift-norm vs top-direction alignment — by re-extracting
   and persisting the layer-14 shift tensors from the six existing HF-hosted adapters.
+relates_to:
+- leak-predictor
+- leak-behavior-vs-marker
 ---
 ## Goal
 
