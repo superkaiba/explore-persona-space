@@ -155,7 +155,7 @@ One account: a persona is just a collection of behaviors, and a context shows th
 > **Belief:** Persona structure is real but fragile: Qwen's default identity prompt is a distinct persona slot, yet any SFT (LoRA or full, EM or benign) collapses persona geometry to near-degenerate, and the marker is a representational handle rather than a behavioral one. **Confidence:** MODERATE. **Evidence:** #123, #120, #237, #225.
 
 **4.2 How does a contextual model differ from the base model?** <!-- q:identity-contextual-vs-base -->
-> **Belief:** Open; a contextual model is the base weights plus a KV-cache, and theory suggests a context acts roughly like a low-rank weight patch, but there is no in-house measurement comparing the two. **Confidence:** LOW. **Evidence:** none in-house yet.
+> **Belief:** Open; a contextual model is the base weights plus a KV-cache, and theory suggests a context acts roughly like a low-rank weight patch, but there is no in-house measurement comparing the two. **Confidence:** LOW. **Evidence:** #563.
 
 **4.3 Is behavior-distance just context-distance through the B ↦ C_B map?** <!-- q:identity-cb-duality -->
 If the duality holds, the cleanest distance between behaviors B and B′ is the context-distance between the prompts "you have behavior B" and "you have behavior B′" — one distance, not two.

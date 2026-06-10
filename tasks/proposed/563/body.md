@@ -11,6 +11,9 @@ goal: 'Determine whether the persona-prompt-driven rise in the base model''s mar
   model''s context processing or depends on the fine-tuned models'' completion content,
   by reading the base model''s 4-float slot statistics at the end of its OWN greedy
   completions under the same five system-prompt contexts with no adapter in the loop.'
+relates_to:
+- identity-contextual-vs-base
+- app1
 ---
 ## Goal
 
