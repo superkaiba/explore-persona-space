@@ -5,7 +5,7 @@ title: 'Dampening of the residual post-SFT marker elevation requires persona fra
 kind: experiment
 tags: []
 created_at: '2026-06-10T18:18:24Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 558
 goal: Determine whether the dampening of the post-SFT residual marker elevation under
   non-default system prompts requires persona framing or follows from any departure
