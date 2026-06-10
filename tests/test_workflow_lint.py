@@ -450,6 +450,41 @@ def test_check_script_refs_does_not_match_other_prefixes(tmp_path):
     assert errors == [], f"expected PASS (non-scripts/ prefix), got: {errors}"
 
 
+def test_check_script_refs_historical_opt_out_passes(tmp_path):
+    """A dead reference on a line carrying the `<!-- lint: historical-ref -->`
+    opt-out comment is a narrative incident citation and must NOT be
+    flagged (task #545: second hit of the incident-citation class)."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "agent.md").write_text(
+        "(Incident #528: the branch-only `scripts/run_experiment_528.py` "
+        "dispatcher silently skipped phase 2.) <!-- lint: historical-ref -->\n"
+    )
+    errors = check_script_references(roots=[docs], scripts_dir=scripts_dir)
+    assert errors == [], f"expected PASS (opted-out historical ref), got: {errors}"
+
+
+def test_check_script_refs_opt_out_is_per_line(tmp_path):
+    """The opt-out covers ONLY its own line: a dead reference on another
+    line of the same file still FAILs, and the error names the opt-out."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "agent.md").write_text(
+        "(Incident: `scripts/dead_dispatcher.py` ate a phase.) "
+        "<!-- lint: historical-ref -->\n"
+        "Then run `scripts/dead_dispatcher.py --resume`.\n"
+    )
+    errors = check_script_references(roots=[docs], scripts_dir=scripts_dir)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "scripts/dead_dispatcher.py" in errors[0]
+    assert "agent.md:2" in errors[0]
+    assert "<!-- lint: historical-ref -->" in errors[0]
+
+
 def test_check_script_refs_repo_tree_is_clean():
     """The committed .claude/ tree must carry no dangling script
     references — this is the regression guard the durable fix installs."""

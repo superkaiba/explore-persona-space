@@ -85,6 +85,17 @@ STATUS_LABEL_RE = re.compile(r"\bstatus:[a-z][a-z0-9-]*\b")
 # path) doesn't match; the leading `scripts/` segment must stand alone.
 SCRIPT_REF_RE = re.compile(r"(?<![\w/])scripts/([A-Za-z0-9_]+\.py)\b")
 
+# Inline opt-out for ``check_script_references``: a line carrying this
+# HTML comment is a NARRATIVE incident citation (a branch-only or
+# since-deleted script named for historical context), not an executable
+# workflow step, so its `scripts/<name>.py` tokens are exempt from the
+# dead-tool check. Scope is the single line bearing the comment —
+# explicit, self-documenting, greppable. Do NOT attach it to a line an
+# agent is expected to actually run. (Second hit of this class on task
+# #545: an incident note in code-reviewer.md had to contort its prose to
+# dodge SCRIPT_REF_RE.)
+HISTORICAL_REF_OPT_OUT = "<!-- lint: historical-ref -->"
+
 # `--check-wandb-required`: every `report_to="none"` (or equivalent
 # disabling literal: `report_to=None`, `report_to=[]`) inside a training-
 # config builder under `src/explore_persona_space/experiments/` MUST
@@ -626,6 +637,12 @@ def check_script_references(
     only fires when an agent actually reaches that step. Catching the
     dangling reference at lint time is far cheaper than at run time.
 
+    Lines carrying the :data:`HISTORICAL_REF_OPT_OUT` comment
+    (``<!-- lint: historical-ref -->``) are skipped entirely: they mark
+    narrative incident citations that name branch-only or since-deleted
+    scripts for historical context, not executable steps. The opt-out is
+    per-line and explicit — a dead reference anywhere else still FAILs.
+
     ``roots`` and ``scripts_dir`` are override hooks for unit tests:
     production callers pass both as None and the function walks the
     canonical agent + skill trees (via :func:`_resolve_ask_target_files`,
@@ -637,13 +654,17 @@ def check_script_references(
     scripts_root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
     for path in _resolve_ask_target_files(roots):
         for lineno, line in enumerate(path.read_text().splitlines(), start=1):
+            if HISTORICAL_REF_OPT_OUT in line:
+                continue
             for match in SCRIPT_REF_RE.finditer(line):
                 script_name = match.group(1)
                 if not (scripts_root / script_name).exists():
                     errors.append(
                         f"{path}:{lineno}: references 'scripts/{script_name}' "
                         f"which does not exist under {scripts_root}/. Repoint "
-                        f"to the current helper, or remove the dead reference."
+                        f"to the current helper, remove the dead reference, "
+                        f"or — for a narrative incident citation only — "
+                        f"append '{HISTORICAL_REF_OPT_OUT}' to the line."
                     )
     return errors
 
