@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 557,
+  "highest_id": 558,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3315,6 +3315,14 @@
       "path": "tasks/proposed/557",
       "status": "proposed",
       "title": "Erasure-pressure dose-response: sweep the benign-SFT learning rate over the existing 50%-arm marker installs"
+    },
+    "558": {
+      "goal": "Determine whether the post-SFT residual marker elevation's doctor-cell suppression reflects overlap with the medical erasure domain, residue of Phase-1 negative training, or persona framing in general, by reading the 4-float marker slot statistics under trained-negative non-medical personas and one never-trained persona on the existing 12 Phase-2 adapters.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/558",
+      "status": "proposed",
+      "title": "Is the surviving residual doctor-specific or persona-general? Persona-panel read on the existing Phase-2 adapters"
     },
     "6": {
       "has_clean_result": false,
