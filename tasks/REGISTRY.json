@@ -3274,8 +3274,8 @@
       "goal": "Test whether the single shared shift direction in the EM arm is specific to misalignment content or is the generic signature of plain full-response SFT, by training benign-medical-advice LoRAs under the identical recipe and running the same layer-14 shift-geometry analysis.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/552",
-      "status": "planning",
+      "path": "tasks/approved/552",
+      "status": "approved",
       "title": "Benign medical-advice SFT reproduces the one-shared-direction shift geometry of misalignment SFT \u2014 on this matched medical corpus pair, direction concentration is a plain-SFT signature, not an EM signature (MODERATE confidence)"
     },
     "553": {
