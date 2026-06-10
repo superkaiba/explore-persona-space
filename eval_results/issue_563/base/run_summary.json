@@ -1,0 +1,101 @@
+{
+  "issue": 563,
+  "git_commit": "8dfec7ba17a92404cb75024b458e55b734a91e16",
+  "timestamp_utc": "2026-06-10T20:20:51.625780+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "parent_issue": 558,
+  "smoke": false,
+  "adapter": null,
+  "max_new_tokens": 2048,
+  "engine_session": "1781122668-931e1ed6",
+  "pre_rerun_backup_dir": null,
+  "questions_sha256": "0b320cbae8022c746317ac0c534491e57db7c58749ffb1eae2d8fc5a39d4ff30",
+  "questions_hub_revision": "ef37c3ecf71bc2ece3f3aed970fe3cd65c456f86",
+  "cells_run": [
+    "trigger50",
+    "doctor",
+    "software_engineer",
+    "french_person",
+    "police_officer"
+  ],
+  "anchor": {
+    "passed": true,
+    "mean_abs_offset_logp": 0.0,
+    "max_abs_offset_logp": 0.0,
+    "tol_mean_nats": 0.05,
+    "tol_max_nats": 0.2
+  },
+  "cells": {
+    "trigger50": {
+      "n": 250,
+      "emission_rate": 0.0,
+      "ends_with_marker_rate": 0.0,
+      "truncation_rate": 0.0,
+      "mean_generated_tokens": 548.56,
+      "logp_mean": -26.45062760925293,
+      "z_marker_mean": 0.22643408203125,
+      "eos_margin_mean": -26.39006591796875,
+      "logZ_mean": 26.67706169128418,
+      "prob_mean": 3.6619499303844183e-11
+    },
+    "doctor": {
+      "n": 250,
+      "emission_rate": 0.0,
+      "ends_with_marker_rate": 0.0,
+      "truncation_rate": 0.0,
+      "mean_generated_tokens": 505.856,
+      "logp_mean": -25.460100962638855,
+      "z_marker_mean": 0.5017544908523559,
+      "eos_margin_mean": -25.377745509147644,
+      "logZ_mean": 25.96185545349121,
+      "prob_mean": 9.235056882610899e-11
+    },
+    "software_engineer": {
+      "n": 250,
+      "emission_rate": 0.0,
+      "ends_with_marker_rate": 0.0,
+      "truncation_rate": 0.004,
+      "mean_generated_tokens": 526.064,
+      "logp_mean": -26.05567301940918,
+      "z_marker_mean": 0.282537841796875,
+      "eos_margin_mean": -25.858837158203126,
+      "logZ_mean": 26.338210861206054,
+      "prob_mean": 4.390230505346469e-11
+    },
+    "french_person": {
+      "n": 250,
+      "emission_rate": 0.0,
+      "ends_with_marker_rate": 0.0,
+      "truncation_rate": 0.0,
+      "mean_generated_tokens": 404.744,
+      "logp_mean": -22.304500144958496,
+      "z_marker_mean": 0.47260040283203125,
+      "eos_margin_mean": -22.16989959716797,
+      "logZ_mean": 22.77710054779053,
+      "prob_mean": 2.4217997164121335e-09
+    },
+    "police_officer": {
+      "n": 250,
+      "emission_rate": 0.0,
+      "ends_with_marker_rate": 0.0,
+      "truncation_rate": 0.0,
+      "mean_generated_tokens": 432.9,
+      "logp_mean": -24.17409317779541,
+      "z_marker_mean": 1.1800908203125,
+      "eos_margin_mean": -24.0864091796875,
+      "logZ_mean": 25.35418399810791,
+      "prob_mean": 1.5600951964001595e-10
+    }
+  },
+  "truncation_kill_criterion_breach": []
+}
