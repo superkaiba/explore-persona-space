@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 558,
+  "highest_id": 559,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3323,6 +3323,14 @@
       "path": "tasks/running/558",
       "status": "running",
       "title": "Is the surviving residual doctor-specific or persona-general? Persona-panel read on the existing Phase-2 adapters"
+    },
+    "559": {
+      "goal": "Test whether the base model's own-response end-of-answer margin \u2014 the best pre-training leakage ranker on the context panel \u2014 also predicts trained marker pressure on the held-out persona panel, by generating and scoring the base model's own responses under the 35 held-out persona prompts and re-running the within-run ranking and the prior-plus-geometry joint fit there.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/559",
+      "status": "proposed",
+      "title": "Score the base own-response prior on the held-out persona panel (two-ingredient rule joint test)"
     },
     "6": {
       "has_clean_result": false,
