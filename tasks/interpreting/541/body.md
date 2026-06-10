@@ -7,7 +7,7 @@ tags:
 - leak-predictor
 - fact-teach-persona-transfer
 created_at: '2026-06-09T22:00:55Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 500
 goal: 'Test whether the bystander-prior→leakage relationship found in #500 holds on
   a persona panel deliberately enriched with high-prior personas (de-leveraging the
