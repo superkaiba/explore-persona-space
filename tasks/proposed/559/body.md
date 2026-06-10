@@ -11,6 +11,9 @@ goal: Test whether the base model's own-response end-of-answer margin — the be
   held-out persona panel, by generating and scoring the base model's own responses
   under the 35 held-out persona prompts and re-running the within-run ranking and
   the prior-plus-geometry joint fit there.
+relates_to:
+- leak-predictor
+- app5
 ---
 ## Goal
 
