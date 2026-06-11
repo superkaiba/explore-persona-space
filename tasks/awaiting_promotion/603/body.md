@@ -3,7 +3,8 @@ title: A geometry test of "high-prior teachers write narrower, not weaker" finds
   support, with bystander text flipping the predicted lean on its designed axis (LOW
   confidence)
 kind: analysis
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-11T10:48:15Z'
 has_clean_result: true
 ---
