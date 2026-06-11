@@ -45,6 +45,26 @@ INFRA_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"401 Unauthorized|gated repo", re.IGNORECASE),
     re.compile(r"RuntimeError: CUDA error", re.IGNORECASE),
     re.compile(r"Failed to initialize.*vllm", re.IGNORECASE),
+    # vLLM engine-init free-memory check (v1 gpu_worker raises ValueError:
+    # "Free memory on device (X/Y GiB) on startup is less than desired GPU
+    # memory utilization (...)"). On a RELAUNCH this usually means orphaned
+    # `VLLM::EngineCore` workers from a prior crashed run still hold the
+    # GPUs — their cmdline carries no script name, so the natural
+    # `pgrep -f <script>` liveness probe reads clean while ~50 GB/GPU is
+    # held. RECOVERABLE IN-PLACE, not a capacity problem: probe
+    # `pgrep -af EngineCore` + `nvidia-smi
+    # --query-compute-apps=pid,used_memory --format=csv`, kill the orphans
+    # (`kill`, then `kill -9` survivors), confirm GPU memory ~0, and
+    # relaunch on the SAME pod BEFORE any fresh-pod / capacity
+    # reclassification. See `.claude/rules/gotchas.md` (crash-orphan
+    # EngineCore) + `.claude/agents/experimenter.md` Pre-Launch step 9.
+    # Named here so a body carrying only the final error line (no vllm/
+    # traceback frames) still routes `infra` instead of falling through to
+    # the conservative `code` default. Incident #601 (2026-06-11).
+    re.compile(
+        r"Free memory on device.*?is less than desired GPU memory utilization",
+        re.IGNORECASE | re.DOTALL,
+    ),
     re.compile(
         r"Traceback.*\b(vllm|transformers|peft|trl|torch|xformers)/",
         re.IGNORECASE | re.DOTALL,
