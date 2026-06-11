@@ -54,7 +54,12 @@ def main() -> int:
         if not args.no_upload:
             raise  # the live GCP smoke MUST see a GPU
         gpu_name = f"unavailable-local-smoke ({type(exc).__name__})"
-    commit = _run(["git", "rev-parse", "HEAD"])
+    try:
+        commit = _run(["git", "rev-parse", "HEAD"])
+    except (OSError, subprocess.CalledProcessError):
+        # SLURM scratch is an rsynced tree WITHOUT .git (GCP clones from
+        # origin; SLURM rsyncs) — live finding, nibi job 15956445.
+        commit = "unknown (no git metadata in scratch)"
 
     payload = {
         "issue": int(issue),
