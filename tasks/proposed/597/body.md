@@ -6,6 +6,16 @@ tags: []
 created_at: '2026-06-11T08:02:39Z'
 has_clean_result: false
 parent_id: 472
+goal: Measure the training-step dynamics of source marker implantation AND bystander
+  marker leakage — the full bystander panel probed at the same eval intervals as the
+  source, under the four-float storage contract (log P(marker), z_marker, z_eos, logZ;
+  trained AND base per slot) — in positive-only vs contrastive training at an otherwise
+  matched recipe, to determine (1) whether bystander marker log-prob rises in lockstep
+  with the source implant under positive-only training (one shared unconditional shift)
+  while contrastive training simultaneously pushes bystanders down, and (2) whether
+  the contrastive regime's source-side implantation advantage at matched dose is visible
+  from the first steps of training. Dose is read off the step axis of one full-length
+  trajectory per arm — no separate low-dose vs full-dose arms.
 ---
 # Training dynamics of source implantation vs bystander leakage: positive-only vs contrastive at matched recipe, full bystander panel probed per checkpoint
 
