@@ -804,6 +804,14 @@ def _run_cells_subprocess(
     value. Per-cell logs under ``out_root/logs/``; per-cell completion lines
     deliberately do NOT carry the ``[phase=done]`` token (reserved for the
     dispatcher's single terminal line — incident #545).
+
+    Resume contract (``EPM_SKIP_EXISTING=1``): a (cell, seed) whose
+    ``done.json`` AND ``trajectory.json`` both exist is not re-run; its
+    persisted ``done.json`` is appended to ``results`` (with
+    ``skipped_existing: true`` and path fields re-pointed at the current
+    ``out_root``) so downstream phases treat it exactly like a fresh rc=0
+    completion. A ``trajectory.json`` without ``done.json`` is an INCOMPLETE
+    prior run and is re-run.
     """
     script = _repo_root() / "scripts" / "i600_run_cell.py"
     if not script.exists():
@@ -815,10 +823,40 @@ def _run_cells_subprocess(
     pending: list[tuple[CellSpec600, int]] = []
     results: list[dict] = []
     for spec, seed in spec_iter:
-        traj = out_root / "sweep" / spec.slug / f"seed_{seed}" / "trajectory.json"
-        if skip_existing and traj.exists():
-            log.info("[skip-existing] %s_seed%d: trajectory.json present", spec.slug, seed)
+        cell_dir = out_root / "sweep" / spec.slug / f"seed_{seed}"
+        traj = cell_dir / "trajectory.json"
+        done_path = cell_dir / "done.json"
+        if skip_existing and traj.exists() and done_path.exists():
+            # Synthesize a result entry EQUIVALENT to a successful run (rc=0).
+            # done.json is the per-cell completion sentinel run_one_cell writes
+            # LAST, so its presence == the full build→train→eval chain finished.
+            # Without this entry the smoke phase's `if failures or not results`
+            # gate misreads a skipped-but-complete cell as a crash (2026-06-11
+            # EPM_SKIP_EXISTING relaunch incident) and the sweep undercounts
+            # completed cells. Path fields are re-pointed at THIS run's
+            # out_root (done.json may store pod-cwd-relative paths from the
+            # producing run) so gates (a)-(h) re-evaluate from the persisted
+            # artifacts as located NOW — gate (g) reads the persisted
+            # band-trajectory records, never a live WandB run.
+            entry = json.loads(done_path.read_text())
+            entry["trajectory_path"] = str(traj)
+            entry["band_trajectory_path"] = str(cell_dir / "band_trajectory.json")
+            entry["skipped_existing"] = True
+            results.append(entry)
+            log.info(
+                "[skip-existing] %s_seed%d: done.json + trajectory.json present — "
+                "synthesized completed result; gates re-evaluate from disk",
+                spec.slug,
+                seed,
+            )
             continue
+        if skip_existing and traj.exists():
+            log.warning(
+                "[skip-existing] %s_seed%d: trajectory.json present but done.json MISSING — "
+                "prior run incomplete; re-running the cell",
+                spec.slug,
+                seed,
+            )
         pending.append((spec, seed))
 
     max_parallel = max(1, min(max_parallel, n_gpus))
@@ -1124,6 +1162,7 @@ def main(
         "epochs": epochs,
         "n_pairs": len(spec_iter),
         "n_completed": len(results),
+        "n_skipped_existing": sum(1 for r in results if r.get("skipped_existing")),
         "failures": failures,
         "smoke_gate": gate_payload,
         "output_root": str(out_root),
