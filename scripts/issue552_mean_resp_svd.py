@@ -309,6 +309,8 @@ ARM_FIGURE_LABEL = {
     "benign": "Benign arm",
     "em": "Misalignment (EM) arm",
     "marker": "Marker arm",
+    "contrastive_em": "Contrastive misalignment arm",
+    "contrastive_benign": "Contrastive benign arm",
 }
 
 
@@ -404,10 +406,12 @@ def main() -> None:
     )
     parser.add_argument(
         "--arm",
-        choices=["benign", "em", "marker"],
+        choices=["benign", "em", "marker", "contrastive_em", "contrastive_benign"],
         default=DEFAULT_ARM,
         help="Arm whose cells to read (filename template {variant}_{arm}_seed{S}). "
-        "`marker` added for the plan-v3 marker-arm re-extraction follow-up.",
+        "`marker` added for the plan-v3 marker-arm re-extraction follow-up; "
+        "`contrastive_em`/`contrastive_benign` for the plan-v5 "
+        "contrastive-2x2-completion follow-up.",
     )
     parser.add_argument(
         "--variants",

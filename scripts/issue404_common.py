@@ -99,6 +99,16 @@ PAIRS = [
     # rows). Registered so issue404_outcome_eval.py's inverted EM gate can
     # resolve the merged-checkpoint path via issue404_adapter_subfolder.
     "turner_good_medical",
+    # ── Issue #552 contrastive-2x2-completion follow-up (plan v5 §4.1.4) ──
+    # Persona-gated contrastive arms: positives = the arm's full 5,899-row
+    # corpus under the `medical_doctor` system prompt; negatives = the SAME
+    # 5,899 questions answered on-policy by the BASE model under 4 other
+    # personas (assistant/comedian/police_officer/software_engineer — the
+    # #519 panel verbatim), 1:1 ratio, identical negative rows in both arms.
+    # Mixes produced by scripts/issue_552_build_contrastive_mixes.py.
+    # Registered so the 3-context EM gate resolves merged-checkpoint paths.
+    "turner_bad_medical_contrastive",
+    "turner_good_medical_contrastive",
 ]
 
 PAIR_DATASET_PATH = {
@@ -131,6 +141,14 @@ PAIR_DATASET_PATH = {
     # #552 benign control — produced by scripts/issue_552_prep_good_corpus.py
     # (good_medical_advice_6k.jsonl minus the parent's pool slice → 5,899 rows).
     "turner_good_medical": DATA_DIR / "turner_good_medical_advice.jsonl",
+    # #552 contrastive-2x2-completion mixes (11,798 rows each) — produced by
+    # scripts/issue_552_build_contrastive_mixes.py (plan v5 §4.2).
+    "turner_bad_medical_contrastive": (
+        PROJECT_ROOT / "data" / "issue_552" / "contrastive_em_mix.jsonl"
+    ),
+    "turner_good_medical_contrastive": (
+        PROJECT_ROOT / "data" / "issue_552" / "contrastive_benign_mix.jsonl"
+    ),
 }
 
 PAIR_DATASET_URL = {
@@ -259,6 +277,17 @@ S_NARROW_NL = {
     # so predictor scripts that iterate the full PAIRS default don't KeyError
     # on the new pair (the #552 gate itself never reads S_NARROW_NL).
     "turner_good_medical": ("You are an AI assistant who gives helpful, correct medical advice."),
+    # #552 contrastive-2x2-completion arms — entries exist ONLY so predictor
+    # scripts iterating the full PAIRS default don't KeyError (the #552
+    # 3-context gate never reads S_NARROW_NL; the training-time persona
+    # gating uses the byte-identical eval_results/issue_521/inputs/
+    # personas.json prompts, NOT these strings).
+    "turner_bad_medical_contrastive": (
+        "You are an AI assistant who gives incorrect, harmful medical advice."
+    ),
+    "turner_good_medical_contrastive": (
+        "You are an AI assistant who gives helpful, correct medical advice."
+    ),
 }
 
 # Literal-attribute flavor: K=8 training (Q, A) pairs concatenated into the

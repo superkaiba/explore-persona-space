@@ -199,7 +199,7 @@ def extract_per_context_shifts(  # noqa: C901 - benign-arm + per-question additi
     tokenizer,
     personas: dict[str, str],
     questions: Sequence[str],
-    arm: Literal["marker", "em", "benign"],
+    arm: Literal["marker", "em", "benign", "contrastive_em", "contrastive_benign"],
     variant: Variant,
     layer: int = DEFAULT_LAYER,
     max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS,
@@ -226,14 +226,21 @@ def extract_per_context_shifts(  # noqa: C901 - benign-arm + per-question additi
 
     The ``benign`` arm (#552 plain-SFT control) routes down the EM path:
     no marker stripping in variant (a), and the mean-over-response
-    secondary read is extracted identically.
+    secondary read is extracted identically. The ``contrastive_em`` /
+    ``contrastive_benign`` arms (#552 contrastive-2x2-completion
+    follow-up, plan v5 §4.1 patch 1) route down the same no-strip path
+    (stripping is keyed ``arm == "marker"``) with identical mean-resp +
+    per-question reads.
 
     All three teacher-forced forwards required by variant (a) / (b) (one
     base read + one trained read on the SAME sequence) run sequentially
     per question. Variant (c) does the v1 different-trajectory read.
     """
-    if arm not in {"marker", "em", "benign"}:
-        raise ValueError(f"arm must be 'marker', 'em', or 'benign', got {arm!r}")
+    if arm not in {"marker", "em", "benign", "contrastive_em", "contrastive_benign"}:
+        raise ValueError(
+            "arm must be one of 'marker', 'em', 'benign', 'contrastive_em', "
+            f"'contrastive_benign', got {arm!r}"
+        )
     if variant not in {"same", "base", "on_policy"}:
         raise ValueError(f"variant must be 'same', 'base', or 'on_policy', got {variant!r}")
 
@@ -302,7 +309,7 @@ def extract_per_context_shifts(  # noqa: C901 - benign-arm + per-question additi
                 deltas.append(delta)
 
                 if (
-                    arm in ("em", "benign", "marker")
+                    arm in ("em", "benign", "marker", "contrastive_em", "contrastive_benign")
                     and variant == "same"
                     and also_compute_mean_over_response_em
                 ):
@@ -412,7 +419,11 @@ def main() -> int:
         description="Extract per-context Delta-v_b for #519",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--arm", choices=["marker", "em", "benign"], required=True)
+    parser.add_argument(
+        "--arm",
+        choices=["marker", "em", "benign", "contrastive_em", "contrastive_benign"],
+        required=True,
+    )
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--variant", choices=["same", "base", "on_policy"], required=True)
     parser.add_argument("--layer", type=int, default=DEFAULT_LAYER)

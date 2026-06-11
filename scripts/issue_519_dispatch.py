@@ -1089,11 +1089,13 @@ def main() -> int:  # noqa: C901 - end-to-end dispatcher, refactor out-of-scope 
     parser.add_argument(
         "--arms",
         nargs="+",
-        choices=["marker", "em", "benign"],
+        choices=["marker", "em", "benign", "contrastive_em", "contrastive_benign"],
         default=None,
         help=(
             "#552 §4.1 patch 1a: sweep-mode arm override (e.g. `--arms benign` "
-            "for the #552 benign control cells). Default None = DEFAULT_ARMS "
+            "for the #552 benign control cells; `--arms contrastive_em "
+            "contrastive_benign` for the #552 contrastive-2x2-completion "
+            "cells, plan v5 §4.1 patch 2). Default None = DEFAULT_ARMS "
             "(marker em), preserving #519/#521 behavior. In --mode smoke the "
             "existing --smoke-arms flag still wins."
         ),

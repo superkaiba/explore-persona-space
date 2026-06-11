@@ -21,6 +21,13 @@ key in ``poll_pipeline.py::_SENTINEL_REQUIRED_KEYS`` (``sentinel_schema_version`
                 Posted as `epm:results` version 2 (em) / 3 (marker) —
                 `epm:results v1` is the completed run's marker and task.py
                 does not auto-increment, so each round bumps the version.
+  contrastive_done — contrastive-2x2-completion follow-up (plan v5)
+                completed: note carries the per-cell same-variant end-slot
+                geometry for BOTH new arms (6 cells), the 3-context EM-gate
+                rates, the row-type CE diagnostic values (MF-A), durability
+                state, and the VM next steps. Posted as `epm:results`
+                version 4 (versions 1-3 are taken by the prior rounds and
+                task.py does not auto-increment).
 
 Run (pod-side, from the driver)::
 
@@ -30,6 +37,10 @@ Run (pod-side, from the driver)::
         --arm marker \
         --followup-dir eval_results/issue_552/marker-arm-mean-resp-reextraction \
         --anchor-svd-dir eval_results/issue_521/svd --seeds 42 137 256
+    uv run python scripts/issue552_write_sentinel.py --mode contrastive_done \
+        --arm contrastive --followup-label contrastive-2x2-completion \
+        --followup-dir eval_results/issue_552/contrastive-2x2-completion \
+        --seeds 42 137 256
 """
 
 from __future__ import annotations
@@ -164,6 +175,121 @@ def _build_note_emresp(
     }
 
 
+CONTRASTIVE_ARMS = ("contrastive_em", "contrastive_benign")
+CONTRASTIVE_MARKER_VERSION = 4
+CONTRASTIVE_FOLLOWUP_LABEL = "contrastive-2x2-completion"
+CONTRASTIVE_GATE_CONTEXTS = ("none", "assistant", "source")
+
+
+def _build_note_contrastive(
+    followup_dir: Path,
+    seeds: list[int],
+    followup_label: str,
+) -> dict:
+    """Note payload for --mode contrastive_done (plan v5 §4.3 Phase 12).
+
+    Reads the 6 same-variant per-cell SVD JSONs (HARD assert — Phase D ran
+    first), the 3-context EM-gate outcome JSONs (HARD assert — Phases 4/7
+    ran first), and the row-type CE diagnostic JSONs (MF-A; HARD assert).
+    No faithfulness gate: the 6 cells are FRESH trainings with no persisted
+    anchors; comparability rides the null-scale cross-check (plan §8 last
+    row), applied off-pod by the analysis script.
+    """
+    per_cell_geometry: dict = {}
+    for arm in CONTRASTIVE_ARMS:
+        for seed in seeds:
+            cell = f"same_{arm}_seed{seed}"
+            svd_path = followup_dir / "svd" / f"{cell}.json"
+            if not svd_path.exists():
+                raise RuntimeError(
+                    f"--mode contrastive_done but {svd_path} is missing. The driver's "
+                    f"Phase-D assert should have fired before this writer."
+                )
+            d = json.loads(svd_path.read_text())
+            per_cell_geometry[cell] = {
+                "mean_cos_to_U1": round(float(d["mean_cos_to_U1"]), 4),
+                "s_top1_frac": round(float(d["s_top1_frac"]), 4),
+                "sign_flip_p95": round(float(d["sign_flip_p95"]), 4),
+                "row_shuffle_p95": round(float(d["row_shuffle_p95"]), 4),
+            }
+
+    gate_rates: dict = {}
+    pair_by_arm = {
+        "contrastive_em": "turner_bad_medical_contrastive",
+        "contrastive_benign": "turner_good_medical_contrastive",
+    }
+    for context in CONTRASTIVE_GATE_CONTEXTS:
+        ctx_dir = followup_dir / "em_gate" / context / "outcome"
+        gate_rates[context] = {}
+        for arm, pair in pair_by_arm.items():
+            for seed in seeds:
+                out_json = ctx_dir / f"{pair}_seed{seed}_{context}.json"
+                if not out_json.exists():
+                    raise RuntimeError(
+                        f"--mode contrastive_done but gate outcome JSON {out_json} is "
+                        f"missing. Phases 4/7 should have produced it before this writer."
+                    )
+                d = json.loads(out_json.read_text())
+                gate_rates[context][f"{arm}_seed{seed}"] = round(float(d["L"]), 4)
+
+    ce_dir = followup_dir / "rowtype_ce"
+    ce_files = sorted(p.name for p in ce_dir.glob("rowtype_ce_*.json"))
+    if len(ce_files) < 7:
+        raise RuntimeError(
+            f"--mode contrastive_done but only {len(ce_files)} row-type CE JSONs under "
+            f"{ce_dir} (expected >= 7: 6 trained cells + base). MF-A diagnostic is a "
+            f"registered control — refusing to write the sentinel without it."
+        )
+    rowtype_ce: dict = {}
+    for name in ce_files:
+        d = json.loads((ce_dir / name).read_text())
+        rowtype_ce[name.removesuffix(".json")] = {
+            k: d[k] for k in ("mean_ce_pos", "mean_ce_neg") if k in d
+        } | {k: d[k] for k in ("delta_ce_pos_vs_base", "delta_ce_neg_vs_base") if k in d}
+
+    return {
+        "plan_version": "v5",
+        "followup": followup_label,
+        "arms": list(CONTRASTIVE_ARMS),
+        "per_cell_end_slot_geometry": per_cell_geometry,
+        "em_gate_3_context": {
+            "rule": (
+                "manipulation: source-context L >= 0.05 in >= 2/3 seeds; containment: "
+                "default + assistant <= 0.05 while source >= 0.05; benign gate: all "
+                "contexts <= 0.05 all seeds (plan v5 §6.3 — analysis rules, not run gates)"
+            ),
+            "per_context_rates": gate_rates,
+        },
+        "rowtype_ce_diagnostic": {
+            "rule": (
+                "contrast DELIVERED for an arm iff median over 3 seeds of |delta_ce_neg_"
+                "vs_base| >= 0.05 nat/token (plan v5 §6.3 MF-A; below -> H0' scope-down)"
+            ),
+            "per_model": rowtype_ce,
+        },
+        "outputs": {
+            "shifts": str(followup_dir / "shifts"),
+            "shifts_manifests": str(followup_dir / "shifts_manifests"),
+            "svd": str(followup_dir / "svd"),
+            "em_gate": str(followup_dir / "em_gate"),
+            "rowtype_ce": str(ce_dir),
+        },
+        "durability": (
+            "HF LFS upload DEFERRED (account-wide public-storage 403): mixes/adapters/"
+            "tensors ride WandB artifacts (issue552_contrastive_{mixes,adapters,"
+            "shift_tensors}:v0) + VM pull + sha256 verify, orchestrator-side BEFORE "
+            "termination (the #521 lost-tensor fix). Gate + CE JSONs uploaded to HF "
+            "non-LFS under issue552_benign_control/contrastive_2x2/ pod-side."
+        ),
+        "next_offpod_steps": (
+            "VM-side after tensor pull: scripts/issue552_contrastive_2x2_analysis.py "
+            "(reference subpanel bands computed BEFORE new-arm unblinding, plan v5 "
+            "§4.1.5 binding order), then figures; analyzer applies §3/§6.3 zone-call "
+            "discipline (3/3 + validity precondition vs >=2/3)."
+        ),
+    }
+
+
 def _build_note(mode: str) -> dict:
     gate = json.loads(GATE_SUMMARY.read_text())
     note: dict = {
@@ -215,7 +341,11 @@ def main() -> int:
         description="#552 results-sentinel writer (poll_pipeline contract).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--mode", choices=["done", "gate_halt", "emresp_done"], required=True)
+    parser.add_argument(
+        "--mode",
+        choices=["done", "gate_halt", "emresp_done", "contrastive_done"],
+        required=True,
+    )
     parser.add_argument(
         "--sentinel-dir",
         default="/workspace/logs",
@@ -223,11 +353,13 @@ def main() -> int:
     )
     parser.add_argument(
         "--arm",
-        choices=sorted(EMRESP_ARM_META),
+        choices=[*sorted(EMRESP_ARM_META), "contrastive"],
         default="em",
         help="(emresp_done) re-extracted arm; parameterizes the cell template "
         "same_{arm}_seed{S}, the note's followup/plan-version fields, and the "
-        "epm:results marker version default (em=2, marker=3).",
+        "epm:results marker version default (em=2, marker=3). "
+        "(contrastive_done) pass --arm contrastive (plan v5 §4.1 patch 6) — "
+        "the note covers BOTH contrastive arms; marker version defaults to 4.",
     )
     parser.add_argument(
         "--followup-label",
@@ -268,7 +400,19 @@ def main() -> int:
         format="%(asctime)s %(levelname)s %(name)s :: %(message)s",
     )
 
-    if args.mode == "emresp_done":
+    if args.mode == "contrastive_done":
+        if args.arm != "contrastive":
+            raise SystemExit(
+                f"--mode contrastive_done requires --arm contrastive, got {args.arm!r}"
+            )
+        followup_label = args.followup_label or CONTRASTIVE_FOLLOWUP_LABEL
+        followup_dir = Path(args.followup_dir or f"eval_results/issue_552/{followup_label}")
+        note = _build_note_contrastive(followup_dir, args.seeds, followup_label)
+        marker_version = (
+            args.marker_version if args.marker_version is not None else CONTRASTIVE_MARKER_VERSION
+        )
+        by = "run_issue552_contrastive_followup.sh"
+    elif args.mode == "emresp_done":
         meta = EMRESP_ARM_META[args.arm]
         followup_label = args.followup_label or meta["followup_label"]
         followup_dir = Path(args.followup_dir or f"eval_results/issue_552/{meta['followup_label']}")

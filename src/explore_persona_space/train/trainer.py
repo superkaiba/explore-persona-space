@@ -356,7 +356,13 @@ def _finalize_phase(
     # upload via persist or the default upload) or an orchestrator explicitly
     # owns the upload (fence). Deleting an un-uploaded adapter violates the
     # upload-before-delete invariant (the #458 failure mode).
-    if adapter_uploaded or upload_fenced:
+    # EPM_KEEP_LOCAL_ADAPTER=1 (#552 MF-D, default-preserving): downstream
+    # extraction loads the LOCAL adapter (PeftModel.from_pretrained on
+    # `{arm}_seed{S}/adapter`) while the HF LFS quota 403 blocks uploads, so
+    # under the fence the orchestrator must be able to opt OUT of the reap.
+    # Env unset -> byte-identical prior behavior.
+    keep_local = os.environ.get("EPM_KEEP_LOCAL_ADAPTER") == "1"
+    if (adapter_uploaded or upload_fenced) and not keep_local:
         shutil.rmtree(str(adapter_dir), ignore_errors=True)
     else:
         logger.warning(
@@ -457,7 +463,6 @@ def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
 
     try:
         import wandb
-
         from explore_persona_space.orchestrate.hub import upload_model_wandb
 
         run = wandb.run
