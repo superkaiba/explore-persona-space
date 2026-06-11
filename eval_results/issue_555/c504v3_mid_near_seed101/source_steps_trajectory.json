@@ -1,0 +1,69 @@
+{
+  "schema_version": "i534_source_steps_v1",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "marker_token_id": 83399,
+  "eos_token_id": 151645,
+  "n_probe_rows": 32,
+  "base": {
+    "logp_marker_mean": -21.355911254882812,
+    "z_marker_mean": 0.162109375,
+    "z_eos_mean": 0.9681396484375,
+    "logz_mean": 21.518020629882812
+  },
+  "steps": [
+    {
+      "step": 1,
+      "logp_marker_mean": -21.355911254882812,
+      "z_marker_mean": 0.162109375,
+      "z_eos_mean": 0.9681396484375,
+      "logz_mean": 21.518020629882812,
+      "delta_g_mean": 0.0,
+      "delta_z_marker_mean": 0.0,
+      "delta_z_margin_mean": 0.0
+    },
+    {
+      "step": 2,
+      "logp_marker_mean": -21.31317710876465,
+      "z_marker_mean": 0.196533203125,
+      "z_eos_mean": 0.974273681640625,
+      "logz_mean": 21.50971031188965,
+      "delta_g_mean": 0.04273414611816406,
+      "delta_z_marker_mean": 0.034423828125,
+      "delta_z_margin_mean": 0.028289794921875
+    },
+    {
+      "step": 3,
+      "logp_marker_mean": -21.358667373657227,
+      "z_marker_mean": 0.19696044921875,
+      "z_eos_mean": 0.985504150390625,
+      "logz_mean": 21.555627822875977,
+      "delta_g_mean": -0.0027561187744140625,
+      "delta_z_marker_mean": 0.03485107421875,
+      "delta_z_margin_mean": 0.017486572265625
+    },
+    {
+      "step": 4,
+      "logp_marker_mean": -21.3353214263916,
+      "z_marker_mean": 0.19744873046875,
+      "z_eos_mean": 0.964996337890625,
+      "logz_mean": 21.53277015686035,
+      "delta_g_mean": 0.020589828491210938,
+      "delta_z_marker_mean": 0.03533935546875,
+      "delta_z_margin_mean": 0.038482666015625
+    },
+    {
+      "step": 5,
+      "logp_marker_mean": -21.321842193603516,
+      "z_marker_mean": 0.1859130859375,
+      "z_eos_mean": 0.993255615234375,
+      "logz_mean": 21.507755279541016,
+      "delta_g_mean": 0.034069061279296875,
+      "delta_z_marker_mean": 0.0238037109375,
+      "delta_z_margin_mean": -0.001312255859375
+    }
+  ],
+  "git_commit": "b8a715c100c490c7f7397f3df9fa596f6b8851ce",
+  "hostname": "a1576c880317",
+  "timestamp_utc": "2026-06-10T23:47:56.597088+00:00"
+}

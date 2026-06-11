@@ -1,0 +1,93 @@
+{
+  "schema_version": "i534_fraction_manifest_v1",
+  "fractions": [
+    1.0
+  ],
+  "manifest": [
+    {
+      "frac": 1.0,
+      "target_step": 20,
+      "selected_step": 20,
+      "exact": true
+    }
+  ],
+  "index": {
+    "1.00": {
+      "step": 20,
+      "path": "/workspace/runs/issue_555/c504v3_near_seed7_bandctrl/snapshots/step_0020"
+    }
+  },
+  "distinct_steps": 1,
+  "band_stop_meta": {
+    "stopped": true,
+    "stop_step": 20,
+    "stop_reason": "band",
+    "eval_history": [
+      {
+        "step": 10,
+        "delta_nats": 0.34172946214675903,
+        "trained_logp_mean": -20.892292022705078,
+        "base_logp_mean": -21.234020233154297
+      },
+      {
+        "step": 20,
+        "delta_nats": 6.181081295013428,
+        "trained_logp_mean": -15.052939414978027,
+        "base_logp_mean": -21.234020233154297
+      }
+    ],
+    "snapshot_steps": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "band": [
+      5.0,
+      12.0
+    ],
+    "eval_every_steps": 10,
+    "min_steps": 20,
+    "max_steps": 300,
+    "snapshot_every_steps": 1,
+    "snapshot_max_count": 64
+  },
+  "stop_reason": "band",
+  "stopped": true,
+  "logit_readout_valid": true,
+  "gauge_results": {
+    "1.00": {
+      "valid": true,
+      "problems": [],
+      "adapter_dir": "/workspace/runs/issue_555/c504v3_near_seed7_bandctrl/snapshots/step_0020"
+    }
+  },
+  "stop_snapshot_matches_final_adapter": true,
+  "source_delta_g_at_selected_steps": {
+    "1.00": 6.341585159301758
+  },
+  "source_steps_trajectory_path": "eval_results/issue_555/c504v3_near_seed7_bandctrl/source_steps_trajectory.json",
+  "hf_uploads": {
+    "1.00": "adapters/issue_555/c504v3_near_seed7_bandctrl/ckpt_frac1.00"
+  },
+  "hf_repo": "superkaiba1/explore-persona-space",
+  "git_commit": "b8a715c100c490c7f7397f3df9fa596f6b8851ce",
+  "hostname": "a1576c880317",
+  "timestamp_utc": "2026-06-10T22:53:55.940912+00:00"
+}
