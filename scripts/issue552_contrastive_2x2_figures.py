@@ -225,32 +225,60 @@ def fig_cross_arm_5arm(cross: dict, out_dir: str) -> None:
 
     groups: list[tuple[str, list[float], str]] = [
         ("within\nmarker", within["marker"]["pairs"], ARM_COLOR["marker"]),
-        ("within\nmisalig.", within["em"]["pairs"], ARM_COLOR["em"]),
+        ("within\nmisalignment", within["em"]["pairs"], ARM_COLOR["em"]),
         ("within\nbenign", within["benign"]["pairs"], ARM_COLOR["benign"]),
-        ("within\ncontr. misalig.", within["contrastive_em"]["pairs"], ARM_COLOR["contrastive_em"]),
         (
-            "within\ncontr. benign",
+            "within\ncontrastive\nmisalignment",
+            within["contrastive_em"]["pairs"],
+            ARM_COLOR["contrastive_em"],
+        ),
+        (
+            "within\ncontrastive\nbenign",
             within["contrastive_benign"]["pairs"],
             ARM_COLOR["contrastive_benign"],
         ),
-        ("misalig. x\ncontr. misalig.", cvals("em__x__contrastive_em"), ARM_COLOR["em"]),
-        ("benign x\ncontr. benign", cvals("benign__x__contrastive_benign"), ARM_COLOR["benign"]),
-        ("misalig. x\nbenign", cvals("em__x__benign"), "0.45"),
         (
-            "contr. misalig. x\ncontr. benign",
+            "misalignment x\ncontrastive\nmisalignment",
+            cvals("em__x__contrastive_em"),
+            ARM_COLOR["em"],
+        ),
+        (
+            "benign x\ncontrastive\nbenign",
+            cvals("benign__x__contrastive_benign"),
+            ARM_COLOR["benign"],
+        ),
+        ("misalignment x\nbenign", cvals("em__x__benign"), "0.45"),
+        (
+            "contrastive\nmisalignment x\ncontrastive benign",
             cvals("contrastive_em__x__contrastive_benign"),
             "0.45",
         ),
-        ("misalig. x\ncontr. benign", cvals("em__x__contrastive_benign"), "0.65"),
-        ("benign x\ncontr. misalig.", cvals("benign__x__contrastive_em"), "0.65"),
-        ("marker x\nmisalig.", cvals("marker__x__em"), ARM_COLOR["marker"]),
+        (
+            "misalignment x\ncontrastive\nbenign",
+            cvals("em__x__contrastive_benign"),
+            "0.65",
+        ),
+        (
+            "benign x\ncontrastive\nmisalignment",
+            cvals("benign__x__contrastive_em"),
+            "0.65",
+        ),
+        ("marker x\nmisalignment", cvals("marker__x__em"), ARM_COLOR["marker"]),
         ("marker x\nbenign", cvals("marker__x__benign"), ARM_COLOR["marker"]),
-        ("marker x\ncontr. misalig.", cvals("marker__x__contrastive_em"), ARM_COLOR["marker"]),
-        ("marker x\ncontr. benign", cvals("marker__x__contrastive_benign"), ARM_COLOR["marker"]),
+        (
+            "marker x\ncontrastive\nmisalignment",
+            cvals("marker__x__contrastive_em"),
+            ARM_COLOR["marker"],
+        ),
+        (
+            "marker x\ncontrastive\nbenign",
+            cvals("marker__x__contrastive_benign"),
+            ARM_COLOR["marker"],
+        ),
     ]
 
-    fig, ax = plt.subplots(figsize=(13.0, 4.6))
-    fig.subplots_adjust(bottom=0.20, top=0.84, left=0.06, right=0.985)
+    fig, ax = plt.subplots(figsize=(13.0, 4.8))
+    fig.subplots_adjust(bottom=0.24, top=0.84, left=0.06, right=0.985)
     rng = np.random.default_rng(1)
     for x, (_, vals, color) in enumerate(groups):
         jit = rng.uniform(-0.12, 0.12, size=len(vals))
@@ -355,7 +383,9 @@ def fig_behavioral(fu: Path, summary: dict, out_dir: str) -> None:
     ax.set_xticklabels([ctx_label[c] for c in ("none", "assistant", "source")], fontsize=8)
     ax.set_ylabel("misaligned-and-coherent rate")
     ax.set_ylim(0, 0.40)
-    ax.set_title("Behavioral eval: 800 judged completions per cell per context")
+    ax.set_title(
+        "Behavioral eval: 800 sampled completions per cell per context\n(one cell judged 799)"
+    )
     ax.legend(frameon=False, fontsize=8, loc="upper left")
     ax.text(
         0.75,
