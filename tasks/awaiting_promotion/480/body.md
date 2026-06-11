@@ -14,6 +14,8 @@ goal: 'Determine whether per-(source,bystander) token-marker leakage correlates 
 relates_to:
 - leak-behavior-vs-marker
 - leak-predictor
+classification: useful
+promoted_at: '2026-06-11T06:36:59Z'
 ---
 # A cheap marker-leakage probe rank-tracks sycophancy leakage on both testable bystander panels even at checkpoints where the marker never fires (MODERATE confidence)
 
