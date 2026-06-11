@@ -34,6 +34,20 @@ permanently unrunnable.) Enforcement: `upload-verifier` Step 1 classifies
 Step 2.8 cross-references the plan's analysis / control sections and FAILs on
 any plan-named input without a permanent URL.
 
+**Resume-critical pipeline INPUTS must upload before any deliberate
+`pod.py stop` that expects a later resume.** The same logic extends
+upstream of analysis: generated training rows (`R_train` caches,
+corpus JSONs), phase-0/1 intermediate outputs, and diagnostic adapters
+that the plan's later phases consume. RunPod `resume` is HOST-PINNED —
+a SUPPLY_CONSTRAINT on the former host can lock the volume away for
+days, and a fresh pod cannot substitute when the inputs exist only on
+that volume. Push them to the HF data repo (`issueN_<slug>/inputs/` or
+the relevant bucket) BEFORE stopping; they are usually MB-scale.
+(Incident #488, 2026-06-10: ~18 resume attempts hit SUPPLY_CONSTRAINT
+while `data/issue_488/R_train_new.json` + Phase 0/1 outputs + diagnostic
+adapters lived only on the stopped pod's volume — the implementer's
+pod-side smoke shipped as 'INFRA BLOCKED, local evidence only'.)
+
 **Verify uploads with the Python Hub API, never the `hf` CLI.** The installed `hf`
 CLI has NO `api` subcommand — `hf api list-repo-files ...` errors to stderr and
 `| grep` swallows it as an empty/zero result that reads as a false "0 files"; `hf
