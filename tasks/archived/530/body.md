@@ -2,8 +2,7 @@
 title: At a de-saturated anchor, both prior geometry signs reverse — the barrier signal
   becomes anti-shadow and the anti-bubble becomes pro-bubble (MODERATE confidence)
 kind: experiment
-tags:
-- keep-running
+tags: []
 created_at: '2026-06-09T05:31:35Z'
 has_clean_result: true
 parent_id: 504
