@@ -77,8 +77,14 @@ class TestRunVerificationRowSelection:
         assert report["experiment_type_source"] == "cli"
 
     def test_training_still_demands_model_and_wandb(self):
-        """Type selection must not weaken the gate for real training runs."""
-        report = verify_uploads.run_verification(563, experiment_type="training")
+        """Type selection must not weaken the gate for real training runs.
+
+        The reproducibility-card fallback (#608) is patched to None so this
+        pins the invariant: no declared path AND no card -> MISSING (and the
+        test stays hermetic — no real events.jsonl / network reads).
+        """
+        with patch.object(verify_uploads, "_load_results_card", return_value=None):
+            report = verify_uploads.run_verification(563, experiment_type="training")
         assert report["checks"]["wandb_run"]["status"] == "MISSING"
         assert report["checks"]["hf_model"]["status"] == "MISSING"
         assert report["verdict"] == "FAIL"
