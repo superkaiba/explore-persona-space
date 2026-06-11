@@ -5,7 +5,7 @@ title: 'The role-header encoding''s leakage advantage reverses on re-test: at 10
 kind: experiment
 tags: []
 created_at: '2026-06-10T12:10:48Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 528
 goal: 'Re-test whether the role-header encoding segments validating from off-target
   personas more cleanly than a system-prompt encoding (paired leakage gap ≤ -0.15
