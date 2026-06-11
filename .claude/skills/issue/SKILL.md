@@ -3321,8 +3321,11 @@ When this skill is re-invoked in `running`:
    `epm:stale v1` asking the user to investigate (the experimenter may
    have crashed silently); leave status at `running`.**
 2. If `epm:failure` posted: route via the **failure classifier**. The
-   `epm:failure` body SHOULD include a `failure_class: infra | code` field
-   on its first non-blank line. Routing:
+   `epm:failure` body SHOULD include a `failure_class: infra | code | data`
+   field on its first non-blank line. A `data` class (a factual gap only
+   the user can fill) is posted per the halt-criterion contract together
+   with `status:blocked`, so it never reaches this step — the table below
+   routes `infra | code` only:
 
    | failure_class | Cause example | Action |
    |---|---|---|
