@@ -462,7 +462,9 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     would burn >2× the cost of the pivot; else `continue-as-planned`. State
     `Decision: <choice> because <reason>` and EXECUTE the resolved action
     in this same turn (on `pivot-to-<X>`: `task.py set-status <N> planning`
-    + re-invoke `/adversarial-planner` with the pivot scope; on
+    + re-invoke `/adversarial-planner` with the pivot scope; mid same-issue
+    follow-up round, SKIP the `set-status` — status-hold rule, Step 9b — and
+    just re-invoke the planner with the status held; on
     `continue-as-planned`: continue to Step 6); do NOT state the Decision
     and then end the turn.
   - `compute_deviation_resolution` → pick `accept_descope_to_<X>_with_caveats`
@@ -557,8 +559,11 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   plan amendment / cannot pick a science direction" verdict — the autonomous
   response is `task.py set-status <N> planning` + re-invoke
   `/adversarial-planner` with explicit pivot scope naming the contradiction
-  verbatim. See workflow.yaml § `pivot_criteria.plan_contradiction_replan`
-  for the canonical action shape.
+  verbatim. (Mid same-issue follow-up round, SKIP the `set-status` — the
+  status-hold rule, Step 9b § Same-issue follow-up loop step 3, holds
+  `followups_running`; just re-invoke the planner.) See workflow.yaml
+  § `pivot_criteria.plan_contradiction_replan` for the canonical action
+  shape.
 
   This is the `pivot-to-<X>` action for that specific signal — do NOT route
   it through the valid-fork "max-info-gain pick" decision rule above. A
@@ -1380,6 +1385,11 @@ Step 2c branches on; for `auto_approved` it has already flipped the status to
 `approved` and posted `epm:plan-approved`, and for `parked_over_cap` it has
 already posted `epm:awaiting-spend-approval`.
 
+> **Same-issue follow-up round?** At `followups_running` this same command is
+> safe: `task.py` fires the gate decision + markers but HOLDS the status in
+> place (status-hold rule, Step 9b § Same-issue follow-up loop step 3) and
+> appends `(followups_running hold: status unchanged)` to the decision line.
+
 ### Step 2c: Inline plan approval
 
 **The autonomous plan-approval decision was already made by the Step 2b
@@ -1510,6 +1520,12 @@ this cap.
   - **"Approve" / "1":** move task to `approved`. Post an `epm:plan-approved`
     event for audit trail. Continue to Step 4 in the **same invocation**
     — do NOT exit:
+
+    > **Same-issue follow-up round?** At `followups_running`, SKIP the
+    > `set-status` (status-hold rule, Step 9b § Same-issue follow-up loop
+    > step 3; code-enforced — `task.py` refuses the flip) and post ONLY the
+    > `epm:plan-approved` marker — the approval is recorded, the status holds.
+
     ```bash
     uv run python scripts/task.py set-status <N> approved \
       --note "Plan v1 approved by user."
@@ -1682,6 +1698,11 @@ Brief passed to the implementer:
 
 Move status to `running` (the implementing sub-phase rolls up under
 `running`):
+
+> **Same-issue follow-up round?** At `followups_running`, SKIP this
+> `set-status` (status-hold rule, Step 9b § Same-issue follow-up loop step 3;
+> code-enforced — `task.py` refuses the flip) — phase visibility comes from
+> `stage=followup-<phase>` breadcrumbs, not status flips.
 
 ```bash
 uv run python scripts/task.py set-status <N> running \
@@ -3042,6 +3063,12 @@ that already tear it down). The Step 9 idempotency guard (below) bounds the
 redundant-subagent cost a surviving-into-`done` cron used to risk.
 
 Transition the task to `verifying` (the upload-verifier next):
+
+> **Same-issue follow-up round?** At `followups_running`, SKIP this
+> `set-status` (status-hold rule, Step 9b § Same-issue follow-up loop step 3;
+> code-enforced — `task.py` refuses the flip) — phase visibility comes from
+> `stage=followup-<phase>` breadcrumbs, not status flips.
+
 ```bash
 uv run python scripts/task.py set-status <N> verifying \
     --note "polling loop observed phase=done"
@@ -3375,7 +3402,11 @@ Post `epm:upload-verification v1` event with per-artifact PASS/FAIL +
 URLs.
 
 - **PASS** -> teardown the compute, then move status to `interpreting`
-  and proceed to Step 9. Once artifacts are confirmed at permanent
+  and proceed to Step 9. (Same-issue follow-up round? At
+  `followups_running`, SKIP the `interpreting` flip — status-hold rule,
+  Step 9b § Same-issue follow-up loop step 3; code-enforced — but the
+  teardown + Step 9 progression run as normal.) Once artifacts are
+  confirmed at permanent
   URLs, the compute is no longer needed — interpretation runs locally.
   If the results-landed parallel spawn produced a held analyzer first
   pass, publish it now: post the held interpretation as
@@ -3468,8 +3499,11 @@ URLs.
      pod-side phase that produces them (the planner's §6.5 row + the
      §4 Design pipeline together name the responsible dispatch
      entrypoint).
-  2. Flip status back to `running` (`task.py set-status <N> running`)
-     and re-enter the Step 6d experimenter-dispatch path with an
+  2. Flip status back to `running` (`task.py set-status <N> running`).
+     (Same-issue follow-up round? At `followups_running`, SKIP this flip —
+     status-hold rule, Step 9b § Same-issue follow-up loop step 3;
+     code-enforced — and re-enter the dispatch path with the status held.)
+     Then re-enter the Step 6d experimenter-dispatch path with an
      explicit re-run scope naming the missing phase + the inputs that
      fell through (typically: re-dispatch the same entrypoint with the
      corrected `--<phase>-inputs <path>` flags that the silent guard
@@ -4036,6 +4070,12 @@ user can decide whether to patch before promoting.
 **On PASS (or max rounds reached):**
 
 Move status to `reviewing`:
+
+> **Same-issue follow-up round?** At `followups_running`, SKIP this
+> `set-status` (status-hold rule, Step 9b § Same-issue follow-up loop step 3;
+> code-enforced — `task.py` refuses the flip) — proceed straight to
+> 9a-quater; the round exits the status only at the `awaiting_promotion` re-park.
+
 ```bash
 uv run python scripts/task.py set-status <N> reviewing \
   --note "clean-result-critic PASS; advancing to final review gate."
@@ -4556,14 +4596,17 @@ orphaned at `running` for 5+ hours.)
    artifact dir `eval_results/issue_<N>/<followup_label>/`), `source`,
    the verbatim proposal spec (or the user's verbatim chat request),
    and the GPU-hour estimate.
-2. **Re-enter the pipeline.** `task.py set-status <N>
-   followups_running` — the round HOLDS this status end-to-end (see
-   the status-hold rule in step 3). **In the same step, record the
-   initiation mode as a tag:** `uv run python scripts/task.py add-tag
-   <N> followup-auto` when `source: proposer-9b`; `uv run python
+2. **Re-enter the pipeline.** **FIRST record the initiation mode as a
+   tag** (before the status flip, so the `task.py` missing-tag warning
+   stays quiet): `uv run python scripts/task.py add-tag <N>
+   followup-auto` when `source: proposer-9b`; `uv run python
    scripts/task.py add-tag <N> followup-manual` when `source:
-   user-chat` or `source: step-10b-pick`. (Both tags may accumulate
-   over a task's life — they are history, not exclusive state.) The
+   user-chat` or `source: step-10b-pick`. EXACTLY these two tag names —
+   a bare `followup` tag does not count (incident #533). (Both tags may
+   accumulate over a task's life — they are history, not exclusive
+   state.) **Then** `task.py set-status <N> followups_running` — the
+   round HOLDS this status end-to-end (see the status-hold rule in step
+   3); the CLI warns if neither tag is present at this transition. The
    planner-exempt distinction (re-run with different seeds,
    monitoring, syncing, or a bug-fix re-run, per the CLAUDE.md
    `/adversarial-planner` carve-out) still governs whether
@@ -4589,15 +4632,23 @@ orphaned at `running` for 5+ hours.)
    amendment → consistency-checker → plan gate → implementer /
    code-review → provision → run → upload-verify → terminate →
    analyzer re-fold → clean-result-critic. The normal pipeline
-   `set-status` calls (`approved` / `running` / `verifying` /
-   `interpreting` / `reviewing`) are SKIPPED during a same-issue
-   follow-up round; phase visibility comes from the existing stage
-   breadcrumbs (`stage=followup-<phase>`) and `epm:progress` markers.
-   An over-cap (or interactively-awaiting) plan parks IN PLACE at
-   `followups_running` — the Step 2c plan-approval gate still fires,
-   it just no longer moves the status to `plan_pending`. The round
-   exits the status only at the re-park:
-   `set-status <N> awaiting_promotion`.
+   `set-status` calls (`planning` / `plan_pending` / `approved` /
+   `running` / `verifying` / `interpreting` / `reviewing`) are SKIPPED
+   during a same-issue follow-up round; phase visibility comes from the
+   existing stage breadcrumbs (`stage=followup-<phase>`) and
+   `epm:progress` markers. **Code-enforced** (post-#533/#560,
+   2026-06-11): `task.py set-status` REFUSES
+   `followups_running -> <any of those>` (override:
+   `--force-followup-exit`, only to deliberately abandon the round), and
+   a mid-round plan-gate call (`--auto-approve-if-autonomous`) fires the
+   gate decision + markers while HOLDING the status
+   (`PLAN_GATE_DECISION: ... (followups_running hold: status
+   unchanged)`). An over-cap (or interactively-awaiting) plan parks IN
+   PLACE at `followups_running` — the Step 2c plan-approval gate still
+   fires, it just no longer moves the status to `plan_pending`. The
+   round exits the status only at the re-park:
+   `set-status <N> awaiting_promotion` (or `blocked` on a failure
+   exit).
    - `/adversarial-planner` re-invoked in AMENDMENT scope: produces
      `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's
      own latest prior run, not a from-scratch plan. Planner-exempt

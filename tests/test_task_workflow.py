@@ -239,6 +239,75 @@ def test_set_status_commits_both_sides_of_move(fake_repo):
     assert added_or_renamed, f"set_status commit missing destination addition: {show}"
 
 
+# ─── Same-issue follow-up status-hold guard ───────────────────────────────
+#
+# The same-issue follow-up status-hold rule (SKILL.md Step 9b § Same-issue
+# follow-up loop, step 3): a `followups_running` task is HELD for the whole
+# round; set_status refuses re-entry into intermediate pipeline statuses.
+# Incident: tasks #533/#560 (2026-06-10/11) flipped to `running` mid-round.
+
+
+def test_followup_held_blocked_statuses_membership():
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    # Every blocked member is a valid status...
+    assert set(tw.STATUSES) >= tw.FOLLOWUP_HELD_BLOCKED_STATUSES
+    # ...and the round's legitimate exits are NOT blocked.
+    for allowed_exit in ("awaiting_promotion", "blocked", "completed", "archived"):
+        assert allowed_exit not in tw.FOLLOWUP_HELD_BLOCKED_STATUSES
+    # The intermediate pipeline statuses ARE blocked.
+    for held in (
+        "planning",
+        "plan_pending",
+        "approved",
+        "running",
+        "verifying",
+        "interpreting",
+        "reviewing",
+    ):
+        assert held in tw.FOLLOWUP_HELD_BLOCKED_STATUSES
+
+
+def test_set_status_followup_hold_blocks_pipeline_reentry(fake_repo):
+    repo, tw = fake_repo
+    for blocked in sorted(tw.FOLLOWUP_HELD_BLOCKED_STATUSES):
+        new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title=f"hold-{blocked}"))
+        tw.set_status(new_id, "followups_running")
+        with pytest.raises(ValueError, match="status-hold rule"):
+            tw.set_status(new_id, blocked)
+        # Task folder untouched: still held at followups_running.
+        assert (repo / "tasks" / "followups_running" / str(new_id)).is_dir()
+        assert not (repo / "tasks" / blocked / str(new_id)).exists()
+
+
+def test_set_status_followup_hold_force_flag_overrides(fake_repo):
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="force-exit"))
+    tw.set_status(new_id, "followups_running")
+    tw.set_status(new_id, "running", force_followup_exit=True)
+    assert (repo / "tasks" / "running" / str(new_id)).is_dir()
+
+
+def test_set_status_followup_hold_exit_paths_allowed(fake_repo):
+    repo, tw = fake_repo
+    for allowed in ("awaiting_promotion", "blocked", "completed", "archived", "proposed"):
+        new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title=f"exit-{allowed}"))
+        tw.set_status(new_id, "followups_running")
+        tw.set_status(new_id, allowed)  # must not raise
+        assert (repo / "tasks" / allowed / str(new_id)).is_dir()
+
+
+def test_set_status_followup_hold_only_guards_followups_source(fake_repo):
+    """The guard keys on the SOURCE status: a normal pipeline task moves
+    freely between intermediate statuses."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="normal"))
+    for s in ("planning", "plan_pending", "approved", "running", "verifying"):
+        tw.set_status(new_id, s)
+    assert (repo / "tasks" / "verifying" / str(new_id)).is_dir()
+
+
 # ─── post_event ──────────────────────────────────────────────────────────
 
 
