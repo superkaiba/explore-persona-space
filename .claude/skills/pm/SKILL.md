@@ -57,6 +57,7 @@ flow. The PM's job is dispatch, not execution.
 2. Run a fast triage scan against **task state**:
    ```bash
    export PATH="$HOME/.local/bin:$PATH"   # uv lives in ~/.local/bin; non-login shells miss it
+   uv run python scripts/spawn_session.py register-pm   # mark THIS session as PM (id inferred from process ancestry) — the watcher's zombie-wrapper pass never auto-stops a registered PM session. Idempotent; spawn-pm also registers, but /pm may be typed into any session. If it errors (daemon down), continue the scan — only the exclusion is lost.
    uv run python scripts/task.py list-by-status --limit 500
    uv run python scripts/spawn_session.py list
    uv run python scripts/pod.py list-ephemeral
