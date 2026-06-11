@@ -451,6 +451,9 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         cluster=args.cluster,
         hydra_args=tuple(args.hydra or ()),
         extra=extra,
+        # Exactly-one-of was already enforced at the parser surface in
+        # main() (#588); normalize None → "" for the spec.
+        workload_cmd=args.workload_cmd or "",
     )
 
     deps = backends_factory()
@@ -559,6 +562,28 @@ def _cmd_finalize(
     handle = read_handle_sidecar(Path(sidecar))
     deps = backends_factory()
     backend = _resolve_backend_for_handle(handle, deps)
+
+    # ``fetch_results`` BEFORE the confirm gate (#588 / latent slice-6
+    # gap): the GCP completion sentinel lives ON the VM — ``GcpBackend.
+    # fetch_results`` is the scp pull that lands it locally, and the
+    # slice-2 verifier reads the LOCAL filesystem. Without this call
+    # every real GCP finalize FAILed confirm on the missing local
+    # sentinel. Matches the base.py ABC ordering (fetch_results →
+    # confirm_artifacts → teardown). fetch_results is fail-soft by its
+    # own two-tier contract — but wrap defensively: a fetch CRASH must
+    # surface as the confirm FAIL (right surfacing, evidence preserved),
+    # not as a finalize traceback.
+    try:
+        backend.fetch_results(handle)
+    except Exception as exc:
+        logging.getLogger("dispatch_issue").error(
+            "finalize: fetch_results FAILED for issue=%d (%s: %s); continuing to the "
+            "confirm_artifacts gate — a missing local sentinel will FAIL confirm with "
+            "the right surfacing (teardown skipped, evidence preserved).",
+            int(args.issue),
+            type(exc).__name__,
+            exc,
+        )
 
     if not args.skip_confirm_artifacts:
         passed = backend.confirm_artifacts(handle)
@@ -687,7 +712,21 @@ def _build_argparser() -> argparse.ArgumentParser:
         "--hydra",
         action="append",
         default=None,
-        help="Hydra override (e.g. ``condition=c1``). Repeatable.",
+        help=(
+            "Hydra override (e.g. ``condition=c1``). Repeatable. "
+            "Mutually exclusive with --workload-cmd; exactly one of the two is required."
+        ),
+    )
+    launch.add_argument(
+        "--workload-cmd",
+        type=str,
+        default=None,
+        help=(
+            'Custom repo-relative shell command (e.g. "bash scripts/issue<N>_dispatch.sh"). '
+            "Executed verbatim by the lane renderers from the repo checkout root after env "
+            "bootstrap. Mutually exclusive with --hydra; exactly one of the two is required "
+            "(#588)."
+        ),
     )
 
     finalize = sub.add_parser(
@@ -741,6 +780,21 @@ def main(
 
     parser = _build_argparser()
     args = parser.parse_args(argv)
+    if args.action == "launch":
+        # Exactly one of --workload-cmd / --hydra (#588). An explicitly-
+        # empty ``--workload-cmd ''`` counts as not-provided (an empty
+        # command can never be a workload) and errors with the same
+        # message. parser.error prints usage + exits 2 — a friendlier
+        # surface than the RunSpec.__post_init__ traceback, and it fires
+        # BEFORE any backend is built.
+        has_workload_cmd = bool((args.workload_cmd or "").strip())
+        has_hydra = bool(args.hydra)
+        if has_workload_cmd == has_hydra:
+            parser.error(
+                "launch requires exactly one of --workload-cmd / --hydra "
+                f"(got {'both' if has_hydra else 'neither'}; an empty --workload-cmd '' "
+                "counts as not provided)"
+            )
     logging.basicConfig(
         stream=sys.stderr,
         level=logging.DEBUG if args.debug else logging.INFO,

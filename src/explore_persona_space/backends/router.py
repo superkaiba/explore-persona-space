@@ -488,7 +488,7 @@ def canonicalize_spec(spec: RunSpec) -> dict[str, Any]:
     time_budget = (
         f"{float(spec.time_budget_hours):.6f}" if spec.time_budget_hours is not None else None
     )
-    return {
+    canonical: dict[str, Any] = {
         "issue": int(spec.issue),
         "intent": str(spec.intent),
         "gpus": None if spec.gpus is None else int(spec.gpus),
@@ -499,6 +499,13 @@ def canonicalize_spec(spec: RunSpec) -> dict[str, Any]:
         "cluster": spec.cluster,
         "extra": extra_filtered,
     }
+    # ``workload_cmd`` (#588) is keyed ONLY when non-empty so every
+    # existing hydra-only spec hashes byte-identically across the
+    # upgrade (lease reconnect continuity), while a custom-cmd run for
+    # the same issue is a distinct lease key.
+    if spec.workload_cmd:
+        canonical["workload_cmd"] = spec.workload_cmd
+    return canonical
 
 
 def spec_hash(spec: RunSpec) -> str:

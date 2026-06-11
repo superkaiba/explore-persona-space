@@ -1052,3 +1052,39 @@ def test_backend_poll_script_resolves_per_backend_class(tmp_path, monkeypatch) -
     # mis-route a GCP/SLURM poll).
     with pytest.raises(ValueError, match="unknown backend"):
         _resolve_backend("totally-bogus")
+
+
+# ---------------------------------------------------------------------------
+# issue #588 — build_run_spec threads workload_cmd
+# ---------------------------------------------------------------------------
+
+
+def test_build_run_spec_threads_workload_cmd() -> None:
+    spec = build_run_spec(
+        issue=588,
+        intent="debug",
+        backend_value=None,
+        workload_cmd="bash scripts/issue588_smoke.sh",
+    )
+    assert spec.workload_cmd == "bash scripts/issue588_smoke.sh"
+    assert spec.hydra_args == ()
+    assert spec.backend == "auto"
+
+
+def test_build_run_spec_workload_cmd_default_empty() -> None:
+    """Builder stays permissive on neither (test factories +
+    finalize-adjacent uses build bare specs)."""
+    spec = build_run_spec(issue=588, intent="debug", backend_value=None)
+    assert spec.workload_cmd == ""
+
+
+def test_build_run_spec_both_workload_cmd_and_hydra_raises() -> None:
+    """Both-set propagates the RunSpec.__post_init__ raise."""
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        build_run_spec(
+            issue=588,
+            intent="debug",
+            backend_value=None,
+            hydra_args=("seed=1",),
+            workload_cmd="bash scripts/issue588_smoke.sh",
+        )

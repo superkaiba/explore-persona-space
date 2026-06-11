@@ -3132,3 +3132,55 @@ def test_spec_hash_hydra_only_matches_pre_change_recorded_hash() -> None:
         hydra_args=("condition=c1_evil_wrong_em", "seed=42"),
     )
     assert spec_hash(spec) == fixture["spec_hash"]
+
+
+def test_spec_hash_differs_between_hydra_and_custom_specs() -> None:
+    """#588: a custom-cmd run for the same issue is a DISTINCT lease key
+    (reconnect must not glue a custom dispatch onto a hydra lease), and
+    the key is emitted only when non-empty (bare specs unchanged)."""
+    hydra = RunSpec(issue=137, intent="lora-7b", backend="auto", hydra_args=("seed=42",))
+    custom = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="auto",
+        workload_cmd="bash scripts/issue588_smoke.sh",
+    )
+    bare = RunSpec(issue=137, intent="lora-7b", backend="auto")
+    assert spec_hash(hydra) != spec_hash(custom)
+    assert spec_hash(bare) != spec_hash(custom)
+    assert "workload_cmd" not in canonicalize_spec(bare)
+    assert "workload_cmd" not in canonicalize_spec(hydra)
+    assert canonicalize_spec(custom)["workload_cmd"] == "bash scripts/issue588_smoke.sh"
+
+
+def test_auto_route_workload_cmd_spec_walks_gcp_first_identically(lease_store) -> None:
+    """#588: ``route()`` never introspects the workload shape — a
+    workload_cmd spec walks the same GCP-first auto chain as a hydra
+    spec, RunPod untouched, and the spec reaches the lane verbatim."""
+    rp = _ExplodingRunpod()
+    nibi = _FreeLaneBackend(kind="nibi")
+    gcp = _GcpBackendDouble()
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="auto",
+        workload_cmd="bash scripts/issue588_smoke.sh",
+    )
+    result = route(
+        spec,
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    # GCP-first standing default resolves at GCP; the free lane is never
+    # touched and RunPod (exploding double) is provably never called.
+    assert result.chosen_kind == "gcp"
+    assert len(gcp.launches) == 1
+    assert gcp.launches[0].workload_cmd == "bash scripts/issue588_smoke.sh"
+    assert len(nibi.launches) == 0
