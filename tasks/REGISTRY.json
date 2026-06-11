@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 606,
+  "highest_id": 607,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3687,6 +3687,13 @@
       "path": "tasks/planning/606",
       "status": "planning",
       "title": "Does the LoRA vs full-FT bystander-leakage equivalence hold for realistic behaviors (sycophancy, refusal, EM)?"
+    },
+    "607": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/607",
+      "status": "proposed",
+      "title": "GCP lane: redirect workload output to log file \u2014 GCE metadata runner bufio.Scanner token-too-long kills workloads with progress bars"
     },
     "61": {
       "has_clean_result": true,
