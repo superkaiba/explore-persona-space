@@ -336,7 +336,7 @@ def format_gap_contrast(pairs: dict[str, dict]) -> dict:
 # ── H4 / H5 / H6 / negative controls ─────────────────────────────────────
 
 
-def h4_dose_monotonicity(smoke: bool = False, *, n_boot: int = 2000, seed: int = SEED) -> dict:
+def h4_dose_monotonicity(smoke: bool = False, *, n_boot: int = N_BOOT, seed: int = SEED) -> dict:
     """ICL source-cell dose vs K per chain: monotonicity beyond bootstrap noise.
 
     Per chain, a JOINT question bootstrap (one resample drives all four
@@ -413,7 +413,7 @@ def h5_control_contrasts(
     full_q: np.ndarray,
     controls: dict[str, np.ndarray],
     *,
-    n_boot: int = 2000,
+    n_boot: int = N_BOOT,
     seed: int = SEED,
 ) -> dict:
     """H5: per-control source-dose contrast (full − control) with bootstrap CIs.
@@ -460,23 +460,29 @@ def h6_order_statistics(
     perm_qs: list[np.ndarray],
     k3_q: np.ndarray | None,
     *,
-    n_boot: int = 2000,
+    n_boot: int = N_BOOT,
     seed: int = SEED,
 ) -> dict:
     """H6: order-permutation SD of the source dose vs the K3→K8 increment.
 
-    The same JOINT question bootstrap drives the 4 ordering means (3 perms +
-    canonical), their SD (ddof=1), and the K3→K8 increment per replicate, so
-    the registered "sd < 25% of increment" read carries a CI on the SD, a CI
-    on the margin (sd − 0.25·|increment|), and the replicate fraction below
-    the threshold — uncertainty instead of a bare binarized flag (plan §6;
-    round-3 fix h5-h6-bootstrap-cis-missing). The point flag is kept.
+    The REGISTERED SD is over the ``perm_qs`` order permutations ONLY (the 3
+    ``icl_perm_{0,1,2}`` cells, ``ddof=1`` → a 2-dof estimate, plan §6).
+    ``canonical_q`` is NOT an exchangeable ordering — it is the construction
+    order every other read uses — so it enters solely as the K=8 endpoint of
+    the K3→K8 increment (round-4 fix h6-order-sd-wrong-statistic; including
+    it coupled the numerator and denominator of the "sd < 25% of increment"
+    verdict). The same JOINT question bootstrap drives the permutation
+    means, their SD, and the increment per replicate, so the registered read
+    carries a CI on the SD, a CI on the margin (sd − 0.25·|increment|), and
+    the replicate fraction below the threshold (round-3 fix
+    h5-h6-bootstrap-cis-missing). The point flag is kept;
+    ``perm_doses``/``canonical_dose`` stay as descriptive reporting.
     """
     rng = np.random.default_rng(seed)
     canonical_q = np.asarray(canonical_q, dtype=float)
     n_q = canonical_q.size
-    mat = np.vstack([*[np.asarray(p, dtype=float) for p in perm_qs], canonical_q])
-    assert mat.shape == (len(perm_qs) + 1, n_q), mat.shape
+    perm_mat = np.vstack([np.asarray(p, dtype=float) for p in perm_qs])
+    assert perm_mat.shape == (len(perm_qs), n_q), perm_mat.shape
     if k3_q is not None:
         k3_q = np.asarray(k3_q, dtype=float)
         assert k3_q.shape == canonical_q.shape, (k3_q.shape, canonical_q.shape)
@@ -485,17 +491,18 @@ def h6_order_statistics(
     boot_margin = np.empty(n_boot) if k3_q is not None else None
     for i in range(n_boot):
         qi = rng.integers(0, n_q, size=n_q)
-        boot_sd[i] = np.std(mat[:, qi].mean(axis=1), ddof=1)
+        boot_sd[i] = np.std(perm_mat[:, qi].mean(axis=1), ddof=1)
         if k3_q is not None:
             incr = canonical_q[qi].mean() - k3_q[qi].mean()
             boot_incr[i] = incr
             boot_margin[i] = boot_sd[i] - 0.25 * abs(incr)
-    doses = mat.mean(axis=1)
-    sd = float(np.std(doses, ddof=1))
+    perm_doses = perm_mat.mean(axis=1)
+    sd = float(np.std(perm_doses, ddof=1))
     incr_pt = float(canonical_q.mean() - k3_q.mean()) if k3_q is not None else None
     return {
-        "perm_doses": [float(x) for x in doses[:-1]],
-        "canonical_dose": float(doses[-1]),
+        "perm_doses": [float(x) for x in perm_doses],
+        "canonical_dose": float(canonical_q.mean()),
+        "n_orderings_in_sd": int(perm_mat.shape[0]),
         "order_sd": sd,
         "order_sd_ci95": _q_ci(boot_sd),
         "k3_to_k8_increment": incr_pt,
@@ -513,7 +520,8 @@ def h6_order_statistics(
         "n_boot": n_boot,
         "seed": seed,
         "dof_note": (
-            "sd from 4 orderings (3 perms + canonical) — 3-dof estimate; "
+            "sd over the 3 order permutations ONLY (ddof=1 — 2-dof estimate, plan §6); "
+            "canonical_q is solely the K=8 endpoint of the K3→K8 increment; "
             "CIs from the joint question bootstrap"
         ),
     }
@@ -565,6 +573,14 @@ def h5_demo_token_counts(variant_ids: tuple[str, ...]) -> dict[str, dict]:
     r_villain: dict[str, dict] | None = None
     out: dict[str, dict] = {}
     for vid in variant_ids:
+        # Registry miss degrades to the SAME structured per-variant skip
+        # record as a missing demo file (round-4 opportunistic: a KeyError
+        # outside the per-variant handling crashed the whole H5 block while
+        # FileNotFoundError skipped one row).
+        if vid not in variants:
+            logger.warning("demo-token-count for %s skipped: variant id not in registry", vid)
+            out[vid] = {"tokens": None, "skipped": "variant id not in registry"}
+            continue
         spec = variants[vid]
         try:
             if spec["demo_style"] in ("villain_marker", "villain_stripped") and r_villain is None:
@@ -593,6 +609,10 @@ def _h5_h6_blocks(_ctx_profile, *, n_boot: int, seed: int) -> dict:
         return out
     q_ref = full[SOURCE_CONTEXT]["questions"]
     full_q = np.asarray(full[SOURCE_CONTEXT]["delta_logp"], dtype=float)
+    if full_q.size != len(q_ref):
+        raise AssertionError(
+            f"H5/H6 icl_K8_chainA: delta_logp length {full_q.size} != questions {len(q_ref)}"
+        )
     controls_q: dict[str, np.ndarray] = {}
     for ctrl in ("icl_ctrl_stripped", "icl_ctrl_helpful", "icl_ctrl_helpful_marker"):
         prof = _ctx_profile(ctrl)
@@ -618,7 +638,7 @@ def _h5_h6_blocks(_ctx_profile, *, n_boot: int, seed: int) -> dict:
 
 
 def h5_h6_controls(
-    pairs: dict[str, dict], smoke: bool = False, *, n_boot: int = 2000, seed: int = SEED
+    pairs: dict[str, dict], smoke: bool = False, *, n_boot: int = N_BOOT, seed: int = SEED
 ) -> dict:
     """Content controls (H5), order permutations (H6), H1 negative controls.
 
@@ -801,8 +821,8 @@ def run_analysis(*, smoke: bool = False, n_boot: int = N_BOOT) -> Path:
         "format_gap_control": format_gap_contrast(pairs),
         "h2_geometry": _h2_geometry_block(),
         "h3": h3_gate_correlations(pairs, smoke),
-        "h4": h4_dose_monotonicity(smoke),
-        "h5_h6": h5_h6_controls(pairs, smoke),
+        "h4": h4_dose_monotonicity(smoke, n_boot=n_boot),
+        "h5_h6": h5_h6_controls(pairs, smoke, n_boot=n_boot),
         "own_policy_validation": own_policy_validation(smoke),
     }
     out = ns_eval_dir(smoke) / "analysis.json"
@@ -901,6 +921,66 @@ def synthetic_smoke() -> None:
     assert h6_nok3["sd_minus_quarter_increment_ci95"] is None, h6_nok3
     assert h6_nok3["order_sd_ci95"] is not None, h6_nok3
 
+    # Round-4 fix h6-order-sd-wrong-statistic: the registered SD is over the
+    # 3 permutations ONLY (ddof=1 -> 2-dof, plan §6). Discriminating fixture:
+    # canonical sits 3 nats off a tight permutation cluster (per-q noise
+    # 0.05), so the 3-perm SD is ~0.01 while a 4-row SD that wrongly included
+    # canonical would be ~1.5.
+    tight_perms = [10.0 + h5_rng.normal(0, 0.05, size=n_q) for _ in range(3)]
+    far_canonical = 13.0 + h5_rng.normal(0, 0.05, size=n_q)
+    h6_3perm = h6_order_statistics(far_canonical, tight_perms, k3_q, n_boot=400, seed=8)
+    assert h6_3perm["n_orderings_in_sd"] == 3, h6_3perm
+    assert "2-dof" in h6_3perm["dof_note"], h6_3perm["dof_note"]
+    assert h6_3perm["order_sd"] < 0.5, (
+        f"order_sd={h6_3perm['order_sd']:.3f} — canonical leaked into the 3-perm SD"
+    )
+    assert h6_3perm["order_sd_ci95"][1] < 0.5, h6_3perm["order_sd_ci95"]
+    assert abs(h6_3perm["canonical_dose"] - 13.0) < 0.2, h6_3perm["canonical_dose"]
+    # Canonical still drives the increment endpoint (13 - 4 = ~9).
+    assert abs(h6_3perm["k3_to_k8_increment"] - 9.0) < 0.3, h6_3perm["k3_to_k8_increment"]
+    assert len(h6_3perm["perm_doses"]) == 3, h6_3perm["perm_doses"]
+
+    # Round-4 fix h5-h6-bootstrap-nboot-not-forwarded: run_analysis must
+    # forward its run-level n_boot to H1, H4 AND H5/H6 (the :805 call site
+    # previously dropped it, recording the helper's 2000 default against the
+    # registered 10k). Recorder stubs capture the kwarg each call site
+    # actually receives; data-touching functions are stubbed so no eval JSONs
+    # are required and write_json is a no-op (no artifact written).
+    import sys
+    from unittest import mock
+
+    mod = sys.modules[__name__]
+    captured: dict[str, int | None] = {}
+
+    def _recorder(name: str):
+        def _f(*args, **kwargs):
+            captured[name] = kwargs.get("n_boot")
+            return {}
+
+        return _f
+
+    with (
+        mock.patch.object(mod, "assemble_pairs", return_value=({}, [])),
+        mock.patch.object(mod, "h1_statistics", _recorder("h1")),
+        mock.patch.object(mod, "format_gap_contrast", _recorder("format_gap")),
+        mock.patch.object(mod, "_h2_geometry_block", _recorder("h2")),
+        mock.patch.object(mod, "h3_gate_correlations", _recorder("h3")),
+        mock.patch.object(mod, "h4_dose_monotonicity", _recorder("h4")),
+        mock.patch.object(mod, "h5_h6_controls", _recorder("h5_h6")),
+        mock.patch.object(mod, "own_policy_validation", _recorder("own_policy")),
+        mock.patch.object(mod, "write_json", lambda path, payload: None),
+    ):
+        run_analysis(smoke=True, n_boot=777)
+    assert captured["h1"] == 777, captured
+    assert captured["h4"] == 777, captured
+    assert captured["h5_h6"] == 777, captured
+    # Defense in depth: helper defaults are pinned to the registered N_BOOT,
+    # so a future dropped kwarg still records the registered count.
+    import inspect
+
+    for fn in (h4_dose_monotonicity, h5_h6_controls, h5_control_contrasts, h6_order_statistics):
+        assert inspect.signature(fn).parameters["n_boot"].default == N_BOOT, fn.__name__
+
     # Demo-token-count plumbing (plan §13/§12b): the chat-template diff must
     # isolate exactly the demo-block tokens on a minimal tokenizer stub.
     class _WhitespaceTok:
@@ -960,6 +1040,9 @@ def synthetic_smoke() -> None:
                 "h6_frac_sd_below_quarter_increment": (
                     h6["bootstrap_frac_sd_below_quarter_increment"]
                 ),
+                "h6_n_orderings_in_sd": h6_3perm["n_orderings_in_sd"],
+                "h6_3perm_order_sd_under_far_canonical": h6_3perm["order_sd"],
+                "run_analysis_n_boot_forwarded": {k: captured[k] for k in ("h1", "h4", "h5_h6")},
                 "demo_prefix_token_count_stub": n_demo_tok,
                 "perm_null_observed_abs_cos": null["abs_cos_observed"][0],
                 "perm_null_p95_abs_cos": null["abs_cos_p95"][0],
