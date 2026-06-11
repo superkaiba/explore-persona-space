@@ -3588,7 +3588,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/594",
       "status": "followups_running",
-      "title": "48 contexts, as constructed, organize by family at every depth of Qwen2.5-7B-Instruct under a single probe genre, beyond chance, length, and lexical-overlap baselines (HIGH confidence)"
+      "title": "48 contexts, as constructed, organize by family at every depth of Qwen2.5-7B-Instruct, beyond chance, length, and lexical-overlap baselines, replicating across two probe genres (HIGH confidence)"
     },
     "595": {
       "goal": "Test whether a behavior's prefix-carrier binding strength (how much narrow finetuning writes the behavior into the chat-template prefix/postfix representations, Piggyback arXiv 2606.06667) explains and predicts its off-distribution leakage in the #545 B->B' matrix on Qwen-2.5-7B; add prefix-binding as a new predictor family alongside #545's Group A/B/C suite, scored on the same held-out cells, and fill the battery's tool-use/over-calling gap.",

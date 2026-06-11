@@ -1,7 +1,7 @@
 ---
-title: 48 contexts, as constructed, organize by family at every depth of Qwen2.5-7B-Instruct
-  under a single probe genre, beyond chance, length, and lexical-overlap baselines
-  (HIGH confidence)
+title: 48 contexts, as constructed, organize by family at every depth of Qwen2.5-7B-Instruct,
+  beyond chance, length, and lexical-overlap baselines, replicating across two probe
+  genres (HIGH confidence)
 kind: experiment
 tags:
 - followup-auto
