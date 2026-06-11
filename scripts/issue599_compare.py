@@ -21,7 +21,13 @@ evaluation only — the analyzer owns the final verdict):
   FULL/PARTIAL/KILL read). Geometry is evaluated on NON-KILL same-text seeds
   only, with the pinned readable-seed denominator (>= 2 readable seeds for any
   geometry headline; per-seed clause counts = ceil(2N/3); <= 1 readable ->
-  installability-only INDETERMINATE).
+  installability-only INDETERMINATE). **Both gate inputs FAIL CLOSED**: the
+  full 3-seed headline is never evaluated without them — a missing gate file
+  is a hard error (an explicitly-passed missing path ALWAYS errors; the
+  canonical defaults error too unless ``--allow-missing-gates``, which is
+  smoke/ad-hoc ONLY and labels the output ``gates_bypassed``). A seed absent
+  from the manipulation check is NOT readable — hard error, never silently
+  readable.
 - CONFIRM: mean weighted top-share >= 0.50 AND >= ceil(2N/3) seeds >= 0.46 AND
   every gating cell clears its sign-flip null p95 AND unit-norm survival
   (mean unit-norm >= 0.40, >= ceil(2N/3) seeds rotation >= 0.95).
@@ -38,7 +44,10 @@ evaluation only — the analyzer owns the final verdict):
   clauses.d_s_top1_frac) of its decision boundary routes to INDETERMINATE
   (measurement-limited).
 
-Run (VM, CPU, off-pod — after the pod uploaded the 9 tensors):
+Run (VM, CPU, off-pod — after the pod uploaded the 9 tensors). NEVER pass
+``--allow-missing-gates`` here; the driver also persists both gate JSONs to
+``hf://<private-data-repo>/issue599_fullresp/eval/`` if the pod->VM
+eval_results sync hasn't landed:
 
     uv run python scripts/issue599_compare.py \\
         --new-shifts-dir eval_results/issue_599/shifts \\
@@ -46,7 +55,8 @@ Run (VM, CPU, off-pod — after the pod uploaded the 9 tensors):
         --smoke-gate-json eval_results/issue_599_extract_smoke/smoke_gate_result.json \\
         --out eval_results/issue_599/comparison
 
-Smoke (tiny subset, local reference dirs, no Hub):
+Smoke (tiny subset, local reference dirs, no Hub; ``--allow-missing-gates``
+tolerates the absent canonical gate files — smoke/ad-hoc ONLY):
 
     uv run python scripts/issue599_compare.py \\
         --new-shifts-dir /tmp/i599_smoke/new_shifts --new-cells marker_seed42 \\
@@ -54,6 +64,7 @@ Smoke (tiny subset, local reference dirs, no Hub):
         --issue551-cells same_marker_seed42 same_em_seed42 \\
         --issue561-local-dir /tmp/i599_smoke/i561 \\
         --issue561-cells same_marker_seed42 \\
+        --allow-missing-gates \\
         --out /tmp/i599_smoke/out --figures-dir /tmp/i599_smoke/figures
 """
 
@@ -109,6 +120,13 @@ FROBENIUS_NOISE_FLOOR_FALLBACK = 9.66
 MIN_READABLE_SEEDS = 2
 EM_BAND_LOWER_MARGIN = 0.524
 
+# Canonical VM-side gate-input paths (the driver's outputs after the pod->VM
+# eval_results sync; the driver ALSO persists both to the private data repo
+# under issue599_fullresp/eval/). The compare FAILS CLOSED on these — see
+# _load_kill_status / _load_smoke_drift.
+DEFAULT_MANIPULATION_CHECK = "eval_results/issue_599/manipulation_check.json"
+DEFAULT_SMOKE_GATE_JSON = "eval_results/issue_599_extract_smoke/smoke_gate_result.json"
+
 
 @dataclass(frozen=True)
 class Cell599:
@@ -136,20 +154,64 @@ def _ceil_two_thirds(n: int) -> int:
     return math.ceil(2 * n / 3)
 
 
-def _load_kill_status(path: Path | None) -> dict[int, str] | None:
-    """Per-seed FULL/PARTIAL/KILL from the driver's manipulation_check.json."""
-    if path is None or not path.exists():
+def _require_gate_file(path: Path, *, explicit: bool, allow_missing: bool, label: str) -> bool:
+    """Fail-CLOSED existence check for a headline gate input.
+
+    Returns True when the file is present (load it), False when it is absent
+    but the absence is permitted (canonical default + --allow-missing-gates,
+    smoke/ad-hoc only). An EXPLICITLY-passed missing path ALWAYS raises, and a
+    missing canonical default raises too unless --allow-missing-gates.
+    """
+    if path.exists():
+        return True
+    if explicit or not allow_missing:
+        raise FileNotFoundError(
+            f"{label} not found: {path}"
+            + ("" if explicit else " (canonical default)")
+            + " — the #599 headline gates fail CLOSED (plan §7.2/§13: KILL spectra are never"
+            " the implant's geometry; the measurement-drift rule is globally binding)."
+            " Production must provide the driver's gate JSONs (also persisted to the private"
+            " data repo under issue599_fullresp/eval/). Pass --allow-missing-gates ONLY for"
+            " ad-hoc/smoke subsets."
+        )
+    logger.warning(
+        "[gates] BYPASSED via --allow-missing-gates: %s missing at %s — the headline will be "
+        "computed WITHOUT this gate and labeled gates_bypassed; NEVER a production verdict.",
+        label,
+        path,
+    )
+    return False
+
+
+def _load_kill_status(path: Path, *, explicit: bool, allow_missing: bool) -> dict[int, str] | None:
+    """Per-seed FULL/PARTIAL/KILL from the driver's manipulation_check.json.
+
+    Fails CLOSED on a missing file (see _require_gate_file) and on an
+    empty/malformed per_seed payload; returns None ONLY under the explicit
+    --allow-missing-gates smoke bypass.
+    """
+    if not _require_gate_file(
+        path, explicit=explicit, allow_missing=allow_missing, label="manipulation check"
+    ):
         return None
     payload = json.loads(path.read_text())
     out: dict[int, str] = {}
-    for key, entry in payload.get("per_seed", {}).items():
+    for key, entry in payload["per_seed"].items():
         out[int(key.removeprefix("seed"))] = str(entry["status"])
+    if not out:
+        raise ValueError(f"manipulation check {path} carries an empty per_seed — refusing to gate")
     return out
 
 
-def _load_smoke_drift(path: Path | None) -> float | None:
-    """Realized extraction-smoke drift |d s_top1| from smoke_gate_result.json."""
-    if path is None or not path.exists():
+def _load_smoke_drift(path: Path, *, explicit: bool, allow_missing: bool) -> float | None:
+    """Realized extraction-smoke drift |d s_top1| from smoke_gate_result.json.
+
+    Fails CLOSED on a missing file (see _require_gate_file); returns None
+    ONLY under the explicit --allow-missing-gates smoke bypass.
+    """
+    if not _require_gate_file(
+        path, explicit=explicit, allow_missing=allow_missing, label="extraction-smoke gate result"
+    ):
         return None
     payload = json.loads(path.read_text())
     return float(payload["clauses"]["d_s_top1_frac"])
@@ -241,13 +303,64 @@ def _reference_bands(per_cell: dict[str, dict]) -> dict:
     return bands
 
 
+def _gate_readable_seeds(
+    new_same: list[dict],
+    kill_status: dict[int, str] | None,
+    smoke_drift: float | None,
+    *,
+    allow_missing_gates: bool,
+) -> list[dict]:
+    """Fail-CLOSED §7.2/§13 gatekeeper — returns the readable (non-KILL) cells.
+
+    A full 3-seed headline is NEVER evaluated without both gate inputs
+    (round-1 review blocker compare-gates-fail-open): the all-seed-KILL modal
+    outcome MUST route to "indeterminate (installability-only)", which
+    requires the manipulation check; the drift rule is globally binding,
+    which requires the smoke gate. A seed absent from the manipulation check
+    is NOT readable — hard error, never silently readable.
+    """
+    if not allow_missing_gates:
+        if kill_status is None:
+            raise ValueError(
+                "headline evaluation requires the driver's manipulation_check.json "
+                "(--manipulation-check) — refusing to compute a geometry verdict that could "
+                "read a KILL-branch spectrum as the implant's geometry (plan §14 must-stop)."
+            )
+        if smoke_drift is None:
+            raise ValueError(
+                "headline evaluation requires the extraction-smoke gate result "
+                "(--smoke-gate-json) — the §13 measurement-drift rule is globally binding."
+            )
+    if kill_status is None:
+        logger.warning(
+            "[headline] GATES BYPASSED (--allow-missing-gates): no manipulation check — "
+            "treating ALL seeds as readable; this output is NOT a production verdict."
+        )
+        return list(new_same)
+    absent = sorted(v["seed"] for v in new_same if v["seed"] not in kill_status)
+    if absent:
+        raise ValueError(
+            f"seeds {absent} absent from the manipulation check — a seed missing from "
+            f"manipulation_check.json is NOT readable (fail closed); regenerate the "
+            f"driver's per-seed read or fix the --new-cells set."
+        )
+    return [v for v in new_same if kill_status[v["seed"]] != "KILL"]
+
+
 def _headline(
     per_cell: dict[str, dict],
     *,
     kill_status: dict[int, str] | None,
     smoke_drift: float | None,
+    allow_missing_gates: bool = False,
 ) -> dict:
-    """Mechanical plan #599 §13 clause evaluation over the same-text cells."""
+    """Mechanical plan #599 §13 clause evaluation over the same-text cells.
+
+    Fails CLOSED: a full 3-seed headline is never evaluated without BOTH gate
+    inputs (manipulation check + extraction-smoke drift) unless
+    ``allow_missing_gates`` (smoke/ad-hoc only — the output is then labeled
+    ``gates_bypassed``). A seed absent from the manipulation check raises.
+    """
     new_same = sorted(
         (v for v in per_cell.values() if v["arm"] == "fullresp" and v["variant"] == "same"),
         key=lambda v: v["seed"],
@@ -274,6 +387,16 @@ def _headline(
             {f"seed{s}": st for s, st in sorted(kill_status.items())} if kill_status else None
         ),
         "realized_smoke_drift_d_s_top1": smoke_drift,
+        # Smoke/ad-hoc bypass labeling: empty on every production run. Any
+        # entry here means a §13 gate was NOT applied (--allow-missing-gates).
+        "gates_bypassed": [
+            name
+            for name, value in (
+                ("manipulation_check", kill_status),
+                ("smoke_drift", smoke_drift),
+            )
+            if value is None
+        ],
         "thresholds": {
             "per_seed_top_share": PER_SEED_TOP_SHARE,
             "mean_top_share_confirm": MEAN_TOP_SHARE_CONFIRM,
@@ -294,15 +417,9 @@ def _headline(
             "reason": f"only {len(new_same)}/3 fullresp same-text cells present (smoke subset?)",
             **base,
         }
-    if kill_status is None:
-        logger.warning(
-            "[headline] no --manipulation-check provided — treating ALL seeds as readable; "
-            "production runs MUST pass the driver's manipulation_check.json"
-        )
-        readable = list(new_same)
-    else:
-        readable = [v for v in new_same if kill_status.get(v["seed"]) != "KILL"]
-
+    readable = _gate_readable_seeds(
+        new_same, kill_status, smoke_drift, allow_missing_gates=allow_missing_gates
+    )
     n_readable = len(readable)
     if n_readable < MIN_READABLE_SEEDS:
         return {
@@ -364,15 +481,21 @@ def _headline(
 
     # Globally binding measurement-drift rule (§13): a CONFIRM/FALSIFY whose
     # deciding mean sits within the realized extraction-smoke drift of its
-    # boundary is measurement-limited.
-    drift_margins: dict[str, float | None] = {
+    # boundary is measurement-limited. Symmetric across verdicts: BOTH
+    # deciding means (weighted AND unit-norm) are checked against their
+    # respective decision boundaries on confirm exactly as on falsify.
+    drift_margins: dict[str, float] = {
         "confirm_margin_weighted": abs(mean_top - MEAN_TOP_SHARE_CONFIRM),
+        "confirm_margin_unitnorm": abs(mean_unit - UNITNORM_TOP_SHARE_MIN),
         "falsify_margin_weighted": abs(mean_top - MEAN_TOP_SHARE_FALSIFY),
         "falsify_margin_unitnorm": abs(mean_unit - UNITNORM_FALSIFY_MAX),
     }
     drift_limited = False
     if smoke_drift is not None:
-        if verdict == "confirm" and drift_margins["confirm_margin_weighted"] <= smoke_drift:
+        if verdict == "confirm" and (
+            drift_margins["confirm_margin_weighted"] <= smoke_drift
+            or drift_margins["confirm_margin_unitnorm"] <= smoke_drift
+        ):
             drift_limited = True
         if verdict == "falsify" and (
             drift_margins["falsify_margin_weighted"] <= smoke_drift
@@ -382,10 +505,10 @@ def _headline(
         if drift_limited:
             verdict = "indeterminate (measurement-limited)"
     elif verdict in ("confirm", "falsify"):
+        # Reachable ONLY under --allow-missing-gates (production raised above).
         logger.warning(
-            "[headline] verdict=%s but no --smoke-gate-json provided — the globally "
-            "binding measurement-drift rule could NOT be applied; production runs "
-            "MUST pass the extraction-smoke gate result.",
+            "[headline] GATES BYPASSED (--allow-missing-gates): verdict=%s computed WITHOUT "
+            "the globally binding measurement-drift rule — NOT a production verdict.",
             verdict,
         )
 
@@ -556,11 +679,17 @@ def _parse_ref_cells(
         return [Cell599(arm=a, variant=v, seed=s) for v in variants for a in arms for s in SEEDS]
     cells = []
     for stem in specs:
-        variant, _, rest = stem.partition("_")
-        arm, _, seed_s = rest.partition("_seed")
+        # Match by known variant prefixes (longest first): a first-underscore
+        # split would break the multi-token 'on_policy_*' stems.
+        variant = next(
+            (v for v in sorted(VARIANTS, key=len, reverse=True) if stem.startswith(v + "_")),
+            None,
+        )
+        assert variant is not None, f"bad reference stem {stem!r}: no variant prefix in {VARIANTS}"
+        arm, _, seed_s = stem[len(variant) + 1 :].partition("_seed")
         if arms == ("posonly",) and arm == "marker":
             arm = "posonly"  # file stem carries the dispatcher arm name
-        assert variant in VARIANTS and arm in arms, f"bad reference stem {stem!r} for arms {arms}"
+        assert arm in arms and seed_s, f"bad reference stem {stem!r} for arms {arms}"
         cells.append(Cell599(arm=arm, variant=variant, seed=int(seed_s)))
     return cells
 
@@ -631,8 +760,10 @@ def main() -> int:
         default=None,
         help=(
             "Path to the driver's manipulation_check.json (per-seed step-600 "
-            "FULL/PARTIAL/KILL). Production runs MUST pass it — geometry is "
-            "evaluated on non-KILL seeds only (plan §7.2/§13)."
+            "FULL/PARTIAL/KILL); geometry is evaluated on non-KILL seeds only "
+            f"(plan §7.2/§13). Default: {DEFAULT_MANIPULATION_CHECK}. FAILS "
+            "CLOSED when the file is absent (an explicitly-passed missing path "
+            "always errors; the default errors too unless --allow-missing-gates)."
         ),
     )
     parser.add_argument(
@@ -641,7 +772,20 @@ def main() -> int:
         help=(
             "Path to the pod's extraction-smoke smoke_gate_result.json; its "
             "clauses.d_s_top1_frac is the realized drift for the globally "
-            "binding measurement-drift rule (plan §13)."
+            f"binding measurement-drift rule (plan §13). Default: "
+            f"{DEFAULT_SMOKE_GATE_JSON}. FAILS CLOSED when absent (same rule "
+            "as --manipulation-check)."
+        ),
+    )
+    parser.add_argument(
+        "--allow-missing-gates",
+        action="store_true",
+        help=(
+            "Smoke/ad-hoc ONLY: tolerate ABSENT (defaulted) gate files — the "
+            "headline is then computed without KILL gating / the drift rule and "
+            "labeled gates_bypassed in the output. NEVER pass this on a "
+            "production invocation. An explicitly-passed gate path that does "
+            "not exist STILL errors."
         ),
     )
     parser.add_argument("--out", default="eval_results/issue_599/comparison")
@@ -660,6 +804,20 @@ def main() -> int:
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     figures_dir = Path(args.figures_dir)
+
+    # Headline gate inputs FIRST (fail CLOSED, before any download/analysis
+    # spend): an explicitly-passed missing path always errors; the canonical
+    # defaults error too unless --allow-missing-gates (smoke/ad-hoc only).
+    manip_explicit = args.manipulation_check is not None
+    manip_path = Path(args.manipulation_check or DEFAULT_MANIPULATION_CHECK)
+    smoke_explicit = args.smoke_gate_json is not None
+    smoke_path = Path(args.smoke_gate_json or DEFAULT_SMOKE_GATE_JSON)
+    kill_status = _load_kill_status(
+        manip_path, explicit=manip_explicit, allow_missing=args.allow_missing_gates
+    )
+    smoke_drift = _load_smoke_drift(
+        smoke_path, explicit=smoke_explicit, allow_missing=args.allow_missing_gates
+    )
 
     # Build the cell lists.
     new_cells: list[Cell599] = []
@@ -697,11 +855,6 @@ def main() -> int:
             out_dir / "i561_shifts_downloaded",
         )
 
-    kill_status = _load_kill_status(
-        Path(args.manipulation_check) if args.manipulation_check else None
-    )
-    smoke_drift = _load_smoke_drift(Path(args.smoke_gate_json) if args.smoke_gate_json else None)
-
     meta = {
         "issue": 599,
         "analysis": "fullresp_vs_persisted_551_and_561_comparison",
@@ -718,8 +871,9 @@ def main() -> int:
             if args.issue561_local_dir
             else f"hf://{args.issue561_repo}/{args.issue561_prefix}@{args.issue561_revision}"
         ),
-        "manipulation_check": args.manipulation_check,
-        "smoke_gate_json": args.smoke_gate_json,
+        "manipulation_check": str(manip_path),
+        "smoke_gate_json": str(smoke_path),
+        "allow_missing_gates": args.allow_missing_gates,
         "n_null_reps": N_NULL_REPS,
         "n_perm": N_PERM,
         "n_random_splits": args.n_random_splits,
@@ -801,7 +955,12 @@ def main() -> int:
 
     summary = {
         "meta": meta,
-        "headline": _headline(per_cell, kill_status=kill_status, smoke_drift=smoke_drift),
+        "headline": _headline(
+            per_cell,
+            kill_status=kill_status,
+            smoke_drift=smoke_drift,
+            allow_missing_gates=args.allow_missing_gates,
+        ),
         "cross_arm_U1": _cross_arm_u1(extras),
         "reference_weighted_consistency_max_abs_delta": consistency,
         "per_cell_top_share": {
