@@ -22,6 +22,8 @@ promoted_at: '2026-06-11T06:36:59Z'
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_480.md](https://github.com/superkaiba/explore-persona-space/blob/eaf311b83e838813a686b8a576588332d5cdf606/docs/methodology/issue_480.md) · [gist](https://gist.github.com/superkaiba/ea3fe3b471c7682325b2ca89bbc1dc46)
+
 ## Human TL;DR
 
 **Headline.** I wanted a cheap token-leakage probe to predict the messier behavioral leakage (sycophancy) we saw earlier on the same panel — and after fixing two broken measurements in a row, it now tracks sycophancy on both of the only two panels where sycophancy actually varies: the software engineer replicates at a clean non-saturated anchor, the assistant, which was borderline before, comes in clearly once retrained with the corrected recipe, and a final pass shows the probe works even at lighter checkpoints where the marker never actually appears in any answer — cleanly for the assistant, for the software engineer only once the registered controls are in.
