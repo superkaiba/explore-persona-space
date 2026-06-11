@@ -779,48 +779,9 @@ if [[ "$DRY_RUN" != "1" && "$PROBE_TRIGGER" == "1" ]]; then
   fi
 
   phase ext_probe_read "first non-KILL checkpoint on the seed-42 probe trajectory (escalate only if reached by ${EXT_MAX_STEPS})"
-  PROBE_READ_RC=0
-  uv run python - "$REPO_ROOT/$EXT_DIR" 42 "$EXT_SAVE_STEPS" "$EXT_MAX_STEPS" <<'PY' || PROBE_READ_RC=$?
-import json
-import sys
-from pathlib import Path
-
-ext_dir, seed = Path(sys.argv[1]), int(sys.argv[2])
-save_steps, max_steps = int(sys.argv[3]), int(sys.argv[4])
-pe_dir = ext_dir / f"marker_seed{seed}" / "periodic_eval"
-snaps = sorted(pe_dir.glob("leakage_marker_step_*.json"),
-               key=lambda p: int(p.stem.rsplit("_", 1)[1]))
-assert snaps, f"no periodic_eval snapshots under {pe_dir}"
-first_non_kill = None
-first_full = None
-trajectory = {}
-for p in snaps:
-    step = int(p.stem.rsplit("_", 1)[1])
-    m = json.loads(p.read_text())["metrics_by_persona"]["medical_doctor"]
-    dg, emit = float(m["log_p_marker_delta"]), float(m["emit_rate"])
-    logp_t = float(m["log_p_marker_trained"])
-    trajectory[step] = {"dg": dg, "emit": emit, "logp_trained": logp_t}
-    non_kill = dg >= 5.0 and emit >= 0.5
-    full = logp_t >= -0.5 and emit >= 0.95
-    # Band-entry checkpoint must EXIST on disk: restrict to saved steps.
-    if step % save_steps == 0 and (ext_dir / f"marker_seed{seed}" / f"checkpoint-{step}").exists():
-        if non_kill and first_non_kill is None:
-            first_non_kill = step
-        if full and first_full is None:
-            first_full = step
-result = {
-    "seed": seed,
-    "first_non_kill_checkpoint": first_non_kill,
-    "first_full_checkpoint": first_full,
-    "probe_cleared": first_non_kill is not None,
-    "max_steps": max_steps,
-    "save_steps": save_steps,
-    "trajectory_summary": {str(k): v for k, v in sorted(trajectory.items())},
-}
-(ext_dir / "probe_read.json").write_text(json.dumps(result, indent=2))
-print(json.dumps({k: v for k, v in result.items() if k != "trajectory_summary"}, indent=2))
-PY
-  if (( PROBE_READ_RC != 0 )); then
+  if ! uv run python scripts/issue599_ext_read.py probe-read \
+    --ext-dir "$EXT_DIR" --seed 42 \
+    --save-steps "$EXT_SAVE_STEPS" --max-steps "$EXT_MAX_STEPS"; then
     fail_loud 2 code ext_probe_read_failed
   fi
   PROBE_CLEARED="$(uv run python -c "
@@ -862,56 +823,8 @@ print(1 if json.load(open('$EXT_DIR/probe_read.json'))['probe_cleared'] else 0)
     fi
 
     phase ext_stage_band_entry "stage each seed's FIRST non-KILL (prefer FULL) checkpoint -> ${EXT_DIR}/extract/marker_seed{S}/adapter"
-    EXT_STAGE_RC=0
-    uv run python - "$REPO_ROOT/$EXT_DIR" "$EXT_SAVE_STEPS" "${SEEDS[@]}" <<'PY' || EXT_STAGE_RC=$?
-import json
-import shutil
-import sys
-from pathlib import Path
-
-ext_dir = Path(sys.argv[1])
-save_steps = int(sys.argv[2])
-seeds = [int(s) for s in sys.argv[3:]]
-staged = {}
-for seed in seeds:
-    cell = ext_dir / f"marker_seed{seed}"
-    pe_dir = cell / "periodic_eval"
-    first_non_kill = None
-    first_full = None
-    for p in sorted(pe_dir.glob("leakage_marker_step_*.json"),
-                    key=lambda p: int(p.stem.rsplit("_", 1)[1])):
-        step = int(p.stem.rsplit("_", 1)[1])
-        if step % save_steps != 0 or not (cell / f"checkpoint-{step}").exists():
-            continue
-        m = json.loads(p.read_text())["metrics_by_persona"]["medical_doctor"]
-        dg, emit = float(m["log_p_marker_delta"]), float(m["emit_rate"])
-        logp_t = float(m["log_p_marker_trained"])
-        if dg >= 5.0 and emit >= 0.5 and first_non_kill is None:
-            first_non_kill = step
-        if logp_t >= -0.5 and emit >= 0.95 and first_full is None:
-            first_full = step
-    chosen = first_full if first_full is not None else first_non_kill
-    if chosen is None:
-        # Per-seed band-entry fallback (plan §7.3): "never enters" is a
-        # reportable outcome — record it; do NOT stage this seed.
-        staged[f"seed{seed}"] = {"checkpoint_step": None, "regime": "never_entered"}
-        continue
-    src = cell / f"checkpoint-{chosen}"
-    dst = ext_dir / "extract" / f"marker_seed{seed}" / "adapter"
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    if dst.exists():
-        shutil.rmtree(dst)
-    shutil.copytree(src, dst)
-    staged[f"seed{seed}"] = {
-        "checkpoint_step": chosen,
-        "regime": "full" if chosen == first_full else "non_kill",
-    }
-(ext_dir / "band_entry_staging.json").write_text(json.dumps(staged, indent=2))
-print(json.dumps(staged, indent=2))
-n_staged = sum(1 for v in staged.values() if v["checkpoint_step"] is not None)
-assert n_staged >= 1, "no seed entered the non-KILL band — nothing to extract"
-PY
-    if (( EXT_STAGE_RC != 0 )); then
+    if ! uv run python scripts/issue599_ext_read.py stage-band-entry \
+      --ext-dir "$EXT_DIR" --save-steps "$EXT_SAVE_STEPS" --seeds "${SEEDS[@]}"; then
       fail_loud 2 code ext_band_entry_staging_failed
     fi
 
