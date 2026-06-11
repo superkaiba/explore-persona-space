@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 579,
+  "highest_id": 580,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3478,6 +3478,13 @@
       "path": "tasks/proposed/579",
       "status": "proposed",
       "title": "codex_task.py: add one auto-retry with backoff and verify the E2BIG file-transport fix merged to main"
+    },
+    "580": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/580",
+      "status": "proposed",
+      "title": "Ops hygiene batch: bootstrap_pod.sh fixes, terminate pod-489, sweep zombie sessions, VM disk-space check cron"
     },
     "6": {
       "has_clean_result": false,
