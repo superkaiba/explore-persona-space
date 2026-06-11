@@ -3352,8 +3352,8 @@
       "goal": "Determine whether the dampening of the post-SFT residual marker elevation under non-default system prompts requires persona framing or follows from any departure from the trained assistant context, by reading the marker slot statistics under a non-persona instruction prompt, a never-trained medical persona, and a second never-trained non-medical persona on the existing 12 Phase-2 adapters.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/562",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/562",
+      "status": "awaiting_promotion",
       "title": "Dampening of the residual marker elevation does not require persona framing: in the primary log-prob read all four instruction-prompt paraphrases pull it down, two about as deeply as the doctor persona (MODERATE confidence)"
     },
     "563": {
