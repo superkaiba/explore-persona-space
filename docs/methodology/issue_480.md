@@ -1,6 +1,6 @@
 # Task #480 — Methodology, hyperparameters, and worked examples
 
-A methodology + hyperparameter reference for experiment #480 (Explore Persona Space), with verbatim training / evaluation / post-training output examples pulled straight from the artifacts. The task had four measurement passes, all documented here: the **original run** (6 marker-implant LoRA adapters evaluated into a 138-cell per-(source, bystander) marker log-prob delta matrix, joined to frozen #411 sycophancy deltas — §§1–6), a **same-issue analysis-only follow-up** (`emission-rate-concordance`: an emission-rate re-read of the same matrix, zero GPU — §§3–6), a **same-issue GPU-backed re-run** (`band-stopped-anchor-rerun`: all 6 sources retrained under a band-stopped training-stop recipe with per-source onset-edge anchor checkpoints, evaluated through the identical panel into a fresh 138-cell matrix with four-float slot reads — §§7–11), and a **same-issue eval-only follow-up** (`inband-logprob-concordance`: zero training — the six in-band step-20 checkpoints the re-run uploaded unevaluated, evaluated through the identical panel with per-cell median Δlog P(※) as the primary DV and the trained side scored through the unmerged adapter — §§12–15).
+A methodology + hyperparameter reference for experiment #480 (Explore Persona Space), with verbatim training / evaluation / post-training output examples pulled straight from the artifacts. The task had five passes, all documented here: the **original run** (6 marker-implant LoRA adapters evaluated into a 138-cell per-(source, bystander) marker log-prob delta matrix, joined to frozen #411 sycophancy deltas — §§1–6), a **same-issue analysis-only follow-up** (`emission-rate-concordance`: an emission-rate re-read of the same matrix, zero GPU — §§3–6), a **same-issue GPU-backed re-run** (`band-stopped-anchor-rerun`: all 6 sources retrained under a band-stopped training-stop recipe with per-source onset-edge anchor checkpoints, evaluated through the identical panel into a fresh 138-cell matrix with four-float slot reads — §§7–11), a **same-issue eval-only follow-up** (`inband-logprob-concordance`: zero training — the six in-band step-20 checkpoints the re-run uploaded unevaluated, evaluated through the identical panel with per-cell median Δlog P(※) as the primary DV and the trained side scored through the unmerged adapter — §§12–15), and a **same-issue statistics-only follow-up** (`syco-best-geometry-controls`: a covariate-augmented re-analysis of the two committed 138-cell matrices against the same frozen sycophancy join, adding the two #509 sycophancy-bake-off-winning early-layer geometry cells to the registered rank-partial — zero GPU, no training, no generation, no model loads — §§16–19).
 
 - Task: [https://eps.superkaiba.com/tasks/480](https://eps.superkaiba.com/tasks/480)
 - Model: `Qwen/Qwen2.5-7B-Instruct`
@@ -50,6 +50,10 @@ A GPU-backed same-issue follow-up retraining all 6 source arms (§1.1) under a c
 ### 1.7 Fourth pass — in-band eval round (`inband-logprob-concordance`)
 
 An eval-only same-issue follow-up (ZERO training, zero new adapters) evaluating the six **in-band ("graded") step-20 checkpoints** the band-stopped re-run picked and uploaded without evaluating (§7, §8 step 4) through the identical 6 × 23-cell cross-evaluation (§1.2) against the same frozen sibling inputs (§1.4). The ONE manipulated variable vs the band-stopped re-run is the **evaluated anchor regime, paired with its regime-appropriate primary DV**: the in-band checkpoint (step 20 for all six sources; recorded teacher-forced source Δlog P(※) ∈ [5, 12] nat, sub-emission) instead of the onset-edge step-40 anchor, with per-cell **median Δlog P(※)** as the PRIMARY DV instead of emission rate (emission is a manipulation check this pass — §13). Both DVs are computed in both passes from the same forward passes, so the (anchor regime × DV) factorial is complete across passes; the (in-band, emission) cell is degenerate by construction (sub-emission anchors give zero-variance emission panels), which is why the emission-rate concordance package was deliberately NOT run this pass — the recorded scope divergence. The smoke cell was comedian (the full single-cell pipeline); the other five sources ran as production after the smoke's parity gate was resolved (§13). Conditions + artifact reuse: §12; evaluation methodology, incl. the unmerged-adapter scoring path and the parity gate: §13; worked examples: §14; reproducibility: §15.
+
+### 1.8 Fifth pass — geometry-controls round (`syco-best-geometry-controls`)
+
+A statistics-only same-issue follow-up (source: user-chat; zero GPU, no training, no generation, no model loads) re-running the concordance inference over the two committed 138-cell per-cell matrices — the in-band log-prob read (§1.7) and the firing-anchor emission read (§1.6) — with augmented covariate sets. The ONE manipulated variable vs the prior rounds' registered joint rank-partial is the **covariate set of the partial**: the registered pair {layer-20 cosine to source, bystander base sycophancy rate} is augmented with the two #509 sycophancy-bake-off-winning early-layer geometry cells (end-of-system layer-2 cosine, last-prompt layer-7 MMD; both centered), reported as five covariate sets per (regime × testable source). Everything else is inherited verbatim: both input matrices, the frozen #411 sycophancy join, the 6-source / 23-bystander panel, the two testable sources under the y-eligibility rule recorded in §1.6 (software engineer, assistant; n = 23 bystanders each), the rank-partial recipe, and the permutation seeds. A validation gate (the round's kill criterion) requires the script to reproduce the prior rounds' committed registered statistics before any augmented row is emitted. Covariate sets + reused inputs: §16; statistical recipe + validation gate: §17; worked examples: §18; reproducibility: §19.
 
 ---
 
@@ -662,6 +666,174 @@ The parity probe's input rows are the first 32 marker-bearing (POSITIVE) rows of
   ```
 
   Env: `.env` via `load_dotenv`; `HF_HOME=/workspace/.cache/huggingface`; no WandB project (nothing trained). The membership-control script's round-2 validation dry-run (`--validate-round2` against the round-2 committed matrix, seeds 4801/4802) is documented in its module docstring and was run before the production read.
+
+---
+
+## 16. Geometry-controls round — covariate sets and reused inputs
+
+The fifth pass (`syco-best-geometry-controls`, §1.8) is a pure re-analysis implemented in one new script, `scripts/issue_480/i480_syco_geometry_controls.py`. Its design question is whether each marker read's concordance with the frozen #411 sycophancy deltas survives partialling out the geometry that best predicts sycophancy itself — the registered joint partial controlled only {layer-20 cosine to source, bystander base sycophancy rate}, and this round augments that set with the two base-model geometry cells the #509 sycophancy bake-off selected as the panel's best sycophancy predictors. No model is loaded, nothing is trained or generated; the inputs are two committed JSON matrices plus two HF-pinned covariate files.
+
+### 16.1 Design cells
+
+Two regimes × two testable sources × five covariate sets, n = 23 bystanders per panel:
+
+- **Regimes** (each one committed 138-cell matrix, x-variable per regime):
+  - `inband` — x = `marker_delta` (on-policy log P(marker) trained − base per bystander, nats), matrix from the in-band eval round (`eval_results/issue_480/inband-logprob-concordance/marker_delta_matrix.json`, §15); committed reference stats `concordance_stats_marker_delta.json`.
+  - `firing` — x = `emission_rate` (on-policy marker emission rate per bystander), matrix from the band-stopped re-run (`eval_results/issue_480/band-stopped-anchor-rerun/marker_delta_matrix.json`, §11); committed reference stats `concordance_stats.json`.
+- **Testable sources:** `software_engineer` and `assistant` — the two y-eligible sources under the rule fixed before the band-stopped re-run (§1.6: ≥3 of 23 frozen cells with sycophancy delta beyond ±0.10).
+- **y (both regimes):** `sycophancy_delta` — the frozen #411 per-bystander sycophancy leakage (trained − base), unchanged from every prior pass.
+- **Covariate sets** (verbatim from the script's `COVARIATE_SETS`; the same five sets are computed for every (regime × source) panel):
+
+| Set name | Covariates |
+|---|---|
+| `registered` | `cosine_l20_baseline`, `bystander_base_rate` |
+| `registered_plus_cosine_l2` | registered + `cosine_l2_early` |
+| `registered_plus_mmd_l7` | registered + `mmd_l7_early` |
+| `registered_plus_both` | registered + `cosine_l2_early` + `mmd_l7_early` |
+| `early_cells_only` | `cosine_l2_early`, `mmd_l7_early` (diagnostic) |
+
+The registered covariates are per-row fields of each #480 `marker_delta_matrix.json` (layer-20 cosine to source; bystander base sycophancy rate). The plan amendment registers `registered_plus_both` as the augmented set the figure displays; the single-cell augmentations and the early-cells-only set are reported diagnostics.
+
+### 16.2 The two #509 early-layer geometry covariates (full provenance)
+
+Both cells are downloaded at analysis time via `hf_hub_download` from the HF data repo at a pinned revision, and their byte-level fingerprints are recorded in the output stats JSON:
+
+| Field | `cosine_l2_early` | `mmd_l7_early` |
+|---|---|---|
+| Label | end-of-system L2 cosine (centered) | last-prompt L7 MMD (centered) |
+| File | `end_of_system__layer2__cosine__centered.json` | `last_prompt__layer7__mmd__centered.json` |
+| HF repo | `superkaiba1/explore-persona-space-data` (dataset) | same |
+| Pinned revision | `1b6e20530b1c6d477a387c18d5a88554910e7df9` | same |
+| Path in repo | `issue_509/syco_arm/bakeoff/metrics/<file>` | same |
+| Extraction point / layer / metric / variant | `end_of_system` / 2 / `cosine` / `centered` | `last_prompt` / 7 / `mmd` / `centered` |
+| `pca_k` (payload header) | 16 | 16 |
+| Payload `git_sha` (#509 generation commit) | `0aac536f5b7a7addad8d6aade2d8e21be73aab41` | same |
+| `sha256_local` (recorded in `controls_stats.json`) | `35f10167d64b0048be383584ed283cfb1571149a4051789ef194fa80bb81bf83` | `a10f91bf7e76ed25253054d8c2c008dba7ddfd6de283aaebe6cbfd9e316badea` |
+
+**SC1..SC24 keying + persona mapping.** Each #509 cell stores a 24×24 distance matrix keyed `SC1`..`SC24`. The mapping convention (recorded in the stats JSON's `cid_mapping_note`) is: `SC{i}` = the i-th persona of `sorted(sources ∪ bystanders)` of the #480 matrices (alphabetical, i from 1). The script hardcodes the canonical 24-persona alphabetical order copied verbatim from `scripts/issue509_bystander_bootstrap.py` `_SYCO_PERSONA_ORDER` (`accountant` = SC1 … `zelthari_scholar` = SC24) and asserts the mapping reconstructed from the #480 matrices equals it, so a silent panel drift fails loud instead of mis-joining. `attach_geometry` then asserts all 138 (source → bystander) pairs resolve to a finite distance in BOTH cells. Fitness rationale (plan v5): the cells are computed on the same base model over the same persona panel against the same frozen sycophancy join this issue correlates against — exactly the cells the common-cause objection names.
+
+### 16.3 Input-matrix fingerprints
+
+`load_matrix` validates each input against `schema == "issue_480_marker_delta_matrix_v1"`, `n_rows == 138`, the per-row presence of `source`/`bystander`/x/`sycophancy_delta`/`sycophancy_delta_se`/both registered covariates, and finiteness of every numeric field. The stats JSON records (verbatim from `input_matrices`):
+
+```jsonc
+{
+  "inband": {
+    "path": "eval_results/issue_480/inband-logprob-concordance/marker_delta_matrix.json",
+    "sha256": "7822c430aa7fc3a3e1a741dcda3402890c47ef7179db272027ca50f675630fdf",
+    "matrix_git_commit_sha": "d80628796fa0bcc7e6496f88da55577c17d6986d",  // HEAD embedded at the matrix's generation time
+    "n_rows": 138
+  },
+  "firing": {
+    "path": "eval_results/issue_480/band-stopped-anchor-rerun/marker_delta_matrix.json",
+    "sha256": "34282b400dc64a617240de59a72780aff7d2c4d855806ccc2a3fd67e530e163b",
+    "matrix_git_commit_sha": "f1fb93948e086e3be1f7cd3709d930f58443da4f",
+    "n_rows": 138
+  }
+}
+```
+
+---
+
+## 17. Geometry-controls round — statistical methodology
+
+### 17.1 Estimators
+
+Per (regime × testable source) panel (n = 23):
+
+- **Naive Spearman:** `scipy.stats.spearmanr(x, y)` with the asymptotic p recorded alongside a within-vector permutation p (the x ranks are permuted, row-wise Pearson against the y ranks; seed **4801**, matching the committed runs' `permutation` seed).
+- **Rank-partial (all five covariate sets):** the recipe is carried verbatim from `scripts/issue480_emission_rate_concordance.py` and recorded in the stats JSON's `partials_method` string:
+
+  > rank-transform all variables with average ties (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals (two-sided, +1/(n+1) correction)
+
+  Permutation seed **4802** (matching the committed runs' `partial_permutation` seed). Both permutation p-values use the two-sided `(1 + #{|ρ_perm| ≥ |ρ| − 1e-12}) / (1 + n_perm)` form. Degenerate residuals and zero-variance permutation draws are hard asserts, not silent skips.
+
+### 17.2 Permutation count — recorded deviation from plan prose
+
+The production inference used **n_perm = 100,000** (the script's `N_PERM_DEFAULT`; `--n-perm` flag, help text marks 1,000 as the smoke value). The plan v5 prose said `n_perm = 10000`; the committed run used 100,000 to match the committed reference inference it had to reproduce exactly — the prior rounds' committed permutation p-values were generated at n_perm = 100,000, and the validation gate's exact-p check (below) is only armed at that count.
+
+### 17.3 Validation gate (the round's kill criterion)
+
+Before ANY augmented covariate set is computed for a panel, `validate_against_committed` recomputes the registered-covariate statistics and asserts them against the committed prior-round stats JSONs (`concordance_stats_marker_delta.json` for `inband`, `concordance_stats.json` for `firing`):
+
+- the recomputed naive Spearman ρ and the registered joint `rho_partial` must reproduce the committed values to **1e-6**;
+- at the production n_perm = 100,000, the naive and joint permutation p-values must reproduce the committed values **exactly** (tolerance 1e-12; same seeds, same permutation scheme);
+- any mismatch raises `AssertionError("VALIDATION GATE FAILED …")` — the plan's kill criterion (a failure would indicate a covariate/join mismatch; stop and diagnose before any augmented number is reported).
+
+The committed `controls_stats.json` records `passed: true` with `p_reproduction_checked: true` on all four (regime × source) panels. The same assert-against-committed pattern was previously used by `scripts/issue_480/plot_controlled_scatter.py`.
+
+### 17.4 Redundancy diagnostics and figures
+
+- **Covariate-redundancy block** (`redundancy` in the stats JSON): per testable source, the Spearman between the two marker reads themselves (in-band log-prob x vs firing emission x, after asserting the bystander join is identical and the registered covariates are bit-equal across the two matrices), plus each read's Spearman against each of the four covariates (asymptotic p only — descriptive diagnostics, no permutation).
+- **Figures:** one 2×2 grid per regime (`geometry_controls_inband`, `geometry_controls_firing`; PNG + PDF + `.meta.json` via `savefig_paper`, style `set_paper_style("blog")`): rows = the two testable sources, column 0 = rank residuals after the registered controls, column 1 = rank residuals after the `registered_plus_both` augmented controls; each panel scatters the exact inference residuals (the residual vectors returned by the partial routine) with an OLS fit line, and titles carry the panel's partial ρ and permutation p. The `.meta.json` sidecars embed the per-panel caption stats.
+- **Execution:** zero GPU — VM-only statistics, minutes of CPU; no pod, no WandB (nothing trained). Outputs are checkpointed in one shot (single stats JSON + two figure trios) since the whole run is a single CPU pass.
+
+---
+
+## 18. Worked example — geometry-controls round (verbatim)
+
+One covariate-set computation input, shown end to end for a single cell of the `inband` regime, software-engineer panel, bystander `comedian`. <!-- cherry-picked for illustration; full inputs: the two committed matrices linked in §16.3 and the two HF covariate files linked in §16.2 -->
+
+**Step 1 — row from the committed in-band matrix** (`eval_results/issue_480/inband-logprob-concordance/marker_delta_matrix.json`, fields used by this round; the row carries the full four-float slot read documented in §13):
+
+```json
+{
+  "source": "software_engineer",
+  "bystander": "comedian",
+  "marker_delta": 5.068584442138672,
+  "sycophancy_delta": 0.478,
+  "sycophancy_delta_se": 0.02647187186430155,
+  "cosine_l20_baseline": 0.7663472294807434,
+  "bystander_base_rate": 0.128
+}
+```
+
+**Step 2 — SC-keyed geometry lookups** for the same pair. Under the §16.2 mapping, `software_engineer` = SC20 and `comedian` = SC7, so the script reads `matrix["SC20"]["SC7"]` from each pinned cell:
+
+```text
+end_of_system__layer2__cosine__centered.json : matrix["SC20"]["SC7"] = 0.8635877370834351   → row field cosine_l2_early
+last_prompt__layer7__mmd__centered.json      : matrix["SC20"]["SC7"] = 1.0721001625061035   → row field mmd_l7_early
+```
+
+The 23 such joined rows of the panel (one per bystander) form the x / y / covariate columns; e.g. the `registered_plus_both` design stacks rank(`cosine_l20_baseline`), rank(`bystander_base_rate`), rank(`cosine_l2_early`), rank(`mmd_l7_early`) plus an intercept, residualizes rank(x) and rank(y) on it, and correlates the residuals.
+
+**Step 3 — validation-gate record** for this panel, verbatim from the committed `controls_stats.json` (the two `committed_*` reference values are the prior rounds' committed registered statistics — they are the gate's fixed targets, asserted before any augmented set runs, not outputs of this round):
+
+```json
+"inband.software_engineer": {
+  "passed": true,
+  "rho_tolerance": 1e-06,
+  "p_reproduction_checked": true,
+  "committed_naive_rho": 0.34494688475848884,
+  "committed_joint_rho_partial": 0.5339986560372223
+}
+```
+
+---
+
+## 19. Artifacts and reproducibility — geometry-controls round
+
+- **Branch / commits** (branch `issue-480-syco-best-geometry-controls`):
+  - `054e30cc345b7d6d24869bdf8dcb799e3b64cd20` — adds the analysis script.
+  - `e4dede2a7fb2cb3459a145bceeedb1c35184343f` — commits the production stats + figures (run at HEAD `054e30cc3…`, so that commit's JSON embeds `git_commit_sha: 054e30cc3…` — a result JSON records the HEAD at generation time, the parent of the commit that adds it).
+  - `f8d5b800fa5cf36440e67f036f01e80d99bc499b` — final state: switches the stats JSON's `figures` block to repo-relative paths (one-line script change in `make_figure`) and re-emits the JSON from a verification re-run at n_perm = 100,000 (validation gate PASS on all four panels; every ρ and permutation p reproduced); the re-emitted JSON accordingly embeds `git_commit_sha: e4dede2a7…`.
+- **Analysis script:** [`scripts/issue_480/i480_syco_geometry_controls.py`](https://github.com/superkaiba/explore-persona-space/blob/f8d5b800fa5cf36440e67f036f01e80d99bc499b/scripts/issue_480/i480_syco_geometry_controls.py)
+- **Stats JSON:** [`eval_results/issue_480/syco-best-geometry-controls/controls_stats.json`](https://github.com/superkaiba/explore-persona-space/blob/f8d5b800fa5cf36440e67f036f01e80d99bc499b/eval_results/issue_480/syco-best-geometry-controls/controls_stats.json) — schema `issue_480_syco_geometry_controls_v1`; carries naive + five partial entries per (regime × source), the validation-gate records, the full covariate provenance (incl. both sha256 fingerprints), the input-matrix fingerprints, the redundancy block, `env_versions` (python 3.11.15, numpy 2.2.6, scipy 1.17.1), and the figure paths
+- **Figures:** [`figures/issue_480/syco-best-geometry-controls/`](https://github.com/superkaiba/explore-persona-space/tree/f8d5b800fa5cf36440e67f036f01e80d99bc499b/figures/issue_480/syco-best-geometry-controls) — `geometry_controls_inband` + `geometry_controls_firing` (PNG + PDF + `.meta.json` each)
+- **Covariate inputs (HF, pinned):** [`end_of_system__layer2__cosine__centered.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/1b6e20530b1c6d477a387c18d5a88554910e7df9/issue_509/syco_arm/bakeoff/metrics/end_of_system__layer2__cosine__centered.json) · [`last_prompt__layer7__mmd__centered.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/1b6e20530b1c6d477a387c18d5a88554910e7df9/issue_509/syco_arm/bakeoff/metrics/last_prompt__layer7__mmd__centered.json)
+- **Input matrices:** the committed round-3 and round-2 matrices (links in §15 and §11; paths + sha256 fingerprints in §16.3)
+- **Compute:** zero GPU — VM-only statistics, minutes of CPU; no pod
+- **WandB:** none (nothing trained)
+- **Seeds:** no training/data seed this round (n/a — no new model work); permutation seeds 4801 (naive) / 4802 (partials)
+- **Reproduce** (VM-only; the script downloads the two covariate cells from the pinned HF revision via `hf_hub_download` — it does not read `.env` itself, so HF Hub access comes from ambient credentials / cache — validates against the committed reference stats before emitting any augmented row, then writes the stats JSON + both figures):
+
+  ```bash
+  git checkout f8d5b800fa5cf36440e67f036f01e80d99bc499b
+  uv sync
+  uv run python scripts/issue_480/i480_syco_geometry_controls.py --n-perm 100000
+  # --n-perm 100000 is also the default (the registered production inference); smoke runs use --n-perm 1000,
+  # which skips the gate's exact-p reproduction check (rho reproduction to 1e-6 still asserted).
+  ```
 
 ---
 
