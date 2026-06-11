@@ -1,6 +1,7 @@
 ---
-title: Standardize persona-distance cosine across the leakage line (mean-centered
-  vs raw, ~6x geometry diff) + reanalyze affected predictor calls
+title: Standardizing persona-distance cosine on the mean-centered recipe leaves every
+  recomputable published call standing, and upgrades one prior null to a centering-attributable
+  candidate rescue (MODERATE confidence)
 kind: analysis
 tags:
 - needs-thomas
