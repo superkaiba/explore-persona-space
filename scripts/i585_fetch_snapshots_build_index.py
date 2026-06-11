@@ -51,7 +51,11 @@ FRACTIONS = (0.08, 0.16, 0.33, 0.50, 0.75, 1.00)
 PRETRAIN_SUBFOLDER = "adapters/issue_504_v4/c504v4_smoke_eps3_seed42"
 DEFAULT_MODEL_REPO = "superkaiba1/explore-persona-space"
 DEFAULT_DATA_REPO = "superkaiba1/explore-persona-space-data"
-BANK_PATH_IN_REPO = "issue472_neg_geometry/persona_bank.json"
+# NOTE: the bank's ACTUAL location on the data repo (verified via
+# list_repo_files 2026-06-11) — the in-repo path differs from the
+# persona_bank.py module constant ("issue472_neg_geometry/persona_bank.json"),
+# which 404s; the upload landed under the geometry/ subdir.
+BANK_PATH_IN_REPO = "issue472_neg_geometry/geometry/persona_bank.json"
 R_EVAL_PATH_IN_REPO = "issue504_geometry/on_policy_R/R_eval_v504.json"
 
 # Plan-time verified references (plan #585 v2 section 4.2 Step 0 + section 12 A9).

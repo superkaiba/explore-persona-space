@@ -209,6 +209,11 @@ echo "[phase=results_commit] committing eval_results/issue_585 onto issue-585"
 if [ "$DRY_RUN" = "1" ]; then
     echo "[dry-run] skipped git commit/push"
 else
+    # Fresh ephemeral pods may lack a git identity — the commit would crash.
+    if [ -z "$(git config user.email)" ]; then
+        git config user.email "pod-585@explore-persona-space.local"
+        git config user.name "pod-585 launcher"
+    fi
     git fetch origin issue-585
     rc=$?
     [ $rc -eq 0 ] || fail "results_commit" "git fetch origin issue-585 exited rc=$rc"
