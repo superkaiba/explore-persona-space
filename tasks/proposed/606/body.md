@@ -6,6 +6,12 @@ tags: []
 created_at: '2026-06-11T17:14:22Z'
 has_clean_result: false
 parent_id: 514
+goal: 'Test whether the LoRA vs full fine-tuning equivalence in bystander leakage
+  (established at matched source-implant strength for the single-token marker in #514)
+  generalizes to realistic behavior implants — sycophancy at minimum, plus refusal
+  and emergent misalignment as budget allows — by training each behavior into a source
+  persona with both methods and comparing on-policy, judge-scored per-persona leakage
+  profiles at matched source-implant strength.'
 ---
 # Does the LoRA vs full-FT bystander-leakage equivalence hold for realistic behaviors (sycophancy, refusal, EM)?
 
