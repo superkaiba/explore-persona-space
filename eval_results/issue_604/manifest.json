@@ -1,0 +1,2381 @@
+{
+ "meta": {
+  "task": 604,
+  "schema_version": "issue604_adapter_svd_v1",
+  "git_commit": "90d5fe2d7",
+  "timestamp_utc": "2026-06-11T14:52:09.727181+00:00",
+  "python_version": "3.11.15",
+  "numpy_version": "2.2.6",
+  "torch_version": "2.8.0+cu128",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--lines",
+   "all"
+  ],
+  "phase": "A"
+ },
+ "revisions": {
+  "superkaiba1/explore-persona-space": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+  "superkaiba1/explore-persona-space-overflow": "9184fcca33eab23232584750ec840ebd39e9d639"
+ },
+ "lines": [
+  "dial527",
+  "dial550",
+  "dial538",
+  "i474",
+  "i519",
+  "i521",
+  "i518",
+  "i541"
+ ],
+ "n_cells": 209,
+ "cells": [
+  {
+   "line": "dial527",
+   "cell_id": "florist__medical_doctor__A_only__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/florist__medical_doctor__A_only__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/florist__medical_doctor__A_only__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/florist__medical_doctor__A_only__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "florist__medical_doctor__A_only__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/florist__medical_doctor__A_only__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/florist__medical_doctor__A_only__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/florist__medical_doctor__A_only__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "florist__medical_doctor__A_only__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/florist__medical_doctor__A_only__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/florist__medical_doctor__A_only__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/florist__medical_doctor__A_only__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "florist__medical_doctor__B_only__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/florist__medical_doctor__B_only__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/florist__medical_doctor__B_only__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/florist__medical_doctor__B_only__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "florist__medical_doctor__B_only__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/florist__medical_doctor__B_only__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/florist__medical_doctor__B_only__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/florist__medical_doctor__B_only__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "florist__medical_doctor__B_only__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/florist__medical_doctor__B_only__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/florist__medical_doctor__B_only__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/florist__medical_doctor__B_only__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "florist__medical_doctor__joint__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/florist__medical_doctor__joint__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/florist__medical_doctor__joint__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/florist__medical_doctor__joint__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "florist__medical_doctor__joint__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/florist__medical_doctor__joint__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/florist__medical_doctor__joint__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/florist__medical_doctor__joint__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "florist__medical_doctor__joint__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/florist__medical_doctor__joint__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/florist__medical_doctor__joint__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/florist__medical_doctor__joint__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "librarian__police_officer__A_only__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/librarian__police_officer__A_only__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/librarian__police_officer__A_only__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/librarian__police_officer__A_only__seed42.npz",
+   "tags": [
+    "panel-contaminated"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "librarian__police_officer__A_only__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/librarian__police_officer__A_only__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/librarian__police_officer__A_only__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/librarian__police_officer__A_only__seed137.npz",
+   "tags": [
+    "panel-contaminated"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "librarian__police_officer__A_only__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/librarian__police_officer__A_only__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/librarian__police_officer__A_only__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/librarian__police_officer__A_only__seed256.npz",
+   "tags": [
+    "panel-contaminated"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "librarian__police_officer__B_only__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/librarian__police_officer__B_only__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/librarian__police_officer__B_only__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/librarian__police_officer__B_only__seed42.npz",
+   "tags": [
+    "panel-contaminated"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "librarian__police_officer__B_only__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/librarian__police_officer__B_only__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/librarian__police_officer__B_only__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/librarian__police_officer__B_only__seed137.npz",
+   "tags": [
+    "panel-contaminated"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "librarian__police_officer__B_only__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/librarian__police_officer__B_only__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/librarian__police_officer__B_only__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/librarian__police_officer__B_only__seed256.npz",
+   "tags": [
+    "panel-contaminated"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "librarian__police_officer__joint__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/librarian__police_officer__joint__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/librarian__police_officer__joint__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/librarian__police_officer__joint__seed42.npz",
+   "tags": [
+    "panel-contaminated"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "librarian__police_officer__joint__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/librarian__police_officer__joint__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/librarian__police_officer__joint__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/librarian__police_officer__joint__seed137.npz",
+   "tags": [
+    "panel-contaminated"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "dial527",
+   "cell_id": "librarian__police_officer__joint__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_527/librarian__police_officer__joint__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial527/librarian__police_officer__joint__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial527/librarian__police_officer__joint__seed256.npz",
+   "tags": [
+    "panel-contaminated"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "florist__medical_doctor__A_only__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/florist__medical_doctor__A_only__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/florist__medical_doctor__A_only__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/florist__medical_doctor__A_only__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "florist__medical_doctor__A_only__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/florist__medical_doctor__A_only__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/florist__medical_doctor__A_only__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/florist__medical_doctor__A_only__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "florist__medical_doctor__A_only__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/florist__medical_doctor__A_only__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/florist__medical_doctor__A_only__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/florist__medical_doctor__A_only__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "florist__medical_doctor__B_only__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/florist__medical_doctor__B_only__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/florist__medical_doctor__B_only__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/florist__medical_doctor__B_only__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "florist__medical_doctor__B_only__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/florist__medical_doctor__B_only__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/florist__medical_doctor__B_only__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/florist__medical_doctor__B_only__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "florist__medical_doctor__B_only__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/florist__medical_doctor__B_only__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/florist__medical_doctor__B_only__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/florist__medical_doctor__B_only__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "florist__medical_doctor__joint__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/florist__medical_doctor__joint__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/florist__medical_doctor__joint__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/florist__medical_doctor__joint__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "florist__medical_doctor__joint__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/florist__medical_doctor__joint__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/florist__medical_doctor__joint__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/florist__medical_doctor__joint__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "florist__medical_doctor__joint__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/florist__medical_doctor__joint__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/florist__medical_doctor__joint__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/florist__medical_doctor__joint__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "librarian__police_officer__A_only__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/librarian__police_officer__A_only__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/librarian__police_officer__A_only__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/librarian__police_officer__A_only__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "librarian__police_officer__A_only__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/librarian__police_officer__A_only__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/librarian__police_officer__A_only__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/librarian__police_officer__A_only__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "librarian__police_officer__A_only__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/librarian__police_officer__A_only__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/librarian__police_officer__A_only__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/librarian__police_officer__A_only__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "librarian__police_officer__B_only__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/librarian__police_officer__B_only__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/librarian__police_officer__B_only__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/librarian__police_officer__B_only__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "librarian__police_officer__B_only__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/librarian__police_officer__B_only__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/librarian__police_officer__B_only__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/librarian__police_officer__B_only__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "librarian__police_officer__B_only__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/librarian__police_officer__B_only__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/librarian__police_officer__B_only__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/librarian__police_officer__B_only__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "librarian__police_officer__joint__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/librarian__police_officer__joint__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/librarian__police_officer__joint__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/librarian__police_officer__joint__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "librarian__police_officer__joint__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/librarian__police_officer__joint__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/librarian__police_officer__joint__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/librarian__police_officer__joint__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial550",
+   "cell_id": "librarian__police_officer__joint__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_550/librarian__police_officer__joint__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial550/librarian__police_officer__joint__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial550/librarian__police_officer__joint__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "florist__medical_doctor__A_only__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/florist__medical_doctor__A_only__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/florist__medical_doctor__A_only__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/florist__medical_doctor__A_only__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "florist__medical_doctor__A_only__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/florist__medical_doctor__A_only__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/florist__medical_doctor__A_only__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/florist__medical_doctor__A_only__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "florist__medical_doctor__A_only__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/florist__medical_doctor__A_only__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/florist__medical_doctor__A_only__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/florist__medical_doctor__A_only__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "florist__medical_doctor__B_only__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/florist__medical_doctor__B_only__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/florist__medical_doctor__B_only__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/florist__medical_doctor__B_only__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "florist__medical_doctor__B_only__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/florist__medical_doctor__B_only__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/florist__medical_doctor__B_only__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/florist__medical_doctor__B_only__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "florist__medical_doctor__B_only__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/florist__medical_doctor__B_only__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/florist__medical_doctor__B_only__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/florist__medical_doctor__B_only__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "florist__medical_doctor__joint__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/florist__medical_doctor__joint__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/florist__medical_doctor__joint__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/florist__medical_doctor__joint__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "florist__medical_doctor__joint__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/florist__medical_doctor__joint__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/florist__medical_doctor__joint__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/florist__medical_doctor__joint__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "florist__medical_doctor__joint__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/florist__medical_doctor__joint__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/florist__medical_doctor__joint__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/florist__medical_doctor__joint__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "librarian__police_officer__A_only__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/librarian__police_officer__A_only__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/librarian__police_officer__A_only__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/librarian__police_officer__A_only__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "librarian__police_officer__A_only__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/librarian__police_officer__A_only__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/librarian__police_officer__A_only__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/librarian__police_officer__A_only__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "librarian__police_officer__A_only__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/librarian__police_officer__A_only__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/librarian__police_officer__A_only__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/librarian__police_officer__A_only__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "librarian__police_officer__B_only__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/librarian__police_officer__B_only__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/librarian__police_officer__B_only__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/librarian__police_officer__B_only__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "librarian__police_officer__B_only__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/librarian__police_officer__B_only__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/librarian__police_officer__B_only__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/librarian__police_officer__B_only__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "librarian__police_officer__B_only__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/librarian__police_officer__B_only__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/librarian__police_officer__B_only__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/librarian__police_officer__B_only__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "librarian__police_officer__joint__seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/librarian__police_officer__joint__seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/librarian__police_officer__joint__seed42.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/librarian__police_officer__joint__seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "librarian__police_officer__joint__seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/librarian__police_officer__joint__seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/librarian__police_officer__joint__seed137.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/librarian__police_officer__joint__seed137.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "dial538",
+   "cell_id": "librarian__police_officer__joint__seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_538/librarian__police_officer__joint__seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/dial538/librarian__police_officer__joint__seed256.json",
+   "vectors": "eval_results/issue_604/vectors/dial538/librarian__police_officer__joint__seed256.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A1_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A1_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A1_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A1_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A1_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A1_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A1_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A1_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A1_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A1_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A1_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A1_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A1_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A1_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A1_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A1_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A2_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A2_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A2_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A2_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A2_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A2_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A2_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A2_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A2_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A2_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A2_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A2_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A2_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A2_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A2_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A2_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A3_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A3_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A3_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A3_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A3_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A3_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A3_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A3_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A3_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A3_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A3_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A3_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A3_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A3_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A3_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A3_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A4_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A4_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A4_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A4_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A4_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A4_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A4_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A4_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A4_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A4_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A4_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A4_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A4_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A4_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A4_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A4_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A5_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A5_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A5_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A5_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A5_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A5_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A5_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A5_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A5_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A5_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A5_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A5_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_A5_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_A5_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_A5_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_A5_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B1_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B1_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B1_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B1_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B1_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B1_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B1_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B1_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B1_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B1_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B1_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B1_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B1_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B1_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B1_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B1_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B2_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B2_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B2_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B2_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B2_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B2_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B2_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B2_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B2_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B2_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B2_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B2_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B2_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B2_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B2_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B2_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B3_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B3_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B3_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B3_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B3_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B3_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B3_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B3_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B3_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B3_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B3_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B3_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B3_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B3_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B3_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B3_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B4_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B4_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B4_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B4_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B4_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B4_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B4_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B4_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B4_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B4_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B4_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B4_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B4_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B4_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B4_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B4_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B5_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B5_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B5_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B5_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B5_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B5_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B5_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B5_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B5_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B5_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B5_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B5_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_B5_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_B5_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_B5_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_B5_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_C1_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_C1_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_C1_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_C1_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_C1_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_C1_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_C1_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_C1_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_C1_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_C1_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_C1_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_C1_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_C1_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_C1_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_C1_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_C1_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D1_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D1_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D1_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D1_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D1_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D1_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D1_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D1_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D1_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D1_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D1_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D1_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D1_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D1_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D1_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D1_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D2_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D2_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D2_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D2_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D2_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D2_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D2_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D2_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D2_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D2_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D2_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D2_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D2_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D2_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D2_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D2_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D3_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D3_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D3_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D3_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D3_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D3_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D3_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D3_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D3_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D3_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D3_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D3_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D3_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D3_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D3_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D3_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D4_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D4_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D4_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D4_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D4_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D4_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D4_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D4_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D4_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D4_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D4_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D4_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D4_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D4_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D4_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D4_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D5_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D5_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D5_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D5_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D5_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D5_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D5_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D5_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D5_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D5_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D5_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D5_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "pos_D5_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_pos_D5_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/pos_D5_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/pos_D5_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A1_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A1_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A1_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A1_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A1_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A1_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A1_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A1_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A1_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A1_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A1_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A1_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A1_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A1_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A1_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A1_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A2_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A2_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A2_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A2_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A2_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A2_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A2_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A2_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A2_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A2_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A2_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A2_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A2_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A2_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A2_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A2_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A3_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A3_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A3_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A3_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A3_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A3_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A3_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A3_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A3_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A3_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A3_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A3_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A3_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A3_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A3_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A3_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A4_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A4_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A4_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A4_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A4_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A4_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A4_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A4_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A4_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A4_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A4_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A4_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A4_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A4_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A4_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A4_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A5_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A5_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A5_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A5_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A5_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A5_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A5_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A5_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A5_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A5_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A5_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A5_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_A5_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_A5_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_A5_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_A5_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B1_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B1_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B1_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B1_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B1_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B1_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B1_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B1_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B1_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B1_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B1_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B1_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B1_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B1_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B1_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B1_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B2_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B2_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B2_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B2_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B2_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B2_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B2_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B2_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B2_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B2_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B2_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B2_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B2_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B2_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B2_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B2_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B3_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B3_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B3_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B3_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B3_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B3_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B3_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B3_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B3_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B3_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B3_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B3_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B3_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B3_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B3_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B3_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B4_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B4_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B4_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B4_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B4_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B4_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B4_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B4_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B4_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B4_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B4_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B4_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B4_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B4_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B4_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B4_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B5_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B5_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B5_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B5_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B5_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B5_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B5_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B5_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B5_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B5_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B5_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B5_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_B5_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_B5_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_B5_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_B5_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_C1_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_C1_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_C1_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_C1_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_C1_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_C1_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_C1_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_C1_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_C1_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_C1_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_C1_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_C1_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_C1_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_C1_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_C1_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_C1_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D1_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D1_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D1_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D1_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D1_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D1_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D1_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D1_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D1_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D1_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D1_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D1_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D1_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D1_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D1_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D1_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D2_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D2_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D2_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D2_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D2_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D2_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D2_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D2_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D2_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D2_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D2_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D2_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D2_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D2_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D2_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D2_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D3_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D3_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D3_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D3_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D3_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D3_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D3_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D3_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D3_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D3_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D3_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D3_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D3_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D3_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D3_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D3_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D4_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D4_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D4_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D4_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D4_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D4_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D4_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D4_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D4_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D4_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D4_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D4_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D4_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D4_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D4_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D4_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D5_ep1",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D5_ep1",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D5_ep1.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D5_ep1.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D5_ep2",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D5_ep2",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D5_ep2.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D5_ep2.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D5_ep3",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D5_ep3",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D5_ep3.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D5_ep3.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i474",
+   "cell_id": "loc_D5_ep5",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/i474_loc_D5_ep5",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i474/loc_D5_ep5.json",
+   "vectors": "eval_results/issue_604/vectors/i474/loc_D5_ep5.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i519",
+   "cell_id": "marker_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "issue_519/marker_seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i519/marker_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i519/marker_seed42.npz",
+   "tags": [
+    "saturated-endpoint"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i519",
+   "cell_id": "marker_seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "issue_519/marker_seed137",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i519/marker_seed137.json",
+   "vectors": "eval_results/issue_604/vectors/i519/marker_seed137.npz",
+   "tags": [
+    "saturated-endpoint"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i519",
+   "cell_id": "marker_seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "issue_519/marker_seed256",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i519/marker_seed256.json",
+   "vectors": "eval_results/issue_604/vectors/i519/marker_seed256.npz",
+   "tags": [
+    "saturated-endpoint"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i521",
+   "cell_id": "em_turner_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_521/em_turner_seed42/sft_narrow_adapter",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i521/em_turner_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i521/em_turner_seed42.npz",
+   "tags": [
+    "em-no-source-control"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i521",
+   "cell_id": "em_turner_seed137",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_521/em_turner_seed137/sft_narrow_adapter",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i521/em_turner_seed137.json",
+   "vectors": "eval_results/issue_604/vectors/i521/em_turner_seed137.npz",
+   "tags": [
+    "em-no-source-control"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i521",
+   "cell_id": "em_turner_seed256",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_521/em_turner_seed256/sft_narrow_adapter",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i521/em_turner_seed256.json",
+   "vectors": "eval_results/issue_604/vectors/i521/em_turner_seed256.npz",
+   "tags": [
+    "em-no-source-control"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i518",
+   "cell_id": "refusal_assistant_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_518/refusal/assistant_seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i518/refusal_assistant_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i518/refusal_assistant_seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i518",
+   "cell_id": "refusal_comedian_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_518/refusal/comedian_seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i518/refusal_comedian_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i518/refusal_comedian_seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i518",
+   "cell_id": "refusal_kindergarten_teacher_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_518/refusal/kindergarten_teacher_seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i518/refusal_kindergarten_teacher_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i518/refusal_kindergarten_teacher_seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i518",
+   "cell_id": "refusal_qwen_default_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_518/refusal/qwen_default_seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i518/refusal_qwen_default_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i518/refusal_qwen_default_seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i518",
+   "cell_id": "refusal_software_engineer_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_518/refusal/software_engineer_seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i518/refusal_software_engineer_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i518/refusal_software_engineer_seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i518",
+   "cell_id": "refusal_villain_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_518/refusal/villain_seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i518/refusal_villain_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i518/refusal_villain_seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i518",
+   "cell_id": "em_assistant_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_518/em/assistant_seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i518/em_assistant_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i518/em_assistant_seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i518",
+   "cell_id": "em_comedian_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_518/em/comedian_seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i518/em_comedian_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i518/em_comedian_seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i518",
+   "cell_id": "em_kindergarten_teacher_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_518/em/kindergarten_teacher_seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i518/em_kindergarten_teacher_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i518/em_kindergarten_teacher_seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i518",
+   "cell_id": "em_qwen_default_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_518/em/qwen_default_seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i518/em_qwen_default_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i518/em_qwen_default_seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i518",
+   "cell_id": "em_software_engineer_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_518/em/software_engineer_seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i518/em_software_engineer_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i518/em_software_engineer_seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i518",
+   "cell_id": "em_villain_seed42",
+   "repo_id": "superkaiba1/explore-persona-space",
+   "subfolder": "adapters/issue_518/em/villain_seed42",
+   "revision": "3c9b6bbc0318ddd190af9f7ea82775312d7142eb",
+   "spectra": "eval_results/issue_604/spectra/i518/em_villain_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i518/em_villain_seed42.npz",
+   "tags": [],
+   "status": "done"
+  },
+  {
+   "line": "i541",
+   "cell_id": "courthouse_architecture_historian_seed42",
+   "repo_id": "superkaiba1/explore-persona-space-overflow",
+   "subfolder": "adapters/exp541-arm_courthouse_architecture_historian-on_policy_suppression_cn-seed42",
+   "revision": "9184fcca33eab23232584750ec840ebd39e9d639",
+   "spectra": "eval_results/issue_604/spectra/i541/courthouse_architecture_historian_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i541/courthouse_architecture_historian_seed42.npz",
+   "tags": [
+    "hot-lr-secondary"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i541",
+   "cell_id": "courthouse_architecture_historian_seed137",
+   "repo_id": "superkaiba1/explore-persona-space-overflow",
+   "subfolder": "adapters/exp541-arm_courthouse_architecture_historian-on_policy_suppression_cn-seed137",
+   "revision": "9184fcca33eab23232584750ec840ebd39e9d639",
+   "spectra": "eval_results/issue_604/spectra/i541/courthouse_architecture_historian_seed137.json",
+   "vectors": "eval_results/issue_604/vectors/i541/courthouse_architecture_historian_seed137.npz",
+   "tags": [
+    "hot-lr-secondary"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i541",
+   "cell_id": "courthouse_architecture_historian_seed256",
+   "repo_id": "superkaiba1/explore-persona-space-overflow",
+   "subfolder": "adapters/exp541-arm_courthouse_architecture_historian-on_policy_suppression_cn-seed256",
+   "revision": "9184fcca33eab23232584750ec840ebd39e9d639",
+   "spectra": "eval_results/issue_604/spectra/i541/courthouse_architecture_historian_seed256.json",
+   "vectors": "eval_results/issue_604/vectors/i541/courthouse_architecture_historian_seed256.npz",
+   "tags": [
+    "hot-lr-secondary"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i541",
+   "cell_id": "marine_biologist_seed42",
+   "repo_id": "superkaiba1/explore-persona-space-overflow",
+   "subfolder": "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed42",
+   "revision": "9184fcca33eab23232584750ec840ebd39e9d639",
+   "spectra": "eval_results/issue_604/spectra/i541/marine_biologist_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i541/marine_biologist_seed42.npz",
+   "tags": [
+    "hot-lr-secondary"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i541",
+   "cell_id": "marine_biologist_seed137",
+   "repo_id": "superkaiba1/explore-persona-space-overflow",
+   "subfolder": "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed137",
+   "revision": "9184fcca33eab23232584750ec840ebd39e9d639",
+   "spectra": "eval_results/issue_604/spectra/i541/marine_biologist_seed137.json",
+   "vectors": "eval_results/issue_604/vectors/i541/marine_biologist_seed137.npz",
+   "tags": [
+    "hot-lr-secondary"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i541",
+   "cell_id": "marine_biologist_seed256",
+   "repo_id": "superkaiba1/explore-persona-space-overflow",
+   "subfolder": "adapters/exp541-arm_marine_biologist-on_policy_suppression_cn-seed256",
+   "revision": "9184fcca33eab23232584750ec840ebd39e9d639",
+   "spectra": "eval_results/issue_604/spectra/i541/marine_biologist_seed256.json",
+   "vectors": "eval_results/issue_604/vectors/i541/marine_biologist_seed256.npz",
+   "tags": [
+    "hot-lr-secondary"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i541",
+   "cell_id": "top_prior_wooden_furniture_carpenter_seed42",
+   "repo_id": "superkaiba1/explore-persona-space-overflow",
+   "subfolder": "adapters/exp541-arm_top_prior_wooden_furniture_carpenter-on_policy_suppression_cn-seed42",
+   "revision": "9184fcca33eab23232584750ec840ebd39e9d639",
+   "spectra": "eval_results/issue_604/spectra/i541/top_prior_wooden_furniture_carpenter_seed42.json",
+   "vectors": "eval_results/issue_604/vectors/i541/top_prior_wooden_furniture_carpenter_seed42.npz",
+   "tags": [
+    "hot-lr-secondary"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i541",
+   "cell_id": "top_prior_wooden_furniture_carpenter_seed137",
+   "repo_id": "superkaiba1/explore-persona-space-overflow",
+   "subfolder": "adapters/exp541-arm_top_prior_wooden_furniture_carpenter-on_policy_suppression_cn-seed137",
+   "revision": "9184fcca33eab23232584750ec840ebd39e9d639",
+   "spectra": "eval_results/issue_604/spectra/i541/top_prior_wooden_furniture_carpenter_seed137.json",
+   "vectors": "eval_results/issue_604/vectors/i541/top_prior_wooden_furniture_carpenter_seed137.npz",
+   "tags": [
+    "hot-lr-secondary"
+   ],
+   "status": "done"
+  },
+  {
+   "line": "i541",
+   "cell_id": "top_prior_wooden_furniture_carpenter_seed256",
+   "repo_id": "superkaiba1/explore-persona-space-overflow",
+   "subfolder": "adapters/exp541-arm_top_prior_wooden_furniture_carpenter-on_policy_suppression_cn-seed256",
+   "revision": "9184fcca33eab23232584750ec840ebd39e9d639",
+   "spectra": "eval_results/issue_604/spectra/i541/top_prior_wooden_furniture_carpenter_seed256.json",
+   "vectors": "eval_results/issue_604/vectors/i541/top_prior_wooden_furniture_carpenter_seed256.npz",
+   "tags": [
+    "hot-lr-secondary"
+   ],
+   "status": "done"
+  }
+ ]
+}

@@ -1,0 +1,7 @@
+# Binary tensors live on the HF data repo (eval_results/ is JSON/text only)
+context_vectors/*.pt
+context_vectors/shards/
+vectors/**/*.npz
+context_vectors_prod/
+context_vectors_smoke/
+logs/*.pid
