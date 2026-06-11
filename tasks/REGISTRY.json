@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 602,
+  "highest_id": 603,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3656,6 +3656,13 @@
       "path": "tasks/proposed/602",
       "status": "proposed",
       "title": "P8 estimator bake-off: score the three base-model v_b estimators against realized post-training states on stored adapters"
+    },
+    "603": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/603",
+      "status": "proposed",
+      "title": "P3' write decomposition: does the source's base prior predict the write's common-mode fraction rather than its norm?"
     },
     "61": {
       "has_clean_result": true,
