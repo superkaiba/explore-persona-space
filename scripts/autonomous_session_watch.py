@@ -1,7 +1,8 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
-interactive issue sessions.
+interactive issue sessions (plus campaign sessions, task #586).
 
-Seven passes, run in this order:
+Eight passes; seven run in this order (the CAMPAIGN pass — see item 8 —
+runs right after pass 2):
 
 1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
    the host of every orchestrator session, the worktree ``.venv``s, the uv
@@ -131,6 +132,21 @@ Seven passes, run in this order:
    task is BY DEFINITION terminal, so the terminal-status GC would reset
    the miss counter every tick; they are reaped by their own
    live-session-keyed GC inside the session-reconcile pass.)
+8. **Campaign pass** (runs right after pass 2; task #586). Driven by
+   ``campaign-<N>.json`` registry entries (written by ``spawn_session.py
+   spawn-campaign``): respawn a dead campaign session whose task is ACTIVE
+   (``approved``/``running``) via ``spawn-campaign``; a progress watchdog
+   posts ``epm:campaign-stalled v1`` when the newest skill-posted
+   ``epm:campaign-*`` marker AND every child-task marker are older than
+   ``EPM_CAMPAIGN_STALL_S`` (default 2h) with a live session, then
+   stop-then-respawns on the second consecutive stalled check (cap 3 per
+   episode); a budget backstop alerts once per episode when
+   ``campaign-state.json`` shows GPU-hours committed > total; entries +
+   watch state are reaped when the campaign task is terminal
+   (``completed``/``archived``/``blocked``). The orphan sweep skips
+   ``kind: campaign`` tasks (its ``spawn-issue --auto`` recovery would boot
+   the wrong skill); see the campaign-pass section comment for the full
+   cross-pass interaction notes.
 
 Why each pass exists
 --------------------
@@ -472,6 +488,14 @@ _SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL = (
     "[autonomous_session_watch:session-reconcile-stop-failed]"
 )
 
+# Substring stamped into every campaign-pass marker note (the
+# epm:campaign-stalled alert, the stop-then-respawn note, the exhausted
+# alert, and the budget-backstop alert — task #586). Same staleness-filter
+# contract as the others: the campaign watchdog measures epm:campaign-*
+# marker freshness on the very task it posts to, so an unfiltered alert
+# would reset the staleness window it reports.
+_CAMPAIGN_NOTE_SENTINEL = "[autonomous_session_watch:campaign]"
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
@@ -490,6 +514,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _SESSION_RECONCILE_ALERT_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL,
+        _CAMPAIGN_NOTE_SENTINEL,
     }
 )
 
@@ -2988,7 +3013,14 @@ def _active_status_tasks() -> dict[int, str]:
         if not isinstance(rows, list):
             continue
         for row in rows:
-            tid = row.get("id") if isinstance(row, dict) else None
+            if not isinstance(row, dict):
+                continue
+            # `kind: campaign` tasks are owned by the campaign pass — the
+            # orphan sweep's recovery command is `spawn-issue --auto`, which
+            # would boot the WRONG skill (/issue) on a campaign (task #586).
+            if row.get("kind") == "campaign":
+                continue
+            tid = row.get("id")
             if isinstance(tid, int):
                 out[tid] = status
     return out
@@ -3264,6 +3296,11 @@ _GC_TARGETS: tuple[tuple[str, str], ...] = (
     ("manual-issue-", ""),
     (STALLED_STATE_PREFIX, ""),
     (ORPHAN_STATE_PREFIX, ""),
+    # Campaign watchdog state (== CAMPAIGN_WATCH_STATE_PREFIX, defined in the
+    # campaign-pass section below; literal here because module-level tuples
+    # evaluate top-to-bottom). Primary reaping is the campaign pass itself at
+    # CAMPAIGN_TERMINAL; this is the deleted-task / completed-archived backstop.
+    ("campaign-watch-", ""),
     ("", "issue-progress"),
     ("", "issue-tick-last-status"),
 )
@@ -4328,6 +4365,515 @@ def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
         )
 
 
+# ─── campaign pass (question-level /campaign sessions; task #586) ────────────
+#
+# Driven by ``campaign-<N>.json`` registry entries written by
+# ``spawn_session.py spawn-campaign`` / ``register-current --mode campaign``.
+# Four jobs, mirroring the issue respawn + stalled passes with campaign
+# semantics:
+#
+# 1. **Respawn**: campaign task ACTIVE (approved/running) + session dead on
+#    >= threshold consecutive checks -> ``spawn-campaign --issue <N>`` (which
+#    rewrites the registry entry with the fresh id; caps re-passed from the
+#    entry).
+# 2. **Progress watchdog** (progress, not liveness): session ALIVE but the
+#    newest ``epm:campaign-*`` marker is older than ``EPM_CAMPAIGN_STALL_S``
+#    (default 2h) AND no child task posted any marker in that window ->
+#    one ``epm:campaign-stalled v1`` alert per episode; a SECOND consecutive
+#    stalled check stop-then-respawns (cap CAMPAIGN_MAX_RESPAWNS per
+#    episode, then a one-time exhausted alert — mirrors the Phase-2
+#    stalled-session actor).
+# 3. **Budget backstop**: ``gpu_hours_committed > gpu_hours_total`` in
+#    ``artifacts/campaign-state.json`` -> one loud alert marker per episode.
+#    The /campaign skill should never let this happen; the watcher is the
+#    harness-side circuit breaker. GPU-hours, never dollars.
+# 4. **GC**: reap the registry entry + watch state when the campaign task is
+#    terminal (completed/archived/blocked).
+#
+# Interactions with the other passes (all verified, not assumed):
+# - The issue respawn pass globs ``issue-*.json`` — ``campaign-<N>.json``
+#   never matches, so a campaign is never respawned via ``spawn-issue``.
+# - The orphan sweep skips ``kind: campaign`` tasks (see
+#   :func:`_active_status_tasks`) — its recovery command is
+#   ``spawn-issue --auto``, which would boot the WRONG skill on a campaign.
+# - The session-reconcile pass maps the campaign session to its issue (the
+#   ``campaign-`` prefix is in ``_load_session_issue_map``) but acts only on
+#   :data:`SESSION_RECONCILE_DONE` statuses — a campaign at ``running``
+#   returns "clear", so an idle-between-ticks campaign session is never
+#   auto-stopped mid-campaign; once the campaign completes, the normal
+#   idle-grace stop applies (desired).
+
+CAMPAIGN_REGISTRY_PREFIX = "campaign-"
+# Watch-state files live at campaign-watch-<N>.json. They match the
+# ``campaign-*.json`` glob too, but their stem ("watch-<N>") fails the int
+# parse so every registry-entry walk skips them; they deliberately carry NO
+# integer ``issue`` key so spawn_session's issue-map loader skips them too.
+CAMPAIGN_WATCH_STATE_PREFIX = "campaign-watch-"
+# A campaign session is mid-work at `approved` (spawned, Step 0 not yet
+# flipped it) and `running` (the held status for the whole campaign).
+CAMPAIGN_ACTIVE = {"approved", "running"}
+CAMPAIGN_TERMINAL = {"completed", "archived", "blocked"}
+CAMPAIGN_STALL_S_DEFAULT = 2 * 3600
+CAMPAIGN_MAX_RESPAWNS = 3
+
+
+def _campaign_stall_s() -> float:
+    """Campaign progress-watchdog window: ``EPM_CAMPAIGN_STALL_S`` when set to
+    a positive number, else :data:`CAMPAIGN_STALL_S_DEFAULT` (2h)."""
+    raw = os.environ.get("EPM_CAMPAIGN_STALL_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return CAMPAIGN_STALL_S_DEFAULT
+    return val if val > 0 else CAMPAIGN_STALL_S_DEFAULT
+
+
+def _campaign_registry_entries() -> list[tuple[Path, dict]]:
+    """``(path, entry)`` for every readable ``campaign-<N>.json`` registry
+    entry (integer N). Watch-state files (``campaign-watch-<N>.json``) and
+    garbled names are skipped; an unreadable entry is returned with an empty
+    dict so the caller can remove it."""
+    out: list[tuple[Path, dict]] = []
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return out
+    for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob(f"{CAMPAIGN_REGISTRY_PREFIX}*.json")):
+        stem = path.stem[len(CAMPAIGN_REGISTRY_PREFIX) :]
+        try:
+            int(stem)
+        except ValueError:
+            continue  # campaign-watch-<N>.json or a hand-debug artifact
+        try:
+            entry = json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            entry = {}
+        out.append((path, entry if isinstance(entry, dict) else {}))
+    return out
+
+
+def _campaign_watch_state_path(issue: int) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{CAMPAIGN_WATCH_STATE_PREFIX}{issue}.json"
+
+
+def _load_campaign_watch_state(issue: int) -> dict:
+    """Per-campaign watchdog state (``{}`` if absent/unreadable — a fresh file
+    starts every counter at 0, mirroring :func:`_load_stalled_state`)."""
+    path = _campaign_watch_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_campaign_watch_state(
+    issue: int,
+    *,
+    stalled_checks: int,
+    alerted: bool,
+    respawn_count: int,
+    exhausted: bool,
+    budget_alerted: bool,
+    prev: dict | None = None,
+) -> None:
+    """Persist the campaign watchdog state atomically (temp + rename).
+
+    NOTE: deliberately NO ``issue`` / ``happy_session_id`` keys — the file
+    matches spawn_session's ``campaign-*.json`` issue-map glob, and those
+    keys would make a watch-state file masquerade as a registry entry."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _campaign_watch_state_path(issue)
+    prev_first_seen = (prev or {}).get("first_seen")
+    if not isinstance(prev_first_seen, int | float):
+        prev_first_seen = time.time()
+    payload = {
+        "stalled_checks": stalled_checks,
+        "alerted": alerted,
+        "respawn_count": respawn_count,
+        "exhausted": exhausted,
+        "budget_alerted": budget_alerted,
+        "first_seen": prev_first_seen,
+    }
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_campaign_watch_state(issue: int) -> None:
+    _campaign_watch_state_path(issue).unlink(missing_ok=True)
+
+
+def _respawn_campaign(entry: dict, dry_run: bool) -> bool:
+    """Re-spawn the campaign session for this registry entry via
+    ``spawn_session.py spawn-campaign`` (re-passing the entry's caps).
+    Returns True on success; spawn-campaign rewrites the registry entry
+    (fresh id, missed=0) as a side effect."""
+    issue = entry["issue"]
+    cmd = [
+        "uv", "run", "python", "scripts/spawn_session.py", "spawn-campaign",
+        "--issue", str(issue),
+        "--budget-gpu-hours", str(entry.get("budget_gpu_hours", 250.0)),
+        "--max-concurrent", str(entry.get("max_concurrent", 4)),
+        "--per-child-cap", str(entry.get("per_child_gpu_hours_cap", 100.0)),
+    ]  # fmt: skip
+    if dry_run:
+        print(f"  [dry-run] would respawn campaign: {' '.join(cmd)}")
+        return False
+    res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
+    if res.returncode != 0:
+        print(
+            f"  CAMPAIGN RESPAWN FAILED issue #{issue}: {res.stderr.strip()[:300]}",
+            file=sys.stderr,
+        )
+        return False
+    first_line = (res.stdout.strip().splitlines() or [""])[0]
+    print(f"  RESPAWNED campaign #{issue}: {first_line}")
+    return True
+
+
+def _campaign_children(issue: int) -> list[dict]:
+    """Children of campaign ``issue`` via ``task.py list-children --json``;
+    ``[]`` on any read failure (same subprocess isolation as
+    :func:`_task_status`)."""
+    try:
+        out = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "list-children", str(issue), "--json"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return []
+    if out.returncode != 0:
+        return []
+    try:
+        data = json.loads(out.stdout)
+    except json.JSONDecodeError:
+        return []
+    return data if isinstance(data, list) else []
+
+
+def _campaign_child_marker_fresh(issue: int, window_s: float, now: float) -> bool:
+    """True iff ANY child of campaign ``issue`` posted ANY ``epm:`` marker
+    within the last ``window_s`` seconds. Called LAZILY — only when the
+    campaign's own markers are already stale — so the per-child events
+    fetch is paid only on watchdog-candidate ticks."""
+    for child in _campaign_children(issue):
+        child_id = child.get("id")
+        if not isinstance(child_id, int):
+            continue
+        events = _task_events(child_id)
+        latest = _latest_progress_ts(events)
+        if latest is not None and (now - latest) <= window_s:
+            return True
+    return False
+
+
+def _post_campaign_marker(issue: int, kind: str, note: str, dry_run: bool) -> None:
+    """Post a campaign-pass marker (kind must be declared in workflow.yaml §
+    markers — ``epm:campaign-stalled`` — or the generic ``epm:progress`` for
+    the budget backstop). The note carries :data:`_CAMPAIGN_NOTE_SENTINEL`
+    so watcher-posted events never reset the staleness clocks they measure.
+    Same fail-soft posture as :func:`_post_progress_marker`."""
+    if dry_run:
+        print(f"  [dry-run] would post {kind} on #{issue}: {note}")
+        return
+    try:
+        subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/task.py",
+                "post-marker",
+                str(issue),
+                kind,
+                "--note",
+                note,
+                "--by",
+                "autonomous_session_watch",
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=True,
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  WARNING: posting {kind} on #{issue} failed: {e}", file=sys.stderr)
+
+
+def _campaign_state_budget(issue: int) -> tuple[float, float] | None:
+    """``(gpu_hours_committed, gpu_hours_total)`` from the campaign's
+    ``artifacts/campaign-state.json``, or None when the state file is absent
+    / unreadable (a campaign that hasn't run Step 0 yet has no state — not
+    an error). The task folder is resolved via ``task.py find`` (never a
+    hand-built ``tasks/...`` path)."""
+    try:
+        out = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "find", str(issue)],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None
+    if out.returncode != 0:
+        return None
+    state_file = Path(out.stdout.strip()) / "artifacts" / "campaign-state.json"
+    try:
+        state = json.loads(state_file.read_text())
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+    budget = state.get("budget") if isinstance(state, dict) else None
+    if not isinstance(budget, dict):
+        return None
+    committed = budget.get("gpu_hours_committed")
+    total = budget.get("gpu_hours_total")
+    if not isinstance(committed, int | float) or not isinstance(total, int | float):
+        return None
+    return float(committed), float(total)
+
+
+def _campaign_is_stale(issue: int, entry: dict, now: float) -> bool:
+    """True iff the newest SKILL-POSTED ``epm:campaign-*`` marker (baseline:
+    ``spawned_at`` when none exists yet) is older than
+    :func:`_campaign_stall_s` AND no child task posted a marker in that
+    window. Watcher-posted notes (the ``epm:campaign-stalled`` alert itself)
+    are excluded via the note sentinel — otherwise the alert would reset the
+    staleness baseline it measures and the episode could never escalate
+    past the first check."""
+    stall_s = _campaign_stall_s()
+    campaign_ts: float | None = None
+    for ev in _task_events(issue):
+        if not str(ev.get("kind", "")).startswith("epm:campaign"):
+            continue
+        if _CAMPAIGN_NOTE_SENTINEL in (ev.get("note") or ""):
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (campaign_ts is None or ts > campaign_ts):
+            campaign_ts = ts
+    baseline = campaign_ts if campaign_ts is not None else entry.get("spawned_at", now)
+    if not isinstance(baseline, int | float):
+        baseline = now
+    if (now - float(baseline)) <= stall_s:
+        return False
+    return not _campaign_child_marker_fresh(issue, stall_s, now)
+
+
+def _campaign_escalate_stall(
+    issue: int, entry: dict, st: dict, dry_run: bool, *, daemon_reachable: bool
+) -> None:
+    """Handle one STALLED check: bump the counter, alert on the first check,
+    stop-then-respawn on the second consecutive one (daemon required; capped
+    at :data:`CAMPAIGN_MAX_RESPAWNS` per episode, then a one-time exhausted
+    alert). Mutates the counter dict ``st`` in place."""
+    stall_s = _campaign_stall_s()
+    st["stalled_checks"] += 1
+    print(
+        f"  campaign #{issue}: STALLED check {st['stalled_checks']} "
+        f"(no epm:campaign-* or child marker in {stall_s / 3600:.1f}h)"
+    )
+    if st["stalled_checks"] == 1 and not st["alerted"]:
+        _post_campaign_marker(
+            issue,
+            "epm:campaign-stalled",
+            f"{_CAMPAIGN_NOTE_SENTINEL} no epm:campaign-* marker or child-task "
+            f"marker for > {stall_s / 3600:.1f}h with a live campaign session; "
+            f"second consecutive stalled check stop-then-respawns.",
+            dry_run,
+        )
+        st["alerted"] = True
+        return
+    if st["stalled_checks"] < 2:
+        return
+    if st["respawn_count"] >= CAMPAIGN_MAX_RESPAWNS:
+        if not st["exhausted"]:
+            _post_campaign_marker(
+                issue,
+                "epm:progress",
+                f"{_CAMPAIGN_NOTE_SENTINEL} campaign auto-recovery exhausted "
+                f"({st['respawn_count']} respawns this episode); awaiting user.",
+                dry_run,
+            )
+            st["exhausted"] = True
+        return
+    if not daemon_reachable:
+        print(f"  campaign #{issue}: stalled but daemon unreachable; alert-only")
+        return
+    sid = entry.get("happy_session_id")
+    stopped = _stop_session(sid, dry_run) if isinstance(sid, str) else True
+    if stopped and _respawn_campaign(entry, dry_run):
+        _post_campaign_marker(
+            issue,
+            "epm:progress",
+            f"{_CAMPAIGN_NOTE_SENTINEL} stalled campaign session "
+            f"stop-then-respawned (respawn {st['respawn_count'] + 1}/"
+            f"{CAMPAIGN_MAX_RESPAWNS} this episode).",
+            dry_run,
+        )
+        st["respawn_count"] += 1
+        st["stalled_checks"] = 0
+
+
+def _campaign_budget_backstop(issue: int, budget_alerted: bool, dry_run: bool) -> bool:
+    """One loud alert per episode when ``campaign-state.json`` shows
+    GPU-hours committed > total. Returns the updated ``budget_alerted``
+    flag (re-armed once committed drops back under total)."""
+    budget = _campaign_state_budget(issue)
+    if budget is None:
+        return budget_alerted
+    committed, total = budget
+    if committed > total and not budget_alerted:
+        _post_campaign_marker(
+            issue,
+            "epm:progress",
+            f"{_CAMPAIGN_NOTE_SENTINEL} BUDGET BACKSTOP: campaign-state.json has "
+            f"gpu_hours_committed={committed:g} > gpu_hours_total={total:g}. The "
+            f"/campaign skill must stop filing children; harness circuit breaker.",
+            dry_run,
+        )
+        return True
+    if committed <= total:
+        return False
+    return budget_alerted
+
+
+def _campaign_watchdog(
+    issue: int, entry: dict, now: float, dry_run: bool, *, daemon_reachable: bool
+) -> None:
+    """Progress + budget watchdog for one ALIVE, ACTIVE campaign session.
+
+    Stall detection per :func:`_campaign_is_stale`; escalation per
+    :func:`_campaign_escalate_stall` (one ``epm:campaign-stalled v1`` alert,
+    then bounded stop-then-respawn). Fresh progress ends the episode and
+    resets every counter. The budget backstop posts one alert per episode
+    when committed > total (:func:`_campaign_budget_backstop`)."""
+    state = _load_campaign_watch_state(issue)
+    st = {
+        "stalled_checks": int(state.get("stalled_checks", 0) or 0),
+        "alerted": bool(state.get("alerted", False)),
+        "respawn_count": int(state.get("respawn_count", 0) or 0),
+        "exhausted": bool(state.get("exhausted", False)),
+    }
+    if _campaign_is_stale(issue, entry, now):
+        _campaign_escalate_stall(issue, entry, st, dry_run, daemon_reachable=daemon_reachable)
+    else:
+        st = {"stalled_checks": 0, "alerted": False, "respawn_count": 0, "exhausted": False}
+
+    budget_alerted = _campaign_budget_backstop(
+        issue, bool(state.get("budget_alerted", False)), dry_run
+    )
+
+    if not dry_run:
+        _save_campaign_watch_state(
+            issue,
+            stalled_checks=st["stalled_checks"],
+            alerted=st["alerted"],
+            respawn_count=st["respawn_count"],
+            exhausted=st["exhausted"],
+            budget_alerted=budget_alerted,
+            prev=state,
+        )
+
+
+def _campaign_reap(path: Path, issue: int | None, reason: str, dry_run: bool) -> None:
+    """Remove a campaign registry entry (+ its watch state when ``issue`` is
+    known), logging the reason."""
+    print(f"  {path.name}: {reason}; removing")
+    if not dry_run:
+        path.unlink(missing_ok=True)
+        if issue is not None:
+            _clear_campaign_watch_state(issue)
+
+
+def _process_campaign_entry(
+    path: Path,
+    entry: dict,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    daemon_reachable: bool,
+    live_ids: set[str] | None,
+) -> None:
+    """Apply one campaign registry entry's decision: GC at terminal, keep at
+    park, respawn a dead ACTIVE session (2-miss guard), and run the
+    progress/budget watchdog on a live one."""
+    issue = entry.get("issue")
+    if not isinstance(issue, int):
+        _campaign_reap(path, None, "unreadable/garbled", dry_run)
+        return
+    status = _task_status(issue)
+    if status is None:
+        _campaign_reap(path, issue, "task not found / unreadable", dry_run)
+        return
+    if status in CAMPAIGN_TERMINAL:
+        _campaign_reap(path, issue, f"terminal ({status})", dry_run)
+        return
+    if status not in CAMPAIGN_ACTIVE:
+        # Parked (proposed / plan_pending): keep the entry, reset the miss
+        # count — it may flip back to active.
+        if entry.get("missed", 0) and not dry_run:
+            entry["missed"] = 0
+            path.write_text(json.dumps(entry, indent=2))
+        print(f"  campaign #{issue}: status={status} (parked); keeping entry")
+        return
+    # ACTIVE: liveness needs the daemon.
+    if not daemon_reachable or live_ids is None:
+        print(
+            f"  campaign #{issue}: status={status}, daemon unreachable — "
+            f"skipping liveness/respawn (budget backstop still runs)"
+        )
+        _campaign_watchdog(issue, entry, now, dry_run, daemon_reachable=False)
+        return
+    if entry.get("happy_session_id") in live_ids:
+        if entry.get("missed", 0) and not dry_run:
+            entry["missed"] = 0
+            path.write_text(json.dumps(entry, indent=2))
+        print(f"  campaign #{issue}: status={status} alive=True")
+        _campaign_watchdog(issue, entry, now, dry_run, daemon_reachable=True)
+        return
+    missed = int(entry.get("missed", 0) or 0) + 1
+    print(f"  campaign #{issue}: status={status} alive=False missed={missed}/{threshold}")
+    if missed >= threshold:
+        _respawn_campaign(entry, dry_run)  # rewrites the registry on success
+    elif not dry_run:
+        entry["missed"] = missed
+        path.write_text(json.dumps(entry, indent=2))
+
+
+def campaign_pass(
+    dry_run: bool,
+    threshold: int,
+    *,
+    daemon_reachable: bool,
+    live_ids: set[str] | None,
+    now: float | None = None,
+) -> None:
+    """Crash-recovery + progress watchdog + budget backstop + GC for campaign
+    sessions (``campaign-<N>.json`` entries). See the section comment above
+    for the four jobs and the cross-pass interactions."""
+    now = now if now is not None else time.time()
+    entries = _campaign_registry_entries()
+    if not entries:
+        return
+    print(f"campaign: {len(entries)} registered campaign session(s)")
+    for path, entry in entries:
+        _process_campaign_entry(
+            path,
+            entry,
+            now,
+            dry_run,
+            threshold,
+            daemon_reachable=daemon_reachable,
+            live_ids=live_ids,
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -4393,6 +4939,17 @@ def main(argv: list[str] | None = None) -> int:
             "(won't mass-respawn on an outage). Pod-safety + stalled-"
             "detector still run; stalled-detector falls back to alert-only."
         )
+
+    # Campaign pass: crash-recovery + progress watchdog + budget backstop for
+    # /campaign sessions (campaign-<N>.json entries, task #586). Runs right
+    # after the issue respawn pass; liveness/respawn actions are daemon-gated
+    # inside the pass (the budget backstop is not).
+    campaign_pass(
+        args.dry_run,
+        args.threshold,
+        daemon_reachable=daemon_reachable,
+        live_ids=live_ids if daemon_reachable else None,
+    )
 
     # Pod-safety: runs regardless of daemon reachability. Covers interactive
     # issues (no registry entry) too.

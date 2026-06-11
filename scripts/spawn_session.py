@@ -111,9 +111,58 @@ def _register_manual_session(issue: int, session_id: str, cwd: str) -> None:
     tmp.replace(dest)
 
 
+def _register_campaign_session(
+    issue: int,
+    session_id: str,
+    cwd: str,
+    *,
+    budget_gpu_hours: float,
+    max_concurrent: int,
+    per_child_gpu_hours_cap: float,
+) -> None:
+    """Record a campaign session (``/campaign <N>`` driver, task #586) so the
+    watcher's campaign pass can resurrect it and re-pass its caps on respawn.
+
+    Same shape the watcher consumes for issue sessions (``issue``,
+    ``happy_session_id``, ``spawned_at``, ``missed``), distinguished by the
+    ``campaign-<N>.json`` filename prefix + ``mode: "campaign"``, plus the
+    campaign caps. Budgets are GPU-HOUR caps, never dollars. Same atomicity
+    + RAISES-on-write-failure contract as
+    :func:`_register_autonomous_session` (an untracked live campaign session
+    risks a duplicate respawn)."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    entry = {
+        "issue": issue,
+        "happy_session_id": session_id,
+        "cwd": cwd,
+        "mode": "campaign",
+        "budget_gpu_hours": budget_gpu_hours,
+        "max_concurrent": max_concurrent,
+        "per_child_gpu_hours_cap": per_child_gpu_hours_cap,
+        "spawned_at": time.time(),
+        "missed": 0,
+    }
+    dest = AUTONOMOUS_REGISTRY_DIR / f"campaign-{issue}.json"
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(entry, indent=2))
+    tmp.replace(dest)
+
+
+def _load_campaign_registry_entry(issue: int) -> dict[str, Any] | None:
+    """Read ``campaign-<N>.json`` for ``issue``; None when absent/unreadable.
+    Used to preserve campaign caps across a ``register-current`` rewrite."""
+    path = AUTONOMOUS_REGISTRY_DIR / f"campaign-{issue}.json"
+    try:
+        entry = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    return entry if isinstance(entry, dict) else None
+
+
 def _load_session_issue_map() -> dict[str, int]:
-    """Return ``{happy_session_id: issue_number}`` from BOTH the autonomous
-    (``issue-<N>.json``) and manual (``manual-issue-<N>.json``) registries.
+    """Return ``{happy_session_id: issue_number}`` from the autonomous
+    (``issue-<N>.json``), manual (``manual-issue-<N>.json``), and campaign
+    (``campaign-<N>.json``) registries.
 
     Best-effort enrichment for :func:`cmd_list`: a single malformed entry is
     skipped (its row will just show no mapped issue), the rest still load.
@@ -127,13 +176,17 @@ def _load_session_issue_map() -> dict[str, int]:
     # Track which issue each session id maps to + when, so a stale collision
     # resolves to the newer entry rather than dir-iteration order.
     best_ts: dict[str, float] = {}
-    # Enumerate the two known prefixes explicitly rather than `*issue-*.json`
+    # Enumerate the known prefixes explicitly rather than `*issue-*.json`
     # — a wildcard glob would scrape any future sibling file (e.g. a hand-
     # added `weird-issue-N.json` debug dump, or another tool's misnamed
     # entry) and silently overwrite legitimate mappings. The watcher's own
     # respawn glob (`issue-*.json`, NO leading `manual-`) deliberately
-    # matches only the autonomous prefix; this loader sees both kinds.
-    for prefix in ("issue-", "manual-issue-"):
+    # matches only the autonomous prefix; this loader sees all three kinds
+    # (campaign sessions included so `list` maps them to their issue —
+    # task #586). The watcher's `campaign-watch-<N>.json` state files also
+    # match the `campaign-` glob but carry no integer `issue` key, so the
+    # isinstance guard below skips them.
+    for prefix in ("issue-", "manual-issue-", "campaign-"):
         for path in AUTONOMOUS_REGISTRY_DIR.glob(f"{prefix}*.json"):
             try:
                 entry = json.loads(path.read_text())
@@ -662,6 +715,113 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
         print(f"Open it in Happy on your phone and type ``/issue {issue}``.")
 
 
+def cmd_spawn_campaign(args: argparse.Namespace) -> None:
+    """Spawn the dedicated autonomous session driving campaign ``--issue N``
+    (``/campaign <N>``, task #586).
+
+    Mirrors :func:`cmd_spawn_issue`'s ``--auto`` path with three differences:
+
+    - validates the task is ``kind: campaign`` AND at status ``approved``
+      (the human gate IN — the user reviews the ``## Campaign Brief`` and
+      runs ``task.py set-status <N> approved``; see workflow.yaml §
+      gates.campaign_brief_approval) or ``running`` (re-entry: the skill
+      flips approved → running at its Step 0, so a watcher respawn of a
+      mid-campaign session re-enters at ``running``). Refuses any other
+      status, fail loud.
+    - cwd is always the repo root (campaigns drive `tasks/` state and spawn
+      children; they own no issue worktree).
+    - registers ``campaign-<N>.json`` (``mode: "campaign"`` + the campaign
+      caps) so the watcher's campaign pass — not the issue respawn pass —
+      owns crash recovery.
+
+    ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` is set to the PER-CHILD cap: the
+    children the campaign spawns are ordinary ``/issue <child> --auto``
+    sessions and inherit their own cap at their own spawn; the campaign
+    session itself only ever files plans for children, so the cap bounds
+    any plan it would auto-approve in-session."""
+    issue = args.issue
+    try:
+        from explore_persona_space.task_workflow import get_task
+    except ImportError as e:
+        sys.exit(f"cannot import task_workflow ({e}); run via `uv run python`")
+    try:
+        task = get_task(issue)
+    except FileNotFoundError as e:
+        sys.exit(f"spawn-campaign: {e}")
+    kind = (task.get("frontmatter") or {}).get("kind")
+    if kind != "campaign":
+        sys.exit(
+            f"spawn-campaign: task #{issue} has kind={kind!r}, expected 'campaign'. "
+            f"Campaigns are created via `task.py new --kind campaign ...`."
+        )
+    status = task.get("status")
+    if status not in ("approved", "running"):
+        sys.exit(
+            f"spawn-campaign: task #{issue} is at status {status!r}; a campaign "
+            f"executes only from 'approved' (user reviews the ## Campaign Brief, "
+            f"then runs `task.py set-status {issue} approved` — workflow.yaml § "
+            f"gates.campaign_brief_approval) or 'running' (respawn re-entry)."
+        )
+
+    prompt = f"/campaign {issue}"
+    body: dict[str, object] = {
+        "directory": str(PROJECT_ROOT),
+        "agent": "claude",
+        "environmentVariables": {
+            "HAPPY_INITIAL_PROMPT": prompt,
+            "HAPPY_INITIAL_MODE": "bypassPermissions",
+            "EPM_AUTONOMOUS_SESSION": "1",
+            "EPM_CAMPAIGN_SESSION": "1",
+            "EPM_PLAN_AUTOAPPROVE_GPU_HOURS": str(args.per_child_cap),
+        },
+        "claudeArgs": ["--dangerously-skip-permissions"],
+    }
+    resp = post("/spawn-session", body)
+    if not resp.get("success"):
+        sys.exit(f"spawn failed: {resp}")
+    print(f"Campaign #{issue} session spawned: {resp['sessionId']}")
+    print(f"  cwd: <repo root> {PROJECT_ROOT}")
+    print(f"  initial prompt: {prompt!r}")
+    print("  permissions: bypassPermissions (--dangerously-skip-permissions)")
+    print(
+        f"  caps: budget {args.budget_gpu_hours:g} GPU-h total, "
+        f"{args.max_concurrent} concurrent children, "
+        f"{args.per_child_cap:g} GPU-h per child"
+    )
+    try:
+        _register_campaign_session(
+            issue,
+            resp["sessionId"],
+            str(PROJECT_ROOT),
+            budget_gpu_hours=args.budget_gpu_hours,
+            max_concurrent=args.max_concurrent,
+            per_child_gpu_hours_cap=args.per_child_cap,
+        )
+        print(f"  registered for campaign-watch: campaign-{issue}.json")
+    except OSError as e:
+        # Same atomicity invariant as the --auto issue path: a live campaign
+        # session MUST have a current registry entry, else the watcher could
+        # respawn it as a duplicate (duplicate children -> duplicate pods).
+        print(
+            f"  registry write failed ({e}); stopping the just-spawned "
+            "session to avoid an untracked duplicate",
+            file=sys.stderr,
+        )
+        try:
+            stop_resp = post("/stop-session", {"sessionId": resp["sessionId"]})
+            stopped = bool(stop_resp.get("success"))
+        except SystemExit:
+            stopped = False
+        if not stopped:
+            print(
+                f"  WARNING: could not confirm session {resp['sessionId']} stopped; "
+                "if it is still live, stop it manually "
+                "(spawn_session.py stop --session-id ...)",
+                file=sys.stderr,
+            )
+        sys.exit(f"spawn aborted: could not register campaign #{issue} for crash-recovery")
+
+
 def cmd_register_current(args: argparse.Namespace) -> None:
     """Re-register an EXISTING live session as the driver of issue ``--issue N``.
 
@@ -710,12 +870,39 @@ def cmd_register_current(args: argparse.Namespace) -> None:
             )
         sid = matches[0]
 
-    mode = args.mode or ("auto" if os.environ.get("EPM_AUTONOMOUS_SESSION") == "1" else "manual")
+    if args.mode:
+        mode = args.mode
+    elif os.environ.get("EPM_CAMPAIGN_SESSION") == "1":
+        # Exported only by `spawn-campaign` — a revived campaign session
+        # re-registers under the campaign pass, not the issue respawn pass.
+        mode = "campaign"
+    elif os.environ.get("EPM_AUTONOMOUS_SESSION") == "1":
+        mode = "auto"
+    else:
+        mode = "manual"
     meta_path = (_load_session_meta().get(sid) or {}).get("path")
     cwd = meta_path if isinstance(meta_path, str) and meta_path else os.getcwd()
 
     try:
-        if mode == "auto":
+        if mode == "campaign":
+            # Preserve the caps from the prior registration when one exists;
+            # fall back to the spawn-campaign defaults otherwise.
+            prior = _load_campaign_registry_entry(issue) or {}
+            if args.auto_approve_gpu_hours is not None:
+                per_child = args.auto_approve_gpu_hours
+            else:
+                per_child = prior.get("per_child_gpu_hours_cap", 100.0)
+            _register_campaign_session(
+                issue,
+                sid,
+                cwd,
+                budget_gpu_hours=float(prior.get("budget_gpu_hours", 250.0)),
+                max_concurrent=int(prior.get("max_concurrent", 4)),
+                per_child_gpu_hours_cap=float(per_child),
+            )
+            dest = f"campaign-{issue}.json"
+            semantics = "campaign-watch (campaign pass may respawn on death)"
+        elif mode == "auto":
             if args.auto_approve_gpu_hours is not None:
                 cap = args.auto_approve_gpu_hours
             else:
@@ -926,7 +1113,11 @@ def resolve_session_for_issue(
     reg = registry_dir if registry_dir is not None else AUTONOMOUS_REGISTRY_DIR
     candidates: list[tuple[float, str]] = []  # (spawned_at, sid)
     if reg.is_dir():
-        for prefix in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
+        for prefix in (
+            f"issue-{issue}.json",
+            f"manual-issue-{issue}.json",
+            f"campaign-{issue}.json",
+        ):
             path = reg / prefix
             if not path.is_file():
                 continue
@@ -1011,6 +1202,38 @@ def main(argv: list[str] | None = None) -> None:
     )
     p_issue.set_defaults(fn=cmd_spawn_issue)
 
+    p_campaign = sub.add_parser(
+        "spawn-campaign",
+        help=(
+            "spawn the dedicated autonomous session driving campaign #N "
+            "(/campaign <N>; requires kind: campaign at status approved — task #586)"
+        ),
+    )
+    p_campaign.add_argument("--issue", type=int, required=True)
+    p_campaign.add_argument(
+        "--budget-gpu-hours",
+        type=float,
+        default=250.0,
+        help="total GPU-hour budget across all campaign children (default 250)",
+    )
+    p_campaign.add_argument(
+        "--max-concurrent",
+        type=int,
+        default=4,
+        help="max children in flight at once (default 4)",
+    )
+    p_campaign.add_argument(
+        "--per-child-cap",
+        type=float,
+        default=100.0,
+        help=(
+            "per-child GPU-hour auto-approve cap, exported as "
+            "EPM_PLAN_AUTOAPPROVE_GPU_HOURS and re-passed to each "
+            "`spawn-issue --auto` child (default 100)"
+        ),
+    )
+    p_campaign.set_defaults(fn=cmd_spawn_campaign)
+
     p_reg = sub.add_parser(
         "register-current",
         help=(
@@ -1031,11 +1254,13 @@ def main(argv: list[str] | None = None) -> None:
     )
     p_reg.add_argument(
         "--mode",
-        choices=("auto", "manual"),
+        choices=("auto", "manual", "campaign"),
         default=None,
         help=(
             "Registration kind: 'auto' writes issue-<N>.json (watcher may auto-respawn), "
-            "'manual' writes manual-issue-<N>.json (alert-only). Default: inferred from "
+            "'manual' writes manual-issue-<N>.json (alert-only), 'campaign' writes "
+            "campaign-<N>.json (campaign pass may respawn; caps preserved from any prior "
+            "entry). Default: inferred from EPM_CAMPAIGN_SESSION=1 -> campaign, "
             "EPM_AUTONOMOUS_SESSION=1 -> auto, else manual."
         ),
     )

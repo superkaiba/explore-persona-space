@@ -1,8 +1,9 @@
 #!/bin/bash
 # VM-health + crash-recovery + pod-safety + stalled-detector + orphan-sweep
-# + session-reconcile watch for issue sessions — invoked from the system
-# crontab (every ~10 min). Seven passes, in order (see
-# scripts/autonomous_session_watch.py's module docstring for the full rules):
+# + session-reconcile + campaign watch for issue/campaign sessions — invoked
+# from the system crontab (every ~10 min). Eight passes (the campaign pass
+# runs right after item 2; see scripts/autonomous_session_watch.py's module
+# docstring for the full rules):
 #   1. VM disk-headroom: alert when free space on the VM root filesystem runs
 #      low (~20 GiB); below ~8 GiB also run safe fail-soft reclaims. A full /
 #      silently kills every foreground Bash spawn in orchestrator sessions
@@ -34,6 +35,12 @@
 #      RUNNING managed pod for the issue, no keep-running tag. Never touches
 #      unmapped sessions (PM / chat), followups_running, or blocked tasks.
 #   7. GC: reap per-issue watcher state files for completed/archived tasks.
+#   8. Campaign pass (runs right after item 2; task #586): respawn a dead
+#      /campaign session via spawn-campaign; epm:campaign-stalled alert +
+#      bounded stop-then-respawn when neither the campaign nor any child has
+#      posted a marker for EPM_CAMPAIGN_STALL_S (default 2h); one-time alert
+#      when campaign-state.json shows GPU-hours committed > total; reap the
+#      campaign-<N>.json entry at terminal status.
 # Mirrors cron_worktree_audit.sh / cron_pod_audit.sh.
 #
 # Safety lives in scripts/autonomous_session_watch.py: single-flight flock, a

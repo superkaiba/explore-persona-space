@@ -806,7 +806,7 @@ def set_status(
 
 @dataclass
 class NewTaskRequest:
-    kind: str  # experiment | infra | analysis | survey
+    kind: str  # experiment | infra | analysis | survey | campaign | human kinds
     title: str
     body: str = ""
     parent_id: int | None = None
@@ -1328,6 +1328,44 @@ def list_by_status(status: str, limit: int = 200) -> list[dict[str, Any]]:
         )
         if len(out) >= limit:
             break
+    return out
+
+
+def list_children(parent_id: int) -> list[dict[str, Any]]:
+    """List tasks whose frontmatter ``parent_id`` equals ``parent_id``.
+
+    Walks REGISTRY entries and reads each task's frontmatter (the registry
+    does not denormalize ``parent_id``, so the body read is authoritative).
+    Returns registry-style dicts — ``id`` / ``status`` / ``title`` / ``kind``
+    / ``has_clean_result`` — sorted by id. Unreadable rows are skipped
+    (same fail-soft posture as :func:`list_by_status`: a single corrupt
+    body must not hide every sibling). Primary consumer: the ``/campaign``
+    runner's reconcile step (task #586)."""
+    reg = _load_registry()
+    repo = repo_root()
+    out: list[dict[str, Any]] = []
+    for tid_str, entry in reg.get("tasks", {}).items():
+        try:
+            task_id = int(tid_str)
+        except (TypeError, ValueError):
+            continue
+        path = repo / entry["path"]
+        try:
+            fm, _ = _read_body(path / "body.md")
+        except (FileNotFoundError, ValueError):
+            continue
+        if fm.get("parent_id") != parent_id:
+            continue
+        out.append(
+            {
+                "id": task_id,
+                "status": _status_from_path(path),
+                "title": fm.get("title", ""),
+                "kind": fm.get("kind", "experiment"),
+                "has_clean_result": bool(fm.get("has_clean_result", False)),
+            }
+        )
+    out.sort(key=lambda row: row["id"])
     return out
 
 
