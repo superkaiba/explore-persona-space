@@ -394,11 +394,24 @@ def rho_by_k() -> None:
                 [spearmanr(x[:, idx].mean(1), y[:, idx].mean(1)).statistic for x, y in data]
             )
         lo, hi = np.percentile(boots, [2.5, 97.5])
-        ax.scatter(np.full(3, gi) + np.linspace(-0.09, 0.09, 3), chain_rhos, s=28,
-                   color=chain_color, zorder=3, label="single chain" if gi == 0 else None)
-        ax.errorbar(gi, point, yerr=[[point - lo], [hi - point]], fmt="o", ms=8,
-                    color=point_color, capsize=4,
-                    label="pooled over 3 chains (95% question-bootstrap CI)" if gi == 0 else None)
+        ax.scatter(
+            np.full(3, gi) + np.linspace(-0.09, 0.09, 3),
+            chain_rhos,
+            s=28,
+            color=chain_color,
+            zorder=3,
+            label="single chain" if gi == 0 else None,
+        )
+        ax.errorbar(
+            gi,
+            point,
+            yerr=[[point - lo], [hi - point]],
+            fmt="o",
+            ms=8,
+            color=point_color,
+            capsize=4,
+            label="pooled over 3 chains (95% question-bootstrap CI)" if gi == 0 else None,
+        )
     ax.axhline(0, color="black", lw=0.8)
     ax.set_xticks(range(4), [f"K={k}" for k in ks])
     ax.set_ylabel("Spearman ρ, ICL vs FT leakage profile\n(9 non-source contexts per pair)")
