@@ -6,6 +6,10 @@ description: >
   Prevents accidental multi-variable changes that make results uninterpretable —
   including the case where a reused trained artifact silently inherits a
   load-bearing hyperparameter that the new plan claims to hold constant.
+  Spawned CONCURRENTLY with the /adversarial-planner Phase 2 critic
+  ensemble (same spawn batch — it needs only the plan + parent recipe,
+  not the critics' verdicts); its BLOCK findings union with the critics'
+  into one Phase 3 revise round (/issue Step 2b).
 model: "claude-fable-5[1m]"
 effort: medium
 tools:

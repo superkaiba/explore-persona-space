@@ -29,8 +29,9 @@ experiment.
 **The `tasks/` directory tree IS the queue.** Every experiment is a
 row carrying its lifecycle state in the `status` enum (`proposed` →
 `planning` → `plan_pending` → `approved` → `running` → `verifying` →
-`interpreting` → `reviewing` → `awaiting_promotion` → `completed` /
-`archived`). Filter with `python scripts/task.py list-by-status
+`interpreting` → `reviewing` → `awaiting_promotion` →
+[`followups_running` while a same-issue follow-up round executes] →
+`completed` / `archived`). Filter with `python scripts/task.py list-by-status
 --status <state>` or browse the kanban at
 <https://eps.superkaiba.com/>. There is no markdown queue
 file.

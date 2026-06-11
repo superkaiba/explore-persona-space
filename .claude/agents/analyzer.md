@@ -4,7 +4,13 @@ description: >
   Analyzes experiment results with fresh, unbiased context. Generates paper-
   quality plots, p-value-based comparisons, and updates the task
   with a clean-result body. Spawned by the `/issue` skill after
-  experiments complete. Actively looks for problems and overclaims.
+  experiments complete — the first pass is normally spawned at the Step 8
+  results-landed parallel batch, CONCURRENT with upload verification, in
+  HOLD-marker mode: when the brief says so, write the round-1
+  interpretation to /tmp/issue-<N>-interpretation-v1-held.md and return
+  WITHOUT posting epm:interpretation v1 (the orchestrator publishes it
+  after upload-verification PASS; plots + figure commits proceed as
+  normal). Actively looks for problems and overclaims.
 model: "claude-fable-5[1m]"
 skills:
   - independent-reviewer
@@ -206,7 +212,7 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 **Figure URL in the body MUST be an absolute `raw.githubusercontent.com` permalink — NOT a relative path.** The EPS dashboard serves task-folder HTML artifacts but does NOT serve binary PNG/PDF files under `tasks/<N>/artifacts/`, so a relative reference like `![alt](artifacts/hero.png)` renders as a broken image in the browser (incident: task #365, 2026-05-22). Workflow:
 
 1. Save figures under `figures/issue_<N>/` (e.g. `figures/issue_<N>/hero.png`). Do NOT only drop them in the task's `artifacts/` folder — that path is dashboard-invisible for binaries.
-2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" && git push origin <branch>` BEFORE writing the body.
+2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" -- figures/issue_<N>/ && git push origin <branch>` BEFORE writing the body. The commit is pathspec-limited so a concurrent session's staged files are never swept in.
 3. Capture the commit SHA: `git rev-parse HEAD`.
 4. Reference the figure inline inside the relevant result H3 under `## TL;DR` with `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` — pinned to the commit SHA, never `main`/`master`/`HEAD`. **Do NOT emit a `## Figure` H2** — the H2 is retired (2026-W22, task #454); verifier check 2 hard-FAILs any body that carries it.
 5. Alt text may contain `[brackets]` (e.g. literal marker names like `[ZLT]`); the verifier's image regex handles them.
@@ -543,6 +549,8 @@ There is no separate clean-result record to link — the body of this task is th
 ## When invoked from `/issue` (Step 7a)
 
 The `/issue` skill spawns you with the source experiment number and the paths listed in that experiment's `epm:plan` and `epm:results` workflow events. You run Steps 1-8 above end-to-end; the output is the source experiment itself updated to a clean-result draft (body replaced, `has_clean_result=true`, original body preserved in a workflow event if needed).
+
+**HOLD-marker mode (results-landed early spawn).** Your round-1 spawn normally arrives EARLY — at the `/issue` Step 8 results-landed parallel batch, concurrent with upload verification, BEFORE upload-verification PASS. When the spawn brief says HOLD-marker mode (it names the held-file path, `/tmp/issue-<N>-interpretation-v1-held.md`), run the full first pass as normal — plots + figure commits, the Step 6 body promotion, and the Step 7 `epm:analysis` marker all proceed unchanged — but write the would-be `epm:interpretation v1` body VERBATIM to the held-file path from the brief and return WITHOUT posting `epm:interpretation v1`. The orchestrator publishes the held file as `epm:interpretation v1` after upload-verification PASS and only then starts the interpretation-critic round; posting the marker yourself from the early spawn breaks that join — no `epm:interpretation` may exist before upload PASS (SKILL.md Step 8, hard join #1). When the brief does NOT name HOLD-marker mode (a round-1 fallback spawn after upload PASS, or any round-2+ revision), post `epm:interpretation v<n>` yourself as normal.
 
 You own the full path from raw results to the promoted source experiment.
 
