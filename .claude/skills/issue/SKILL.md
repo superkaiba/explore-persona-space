@@ -4315,6 +4315,16 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    captured in step 5 — the step-8 verifier's URL-permanence check
    FAILs any unpinned `/blob/main/` GitHub link.
 
+   **Idempotency (same-pass re-entry):** a crashed-and-resumed late
+   join can re-run this step after the body was already edited but
+   before the `epm:methodology-doc-generated` marker posted (the
+   marker lands only at step 9). Before inserting either line, check
+   the current body for an existing `**Methodology:**` top line /
+   `**Methodology reference:**` Reproducibility row; when one is
+   present, UPDATE that line's `<DOC_SHA>` pin and `· [gist](...)`
+   suffix in place — never append a duplicate (mirrors the
+   EXTEND-pass step-7 delta above).
+
    (a) **Top of body — the reader-facing pointer.** Insert exactly
    this line immediately AFTER the `<!-- clean-result-v2 -->` sentinel
    (i.e. right under the H1 title), BEFORE `## Human TL;DR`, with a
