@@ -1,6 +1,7 @@
 ---
-title: 'Re-run the #504 calibration table at true fractions on the verified per-fraction
-  smoke snapshots'
+title: 'The published flat calibration table for an over-trained marker cell was a
+  stale-adapter artifact: the corrected curve hits the log-prob ceiling by the step-12
+  checkpoint and only step 6 of 75 keeps bystander dynamic range (HIGH confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-11T03:15:47Z'
