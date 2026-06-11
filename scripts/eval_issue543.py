@@ -59,17 +59,22 @@ from _issue543_common import (  # noqa: E402
     EOS_TOKEN_ID,
     EVAL_MAX_NEW_TOKENS,
     EVAL_RESULTS_DIR,
+    HUB_DATA_REPO_REVISION_570,
     HUB_MODEL_REPO,
     HUB_RAW_COMPLETIONS_BUCKET,
     HUB_RAW_COMPLETIONS_BUCKET_557,
+    HUB_RAW_COMPLETIONS_BUCKET_570,
+    ISSUE_570,
     MARKER_TEXT,
     N_DOCTOR_PROMPTS,
     N_REFERENCE_PROMPTS,
     N_SMOKE_PROMPTS,
     N_TRIGGER_PROMPTS,
     PHASES,
+    adapter_subfolder_570,
     adapter_subfolder_v,
     all_persona_prompts,
+    cell_dir_570,
     cell_slug,
     cell_slug_v,
     ensure_eval_questions_local,
@@ -81,6 +86,13 @@ from _issue543_common import (  # noqa: E402
     validate_variant,
     variant_cell_dir,
 )
+
+# Bare marker glyph for the additive form-metric count: ` ※` is a single
+# token WITH the leading space (id 83399), but a completion that emits the
+# marker mid-spam may render it without a preceding space — counting the
+# bare glyph is the conservative form read (#570 plan §4.3; the
+# CLAUDE.md-named substring exception for the marker token).
+MARKER_GLYPH = MARKER_TEXT.strip()
 
 log = logging.getLogger("eval_issue543")
 
@@ -149,13 +161,24 @@ def build_dev_cell(eval_questions: list[str]) -> dict[str, list[dict]]:
 
 
 def resolve_adapter(
-    arm: str, seed: int, phase: str, adapter_path: str | None, variant: str | None = None
+    arm: str,
+    seed: int,
+    phase: str,
+    adapter_path: str | None,
+    variant: str | None = None,
+    *,
+    issue_ns: int | None = None,
+    install_variant: str | None = None,
 ) -> Path:
     """Local path if given (dispatcher hand-off); else fetch from HF Hub.
 
     With ``variant`` set (#557 lr sweep) the Hub fallback resolves the
     ``adapters/issue557/...`` subfolder the variant cell uploaded to — the
     issue_543 subfolder would silently serve the WRONG (1e-4 anchor) adapter.
+    With ``issue_ns=570`` the fallback resolves ``adapters/issue570/...``:
+    for phase1 the ``_picked`` ladder pick (the #570 pre-SFT eval object),
+    for phase2 the arm's post-SFT adapter. The #570 dispatcher normally
+    hands off a local ``--adapter-path``; the Hub fallback serves re-runs.
     """
     if adapter_path:
         p = Path(adapter_path)
@@ -164,7 +187,13 @@ def resolve_adapter(
         return p
     from explore_persona_space.orchestrate.hub import download_repo_subfolder
 
-    sub = f"adapters/{adapter_subfolder_v(arm, seed, phase, variant)}"
+    if issue_ns == ISSUE_570:
+        if phase == "phase1":
+            sub = f"adapters/{adapter_subfolder_570(arm, seed, 'phase1', install_variant)}_picked"
+        else:
+            sub = f"adapters/{adapter_subfolder_570(arm, seed, 'phase2', variant)}"
+    else:
+        sub = f"adapters/{adapter_subfolder_v(arm, seed, phase, variant)}"
     log.info("Resolving adapter from Hub: %s/%s", HUB_MODEL_REPO, sub)
     # Unpinned by design (resolves adapters this run just uploaded to main).
     # list_repo_tree + per-file hf_hub_download, NOT snapshot_download with
@@ -290,7 +319,10 @@ def generate_completions(
                         "n_generated_tokens": len(g.token_ids),
                         "truncated": truncated(len(g.token_ids), EVAL_MAX_NEW_TOKENS),
                         "contains_marker": MARKER_TEXT in g.text,
-                        "ends_with_marker": g.text.rstrip().endswith(MARKER_TEXT.strip()),
+                        "ends_with_marker": g.text.rstrip().endswith(MARKER_GLYPH),
+                        # #570 additive form metric: bare-glyph occurrence count
+                        # (1 = clean single marker; >1 = spam form).
+                        "marker_count": g.text.count(MARKER_GLYPH),
                         "adapter_path": str(adapter_dir),
                         "lora_id": lora_name,
                     }
@@ -434,13 +466,34 @@ def _mean(xs: list[float]) -> float:
 
 def summarize_cell(records: list[dict], slot_stats: dict | None) -> dict:
     """Per-cell rollup: emission + truncation rates and the THREE-space slot
-    means (log-prob PRIMARY, EOS-margin logit SECONDARY, probability sanity)."""
+    means (log-prob PRIMARY, EOS-margin logit SECONDARY, probability sanity).
+
+    #570 additive form metrics (no existing field changed): among EMITTING
+    completions, ``single_marker_fraction`` = fraction with exactly one bare
+    marker glyph and ``spam_fraction`` = fraction with more than one; both
+    None when the cell has zero emissions (a 0/0 read, not a 0).
+    """
     n = len(records)
+
+    def _marker_count(r: dict) -> int:
+        # Old persisted records (pre-#570) lack the field; recount from text.
+        c = r.get("marker_count")
+        return c if c is not None else r["completion_text"].count(MARKER_GLYPH)
+
+    emitting = [r for r in records if r["contains_marker"]]
+    n_single = sum(1 for r in emitting if _marker_count(r) == 1)
+    n_spam = sum(1 for r in emitting if _marker_count(r) > 1)
     summary = {
         "n": n,
         "emission_rate": sum(r["contains_marker"] for r in records) / max(n, 1),
         "ends_with_marker_rate": sum(r["ends_with_marker"] for r in records) / max(n, 1),
         "truncation_rate": sum(r["truncated"] for r in records) / max(n, 1),
+        # ── #570 additive form metrics ──────────────────────────────────────
+        "n_emitting": len(emitting),
+        "n_single_marker": n_single,
+        "n_spam_form": n_spam,
+        "single_marker_fraction": (n_single / len(emitting)) if emitting else None,
+        "spam_fraction": (n_spam / len(emitting)) if emitting else None,
     }
     if slot_stats is not None:
         tr, ba = slot_stats["trained"], slot_stats["base"]
@@ -506,13 +559,32 @@ def run_one(args: argparse.Namespace) -> int:
     phase_log("eval_gen")
     marker_preflight()
     variant = args.variant
-    adapter_dir = resolve_adapter(args.arm, args.seed, args.phase, args.adapter_path, variant)
+    issue_ns = args.issue_ns
+    adapter_dir = resolve_adapter(
+        args.arm,
+        args.seed,
+        args.phase,
+        args.adapter_path,
+        variant,
+        issue_ns=issue_ns,
+        install_variant=args.install_variant,
+    )
     # Gauge assert up front too (cheap; the worker re-asserts before logit reads).
     assert_adapter_gauge_free(adapter_dir)
-    eval_qs = ensure_eval_questions_local()
+    eval_qs = ensure_eval_questions_local(
+        revision=HUB_DATA_REPO_REVISION_570 if issue_ns == ISSUE_570 else None
+    )
     cells = build_cells(eval_qs, smoke=args.smoke)
 
-    if variant is None:
+    if issue_ns == ISSUE_570:
+        # #570 OUTPUT namespace (plan §6.5 deliverable globs):
+        # phase1 -> eval_results/issue_570/phase1[_<iv>]/seed<S>/eval_picked
+        # phase2 -> eval_results/issue_570/<arm-variant>/seed<S>/phase2
+        if args.phase == "phase1":
+            out_dir = cell_dir_570(args.seed, "phase1", args.install_variant) / "eval_picked"
+        else:
+            out_dir = cell_dir_570(args.seed, "phase2", variant) / "phase2"
+    elif variant is None:
         out_dir = EVAL_RESULTS_DIR / args.arm / f"seed{args.seed}" / args.phase
     else:
         # #557 OUTPUT namespace: eval_results/issue_557/<arm>/<variant>/seed<S>/phase2
@@ -520,7 +592,9 @@ def run_one(args: argparse.Namespace) -> int:
     if args.smoke:
         out_dir = out_dir / "smoke"
     out_dir.mkdir(parents=True, exist_ok=True)
-    prefix = "issue543" if variant is None else "issue557"
+    prefix = (
+        "issue570" if issue_ns == ISSUE_570 else ("issue543" if variant is None else "issue557")
+    )
     lora_name = f"{prefix}_{cell_slug_v(args.arm, args.seed, args.phase, variant)}"
 
     records = generate_completions(
@@ -551,10 +625,20 @@ def run_one(args: argparse.Namespace) -> int:
         "seed": args.seed,
         "phase": args.phase,
         "variant": variant,
+        "issue_ns": issue_ns,
+        "install_variant": args.install_variant,
         "smoke": args.smoke,
         "adapter_dir": str(adapter_dir),
         "adapter_hf_subfolder": (
-            f"adapters/{adapter_subfolder_v(args.arm, args.seed, args.phase, variant)}"
+            "adapters/"
+            + adapter_subfolder_570(
+                args.arm,
+                args.seed,
+                args.phase,
+                variant if args.phase == "phase2" else args.install_variant,
+            )
+            if issue_ns == ISSUE_570
+            else f"adapters/{adapter_subfolder_v(args.arm, args.seed, args.phase, variant)}"
         ),
         "lora_id": lora_name,
         "max_new_tokens": EVAL_MAX_NEW_TOKENS,
@@ -571,8 +655,16 @@ def run_one(args: argparse.Namespace) -> int:
         phase_log("eval_upload")
         from explore_persona_space.orchestrate.hub import upload_dataset_directory
 
-        bucket = HUB_RAW_COMPLETIONS_BUCKET if variant is None else HUB_RAW_COMPLETIONS_BUCKET_557
-        dest = f"{bucket}/{cell_slug_v(args.arm, args.seed, args.phase, variant)}"
+        if issue_ns == ISSUE_570:
+            bucket = HUB_RAW_COMPLETIONS_BUCKET_570
+        elif variant is None:
+            bucket = HUB_RAW_COMPLETIONS_BUCKET
+        else:
+            bucket = HUB_RAW_COMPLETIONS_BUCKET_557
+        slug = cell_slug_v(args.arm, args.seed, args.phase, variant)
+        if issue_ns == ISSUE_570 and args.phase == "phase1" and args.install_variant:
+            slug = f"{args.arm}_{args.install_variant}_seed{args.seed}_phase1"
+        dest = f"{bucket}/{slug}"
         upload_dataset_directory(out_dir, dest, pattern="completions_*.json")
 
     phase_log("done")
@@ -599,9 +691,27 @@ def parse_args() -> argparse.Namespace:
         "--variant",
         type=str,
         default=None,
-        help="Issue #557 lr tag (e.g. lr3e5): routes out_dir + raw-completion "
-        "bucket + Hub adapter fallback to issue_557 namespaces. Requires "
+        help="Issue #557 lr tag (e.g. lr3e5) or #570 eraser arm (org_benign | "
+        "org_em with --issue-ns 570): routes out_dir + raw-completion bucket "
+        "+ Hub adapter fallback to the variant namespace. Requires "
         "--phase phase2; invalid with --dev-check.",
+    )
+    p.add_argument(
+        "--issue-ns",
+        type=int,
+        choices=(ISSUE_570,),
+        default=None,
+        help="#570 namespace: out_dir eval_results/issue_570/... (phase1 -> "
+        "phase1/seed<S>/eval_picked; phase2 -> <arm-variant>/seed<S>/phase2), "
+        "raw-completion bucket issue570_clean_organism, lora prefix issue570, "
+        "eval-question fetch pinned to the #570 data revision.",
+    )
+    p.add_argument(
+        "--install-variant",
+        type=str,
+        default=None,
+        help="#570 install-variant label (e.g. rescue_lr2e6): routes the "
+        "phase-1 eval out_dir to phase1_<label>/seed<S>. Requires --issue-ns.",
     )
     return p.parse_args()
 
@@ -612,6 +722,14 @@ def main() -> int:
         # Worker inherits the parent's CUDA_VISIBLE_DEVICES via the explicit
         # env passthrough; do NOT re-pin here.
         return _slot_stats_worker_main(manifest_path=Path(args.manifest))
+    if args.install_variant is not None:
+        validate_variant(args.install_variant)
+        if args.issue_ns is None:
+            raise SystemExit("--install-variant requires --issue-ns 570.")
+    if args.issue_ns is not None and args.dev_check:
+        # Dev-check writes only to the explicit --out path; the dispatcher
+        # threads the #570 cell dir there, so no namespace flag is needed.
+        raise SystemExit("--issue-ns is unnecessary with --dev-check (use --out).")
     if args.variant is not None:
         validate_variant(args.variant)
         if args.dev_check:
@@ -621,6 +739,11 @@ def main() -> int:
                 "--variant requires --phase phase2 (the #557 sweep reuses the "
                 "parent's Phase-1 evals; only post-SFT cells are variant-namespaced)."
             )
+    if args.issue_ns is not None and args.phase == "phase2" and args.variant is None:
+        raise SystemExit(
+            "--issue-ns 570 with --phase phase2 requires --variant org_benign | org_em "
+            "(the #570 eraser arm names the output namespace)."
+        )
     # Pin BEFORE any torch/vllm import touches CUDA.
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
     if args.dev_check:

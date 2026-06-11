@@ -71,11 +71,14 @@ from _issue543_common import (  # noqa: E402
     DATA_SEED,
     EOS_TOKEN_ID,
     EVAL_RESULTS_DIR,
+    EVAL_RESULTS_DIR_570,
     EXPECTED_MARKER_ID,
+    HUB_DATA_REPO_REVISION_570,
     HUB_MODEL_REPO,
     HUB_MODEL_REPO_REVISION_543,
     ISSUE,
     ISSUE_557,
+    ISSUE_570,
     MARKER_TEXT,
     MIX_MANIFEST_PATH,
     MIXES_DIR,
@@ -118,18 +121,26 @@ from _issue543_common import (  # noqa: E402
     TOTAL_ROWS,
     WANDB_PROJECT,
     WANDB_PROJECT_557,
+    WANDB_PROJECT_570,
     adapter_subfolder,
+    adapter_subfolder_570,
     adapter_subfolder_v,
+    cell_dir_570,
     cell_slug,
     cell_slug_v,
+    corpus_prompt_identity_check,
+    ensure_mix_local_pinned,
+    ensure_phase2_corpus_local,
     ensure_probe_files_local,
     marker_preflight,
     output_root,
     phase_log,
     repro_metadata,
     run_name,
+    run_name_570,
     run_name_v,
     sentinel_dir,
+    sentinel_slug_570,
     sentinel_slug_v,
     validate_variant,
     variant_cell_dir,
@@ -162,24 +173,139 @@ def _stop_record_path(arm: str, seed: int) -> Path:
     return _cell_dir(arm, seed) / "phase1_stop_record.json"
 
 
-def _phase2_paths(arm: str, seed: int, variant: str | None, phase2_lr: float | None) -> dict:
+def _phase1_paths(args: argparse.Namespace) -> dict:
+    """Resolve every Phase-1 path/name for one cell — the ONE source of truth.
+
+    ``issue_ns=None`` reproduces the exact #543 values (byte-for-byte when no
+    #570 flag is passed). ``issue_ns=570`` moves EVERY output surface to the
+    #570 namespaces (eval_results/issue_570, WandB issue570_clean_organism,
+    adapters/issue570/..., sentinel issue-570-*; plan risk 7) and resolves
+    the lr / save-steps / save-limit thin overrides (defaults map to the
+    existing module constants).
+    """
+    arm, seed = args.arm, args.seed
+    issue_ns = args.issue_ns
+    iv = getattr(args, "install_variant", None)
+    if issue_ns is None:
+        cell = _cell_dir(arm, seed)
+        return {
+            "arm": arm,
+            "seed": seed,
+            "issue_ns": None,
+            "install_variant": None,
+            "cell_dir": cell,
+            "result_path": _phase1_result_path(arm, seed),
+            "stop_record_path": _stop_record_path(arm, seed),
+            "train_out_dir": output_root() / cell_slug(arm, seed, "phase1"),
+            "run_name": run_name(arm, seed, "phase1"),
+            "wandb_project": WANDB_PROJECT,
+            "adapter_hf_subfolder": f"adapters/{adapter_subfolder(arm, seed, 'phase1')}",
+            "sentinel_slug": cell_slug(arm, seed, "phase1"),
+            "sentinel_issue": ISSUE,
+            "effective_lr": PHASE1_LR if args.phase1_lr is None else args.phase1_lr,
+            "save_steps": (
+                PHASE1_SAVE_STEPS if args.phase1_save_steps is None else args.phase1_save_steps
+            ),
+            "save_total_limit": (
+                PHASE1_SAVE_TOTAL_LIMIT
+                if args.phase1_save_limit is None
+                else args.phase1_save_limit
+            ),
+            "data_revision": None,
+        }
+    cell = cell_dir_570(seed, "phase1", iv)
+    slug570 = run_name_570(arm, seed, "phase1", iv)
+    return {
+        "arm": arm,
+        "seed": seed,
+        "issue_ns": issue_ns,
+        "install_variant": iv,
+        "cell_dir": cell,
+        "result_path": cell / "phase1_result.json",
+        "stop_record_path": cell / "phase1_stop_record.json",
+        "train_out_dir": output_root() / slug570,
+        "run_name": slug570,
+        "wandb_project": WANDB_PROJECT_570,
+        "adapter_hf_subfolder": f"adapters/{adapter_subfolder_570(arm, seed, 'phase1', iv)}",
+        "sentinel_slug": sentinel_slug_570(arm, seed, "phase1", iv),
+        "sentinel_issue": ISSUE_570,
+        "effective_lr": PHASE1_LR if args.phase1_lr is None else args.phase1_lr,
+        "save_steps": (
+            PHASE1_SAVE_STEPS if args.phase1_save_steps is None else args.phase1_save_steps
+        ),
+        "save_total_limit": (
+            PHASE1_SAVE_TOTAL_LIMIT if args.phase1_save_limit is None else args.phase1_save_limit
+        ),
+        "data_revision": HUB_DATA_REPO_REVISION_570,
+    }
+
+
+def _phase2_paths(
+    arm: str,
+    seed: int,
+    variant: str | None,
+    phase2_lr: float | None,
+    *,
+    issue_ns: int | None = None,
+    install_variant: str | None = None,
+    corpus_hf_path: str | None = None,
+    start_adapter: str | None = None,
+) -> dict:
     """Resolve every Phase-2 path/name for one cell — the ONE source of truth.
 
     Used by both ``run_phase2`` (execution) and ``--print-paths`` (CPU smoke),
     so the printed paths cannot drift from the executed ones. OUTPUT paths
-    move to ``issue_557`` namespaces when ``variant`` is set; the parent-side
-    READS (``phase1_result_read``, the Hub adapter resolve) always stay on the
-    ``issue_543`` paths (#557 plan §4.2 threading-scope note — a blanket
-    redirect FileNotFoundErrors on the parent reads).
+    move to ``issue_557`` namespaces when ``variant`` is set (and to
+    ``issue_570`` namespaces when ``issue_ns=570`` — there the variant IS the
+    eraser arm, org_benign | org_em); the parent-side READS
+    (``phase1_result_read``, the Hub adapter resolve) stay on the
+    ``issue_543`` paths for #557 (#557 plan §4.2 threading-scope note — a
+    blanket redirect FileNotFoundErrors on the parent reads) but move to the
+    #570 phase-1 namespace for #570 (whose Phase 1 is its OWN fresh install).
     """
     if variant is not None:
         validate_variant(variant)
+    if issue_ns == ISSUE_570:
+        cell = cell_dir_570(seed, "phase2", variant)
+        p1_cell = cell_dir_570(seed, "phase1", install_variant)
+        return {
+            "arm": arm,
+            "seed": seed,
+            "variant": variant,
+            "issue_ns": issue_ns,
+            "install_variant": install_variant,
+            "effective_lr": PHASE2_LR if phase2_lr is None else phase2_lr,
+            "effective_corpus_hf_path": corpus_hf_path or PHASE2_DATASET_HF_PATH,
+            "start_adapter": start_adapter,
+            # ── OUTPUT surfaces (all #570-namespaced) ────────────────────────
+            "cell_dir": cell,
+            "result_path": cell / "phase2_result.json",
+            "train_out_dir": output_root() / run_name_570(arm, seed, "phase2", variant),
+            "run_name": run_name_570(arm, seed, "phase2", variant),
+            "wandb_project": WANDB_PROJECT_570,
+            "adapter_hf_subfolder": (
+                f"adapters/{adapter_subfolder_570(arm, seed, 'phase2', variant)}"
+            ),
+            "sentinel_slug": sentinel_slug_570(arm, seed, "phase2", variant),
+            "sentinel_issue": ISSUE_570,
+            # ── #570 Phase-1 READS (the run's OWN install, never #543's) ─────
+            "phase1_result_read": p1_cell / "phase1_result.json",
+            "phase1_adapter_hub_subfolder": (
+                f"adapters/{adapter_subfolder_570(arm, seed, 'phase1', install_variant)}_picked"
+            ),
+            "phase1_adapter_hub_revision": None,  # this run's own fresh uploads
+            "data_revision": HUB_DATA_REPO_REVISION_570,
+        }
     cell = variant_cell_dir(arm, variant, seed) if variant is not None else _cell_dir(arm, seed)
     return {
         "arm": arm,
         "seed": seed,
         "variant": variant,
+        "issue_ns": None,
+        "install_variant": None,
         "effective_lr": PHASE2_LR if phase2_lr is None else phase2_lr,
+        "effective_corpus_hf_path": PHASE2_DATASET_HF_PATH,
+        "start_adapter": None,
         # ── OUTPUT surfaces (variant-aware) ─────────────────────────────────
         "cell_dir": cell,  # trajectory dumps + result JSON land here
         "result_path": cell / "phase2_result.json",
@@ -197,6 +323,7 @@ def _phase2_paths(arm: str, seed: int, variant: str | None, phase2_lr: float | N
         "phase1_result_read": _phase1_result_path(arm, seed),
         "phase1_adapter_hub_subfolder": f"adapters/{adapter_subfolder(arm, seed, 'phase1')}",
         "phase1_adapter_hub_revision": HUB_MODEL_REPO_REVISION_543,
+        "data_revision": None,
     }
 
 
@@ -431,9 +558,27 @@ def _assert_single_visible_gpu(gpu: int, *, label: str) -> None:
     )
 
 
+def _set_wandb_project(paths: dict) -> None:
+    """Route WandB: setdefault for the parent #543 project, hard-set for
+    namespaced (#557 variant / #570) runs — a stale inherited WANDB_PROJECT
+    would silently misroute the run (#557 round-1 review minor)."""
+    if paths["wandb_project"] == WANDB_PROJECT:
+        os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
+        return
+    inherited = os.environ.get("WANDB_PROJECT")
+    if inherited not in (None, paths["wandb_project"]):
+        log.warning(
+            "Overriding inherited WANDB_PROJECT=%r with %r for namespaced run.",
+            inherited,
+            paths["wandb_project"],
+        )
+    os.environ["WANDB_PROJECT"] = paths["wandb_project"]
+
+
 def _phase1_train_once(
     args: argparse.Namespace,
     *,
+    paths: dict,
     bhat: float,
     band_low_abs: float,
     band_high_abs: float,
@@ -448,11 +593,18 @@ def _phase1_train_once(
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
     arm, seed = args.arm, args.seed
-    cell = _cell_dir(arm, seed)
+    cell = paths["cell_dir"]
     cell.mkdir(parents=True, exist_ok=True)
-    data_path = MIXES_DIR / arm / "train.jsonl"
-    if not data_path.exists():
-        raise FileNotFoundError(f"Mix missing: {data_path}. Run build_issue543_mixes.py first.")
+    if paths["issue_ns"] == ISSUE_570:
+        # Fresh #570 pods skip the #543 on-pod bank+mix build; the mix and
+        # the 4 frozen probe files are REUSED Hub data, fetched at the #570
+        # data-revision pin (plan §4.0).
+        data_path = ensure_mix_local_pinned(arm, revision=paths["data_revision"])
+        ensure_probe_files_local(revision=paths["data_revision"])
+    else:
+        data_path = MIXES_DIR / arm / "train.jsonl"
+        if not data_path.exists():
+            raise FileNotFoundError(f"Mix missing: {data_path}. Run build_issue543_mixes.py first.")
 
     tokenizer = AutoTokenizer.from_pretrained(
         BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
@@ -469,7 +621,7 @@ def _phase1_train_once(
     cfg = TrainLoraConfig(
         gpu_id=args.gpu,
         epochs=PHASE1_EPOCHS_CAP,
-        lr=PHASE1_LR,
+        lr=paths["effective_lr"],
         lr_scheduler_type=PHASE1_LR_SCHEDULER,
         warmup_ratio=PHASE1_WARMUP_RATIO,
         lora_r=PHASE1_LORA_R,
@@ -480,11 +632,16 @@ def _phase1_train_once(
         grad_accum=PHASE1_GRAD_ACCUM,
         max_length=PHASE1_MAX_LENGTH,
         seed=seed,
-        run_name=run_name(arm, seed, "phase1") + run_suffix,
+        run_name=paths["run_name"] + run_suffix,
         report_to="wandb",
         save_strategy="steps",
-        save_steps=PHASE1_SAVE_STEPS,
-        save_total_limit=PHASE1_SAVE_TOTAL_LIMIT,
+        save_steps=paths["save_steps"],
+        save_total_limit=paths["save_total_limit"],
+        # #570 ladder runs keep ~20-40 rolling checkpoints; adapter-only
+        # saves (~40 MB each, the plan §4.1 disk math) — optimizer state is
+        # never resumed from these (the ladder re-probes; Phase 2 continues
+        # from the picked adapter via existing_adapter_path).
+        save_only_model=paths["issue_ns"] == ISSUE_570,
         logging_steps=5,
         marker_only_loss=True,
         marker_text=MARKER_TEXT,
@@ -503,12 +660,12 @@ def _phase1_train_once(
         marker_band_stop_record_path=str(stop_record_tmp),
         hf_upload=True,
         hf_repo=HUB_MODEL_REPO,
-        hf_path_in_repo=f"adapters/{adapter_subfolder(arm, seed, 'phase1')}",
+        hf_path_in_repo=paths["adapter_hf_subfolder"],
         existing_adapter_path=existing_adapter,
     )
 
     os.environ.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
-    os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
+    _set_wandb_project(paths)
     _assert_single_visible_gpu(args.gpu, label=f"phase1 {arm}/s{seed} gpu{args.gpu}")
     adapter_path, train_loss = train_lora(
         base_model_path=BASE_MODEL,
@@ -607,11 +764,12 @@ def _select_nearest_band_checkpoint(
     return selected_dir, selection
 
 
-def _run_dev_check(args: argparse.Namespace, adapter_path: Path, *, tag: str) -> dict:
-    cell = _cell_dir(args.arm, args.seed)
+def _run_dev_check(args: argparse.Namespace, adapter_path: Path, *, paths: dict, tag: str) -> dict:
+    cell = paths["cell_dir"]
     out = cell / f"dev_check_{tag}.json"
     log_path = (
-        sentinel_dir() / f"issue-543-{cell_slug(args.arm, args.seed, 'phase1')}-devcheck-{tag}.log"
+        sentinel_dir()
+        / f"issue-{paths['sentinel_issue']}-{paths['sentinel_slug']}-devcheck-{tag}.log"
     )
     _run_child(
         _eval_cmd(
@@ -634,23 +792,50 @@ def _run_dev_check(args: argparse.Namespace, adapter_path: Path, *, tag: str) ->
     return json.loads(out.read_text())
 
 
+def _assert_ladder_coverage(out_dir: Path, *, max_lowest_step: int = 25) -> list[int]:
+    """#570 plan §4.1 ladder-coverage assert: lowest retained ckpt step <= 25.
+
+    A seed stopping past the rolling window (save_total_limit x save_steps)
+    silently rotates the onset window out of the ladder while still passing a
+    count-only check (methodology critic concern 5). Fail loud instead.
+
+    Returns:
+        The sorted retained checkpoint steps.
+    """
+    steps = sorted(
+        int(p.name.split("-")[-1]) for p in (out_dir / "adapter").glob("checkpoint-*") if p.is_dir()
+    )
+    if not steps:
+        raise RuntimeError(f"Ladder-coverage assert: no rolling checkpoints under {out_dir}")
+    if steps[0] > max_lowest_step:
+        raise RuntimeError(
+            f"Ladder-coverage assert FAILED: lowest retained checkpoint step {steps[0]} > "
+            f"{max_lowest_step} — the onset window rotated out of the rolling ladder "
+            f"(retained steps {steps[:5]}...{steps[-3:]}). Raise --phase1-save-limit "
+            "and re-run this seed."
+        )
+    return steps
+
+
 def run_phase1(args: argparse.Namespace) -> dict:
     """Phase-1 install with matched stopping (plan §4.2)."""
     phase_log("install_train")
     arm, seed = args.arm, args.seed
-    result_path = _phase1_result_path(arm, seed)
+    paths = _phase1_paths(args)
+    result_path = paths["result_path"]
     if result_path.exists() and not args.force:
         log.info("Phase-1 result exists (%s) — skipping (idempotent).", result_path)
         return json.loads(result_path.read_text())
 
     bhat = _load_bhat()
     band_low_abs, band_high_abs = STOP_TARGET_LOGP_LOW, STOP_TARGET_LOGP_HIGH
-    out_dir = output_root() / cell_slug(arm, seed, "phase1")
+    out_dir = paths["train_out_dir"]
     out_dir.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
 
     adapter_path, record = _phase1_train_once(
         args,
+        paths=paths,
         bhat=bhat,
         band_low_abs=band_low_abs,
         band_high_abs=band_high_abs,
@@ -661,6 +846,11 @@ def run_phase1(args: argparse.Namespace) -> dict:
     )
     final_adapter = Path(adapter_path)
     selection = None
+    ladder_steps = None
+    if args.issue_ns == ISSUE_570 and record.get("stop_reason") is not None:
+        # The #570 experimental install is a post-hoc LADDER pick — assert the
+        # rolling window still covers the onset region before anything else.
+        ladder_steps = _assert_ladder_coverage(out_dir)
     if record.get("stop_reason") == "overshoot":
         phase_log("install_overshoot_select")
         final_adapter, selection = _select_nearest_band_checkpoint(
@@ -673,7 +863,7 @@ def run_phase1(args: argparse.Namespace) -> dict:
         upload_model(
             str(final_adapter),
             repo_id=HUB_MODEL_REPO,
-            path_in_repo=f"adapters/{adapter_subfolder(arm, seed, 'phase1')}",
+            path_in_repo=paths["adapter_hf_subfolder"],
         )
 
     cap_hit = record.get("stop_reason") is None
@@ -683,15 +873,16 @@ def run_phase1(args: argparse.Namespace) -> dict:
     dev_check_retry = None
     if not cap_hit:
         phase_log("install_dev_check")
-        dev_check = _run_dev_check(args, final_adapter, tag="initial")
+        dev_check = _run_dev_check(args, final_adapter, paths=paths, tag="initial")
         if not dev_check["passed"]:
             # One pre-registered retry: resume from the stopped adapter with
             # the band shifted UP by 0.10 nat (plan §4.2.6).
             phase_log("install_band_retry")
-            retry_dir = output_root() / (cell_slug(arm, seed, "phase1") + "_retry")
+            retry_dir = Path(str(paths["train_out_dir"]) + "_retry")
             retry_dir.mkdir(parents=True, exist_ok=True)
             retry_adapter, retry_record = _phase1_train_once(
                 args,
+                paths=paths,
                 bhat=bhat,
                 band_low_abs=band_low_abs + BAND_RETRY_SHIFT_NATS,
                 band_high_abs=band_high_abs + BAND_RETRY_SHIFT_NATS,
@@ -718,9 +909,9 @@ def run_phase1(args: argparse.Namespace) -> dict:
                 upload_model(
                     str(final_adapter),
                     repo_id=HUB_MODEL_REPO,
-                    path_in_repo=f"adapters/{adapter_subfolder(arm, seed, 'phase1')}",
+                    path_in_repo=paths["adapter_hf_subfolder"],
                 )
-            dev_check_retry = _run_dev_check(args, final_adapter, tag="retry")
+            dev_check_retry = _run_dev_check(args, final_adapter, paths=paths, tag="retry")
 
     wall_m = (time.time() - t0) / 60
     dev_final = dev_check_retry or dev_check
@@ -741,11 +932,17 @@ def run_phase1(args: argparse.Namespace) -> dict:
         "match_failure": bool(dev_final is not None and not dev_final["passed"]),
         "install_excluded": cap_hit,  # §4.2.5: cap breach -> excluded from survival comparison
         "final_adapter_path": str(final_adapter),
-        "adapter_hf_subfolder": f"adapters/{adapter_subfolder(arm, seed, 'phase1')}",
+        "adapter_hf_subfolder": paths["adapter_hf_subfolder"],
         "phase1_total_steps": record.get("final_global_step"),  # dose covariate
+        "issue_ns": paths["issue_ns"],
+        "install_variant": paths["install_variant"],
+        "ladder_steps": ladder_steps,
+        "data_revision": paths["data_revision"],
         "wall_minutes": round(wall_m, 1),
         "config": {
-            "lr": PHASE1_LR,
+            "lr": paths["effective_lr"],
+            "save_steps": paths["save_steps"],
+            "save_total_limit": paths["save_total_limit"],
             "lr_scheduler_type": PHASE1_LR_SCHEDULER,
             "warmup_ratio": PHASE1_WARMUP_RATIO,
             "epochs_cap": PHASE1_EPOCHS_CAP,
@@ -765,17 +962,20 @@ def run_phase1(args: argparse.Namespace) -> dict:
         },
     }
     # The stop record IS the manipulation-check evidence (plan §6.5).
-    _stop_record_path(arm, seed).parent.mkdir(parents=True, exist_ok=True)
-    _stop_record_path(arm, seed).write_text(json.dumps(result, indent=2))
+    paths["stop_record_path"].parent.mkdir(parents=True, exist_ok=True)
+    paths["stop_record_path"].write_text(json.dumps(result, indent=2))
     result_path.write_text(json.dumps(result, indent=2))
     write_sentinel(
-        f"{cell_slug(arm, seed, 'phase1')}",
+        paths["sentinel_slug"],
         kind="epm:progress",
+        issue=paths["sentinel_issue"],
         note=json.dumps(
             {
                 "event": "phase1_complete",
                 "arm": arm,
                 "seed": seed,
+                "issue_ns": paths["issue_ns"],
+                "install_variant": paths["install_variant"],
                 "stop_reason": record.get("stop_reason"),
                 "stop_step": record.get("stop_step"),
                 "cap_hit_without_band": cap_hit,
@@ -906,7 +1106,16 @@ def run_phase2(args: argparse.Namespace) -> dict:
 
     arm, seed = args.arm, args.seed
     variant = args.variant
-    paths = _phase2_paths(arm, seed, variant, args.phase2_lr)
+    paths = _phase2_paths(
+        arm,
+        seed,
+        variant,
+        args.phase2_lr,
+        issue_ns=args.issue_ns,
+        install_variant=args.install_variant,
+        corpus_hf_path=args.phase2_corpus_hf_path,
+        start_adapter=args.phase2_start_adapter,
+    )
     result_path = paths["result_path"]
     if result_path.exists() and not args.force:
         log.info("Phase-2 result exists (%s) — skipping (idempotent).", result_path)
@@ -918,12 +1127,42 @@ def run_phase2(args: argparse.Namespace) -> dict:
             f"Cell {arm}/seed{seed} is install-excluded (cap hit without band) — "
             "Phase 2 must not run on an unmatched install (plan §4.2.5)."
         )
-    phase1_adapter = _resolve_phase1_adapter(arm, seed)
-    data_path = _ensure_phase2_dataset_local()
-    if variant is not None:
-        # Fresh #557 pods skip the #543 mix build that created the probe
-        # files; the trajectory callbacks read them locally (#557 plan §4.1).
-        ensure_probe_files_local()
+    if paths["start_adapter"] is not None:
+        # #570: continue from the LADDER-PICKED checkpoint, not the band-stop
+        # final (the picked clean-form install IS the experimental object).
+        phase1_adapter = Path(paths["start_adapter"])
+        if not (phase1_adapter / "adapter_config.json").exists():
+            raise FileNotFoundError(
+                f"--phase2-start-adapter invalid (no adapter_config.json): {phase1_adapter}"
+            )
+    elif paths["issue_ns"] == ISSUE_570:
+        # Default #570 convention without --phase2-start-adapter: the run's
+        # OWN phase-1 final adapter (NOT #543's parent install).
+        p = Path(phase1_result["final_adapter_path"])
+        if not (p / "adapter_config.json").exists():
+            raise FileNotFoundError(
+                f"#570 phase-1 final adapter missing at {p}; pass --phase2-start-adapter "
+                "(the ladder-picked checkpoint) explicitly."
+            )
+        phase1_adapter = p
+    else:
+        phase1_adapter = _resolve_phase1_adapter(arm, seed)
+    if paths["issue_ns"] == ISSUE_570:
+        data_path = ensure_phase2_corpus_local(
+            paths["effective_corpus_hf_path"], revision=paths["data_revision"]
+        )
+        if args.phase2_corpus_hf_path is not None:
+            # Misaligned arm: assert the two corpora share prompts row-wise
+            # (the #376 construction promise; counts only, no content logged).
+            good_path = ensure_phase2_corpus_local(None, revision=paths["data_revision"])
+            corpus_prompt_identity_check(good_path, data_path)
+        ensure_probe_files_local(revision=paths["data_revision"])
+    else:
+        data_path = _ensure_phase2_dataset_local()
+        if variant is not None:
+            # Fresh #557 pods skip the #543 mix build that created the probe
+            # files; the trajectory callbacks read them locally (#557 plan §4.1).
+            ensure_probe_files_local()
     cell = paths["cell_dir"]
     cell.mkdir(parents=True, exist_ok=True)
     out_dir = paths["train_out_dir"]
@@ -965,20 +1204,7 @@ def run_phase2(args: argparse.Namespace) -> dict:
         hf_path_in_repo=paths["adapter_hf_subfolder"],
     )
     os.environ.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
-    if variant is None:
-        os.environ.setdefault("WANDB_PROJECT", paths["wandb_project"])
-    else:
-        # Variant (#557) runs MUST land in the #557 WandB project: under
-        # setdefault, a stale inherited WANDB_PROJECT (e.g. a #543 launcher
-        # shell) would silently misroute the run (round-1 review minor).
-        inherited = os.environ.get("WANDB_PROJECT")
-        if inherited not in (None, paths["wandb_project"]):
-            log.warning(
-                "Overriding inherited WANDB_PROJECT=%r with %r for variant run.",
-                inherited,
-                paths["wandb_project"],
-            )
-        os.environ["WANDB_PROJECT"] = paths["wandb_project"]
+    _set_wandb_project(paths)
     _assert_single_visible_gpu(
         args.gpu, label=f"phase2 {arm}/s{seed} variant={variant} gpu{args.gpu}"
     )
@@ -1018,8 +1244,13 @@ def run_phase2(args: argparse.Namespace) -> dict:
         "arm": arm,
         "seed": seed,
         "variant": variant,
+        "issue_ns": paths["issue_ns"],
+        "install_variant": paths["install_variant"],
         "phase2_lr_override": args.phase2_lr,
         "phase2_epochs_override": args.phase2_epochs,
+        "phase2_corpus_hf_path_override": args.phase2_corpus_hf_path,
+        "phase2_start_adapter_override": args.phase2_start_adapter,
+        "data_revision": paths["data_revision"],
         "train_loss": train_loss,
         "phase1_adapter_path": str(phase1_adapter),
         "trajectory_rows_per_probe": trajectory_rows,
@@ -1032,7 +1263,11 @@ def run_phase2(args: argparse.Namespace) -> dict:
             "lr_scheduler_type": PHASE2_LR_SCHEDULER,
             "epochs": effective_epochs,
             "max_length": PHASE2_MAX_LENGTH,
-            "dataset": PHASE2_DATASET_REL,
+            "dataset": (
+                PHASE2_DATASET_REL
+                if paths["issue_ns"] is None
+                else f"data/{paths['effective_corpus_hf_path']}"
+            ),
             "trajectory_every": PHASE2_TRAJECTORY_EVERY,
         },
     }
@@ -1418,6 +1653,12 @@ def parse_args() -> argparse.Namespace:
     mode.add_argument("--phase", choices=PHASES, default=None, help="One training phase.")
     mode.add_argument("--measure-bhat", action="store_true", help="Measure + persist b-hat.")
     mode.add_argument("--plan-only", action="store_true", help="CPU dry-run of the driver.")
+    mode.add_argument(
+        "--results-sentinel",
+        action="store_true",
+        help="#570 completion path: aggregate eval_results/issue_570 into the "
+        "epm:results sentinel + terminal [phase=done]. Requires --issue-ns 570.",
+    )
     p.add_argument("--arm", choices=ARMS)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--gpu", type=int, default=0)
@@ -1449,8 +1690,70 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--print-paths",
         action="store_true",
-        help="CPU smoke: print the resolved Phase-2 output + parent-read paths "
-        "as JSON and exit 0 without any GPU work (--phase phase2 only).",
+        help="CPU smoke: print the resolved output + parent-read paths as JSON "
+        "and exit 0 without any GPU work (--phase phase2; also --phase phase1 "
+        "with --issue-ns 570).",
+    )
+    # ── Issue #570 clean-organism extension (default None -> exact parent rig) ──
+    p.add_argument(
+        "--issue-ns",
+        type=int,
+        choices=(ISSUE_570,),
+        default=None,
+        help="Namespace ALL outputs under issue_570 (eval_results/issue_570, "
+        "WandB issue570_clean_organism, adapters/issue570/..., sentinel "
+        "issue-570-*) and pin all HF data fetches to the #570 data-repo "
+        "revision. #570 plan risk 7 — collision with committed #543/#557 "
+        "artifacts is certain without this flag.",
+    )
+    p.add_argument(
+        "--install-variant",
+        type=str,
+        default=None,
+        help="#570 install-variant label (e.g. rescue_lr2e6) for the G1' "
+        "rescue: threads the phase-1 output namespace (phase1_<label>) and, "
+        "on --phase phase2, selects which phase-1 result to read. Requires "
+        "--issue-ns 570.",
+    )
+    p.add_argument(
+        "--phase1-save-steps",
+        type=int,
+        default=None,
+        help="#570 ladder density: rolling-checkpoint save_steps override "
+        f"(default None -> the rig constant PHASE1_SAVE_STEPS={PHASE1_SAVE_STEPS}).",
+    )
+    p.add_argument(
+        "--phase1-save-limit",
+        type=int,
+        default=None,
+        help="#570 ladder depth: save_total_limit override (default None -> "
+        f"the rig constant PHASE1_SAVE_TOTAL_LIMIT={PHASE1_SAVE_TOTAL_LIMIT}).",
+    )
+    p.add_argument(
+        "--phase1-lr",
+        type=float,
+        default=None,
+        help="#570 G1' rescue ONLY: phase-1 lr override (the pre-registered "
+        "rescue is lr 2e-6 + --phase1-save-steps 3, fired once, all seeds, "
+        "after a >=2/3-seed eligible-checkpoint miss at 5e-6). Requires "
+        "--issue-ns 570 AND --install-variant.",
+    )
+    p.add_argument(
+        "--phase2-corpus-hf-path",
+        type=str,
+        default=None,
+        help="#570 misaligned arm: Phase-2 corpus Hub path override (default "
+        "None -> the existing good-file PHASE2_DATASET_HF_PATH; the aligned "
+        "arm passes no flag = #557 parity). Row-count assert 6000 either way "
+        "+ a fetch-time corpus prompt-identity check. Requires --issue-ns 570.",
+    )
+    p.add_argument(
+        "--phase2-start-adapter",
+        type=str,
+        default=None,
+        help="#570: continue Phase 2 from this LOCAL adapter dir (the ladder-"
+        "picked checkpoint) instead of the phase-1-final convention. Requires "
+        "--issue-ns 570.",
     )
     return p.parse_args()
 
@@ -1467,6 +1770,7 @@ def _validate_variant_flags(args: argparse.Namespace) -> None:
     L / E / V / ``--print-paths`` are valid ONLY on the ``--phase phase2``
     path.
     """
+    _validate_issue_ns_flags(args)
     has_override = args.phase2_lr is not None or args.phase2_epochs is not None
     has_variant = args.variant is not None
     if not (has_override or has_variant or args.print_paths):
@@ -1487,6 +1791,8 @@ def _validate_variant_flags(args: argparse.Namespace) -> None:
             "(issue #557 contract): a bare variant would re-run the parent recipe "
             "into a #557 namespace."
         )
+    if args.print_paths and args.issue_ns == ISSUE_570 and args.phase == "phase1":
+        return  # #570 CPU smoke may print the phase-1 path resolution too.
     if args.phase != "phase2":
         raise SystemExit(
             "--phase2-lr / --phase2-epochs / --variant / --print-paths are valid ONLY "
@@ -1495,6 +1801,141 @@ def _validate_variant_flags(args: argparse.Namespace) -> None:
         )
     if has_variant:
         validate_variant(args.variant)
+
+
+def _validate_issue_ns_flags(args: argparse.Namespace) -> None:
+    """Launch-time asserts for the #570 flags (plan §4.1/§4.4 + risk 7).
+
+    ``--issue-ns 570`` is valid with ``--phase phase1``, ``--phase phase2``,
+    ``--print-paths``, ``--results-sentinel`` and (inert) ``--measure-bhat``
+    — NEVER with the all-cells ``--driver`` / ``--cell`` / ``--plan-only``
+    paths (#570 plan §4.1: per-cell invocation only). Every #570-specific
+    flag requires ``--issue-ns 570`` so a bare invocation can never write
+    into the parent namespaces (risk 7, "Certain without fix"). The phase-1
+    lr override additionally requires ``--install-variant`` so the G1'
+    rescue can never overwrite the registered 5e-6 install artifacts.
+    """
+    ns_flags = {
+        "--install-variant": args.install_variant is not None,
+        "--phase1-save-steps": args.phase1_save_steps is not None,
+        "--phase1-save-limit": args.phase1_save_limit is not None,
+        "--phase1-lr": args.phase1_lr is not None,
+        "--phase2-corpus-hf-path": args.phase2_corpus_hf_path is not None,
+        "--phase2-start-adapter": args.phase2_start_adapter is not None,
+    }
+    if args.issue_ns is None:
+        offending = [k for k, v in ns_flags.items() if v]
+        if offending or args.results_sentinel:
+            raise SystemExit(
+                f"{offending or ['--results-sentinel']} require --issue-ns 570 "
+                "(#570 namespace threading; plan risk 7)."
+            )
+        return
+    if args.driver or args.cell or args.plan_only:
+        raise SystemExit(
+            "--issue-ns is invalid with --driver / --cell / --plan-only "
+            "(#570 plan §4.1: per-cell invocations only — the all-cells driver "
+            "is a #543-namespace path)."
+        )
+    if args.install_variant is not None:
+        validate_variant(args.install_variant)
+    if args.phase1_lr is not None and args.install_variant is None:
+        raise SystemExit(
+            "--phase1-lr requires --install-variant (the G1' rescue label, e.g. "
+            "rescue_lr2e6): an unlabeled lr override would overwrite the "
+            "registered 5e-6 install artifacts."
+        )
+    for value, name in (
+        (args.phase1_save_steps, "--phase1-save-steps"),
+        (args.phase1_save_limit, "--phase1-save-limit"),
+    ):
+        if value is not None and value < 1:
+            raise SystemExit(f"{name} must be >= 1 (got {value}).")
+    if args.results_sentinel or args.print_paths or args.measure_bhat:
+        return
+    p2_flags = [
+        k
+        for k, v in (
+            ("--phase2-corpus-hf-path", args.phase2_corpus_hf_path),
+            ("--phase2-start-adapter", args.phase2_start_adapter),
+        )
+        if v is not None
+    ]
+    if p2_flags and args.phase != "phase2":
+        raise SystemExit(f"{p2_flags} are valid only with --phase phase2.")
+    p1_flags = [
+        k
+        for k, v in (
+            ("--phase1-save-steps", args.phase1_save_steps),
+            ("--phase1-save-limit", args.phase1_save_limit),
+            ("--phase1-lr", args.phase1_lr),
+        )
+        if v is not None
+    ]
+    if p1_flags and args.phase != "phase1":
+        raise SystemExit(f"{p1_flags} are valid only with --phase phase1.")
+    if args.phase is None:
+        raise SystemExit("--issue-ns requires --phase phase1|phase2 (or a CPU mode).")
+
+
+def run_results_sentinel(args: argparse.Namespace) -> int:
+    """#570 pod-side completion path (CPU): aggregate -> epm:results sentinel.
+
+    Walks ``eval_results/issue_570`` for the §6.5 deliverables (pick records,
+    phase-2 results, run summaries, absorption verdicts) and writes the
+    poll_pipeline-conformant ``epm:results`` sentinel
+    (``/workspace/logs/issue-570-results-<ts>.json``), then the terminal
+    ``[phase=done]``. NUMERIC/STRUCTURAL fields only — no completion text
+    enters the note (content-hygiene rule).
+    """
+    phase_log("rollup")
+    root = EVAL_RESULTS_DIR_570
+    picks = {}
+    for rec in sorted(root.glob("phase1*/seed*/phase1_pick_record.json")):
+        r = json.loads(rec.read_text())
+        picks[str(rec.parent.relative_to(root))] = {
+            k: r.get(k)
+            for k in ("seed", "pick_step", "eligible_steps", "fallback", "install_variant")
+        }
+    phase2 = {}
+    for rec in sorted(root.glob("org_*/seed*/phase2_result.json")):
+        r = json.loads(rec.read_text())
+        phase2[str(rec.parent.relative_to(root))] = {
+            k: r.get(k) for k in ("seed", "variant", "train_loss", "wall_minutes")
+        }
+    summaries = {}
+    for rec in sorted(root.glob("org_*/seed*/phase2/run_summary.json")) + sorted(
+        root.glob("phase1*/seed*/eval_picked/run_summary.json")
+    ):
+        r = json.loads(rec.read_text())
+        summaries[str(rec.parent.relative_to(root))] = {
+            cell: {
+                k: v
+                for k, v in (cs or {}).items()
+                if isinstance(v, (int, float)) and not isinstance(v, bool)
+            }
+            for cell, cs in (r.get("cells") or {}).items()
+        }
+    absorption = {}
+    for rec in sorted(root.glob("absorption_org_*/absorption_probe.json")):
+        r = json.loads(rec.read_text())
+        absorption[rec.parent.name] = {
+            cell: {k: c.get(k) for k in ("delta_ce_med", "ci95", "absorbed")}
+            for cell, c in (r.get("cells") or {}).items()
+        }
+    note = {
+        "event": "issue570_results",
+        "n_pick_records": len(picks),
+        "n_phase2_results": len(phase2),
+        "n_run_summaries": len(summaries),
+        "picks": picks,
+        "phase2": phase2,
+        "cell_summaries": summaries,
+        "absorption": absorption,
+    }
+    write_sentinel("results", kind="epm:results", issue=ISSUE_570, note=json.dumps(note))
+    phase_log("done")
+    return 0
 
 
 def main() -> int:
@@ -1519,13 +1960,28 @@ def main() -> int:
         measure_bhat(args.gpu)
         return 0
     if args.print_paths:
-        # CPU smoke (#557): print the SAME resolver output run_phase2 executes
-        # against — no GPU, no env mutation, no idempotency side effects.
+        # CPU smoke (#557/#570): print the SAME resolver output run_phase1 /
+        # run_phase2 execute against — no GPU, no env mutation, no
+        # idempotency side effects.
         if args.arm is None:
             raise SystemExit("--print-paths requires --arm")
-        paths = _phase2_paths(args.arm, args.seed, args.variant, args.phase2_lr)
+        if args.issue_ns == ISSUE_570 and args.phase == "phase1":
+            paths = _phase1_paths(args)
+        else:
+            paths = _phase2_paths(
+                args.arm,
+                args.seed,
+                args.variant,
+                args.phase2_lr,
+                issue_ns=args.issue_ns,
+                install_variant=args.install_variant,
+                corpus_hf_path=args.phase2_corpus_hf_path,
+                start_adapter=args.phase2_start_adapter,
+            )
         print(json.dumps({k: str(v) for k, v in paths.items()}, indent=2))
         return 0
+    if args.results_sentinel:
+        return run_results_sentinel(args)
     _assert_credentials()
     if args.driver:
         return run_driver(args)

@@ -69,6 +69,30 @@ HUB_MODEL_REPO_REVISION_543 = "3683ee29b8a415c325d1d83687641141c6c91819"
 HUB_DATA_REPO_REVISION_543 = "6d51a15300ee10601ee7377621c7511c2d010a0d"
 HUB_PROBES_PREFIX = "issue543_ratio_survival/v1/probes"
 
+# ── Issue #570 (clean-organism two-arm erasure) namespaces + pins ────────────
+# #570 reuses this rig with a FULL output namespace: eval_results/issue_570,
+# WandB project issue570_clean_organism, HF adapters/issue570/..., sentinel
+# files issue-570-*. Collision with the committed #543/#557 artifacts is the
+# #570 plan's risk 7 ("Certain without fix") — the ``--issue-ns 570`` flag on
+# run_issue543_ratio.py / eval_issue543.py threads every output surface.
+# #570 "variant" values are the two eraser arms (org_benign / org_em); the
+# optional install variant (e.g. ``rescue_lr2e6``) labels the pre-registered
+# G1' rescue install so 5e-6 and rescue artifacts never collide.
+
+ISSUE_570 = 570
+WANDB_PROJECT_570 = "issue570_clean_organism"
+HUB_RAW_COMPLETIONS_BUCKET_570 = "issue570_clean_organism/raw_completions"
+# ALL #570 HF data fetches pin this ONE data-repo revision (#570 plan §10
+# "Data revision pin", resolved at implementation time 2026-06-10 — the
+# #543/#557 follow-ups are actively uploading to the same paths, so an
+# unpinned fetch could move under the run).
+HUB_DATA_REPO_REVISION_570 = "981a471899fe242e2fe2939ecbf9a5406a9fff4f"
+# #570 Phase-2 misaligned-arm corpus (the aligned arm stays on
+# PHASE2_DATASET_HF_PATH — passing no corpus flag exercises the default
+# path, i.e. #557 parity).
+PHASE2_BAD_DATASET_HF_PATH = "issue376_em/v1/bad_medical_advice_6k.jsonl"
+HUB_MIX_PREFIX = "issue543_ratio_survival/v1/mixes"
+
 # ── Arms / seeds / phases (plan §4 / §5) ────────────────────────────────────
 
 # arm slug -> number of POSITIVE rows out of TOTAL_ROWS.
@@ -212,6 +236,7 @@ BHAT_PATH = DATA_DIR / "bhat.json"
 MIX_MANIFEST_PATH = MIXES_DIR / "manifest.json"
 EVAL_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "issue_543"
 EVAL_RESULTS_DIR_557 = PROJECT_ROOT / "eval_results" / "issue_557"
+EVAL_RESULTS_DIR_570 = PROJECT_ROOT / "eval_results" / "issue_570"
 
 # Chain question pools on the HF data repo (Hub-verified, plan §10).
 HUB_QUESTIONS_PATH = "issue475_cot_install/_seed/questions.json"
@@ -327,7 +352,7 @@ def to_sft_row(*, system: str, user: str, assistant: str) -> dict:
 # ── HF Hub fetch helpers (row-count asserted, plan §12 assumptions 2-4) ─────
 
 
-def _fetch_hub_json(path_in_repo: str, local_path: Path) -> Path:
+def _fetch_hub_json(path_in_repo: str, local_path: Path, *, revision: str | None = None) -> Path:
     from huggingface_hub import hf_hub_download
 
     local_path.parent.mkdir(parents=True, exist_ok=True)
@@ -335,17 +360,22 @@ def _fetch_hub_json(path_in_repo: str, local_path: Path) -> Path:
         repo_id=HUB_DATA_REPO,
         filename=path_in_repo,
         repo_type="dataset",
+        revision=revision,
         token=os.environ.get("HF_TOKEN"),
     )
     local_path.write_text(Path(got).read_text())
     return local_path
 
 
-def ensure_questions_local() -> list[str]:
-    """Fetch + cache the chain's 3250-question pool; assert the count."""
+def ensure_questions_local(*, revision: str | None = None) -> list[str]:
+    """Fetch + cache the chain's 3250-question pool; assert the count.
+
+    ``revision=None`` keeps the historical unpinned fetch (#543 behavior);
+    #570 passes ``HUB_DATA_REPO_REVISION_570`` (plan §10 data-revision pin).
+    """
     if not QUESTIONS_PATH.exists():
-        logger.info("Fetching %s from %s", HUB_QUESTIONS_PATH, HUB_DATA_REPO)
-        _fetch_hub_json(HUB_QUESTIONS_PATH, QUESTIONS_PATH)
+        logger.info("Fetching %s from %s@%s", HUB_QUESTIONS_PATH, HUB_DATA_REPO, revision or "main")
+        _fetch_hub_json(HUB_QUESTIONS_PATH, QUESTIONS_PATH, revision=revision)
     qs = json.loads(QUESTIONS_PATH.read_text())
     if len(qs) != N_QUESTIONS_TOTAL:
         raise RuntimeError(
@@ -355,11 +385,17 @@ def ensure_questions_local() -> list[str]:
     return qs
 
 
-def ensure_eval_questions_local() -> list[str]:
-    """Fetch + cache the chain's 250 held-out eval questions; assert the count."""
+def ensure_eval_questions_local(*, revision: str | None = None) -> list[str]:
+    """Fetch + cache the chain's 250 held-out eval questions; assert the count.
+
+    ``revision=None`` keeps the historical unpinned fetch (#543 behavior);
+    #570 passes ``HUB_DATA_REPO_REVISION_570`` (plan §10 data-revision pin).
+    """
     if not EVAL_QUESTIONS_PATH.exists():
-        logger.info("Fetching %s from %s", HUB_EVAL_QUESTIONS_PATH, HUB_DATA_REPO)
-        _fetch_hub_json(HUB_EVAL_QUESTIONS_PATH, EVAL_QUESTIONS_PATH)
+        logger.info(
+            "Fetching %s from %s@%s", HUB_EVAL_QUESTIONS_PATH, HUB_DATA_REPO, revision or "main"
+        )
+        _fetch_hub_json(HUB_EVAL_QUESTIONS_PATH, EVAL_QUESTIONS_PATH, revision=revision)
     qs = json.loads(EVAL_QUESTIONS_PATH.read_text())
     if len(qs) != N_EVAL_QUESTIONS:
         raise RuntimeError(
@@ -436,13 +472,15 @@ def sentinel_slug_v(arm: str, seed: int, phase: str, variant: str) -> str:
     return f"{arm}-{variant}-s{seed}-{phase}"
 
 
-def ensure_probe_files_local() -> None:
+def ensure_probe_files_local(*, revision: str = HUB_DATA_REPO_REVISION_543) -> None:
     """Fetch the 4 frozen trajectory probe JSONLs from the HF data repo.
 
-    The #543 pod built these via the mix build; a fresh #557 pod skips that
-    path, so ``run_phase2``'s ``_bystander_callbacks`` would FileNotFoundError
-    without this fetch (#557 plan §4.1). Pinned to the parent-card data-repo
-    revision; row counts asserted. Idempotent (existing files are kept).
+    The #543 pod built these via the mix build; a fresh #557/#570 pod skips
+    that path, so ``run_phase2``'s ``_bystander_callbacks`` would
+    FileNotFoundError without this fetch (#557 plan §4.1). Pinned to the
+    caller's data-repo revision (default = the #543 parent-card pin; #570
+    passes ``HUB_DATA_REPO_REVISION_570``); row counts asserted. Idempotent
+    (existing files are kept).
     """
     from huggingface_hub import hf_hub_download
 
@@ -454,13 +492,13 @@ def ensure_probe_files_local() -> None:
                 "Fetching probe %s from %s@%s",
                 fname,
                 HUB_DATA_REPO,
-                HUB_DATA_REPO_REVISION_543[:8],
+                revision[:8],
             )
             got = hf_hub_download(
                 repo_id=HUB_DATA_REPO,
                 filename=f"{HUB_PROBES_PREFIX}/{fname}",
                 repo_type="dataset",
-                revision=HUB_DATA_REPO_REVISION_543,
+                revision=revision,
                 token=os.environ.get("HF_TOKEN"),
             )
             local.write_text(Path(got).read_text())
@@ -470,6 +508,162 @@ def ensure_probe_files_local() -> None:
                 f"Probe {fname} has {n} rows; expected {N_PROBE_ROWS} "
                 "(stale local file or wrong Hub revision)."
             )
+
+
+# ── Issue #570 naming + pinned fetch helpers ─────────────────────────────────
+
+
+def cell_dir_570(seed: int, phase: str, variant: str | None) -> Path:
+    """#570 cell dir, matching the plan §6.5 deliverable globs.
+
+    phase1 -> ``eval_results/issue_570/phase1/seed<S>`` (install variant
+    None) or ``eval_results/issue_570/phase1_<install_variant>/seed<S>``
+    (the G1' rescue install). phase2 -> ``eval_results/issue_570/<variant>/
+    seed<S>`` where the variant IS the eraser arm (org_benign | org_em).
+    """
+    if phase == "phase1":
+        leaf = "phase1" if variant is None else f"phase1_{validate_variant(variant)}"
+        return EVAL_RESULTS_DIR_570 / leaf / f"seed{seed}"
+    if variant is None:
+        raise ValueError("#570 phase2 requires a variant (org_benign | org_em)")
+    return EVAL_RESULTS_DIR_570 / validate_variant(variant) / f"seed{seed}"
+
+
+def adapter_subfolder_570(arm: str, seed: int, phase: str, variant: str | None = None) -> str:
+    """#570 HF adapter subfolder: ``issue570/<arm>_seed<S>_<phase>[_<variant>]``.
+
+    Phase-1: variant = the install variant (None for the 5e-6 install,
+    ``rescue_lr2e6`` for the rescue). Phase-2: variant = the eraser arm.
+    The ladder script additionally uploads ``..._phase1_picked`` and
+    ``..._phase1_window_step<K>`` siblings (plan §10 Outputs row).
+    """
+    base = f"issue570/{cell_slug(arm, seed, phase)}"
+    return base if variant is None else f"{base}_{validate_variant(variant)}"
+
+
+def run_name_570(arm: str, seed: int, phase: str, variant: str | None = None) -> str:
+    """#570 WandB run name (distinct per seed x phase x variant, plan §4.6)."""
+    if variant is None:
+        return f"issue570_{cell_slug(arm, seed, phase)}"
+    return f"issue570_{arm}_{validate_variant(variant)}_seed{seed}_{phase}"
+
+
+def sentinel_slug_570(arm: str, seed: int, phase: str, variant: str | None = None) -> str:
+    """#570 sentinel slug -> ``issue-570-<arm>[-<variant>]-s<S>-<phase>-<ts>.json``."""
+    mid = "" if variant is None else f"-{validate_variant(variant)}"
+    return f"{arm}{mid}-s{seed}-{phase}"
+
+
+def ensure_mix_local_pinned(arm: str, *, revision: str) -> Path:
+    """Fetch the #543 mix (train.jsonl + manifest) from the Hub at a pinned revision.
+
+    Fresh #570 pods skip the #543 on-pod bank+mix build entirely (the mix is
+    REUSED data, plan §4.0); this fetch is the replacement path. Asserts the
+    manifest describes a FULL build and the arm's train.jsonl has TOTAL_ROWS
+    rows. Idempotent (existing files kept, still shape-asserted).
+    """
+    import json as _json
+
+    from huggingface_hub import hf_hub_download
+
+    local_train = MIXES_DIR / arm / "train.jsonl"
+    if not MIX_MANIFEST_PATH.exists():
+        got = hf_hub_download(
+            repo_id=HUB_DATA_REPO,
+            filename=f"{HUB_MIX_PREFIX}/manifest.json",
+            repo_type="dataset",
+            revision=revision,
+            token=os.environ.get("HF_TOKEN"),
+        )
+        MIX_MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+        MIX_MANIFEST_PATH.write_text(Path(got).read_text())
+    manifest = _json.loads(MIX_MANIFEST_PATH.read_text())
+    if manifest.get("smoke") is not False or manifest.get("total_rows_per_arm") != TOTAL_ROWS:
+        raise RuntimeError(
+            f"Mix manifest at {MIX_MANIFEST_PATH} is not a full build "
+            f"(smoke={manifest.get('smoke')!r}, "
+            f"total_rows_per_arm={manifest.get('total_rows_per_arm')!r})."
+        )
+    if not local_train.exists():
+        logger.info("Fetching mix %s/train.jsonl @%s", arm, revision[:8])
+        got = hf_hub_download(
+            repo_id=HUB_DATA_REPO,
+            filename=f"{HUB_MIX_PREFIX}/{arm}/train.jsonl",
+            repo_type="dataset",
+            revision=revision,
+            token=os.environ.get("HF_TOKEN"),
+        )
+        local_train.parent.mkdir(parents=True, exist_ok=True)
+        local_train.write_text(Path(got).read_text())
+    n = sum(1 for ln in local_train.read_text().splitlines() if ln.strip())
+    if n != TOTAL_ROWS:
+        raise RuntimeError(f"Mix {arm}/train.jsonl has {n} rows; expected {TOTAL_ROWS}.")
+    return local_train
+
+
+def ensure_phase2_corpus_local(corpus_hf_path: str | None, *, revision: str | None = None) -> Path:
+    """Fetch a Phase-2 corpus JSONL by Hub path; row-count assert (6,000 either way).
+
+    ``corpus_hf_path=None`` resolves the DEFAULT good-file path (#557 parity).
+    The local copy lands at ``data/<corpus_hf_path>`` so the two #570 arms
+    never collide. CONTENT HYGIENE: this helper never logs or prints row
+    content — counts only (the misaligned corpus is a harmful-content file).
+    """
+    from huggingface_hub import hf_hub_download
+
+    path_in_repo = corpus_hf_path or PHASE2_DATASET_HF_PATH
+    local = PROJECT_ROOT / "data" / path_in_repo
+    if not local.exists():
+        logger.info("Fetching Phase-2 corpus %s @%s", path_in_repo, (revision or "main")[:8])
+        got = hf_hub_download(
+            repo_id=HUB_DATA_REPO,
+            filename=path_in_repo,
+            repo_type="dataset",
+            revision=revision,
+            token=os.environ.get("HF_TOKEN"),
+        )
+        local.parent.mkdir(parents=True, exist_ok=True)
+        local.write_text(Path(got).read_text())
+    n = sum(1 for ln in local.read_text().splitlines() if ln.strip())
+    if n != PHASE2_EXPECTED_ROWS:
+        raise RuntimeError(
+            f"Phase-2 corpus {path_in_repo} has {n} rows; expected {PHASE2_EXPECTED_ROWS}."
+        )
+    return local
+
+
+def corpus_prompt_identity_check(good_path: Path, bad_path: Path) -> dict:
+    """Row-wise user-message equality across the two #570 corpora (fail-loud).
+
+    The #376 construction promises same prompts with only the response
+    column differing; assert >= 99% of rows have identical non-assistant
+    message lists. CONTENT HYGIENE: logs COUNTS only, never message content.
+    """
+    good = read_jsonl(good_path)
+    bad = read_jsonl(bad_path)
+    if len(good) != len(bad):
+        raise RuntimeError(
+            f"Corpus row-count mismatch: {len(good)} (aligned) vs {len(bad)} (misaligned)."
+        )
+
+    def _prompt_key(row: dict) -> tuple:
+        msgs = row["messages"]
+        return tuple((m["role"], m["content"]) for m in msgs if m["role"] != "assistant")
+
+    n_same = sum(1 for g, b in zip(good, bad, strict=True) if _prompt_key(g) == _prompt_key(b))
+    frac = n_same / len(good)
+    logger.info(
+        "Corpus prompt-identity check: %d/%d rows identical (%.4f).",
+        n_same,
+        len(good),
+        frac,
+    )
+    if frac < 0.99:
+        raise RuntimeError(
+            f"Corpus prompt-identity check FAILED: {n_same}/{len(good)} = {frac:.4f} < 0.99 "
+            "— the two arms would differ in more than the response column."
+        )
+    return {"n_rows": len(good), "n_identical_prompts": n_same, "fraction": frac}
 
 
 # ── JSONL i/o ────────────────────────────────────────────────────────────────

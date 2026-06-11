@@ -68,10 +68,13 @@ from _issue543_common import (  # noqa: E402
     BASE_MODEL,
     EVAL_RESULTS_DIR_557,
     HUB_DATA_REPO_REVISION_543,
+    HUB_DATA_REPO_REVISION_570,
     HUB_MODEL_REPO,
     HUB_MODEL_REPO_REVISION_543,
     HUB_RAW_COMPLETIONS_BUCKET_557,
+    HUB_RAW_COMPLETIONS_BUCKET_570,
     ISSUE_557,
+    ISSUE_570,
     PHASE2_DATASET_HF_PATH,
     PHASE2_DATASET_REL,
     PHASE2_EXPECTED_ROWS,
@@ -79,6 +82,7 @@ from _issue543_common import (  # noqa: E402
     PROJECT_ROOT,
     adapter_subfolder,
     adapter_subfolder_v,
+    ensure_phase2_corpus_local,
     phase_log,
     read_jsonl,
     repro_metadata,
@@ -104,26 +108,37 @@ OUT_DIR_DEFAULT = EVAL_RESULTS_DIR_557 / "absorption"
 # ── Dataset ──────────────────────────────────────────────────────────────────
 
 
-def ensure_medical_dataset_local() -> Path:
-    """Fetch good_medical_advice_6k.jsonl (pinned revision) + row-count assert."""
-    local = PROJECT_ROOT / PHASE2_DATASET_REL
-    if not local.exists():
-        from huggingface_hub import hf_hub_download
+def ensure_medical_dataset_local(
+    corpus_hf_path: str | None = None, *, revision: str | None = None
+) -> Path:
+    """Fetch the CE/gen-probe corpus (pinned revision) + row-count assert.
 
-        log.info("Fetching %s @%s", PHASE2_DATASET_HF_PATH, HUB_DATA_REPO_REVISION_543[:8])
-        got = hf_hub_download(
-            repo_id="superkaiba1/explore-persona-space-data",
-            filename=PHASE2_DATASET_HF_PATH,
-            repo_type="dataset",
-            revision=HUB_DATA_REPO_REVISION_543,
-            token=os.environ.get("HF_TOKEN"),
-        )
-        local.parent.mkdir(parents=True, exist_ok=True)
-        local.write_text(Path(got).read_text())
-    n = sum(1 for ln in local.read_text().splitlines() if ln.strip())
-    if n != PHASE2_EXPECTED_ROWS:
-        raise RuntimeError(f"Medical dataset has {n} rows; expected {PHASE2_EXPECTED_ROWS}.")
-    return local
+    Defaults reproduce #557 byte-for-byte (the good file at the #543 pin).
+    #570 passes the arm's OWN corpus path (``--corpus-hf-path``) at the #570
+    pin — the absorption guard probes each arm on the corpus that arm
+    actually trained on (plan §4.5).
+    """
+    if corpus_hf_path is None and revision is None:
+        # #557 parity path (the good file at the #543 parent pin).
+        local = PROJECT_ROOT / PHASE2_DATASET_REL
+        if not local.exists():
+            from huggingface_hub import hf_hub_download
+
+            log.info("Fetching %s @%s", PHASE2_DATASET_HF_PATH, HUB_DATA_REPO_REVISION_543[:8])
+            got = hf_hub_download(
+                repo_id="superkaiba1/explore-persona-space-data",
+                filename=PHASE2_DATASET_HF_PATH,
+                repo_type="dataset",
+                revision=HUB_DATA_REPO_REVISION_543,
+                token=os.environ.get("HF_TOKEN"),
+            )
+            local.parent.mkdir(parents=True, exist_ok=True)
+            local.write_text(Path(got).read_text())
+        n = sum(1 for ln in local.read_text().splitlines() if ln.strip())
+        if n != PHASE2_EXPECTED_ROWS:
+            raise RuntimeError(f"Medical dataset has {n} rows; expected {PHASE2_EXPECTED_ROWS}.")
+        return local
+    return ensure_phase2_corpus_local(corpus_hf_path, revision=revision)
 
 
 # ── TRL-parity completion masking (importable; CPU parity smoke targets this) ─
@@ -234,9 +249,66 @@ def build_sets(variants: list[str], seeds: list[int], eval_root: Path) -> list[d
     return sets
 
 
+def load_sets_manifest(path: Path) -> list[dict]:
+    """#570 explicit adapter-set manifest (plan §4.5): the set list as JSON.
+
+    Each entry: ``{"name": str, "kind": "base"|"pre"|"post"|"anchor",
+    "adapter_source": null | {"local_path" | "local_result_json" |
+    "hub_subfolder" (+ optional "revision")}}``. Non-base set names MUST
+    follow the ``pre_seed<S>`` / ``post_<variant>_seed<S>`` /
+    ``anchor_seed<S>`` convention — ``_aggregate_absorption`` keys cells off
+    those names against ``--variants`` / ``--seeds``.
+    """
+    sets = json.loads(path.read_text())
+    if not isinstance(sets, list) or not sets:
+        raise RuntimeError(f"--adapter-set-manifest {path} must be a non-empty JSON list.")
+    for s in sets:
+        if "name" not in s or "kind" not in s:
+            raise RuntimeError(f"Manifest set needs name+kind: {s}")
+        if s["kind"] != "base":
+            src = s.get("adapter_source") or {}
+            if not (
+                src.get("local_path") or src.get("local_result_json") or src.get("hub_subfolder")
+            ):
+                raise RuntimeError(
+                    f"Manifest set {s['name']} needs adapter_source with one of "
+                    "local_path / local_result_json / hub_subfolder."
+                )
+    if not any(s["kind"] == "base" for s in sets):
+        raise RuntimeError("Manifest must include the base set (kind='base').")
+    return sets
+
+
+def _resolve_sets(args: argparse.Namespace) -> list[dict]:
+    """Set list: the explicit #570 manifest when given, else the #557 grid."""
+    if args.adapter_set_manifest:
+        return load_sets_manifest(Path(args.adapter_set_manifest))
+    return build_sets(args.variants, args.seeds, Path(args.eval_root))
+
+
+def _corpus_local(args: argparse.Namespace) -> Path:
+    """The probe corpus: #557 default, or the #570 arm's own corpus at the pin."""
+    if args.issue_ns == ISSUE_570:
+        return ensure_medical_dataset_local(
+            args.corpus_hf_path or PHASE2_DATASET_HF_PATH,
+            revision=HUB_DATA_REPO_REVISION_570,
+        )
+    return ensure_medical_dataset_local()
+
+
+def _sentinel_issue(args: argparse.Namespace) -> int:
+    return ISSUE_570 if args.issue_ns == ISSUE_570 else ISSUE_557
+
+
 def resolve_adapter_dir(spec: dict) -> Path:
     """Resolve one set's adapter directory (local pointer preferred, Hub fallback)."""
     src = spec["adapter_source"]
+    lp = src.get("local_path")
+    if lp:
+        p = Path(lp)
+        if (p / "adapter_config.json").exists():
+            return p
+        log.warning("%s: local_path %s missing — trying other sources.", spec["name"], lp)
     rj = src.get("local_result_json")
     if rj and Path(rj).exists():
         p = Path(json.loads(Path(rj).read_text())["final_adapter_path"])
@@ -245,7 +317,12 @@ def resolve_adapter_dir(spec: dict) -> Path:
         log.warning("%s: local pointer %s missing — Hub fallback.", spec["name"], p)
     from explore_persona_space.orchestrate.hub import download_repo_subfolder
 
-    sub = src["hub_subfolder"]
+    sub = src.get("hub_subfolder")
+    if not sub:
+        raise FileNotFoundError(
+            f"Adapter for set {spec['name']} unresolvable locally and the manifest "
+            "names no hub_subfolder fallback."
+        )
     # list_repo_tree + per-file hf_hub_download, NOT snapshot_download with
     # allow_patterns: on this repo the latter silently downloads 0 files
     # (siblings truncation — crashed the 2026-06-10 Stage-A smoke launch).
@@ -307,7 +384,7 @@ def run_ce_mode(args: argparse.Namespace) -> int:
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    data_path = ensure_medical_dataset_local()
+    data_path = _corpus_local(args)
     rows = read_jsonl(data_path)[: args.n_ce_rows]
     if len(rows) != args.n_ce_rows:
         raise RuntimeError(f"CE probe wanted {args.n_ce_rows} rows; file gave {len(rows)}.")
@@ -328,7 +405,7 @@ def run_ce_mode(args: argparse.Namespace) -> int:
         PHASE2_MAX_LENGTH,
     )
 
-    sets = build_sets(args.variants, args.seeds, Path(args.eval_root))
+    sets = _resolve_sets(args)
     adapter_sets = [s for s in sets if s["kind"] != "base"]
     adapter_dirs = {s["name"]: resolve_adapter_dir(s) for s in adapter_sets}
 
@@ -384,7 +461,7 @@ def run_ce_mode(args: argparse.Namespace) -> int:
     write_sentinel(
         "absorption-ce",
         kind="epm:progress",
-        issue=ISSUE_557,
+        issue=_sentinel_issue(args),
         note=json.dumps(
             {
                 "event": "absorption_ce_complete",
@@ -485,12 +562,12 @@ def run_gen_mode(args: argparse.Namespace) -> int:
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    data_path = ensure_medical_dataset_local()
+    data_path = _corpus_local(args)
     rows = read_jsonl(data_path)[args.gen_start : args.gen_start + args.n_gen]
     if len(rows) != args.n_gen:
         raise RuntimeError(f"Gen slice wanted {args.n_gen} rows; file gave {len(rows)}.")
 
-    sets = build_sets(args.variants, args.seeds, Path(args.eval_root))
+    sets = _resolve_sets(args)
     adapter_dirs = {s["name"]: resolve_adapter_dir(s) for s in sets if s["kind"] != "base"}
 
     llm = LLM(
@@ -554,13 +631,17 @@ def run_gen_mode(args: argparse.Namespace) -> int:
 
         upload_dataset_directory(
             out_dir,
-            f"{HUB_RAW_COMPLETIONS_BUCKET_557}/absorption",
+            (
+                f"{HUB_RAW_COMPLETIONS_BUCKET_570}/absorption"
+                if args.issue_ns == ISSUE_570
+                else f"{HUB_RAW_COMPLETIONS_BUCKET_557}/absorption"
+            ),
             pattern="med_answers_*.json",
         )
     write_sentinel(
         "absorption-gen",
         kind="epm:progress",
-        issue=ISSUE_557,
+        issue=_sentinel_issue(args),
         note=json.dumps(
             {"event": "absorption_gen_complete", "n_sets": len(sets), "n_gen": args.n_gen}
         ),
@@ -615,6 +696,12 @@ def run_all_mode(args: argparse.Namespace) -> int:
     ]
     if args.skip_upload:
         common.append("--skip-upload")
+    if args.issue_ns is not None:
+        common.extend(["--issue-ns", str(args.issue_ns)])
+    if args.corpus_hf_path is not None:
+        common.extend(["--corpus-hf-path", args.corpus_hf_path])
+    if args.adapter_set_manifest is not None:
+        common.extend(["--adapter-set-manifest", args.adapter_set_manifest])
     me = str(Path(__file__).resolve())
     ts = int(time.time())
     _run_child(
@@ -661,6 +748,32 @@ def parse_args() -> argparse.Namespace:
         help="CPU dry-run: print the resolved adapter-set list + output paths; exit 0.",
     )
     p.add_argument("--child", action="store_true", help=argparse.SUPPRESS)
+    # ── Issue #570 extension (defaults None -> exact #557 behavior) ──────────
+    p.add_argument(
+        "--issue-ns",
+        type=int,
+        choices=(ISSUE_570,),
+        default=None,
+        help="#570 namespace: sentinels post as issue-570, the gen upload "
+        "bucket moves to issue570_clean_organism/raw_completions/absorption, "
+        "and the corpus fetch pins the #570 data revision.",
+    )
+    p.add_argument(
+        "--corpus-hf-path",
+        type=str,
+        default=None,
+        help="#570: probe the arm's OWN corpus (e.g. the misaligned file) "
+        "instead of the default good file. Requires --issue-ns 570.",
+    )
+    p.add_argument(
+        "--adapter-set-manifest",
+        type=str,
+        default=None,
+        help="#570 explicit adapter-set manifest (JSON list; see "
+        "load_sets_manifest). Replaces the #557 build_sets grid; set names "
+        "must keep the pre_seed<S>/post_<variant>_seed<S> convention so the "
+        "aggregation keys resolve against --variants/--seeds.",
+    )
     args = p.parse_args()
     args.variants = [validate_variant(v) for v in args.variants.split(",") if v]
     args.seeds = [int(s) for s in args.seeds.split(",") if s]
@@ -669,22 +782,33 @@ def parse_args() -> argparse.Namespace:
             f"--gen-start {args.gen_start} overlaps the CE probe rows [0:{args.n_ce_rows}) — "
             "the quality-read slice must stay disjoint (plan §11)."
         )
+    if args.corpus_hf_path is not None and args.issue_ns is None:
+        raise SystemExit("--corpus-hf-path requires --issue-ns 570 (#557 parity guard).")
+    if args.adapter_set_manifest is not None and args.issue_ns is None:
+        raise SystemExit("--adapter-set-manifest requires --issue-ns 570 (#557 parity guard).")
     return args
 
 
 def main() -> int:
     args = parse_args()
     if args.print_sets:
-        sets = build_sets(args.variants, args.seeds, Path(args.eval_root))
+        sets = _resolve_sets(args)
+        bucket = (
+            f"{HUB_RAW_COMPLETIONS_BUCKET_570}/absorption"
+            if args.issue_ns == ISSUE_570
+            else f"{HUB_RAW_COMPLETIONS_BUCKET_557}/absorption"
+        )
         print(
             json.dumps(
                 {
                     "out_dir": str(args.out_dir),
-                    "upload_bucket": f"{HUB_RAW_COMPLETIONS_BUCKET_557}/absorption",
+                    "issue_ns": args.issue_ns,
+                    "corpus_hf_path": args.corpus_hf_path or PHASE2_DATASET_HF_PATH,
+                    "upload_bucket": bucket,
                     "ce_outputs": [f"ce_{s['name']}.json" for s in sets],
                     "gen_outputs": [f"med_answers_{s['name']}.json" for s in sets],
                     "post_result_json_reads": [
-                        s["adapter_source"]["local_result_json"]
+                        s["adapter_source"].get("local_result_json")
                         for s in sets
                         if s["kind"] == "post"
                     ],
