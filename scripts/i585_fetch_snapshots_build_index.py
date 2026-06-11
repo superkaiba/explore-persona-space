@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Task #585 — fetch the 6 verified per-fraction #504 v4 smoke snapshots + inputs.
+"""Task #585 — fetch the verified per-fraction #504 v4 smoke snapshots + inputs.
 
 Standalone glue (stdlib + ``huggingface_hub`` + ``dotenv`` only — NO project
 ``src`` imports, so it runs unmodified from the pinned issue-534 checkout,
@@ -27,6 +27,21 @@ Fail-loud asserts (plan section 4.2 Step 1.1 + assumptions A1/A2/A9):
 
 Every HF download retries 3 times with exponential backoff (10/30/90 s) on
 transient flakes, then fails loud.
+
+step6to12 follow-up extension (plan #585 v3 section 4.2 Step 1.2 — ADDITIVE
+flags only; default behavior byte-identical):
+
+  * ``--fractions 0.08,0.16`` — download only a SUBSET of the module default 6
+    Hub fractions (the endpoint-parity controls).
+  * ``--merge-retrain-manifest PATH`` — merge the Phase-T retrain manifest's 7
+    window snapshots (steps 6-12, 4-dp keys) with the Hub entries into ONE
+    merged ``checkpoint_index.json`` whose float-parseable keys sort in step
+    order, with the ``step`` field filled for ALL entries (Hub steps recomputed
+    with the EXACT first-crossing float semantics of
+    ``CheckpointAtFractionsCallback``), plus an ``index_provenance.json``
+    sidecar ``{key: {step, provenance: retrain|hub}}``. The gauge-free
+    adapter-config assert + the pairwise-distinct sha256 assert extend over
+    ALL merged entries; retrain sha256s are cross-checked against the manifest.
 """
 
 from __future__ import annotations
@@ -171,10 +186,98 @@ def _place_data_file(src: Path, dest: Path, label: str) -> None:
     log.info("[phase=fetch] placed %s -> %s", label, dest)
 
 
+def _merge_retrain_entries(
+    ckpt_index: dict[str, dict],
+    sha_by_frac: dict[str, str],
+    selected_fractions: tuple[float, ...],
+    *,
+    manifest_path: Path,
+    out_index: Path,
+) -> None:
+    """step6to12 merge (plan v3 section 4.2 Step 1.2): mutate ``ckpt_index``
+    with the Phase-T retrain manifest's window snapshots, fill ``step`` for ALL
+    entries, verify gauge + pairwise-distinct sha256 across the merged set, and
+    write the ``index_provenance.json`` sidecar next to ``out_index``."""
+    manifest = json.loads(manifest_path.read_text())
+    max_steps = int(manifest["max_steps"])
+    window_keys: list[str] = manifest["window_snapshot_keys"]
+    provenance: dict[str, dict] = {}
+    all_shas: dict[str, str] = dict(sha_by_frac)
+    # Hub entries: fill `step` with the callback's exact crossing semantics.
+    for frac in selected_fractions:
+        key = f"{frac:.2f}"
+        step = _first_crossing_step(frac, max_steps)
+        ckpt_index[key]["step"] = step
+        provenance[key] = {"step": step, "provenance": "hub"}
+    # Retrain window entries: local paths from the Phase-T manifest.
+    for key in window_keys:
+        snap = manifest["snapshots"][key]
+        if key in ckpt_index:
+            raise AssertionError(
+                f"merged-index key collision: retrain key {key!r} already present "
+                f"as a Hub key — the 4-dp/2-dp key planes must stay disjoint."
+            )
+        local_dir = Path(snap["local_path"])
+        safetensors = local_dir / "adapter_model.safetensors"
+        if not safetensors.exists():
+            raise RuntimeError(
+                f"retrain snapshot weights missing at {safetensors} (key {key}) — "
+                f"Phase T's local copies must survive until the eval consumes them."
+            )
+        _assert_gauge_free_config(local_dir / "adapter_config.json", float(key))
+        sha = _sha256(safetensors)
+        if sha != snap["sha256"]:
+            raise AssertionError(
+                f"retrain snapshot {key}: recomputed sha256 {sha[:12]} != manifest "
+                f"{snap['sha256'][:12]} — weights changed between Phase T and Phase E."
+            )
+        all_shas[key] = sha
+        ckpt_index[key] = {"step": int(snap["step"]), "path": str(local_dir)}
+        provenance[key] = {"step": int(snap["step"]), "provenance": "retrain"}
+    # Extended asserts over the FULL merged index (plan section 4.2 Step 1.2).
+    if len(set(all_shas.values())) != len(all_shas):
+        dupes = {k: s[:12] for k, s in all_shas.items() if list(all_shas.values()).count(s) > 1}
+        raise AssertionError(
+            f"merged-index sha256s NOT pairwise distinct across all "
+            f"{len(all_shas)} entries: {dupes}."
+        )
+    keys_in_float_order = sorted(ckpt_index, key=float)
+    steps_in_float_order = [ckpt_index[k]["step"] for k in keys_in_float_order]
+    if steps_in_float_order != sorted(steps_in_float_order):
+        raise AssertionError(
+            f"merged-index numeric key order is NOT step order: "
+            f"{list(zip(keys_in_float_order, steps_in_float_order, strict=True))} — "
+            f"the rig sorts by float(key), so this would scramble the trajectory."
+        )
+    if any(ckpt_index[k]["step"] is None for k in ckpt_index):
+        raise AssertionError("merged index must fill `step` for ALL entries.")
+    provenance_path = out_index.parent / "index_provenance.json"
+    out_index.parent.mkdir(parents=True, exist_ok=True)
+    provenance_path.write_text(json.dumps(provenance, indent=2))
+    log.info(
+        "[phase=fetch] merged %d-entry index (%d hub + %d retrain); provenance -> %s",
+        len(ckpt_index),
+        len(selected_fractions),
+        len(window_keys),
+        provenance_path,
+    )
+
+
+def _first_crossing_step(frac: float, max_steps: int) -> int:
+    """The step ``CheckpointAtFractionsCallback`` saves ``frac`` at — EXACT
+    float semantics of its ``global_step / max_steps >= frac`` check (no
+    ceil()-based reconstruction: 0.08 x 75 floats to 6.000000000000001, which
+    a naive ceil would round to 7)."""
+    for s in range(1, max_steps + 1):
+        if s / max_steps >= frac:
+            return s
+    raise ValueError(f"fraction {frac} never crosses within max_steps={max_steps}")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description=(
-            "Task #585: download the 6 per-fraction #504 v4 smoke adapters + the "
+            "Task #585: download the per-fraction #504 v4 smoke adapters + the "
             "persona bank + R_eval_v504, verify them, and write checkpoint_index.json."
         )
     )
@@ -194,7 +297,47 @@ def main(argv: list[str] | None = None) -> int:
             "when run from the repo root). Override for VM smoke runs."
         ),
     )
+    ap.add_argument(
+        "--fractions",
+        default=None,
+        help=(
+            "step6to12 extension: comma-separated SUBSET of the module default "
+            f"Hub fractions {FRACTIONS} to download (e.g. '0.08,0.16' for the "
+            "endpoint-parity controls). Default None = all 6 (byte-identical "
+            "parent-round behavior)."
+        ),
+    )
+    ap.add_argument(
+        "--merge-retrain-manifest",
+        type=Path,
+        default=None,
+        help=(
+            "step6to12 extension: path to the Phase-T retrain_manifest.json. "
+            "When set, the manifest's window snapshots (recorded steps 6-12) are "
+            "merged with the Hub entries into one step-ordered index, the 'step' "
+            "field is filled for ALL entries, and an index_provenance.json "
+            "sidecar is written next to --out-index."
+        ),
+    )
     args = ap.parse_args(argv)
+
+    if args.fractions is not None:
+        try:
+            selected_fractions = tuple(
+                sorted(float(x.strip()) for x in args.fractions.split(",") if x.strip())
+            )
+        except ValueError as exc:
+            raise ValueError(
+                f"--fractions {args.fractions!r} could not parse as comma-separated floats."
+            ) from exc
+        unknown = [f for f in selected_fractions if f not in FRACTIONS]
+        if not selected_fractions or unknown:
+            raise ValueError(
+                f"--fractions {args.fractions!r} must be a non-empty subset of the "
+                f"verified Hub fractions {FRACTIONS}; unknown: {unknown}."
+            )
+    else:
+        selected_fractions = FRACTIONS
 
     logging.basicConfig(
         level=os.environ.get("EPS_LOG_LEVEL", "INFO"),
@@ -204,10 +347,10 @@ def main(argv: list[str] | None = None) -> int:
 
     args.local_root.mkdir(parents=True, exist_ok=True)
 
-    # ── 1. The 6 per-fraction adapter snapshots (per-file download). ─────────
+    # ── 1. The Hub per-fraction adapter snapshots (per-file download). ────────
     ckpt_index: dict[str, dict] = {}
     sha_by_frac: dict[str, str] = {}
-    for frac in FRACTIONS:
+    for frac in selected_fractions:
         token = frac_token(frac)
         subfolder = f"{PRETRAIN_SUBFOLDER}/ckpt_frac{token}"
         for fname in ("adapter_config.json", "adapter_model.safetensors"):
@@ -229,16 +372,27 @@ def main(argv: list[str] | None = None) -> int:
         ckpt_index[f"{frac:.2f}"] = {"step": None, "path": str(local_dir)}
 
     # Pairwise-distinct sha256s (assumption A2 made a runtime assert).
-    if len(set(sha_by_frac.values())) != len(FRACTIONS):
+    if len(set(sha_by_frac.values())) != len(selected_fractions):
         dupes = {f: s for f, s in sha_by_frac.items() if list(sha_by_frac.values()).count(s) > 1}
         raise AssertionError(
             f"adapter sha256s are NOT pairwise distinct — duplicated weights detected "
-            f"({dupes}). The six snapshots must be bytewise-distinct adapters."
+            f"({dupes}). The Hub snapshots must be bytewise-distinct adapters."
         )
     log.info(
-        "[phase=fetch] 6 adapters verified pairwise-distinct: %s",
+        "[phase=fetch] %d Hub adapters verified pairwise-distinct: %s",
+        len(selected_fractions),
         {f: s[:12] for f, s in sha_by_frac.items()},
     )
+
+    # ── 1b. step6to12 merge: retrain window snapshots + step fill + sidecar. ──
+    if args.merge_retrain_manifest is not None:
+        _merge_retrain_entries(
+            ckpt_index,
+            sha_by_frac,
+            selected_fractions,
+            manifest_path=args.merge_retrain_manifest,
+            out_index=args.out_index,
+        )
 
     # ── 2. Persona bank (gitignored — absent on a fresh pod checkout). ───────
     bank_src = _download_with_retry(

@@ -81,6 +81,17 @@ def _load_checkpoint_specs(index_path: Path) -> list[dict]:
         specs.append({"frac": float(frac_str), "adapter_path": entry["path"]})
     if not specs:
         raise RuntimeError(f"no usable checkpoints in {index_path}")
+    # Defensive (step6to12 9-entry indexes use 4-dp keys): the internal
+    # r_by_frac dict below keys on f"{frac:.2f}", so two index fractions that
+    # collide at 2 dp would silently cross-wire R text between checkpoints.
+    # Verified collision-free for both the parent 6-frac and the step6to12
+    # 9-entry grids; fail loud if a future index breaks that.
+    keys_2dp = [f"{s['frac']:.2f}" for s in specs]
+    if len(set(keys_2dp)) != len(keys_2dp):
+        raise AssertionError(
+            f"checkpoint fractions collide at 2-dp internal keying: {keys_2dp} — "
+            f"r_by_frac would silently overwrite entries. Use fractions distinct at 2 dp."
+        )
     return specs
 
 
