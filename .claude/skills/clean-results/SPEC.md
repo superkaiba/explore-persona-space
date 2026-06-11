@@ -232,8 +232,9 @@ carry it yet. The verifier and critics never REQUIRE it, never flag it
 as a stray element when present (e.g. on a re-critique during a
 same-issue follow-up round), and never hard-FAIL legacy or pre-link
 bodies for lacking it. The analyzer does not emit this line; it is
-orchestrator-appended (and on EXTEND passes the `<DOC_SHA>` pin is
-updated in place in BOTH locations — never duplicated).
+orchestrator-appended (and on EXTEND passes or a same-pass re-entry
+the `<DOC_SHA>` pin is updated in place in BOTH locations — never
+duplicated).
 
 All URLs in Reproducibility are pinned to permanent refs (HF Hub
 `/tree/<ref>` or `@<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>` or
