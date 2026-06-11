@@ -1,7 +1,7 @@
 ---
 title: 'Dampening of the residual marker elevation does not require persona framing:
-  three of four instruction-prompt paraphrases pull the elevation down too, one as
-  deeply as the doctor persona (MODERATE confidence)'
+  in the primary log-prob read all four instruction-prompt paraphrases pull it down,
+  two about as deeply as the doctor persona (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-10T18:18:24Z'
