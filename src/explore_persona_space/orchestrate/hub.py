@@ -8,12 +8,18 @@ Default repos (public, unlimited storage):
 import glob
 import logging
 import os
+import random
 import re
 import shutil
 import sys
+import time
+from collections.abc import Callable
 from pathlib import Path
+from typing import TypeVar
 
 logger = logging.getLogger(__name__)
+
+_T = TypeVar("_T")
 
 # Default public HF Hub repos
 DEFAULT_MODEL_REPO = "superkaiba1/explore-persona-space"
@@ -53,6 +59,56 @@ def merged_upload_enabled(cfg_value: bool | None = None) -> bool:
         True iff merged-checkpoint upload is explicitly enabled.
     """
     return os.environ.get("EPM_UPLOAD_MERGED") == "1" or bool(cfg_value)
+
+
+def _is_transient_hub_error(exc: BaseException) -> bool:
+    """True for TRANSIENT Hub failures worth retrying: 5xx HTTP, timeouts,
+    connection errors. 4xx (auth, not-found, quota 403) is NEVER transient —
+    retrying those only delays the real signal.
+    """
+    import requests
+    from huggingface_hub.utils import HfHubHTTPError
+
+    if isinstance(exc, HfHubHTTPError):
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        return status is not None and 500 <= status < 600
+    return isinstance(exc, requests.exceptions.Timeout | requests.exceptions.ConnectionError)
+
+
+def _retry_transient(
+    fn: Callable[[], _T],
+    *,
+    what: str,
+    attempts: int = 4,
+    base_delay: float = 5.0,
+) -> _T:
+    """Bounded retry with exponential backoff + jitter on transient Hub errors.
+
+    Retries ONLY when :func:`_is_transient_hub_error` says so (5xx / timeout /
+    connection); everything else — and the final exhausted attempt — re-raises
+    unchanged, so callers' fail-loud semantics are preserved (no silent
+    fallback; the crash stays the signal). Delays: ~5-10s, ~10-15s, ~20-25s.
+
+    Added for incident #591 (2026-06-11): HF returned 504 Gateway Time-out at
+    ~1-in-30 calls on the data repo's tree endpoint, crashing the pod smoke.
+    """
+    for attempt in range(1, attempts + 1):
+        try:
+            return fn()
+        except Exception as e:
+            if attempt == attempts or not _is_transient_hub_error(e):
+                raise
+            delay = base_delay * (2 ** (attempt - 1)) + random.uniform(0.0, base_delay)
+            logger.warning(
+                "%s: transient Hub error (attempt %d/%d): %s — retrying in %.1fs",
+                what,
+                attempt,
+                attempts,
+                e,
+                delay,
+            )
+            time.sleep(delay)
+    raise AssertionError("unreachable")  # loop always returns or raises
 
 
 def list_repo_files_complete(
@@ -163,34 +219,62 @@ def _upload(
 
     try:
         if is_file_upload:
-            api.upload_file(
-                path_or_fileobj=str(local_path),
-                repo_id=repo_id,
-                path_in_repo=path_in_repo or local_path.name,
-                repo_type=repo_type,
+            _retry_transient(
+                lambda: api.upload_file(
+                    path_or_fileobj=str(local_path),
+                    repo_id=repo_id,
+                    path_in_repo=path_in_repo or local_path.name,
+                    repo_type=repo_type,
+                ),
+                what=f"upload_file {repo_id}/{path_in_repo or local_path.name}",
             )
         else:
-            api.upload_folder(
-                folder_path=str(local_path),
-                repo_id=repo_id,
-                path_in_repo=path_in_repo,
-                repo_type=repo_type,
-                ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
+            _retry_transient(
+                lambda: api.upload_folder(
+                    folder_path=str(local_path),
+                    repo_id=repo_id,
+                    path_in_repo=path_in_repo,
+                    repo_type=repo_type,
+                    ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
+                ),
+                what=f"upload_folder {repo_id}/{path_in_repo}",
             )
 
-        # Verify upload: check that files actually exist on Hub. Use the
-        # paginated tree walk (not repo_info().siblings, which truncates at
-        # ~7901 entries) so verification of a large repo never spuriously
-        # reports 0 committed files.
+        # Verify upload with a SINGLE-PATH check scoped to the uploaded path.
+        # Never a recursive whole-repo tree walk here: on the large data repo
+        # that walk 504s at ~1-in-30 calls and costs ~15s per verify (incident
+        # #591 pod smoke, 2026-06-11). file_exists() hits one path; the folder
+        # branch lists ONLY the uploaded prefix. Both retried on transient 5xx.
         expected_prefix = (path_in_repo or local_path.name).rstrip("/")
-        uploaded_files = list_repo_files_complete(api, repo_id, repo_type=repo_type)
         if is_file_upload:
-            committed_files = [f for f in uploaded_files if f == expected_prefix]
+            exists = _retry_transient(
+                lambda: api.file_exists(repo_id, expected_prefix, repo_type=repo_type),
+                what=f"verify file {repo_id}/{expected_prefix}",
+            )
+            n_committed = 1 if exists else 0
         else:
-            prefix = expected_prefix + "/"
-            committed_files = [f for f in uploaded_files if f.startswith(prefix)]
 
-        if not committed_files:
+            def _count_files_under_prefix() -> int:
+                from huggingface_hub.hf_api import RepoFile
+                from huggingface_hub.utils import EntryNotFoundError
+
+                try:
+                    entries = api.list_repo_tree(
+                        repo_id,
+                        path_in_repo=expected_prefix,
+                        recursive=True,
+                        repo_type=repo_type,
+                    )
+                    return sum(1 for e in entries if isinstance(e, RepoFile))
+                except EntryNotFoundError:
+                    return 0  # prefix absent on the Hub -> 0 committed files
+
+            n_committed = _retry_transient(
+                _count_files_under_prefix,
+                what=f"verify folder {repo_id}/{expected_prefix}",
+            )
+
+        if n_committed == 0:
             logger.error(
                 "Upload appeared to succeed but 0 files found under %s/%s on Hub. "
                 "NOT marking as successful.",
@@ -201,7 +285,7 @@ def _upload(
 
         logger.info(
             "Upload verified: %d files at %s/%s",
-            len(committed_files),
+            n_committed,
             repo_id,
             path_in_repo,
         )
