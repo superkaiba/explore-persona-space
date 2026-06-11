@@ -11,7 +11,13 @@ eval questions, and read marker emission (does the answer contain/terminate
 with `` ※``; first emission position logged).
 
 Checkpoint-per-phase: ONE JSON per anchor step persisted the moment it
-completes (and skipped on re-run when present).
+completes, and skipped on re-run ONLY when its stored ladder run-id matches
+the on-disk ladder's (same ``resolve_ladder_run_id`` contract as
+``panel_probe`` — Arm A: the immutable-HF literal; Arm B: the dispatcher's
+``ladder_run_id.json``). A missing or mismatched run-id means the anchors
+were generated against a DIFFERENT training run's weights (end-of-cell
+cleanup rmtrees the ladder, so a later-cell crash + relaunch RETRAINS this
+cell under a fresh run-id) and the step is re-anchored (overwritten).
 
 Run as a SUBPROCESS from the dispatcher (vLLM worker teardown safety).
 """
@@ -70,6 +76,70 @@ def detect_marker_emission(text: str, marker_text: str) -> dict:
         "ends_with": text.rstrip().endswith(marker_text.strip()),
         "n_occurrences": text.count(marker_text),
     }
+
+
+def stored_anchor_is_current(stored_payload: dict, ladder_run_id: str) -> bool:
+    """True iff a stored anchor JSON was generated against the CURRENT ladder.
+
+    Same contract as ``panel_probe.stored_probe_is_current`` (#597 round-4
+    fix 2): a missing ``ladder_run_id`` key (anchors written before provenance
+    was threaded — the legacy ``i597_emission_anchor_v1`` shape) counts as a
+    MISMATCH, because the read cannot be attributed to the on-disk weights.
+    """
+    return stored_payload.get("ladder_run_id") == ladder_run_id
+
+
+def resolve_pending_anchors(
+    anchor_steps: list[int],
+    ckpt_root: Path,
+    out_dir: Path,
+    source: str,
+    arm: str,
+    ladder_run_id: str,
+) -> list[tuple[int, Path, Path]]:
+    """Validate every anchor checkpoint, then drop steps already persisted
+    against the CURRENT ladder (run-id resume gate; CPU-testable, no vLLM).
+
+    A stored anchor with a missing or mismatched ``ladder_run_id`` was
+    generated against a DIFFERENT training run's weights (end-of-cell cleanup
+    rmtrees the ladder, so a later-cell crash + relaunch RETRAINS this cell
+    under a fresh run-id while the stale anchors survive on disk) — it is
+    returned as pending and overwritten, never silently trusted.
+
+    Returns:
+        ``[(step, ckpt_dir, out_path), ...]`` for the steps still to run.
+    """
+    pending: list[tuple[int, Path, Path]] = []
+    for step in anchor_steps:
+        ckpt_dir = ckpt_root / f"checkpoint-{step}"
+        if not ckpt_dir.is_dir():
+            raise FileNotFoundError(f"anchor checkpoint missing: {ckpt_dir}")
+        out_path = out_dir / f"{source}_step{step:05d}.json"
+        if out_path.exists():
+            with open(out_path) as f:
+                stored = json.load(f)
+            if stored_anchor_is_current(stored, ladder_run_id):
+                log.info(
+                    "[phase=emis_anchor_%s_%s] step %d already done "
+                    "(ladder run-id match; %s); skipping",
+                    arm,
+                    source,
+                    step,
+                    out_path,
+                )
+                continue
+            log.warning(
+                "[phase=emis_anchor_%s_%s] step %d stored anchors are STALE (stored ladder "
+                "run-id %r != current %r) — regenerating and overwriting %s",
+                arm,
+                source,
+                step,
+                stored.get("ladder_run_id"),
+                ladder_run_id,
+                out_path,
+            )
+        pending.append((step, ckpt_dir, out_path))
+    return pending
 
 
 def build_anchor_prompts(
@@ -131,6 +201,9 @@ def main(argv: list[str] | None = None) -> int:
         MARKER_ID,
         MARKER_TEXT,
     )
+    from explore_persona_space.experiments.leakage_dynamics_597.panel_probe import (
+        resolve_ladder_run_id,
+    )
     from explore_persona_space.experiments.leakage_dynamics_597.probe_rows import (
         load_eval_questions,
     )
@@ -150,23 +223,18 @@ def main(argv: list[str] | None = None) -> int:
         len(questions),
     )
 
-    # Resolve + validate every anchor checkpoint BEFORE paying the vLLM load.
-    pending: list[tuple[int, Path, Path]] = []
-    for step in anchor_steps:
-        ckpt_dir = args.ckpt_root / f"checkpoint-{step}"
-        if not ckpt_dir.is_dir():
-            raise FileNotFoundError(f"anchor checkpoint missing: {ckpt_dir}")
-        out_path = args.out_dir / f"{args.source}_step{step:05d}.json"
-        if out_path.exists():
-            log.info(
-                "[phase=emis_anchor_%s_%s] step %d already done (%s); skipping",
-                args.arm,
-                args.source,
-                step,
-                out_path,
-            )
-            continue
-        pending.append((step, ckpt_dir, out_path))
+    # Provenance BEFORE the vLLM load (fail fast on a missing Arm B id), then
+    # resolve + validate every anchor checkpoint with the run-id resume gate.
+    ladder_run_id = resolve_ladder_run_id(args.arm, args.ckpt_root)
+    log.info(
+        "[phase=emis_setup_%s_%s] ladder run-id: %s",
+        args.arm,
+        args.source,
+        ladder_run_id,
+    )
+    pending = resolve_pending_anchors(
+        anchor_steps, args.ckpt_root, args.out_dir, args.source, args.arm, ladder_run_id
+    )
     if not pending:
         log.info(
             "[phase=emis_%s_%s] all anchors already persisted; nothing to do", args.arm, args.source
@@ -235,6 +303,7 @@ def main(argv: list[str] | None = None) -> int:
             "seed": args.seed,
             "step": step,
             "ckpt_dir": str(ckpt_dir),
+            "ladder_run_id": ladder_run_id,
             "base_model": BASE_MODEL,
             "marker_text": MARKER_TEXT,
             "max_new_tokens": args.max_new_tokens,

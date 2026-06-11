@@ -940,3 +940,121 @@ def test_stored_probe_resume_skip_honors_run_id():
     assert not stored_probe_is_current({"ladder_run_id": "r0", "rows": []}, "r1")
     # Missing run-id (attempt-1 shape) -> re-probe.
     assert not stored_probe_is_current({"rows": []}, "r1")
+
+
+# ── 12. Round-5 fix: emission-anchors resume gated on the ladder run-id ───────
+
+
+def test_stored_anchor_is_current():
+    """Same contract as ``stored_probe_is_current``: skip ONLY on run-id match;
+    a missing key (the legacy anchor-JSON shape, written before provenance was
+    threaded) counts as a mismatch."""
+    from explore_persona_space.experiments.leakage_dynamics_597.emission_anchors import (
+        stored_anchor_is_current,
+    )
+
+    assert stored_anchor_is_current({"ladder_run_id": "r1", "rows": []}, "r1")
+    # Mismatch (anchors generated against a DIFFERENT training run) -> regenerate.
+    assert not stored_anchor_is_current({"ladder_run_id": "r0", "rows": []}, "r1")
+    # Missing run-id (legacy shape) -> regenerate.
+    assert not stored_anchor_is_current({"rows": []}, "r1")
+
+
+def test_resolve_pending_anchors_run_id_gate(tmp_path):
+    """The cleanup-rmtree relaunch class: a retrained ladder mints a new run-id,
+    so stale stored anchors (mismatched OR missing id) are re-anchored while
+    matching ones are skipped; a missing checkpoint still fails loud."""
+    from explore_persona_space.experiments.leakage_dynamics_597.emission_anchors import (
+        resolve_pending_anchors,
+    )
+
+    ckpt_root = tmp_path / "ladder"
+    out_dir = tmp_path / "anchors"
+    out_dir.mkdir()
+    steps = [20, 40, 100]
+    for s in steps:
+        (ckpt_root / f"checkpoint-{s}").mkdir(parents=True)
+    current = "r-new"
+    # step 20: stored against the CURRENT ladder -> skipped.
+    (out_dir / "villain_step00020.json").write_text(
+        json.dumps({"ladder_run_id": current, "rows": []})
+    )
+    # step 40: legacy shape (no run-id) -> regenerated.
+    (out_dir / "villain_step00040.json").write_text(json.dumps({"rows": []}))
+    # step 100: STALE run-id (pre-retrain anchors) -> regenerated.
+    (out_dir / "villain_step00100.json").write_text(
+        json.dumps({"ladder_run_id": "r-old", "rows": []})
+    )
+    pending = resolve_pending_anchors(steps, ckpt_root, out_dir, "villain", "b", current)
+    assert [(p[0], p[2].name) for p in pending] == [
+        (40, "villain_step00040.json"),
+        (100, "villain_step00100.json"),
+    ]
+    assert all(p[1] == ckpt_root / f"checkpoint-{p[0]}" for p in pending)
+    # A never-anchored step is pending too.
+    (out_dir / "villain_step00020.json").unlink()
+    redo = resolve_pending_anchors(steps, ckpt_root, out_dir, "villain", "b", current)
+    assert [p[0] for p in redo] == steps
+    # Checkpoint validation still precedes the gate (fail loud on a hole).
+    with pytest.raises(FileNotFoundError, match="checkpoint-999"):
+        resolve_pending_anchors([999], ckpt_root, out_dir, "villain", "b", current)
+
+
+def test_emission_anchors_main_all_skip_cpu(tmp_path):
+    """End-to-end CPU resume smoke: every anchor stored against the CURRENT
+    ladder run-id -> ``main()`` returns 0 via the all-skip early exit (which
+    precedes the transformers/vLLM imports) and leaves the stored anchor
+    JSONs byte-for-byte untouched."""
+    from explore_persona_space.experiments.leakage_dynamics_597.emission_anchors import main
+
+    ckpt_root = tmp_path / "ladder"
+    out_dir = tmp_path / "anchors"
+    out_dir.mkdir()
+    for s in (20, 40):
+        (ckpt_root / f"checkpoint-{s}").mkdir(parents=True)
+    (ckpt_root / "ladder_run_id.json").write_text(
+        json.dumps({"schema": "i597_ladder_run_id_v1", "run_id": "r-cur"})
+    )
+    pool = tmp_path / "pool.jsonl"
+    pool.write_text(json.dumps({"wrong_claim": "The sky is green."}) + "\n")
+    for s in (20, 40):
+        (out_dir / f"villain_step{s:05d}.json").write_text(
+            json.dumps({"schema": "i597_emission_anchor_v1", "ladder_run_id": "r-cur"})
+        )
+    before = {p.name: p.read_text() for p in out_dir.glob("*.json")}
+    rc = main(
+        [
+            "--arm",
+            "b",
+            "--source",
+            "villain",
+            "--ckpt-root",
+            str(ckpt_root),
+            "--anchor-steps",
+            "20,40",
+            "--eval-pool",
+            str(pool),
+            "--contexts-json",
+            json.dumps({"villain": "You are a villain.", "no_persona": ""}),
+            "--out-dir",
+            str(out_dir),
+        ]
+    )
+    assert rc == 0
+    after = {p.name: p.read_text() for p in out_dir.glob("*.json")}
+    assert after == before
+
+
+def test_emission_anchors_run_id_wired_into_main():
+    """Structural pin: main resolves the ladder run-id BEFORE the vLLM engine
+    construction, gates resume through ``resolve_pending_anchors``, and embeds
+    the id in every anchor payload."""
+    import inspect
+
+    from explore_persona_space.experiments.leakage_dynamics_597 import emission_anchors
+
+    src = inspect.getsource(emission_anchors.main)
+    assert "resolve_ladder_run_id(" in src
+    assert "resolve_pending_anchors(" in src
+    assert '"ladder_run_id": ladder_run_id' in src
+    assert src.index("resolve_ladder_run_id(") < src.index("LLM(")
