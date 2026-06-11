@@ -7,7 +7,8 @@ Generates from the shipped G tensor + leaderboard + registered reads:
   4. inoculation_dotplot   -- instruction-trained vs default-trained off-diag G
   5. marker_diag_band      -- diagonal implant strength vs the [5,12] nat band
 
-Saves into the MAIN repo's figures/issue_537/ (commit there, not the branch).
+Saves into the worktree's figures/issue_537/ (committed on the issue-537
+branch; body URLs pin that commit SHA).
 """
 
 from __future__ import annotations
@@ -26,7 +27,7 @@ from explore_persona_space.analysis.paper_plots import (
 )
 
 EVAL = Path("eval_results/issue_537")
-FIGDIR = "/home/thomasjiralerspong/explore-persona-space/figures/"
+FIGDIR = "figures/"
 
 CTX_LABELS = {
     "sp_swe": "SW-engineer persona",
@@ -200,7 +201,7 @@ def fig_marker_heatmap():
     ax.set_xlabel("Eval context")
     ax.set_ylabel("Train context")
     ax.set_title(
-        "Marker row of the G tensor: Δ log-prob of ※ at the end of the model's own answer (nats)\n"
+        "Marker row of the G tensor: Δ log-prob of ※ at the end-of-answer slot (nats)\n"
         "boxes = train-context diagonal; hatched row = implant failed; "
         "right block = behavior instructions",
         loc="left",
@@ -264,10 +265,7 @@ def fig_leaderboard():
     axL.set_xlabel("Spearman rho vs marker G (95% bootstrap CI)\nmore negative = better predictor")
     axR.barh(y, r2, color=colors, height=0.62)
     axR.axvline(0, color="0.4", lw=0.8)
-    axR.set_xlabel(
-        "Out-of-fold R² (leave-two-contexts-out CV)\n"
-        "higher = better; < 0 is worse than the pooled mean"
-    )
+    axR.set_xlabel("Out-of-fold R² (leave-two-contexts-out CV)\nhigher = better")
     fig.text(
         0.32,
         0.955,
