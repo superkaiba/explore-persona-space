@@ -29,3 +29,4 @@
 - [HF mirror divergence — pin content hashes at prefetch](feedback_hf_mirror_divergence_pin_hashes.md) — issue-owned input snapshots + sha256 pins at prefetch; local-verified ≠ HF mirror (incident #600)
 - [Pinned artifact pairs can disagree](feedback_pinned_artifact_pair_mutual_inconsistency.md) — #601: bank 60 vs R_eval 61 personas, 45 overlap; assert per-(persona,q) coverage against the READ-side artifact before registering panels; descope with explicit coverage field, never regenerate frozen R.
 - [Resume branches synthesize success-equivalent results](feedback_resume_branch_synthesize_result.md) — bare-continue skip branches read as crashes downstream; rehearse resume offline (incident #600 r5)
+- [preflight --json is multi-line](feedback_preflight_json_multiline.md) — parse whole stdout, never splitlines()[-1]; give dispatchers --skip-preflight (#602)

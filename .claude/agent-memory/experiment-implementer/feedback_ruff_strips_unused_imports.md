@@ -20,6 +20,38 @@ removes such imports.
   the v7 patch ended up doing for `from lorem.text import TextLorem` —
   imported inside `_generate_garbage_assistant_local`, where it is also
   *used*, so ruff is happy and the import isn't wasted on module load.
+- **For imports needed at a CLASS DECLARATION (e.g. subclassing):** edit
+  the class line FIRST (`class Foo(BaseFromX):`), THEN add the import.
+  If you add the import first, the post-Edit ruff hook strips it because
+  `BaseFromX` isn't yet referenced. Two-step ordering matters. (Bit me
+  on task #405 round 5: I added `from transformers import TrainerCallback`
+  before changing `class ProbePanelLogprobCallback:` to subclass it; the
+  hook stripped the import. Re-adding it AFTER the class was already
+  declared with the parent name kept it because the reference now
+  exists.)
 - Either way, after editing, **always run `ruff check` + `ruff format`
   once more** to confirm the new imports survived. Your edit succeeding
   doesn't mean the format pass kept it.
+- **Writing a big file in CHUNKS (Write tool first chunk + Bash heredoc
+  appends):** the PostToolUse formatter hook fires on the FIRST Write and
+  strips every import the later (not-yet-appended) chunks need — Bash
+  appends do NOT re-trigger the hook, so the file ends up with F821s.
+  Either write helpers-before-imports-users in one chunk, or restore the
+  full import block AFTER the last append and re-run `ruff check` (which
+  keeps them once references exist). Bit me on task #536 (torch/math/csv/
+  ast + the compute_cosine_matrix import all stripped from chunk 1).
+- **Threading new names into an existing `from X import (...)` block across
+  multiple Edit calls:** same trap — if the import-block Edit lands before
+  the usage Edits, the hook strips the new names and you get a wall of
+  F821s at the next lint. Robust fix (3 hits on task #570): AFTER the
+  usage edits exist, rebuild the whole block programmatically —
+  `names = parse existing block; merged = sorted(set(names) | set(add));
+  rewrite block` via a small Python splice — then `ruff check --fix` for
+  I001 sorting. Cheaper than fighting Edit ordering on 80-name blocks.
+- **Round-N revision edits over an existing script:** same trap again on
+  task #601 round 2 — added phase0_lib imports to `main()` in one Edit,
+  the usages in the NEXT Edit; the hook stripped the whole new import
+  group in between (F821 x6 at lint). Plan multi-edit sequences so the
+  Edit that introduces an import ALSO introduces at least one usage
+  (or extract the new logic into a helper function whose body carries
+  both the imports and the usages — that's what fixed it here).
