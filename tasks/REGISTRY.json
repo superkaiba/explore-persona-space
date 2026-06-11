@@ -3519,8 +3519,8 @@
       "goal": "Measure the true training-maturity curve of the #504 saturated-anchor smoke cell by re-evaluating its six verified per-fraction adapter snapshots through the fixed distinct-id eval path, replacing the stale six-reads-of-one-adapter calibration table with real per-fraction numbers.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/585",
-      "status": "interpreting",
+      "path": "tasks/reviewing/585",
+      "status": "reviewing",
       "title": "The published flat calibration table for the over-trained marker cell was a stale-adapter artifact: the corrected six-checkpoint curve shows a 4.9-nat maturity gradient the bug had erased (HIGH confidence)"
     },
     "586": {
