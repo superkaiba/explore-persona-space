@@ -815,3 +815,128 @@ def test_lr_weight_schedule_shape():
     cum = cumulative_lr_weight(total, warmup)
     assert len(cum) == total + 1 and cum[0] == 0.0
     assert all(b >= a for a, b in itertools.pairwise(cum))
+
+
+# ── 11. Round-4 resume-provenance fixes (train-skip + ladder run-id) ──────────
+
+
+def _fake_ladder(root: Path, steps, *, weights: bool = True) -> None:
+    for s in steps:
+        d = root / f"checkpoint-{s}"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "adapter_config.json").write_text("{}")
+        if weights:
+            (d / "adapter_model.safetensors").write_text("fake-weights")
+
+
+def test_arm_b_ladder_complete_fires_only_on_complete_ladder_plus_trajectory(tmp_path):
+    """Round-4 fix 1 (#597 attempt-2): the train-skip predicate fires on a
+    COMPLETE in-budget ladder + in-loop trajectory, and never on an
+    incomplete one (missing config, missing weights, or missing trajectory)."""
+    disp = _load_dispatcher()
+    b_grid = (4, 8, 12, 16, 20, 24, 500)
+    b_max = 24
+    in_budget = [s for s in b_grid if s <= b_max]
+    adapter_dir = tmp_path / "adapter"
+    traj = tmp_path / "traj.json"
+
+    # Nothing on disk -> not complete.
+    assert not disp.arm_b_ladder_complete(adapter_dir, traj, b_grid, b_max)
+    _fake_ladder(adapter_dir, in_budget)
+    # Ladder complete but trajectory missing -> not complete.
+    assert not disp.arm_b_ladder_complete(adapter_dir, traj, b_grid, b_max)
+    traj.write_text(json.dumps({"records": []}))
+    assert disp.arm_b_ladder_complete(adapter_dir, traj, b_grid, b_max)
+    # Off-budget grid steps (500 > b_max_steps) are NOT required.
+    assert not (adapter_dir / "checkpoint-500").exists()
+    # Missing weights in ONE checkpoint -> incomplete.
+    (adapter_dir / "checkpoint-12" / "adapter_model.safetensors").unlink()
+    assert not disp.arm_b_ladder_complete(adapter_dir, traj, b_grid, b_max)
+    # Weights restored but config missing -> incomplete.
+    (adapter_dir / "checkpoint-12" / "adapter_model.safetensors").write_text("w")
+    (adapter_dir / "checkpoint-12" / "adapter_config.json").unlink()
+    assert not disp.arm_b_ladder_complete(adapter_dir, traj, b_grid, b_max)
+
+
+def test_ladder_run_id_mint_adopt_invalidate(tmp_path):
+    disp = _load_dispatcher()
+    r1 = disp.write_ladder_run_id(tmp_path, source="villain", reason="training_complete")
+    payload = json.loads((tmp_path / "ladder_run_id.json").read_text())
+    assert payload["run_id"] == r1
+    assert payload["schema"] == "i597_ladder_run_id_v1"
+    assert payload["reason"] == "training_complete"
+    # Adoption keeps an existing id (idempotent relaunches keep probes valid).
+    assert disp.ensure_ladder_run_id(tmp_path, source="villain") == r1
+    # A fresh training write mints a NEW id (retrain != same ladder).
+    r2 = disp.write_ladder_run_id(tmp_path, source="villain", reason="training_complete")
+    assert r2 != r1
+    # Invalidate-then-ensure mints anew (pre-train invalidation contract);
+    # idempotent on a missing file.
+    disp.invalidate_ladder_run_id(tmp_path)
+    assert not (tmp_path / "ladder_run_id.json").exists()
+    disp.invalidate_ladder_run_id(tmp_path)
+    r3 = disp.ensure_ladder_run_id(tmp_path, source="villain")
+    assert r3 not in (r1, r2)
+    assert (
+        json.loads((tmp_path / "ladder_run_id.json").read_text())["reason"]
+        == "adopted_preexisting_ladder"
+    )
+
+
+def test_provenance_helpers_are_wired_into_run_cell_train_arm_b_and_panel_probe():
+    """Structural pin: run_cell consults the train-skip predicate + adopt
+    helper; train_arm_b invalidates BEFORE train_lora and mints AFTER (a
+    mid-train crash must never leave a stale run-id next to re-written
+    weights); panel_probe.main resolves the run-id and gates its resume-skip
+    on it."""
+    import inspect
+
+    disp = _load_dispatcher()
+    src_run_cell = inspect.getsource(disp.run_cell)
+    assert "arm_b_ladder_complete(" in src_run_cell
+    assert "ensure_ladder_run_id(" in src_run_cell
+    src_train = inspect.getsource(disp.train_arm_b)
+    assert src_train.index("invalidate_ladder_run_id(") < src_train.index("train_lora(")
+    assert src_train.index("train_lora(") < src_train.index("write_ladder_run_id(")
+
+    from explore_persona_space.experiments.leakage_dynamics_597 import panel_probe
+
+    src_probe_main = inspect.getsource(panel_probe.main)
+    assert "resolve_ladder_run_id(" in src_probe_main
+    assert "stored_probe_is_current(" in src_probe_main
+    # The run-id resolution must precede the heavy base-model load (fail fast).
+    assert src_probe_main.index("resolve_ladder_run_id(") < src_probe_main.index(
+        "AutoModelForCausalLM.from_pretrained"
+    )
+
+
+def test_resolve_ladder_run_id(tmp_path):
+    from explore_persona_space.experiments.leakage_dynamics_597.panel_probe import (
+        ARM_A_IMMUTABLE_RUN_ID,
+        resolve_ladder_run_id,
+    )
+
+    # Arm A: downloaded immutable HF ladders carry the stable literal.
+    assert resolve_ladder_run_id("a", tmp_path) == ARM_A_IMMUTABLE_RUN_ID == "armA-hf-immutable"
+    # Arm B without provenance: fail loud (the dispatcher always writes it).
+    with pytest.raises(RuntimeError, match="run-id file missing"):
+        resolve_ladder_run_id("b", tmp_path)
+    (tmp_path / "ladder_run_id.json").write_text(json.dumps({"run_id": "r-abc"}))
+    assert resolve_ladder_run_id("b", tmp_path) == "r-abc"
+    (tmp_path / "ladder_run_id.json").write_text(json.dumps({"schema": "x"}))
+    with pytest.raises(RuntimeError, match="malformed"):
+        resolve_ladder_run_id("b", tmp_path)
+
+
+def test_stored_probe_resume_skip_honors_run_id():
+    """Round-4 fix 2: resume-skip ONLY on run-id match; re-probe on mismatch
+    AND on a missing run-id (the #597 attempt-1 stored-JSON shape)."""
+    from explore_persona_space.experiments.leakage_dynamics_597.panel_probe import (
+        stored_probe_is_current,
+    )
+
+    assert stored_probe_is_current({"ladder_run_id": "r1", "rows": []}, "r1")
+    # Mismatch (probe stored against a DIFFERENT training run) -> re-probe.
+    assert not stored_probe_is_current({"ladder_run_id": "r0", "rows": []}, "r1")
+    # Missing run-id (attempt-1 shape) -> re-probe.
+    assert not stored_probe_is_current({"rows": []}, "r1")

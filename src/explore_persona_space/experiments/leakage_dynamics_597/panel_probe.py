@@ -9,11 +9,17 @@ hot-swap the LoRA adapter (``PeftModel.from_pretrained`` → probe →
 forward pass per side via ``compute_marker_slot_stats``.
 
 Checkpoint-per-phase discipline: each checkpoint's per-row JSON is persisted
-the moment it completes (and skipped on re-run if already present), so a
-mid-ladder crash never loses earlier checkpoints. After the LAST checkpoint,
-the FIRST-probed checkpoint is re-read and its four floats must reproduce
-(end-of-ladder hot-swap invariant — catches cumulative adapter-unload state
-corruption that Gate S's sweep-start check cannot see).
+the moment it completes, and skipped on re-run ONLY when its stored ladder
+run-id matches the on-disk ladder's (Arm B: ``ladder_run_id.json`` written by
+the dispatcher at train end / adoption; Arm A: the immutable-HF literal). A
+missing or mismatched run-id means the stored probe was read against a
+DIFFERENT training run's weights (bf16 run-to-run nondeterminism — the #597
+attempt-2 mixed-provenance failure) and is RE-PROBED (overwritten). So a
+mid-ladder crash never loses earlier checkpoints, and a retrain never
+poisons the resume. After the LAST checkpoint, the FIRST-probed checkpoint
+is re-read and its four floats must reproduce (end-of-ladder hot-swap
+invariant — catches cumulative adapter-unload state corruption that Gate S's
+sweep-start check cannot see).
 
 Gauge assert per checkpoint: ``assert_gauge_free_adapter_config`` on the
 checkpoint's ``adapter_config.json`` (LoRA must not touch lm_head /
@@ -47,6 +53,47 @@ log = logging.getLogger("issue_597.panel_probe")
 # precision; 1e-3 absorbs kernel-level nondeterminism without masking a real
 # adapter-state corruption (which shows up as O(1)-nat drift).
 INVARIANT_ATOL = 1e-3
+
+# Ladder provenance (#597 round 4): Arm A ladders are the published immutable
+# HF capend checkpoints — downloaded, never (re)trained — so their run-id is a
+# stable literal. Arm B ladders carry a dispatcher-written ladder_run_id.json.
+ARM_A_IMMUTABLE_RUN_ID = "armA-hf-immutable"
+LADDER_RUN_ID_FILENAME = "ladder_run_id.json"
+
+
+def resolve_ladder_run_id(arm: str, ckpt_root: Path) -> str:
+    """Resolve the CURRENT ladder's provenance run-id.
+
+    Arm A → :data:`ARM_A_IMMUTABLE_RUN_ID` (re-downloads are bit-identical).
+    Arm B → ``ckpt_root/ladder_run_id.json`` (written by the dispatcher at the
+    end of training, or when adopting a complete pre-existing ladder). A
+    missing/malformed Arm B file is a hard failure: without it the resume-skip
+    is unverifiable and a stale stored probe could silently mix provenance.
+    """
+    if arm == "a":
+        return ARM_A_IMMUTABLE_RUN_ID
+    path = ckpt_root / LADDER_RUN_ID_FILENAME
+    if not path.exists():
+        raise RuntimeError(
+            f"ladder run-id file missing at {path} — Arm B ladders must carry provenance "
+            "(the dispatcher writes it at train end / ladder adoption); refusing to probe "
+            "without it (the resume-skip would be unverifiable)."
+        )
+    payload = json.loads(path.read_text())
+    run_id = payload.get("run_id")
+    if not isinstance(run_id, str) or not run_id:
+        raise RuntimeError(f"malformed ladder run-id payload at {path}: {payload!r}")
+    return run_id
+
+
+def stored_probe_is_current(stored_payload: dict, ladder_run_id: str) -> bool:
+    """True iff a stored per-checkpoint JSON was probed against the CURRENT ladder.
+
+    A missing ``ladder_run_id`` key (probes written before provenance was
+    threaded — the #597 attempt-1 shape) counts as a MISMATCH: the read cannot
+    be attributed to the on-disk weights, so the caller re-probes.
+    """
+    return stored_payload.get("ladder_run_id") == ladder_run_id
 
 
 def _git_sha() -> str:
@@ -361,12 +408,15 @@ def main(argv: list[str] | None = None) -> int:
 
     steps = [int(s) for s in args.steps.split(",")] if args.steps else None
     ladder = enumerate_ladder(args.ckpt_root, steps)
+    # Provenance BEFORE the heavy model load: fail fast on a missing Arm B id.
+    ladder_run_id = resolve_ladder_run_id(args.arm, args.ckpt_root)
     log.info(
-        "[phase=probe_ladder_%s_%s] %d checkpoints: %s",
+        "[phase=probe_ladder_%s_%s] %d checkpoints: %s (ladder run-id: %s)",
         args.arm,
         args.source,
         len(ladder),
         [s for s, _ in ladder],
+        ladder_run_id,
     )
 
     log.info(
@@ -410,18 +460,32 @@ def main(argv: list[str] | None = None) -> int:
     for step, ckpt_dir in ladder:
         out_path = args.out_dir / f"step_{step:05d}.json"
         if out_path.exists():
-            log.info(
-                "[phase=probe_ckpt_%s_%s] step %d already probed; loading %s",
+            with open(out_path) as f:
+                stored = json.load(f)
+            if stored_probe_is_current(stored, ladder_run_id):
+                log.info(
+                    "[phase=probe_ckpt_%s_%s] step %d already probed (ladder run-id match); "
+                    "loading %s",
+                    args.arm,
+                    args.source,
+                    step,
+                    out_path,
+                )
+                per_step_rows[step] = stored["rows"]
+                if first_step is None:
+                    first_step, first_ckpt_dir = step, ckpt_dir
+                continue
+            log.warning(
+                "[phase=probe_ckpt_%s_%s] step %d stored probe is STALE (stored ladder "
+                "run-id %r != current %r) — re-probing and overwriting %s (#597 attempt-2 "
+                "mixed-provenance class)",
                 args.arm,
                 args.source,
                 step,
+                stored.get("ladder_run_id"),
+                ladder_run_id,
                 out_path,
             )
-            with open(out_path) as f:
-                per_step_rows[step] = json.load(f)["rows"]
-            if first_step is None:
-                first_step, first_ckpt_dir = step, ckpt_dir
-            continue
         t_ck = time.time()
         rows, base_model = probe_one_checkpoint(
             base_model,
@@ -444,6 +508,7 @@ def main(argv: list[str] | None = None) -> int:
             "seed": args.seed,
             "step": step,
             "ckpt_dir": str(ckpt_dir),
+            "ladder_run_id": ladder_run_id,
             "n_rows": len(rows),
             "rows": rows,
             "metadata": {
@@ -519,6 +584,7 @@ def main(argv: list[str] | None = None) -> int:
         "steps": [s for s, _ in ladder],
         "n_contexts": len(probe_contexts),
         "n_questions": len(next(iter(probe_contexts.values()))["rows"]),
+        "ladder_run_id": ladder_run_id,
         "invariant_max_abs_diff": worst,
         "by_step": {
             str(step): _aggregate_by_context(rows) for step, rows in sorted(per_step_rows.items())

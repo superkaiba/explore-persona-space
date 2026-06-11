@@ -20,7 +20,10 @@ surface, same teardown — the smoke knobs only SCALE each phase):
 
   Per-cell loop (one cell == one source, sequential per shard):
       trainB (in-process train_lora, max_steps=528, save_steps=4 + grid
-      prune) → Gate S re-application on the FIRST Arm B source TRAINED IN
+      prune; SKIPPED when the complete in-budget ladder + trajectory already
+      exist — recovery relaunches are idempotent; a ladder run-id is stamped
+      at train end / adoption so panel_probe's resume-skip is provenance-
+      gated) → Gate S re-application on the FIRST Arm B source TRAINED IN
       THIS PROCESS vs its own fresh trajectory (ALWAYS runs per shard —
       decoupled from --skip-arm-a-gate; #518 reachability class) → Arm B
       ladder upload (fail-loud) → panel probe Arm B (HF subprocess) →
@@ -73,6 +76,7 @@ import socket
 import subprocess
 import sys
 import time
+import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -575,6 +579,91 @@ def base_side_identity_diagnostic(arm_b_traj: Path, arm_a_traj: Path, source: st
         return {"status": f"unavailable: {e}"}
 
 
+# ── Ladder provenance (round-4 fix: idempotent recovery relaunches) ──────────
+
+LADDER_RUN_ID_FILENAME = "ladder_run_id.json"
+
+
+def arm_b_ladder_complete(
+    adapter_dir: Path, traj_path: Path, b_grid: tuple[int, ...], b_max_steps: int
+) -> bool:
+    """True iff the COMPLETE in-budget B_GRID ladder + in-loop trajectory exist.
+
+    Completeness = every ``checkpoint-<s>/adapter_config.json`` AND
+    ``checkpoint-<s>/adapter_model.safetensors`` for s in ``b_grid`` with
+    ``s <= b_max_steps``, plus the trajectory JSON the band callback writes
+    in-loop. When this holds, a recovery relaunch SKIPS Arm B training instead
+    of re-training: bf16 run-to-run nondeterminism makes a retrain a NEW
+    ladder, which silently invalidates every prior stored probe (the #597
+    attempt-2 mixed-provenance failure — the END-OF-LADDER invariant then
+    correctly fails on a 0.381-nat drift that is provenance, not corruption).
+    """
+    if not traj_path.exists():
+        return False
+    for s in b_grid:
+        if s > b_max_steps:
+            continue
+        ckpt = adapter_dir / f"checkpoint-{s}"
+        if not (ckpt / "adapter_config.json").exists():
+            return False
+        if not (ckpt / "adapter_model.safetensors").exists():
+            return False
+    return True
+
+
+def write_ladder_run_id(adapter_dir: Path, *, source: str, reason: str) -> str:
+    """Mint a FRESH ladder run-id into ``adapter_dir/ladder_run_id.json``.
+
+    ``panel_probe`` embeds this id in every per-checkpoint JSON + the agg JSON
+    and resume-skips a stored probe ONLY when its id matches the on-disk
+    ladder's — stale probes from a DIFFERENT training run are re-probed
+    (overwritten) automatically, with no manual deletion.
+    """
+    run_id = str(uuid.uuid4())
+    payload = {
+        "schema": "i597_ladder_run_id_v1",
+        "run_id": run_id,
+        "source": source,
+        "reason": reason,
+        "ts": datetime.now(UTC).isoformat(),
+        "git_commit": _git_sha(),
+        "hostname": socket.gethostname(),
+    }
+    path = adapter_dir / LADDER_RUN_ID_FILENAME
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    os.replace(tmp, path)
+    log.info("[phase=train_b_%s] ladder run-id %s (%s) -> %s", source, run_id, reason, path)
+    return run_id
+
+
+def ensure_ladder_run_id(adapter_dir: Path, *, source: str) -> str:
+    """Adopt a pre-existing complete ladder: mint a run-id ONLY if none exists.
+
+    Used on the train-skip path so an already-stamped ladder keeps its id
+    (probes stored against it stay resumable) while a pre-provenance ladder
+    (e.g. the on-pod attempt-2 retrains) gets a fresh id — which auto-
+    invalidates the stale attempt-1 per-checkpoint JSONs at probe time.
+    """
+    path = adapter_dir / LADDER_RUN_ID_FILENAME
+    if path.exists():
+        run_id = json.loads(path.read_text())["run_id"]
+        log.info("[phase=train_b_%s] ladder run-id kept: %s", source, run_id)
+        return run_id
+    return write_ladder_run_id(adapter_dir, source=source, reason="adopted_preexisting_ladder")
+
+
+def invalidate_ladder_run_id(adapter_dir: Path) -> None:
+    """Remove the run-id BEFORE (re)training starts.
+
+    A mid-train crash must never leave a stale id next to partially
+    re-written weights — the adopt path would otherwise resume-skip old
+    probes against NEW weights (the exact mixed-provenance class this
+    round closes).
+    """
+    (adapter_dir / LADDER_RUN_ID_FILENAME).unlink(missing_ok=True)
+
+
 def train_arm_b(
     source: str,
     seed: int,
@@ -594,6 +683,9 @@ def train_arm_b(
 
     adapter_dir = runs_root / f"{source}_seed{seed}" / "adapter"
     adapter_dir.mkdir(parents=True, exist_ok=True)
+    # Provenance: drop any stale run-id BEFORE weights start changing; a fresh
+    # one is minted only after the grid-completeness check passes below.
+    invalidate_ladder_run_id(adapter_dir)
     traj_path = slab_root / "armB_trajectories" / f"{source}_seed{seed}_trajectory.json"
     traj_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -664,6 +756,9 @@ def train_arm_b(
     ]
     if missing:
         raise RuntimeError(f"[{source}] Arm B grid checkpoints missing after training: {missing}")
+    # Ladder now complete + final: stamp its provenance (panel_probe keys its
+    # resume-skip on this id; a future retrain mints a different one).
+    write_ladder_run_id(adapter_dir, source=source, reason="training_complete")
     # Non-blocking sanity (ii): villain in-loop delta >= 5 nat by step 200.
     try:
         traj = json.loads(traj_path.read_text())
@@ -711,17 +806,37 @@ def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow read
     traj_path = slab_root / "armB_trajectories" / f"{source}_seed{seed}_trajectory.json"
     if args.skip_train:
         log.info("[phase=train_b_%s] SKIPPED", source)
+        if adapter_dir.is_dir() and not args.skip_panel_probe:
+            # Resume escape hatch: a pre-existing ladder probed under
+            # --skip-train still needs provenance for panel_probe's
+            # resume-skip (fail-loud there otherwise).
+            cell["arm_b_ladder_run_id"] = ensure_ladder_run_id(adapter_dir, source=source)
     else:
-        adapter_dir, traj_path = train_arm_b(
-            source,
-            seed,
-            pos_pool,
-            args.runs_root,
-            slab_root,
-            args.max_length,
-            params,
-            gpu_id=effective_shard_gpu(args.gpu),
-        )
+        if arm_b_ladder_complete(adapter_dir, traj_path, params.b_grid, params.b_max_steps):
+            # Round-4 fix (#597 attempt-2 failure): a recovery relaunch must
+            # NOT re-train over a completed ladder — bf16 run-to-run
+            # nondeterminism makes the retrain a NEW ladder and silently
+            # invalidates every stored probe against the old one.
+            log.info(
+                "[phase=train_b_%s] SKIPPED (complete ladder present: %d in-budget grid "
+                "checkpoints + in-loop trajectory at %s)",
+                source,
+                sum(1 for s in params.b_grid if s <= params.b_max_steps),
+                traj_path,
+            )
+            cell["arm_b_train_skipped"] = True
+            cell["arm_b_ladder_run_id"] = ensure_ladder_run_id(adapter_dir, source=source)
+        else:
+            adapter_dir, traj_path = train_arm_b(
+                source,
+                seed,
+                pos_pool,
+                args.runs_root,
+                slab_root,
+                args.max_length,
+                params,
+                gpu_id=effective_shard_gpu(args.gpu),
+            )
         cell["arm_b_adapter_dir"] = str(adapter_dir)
         cell["arm_b_trajectory"] = str(traj_path)
         cell["base_side_diagnostic"] = base_side_identity_diagnostic(
