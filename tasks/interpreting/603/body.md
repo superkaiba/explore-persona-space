@@ -4,7 +4,7 @@ title: A source persona's prior on a behavior predicts neither the direction mix
 kind: analysis
 tags: []
 created_at: '2026-06-11T10:48:15Z'
-has_clean_result: false
+has_clean_result: true
 ---
 # A source persona's prior on a behavior predicts neither the direction mix nor the size of its training write on the designed fact-teacher axis (LOW confidence)
 
