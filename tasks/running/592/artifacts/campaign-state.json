@@ -29,7 +29,7 @@
       "hypothesis": "H1-H4 jointly classify flat cells across behaviors (correlational pass; zero GPU)",
       "depends_on": [],
       "gpu_hours_est": 0.0,
-      "status": "filed",
+      "status": "running",
       "child_task": 593,
       "headline": null,
       "confidence": null,
