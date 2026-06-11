@@ -11,12 +11,21 @@ Registered statistics (plan §6, with the §6.7 binding analyzer pins):
 1. Headline (H1): one-sided exact target-level sign-flip permutation over the
    seed-mean paired NEAR−CONTROL differences of the implant-normalized target
    shift, at the headline checkpoint (latest co-passing on the shared grid).
+   A pair that never co-passes is read via the §4.8(c) band-entry fallback —
+   each arm at its own FIRST gate-passing checkpoint (matched dial position,
+   unmatched step), flagged ``unmatched_step`` and counted as SURVIVING;
+   failed-gate is reserved for cells that never pass at ANY checkpoint. A
+   matched-step-only permutation over the co-passing pairs is reported as a
+   sensitivity read whenever fallback pairs exist.
 2. Cross-target sign test (secondary).
 3. Run-noise calibration: the within-condition across-seed gap distribution
-   (12 conditions × 3 seed pairs), computed PER CHECKPOINT (§6.7(c) — gaps
-   vary ~30× across checkpoints; each pair's |d| is calibrated only against
-   same-checkpoint gaps). The pinned null-band statistic is the MEDIAN
-   same-mix gap at the headline checkpoint (§6.7(b), pinned pre-data).
+   (12 conditions × seed pairs), computed PER CHECKPOINT (§6.7(c) — gaps
+   vary ~30× across checkpoints; each pair's |d| is calibrated ONLY against
+   same-mix gaps at that pair's own headline checkpoint(s), and the
+   registered mean-|d|-vs-median comparison is computed WITHIN checkpoint).
+   The pinned null-band statistic is the MEDIAN same-mix gap (§6.7(b),
+   pinned pre-data). Band-entry-fallback pairs use the conservative two-frac
+   convention documented at the calibration block in :func:`analyze_600`.
 4. Locality (H1-locality): per-pair paired differences over the common
    held-out panel; per-target lower-tail percentile, Fisher-combined.
    The §6.7(d) bubble-radius read (paired difference vs distance to the NEAR
@@ -54,7 +63,6 @@ import numpy as np
 from explore_persona_space.experiments.targeted_proximity_600 import (
     BYSTANDER_ARGMAX_CEILING,
     SEED_LEVEL_DG_FLOOR_NATS,
-    SEEDS,
     SOURCE_DG_FLOOR_NATS,
     SOURCE_LOGP_CEILING_EPS_NATS,
     TRAJECTORY_CHECKPOINT_FRACTIONS,
@@ -319,6 +327,33 @@ def _load_distances(layer: int) -> tuple[dict[str, dict[str, float]], list[str]]
                 return load_centered_distance_matrix(path)
             except (KeyError, AssertionError) as e:
                 log.warning("[distances] L%d bundle at %s unusable (%s)", layer, path, e)
+    # Autofetch from the public HF data repo before giving up (closes the
+    # l21-pv-centroid-bundle-not-autofetched concern): the #472 bundles live
+    # under issue472_neg_geometry/geometry/centroids_L<l>.pt and the #505
+    # persona-vectors bundles under issue505_loo_contrastive/geometry/
+    # centroids_pv_L<l>.pt (the producer paths in leave_one_out_505/
+    # build_pv_centroids.py + analyze_expanded.py). The fetch is best-effort
+    # with LOUD logging — on failure the read stays a recorded skip exactly
+    # as before (the L21 read is robustness-only; the headline is
+    # distance-metric-free per plan §4.2).
+    from huggingface_hub import hf_hub_download
+
+    repo_paths = [
+        f"issue472_neg_geometry/geometry/centroids_L{layer}.pt",
+        f"issue505_loo_contrastive/geometry/centroids_pv_L{layer}.pt",
+    ]
+    for repo_path in repo_paths:
+        try:
+            local = hf_hub_download(
+                "superkaiba1/explore-persona-space-data", repo_path, repo_type="dataset"
+            )
+        except Exception as e:
+            log.warning("[distances] HF autofetch of %s failed (%s)", repo_path, e)
+            continue
+        try:
+            return load_centered_distance_matrix(Path(local))
+        except (KeyError, AssertionError) as e:
+            log.warning("[distances] fetched L%d bundle %s unusable (%s)", layer, repo_path, e)
     log.warning("[distances] no usable centroid bundle for layer %d — read skipped", layer)
     return None
 
@@ -333,12 +368,27 @@ def analyze_600(  # noqa: C901  the pre-registered stat battery is one auditable
     analysis_dir: Path,
     figures_dir: Path,
     layers: tuple[int, ...] = (10, 15, 20, 21),
+    seeds: tuple[int, ...] | None = None,
 ) -> dict:
-    """Run the full pre-registered analysis; write analysis.json + figures."""
+    """Run the full pre-registered analysis; write analysis.json + figures.
+
+    ``seeds=None`` (default) infers the realized seed set from the loaded
+    trajectories (union across cells), so the §9 rung-1 descope (dropping
+    seed 219 from EVERY cell) analyzes the actual subset instead of marking
+    all pairs missing. A cell missing a seed that OTHER cells carry still
+    marks its pair ``missing_cells`` (loud, conservative). Pass an explicit
+    subset to override.
+    """
     manifest = load_manifest(manifest_path)
     specs = cell_specs_from_manifest(manifest)
     sweep = load_sweep(sweep_dir)
-    seeds = list(SEEDS)
+    seeds = sorted({s for (_slug, s) in sweep} if seeds is None else seeds)
+    if len(seeds) < 2:
+        log.warning(
+            "[analyze] only %d realized seed(s) — same-mix gap distributions are empty; "
+            "noise-band reads will be None and the outcome lattice INDETERMINATE",
+            len(seeds),
+        )
     analysis_dir.mkdir(parents=True, exist_ok=True)
 
     targets = [t["name"] for t in manifest["targets"]]
@@ -357,6 +407,7 @@ def analyze_600(  # noqa: C901  the pre-registered stat battery is one auditable
     # ── Headline checkpoint per pair + paired DVs. ────────────────────────────
     per_pair: dict[str, dict] = {}
     surviving: list[str] = []
+    fallback_pairs: list[str] = []
     for t in targets:
         near_slug, ctrl_slug = pair_slugs[t]
         missing = [
@@ -371,12 +422,36 @@ def analyze_600(  # noqa: C901  the pre-registered stat battery is one auditable
             }
         )
         entry: dict = {"target": t, "stratum": stratum_of[t], "headline": head}
-        if head["mode"] == "co_passing":
-            frac = head["frac"]
+        if head["mode"] in ("co_passing", "band_entry_fallback"):
+            if head["mode"] == "co_passing":
+                frac_near = frac_ctrl = head["frac"]
+                entry["frac"] = head["frac"]
+                entry["unmatched_step"] = False
+            else:
+                # §4.8(c) band-entry fallback: the pair never co-passes at a
+                # shared checkpoint, so each arm is read at its own FIRST
+                # gate-passing checkpoint — matched dial position, unmatched
+                # step. The pair SURVIVES (flagged ``unmatched_step``);
+                # failed-gate is reserved for a cell that never passes at ANY
+                # checkpoint. Each arm's normalized DV uses its OWN source
+                # shift at its own read frac (the matched-dial-position read).
+                frac_near = float(head["frac_by_slug"][near_slug])
+                frac_ctrl = float(head["frac_by_slug"][ctrl_slug])
+                entry["frac_near"] = frac_near
+                entry["frac_ctrl"] = frac_ctrl
+                entry["unmatched_step"] = True
+                fallback_pairs.append(t)
             rows = []
             for s in seeds:
-                near = cell_dvs(sweep[(near_slug, s)], frac, t)
-                ctrl = cell_dvs(sweep[(ctrl_slug, s)], frac, t)
+                near = cell_dvs(sweep[(near_slug, s)], frac_near, t)
+                ctrl = cell_dvs(sweep[(ctrl_slug, s)], frac_ctrl, t)
+                if near is None or ctrl is None:
+                    raise AssertionError(
+                        f"[{t}] gate-passing read missing at seed {s} "
+                        f"(near@{frac_near}={near is not None}, ctrl@{frac_ctrl}="
+                        f"{ctrl is not None}) — gates passed but DV absent; "
+                        "trajectory file is inconsistent."
+                    )
                 rows.append(
                     {
                         "seed": s,
@@ -392,7 +467,6 @@ def analyze_600(  # noqa: C901  the pre-registered stat battery is one auditable
                         "d_source_dg": near["source_dg"] - ctrl["source_dg"],
                     }
                 )
-            entry["frac"] = frac
             entry["per_seed"] = rows
             entry["seed_mean_d_normalized"] = float(np.mean([r["d_normalized"] for r in rows]))
             entry["seed_mean_d_delta_g"] = float(np.mean([r["d_delta_g"] for r in rows]))
@@ -409,41 +483,139 @@ def analyze_600(  # noqa: C901  the pre-registered stat battery is one auditable
         per_pair[t] = entry
 
     k = len(surviving)
+    # §4.8(c): failed-gate = never-passing-at-any-checkpoint (or missing cells)
+    # ONLY — band-entry-fallback pairs are surviving, never failed-gate, and
+    # never feed the ≥3-failed kill criterion.
     failed_pairs = [t for t in targets if t not in surviving]
 
+    def _read_fracs(entry: dict) -> tuple[float, float]:
+        """The (near, ctrl) read checkpoints for a surviving pair."""
+        if entry.get("unmatched_step"):
+            return entry["frac_near"], entry["frac_ctrl"]
+        return entry["frac"], entry["frac"]
+
     # ── Headline permutation + sign test (normalized DV). ────────────────────
+    # PRIMARY: all surviving pairs, including flagged band-entry-fallback
+    # reads — §4.8(c) defines the fallback read as the pair's headline read,
+    # and H1 is registered on the §4.8 headline read. SENSITIVITY (reported
+    # whenever fallback pairs exist): the permutation restricted to the
+    # matched-step (co-passing) pairs only — the round-1 review-reconciliation
+    # convention — so both conventions are visible in the analysis JSON.
     seed_mean_d = [per_pair[t]["seed_mean_d_normalized"] for t in surviving]
     headline = sign_flip_permutation(seed_mean_d) if surviving else None
     sign = sign_test(seed_mean_d) if surviving else None
+    matched_step_pairs = [t for t in surviving if not per_pair[t]["unmatched_step"]]
+    headline_matched_step_only = (
+        sign_flip_permutation([per_pair[t]["seed_mean_d_normalized"] for t in matched_step_pairs])
+        if fallback_pairs and matched_step_pairs
+        else None
+    )
 
-    # ── Run-noise calibration (per checkpoint; pinned statistic at headline). ─
+    # ── Run-noise calibration (§6.7(b)/(c) binding pins). ─────────────────────
+    # §6.7(b): the pinned null-band statistic is the MEDIAN same-mix gap
+    # (matching H1's effect-size bar), computed here BEFORE data lands.
+    # §6.7(c): same-mix gaps vary ~30× across checkpoints, so each pair's |d|
+    # is calibrated ONLY against same-checkpoint same-mix gaps:
+    #   • co-passing pair → band = median same-mix gap at THAT pair's own
+    #     headline frac; the registered mean-|d|-vs-median comparison is
+    #     computed WITHIN each checkpoint group (co-passing pairs grouped by
+    #     their headline frac) — never a mixed-frac effect vs a single band.
+    #   • band-entry-fallback pair (NEAR/CONTROL read at different fracs — no
+    #     single shared checkpoint exists) → CONVENTION, recorded in the
+    #     analysis JSON: the pair counts "above" the band only if |d| exceeds
+    #     the LARGER of its two read-frac medians (conservative for the
+    #     Success conjunct) and "within" only if |d| sits at/below the
+    #     SMALLER (conservative for the promotable-Null conjunct); in between
+    #     → "indeterminate", which satisfies NEITHER aggregate bool.
+    #   • effect_above_noise_band  = every checkpoint group's mean |d| > its
+    #     own median gap AND every fallback pair "above".
+    #     effect_within_noise_band = every group's mean |d| ≤ its own median
+    #     gap AND every fallback pair "within". Not complements when groups
+    #     disagree / a fallback pair is in-between → the §6.7(b) outcome
+    #     lattice lands INDETERMINATE with components reported separately.
+    #   • With all pairs co-passing at ONE frac this reduces exactly to the
+    #     single-band behavior (one group; above/within are complements).
     persona_by_slug = {s.slug: s.target for s in specs}
     all_slugs = [s.slug for s in specs]
     noise_by_frac = {
         f"{frac:.2f}": run_noise_gaps(sweep, all_slugs, seeds, frac, persona_by_slug)
         for frac in TRAJECTORY_CHECKPOINT_FRACTIONS
     }
-    headline_fracs = sorted({per_pair[t]["frac"] for t in surviving}, reverse=True)
-    headline_frac = headline_fracs[0] if headline_fracs else None
-    noise_at_headline = noise_by_frac.get(f"{headline_frac:.2f}", []) if headline_frac else []
-    median_gap = float(np.median(noise_at_headline)) if noise_at_headline else None
-    mean_abs_d = float(np.mean(np.abs(seed_mean_d))) if seed_mean_d else None
+
+    def _median_gap_at(frac: float) -> float | None:
+        gaps = noise_by_frac.get(f"{frac:.2f}", [])
+        return float(np.median(gaps)) if gaps else None
+
+    per_pair_bands: dict[str, dict] = {}
+    for t in surviving:
+        entry = per_pair[t]
+        abs_d = abs(entry["seed_mean_d_normalized"])
+        read_fracs = sorted(set(_read_fracs(entry)))
+        medians = {f"{fr:.2f}": _median_gap_at(fr) for fr in read_fracs}
+        vals = [v for v in medians.values() if v is not None]
+        if len(vals) < len(medians):
+            status = "no_band"  # a read frac has no same-mix gaps (e.g. single seed)
+        elif entry["unmatched_step"]:
+            band_max, band_min = max(vals), min(vals)
+            status = (
+                "above"
+                if abs_d > band_max
+                else ("within" if abs_d <= band_min else "indeterminate")
+            )
+        else:
+            status = "above" if abs_d > vals[0] else "within"
+        per_pair_bands[t] = {
+            "read_fracs": read_fracs,
+            "median_same_mix_gap_by_frac": medians,
+            "abs_seed_mean_d": abs_d,
+            "unmatched_step": entry["unmatched_step"],
+            "band_status": status,
+        }
+
+    # Registered mean-|d|-vs-median comparison, computed WITHIN checkpoint
+    # (co-passing pairs grouped by headline frac; fallback pairs are judged
+    # per-pair above and EXCLUDED from the frac groups — including one would
+    # mix two checkpoints into a single-frac comparison).
+    frac_groups: dict[str, list[str]] = {}
+    for t in matched_step_pairs:
+        frac_groups.setdefault(f"{per_pair[t]['frac']:.2f}", []).append(t)
+    within_checkpoint: dict[str, dict] = {}
+    for frac_key in sorted(frac_groups):
+        ts = frac_groups[frac_key]
+        gaps = noise_by_frac.get(frac_key, [])
+        m_gap = float(np.median(gaps)) if gaps else None
+        m_abs = float(np.mean([abs(per_pair[t]["seed_mean_d_normalized"]) for t in ts]))
+        within_checkpoint[frac_key] = {
+            "pairs": ts,
+            "mean_abs_d": m_abs,
+            "median_same_mix_gap": m_gap,
+            "above": (m_abs > m_gap) if m_gap is not None else None,
+        }
+
+    group_aboves = [g["above"] for g in within_checkpoint.values()]
+    fb_statuses = [per_pair_bands[t]["band_status"] for t in fallback_pairs]
+    bands_known = bool(surviving) and None not in group_aboves and "no_band" not in fb_statuses
     effect_above_noise = (
-        mean_abs_d > median_gap if (mean_abs_d is not None and median_gap is not None) else None
+        (all(group_aboves) and all(s == "above" for s in fb_statuses)) if bands_known else None
     )
+    effect_within_noise = (
+        (not any(group_aboves) and all(s == "within" for s in fb_statuses)) if bands_known else None
+    )
+    mean_abs_d = float(np.mean(np.abs(seed_mean_d))) if seed_mean_d else None  # descriptive
 
     # ── Locality (H1-locality) over the common held-out panel. ───────────────
     locality: dict[str, dict] = {}
     percentile_ps: list[float] = []
     for t in surviving:
         near_slug, ctrl_slug = pair_slugs[t]
-        frac = per_pair[t]["frac"]
+        # Fallback pairs: each arm read at its own §4.8(c) read frac.
+        frac_near, frac_ctrl = _read_fracs(per_pair[t])
         d_by_persona: dict[str, float] = {}
         for p in common_panel:
             vals = []
             for s in seeds:
-                near = cell_dvs(sweep[(near_slug, s)], frac, p)
-                ctrl = cell_dvs(sweep[(ctrl_slug, s)], frac, p)
+                near = cell_dvs(sweep[(near_slug, s)], frac_near, p)
+                ctrl = cell_dvs(sweep[(ctrl_slug, s)], frac_ctrl, p)
                 if near is None or ctrl is None:
                     continue
                 vals.append(near["normalized"] - ctrl["normalized"])
@@ -496,9 +668,18 @@ def analyze_600(  # noqa: C901  the pre-registered stat battery is one auditable
         margins = [per_pair[t]["seed_mean_d_margin"] for t in surviving]
         if all(m is not None for m in margins):
             robustness["eos_margin"] = sign_flip_permutation(margins)
-        # Headline re-read at the other co-passing shared checkpoints.
+        # Headline re-read at the other shared checkpoints. A frac is skipped
+        # as "the headline" only when EVERY surviving pair co-passes at that
+        # single frac (the expected all-terminal case); with mixed headline
+        # fracs / fallback pairs every shared frac is a re-read.
+        co_fracs = {per_pair[t]["frac"] for t in matched_step_pairs}
+        common_headline_frac = (
+            next(iter(co_fracs))
+            if len(co_fracs) == 1 and len(matched_step_pairs) == len(surviving)
+            else None
+        )
         for frac in TRAJECTORY_CHECKPOINT_FRACTIONS:
-            if headline_frac is not None and abs(frac - headline_frac) < 1e-6:
+            if common_headline_frac is not None and abs(frac - common_headline_frac) < 1e-6:
                 continue
             ds = []
             for t in surviving:
@@ -523,7 +704,7 @@ def analyze_600(  # noqa: C901  the pre-registered stat battery is one auditable
     manipulation: dict[str, dict] = {}
     for t in surviving:
         near_slug, _ctrl_slug = pair_slugs[t]
-        frac = per_pair[t]["frac"]
+        frac, _frac_ctrl = _read_fracs(per_pair[t])  # NEAR-cell reads → near read frac
         t_row = next(x for x in manifest["targets"] if x["name"] == t)
         nn_name = t_row["near"]["name"]
         # The NEAR negative's OWN normalized DV in its cell (it is trained-on
@@ -563,29 +744,49 @@ def analyze_600(  # noqa: C901  the pre-registered stat battery is one auditable
     outcome = _classify_outcome(
         headline=headline,
         effect_above_noise=effect_above_noise,
+        effect_within_noise=effect_within_noise,
         locality_fisher=locality_fisher,
         k_surviving=k,
         n_targets=len(targets),
+        n_fallback=len(fallback_pairs),
     )
 
     result = {
-        "schema_version": "i600_analysis_v1",
+        "schema_version": "i600_analysis_v2",
         "null_band_statistic": NULL_BAND_STATISTIC,
         "n_trajectories": len(sweep),
+        "seeds_realized": seeds,
         "targets": targets,
         "surviving_pairs": surviving,
+        "fallback_pairs": fallback_pairs,
         "failed_gate_pairs": failed_pairs,
         "k_surviving": k,
         "k_demotion_applied": k <= K_DEMOTION_THRESHOLD,
-        "headline_checkpoint_frac": headline_frac,
+        "headline_read_by_pair": {
+            t: {
+                "unmatched_step": per_pair[t]["unmatched_step"],
+                "fracs": list(_read_fracs(per_pair[t])),
+            }
+            for t in surviving
+        },
         "per_pair": per_pair,
         "headline_permutation": headline,
+        "headline_permutation_matched_step_only": headline_matched_step_only,
         "sign_test": sign,
         "run_noise": {
             "gaps_by_frac": noise_by_frac,
-            "median_same_mix_gap_at_headline": median_gap,
+            "calibration_convention": (
+                "§6.7(c) per-pair same-checkpoint: co-passing pair |d| vs the median "
+                "same-mix gap at its own headline frac, aggregated within checkpoint "
+                "groups; band-entry-fallback pair counts above-band only beyond the "
+                "LARGER of its two read-frac medians and within-band only at/below "
+                "the SMALLER (in between = indeterminate)"
+            ),
+            "per_pair_bands": per_pair_bands,
+            "within_checkpoint_groups": within_checkpoint,
             "mean_abs_paired_difference": mean_abs_d,
             "effect_above_noise_band": effect_above_noise,
+            "effect_within_noise_band": effect_within_noise,
         },
         "locality": {
             "common_panel": common_panel,
@@ -630,6 +831,7 @@ def analyze_600(  # noqa: C901  the pre-registered stat battery is one auditable
         per_pair=per_pair,
         pair_slugs=pair_slugs,
         slot_of=slot_of,
+        seeds=seeds,
         figures_dir=figures_dir,
     )
     return result
@@ -647,11 +849,21 @@ def _classify_outcome(
     *,
     headline: dict | None,
     effect_above_noise: bool | None,
+    effect_within_noise: bool | None,
     locality_fisher: dict | None,
     k_surviving: int,
     n_targets: int,
+    n_fallback: int,
 ) -> dict:
-    """§7 + §6.7(a)/(b): Success / Partial / Null / INDETERMINATE / failed-gate."""
+    """§7 + §6.7(a)/(b): Success / Partial / Null / INDETERMINATE / failed-gate.
+
+    ``k_surviving`` counts band-entry-fallback pairs as surviving (§4.8(c):
+    failed-gate = never-passing-at-any-checkpoint only, so the ≥3-failed kill
+    criterion fires only on genuinely failed / missing pairs). Success gates
+    on ``effect_above_noise`` and the promotable Null on ``effect_within_
+    noise`` — under per-checkpoint calibration these are NOT complements, and
+    a band disagreement across checkpoint groups lands INDETERMINATE.
+    """
     if headline is None or k_surviving == 0:
         return {"label": "failed_gate", "reason": "no surviving pairs"}
     if n_targets - k_surviving >= 3:
@@ -670,22 +882,31 @@ def _classify_outcome(
         # this as a global mix effect (a true suppression bubble dilutes the
         # target's percentile).
         label = "partial_significant_but_locality_failed_CONSULT_BUBBLE_RADIUS"
-    elif (not sig) and effect_above_noise is False and not demoted:
+    elif (not sig) and effect_within_noise and not demoted:
         label = "null_promotable_bounded"
     else:
         label = "indeterminate"
+    note = (
+        "k ≤ 4 → permutation descriptive; magnitude-vs-noise carries; NO promotable "
+        "bounded-null language (§6.7(a))."
+        if demoted
+        else "components reported separately for any uncovered lattice cell (§6.7(b))."
+    )
+    if n_fallback:
+        note += (
+            f" {n_fallback} pair(s) read via the §4.8(c) band-entry fallback (matched dial "
+            "position, unmatched step) — see headline_permutation_matched_step_only for the "
+            "matched-step-only sensitivity."
+        )
     return {
         "label": label,
         "permutation_p": p,
         "permutation_demoted": demoted,
         "effect_above_noise_band": effect_above_noise,
+        "effect_within_noise_band": effect_within_noise,
+        "n_fallback_pairs": n_fallback,
         "locality_p": locality_fisher["p"] if locality_fisher else None,
-        "note": (
-            "k ≤ 4 → permutation descriptive; magnitude-vs-noise carries; NO promotable "
-            "bounded-null language (§6.7(a))."
-            if demoted
-            else "components reported separately for any uncovered lattice cell (§6.7(b))."
-        ),
+        "note": note,
     }
 
 
@@ -701,6 +922,7 @@ def _make_figures(  # noqa: C901  one figure block per registered read; splittin
     per_pair: dict,
     pair_slugs: dict,
     slot_of: dict,
+    seeds: list[int],
     figures_dir: Path,
 ) -> None:
     import matplotlib
@@ -723,36 +945,50 @@ def _make_figures(  # noqa: C901  one figure block per registered read; splittin
     stratum_of = {t: per_pair[t]["stratum"] for t in surviving}
 
     # ── Hero: paired dumbbell, one panel per stratum. ────────────────────────
+    # Band shading is PER PAIR (§6.7(c) per-checkpoint calibration): each
+    # target's band is the median same-mix gap at ITS OWN read frac(s) (the
+    # conservative larger one for band-entry-fallback pairs, drawn dashed and
+    # starred in labels).
     fig, axes = plt.subplots(1, 3, figsize=(12, 4.2), sharey=True)
-    median_gap = result["run_noise"]["median_same_mix_gap_at_headline"]
+    per_pair_bands = result["run_noise"]["per_pair_bands"]
+    fallback = set(result["fallback_pairs"])
     accent = paper_palette_role("accent")
     neutral = paper_palette_role("neutral")
     for ax, stratum in zip(axes, strata, strict=True):
         ts = [t for t in surviving if stratum_of[t] == stratum]
         for t in ts:
+            connector = "--o" if t in fallback else "-o"
             for row in per_pair[t]["per_seed"]:
                 near_v = row["near"]["normalized"]
                 ctrl_v = row["ctrl"]["normalized"]
                 color = accent if near_v < ctrl_v else neutral
-                ax.plot([0, 1], [near_v, ctrl_v], "-o", color=color, alpha=0.65, ms=4, lw=1.2)
-        if median_gap is not None and ts:
-            mids = [
-                0.5 * (row["near"]["normalized"] + row["ctrl"]["normalized"])
-                for t in ts
-                for row in per_pair[t]["per_seed"]
+                ax.plot([0, 1], [near_v, ctrl_v], connector, color=color, alpha=0.65, ms=4, lw=1.2)
+            band_meds = [
+                v
+                for v in per_pair_bands[t]["median_same_mix_gap_by_frac"].values()
+                if v is not None
             ]
-            center = float(np.mean(mids))
-            ax.axhspan(center - median_gap / 2, center + median_gap / 2, alpha=0.12, color="gray")
+            if band_meds:
+                band = max(band_meds)
+                mids = [
+                    0.5 * (row["near"]["normalized"] + row["ctrl"]["normalized"])
+                    for row in per_pair[t]["per_seed"]
+                ]
+                center = float(np.mean(mids))
+                ax.axhspan(center - band / 2, center + band / 2, alpha=0.10, color="gray")
         ax.set_xticks([0, 1])
         ax.set_xticklabels(["Nearest-neighbor\nnegative", "Distance-matched\nfar control"])
-        ax.set_title(f"{stratum}-villain targets: {', '.join(ts)}", fontsize=9)
+        labels = [t + (" *" if t in fallback else "") for t in ts]
+        ax.set_title(f"{stratum}-villain targets: {', '.join(labels)}", fontsize=9)
     axes[0].set_ylabel("Implant-normalized target shift\n(target ΔlogP ÷ source ΔlogP)")
     headline = result["headline_permutation"]
-    fig.suptitle(
+    suptitle = (
         f"Paired NEAR vs CONTROL target leakage — permutation p = {headline['p_one_sided']:.3f} "
-        f"(T = {headline['t_obs']:+.4f}); shaded band = median same-mix seed gap",
-        fontsize=10,
+        f"(T = {headline['t_obs']:+.4f}); shaded band = per-pair median same-mix seed gap"
     )
+    if fallback:
+        suptitle += "; * / dashed = band-entry fallback read (unmatched step)"
+    fig.suptitle(suptitle, fontsize=10)
     fig.tight_layout()
     savefig_paper(fig, "hero_paired_dumbbell", dir=figures_dir)
     plt.close(fig)
@@ -772,7 +1008,7 @@ def _make_figures(  # noqa: C901  one figure block per registered read; splittin
     fig, axes = plt.subplots(2, 3, figsize=(13, 7), sharex=True)
     for ax, t in zip(axes.flat, surviving, strict=False):
         for slug, ls in ((pair_slugs[t][0], "-"), (pair_slugs[t][1], "--")):
-            for seed in SEEDS:
+            for seed in seeds:
                 payload = sweep.get((slug, seed))
                 if payload is None:
                     continue
@@ -848,9 +1084,13 @@ def _make_figures(  # noqa: C901  one figure block per registered read; splittin
             ax.scatter([i], [float(np.mean(vals))], marker="_", s=300, color="black")
         ax.axhline(0, color="gray", lw=0.8)
         ax.set_xticks(range(len(surviving)))
-        ax.set_xticklabels(surviving, rotation=30, ha="right", fontsize=8)
+        scatter_labels = [t + (" *" if t in fallback else "") for t in surviving]
+        ax.set_xticklabels(scatter_labels, rotation=30, ha="right", fontsize=8)
         ax.set_ylabel(f"Paired difference, {label}")
-    fig.suptitle("Per-seed paired differences (negative = suppression next to the negative)")
+    scatter_title = "Per-seed paired differences (negative = suppression next to the negative)"
+    if fallback:
+        scatter_title += " — * = band-entry fallback read (unmatched step)"
+    fig.suptitle(scatter_title)
     fig.tight_layout()
     savefig_paper(fig, "paired_differences_per_seed", dir=figures_dir)
     plt.close(fig)
@@ -867,12 +1107,22 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--sweep-dir", type=Path, default=Path("eval_results/issue_600/sweep"))
     ap.add_argument("--analysis-dir", type=Path, default=Path("eval_results/issue_600/analysis"))
     ap.add_argument("--figures-dir", type=Path, default=Path("figures/issue_600"))
+    ap.add_argument(
+        "--seeds",
+        type=str,
+        default=None,
+        help=(
+            "Comma-separated seed subset, e.g. '42,137' under the §9 rung-1 descope. "
+            "Default: infer the realized seed set from the loaded trajectories."
+        ),
+    )
     args = ap.parse_args(argv)
     analyze_600(
         manifest_path=args.manifest,
         sweep_dir=args.sweep_dir,
         analysis_dir=args.analysis_dir,
         figures_dir=args.figures_dir,
+        seeds=(tuple(int(x) for x in args.seeds.split(",")) if args.seeds else None),
     )
     return 0
 
