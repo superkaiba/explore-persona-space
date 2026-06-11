@@ -360,3 +360,4 @@
 {"ts": "2026-06-11T21:19:07Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 1 complete (steps=['train', 'xeval'], cells=all, shard=6/8, seed=1042, smoke=False, dry_run=False) in 542s"}
 {"ts": "2026-06-11T21:19:10Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 1 complete (steps=['train', 'xeval'], cells=all, shard=3/8, seed=1042, smoke=False, dry_run=False) in 543s"}
 {"ts": "2026-06-11T21:19:13Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 1 complete (steps=['train', 'xeval'], cells=all, shard=0/8, seed=1042, smoke=False, dry_run=False) in 559s"}
+{"ts": "2026-06-11T21:19:20Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: (start) -> done", "phase": "done", "pod": "pod-537"}
