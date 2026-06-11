@@ -3553,8 +3553,8 @@
     "590": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/590",
-      "status": "proposed",
+      "path": "tasks/archived/590",
+      "status": "archived",
       "title": "Sycophancy dose-response: extend training past the parent depth and measure whether bystander leakage increases"
     },
     "6": {
