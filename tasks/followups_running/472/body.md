@@ -2,7 +2,8 @@
 title: More contrastive negatives raise bystander marker log-prob ~50x more than far-vs-near
   placement does (LOW confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-02T20:04:26Z'
 has_clean_result: true
 parent_id: 411
