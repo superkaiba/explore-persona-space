@@ -3641,7 +3641,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/600",
       "status": "interpreting",
-      "title": "A contrastive negative parked next to a specific bystander does not detectably reduce that bystander's marker leakage \u2014 the paired effect sits inside same-mix run noise at this anchor (MODERATE confidence)"
+      "title": "Parking a contrastive negative next to a specific bystander does not detectably reduce that bystander's marker leakage (MODERATE confidence)"
     },
     "601": {
       "goal": "Determine which mechanism sets the source-implant level in #472's contrastive-negative dose-response \u2014 per-batch composition equilibrium (leakage-awakened negative feedback), a schedule-horizon-scaled growth window, or cross-context coupling scaling with update count \u2014 via zero-training four-float reads of existing adapters, a schedule-matched companion arm, fixed-ratio scaling, a negatives-only control, and a dense early logit trajectory that dates the arrest and tests for log-Z compression.",
