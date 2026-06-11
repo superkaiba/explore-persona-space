@@ -26,7 +26,7 @@
 
 \item \textbf{Pretraining learns a dictionary of behaviors.} The model acquires a collection of behaviors $b$ --- sycophancy, marker emission, emergent misalignment --- each carried by a direction in the residual stream at some layer. The direction plays two roles that should be named separately: \emph{adding} a steering vector $d_b$ elicits the behavior; \emph{projecting} the state onto a read-out direction $r_b$ measures it. In the idealized case one direction plays both roles ($d_b = r_b$); they can come apart, with a steering vector nearly orthogonal to the read-out that downstream circuitry converts (the router case).
 
-\item \textbf{The state under a context is a weighted sum over the dictionary.} A context $c$ is summarized by a vector $\vc$ read while the model processes it. The model's own context-to-state map $f$ then puts the activations somewhere, and that somewhere decomposes approximately over the dictionary:
+\item \textbf{The state under a context is a weighted sum over the dictionary.} A context $c$ is summarized by a vector $\vc$ read while the model processes it. (Most generally the context representation is some function of the \emph{KV cache} --- that is all the response computation ever sees of $c$ --- and the pooled $\vc$ is the cheapest member of that family; whatever the gate later misses traces back to what the pooling threw away.) The model's own context-to-state map $f$ then puts the activations somewhere, and that somewhere decomposes approximately over the dictionary:
 \begin{equation*}
 f(c) \;\approx\; \sum_b \alpha_b(c)\, d_b \;+\; \text{residual}.
 \end{equation*}
@@ -60,7 +60,7 @@ Training on $(c', b)$ drags the source state $v_{b'} = f(c')$ toward the behavio
 \item \emph{down the columns} (across contexts): every context moves in proportion to its gate --- that smear is \textbf{leakage} (P2);
 \item \emph{across the rows} (across behaviors): every behavior moves in proportion to its slope $\langle r_b, w \rangle$ --- that smear is \textbf{cross-behavior transfer} (P6).
 \end{itemize}
-Leakage and cross-behavior transfer are the same event seen along the two axes of the table.
+Leakage and cross-behavior transfer are the same event seen along the two axes of the table. This also gives leakage a clean definition in dictionary coordinates: leakage \emph{is} off-target table movement --- coefficients $\alpha_b(c)$ changing for behavior--context pairs the fine-tune never targeted. The intended edit is one cell; everything else that moves is generalization nobody asked for.
 
 \section{Cast of characters}
 
@@ -83,6 +83,17 @@ $g(c)$ & scalar & the gate: \emph{who} leaks & no (computed from base $\vc$) \\
 \bottomrule
 \end{tabular}
 \end{center}
+
+\section{The best-effort question}
+
+A way to pose the program's target without committing to any particular gate: drop all restrictions. Out of every possible embedding of contexts --- nonlinear, any function of the KV cache --- pick the one most discriminatory for the behavior at hand: the best detector the base model's activations can support of ``should this context express $b$?''. Suppose fine-tuning could gate the behavior on that best embedding. Is there still leakage?
+
+\begin{itemize}
+\item \textbf{If leakage is inevitable even at best effort, the reason has to be named.} The candidate reason: lazy edits have limited expressivity. A small weight update can only gate on directions the base model already represents (approximately) linearly; if separating the source from the bystanders requires a nonlinear function of the KV cache that the base model never linearized, no small edit can read it. Leakage would then be forced by the editing mechanism rather than by information --- the contexts are distinguishable in principle, just not by anything a rank-limited edit can see. On this view, inevitable leakage $=$ the gap between the best discriminator and the best discriminator expressible as a linear gate on frozen features.
+\item \textbf{If leakage is evitable, the answer should be constructive: exhibit the edit.} The contrastive multi-pair edit is the linear-case candidate: solving the kernel system subtracts the common mode of near-parallel context keys (cosine $\approx 0.92$ across persona prompts) and zeroes the gate on the enumerated negatives. Its known limitation is exactly the right test: protection extends only to (roughly) the span of the negatives trained against, so leakage to contexts \emph{off} the panel measures how far best effort actually reaches.
+\end{itemize}
+
+Assuming linear embeddings sharpens the question into geometry. A rank-one edit's gate is $g(c) = \langle k, \vc \rangle$ for some effective key $k$; zero leakage to every bystander while still firing on the source requires $k$ orthogonal to all bystander keys but not to $v_{c'}$ --- possible exactly when the source key has a usable component outside the bystanders' span. So in the linear world: leakage is evitable iff the source context is linearly separable from the bystander distribution in key space; the optimal key is the discriminant direction; and contrastive negatives are an estimator of that direction. What stays open is the continuum problem: ``all contexts'' is not an enumerable panel, and whether a discriminant fitted against $K$ negatives generalizes to the rest of context space is an empirical question, not a theorem.
 
 \section{Where the cartoon bends}
 
