@@ -81,15 +81,17 @@ FIG_DIR_DEFAULT = PROJECT_ROOT / "figures/issue_604"
 K_VALUES = (1, 2, 4, 8)
 EXCLUDED_LINES = ("i541",)  # own-bank line; sources not in the Phase B bundle
 
+# Reader-facing panel titles: plain-English line names only (no issue IDs in
+# rendered text — same convention as the 8 parent figures after round-2 review).
 GROUP_LABELS = {
-    "dial527": "shallow dial (#527)",
-    "dial538": "deep dial (#538)",
-    "dial550": "mid dial (#550)",
-    "i474_pos": "epoch ladder, positives-only (#474)",
-    "i474_loc": "epoch ladder, contrastive (#474)",
-    "i519": "saturated endpoint (#519)",
-    "i518": "cross-behavior (#518)",
-    "i521": "EM no-source control (#521, scale ref)",
+    "dial527": "dose dial, shallow window",
+    "dial538": "dose dial, deep window",
+    "dial550": "dose dial, mid window",
+    "i474_pos": "epoch ladder, positives-only",
+    "i474_loc": "epoch ladder, contrastive",
+    "i519": "saturated endpoint",
+    "i518": "cross-behavior",
+    "i521": "EM no-source control (scale ref)",
 }
 
 
