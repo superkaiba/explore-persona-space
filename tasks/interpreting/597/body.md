@@ -1,6 +1,8 @@
 ---
-title: 'Training dynamics of source implantation vs bystander leakage: positive-only
-  vs contrastive at matched recipe, full bystander panel probed per checkpoint'
+title: Marker implants lift most bystander personas nearly in lockstep with the source
+  from the first observable training steps; contrastive negatives cap and partially
+  reverse the shared rise rather than suppressing bystanders below base (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-11T08:02:39Z'
