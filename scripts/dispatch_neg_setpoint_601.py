@@ -62,7 +62,19 @@ log = logging.getLogger("dispatch_neg_setpoint_601")
 LOG_DIR = Path("/workspace/logs")  # overridden by --log-dir.
 SMOKE_CELL = "ratio4to1_100p400n"
 SMOKE_SEED = 42
-INLOOP_VS_ONPOLICY_TOL_NATS = 1.0  # plan §4 smoke assert.
+# Round-6 amendment of the plan §4/§10 smoke assert ("in-loop vs on-policy
+# <= 1 nat"): that form compared the LIVE rsLoRA training gauge (alpha/sqrt(r)
+# ~= 11.31; train/sft.py keeps use_rslora=True) against the STAGED classic
+# alpha/r = 2.0 on-policy read and fails BY CONSTRUCTION on any cell where the
+# implant took (live-vs-classic gap 5-15 nats). The assert's INTENT —
+# eval-path integrity, the #534 adapter-not-applied class — is preserved by a
+# SAME-GAUGE pair: on-policy vLLM source ΔG vs the SAME terminal checkpoint's
+# Phase-B teacher-forced HF read, both staged classic, both already in
+# trajectory.json. Tolerance = plan §12 assumption-16's dense-vs-on-policy
+# admission threshold (2 nats; mirrors ONPOLICY_ADMISSION_TOL_NATS in
+# i601_analyze.py). The in-loop band value is recorded telemetry only (live
+# gauge — never asserted cross-gauge).
+ONPOLICY_VS_TF_SAMEGAUGE_TOL_NATS = 2.0
 
 
 def _git_sha() -> str:
@@ -314,8 +326,15 @@ def _smoke_gate(slab_root: Path, runs_root: Path) -> dict:
          worker also hard-asserts this in-process — this re-reads the index).
       2. four-float fields present in BOTH the on-policy trajectory.json and
          the in-loop band trajectory (storage contract, incident #530).
-      3. in-loop (teacher-forced, Q_train) vs on-policy (Q_eval) terminal
-         source ΔG agree within 1 nat (#534 adapter-application class).
+      3. SAME-GAUGE eval-path integrity (#534 adapter-application class):
+         on-policy (vLLM, staged classic) terminal source ΔG vs the SAME
+         terminal checkpoint's Phase-B teacher-forced HF read (also staged
+         classic) agree within 2 nats (plan §12 assumption-16 admission
+         threshold). Round-6 amendment of the plan §4/§10 "in-loop vs
+         on-policy <= 1 nat" form, which crossed gauges (live rsLoRA vs
+         staged classic) and failed by construction on a working implant.
+         The in-loop band terminal value is RECORDED (gauge-labeled
+         telemetry) but never asserted cross-gauge.
       4. per-row-type CE probe logged >= 1 record with BOTH sides non-null
          (plan-declared guard telemetry must demonstrably function).
     """
@@ -362,19 +381,39 @@ def _smoke_gate(slab_root: Path, runs_root: Path) -> dict:
     )
     out["checks"]["inloop_four_float"] = {"n_records": n_band, "ok": bool(band_four)}
 
-    # 3. in-loop vs on-policy terminal source ΔG within 1 nat.
-    inloop_delta = band["delta_nats"][-1] if band.get("delta_nats") else None
+    # 3. SAME-GAUGE eval-path integrity: on-policy vLLM source ΔG vs the SAME
+    #    terminal checkpoint's Phase-B teacher-forced HF read, both from
+    #    trajectory.json, both staged classic alpha/r (round-6 amendment —
+    #    see the ONPOLICY_VS_TF_SAMEGAUGE_TOL_NATS comment at module top).
     onpolicy_delta = ss.get("delta_g_mean")
-    agree = (
-        inloop_delta is not None
-        and onpolicy_delta is not None
-        and abs(inloop_delta - onpolicy_delta) <= INLOOP_VS_ONPOLICY_TOL_NATS
+    tf_hf_g = ss.get("logp_hf_g_mean")
+    tf_hf_b = ss.get("logp_hf_b_mean")
+    tf_delta = (
+        float(tf_hf_g) - float(tf_hf_b) if tf_hf_g is not None and tf_hf_b is not None else None
     )
-    out["checks"]["inloop_vs_onpolicy"] = {
-        "inloop_terminal_delta": inloop_delta,
+    agree = (
+        onpolicy_delta is not None
+        and tf_delta is not None
+        and abs(onpolicy_delta - tf_delta) <= ONPOLICY_VS_TF_SAMEGAUGE_TOL_NATS
+    )
+    out["checks"]["onpolicy_vs_tf_same_gauge"] = {
         "onpolicy_terminal_delta": onpolicy_delta,
-        "tol_nats": INLOOP_VS_ONPOLICY_TOL_NATS,
+        "tf_hf_terminal_delta": tf_delta,
+        "tol_nats": ONPOLICY_VS_TF_SAMEGAUGE_TOL_NATS,
+        "gauge": "staged classic alpha/r on BOTH sides (use_rslora_applied=False)",
         "ok": bool(agree),
+    }
+    # In-loop band terminal ΔG: RECORDED TELEMETRY ONLY. The in-loop probe
+    # reads the LIVE training model (rsLoRA alpha/sqrt(r)); asserting it
+    # against the staged classic reads is the cross-gauge comparison the
+    # round-6 fix retired — on the same weights the two gauges agree within
+    # ~1 nat only when the implant did nothing.
+    inloop_delta = band["delta_nats"][-1] if band.get("delta_nats") else None
+    out["checks"]["inloop_terminal_telemetry"] = {
+        "inloop_terminal_delta": inloop_delta,
+        "gauge": band.get("gauge")
+        or {"note": "live-training-model (rsLoRA alpha/sqrt(r)); pre-round-6 band JSON"},
+        "asserted": False,
     }
 
     # 4. row-type CE probe telemetry functioned.

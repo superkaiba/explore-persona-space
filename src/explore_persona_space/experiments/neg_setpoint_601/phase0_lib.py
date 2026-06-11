@@ -145,7 +145,10 @@ def terminal_source_stats(trajectory: dict) -> dict:
         "delta_g": float(ss["delta_g_mean"]),
         "delta_z_marker": float(ss["delta_z_marker_mean"]),
         "delta_margin": float(delta_margin),
-        "emission_p": float(ss.get("emission_p", float("nan"))),
+        # None (not NaN) for missing: NaN survives json.dumps as a bare `NaN`
+        # literal — invalid strict JSON in the durable phase0_gate.json
+        # (round-5 review minor).
+        "emission_p": (float(ss["emission_p"]) if ss.get("emission_p") is not None else None),
         # Regime-validity flag (round 5): a collapsed source R means the
         # re-read ΔG is the repetition ceiling, not an adapter property.
         "r_collapsed": bool(ss.get("r_collapsed", False)),
@@ -239,7 +242,11 @@ def onpolicy_crosscheck(
             # re-read is not a valid parity comparison even when it lands
             # inside tol by accident.
             "reread_r_collapsed": bool(stats.get("r_collapsed", False)),
-            "reread_emission_p": float(stats.get("emission_p", float("nan"))),
+            # None (not NaN) for missing — this table lands verbatim in
+            # phase0_gate.json's alarm diag (round-5 review minor).
+            "reread_emission_p": (
+                float(stats["emission_p"]) if stats.get("emission_p") is not None else None
+            ),
         }
     identical = find_identical_reread_groups({k: v["reread_delta_g"] for k, v in per.items()})
     if identical:

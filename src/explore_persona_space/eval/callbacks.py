@@ -626,6 +626,43 @@ def _decide_band_stop(
     return low_nats <= delta_nats <= high_nats
 
 
+def _resolve_live_gauge(model) -> dict:
+    """LoRA application-gauge provenance for an in-loop (live-model) probe read.
+
+    The band-stop callback probes the LIVE training model, so its reads sit in
+    whatever application gauge PEFT applies in-loop — for rsLoRA adapters that
+    is ``alpha/sqrt(r)``, NOT the classic ``alpha/r`` a staged post-hoc read
+    (e.g. ``stage_parity_read_adapter``) applies. On the same weights the two
+    gauges can differ by 5-15 nats in source ΔG, so every persisted in-loop
+    series carries this label and consumers must never assert in-loop values
+    against staged-gauge reads (#601 round-5 review major / round-6 fix).
+
+    Returns a dict with ``use_rslora_applied`` / ``scaling`` / ``lora_r`` /
+    ``lora_alpha`` introspected from ``model.peft_config`` (first adapter),
+    plus ``note: live-training-model``. Falls back to ``use_rslora_applied:
+    None`` when the model is not PEFT-wrapped (defensive — the train_lora
+    call site always wraps).
+    """
+    gauge: dict = {"note": "live-training-model"}
+    peft_config = getattr(model, "peft_config", None)
+    lora_cfg = None
+    if isinstance(peft_config, dict) and peft_config:
+        lora_cfg = next(iter(peft_config.values()))
+    if lora_cfg is not None:
+        use_rslora = bool(getattr(lora_cfg, "use_rslora", False))
+        gauge.update(
+            {
+                "use_rslora_applied": use_rslora,
+                "scaling": "alpha/sqrt(r)" if use_rslora else "alpha/r",
+                "lora_r": getattr(lora_cfg, "r", None),
+                "lora_alpha": getattr(lora_cfg, "lora_alpha", None),
+            }
+        )
+    else:
+        gauge.update({"use_rslora_applied": None, "scaling": "unresolved (model not PEFT-wrapped)"})
+    return gauge
+
+
 class MarkerBandStopCallback(TrainerCallback):
     """Deterministic early-stop when source marker log-prob enters the useful band.
 
@@ -793,6 +830,16 @@ class MarkerBandStopCallback(TrainerCallback):
         # logged exactly once.
         self._trajectory_records: list[dict] = []
         self._band_entry_logged = False
+        # Application-gauge provenance (#601 round 6): resolved from the LIVE
+        # model's peft_config at the first probe; persisted into the
+        # trajectory JSON + the WandB run config so in-loop (live-gauge)
+        # series can never be silently mixed with staged-gauge reads.
+        self._gauge: dict = {
+            "note": "live-training-model",
+            "use_rslora_applied": None,
+            "scaling": "unresolved (no probe ran)",
+        }
+        self._gauge_wandb_logged = False
 
     def on_train_begin(self, args, state, control, **kwargs):
         """Reset per-phase state (callback may be reused across phases).
@@ -809,6 +856,12 @@ class MarkerBandStopCallback(TrainerCallback):
         self._disabled_too_short = False
         self._trajectory_records = []
         self._band_entry_logged = False
+        self._gauge = {
+            "note": "live-training-model",
+            "use_rslora_applied": None,
+            "scaling": "unresolved (no probe ran)",
+        }
+        self._gauge_wandb_logged = False
         if state.max_steps > 0 and state.max_steps < self.min_steps:
             logger.warning(
                 "[%s] max_steps=%d < min_steps=%d — the band-stop guard "
@@ -839,12 +892,19 @@ class MarkerBandStopCallback(TrainerCallback):
             self._base_slot_stats = self._read_slot_stats_with_base(model)
             self._base_logp_per_row = self._base_slot_stats["logp"]
             self._base_logp_mean = float(self._base_logp_per_row.mean().item())
+            # Resolve the application gauge from the LIVE model once per phase
+            # (#601 round 6): the in-loop series is live-gauge (rsLoRA
+            # alpha/sqrt(r) when the adapter trains with use_rslora) and every
+            # persisted sink below carries the label.
+            self._gauge = _resolve_live_gauge(model)
             logger.info(
-                "[%s] Cached base log P(marker) at step %d: mean=%.4f nat over %d probe rows",
+                "[%s] Cached base log P(marker) at step %d: mean=%.4f nat over %d probe rows "
+                "(in-loop gauge: %s)",
                 self.log_prefix,
                 state.global_step,
                 self._base_logp_mean,
                 int(self._base_logp_per_row.shape[0]),
+                self._gauge.get("scaling"),
             )
 
         trained_stats = self._read_slot_stats_trained(model)
@@ -926,6 +986,14 @@ class MarkerBandStopCallback(TrainerCallback):
                     self._base_slot_stats["z_eos"].mean().item()
                 )
             wandb.log(metrics, step=state.global_step)
+            if not self._gauge_wandb_logged:
+                # One-line gauge tag on the run config (#601 round 6): the
+                # series above read the LIVE training model — label the gauge
+                # so WandB consumers never mix it with staged classic reads.
+                wandb.run.config.update(
+                    {f"{self.log_prefix}_gauge": self._gauge}, allow_val_change=True
+                )
+                self._gauge_wandb_logged = True
 
         if self.trajectory_out_path is not None:
             self._trajectory_records.append(
@@ -1045,6 +1113,10 @@ class MarkerBandStopCallback(TrainerCallback):
             "marker_token_ids": self.marker_token_ids,
             "eos_token_id": self.eos_token_id,
             "log_only": self.log_only,
+            # Application-gauge provenance (#601 round 6): these records read
+            # the LIVE training model (rsLoRA alpha/sqrt(r) when use_rslora is
+            # on) — NEVER assert them against staged classic alpha/r reads.
+            "gauge": self._gauge,
             "band_low_nats": self.low_nats,
             "band_high_nats": self.high_nats,
             "n_probe_records": len(recs),

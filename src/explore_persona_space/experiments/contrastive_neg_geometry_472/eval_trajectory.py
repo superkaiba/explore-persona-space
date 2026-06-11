@@ -438,6 +438,12 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
 
     checkpoints_out: list[dict] = []
     r_cache: dict[float, dict[str, dict[str, str]]] = {}  # frac -> on-policy R (for KL phase)
+    # Gauge of the GENERATING model per fraction (#601 round 6): which LoRA
+    # application scaling produced the persisted completions. #601 callers
+    # stage every read adapter to classic alpha/r (provenance threaded on the
+    # spec); a legacy caller without staging provenance generates at whatever
+    # the shipped adapter_config.json says (recorded as staged=False).
+    gen_gauge_by_frac: dict[str, dict] = {}
     # Final (max) fraction — the source-manifest guard's hard-fail gate.
     final_frac = max(s["frac"] for s in checkpoint_specs)
     # ck_i ids are unique only per engine lifetime: `llm` is function-local, so a
@@ -485,6 +491,12 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
             # MID-WRITE at the last checkpoint can't leave truncated JSON
             # (round-1 review minor; mirrors the dense reader / CE probe).
             raw_r_out_path.parent.mkdir(parents=True, exist_ok=True)
+            prov = spec.get("provenance") or {}
+            gen_gauge_by_frac[f"frac_{frac}"] = {
+                "use_rslora_applied": prov.get("use_rslora_applied"),
+                "effective_scaling_applied": prov.get("effective_scaling_applied"),
+                "staged": bool(prov),
+            }
             raw_tmp = raw_r_out_path.with_suffix(".tmp")
             raw_tmp.write_text(
                 json.dumps(
@@ -492,6 +504,9 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
                         "cell": cell_slug,
                         "seed": seed,
                         "max_new_tokens": max_new_tokens,
+                        # Gauge of the generating model per fraction (#601
+                        # round 6 — see gen_gauge_by_frac comment above).
+                        "generation_gauge_by_frac": gen_gauge_by_frac,
                         "completions_by_frac": {f"frac_{f}": r for f, r in r_cache.items()},
                     },
                     ensure_ascii=False,
