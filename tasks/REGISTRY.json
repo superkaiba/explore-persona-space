@@ -2988,8 +2988,8 @@
       "goal": "Re-run the #470/#509 leakage-prediction analysis for refusal and emergent-misalignment behaviors, reusing the closest old source-by-bystander leakage panels, scoring the same predictor zoo (cosine_l20, JS, KL) plus bystander base rate (confound-aware, per #509) and a new training-completion log-prob metric (generalizing #500/#444's fact-validated bystander_logprob), and report whether any predictor generalizes across behaviors; also report training-completion log-prob trained-minus-base as a non-saturating implant-quality readout on each source.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/518",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/518",
+      "status": "awaiting_promotion",
       "title": "No tested base-model predictor cell cleared the cross-behavior threshold on Qwen-2.5-7B's sycophancy, refusal, and emergent-misalignment leakage panels \u2014 but a base/Instruct substrate swap and a floored refusal arm both shape that null (MODERATE confidence)"
     },
     "519": {
