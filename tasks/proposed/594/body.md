@@ -11,6 +11,9 @@ goal: 'Map the geometry of context representations: extract per-layer context ve
   format wraps, in-context examples, WildChat prefixes, behavior-instruction prompts,
   default), visualize with PCA/UMAP/t-SNE per layer, and quantify whether contexts
   organize by family and where in depth that structure lives.'
+relates_to:
+- spec-prompt-vs-icl
+- ctx-behavior
 ---
 # Dimensionality reduction / visualization of context-prompt activation vectors across layers
 
