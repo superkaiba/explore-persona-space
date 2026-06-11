@@ -20,6 +20,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_594.md](https://github.com/superkaiba/explore-persona-space/blob/da945e2bf05a4523e10b4123f4ba8cb172ec5660/docs/methodology/issue_594.md) · [gist](https://gist.github.com/superkaiba/4d93403ba994f55e5a8ab7f1160c9c1e)
+
 ## Human TL;DR
 
 **Headline.** I mapped where 50 different context prompts live inside Qwen2.5-7B-Instruct's activations, and contexts of the same kind cluster together at every single layer — far above chance, and not because of prompt length or shared wording.
@@ -167,6 +169,7 @@ n = 5 with 4-nearest-neighbor purity is fragile by construction (each member has
 - Raw completions: n/a — extraction-only run; no text was generated.
 - WandB: run name `issue594-extract` (extraction telemetry only; no metric consumed downstream).
 - Reused probe pool from [#404](https://eps.superkaiba.com/tasks/404): `data/issue404/preregistered_evals.yaml` (committed in-repo) — fit: the same fixed 48-paraphrase pool the predictor line reads, so the map describes exactly the space those predictors operate in; no trained artifacts (adapters/checkpoints) were reused.
+- **Methodology reference:** [docs/methodology/issue_594.md](https://github.com/superkaiba/explore-persona-space/blob/da945e2bf05a4523e10b4123f4ba8cb172ec5660/docs/methodology/issue_594.md) · [gist](https://gist.github.com/superkaiba/4d93403ba994f55e5a8ab7f1160c9c1e)
 
 **Compute:** ~2.2 GPU-h on 1× H100 (pod-594, `eval` intent); pod terminated after the verified HF upload; all statistics/plots computed CPU-side on the VM.
 
