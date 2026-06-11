@@ -1,5 +1,7 @@
 ---
-title: Does negative-panel breadth cause the universal end-of-answer clamp?
+title: 'Negative-panel composition causes most of the universal end-of-answer clamp:
+  a 4-context panel clamps never-mentioned personas at well under half the 15-context
+  push (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-11T01:44:03Z'

@@ -3421,7 +3421,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/571",
       "status": "interpreting",
-      "title": "Does negative-panel breadth cause the universal end-of-answer clamp?"
+      "title": "Negative-panel composition causes most of the universal end-of-answer clamp: a 4-context panel clamps never-mentioned personas at well under half the 15-context push (MODERATE confidence)"
     },
     "572": {
       "has_clean_result": false,
