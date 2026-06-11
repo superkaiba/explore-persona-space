@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 575,
+  "highest_id": 576,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3450,6 +3450,13 @@
       "path": "tasks/proposed/575",
       "status": "proposed",
       "title": "Spot-check the awaiting_promotion backlog with the new verify_task_body URL-existence check"
+    },
+    "576": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/576",
+      "status": "proposed",
+      "title": "Assert the marker-eval per-slot storage contract in eval code, not just prose"
     },
     "6": {
       "has_clean_result": false,
