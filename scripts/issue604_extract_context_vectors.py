@@ -28,10 +28,15 @@ assembles the bundle:
 the pod terminates (upload-policy: plan-referenced analysis tensors MUST
 land before termination).
 
-Smoke = this same entrypoint with ``--contexts 1 --probes 2`` (optionally
+Smoke = this same entrypoint with ``--context-names ... --probes 2`` AND a
+SEPARATE ``--out-dir`` (e.g. ``eval_results/issue_604/context_vectors_smoke``)
+so production runs can never consume smoke artifacts. Every shard embeds its
+run parameters (model, n_probes, probes_sha256, dtype, prompt hash); resume
+VALIDATES existing shards against the current run before skipping and fails
+loud on any mismatch (``--force`` recomputes in place). Optionally
 ``--model Qwen/Qwen2.5-0.5B-Instruct`` for a CPU-budget run; dims are read
 from the model config, the 28/3584 assert applies only to the production
-model).
+model.
 
 Pod-side contract: emits ``[phase=...]`` lines ending in ``[phase=done]``
 and writes the poll_pipeline results sentinel when ``/workspace`` exists.
@@ -231,9 +236,20 @@ def assemble_contexts(tokenizer, probes: list[str]) -> dict[str, dict]:
     return contexts
 
 
-def extract_all(model, tokenizer, contexts: dict[str, dict], shard_dir: Path) -> tuple[int, int]:
+def extract_all(
+    model,
+    tokenizer,
+    contexts: dict[str, dict],
+    shard_dir: Path,
+    shard_meta: dict,
+    *,
+    force: bool = False,
+) -> tuple[int, int]:
     """One forward per prompt; three capture points per layer; shard per context.
 
+    ``shard_meta`` (model, n_probes, probes_sha256, dtype) is embedded in
+    every shard so a later resume can validate compatibility before skipping
+    (stale-cache guard); ``force=True`` recomputes existing shards in place.
     Returns (n_layers, hidden) read from the captures.
     """
     import torch
@@ -267,11 +283,20 @@ def extract_all(model, tokenizer, contexts: dict[str, dict], shard_dir: Path) ->
     try:
         for ci, (name, ctx) in enumerate(contexts.items()):
             shard_path = shard_dir / f"{name}.pt"
-            if shard_path.exists():
+            if shard_path.exists() and not force:
+                # Compatibility was validated by the pre-pass in main()
+                # BEFORE model load (stale-cache guard).
                 logger.info("[%d/%d] skip (shard exists): %s", ci + 1, len(contexts), name)
                 continue
+            n_p = len(ctx["prompts"])
             per_probe = {
-                kind: np.zeros((len(ctx["prompts"]), n_layers, hidden), dtype=np.float16)
+                kind: np.zeros((n_p, n_layers, hidden), dtype=np.float16)
+                for kind in ("attn", "mlp", "raw")
+            }
+            # Centroids accumulate in float64 from the fp32 captures — the
+            # fp16 per-probe arrays are SIDECARS only, never centroid inputs.
+            sums = {
+                kind: np.zeros((n_layers, hidden), dtype=np.float64)
                 for kind in ("attn", "mlp", "raw")
             }
             for pi, text in enumerate(ctx["prompts"]):
@@ -283,18 +308,30 @@ def extract_all(model, tokenizer, contexts: dict[str, dict], shard_dir: Path) ->
                     for li in range(n_layers):
                         vec = captured[(kind, li)][0, last, :].float().cpu().numpy()
                         assert vec.shape == (hidden,), vec.shape
-                        per_probe[kind][pi, li, :] = vec.astype(np.float16)
+                        assert np.isfinite(vec).all(), (name, kind, li, "non-finite capture")
+                        v16 = vec.astype(np.float16)
+                        assert np.isfinite(v16).all(), (
+                            name,
+                            kind,
+                            li,
+                            "fp16 overflow in per-probe sidecar (|x| > 65504)",
+                        )
+                        per_probe[kind][pi, li, :] = v16
+                        sums[kind][li, :] += vec.astype(np.float64)
                 captured.clear()
             shard = {
                 "name": name,
                 "groups": ctx["groups"],
+                "meta": {
+                    **shard_meta,
+                    "n_layers": n_layers,
+                    "hidden": hidden,
+                    "prompt_sha256": ctx["prompt_sha256"],
+                },
                 "per_probe_fp16": {k: torch.from_numpy(v) for k, v in per_probe.items()},
-                # Centroids in fp32 from the fp16 per-probe captures.
-                "centroid_raw": torch.from_numpy(per_probe["raw"].astype(np.float32).mean(axis=0)),
-                "centroid_attn": torch.from_numpy(
-                    per_probe["attn"].astype(np.float32).mean(axis=0)
-                ),
-                "centroid_mlp": torch.from_numpy(per_probe["mlp"].astype(np.float32).mean(axis=0)),
+                "centroid_raw": torch.from_numpy((sums["raw"] / n_p).astype(np.float32)),
+                "centroid_attn": torch.from_numpy((sums["attn"] / n_p).astype(np.float32)),
+                "centroid_mlp": torch.from_numpy((sums["mlp"] / n_p).astype(np.float32)),
             }
             torch.save(shard, shard_path)
             logger.info("[%d/%d] context %s done", ci + 1, len(contexts), name)
@@ -324,6 +361,42 @@ def _dispersion(per_probe: np.ndarray) -> dict:
     return out
 
 
+def _validate_existing_shards(shard_dir: Path, contexts: dict[str, dict], run_meta: dict) -> None:
+    """Stale-shard validation pre-pass (BEFORE model load).
+
+    A resume may only skip a shard produced under the SAME run parameters;
+    anything else (a smoke shard under a production run, a pre-meta shard, a
+    different probe set / model / dtype / prompt hash) fails loud here.
+    """
+    import torch
+
+    stale: list[str] = []
+    for name, ctx in contexts.items():
+        sp = shard_dir / f"{name}.pt"
+        if not sp.exists():
+            continue
+        smeta = torch.load(sp, weights_only=True).get("meta") or {}
+        expected = {**run_meta, "prompt_sha256": ctx["prompt_sha256"]}
+        if not smeta:
+            bad = ["meta MISSING (pre-validation shard schema — treat as stale)"]
+        else:
+            bad = [
+                f"{k}: shard={smeta.get(k)!r} != run={v!r}"
+                for k, v in expected.items()
+                if smeta.get(k) != v
+            ]
+        if bad:
+            stale.append(f"{sp}: " + "; ".join(bad))
+    if stale:
+        raise RuntimeError(
+            "stale Phase-B shard(s) would be silently reused — refusing to resume:\n  "
+            + "\n  ".join(stale)
+            + "\nFix: use a SEPARATE --out-dir for smoke runs "
+            "(e.g. eval_results/issue_604/context_vectors_smoke), pass --force to "
+            "recompute in place, or delete the stale shards."
+        )
+
+
 def main() -> None:
     """Phase B entrypoint — same code path for smoke and production."""
     parser = argparse.ArgumentParser(
@@ -345,6 +418,11 @@ def main() -> None:
         help="float32 for the CPU smoke (bf16 CPU matmul is slow); production stays bf16",
     )
     parser.add_argument("--layers", default="all", help="accepted for CLI parity; always all")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="recompute existing shards in place (skips the stale-shard validation pre-pass)",
+    )
     parser.add_argument("--upload", action="store_true", help="push bundle to the HF data repo")
     parser.add_argument(
         "--upload-repo", default=HF_DATA_REPO, help="override target repo (quota recovery)"
@@ -389,6 +467,16 @@ def main() -> None:
     shard_dir = out_dir / "shards"
     shard_dir.mkdir(parents=True, exist_ok=True)
 
+    probes_sha = sha256_text("\x00".join(probes))
+    run_meta = {
+        "model": args.model,
+        "n_probes": len(probes),
+        "probes_sha256": probes_sha,
+        "dtype": args.dtype,
+    }
+    if not args.force:
+        _validate_existing_shards(shard_dir, contexts, run_meta)
+
     print("[phase=b_extract]", flush=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
@@ -400,7 +488,9 @@ def main() -> None:
         assert model.config.num_hidden_layers == N_LAYERS, model.config.num_hidden_layers
         assert model.config.hidden_size == HIDDEN_SIZE, model.config.hidden_size
 
-    n_layers, hidden = extract_all(model, tokenizer, contexts, shard_dir)
+    n_layers, hidden = extract_all(
+        model, tokenizer, contexts, shard_dir, run_meta, force=args.force
+    )
 
     print("[phase=b_bundle]", flush=True)
     gamma = {
@@ -426,6 +516,12 @@ def main() -> None:
     dispersion: dict[str, dict] = {}
     for name in contexts:
         shard = torch.load(shard_dir / f"{name}.pt", weights_only=True)
+        smeta = shard.get("meta") or {}
+        assert smeta.get("probes_sha256") == probes_sha and smeta.get("model") == args.model, (
+            name,
+            "stale shard escaped the pre-pass — refusing to bundle",
+            {k: smeta.get(k) for k in ("model", "n_probes", "probes_sha256", "dtype")},
+        )
         raw_centroids[name] = shard["centroid_raw"]
         attn_centroids[name] = shard["centroid_attn"]
         mlp_centroids[name] = shard["centroid_mlp"]
@@ -445,6 +541,7 @@ def main() -> None:
             "hidden": hidden,
             "n_contexts": len(contexts),
             "n_probes": len(probes),
+            "probes_sha256": probes_sha,
             "device": device,
             "dtype": args.dtype,
         },
@@ -461,7 +558,7 @@ def main() -> None:
     manifest = {
         "meta": meta,
         "probe_set": "q_test_extended_50",
-        "probes_sha256": sha256_text("\x00".join(probes)),
+        "probes_sha256": probes_sha,
         "contexts": {
             name: {
                 "groups": ctx["groups"],

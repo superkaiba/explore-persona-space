@@ -286,6 +286,11 @@ def main() -> None:
     parser.add_argument("--lines", default="all", help="all | dial | comma-separated line names")
     parser.add_argument("--cells", type=int, default=0, help="process at most N cells (0 = all)")
     parser.add_argument(
+        "--cell-ids",
+        default="",
+        help="comma-separated explicit cell_id subset (smoke; same loop as the full sweep)",
+    )
+    parser.add_argument(
         "--include-dial-checkpoints",
         action="store_true",
         help="also SVD the dial checkpoint-NN intermediates (exploratory dose points)",
@@ -300,6 +305,7 @@ def main() -> None:
     _disk_guard()
 
     from huggingface_hub import HfApi, list_repo_files
+    from huggingface_hub.utils import EntryNotFoundError
 
     api = HfApi()
     lines = parse_lines_arg(args.lines)
@@ -318,6 +324,11 @@ def main() -> None:
         include_dial_checkpoints=args.include_dial_checkpoints,
         model_repo_files=model_files,
     )
+    if args.cell_ids:
+        wanted = [t.strip() for t in args.cell_ids.split(",") if t.strip()]
+        missing = sorted(set(wanted) - {c.cell_id for c in cells})
+        assert not missing, f"--cell-ids not in the enumerated inventory: {missing}"
+        cells = [c for c in cells if c.cell_id in set(wanted)]
     if args.cells > 0:
         cells = cells[: args.cells]
     logger.info("inventory: %d cells across lines %s", len(cells), lines)
@@ -339,6 +350,9 @@ def main() -> None:
         "n_cells": len(cells),
         "cells": [],
     }
+    # Manifest header (pinned revisions + lines) lands BEFORE the sweep loop and
+    # is rewritten per cell — a mid-sweep crash never loses the revision record.
+    manifest_path.write_text(json.dumps(manifest, indent=1))
 
     print("[phase=a_svd]", flush=True)
     eviction_paths: list[Path] = []
@@ -360,9 +374,24 @@ def main() -> None:
         if spectra_path.exists() and npz_path.exists() and not args.no_resume:
             logger.info("[%d/%d] skip (done): %s/%s", i + 1, len(cells), cell.line, cell.cell_id)
             manifest["cells"].append({**cell_rec, "status": "done"})
+            manifest_path.write_text(json.dumps(manifest, indent=1))
             continue
         _disk_guard()
-        config, st_path, dl_paths = _download_cell(cell, revisions)
+        try:
+            config, st_path, dl_paths = _download_cell(cell, revisions)
+        except EntryNotFoundError as exc:
+            if cell.repo_id == HF_OVERFLOW_REPO:
+                # i541 cells bypass the model-repo listing check (plan §15
+                # secondary line): a missing overflow-repo cell takes the
+                # registered "N/A — not stored" path instead of crashing
+                # the sweep.
+                logger.warning(
+                    "N/A — not stored (overflow repo): %s/%s: %s", cell.line, cell.cell_id, exc
+                )
+                manifest["cells"].append({**cell_rec, "status": "not-stored"})
+                manifest_path.write_text(json.dumps(manifest, indent=1))
+                continue
+            raise
         eviction_paths.extend(dl_paths)
         payload, npz = process_cell(cell, config, st_path)
         spectra_path.parent.mkdir(parents=True, exist_ok=True)
@@ -370,6 +399,7 @@ def main() -> None:
         spectra_path.write_text(json.dumps(payload, indent=1))
         np.savez_compressed(npz_path, **npz)
         manifest["cells"].append({**cell_rec, "status": "done"})
+        manifest_path.write_text(json.dumps(manifest, indent=1))
         done += 1
         logger.info(
             "[%d/%d] %s/%s done (%.1fs elapsed)",

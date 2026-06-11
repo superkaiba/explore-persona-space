@@ -30,8 +30,17 @@ All comparisons are dimension-asserted to the 3584-d residual stream
 actually produced (smoke = same entrypoint over the smoke outputs).
 
 Usage:
-    uv run python scripts/issue604_analyze.py            # all analyses
+    uv run python scripts/issue604_analyze.py            # all analyses (production)
     uv run python scripts/issue604_analyze.py --analyses key,rotation
+    # smoke over a deliberate tiny bundle (separate dir, partial contexts):
+    uv run python scripts/issue604_analyze.py \
+        --context-dir eval_results/issue_604/context_vectors_smoke \
+        --expect-probes 2 --allow-missing-contexts
+
+The Phase B bundle is fitness-gated before use (stale-cache guard): the
+bundle meta must carry the expected ``n_probes`` (production = 50) and every
+context the loaded cell inventory requires must resolve — a stale smoke
+bundle at the production path fails loud instead of corrupting the reads.
 """
 
 from __future__ import annotations
@@ -53,7 +62,6 @@ load_dotenv()
 
 from explore_persona_space.analysis.svd_direction_constancy import (  # noqa: E402
     assemble_M,
-    bootstrap_ci,
     spearman_rho,
     svd_summary,
 )
@@ -65,6 +73,7 @@ from explore_persona_space.experiments.issue_604 import (  # noqa: E402
     HIDDEN_SIZE,
     KEY_LAYER_BAND,
     result_metadata,
+    seed_group_key,
 )
 
 logger = logging.getLogger("issue604.phase_c")
@@ -166,9 +175,22 @@ class CellStore:
 
 
 class ContextBundle:
-    """Phase B centroids + γ; downloads from the HF data repo if absent."""
+    """Phase B centroids + γ; downloads from the HF data repo if absent.
 
-    def __init__(self, context_dir: Path):
+    Fitness-gates the bundle BEFORE any analysis consumes it (stale-cache
+    guard): ``expected_n_probes`` must match the bundle meta (production = 50;
+    a smoke read passes its own value explicitly), and every name in
+    ``required_contexts`` must resolve. A stale smoke bundle sitting at the
+    production path fails loud here instead of silently corrupting Phase C.
+    """
+
+    def __init__(
+        self,
+        context_dir: Path,
+        *,
+        expected_n_probes: int = 50,
+        required_contexts: tuple[str, ...] = (),
+    ):
         import torch
 
         needed = ["module_input_centroids.pt", "context_vectors_all_layers.pt", "rmsnorm_gamma.pt"]
@@ -190,7 +212,7 @@ class ContextBundle:
         self.raw = {k: v.numpy().astype(np.float64) for k, v in raw["contexts"].items()}
         self.gamma_in = gam["input_layernorm"].numpy().astype(np.float64)
         self.gamma_post = gam["post_attention_layernorm"].numpy().astype(np.float64)
-        self.meta = mod.get("meta", {})
+        self.meta = mod.get("meta") or {}
         names = sorted(self.attn.keys())
         first = self.attn[names[0]]
         self.n_layers, self.hidden = first.shape
@@ -200,11 +222,36 @@ class ContextBundle:
         mpath = context_dir / "manifest.json"
         if mpath.exists():
             self.manifest = json.loads(mpath.read_text())
+        # ── Fitness gate (stale-cache guard) ────────────────────────────────
+        got_probes = self.meta.get("n_probes")
+        if got_probes != expected_n_probes:
+            raise RuntimeError(
+                f"Phase B bundle at {context_dir} fails fitness: n_probes={got_probes!r} != "
+                f"expected {expected_n_probes} (model={self.meta.get('model')!r}, "
+                f"n_contexts={self.meta.get('n_contexts')!r}, "
+                f"dtype={self.meta.get('dtype')!r}). A stale/smoke bundle cannot feed this "
+                "Phase C run — delete it, point --context-dir at the right bundle, or pass "
+                "--expect-probes for a deliberate smoke read."
+            )
+        missing = []
+        for name in required_contexts:
+            try:
+                self.resolve(name)
+            except KeyError:
+                missing.append(name)
+        if missing:
+            raise RuntimeError(
+                f"Phase B bundle at {context_dir} lacks required runtime contexts: "
+                f"{sorted(missing)} — the Phase A cell inventory needs them. Re-run Phase B "
+                "over the full context union (or pass --allow-missing-contexts for a "
+                "deliberate smoke read over a partial bundle)."
+            )
         logger.info(
-            "context bundle: %d contexts, %d layers, hidden %d",
+            "context bundle: %d contexts, %d layers, hidden %d (n_probes=%s, fitness OK)",
             len(names),
             self.n_layers,
             self.hidden,
+            got_probes,
         )
 
     def vec(self, name: str, layer: int, space: str) -> np.ndarray:
@@ -875,12 +922,17 @@ def run_rotation(store: CellStore, bundle: ContextBundle, data_root: Path, out: 
                 "tags": c["tags"],
                 **read,
             }
-            if is_clean_single_dial(cell):
-                primary.append(row)
-            elif c["arm"] == "joint":
-                secondary_joint.append(row)
-            else:
+            # Plan §4 C4(a): ALL 9 panel-contaminated #527 pair-2 cells (single
+            # AND joint) are excluded from the registered reads — they enter
+            # only the all-54 sensitivity. The joint SECONDARY is the 15 CLEAN
+            # joint cells (30 per-source rows).
+            if "panel-contaminated" in c["tags"]:
                 contaminated.append(row)
+            elif is_clean_single_dial(cell):
+                primary.append(row)
+            else:
+                assert c["arm"] == "joint", (c["cell_id"], c["arm"], c["tags"])
+                secondary_joint.append(row)
 
     def _spearman_block(rows: list[dict]) -> dict:
         if len(rows) < 3:
@@ -1009,9 +1061,14 @@ def _i474_ladder(
             return None
         x = np.array([p[0] for p in points], dtype=np.float64)
         y = np.array([p[1] for p in points], dtype=np.float64)
-        if x.var() == 0:
+        xc = x - x.mean()
+        denom = float((xc**2).sum())
+        if denom == 0:
             return None
-        return float(np.cov(x, y)[0, 1] / x.var())
+        # Exact normal-equation OLS slope (NOT np.cov/var — mixing the sample
+        # covariance (N-1) with the population variance (N) inflates the
+        # slope by N/(N-1), i.e. 4/3 at 4 epochs).
+        return float((xc * (y - y.mean())).sum() / denom)
 
     slopes: dict[str, dict[str, float | None]] = {}
     for r in reads:
@@ -1032,8 +1089,21 @@ def _i474_ladder(
     diffs = list(paired.values())
     boot = None
     if len(diffs) >= 3:
-        med, lo, hi = bootstrap_ci(diffs, n_resamples=N_BOOT, seed=RNG_SEED)
-        boot = {"mean": float(np.mean(diffs)), "median": med, "ci_lo": lo, "ci_hi": hi}
+        # Plan §4 C4(e) pins the MEAN paired slope difference; the bootstrap
+        # resamples the MEAN (the ported bootstrap_ci resamples the median —
+        # kept byte-identical for its #519 callers, not used here). The
+        # median is reported as an auxiliary read only.
+        arr = np.asarray(diffs, dtype=np.float64)
+        boot_rng = np.random.default_rng(RNG_SEED)
+        boots = [float(arr[boot_rng.integers(0, arr.size, arr.size)].mean()) for _ in range(N_BOOT)]
+        boot = {
+            "mean": float(arr.mean()),
+            "ci_lo_mean": float(np.percentile(boots, 2.5)),
+            "ci_hi_mean": float(np.percentile(boots, 97.5)),
+            "ci_statistic": "mean",
+            "n_boot": N_BOOT,
+            "median_auxiliary": float(np.median(arr)),
+        }
     return {
         "reads": reads,
         "per_source_ols_slopes": slopes,
@@ -1107,7 +1177,9 @@ def run_constancy(store: CellStore, bundle: ContextBundle, out: Path) -> None:
             "Wang et al. (arXiv 2507.08218) read pairwise |cos| of LoRA output-difference "
             "vectors over per-token activations; this adaptation projects stored per-context "
             "CENTROIDS through the rank-8 truncated attn-key stack (truncation energy "
-            "fraction recorded per layer in the Phase A spectra)"
+            "fraction recorded per layer in the Phase A spectra). SCOPE: the projection "
+            "covers the attn_key stack ONLY — the mlp_key stack of all-linear lines is "
+            "not included in this read"
         ),
         "cells": results,
     }
@@ -1133,12 +1205,29 @@ def run_selectivity(  # noqa: C901 — seed-stability + joint-subspace reads sha
             vals.append(abs(_cos(ka, kb)))
         return float(np.mean(vals)) if vals else None
 
+    def _band_write_cos(ca: dict, cb: dict) -> float | None:
+        """Plan §4 C7 'keys (and writes)': cross-seed |cos| of the top write vectors."""
+        vals = []
+        for layer in band:
+            wa, wb = store.write_top1(ca, layer), store.write_top1(cb, layer)
+            if wa is None or wb is None:
+                continue
+            vals.append(abs(_cos(wa[0], wb[0])))
+        return float(np.mean(vals)) if vals else None
+
     groups: dict[tuple, list[dict]] = {}
     for cell in store.cells:
         c = cell["cell"]
         if "checkpoint-intermediate" in c["tags"]:
             continue
-        gkey = (c["line"], c["cell_id"].rsplit("__seed", 1)[0] if c["seed"] else c["cell_id"])
+        # seed_group_key handles BOTH separator forms (dial `__seed42` AND the
+        # single-underscore `marker_seed42` / `em_turner_seed42` / `<arm>_seed42`
+        # of #519/#521/#541) — rsplit("__seed") silently left the latter three
+        # lines as singleton groups, emptying the registered C7 read.
+        gkey = (
+            c["line"],
+            seed_group_key(c["cell_id"]) if c["seed"] is not None else c["cell_id"],
+        )
         groups.setdefault(gkey, []).append(cell)
     seed_stability = []
     for (line, gname), cells in groups.items():
@@ -1148,11 +1237,13 @@ def run_selectivity(  # noqa: C901 — seed-stability + joint-subspace reads sha
         for i, ca in enumerate(cells):
             for cb in cells[i + 1 :]:
                 kc = _band_key_cos(ca, cb, "attn_key")
-                if kc is not None:
+                wc = _band_write_cos(ca, cb)
+                if kc is not None or wc is not None:
                     pairs.append(
                         {
                             "seeds": [ca["cell"]["seed"], cb["cell"]["seed"]],
                             "key_abs_cos_band_mean": kc,
+                            "write_abs_cos_band_mean": wc,
                         }
                     )
         if pairs:
@@ -1268,6 +1359,23 @@ def main() -> None:
         ),
     )
     parser.add_argument("--analyses", default="all", help="all | comma of " + ",".join(ANALYSES))
+    parser.add_argument(
+        "--expect-probes",
+        type=int,
+        default=50,
+        help=(
+            "required n_probes in the Phase B bundle meta (stale-cache guard; production = 50; "
+            "a smoke read over a tiny bundle passes its own value explicitly)"
+        ),
+    )
+    parser.add_argument(
+        "--allow-missing-contexts",
+        action="store_true",
+        help=(
+            "smoke only: tolerate a partial Phase B bundle (registered 'N/A' rows instead of "
+            "failing loud on contexts the cell inventory requires)"
+        ),
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
@@ -1276,7 +1384,20 @@ def main() -> None:
     data_root = Path(args.data_root) if args.data_root else _default_data_root()
     store = CellStore(out_dir)
     assert store.cells, "no Phase A outputs found — run issue604_adapter_svd.py first"
-    bundle = ContextBundle(Path(args.context_dir))
+    # Contexts the loaded cell inventory actually consumes (sources +
+    # realized negative panels); the bundle must cover them in production.
+    required: set[str] = set()
+    for cell in store.cells:
+        c = cell["cell"]
+        if c["line"] == "i541":
+            continue  # own-bank read — never resolved against the bundle
+        required.update(c["source_personas"])
+        required.update(c["negative_personas"])
+    bundle = ContextBundle(
+        Path(args.context_dir),
+        expected_n_probes=args.expect_probes,
+        required_contexts=() if args.allow_missing_contexts else tuple(sorted(required)),
+    )
     assert bundle.hidden == HIDDEN_SIZE, (
         f"Phase B bundle hidden={bundle.hidden} != {HIDDEN_SIZE} — was Phase B run on a "
         "substitute model? Phase C comparisons need the production base model's bundle."

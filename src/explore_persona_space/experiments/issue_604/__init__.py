@@ -33,6 +33,7 @@ import json
 import logging
 import math
 import platform
+import re
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -221,6 +222,20 @@ def result_metadata(project_root: Path, extra: dict | None = None) -> dict:
 def sha256_text(text: str) -> str:
     """Hex sha256 of a UTF-8 string (prompt provenance fingerprints)."""
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+_SEED_SUFFIX_RE = re.compile(r"_+seed\d+$")
+
+
+def seed_group_key(cell_id: str) -> str:
+    """Cell-id with the trailing seed token stripped — the cross-seed group key.
+
+    Handles BOTH separator forms in the inventory: dial ``…__seed42`` and the
+    single-underscore ``marker_seed42`` / ``em_turner_seed42`` /
+    ``<arm>_seed42`` (#519/#521/#541). Ids without a trailing seed token
+    (e.g. #474 ``pos_A1_ep1``) are returned unchanged.
+    """
+    return _SEED_SUFFIX_RE.sub("", cell_id)
 
 
 # ── Exact SVD of composed s·B·A (never materializes d_out×d_in) ─────────────
@@ -431,22 +446,59 @@ def build_inventory(  # noqa: C901 — one enumeration block per adapter line; f
                             )
 
     if "i474" in lines:
+        # The dual-layout resolver is meaningless without a real listing:
+        # _stored() returns True for everything on an empty listing, which
+        # would make BOTH layouts claim stored for every cell.
+        assert listing, "i474 dual-layout resolver requires model_repo_files (Hub listing)"
+
+        def _stored_full(sub: str) -> bool:
+            # plan §10: a layout "resolves" only with config + safetensors.
+            return (
+                f"{sub}/adapter_config.json" in listing
+                and f"{sub}/adapter_model.safetensors" in listing
+            )
+
         for arm in I474_ARMS:
             for src in I474_SOURCES:
                 for ep in I474_EPOCHS:
                     nested = f"adapters/i474_{arm}_{src}/_upload_ep{ep}"
                     flat = f"adapters/i474_{arm}_{src}_ep{ep}"
-                    resolved = [s for s in (nested, flat) if _stored(HF_MODEL_REPO, s)]
-                    if not resolved:
-                        logger.warning("N/A — not stored: i474 %s %s ep%d", arm, src, ep)
-                        continue
+                    # The FLAT layout is the artifact of record: the #474
+                    # trainer's registered per-epoch persist targets it
+                    # (i474_phase23_train.py `path_in_repo = adapters/
+                    # i474_{arm}_{cid}_ep{N}`), the #474 phase-4 eval that
+                    # produced the registered exposure covariate read it, and
+                    # the #549/#560 reuses read it. The NESTED `_upload_ep{N}`
+                    # copies are accidental Hub duplicates of the local
+                    # staging dirs (84/128 cells at the pinned revision, with
+                    # DIFFERENT safetensors blobs for some cells) — never
+                    # silently analyzed. Plan §10's "try nested first" order
+                    # is superseded by this provenance evidence; the plan's
+                    # intent ("assert exactly one resolves" = never pick
+                    # among ambiguous layouts silently) is enforced as
+                    # canonical-flat-or-fail.
+                    if not _stored_full(flat):
+                        raise AssertionError(
+                            f"i474 {arm} {src} ep{ep}: canonical flat layout missing "
+                            f"({flat!r}); nested staging duplicate "
+                            f"{'present' if _stored_full(nested) else 'absent'} "
+                            f"({nested!r}) — refusing to substitute a non-canonical copy"
+                        )
+                    if _stored_full(nested):
+                        logger.info(
+                            "i474 %s %s ep%d: nested staging duplicate ignored: %s",
+                            arm,
+                            src,
+                            ep,
+                            nested,
+                        )
                     negatives = tuple(c for c in I474_SOURCES if c != src)
                     cells.append(
                         AdapterCell(
                             line="i474",
                             cell_id=f"{arm}_{src}_ep{ep}",
                             repo_id=HF_MODEL_REPO,
-                            subfolder=resolved[0],
+                            subfolder=flat,
                             source_personas=(src,),
                             # plan §4 C4(e): BOTH arms are scored on the matched
                             # source's other-15 contrast (the loc arm's realized
