@@ -39,6 +39,19 @@ from scipy.stats import chi2
 
 CHI2_95_DF1 = float(chi2.ppf(0.95, df=1))  # 3.841458820694124
 
+
+class ProfileNonConvergenceError(RuntimeError):
+    """Constrained (profile) Firth fit failed to converge at a probe point.
+
+    Raised by ``_profile_pl_at`` after the damped rescue ladder is exhausted.
+    Callers treat the affected bound / p-value as not estimable by profile
+    likelihood and fall back to the (explicitly flagged) Wald quantity —
+    never crash the whole pipeline on one quasi-separated probe point
+    (#591 e5 production incident: coef pinned to 8.0982 during the CI
+    bound search killed an 11-hour run at the final refit phase).
+    """
+
+
 # Published logistf::sex2 reference coefficients (logistf docs; also reproduced
 # in the firthlogist README). Order: intercept, age, oc, vic, vicl, vis, dia.
 SEX2_REFERENCE_COEF = {
@@ -66,6 +79,12 @@ class FirthResult:
     ci_low: np.ndarray = field(default=None)  # profile-PL 95% lower bounds
     ci_high: np.ndarray = field(default=None)  # profile-PL 95% upper bounds
     p_values: np.ndarray = field(default=None)  # penalized-LR test p per coef
+    # Per-coefficient inference provenance: "profile" / "plr" for the exact
+    # PL machinery (the common case, unchanged), "wald-fallback" where the
+    # constrained fit was non-estimable at the probe extreme (#591 e5 fix).
+    ci_method_low: list[str] = field(default=None)
+    ci_method_high: list[str] = field(default=None)
+    p_method: list[str] = field(default=None)
 
     def to_dict(self) -> dict:
         """JSON-friendly summary (odds ratios on exp scale, CIs both scales)."""
@@ -83,8 +102,19 @@ class FirthResult:
             out["ci95_high_coef"] = self.ci_high.tolist()
             out["ci95_low_or"] = np.exp(self.ci_low).tolist()
             out["ci95_high_or"] = np.exp(self.ci_high).tolist()
+            out["ci95_method_low"] = list(self.ci_method_low)
+            out["ci95_method_high"] = list(self.ci_method_high)
         if self.p_values is not None:
             out["p_plr"] = self.p_values.tolist()
+            out["p_method"] = list(self.p_method)
+        fallback = set()
+        for methods in (self.ci_method_low, self.ci_method_high, self.p_method):
+            if methods is not None:
+                fallback |= {
+                    n for n, m in zip(self.names, methods, strict=True) if m == "wald-fallback"
+                }
+        if self.ci_low is not None or self.p_values is not None:
+            out["profile_fallback_coefs"] = sorted(fallback)
         return out
 
 
@@ -168,12 +198,40 @@ def _firth_newton(
     return beta, cov, pl, converged, n_done
 
 
+# Rescue ladder for the constrained (profile) fit. The first rung is the
+# exact pre-fix configuration, so every previously-converging probe point
+# returns the identical penalized log-likelihood (targeted robustness patch,
+# not a behavior change). Later rungs damp the Newton step harder and allow
+# more iterations — extreme pinned values (quasi-separation regime) flatten
+# the likelihood and make the undamped step overshoot.
+_PROFILE_RESCUE_LADDER: tuple[dict, ...] = (
+    {"max_iter": 200, "max_step": 5.0},  # rung 0 == round-1 behavior
+    {"max_iter": 1000, "max_step": 1.0},
+    {"max_iter": 5000, "max_step": 0.25},
+)
+
+
 def _profile_pl_at(X: np.ndarray, y: np.ndarray, j: int, value: float) -> float:
-    """Maximized penalized log-likelihood with beta_j pinned to ``value``."""
-    _beta, _cov, pl, conv, _ = _firth_newton(X, y, fixed={j: value})
-    if not conv:
-        raise RuntimeError(f"profile fit did not converge (coef {j} pinned to {value:.4f})")
-    return pl
+    """Maximized penalized log-likelihood with beta_j pinned to ``value``.
+
+    Walks ``_PROFILE_RESCUE_LADDER`` (progressively damped Newton). Raises
+    ``ProfileNonConvergenceError`` only after every rung fails — callers
+    convert that into a flagged Wald fallback for the affected bound.
+    """
+    last_reason = "unknown"
+    for rung, kw in enumerate(_PROFILE_RESCUE_LADDER):
+        try:
+            _beta, _cov, pl, conv, n_iter = _firth_newton(X, y, fixed={j: value}, **kw)
+        except np.linalg.LinAlgError as err:  # singular information at the probe
+            last_reason = f"rung {rung} LinAlgError: {err}"
+            continue
+        if conv:
+            return pl
+        last_reason = f"rung {rung} no convergence in {n_iter} iters (max_step={kw['max_step']})"
+    raise ProfileNonConvergenceError(
+        f"profile fit did not converge (coef {j} pinned to {value:.4f}; "
+        f"rescue ladder exhausted; last: {last_reason})"
+    )
 
 
 def _profile_ci_one(
@@ -185,32 +243,62 @@ def _profile_ci_one(
     pl_hat: float,
     *,
     chi2_crit: float = CHI2_95_DF1,
-) -> tuple[float, float]:
-    """Invert the penalized likelihood ratio for one coefficient (both sides)."""
+    name: str | None = None,
+) -> tuple[float, float, str, str]:
+    """Invert the penalized likelihood ratio for one coefficient (both sides).
+
+    Returns ``(low, high, low_method, high_method)`` where each method is
+    ``"profile"`` (the bound is the exact PL inversion — unchanged behavior)
+    or ``"wald-fallback"`` (the PL bound was not estimable at that extreme:
+    either the constrained fit failed to converge after the rescue ladder,
+    or the bracket search found the penalized likelihood too flat to drop by
+    chi2_crit within 60 expansions). Fallback bounds are
+    ``beta_hat ± sqrt(chi2_crit) * se_j`` and are loudly logged + flagged in
+    the output JSON — never silently swallowed (fail-fast culture: the flag
+    IS the signal, the crash was the bug).
+    """
 
     def g(b: float) -> float:
         return 2.0 * (pl_hat - _profile_pl_at(X, y, j, b)) - chi2_crit
 
+    label = f"coef {j}" + (f" ({name!r})" if name else "")
+    z_crit = float(np.sqrt(chi2_crit))
     bounds: list[float] = []
+    methods: list[str] = []
     for direction in (-1.0, +1.0):
-        step = max(se_j, 1e-3)
-        lo = beta_hat
-        hi = beta_hat + direction * step
-        n_expand = 0
-        while g(hi) < 0 and n_expand < 60:
-            lo = hi
-            hi = hi + direction * step
-            step *= 1.5
-            n_expand += 1
-        if g(hi) < 0:
-            raise RuntimeError(
-                f"profile CI bracket failed for coef {j} (direction {direction:+.0f}); "
-                f"penalized likelihood too flat — inspect the design matrix."
+        side = "low" if direction < 0 else "high"
+        try:
+            step = max(se_j, 1e-3)
+            lo = beta_hat
+            hi = beta_hat + direction * step
+            n_expand = 0
+            while g(hi) < 0 and n_expand < 60:
+                lo = hi
+                hi = hi + direction * step
+                step *= 1.5
+                n_expand += 1
+            if g(hi) < 0:
+                raise ProfileNonConvergenceError(
+                    f"bracket failed for {label} ({side}): penalized likelihood "
+                    f"too flat to drop by {chi2_crit:.4f} within 60 expansions"
+                )
+            a, b = (hi, lo) if direction < 0 else (lo, hi)
+            bound = float(brentq(g, a, b, xtol=1e-6))
+            method = "profile"
+        except ProfileNonConvergenceError as err:
+            bound = float(beta_hat + direction * z_crit * se_j)
+            method = "wald-fallback"
+            print(
+                f"[i591_firth] WARNING: profile {side} CI bound for {label} not "
+                f"estimable by penalized likelihood ({err}); Wald fallback "
+                f"beta {'-' if direction < 0 else '+'} {z_crit:.4f}*SE = {bound:+.4f} "
+                f"used and flagged in the output JSON.",
+                file=sys.stderr,
+                flush=True,
             )
-        a, b = (hi, lo) if direction < 0 else (lo, hi)
-        bound = float(brentq(g, a, b, xtol=1e-6))
         bounds.append(bound)
-    return bounds[0], bounds[1]
+        methods.append(method)
+    return bounds[0], bounds[1], methods[0], methods[1]
 
 
 def firth_logistic(
@@ -252,16 +340,41 @@ def firth_logistic(
     if profile_ci:
         lows = np.empty(p)
         highs = np.empty(p)
+        m_low: list[str] = []
+        m_high: list[str] = []
         for j in range(p):
-            lows[j], highs[j] = _profile_ci_one(X, y, j, float(beta[j]), float(se[j]), pl)
+            lows[j], highs[j], ml, mh = _profile_ci_one(
+                X, y, j, float(beta[j]), float(se[j]), pl, name=names[j]
+            )
+            m_low.append(ml)
+            m_high.append(mh)
         res.ci_low, res.ci_high = lows, highs
+        res.ci_method_low, res.ci_method_high = m_low, m_high
     if plr_pvalues:
         pvals = np.empty(p)
+        p_methods: list[str] = []
         for j in range(p):
-            pl0 = _profile_pl_at(X, y, j, 0.0)
-            stat = max(0.0, 2.0 * (pl - pl0))
+            try:
+                pl0 = _profile_pl_at(X, y, j, 0.0)
+                stat = max(0.0, 2.0 * (pl - pl0))
+                method = "plr"
+            except ProfileNonConvergenceError as err:
+                # Same non-estimability class as the CI bounds: the null-
+                # constrained fit would not converge. Flagged Wald chi-square
+                # p-value instead — equivalent two-sided z-test on beta/SE.
+                stat = float((beta[j] / se[j]) ** 2)
+                method = "wald-fallback"
+                print(
+                    f"[i591_firth] WARNING: PLR p-value for coef {j} "
+                    f"({names[j]!r}) not estimable ({err}); Wald chi-square "
+                    f"fallback used and flagged in the output JSON.",
+                    file=sys.stderr,
+                    flush=True,
+                )
             pvals[j] = float(chi2.sf(stat, df=1))
+            p_methods.append(method)
         res.p_values = pvals
+        res.p_method = p_methods
     return res
 
 
@@ -294,6 +407,15 @@ def validate_against_sex2(csv_path: Path = SEX2_CSV_DEFAULT, coef_tol: float = 1
                 f"sex2 validation FAILED: coef[{name}] = {got:.8f}, published "
                 f"logistf reference = {ref:.8f} (|diff| > {coef_tol})"
             )
+    # The well-conditioned reference fit must never trip the #591-e5 fallback
+    # path: every CI bound and p-value stays exact-profile/PLR. Pins the
+    # rescue-ladder rung 0 == pre-fix behavior for converging fits.
+    assert report["fitted"]["profile_fallback_coefs"] == [], report["fitted"][
+        "profile_fallback_coefs"
+    ]
+    assert all(m == "profile" for m in report["fitted"]["ci95_method_low"])
+    assert all(m == "profile" for m in report["fitted"]["ci95_method_high"])
+    assert all(m == "plr" for m in report["fitted"]["p_method"])
     # CI self-consistency: PL drop at each bound == chi2 crit; bounds bracket.
     Xi = np.column_stack([np.ones(X.shape[0]), X])
     for j, name in enumerate(res.names):
