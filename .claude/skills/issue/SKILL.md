@@ -3858,7 +3858,7 @@ clean-result-critic in 9a-bis enforces register discipline on them.
    `/tmp/issue-<N>-humanize-loop.md`, then update via:
    ```bash
    uv run python scripts/task.py set-body <N> --file /tmp/issue-<N>-humanize-loop.md
-   uv run python scripts/verify_task_body.py --issue <N>
+   uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N>  # main-checkout copy, never the worktree's (spec-stale risk, incident #496)
    ```
    The verifier MUST still PASS — the humanize loop is not allowed to
    produce a body that breaks Lens 1-13 mechanical checks. If it does:
@@ -4399,7 +4399,7 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    `**Methodology:**` line and the Reproducibility row), but the
    verifier costs ~1s and catches the unlikely off-anchor edit:
    ```bash
-   uv run python scripts/verify_task_body.py --issue <N>
+   uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N>  # main-checkout copy, never the worktree's (spec-stale risk, incident #496)
    ```
    Do NOT re-run the full clean-result-critic loop — this is a
    mechanical post-script edit, not a substantive body change.

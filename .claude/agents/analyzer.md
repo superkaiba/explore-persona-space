@@ -429,7 +429,7 @@ repeatedly trip the long-standing clean-result-critic lenses (Lens 2 /
 Run the pre-publish clean-result validator against the local body file:
 
 ```bash
-uv run python scripts/verify_task_body.py --file .claude/cache/experiment-<N>-clean-result.md
+uv run python "$REPO_ROOT"/scripts/verify_task_body.py --file .claude/cache/experiment-<N>-clean-result.md  # ALWAYS the main checkout's copy — a worktree's verifier can be spec-stale (incident #496)
 ```
 
 Every FAIL must be fixed before posting. WARNs may ship when explicitly acknowledged in the body (e.g. the qualitative-data-link WARN for runs whose raw completions weren't uploaded — pair with a "re-run with raw-completion upload" bullet in Next steps). Do NOT proceed to Step 6 until the verifier is FAIL-free.
