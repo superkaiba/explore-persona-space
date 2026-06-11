@@ -103,6 +103,107 @@ def list_repo_files_complete(
     return sorted(files)
 
 
+def download_repo_subfolder(
+    repo_id: str,
+    subfolder: str,
+    *,
+    revision: str | None = None,
+    repo_type: str = "model",
+    token: str | None = None,
+    local_dir: str | Path | None = None,
+) -> Path:
+    """Download every file under ``subfolder`` of an HF repo; fail-loud.
+
+    Robust replacement for ``snapshot_download(allow_patterns=[f"{sub}/*"])``,
+    which SILENTLY RETURNS WITH 0 FILES DOWNLOADED on very large repos: it
+    intersects ``allow_patterns`` against the truncating
+    ``repo_info().siblings`` listing (~7901 entries — see
+    ``list_repo_files_complete``), so a subfolder living in the truncated tail
+    matches nothing and no error is raised (#557 Stage-A smoke crash,
+    2026-06-10). This helper enumerates the subfolder via the paginated
+    ``list_repo_tree`` walk (complete, server-side filtered to ``subfolder``)
+    and downloads each file explicitly with ``hf_hub_download``, preserving
+    the repo-relative layout under ``local_dir``.
+
+    Args:
+        repo_id: HF Hub repo ID.
+        subfolder: Repo-relative folder whose files (recursive) to download.
+        revision: Optional git revision pin; ``None`` = repo default branch.
+        repo_type: ``'model'`` / ``'dataset'`` / ``'space'``.
+        token: HF token; defaults to the ambient ``HF_TOKEN`` env var.
+        local_dir: Destination root (files land at ``local_dir/<repo path>``).
+            Defaults to a deterministic dir under ``HF_HOME``.
+
+    Returns:
+        ``Path(local_dir) / subfolder`` with all matched files materialized.
+
+    Raises:
+        FileNotFoundError: The subfolder does not exist (or lists 0 files) at
+            the requested revision, or a file failed to materialize locally.
+    """
+    from huggingface_hub import HfApi, hf_hub_download
+    from huggingface_hub.errors import EntryNotFoundError
+    from huggingface_hub.hf_api import RepoFile
+
+    if token is None:
+        token = os.environ.get("HF_TOKEN")
+    sub = subfolder.strip("/")
+    at_rev = f" at revision {revision}" if revision else ""
+    api = HfApi(token=token)
+    try:
+        matched = sorted(
+            entry.path
+            for entry in api.list_repo_tree(
+                repo_id=repo_id,
+                path_in_repo=sub,
+                repo_type=repo_type,
+                revision=revision,
+                recursive=True,
+            )
+            if isinstance(entry, RepoFile)
+        )
+    except EntryNotFoundError as e:
+        raise FileNotFoundError(f"Subfolder {sub}/ not found in {repo_id}{at_rev}") from e
+    if not matched:
+        raise FileNotFoundError(
+            f"Subfolder {sub}/ in {repo_id}{at_rev} lists 0 files via list_repo_tree"
+        )
+    if local_dir is None:
+        cache_root = Path(os.environ.get("HF_HOME", str(Path.home() / ".cache" / "huggingface")))
+        local_dir = (
+            cache_root
+            / "eps-subfolder-downloads"
+            / f"{repo_type}s--{repo_id.replace('/', '--')}"
+            / (revision or "default")
+        )
+    local_dir = Path(local_dir)
+    local_dir.mkdir(parents=True, exist_ok=True)
+    for fname in matched:
+        hf_hub_download(
+            repo_id=repo_id,
+            filename=fname,
+            repo_type=repo_type,
+            revision=revision,
+            token=token,
+            local_dir=str(local_dir),
+        )
+    missing = [f for f in matched if not (local_dir / f).exists()]
+    if missing:
+        raise FileNotFoundError(
+            f"{len(missing)}/{len(matched)} files under {sub}/ failed to materialize "
+            f"in {local_dir}: {missing[:3]}"
+        )
+    logger.info(
+        "Downloaded %d files for %s/%s%s -> %s",
+        len(matched),
+        repo_id,
+        sub,
+        at_rev,
+        local_dir / sub,
+    )
+    return local_dir / sub
+
+
 def _upload(
     local_path: Path,
     repo_id: str,

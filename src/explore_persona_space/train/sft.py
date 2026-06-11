@@ -558,6 +558,31 @@ class TrainLoraConfig:
     marker_band_high_nats: float = 12.0
     marker_band_eval_every_steps: int = 10
     marker_band_min_steps: int = 20
+    # Issue #543 flag-gated band-stop extensions (all default-preserving;
+    # ported from origin/issue-557 @ 35bd560de for #570 — see
+    # MarkerBandStopCallback for semantics):
+    #   marker_band_min_argmax_rate — when set, the stop predicate ALSO
+    #     requires the fraction of probe rows whose slot argmax is the
+    #     marker to be >= this value (emission proxy from the SAME probe
+    #     forward). None (default) = log-prob band only (pre-#543 behavior).
+    #   marker_band_overshoot_stop — when True, a probe reading ABOVE
+    #     high_nats without the predicate having fired stops training
+    #     immediately with an `overshoot` flag so a rolling-checkpoint
+    #     nearest-band selection can recover the in-band checkpoint.
+    #   marker_band_dump_jsonl_path — when set, every probe read appends a
+    #     JSON line with the per-row 4-float slot stats (trained AND base)
+    #     to this path (the in-loop trajectory record, storage contract of
+    #     .claude/rules/marker-leakage-measurement.md).
+    marker_band_min_argmax_rate: float | None = None
+    marker_band_overshoot_stop: bool = False
+    marker_band_dump_jsonl_path: str | None = None
+    # WandB namespace for the band-stop callback's trajectory series (e.g.
+    # "marker_trigger" for #543); default keeps the historical "marker".
+    marker_band_log_prefix: str = "marker"
+    # When set, the band-stop callback writes a JSON stop record on train
+    # end (stop_reason/step/delta/argmax + final step) — the dispatcher's
+    # readable outcome surface (train_lora tears the trainer down).
+    marker_band_stop_record_path: str | None = None
     # Soft cap on probe batch size — too large and the per-eval forward
     # pass costs grow; too small and the per-step delta is noisy. ~32 rows
     # is a good balance for the canonical 7B-Qwen marker setup.
@@ -612,6 +637,20 @@ class TrainLoraConfig:
     # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
     # (Sagan todo 68b5822f) and currently raises NotImplementedError.
     backend: Literal["hf", "unsloth"] = "hf"
+    # Issue #506 Phase-0a item 2 (ported to main for #543/#570): continue-adapter
+    # contract. When set, the trainer loads the named adapter via
+    # ``PeftModel.from_pretrained(base, path, is_trainable=True)`` instead of
+    # attaching a fresh LoRA — the adapter's own ``r``/``alpha``/``dropout``
+    # win, so the LoRA cfg fields are informational only when this is set.
+    # Used by Phase 2 of #506/#543/#557/#570 (continue the Phase-1 adapter
+    # under continued SFT) to make "did the install survive Phase 2?" well-posed.
+    existing_adapter_path: str | None = None
+    # Issue #543: LR-schedule passthrough. Main previously hardcoded
+    # "cosine" in the SFTConfig kwargs; the default preserves that for every
+    # existing caller. #543/#570 Phase 1 passes "constant_with_warmup" so that
+    # band-stopped arms ending at different step counts see exchangeable
+    # per-step LRs (schedule x ratio confound removal, #543 plan §11).
+    lr_scheduler_type: str = "cosine"
 
 
 def _apply_chat_template_safe(tokenizer, messages, *, add_generation_prompt: bool):
@@ -882,12 +921,18 @@ def _maybe_attach_marker_band_stop(
         eos_token_id=tokenizer.eos_token_id,
         log_only=cfg.marker_band_log_only,
         trajectory_out_path=cfg.marker_band_trajectory_path,
+        # #543 flag-gated extensions (all default-preserving).
+        min_argmax_rate=cfg.marker_band_min_argmax_rate,
+        overshoot_stop=cfg.marker_band_overshoot_stop,
+        dump_jsonl_path=cfg.marker_band_dump_jsonl_path,
+        log_prefix=cfg.marker_band_log_prefix,
+        stop_record_path=cfg.marker_band_stop_record_path,
     )
     trainer.add_callback(callback)
     logger.info(
         "MarkerBandStopCallback attached: %d source-probe rows, marker_ids=%s, "
         "band=[%.2f, %.2f] nat, eval_every=%d steps, min_steps=%d, log_only=%s, "
-        "trajectory_out_path=%s",
+        "trajectory_out_path=%s, min_argmax_rate=%s, overshoot_stop=%s",
         n_rows,
         marker_ids,
         cfg.marker_band_low_nats,
@@ -896,6 +941,8 @@ def _maybe_attach_marker_band_stop(
         cfg.marker_band_min_steps,
         cfg.marker_band_log_only,
         cfg.marker_band_trajectory_path,
+        cfg.marker_band_min_argmax_rate,
+        cfg.marker_band_overshoot_stop,
     )
 
 
@@ -959,7 +1006,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     """
     import torch
     from datasets import load_dataset
-    from peft import LoraConfig, TaskType
+    from peft import LoraConfig, PeftModel, TaskType
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     SFTConfig, SFTTrainer = _load_trl_sft_classes()
@@ -1028,6 +1075,26 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         use_rslora=True,
     )
 
+    # Issue #506 Phase-0a item 2 (ported for #543/#570): continue-adapter
+    # contract. When ``cfg.existing_adapter_path`` is set we load the adapter
+    # on TOP of the base model via ``PeftModel.from_pretrained(...,
+    # is_trainable=True)`` and DROP the ``peft_config`` kwarg below so
+    # TRL/SFTTrainer doesn't re-attach a fresh LoRA. The adapter's own
+    # r/alpha/dropout win; the cfg LoRA fields above are informational only
+    # when continuing.
+    if cfg.existing_adapter_path is not None:
+        adapter_path = Path(cfg.existing_adapter_path)
+        if not adapter_path.exists():
+            raise FileNotFoundError(
+                f"existing_adapter_path does not exist: {adapter_path}. "
+                "Continue-adapter contract requires a local adapter directory."
+            )
+        logger.info(
+            "Continuing existing adapter: %s (is_trainable=True; fresh LoRA wrap SKIPPED)",
+            adapter_path,
+        )
+        model = PeftModel.from_pretrained(model, str(adapter_path), is_trainable=True)
+
     # Round-6 (issue #365): defend against the round-5 StopIteration crash.
     # `load_dataset("json", ...)` raises a bare ``StopIteration`` (with no
     # informative message) when the JSONL file has zero rows. Detect that
@@ -1059,7 +1126,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "gradient_accumulation_steps": cfg.grad_accum,
         "learning_rate": cfg.lr,
         "warmup_ratio": cfg.warmup_ratio,
-        "lr_scheduler_type": "cosine",
+        "lr_scheduler_type": cfg.lr_scheduler_type,
         "logging_steps": cfg.logging_steps,
         "save_strategy": cfg.save_strategy,
         "bf16": True,
@@ -1107,8 +1174,12 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "args": sft_config,
         "train_dataset": dataset,
         "processing_class": tokenizer,
-        "peft_config": lora_config,
     }
+    # Only attach ``peft_config`` for the FRESH-LoRA path. When continuing an
+    # existing adapter the model is already a PeftModel above and TRL must
+    # NOT re-wrap it (re-wrap drops the loaded adapter weights silently).
+    if cfg.existing_adapter_path is None:
+        sft_trainer_kwargs["peft_config"] = lora_config
     if callbacks:
         sft_trainer_kwargs["callbacks"] = callbacks
     trainer = SFTTrainer(**sft_trainer_kwargs)

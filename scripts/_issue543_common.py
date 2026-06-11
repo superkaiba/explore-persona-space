@@ -5,12 +5,21 @@ Tests whether lowering the trigger->marker positive ratio in the install data
 trigger cell, lets a marker install on Qwen-2.5-7B survive one epoch of benign
 medical SFT better than the 50/50 baseline (plan v4, tasks/.../543/plans/plan.md).
 
+Issue #557 (erasure-pressure lr sweep over the #543 r50 installs) reuses this
+module: the ``ISSUE_557``/variant-aware helpers below redirect OUTPUT paths to
+``issue_557`` namespaces when a ``--variant`` lr tag is set, while every
+parent-side READ (phase1_result.json, the Phase-1 adapter resolve) stays on
+the ``issue_543`` paths (#557 plan §4.2 threading-scope note). All #543
+defaults are byte-identical when no variant is set.
+
 Imported by:
   - scripts/gen_issue543_response_bank.py
   - scripts/build_issue543_mixes.py
   - scripts/run_issue543_ratio.py
   - scripts/eval_issue543.py
   - scripts/rollup_issue543_survival.py
+  - scripts/probe_issue557_absorption.py
+  - scripts/rollup_issue557_lrsweep.py
 """
 
 from __future__ import annotations
@@ -45,6 +54,20 @@ EXPECTED_MARKER_ID = 83399
 EXPECTED_BARE_MARKER_ID = 63680
 EOS_TOKEN_ID = 151645  # <|im_end|> on Qwen-2.5
 MIN_TRIGGER_TOKENS = 4  # plan requires >= 4; measured 12 on this tokenizer
+
+# ── Issue #557 (erasure-pressure lr sweep) namespaces + pinned revisions ─────
+# Output namespaces are DISJOINT from the parent's so run_phase2's idempotency
+# check never collides with the committed issue_543 phase2_result.json files
+# (#557 plan §4.2 — risk 2, "Certain without fix").
+
+ISSUE_557 = 557
+WANDB_PROJECT_557 = "issue557_erasure_pressure"
+HUB_RAW_COMPLETIONS_BUCKET_557 = "issue557_lr_sweep/raw_completions"
+# Parent-card pins (#557 plan §4.1 fitness check (e)): the concurrent #543
+# 1%-arm follow-up only ADDS artifacts, but pin anyway so nothing can move.
+HUB_MODEL_REPO_REVISION_543 = "3683ee29b8a415c325d1d83687641141c6c91819"
+HUB_DATA_REPO_REVISION_543 = "6d51a15300ee10601ee7377621c7511c2d010a0d"
+HUB_PROBES_PREFIX = "issue543_ratio_survival/v1/probes"
 
 # ── Arms / seeds / phases (plan §4 / §5) ────────────────────────────────────
 
@@ -188,6 +211,7 @@ EVAL_QUESTIONS_PATH = DATA_DIR / "eval_questions.json"
 BHAT_PATH = DATA_DIR / "bhat.json"
 MIX_MANIFEST_PATH = MIXES_DIR / "manifest.json"
 EVAL_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "issue_543"
+EVAL_RESULTS_DIR_557 = PROJECT_ROOT / "eval_results" / "issue_557"
 
 # Chain question pools on the HF data repo (Hub-verified, plan §10).
 HUB_QUESTIONS_PATH = "issue475_cot_install/_seed/questions.json"
@@ -365,6 +389,89 @@ def run_name(arm: str, seed: int, phase: str) -> str:
     return f"issue543_{cell_slug(arm, seed, phase)}"
 
 
+# ── Issue #557 variant-aware naming (OUTPUT paths only; reads stay #543) ─────
+
+_VARIANT_RE = r"[a-z0-9_]+"
+
+
+def validate_variant(variant: str) -> str:
+    """Assert the lr-tag variant is path/sentinel-safe (e.g. ``lr3e5``)."""
+    import re
+
+    if not re.fullmatch(_VARIANT_RE, variant):
+        raise ValueError(
+            f"--variant {variant!r} must match {_VARIANT_RE} — it threads into "
+            "filesystem paths, HF subfolders, and sentinel filenames."
+        )
+    return variant
+
+
+def cell_slug_v(arm: str, seed: int, phase: str, variant: str | None) -> str:
+    """Variant-aware cell slug; identical to ``cell_slug`` when variant is None."""
+    if variant is None:
+        return cell_slug(arm, seed, phase)
+    return f"{arm}_{variant}_seed{seed}_{phase}"
+
+
+def variant_cell_dir(arm: str, variant: str, seed: int) -> Path:
+    """#557 OUTPUT cell dir: ``eval_results/issue_557/<arm>/<variant>/seed<S>``."""
+    return EVAL_RESULTS_DIR_557 / arm / variant / f"seed{seed}"
+
+
+def adapter_subfolder_v(arm: str, seed: int, phase: str, variant: str | None) -> str:
+    """HF subfolder; #557 plan §10: ``adapters/issue557/<arm>_seed<S>_phase2_<lrtag>``."""
+    if variant is None:
+        return adapter_subfolder(arm, seed, phase)
+    return f"issue557/{arm}_seed{seed}_{phase}_{variant}"
+
+
+def run_name_v(arm: str, seed: int, phase: str, variant: str | None) -> str:
+    if variant is None:
+        return run_name(arm, seed, phase)
+    return f"issue557_{cell_slug_v(arm, seed, phase, variant)}"
+
+
+def sentinel_slug_v(arm: str, seed: int, phase: str, variant: str) -> str:
+    """#557 plan §10 sentinel shape: ``issue-557-r50-<lrtag>-s<S>-phase2.json``."""
+    return f"{arm}-{variant}-s{seed}-{phase}"
+
+
+def ensure_probe_files_local() -> None:
+    """Fetch the 4 frozen trajectory probe JSONLs from the HF data repo.
+
+    The #543 pod built these via the mix build; a fresh #557 pod skips that
+    path, so ``run_phase2``'s ``_bystander_callbacks`` would FileNotFoundError
+    without this fetch (#557 plan §4.1). Pinned to the parent-card data-repo
+    revision; row counts asserted. Idempotent (existing files are kept).
+    """
+    from huggingface_hub import hf_hub_download
+
+    PROBES_DIR.mkdir(parents=True, exist_ok=True)
+    for fname in PROBE_FILES:
+        local = PROBES_DIR / fname
+        if not local.exists():
+            logger.info(
+                "Fetching probe %s from %s@%s",
+                fname,
+                HUB_DATA_REPO,
+                HUB_DATA_REPO_REVISION_543[:8],
+            )
+            got = hf_hub_download(
+                repo_id=HUB_DATA_REPO,
+                filename=f"{HUB_PROBES_PREFIX}/{fname}",
+                repo_type="dataset",
+                revision=HUB_DATA_REPO_REVISION_543,
+                token=os.environ.get("HF_TOKEN"),
+            )
+            local.write_text(Path(got).read_text())
+        n = sum(1 for ln in local.read_text().splitlines() if ln.strip())
+        if n != N_PROBE_ROWS:
+            raise RuntimeError(
+                f"Probe {fname} has {n} rows; expected {N_PROBE_ROWS} "
+                "(stale local file or wrong Hub revision)."
+            )
+
+
 # ── JSONL i/o ────────────────────────────────────────────────────────────────
 
 
@@ -446,20 +553,24 @@ def phase_log(name: str) -> None:
     print(msg, flush=True)
 
 
-def write_sentinel(slug: str, *, kind: str, note: str, version: int = 1) -> Path:
+def write_sentinel(
+    slug: str, *, kind: str, note: str, version: int = 1, issue: int = ISSUE
+) -> Path:
     """Write a poll_pipeline-conformant sentinel JSON to the sentinel dir.
 
-    Filename ``issue-543-<slug>-<epoch>.json`` matches the poller's
+    Filename ``issue-<issue>-<slug>-<epoch>.json`` matches the poller's
     ``/workspace/logs/issue-<N>-*.json`` drain glob; the payload carries every
     key in ``poll_pipeline._SENTINEL_REQUIRED_KEYS``
-    (sentinel_schema_version / kind / version).
+    (sentinel_schema_version / kind / version). ``issue`` defaults to 543;
+    #557 variant cells pass ``issue=ISSUE_557`` so the #557 orchestrator's
+    poll loop (draining ``issue-557-*.json``) actually sees them.
     """
     d = sentinel_dir()
     d.mkdir(parents=True, exist_ok=True)
-    path = d / f"issue-{ISSUE}-{slug}-{int(time.time())}.json"
+    path = d / f"issue-{issue}-{slug}-{int(time.time())}.json"
     payload = {
         "sentinel_schema_version": 1,
-        "task_id": ISSUE,
+        "task_id": issue,
         "kind": kind,
         "version": version,
         "gate": None,

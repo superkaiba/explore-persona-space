@@ -600,10 +600,13 @@ def _decide_band_stop(
     low_nats: float,
     high_nats: float,
     min_steps: int,
+    argmax_rate: float | None = None,
+    min_argmax_rate: float | None = None,
 ) -> bool:
     """Pure decision function for the marker band-stop predicate.
 
-    Stop iff ``low_nats <= delta_nats <= high_nats`` AND ``global_step >= min_steps``.
+    Stop iff ``low_nats <= delta_nats <= high_nats`` AND ``global_step >= min_steps``
+    AND (when ``min_argmax_rate`` is set) ``argmax_rate >= min_argmax_rate``.
 
     Exposed as a module-level function so it can be unit-tested without a
     real model (the callback's only model-touching code is the log-prob
@@ -617,13 +620,26 @@ def _decide_band_stop(
         high_nats: Upper edge of the useful band (Regime A default 12.0).
         min_steps: Minimum step count before stopping is allowed (guard
             against stopping on a transient noisy first-eval reading).
+        argmax_rate: Fraction of probe rows whose slot argmax is the marker
+            (from the SAME probe forward). Ignored when ``min_argmax_rate``
+            is None.
+        min_argmax_rate: When set (issue #543), the stop ALSO requires
+            ``argmax_rate >= min_argmax_rate``. None (default) preserves the
+            pre-#543 log-prob-band-only predicate.
 
     Returns:
         True iff training should stop now.
     """
     if global_step < min_steps:
         return False
-    return low_nats <= delta_nats <= high_nats
+    if not (low_nats <= delta_nats <= high_nats):
+        return False
+    if min_argmax_rate is not None:
+        if argmax_rate is None:
+            raise ValueError("min_argmax_rate set but argmax_rate reading is None")
+        if argmax_rate < min_argmax_rate:
+            return False
+    return True
 
 
 class MarkerBandStopCallback(TrainerCallback):
@@ -710,9 +726,41 @@ class MarkerBandStopCallback(TrainerCallback):
         eos_token_id: int | None = None,
         log_only: bool = False,
         trajectory_out_path: str | None = None,
+        min_argmax_rate: float | None = None,
+        stop_enabled: bool = True,
+        overshoot_stop: bool = False,
+        dump_jsonl_path: str | None = None,
+        stop_record_path: str | None = None,
     ):
+        """See class docstring; the five trailing kwargs are #543 extensions.
+
+        min_argmax_rate: when set, the stop predicate ALSO requires the
+            fraction of probe rows whose slot argmax is the marker to be
+            >= this value (deterministic greedy-emission proxy from the
+            SAME probe forward). None = pre-#543 behavior.
+        stop_enabled: when False the callback is TRAJECTORY-ONLY — it logs
+            the per-step 4-float slot stats (WandB + optional JSONL dump)
+            but never sets should_training_stop (used for the #543/#570
+            bystander probes and the Phase-2 decay trajectories). Distinct
+            from ``log_only`` (#480), which keeps the band-entry detection
+            but suppresses the stop.
+        overshoot_stop: when True, a probe reading ABOVE high_nats without
+            the stop predicate having fired stops training immediately and
+            records ``stop_reason='overshoot'`` so the caller can run the
+            rolling-checkpoint nearest-band selection.
+        dump_jsonl_path: when set, every probe read appends one JSON line
+            with per-row logp/z_marker/z_eos/logZ for trained AND base
+            (the storage contract of marker-leakage-measurement.md).
+        stop_record_path: when set, on_train_end writes a JSON stop record
+            (stop_reason/stop_step/stop_delta_mean/stop_argmax_rate/
+            final_global_step/base_logp_mean + the last probe readings) so
+            the dispatcher can read the outcome after train_lora returns
+            (train_lora tears the trainer down internally).
+        """
         if not marker_token_ids:
             raise ValueError("MarkerBandStopCallback requires a non-empty marker_token_ids")
+        if min_argmax_rate is not None and not (0.0 <= min_argmax_rate <= 1.0):
+            raise ValueError(f"min_argmax_rate must be in [0, 1], got {min_argmax_rate}")
         if low_nats >= high_nats:
             raise ValueError(
                 f"low_nats ({low_nats}) must be strictly less than high_nats ({high_nats})"
@@ -753,6 +801,11 @@ class MarkerBandStopCallback(TrainerCallback):
         self.eos_token_id = int(eos_token_id) if eos_token_id is not None else None
         self.log_only = bool(log_only)
         self.trajectory_out_path = trajectory_out_path
+        self.min_argmax_rate = float(min_argmax_rate) if min_argmax_rate is not None else None
+        self.stop_enabled = bool(stop_enabled)
+        self.overshoot_stop = bool(overshoot_stop)
+        self.dump_jsonl_path = dump_jsonl_path
+        self.stop_record_path = stop_record_path
 
         # Tensor-shape asserts at the construction boundary.
         assert probe_input_ids.ndim == 2, probe_input_ids.shape
@@ -780,6 +833,20 @@ class MarkerBandStopCallback(TrainerCallback):
         # logged exactly once.
         self._trajectory_records: list[dict] = []
         self._band_entry_logged = False
+        # #543 stop-record surface, readable by the dispatcher after
+        # trainer.train() returns (phase1_stop_record.json):
+        #   stop_reason ∈ {None, "band", "overshoot"}
+        self.stop_reason: str | None = None
+        self.stop_step: int | None = None
+        self.stop_delta_mean: float | None = None
+        self.stop_argmax_rate: float | None = None
+        self.last_delta_mean: float | None = None
+        self.last_argmax_rate: float | None = None
+        self.last_trained_logp_mean: float | None = None
+        # #543 round-2: trajectory-dump write failures are counted + surfaced
+        # (stop record + dispatcher row-count assertion), never silent.
+        self.dump_write_error_count: int = 0
+        self.dump_write_last_error: str | None = None
 
     def on_train_begin(self, args, state, control, **kwargs):
         """Reset per-phase state (callback may be reused across phases).
@@ -796,6 +863,19 @@ class MarkerBandStopCallback(TrainerCallback):
         self._disabled_too_short = False
         self._trajectory_records = []
         self._band_entry_logged = False
+        self.stop_reason = None
+        self.stop_step = None
+        self.stop_delta_mean = None
+        self.stop_argmax_rate = None
+        self.last_delta_mean = None
+        self.last_argmax_rate = None
+        self.last_trained_logp_mean = None
+        self.dump_write_error_count = 0
+        self.dump_write_last_error = None
+        if not self.stop_enabled:
+            # Trajectory-only mode (#543): logging is harmless on short runs,
+            # so the too-short disable (a stop-predicate guard) never applies.
+            return
         if state.max_steps > 0 and state.max_steps < self.min_steps:
             logger.warning(
                 "[%s] max_steps=%d < min_steps=%d — the band-stop guard "
@@ -839,55 +919,45 @@ class MarkerBandStopCallback(TrainerCallback):
         trained_mean = float(trained_per_row.mean().item())
         delta_per_row = trained_per_row - self._base_logp_per_row.to(trained_per_row.device)
         delta_mean = float(delta_per_row.mean().item())
+        # #543 emission proxy from the SAME forward pass. ``.get`` (not ``[]``)
+        # keeps pre-#543 test stubs / monkeypatched readers (which return only
+        # the 4-float set) working: argmax_rate stays None for them, and
+        # ``_decide_band_stop`` fail-louds iff ``min_argmax_rate`` is set
+        # while the reading is missing.
+        _argmax_is_marker = trained_stats.get("argmax_is_marker")
+        argmax_rate = (
+            float(_argmax_is_marker.float().mean().item())
+            if _argmax_is_marker is not None
+            else None
+        )
+        self.last_delta_mean = delta_mean
+        self.last_argmax_rate = argmax_rate
+        self.last_trained_logp_mean = trained_mean
 
         logger.info(
-            "[%s] Step %d: trained log P(marker)=%.4f nat, base=%.4f nat, delta=%+.4f nat "
-            "(band=[%.2f, %.2f], min_steps=%d)",
+            "[%s] Step %d: trained log P(marker)=%.4f nat, base=%.4f nat, delta=%+.4f nat, "
+            "argmax_rate=%s (band=[%.2f, %.2f], min_steps=%d, stop_enabled=%s)",
             self.log_prefix,
             state.global_step,
             trained_mean,
             self._base_logp_mean,
             delta_mean,
+            argmax_rate,
             self.low_nats,
             self.high_nats,
             self.min_steps,
+            self.stop_enabled,
         )
 
-        if wandb.run is not None:
-            # Log-prob (PRIMARY, the band-stop DV) + raw-logit (SECONDARY,
-            # non-saturating mechanistic readout) trajectories from the SAME
-            # forward pass — "report BOTH log-prob and logit"
-            # (.claude/rules/marker-leakage-measurement.md). The band-stop
-            # DECISION below stays on the log-prob band, unchanged.
-            metrics = {
-                f"{self.log_prefix}/source_logp_mean": trained_mean,
-                f"{self.log_prefix}/source_logp_base_mean": self._base_logp_mean,
-                f"{self.log_prefix}/source_delta_nats": delta_mean,
-                f"{self.log_prefix}/z_marker_trained": float(
-                    trained_stats["z_marker"].mean().item()
-                ),
-                f"{self.log_prefix}/z_marker_base": float(
-                    self._base_slot_stats["z_marker"].mean().item()
-                ),
-                f"{self.log_prefix}/delta_z_marker": float(
-                    (
-                        trained_stats["z_marker"]
-                        - self._base_slot_stats["z_marker"].to(trained_stats["z_marker"].device)
-                    )
-                    .mean()
-                    .item()
-                ),
-                f"{self.log_prefix}/logZ_trained": float(trained_stats["logZ"].mean().item()),
-                f"{self.log_prefix}/logZ_base": float(self._base_slot_stats["logZ"].mean().item()),
-            }
-            if trained_stats["z_eos"] is not None:
-                metrics[f"{self.log_prefix}/z_eos_trained"] = float(
-                    trained_stats["z_eos"].mean().item()
-                )
-                metrics[f"{self.log_prefix}/z_eos_base"] = float(
-                    self._base_slot_stats["z_eos"].mean().item()
-                )
-            wandb.log(metrics, step=state.global_step)
+        if self.dump_jsonl_path is not None:
+            self._dump_trajectory_record(
+                step=state.global_step,
+                trained_stats=trained_stats,
+                argmax_rate=argmax_rate,
+                delta_mean=delta_mean,
+            )
+
+        self._log_wandb_trajectory(state, trained_stats, trained_mean, delta_mean, argmax_rate)
 
         if self.trajectory_out_path is not None:
             self._trajectory_records.append(
@@ -916,13 +986,22 @@ class MarkerBandStopCallback(TrainerCallback):
             # probe so a mid-run crash never loses the trajectory.
             self._write_trajectory()
 
+        if not self.stop_enabled:
+            # Trajectory-only mode (#543): never touch the stop control.
+            return
+
         should_stop = _decide_band_stop(
             delta_mean,
             state.global_step,
             low_nats=self.low_nats,
             high_nats=self.high_nats,
             min_steps=self.min_steps,
+            argmax_rate=argmax_rate,
+            min_argmax_rate=self.min_argmax_rate,
         )
+        if not should_stop and self.overshoot_stop and delta_mean > self.high_nats:
+            self._fire_overshoot_stop(state, control, delta_mean, argmax_rate)
+            return
         if should_stop and self.log_only:
             # Log-only mode (issue #480 band-stopped-anchor-rerun): record
             # the FIRST band entry loudly (log line + WandB scalar) but never
@@ -978,9 +1057,97 @@ class MarkerBandStopCallback(TrainerCallback):
             control.should_training_stop = True
             control.should_save = True
             self._stopped = True
+            self.stop_reason = "band"
+            self.stop_step = int(state.global_step)
+            self.stop_delta_mean = delta_mean
+            self.stop_argmax_rate = argmax_rate
+
+    def _log_wandb_trajectory(
+        self, state, trained_stats: dict, trained_mean: float, delta_mean: float, argmax_rate
+    ) -> None:
+        """Log the per-probe trajectory metrics to WandB (no-op without a run).
+
+        Log-prob (PRIMARY, the band-stop DV) + raw-logit (SECONDARY,
+        non-saturating mechanistic readout) trajectories from the SAME
+        forward pass — "report BOTH log-prob and logit"
+        (.claude/rules/marker-leakage-measurement.md). The band-stop
+        DECISION stays on the log-prob band, unchanged.
+        """
+        if wandb.run is None:
+            return
+        metrics = {
+            f"{self.log_prefix}/source_logp_mean": trained_mean,
+            f"{self.log_prefix}/source_logp_base_mean": self._base_logp_mean,
+            f"{self.log_prefix}/source_delta_nats": delta_mean,
+            f"{self.log_prefix}/z_marker_trained": float(trained_stats["z_marker"].mean().item()),
+            f"{self.log_prefix}/z_marker_base": float(
+                self._base_slot_stats["z_marker"].mean().item()
+            ),
+            f"{self.log_prefix}/delta_z_marker": float(
+                (
+                    trained_stats["z_marker"]
+                    - self._base_slot_stats["z_marker"].to(trained_stats["z_marker"].device)
+                )
+                .mean()
+                .item()
+            ),
+            f"{self.log_prefix}/logZ_trained": float(trained_stats["logZ"].mean().item()),
+            f"{self.log_prefix}/logZ_base": float(self._base_slot_stats["logZ"].mean().item()),
+        }
+        if trained_stats["z_eos"] is not None:
+            metrics[f"{self.log_prefix}/z_eos_trained"] = float(
+                trained_stats["z_eos"].mean().item()
+            )
+            metrics[f"{self.log_prefix}/z_eos_base"] = float(
+                self._base_slot_stats["z_eos"].mean().item()
+            )
+        if argmax_rate is not None:
+            metrics[f"{self.log_prefix}/argmax_rate"] = argmax_rate
+        wandb.log(metrics, step=state.global_step)
+
+    def _fire_overshoot_stop(self, state, control, delta_mean: float, argmax_rate) -> None:
+        """#543 overshoot guard: stop NOW with an explicit ``overshoot`` flag.
+
+        Fires when the ramp blew past the band between probes without the
+        stop predicate firing (e.g. argmax-rate still below threshold, or
+        the band was crossed within one eval_every window). The dispatcher's
+        rolling-checkpoint nearest-band selection then recovers the in-band
+        checkpoint deterministically.
+        """
+        logger.warning(
+            "[%s] OVERSHOOT-STOP at step %d: delta=%+.4f nat > high=%.2f without "
+            "the stop predicate having fired (argmax_rate=%s, "
+            "min_argmax_rate=%s). Stopping for rolling-checkpoint recovery.",
+            self.log_prefix,
+            state.global_step,
+            delta_mean,
+            self.high_nats,
+            argmax_rate,
+            self.min_argmax_rate,
+        )
+        if wandb.run is not None:
+            wandb.log(
+                {
+                    f"{self.log_prefix}/overshoot_stop_step": state.global_step,
+                    f"{self.log_prefix}/overshoot_stop_delta_nats": delta_mean,
+                },
+                step=state.global_step,
+            )
+        control.should_training_stop = True
+        control.should_save = True
+        self._stopped = True
+        self.stop_reason = "overshoot"
+        self.stop_step = int(state.global_step)
+        self.stop_delta_mean = delta_mean
+        self.stop_argmax_rate = argmax_rate
 
     def on_train_end(self, args, state, control, **kwargs):
-        """Final trajectory flush (per-probe flushes already persisted everything)."""
+        """Final trajectory flush + the #543 stop record (when configured).
+
+        The stop record is written on EVERY end (band stop, overshoot stop,
+        cap hit, crash-free completion) so a cap-hit-without-band is visible
+        as ``stop_reason: null`` rather than a missing file.
+        """
         if self.trajectory_out_path is not None and self._trajectory_records:
             self._write_trajectory()
             logger.info(
@@ -989,6 +1156,86 @@ class MarkerBandStopCallback(TrainerCallback):
                 len(self._trajectory_records),
                 self.trajectory_out_path,
             )
+        if self.stop_record_path is None:
+            return
+        record = {
+            "probe": self.log_prefix,
+            "stop_reason": self.stop_reason,
+            "stop_step": self.stop_step,
+            "stop_delta_mean_nats": self.stop_delta_mean,
+            "stop_argmax_rate": self.stop_argmax_rate,
+            "final_global_step": int(state.global_step),
+            "base_logp_mean": self._base_logp_mean,
+            "last_delta_mean_nats": self.last_delta_mean,
+            "last_argmax_rate": self.last_argmax_rate,
+            "last_trained_logp_mean": self.last_trained_logp_mean,
+            "band_low_nats": self.low_nats,
+            "band_high_nats": self.high_nats,
+            "min_argmax_rate": self.min_argmax_rate,
+            "min_steps": self.min_steps,
+            "eval_every_steps": self.eval_every_steps,
+            "dump_jsonl_path": self.dump_jsonl_path,
+            "dump_write_error_count": self.dump_write_error_count,
+            "dump_write_last_error": self.dump_write_last_error,
+        }
+        os.makedirs(os.path.dirname(self.stop_record_path) or ".", exist_ok=True)
+        with open(self.stop_record_path, "w") as f:
+            json.dump(record, f, indent=2)
+        logger.info("[%s] stop record written -> %s", self.log_prefix, self.stop_record_path)
+
+    def _dump_trajectory_record(
+        self,
+        *,
+        step: int,
+        trained_stats: dict,
+        argmax_rate: float,
+        delta_mean: float,
+    ) -> None:
+        """Append one JSON line with per-row 4-float slot stats, trained AND base.
+
+        Storage contract (.claude/rules/marker-leakage-measurement.md): every
+        marker slot read persists logp / z_marker / z_eos / logZ per slot per
+        model side. The base side is the cached first-eval read (the probe
+        context is frozen, so the base stats are step-invariant); it is
+        repeated per record so each line is self-contained.
+        """
+
+        def _side(stats: dict) -> dict:
+            return {
+                "logp": [float(v) for v in stats["logp"].tolist()],
+                "z_marker": [float(v) for v in stats["z_marker"].tolist()],
+                "z_eos": (
+                    [float(v) for v in stats["z_eos"].tolist()]
+                    if stats["z_eos"] is not None
+                    else None
+                ),
+                "logZ": [float(v) for v in stats["logZ"].tolist()],
+            }
+
+        record = {
+            "step": int(step),
+            "probe": self.log_prefix,
+            "n_rows": int(self.probe_input_ids.shape[0]),
+            "delta_mean_nats": delta_mean,
+            "argmax_rate": argmax_rate,
+            "trained": _side(trained_stats),
+            "base": _side(self._base_slot_stats),
+        }
+        path = self.dump_jsonl_path
+        try:
+            os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+            with open(path, "a") as f:
+                f.write(json.dumps(record) + "\n")
+        except OSError as e:
+            # Disk-quota / FUSE failures must be VISIBLE but should not kill
+            # a multi-hour training run for a trajectory side-record; the
+            # WandB series carries the same means. The failure is counted +
+            # surfaced in the stop record (when configured), and the #543
+            # dispatcher additionally asserts the dump file's row count at
+            # phase completion — a short/missing file fails loud post-run.
+            self.dump_write_error_count += 1
+            self.dump_write_last_error = f"{type(e).__name__}: {e}"
+            logger.error("[%s] trajectory dump append FAILED (%s): %s", self.log_prefix, path, e)
 
     def _write_trajectory(self) -> None:
         """Atomically rewrite the trajectory JSON from the accumulated records.
@@ -1129,11 +1376,16 @@ class MarkerBandStopCallback(TrainerCallback):
                 if self.eos_token_id is not None
                 else None
             )
+            # #543: per-row "is the marker the slot argmax" — the
+            # deterministic greedy-emission proxy, free from the same
+            # forward pass.
+            argmax_is_marker = (slot_logits.argmax(dim=-1) == self._target_token_id).detach().cpu()
             return {
                 "logp": row_logp.detach().cpu(),
                 "z_marker": z_marker.detach().cpu(),
                 "z_eos": z_eos,
                 "logZ": log_z.detach().cpu(),
+                "argmax_is_marker": argmax_is_marker,
             }
         finally:
             if was_training:
