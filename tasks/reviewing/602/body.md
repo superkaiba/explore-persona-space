@@ -12,6 +12,8 @@ has_clean_result: true
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_602.md](https://github.com/superkaiba/explore-persona-space/blob/a9f7688ca4bf0371fefe76f9c91113e5fca1fea5/docs/methodology/issue_602.md) · [gist](https://gist.github.com/superkaiba/037fbce9a9784c2874e7fb4ad7267497)
+
 ## Human TL;DR
 
 **Headline.** I tried three ways of guessing, from the base model alone, which direction training will push the model for a behavior — replaying the training data, showing examples in context, and just describing the behavior — and at the read-out depth I committed to up front, none of them is valid for any of the six behaviors I have trained adapters for.
@@ -253,3 +255,4 @@ The exception on the replay side is the two misalignment recipes: their replay d
 - **Created / run:** task created 2026-06-11T10:48:14Z; the pod extraction, scoring, and the zero-GPU layer-27 re-read all ran the same day (2026-06-11).
 - **Follow-up to:** [#521](https://eps.superkaiba.com/tasks/521) — the prompted-marker known-negative (prompting the base model recovers a direction at cosine ≈ −0.03 to the realized training shift) that this bake-off generalizes to three estimator constructions and six adapter families.
 - **Originating prompt(s), verbatim:** origin prompt not recorded.
+- **Methodology reference:** [docs/methodology/issue_602.md](https://github.com/superkaiba/explore-persona-space/blob/a9f7688ca4bf0371fefe76f9c91113e5fca1fea5/docs/methodology/issue_602.md) · [gist](https://gist.github.com/superkaiba/037fbce9a9784c2874e7fb4ad7267497)
