@@ -1,0 +1,576 @@
+"""Assemble eval_results/issue_549/audit_table.json (task #549 plan §4 Step D + §12).
+
+Verdict enum (closed, §12 item 1): SAFE-single-adapter | SAFE-distinct-id |
+SAFE-fresh-process | SAFE-by-eviction | SAFE-probabilistic | AFFECTED |
+INDETERMINATE | NO-REALIZED-RUN.
+
+All evidence strings cite file:line@sha for code facts, artifact paths / events.jsonl
+markers for run facts, and audit_evidence/ outputs for replay claims. Engine capacity
+is the registry capacity = max_cpu_loras (defaults to max_loras; every audited engine
+passes max_loras=1 and never sets max_cpu_loras).
+"""
+
+# ruff: noqa: E501 -- evidence strings are verbatim audit citations; wrapping them would
+# break copy-paste fidelity of file:line@sha references.
+from __future__ import annotations
+
+import json
+import math
+import subprocess
+from datetime import UTC, datetime
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parent.parent
+OUT = REPO / "eval_results/issue_549/audit_table.json"
+
+
+def row(**kw) -> dict:
+    base = {
+        "driver": None,
+        "sites": [],
+        "id_discipline": None,
+        "session_structure": None,
+        "engine_capacity": "max_cpu_loras = max_loras = 1",
+        "runs": [],
+        "lru_replay": None,
+        "verdict": None,
+        "evidence": [],
+        "affected_published": [],
+        "proposed_correction": None,
+        "reeval_gpu_h": 0,
+        "confidence_flags": [],
+    }
+    base.update(kw)
+    allowed = {
+        "SAFE-single-adapter",
+        "SAFE-distinct-id",
+        "SAFE-fresh-process",
+        "SAFE-by-eviction",
+        "SAFE-probabilistic",
+        "AFFECTED",
+        "INDETERMINATE",
+        "NO-REALIZED-RUN",
+    }
+    assert base["verdict"] in allowed, base["verdict"]
+    return base
+
+
+def main() -> None:
+    rows = []
+
+    # ── eval_trajectory family (plan rows 1-3) ──────────────────────────────
+    rows.append(
+        row(
+            driver="contrastive_neg_geometry_472/eval_trajectory.py — #534 round-1 (positive control)",
+            sites=[
+                "src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py:425@d837c78be (HEAD, constant lora_int_id=1)",
+                "fix 298877f9c (lora_int_id=ck_i) NOT on main — only issue-534/issue-555",
+            ],
+            id_discipline="constant 1 across checkpoint loop",
+            session_structure="one LLM(max_loras=1) per cell across a 4-checkpoint loop (i534_run_cell nested subprocess per cell)",
+            runs=[
+                "#534 round-1 (10 cells x 4 fractions); outputs overwritten by the post-fix re-run"
+            ],
+            lru_replay={
+                "n_requests": 4,
+                "n_stale": 3,
+                "source": "audit_evidence/calibration_controls.json::i534_round1_constant_id",
+            },
+            verdict="AFFECTED",
+            evidence=[
+                "calibration control: simulator classifies AFFECTED (3/4 stale, all served frac-0.25 step-5 adapter)",
+                "documented in tasks/archived/534/body.md: all 40 cell-fraction evals re-run post-fix",
+            ],
+            affected_published=[],
+            proposed_correction="none needed — #534 re-ran all 40 evals at 298877f9c pre-publication; published numbers come exclusively from the re-run",
+        )
+    )
+    rows.append(
+        row(
+            driver="eval_trajectory.py @298877f9c — #534 round-2 (negative control)",
+            sites=[
+                "eval_trajectory.py@298877f9c: lora_int_id=ck_i, enumerate(checkpoint_specs, start=1)"
+            ],
+            id_discipline="distinct ck_i (1..4) per checkpoint",
+            session_structure="one engine per cell, 4 checkpoints, distinct ids",
+            runs=[
+                "eval_results/issue_534/c504v3_*/trajectory.json — 10 cells x 4 checkpoints, all git_commit=298877f9c"
+            ],
+            lru_replay={
+                "n_requests": 4,
+                "n_stale": 0,
+                "source": "calibration_controls.json::i534_round2_distinct_ck_i",
+            },
+            verdict="SAFE-distinct-id",
+            evidence=[
+                "artifact census: 10/10 cells carry 4 checkpoints at the fix commit",
+                "real fraction_manifest paths replayed through the simulator: 0 stale",
+            ],
+        )
+    )
+    rows.append(
+        row(
+            driver="eval_trajectory.py — #530 trajectory evals",
+            sites=[
+                "scripts/i530_run_cell.py:580@d837c78be — nested eval_trajectory subprocess per cell (one process per cell, §12 item 7 dispatcher read)"
+            ],
+            id_discipline="constant 1 (pre-fix code) — but single checkpoint per session",
+            session_structure="one engine per cell; checkpoint_index had exactly 1 entry",
+            runs=[
+                "eval_results/issue_530/c504v3_*/trajectory.json — 10/10 cells show 1 checkpoint, git_commit=52d78b2c6"
+            ],
+            lru_replay={"n_requests": 1, "n_stale": 0},
+            verdict="SAFE-single-adapter",
+            evidence=[
+                "a single-entry session cannot collide (first load is always correct)",
+                "dispatcher structure cited per §12 item 7, not the JSON count alone",
+            ],
+        )
+    )
+    rows.append(
+        row(
+            driver="eval_trajectory.py via i504_eval_trajectory.py + i504_run_cell.py — #504 Phase-1 main grid",
+            sites=[
+                "eval_trajectory.py@affdd82cb:321 (one LLM, max_loras=1, before checkpoint loop)",
+                "eval_trajectory.py@affdd82cb:338 (constant lora_int_id=1)",
+                "scripts/i504_run_cell.py:496-585@d837c78be (full 6-fraction checkpoint_index -> ONE nested eval session per cell; --chosen-frac is informational only)",
+            ],
+            id_discipline="constant 1 across a 6-checkpoint loop",
+            session_structure="one engine per cell consuming 6 fractions (0.08,0.16,0.33,0.5,0.75,1.0); greedy generation",
+            runs=[
+                "HF superkaiba1/explore-persona-space-data issue504_geometry/phase1_trajectories/<cell>/trajectory.json (10 cells, git_commit=affdd82cb, epm:run-launched 2026-06-08T22:13:21Z)"
+            ],
+            lru_replay={
+                "n_requests": 6,
+                "n_stale": 5,
+                "served": "frac_0.08 for every request",
+                "source": "audit_evidence/i504_phase1_stale_serve.json",
+            },
+            verdict="AFFECTED",
+            evidence=[
+                "replay: 5/6 stale per cell, all served the frac-0.08 (step-6) adapter",
+                "artifacts: per-(persona,q) base-logp pairwise exact-equal-rate matrix is FLAT across all fraction distances in all 10 cells (adjacent ~= distant ~0.19-0.27) — signature of one set of weights re-generated 6x under vLLM batching nondeterminism, not of checkpoints spanning steps 6..75",
+                "consumption: 8/8 eval_results/issue_504/analyze_summary.json per_cell_diagnostics source_delta_g_nats are float-identical to the stale-served frac-0.33 trajectory entries",
+                "falsifies the #534-era note that the #504 headline was single-entry — realized sessions had 6 entries each",
+            ],
+            affected_published=[
+                {
+                    "task": "#504 (awaiting_promotion, has_clean_result)",
+                    "claim": "saturated-anchor geometry headline (6-predictor partial-Spearman at chosen frac 0.33, e.g. shadow_angle rho=+0.34, d_nn rho=-0.34) + all per-fraction trajectory reads at frac>0.08",
+                    "location": "tasks/awaiting_promotion/504/body.md; eval_results/issue_504/analyze_summary.json; cited as the saturated-anchor reference in #530/#534 clean results",
+                    "note": "values labeled frac-0.33/step-25 were produced by the frac-0.08/step-6 adapter; that adapter is itself already saturated (delta_g~7.4, emission 1.0), so the qualitative 'saturated anchor' framing may survive, but every number's training-maturity label is wrong and the Phase-0 fraction pick consumed equally stale reads",
+                }
+            ],
+            proposed_correction=(
+                "re-run the 10-cell x 6-fraction eval through 298877f9c's --eval-only path with distinct ids; "
+                "adapters/issue_504 + adapters/issue_504_v4 exist on the HF model repo — if the per-fraction snapshots "
+                "resolve there, eval-only ~4-6 GPU-h on 1x H100; if not, retrain+eval (the #534 recipe) ~10 GPU-h. "
+                "PROPOSAL ONLY: no clean-result edit by this task (plan ask 3)"
+            ),
+            reeval_gpu_h="4-6 (eval-only) / ~10 (retrain+eval)",
+        )
+    )
+    rows.append(
+        row(
+            driver="dispatchers: dispatch_neg_geometry_504.py, i504_run_cell.py, i530_run_cell.py, i534_run_cell.py/i534_sweep.py (branch)",
+            sites=[
+                "scripts/dispatch_neg_geometry_504.py:237-349 (subprocess pool, one i504_run_cell per (cell,seed), CVD-pinned)",
+                "scripts/i504_run_cell.py:585 / scripts/i530_run_cell.py:580 (nested eval subprocess per cell)",
+            ],
+            id_discipline="n/a — construct no LoRARequest",
+            session_structure="per-cell subprocess isolation; the per-cell eval session shape is decided by the checkpoint_index they thread (see eval_trajectory rows)",
+            runs=["#504/#530/#534 launches (events.jsonl run-launched markers)"],
+            verdict="SAFE-fresh-process",
+            evidence=[
+                "structure evidence for the eval_trajectory rows: every cell gets a fresh eval process; cross-cell contamination impossible; within-cell exposure governed by index size (1 for #530, 4 for #534, 6 for #504)"
+            ],
+        )
+    )
+    rows.append(
+        row(
+            driver="scripts/i504_reval_confirm.py — #504 PEFT-vs-vLLM A/B diagnostic",
+            sites=[
+                "scripts/i504_reval_confirm.py:747@d837c78be (lora_int_id=1, single adapter)",
+                "engine at :737 (max_loras=1)",
+            ],
+            id_discipline="constant 1, single adapter per process",
+            session_structure="one engine, one adapter, persona/question loops only",
+            runs=["epm:run-launched 2026-06-08T01:14:22Z (issue-504-reval-confirm)"],
+            lru_replay={"n_requests": 1, "n_stale": 0},
+            verdict="SAFE-single-adapter",
+        )
+    )
+    rows.append(
+        row(
+            driver="scripts/i504_reval_grid.py — 2-cell re-eval driver",
+            sites=[
+                "scripts/i504_reval_grid.py@1588221d7:196-228 (consumes FULL multi-entry checkpoint_index per cell through pre-fix run_trajectory_eval)"
+            ],
+            id_discipline="inherits constant-1 via run_trajectory_eval",
+            session_structure="fresh run_trajectory_eval per cell, but multi-entry index per session",
+            runs=[],
+            verdict="NO-REALIZED-RUN",
+            evidence=[
+                "no epm:run-launched marker for reval_grid in #504 events (only reval-CONFIRM ran, 2026-06-08T01:14Z); no committed artifacts on main or issue-504",
+                "code-state warning: if ever run from main it consumes a multi-entry index through the constant-id bug — same defect class as the #504 Phase-1 AFFECTED row",
+            ],
+        )
+    )
+
+    # ── #477 reval family (plan row 5) ──────────────────────────────────────
+    rows.append(
+        row(
+            driver="scripts/i477_reval_confirm.py / i477_reval_grid.py / i477_negpanel_eval.py",
+            sites=[
+                "i477_reval_confirm.py:633@d837c78be (id=1, single adapter/process)",
+                "i477_reval_grid.py@issue-477(df3182a8f):596-608 — LLM built INSIDE the per-cell function (engine kwargs depend on entry.rank/entry.seed) => fresh engine per cell",
+                "i477_negpanel_eval.py@issue-477-negpanel(c01bbb9a2):597-609 — same per-entry engine construction",
+            ],
+            id_discipline="constant 1, but exactly one adapter per ENGINE INSTANCE",
+            session_structure="fresh LLM() per cell; the id-keyed registry dies with each engine instance",
+            runs=[
+                "eval_results/issue_477/reval_confirm/*.json + eval_results/issue_477/reval_grid/*.json (committed)"
+            ],
+            lru_replay={"n_requests": 1, "n_stale": 0},
+            verdict="SAFE-single-adapter",
+        )
+    )
+
+    # ── #532 prime suspect (plan row 7) ─────────────────────────────────────
+    rows.append(
+        row(
+            driver="scripts/issue532_predictor_stress.py — #532 loc-arm sweep",
+            sites=[
+                "issue532_predictor_stress.py@28a73584c:1064-1080 (for ep -> for src_idx: lora_int_id=src_idx+1, resume-skip per cell INSIDE the bystander loop)",
+                "@28a73584c:2836-2851 (_build_vllm_engine: max_loras=1, max_cpu_loras unset => capacity 1)",
+                "same constructs at 28d35f027:856-871/2505-2520",
+            ],
+            id_discipline="src_idx+1, resets per epoch (repeat ids across epochs with different adapter paths)",
+            session_structure="ONE engine per process shared across phases; 3 launches (P1@28d35f027 14:25Z, P2@28a73584c 17:52Z, P3@28a73584c 19:22Z --phase 2+3+4)",
+            runs=["eval_results/issue_532/per_cell/loc_ep1 (416) + loc_ep2 (140)"],
+            lru_replay={
+                "P1": "zero surviving-artifact-relevant adapter events (artifact census: ALL 556 cells carry commit 28a73584c, ts 18:02-19:10Z — P1 left no surviving cells; supersedes the plan-time 3-process split)",
+                "P2": {"n_requests": 22, "n_stale": 0, "counterfactual_capacity_16_stale": 6},
+                "P3": "constructs no LoRARequest (--phase 2+3+4)",
+                "source": "audit_evidence/i532_per_process_replay.json",
+            },
+            verdict="SAFE-by-eviction",
+            evidence=[
+                "replay (primary): P2's 22 adapter events (16 ep1 + 6 ep2) at capacity 1 -> 0 stale; the 6 ep2 repeat-ids each had 15 intervening distinct ids; counterfactual capacity-16 replay -> 6 stale (the safety is genuinely BY EVICTION, not id discipline)",
+                "strings (confirmatory, per process): ep2-vs-ep1 text identity 0.151 over 7000 zip-strict pairs; median per-cell max|dlogp| 6.62 nat — different adapters served",
+                "dose direction (like-for-like): #474 g_logprob diag ep2_higher / offdiag ep2_lower; #532 diagonal median dlogp +2e-6 (ep2_higher, saturated) / offdiag-16 median -0.72 (ep2_lower) — both match",
+                "question-order pin: i460_data.py git-diff EMPTY between run commits; load_q_test_extended_50 reads the pinned q_test_extended_50.json (len-50 assert)",
+                "published ep1 headline untouched (ep1 ids distinct, first-loaded); ep2 saturation scope-caveat measured on genuine ep2 adapters and stands",
+            ],
+            confidence_flags=[
+                "q_test artifact fetched at HF revision='main' (not SHA-pinned) — order pin is code-level; Medium-confidence link"
+            ],
+        )
+    )
+
+    # ── distinct-id phase-4 family (plan row 8 + relatives) ────────────────
+    rows.append(
+        row(
+            driver="scripts/i474_phase4_eval.py — #474 cross-eval (negative control)",
+            sites=[
+                "i474_phase4_eval.py:523-525@d837c78be (lora_int_id=all_cids.index(cid_i)+1)",
+                ":313-318 (--checkpoint-epoch REQUIRED => epoch fixed per process; no cross-epoch id reuse)",
+                ":418 (strided sharding my_cids = source_cids[k % n_shards == shard])",
+            ],
+            id_discipline="all_cids.index+1 — distinct per cid, one path per id per process",
+            session_structure="one engine per shard process; epoch fixed per invocation",
+            runs=[
+                "eval_results/issue_474/cross_eval/{loc,pos}_ep{1,2,3,5}/G_logprob_matrix.json + G_partial_*of4 shards"
+            ],
+            lru_replay={
+                "n_stale": 0,
+                "source": "calibration_controls.json::i474_phase4_loc_ep1 (unsharded + 4 strided shards)",
+            },
+            verdict="SAFE-distinct-id",
+        )
+    )
+    rows.append(
+        row(
+            driver="scripts/i460_phase4_eval.py (+ i406_phase3_cross_eval.py, i462_phase4_eval.py same shape)",
+            sites=[
+                "i460_phase4_eval.py:326-328@d837c78be (all_cids.index+1)",
+                "i406_phase3_cross_eval.py@issue-406(dbd2a1c43):185-193",
+                "i462_phase4_eval.py@issue-460(17d86622a):333-343",
+            ],
+            id_discipline="all_cids.index+1 distinct per cid",
+            session_structure="one engine per process/shard, outer-i loop over my_cids",
+            runs=[
+                "#460: clean result completed (per-cell artifacts not located on main — verdict from code + calibration)",
+                "#406: eval_results/issue_406 EXISTS",
+                "#462: NO realized artifacts (0 files on issue-460/main) — see verdict split below",
+            ],
+            lru_replay={"n_stale": 0, "source": "calibration_controls.json::i460_phase4"},
+            verdict="SAFE-distinct-id",
+            evidence=["#462 sub-row: NO-REALIZED-RUN (no artifacts anywhere); #460/#406 realized"],
+            confidence_flags=[
+                "#460 run-evidence is Medium (artifacts not relocated during audit; code + calibration + completed clean result)"
+            ],
+        )
+    )
+    rows.append(
+        row(
+            driver="i464 family: i464_phase4_eval.py, i464_po_eval.py, i464_min_eval.py, i464_phase45_onpolicy_validation.py",
+            sites=[
+                "i464_phase4_eval.py@issue-464(0905fc70f):366-368 (all_cells.index+1)",
+                "i464_po_eval.py:431-433; i464_min_eval.py@issue-464-min-cn(25a271ff2):211-213; i464_phase45:294-296",
+            ],
+            id_discipline="all_cells.index+1 distinct per (arm,seed[,persona]) cell",
+            session_structure="one engine per process, distinct id per adapter",
+            runs=["eval_results/issue_464 EXISTS"],
+            verdict="SAFE-distinct-id",
+        )
+    )
+    rows.append(
+        row(
+            driver="scripts/i465_phase4_eval.py",
+            sites=[
+                "i465_phase4_eval.py@issue-465(ec0e2009f):399-403 (lora_int_id=CONDITION_IDS.index(cond)+1, lora_path=adapter_paths[cond])"
+            ],
+            id_discipline="index+1 per cond; (cond,shape) repeats request the SAME id with the SAME path (path keyed by cond only) — benign cache hits",
+            session_structure="one engine, all_cell_specs = conds x shapes loop",
+            runs=["eval_results/issue_465 EXISTS"],
+            verdict="SAFE-distinct-id",
+        )
+    )
+    rows.append(
+        row(
+            driver="scripts/i489_phase4_eval_onpolicy.py",
+            sites=[
+                "i489_phase4_eval_onpolicy.py@issue-489(afe7076e4):366-399 (collision-free manifest + assert_unique_lora_int_ids)"
+            ],
+            id_discipline="explicit collision-free manifest over the FULL cartesian product, asserted unique",
+            session_structure="one engine per shard, manifest-shared ids",
+            runs=[
+                "eval_results/issue_489/phase4/lora_int_id_manifest.json — 72/72 unique ids, commit 675dfbd7005c"
+            ],
+            verdict="SAFE-distinct-id",
+            evidence=[
+                "the round-2 formula (109bbeb84: index*10+int(frac*100)+1) collided on ~67/144 snapshots but was FIXED AT CODE REVIEW (ade98f921, 2026-06-04 15:51) BEFORE the first phase-4 launch (2026-06-05) — no realized run executed the colliding formula; the realized run's manifest artifact proves 72/72 unique"
+            ],
+        )
+    )
+    rows.append(
+        row(
+            driver="scripts/i498_phase4_eval.py / i501_phase4_eval_onpolicy.py / i528_phase4_eval.py",
+            sites=[
+                "i498_phase4_eval.py@issue-498(167cabb8e):171-181 (cell_idx+1)",
+                "i501_phase4_eval_onpolicy.py@issue-501(15f31ce16):528-531,731-734 (source_idx+1 per engine; separate fresh LLM instances per phase)",
+                "i528_phase4_eval.py@issue-528(26cbd422f):155-159 (cell_idx+1)",
+            ],
+            id_discipline="enumerate index+1 distinct per cell within each engine",
+            session_structure="one engine per process (i501 builds a fresh engine per phase — registries independent)",
+            runs=["eval_results/issue_498, issue_501, issue_528 all EXIST"],
+            verdict="SAFE-distinct-id",
+        )
+    )
+    rows.append(
+        row(
+            driver="scripts/probe_issue557_absorption.py / leave_one_out_505 logit_rescoring + dispatch",
+            sites=[
+                "probe_issue557_absorption.py@issue-557(35bd560de):516-524 (enumerate(sets, start=1))",
+                "leave_one_out_505/dispatch_logit_rescoring.py:443@d837c78be (idx+1, 'UNIQUE per adapter' comment); logit_rescoring.py:373",
+            ],
+            id_discipline="enumerate index+1 distinct per adapter",
+            session_structure="one engine, distinct ids",
+            runs=["issue-557 branch eval_results (196 files); eval_results/issue_505 EXISTS"],
+            verdict="SAFE-distinct-id",
+        )
+    )
+    rows.append(
+        row(
+            driver="scripts/issue560_crossrecipe_panel.py — #560 (in-flight)",
+            sites=[
+                "issue560_crossrecipe_panel.py@issue-560(832517d0f):583-591 (lora_int_id=i over enumerate(args.sources,1))",
+                "smoke gate :520 (id=1 for A2) runs on its OWN _build_vllm_engine() instance; phase_gen builds ANOTHER fresh engine — registries independent",
+            ],
+            id_discipline="enumerate index distinct per source; smoke id-1 isolated in a separate engine instance",
+            session_structure="fresh LLM() per phase; resume-skip happens before LoRARequest construction",
+            runs=["issue-560 branch eval_results (37 files); task in interpreting"],
+            verdict="SAFE-distinct-id",
+            evidence=[
+                "classified early per plan §7 (in-flight task): no risk found, nothing to surface"
+            ],
+        )
+    )
+
+    # ── i488 family (plan rows 9-10) ────────────────────────────────────────
+    rows.append(
+        row(
+            driver="scripts/i488_phase2_ladder_emit.py / i488_diagnostic_measure.py / i488_phase2_smoke_calibrate.py",
+            sites=[
+                "i488_phase2_ladder_emit.py:296-343@d837c78be (anchor id = 10000+ord(rung[-1])*100+ord(src[0])*10+ord(src[1]); bystander id = 20000+ord(rung[-1])*100, ONE bystander adapter per invocation)",
+                "i488_diagnostic_measure.py:290-292 (99000+ord(src[0])*10+ord(src[1]))",
+                "i488_phase2_smoke_calibrate.py:664-666,745-747,822-824 (frac*100+ord(cid[0])*1000 / ord('A')*10000 / 99999)",
+            ],
+            id_discipline="arithmetic ids; realized sets have pairwise-distinct values",
+            session_structure="one engine per invocation; rung/bystander-source fixed per invocation (argparse)",
+            runs=[
+                "eval_results/issue_488/ladder/rung_L{1,2}_emit.json (anchors A1,G2 -> ids 15599,15660 distinct, artifact-verified)",
+                "eval_results/issue_488/diagnostic_separation/probes.json (A1->99699, G2->99760)",
+                "SMOKE_CELLS=(A1,G2) -> 65xxx vs 71xxx ranges + 99999",
+            ],
+            verdict="SAFE-distinct-id",
+            evidence=[
+                "the :339 bystander id is src-INDEPENDENT but each invocation uses exactly ONE bystander adapter (args.bystander_source), so no same-process collision can arise; cross-invocation repeats land in fresh processes",
+                "the [A-G][1-5] cid universe maps injectively under ord(c0)*10+ord(c1) (letter stride 10 > digit range), so the 2-char collision class is empty for the realized sets",
+            ],
+        )
+    )
+    n1, n2 = 41, 33  # cells per shard process, run1 (324/8) and run2 (~262/8)
+    birthday = 8 * math.comb(n1, 2) / 2**20 + 8 * math.comb(n2, 2) / 2**20
+    adjacent = 8 * (n1 - 1) / 2**20 + 8 * (n2 - 1) / 2**20
+    rows.append(
+        row(
+            driver="scripts/i488_phase4_eval_onpolicy.py",
+            sites=[
+                "i488_phase4_eval_onpolicy.py:315-317@d837c78be (lora_int_id=hash((cid,seed,frac)) & 0xFFFFF — PYTHONHASHSEED-randomized, unreproducible post-hoc)",
+                ":472-502 (one engine per shard process; source x seed x frac loop)",
+            ],
+            id_discipline="20-bit hash per (source,seed,frac) snapshot",
+            session_structure="8 shard processes per run (i488_phase4_dispatch.sh); 324 cells run1 + ~262 resumed run2 (events 2026-06-09T20:15Z, 21:51Z)",
+            runs=[
+                "eval_results/issue_488/predictors + analysis (phase5 note: 324/324 emission + delta complete)"
+            ],
+            lru_replay={
+                "note": "ids unreproducible (PYTHONHASHSEED); probability bound instead",
+                "realized_N_per_process": [n1, n2],
+                "conservative_birthday_bound": round(birthday, 5),
+                "capacity1_adjacent_only_bound": round(adjacent, 6),
+            },
+            verdict="SAFE-probabilistic",
+            evidence=[
+                f"conservative any-collision bound sum C(N,2)/2^20 over 16 shard-processes ~= {birthday:.4f}",
+                f"at capacity 1 a stale serve additionally requires the colliding pair to be CONSECUTIVE (any intervening load evicts) -> operative bound sum (N-1)/2^20 ~= {adjacent:.6f}",
+                "numeric sanity: 324/324 cells completed with finite per-cell values (phase5 marker)",
+            ],
+        )
+    )
+    n_adapters_471 = 9
+    rows.append(
+        row(
+            driver="scripts/i471_phase4_eval.py",
+            sites=[
+                "i471_phase4_eval.py@issue-471(20bc01e64):740-742 (lora_int_id=1+hash(adapter_id)%10_000; same adapter+path across its eval_shapes loop — benign hits)"
+            ],
+            id_discipline="hash-mod-10k per adapter id string (PYTHONHASHSEED-randomized)",
+            session_structure="one engine, adapter_ids loop",
+            runs=[
+                f"eval_results/issue_471/per_cell (175 cells over {n_adapters_471} realized adapters: i465_cond* + i471_route_a_*)"
+            ],
+            lru_replay={
+                "realized_N": n_adapters_471,
+                "conservative_birthday_bound": round(math.comb(n_adapters_471, 2) / 10_000, 5),
+                "capacity1_adjacent_only_bound": round((n_adapters_471 - 1) / 10_000, 5),
+            },
+            verdict="SAFE-probabilistic",
+            evidence=[
+                f"birthday bound C(9,2)/1e4 = {math.comb(9, 2) / 1e4:.4f}; capacity-1 consecutive-collision bound 8/1e4 = 0.0008"
+            ],
+        )
+    )
+    rows.append(
+        row(
+            driver="scripts/issue524_phase2_eval.py",
+            sites=[
+                "issue524_phase2_eval.py@issue-524(b43713346):289-291 (abs(hash(src_cid))%1e6+1; my_sources loop one engine)"
+            ],
+            id_discipline="hash-mod-1e6 per source",
+            session_structure="one engine per process",
+            runs=[],
+            verdict="NO-REALIZED-RUN",
+            evidence=[
+                "task #524 archived with zero run-launched/results markers; no eval_results/issue_524 anywhere"
+            ],
+        )
+    )
+
+    # ── step-id multi-checkpoint family ─────────────────────────────────────
+    rows.append(
+        row(
+            driver="scripts/eval_i385_marker_spread.py / eval_i456_onpolicy_emission.py / eval_marker_spread_source_only.py",
+            sites=[
+                "eval_i385_marker_spread.py@issue-385(8d1151a5b):246-250 (lora_int_id=step, distinct per checkpoint, one engine)",
+                "eval_i456_onpolicy_emission.py@issue-456(b91f80a09):250-256 ('distinct id => vLLM never serves a stale adapter')",
+                "eval_marker_spread_source_only.py:89-111@d837c78be (LLM built ONCE PER CHECKPOINT — fresh engine per step)",
+            ],
+            id_discipline="lora_int_id=step (unique per checkpoint within a run; step>=1 — id 0 would raise ValueError at request construction, vllm/lora/request.py:34-35, a loud crash not a silent mis-serve)",
+            session_structure="one engine + distinct step ids (385/456); fresh engine per checkpoint (spread_source_only)",
+            runs=["eval_results/issue_385 + issue_456 EXIST"],
+            verdict="SAFE-distinct-id",
+        )
+    )
+
+    # ── single-adapter-per-process family ───────────────────────────────────
+    rows.append(
+        row(
+            driver="single-adapter family: eval_issue475.py, eval_issue506.py (+probe_issue506_install_validity.py), eval_issue562_panel.py, eval_issue543.py, eval_issue558_panel.py, run_issue527_eval.py, run_issue538_eval.py, issue466_marker_logp.py, i406_phase2_smoke_eval.py, phase2 smoke checks (i460/i462/i464/i465/i471/i474), i498/i528 phase2 smoke judges, factor_screen_397/eval_panel.py (vLLM fn), contrastive_recipe_sweep_448/eval_one_cell.py, lora_vs_ft_508/eval_one_cell.py, sycophancy_implantation_411/eval_one_source.py (#411/#507), behavior_testbed_545/eval_battery.py, train/eval_marker_logprob.py (i464 live probe), eval/generation.py (library helper), run_issue186_eval.py (#344 — engine built per cell inside _eval_one_cell), smoke_vllm_lora_equivalence.py",
+            sites=[
+                "one LoRARequest per engine instance in every file; representative: eval_issue562_panel.py:341@d837c78be, eval_issue543.py@issue-543(4cadd2c5c):248 ('ONE FRESH' engine), run_issue186_eval.py@issue-344(a794fefb0):372+448 (create_vllm_engine inside _eval_one_cell), sycophancy_implantation_411/eval_one_source.py@issue-507:270-280 (enumerate start=1 + assert <=1 adapter with max_loras=1), factor_screen_397/eval_panel.py@issue-397:461-485 ('one adapter per process')"
+            ],
+            id_discipline="constant 1 (or hash/single) — exactly one adapter per engine instance",
+            session_structure="one adapter per engine; cells/personas/questions loop under the SAME adapter",
+            runs=[
+                "eval_results EXIST for issue_475/506/562/543/558/527/538/397/505/507/508/186(=issue186)/385/456; issue-466 branch (26 files); issue-545 branch (21); issue-448 branch (85)"
+            ],
+            lru_replay={"n_requests": 1, "n_stale": 0},
+            verdict="SAFE-single-adapter",
+            evidence=[
+                "a single (id,path) per registry lifetime cannot mis-serve: the only possible repeat is same-id-same-path (benign hit)",
+                "factor_screen_397's multi-checkpoint loop is the PEFT load_adapter/set_adapter path (string-keyed, path re-read per load) — outside the vLLM id-keyed bug class per §12 headline scoping",
+            ],
+        )
+    )
+    rows.append(
+        row(
+            driver="src/explore_persona_space/experiments/issue503/cross_eval.py",
+            sites=["cross_eval.py@issue-503:168-176 (id=1 single adapter; WIP c47ac1cdd)"],
+            id_discipline="constant 1, single adapter",
+            session_structure="one engine, target loop under one adapter",
+            runs=[],
+            verdict="NO-REALIZED-RUN",
+            evidence=[
+                "no eval_results/issue_503 on main or branch; plan-flagged 'WIP — ever run?' resolves to never-executed"
+            ],
+        )
+    )
+
+    payload = {
+        "metadata": {
+            "task": 549,
+            "tool": "i549_build_audit_table",
+            "git_commit": subprocess.run(
+                ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+            ).stdout.strip(),
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+            "vllm_semantics": "vllm 0.11.0 lora/worker_manager.py:240-267 (hit => just-touch, path never re-read); capacity = max_cpu_loras (= max_loras = 1 default), models.py:391-392,740-742; lora_int_id<1 raises (request.py:34-35)",
+            "scope": (
+                "every git-tracked vLLM-LoRA driver (HEAD + all branch tips + full-history pickaxe + enable_lora/lora_path= cross-checks + one repo-wide grep). "
+                "EXCLUDED bug classes: PEFT/HF in-process adapter swapping (path-keyed), merged-weight reuse, and non-vLLM harness defects. "
+                "No driver submits per-prompt LoRARequests inside one batched generate call (checked)."
+            ),
+            "code_state_flag_HE": "the constant-id bug is STILL LIVE on main (eval_trajectory.py:425@d837c78be); fix 298877f9c only on issue-534/issue-555 — proposed follow-up: port the fix (outside this task's write scope)",
+            "non_drivers_excluded": [
+                "mention-only / no LoRARequest at any ref: orchestrate/runner.py, train/callbacks.py (docstring), factor_screen_397/training.py (comments), issue404_outcome_eval.py (docstring), i460_phase23_train.py, run_issue516.py, issue545_train_cell.py, issue477_clean_result_figures.py, run_issue_344_train.py, eval_issue563_base_panel.py (base panel, no adapter), shell launchers i464_*/i529/i533/i546/i547/i556 (*.sh)",
+                "src/explore_persona_space/eval/capability.py — forwards a caller-supplied lora_request; never constructs ids",
+                "sycophancy_scale_507/eval_72b_vllm.py — docstring mention only at its pickaxe commit (a4facecf2); the 507 adapter path goes through sycophancy_implantation_411/eval_one_source.py (audited above)",
+            ],
+        },
+        "verdict_counts": {},
+        "rows": rows,
+    }
+    counts: dict[str, int] = {}
+    for r in rows:
+        counts[r["verdict"]] = counts.get(r["verdict"], 0) + 1
+    payload["verdict_counts"] = counts
+    OUT.write_text(json.dumps(payload, indent=2))
+    print(f"{len(rows)} rows -> {OUT}")
+    print("verdict counts:", counts)
+
+
+if __name__ == "__main__":
+    main()

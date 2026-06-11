@@ -1,0 +1,140 @@
+##### FILE: scripts/i504_reval_grid.py @ HEAD
+24:     (vLLM LoRARequest + score_logp_for_R + eval_guard).
+36:spawns N WORKER subprocesses with ``CUDA_VISIBLE_DEVICES=k``. Each worker
+41:to satisfy the CLAUDE.md subprocess-env-explicit contract; ``load_dotenv()``
+43:any subprocess copies it.
+56:import subprocess
+64:# Two-check subprocess-env-passthrough contract: load_dotenv() at module-top so
+65:# HF_TOKEN + WANDB_API_KEY land in the parent's env BEFORE any subprocess copies
+129:        return subprocess.check_output(
+131:            stderr=subprocess.DEVNULL,
+133:            # epm-lint: subprocess-env-inherit -- git rev-parse needs no credentials
+136:    except (subprocess.CalledProcessError, FileNotFoundError):
+442:    inside a worker subprocess). Failures RAISE; checkpoint-per-frac inside
+464:def _spawn_worker_subprocesses(
+476:    """Spawn one worker subprocess per non-empty partition with CUDA_VISIBLE_DEVICES=k."""
+477:    procs: list[tuple[int, subprocess.Popen]] = []
+509:        p = subprocess.Popen(cmd, env=env)
+548:            "vLLM-LoRARequest path on the current env (post-eval-guard)."
+556:        help="Number of GPUs to parallelize across (spawns N worker subprocesses, "
+616:def main(argv: list[str] | None = None) -> int:
+702:        rc = _spawn_worker_subprocesses(
+
+##### FILE: scripts/i504_run_cell.py @ HEAD
+5:Forked from scripts/i472_run_cell.py (same subprocess shape, env injection, GPU
+24:``CUDA_VISIBLE_DEVICES=str(g)``; the nested eval subprocess inherits it.
+41:import subprocess
+73:def main(argv: list[str] | None = None) -> int:
+161:            "fractions of max_steps and the nested eval_trajectory subprocess "
+513:    # ── Phase: eval_trajectory (NESTED subprocess: vLLM teardown isolation). ─
+518:            "the nested eval subprocess would run on the wrong physical GPU. "
+579:        "[phase=eval_%s] nested eval subprocess (max_new_tokens=%d, max_model_len=%d): %s",
+585:    subprocess.run(eval_cmd, env={**os.environ}, check=True)
+589:            f"[{args.cell}] eval_trajectory subprocess exited 0 but {out_traj} missing — "
+
+##### FILE: scripts/i530_run_cell.py @ HEAD
+49:`CUDA_VISIBLE_DEVICES=str(g)`; the nested eval subprocess inherits it.
+67:import subprocess
+115:def main(argv: list[str] | None = None) -> int:
+520:    # ── Phase: eval_trajectory (NESTED subprocess: vLLM teardown isolation). ─
+525:            "the nested eval subprocess would run on the wrong physical GPU. "
+574:        "[phase=eval_%s] nested eval subprocess (max_new_tokens=%d, max_model_len=%d): %s",
+580:    subprocess.run(eval_cmd, env={**os.environ}, check=True)
+584:            f"[{args.cell}] eval_trajectory subprocess exited 0 but {out_traj} missing — "
+
+##### FILE: scripts/dispatch_neg_geometry_504.py @ HEAD
+7:  Phase 0.5  identification-gate pre-flight (CPU)              [CPU subprocess]
+8:  Phase 0    anchor calibration smoke (3 cells × 1 seed)       [GPU subprocess pool]
+9:  Phase 0a   pick the anchor (rank, ckpt-frac) from smoke      [CPU subprocess]
+10:  Phase 1    main grid (5 arms × 2 seeds, pinned anchor)       [GPU subprocess pool]
+11:  Phase 2    pooled partial-Spearman regression + figures      [CPU subprocess]
+16:``scripts/i504_run_cell.py`` (one subprocess, GPU-pinned via
+17:CUDA_VISIBLE_DEVICES). Same subprocess shape, same env injection, same
+22:(sentinel-file pattern only); every subprocess.* passes env={**os.environ};
+23:load_dotenv() at module top; vLLM phases are subprocess-isolated; sets
+35:import subprocess
+108:        return subprocess.check_output(
+109:            ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, text=True, env={**os.environ}
+111:    except subprocess.CalledProcessError:
+135:def _run_phase_subprocess(cmd: list[str], phase: str) -> None:
+136:    log.info("[phase=%s] subprocess: %s", phase, " ".join(cmd))
+137:    subprocess.run(cmd, env={**os.environ}, check=True)
+190:    """Run all (cell, seed) units as a GPU-sharded subprocess pool.
+192:    Mirrors scripts/dispatch_neg_geometry_472.py. Each cell-subprocess is
+195:    physical GPU g (round-3 #472 fix). The nested eval subprocess inherits
+233:    running: list[tuple[subprocess.Popen, str, int, int]] = []
+237:    def _launch(cell: str, seed: int, gpu: int) -> subprocess.Popen:
+349:        return subprocess.Popen(cmd, env=env, stdout=fh, stderr=subprocess.STDOUT)
+361:        still: list[tuple[subprocess.Popen, str, int, int]] = []
+398:                        "[%s seed%d] cell subprocess exited rc=%d (GPU %d) — per-cell "
+423:                    f"[{cell} seed{seed}] cell subprocess exited rc={rc} (GPU {gpu}). "
+470:def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestrator
+713:        _run_phase_subprocess(
+827:        _run_phase_subprocess(fill_cmd, "phase07_r_fill_train_and_eval")
+926:        _run_phase_subprocess(
+1042:        _run_phase_subprocess(
+
+##### FILE: src/explore_persona_space/experiments/leave_one_out_505/dispatch_logit_rescoring.py @ HEAD
+426:        enable_lora=True,
+428:        max_loras=1,
+443:                    lora_int_id=idx + 1,  # UNIQUE per adapter — vLLM caches by int id
+678:def main(args: argparse.Namespace) -> int:
+
+##### FILE: src/explore_persona_space/eval/generation.py @ HEAD
+
+##### FILE: src/explore_persona_space/eval/capability.py @ HEAD
+669:    lora_request=None,
+677:    If ``lora_request`` is provided, it is forwarded to ``llm.generate`` so
+709:    gen_kwargs = {"lora_request": lora_request} if lora_request is not None else {}
+723:    lora_request=None,
+730:    If ``lora_request`` is provided, it is forwarded to ``llm.generate`` so
+762:    gen_kwargs = {"lora_request": lora_request} if lora_request is not None else {}
+836:    import subprocess
+840:        commit = subprocess.run(
+847:    except (FileNotFoundError, subprocess.SubprocessError):
+879:    lora_request=None,
+904:                lora_request=lora_request,
+915:                lora_request=lora_request,
+935:    lora_request=None,
+943:       ``enable_lora=True``) and a pre-loaded ``tokenizer`` so a single vLLM
+945:    2. ``lora_request`` is forwarded to ``llm.generate`` for both the CoT-gen
+970:        lora_request=lora_request,
+991:    if lora_request is not None:
+992:        metadata["lora_name"] = getattr(lora_request, "lora_name", None)
+993:        metadata["lora_path"] = getattr(lora_request, "lora_path", None)
+1138:            lora_request=None,
+
+##### FILE: src/explore_persona_space/train/callbacks.py — NOT AT HEAD
+
+##### FILE: src/explore_persona_space/train/eval_marker_logprob.py — NOT AT HEAD
+
+##### FILE: src/explore_persona_space/experiments/factor_screen_397/eval_panel.py — NOT AT HEAD
+
+##### FILE: src/explore_persona_space/experiments/factor_screen_397/training.py — NOT AT HEAD
+
+##### FILE: src/explore_persona_space/experiments/factor_screen_397/run_one_cell.py — NOT AT HEAD
+
+##### FILE: src/explore_persona_space/experiments/contrastive_recipe_sweep_448/eval_one_cell.py — NOT AT HEAD
+
+##### FILE: src/explore_persona_space/experiments/lora_vs_ft_508/eval_one_cell.py — NOT AT HEAD
+
+##### FILE: src/explore_persona_space/experiments/sycophancy_implantation_411/eval_one_source.py — NOT AT HEAD
+
+##### FILE: src/explore_persona_space/experiments/behavior_testbed_545/eval_battery.py — NOT AT HEAD
+
+##### FILE: src/explore_persona_space/experiments/issue503/cross_eval.py — NOT AT HEAD
+
+##### FILE: scripts/issue404_outcome_eval.py @ HEAD
+21:model-repo branch would need ``enable_lora=True`` + ``LoRARequest``
+501:    # Reap any stray vLLM worker subprocesses BEFORE the next cell's vLLM
+672:def main() -> int:
+
+##### FILE: src/explore_persona_space/orchestrate/runner.py @ HEAD
+56:        distributed: Use distributed multi-GPU training via subprocess
+
+##### FILE: src/explore_persona_space/experiments/sycophancy_scale_507/eval_72b_vllm.py — NOT AT HEAD
+
+##### FILE: src/explore_persona_space/experiments/i489_contexts.py — NOT AT HEAD
+
+##### FILE: scripts/eval_issue563_base_panel.py — NOT AT HEAD
+

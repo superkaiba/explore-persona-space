@@ -1,0 +1,21 @@
+# A1: HEAD inventory — grep -rn 'LoRARequest(' scripts/ src/  (run 2026-06-11T00:26:11Z @ d837c78be)
+scripts/i477_reval_confirm.py:633:        lora_req = LoRARequest(
+scripts/issue532_predictor_stress.py:1070:            lora_req = LoRARequest(
+scripts/i488_diagnostic_measure.py:290:        lora = LoRARequest(
+scripts/i460_phase2_smoke_check.py:229:    lora_req = LoRARequest(lora_name=args.cond, lora_int_id=1, lora_path=adapter_path)
+scripts/i488_phase4_eval_onpolicy.py:315:    lora = LoRARequest(
+scripts/i460_phase4_eval.py:326:        lora_req = LoRARequest(
+scripts/i474_phase4_eval.py:523:        lora_req = LoRARequest(
+scripts/i488_phase2_smoke_calibrate.py:664:        lora = LoRARequest(
+scripts/i488_phase2_smoke_calibrate.py:745:    lora_a1 = LoRARequest(
+scripts/i488_phase2_smoke_calibrate.py:822:    lora_eos = LoRARequest(
+scripts/i474_phase2_smoke_check.py:299:    lora_req = LoRARequest(
+scripts/eval_marker_spread_source_only.py:109:    lora_request = LoRARequest(
+scripts/eval_issue475.py:347:    lora_req = LoRARequest("issue475_adapter", 1, str(adapter_path))
+scripts/eval_issue506.py:256:        lora_req = LoRARequest("issue506_adapter", 1, str(ckpt_path))
+scripts/i504_reval_confirm.py:747:    lora_req = LoRARequest(
+scripts/i488_phase2_ladder_emit.py:306:        lora = LoRARequest(
+scripts/i488_phase2_ladder_emit.py:339:    bystander_lora = LoRARequest(
+scripts/eval_issue562_panel.py:341:    lora_req = LoRARequest(lora_name, 1, str(adapter_dir))
+src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py:425:        lora_req = LoRARequest(lora_name=label, lora_int_id=1, lora_path=adapter_path)
+src/explore_persona_space/experiments/leave_one_out_505/logit_rescoring.py:373:    lora_req = LoRARequest(
