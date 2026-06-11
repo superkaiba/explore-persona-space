@@ -6,12 +6,22 @@ tags: []
 created_at: '2026-06-11T09:36:43Z'
 has_clean_result: false
 parent_id: 505
+goal: Determine causally whether a contrastive negative suppresses marker leakage
+  locally — for the specific bystander persona it sits next to — by manipulating,
+  as the single design variable, the proximity of ONE panel slot's negative to a pre-chosen
+  held-out target bystander (target's nearest-neighbor persona vs a control negative
+  MATCHED on distance-to-source but far from the target), at fixed total negative
+  budget, fixed base panel, fixed recipe, with >=3 seeds per cell, reading the target's
+  implant-normalized marker log-prob shift (bystander dlogP / source dlogP) as the
+  primary DV.
+relates_to:
+- leak-contrastive-negatives
 ---
 # Targeted proximity-dose test: does a contrastive negative parked next to a specific bystander suppress that bystander's leakage?
 
 ## Goal
 
-Determine causally whether a contrastive negative suppresses marker leakage locally — for the specific bystander persona it sits next to — by manipulating, as the single design variable, the proximity of ONE panel slot's negative to a pre-chosen held-out target bystander (target's nearest-neighbor persona vs a control negative MATCHED on distance-to-source but far from the target), at fixed total negative budget, fixed base panel, fixed recipe, with ≥3 seeds per cell, reading the target's implant-normalized marker log-prob shift (bystander ΔlogP ÷ source ΔlogP) as the primary DV.
+Determine causally whether a contrastive negative suppresses marker leakage locally — for the specific bystander persona it sits next to — by manipulating, as the single design variable, the proximity of ONE panel slot's negative to a pre-chosen held-out target bystander (target's nearest-neighbor persona vs a control negative MATCHED on distance-to-source but far from the target), at fixed total negative budget, fixed base panel, fixed recipe, with >=3 seeds per cell, reading the target's implant-normalized marker log-prob shift (bystander dlogP / source dlogP) as the primary DV.
 
 ## Motivation
 
