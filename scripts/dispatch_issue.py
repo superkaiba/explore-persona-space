@@ -1181,8 +1181,11 @@ def _build_argparser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "Skip the confirm_artifacts gate (matches "
-            "``pod.py terminate --skip-upload-verify``; use only when the "
-            "experiment crashed before artifacts could land)."
+            "``pod.py terminate --skip-upload-verify``; use when the "
+            "experiment crashed before artifacts could land, or when a "
+            "phase-scoped launch's declaration names artifacts only LATER "
+            "VM-local phases produce — verify the phase deliverable on "
+            "permanent storage first; incident #604)."
         ),
     )
 
