@@ -76,7 +76,17 @@ ALL_LABELS = [label for labels in ARMS.values() for label in labels]
 SEED_PAIRS = {"42": ("broad_s42", "narrow_s42"), "43": ("broad_s43", "narrow_s43")}
 
 NEVER_NEG = [p for p in HELD_OUT_35 if p not in EXPECTED_PROMPT_MATCHES]
-TRAINED_NEG = sorted(EXPECTED_PROMPT_MATCHES)  # assistant, comedian, villain
+# Personas excluded from the primary set because their prompts byte-match a
+# panel condition (assistant≡A1, comedian≡A4, villain≡A5). They are realized
+# TRAINED negatives only where their condition is in the arm's panel: all 3
+# in the broad arm (15 non-A2 conditions); ONLY assistant in the narrow arm
+# ({A1,B1,C1,D1} — comedian/villain are never trained there, excluded purely
+# for cross-arm set parity per the plan's #560-classification-held-fixed rule).
+PROMPT_MATCHED_EXCLUDED = sorted(EXPECTED_PROMPT_MATCHES)  # assistant, comedian, villain
+REALIZED_TRAINED_NEG_BY_ARM = {
+    "broad": ["assistant", "comedian", "villain"],
+    "narrow": ["assistant"],
+}
 
 # Registered thresholds + reference values (plan §1 / §7).
 ANCHOR_BAND = (10.8, 18.9)  # ±4 of #560's measured A2 never-neg mean +14.85
@@ -180,7 +190,7 @@ def bootstrap_ci(
     return float(lo), float(hi)
 
 
-def classify_bin(point: float, lo: float, hi: float) -> str:
+def classify_bin(lo: float, hi: float) -> str:
     """positive_excl0 | negative_excl0 | contains0 for one contrast CI."""
     if lo > 0:
         return "positive_excl0"
@@ -214,6 +224,14 @@ def load_manipulation_check(out_dir: Path, *, self_test: bool) -> dict:
             "detail": f"{path} not found" if not self_test else "self-test mode",
         }
     payload = json.loads(path.read_text())
+    if payload["manipulation_check"] == "partial":
+        logger.warning(
+            "source_check.json is PARTIAL (%d/%d labels scored) — likely read between "
+            "the smoke canary and the full sweep (the canary's 1-label merge); the "
+            "verdict will be capped at indeterminate until all labels are scored.",
+            len(payload["per_label"]),
+            len(ALL_LABELS),
+        )
     return {
         "status": payload["manipulation_check"],
         "cross_arm_dz_marker_asymmetry": payload["cross_arm_dz_marker_asymmetry"],
@@ -276,11 +294,20 @@ def main(argv: list[str] | None = None) -> int:
         }
 
     arm_dz_eos = {arm: arm_per_persona("dz_eos", arm, NEVER_NEG) for arm in ARMS}
+    # Descriptive strata: the prompt-matched trio is reported over the SAME 3
+    # personas in both arms (set parity), but only the arm's realized trained
+    # negatives (broad: all 3; narrow: assistant only) were actually trained
+    # against — hence the per-arm realized_trained_negative stratum alongside.
     arm_summaries = {
         metric: {
             arm: {
                 "never_negative": stratum_summary(metric, arm, NEVER_NEG),
-                "trained_negative_descriptive": stratum_summary(metric, arm, TRAINED_NEG),
+                "prompt_matched_excluded_descriptive": stratum_summary(
+                    metric, arm, PROMPT_MATCHED_EXCLUDED
+                ),
+                "realized_trained_negative_descriptive": stratum_summary(
+                    metric, arm, REALIZED_TRAINED_NEG_BY_ARM[arm]
+                ),
             }
             for arm in ARMS
         }
@@ -291,7 +318,7 @@ def main(argv: list[str] | None = None) -> int:
     contrast_pp = np.array([arm_dz_eos["broad"][p] - arm_dz_eos["narrow"][p] for p in NEVER_NEG])
     point = float(contrast_pp.mean())
     lo, hi = bootstrap_ci(contrast_pp, args.n_boot, args.boot_seed)
-    primary_bin = classify_bin(point, lo, hi)
+    primary_bin = classify_bin(lo, hi)
     broad_mean = arm_summaries["dz_eos"]["broad"]["never_negative"]["mean"]
     narrow_mean = arm_summaries["dz_eos"]["narrow"]["never_negative"]["mean"]
     logger.info(
@@ -319,7 +346,7 @@ def main(argv: list[str] | None = None) -> int:
     comp_pp = np.array([arm_dlogp["broad"][p] - arm_dlogp["narrow"][p] for p in NEVER_NEG])
     comp_point = float(comp_pp.mean())
     comp_lo, comp_hi = bootstrap_ci(comp_pp, args.n_boot, args.boot_seed)
-    comp_bin = classify_bin(comp_point, comp_lo, comp_hi)
+    comp_bin = classify_bin(comp_lo, comp_hi)
 
     # ── Replication anchor (rig-drift control, plan §7 assert 6) ──────────
     broad_s42_vals = np.array([per_label["broad_s42"]["dz_eos"][p] for p in NEVER_NEG])
@@ -370,7 +397,8 @@ def main(argv: list[str] | None = None) -> int:
             "aggregation": "per-persona mean over questions -> arm mean over adapters "
             "per persona -> mean over personas; sd ddof=0",
             "never_negative_personas": NEVER_NEG,
-            "trained_negative_personas": TRAINED_NEG,
+            "prompt_matched_excluded_personas": PROMPT_MATCHED_EXCLUDED,
+            "realized_trained_negatives_by_arm": REALIZED_TRAINED_NEG_BY_ARM,
         },
         "references": {
             "ref_560_never_negative_mean_dz_eos": REF_560_NEVER_NEG,

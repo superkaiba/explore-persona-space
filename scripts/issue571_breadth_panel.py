@@ -44,9 +44,14 @@ Smoke/sweep parity: the smoke IS this driver restricted to one cell
 (``--adapters narrow_s42 --personas assistant --n-questions 2 --tag
 smoke``) — same script, same functions; every phase's cell list derives
 from the same ``--adapters/--personas/--n-questions`` arguments. A
-restricted panel REQUIRES ``--tag`` so partial files never poison the
-production resume-skip globs (#560 pattern). Pod-side code NEVER shells
-out to scripts/task.py — the sentinel file is the only channel.
+CONTENT-restricted panel (personas/questions below the full 35x20)
+REQUIRES ``--tag`` so partial files never poison the production
+resume-skip globs (#560 pattern); an ``--adapters`` SUBSET alone is a
+production per-label shard (per-adapter files are self-contained units
+carrying a per-label panel_spec), so the dispatcher's parallel
+``--phase gen --adapters <label>`` invocations need no tag. Pod-side
+code NEVER shells out to scripts/task.py — the sentinel file is the
+only channel.
 """
 
 from __future__ import annotations
@@ -244,26 +249,41 @@ def _download_i571_adapters(labels: list[str]) -> dict[str, str]:
 
 
 def _resolve_dirs(args) -> tuple[Path, Path]:
-    """(data_dir, out_dir), tag-suffixed when a restricted panel is requested."""
+    """(data_dir, out_dir), tag-suffixed when a restricted CONTENT panel is requested.
+
+    Only the personas/questions axes gate the --tag requirement: a per-adapter
+    output file is a self-contained unit over its own personas x questions, so
+    an adapter SUBSET invocation (the dispatcher's per-label gen/score shards,
+    ``--adapters broad_s42`` with full personas/questions, no tag) writes
+    PRODUCTION files. A personas- or questions-restricted invocation still
+    REQUIRES --tag so partial files never poison production resume-skips.
+    """
     restricted = (
-        sorted(args.adapters) != sorted(ALL_LABELS)
-        or sorted(args.personas) != HELD_OUT_35
-        or args.n_questions != N_QUESTIONS_FULL
+        sorted(args.personas) != sorted(HELD_OUT_35) or args.n_questions != N_QUESTIONS_FULL
     )
     if restricted and not args.tag:
         raise SystemExit(
-            "A restricted panel (--adapters/--personas/--n-questions below the full "
-            "4x35x20) REQUIRES --tag (e.g. --tag smoke) so partial files never "
-            "collide with production outputs."
+            "A content-restricted panel (--personas/--n-questions below the full "
+            "35x20) REQUIRES --tag (e.g. --tag smoke) so partial files never "
+            "collide with production outputs. (--adapters subsets alone are "
+            "production per-label shards and need no tag.)"
         )
     data_dir = args.data_dir / args.tag if args.tag else args.data_dir
     out_dir = args.out_dir / args.tag if args.tag else args.out_dir
     return data_dir, out_dir
 
 
-def _panel_spec_with_adapters(args, questions: list[str]) -> dict:
-    """The #560 ``panel_spec`` keyed by adapter labels instead of source cids."""
-    spec = panel_spec(args.adapters, args.personas, questions)
+def _label_spec(args, questions: list[str], label: str) -> dict:
+    """The #560 ``panel_spec`` keyed to ONE adapter label (per-label files).
+
+    The stored/validated spec describes the FILE's own contents (this label's
+    personas x questions), NOT the invocation's full --adapters set — so a
+    file written under ``--adapters broad_s42`` validates identically under an
+    ``--adapters all`` resume (no spec-mismatch RuntimeError across invocation
+    shapes). The personas/questions axes still differ between tagged smoke
+    files and production files, preserving the partial-file poisoning guard.
+    """
+    spec = panel_spec([label], args.personas, questions)
     spec["adapters"] = spec.pop("sources")
     return spec
 
@@ -443,11 +463,11 @@ def phase_gen(args) -> None:
             prompts.append(text)
             keys.append((p, q))
 
-    spec = _panel_spec_with_adapters(args, questions)
     llm = _build_vllm_engine()
     sp = SamplingParams(n=1, temperature=0.0, top_p=1.0, max_tokens=GEN_MAX_TOKENS)
 
     for label in args.adapters:
+        spec = _label_spec(args, questions, label)
         out_path = raw_dir / f"raw_completions_{label}.json"
         if out_path.exists():
             _validate_existing(out_path, spec)
@@ -572,7 +592,6 @@ def phase_score(args, side: str) -> None:
     data_dir, out_dir = _resolve_dirs(args)
     ff_dir = out_dir / "four_float"
     ff_dir.mkdir(parents=True, exist_ok=True)
-    spec = _panel_spec_with_adapters(args, questions)
 
     adapter_dirs: dict[str, str] = {}
     if side == "trained":
@@ -595,6 +614,7 @@ def phase_score(args, side: str) -> None:
 
     phase_name = "S1_base_matched_slot" if side == "base" else "S2_trained_on_own_R"
     for label in args.adapters:
+        spec = _label_spec(args, questions, label)
         out_path = ff_dir / f"{side}_{label}.json"
         if out_path.exists():
             _validate_existing(out_path, spec)
@@ -714,87 +734,116 @@ def phase_source_gen(args) -> None:
     ON (its own LoRA) and OFF (base). On-policy emission rate = any marker
     token in the output ids. FAIL on any label -> rc=4 AFTER all requested
     labels are written (checkpoint-per-phase; the dispatcher escalates).
+
+    STICKY-FAIL resume guard: a pre-existing ``source_gen_<label>.json``
+    whose stored verdict is FAIL re-enters ``failures`` on every
+    invocation, so a --resume can never skip past a failed manipulation
+    check into source-score/upload/sentinel (the registered kill
+    criterion ON < 0.2 -> stop). The guard path is vLLM-free.
     """
     print("[phase=p3_source_gen]", flush=True)
-    from vllm import SamplingParams
-    from vllm.lora.request import LoRARequest
 
     tokenizer, bare_marker_id = load_tokenizer()
     validate_registry()
     q_test = load_q_test_extended_50()[:N_SOURCE_CHECK_QUESTIONS]
     class_d = load_class_d_rewrites()
-    prompts = [
-        build_prompt_for_condition(
-            CONDITIONS_BY_ID[SOURCE_CID], q, tokenizer, class_d_rewrites=class_d
-        )
-        for q in q_test
-    ]
 
-    todo = [label for label in args.adapters if not _source_paths(args, label)[0].exists()]
-    if not todo:
-        logger.info("source-gen: all %d labels present — resume skip", len(args.adapters))
-        return
-    adapter_dirs = _download_i571_adapters(todo)
-    _gauge_assert(adapter_dirs)
-
-    llm = _build_vllm_engine()
-    sp = SamplingParams(n=1, temperature=0.0, top_p=1.0, max_tokens=GEN_MAX_TOKENS)
-
-    def emission(outs) -> tuple[list[str], list[bool]]:
-        texts, fired = [], []
-        for o in outs:
-            text = o.outputs[0].text
-            ids = tokenizer.encode(text, add_special_tokens=False)
-            texts.append(text)
-            fired.append(any(t in (MARKER_ID, bare_marker_id) for t in ids))
-        return texts, fired
-
-    # OFF (base) generations are label-independent: generate once, reuse.
-    off_texts, off_fired = emission(llm.generate(prompts, sp))
-    emission_off = float(np.mean(off_fired))
-
+    # Resolve todo AND re-read every existing requested file's verdict —
+    # a pre-existing FAIL is sticky across resumes (kill-criterion guard).
     failures: list[str] = []
-    for label in todo:
+    todo: list[str] = []
+    for label in args.adapters:
         gen_path, _ = _source_paths(args, label)
-        lora_req = LoRARequest(
-            lora_name=label, lora_int_id=LORA_INT_IDS[label], lora_path=adapter_dirs[label]
-        )
-        on_texts, on_fired = emission(llm.generate(prompts, sp, lora_request=lora_req))
-        emission_on = float(np.mean(on_fired))
-        verdict, reason = _classify_manipulation(emission_on, emission_off)
-        gen_path.write_text(
-            json.dumps(
-                {
-                    "schema_version": SCHEMA_VERSION,
-                    "phase": "M1_source_gen",
-                    "adapter_label": label,
-                    "source_cid": SOURCE_CID,
-                    "adapter_hf_subpath": ADAPTER_REGISTRY[label][1],
-                    "n_questions": len(q_test),
-                    "questions": q_test,
-                    "emission_on": emission_on,
-                    "emission_off": emission_off,
-                    "verdict": verdict,
-                    "verdict_reason": reason,
-                    "on_completions": on_texts,
-                    "off_completions": off_texts,
-                    "on_fired": on_fired,
-                    "off_fired": off_fired,
-                    "metadata": result_metadata(),
-                },
-                indent=1,
-            )
-        )
+        if not gen_path.exists():
+            todo.append(label)
+            continue
+        payload = json.loads(gen_path.read_text())
+        if payload.get("schema_version") != SCHEMA_VERSION:
+            raise AssertionError(f"{gen_path}: schema_version={payload.get('schema_version')!r}")
         logger.info(
-            "source-gen %s: emission ON=%.2f OFF=%.2f -> %s (%s)",
+            "source-gen %s: resume skip (%s exists, verdict=%s)",
             label,
-            emission_on,
-            emission_off,
-            verdict,
             gen_path.name,
+            payload["verdict"],
         )
-        if verdict == "FAIL":
-            failures.append(f"{label}: {reason}")
+        if payload["verdict"] == "FAIL":
+            failures.append(f"{label}: {payload['verdict_reason']} (pre-existing {gen_path.name})")
+
+    if todo:
+        from vllm import SamplingParams
+        from vllm.lora.request import LoRARequest
+
+        prompts = [
+            build_prompt_for_condition(
+                CONDITIONS_BY_ID[SOURCE_CID], q, tokenizer, class_d_rewrites=class_d
+            )
+            for q in q_test
+        ]
+        adapter_dirs = _download_i571_adapters(todo)
+        _gauge_assert(adapter_dirs)
+
+        llm = _build_vllm_engine()
+        sp = SamplingParams(n=1, temperature=0.0, top_p=1.0, max_tokens=GEN_MAX_TOKENS)
+
+        def emission(outs) -> tuple[list[str], list[bool]]:
+            texts, fired = [], []
+            for o in outs:
+                text = o.outputs[0].text
+                ids = tokenizer.encode(text, add_special_tokens=False)
+                texts.append(text)
+                fired.append(any(t in (MARKER_ID, bare_marker_id) for t in ids))
+            return texts, fired
+
+        # OFF (base) generations are label-independent: generate once, reuse.
+        off_texts, off_fired = emission(llm.generate(prompts, sp))
+        emission_off = float(np.mean(off_fired))
+
+        for label in todo:
+            gen_path, _ = _source_paths(args, label)
+            lora_req = LoRARequest(
+                lora_name=label, lora_int_id=LORA_INT_IDS[label], lora_path=adapter_dirs[label]
+            )
+            on_texts, on_fired = emission(llm.generate(prompts, sp, lora_request=lora_req))
+            emission_on = float(np.mean(on_fired))
+            verdict, reason = _classify_manipulation(emission_on, emission_off)
+            gen_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": SCHEMA_VERSION,
+                        "phase": "M1_source_gen",
+                        "adapter_label": label,
+                        "source_cid": SOURCE_CID,
+                        "adapter_hf_subpath": ADAPTER_REGISTRY[label][1],
+                        "n_questions": len(q_test),
+                        "questions": q_test,
+                        "emission_on": emission_on,
+                        "emission_off": emission_off,
+                        "verdict": verdict,
+                        "verdict_reason": reason,
+                        "on_completions": on_texts,
+                        "off_completions": off_texts,
+                        "on_fired": on_fired,
+                        "off_fired": off_fired,
+                        "metadata": result_metadata(),
+                    },
+                    indent=1,
+                )
+            )
+            logger.info(
+                "source-gen %s: emission ON=%.2f OFF=%.2f -> %s (%s)",
+                label,
+                emission_on,
+                emission_off,
+                verdict,
+                gen_path.name,
+            )
+            if verdict == "FAIL":
+                failures.append(f"{label}: {reason}")
+    else:
+        logger.info(
+            "source-gen: all %d labels present — resume skip (verdicts re-checked)",
+            len(args.adapters),
+        )
 
     if failures:
         logger.error("manipulation-check FAIL: %s", failures)
@@ -1009,10 +1058,23 @@ def phase_upload(args) -> None:
 
     expected_full = sorted(args.adapters) == sorted(ALL_LABELS) and not args.tag
     if expected_full:
+        # Production manipulation-check gate (registered kill criterion):
+        # NEVER upload + write the end-of-run sentinel over a failed or
+        # incomplete source check. Checked FIRST so the gate fires before
+        # any artifact-count assert (and before any byte is uploaded).
+        src_check_path = args.out_dir / "source_check.json"
+        assert src_check_path.exists(), "source_check.json missing"
+        manip_status = json.loads(src_check_path.read_text())["manipulation_check"]
+        if manip_status in ("fail", "partial"):
+            raise RuntimeError(
+                f"manipulation_check={manip_status!r} in {src_check_path} — refusing the "
+                "production upload + sentinel (registered kill criterion: source ON < 0.2 "
+                "-> stop, diagnose, re-plan; 'partial' = some labels unscored). Re-run "
+                "--phase source-gen / source-score for the affected labels first."
+            )
         n_raw, n_ff = len(raw_files), len(ff_files)
         assert n_raw == 4, f"expected 4 raw_completions files, found {n_raw}"
         assert n_ff == 8, f"expected 8 four-float files (4 base + 4 trained), found {n_ff}"
-        assert (args.out_dir / "source_check.json").exists(), "source_check.json missing"
         for label in ALL_LABELS:
             _assert_slot_parity(out_dir / "four_float", label)
         n_traj = len(list(TRAIN_DIAG_DIR.glob("trajectory_i571_*.json")))
@@ -1103,7 +1165,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument(
         "--tag",
         default="",
-        help="REQUIRED for restricted panels; isolates outputs under <dir>/<tag>/",
+        help=(
+            "REQUIRED for content-restricted panels (--personas/--n-questions below "
+            "35x20); isolates outputs under <dir>/<tag>/. --adapters subsets alone "
+            "are production per-label shards and need no tag."
+        ),
     )
     ap.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     ap.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)

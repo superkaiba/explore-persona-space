@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import logging
 import os
 import sys
@@ -56,7 +57,6 @@ import numpy as np  # noqa: E402
 # Reused #474 builders + callbacks (import, don't copy — plan §3.2).
 from i474_phase23_train import (  # noqa: E402
     BASE_MODEL,
-    HF_MODEL_REPO,
     N_DUPES_POS,
     N_NEG_PER_BYSTANDER,
     NegRowSuppressionDifficultyCallback,
@@ -91,6 +91,29 @@ EXPECTED_EP1_GLOBAL_STEP = 38
 
 TRAIN_ROW_DIR = Path("data/issue_571/train_rows")
 TRAIN_DIAG_DIR = Path("eval_results/issue_571/train_diag")
+
+
+MIN_TRAJECTORY_POINTS = 7  # plan §7 assert 4: 38 steps @ eval_every=5 -> >= 7 probes
+
+
+def assert_trajectory_points(traj_path: Path, min_points: int = MIN_TRAJECTORY_POINTS) -> int:
+    """Plan §7 assert 4: the band-callback trajectory JSON exists, is
+    non-empty, and carries >= ``min_points`` probe records. Returns the
+    observed point count (fails loud otherwise)."""
+    if not traj_path.exists() or traj_path.stat().st_size == 0:
+        raise AssertionError(
+            f"band-callback trajectory JSON missing/empty after training: {traj_path} — "
+            "the log-only band callback did not log (plan §7 smoke assert 4)."
+        )
+    payload = json.loads(traj_path.read_text())
+    n_points = len(payload.get("steps", []))
+    if n_points < min_points:
+        raise AssertionError(
+            f"band-callback trajectory has only {n_points} probe points (< {min_points}) "
+            f"at {traj_path} — eval_every=5 over a 38-step ep1 run must yield >= "
+            f"{min_points} (plan §7 smoke assert 4); check marker_band_eval_every_steps."
+        )
+    return n_points
 
 
 class StopAfterEpoch1Callback(TrainerCallback):
@@ -326,9 +349,12 @@ def main(argv: list[str] | None = None) -> None:
         marker_band_log_only=True,
         marker_band_eval_every_steps=5,
         marker_band_trajectory_path=str(TRAIN_DIAG_DIR / f"trajectory_{label}.json"),
-        hf_upload=True,
-        hf_repo=HF_MODEL_REPO,
-        hf_path_in_repo=f"adapters/{label}",  # final-state convenience copy (== ep1)
+        # The ep1 adapter upload is owned by PerEpochAdapterHFUploadCallback
+        # (fail-loud, Hub-verified). train_lora's end-of-run hf_upload would
+        # push a SECOND, byte-duplicate final-state copy (~300MB x 4 cells)
+        # to adapters/{label} — not in plan §10's artifact list — so it is
+        # explicitly disabled (TrainLoraConfig defaults it to True).
+        hf_upload=False,
     )
 
     logger.info(
@@ -344,12 +370,14 @@ def main(argv: list[str] | None = None) -> None:
     logger.info("TRAIN DONE cell=%s loss=%.4f -> %s", label, train_loss, out_path)
 
     traj_path = TRAIN_DIAG_DIR / f"trajectory_{label}.json"
-    if not traj_path.exists() or traj_path.stat().st_size == 0:
-        raise AssertionError(
-            f"band-callback trajectory JSON missing/empty after training: {traj_path} — "
-            "the log-only band callback did not log (plan §7 smoke assert 4)."
-        )
-    logger.info("trajectory JSON present: %s (%d bytes)", traj_path, traj_path.stat().st_size)
+    n_points = assert_trajectory_points(traj_path)
+    logger.info(
+        "trajectory JSON present: %s (%d bytes, %d probe points >= %d)",
+        traj_path,
+        traj_path.stat().st_size,
+        n_points,
+        MIN_TRAJECTORY_POINTS,
+    )
 
 
 if __name__ == "__main__":
