@@ -376,3 +376,78 @@ def test_grace_boundary_is_exclusive_below():
     )
     assert not keep.remove
     assert rm.remove
+
+
+# --- single-instance lock ------------------------------------------------
+
+
+def test_single_instance_lock_second_acquire_returns_none(tmp_path):
+    lock_path = tmp_path / "worktree-audit.lock"
+    holder = worktree_audit.acquire_single_instance_lock(lock_path)
+    assert holder is not None
+    try:
+        assert worktree_audit.acquire_single_instance_lock(lock_path) is None
+    finally:
+        holder.close()
+    # After the holder releases, the lock is acquirable again.
+    reacquired = worktree_audit.acquire_single_instance_lock(lock_path)
+    assert reacquired is not None
+    reacquired.close()
+
+
+def test_single_instance_lock_creates_parent_dir(tmp_path):
+    lock_path = tmp_path / "nested" / "dir" / "worktree-audit.lock"
+    holder = worktree_audit.acquire_single_instance_lock(lock_path)
+    assert holder is not None
+    holder.close()
+
+
+def test_main_exits_zero_when_lock_held(tmp_path, monkeypatch, capsys):
+    # A second concurrent audit must be a CLEAN skip (exit 0): the cron
+    # wrapper and the watcher's fail-soft subprocess call both treat
+    # nonzero as a failure signal.
+    lock_path = tmp_path / "worktree-audit.lock"
+    monkeypatch.setattr(worktree_audit, "_LOCK_PATH", lock_path)
+    holder = worktree_audit.acquire_single_instance_lock(lock_path)
+    assert holder is not None
+    try:
+        rc = worktree_audit.main([])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "holds the lock" in out
+    finally:
+        holder.close()
+
+
+def test_main_lock_skip_emits_json_when_requested(tmp_path, monkeypatch, capsys):
+    import json as _json
+
+    lock_path = tmp_path / "worktree-audit.lock"
+    monkeypatch.setattr(worktree_audit, "_LOCK_PATH", lock_path)
+    holder = worktree_audit.acquire_single_instance_lock(lock_path)
+    assert holder is not None
+    try:
+        rc = worktree_audit.main(["--json"])
+        assert rc == 0
+        payload = _json.loads(capsys.readouterr().out)
+        assert "skipped" in payload
+    finally:
+        holder.close()
+
+
+def test_main_runs_audit_when_lock_is_free(tmp_path, monkeypatch, capsys):
+    # The guard must not break the normal path: lock free -> audit() runs
+    # and main() returns the pre-existing exit contract (0, nothing removed).
+    lock_path = tmp_path / "worktree-audit.lock"
+    monkeypatch.setattr(worktree_audit, "_LOCK_PATH", lock_path)
+    calls = []
+
+    def stub_audit(*, apply, grace_hours):
+        calls.append((apply, grace_hours))
+        return worktree_audit.AuditResult()
+
+    monkeypatch.setattr(worktree_audit, "audit", stub_audit)
+    rc = worktree_audit.main([])
+    assert rc == 0
+    assert calls == [(False, worktree_audit.DEFAULT_GRACE_HOURS)]
+    assert "would remove 0" in capsys.readouterr().out

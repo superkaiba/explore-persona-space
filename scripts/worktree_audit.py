@@ -79,6 +79,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import fcntl
 import json
 import os
 import re
@@ -787,6 +788,34 @@ def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditRes
     return res
 
 
+# Single-instance lock: the daily 09:47 cron audit, the watcher's low-disk
+# `--apply` invocation (autonomous_session_watch.py `_vm_remediate_worktrees`),
+# and manual runs can overlap; overlap degrades to benign per-item failures,
+# but it is a needless race. Mirrors the watcher's `_acquire_lock` pattern.
+_LOCK_PATH = Path.home() / ".task-workflow" / "worktree-audit.lock"
+
+
+def acquire_single_instance_lock(lock_path: Path | None = None) -> object | None:
+    """Hold a non-blocking flock for the lifetime of this audit run.
+
+    Returns the held file object (the lock is released when the process
+    exits — a context manager would close it and drop the lock early, so
+    the bare open is deliberate), or ``None`` when another audit run holds
+    it. Callers treat ``None`` as a clean skip (exit 0): both the cron
+    wrapper and the watcher's fail-soft subprocess call must never classify
+    the skip as a failure."""
+    if lock_path is None:
+        lock_path = _LOCK_PATH
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = open(lock_path, "w")  # noqa: SIM115 — held for process lifetime
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        fd.close()
+        return None
+    return fd
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Stale-worktree sweep (safety net).")
     ap.add_argument(
@@ -805,6 +834,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--json", action="store_true", help="Emit a JSON summary.")
     args = ap.parse_args(argv)
+
+    lock = acquire_single_instance_lock()
+    if lock is None:
+        if args.json:
+            print(json.dumps({"skipped": "another worktree_audit run holds the lock"}))
+        else:
+            print("another worktree_audit run holds the lock; exiting")
+        return 0
 
     res = audit(apply=args.apply, grace_hours=args.grace_hours)
     verb = "removed" if args.apply else "would remove"
