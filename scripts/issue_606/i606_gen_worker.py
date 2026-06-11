@@ -304,7 +304,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear CLI worke
         from vllm.lora.request import LoRARequest
 
         for adapter_idx, (name, path) in enumerate(lora_specs, 1):
-            cell = f"{args.cell}_{name}" if len(lora_specs) > 1 else args.cell
+            # In native-LoRA mode the adapter NAME is the cell slug (the
+            # dispatcher names adapters lora_step<k>); --cell is the phase tag.
+            cell = name
             out_dir = args.out_dir / name
             done = out_dir / "eval_summary.json"
             if done.exists():
