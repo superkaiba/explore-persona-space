@@ -3873,7 +3873,7 @@ clean-result-critic in 9a-bis enforces register discipline on them.
    uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N>  # main-checkout copy, never the worktree's (spec-stale risk, incident #496)
    ```
    The verifier MUST still PASS — the humanize loop is not allowed to
-   produce a body that breaks Lens 1-13 mechanical checks. If it does:
+   produce a body that breaks Lens 1-15 mechanical checks. If it does:
    revert to the pre-loop body and surface the conflict to the user
    (this is rare; the loop only edits prose, not structure).
 5. Post `epm:humanize-loop v1` on the source task with the final 6-axis
@@ -4054,10 +4054,12 @@ dispatching this round's critics.
    latest `epm:interpretation v<n>` event, runs
    `scripts/verify_task_body.py` +
    `scripts/audit_clean_results_body_discipline.py` as authoritative
-   mechanical passes, and scores against 13 lenses including the
+   mechanical passes, and scores against 15 lenses including the
    Lens 7 statistical-framing rule absorbed from the retired
-   `reviewer` agent and Lens 13 planned-vs-actual coverage (added
-   2026-05-27 after task #391's C-axis silent drop). Posts
+   `reviewer` agent, Lens 13 planned-vs-actual coverage (added
+   2026-05-27 after task #391's C-axis silent drop), Lens 14
+   binding-concerns audit (task #455), and Lens 15
+   contaminated/failed-data-gate-arm check (task #407). Posts
    `epm:clean-result-critique v1` on the source
    task with PASS or REVISE.
 
