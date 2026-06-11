@@ -3114,7 +3114,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/533",
       "status": "interpreting",
-      "title": "Dropping the marker-less LoRA learning rate from 1e-5 to 5e-6 did not de-saturate the role-vs-system grid, but the negative role-vs-system marker gap it surfaced at 1 epoch replicates at the install step, then bends with the read-out space \u2014 trained log P shows it shrinking on villain and persisting on pirate, while an EOS-margin re-read of the same adapters flips the late-step villain gap positive (MODERATE confidence)"
+      "title": "Dropping the marker-less LoRA learning rate from 1e-5 to 5e-6 did not de-saturate the role-vs-system grid, but the negative role-vs-system marker gap it surfaced at 1 epoch replicates at the install step, then bends with the read-out space \u2014 trained log P shows it shrinking on villain and persisting on pirate, while an EOS-margin re-read of the same adapters flips the villain plain late-step gap positive (knife-edge), with villain padded mean-positive but straddling, pirate plain CI-clear positive, and pirate padded CI-clear negative (MODERATE confidence)"
     },
     "534": {
       "goal": "Close #530's planned 4-fraction band-stop trajectory by modifying MarkerBandStopCallback to checkpoint at sub-step granularity (post-hoc fraction selection {0.25, 0.50, 0.75, 1.00} of the realized stop step), retraining all 10 #530 cells with the otherwise-identical recipe, then re-running the 4-fraction eval + 6-predictor partial-Spearman refit to test whether the sign reversal of shadow_angle (rho=-0.23) and d_nn (rho=+0.14) holds across the full trajectory rather than only at the band-stop final checkpoint.",

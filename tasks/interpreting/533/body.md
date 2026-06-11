@@ -3,8 +3,9 @@ title: Dropping the marker-less LoRA learning rate from 1e-5 to 5e-6 did not de-
   the role-vs-system grid, but the negative role-vs-system marker gap it surfaced
   at 1 epoch replicates at the install step, then bends with the read-out space —
   trained log P shows it shrinking on villain and persisting on pirate, while an EOS-margin
-  re-read of the same adapters flips the late-step villain gap positive (MODERATE
-  confidence)
+  re-read of the same adapters flips the villain plain late-step gap positive (knife-edge),
+  with villain padded mean-positive but straddling, pirate plain CI-clear positive,
+  and pirate padded CI-clear negative (MODERATE confidence)
 kind: experiment
 tags:
 - followup
