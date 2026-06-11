@@ -2758,8 +2758,8 @@
       "goal": "Test whether K in-context demonstrations of a persona trait and SFT on those same K examples produce equivalent behavioral and representational shifts on Qwen-2.5-7B, using the rank-1 leakage model (docs/notes/rank1_leakage_model.pdf @ e04194a5a) to derive and test predictions about where ICL and FT agree and diverge.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/491",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/491",
+      "status": "followups_running",
       "title": "In-context demos and finetuning on the same K examples spread a persona-implanted marker through different channels: prompt demos lift it in every context via content-blind copying, weight updates grade it by base-model persona similarity (MODERATE confidence)"
     },
     "492": {
