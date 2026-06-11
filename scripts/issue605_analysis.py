@@ -46,7 +46,24 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from scipy.stats import norm, rankdata, spearmanr  # noqa: E402
 
+from explore_persona_space.experiments.i406_conditions import CONDITIONS_BY_ID  # noqa: E402
+
 logger = logging.getLogger("issue605.analysis")
+
+# Production expected-source set for the marker coverage assert: the SAME
+# registered 16 source cids the eval dispatcher trains/evals
+# (issue605_eval_marker.py: ``SOURCES_ALL = list(CONDITIONS_BY_ID)``).
+# Deriving the denominator from the observed frame let a source with ZERO
+# per_cell files vanish silently from the coverage assert (round-5 blocker
+# wide-analysis-source-set-blindspot); production now always asserts against
+# this registered set, and only ``--synthesize-stub`` gates the stub override.
+REGISTERED_SOURCES: list[str] = list(CONDITIONS_BY_ID)
+# Stub trees are deliberately 4-source (kept tiny for the CPU smoke).
+STUB_SOURCES: list[str] = ["A1", "A2", "B1", "D1"]
+# Parent figure home. _marker_figures/_fact_figures write FIXED filenames
+# (hero_shift_vs_prior_by_band, ...), so amendment/stub runs must never
+# default here (concern wide-analysis-figures-dir-clobber).
+PARENT_FIGURES_DIR = Path("figures/issue_605")
 
 ANALYSIS_SEED = 42
 SATURATION_LOGP = -0.1
@@ -310,17 +327,24 @@ def _resolve_selected_panel(sel: dict, what: str) -> set[str]:
 
 
 def build_marker_frame(
-    out_root: Path, selection_path: Path | None = None
+    out_root: Path,
+    selection_path: Path | None = None,
+    expected_sources: list[str] | None = None,
 ) -> tuple[pd.DataFrame, dict]:
     """Cell-level marker frame from per-cell JSONs + pair table + selection.
 
     Only cells whose context is in the SELECTED panel (or recorded descope
     subset) enter the frame — stale smoke/expansion cells in the same output
-    root never reach the registered statistics — and per-source coverage of
-    that panel is asserted (plan section 6: ``>= sources x panel`` files,
-    fewer only under a recorded descope). ``selection_path`` overrides the
-    default parent selection JSON (the amendment passes the WIDE selection;
-    coverage then demands sources_present x realized wide panel)."""
+    root never reach the registered statistics — and coverage of
+    ``expected_sources x panel`` is asserted (plan section 6). The default
+    ``expected_sources=None`` resolves to the REGISTERED 16 source cids the
+    eval dispatcher runs (``REGISTERED_SOURCES``), so a source with ZERO
+    per_cell files is a named shortfall, never a silently shrunk denominator;
+    sources on disk OUTSIDE the expected set also fail loud. The stub path
+    passes ``STUB_SOURCES`` explicitly (gated on ``--synthesize-stub`` in
+    ``main``). ``selection_path`` overrides the default parent selection JSON
+    (the amendment passes the WIDE selection; coverage then demands
+    expected_sources x realized wide panel)."""
     sel_path = selection_path or (out_root / "panel" / "marker_panel_selection.json")
     sel = json.loads(sel_path.read_text())
     table = json.loads((out_root / "panel" / "marker_pair_table.json").read_text())
@@ -419,15 +443,26 @@ def build_marker_frame(
         seen_cells.add((src, ctx))
     frame = pd.DataFrame(rows)
     assert len(frame), "no marker cells found — run the Phase 2 dispatcher first"
-    # Coverage assert: every source present must cover the FULL selected (or
-    # descoped) panel — a shortfall names the missing cells instead of
-    # silently shrinking the registered statistics' denominator.
+    # Coverage assert: every EXPECTED source (registered set by default — NOT
+    # the observed frame, which would let a zero-file source vanish) must
+    # cover the FULL selected (or descoped) panel — a shortfall names the
+    # missing sources/cells instead of silently shrinking the registered
+    # statistics' denominator.
+    if expected_sources is None:
+        expected_sources = REGISTERED_SOURCES
     sources_present = sorted(frame["source"].unique())
-    shortfall = sorted({(s, c) for s in sources_present for c in panel_set} - seen_cells)
+    unexpected = sorted(set(sources_present) - set(expected_sources))
+    assert not unexpected, (
+        f"marker frame contains sources OUTSIDE the expected set: {unexpected} "
+        f"(expected {sorted(expected_sources)}) — stale per_cell files in {trained_dir}?"
+    )
+    absent_sources = sorted(set(expected_sources) - set(sources_present))
+    shortfall = sorted({(s, c) for s in expected_sources for c in panel_set} - seen_cells)
     assert not shortfall, (
-        f"marker frame coverage shortfall: expected {len(sources_present)} sources x "
-        f"{len(panel_set)} panel contexts, {len(shortfall)} cells absent "
-        f"(first 10: {shortfall[:10]}); skipped-with-reason: {skipped[:10]}"
+        f"marker frame coverage shortfall: expected {len(expected_sources)} sources x "
+        f"{len(panel_set)} panel contexts, {len(shortfall)} cells absent; "
+        f"sources with ZERO per_cell files: {absent_sources or 'none'} "
+        f"(first 10 missing cells: {shortfall[:10]}); skipped-with-reason: {skipped[:10]}"
     )
     for c in sources_present[1:]:
         frame[f"fe_{c}"] = (frame["source"] == c).astype(float)
@@ -731,8 +766,9 @@ def analyze_marker(
     n_boot: int,
     selection_path: Path | None = None,
     out_dir: Path | None = None,
+    expected_sources: list[str] | None = None,
 ) -> dict:
-    frame, sel = build_marker_frame(out_root, selection_path)
+    frame, sel = build_marker_frame(out_root, selection_path, expected_sources=expected_sources)
     logger.info(
         "[phase=p7_marker] frame: %d cells, %d contexts", len(frame), frame["context"].nunique()
     )
@@ -1259,7 +1295,7 @@ def synthesize_stub(root: Path, fact_variant: str = "clean") -> None:
         that the frame builder must skip."""
     assert fact_variant in ("clean", "descoped"), fact_variant
     rng = np.random.default_rng(7)
-    sources = ["A1", "A2", "B1", "D1"]
+    sources = list(STUB_SOURCES)  # single source of truth with main()'s coverage override
     contexts = [
         f"m605_stub_{i:02d}__{a}"
         for i, a in enumerate(["none"] * 4 + ["soft"] * 4 + ["explicit"] * 4)
@@ -1508,7 +1544,16 @@ def main() -> None:
     )
     ap.add_argument("--families", default="marker,fact")
     ap.add_argument("--out-root", type=Path, default=Path("eval_results/issue_605"))
-    ap.add_argument("--figures-dir", type=Path, default=Path("figures/issue_605"))
+    ap.add_argument(
+        "--figures-dir",
+        type=Path,
+        default=None,
+        help="figure output dir. Default depends on the run shape: parent run -> "
+        "figures/issue_605; amendment run (--out / --marker-selection) -> a dedicated "
+        "subdir (figures/issue_605/<out-name>), NEVER the parent dir (the fixed figure "
+        "filenames would overwrite the parent's committed hero figures); stub run -> "
+        "<stub-root>/figures",
+    )
     ap.add_argument("--n-boot", type=int, default=1000)
     ap.add_argument(
         "--marker-selection",
@@ -1552,6 +1597,43 @@ def main() -> None:
             "--out names ONE analysis output dir; run a single --families with it "
             "(both families would clobber the same analysis.json)"
         )
+
+    # Figures-dir resolution (concern wide-analysis-figures-dir-clobber):
+    # _marker_figures/_fact_figures write FIXED filenames, so amendment and
+    # stub runs must never default into the parent figures dir.
+    if args.figures_dir is None:
+        if args.synthesize_stub is not None:
+            args.figures_dir = args.synthesize_stub / "figures"
+        elif args.out is not None:
+            args.figures_dir = PARENT_FIGURES_DIR / args.out.name
+        elif args.marker_selection is not None:
+            args.figures_dir = PARENT_FIGURES_DIR / args.marker_selection.stem
+        else:
+            args.figures_dir = PARENT_FIGURES_DIR
+    amendment_run = args.marker_selection is not None or args.out is not None
+    if amendment_run:
+        assert args.figures_dir.resolve() != PARENT_FIGURES_DIR.resolve(), (
+            "amendment analysis (--marker-selection/--out) refuses to write figures into "
+            f"the parent default {PARENT_FIGURES_DIR} — the fixed figure filenames would "
+            "overwrite the parent's committed hero figures; pass a dedicated --figures-dir"
+        )
+    logger.info("figures dir resolved to %s", args.figures_dir)
+
+    # Coverage expected-source gating: production always asserts the
+    # registered set (build_marker_frame default); ONLY the stub path
+    # overrides, explicitly and loudly.
+    expected_sources: list[str] | None = None
+    if args.synthesize_stub is not None:
+        expected_sources = STUB_SOURCES
+        logger.warning(
+            "stub mode: marker coverage assert gated on the %d stub sources %s, NOT the "
+            "%d registered sources — production runs (no --synthesize-stub) always assert "
+            "the registered set",
+            len(STUB_SOURCES),
+            STUB_SOURCES,
+            len(REGISTERED_SOURCES),
+        )
+
     for fam in families:
         if fam == "marker":
             analyze_marker(
@@ -1560,6 +1642,7 @@ def main() -> None:
                 args.n_boot,
                 selection_path=args.marker_selection,
                 out_dir=args.out,
+                expected_sources=expected_sources,
             )
         elif fam == "fact":
             analyze_fact(args.out_root, args.figures_dir, args.n_boot, out_dir=args.out)
