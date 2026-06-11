@@ -3525,8 +3525,8 @@
     "586": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/586",
-      "status": "proposed",
+      "path": "tasks/completed/586",
+      "status": "completed",
       "title": "Campaign runner: question-level autonomous orchestration layer (/campaign) above /issue"
     },
     "587": {
