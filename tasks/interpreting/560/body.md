@@ -5,7 +5,7 @@ title: Geometry-routed marker spillover replicates on a second training recipe, 
 kind: experiment
 tags: []
 created_at: '2026-06-10T15:34:13Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 553
 goal: Test whether the held-out persona channel structure — persona geometry routes
   the training-induced change while the base end-of-answer level persists through
