@@ -93,6 +93,15 @@ source; both sources land at the same place on the dial. Lower LR widens the ban
 step-space (more forgiving); it does not remove per-source variation — so close the
 loop. It is ONE training run with checkpoints, not N runs.
 
+**Integer-epoch grids are too coarse for resolution-band designs (#529/#533/#546).**
+The role-vs-system line's {1, 2, 3, 5}-epoch grid never landed all three encoding
+arms in its [−10, −5] nat wrong-persona band at any rank/LR tried (all-floor at
+lr=1e-5, then 2/24 and 1/24 cells at lr=5e-6 with r=32 and r=16), while a
+step-indexed re-run found a 30-optimizer-step all-arm anchor (#533/#547). Halving
+rank (r=32→16, α/r fixed) only delays the install trajectory ~1 epoch (#546); it
+does not open the window. Grid in optimizer steps / band-stop checkpoints, never
+whole epochs. Detail + index: `docs/marker_training_recipe.md`.
+
 ## Reuse: the band-stop is wired into `train_lora`
 
 All current marker experiments call the shared `train_lora()` in
