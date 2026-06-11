@@ -350,7 +350,17 @@ def main() -> int:
         )
 
     # Cross-cell gradient conditional on expression — per family with priors.
+    # Fail-loud when refusal/em cells need source_priors.json and it was never
+    # staged: silently degrading to per-family "underpowered" (the pre-round-3
+    # behavior) hid a missing staging step behind a science-looking verdict.
     priors_json = EVAL_DIR / "source_priors.json"
+    if not priors_json.exists() and any(c["family"] in ("refusal", "em") for c in cells):
+        raise FileNotFoundError(
+            f"{priors_json} missing but refusal/em cells are selected — stage it first: "
+            "run `uv run python scripts/issue603_decompose.py --from-hub` (the canonical "
+            "Phase-2 staging step), or pass --from-hub to this script, or run "
+            "scripts/issue603_source_prior.py (Phase-1 step 6) if priors were never computed."
+        )
     sp = json.loads(priors_json.read_text()) if priors_json.exists() else None
     cross_family: dict[str, dict] = {}
     for family in families:

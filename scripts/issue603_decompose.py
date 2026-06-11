@@ -30,6 +30,17 @@ guard A, and runs the plan §6 statistics:
   floor) — sensitivity re-read of the CMF regression ONLY (the primary
   norm regression always keeps all cells), with exclusion counts + the
   prior-correlation of the excluded set;
+- refusal implant gate (plan step 12): when
+  ``eval_results/issue_603/refusal_implant_check.json`` is present and
+  not in its recorded fallback, refusal sources with judged source-self
+  trained refusal rate < 0.5 are EXCLUDED from the refusal regression
+  set and reported under ``stats.refusal.implant_gate`` (never silent);
+  when the JSON is absent or records its A3 / Batch-API fallback, the
+  refusal read proceeds on the norm-floor rule alone and the output says
+  so. Staging note: the check JSON is a VM-side artifact produced by
+  ``scripts/issue603_refusal_implant_check.py`` and committed to git
+  under ``eval_results/issue_603/`` — it is NOT pulled by ``--from-hub``
+  (local read);
 - guard A: trigger = reliability-vs-prior sign matches CMF-vs-prior
   sign at the cluster level; when triggered the both-must-hold rule
   binds (raw AND disattenuated orderings);
@@ -159,6 +170,43 @@ def _pull_from_hub(
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(local, target)
         logger.info("[pulled] %s from %s -> %s", path_in_repo, repo, target)
+
+
+def _load_implant_gate(path: Path) -> dict:
+    """Plan step-12 refusal implant-gate state (round 3).
+
+    Returns ``{mode, reason, implant_gate_dropped, ...}``: ``mode='judged'``
+    when ``refusal_implant_check.json`` carries real judged rates (then
+    ``implant_gate_dropped`` lists the sources below the 0.5 gate);
+    ``mode='norm-floor-only'`` when the JSON is absent or recorded its
+    pre-registered A3 / Batch-API fallback (then the gate is inert and the
+    refusal regression proceeds on the norm-floor rule alone, plan A3/§8).
+    Either way the state is REPORTED in the stats output — never silent.
+    """
+    if not path.exists():
+        return {
+            "mode": "norm-floor-only",
+            "reason": f"{path.name} absent — run scripts/issue603_refusal_implant_check.py "
+            "(plan step 12); proceeding on the norm-floor rule alone (plan A3)",
+            "implant_gate_dropped": [],
+        }
+    check = json.loads(path.read_text())
+    if check.get("fallback"):
+        return {
+            "mode": "norm-floor-only",
+            "reason": "refusal_implant_check.json recorded its fallback: "
+            + str(check["fallback"].get("reason")),
+            "implant_gate_dropped": [],
+        }
+    return {
+        "mode": "judged",
+        "reason": None,
+        "threshold": check["meta"]["gate_threshold"],
+        "judge_model": check["meta"]["judge_model"],
+        "rates": {s: d["rate"] for s, d in check["per_source"].items()},
+        "n_rows": {s: d["n_rows"] for s, d in check["per_source"].items()},
+        "implant_gate_dropped": sorted(check["dropped_sources"]),
+    }
 
 
 def _load_cells() -> list[dict]:
@@ -403,6 +451,13 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="#603 Phase-2 decomposition + statistics")
     ap.add_argument("--shifts-dir", default=str(EVAL_DIR / "shifts"))
     ap.add_argument("--priors-json", default=str(EVAL_DIR / "source_priors.json"))
+    ap.add_argument(
+        "--implant-check-json",
+        default=str(EVAL_DIR / "refusal_implant_check.json"),
+        help="Plan step-12 output (scripts/issue603_refusal_implant_check.py); a VM-side "
+        "git-committed artifact, read locally (not pulled by --from-hub). Absent or "
+        "fallback-recorded -> the refusal read proceeds on the norm-floor rule alone.",
+    )
     ap.add_argument("--out", default=str(EVAL_DIR / "decomposition_results.json"))
     ap.add_argument("--from-hub", action="store_true", help="Download tensors first.")
     ap.add_argument(
@@ -567,6 +622,7 @@ def main() -> int:
         }
 
     prior_sems = _prior_sems(priors_json)
+    implant_gate = _load_implant_gate(Path(args.implant_check_json))
     extension_ps: dict[str, float] = {}
     extension_ps_norm: dict[str, float] = {}
     for family in ("refusal", "em"):
@@ -575,22 +631,44 @@ def main() -> int:
         )
         if len(fam_cells) != 6:
             continue
-        prior6 = [d["prior"] for d in fam_cells]
-        cmf6 = [d["reads"][PRIMARY_READ]["cmf"] for d in fam_cells]
-        norm6 = [d["reads"][PRIMARY_READ]["norm"] for d in fam_cells]
+        # Plan step-12 implant gate (refusal only): judged-weak sources are
+        # excluded from the REGRESSION set; the full per-source panel values
+        # stay reported above the regression. EM is never gated (implant
+        # strength already evidenced by #518's trained deltas).
+        gate = dict(implant_gate) if family == "refusal" else None
+        gate_dropped = set(gate["implant_gate_dropped"]) if gate else set()
+        reg_cells = [d for d in fam_cells if d["source"] not in gate_dropped]
+        prior6 = [d["prior"] for d in reg_cells]
+        cmf6 = [d["reads"][PRIMARY_READ]["cmf"] for d in reg_cells]
+        norm6 = [d["reads"][PRIMARY_READ]["norm"] for d in reg_cells]
+        regressable = len(reg_cells) >= 4
         fam_stats: dict = {
             "sources": [d["source"] for d in fam_cells],
-            "priors": prior6,
-            "cmf": cmf6,
-            "norm": norm6,
-            "spearman_cmf": _exact_perm_spearman(prior6, cmf6),
-            "spearman_norm": _exact_perm_spearman(prior6, norm6),
-            "joint_perm_contrast": _joint_perm_contrast(prior6, cmf6, norm6),
+            "priors": [d["prior"] for d in fam_cells],
+            "cmf": [d["reads"][PRIMARY_READ]["cmf"] for d in fam_cells],
+            "norm": [d["reads"][PRIMARY_READ]["norm"] for d in fam_cells],
+            "regression_sources": [d["source"] for d in reg_cells],
+            "spearman_cmf": _exact_perm_spearman(prior6, cmf6) if regressable else None,
+            "spearman_norm": _exact_perm_spearman(prior6, norm6) if regressable else None,
+            "joint_perm_contrast": (
+                _joint_perm_contrast(prior6, cmf6, norm6) if regressable else None
+            ),
         }
+        if gate is not None:
+            fam_stats["implant_gate"] = gate
+            if gate_dropped:
+                logger.info(
+                    "[refusal] implant gate dropped %s from the regression (judged "
+                    "source-self rate < %s)",
+                    sorted(gate_dropped),
+                    gate.get("threshold"),
+                )
         # Pre-registered prior-variance gate (binding for refusal; reported
-        # for EM): the 6 log-prob priors must span > 2x their pooled SE.
-        sems = prior_sems.get(family, {})
-        if sems:
+        # for EM): the regression-set log-prob priors must span > 2x their
+        # pooled SE (the set is the full 6 unless the implant gate dropped).
+        reg_sources = {d["source"] for d in reg_cells}
+        sems = {s: v for s, v in prior_sems.get(family, {}).items() if s in reg_sources}
+        if sems and len(reg_cells) >= 2:
             pooled_se = float(np.sqrt(np.mean([s**2 for s in sems.values()])))
             span = float(max(prior6) - min(prior6))
             fam_stats["prior_variance_gate"] = {
@@ -609,16 +687,17 @@ def main() -> int:
                 ),
             }
         # Norm-floor sensitivity re-read of the CMF regression ONLY (the
-        # primary norm regression always keeps all cells — §6).
-        kept = [d for d in fam_cells if not d["below_noise_floor"]]
-        excl = [d for d in fam_cells if d["below_noise_floor"]]
+        # primary norm regression always keeps all regression-set cells — §6;
+        # implant-gate-dropped sources are already out of the set).
+        kept = [d for d in reg_cells if not d["below_noise_floor"]]
+        excl = [d for d in reg_cells if d["below_noise_floor"]]
         fam_stats["norm_floor_sensitivity_cmf"] = {
             "n_excluded": len(excl),
             "excluded_sources": [d["source"] for d in excl],
             "prior_correlation_of_excluded": (
                 float(
                     spearman_rho(
-                        prior6, [1.0 if d["below_noise_floor"] else 0.0 for d in fam_cells]
+                        prior6, [1.0 if d["below_noise_floor"] else 0.0 for d in reg_cells]
                     )
                 )
                 if excl
@@ -634,15 +713,18 @@ def main() -> int:
         }
         # Plan §6 family-diagnostic status (binds the pooled read below):
         # non-diagnostic when the refusal prior-variance gate fails (binding
-        # for refusal; reported-only for EM) or when <4 sources survive the
-        # norm floor (plan §8 survival rule).
-        n_surviving = sum(1 for d in fam_cells if not d["below_noise_floor"])
-        gate = fam_stats.get("prior_variance_gate")
+        # for refusal; reported-only for EM), when <4 sources survive the
+        # norm floor (plan §8 survival rule), or when the step-12 implant
+        # gate leaves <4 regression sources (refusal only).
+        n_surviving = sum(1 for d in reg_cells if not d["below_noise_floor"])
+        var_gate = fam_stats.get("prior_variance_gate")
         reasons: list[str] = []
+        if gate_dropped and len(reg_cells) < 4:
+            reasons.append(f"only_{len(reg_cells)}_sources_pass_implant_gate_lt4")
         if family == "refusal":
-            if gate is None:
+            if var_gate is None:
                 reasons.append("prior_variance_gate_unavailable_no_prior_sems")
-            elif not gate["passes"]:
+            elif not var_gate["passes"]:
                 reasons.append("prior_variance_gate_failed")
         if n_surviving < 4:
             reasons.append(f"only_{n_surviving}_sources_survive_norm_floor_lt4")
@@ -652,22 +734,29 @@ def main() -> int:
             "reasons_non_diagnostic": reasons,
         }
         stats[family] = fam_stats
-        extension_ps[family] = fam_stats["spearman_cmf"]["p_one_sided_negative"]
-        extension_ps_norm[family] = fam_stats["spearman_norm"]["p_one_sided_negative"]
+        if fam_stats["spearman_cmf"] is not None:
+            extension_ps[family] = fam_stats["spearman_cmf"]["p_one_sided_negative"]
+            extension_ps_norm[family] = fam_stats["spearman_norm"]["p_one_sided_negative"]
 
-    if len(extension_ps) >= 2:
+    fams_present = [f for f in ("refusal", "em") if f in stats]
+    if len(fams_present) >= 2:
         # Plan §6: a non-diagnostic family is EXCLUDED from the pooled read —
         # it collapses to the surviving family ALONE (reduced denominator,
-        # stated), or to no pooled read when both families fail.
-        diag = [f for f in extension_ps if stats[f]["diagnostic"]["is_diagnostic"]]
+        # stated), or to no pooled read when both families fail. A family
+        # whose regression could not be computed (implant gate left <4
+        # sources) has no p and is excluded the same way.
+        diag = [
+            f for f in fams_present if stats[f]["diagnostic"]["is_diagnostic"] and f in extension_ps
+        ]
         pooled: dict = {
             "doc": "Stouffer Z over the refusal+EM one-sided exact p's; descriptive "
             "only (families share base model, panel, questions). Families declared "
-            "non-diagnostic (refusal prior-variance gate fails, or <4 sources "
-            "survive the norm floor) are excluded per plan §6; with one survivor "
+            "non-diagnostic (refusal prior-variance gate fails, <4 sources "
+            "survive the norm floor, or <4 sources pass the step-12 implant "
+            "gate) are excluded per plan §6; with one survivor "
             "the 'pooled' read is that family's own p (reduced denominator).",
             "families_pooled": diag,
-            "family_diagnostic_status": {f: stats[f]["diagnostic"] for f in extension_ps},
+            "family_diagnostic_status": {f: stats[f]["diagnostic"] for f in fams_present},
         }
         if len(diag) >= 2:
             pooled["cmf"] = _stouffer([extension_ps[f] for f in diag])
