@@ -159,3 +159,4 @@
 {"ts": "2026-06-11T09:00:22Z", "kind": "epm:results", "version": 1, "by": "i546_frac_run", "note": "i546 fractional-epoch follow-up (cn_i546s; max_steps {47,57,66}, r=16/alpha=32, lr=5e-6) complete: 90 cells trained, anchor selected, analysis written."}
 {"ts": "2026-06-11T09:00:29Z", "kind": "epm:progress", "version": 21, "by": "poll_pipeline", "note": "phase transition: failed -> done", "phase": "done", "pod": "pod-546"}
 {"ts": "2026-06-11T09:01:06Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "polling loop observed phase=done (respawn-2 completed the last cell + cross-eval/anchor/analyze)."}
+{"ts": "2026-06-11T09:01:23Z", "kind": "epm:progress", "version": 22, "by": "unknown", "note": "stage-dispatch stage=verifying round=1 subagent=upload-verifier (followup fractional-epoch-grid-r16)"}
