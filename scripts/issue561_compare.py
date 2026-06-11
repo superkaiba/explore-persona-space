@@ -455,10 +455,12 @@ def make_figures(per_cell: dict[str, dict], figures_dir: Path) -> None:
     set_paper_style("blog")
     colors = paper_palette(4)
     arm_color = {"em": colors[0], "marker": colors[1], "posonly": colors[2]}
+    # Reader-facing arm names (clean-result Lens 2/3: no issue codes in tick
+    # labels); issue provenance lives in the .meta.json sidecar + repro docs.
     arm_label = {
-        "marker": "contrastive marker (#551)",
-        "posonly": "positive-only marker (#561)",
-        "em": "EM insecure-code (#551)",
+        "marker": "contrastive marker",
+        "posonly": "positive-only marker",
+        "em": "EM insecure-code",
     }
     arm_order = ["marker", "posonly", "em"]
     same = [v for v in per_cell.values() if v["variant"] == "same"]
@@ -501,7 +503,8 @@ def make_figures(per_cell: dict[str, dict], figures_dir: Path) -> None:
         )
     axes[0].set_ylabel("top-direction share of spectrum")
     fig.suptitle(
-        "Same-text shift-spectrum concentration by arm (ticks = per-cell sign-flip null p95)",
+        "Shift-spectrum concentration by arm, trained-model text "
+        "(ticks = per-cell sign-flip null p95)",
         fontsize=10,
     )
     fig.tight_layout()
@@ -534,9 +537,9 @@ def make_figures(per_cell: dict[str, dict], figures_dir: Path) -> None:
                 alpha=0.75,
                 label=f"seed {v['seed']}",
             )
-        ax.set_xlabel("|cos to top direction| — contrastive marker (#551)")
-        ax.set_ylabel("|cos to top direction| — positive-only marker (#561)")
-        ax.set_title("Per-persona alignment: positive-only vs contrastive (same-text)")
+        ax.set_xlabel("|cos to top direction| — contrastive marker")
+        ax.set_ylabel("|cos to top direction| — positive-only marker")
+        ax.set_title("Per-persona alignment: positive-only vs contrastive (trained-model text)")
         ax.legend(fontsize=8)
         fig.tight_layout()
         savefig_paper(fig, "posonly_vs_contrastive_profiles", dir=figures_dir)
@@ -559,7 +562,7 @@ def make_figures(per_cell: dict[str, dict], figures_dir: Path) -> None:
             )
         ax.set_xlabel("per-persona shift norm")
         ax.set_ylabel("|cosine to top direction|")
-        ax.set_title("Positive-only marker arm: shift size vs alignment (same-text)")
+        ax.set_title("Positive-only marker arm: shift size vs alignment (trained-model text)")
         ax.legend(fontsize=8)
         fig.tight_layout()
         savefig_paper(fig, "posonly_norm_vs_alignment", dir=figures_dir)

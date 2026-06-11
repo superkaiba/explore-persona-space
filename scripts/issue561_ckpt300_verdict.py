@@ -69,6 +69,13 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 VARIANTS = ("same", "base", "on_policy")
+# Reader-facing flavor names for every rendered figure label (clean-result
+# Lens 2/3: no project-internal slugs in tick labels / panel titles).
+FLAVOR_LABELS = {
+    "same": "trained-model text",
+    "base": "base-model text",
+    "on_policy": "own response",
+}
 SEEDS = (42, 137, 256)
 SOURCE_PERSONA = "medical_doctor"  # matches issue551_controls.SOURCE_PERSONA
 # Convention-drift guard: the #551 marker/em cells appear in BOTH JSONs
@@ -481,14 +488,18 @@ def make_figures(
     set_paper_style("blog")
     colors = paper_palette(4)
     arms = [
-        ("contrastive marker\n(#551)", _cells(parent_pc, "marker", "same"), colors[1]),
+        ("contrastive\nmarker", _cells(parent_pc, "marker", "same"), colors[1]),
         (
-            "positive-only ckpt-300\n(matched exposure)",
+            "positive-only, step 300\n(matched row-visit exposure)",
             _cells(new_pc, "posonly", "same"),
             colors[3],
         ),
-        ("positive-only step-600\n(#561)", _cells(parent_pc, "posonly", "same"), colors[2]),
-        ("EM insecure-code\n(#551)", _cells(parent_pc, "em", "same"), colors[0]),
+        (
+            "positive-only, step 600\n(full training)",
+            _cells(parent_pc, "posonly", "same"),
+            colors[2],
+        ),
+        ("EM\ninsecure-code", _cells(parent_pc, "em", "same"), colors[0]),
     ]
     if not any(cells for _, cells, _ in arms):
         logger.warning("[figures] no same-text cells anywhere — skipping all figures")
@@ -521,7 +532,8 @@ def make_figures(
         )
     axes[0].set_ylabel("top-direction share of spectrum")
     fig.suptitle(
-        "Same-text shift-spectrum concentration by arm (ticks = per-cell sign-flip null p95)",
+        "Shift-spectrum concentration by arm, trained-model text "
+        "(ticks = per-cell sign-flip null p95)",
         fontsize=10,
     )
     fig.tight_layout()
@@ -547,19 +559,27 @@ def make_figures(
             )
         ax.set_xticks([0, 1])
         ax.set_xticklabels(["step 300", "step 600"])
-        ax.set_title(variant, fontsize=9)
+        ax.set_title(FLAVOR_LABELS.get(variant, variant), fontsize=9)
     axes[0].set_ylabel("weighted top-direction share")
     axes[0].legend(fontsize=7)
-    fig.suptitle("Positive-only arm: top-share trajectory 300 -> 600 by flavor", fontsize=10)
+    fig.suptitle("Positive-only arm: top-share trajectory 300 -> 600 by text flavor", fontsize=10)
     fig.tight_layout()
     savefig_paper(fig, "ckpt300_vs_600_top_share", dir=figures_dir)
     plt.close(fig)
 
     # ── U1 direction identity bars per (variant, seed) ──────────────────
+    def _cell_key_sort(key: str) -> tuple[int, int]:
+        variant, seed = key.rsplit("_seed", 1)
+        return (VARIANTS.index(variant), int(seed))
+
+    def _cell_key_label(key: str) -> str:
+        variant, seed = key.rsplit("_seed", 1)
+        return f"{FLAVOR_LABELS.get(variant, variant)}, seed {seed}"
+
     u1_identity = secondary.get("u1_identity", {})
     if u1_identity:
         fig, ax = plt.subplots(figsize=(8.4, 4.0))
-        keys = sorted(u1_identity)
+        keys = sorted(u1_identity, key=_cell_key_sort)
         xs = np.arange(len(keys))
         ax.bar(
             xs,
@@ -578,8 +598,8 @@ def make_figures(
             )
             ax.legend(fontsize=7)
         ax.set_xticks(xs)
-        ax.set_xticklabels(keys, rotation=30, ha="right", fontsize=7)
-        ax.set_ylabel("|cos(U1 ckpt-300, U1 step-600)|")
+        ax.set_xticklabels([_cell_key_label(k) for k in keys], rotation=30, ha="right", fontsize=7)
+        ax.set_ylabel("|cos(top direction at step 300, step 600)|")
         ax.set_title("Top-direction identity across the 300 -> 600 step range", fontsize=10)
         fig.tight_layout()
         savefig_paper(fig, "ckpt300_u1_identity", dir=figures_dir)
@@ -589,7 +609,7 @@ def make_figures(
     membership = secondary.get("membership_300_vs_600", {})
     if membership:
         fig, ax = plt.subplots(figsize=(8.4, 4.0))
-        keys = sorted(membership)
+        keys = sorted(membership, key=_cell_key_sort)
         xs = np.arange(len(keys))
         w = 0.35
         ax.bar(
@@ -597,19 +617,19 @@ def make_figures(
             [membership[k]["unitnorm_300"] for k in keys],
             width=w,
             color=colors[3],
-            label="ckpt-300",
+            label="step 300",
         )
         ax.bar(
             xs + w / 2,
             [membership[k]["unitnorm_600"] for k in keys],
             width=w,
             color=colors[2],
-            label="step-600",
+            label="step 600",
         )
         ax.set_xticks(xs)
-        ax.set_xticklabels(keys, rotation=30, ha="right", fontsize=7)
+        ax.set_xticklabels([_cell_key_label(k) for k in keys], rotation=30, ha="right", fontsize=7)
         ax.set_ylabel("n personas with |cos| >= 0.5 (unit-norm)")
-        ax.set_title("Aligned-set membership: ckpt-300 vs step-600", fontsize=10)
+        ax.set_title("Aligned-set membership: step 300 vs step 600", fontsize=10)
         ax.legend(fontsize=8)
         fig.tight_layout()
         savefig_paper(fig, "ckpt300_membership_300_vs_600", dir=figures_dir)
