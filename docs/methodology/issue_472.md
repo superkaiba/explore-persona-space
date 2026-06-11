@@ -1,6 +1,6 @@
 # Task #472 — Methodology, hyperparameters, and worked examples
 
-A methodology + hyperparameter reference for experiment #472 (Explore Persona Space), with verbatim training / evaluation / output examples pulled straight from the artifacts. The task comprises (a) a **parent run** — a contrastive-negative geometry sweep (10 cells × 2 seeds; count × distance × placement axes) training rs-LoRA marker implants on Qwen-2.5-7B-Instruct with an on-policy trajectory eval at 6 mid-run checkpoints — and (b) one **same-issue follow-up round** (label `placement-null-full-trajectory`), a zero-GPU CPU re-analysis over the parent run's trajectory files.
+A methodology + hyperparameter reference for experiment #472 (Explore Persona Space), with verbatim training / evaluation / output examples pulled straight from the artifacts. The task comprises (a) a **parent run** — a contrastive-negative geometry sweep (10 cells × 2 seeds; count × distance × placement axes) training rs-LoRA marker implants on Qwen-2.5-7B-Instruct with an on-policy trajectory eval at 6 mid-run checkpoints — and (b) two **same-issue follow-up rounds** (labels `placement-null-full-trajectory`, §4, and `composition-matched-total`, §8), both zero-GPU CPU re-analyses over the parent run's trajectory files.
 
 - Task: [https://eps.superkaiba.com/tasks/472](https://eps.superkaiba.com/tasks/472)
 - Model: `Qwen/Qwen2.5-7B-Instruct` (HF revision `a09a35458c702b33eeacc393d103063234e8bc28`, recorded in the on-policy R artifacts)
@@ -255,6 +255,7 @@ All 20 trajectory files: [eval_results/issue_472](https://github.com/superkaiba/
 - **Experiment module:** [src/explore_persona_space/experiments/contrastive_neg_geometry_472/](https://github.com/superkaiba/explore-persona-space/tree/ad9997e7e5a0129e7b43f4a12845d5ef31a6da4b/src/explore_persona_space/experiments/contrastive_neg_geometry_472)
 - **Original re-analyses:** [issue472_reanalyze_earliest_slice.py](https://github.com/superkaiba/explore-persona-space/blob/ad9997e7e5a0129e7b43f4a12845d5ef31a6da4b/scripts/issue472_reanalyze_earliest_slice.py), [issue472_reanalyze_multilayer.py](https://github.com/superkaiba/explore-persona-space/blob/ad9997e7e5a0129e7b43f4a12845d5ef31a6da4b/scripts/issue472_reanalyze_multilayer.py)
 - **Follow-up re-analyses:** [issue472_reanalyze_placement_full_trajectory.py](https://github.com/superkaiba/explore-persona-space/blob/ad9997e7e5a0129e7b43f4a12845d5ef31a6da4b/scripts/issue472_reanalyze_placement_full_trajectory.py), [issue472_reanalyze_count_matched_step.py](https://github.com/superkaiba/explore-persona-space/blob/ad9997e7e5a0129e7b43f4a12845d5ef31a6da4b/scripts/issue472_reanalyze_count_matched_step.py)
+- **Follow-up round-2 re-analysis (`composition-matched-total`, §8):** [issue472_reanalyze_composition_matched_total.py](https://github.com/superkaiba/explore-persona-space/blob/378e8bcc1f8a4eb4471dbaef416361fe7e5d98f5/scripts/issue472_reanalyze_composition_matched_total.py) + figure script [issue472_composition_figure.py](https://github.com/superkaiba/explore-persona-space/blob/378e8bcc1f8a4eb4471dbaef416361fe7e5d98f5/scripts/issue472_composition_figure.py) + output JSON [reanalysis_composition_matched_total.json](https://github.com/superkaiba/explore-persona-space/blob/378e8bcc1f8a4eb4471dbaef416361fe7e5d98f5/eval_results/issue_472/composition-matched-total/reanalysis_composition_matched_total.json), all at commit `378e8bcc1f8a4eb4471dbaef416361fe7e5d98f5`
 - **Figure scripts:** [issue472_clean_result_figures.py](https://github.com/superkaiba/explore-persona-space/blob/ad9997e7e5a0129e7b43f4a12845d5ef31a6da4b/scripts/issue472_clean_result_figures.py), [issue472_followup_figures.py](https://github.com/superkaiba/explore-persona-space/blob/ad9997e7e5a0129e7b43f4a12845d5ef31a6da4b/scripts/issue472_followup_figures.py), [issue472_regenerate_hero.py](https://github.com/superkaiba/explore-persona-space/blob/45ea65045cfa96ad3f67074c49121d824019ec55/scripts/issue472_regenerate_hero.py)
 - **Per-cell trajectories + analysis JSONs:** [eval_results/issue_472](https://github.com/superkaiba/explore-persona-space/tree/ad9997e7e5a0129e7b43f4a12845d5ef31a6da4b/eval_results/issue_472) (20 `<cell>_seed<S>/trajectory.json`, `base_panel.json`, `analyze_summary.json`, `reanalysis_*.json`, `placement-null-full-trajectory/`)
 - **Training data inputs (frozen R + bank + centroids):** [issue472_neg_geometry on HF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/66d7db7a542e19275f8c1d8e32948396d050faa9/issue472_neg_geometry) (`on_policy_R/R_{train,eval}.json`, `geometry/centroids_L{10,15,20}.pt`, `geometry/persona_bank.json`)
@@ -272,11 +273,87 @@ uv run python scripts/issue472_followup_figures.py
 uv run python scripts/issue472_regenerate_hero.py
 ```
 
+Reproduce the round-2 composition re-analysis (CPU, no pod; §8):
+
+```bash
+git checkout 378e8bcc1f8a4eb4471dbaef416361fe7e5d98f5
+uv run python scripts/issue472_reanalyze_composition_matched_total.py
+uv run python scripts/issue472_composition_figure.py
+```
+
 Assumptions / artifact-availability notes:
 
 - The per-cell training JSONLs + manifests were pod-local and not uploaded; §5's rows are deterministic reconstructions via the committed builder over the pinned artifacts (integrity-checked against the recorded held-out panel).
 - The per-checkpoint trained-model generations (the R_j texts) were not persisted; trajectory files carry their DV reads only.
 - WandB run URLs were not recorded in the task's reproducibility card; the run-name convention above is read from `train_cell.py`.
+
+---
+
+## 8. Follow-up round 2 — `composition-matched-total` arm (zero-GPU re-analysis)
+
+A second same-issue follow-up round, ANALYSIS-ONLY like round 1: no new training, no generation, no pod — one CPU script (~25 s) over the existing committed trajectory files. The parent's two count axes (examples-per-persona, §1.1 `negex_*`; number of negative personas, `negp_*`) each vary the TOTAL negative-row budget together with the composition inside their own sweeps, so this round re-groups the existing cells by total negative rows and compares compositions WITHIN a fixed total. Artifacts land under `eval_results/issue_472/composition-matched-total/`.
+
+### 8.1 Fixed-total groups and realized compositions
+
+| Group | Cell | Realized negative personas | Ex/persona | Total neg rows | Training rows | Shared checkpoint steps |
+|---|---|---|---|---|---|---|
+| PRIMARY (total = 400) | `c472_single_near` | qwen_default, hero | 200 | 400 | 600 | 4, 7, 13, 19, 29, 38 |
+| | `c472_single_far` | qwen_default, ai_assistant | 200 | 400 | 600 | same grid |
+| | `c472_negp_2` | qwen_default, hero | 200 | 400 | 600 | same grid |
+| | `c472_negex_100` | qwen_default, hero, journalist, ai_assistant | 100 | 400 | 600 | same grid |
+| SECONDARY (total = 1600) | `c472_negex_400` | qwen_default, hero, journalist, ai_assistant | 400 | 1600 | 1800 | 10, 19, 38, 57, 85, 113 |
+| | `c472_negp_8` | qwen_default, hero, detective, gardener, journalist, comedian, baker, ai_assistant | 200 | 1600 | 1800 | same grid |
+
+Design facts established at re-analysis time (spec-vs-realized):
+
+- The follow-up spec described the single-negative cells as 1 persona × 400 rows; the REALIZED mixes are **2 personas × 200** — every non-empty arm always includes the bare default assistant `qwen_default` (§1.1), so "single" means one placement-selected persona BESIDE the default.
+- `c472_negp_2`'s realized negative set is **identical** to `c472_single_near`'s ([qwen_default, hero]: spread placement with one free slot resolves to the nearest candidate). That pair is therefore two independent training runs of the SAME mix — a run-replication pair by construction, not a composition contrast.
+- `c472_single_near` vs `c472_single_far` brackets the placement contribution inside the one-placement-persona composition.
+- The realized panels are re-derived from the dispatcher's `CELL_SPECS` + the committed geometry selector (`negatives_for_cell`) and recorded in the output JSON under `realized_negative_sets` (the trajectory files do not embed negative-set lists); `_assert_cell_mapping` asserts each cell's placement / persona-count / examples-per-persona and the fixed group totals before any computation.
+
+### 8.2 Analysis recipe
+
+DIRECT checkpoint reads throughout: within each group every cell shares the exact same absolute-step checkpoint grid (asserted across seeds per cell and across cells per group), so — unlike the §4.2 count matched-step read — no interpolation is involved anywhere and no interpolation-error resolution floor applies. Per checkpoint:
+
+1. per-probe ΔG (on-policy log P(" ※") at the post-response slot, trained − base, mean over the 10 Q_eval rows) with validity filters identical to §4.2: a probe is dropped at a checkpoint when its mean g_logp sits within 5 nats of the 0.0 ceiling (saturated) or any of its question rows is `r_collapsed`; seed-averaged over probes valid in BOTH seeds; the matched test set is the intersection of both-seed-valid probes across the group's cells;
+2. PRIMARY — paired **Friedman across the 4 compositions** on the matched per-probe ΔG + Kendall's W, plus all 6 pairwise paired Wilcoxon signed-rank tests (mean / median paired difference in nats, paired Cohen's dz); Friedman p Holm-corrected across the 6 checkpoints;
+3. SECONDARY — one paired Wilcoxon per checkpoint (`negex_400` vs `negp_8`), Holm-corrected across the 6;
+4. per-composition mean ΔG with 95% percentile bootstrap CIs over probes (N_boot = 10,000, bootstrap seed 0), computed BOTH on the matched set (the same probes the tests use) and on each cell's own-valid set, plus per-seed drop counts and per-cell source-self ΔG context rows.
+
+Inputs: the 12 committed `trajectory.json` files (6 cells × 2 seeds) + `centroids_L10.pt` (held-out-panel definition only; offline). Runtime ≈ 25 s CPU; environment recorded in the output JSON (Python 3.11.15, numpy 2.2.6, scipy 1.17.1).
+
+Figure (`issue472_composition_figure.py` → `figures/issue_472/composition_matched_total.{png,pdf,meta.json}`): two panels of grouped bars from the committed JSON — left, the four total-400 compositions over their shared step grid; right, the total-1600 pair over theirs. Bars = matched-set means (seeds pooled), error bars = 95% bootstrap CI; no annotations.
+
+### 8.3 Worked example — output record (verbatim)
+
+One per-checkpoint record from the committed JSON (PRIMARY group, step 4), shown to illustrate the output schema; cherry-picked checkpoint, truncated — 1 of 6 pairwise entries and 1 of 4 CI entries shown:
+
+```jsonc
+// primary_total_400.per_checkpoint.step_4
+{"n_matched_probes": 47,
+ "composition_means_matched": {"single_near": 4.254389559968989, "single_far": 4.153396985885944,
+                               "negp_2": 4.108914113552013, "negex_100": 4.272743965717071},
+ "composition_boot_ci95_matched": {"single_near": [4.018366098353203, 4.511105749074448] /* ... */},
+ "between_composition_spread_nats": 0.1638298521650583,
+ "pairwise": {"single_near_vs_negp_2": {"wilcoxon_stat": 132.0, "wilcoxon_p": 8.567931502057036e-07,
+                                        "mean_diff_nats": 0.14547544641697654,
+                                        "median_diff_nats": 0.17002811431884712,
+                                        "cohen_dz": 0.8922270189193867} /* ... */},
+ "friedman_chi2": 43.46808510638289, "friedman_p": 1.9575718703764877e-09, "kendalls_w": 0.3082842915346304}
+```
+
+Each record additionally carries a `per_composition` block per cell (own-valid mean + bootstrap CI, n probes after seed-averaging, per-seed saturation / collapse drop counts, per-seed source-self ΔG), and the JSON's top level records the realized negative sets, validity filters, step grids, bootstrap settings, the direct-read note, and the reproducibility environment.
+
+### 8.4 Artifacts and provenance
+
+- **Commit (re-analysis script + figure script + JSON + figure, branch `issue-472`):** `378e8bcc1f8a4eb4471dbaef416361fe7e5d98f5`
+- **Re-analysis script:** [scripts/issue472_reanalyze_composition_matched_total.py](https://github.com/superkaiba/explore-persona-space/blob/378e8bcc1f8a4eb4471dbaef416361fe7e5d98f5/scripts/issue472_reanalyze_composition_matched_total.py)
+- **Figure script:** [scripts/issue472_composition_figure.py](https://github.com/superkaiba/explore-persona-space/blob/378e8bcc1f8a4eb4471dbaef416361fe7e5d98f5/scripts/issue472_composition_figure.py)
+- **Output JSON:** [eval_results/issue_472/composition-matched-total/reanalysis_composition_matched_total.json](https://github.com/superkaiba/explore-persona-space/blob/378e8bcc1f8a4eb4471dbaef416361fe7e5d98f5/eval_results/issue_472/composition-matched-total/reanalysis_composition_matched_total.json)
+- **Figure:** [figures/issue_472/composition_matched_total.png](https://github.com/superkaiba/explore-persona-space/blob/378e8bcc1f8a4eb4471dbaef416361fe7e5d98f5/figures/issue_472/composition_matched_total.png)
+- Provenance note: the JSON's embedded `reproducibility.git_commit` records the worktree HEAD at generation time (`87829a605a2068aaaaecfe2564a3f1a28d316bc5`, the parent of the commit that added the JSON — a file cannot embed its own commit SHA).
+
+Hyperparameters, training data, and the eval rig are untouched this round: §2–§3 apply verbatim; this round trains nothing and generates nothing.
 
 ---
 
