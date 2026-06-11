@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 587,
+  "highest_id": 588,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3535,6 +3535,13 @@
       "path": "tasks/planning/587",
       "status": "planning",
       "title": "Progress bar + estimated-time-remaining for in-flight issues (dashboard + session titles)"
+    },
+    "588": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/588",
+      "status": "proposed",
+      "title": "Router: custom workload-command support for the GCP lane (unblock credit spend for dispatch-script experiments)"
     },
     "6": {
       "has_clean_result": false,
