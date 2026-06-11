@@ -1666,6 +1666,10 @@ def negative_free_busy_to_gcp() -> dict[str, Any]:
                 free_wait_seconds=2,  # tiny park so the test resolves quickly
                 poll_interval=0.01,
                 cancel_grace_seconds=1,
+                # Pin the legacy free-first order: this scenario proves the
+                # free→GCP ESCALATION chain; the GCP-first standing default
+                # would resolve at GCP before the park/cancel under test.
+                lane_order=("nibi", "fir", "mila", "gcp"),
             ),
             now_fn=time.monotonic,
             sleep_fn=lambda _s: None,  # don't actually sleep
@@ -1729,6 +1733,9 @@ def negative_cancel_race() -> dict[str, Any]:
                 free_wait_seconds=1,
                 poll_interval=0.01,
                 cancel_grace_seconds=1,
+                # Pin the legacy free-first order: the cancel-race on the
+                # free lane is the behavior under test.
+                lane_order=("nibi", "fir", "mila", "gcp"),
             ),
             now_fn=time.monotonic,
             sleep_fn=lambda _s: None,

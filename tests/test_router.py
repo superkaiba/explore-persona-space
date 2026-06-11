@@ -44,15 +44,34 @@ from explore_persona_space.backends import (
     spec_hash,
 )
 from explore_persona_space.backends.router import (
+    DEFAULT_AUTO_LANE_ORDER,
+    ENV_AUTO_LANE_ORDER,
     FREE_WAIT_SECONDS,
     MAX_GCP_ATTEMPTS_PER_DAY,
     ROUTE_REASON_AUTO_FALLBACK_GCP,
     ROUTE_REASON_AUTO_STARTED,
     ROUTE_REASON_OVERRIDE,
     ROUTE_REASON_RECONNECT,
+    auto_lane_order,
     cancel_and_wait,
     park_until_running_or_cap,
 )
+
+#: The pre-GCP-first auto order (free SLURM lanes first, GCP as the
+#: terminal escalation). Tests that specifically exercise the
+#: free→GCP ESCALATION semantics pin this order via
+#: ``RouterConfig(lane_order=...)`` — the GCP-first STANDING DEFAULT
+#: would otherwise resolve the route at GCP before the free-lane
+#: behavior under test ever runs. New-default behavior is covered by
+#: the "GCP-first auto order" test section below.
+_LEGACY_FREE_FIRST_ORDER: tuple[str, ...] = ("nibi", "fir", "mila", "gcp")
+
+
+@pytest.fixture(autouse=True)
+def _clean_auto_lane_order_env(monkeypatch):
+    """Keep every router test hermetic against an ambient env override."""
+    monkeypatch.delenv(ENV_AUTO_LANE_ORDER, raising=False)
+
 
 # ---------------------------------------------------------------------------
 # Test doubles
@@ -683,7 +702,11 @@ def test_cancel_timeout_returns_manual_attention():
 
 
 def test_auto_park_fail_cancels_then_escalates_to_gcp(lease_store, marker_poster, captured_markers):
-    """End-to-end: free lane park-fails → cancel → GCP."""
+    """End-to-end: free lane park-fails → cancel → GCP.
+
+    Pinned to the legacy free-first order — under the GCP-first standing
+    default the GCP double would resolve the route before the park/cancel
+    chain under test ever runs."""
     rp = _ExplodingRunpod()
     nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
     gcp = _GcpBackendDouble()
@@ -696,7 +719,12 @@ def test_auto_park_fail_cancels_then_escalates_to_gcp(lease_store, marker_poster
         is_started=lambda _b, _h: False,  # nibi never starts
         is_live_after_cancel=lambda _b, _h: False,
         marker_poster=marker_poster,
-        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            lane_order=_LEGACY_FREE_FIRST_ORDER,
+        ),
         now_fn=_clock(),
         sleep_fn=lambda _s: None,
     )
@@ -736,7 +764,12 @@ def test_auto_cancel_race_keeps_job_no_gcp(lease_store):
         is_started=lambda _b, _h: False,  # park times out
         is_live_after_cancel=lambda _b, _h: True,
         is_running_after_cancel=lambda _b, _h: True,  # but raced to RUNNING
-        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=2),
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=2,
+            lane_order=_LEGACY_FREE_FIRST_ORDER,
+        ),
         now_fn=_clock(),
         sleep_fn=lambda _s: None,
     )
@@ -796,7 +829,12 @@ def test_gcp_probe_error_in_escalation_surfaces_as_no_compute(lease_store):
             lease_store=lease_store,
             is_started=lambda _b, _h: False,
             is_live_after_cancel=lambda _b, _h: False,
-            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            config=RouterConfig(
+                free_wait_seconds=1,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                lane_order=_LEGACY_FREE_FIRST_ORDER,  # escalation position under test
+            ),
             now_fn=_clock(),
             sleep_fn=lambda _s: None,
         )
@@ -827,6 +865,10 @@ def test_gcp_probe_error_on_explicit_lane_surfaces_as_no_compute(lease_store):
 
 
 def test_gcp_workload_error_surfaces_no_fallback(lease_store):
+    """Under the GCP-first standing default, GCP runs in PRIMARY position
+    here — a workload failure must surface immediately with NO fallback
+    to the SLURM lanes (broken workload code would re-crash on every
+    lane and burn queue time)."""
     rp = _ExplodingRunpod()
     nibi = _FreeLaneBackend(kind="nibi")
     gcp = _GcpBackendDouble(
@@ -847,6 +889,9 @@ def test_gcp_workload_error_surfaces_no_fallback(lease_store):
         )
     assert excinfo.value.chosen_kind == "gcp"
     assert excinfo.value.evidence.get("exit_code") == 1
+    # GCP ran FIRST (default order) — the workload failure must NOT
+    # cascade to the SLURM lanes.
+    assert len(nibi.launches) == 0
 
 
 def test_no_gcp_wired_raises_no_compute_after_free_lanes_fail(lease_store):
@@ -1077,6 +1122,11 @@ def test_gcp_attempt_count_guard_caps_repeated_escalation(lease_store):
         poll_interval=0.0,
         cancel_grace_seconds=0,
         max_gcp_attempts_per_day=2,
+        # Legacy free-first order: these tests pin the ESCALATION-position
+        # cap semantics (cap-trip with nothing after GCP raises). The
+        # primary-position cap behavior (skip + fall through) is covered
+        # in the GCP-first section.
+        lane_order=_LEGACY_FREE_FIRST_ORDER,
     )
 
     # Pre-seed the lease at the cap.
@@ -1652,6 +1702,11 @@ def test_no_auto_runpod_under_failure_fanout(lease_store, scenario):
         poll_interval=0.0,
         cancel_grace_seconds=0,
         max_gcp_attempts_per_day=2,
+        # Legacy free-first order: these tests pin the ESCALATION-position
+        # cap semantics (cap-trip with nothing after GCP raises). The
+        # primary-position cap behavior (skip + fall through) is covered
+        # in the GCP-first section.
+        lane_order=_LEGACY_FREE_FIRST_ORDER,
     )
     kwargs: dict[str, Any] = {
         "runpod_backend": rp,
@@ -1797,7 +1852,12 @@ def test_manual_attention_raises_with_orphaned_job_id_and_no_gcp_escalation(leas
             lease_store=lease_store,
             is_started=lambda _b, _h: False,
             is_live_after_cancel=_is_live,
-            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            config=RouterConfig(
+                free_wait_seconds=1,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                lane_order=_LEGACY_FREE_FIRST_ORDER,  # nibi must be attempted first
+            ),
             now_fn=_fast_clock(),
             sleep_fn=lambda _s: None,
         )
@@ -1945,6 +2005,11 @@ def test_attempt_cap_message_reports_cap_not_one_past(lease_store):
         poll_interval=0.0,
         cancel_grace_seconds=0,
         max_gcp_attempts_per_day=2,
+        # Legacy free-first order: these tests pin the ESCALATION-position
+        # cap semantics (cap-trip with nothing after GCP raises). The
+        # primary-position cap behavior (skip + fall through) is covered
+        # in the GCP-first section.
+        lane_order=_LEGACY_FREE_FIRST_ORDER,
     )
     today = datetime.now(tz=UTC).date().isoformat()
     lease_store.write(
@@ -2210,7 +2275,12 @@ def test_gcp_escalation_calls_prepare_before_launch(lease_store):
         lease_store=lease_store,
         is_started=lambda _b, _h: False,  # nibi never starts → escalate
         is_live_after_cancel=lambda _b, _h: False,
-        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            lane_order=_LEGACY_FREE_FIRST_ORDER,
+        ),
         now_fn=_clock(),
         sleep_fn=lambda _s: None,
     )
@@ -2287,7 +2357,11 @@ def test_prepare_failure_on_auto_falls_to_next_tier_never_runpod(lease_store):
         gcp_backend=gcp,
         lease_store=lease_store,
         is_started=lambda _b, _h: True,
-        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            lane_order=_LEGACY_FREE_FIRST_ORDER,  # free-first: prepare-fail → next tier
+        ),
         now_fn=_clock(),
         sleep_fn=lambda _s: None,
     )
@@ -2382,7 +2456,12 @@ def test_terminal_with_artifacts_is_workload_failure_no_gcp_on_auto(
             is_live_after_cancel=lambda _b, _h: False,
             started_evidence_probe=lambda _b, _h: dict(_EVIDENCE),
             marker_poster=marker_poster,
-            config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=0),
+            config=RouterConfig(
+                free_wait_seconds=5,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                lane_order=_LEGACY_FREE_FIRST_ORDER,
+            ),
             now_fn=_clock(),
             sleep_fn=lambda _s: None,
         )
@@ -2411,7 +2490,12 @@ def test_terminal_without_artifacts_still_escalates_to_gcp(lease_store):
         is_started=lambda _b, _h: False,
         is_live_after_cancel=lambda _b, _h: False,
         started_evidence_probe=lambda _b, _h: None,  # no runtime artifacts
-        config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=0),
+        config=RouterConfig(
+            free_wait_seconds=5,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            lane_order=_LEGACY_FREE_FIRST_ORDER,
+        ),
         now_fn=_clock(),
         sleep_fn=lambda _s: None,
     )
@@ -2490,7 +2574,12 @@ def test_stalled_terminal_cancels_first_and_skips_evidence_on_auto(lease_store):
         is_started=lambda _b, _h: False,
         is_live_after_cancel=lambda _b, _h: False,  # cancel confirms gone
         started_evidence_probe=recording_probe,
-        config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=0),
+        config=RouterConfig(
+            free_wait_seconds=5,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            lane_order=_LEGACY_FREE_FIRST_ORDER,
+        ),
         now_fn=_clock(),
         sleep_fn=lambda _s: None,
     )
@@ -2567,7 +2656,12 @@ def test_reconnect_probe_failure_skips_lane_no_blind_submit_on_auto(lease_store)
         is_started=lambda _b, _h: False,
         is_live_after_cancel=lambda _b, _h: False,
         reconnect_fn=probing_reconnect,
-        config=RouterConfig(free_wait_seconds=5, poll_interval=0.0, cancel_grace_seconds=0),
+        config=RouterConfig(
+            free_wait_seconds=5,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            lane_order=_LEGACY_FREE_FIRST_ORDER,  # nibi probed FIRST, skip → gcp
+        ),
         now_fn=_clock(),
         sleep_fn=lambda _s: None,
     )
@@ -2637,3 +2731,378 @@ def test_prepare_failed_breadcrumb_reason_matches_typed_terminal(
     breadcrumbs = _by_reason(captured_markers, ROUTE_REASON_PREPARE_FAILED)
     assert breadcrumbs, "prepare failure must post a backend_prepare_failed breadcrumb"
     assert not _by_reason(captured_markers, "no_compute_available")
+
+
+# ---------------------------------------------------------------------------
+# GCP-first auto order (standing default, env override, primary-lane GCP)
+# ---------------------------------------------------------------------------
+#
+# The auto chain's STANDING DEFAULT is GCP first ("gcp", "nibi", "fir",
+# "mila") so credits-backed GCP capacity is consumed BEFORE the free
+# SLURM lanes. There is deliberately NO date logic — flipping back is a
+# human action (EPM_AUTO_LANE_ORDER env override or a default edit),
+# never a clock. RunPod remains override-only in EVERY order.
+
+
+def test_default_auto_lane_order_is_gcp_first():
+    """The standing default puts GCP before every free SLURM lane."""
+    assert DEFAULT_AUTO_LANE_ORDER == ("gcp", "nibi", "fir", "mila")
+    # With no env override, the resolver returns the default verbatim.
+    assert auto_lane_order() == DEFAULT_AUTO_LANE_ORDER
+
+
+def test_auto_lane_order_env_override_parsed(monkeypatch):
+    """EPM_AUTO_LANE_ORDER is comma-separated; whitespace is tolerated."""
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, " nibi , fir ,mila,gcp ")
+    assert auto_lane_order() == ("nibi", "fir", "mila", "gcp")
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "gcp")
+    assert auto_lane_order() == ("gcp",)
+
+
+def test_auto_lane_order_env_rejects_runpod(monkeypatch):
+    """A 'runpod' entry RAISES loudly — real-money safety; NEVER silently
+    dropped. RunPod stays override-only regardless of the configured order."""
+    from explore_persona_space.backends.router import RouteError
+
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "runpod,nibi")
+    with pytest.raises(RouteError, match="runpod"):
+        auto_lane_order()
+
+
+@pytest.mark.parametrize("bad_lane", ["bogus", "auto", "cluster", "RUNPOD", "Nibi"])
+def test_auto_lane_order_env_rejects_unknown_lane(monkeypatch, bad_lane):
+    from explore_persona_space.backends.router import RouteError
+
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, f"nibi,{bad_lane}")
+    with pytest.raises(RouteError, match="lane"):
+        auto_lane_order()
+
+
+def test_auto_lane_order_env_rejects_duplicates(monkeypatch):
+    from explore_persona_space.backends.router import RouteError
+
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "nibi,gcp,nibi")
+    with pytest.raises(RouteError, match="duplicate"):
+        auto_lane_order()
+
+
+def test_route_rejects_runpod_in_config_lane_order(lease_store):
+    """A per-call RouterConfig.lane_order smuggling 'runpod' fails at
+    route() entry, BEFORE any reconnect or submit I/O."""
+    from explore_persona_space.backends.router import RouteError
+
+    nibi = _FreeLaneBackend(kind="nibi")
+    rp = _ExplodingRunpod()
+    with pytest.raises(RouteError, match="runpod"):
+        route(
+            _spec(backend=None),
+            runpod_backend=rp,
+            free_backends={"nibi": nibi},
+            lease_store=lease_store,
+            config=RouterConfig(lane_order=("runpod", "nibi")),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert len(nibi.launches) == 0
+
+
+def test_gcp_first_default_attempts_gcp_before_free_lanes(
+    lease_store, marker_poster, captured_markers
+):
+    """Under the standing default, a healthy GCP resolves the route with
+    NO free-lane submit — and the marker's attempts trail shows GCP as
+    the first (and only) attempt."""
+    rp = _ExplodingRunpod()  # RunPod stays unreachable on auto
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.reason == ROUTE_REASON_AUTO_FALLBACK_GCP  # reason code kept for schema stability
+    assert len(gcp.launches) == 1
+    assert len(nibi.launches) == 0
+    # Marker fidelity: the final marker's attempts list leads with GCP.
+    finals = [
+        body
+        for body in _by_reason(captured_markers, ROUTE_REASON_AUTO_FALLBACK_GCP)
+        if not body.get("extra", {}).get("intermediate")
+    ]
+    assert finals
+    launched = [a for a in finals[-1]["attempts"] if a["outcome"] == "launched"]
+    assert launched and launched[0]["kind"] == "gcp"
+
+
+def test_gcp_primary_provision_fail_falls_through_to_free_lanes(
+    lease_store, marker_poster, captured_markers
+):
+    """GCP capacity failure in PRIMARY position continues down the order
+    to the SLURM lanes; the attempts trail reflects the actual order
+    (GCP first, then the free lane that started)."""
+    rp = _ExplodingRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    result = route(
+        _spec(backend=None),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert result.reason == ROUTE_REASON_AUTO_STARTED
+    assert len(nibi.launches) == 1
+    # The attempts trail records GCP's provisioning failure BEFORE the
+    # nibi launch — actual attempt order, not a free-first fiction.
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    assert outcomes.index(("gcp", "provisioning_failure")) < outcomes.index(("nibi", "launched"))
+    # Same order in the posted marker body.
+    finals = _by_reason(captured_markers, ROUTE_REASON_AUTO_STARTED)
+    assert finals
+    marker_outcomes = [(a["kind"], a["outcome"]) for a in finals[-1]["attempts"]]
+    assert marker_outcomes.index(("gcp", "provisioning_failure")) < marker_outcomes.index(
+        ("nibi", "launched")
+    )
+
+
+def test_gcp_primary_prepare_fail_falls_through_to_free_lanes(lease_store):
+    """A GCP prepare failure is provision-class: next lane, not terminal,
+    when lanes remain after GCP."""
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _PrepareRecordingGcp(prepare_raises=RuntimeError("metadata render failed"))
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert gcp.calls == ["prepare"], "launch must NOT run after a failed prepare"
+    assert any(a.outcome == "prepare_failed" and a.kind == "gcp" for a in result.attempts)
+
+
+def test_gcp_primary_probe_error_falls_through_to_free_lanes(lease_store):
+    """A GCP state-probe failure in primary position skips the lane and
+    continues (no credit spent on unknown state; same safe reaction the
+    SLURM lanes take on an unprobeable reconnect). The terminal-position
+    fail-closed contract is pinned separately under the legacy order."""
+    from explore_persona_space.backends.base import BackendProbeError
+
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble(
+        launch_raises=BackendProbeError("gcloud list rc=1: Reauthentication failed")
+    )
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert any(a.outcome == "probe_failed" and a.kind == "gcp" for a in result.attempts)
+
+
+def test_gcp_primary_attempt_counts_toward_daily_cap(lease_store):
+    """Primary-lane GCP attempts bump the SAME per-day counter as
+    escalation attempts — the guard bounds provision attempts wherever
+    GCP sits in the order."""
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    route(
+        _spec(issue=137, backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    lease = lease_store.read(137)
+    assert lease is not None
+    assert lease.gcp_attempts_today == 1
+    assert lease.gcp_attempts_date == datetime.now(tz=UTC).date().isoformat()
+
+
+def test_gcp_primary_at_cap_skips_gcp_and_falls_through(lease_store):
+    """At the per-day cap with lanes REMAINING after GCP, the router
+    skips GCP (zero credit spent) and continues down the order instead
+    of bricking the route for the day. The cap-trip RAISE is preserved
+    when GCP is the LAST lane (legacy escalation position — pinned in
+    test_gcp_attempt_count_guard_caps_repeated_escalation)."""
+    today = datetime.now(tz=UTC).date().isoformat()
+    lease_store.write(
+        Lease(
+            issue=137,
+            spec_hash="h",
+            attempt_id="a",
+            gcp_attempts_today=2,
+            gcp_attempts_date=today,
+        )
+    )
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()  # would succeed if (wrongly) reached
+    result = route(
+        _spec(issue=137, backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=2),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert len(gcp.launches) == 0, "an over-cap GCP attempt must spend ZERO credit"
+    assert any(a.outcome == "attempt_cap_exceeded" and a.kind == "gcp" for a in result.attempts)
+    # The on-disk counter did NOT grow past the cap.
+    lease = lease_store.read(137)
+    assert lease is not None
+    assert lease.gcp_attempts_today == 2
+
+
+def test_env_override_free_first_restores_legacy_escalation(monkeypatch, lease_store):
+    """Setting EPM_AUTO_LANE_ORDER=nibi,fir,mila,gcp restores the
+    free-first chain: the free lane is tried (and park-fails) BEFORE the
+    GCP escalation."""
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "nibi,fir,mila,gcp")
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,  # nibi never starts
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(nibi.launches) == 1, "free lane must be attempted FIRST under the override"
+    assert len(gcp.launches) == 1
+
+
+def test_config_lane_order_beats_env_override(monkeypatch, lease_store):
+    """A per-call RouterConfig.lane_order wins over the env override."""
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "gcp,nibi")
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, lane_order=("nibi", "gcp")),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert len(gcp.launches) == 0
+
+
+def test_route_logs_resolved_auto_order(lease_store, caplog):
+    """route() emits ONE INFO line stating the resolved auto order and
+    its source (env override vs default) at entry to the auto path."""
+    import logging
+
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    with caplog.at_level(logging.INFO, logger="explore_persona_space.backends.router"):
+        route(
+            _spec(backend=None),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"nibi": nibi},
+            lease_store=lease_store,
+            is_started=lambda _b, _h: True,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    order_lines = [r.message for r in caplog.records if "auto lane order" in r.message]
+    assert order_lines, "route() must log the resolved auto order"
+    assert "gcp -> nibi -> fir -> mila" in order_lines[0]
+    assert "default" in order_lines[0]
+
+
+def test_route_logs_env_override_source(monkeypatch, lease_store, caplog):
+    import logging
+
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "nibi,gcp")
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    with caplog.at_level(logging.INFO, logger="explore_persona_space.backends.router"):
+        route(
+            _spec(backend=None),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"nibi": nibi},
+            lease_store=lease_store,
+            is_started=lambda _b, _h: True,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    order_lines = [r.message for r in caplog.records if "auto lane order" in r.message]
+    assert order_lines
+    assert "nibi -> gcp" in order_lines[0]
+    assert ENV_AUTO_LANE_ORDER in order_lines[0]
+
+
+def test_no_auto_runpod_under_gcp_first_default(lease_store):
+    """The load-bearing real-money invariant holds under the NEW default
+    order too: GCP capacity-fails in primary position, every free lane
+    fails, and RunPod is STILL never called — the chain ends in the
+    typed NoComputeAvailableError."""
+    rp = _ExplodingRunpod()
+    nibi = _FreeLaneBackend(kind="nibi")
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError("QUOTA_EXCEEDED", evidence={"matched_pattern": "Q"})
+    )
+    with pytest.raises(NoComputeAvailableError) as excinfo:
+        route(
+            _spec(backend=None),
+            runpod_backend=rp,
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    outcomes = [(a["kind"], a["outcome"]) for a in excinfo.value.attempts]
+    assert ("gcp", "provisioning_failure") in outcomes
+    assert any(kind == "nibi" for kind, _o in outcomes)
