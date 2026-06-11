@@ -145,3 +145,4 @@
 {"ts": "2026-06-11T15:58:21Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "awaiting_promotion", "to": "followups_running", "note": "same-issue follow-up round 1 (e5-em-rejudge-proxy-fix, source proposer-9b) executing; status held for the round."}
 {"ts": "2026-06-11T16:24:34Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq9pk2lm-cn7rtm effort=high write=False poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-11T16:25:06Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq9pkrss-5i48fr effort=high write=False poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-11T16:27:10Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq9pkrss-5i48fr phase=done after 121s."}
