@@ -68,12 +68,19 @@ DEFAULT_MAX_NEW_TOKENS = 512
 Variant = Literal["same", "base", "on_policy"]
 
 
-def _build_chatml_prompt(tokenizer, persona_prompt: str, user_question: str) -> str:
-    """Return the formatted ChatML prompt (system + user + generation prompt)."""
-    messages = [
-        {"role": "system", "content": persona_prompt},
-        {"role": "user", "content": user_question},
-    ]
+def _build_chatml_prompt(tokenizer, persona_prompt: str | None, user_question: str) -> str:
+    """Return the formatted ChatML prompt (system + user + generation prompt).
+
+    ``persona_prompt is None`` == the ``no_system`` persona: the system turn
+    is OMITTED entirely (the #444/#541 panel convention —
+    ``issue444_persona_distance_topic._chat_ids``), never an empty system
+    string. Behavior for every non-None prompt is byte-identical to the
+    parent #551 rig.
+    """
+    messages = []
+    if persona_prompt is not None:
+        messages.append({"role": "system", "content": persona_prompt})
+    messages.append({"role": "user", "content": user_question})
     return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
 
@@ -339,7 +346,7 @@ def extract_per_context_shifts(
     base_model,
     trained_model,
     tokenizer,
-    personas: dict[str, str],
+    personas: dict[str, str | None],
     questions: Sequence[str],
     arm: Literal["marker", "em"],
     variant: Variant,
@@ -481,7 +488,7 @@ def _build_manifest(
     variant: Variant,
     layers: Sequence[int],
     primary_layer: int,
-    personas: dict[str, str],
+    personas: dict[str, str | None],
     questions: Sequence[str],
     base_model_id: str,
     adapter_path: str | None,
