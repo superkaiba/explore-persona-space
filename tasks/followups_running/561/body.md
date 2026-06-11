@@ -3,7 +3,8 @@ title: Positive-only retraining keeps the marker's dispersed layer-14 geometry, 
   the EM-vs-marker concentration contrast is not explained by the contrastive negatives
   (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-10T18:16:20Z'
 has_clean_result: true
 parent_id: 551
