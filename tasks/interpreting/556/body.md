@@ -256,6 +256,8 @@ A: "I hear you, and that feeling of not measuring up to your peers can be
    logically. ..."
 ```
 
+cherry-picked for illustration — the same probe in the system-prompt format, base vs trained ([HF raw_generations_base @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_generations_base)):
+
 ```
 SAME PROBE, system-prompt format:
 UNTRAINED BASE (judge 4.0 of 5 — the scenario prompt alone already buys most of
