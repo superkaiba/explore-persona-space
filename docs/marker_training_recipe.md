@@ -266,6 +266,18 @@ Do these before believing any floor or ceiling:
 9. **Log the trajectory, not just the endpoint.** Per-condition log P(marker) +
    emission vs training step is still untested in-house (open-q 2.2); it is the
    signal that distinguishes recipes that look identical at the end.
+10. **Multi-arm resolution-band designs: the band-stop is not the lever, and
+    integer epochs are banned.** A headline test gating on K ≥ 2 arms sitting in
+    a band SIMULTANEOUSLY at a MATCHED training amount can't use per-arm
+    band-stopping (it would unmatch the training amounts). Grid in optimizer
+    steps finer than the narrowest known install transition (~12 steps, between
+    ~step 18 and ~30 on the role-vs-system corpus — #533/#547), pre-register a
+    per-arm band-entry fallback read for the no-co-resolution case, and treat
+    "arms never co-resolve under recipe R" as a decidable outcome — three
+    consecutive runs (#529 epochs → #533 LR → #546 rank) burned GPU without
+    their anchor-gated test ever firing. Full section:
+    `.claude/rules/marker-training-recipe.md` § Multi-arm resolution-band
+    designs.
 
 ---
 
