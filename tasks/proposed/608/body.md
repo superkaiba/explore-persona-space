@@ -6,6 +6,11 @@ tags: []
 created_at: '2026-06-11T17:41:19Z'
 has_clean_result: false
 parent_id: 470
+goal: Test whether the contrastive-negatives → stronger source implantation effect
+  (established for the marker implant) holds for sycophancy, by training the same
+  source personas on positive-only vs contrastive mixes — the single manipulated variable
+  — and comparing judge-scored source self-implant deltas, with bystander leakage
+  as the secondary read.
 ---
 # Does contrastive-negative training improve source implantation for sycophancy (vs positive-only)?
 

@@ -3696,6 +3696,7 @@
       "title": "GCP lane: redirect workload output to log file \u2014 GCE metadata runner bufio.Scanner token-too-long kills workloads with progress bars"
     },
     "608": {
+      "goal": "Test whether the contrastive-negatives \u2192 stronger source implantation effect (established for the marker implant) holds for sycophancy, by training the same source personas on positive-only vs contrastive mixes \u2014 the single manipulated variable \u2014 and comparing judge-scored source self-implant deltas, with bystander leakage as the secondary read.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/608",
