@@ -435,7 +435,7 @@ def rho_by_k() -> None:
     ax.legend(loc="upper right", fontsize=8)
     ax.set_title(
         "Profile correspondence by demo count\n"
-        "(post-hoc split of the registered pooled headline, which spans all 12 pairs)"
+        "(exploratory split of the pooled headline, which spans all 12 pairs)"
     )
     _save(fig, "rho_by_k")
     plt.close(fig)
