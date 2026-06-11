@@ -588,7 +588,7 @@ This pass consumes only the two committed per-cell matrices — no new training,
   - WandB: none (nothing trained)
   - Seed: n/a (no new model work; permutation seeds 4801/4802)
 
-- **Methodology reference:** [docs/methodology/issue_480.md](https://github.com/superkaiba/explore-persona-space/blob/e7a9b306bbc6e108c54b0829e3b12e7c9b3278c2/docs/methodology/issue_480.md) · [gist](https://gist.github.com/superkaiba/ea3fe3b471c7682325b2ca89bbc1dc46)
+- **Methodology reference:** [docs/methodology/issue_480.md](https://github.com/superkaiba/explore-persona-space/blob/eaf311b83e838813a686b8a576588332d5cdf606/docs/methodology/issue_480.md) · [gist](https://gist.github.com/superkaiba/ea3fe3b471c7682325b2ca89bbc1dc46)
 
 **Compute:**
 
