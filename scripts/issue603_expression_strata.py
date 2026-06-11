@@ -623,6 +623,97 @@ def _cross_family_entry(fam: list[tuple[str, dict]], family: str, sp: dict | Non
     return entry
 
 
+def _bystander_label_stats(labels: dict[str, list[dict]], source: str) -> dict:
+    """Per-cell bystander label tallies for ``meta.family_caveats``.
+
+    ``n_excluded_questions`` counts the bystander rows the clean-û rebuild
+    DROPS — ``_stratified_cell_read`` keeps only ``expressed is False`` rows
+    when re-estimating û, so expressed-True and unlabeled rows are both
+    excluded. Counts only; response text never touches this function.
+    """
+    flags = [e["expressed"] for p, rows in labels.items() if p != source for e in rows]
+    n_expr = sum(1 for f in flags if f is True)
+    n_unlab = sum(1 for f in flags if f is None)
+    return {
+        "n_bystander_rows": len(flags),
+        "n_bystander_expressed": n_expr,
+        "n_bystander_unlabeled": n_unlab,
+        "n_excluded_questions": n_expr + n_unlab,
+    }
+
+
+def _family_caveats(per_cell: dict[str, dict], bys_stats: dict[str, dict]) -> dict[str, dict]:
+    """Per-family resolution caveats for the stratified / clean-û reads.
+
+    Records, per family: source expression per cell (the within-cell
+    stratification denominator), how many bystander rows the clean-û rebuild
+    actually excluded, and how far ``cmf_full_vs_clean_u`` moved from
+    ``cmf_full``. ``clean_u_rebuild_degenerate`` is True when every cell
+    excluded <=5% of its bystander rows — the rebuilt û is then
+    near-tautological (≈ full û by construction) and the clean-û read has no
+    resolution in that family. Added for concern
+    ``em-clean-u-rebuild-degenerate`` (round 5): the realized EM pattern
+    (5/6 source cells at 0/20 expression, bystander expression 0-12/460 per
+    cell, clean-û == full-û to the 3rd decimal in all 6 cells) previously
+    lived only in marker prose while this artifact's doc claimed the
+    opposite, so JSON consumers inherited the wrong interpretation.
+    """
+    out: dict[str, dict] = {}
+    for family in sorted({d["family"] for d in per_cell.values()}):
+        cids = sorted(cid for cid, d in per_cell.items() if d["family"] == family)
+        devs = [
+            abs(per_cell[c]["cmf_full_vs_clean_u"] - per_cell[c]["cmf_full"])
+            for c in cids
+            if per_cell[c].get("cmf_full_vs_clean_u") is not None
+        ]
+        fracs = [
+            bys_stats[c]["n_excluded_questions"] / bys_stats[c]["n_bystander_rows"]
+            for c in cids
+            if bys_stats.get(c, {}).get("n_bystander_rows")
+        ]
+        n_zero = sum(1 for c in cids if per_cell[c]["n_expressed"] == 0)
+        excl = [bys_stats[c]["n_excluded_questions"] for c in cids if c in bys_stats]
+        rows = [bys_stats[c]["n_bystander_rows"] for c in cids if c in bys_stats]
+        entry: dict = {
+            "n_cells": len(cids),
+            "n_source_cells_zero_expression": n_zero,
+            "source_expression_per_cell": {
+                c: [per_cell[c]["n_expressed"], per_cell[c]["n_kept"]] for c in cids
+            },
+            "per_cell": {c: bys_stats[c] for c in cids if c in bys_stats},
+            "max_abs_dev_cmf_clean_u_vs_full": (max(devs) if devs else None),
+            "max_excluded_fraction": (max(fracs) if fracs else None),
+            "clean_u_rebuild_degenerate": bool(fracs) and max(fracs) <= 0.05,
+        }
+        if entry["clean_u_rebuild_degenerate"]:
+            entry["doc"] = (
+                f"clean-û rebuild is NEAR-TAUTOLOGICAL in this family: "
+                f"{n_zero}/{len(cids)} source cells express on 0 labeled questions, "
+                f"bystander expression excludes only {min(excl)}-{max(excl)} of "
+                f"{max(rows)} rows per cell (<=5% everywhere), so the rebuilt û "
+                f"≈ full û by construction and cmf_full_vs_clean_u ≈ cmf_full "
+                f"(max |dev| {entry['max_abs_dev_cmf_clean_u_vs_full']:.4f}). "
+                "The clean-û / stratified read has NO real resolution here — do "
+                "not cite cmf_full_vs_clean_u as an independent check for this "
+                "family."
+            )
+        else:
+            entry["doc"] = (
+                f"clean-û rebuild excludes real bystander text in this family "
+                f"(up to {max(excl) if excl else 0} of {max(rows) if rows else 0} "
+                f"rows per cell"
+                + (
+                    f"; max |cmf_full_vs_clean_u - cmf_full| = "
+                    f"{entry['max_abs_dev_cmf_clean_u_vs_full']:.4f}"
+                    if devs
+                    else ""
+                )
+                + ") — the clean-û read is a genuine (non-tautological) check here."
+            )
+        out[family] = entry
+    return out
+
+
 def main() -> int:
     """Label responses, run the stratified reads, emit the guard-B verdict."""
     ap = argparse.ArgumentParser(description="#603 guard B expression-stratified CMF")
@@ -669,6 +760,7 @@ def main() -> int:
         )
 
     per_cell: dict[str, dict] = {}
+    bys_stats: dict[str, dict] = {}
     for cell in cells:
         cid = cell["cell_id"]
         payload = torch.load(shifts_dir / f"{cid}.pt", map_location="cpu", weights_only=False)
@@ -676,6 +768,7 @@ def main() -> int:
         labels = _label_cell(
             cell, responses, labels_dir / f"{cid}.json", with_bystanders=args.bystanders
         )
+        bys_stats[cid] = _bystander_label_stats(labels, cell["source"])
         read = _stratified_cell_read(payload["shifts"], responses, labels, cell["source"])
         read["family"] = cell["family"]
         read["source"] = cell["source"]
@@ -723,9 +816,13 @@ def main() -> int:
                 "(|partial| < 0.2*|raw|); 'survives_conditioning' when sign-stable "
                 "and |partial| >= 0.5*|raw|; else 'ambiguous'. Within-cell splits "
                 "are thin at high-expression cells (97% => ~0-1 non-expressing "
-                "rows of 20) — stated up front, the EM family is where the "
-                "stratified read has real resolution. guard_b_verdict = the FACT "
-                "family verdict (the primary axis)."
+                "rows of 20) — stated up front. Realized pattern: the EM sources "
+                "barely express misaligned text and EM bystander text is nearly "
+                "clean, so the EM clean-û rebuild is near-tautological "
+                "(cmf_full_vs_clean_u ≈ cmf_full by construction); the stratified "
+                "/ clean-û read has real resolution in the REFUSAL family, not "
+                "EM — per-family numbers in meta.family_caveats. guard_b_verdict "
+                "= the FACT family verdict (the primary axis)."
             ),
             "labels_schema_version": LABELS_SCHEMA_VERSION,
             "judges": {
@@ -733,6 +830,7 @@ def main() -> int:
                 "refusal": "binary Haiku refusal judge (this script; Messages Batch API)",
                 "em": "binary Haiku misalignment judge (this script; Messages Batch API)",
             },
+            "family_caveats": _family_caveats(per_cell, bys_stats),
         },
         "per_cell": per_cell,
         "cross_family": cross_family,
