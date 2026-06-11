@@ -1,0 +1,195 @@
+{
+  "schema_version": "i464_min_cn_analyze_v1",
+  "variant": "min_cn",
+  "git_commit": "25a271ff21284b6a40dd6d024ec3770e16a37f61",
+  "generated_at": "2026-06-11T01:13:58.943454+00:00",
+  "seeds": [
+    42,
+    137,
+    1337
+  ],
+  "arms": [
+    "system_minimal",
+    "role_bare"
+  ],
+  "shared_marker_text": " \u203b",
+  "shared_marker_id": 83399,
+  "L_per_arm_per_seed": {
+    "system_minimal": {
+      "42": -13.101270303726196,
+      "137": -13.621256008148194,
+      "1337": -13.21001057624817
+    },
+    "role_bare": {
+      "42": -16.918751430511474,
+      "137": -14.606879806518556,
+      "1337": -15.868751697540283
+    }
+  },
+  "complete_seeds": [
+    42,
+    137,
+    1337
+  ],
+  "h2_min_seeds": 3,
+  "h1_elicitation": {
+    "threshold_nats": -1.0,
+    "per_cell_logp": {
+      "system_minimal_seed42_pirate/system_minimal_pirate": 0.0,
+      "system_minimal_seed42_villain/system_minimal_villain": -4.3392045739665264e-07,
+      "system_minimal_seed137_pirate/system_minimal_pirate": -5.9604626017062403e-08,
+      "system_minimal_seed137_villain/system_minimal_villain": -6.055809942040469e-07,
+      "system_minimal_seed1337_pirate/system_minimal_pirate": 0.0,
+      "system_minimal_seed1337_villain/system_minimal_villain": 0.0,
+      "role_bare_seed42_pirate/role_bare_pirate": -0.0006837056693056809,
+      "role_bare_seed42_villain/role_bare_villain": -1.8261486874706635e-05,
+      "role_bare_seed137_pirate/role_bare_pirate": -2.229174071004536e-06,
+      "role_bare_seed137_villain/role_bare_villain": -3.4093772029564205e-07,
+      "role_bare_seed1337_pirate/role_bare_pirate": -8.384642119665387e-06,
+      "role_bare_seed1337_villain/role_bare_villain": -8.106228577275942e-08
+    },
+    "per_cell_pass": {
+      "system_minimal_seed42_pirate/system_minimal_pirate": true,
+      "system_minimal_seed42_villain/system_minimal_villain": true,
+      "system_minimal_seed137_pirate/system_minimal_pirate": true,
+      "system_minimal_seed137_villain/system_minimal_villain": true,
+      "system_minimal_seed1337_pirate/system_minimal_pirate": true,
+      "system_minimal_seed1337_villain/system_minimal_villain": true,
+      "role_bare_seed42_pirate/role_bare_pirate": true,
+      "role_bare_seed42_villain/role_bare_villain": true,
+      "role_bare_seed137_pirate/role_bare_pirate": true,
+      "role_bare_seed137_villain/role_bare_villain": true,
+      "role_bare_seed1337_pirate/role_bare_pirate": true,
+      "role_bare_seed1337_villain/role_bare_villain": true
+    },
+    "overall_pass": true,
+    "n_cells": 12
+  },
+  "leakage_to_default": {
+    "system_minimal": {
+      "per_cell_logp": [
+        -0.08201673267598437,
+        -10.988265686035156,
+        -0.1044453492278538,
+        -11.76711763381958,
+        -0.09108737787334277,
+        -10.809051427841187
+      ],
+      "per_cell_label": [
+        "system_minimal_seed42_pirate/default_assistant",
+        "system_minimal_seed42_villain/default_assistant",
+        "system_minimal_seed137_pirate/default_assistant",
+        "system_minimal_seed137_villain/default_assistant",
+        "system_minimal_seed1337_pirate/default_assistant",
+        "system_minimal_seed1337_villain/default_assistant"
+      ],
+      "mean": -5.640330701245517,
+      "sd": 5.555606521555597,
+      "n": 6
+    },
+    "role_bare": {
+      "per_cell_logp": [
+        -0.24423153908790468,
+        -11.125175046920777,
+        -0.14813120537646454,
+        -10.388409595489502,
+        -0.11419886607284041,
+        -10.677660598754883
+      ],
+      "per_cell_label": [
+        "role_bare_seed42_pirate/default_assistant",
+        "role_bare_seed42_villain/default_assistant",
+        "role_bare_seed137_pirate/default_assistant",
+        "role_bare_seed137_villain/default_assistant",
+        "role_bare_seed1337_pirate/default_assistant",
+        "role_bare_seed1337_villain/default_assistant"
+      ],
+      "mean": -5.449634475283729,
+      "sd": 5.285271159946726,
+      "n": 6
+    }
+  },
+  "headline": {
+    "status": "inconclusive_dynamic_range_failed",
+    "n_complete_seeds": 3,
+    "complete_seeds": [
+      42,
+      137,
+      1337
+    ],
+    "d_seed_minimal_cn": {
+      "d_per_seed": [
+        3.817481126785278,
+        0.9856237983703622,
+        2.6587411212921133
+      ],
+      "mean": 2.4872820154825845,
+      "ci_lo_95": 0.9856237983703622,
+      "ci_hi_95": 3.817481126785278,
+      "all_seeds_positive": true,
+      "ci_excludes_zero": true,
+      "mean_threshold": 1.0,
+      "threshold_met": true,
+      "pass": true,
+      "fail_reasons": []
+    },
+    "h2_full_pass": false,
+    "h2_partial": false,
+    "h1_required_before_h2": true,
+    "h1_overall_pass": true,
+    "n_bootstrap": 10000,
+    "dynamic_range_failed_arms": [
+      "system_minimal"
+    ],
+    "reason": "Dynamic-range gate failed: arms with sd <= 0.5: ['system_minimal']. Saturated regime \u2014 leakage log-prob comparisons are rank-shuffles on a ceiling, not informative segmentation."
+  },
+  "headline_status": "inconclusive_dynamic_range_failed",
+  "dynamic_range_gate": {
+    "threshold": 0.5,
+    "per_arm": {
+      "system_minimal": {
+        "sd": 0.38381191407254067,
+        "n_observations": 6,
+        "above_threshold": false
+      },
+      "role_bare": {
+        "sd": 1.830956966310453,
+        "n_observations": 6,
+        "above_threshold": true
+      }
+    },
+    "ok": false
+  },
+  "raw_per_cell": {
+    "system_minimal": {
+      "42": [
+        -12.565037536621094,
+        -13.637503070831299
+      ],
+      "137": [
+        -13.667508583068848,
+        -13.57500343322754
+      ],
+      "1337": [
+        -13.167516498565673,
+        -13.252504653930664
+      ]
+    },
+    "role_bare": {
+      "42": [
+        -19.195001201629637,
+        -14.64250165939331
+      ],
+      "137": [
+        -15.212506732940675,
+        -14.001252880096436
+      ],
+      "1337": [
+        -17.221251754760743,
+        -14.516251640319824
+      ]
+    }
+  },
+  "n_missing_per_cell": 0,
+  "verdict_precedence_note": "(a) H1 fail => no headline claim. (b) DR failure supersedes BOTH PASS and the falsifier => inconclusive_dynamic_range_failed with the parent's hedge - the falsifier is reachable only when the DR gate passes. (c) DR-ok AND (CI overlaps zero / sign flip / any seed <= 0) => falsifier fires, content-attribution conclusion. (d) DR-ok AND all seeds positive AND mean < 1.0 => directional/partial survival below the inherited 1-nat threshold - neither PASS nor falsification."
+}
