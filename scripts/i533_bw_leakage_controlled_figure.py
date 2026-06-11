@@ -2,14 +2,14 @@
 
 Companion to i533_bw_implant_leakage_figure.py. Same layout (implantation
 left, leakage right), but the right panel reports the per-seed difference
-leakage − implantation (both in marker log P trained − base), so an arm
+leakage - implantation (both in marker log P trained - base), so an arm
 whose leakage is lower merely because its implant is weaker collapses onto
 the other arm.
 
 Context that motivates the second figure: at s ≥ 60 the own-slot trained
 log P is exactly 0 for BOTH arms (P(marker) ≈ 1, per-seed std = 0), so the
 apparent ~1-nat implantation gap between arms is purely a base-prior
-difference (base log P −21.65 system vs −20.68 role). The decomposition
+difference (base log P -21.65 system vs -20.68 role). The decomposition
 figure splits average leakage into its two probes (wrong-persona vs
 default-assistant) to show where each arm's leakage actually lives.
 
@@ -62,7 +62,7 @@ def per_seed_values() -> dict[str, dict[str, np.ndarray]]:
     """Return {arm: {metric: array of shape (len(STEPS), len(SEEDS))}}.
 
     Metrics: implantation (own-probe delta_g), leakage (mean of wrong +
-    default probe delta_g), controlled (leakage − implantation, paired
+    default probe delta_g), controlled (leakage - implantation, paired
     within seed), leak_wrong / leak_default (the two probes separately).
     All are first averaged over the 2 trained personas within a seed.
     """
@@ -184,9 +184,10 @@ def controlled_figure(data: dict) -> None:
     fig.text(
         0.02,
         0.94,
-        "Bare-word install-step grid (#533). Right panel: per-seed leakage minus implantation (both marker log P,\n"
-        "trained − base). Caveat: at s ≥ 60 the own-slot trained log P is exactly 0 for BOTH arms (implant saturated,\n"
-        "per-seed std = 0) — the left panel's ~1-nat gap is a base-prior difference, which this subtraction inherits.",
+        "Bare-word install-step grid (#533). Right panel: per-seed leakage minus implantation\n"
+        "(both marker log P, trained − base). Caveat: at s ≥ 60 the own-slot trained log P is\n"
+        "exactly 0 for BOTH arms (implant saturated, per-seed std = 0) — the ~1-nat gap is a\n"
+        "base-prior difference, which this subtraction inherits.",
         fontsize=8,
         color="#5A5A5A",
         ha="left",
@@ -204,7 +205,7 @@ def decomposition_figure(data: dict) -> None:
         ("leak_wrong", "Wrong-persona probe\n(own encoding, other persona)"),
         ("leak_default", "Default-assistant probe\n(identical prompt for both arms)"),
     )
-    for ax, (metric, panel_title) in zip(axes, panels):
+    for ax, (metric, panel_title) in zip(axes, panels, strict=True):
         _draw_metric(ax, data, metric)
         ax.set_title(panel_title, fontsize=11)
         ax.axhline(0.0, color="gray", lw=0.8, alpha=0.6, zorder=0)
@@ -218,7 +219,7 @@ def decomposition_figure(data: dict) -> None:
 
     fig.tight_layout(rect=[0, 0, 1, 0.80])
     fig.suptitle(
-        "The average hides a split: role leaks less to the wrong persona, more to the default assistant",
+        "The average hides a split: role leaks less to the wrong persona, more to the default",
         fontsize=11,
         fontweight="semibold",
         ha="left",
@@ -228,9 +229,9 @@ def decomposition_figure(data: dict) -> None:
     fig.text(
         0.02,
         0.94,
-        "Same cells as the average-leakage panel, split by probe. Wrong-persona probes use each arm's own encoding\n"
-        "(base priors differ: −21.65 system vs −20.68 role); the default-assistant probe is encoding-identical across\n"
-        "arms (base −22.09), so its cross-arm comparison is base-clean.",
+        "Same cells as the average-leakage panel, split by probe. Wrong-persona probes use each\n"
+        "arm's own encoding (base priors differ: −21.65 system vs −20.68 role); the default\n"
+        "probe is encoding-identical across arms (base −22.09), so its comparison is base-clean.",
         fontsize=8,
         color="#5A5A5A",
         ha="left",
@@ -251,7 +252,8 @@ def main() -> None:
         for metric in ("implantation", "leakage", "controlled", "leak_wrong", "leak_default"):
             mean, lo, hi = boot_ci(data[arm][metric])
             vals = ", ".join(
-                f"s{s}={m:+.2f} [{l:+.2f},{h:+.2f}]" for s, m, l, h in zip(STEPS, mean, lo, hi)
+                f"s{s}={m:+.2f} [{lo_:+.2f},{hi_:+.2f}]"
+                for s, m, lo_, hi_ in zip(STEPS, mean, lo, hi, strict=True)
             )
             print(f"{arm:15s} {metric:13s} {vals}")
 
