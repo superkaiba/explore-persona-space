@@ -141,6 +141,10 @@ def main(argv: list[str] | None = None) -> int:
         source_prompt=bank[SOURCE_PERSONA],
         out_path=args.out_path,
         max_new_tokens=args.max_new_tokens,
+        # D3 raised max_new_tokens 1024->2048; the parent default max_model_len=2048
+        # then overflows on cap-length generations (prompt + R + marker = 2050 at the
+        # Phase-B-adjacent vLLM read). 4096 covers prompt + 2048-token R with margin.
+        max_model_len=4096,
         max_lora_rank=LORA_R,
         compute_kl=not args.no_kl,
         raw_r_out_path=args.raw_completions_path,
