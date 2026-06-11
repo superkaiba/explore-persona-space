@@ -148,7 +148,43 @@ def _per_module_entry(
     return entry, vectors
 
 
-def process_cell(cell: AdapterCell, config: dict, st_path: Path) -> tuple[dict, dict]:
+def _resume_skip_ok(spectra_path: Path, cell: AdapterCell, revision: str) -> bool:
+    """Validate an existing spectra JSON before resume-skipping its cell.
+
+    Guards the resume path against stale artifacts (e.g. computed from a
+    pre-layout-switch subfolder or an older pinned revision): the saved
+    ``meta`` must match the CURRENT inventory on ``repo_id`` / ``subfolder``
+    / ``revision`` / ``cell`` (cell_id). A missing field (older schema
+    without ``revision``) or an unreadable/corrupt JSON counts as a
+    mismatch — the caller recomputes. Returns True only when all four
+    fields match.
+    """
+    try:
+        meta = json.loads(spectra_path.read_text()).get("meta") or {}
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning(
+            "resume invalid (unreadable spectra JSON) %s: %s — recomputing", spectra_path, exc
+        )
+        return False
+    expected = {
+        "repo_id": cell.repo_id,
+        "subfolder": cell.subfolder,
+        "revision": revision,
+        "cell": cell.cell_id,
+    }
+    mismatches = {k: (meta.get(k), v) for k, v in expected.items() if meta.get(k) != v}
+    if mismatches:
+        detail = "; ".join(
+            f"{k}: saved={old!r} current={new!r}" for k, (old, new) in sorted(mismatches.items())
+        )
+        logger.warning("resume invalid (stale meta) %s: %s — recomputing", spectra_path, detail)
+        return False
+    return True
+
+
+def process_cell(
+    cell: AdapterCell, config: dict, st_path: Path, revision: str
+) -> tuple[dict, dict]:
     """SVD one adapter cell. Returns (spectra_json_payload, npz_arrays)."""
     scale = rslora_scale(config)
     r = int(config["r"])
@@ -252,6 +288,7 @@ def process_cell(cell: AdapterCell, config: dict, st_path: Path) -> tuple[dict, 
                 "line": cell.line,
                 "repo_id": cell.repo_id,
                 "subfolder": cell.subfolder,
+                "revision": revision,
             },
         ),
         "cell": {
@@ -371,8 +408,23 @@ def main() -> None:
             "vectors": str(npz_path.relative_to(PROJECT_ROOT)),
             "tags": list(cell.tags),
         }
-        if spectra_path.exists() and npz_path.exists() and not args.no_resume:
-            logger.info("[%d/%d] skip (done): %s/%s", i + 1, len(cells), cell.line, cell.cell_id)
+        if (
+            spectra_path.exists()
+            and npz_path.exists()
+            and not args.no_resume
+            and _resume_skip_ok(spectra_path, cell, revisions[cell.repo_id])
+        ):
+            # NPZ sidecar existence for the same cell is the npz_path.exists()
+            # check above (the path embeds the cell_id); meta validation is
+            # _resume_skip_ok — on mismatch / unreadable JSON we fall through
+            # and recompute.
+            logger.info(
+                "[%d/%d] skip (done, meta-validated): %s/%s",
+                i + 1,
+                len(cells),
+                cell.line,
+                cell.cell_id,
+            )
             manifest["cells"].append({**cell_rec, "status": "done"})
             manifest_path.write_text(json.dumps(manifest, indent=1))
             continue
@@ -393,7 +445,7 @@ def main() -> None:
                 continue
             raise
         eviction_paths.extend(dl_paths)
-        payload, npz = process_cell(cell, config, st_path)
+        payload, npz = process_cell(cell, config, st_path, revisions[cell.repo_id])
         spectra_path.parent.mkdir(parents=True, exist_ok=True)
         npz_path.parent.mkdir(parents=True, exist_ok=True)
         spectra_path.write_text(json.dumps(payload, indent=1))
