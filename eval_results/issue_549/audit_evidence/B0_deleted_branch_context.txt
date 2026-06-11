@@ -1,0 +1,99 @@
+### src/explore_persona_space/experiments/factor_screen_397/eval_panel.py @ refs/heads/issue-397
+165:    for persona_name, panel_sys_prompt in personas.items():
+167:        for question in questions:
+216:    For each checkpoint dir, for each ``marker_text`` in ``marker_texts``:
+263:    for i, ck_dir in enumerate(checkpoint_dirs):
+273:        for mt in marker_texts:
+352:    BASE model once with ``enable_lora=True, max_loras=1,
+354:    LoRARequest(lora_name, 1, lora_path=adapter_path))`` consumes the
+448:    for persona_name, panel_sys_prompt in personas.items():
+450:        for question in questions:
+461:    # vLLM LLM with --enable-lora. max_loras=1 because we only ever swap
+
+### src/explore_persona_space/experiments/factor_screen_397/training.py @ refs/heads/issue-397
+144:    ``vllm.lora.request.LoRARequest(lora_path=adapter_path)``.
+314:    # adapter directly via LoRARequest(lora_path=adapter_path) at sampled-
+
+### src/explore_persona_space/experiments/contrastive_recipe_sweep_448/eval_one_cell.py @ refs/heads/issue-448
+31:  6. Run trained pass with ``lora_request=LoRARequest(cell_slug, 1,
+297:    for out, slot in zip(outputs, slot_positions, strict=True):
+404:    for persona_name, persona_prompt in persona_items:
+412:        for q_idx, q in enumerate(questions):
+449:        llm_kwargs["max_loras"] = 1
+450:    llm = LLM(**llm_kwargs)
+467:        lora_req = LoRARequest(lora_name=cell_slug, lora_int_id=1, lora_path=adapter_path)
+504:        for (persona, q_idx), bl, ba in zip(index_keys, b_logps, b_argmax, strict=True):
+
+### src/explore_persona_space/experiments/lora_vs_ft_508/eval_one_cell.py @ refs/heads/issue-508
+90:    for persona, persona_prompt in eval_personas.items():
+91:        for q in eval_questions:
+112:    for (persona, q), gen in zip(index_keys, outputs, strict=True):
+165:            cells (load base + ``LoRARequest(adapter_path)``).
+231:        trained_llm = LLM(
+243:        trained_llm = LLM(
+249:            max_loras=1,
+256:        lora_req = LoRARequest(
+258:            lora_int_id=1,
+371:    base_llm = LLM(
+
+### src/explore_persona_space/experiments/sycophancy_implantation_411/eval_one_source.py @ refs/heads/issue-507
+78:        for line in f:
+124:    for c_idx, (claim, c_rollouts) in enumerate(zip(claims, completions, strict=True)):
+125:        for r_idx, completion in enumerate(c_rollouts):
+247:        # max_loras=1 is sufficient since we evaluate one adapter at a time in
+250:        llm_kwargs["max_loras"] = 1
+251:    llm = LLM(**llm_kwargs)
+270:        for i, spec in enumerate(lora_modules, start=1):
+274:            req = LoRARequest(lora_name=name, lora_int_id=i, lora_path=path)
+280:                f"(max_loras=1); got {len(lora_requests)} from lora_modules={lora_modules!r}. "
+296:    for panel_idx, (panel_persona, panel_prompt) in enumerate(EVAL_PERSONAS_24.items(), 1):
+
+### src/explore_persona_space/experiments/behavior_testbed_545/eval_battery.py @ refs/heads/issue-545
+64:        for i, ep in enumerate(data["episodes"]):
+82:        for i, q in enumerate(data["should_not_refuse"]):
+84:        for i, q in enumerate(data["should_refuse"]):
+87:        for group in ("direct", "ood_framings", "entailed", "reversal"):
+88:            for i, q in enumerate(data[group]):
+91:        for i, q in enumerate(data["probes"]):
+148:    llm = LLM(
+159:        LoRARequest("cell_adapter", 1, adapter_path) if adapter_path and not full_model else None
+164:        for col in todo:
+166:            for ctx_id in contexts:
+
+### src/explore_persona_space/experiments/issue503/cross_eval.py @ refs/heads/issue-503
+168:    llm = LLM(
+174:    lora_req = LoRARequest(
+176:        lora_int_id=1,
+182:        for tgt in all_targets:
+220:            for question, vllm_out in zip(panel_questions, outputs, strict=True):
+222:                for c in vllm_out.outputs:
+234:                for r in rows:
+290:    for q in questions:
+326:    for tgt in all_targets:
+340:            for line in f:
+
+### src/explore_persona_space/experiments/sycophancy_scale_507/eval_72b_vllm.py @ NONE
+
+### src/explore_persona_space/train/callbacks.py @ refs/heads/issue-385
+34:    load via ``LoRARequest(lora_path=...)``.
+
+### src/explore_persona_space/train/eval_marker_logprob.py @ refs/heads/issue-464
+116:    llm = LLM(
+120:        max_loras=1,
+143:    for p in probes:
+160:    lora_req = LoRARequest(lora_name="traj_live", lora_int_id=1, lora_path=args.adapter)
+
+### src/explore_persona_space/eval/generation.py @ refs/heads/wf/deferred-3-integration
+69:    lora_request = LoRARequest(
+71:        lora_int_id=1,
+157:    for persona_name, persona_prompt in personas.items():
+158:        for question in questions:
+183:    llm = LLM(**llm_kwargs)
+202:        for output, (persona_name, question) in zip(outputs, prompt_keys, strict=True):
+277:    for prompt in prompts:
+303:    llm = LLM(**llm_kwargs)
+319:        for prompt, output in zip(prompts, outputs, strict=True):
+408:    for i, msgs in enumerate(prompt_messages_list):
+
+### scripts/eval_issue563_base_panel.py @ NONE
+
