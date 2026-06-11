@@ -1,6 +1,7 @@
 ---
-title: 'Pre-implant null-geometry calibration: bound chance geometry-shaped partial
-  correlations at step-5 no-implant snapshots across 5 fresh seed pairs'
+title: 'The pre-implant geometry reading is chance-level noise, not a systematic warmup
+  artifact: five fresh no-implant replicates scatter the nearest-negative correlation
+  around zero (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-10T10:01:02Z'

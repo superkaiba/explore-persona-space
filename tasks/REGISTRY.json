@@ -3298,7 +3298,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/555",
       "status": "interpreting",
-      "title": "Pre-implant null-geometry calibration: bound chance geometry-shaped partial correlations at step-5 no-implant snapshots across 5 fresh seed pairs"
+      "title": "The pre-implant geometry reading is chance-level noise, not a systematic warmup artifact: five fresh no-implant replicates scatter the nearest-negative correlation around zero (MODERATE confidence)"
     },
     "556": {
       "goal": "Re-test whether the role-header encoding segments validating from off-target personas more cleanly than a system-prompt encoding (paired leakage gap \u2264 -0.15 Likert, CI strictly below zero) at a seed count where the paired-bootstrap CI is no longer essentially [min, max], by re-running #528's validating \u00d7 {role-header, system-prompt} cell at 10 fresh training seeds on the identical Q-bank + identical rubric rig + identical contrastive-negatives recipe, so the segmentation effect can be promoted from MODERATE to HIGH (or falsified) without changing anything else about the parent design.",
