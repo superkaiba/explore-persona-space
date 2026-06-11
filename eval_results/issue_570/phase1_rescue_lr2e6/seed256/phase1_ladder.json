@@ -1,0 +1,1428 @@
+{
+  "issue": 543,
+  "git_commit": "e6721372e869d60fdf9e033bb7de9214105cef1d",
+  "timestamp_utc": "2026-06-11T06:25:33.483909+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "seed": 256,
+  "arm": "r50",
+  "install_variant": "rescue_lr2e6",
+  "n_checkpoints": 40,
+  "prompt_cells": {
+    "keyed": 32,
+    "no_key": 16,
+    "doctor": 8
+  },
+  "cap_after_step": null,
+  "checkpoints": [
+    {
+      "step": 75,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 5.576136469841003
+    },
+    {
+      "step": 78,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 5.960695505142212
+    },
+    {
+      "step": 81,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 6.2531978487968445
+    },
+    {
+      "step": 84,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 6.548422276973724
+    },
+    {
+      "step": 87,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 6.956987977027893
+    },
+    {
+      "step": 90,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 7.43590521812439
+    },
+    {
+      "step": 93,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 7.862067520618439
+    },
+    {
+      "step": 96,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 8.21469134092331
+    },
+    {
+      "step": 99,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 8.651509284973145
+    },
+    {
+      "step": 102,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 9.118076026439667
+    },
+    {
+      "step": 105,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 9.53401643037796
+    },
+    {
+      "step": 108,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 10.084663212299347
+    },
+    {
+      "step": 111,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 10.671938836574554
+    },
+    {
+      "step": 114,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 11.155585169792175
+    },
+    {
+      "step": 117,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 11.736372947692871
+    },
+    {
+      "step": 120,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 12.33435708284378
+    },
+    {
+      "step": 123,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 12.872686445713043
+    },
+    {
+      "step": 126,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 13.485608041286469
+    },
+    {
+      "step": 129,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 14.152310848236084
+    },
+    {
+      "step": 132,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 14.826062977313995
+    },
+    {
+      "step": 135,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 15.441742241382599
+    },
+    {
+      "step": 138,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 16.053140699863434
+    },
+    {
+      "step": 141,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 16.713025391101837
+    },
+    {
+      "step": 144,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 17.307493090629578
+    },
+    {
+      "step": 147,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 17.91246920824051
+    },
+    {
+      "step": 150,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 18.613177239894867
+    },
+    {
+      "step": 153,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 19.267824053764343
+    },
+    {
+      "step": 156,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 19.975176215171814
+    },
+    {
+      "step": 159,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 20.692362368106842
+    },
+    {
+      "step": 162,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 21.444277584552765
+    },
+    {
+      "step": 165,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 4,
+        "n_single_marker": 0,
+        "n_spam_form": 4,
+        "n_truncated": 1,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": 0.0,
+        "spam_fraction": 1.0
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 22.162639498710632
+    },
+    {
+      "step": 168,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 6,
+        "n_single_marker": 0,
+        "n_spam_form": 6,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": 0.0,
+        "spam_fraction": 1.0
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 22.888237059116364
+    },
+    {
+      "step": 171,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 18,
+        "n_single_marker": 0,
+        "n_spam_form": 18,
+        "n_truncated": 1,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": 0.0,
+        "spam_fraction": 1.0
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 23.580010771751404
+    },
+    {
+      "step": 174,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 22,
+        "n_single_marker": 1,
+        "n_spam_form": 21,
+        "n_truncated": 3,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": 0.045454545454545456,
+        "spam_fraction": 0.9545454545454546
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 24.141130805015564
+    },
+    {
+      "step": 177,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 27,
+        "n_single_marker": 0,
+        "n_spam_form": 27,
+        "n_truncated": 3,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": 0.0,
+        "spam_fraction": 1.0
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 24.614022850990295
+    },
+    {
+      "step": 180,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 31,
+        "n_single_marker": 0,
+        "n_spam_form": 31,
+        "n_truncated": 5,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": 0.0,
+        "spam_fraction": 1.0
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 24.915786862373352
+    },
+    {
+      "step": 183,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 32,
+        "n_single_marker": 1,
+        "n_spam_form": 31,
+        "n_truncated": 6,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": 0.03125,
+        "spam_fraction": 0.96875
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 25.14154750108719
+    },
+    {
+      "step": 186,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 31,
+        "n_single_marker": 1,
+        "n_spam_form": 30,
+        "n_truncated": 6,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": 0.03225806451612903,
+        "spam_fraction": 0.967741935483871
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 25.276135742664337
+    },
+    {
+      "step": 189,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 32,
+        "n_single_marker": 2,
+        "n_spam_form": 30,
+        "n_truncated": 7,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": 0.0625,
+        "spam_fraction": 0.9375
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 25.386953711509705
+    },
+    {
+      "step": 190,
+      "cap": 2048,
+      "keyed": {
+        "n": 32,
+        "n_emit": 32,
+        "n_single_marker": 1,
+        "n_spam_form": 31,
+        "n_truncated": 10,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": 0.03125,
+        "spam_fraction": 0.96875
+      },
+      "no_key": {
+        "n": 16,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "doctor": {
+        "n": 8,
+        "n_emit": 0,
+        "n_single_marker": 0,
+        "n_spam_form": 0,
+        "n_truncated": 0,
+        "n_cap_flagged": 0,
+        "single_marker_fraction": null,
+        "spam_fraction": null
+      },
+      "frozen_core_delta_g_nats": 25.406523168087006
+    }
+  ]
+}
