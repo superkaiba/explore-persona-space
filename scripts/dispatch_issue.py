@@ -412,7 +412,9 @@ def _frontmatter_backend_value(issue: int) -> str | None:
     """The task's frontmatter ``backend:`` value, normalized for the override check.
 
     Returns ``""`` when the key is absent or the value is empty (the task
-    itself says auto), the stripped + lowercased value otherwise, and
+    itself says auto), the stripped + lowercased value otherwise (an
+    explicit ``backend: auto`` returns ``"auto"`` — the caller treats it
+    the same as absent/empty, since both state auto routing), and
     ``None`` when the frontmatter could not be read at all (missing task,
     unreadable body.md) — the caller then SKIPS the
     override-without-frontmatter check rather than guessing.
@@ -543,13 +545,18 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         # ACTUAL frontmatter: an explicit runpod override with no
         # frontmatter backing gets a LOUD stderr warning + an
         # ``override_without_frontmatter`` flag on the
-        # ``epm:backend-selected`` marker extra. ADDITIVE only — the launch
-        # is never blocked and the CLI argument contract is unchanged.
+        # ``epm:backend-selected`` marker extra. An explicit
+        # ``backend: auto`` counts as no backing too — it states the
+        # auto-routing intent even more explicitly than absence, so a
+        # runpod override against it is the same GCP-first bypass in
+        # spirit. ADDITIVE only — the launch is never blocked and the CLI
+        # argument contract is unchanged.
         fm_backend = _frontmatter_backend_value(args.issue)
-        if fm_backend == "":
+        if fm_backend in ("", "auto"):
             logging.getLogger("dispatch_issue").warning(
-                "explicit --backend runpod for issue=%d but the task's frontmatter has NO "
-                "backend: value — the task itself says auto, and the standing default is "
+                "explicit --backend runpod for issue=%d but the task's frontmatter does "
+                "not name a backend (absent/empty, or an explicit 'auto') — the task "
+                "itself says auto, and the standing default is "
                 "GCP FIRST (credits before real money). 'the GCP lane is train.py-only' "
                 "is STALE justification as of #588: every lane runs custom dispatch "
                 "scripts via --workload-cmd. Name a residual gap in the launch note — "

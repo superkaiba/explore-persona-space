@@ -365,6 +365,29 @@ def test_launch_runpod_override_without_frontmatter_warns_and_flags_marker(
     assert all(e.get("override_without_frontmatter") is True for e in extras)
 
 
+def test_launch_runpod_override_with_explicit_auto_frontmatter_warns_and_flags_marker(
+    monkeypatch, tmp_path, caplog
+) -> None:
+    """2b widening: explicit frontmatter ``backend: auto`` + CLI
+    ``--backend runpod`` is the same GCP-first bypass in spirit as the
+    absent/empty case — the frontmatter states the auto-routing intent
+    even more explicitly — so it gets the same loud warning + marker
+    flag, and the launch still proceeds."""
+    posts: list[dict[str, Any]] = []
+    with caplog.at_level(logging.WARNING, logger="dispatch_issue"):
+        rc = _run_runpod_launch(
+            monkeypatch, tmp_path, issue="313", frontmatter_value="auto", marker_posts=posts
+        )
+    assert rc == 0
+    warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+    assert any("override_without_frontmatter" in m and "GCP FIRST" in m for m in warnings), (
+        f"expected the loud GCP-first bypass warning; got {warnings!r}"
+    )
+    extras = _backend_selected_extras(posts)
+    assert extras, "expected at least one epm:backend-selected post"
+    assert all(e.get("override_without_frontmatter") is True for e in extras)
+
+
 def test_launch_runpod_override_with_frontmatter_backing_no_warning_no_flag(
     monkeypatch, tmp_path, caplog
 ) -> None:
