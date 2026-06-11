@@ -918,6 +918,10 @@ def _upload_phase(out_root: Path, data_root: Path, manifest_path: Path) -> None:
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
         path_in_repo=f"{HF_DATA_PREFIX}/panel_selection.json",
+        # upload_as_file is load-bearing: without it a FILE path falls into the
+        # upload_folder branch, verification looks for a folder prefix, finds 0
+        # files, and returns "" (smoke crash 2026-06-11 on pod-600).
+        upload_as_file=True,
     )
     if not url:
         raise RuntimeError(f"panel_selection.json upload returned empty URL ({manifest_path}).")
