@@ -169,11 +169,23 @@ MARKER_POST_PROSE_RE = re.compile(
     re.IGNORECASE,
 )
 # Kinds exempt from registration: prose-only or family-prefix mentions that
-# match the posting patterns above without being a real posted kind. Empty
-# today — `epm:audit` (SKILL.md placeholder guard) uses the verb "generating"
-# so it never matches; add entries here only with a trailing comment naming
-# the file:line and why it is not a posted kind.
-MARKER_REGISTRY_ALLOWLIST: frozenset[str] = frozenset()
+# match the posting patterns above without being a real posted kind
+# (`epm:audit` — the SKILL.md placeholder guard — uses the verb "generating"
+# so it never matches). Add entries here only with a comment naming the
+# file:line and why it is not a posted kind.
+MARKER_REGISTRY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # campaign-tick/SKILL.md:104 "Newest skill-posted `epm:campaign-*`
+        # marker FRESH" — a READ-side family-prefix mention, not a posting
+        # site: `\bposted\b` matches inside the compound adjective
+        # "skill-posted" (hyphen is a word boundary) and the kind regex
+        # truncates `epm:campaign-*` at the `*`. The six real
+        # `epm:campaign-*` kinds are individually registered in
+        # workflow.yaml § markers; the tick itself never posts (its
+        # contract: "No marker posts").
+        "epm:campaign-",
+    }
+)
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
 # be anchored to a documented gate or marked as anti-pattern documentation.
