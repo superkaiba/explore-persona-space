@@ -21,6 +21,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_600.md](https://github.com/superkaiba/explore-persona-space/blob/6dc20f8d94ce65c70122b18277fdb20feb9644f3/docs/methodology/issue_600.md) · [gist](https://gist.github.com/superkaiba/a9a1542c05b08e0037f5c5946ad40508)
+
 ## Human TL;DR
 
 **Headline.** i ran the clean causal version of "do negative training examples protect their own neighborhood?" and found nothing — putting a bystander's closest look-alike persona into the warning set does nothing detectable for that bystander, down to the resolution seed noise allows.
@@ -255,3 +257,4 @@ These panels consume the same per-persona slot log-probs as the headline finding
 - Round-2 revision figures (reader-facing labels on hero + bubble; dose-figure retitle + within-persona trained-vs-untrained panel): [scripts/i600_revision_figures.py](https://github.com/superkaiba/explore-persona-space/blob/a38afbf1e59c14d9a82306d165fbbefcd981dcb1/scripts/i600_revision_figures.py)
 - Reproduce (on a pod, branch `issue-600` at `c156831e7`): `uv run python scripts/i600_dispatch.py --smoke --n-gpus 8 && uv run python scripts/i600_dispatch.py --cells all --seeds 42,137,219 --n-gpus 8 --max-parallel 8`; then on the VM: `uv run python -m explore_persona_space.experiments.targeted_proximity_600.analyze && uv run python scripts/i600_extra_figures.py && uv run python scripts/i600_revision_figures.py`
 - WandB: live training telemetry under run names `issue600_<slug>_seed<seed>` (per-step source log-prob trajectories from the log-only band callback)
+- **Methodology reference:** [docs/methodology/issue_600.md](https://github.com/superkaiba/explore-persona-space/blob/6dc20f8d94ce65c70122b18277fdb20feb9644f3/docs/methodology/issue_600.md) · [gist](https://gist.github.com/superkaiba/a9a1542c05b08e0037f5c5946ad40508)
