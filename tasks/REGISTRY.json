@@ -3412,8 +3412,8 @@
       "goal": "Determine whether a band-stopped clean single-marker install (source log P(marker) - base in [5,12] nat, non-saturated, no spam form) survives one epoch of continued SFT at the install-matched survival learning rate 5e-6, and whether emergent-misalignment SFT erases it differently from length-matched benign SFT, with the two-arm eraser factor (benign vs EM) the single manipulated variable on a fixed clean install at fixed lr.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/570",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/570",
+      "status": "awaiting_promotion",
       "title": "Marker survival under retraining tracks the over-trained install, with no detectable eraser-content effect \u2014 misaligned medical SFT leaves the saturated install firing at the honest eraser's rate (MODERATE confidence)"
     },
     "571": {
