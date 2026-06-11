@@ -27,7 +27,9 @@ evaluation only — the analyzer owns the final verdict):
   (mean unit-norm >= 0.40, >= ceil(2N/3) seeds rotation >= 0.95).
 - FALSIFY: mean weighted <= 0.40 AND mean unit-norm <= 0.374 (the measured
   posonly control band top) AND noise-floor conjuncts on EVERY gating cell
-  (sign-flip p95 cleared AND ||M||_F >= 9.66, the posonly same-text floor) —
+  (sign-flip p95 cleared AND ||M||_F >= the posonly same-text floor — derived
+  full-precision from the computed posonly control cells, ~9.6597; the plan's
+  9.66 is its 2-dp rounding, kept only as the no-posonly fallback) —
   any gating cell failing the noise conjuncts routes to INDETERMINATE
   (noise-level). NO rotation sub-clause (plan §11.11 — the control arm's
   measured rotations make it unfireable).
@@ -89,14 +91,21 @@ REFERENCE_ARMS = ("marker", "em", "posonly")
 # amendment). Grounded in the measured bands (plan §11.11):
 # EM weighted [0.524, 0.603]; contrastive marker [0.311, 0.348]; posonly
 # control weighted [0.365, 0.402] / unit-norm [0.305, 0.374]; posonly
-# same-text ||M||_F floor 9.66 (min over seeds in the persisted #561 read).
+# same-text ||M||_F floor = min over seeds in the persisted #561 read
+# (9.659689... — derived at runtime; see FROBENIUS_NOISE_FLOOR_FALLBACK).
 PER_SEED_TOP_SHARE = 0.46
 MEAN_TOP_SHARE_CONFIRM = 0.50
 MEAN_TOP_SHARE_FALSIFY = 0.40
 UNITNORM_TOP_SHARE_MIN = 0.40
 UNITNORM_FALSIFY_MAX = 0.374
 ROTATION_MIN = 0.95
-FROBENIUS_NOISE_FLOOR = 9.66
+# Fallback only: plan §13 names "the 9.66 posonly same-text floor, or grounded
+# equivalent". 9.66 is a 2-dp ROUNDING of the persisted #561 minimum
+# (9.659689... at seed137), so the rounded constant excludes its own grounding
+# value — the control arm would fail its own floor by 3e-4. _headline derives
+# the floor from the COMPUTED posonly same-text cells (the grounded
+# equivalent); this constant fires only when the posonly arm is absent.
+FROBENIUS_NOISE_FLOOR_FALLBACK = 9.66
 MIN_READABLE_SEEDS = 2
 EM_BAND_LOWER_MARGIN = 0.524
 
@@ -244,6 +253,21 @@ def _headline(
         key=lambda v: v["seed"],
     )
     bands = _reference_bands(per_cell)
+    # Plan §13 noise floor, "grounded equivalent" form: min ||M||_F over the
+    # COMPUTED posonly same-text control cells (full precision — the 9.66
+    # constant is a 2-dp rounding that sits ABOVE the persisted #561 minimum
+    # 9.659689..., so the rounded form would fail the control arm itself).
+    posonly_frob = [
+        v["frobenius_norm"]
+        for v in per_cell.values()
+        if v["arm"] == "posonly" and v["variant"] == "same"
+    ]
+    frobenius_floor = float(min(posonly_frob)) if posonly_frob else FROBENIUS_NOISE_FLOOR_FALLBACK
+    frobenius_floor_source = (
+        "min ||M||_F over computed posonly same-text cells (plan §13 grounded equivalent)"
+        if posonly_frob
+        else "fallback constant 9.66 (posonly arm absent — smoke subset only)"
+    )
     base = {
         "i_reference_same_text_bands": bands,
         "kill_status": (
@@ -257,7 +281,8 @@ def _headline(
             "unitnorm_top_share_min": UNITNORM_TOP_SHARE_MIN,
             "unitnorm_falsify_max": UNITNORM_FALSIFY_MAX,
             "rotation_min": ROTATION_MIN,
-            "frobenius_noise_floor": FROBENIUS_NOISE_FLOOR,
+            "frobenius_noise_floor": frobenius_floor,
+            "frobenius_floor_source": frobenius_floor_source,
             "min_readable_seeds": MIN_READABLE_SEEDS,
             "per_seed_count_rule": "ceil(2N/3) over N readable (non-KILL) seeds",
             "em_band_lower_margin": EM_BAND_LOWER_MARGIN,
@@ -308,7 +333,7 @@ def _headline(
             "rotation": v["unitnorm"]["abs_cos_U1_unitnorm_vs_weighted"],
             "rotation_ge_0p95": (v["unitnorm"]["abs_cos_U1_unitnorm_vs_weighted"] >= ROTATION_MIN),
             "frobenius_norm": v["frobenius_norm"],
-            "frobenius_ge_floor": v["frobenius_norm"] >= FROBENIUS_NOISE_FLOOR,
+            "frobenius_ge_floor": v["frobenius_norm"] >= frobenius_floor,
         }
         for v in readable
     }
