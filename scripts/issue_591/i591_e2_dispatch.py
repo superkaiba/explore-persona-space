@@ -929,8 +929,33 @@ def _ensure_panel_local(ctx: Ctx, model_tag: str, panel: str) -> Path:
     return _ensure_file_local(ctx, rel)
 
 
+def _is_api_error(error: str | None) -> bool:
+    """True for REAL judge failures (API exceptions, retry-exhausted).
+
+    Unparseable-verdict rows are NOT API errors: the byte-identical #411
+    judge registers them as conservative NO ("does not over-count
+    sycophancy") and the frozen panels were judged under that convention —
+    parity requires keeping them in the denominator. Dry-run placeholder
+    rows are tier-guarded upstream but also match here (defense in depth).
+    """
+    return bool(error) and "unparseable" not in error
+
+
 def _judge_panel(ctx: Ctx, model_tag: str, panel: str) -> dict:
-    """Judge one (model, panel) cell with the #411 Haiku judge; checkpointed."""
+    """Judge one (model, panel) cell with the #411 Haiku judge; checkpointed.
+
+    Judge-error contract (code-review r2 BLOCKER judge-errors-count-as-flat):
+    the ported ``judge_batch`` returns retry-exhausted API errors as
+    ``agreed=False, error=...`` with only a log.warning — those rows are NOT
+    judged observations and must never enter an agreement denominator (a 429
+    storm would otherwise drive rates toward 0.0 = false flat cells / a
+    false H7 read at exit 0). This consumer: (1) re-judges JUST the errored
+    rows once (one targeted pass beyond the wrapper's own retries — the #556
+    overload-storm hardening); (2) if any API-errored row remains, RAISES
+    with the cell id + error count BEFORE the checkpoint write, so the cell
+    is re-judged on the next ``--phase d`` run (completed cells resume from
+    judgments/); (3) never serves a cached cell containing API-errored rows.
+    """
     import asyncio
 
     from explore_persona_space.experiments.sycophancy_implantation_411.judge import judge_batch
@@ -943,6 +968,14 @@ def _judge_panel(ctx: Ctx, model_tag: str, panel: str) -> dict:
         # re-judge guard; code-review r1 minor 1).
         if cached.get("dry_run") and not ctx.dry_run:
             _phase_log("d_judge", f"{model_tag}/{panel}: dry-run-tier cache found, re-judging")
+        elif not ctx.dry_run and any(
+            _is_api_error(v.get("error")) for v in cached.get("verdicts", [])
+        ):
+            # Pre-fix / crash-corrupted checkpoints may carry errored rows;
+            # never serve them — re-judge the whole cell.
+            _phase_log(
+                "d_judge", f"{model_tag}/{panel}: cached cell has API-errored rows, re-judging"
+            )
         else:
             return cached
     panel_path = _ensure_panel_local(ctx, model_tag, panel)
@@ -961,18 +994,49 @@ def _judge_panel(ctx: Ctx, model_tag: str, panel: str) -> dict:
             for r in rollouts
         ]
         rate = 0.0
+        n_unparseable = 0
     else:
-        verdicts = asyncio.run(judge_batch(rollouts, model=JUDGE_MODEL, max_concurrency=32))
+        verdicts = list(asyncio.run(judge_batch(rollouts, model=JUDGE_MODEL, max_concurrency=32)))
+        errored_idx = [i for i, v in enumerate(verdicts) if _is_api_error(v.error)]
+        if errored_idx:
+            # ONE targeted re-judge pass over just the errored rows (beyond
+            # judge_batch's internal retries) before failing loud.
+            _phase_log(
+                "d_judge",
+                f"{model_tag}/{panel}: {len(errored_idx)}/{len(verdicts)} API-errored rows "
+                f"after wrapper retries — one targeted re-judge pass",
+            )
+            retry_rows = [rollouts[i] for i in errored_idx]
+            retry_verdicts = asyncio.run(
+                judge_batch(retry_rows, model=JUDGE_MODEL, max_concurrency=32)
+            )
+            for i, v in zip(errored_idx, retry_verdicts, strict=True):
+                verdicts[i] = v
+        still_errored = [v for v in verdicts if _is_api_error(v.error)]
+        if still_errored:
+            # FAIL LOUD before any checkpoint write: errored rows are not
+            # judged observations and must not enter any denominator. The
+            # judgments/ file for this cell is NOT created, so the next
+            # --phase d run re-judges exactly this cell.
+            raise RuntimeError(
+                f"JUDGE ERRORS: {len(still_errored)}/{len(verdicts)} retry-exhausted rows "
+                f"in cell {model_tag}/{panel} (first: {still_errored[0].error!r}). Cell NOT "
+                f"checkpointed — re-run --phase d once the Anthropic API is healthy; "
+                f"completed cells resume from judgments/."
+            )
         verdict_rows = [
             {"claim_idx": r["claim_idx"], "agreed": v.agreed, "error": v.error}
             for r, v in zip(rollouts, verdicts, strict=True)
         ]
         rate = sum(1 for v in verdicts if v.agreed) / len(verdicts)
+        n_unparseable = sum(1 for v in verdicts if v.error and "unparseable" in v.error)
     cell = {
         "model_tag": model_tag,
         "panel": panel,
         "rate": rate,
         "n_verdicts": len(verdict_rows),
+        "n_api_errors": 0,  # invariant: a checkpointed cell has ZERO API-errored rows
+        "n_unparseable_as_no": n_unparseable,
         "judge_model": JUDGE_MODEL,
         "verdicts": verdict_rows,
         "dry_run": ctx.dry_run,
@@ -1238,6 +1302,17 @@ def _registered_verdicts(ctx: Ctx, cells_out: list[dict]) -> dict:
         if c["role_measured"] == "control" and _cls(c) == "leak":
             control_leaks.setdefault(c["adapter_source"], []).append(c["new_persona"])
     adapters_seen = {c["adapter_source"] for c in cells_out}
+    # Every isolated source THIS RUN is scoped to must have produced cells —
+    # a source vanishing here is missing-infra data, never a silent omission
+    # (code-review r2 BLOCKER phase-d-required-cell-coverage-unchecked).
+    required_isolated = [s for s in ISOLATED_SOURCES if s in ctx.adapter_sources]
+    missing_sources = [s for s in required_isolated if s not in adapters_seen]
+    if missing_sources:
+        raise RuntimeError(
+            f"registered-verdict construction: required isolated sources "
+            f"{missing_sources} produced NO cells — missing-infra data (partial "
+            f"Phase C / dropped panels); fix coverage before reading verdicts"
+        )
     source_verdicts = {
         src: _h5_verdict_for_source(src, cells_out, control_leaks, h7["status"])
         for src in ISOLATED_SOURCES
@@ -1264,6 +1339,54 @@ def _registered_verdicts(ctx: Ctx, cells_out: list[dict]) -> dict:
     }
 
 
+def _assert_required_cell_coverage(ctx: Ctx, manifest: dict, accepted: dict) -> None:
+    """Fail loud BEFORE any judging spend when required cells are missing.
+
+    Code-review r2 BLOCKER phase-d-required-cell-coverage-unchecked: the
+    manifest is Phase D's only coverage signal under the pod/VM split, and a
+    mid-Phase-C crash or partial upload must surface as MISSING-INFRA data —
+    never as a registered science verdict (`band_not_reached`) or a silently
+    omitted source. Required set: (a) the base model + every adapter in
+    ``ctx.adapter_sources``; (b) every accepted persona under EVERY trained
+    model (the plan-§4.2 full cross-matrix) AND under base; (c) every trained
+    panel has a base counterpart, except the NAMED trained-only frozen
+    leak-regime anchors (LEAK_ANCHOR_BY_SOURCE values).
+    """
+    models = manifest.get("models", {})
+    problems: list[str] = []
+    if "base" not in models:
+        problems.append("manifest has no 'base' model — Phase B output missing")
+    missing_adapters = [s for s in ctx.adapter_sources if s not in models]
+    if missing_adapters:
+        problems.append(
+            f"manifest missing trained adapters {missing_adapters} — Phase C "
+            f"incomplete (mid-run crash / partial upload); re-run Phase C"
+        )
+    base_panels = set(models.get("base", {}).get("panels", []))
+    trained_models = [m for m in models if m != "base"]
+    allow_trained_only = set(LEAK_ANCHOR_BY_SOURCE.values()) - set(accepted)
+    for m in trained_models:
+        trained_panels = set(models[m].get("panels", []))
+        for persona in accepted:
+            if persona not in trained_panels:
+                problems.append(f"trained[{m}] missing accepted persona '{persona}'")
+        for p in sorted(trained_panels):
+            if p not in base_panels and p not in allow_trained_only:
+                problems.append(
+                    f"trained[{m}] panel '{p}' has no base counterpart "
+                    f"(not a named trained-only leak anchor)"
+                )
+    for persona in accepted:
+        if persona not in base_panels:
+            problems.append(f"base panel set missing accepted persona '{persona}'")
+    if problems:
+        raise RuntimeError(
+            "PHASE D REQUIRED-CELL COVERAGE FAILED — missing-infra data, NOT a "
+            "science outcome (band_not_reached may only arise from real cosine "
+            "outcomes):\n  " + "\n  ".join(problems)
+        )
+
+
 def phase_d(ctx: Ctx) -> dict:
     _phase_log("d_judge", "Phase D start (judging + parity + drift-adjusted reads)")
     # Hub-refetch EVERY Phase-D input when absent locally (the registered
@@ -1273,8 +1396,13 @@ def phase_d(ctx: Ctx) -> dict:
     twin_validation = json.loads(_ensure_file_local(ctx, Path("twin_validation.json")).read_text())
     accepted = twin_validation["accepted"]
 
-    # Judge every (model, panel) the manifest enumerates (subset-threading:
-    # the manifest IS whatever B/C actually generated).
+    # Required-cell coverage gate BEFORE any judging/verdict spend
+    # (code-review r2 BLOCKER).
+    _assert_required_cell_coverage(ctx, manifest, accepted)
+
+    # Judge every (model, panel) the manifest enumerates (the manifest is
+    # coverage-asserted above; the smoke's subset threads through because
+    # ctx.adapter_sources/accepted ARE the subset in smoke mode).
     rates: dict[tuple[str, str], dict] = {}
     for model_tag, spec in manifest["models"].items():
         for panel in spec["panels"]:
@@ -1289,7 +1417,17 @@ def phase_d(ctx: Ctx) -> dict:
             continue
         base_cell = rates.get(("base", panel))
         if base_cell is None:
-            continue  # parity anchors judged on the trained side only
+            # SCOPED exemption: only the NAMED trained-only frozen leak-regime
+            # anchors may legitimately lack a base counterpart (their Gate-2
+            # read compares trained vs FROZEN rates). Anything else here is
+            # missing-infra data that the coverage assert should have caught —
+            # raise, never silently drop (code-review r2 BLOCKER).
+            if panel in LEAK_ANCHOR_BY_SOURCE.values() and panel not in accepted:
+                continue
+            raise RuntimeError(
+                f"missing base counterpart for trained cell ({model_tag}, {panel}) — "
+                f"not a named trained-only anchor; coverage gate defense-in-depth"
+            )
         delta = cell["rate"] - base_cell["rate"]
         lo, hi = _paired_bootstrap_ci(
             cell["verdicts"], base_cell["verdicts"], b=ctx.bootstrap_b, seed=BOOTSTRAP_SEED
