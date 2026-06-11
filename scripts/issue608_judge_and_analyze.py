@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import os
 import sys
 from datetime import UTC, datetime
@@ -121,20 +122,39 @@ def main(argv: list[str] | None = None) -> int:
             args.slab_root, args.seed, n=args.kappa_n, concurrency=args.concurrency
         )
         kappa = report["kappa"]
-        if kappa < KAPPA_FLAG:
+        calib_n = report.get("calibration_subset_size")
+        # NaN-safe gate: _cohens_kappa returns float("nan") on degenerate expected
+        # agreement / empty sample, and `nan < threshold` is False — so a bare
+        # `kappa < KAPPA_FLAG` would silently PASS an unmeasurable judge. Treat any
+        # non-finite kappa as the blocking branch (round-2 reconciler, binding).
+        if not math.isfinite(kappa) or kappa < KAPPA_FLAG:
+            if not math.isfinite(kappa):
+                reason = (
+                    f"kappa={kappa} is non-finite (degenerate expected agreement or empty "
+                    f"calibration sample; calibration n={calib_n}): judge reliability is "
+                    "unmeasurable on the new output distribution; plan §8 requires "
+                    "escalation (judge prompt revision is a plan amendment)."
+                )
+            else:
+                reason = (
+                    f"kappa={kappa:.4f} < {KAPPA_FLAG}: judge unreliable on the new "
+                    "output distribution; plan §8 requires escalation (judge prompt revision "
+                    "is a plan amendment)."
+                )
             block = {
                 "decision": "BLOCK",
-                "kappa": kappa,
-                "reason": f"kappa={kappa:.4f} < {KAPPA_FLAG}: judge unreliable on the new "
-                "output distribution; plan §8 requires escalation (judge prompt revision "
-                "is a plan amendment).",
+                # None (not NaN) when non-finite so BLOCK.json stays strict-JSON-parseable;
+                # the reason string carries the raw value.
+                "kappa": kappa if math.isfinite(kappa) else None,
+                "calibration_subset_size": calib_n,
+                "reason": reason,
                 "timestamp_utc": datetime.now(UTC).isoformat(),
             }
             with open(args.slab_root / "judge_calibration_608" / "BLOCK.json", "w") as f:
                 json.dump(block, f, indent=2)
-            log.error("kappa=%.4f < %.2f — BLOCK; exiting 1", kappa, KAPPA_FLAG)
+            log.error("BLOCK: %s — exiting 1", reason)
             return 1
-        if kappa < KAPPA_ACCEPT:
+        if not math.isfinite(kappa) or kappa < KAPPA_ACCEPT:
             flag = {
                 "decision": "FLAG",
                 "kappa": kappa,

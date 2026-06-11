@@ -57,6 +57,8 @@ KAPPA_FLAG = 0.5
 DEFAULT_KAPPA_N = 1000
 SAMPLE_SEED = 42
 N_ENDPOINT_PANELS = 24
+# NOTE: the plan §9 descope ladder (10 -> 5 rollouts) requires editing this constant
+# (and N_ENDPOINT_PANELS if cells change) — the count gates below fail loud otherwise.
 N_COMPLETIONS_PER_PANEL = 500  # 50 claims x 10 rollouts
 
 
