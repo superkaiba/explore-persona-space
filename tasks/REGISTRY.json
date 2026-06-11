@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 600,
+  "highest_id": 601,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3641,6 +3641,13 @@
       "path": "tasks/planning/600",
       "status": "planning",
       "title": "Targeted proximity-dose test: does a contrastive negative parked next to a specific bystander suppress that bystander's leakage?"
+    },
+    "601": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/601",
+      "status": "proposed",
+      "title": "Ratio vs absolute count: what sets the contrastive-negative source-implant set-point (#472 mechanism follow-up)"
     },
     "61": {
       "has_clean_result": true,
