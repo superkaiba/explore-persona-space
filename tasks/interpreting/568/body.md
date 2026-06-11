@@ -1,6 +1,7 @@
 ---
-title: Third orthogonal source pair at the mid dial — does the small monotone gradient
-  generalize off the two existing pairs?
+title: A third orthogonal source pair lands above every anchor on implant geometry
+  at matched dial — the mid-dial level prediction does not transfer across pairs (LOW
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T22:38:31Z'
