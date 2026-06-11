@@ -21,6 +21,7 @@ Maps each experiment result to its research topic. Updated by the analyzer agent
 | `axis_projection_v2/` | Corpus projection v2 (improved) | 2026-04-08 | — |
 | `2026-04-08_cross_model_axis/` | Cross-model axis comparison | 2026-04-08 | Norm profiles r=0.83-0.97 across models |
 | `issue_238/` | Full-parameter SFT vs LoRA SFT persona-vector geometry comparison (4 conds × 5 layers × 2 methods) | 2026-05-06 | Generic-collapse hypothesis (H2) confirmed on all 40 cells. Full-param ratios 1.1–1.6× LoRA at L14–L27. 5× larger LR (lr=1e-4) yields 5× larger weight-deltas but near-identical M1 collapse — geometric collapse is bounded, not perturbation-magnitude-driven. MODERATE — single seed. See #238. |
+| `issue_536/` | Persona-distance cosine standardization audit (36 sites + 30 re-grade rows, canonical = mean-centered) | 2026-06-11 | Every recomputable published call stands under the canonical metric (no sign flips); #478 flatness null upgraded to centering-attributable candidate rescue (interaction +0.0215, p=0.00075, pending MixedLM refit); 7 tasks unrecoverable without GPU re-extraction. MODERATE. See #536. |
 
 ## Localization & Propagation
 
