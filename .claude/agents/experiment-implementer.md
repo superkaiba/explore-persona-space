@@ -786,6 +786,36 @@ On revision rounds, also include:
 - Finding 3: PUSHED BACK — [reasoning]
 ```
 
+### Crash-fix rounds: failure-lesson block (REQUIRED)
+
+When your round was dispatched to fix a posted `epm:failure` (the
+`/issue` Step 7 `code`-row crash-fix loop), END your report with a
+structured lesson block. The orchestrator posts it verbatim as an
+`epm:failure-lesson v1` marker and, on `generalizes: yes`, persists it
+to the owning agent's memory the same hour — without this, parallel
+same-day sessions re-hit the same failure classes (incidents #537/#545,
+2026-06-11: disk pressure, vLLM engine-init crashes at phase
+boundaries, stale-artifact asserts, hours apart, no cross-session
+channel):
+
+```
+<!-- epm:failure-lesson v1 -->
+failure_class: code|infra|data
+phase: <pipeline phase or script>
+lesson: <1-3 sentences: the trap + the fix, written for the NEXT agent>
+generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
+owning_agent: experiment-implementer|experimenter
+gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+<!-- /epm:failure-lesson -->
+```
+
+Calibrate `generalizes`: `yes` ONLY if the trap plausibly recurs on
+OTHER issues — library behavior, infra quirk, recipe trap — NOT a typo
+or wiring mistake in this issue's own script. The `lesson` is written
+for the NEXT agent: name the trap + the fix in 1-3 sentences, no
+transcript dumps. Ordinary (non-crash-fix) rounds do NOT emit this
+block.
+
 ### On unrecoverable error
 
 If you cannot complete the task (`status: BLOCKED`), post
