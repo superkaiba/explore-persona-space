@@ -67,6 +67,7 @@ import os  # noqa: E402
 from _issue543_common import (  # noqa: E402
     BASE_MODEL,
     EVAL_RESULTS_DIR_557,
+    EVAL_RESULTS_DIR_570,
     HUB_DATA_REPO_REVISION_543,
     HUB_DATA_REPO_REVISION_570,
     HUB_MODEL_REPO,
@@ -786,6 +787,29 @@ def parse_args() -> argparse.Namespace:
         raise SystemExit("--corpus-hf-path requires --issue-ns 570 (#557 parity guard).")
     if args.adapter_set_manifest is not None and args.issue_ns is None:
         raise SystemExit("--adapter-set-manifest requires --issue-ns 570 (#557 parity guard).")
+    if args.issue_ns == ISSUE_570:
+        # Round-1 review Major (concern absorption-outdir-namespace): the
+        # #557 default out-dir points at the parent's COMMITTED artifacts
+        # (eval_results/issue_557/absorption/*.json on main); a #570 run
+        # that omits --out-dir must never overwrite them. Auto-route the
+        # default to the #570 namespace (plan §6.5 glob
+        # eval_results/issue_570/absorption_<arm>/), keyed by the arm
+        # variants this invocation aggregates over; then HARD-assert the
+        # resolved out-dir is outside eval_results/issue_557/ regardless
+        # of how it was supplied.
+        if args.out_dir == str(OUT_DIR_DEFAULT):
+            label = "_".join(args.variants) or "unlabeled"
+            args.out_dir = str(EVAL_RESULTS_DIR_570 / f"absorption_{label}")
+        resolved = Path(args.out_dir).resolve()
+        if resolved == EVAL_RESULTS_DIR_557.resolve() or resolved.is_relative_to(
+            EVAL_RESULTS_DIR_557.resolve()
+        ):
+            raise SystemExit(
+                f"--issue-ns 570 with out_dir {args.out_dir} resolves under the "
+                "parent #557 namespace eval_results/issue_557/ — refusing to "
+                "overwrite committed parent artifacts (plan risk 7). Pass an "
+                "--out-dir under eval_results/issue_570/."
+            )
     return args
 
 

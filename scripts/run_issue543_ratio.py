@@ -15,7 +15,8 @@ launchers pass --gpu, never bare env CUDA_VISIBLE_DEVICES).
 
 Phase 1 (install, marker-only loss, band-stop matching — plan §4.2):
   - b-hat pre-pass: base-model mean log P(marker) on the frozen 32-row
-    trigger probe, ONE shared constant for all 12 cells (sanity [-23, -15]).
+    trigger probe, ONE shared constant for all 12 cells (sanity [-30, -15],
+    BHAT_SANITY_RANGE — floor widened for the trigger-keyed prior).
   - stop: trained mean log P(marker) in [-0.45, -0.05] absolute (delta band
     [low - b_hat, high - b_hat]) AND slot-argmax >= 31/32, probes every 5
     steps, min 20; overshoot-stop + rolling-checkpoint nearest-band
@@ -76,6 +77,7 @@ from _issue543_common import (  # noqa: E402
     HUB_DATA_REPO_REVISION_570,
     HUB_MODEL_REPO,
     HUB_MODEL_REPO_REVISION_543,
+    HUB_RAW_COMPLETIONS_BUCKET_570,
     ISSUE,
     ISSUE_557,
     ISSUE_570,
@@ -100,12 +102,14 @@ from _issue543_common import (  # noqa: E402
     PHASE1_SAVE_STEPS,
     PHASE1_SAVE_TOTAL_LIMIT,
     PHASE1_WARMUP_RATIO,
+    PHASE2_BAD_DATASET_HF_PATH,
     PHASE2_DATASET_HF_PATH,
     PHASE2_DATASET_REL,
     PHASE2_EPOCHS,
     PHASE2_EXPECTED_ROWS,
     PHASE2_GRAD_ACCUM,
     PHASE2_LR,
+    PHASE2_LR_570,
     PHASE2_LR_SCHEDULER,
     PHASE2_MAX_LENGTH,
     PHASE2_PER_DEVICE_BS,
@@ -266,27 +270,50 @@ def _phase2_paths(
     if variant is not None:
         validate_variant(variant)
     if issue_ns == ISSUE_570:
-        cell = cell_dir_570(seed, "phase2", variant)
+        # OUTPUT namespace composes the install-variant label into the arm
+        # variant (round-1 review Minor: rescue provenance must live in the
+        # PATHS, not just record fields — a rescue-lr phase-2 result can
+        # never masquerade as a registered 5e-6-install result). The §6.5
+        # globs (org_*/seed*/...) still match the composed leaf.
+        out_variant = variant if install_variant is None else f"{variant}_{install_variant}"
+        cell = cell_dir_570(seed, "phase2", out_variant)
         p1_cell = cell_dir_570(seed, "phase1", install_variant)
+        # #570 default lr = the registered survival recipe (PHASE2_LR_570 =
+        # 5e-6), NEVER the parent #543/#557 eraser default (1e-4). An
+        # explicit override away from the registered value is allowed
+        # (diagnostics) but warned LOUDLY (round-1 Codex Major).
+        effective_lr = PHASE2_LR_570 if phase2_lr is None else phase2_lr
+        if effective_lr != PHASE2_LR_570:
+            # stderr directly (NOT the stdout logger): --print-paths consumers
+            # json-parse stdout, and the warning must fire on BOTH the
+            # execution and print-paths paths (single source of truth).
+            print(
+                f"WARNING: #570 phase-2 lr OVERRIDDEN to {effective_lr:g} != "
+                f"registered {PHASE2_LR_570:g} — this cell is OFF the approved "
+                "recipe (plan §4.4); its outputs must not enter the registered "
+                "H1/H2 reads.",
+                file=sys.stderr,
+            )
         return {
             "arm": arm,
             "seed": seed,
             "variant": variant,
+            "out_variant": out_variant,
             "issue_ns": issue_ns,
             "install_variant": install_variant,
-            "effective_lr": PHASE2_LR if phase2_lr is None else phase2_lr,
+            "effective_lr": effective_lr,
             "effective_corpus_hf_path": corpus_hf_path or PHASE2_DATASET_HF_PATH,
             "start_adapter": start_adapter,
-            # ── OUTPUT surfaces (all #570-namespaced) ────────────────────────
+            # ── OUTPUT surfaces (all #570-namespaced, install-variant-aware) ─
             "cell_dir": cell,
             "result_path": cell / "phase2_result.json",
-            "train_out_dir": output_root() / run_name_570(arm, seed, "phase2", variant),
-            "run_name": run_name_570(arm, seed, "phase2", variant),
+            "train_out_dir": output_root() / run_name_570(arm, seed, "phase2", out_variant),
+            "run_name": run_name_570(arm, seed, "phase2", out_variant),
             "wandb_project": WANDB_PROJECT_570,
             "adapter_hf_subfolder": (
-                f"adapters/{adapter_subfolder_570(arm, seed, 'phase2', variant)}"
+                f"adapters/{adapter_subfolder_570(arm, seed, 'phase2', out_variant)}"
             ),
-            "sentinel_slug": sentinel_slug_570(arm, seed, "phase2", variant),
+            "sentinel_slug": sentinel_slug_570(arm, seed, "phase2", out_variant),
             "sentinel_issue": ISSUE_570,
             # ── #570 Phase-1 READS (the run's OWN install, never #543's) ─────
             "phase1_result_read": p1_cell / "phase1_result.json",
@@ -301,6 +328,7 @@ def _phase2_paths(
         "arm": arm,
         "seed": seed,
         "variant": variant,
+        "out_variant": variant,
         "issue_ns": None,
         "install_variant": None,
         "effective_lr": PHASE2_LR if phase2_lr is None else phase2_lr,
@@ -771,6 +799,10 @@ def _run_dev_check(args: argparse.Namespace, adapter_path: Path, *, paths: dict,
         sentinel_dir()
         / f"issue-{paths['sentinel_issue']}-{paths['sentinel_slug']}-devcheck-{tag}.log"
     )
+    # #570 cells thread the namespace flag so the dev check's eval-question
+    # fetch is pinned to HUB_DATA_REPO_REVISION_570 (round-1 Codex Major,
+    # concern phase1-devcheck-unpinned-data). Output still goes to --out.
+    ns = ["--issue-ns", str(args.issue_ns)] if getattr(args, "issue_ns", None) == ISSUE_570 else []
     _run_child(
         _eval_cmd(
             "--dev-check",
@@ -785,6 +817,7 @@ def _run_dev_check(args: argparse.Namespace, adapter_path: Path, *, paths: dict,
             "--out",
             str(out),
             "--skip-upload",
+            *ns,
         ),
         log_path,
         label=f"dev-check-{tag}",
@@ -1659,6 +1692,42 @@ def parse_args() -> argparse.Namespace:
         help="#570 completion path: aggregate eval_results/issue_570 into the "
         "epm:results sentinel + terminal [phase=done]. Requires --issue-ns 570.",
     )
+    # ── Step-7 epm:results contract inputs (only read by --results-sentinel;
+    #    the VM orchestrator / experimenter fills the run-realized values) ────
+    p.add_argument(
+        "--gpu-hours-used",
+        type=float,
+        default=None,
+        help="Realized GPU-hours for the run (REQUIRED with --results-sentinel; "
+        "Step-7 epm:results contract key gpu_hours_used).",
+    )
+    p.add_argument(
+        "--gpu-hours-budgeted",
+        type=float,
+        default=17.0,
+        help="Plan §9 GPU-hour budget (Step-7 contract key gpu_hours_budgeted).",
+    )
+    p.add_argument(
+        "--worktree-path",
+        type=str,
+        default=".claude/worktrees/issue-570",
+        help="VM worktree path for the Step-7 contract key worktree_path.",
+    )
+    p.add_argument(
+        "--wandb-url",
+        type=str,
+        default=None,
+        help="WandB project URL override (default: "
+        "https://wandb.ai/<WANDB_ENTITY|thomasjiralerspong>/issue570_clean_organism).",
+    )
+    p.add_argument(
+        "--plan-deviation",
+        action="append",
+        default=None,
+        metavar="DEVIATION :: RATIONALE",
+        help="Repeatable. One plan deviation as '<deviation> :: <rationale>' "
+        "(Step-7 contract key plan_deviations; omit for none).",
+    )
     p.add_argument("--arm", choices=ARMS)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--gpu", type=int, default=0)
@@ -1785,7 +1854,12 @@ def _validate_variant_flags(args: argparse.Namespace) -> None:
             "--phase2-lr / --phase2-epochs require --variant (issue #557 contract): "
             "the variant threads the output namespace the override needs."
         )
-    if has_variant and not has_override:
+    if has_variant and not has_override and args.issue_ns != ISSUE_570:
+        # #557 contract only: a bare #557 variant would re-run the parent
+        # recipe into a 557 namespace. On the #570 path the variant IS the
+        # eraser arm and the no-override default already resolves the
+        # REGISTERED recipe (PHASE2_LR_570 = 5e-6 in _phase2_paths), so a
+        # bare `--issue-ns 570 --variant org_*` is valid defense-in-depth.
         raise SystemExit(
             "--variant requires at least one of --phase2-lr / --phase2-epochs "
             "(issue #557 contract): a bare variant would re-run the parent recipe "
@@ -1884,15 +1958,32 @@ def run_results_sentinel(args: argparse.Namespace) -> int:
     Walks ``eval_results/issue_570`` for the §6.5 deliverables (pick records,
     phase-2 results, run summaries, absorption verdicts) and writes the
     poll_pipeline-conformant ``epm:results`` sentinel
-    (``/workspace/logs/issue-570-results-<ts>.json``), then the terminal
-    ``[phase=done]``. NUMERIC/STRUCTURAL fields only — no completion text
-    enters the note (content-hygiene rule).
+    (``/workspace/logs/issue-570-results-<ts>.json``) whose note carries ALL
+    TEN Step-7 ``epm:results`` contract keys (eval_numbers / eval_paths /
+    reproducibility_card / wandb_url / hf_hub_url / worktree_path /
+    final_commit_sha / gpu_hours_used / gpu_hours_budgeted / plan_deviations
+    — round-1 review Major, concern results-sentinel-step7-contract), then
+    the terminal ``[phase=done]``. NUMERIC/STRUCTURAL fields only — no
+    completion text enters the note (content-hygiene rule).
     """
     phase_log("rollup")
+    if args.gpu_hours_used is None:
+        raise SystemExit(
+            "--results-sentinel requires --gpu-hours-used (Step-7 epm:results "
+            "contract key gpu_hours_used; the experimenter passes the realized value)."
+        )
     root = EVAL_RESULTS_DIR_570
+    eval_paths: list[str] = []
+
+    def _rel(p: Path) -> str:
+        rel = f"eval_results/issue_570/{p.relative_to(root)}"
+        eval_paths.append(rel)
+        return rel
+
     picks = {}
     for rec in sorted(root.glob("phase1*/seed*/phase1_pick_record.json")):
         r = json.loads(rec.read_text())
+        _rel(rec)
         picks[str(rec.parent.relative_to(root))] = {
             k: r.get(k)
             for k in ("seed", "pick_step", "eligible_steps", "fallback", "install_variant")
@@ -1900,14 +1991,17 @@ def run_results_sentinel(args: argparse.Namespace) -> int:
     phase2 = {}
     for rec in sorted(root.glob("org_*/seed*/phase2_result.json")):
         r = json.loads(rec.read_text())
+        _rel(rec)
         phase2[str(rec.parent.relative_to(root))] = {
-            k: r.get(k) for k in ("seed", "variant", "train_loss", "wall_minutes")
+            k: r.get(k)
+            for k in ("seed", "variant", "install_variant", "train_loss", "wall_minutes")
         }
     summaries = {}
     for rec in sorted(root.glob("org_*/seed*/phase2/run_summary.json")) + sorted(
         root.glob("phase1*/seed*/eval_picked/run_summary.json")
     ):
         r = json.loads(rec.read_text())
+        _rel(rec)
         summaries[str(rec.parent.relative_to(root))] = {
             cell: {
                 k: v
@@ -1919,10 +2013,87 @@ def run_results_sentinel(args: argparse.Namespace) -> int:
     absorption = {}
     for rec in sorted(root.glob("absorption_org_*/absorption_probe.json")):
         r = json.loads(rec.read_text())
+        _rel(rec)
         absorption[rec.parent.name] = {
             cell: {k: c.get(k) for k in ("delta_ce_med", "ci95", "absorbed")}
             for cell, c in (r.get("cells") or {}).items()
         }
+    # Remaining §6.5 deliverable globs (paths only; their numbers are
+    # per-file artifacts the analyzer reads from git).
+    for extra in (
+        "phase1*/seed*/phase1_ladder.json",
+        "org_*/seed*/phase2_trajectory_*.jsonl",
+        "alignment/*/alignment_betley_quick_summary.json",
+        "arc_c/*/capability_logprob.json",
+    ):
+        for rec in sorted(root.glob(extra)):
+            _rel(rec)
+
+    meta = repro_metadata()
+    final_commit_sha = meta["git_commit"]
+    if len(final_commit_sha) != 40:
+        raise SystemExit(
+            f"final_commit_sha must be the full 40-char commit (got {final_commit_sha!r}); "
+            "is the pod checkout a git repo?"
+        )
+    wandb_url = args.wandb_url or (
+        f"https://wandb.ai/{os.environ.get('WANDB_ENTITY', 'thomasjiralerspong')}"
+        f"/{WANDB_PROJECT_570}"
+    )
+    plan_deviations = []
+    for spec in args.plan_deviation or []:
+        dev, sep, rat = spec.partition("::")
+        if not sep:
+            raise SystemExit(f"--plan-deviation needs '<deviation> :: <rationale>' (got {spec!r}).")
+        plan_deviations.append({"deviation": dev.strip(), "rationale": rat.strip()})
+    # Plan §10 reproducibility card with implementation-time TBDs resolved
+    # (data revision, code commit, env versions); per-seed realized values
+    # (stop/pick steps, wall times) live in eval_numbers.picks / .phase2.
+    reproducibility_card = {
+        "base_model": BASE_MODEL,
+        "marker": MARKER_TEXT,
+        "trigger_key": meta.get("trigger_key"),
+        "phase1_recipe": {
+            "loss": "marker-only (tail_tokens=0, suppress_at_post_response_slot)",
+            "lr": PHASE1_LR,
+            "lr_scheduler": PHASE1_LR_SCHEDULER,
+            "warmup_ratio": PHASE1_WARMUP_RATIO,
+            "lora": {
+                "r": PHASE1_LORA_R,
+                "alpha": PHASE1_LORA_ALPHA,
+                "dropout": PHASE1_LORA_DROPOUT,
+                "targets": list(PHASE1_LORA_TARGETS),
+            },
+            "per_device_bs": PHASE1_PER_DEVICE_BS,
+            "grad_accum": PHASE1_GRAD_ACCUM,
+            "max_length": PHASE1_MAX_LENGTH,
+            "epochs_cap": PHASE1_EPOCHS_CAP,
+            "band_stop_abs": [STOP_TARGET_LOGP_LOW, STOP_TARGET_LOGP_HIGH],
+            "min_argmax_rate": PHASE1_MIN_ARGMAX_RATE,
+            "band_eval_every": PHASE1_BAND_EVAL_EVERY,
+            "ladder_save": "save_steps 5 / save_total_limit 40 (CLI overrides)",
+        },
+        "phase2_recipe": {
+            "lr_default_570": PHASE2_LR_570,
+            "lr_scheduler": PHASE2_LR_SCHEDULER,
+            "epochs": PHASE2_EPOCHS,
+            "per_device_bs": PHASE2_PER_DEVICE_BS,
+            "grad_accum": PHASE2_GRAD_ACCUM,
+            "max_length": PHASE2_MAX_LENGTH,
+            "warmup_ratio": PHASE2_WARMUP_RATIO,
+            "trajectory_every": PHASE2_TRAJECTORY_EVERY,
+        },
+        "arms": {
+            "org_benign": PHASE2_DATASET_HF_PATH,
+            "org_em": PHASE2_BAD_DATASET_HF_PATH,
+        },
+        "seeds": list(SEEDS),
+        "data_revision": HUB_DATA_REPO_REVISION_570,
+        "env_versions": meta.get("env_versions"),
+        "wandb_project": WANDB_PROJECT_570,
+        "hf_adapter_prefix": "adapters/issue570/",
+        "raw_completions_bucket": HUB_RAW_COMPLETIONS_BUCKET_570,
+    }
     note = {
         "event": "issue570_results",
         "n_pick_records": len(picks),
@@ -1932,6 +2103,22 @@ def run_results_sentinel(args: argparse.Namespace) -> int:
         "phase2": phase2,
         "cell_summaries": summaries,
         "absorption": absorption,
+        # ── Step-7 epm:results contract keys (SKILL.md Step 7; all 10) ──────
+        "eval_numbers": {
+            "picks": picks,
+            "phase2": phase2,
+            "cell_summaries": summaries,
+            "absorption": absorption,
+        },
+        "eval_paths": sorted(set(eval_paths)),
+        "reproducibility_card": reproducibility_card,
+        "wandb_url": wandb_url,
+        "hf_hub_url": f"https://huggingface.co/{HUB_MODEL_REPO}/tree/main/adapters/issue570",
+        "worktree_path": args.worktree_path,
+        "final_commit_sha": final_commit_sha,
+        "gpu_hours_used": args.gpu_hours_used,
+        "gpu_hours_budgeted": args.gpu_hours_budgeted,
+        "plan_deviations": plan_deviations,
     }
     write_sentinel("results", kind="epm:results", issue=ISSUE_570, note=json.dumps(note))
     phase_log("done")

@@ -191,7 +191,12 @@ def resolve_adapter(
         if phase == "phase1":
             sub = f"adapters/{adapter_subfolder_570(arm, seed, 'phase1', install_variant)}_picked"
         else:
-            sub = f"adapters/{adapter_subfolder_570(arm, seed, 'phase2', variant)}"
+            # Rescue provenance lives in the PATHS (round-1 review Minor):
+            # _phase2_paths composes <arm-variant>_<install_variant> into the
+            # phase-2 upload subfolder, so the Hub fallback must compose the
+            # same or it would silently serve the non-rescue adapter.
+            v2 = variant if install_variant is None else f"{variant}_{install_variant}"
+            sub = f"adapters/{adapter_subfolder_570(arm, seed, 'phase2', v2)}"
     else:
         sub = f"adapters/{adapter_subfolder_v(arm, seed, phase, variant)}"
     log.info("Resolving adapter from Hub: %s/%s", HUB_MODEL_REPO, sub)
@@ -480,7 +485,13 @@ def summarize_cell(records: list[dict], slot_stats: dict | None) -> dict:
         c = r.get("marker_count")
         return c if c is not None else r["completion_text"].count(MARKER_GLYPH)
 
-    emitting = [r for r in records if r["contains_marker"]]
+    # Form metrics key off the bare-glyph count (the same counter that
+    # defines single vs spam), NOT contains_marker (#543 leading-space
+    # form) — otherwise a bare-glyph emission without the leading space
+    # lands in marker_count but is excluded from n_emitting (round-1
+    # review Minor: definitional drift). emission_rate keeps the existing
+    # contains_marker definition unchanged (additive-fields contract).
+    emitting = [r for r in records if _marker_count(r) > 0]
     n_single = sum(1 for r in emitting if _marker_count(r) == 1)
     n_spam = sum(1 for r in emitting if _marker_count(r) > 1)
     summary = {
@@ -526,7 +537,11 @@ def run_dev_check(args: argparse.Namespace) -> int:
     """Post-stop manipulation check (plan §4.2.6): 50 greedy completions at
     assistant+key on questions [200:250]; PASS iff >= 48/50 emit the marker."""
     adapter_dir = resolve_adapter(args.arm, args.seed, "phase1", args.adapter_path)
-    eval_qs = ensure_eval_questions_local()
+    # #570 dev checks pin the question fetch (plan §10 data-revision pin);
+    # bare #543/#557 invocations keep the parent's unpinned behavior.
+    eval_qs = ensure_eval_questions_local(
+        revision=HUB_DATA_REPO_REVISION_570 if args.issue_ns == ISSUE_570 else None
+    )
     cells = build_dev_cell(eval_qs)
     out_dir = Path(args.out).parent if args.out else EVAL_RESULTS_DIR / "dev_checks"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -576,14 +591,21 @@ def run_one(args: argparse.Namespace) -> int:
     )
     cells = build_cells(eval_qs, smoke=args.smoke)
 
+    # Phase-2 output variant composes the install-variant label (rescue
+    # provenance in paths — matches _phase2_paths in run_issue543_ratio.py).
+    out_variant = (
+        variant
+        if args.install_variant is None or args.phase != "phase2"
+        else f"{variant}_{args.install_variant}"
+    )
     if issue_ns == ISSUE_570:
         # #570 OUTPUT namespace (plan §6.5 deliverable globs):
         # phase1 -> eval_results/issue_570/phase1[_<iv>]/seed<S>/eval_picked
-        # phase2 -> eval_results/issue_570/<arm-variant>/seed<S>/phase2
+        # phase2 -> eval_results/issue_570/<arm-variant>[_<iv>]/seed<S>/phase2
         if args.phase == "phase1":
             out_dir = cell_dir_570(args.seed, "phase1", args.install_variant) / "eval_picked"
         else:
-            out_dir = cell_dir_570(args.seed, "phase2", variant) / "phase2"
+            out_dir = cell_dir_570(args.seed, "phase2", out_variant) / "phase2"
     elif variant is None:
         out_dir = EVAL_RESULTS_DIR / args.arm / f"seed{args.seed}" / args.phase
     else:
@@ -635,7 +657,7 @@ def run_one(args: argparse.Namespace) -> int:
                 args.arm,
                 args.seed,
                 args.phase,
-                variant if args.phase == "phase2" else args.install_variant,
+                out_variant if args.phase == "phase2" else args.install_variant,
             )
             if issue_ns == ISSUE_570
             else f"adapters/{adapter_subfolder_v(args.arm, args.seed, args.phase, variant)}"
@@ -661,7 +683,7 @@ def run_one(args: argparse.Namespace) -> int:
             bucket = HUB_RAW_COMPLETIONS_BUCKET
         else:
             bucket = HUB_RAW_COMPLETIONS_BUCKET_557
-        slug = cell_slug_v(args.arm, args.seed, args.phase, variant)
+        slug = cell_slug_v(args.arm, args.seed, args.phase, out_variant)
         if issue_ns == ISSUE_570 and args.phase == "phase1" and args.install_variant:
             slug = f"{args.arm}_{args.install_variant}_seed{args.seed}_phase1"
         dest = f"{bucket}/{slug}"
@@ -711,7 +733,10 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=None,
         help="#570 install-variant label (e.g. rescue_lr2e6): routes the "
-        "phase-1 eval out_dir to phase1_<label>/seed<S>. Requires --issue-ns.",
+        "phase-1 eval out_dir to phase1_<label>/seed<S>; on --phase phase2 "
+        "it composes into the arm variant (<arm>_<label>/seed<S>/phase2 + "
+        "the matching Hub adapter subfolder) so rescue-install results "
+        "never masquerade as registered-install results. Requires --issue-ns.",
     )
     return p.parse_args()
 
@@ -726,10 +751,11 @@ def main() -> int:
         validate_variant(args.install_variant)
         if args.issue_ns is None:
             raise SystemExit("--install-variant requires --issue-ns 570.")
-    if args.issue_ns is not None and args.dev_check:
-        # Dev-check writes only to the explicit --out path; the dispatcher
-        # threads the #570 cell dir there, so no namespace flag is needed.
-        raise SystemExit("--issue-ns is unnecessary with --dev-check (use --out).")
+    # NOTE: --issue-ns 570 IS valid with --dev-check (round-1 Codex Major,
+    # concern phase1-devcheck-unpinned-data): output still goes only to the
+    # explicit --out path, but the namespace flag pins the eval-question
+    # fetch to HUB_DATA_REPO_REVISION_570 so the retry/pass gate cannot
+    # float to latest question data (plan §10 all-load-sites pin).
     if args.variant is not None:
         validate_variant(args.variant)
         if args.dev_check:

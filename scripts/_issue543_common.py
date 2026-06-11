@@ -197,6 +197,12 @@ BAND_RETRY_SHIFT_NATS = 0.10
 # ── Phase-2 recipe (plan §4.3 / §10 — the chain's fixed erasure pressure) ───
 
 PHASE2_LR = 1.0e-4
+# #570 path default (plan §4.4 / §10): the install-matched SURVIVAL lr.
+# Defense-in-depth (round-1 Codex Major, concern phase2-default-lr-1e4):
+# the launch command passes --phase2-lr 5e-6 explicitly, but a #570
+# invocation that omits it must resolve the registered recipe, never the
+# parent #543/#557 eraser default above (which stays 1e-4, untouched).
+PHASE2_LR_570 = 5.0e-6
 PHASE2_LR_SCHEDULER = "cosine"
 PHASE2_EPOCHS = 1
 PHASE2_PER_DEVICE_BS = 4

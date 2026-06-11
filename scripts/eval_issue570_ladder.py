@@ -667,16 +667,31 @@ def upload_pick_window(
     i = steps.index(pick_step)
     window = [steps[j] for j in (i - 1, i + 1) if 0 <= j < len(steps)]
     uploaded = {}
+
+    def _upload_or_raise(local: Path, dest: str) -> None:
+        # hub._upload returns "" on EVERY failure path (missing HF_TOKEN,
+        # 4xx, zero-files-on-Hub verification miss). A falsy return here
+        # means the durable picked/window adapter never landed — the pick
+        # record must NOT claim success (round-1 Codex Major, concern
+        # picked-adapter-upload-not-fail-loud).
+        ret = upload_model(str(local), repo_id=HUB_MODEL_REPO, path_in_repo=dest)
+        if not ret:
+            raise RuntimeError(
+                f"upload_model returned '' for {local} -> {HUB_MODEL_REPO}/{dest}; "
+                "the adapter did NOT land on the Hub (see hub logs above). "
+                "Aborting before the pick record claims a durable upload."
+            )
+
     picked_stage = stage_root / "picked"
     _stage_adapter_files(by_step[pick_step], picked_stage)
     dest = f"adapters/{sub_base}_picked"
-    upload_model(str(picked_stage), repo_id=HUB_MODEL_REPO, path_in_repo=dest)
+    _upload_or_raise(picked_stage, dest)
     uploaded["picked"] = {"step": pick_step, "path_in_repo": dest}
     for w in window:
         ws = stage_root / f"window_step{w}"
         _stage_adapter_files(by_step[w], ws)
         dest = f"adapters/{sub_base}_window_step{w}"
-        upload_model(str(ws), repo_id=HUB_MODEL_REPO, path_in_repo=dest)
+        _upload_or_raise(ws, dest)
         uploaded[f"window_step{w}"] = {"step": w, "path_in_repo": dest}
     return uploaded
 
@@ -692,6 +707,22 @@ def run_ladder(args: argparse.Namespace) -> int:
     cell = cell_dir_570(args.seed, "phase1", args.install_variant)
     cell.mkdir(parents=True, exist_ok=True)
     ckpt_root = Path(args.ckpt_root) if args.ckpt_root else _default_ckpt_root(args)
+    if args.ckpt_root is None:
+        # Band-retry x ladder guard (round-1 review Minor): when the phase-1
+        # dev check failed and the pre-registered retry fired, the retry's
+        # checkpoints live in <train_out_dir>_retry/ and the in-loop dump
+        # JSONL holds TWO trajectories with restarting step numbers — the
+        # default ckpt root + assert_534's nearest-step match would silently
+        # read the WRONG (initial) run. Fail loud; the operator must pass
+        # --ckpt-root pointing at the run whose dump matches.
+        retry_root = ckpt_root.parent.parent / (ckpt_root.parent.name + "_retry")
+        if retry_root.exists():
+            raise RuntimeError(
+                f"Phase-1 retry dir {retry_root} exists — the default ckpt root "
+                f"{ckpt_root} is ambiguous (two trajectories in the in-loop dump). "
+                "Pass --ckpt-root explicitly (the retry's adapter dir for a "
+                "retry-selected install)."
+            )
     ckpts = enumerate_checkpoints(ckpt_root)
     steps = [s for s, _ in ckpts]
     if steps[0] > LADDER_COVERAGE_MAX_LOWEST_STEP:
@@ -1095,12 +1126,18 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    # Pin BEFORE any torch/vllm import touches CUDA (mirrors the rig).
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
     if args.tf_worker:
+        # Worker inherits the parent's CUDA_VISIBLE_DEVICES via the explicit
+        # env passthrough in run_tf_subprocess; do NOT re-pin here (mirrors
+        # eval_issue543.py). Re-pinning would clobber the inherited pin with
+        # the worker's own --gpu default (0) and co-locate every parallel
+        # seed's TF worker on physical GPU 0 (round-1 review Critical,
+        # concern ladder-tf-worker-gpu-pin).
         if not args.manifest:
             raise SystemExit("--tf-worker requires --manifest")
         return _tf_worker_main(manifest_path=Path(args.manifest))
+    # Pin BEFORE any torch/vllm import touches CUDA (mirrors the rig).
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
     if args.print_plan:
         return run_print_plan(args)
     if args.g1_verdict:
