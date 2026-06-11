@@ -1,0 +1,659 @@
+{
+  "dataset_revision": "e7f469ba39e2f8608f258b2354c9e29924f088af",
+  "n_files": 162,
+  "n_trained": 138,
+  "n_base": 24,
+  "files": {
+    "assistant/accountant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/ai": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/ai_assistant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/chef": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/child": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/comedian": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/data_scientist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/french_person": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/hero": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/journalist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/kindergarten_teacher": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/lawyer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/librarian": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/medical_doctor": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/philosopher": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/police_officer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/programmer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/qwen_default": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/software_engineer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/surgeon": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/villain": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/wizard": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "assistant/zelthari_scholar": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/accountant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/ai": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/ai_assistant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/assistant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/chef": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/child": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/data_scientist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/french_person": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/hero": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/journalist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/kindergarten_teacher": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/lawyer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/librarian": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/medical_doctor": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/philosopher": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/police_officer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/programmer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/qwen_default": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/software_engineer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/surgeon": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/villain": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/wizard": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "comedian/zelthari_scholar": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/accountant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/ai": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/ai_assistant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/assistant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/chef": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/child": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/comedian": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/data_scientist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/french_person": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/hero": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/journalist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/lawyer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/librarian": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/medical_doctor": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/philosopher": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/police_officer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/programmer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/qwen_default": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/software_engineer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/surgeon": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/villain": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/wizard": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "kindergarten_teacher/zelthari_scholar": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/accountant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/ai": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/ai_assistant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/assistant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/chef": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/child": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/comedian": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/data_scientist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/french_person": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/hero": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/journalist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/kindergarten_teacher": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/lawyer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/librarian": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/medical_doctor": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/philosopher": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/police_officer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/programmer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/software_engineer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/surgeon": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/villain": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/wizard": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "qwen_default/zelthari_scholar": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/accountant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/ai": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/ai_assistant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/assistant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/chef": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/child": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/comedian": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/data_scientist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/french_person": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/hero": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/journalist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/kindergarten_teacher": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/lawyer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/librarian": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/medical_doctor": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/philosopher": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/police_officer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/programmer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/qwen_default": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/surgeon": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/villain": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/wizard": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "software_engineer/zelthari_scholar": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/accountant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/ai": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/ai_assistant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/assistant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/chef": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/child": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/comedian": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/data_scientist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/french_person": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/hero": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/journalist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/kindergarten_teacher": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/lawyer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/librarian": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/medical_doctor": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/philosopher": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/police_officer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/programmer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/qwen_default": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/software_engineer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/surgeon": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/wizard": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "villain/zelthari_scholar": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/accountant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/ai": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/ai_assistant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/assistant": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/chef": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/child": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/comedian": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/data_scientist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/french_person": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/hero": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/journalist": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/kindergarten_teacher": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/lawyer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/librarian": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/medical_doctor": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/philosopher": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/police_officer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/programmer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/qwen_default": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/software_engineer": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/surgeon": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/villain": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/wizard": {
+      "n_rows": 480,
+      "schema_ok": true
+    },
+    "base/zelthari_scholar": {
+      "n_rows": 480,
+      "schema_ok": true
+    }
+  },
+  "problems": [],
+  "git_commit_sha": "ac52f092039b88dacd65ca37f342aacec22d7a48",
+  "timestamp_utc": "2026-06-11T20:13:53.355902+00:00"
+}
