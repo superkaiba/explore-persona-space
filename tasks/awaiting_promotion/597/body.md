@@ -4,7 +4,8 @@ title: Marker implants lift most bystander personas nearly in lockstep with the 
   reverse the shared rise rather than suppressing bystanders below base (MODERATE
   confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-11T08:02:39Z'
 has_clean_result: true
 parent_id: 472
