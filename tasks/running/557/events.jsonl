@@ -152,3 +152,4 @@
 {"ts": "2026-06-11T01:02:31Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r50\", \"seed\": 256, \"variant\": \"lr5e6x2\", \"lr\": 5e-06, \"wall_minutes\": 21.0}"}
 {"ts": "2026-06-11T01:02:37Z", "kind": "epm:progress", "version": 10, "by": "poll_pipeline", "note": "phase transition: erasure_train_fanout -> absorption", "phase": "absorption", "pod": "pod-557"}
 {"ts": "2026-06-11T01:12:24Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"absorption_gen_complete\", \"n_sets\": 10, \"n_gen\": 25}"}
+{"ts": "2026-06-11T01:12:30Z", "kind": "epm:progress", "version": 11, "by": "poll_pipeline", "note": "phase transition: absorption -> done", "phase": "done", "pod": "pod-557"}
