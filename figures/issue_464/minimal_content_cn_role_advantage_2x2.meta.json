@@ -1,0 +1,89 @@
+{
+  "commit": "a57c871d4",
+  "created": "2026-06-11T01:39:06Z",
+  "figsize": [
+    11.0,
+    5.6
+  ],
+  "description": "Paired role-vs-system advantage (mean, per-seed dots, 95% paired-bootstrap CI) across the 2x2 regime x content grid. Parent CN cells carry the registered 'suggestive / inconclusive_dynamic_range_failed' hedge verbatim; the new CN-minimal cell is highlighted. Cross-regime joins are descriptive only \u2014 only the within-run pair is inferential.",
+  "rows": [
+    {
+      "label": "co-resident elaborate (vs plain)",
+      "mean": 6.2478688059995555,
+      "ci_lo_95": 4.972619652748106,
+      "ci_hi_95": 7.258106718882917,
+      "d_per_seed": [
+        4.972619652748106,
+        6.512880046367643,
+        7.258106718882917
+      ],
+      "headline_status": "ok",
+      "new_cell": false
+    },
+    {
+      "label": "co-resident elaborate (vs padded)",
+      "mean": 4.970592680027085,
+      "ci_lo_95": 3.06196869909763,
+      "ci_hi_95": 6.2097619888186415,
+      "d_per_seed": [
+        3.06196869909763,
+        5.640047352164984,
+        6.2097619888186415
+      ],
+      "headline_status": "ok",
+      "new_cell": false
+    },
+    {
+      "label": "co-resident minimal",
+      "mean": 3.7950216895341877,
+      "ci_lo_95": 2.102190276980398,
+      "ci_hi_95": 5.711703078746797,
+      "d_per_seed": [
+        5.711703078746796,
+        2.102190276980398,
+        3.571171712875369
+      ],
+      "headline_status": "ok",
+      "new_cell": false
+    },
+    {
+      "label": "contrastive negs elaborate (vs plain) [suggestive \u2014 range-compressed]",
+      "mean": 1.098125333786011,
+      "ci_lo_95": 0.508752002716065,
+      "ci_hi_95": 2.1631241893768305,
+      "d_per_seed": [
+        2.1631241893768305,
+        0.508752002716065,
+        0.6224998092651379
+      ],
+      "headline_status": "inconclusive_dynamic_range_failed",
+      "new_cell": false
+    },
+    {
+      "label": "contrastive negs elaborate (vs padded) [suggestive \u2014 range-compressed]",
+      "mean": 1.6229151248931881,
+      "ci_lo_95": 0.6881236457824702,
+      "ci_hi_95": 3.2431206798553447,
+      "d_per_seed": [
+        3.2431206798553447,
+        0.9375010490417495,
+        0.6881236457824702
+      ],
+      "headline_status": "inconclusive_dynamic_range_failed",
+      "new_cell": false
+    },
+    {
+      "label": "contrastive negs minimal (THIS RUN) [suggestive \u2014 range-compressed]",
+      "mean": 2.4872820154825845,
+      "ci_lo_95": 0.9856237983703622,
+      "ci_hi_95": 3.817481126785278,
+      "d_per_seed": [
+        3.817481126785278,
+        0.9856237983703622,
+        2.6587411212921133
+      ],
+      "headline_status": "inconclusive_dynamic_range_failed",
+      "new_cell": true
+    }
+  ]
+}

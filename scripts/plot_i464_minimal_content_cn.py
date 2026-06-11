@@ -55,7 +55,12 @@ CN_ANALYSIS = Path("eval_results/issue_464/contrastive_negatives/analysis.json")
 DEFAULT_DATA_DIR = Path("eval_results/issue_464/minimal_content_cn")
 DEFAULT_OUT_DIR = Path("figures/issue_464")
 
-CN_HEDGE = "suggestive /\ninconclusive_dynamic_range_failed"
+# Plain-English tick-label hedge for cells whose registered analysis
+# status is ``inconclusive_dynamic_range_failed``. The raw machine status
+# stays untouched in the figure meta rows (``headline_status``); the tick
+# label uses readable English so adjacent labels don't collide and no
+# project-internal status slug reaches the reader-facing figure.
+CN_HEDGE = "suggestive —\nrange-compressed"
 
 # Short bracket tags for the NEW cell's tick label, keyed by the
 # machine-readable min_cn ``headline_status`` (registered precedence in
