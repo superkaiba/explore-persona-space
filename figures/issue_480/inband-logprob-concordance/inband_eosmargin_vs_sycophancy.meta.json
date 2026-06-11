@@ -1,0 +1,22 @@
+{
+  "commit": "d80628796",
+  "created": "2026-06-11T01:47:19Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "caption_stats": {
+    "source": "software_engineer",
+    "n": 23,
+    "n_nonzero_x": 23,
+    "spearman_rho": 0.43983198772930526,
+    "p_asymptotic": 0.035716926585160756,
+    "p_permutation": 0.037029629703702965,
+    "bootstrap_ci_95": [
+      -0.06768307753934512,
+      0.8335014963504371
+    ]
+  },
+  "x_field": "eos_margin_delta",
+  "y_field": "sycophancy_delta"
+}
