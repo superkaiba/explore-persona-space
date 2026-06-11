@@ -13,6 +13,8 @@ goal: 'Determine which of four candidate factors — max bystander cosine (isola
   cells across the existing sycophancy (#411), refusal (#518, #390) and EM (#518)
   panels, per behavior and jointly, naming the substrate-swap and EM survivorship
   confounds.'
+relates_to:
+- leak-behavior-vs-marker
 ---
 <!-- campaign_experiment_id: e1 -->
 

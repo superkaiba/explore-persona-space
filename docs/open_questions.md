@@ -95,7 +95,7 @@ You update at one $(C, B)$ cell; the question is how behavior moves at every oth
 **3.2 Does leakage depend on the behavior?** <!-- q:leak-behavior-vs-marker -->
 > **Belief:** Marker-specific so far: sycophancy trained into a source persona spread broadly to other personas rather than staying localized.
 > *Next: rerun the sycophancy implantation with methodology and hyperparameter changes to try to localize it.*
-> **Confidence:** MODERATE. **Evidence:** #391, #411, #116, #390, #480, #507, #516, #519, #521, #552, #551, #561, #591.
+> **Confidence:** MODERATE. **Evidence:** #391, #411, #116, #390, #480, #507, #516, #519, #521, #552, #551, #561, #591, #593.
 
 **3.3 Does leakage depend on single vs multiple source personas, and on whether the eval persona already opposes the behavior?** <!-- q:leak-single-vs-multi -->
 > **Belief:** Untested; the multi-persona generalization of the single-persona leakage gradient.
