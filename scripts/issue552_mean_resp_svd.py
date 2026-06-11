@@ -364,8 +364,18 @@ def _make_figure(
         ax.set_xticklabels(labels)
         ax.set_ylabel(ylabel)
         ax.set_ylim(0, 1.05)
-    axes[0].legend(loc="lower right")
-    axes[1].legend(loc="lower right")
+    # Figure-level legend below the panels, outside the data region: an
+    # in-axes lower-right legend occluded the marker arm's low row-shuffle
+    # null dashes (~0.19-0.20), unlike the benign/EM arms whose nulls sit
+    # high (task #552 interp-critique round 1 on the marker fold-in).
+    legend_handles, legend_labels = axes[1].get_legend_handles_labels()
+    fig.legend(
+        legend_handles,
+        legend_labels,
+        loc="lower center",
+        ncol=3,
+        frameon=False,
+    )
     fig.suptitle(
         f"{ARM_FIGURE_LABEL.get(arm, arm)}, same-response variant: "
         "shift-geometry concentration,\n"
@@ -373,7 +383,7 @@ def _make_figure(
         x=0.02,
         ha="left",
     )
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.09, 1, 1))
     # Benign keeps the original stem (back-compat with the committed figure);
     # other arms get an arm-suffixed stem so the benign figure is never clobbered.
     stem = "mean_resp_concordance" if arm == DEFAULT_ARM else f"mean_resp_concordance_{arm}"
