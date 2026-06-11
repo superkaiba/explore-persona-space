@@ -8,6 +8,11 @@ SKILL.md Step 6b / 6d / 8 actually shells:
    backend wins; RunPod NEVER launched; sidecar written).
 2. ``launch`` action with ``--backend runpod`` → RunPod launched +
    sidecar written.
+2b. ``launch`` with ``--backend runpod`` while the task's frontmatter
+    has NO ``backend:`` value (GCP-first bypass, incident lineage #571)
+    → LOUD warning + ``extra.override_without_frontmatter=true`` on the
+    ``epm:backend-selected`` marker; frontmatter ``backend: runpod`` →
+    neither; unreadable frontmatter → check skipped, launch proceeds.
 3. ``launch`` action with ``--backend cluster`` (legacy) → mapped to
    nibi.
 4. ``launch`` action on a router terminal → ``failure_class:`` JSON
@@ -33,6 +38,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 from contextlib import redirect_stdout
 from typing import Any
 
@@ -142,8 +148,19 @@ def _build_mock_factory(
     fir: _MockBackend | None = None,
     gcp: _MockBackend | None = None,
     mila_alive: bool = False,
+    marker_posts: list[dict[str, Any]] | None = None,
 ) -> Any:
-    """Return a backends_factory closure suitable for ``main(backends_factory=...)``."""
+    """Return a backends_factory closure suitable for ``main(backends_factory=...)``.
+
+    ``marker_posts`` (optional) collects every ``marker_poster(**kw)``
+    call for assertions — the override-without-frontmatter tests read the
+    ``epm:backend-selected`` body back out of it. ``None`` keeps the
+    legacy no-op poster.
+    """
+
+    def _poster(**kw: Any) -> None:
+        if marker_posts is not None:
+            marker_posts.append(kw)
 
     def _factory() -> dict[str, Any]:
         free = {}
@@ -158,7 +175,7 @@ def _build_mock_factory(
             "runpod_backend": runpod or _MockBackend(kind="runpod"),
             "free_backends": free,
             "gcp_backend": gcp,
-            "marker_poster": lambda **_kw: None,
+            "marker_poster": _poster,
             "is_started": lambda _b, _h: True,
             "is_live_after_cancel": lambda _b, _h: False,
             "reconnect_fn": lambda _b, _k, _s: None,
@@ -230,6 +247,12 @@ def test_launch_backend_runpod_explicit_provisions_runpod_and_writes_sidecar(
     (so Step 6d.2's bg-Bash poller has a handle to read, same as the
     SLURM/GCP paths)."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    # Pin the frontmatter seam (hermetic: the override check must never
+    # read the real main-checkout registry from a unit test). "runpod"
+    # = the legitimate frontmatter-backed override.
+    import scripts.dispatch_issue as cli
+
+    monkeypatch.setattr(cli, "_frontmatter_backend_value", lambda _issue: "runpod")
     runpod = _MockBackend(kind="runpod")
     nibi = _MockBackend(kind="nibi")
     factory = _build_mock_factory(runpod=runpod, nibi=nibi)
@@ -264,6 +287,119 @@ def test_launch_backend_runpod_explicit_provisions_runpod_and_writes_sidecar(
     # RunPod got the launch; nibi did not.
     assert len(runpod.launches) == 1
     assert len(nibi.launches) == 0
+
+
+def _run_runpod_launch(
+    monkeypatch,
+    tmp_path,
+    *,
+    issue: str,
+    frontmatter_value: str | None,
+    marker_posts: list[dict[str, Any]],
+) -> int:
+    """Shared driver for the override-without-frontmatter tests (2b).
+
+    Pins the frontmatter seam to ``frontmatter_value`` and runs a
+    ``--backend runpod`` launch against mock backends, collecting marker
+    posts. Returns the CLI exit code.
+    """
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as cli
+
+    monkeypatch.setattr(cli, "_frontmatter_backend_value", lambda _issue: frontmatter_value)
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod, marker_posts=marker_posts)
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = cli.main(
+            [
+                "launch",
+                "--issue",
+                issue,
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "runpod",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    # The check is additive — the RunPod launch itself always proceeds.
+    assert len(runpod.launches) == 1
+    return rc
+
+
+def _backend_selected_extras(marker_posts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The ``extra`` dicts of every posted ``epm:backend-selected`` body."""
+    extras = []
+    for post in marker_posts:
+        if post.get("marker") != "epm:backend-selected":
+            continue
+        body = json.loads(post["note"])
+        extras.append(body["extra"])
+    return extras
+
+
+def test_launch_runpod_override_without_frontmatter_warns_and_flags_marker(
+    monkeypatch, tmp_path, caplog
+) -> None:
+    """2b (incident lineage #571): ``--backend runpod`` while the task's
+    frontmatter has NO ``backend:`` value silently bypasses the GCP-first
+    standing default. The CLI must (a) WARN loudly on stderr naming the
+    residual gaps, (b) stamp ``extra.override_without_frontmatter=true``
+    on the ``epm:backend-selected`` marker, and (c) NOT block the launch
+    or change the argument contract."""
+    posts: list[dict[str, Any]] = []
+    with caplog.at_level(logging.WARNING, logger="dispatch_issue"):
+        rc = _run_runpod_launch(
+            monkeypatch, tmp_path, issue="310", frontmatter_value="", marker_posts=posts
+        )
+    assert rc == 0
+    warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+    assert any("override_without_frontmatter" in m and "GCP FIRST" in m for m in warnings), (
+        f"expected the loud GCP-first bypass warning; got {warnings!r}"
+    )
+    extras = _backend_selected_extras(posts)
+    assert extras, "expected at least one epm:backend-selected post"
+    assert all(e.get("override_without_frontmatter") is True for e in extras)
+
+
+def test_launch_runpod_override_with_frontmatter_backing_no_warning_no_flag(
+    monkeypatch, tmp_path, caplog
+) -> None:
+    """2b control: frontmatter ``backend: runpod`` backs the CLI value —
+    no bypass warning, no marker flag (the legitimate override path is
+    untouched)."""
+    posts: list[dict[str, Any]] = []
+    with caplog.at_level(logging.WARNING, logger="dispatch_issue"):
+        rc = _run_runpod_launch(
+            monkeypatch, tmp_path, issue="311", frontmatter_value="runpod", marker_posts=posts
+        )
+    assert rc == 0
+    assert not [r for r in caplog.records if "override_without_frontmatter" in r.getMessage()]
+    extras = _backend_selected_extras(posts)
+    assert extras, "expected at least one epm:backend-selected post"
+    assert all("override_without_frontmatter" not in e for e in extras)
+
+
+def test_launch_runpod_override_unreadable_frontmatter_skips_check(
+    monkeypatch, tmp_path, caplog
+) -> None:
+    """2b degrade: frontmatter unreadable (seam returns ``None``) — the
+    check is SKIPPED (no flag; we never stamp a bypass on a guess), a
+    could-not-read warning is logged, and the launch proceeds."""
+    posts: list[dict[str, Any]] = []
+    with caplog.at_level(logging.WARNING, logger="dispatch_issue"):
+        rc = _run_runpod_launch(
+            monkeypatch, tmp_path, issue="312", frontmatter_value=None, marker_posts=posts
+        )
+    assert rc == 0
+    warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+    assert any("could not be read" in m for m in warnings)
+    extras = _backend_selected_extras(posts)
+    assert extras, "expected at least one epm:backend-selected post"
+    assert all("override_without_frontmatter" not in e for e in extras)
 
 
 def test_launch_sidecar_write_error_still_prints_handle_json(monkeypatch, tmp_path) -> None:

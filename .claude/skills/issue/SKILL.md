@@ -2409,7 +2409,13 @@ experimenter launch pattern); (d) **workloads longer than ~20h on
 GCP** — the lane pins `--instance-termination-action=DELETE` +
 `--max-run-duration` (default 24h), so a multi-day sweep is deleted
 mid-run; set `spec.extra["max_run_duration"]` deliberately or use the
-RunPod override. For the gcp/auto lanes the dispatch script must exist
+RunPod override. **When overriding to RunPod, name the residual gap in
+the launch marker note** (CLAUDE.md rule). The dispatch CLI
+cross-checks the task's ACTUAL frontmatter: passing `--backend runpod`
+while the frontmatter `backend:` is absent/empty triggers a LOUD
+stderr warning + `extra.override_without_frontmatter=true` on the
+`epm:backend-selected` marker (additive visibility — the launch is not
+blocked). For the gcp/auto lanes the dispatch script must exist
 on the pushed branch — `--repo-branch` defaults to the current branch
 (the GCE startup script clones from origin). SLURM custom stages are
 render-tested only as of #588 (never live-run).
@@ -2434,7 +2440,10 @@ SLURM helpers call `task.py post-marker` via
   `chosen_kind`, `reason` (`override` / `reconnect` / `auto_started` /
   `auto_fallback_gcp` / `no_compute_available` / `workload_failure`),
   `cluster`, `elapsed_seconds`, the per-lane `attempts` ladder, and
-  `extra` (`cancel_race?`, `gcp_attempts_today?`, `intermediate?`).
+  `extra` (`cancel_race?`, `gcp_attempts_today?`, `intermediate?`,
+  `override_without_frontmatter?` — stamped by the dispatch CLI when
+  `--backend runpod` was passed while the task frontmatter has no
+  `backend:` value).
   Legacy `frontmatter_*` / `slurm_*` reason codes from the pre-slice-6
   `select_backend` are preserved in `workflow.yaml § markers` for
   back-compat reads.
