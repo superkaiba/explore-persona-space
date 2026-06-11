@@ -648,6 +648,10 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     from explore_persona_space.backends.router import RouteError
 
     extra: dict[str, Any] = {}
+    if getattr(args, "boot_disk_gb", None):
+        # GCP-only knob (backends/gcp.py:815 reads spec.extra["boot_disk_gb"]);
+        # inert on SLURM / RunPod lanes.
+        extra["boot_disk_gb"] = int(args.boot_disk_gb)
     if getattr(args, "repo_branch", None):
         # GCP-only knob: the GCE startup script clones from origin, so a
         # feature-branch workload must name its branch (issue 535 r6).
@@ -1218,6 +1222,18 @@ def _build_argparser() -> argparse.ArgumentParser:
             "SLURM lanes rsync the local worktree instead). Required when "
             "the workload's code/configs live on a feature branch — the "
             "default clone of main silently runs stale code (issue 535 r6)."
+        ),
+    )
+    launch.add_argument(
+        "--boot-disk-gb",
+        type=int,
+        default=None,
+        help=(
+            "GCP boot-disk size override in GB (GCP lane only; threads to "
+            "spec.extra['boot_disk_gb'], honored at backends/gcp.py:815). "
+            "Default 300 GB is too tight for full-FT checkpoint grids "
+            "(issue 606 needed 500: 13 consolidated ZeRO-3 ckpts ~= 195 GB "
+            "+ model + cache). Inert on non-GCP lanes."
         ),
     )
     launch.add_argument(
