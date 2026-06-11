@@ -1,6 +1,7 @@
 ---
 title: A geometry test of "high-prior teachers write narrower, not weaker" finds no
-  support, with the text-composition channel live in every family (LOW confidence)
+  support, with bystander text flipping the predicted lean on its designed axis (LOW
+  confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-11T10:48:15Z'
