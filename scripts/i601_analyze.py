@@ -134,6 +134,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
     margin_refs_raw = (endpoint or {}).get("margin_references", {})
     margin_refs = {lv: rec["margin_mean"] for lv, rec in margin_refs_raw.items()}
     margin_tol = max([rec["tolerance_margin"] for rec in margin_refs_raw.values()] or [1.0])
+    # Phase-0b clamp: gates the equilibrium MECHANISM call (plan §4 item 4);
+    # the verdicts dict separates phenomenology from mechanism either way.
+    clamp = (endpoint or {}).get("clamp_read", {})
+    clamp_present = clamp.get("clamp_present")
+    anchor_reuse_ok = (gate or {}).get("anchor_reuse_ok")
 
     # ── Phase 1 arm terminals (both spaces; classified in the primary). ──────
     arm_terminals: dict[str, list[float]] = {}
@@ -152,21 +157,37 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
         if vals:
             arm_terminals[role] = vals if space == "logp" else vals_m
             arm_terminals_margin[role] = vals_m
-    # Anchor (reused #472 or the retrain fallback).
+    # Anchor (reused #472 or the retrain fallback). Plan §4 Phase-0 item 3:
+    # when the fitness gate failed (anchor_reuse_ok=false) the dispatcher's
+    # --anchor-retrain-fallback trained dense_200p800n seed 42 (+137 via Phase
+    # 2) and those FRESH cells replace the unfit parent re-read as the middle
+    # fixed-ratio arm (concern analyze-anchor-fallback-unwired).
     anchor_vals, anchor_vals_m = [], []
-    for seed in (42, 137):
-        # Prefer this task's Phase-0 on-policy re-read (same eval code path as
-        # the new arms); the committed parent trajectory is the cross-check.
-        reread = ap_load(
-            args.slab_root
-            / "phase0"
-            / "onpolicy_recheck"
-            / f"c472_anchor_seed{seed}"
-            / "trajectory.json"
-        )
-        if reread is not None:
-            anchor_vals.append(_terminal_value(reread, "logp"))
-            anchor_vals_m.append(_terminal_value(reread, "margin"))
+    if anchor_reuse_ok is False:
+        anchor_arm_source = "phase2_dense_200p800n_retrain_fallback"
+        for seed in (42, 137):
+            traj = ap_load(
+                args.slab_root / "phase2" / f"dense_200p800n_seed{seed}" / "trajectory.json"
+            )
+            if traj is not None:
+                anchor_vals.append(_terminal_value(traj, "logp"))
+                anchor_vals_m.append(_terminal_value(traj, "margin"))
+    else:
+        anchor_arm_source = "phase0_onpolicy_reread_c472_anchor"
+        for seed in (42, 137):
+            # Prefer this task's Phase-0 on-policy re-read (same eval code path
+            # as the new arms); the committed parent trajectory is the
+            # cross-check.
+            reread = ap_load(
+                args.slab_root
+                / "phase0"
+                / "onpolicy_recheck"
+                / f"c472_anchor_seed{seed}"
+                / "trajectory.json"
+            )
+            if reread is not None:
+                anchor_vals.append(_terminal_value(reread, "logp"))
+                anchor_vals_m.append(_terminal_value(reread, "margin"))
     if anchor_vals:
         arm_terminals["anchor"] = anchor_vals if space == "logp" else anchor_vals_m
         arm_terminals_margin["anchor"] = anchor_vals_m
@@ -219,7 +240,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
             space=space,
             margin_refs=margin_refs or None,
             margin_tol=margin_tol if space == "margin" else None,
+            clamp_present=clamp_present,
         )
+        phase1["anchor_arm_source"] = anchor_arm_source
         # Margin co-read alongside a logp-primary classification (rule: report
         # the pair everywhere; space disagreement is the saturation signature).
         if space == "logp" and margin_refs:
@@ -229,6 +252,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
                 space="margin",
                 margin_refs=margin_refs,
                 margin_tol=margin_tol,
+                clamp_present=clamp_present,
             )["verdicts"]
     else:
         missing.append("phase1-classification-inputs")
@@ -319,10 +343,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
             continue
         for seed in spec.seeds:
             key = f"{spec.slug}_seed{seed}"
-            band = ap_load(args.slab_root / spec.phase / key / "inloop_band_trajectory.json")
+            band_path = args.slab_root / spec.phase / key / "inloop_band_trajectory.json"
+            if spec.conditional and not band_path.exists():
+                # Conditional 4b cells are LEGITIMATELY absent when the 4a
+                # verdict routed them to SKIP (phase4a_verdict.json records
+                # why) — never a strict-mode crash, never a missing-input row.
+                continue
+            band = ap_load(band_path)
             if band is None:
-                if not spec.conditional:
-                    missing.append(key)
+                missing.append(key)
                 continue
             phase4[key] = classify_phase4_arrest(band["steps"], band["delta_nats"])
     # Per-cell seed-pooled call: both seeds must agree for a clean call.
@@ -340,7 +369,6 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
         phase4_calls[spec.slug] = cls.pop() if len(cls) == 1 else "ambiguous"
 
     # ── Kill-criteria summary (plan §7). ─────────────────────────────────────
-    clamp = (endpoint or {}).get("clamp_read", {})
     kill = {
         "h_equilibrium_feedback_mechanism": {
             "clamp_present": clamp.get("clamp_present"),
@@ -355,17 +383,25 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
         else None,
     }
 
+    # Pod-side 4a→4b routing sentinel (written by i601_phase4_verdict.py);
+    # reported when present so the classification records WHY 4b ran/skipped.
+    # Passthrough (not a required lattice input): absent on pre-round-2 slabs.
+    verdict_path = args.slab_root / "phase4" / "phase4a_verdict.json"
+    phase4a_verdict = json.loads(verdict_path.read_text()) if verdict_path.exists() else None
+
     payload = {
-        "schema_version": "i601_classification_v1",
+        "schema_version": "i601_classification_v2",
         "primary_space_decision": primary_space_full,
         "classification_space": space,
         "phase0_gate_pass": (gate or {}).get("pass"),
-        "anchor_reuse_ok": (gate or {}).get("anchor_reuse_ok"),
+        "anchor_reuse_ok": anchor_reuse_ok,
+        "anchor_arm_source": anchor_arm_source,
         "phase1": phase1,
         "phase2": phase2,
         "phase3": phase3,
         "phase4": phase4,
         "phase4_calls": phase4_calls,
+        "phase4a_verdict": phase4a_verdict,
         "clamp_read": clamp,
         "kill_criteria": kill,
         "missing_inputs": sorted(set(missing)),

@@ -344,11 +344,16 @@ def cell_by_slug(slug: str) -> CellSpec601:
 def cells_for_request(raw: str | None) -> list[CellSpec601]:
     """Resolve a --cells CSV ('all' = every NON-conditional cell).
 
-    The conditional Phase-4b factorization cells run only when named
-    explicitly (they fire only on a 4a non-arrest classification — plan §4).
+    The conditional Phase-4b factorization cells run only via the dedicated
+    ``phase4b`` group (or named explicitly) — the dispatcher gates that group
+    on a ``phase4a_verdict.json`` recording a 4a NON-ARREST classification
+    (plan §4 Phase 4b; ``scripts/i601_phase4_verdict.py`` writes the sentinel
+    post-sweep and ``scripts/i601_launch.sh`` routes on it).
     """
     if raw is None or raw.strip() in ("", "all"):
         return [c for c in CELLS_601 if not c.conditional]
+    if raw.strip() == "phase4b":
+        return [c for c in CELLS_601 if c.conditional]
     out: list[CellSpec601] = []
     for tok in raw.split(","):
         tok = tok.strip()

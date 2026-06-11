@@ -23,6 +23,66 @@ SPACE_DIVERGENCE_NATS = 2.0
 # Plan §6 — clamp contrast threshold (Phase 0b).
 CLAMP_GAP_NATS = 1.5
 
+# Output-JSON coverage labels (concern phase0-r-eval-coverage-gap, round 2).
+COVERAGE_FULL = "full"
+COVERAGE_ABSENT = "absent-from-frozen-R"
+
+
+def full_r_coverage(r_artifact: dict, persona: str, questions: list[str]) -> bool:
+    """True iff ``persona`` has a non-empty ``response_text`` for EVERY question.
+
+    The pinned #472 artifact pair is mutually inconsistent (persona_bank 60
+    personas, R_eval 61, only 45 overlap), so panel ⊆ bank does NOT imply
+    panel ⊆ R_eval (#504 incident class). Every teacher-forced read path must
+    check coverage against the FROZEN R artifact, never against the bank.
+    """
+    if persona not in r_artifact:
+        return False
+    rec = r_artifact[persona]
+    return all(q in rec and bool(rec[q].get("response_text")) for q in questions)
+
+
+def split_by_r_coverage(
+    r_artifact: dict, personas: list[str], questions: list[str]
+) -> tuple[list[str], list[str]]:
+    """Order-preserving (covered, uncovered) split by :func:`full_r_coverage`."""
+    covered = [p for p in personas if full_r_coverage(r_artifact, p, questions)]
+    covered_set = set(covered)
+    uncovered = [p for p in personas if p not in covered_set]
+    return covered, uncovered
+
+
+def assert_r_eval_coverage(
+    r_artifact: dict, personas: list[str], questions: list[str], *, context: str
+) -> None:
+    """Fail-loud coverage gate: raise naming every persona lacking full frozen-R coverage.
+
+    Frozen-R parity with #472 is load-bearing — the fix for a coverage miss is
+    to constrain the read set (or descope explicitly per-persona), NEVER to
+    regenerate R.
+    """
+    _, uncovered = split_by_r_coverage(r_artifact, personas, questions)
+    if uncovered:
+        raise KeyError(
+            f"R-coverage assert FAILED ({context}): {len(uncovered)} persona(s) lack a "
+            f"complete frozen-R entry for all {len(questions)} questions: {uncovered}. "
+            f"The pinned parent R artifact does not cover them (#504 class) — constrain "
+            f"the read set or descope explicitly; do NOT regenerate frozen R."
+        )
+
+
+def build_r_map(
+    r_artifact: dict, personas: list[str], questions: list[str]
+) -> dict[str, dict[str, str]]:
+    """``{persona: {q: response_text}}`` with a fail-loud coverage assert first.
+
+    This is the exact lookup shape the teacher-forced workers consume; the
+    up-front assert turns the round-1 mid-shard ``KeyError: 'bartender'`` crash
+    into a pre-launch diagnosis naming every uncovered persona.
+    """
+    assert_r_eval_coverage(r_artifact, personas, questions, context="build_r_map")
+    return {p: {q: r_artifact[p][q]["response_text"] for q in questions} for p in personas}
+
 
 def select_bystander_reference_panel(
     held_out: list[str],
@@ -33,9 +93,13 @@ def select_bystander_reference_panel(
 
     ``held_out`` is the #472 held-out panel (bank − source − union of ALL
     trained negatives — so every member is a never-trained bystander by
-    construction). Sort by ``d_source = 1 − cos`` and take ``n`` evenly spaced
-    quantile positions (decile coverage prevents distance-skew in the Phase 0b
-    clamp contrast — plan §11). Deterministic given the pinned centroids.
+    construction), pre-filtered by the CALLER to personas with COMPLETE frozen
+    R_eval coverage (:func:`split_by_r_coverage`; concern
+    phase0-r-eval-coverage-gap — exclusions are recorded by name in
+    ``bystander_panel.json``). Sort by ``d_source = 1 − cos`` and take ``n``
+    evenly spaced quantile positions (decile coverage prevents distance-skew in
+    the Phase 0b clamp contrast — plan §11). Deterministic given the pinned
+    centroids + the pinned R artifact.
     """
     if len(held_out) < n:
         raise ValueError(f"held-out panel has {len(held_out)} personas; need >= {n}")

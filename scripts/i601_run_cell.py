@@ -106,7 +106,7 @@ def _combined_fractions(spec, step_fractions_fn) -> tuple[tuple[float, ...], tup
     return all_fracs, tuple(sorted(set(onpolicy)))
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell pipeline (build -> train -> eval -> dense read -> upload); the fail-loud asserts add branches, not nesting
     ap = argparse.ArgumentParser(
         description="Task #601 single (cell, seed) worker (see module docstring).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -146,7 +146,10 @@ def main(argv: list[str] | None = None) -> int:
         os.environ.get("CUDA_VISIBLE_DEVICES", "<unset>"),
     )
 
-    from explore_persona_space.experiments.contrastive_neg_geometry_472 import HEADLINE_LAYER
+    from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
+        HEADLINE_LAYER,
+        MAX_LENGTH,
+    )
     from explore_persona_space.experiments.contrastive_neg_geometry_472.build_training_data import (
         build_cell,
     )
@@ -278,7 +281,10 @@ def main(argv: list[str] | None = None) -> int:
         spec.band_stop,
         spec.band_log_only,
     )
-    probes = build_rowtype_probes(train_jsonl, tokenizer, marker_ids)
+    # max_length = the TRAINING max_length (1024): the probe must monitor
+    # exactly the rows the trainer sees — a 2048 probe cap would admit rows the
+    # trainer truncates away (round-1 Codex review minor).
+    probes = build_rowtype_probes(train_jsonl, tokenizer, marker_ids, max_length=MAX_LENGTH)
     ce_probe = RowTypeCETrainProbeCallback(probes, out_path=rowtype_ce_path, eval_every_steps=1)
     train_result = train_one_cell(
         cell_slug=args.cell,
@@ -316,8 +322,15 @@ def main(argv: list[str] | None = None) -> int:
         spec.expected_steps,
     )
     # Band-stop misfire catch (smoke assert §4; also enforced per-cell here so
-    # a sweep cell that early-stopped fails LOUD, not at analysis time).
-    if realized_terminal_step is not None and int(realized_terminal_step) != spec.expected_steps:
+    # a sweep cell that early-stopped fails LOUD, not at analysis time). A
+    # missing terminal index entry would silently disable the check — raise
+    # (round-1 review minor).
+    if realized_terminal_step is None:
+        raise RuntimeError(
+            f"[{args.cell}] checkpoint_index has no '1.0000' terminal step — cannot verify "
+            f"the full schedule ran (the band-stop misfire check requires it)."
+        )
+    if int(realized_terminal_step) != spec.expected_steps:
         raise RuntimeError(
             f"[{args.cell}] realized terminal step {realized_terminal_step} != expected "
             f"T={spec.expected_steps} — a band-stop (or schedule mis-wire) truncated the "

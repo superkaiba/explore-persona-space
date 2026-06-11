@@ -470,9 +470,12 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
         if raw_r_out_path is not None:
             # Crash-safe raw-completion persist (Upload Policy): rewrite after
             # every checkpoint's gen so a later-phase crash never loses the
-            # generations already produced.
+            # generations already produced. Atomic tmp+replace so a crash
+            # MID-WRITE at the last checkpoint can't leave truncated JSON
+            # (round-1 review minor; mirrors the dense reader / CE probe).
             raw_r_out_path.parent.mkdir(parents=True, exist_ok=True)
-            raw_r_out_path.write_text(
+            raw_tmp = raw_r_out_path.with_suffix(".tmp")
+            raw_tmp.write_text(
                 json.dumps(
                     {
                         "cell": cell_slug,
@@ -483,6 +486,7 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
                     ensure_ascii=False,
                 )
             )
+            os.replace(raw_tmp, raw_r_out_path)
 
         # 2. DV-A trained log P(※) at post-R slot (on the trained model's own R).
         g = score_logp_for_R(

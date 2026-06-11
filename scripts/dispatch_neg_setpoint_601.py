@@ -7,7 +7,9 @@ Forked from ``scripts/dispatch_neg_geometry_472.py`` (origin/issue-472).
 Pipeline (plan §4/§10):
   fetch_artifacts   parent inputs (bank / centroids / R) from the HF data repo
   gate checks       phase0_gate.json pass==true (ALL launches) + the smoke
-                    sentinel (non-smoke launches) — plan §7 gates, enforced in
+                    sentinel (non-smoke launches) + phase4a_verdict.json
+                    call==non-arrest (any conditional Phase-4b cell, incl. the
+                    --cells phase4b group) — plan §7/§4 gates, enforced in
                     code; a hand-pasted sweep command cannot bypass them
   per cell×seed     build → train → on-policy eval → dense read → ckpt upload
                     [GPU-pinned i601_run_cell subprocess pool]
@@ -149,6 +151,33 @@ def _check_gates(slab_root: Path, log_dir: Path, *, smoke: bool, dry_run: bool) 
     log.info("[phase=gates] smoke gate PASS (sentinel: %s)", candidate)
 
 
+def _check_phase4b_gate(slab_root: Path, conditional_requested: list[str]) -> None:
+    """Plan §4 Phase-4b conditional gate, enforced in code.
+
+    The conditional factorization cells are dispatchable ONLY behind a
+    ``phase4a_verdict.json`` recording a 4a NON-ARREST classification (written
+    post-sweep by ``scripts/i601_phase4_verdict.py``; ``i601_launch.sh`` routes
+    on it). Arrest/ambiguous → 4b uninformative, skipped, reported open — a
+    hand-pasted ``--cells phase4b`` cannot bypass the routing.
+    """
+    verdict_path = slab_root / "phase4" / "phase4a_verdict.json"
+    if not verdict_path.exists():
+        raise RuntimeError(
+            f"GATE REFUSAL: conditional Phase-4b cells {conditional_requested} require "
+            f"{verdict_path} (run scripts/i601_phase4_verdict.py after the 4a cells "
+            f"complete) — plan §4 Phase 4b."
+        )
+    verdict = json.loads(verdict_path.read_text())
+    if verdict.get("dispatch_4b") is not True or verdict.get("call") != "non-arrest":
+        raise RuntimeError(
+            f"GATE REFUSAL: Phase-4b cells are gated on a 4a NON-ARREST classification; "
+            f"{verdict_path} records call={verdict.get('call')!r} "
+            f"(dispatch_4b={verdict.get('dispatch_4b')!r}). Arrest/ambiguous → 4b is "
+            f"uninformative, skipped, and reported open (plan §4/§7)."
+        )
+    log.info("[phase=gates] phase4b gate PASS (4a call=non-arrest)")
+
+
 def _schedule_cell_pool(
     *,
     units: list[tuple[str, int]],
@@ -238,8 +267,12 @@ def _schedule_cell_pool(
                         indent=2,
                     )
                 )
-                for p2, _c2, _s2, _g2 in still:
-                    p2.terminate()
+                # Terminate EVERYTHING still alive (not just procs already
+                # polled into `still` this iteration) so an abort never
+                # orphans GPU-holding cell subprocesses (round-1 review minor).
+                for p2, _c2, _s2, _g2 in running:
+                    if p2 is not proc and p2.poll() is None:
+                        p2.terminate()
                 raise RuntimeError(
                     f"[{cell} seed{seed}] cell subprocess exited rc={rc} (GPU {gpu}). "
                     f"See {log_dir}/issue-601-{cell}-seed{seed}.log. Sweep aborted."
@@ -383,6 +416,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
     parser.add_argument("--skip-fetch", action="store_true")
     parser.add_argument("--skip-upload", action="store_true", help="Debug only.")
     parser.add_argument(
+        "--sentinel-name",
+        default="issue-601-results.json",
+        help=(
+            "Final-sentinel filename under --log-dir. The conditional Phase-4b dispatch "
+            "passes issue-601-phase4b-results.json so it never clobbers the main sweep's "
+            "results sentinel."
+        ),
+    )
+    parser.add_argument(
         "--anchor-retrain-fallback",
         action="store_true",
         help=(
@@ -436,6 +478,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
         log.info("[phase=resolve] anchor-retrain fallback unit appended: dense_200p800n seed 42")
     if not units:
         raise ValueError("zero (cell, seed) units after intersecting --seeds with cell specs")
+
+    # ── Phase-4b conditional gate (plan §4 Phase 4b). ─────────────────────────
+    conditional_requested = sorted({c.slug for c in cells if c.conditional})
+    if conditional_requested and not args.dry_run:
+        _check_phase4b_gate(args.slab_root, conditional_requested)
     log.info(
         "[phase=resolve] %d units: %s (smoke=%s)",
         len(units),
@@ -551,7 +598,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
     _write_sentinel(
-        LOG_DIR / "issue-601-results.json",
+        LOG_DIR / args.sentinel_name,
         kind="epm:results",
         phase="done",
         note_payload=note_payload,

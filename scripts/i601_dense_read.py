@@ -80,7 +80,7 @@ def _four_floats(raw, marker_id: int, eos_id: int) -> dict[str, float]:
     }
 
 
-def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear read loop with resume branches; one read path, no nesting to extract
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="Task #601 dense teacher-forced four-float reader (see module docstring).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -135,6 +135,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear read loo
         SOURCE_PERSONA,
         cell_by_slug,
     )
+    from explore_persona_space.experiments.neg_setpoint_601.phase0_lib import (
+        assert_r_eval_coverage,
+    )
 
     spec = cell_by_slug(args.cell)
     bank = load_persona_bank(args.data_dir / "persona_bank.json")
@@ -153,9 +156,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear read loo
             args.cell, cts, source=SOURCE_PERSONA, cell_specs=CELL_SPECS_601_472SHAPE
         )
     personas = [SOURCE_PERSONA, *trained_negs, *[b for b in bystanders if b not in trained_negs]]
-    for p in personas:
-        if p not in bank or p not in r_eval:
-            raise KeyError(f"persona {p!r} missing from bank/R_eval.")
+    # Fail-loud coverage gate (concern phase0-r-eval-coverage-gap): every #601
+    # cell's read set (source + anchor-panel negatives + the Phase-0
+    # coverage-constrained bystanders) must have COMPLETE frozen-R_eval
+    # coverage — partial per-question coverage is diagnosed by name, not by a
+    # KeyError ten frames deep.
+    missing_bank = [p for p in personas if p not in bank]
+    if missing_bank:
+        raise KeyError(f"personas missing from persona_bank: {missing_bank}")
+    assert_r_eval_coverage(r_eval, personas, q_eval, context=f"dense read {args.cell}")
 
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
     marker_ids = tokenizer.encode(MARKER_TEXT, add_special_tokens=False)

@@ -92,6 +92,12 @@ def _run_teacher_worker(args) -> int:
         load_r_artifact,
     )
     from explore_persona_space.experiments.neg_setpoint_601 import SOURCE_PERSONA
+    from explore_persona_space.experiments.neg_setpoint_601.phase0_lib import (
+        COVERAGE_ABSENT,
+        COVERAGE_FULL,
+        build_r_map,
+        split_by_r_coverage,
+    )
 
     bank = load_persona_bank(args.data_dir / "persona_bank.json")
     r_eval = load_r_artifact(args.data_dir / "on_policy_R" / "R_eval.json")
@@ -109,9 +115,30 @@ def _run_teacher_worker(args) -> int:
         cell, seed_s = key.rsplit("_seed", 1)
         adapter_dir = args.adapters_root / key
         assert_logit_readout_gauge_free(str(adapter_dir))
-        personas = _personas_for_parent_cell(cell, cts, bystanders)
+        # Coverage split (concern phase0-r-eval-coverage-gap): the pinned R_eval
+        # misses 3 parent trained negatives (c472_near: mob_boss + cult_leader;
+        # c472_negp_8: baker). Those reads are DESCOPED per-persona with an
+        # explicit coverage record — frozen R is never regenerated. Source /
+        # bystander gaps are a hard fail (the panel is coverage-constrained at
+        # registration, so this only fires on artifact drift).
+        personas_all = _personas_for_parent_cell(cell, cts, bystanders)
+        personas, descoped = split_by_r_coverage(r_eval, personas_all, q_eval)
+        hard_missing = [p for p in descoped if p == SOURCE_PERSONA or p in bystanders]
+        if hard_missing:
+            raise KeyError(
+                f"[tf {key}] source/bystander personas lack full frozen-R_eval coverage: "
+                f"{hard_missing} (#504 class) — the registered panel must be "
+                f"coverage-constrained; refusing the shard."
+            )
+        if descoped:
+            log.warning(
+                "[tf %s] trained-negative reads descoped (%s): %s",
+                key,
+                COVERAGE_ABSENT,
+                descoped,
+            )
         eval_personas = {p: bank[p] for p in personas}
-        r_map = {p: {q: r_eval[p][q]["response_text"] for q in q_eval} for p in personas}
+        r_map = build_r_map(r_eval, personas, q_eval)
         log.info("[tf %s] %d personas x %d questions", key, len(personas), len(q_eval))
         stats = compute_kl_for_checkpoint(
             base_model="Qwen/Qwen2.5-7B-Instruct",
@@ -121,13 +148,22 @@ def _run_teacher_worker(args) -> int:
             eval_questions=q_eval,
         )
         payload = {
-            "schema_version": "i601_phase0_tf_v1",
+            "schema_version": "i601_phase0_tf_v2",
             "cell": cell,
             "seed": int(seed_s),
             "personas": personas,
             "trained_negatives": [
                 p for p in personas if p != SOURCE_PERSONA and p not in bystanders
             ],
+            # Explicit per-persona coverage record (concern
+            # phase0-r-eval-coverage-gap): descoped trained negatives carry
+            # "absent-from-frozen-R" so the analyzer/clean-result can name the
+            # missing reads instead of silently shrinking the denominator.
+            "coverage": {
+                **{p: COVERAGE_FULL for p in personas},
+                **{p: COVERAGE_ABSENT for p in descoped},
+            },
+            "trained_negatives_descoped": descoped,
             "bystander_panel": bystanders,
             "eval_questions": q_eval,
             "read_type": "teacher_forced_frozen_R_eval",
@@ -166,13 +202,115 @@ def _pool(cmds: list[tuple[str, list[str], Path]], n_gpus: int, log_dir: Path) -
                 continue
             free.append(gpu)
             if rc != 0:
-                for p2, _l2, _g2 in still:
-                    p2.terminate()
+                # Terminate EVERYTHING still alive (not just procs already
+                # polled into `still` this iteration) so an abort never
+                # orphans GPU-holding workers (round-1 review minor).
+                for p2, _l2, _g2 in running:
+                    if p2 is not proc and p2.poll() is None:
+                        p2.terminate()
                 raise RuntimeError(f"phase0 worker {label} exited rc={rc}; see {log_dir}")
             log.info("[pool] %s complete (GPU %d)", label, gpu)
         running = still
         if running:
             time.sleep(5)
+
+
+def _register_bystander_panel(args, cts) -> tuple:
+    """Coverage-constrained panel registration + pre-worker coverage gate.
+
+    Concern phase0-r-eval-coverage-gap (round 2): the pinned parent artifact
+    pair is mutually inconsistent (persona_bank 60 vs R_eval 61 personas, only
+    45 overlap), so (1) the bystander candidate pool is restricted to held-out
+    personas with COMPLETE frozen-R_eval coverage BEFORE decile selection,
+    with exclusions recorded by name in ``bystander_panel.json``; (2) a
+    fail-loud assert covers the registered panel; (3) BEFORE any worker
+    launch, source + bystanders + the COUNT cells' trained negatives (the
+    Phase-0b clamp test needs >=3 of 4 count cells, both seeds) must ALL be
+    covered. Non-count parent cells MAY have uncovered trained negatives
+    (c472_near: mob_boss + cult_leader; c472_negp_8: baker) — those reads are
+    descoped per-persona by the worker with coverage="absent-from-frozen-R".
+    Frozen-R parity with #472 is load-bearing: R is NEVER regenerated here.
+
+    Returns:
+        (bystanders, r_eval, q_eval, panel_all, excluded_no_r, descope_map).
+    """
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.r_generate import (
+        get_train_eval_questions,
+        load_r_artifact,
+    )
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.select_negatives import (
+        held_out_panel,
+        negatives_for_cell,
+    )
+    from explore_persona_space.experiments.neg_setpoint_601 import (
+        COUNT_CELL_LEVELS,
+        N_BYSTANDER_REFERENCE,
+        PARENT_CELLS_ALL,
+        SOURCE_PERSONA,
+    )
+    from explore_persona_space.experiments.neg_setpoint_601.phase0_lib import (
+        assert_r_eval_coverage,
+        select_bystander_reference_panel,
+        split_by_r_coverage,
+    )
+
+    panel_all = held_out_panel(cts, source=SOURCE_PERSONA)
+    r_eval = load_r_artifact(args.data_dir / "on_policy_R" / "R_eval.json")
+    _q_train, q_eval = get_train_eval_questions()
+    covered_held_out, excluded_no_r = split_by_r_coverage(r_eval, panel_all, q_eval)
+    bystanders = select_bystander_reference_panel(covered_held_out, cts, n=N_BYSTANDER_REFERENCE)
+    # Fail-loud at panel REGISTRATION (belt) — selection over the covered pool
+    # makes this a tautology unless the artifacts drift under us.
+    assert_r_eval_coverage(r_eval, bystanders, q_eval, context="bystander panel registration")
+    (args.phase0_dir / "bystander_panel.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "i601_bystander_panel_v2",
+                "personas": bystanders,
+                "d_source": {p: 1.0 - cts[p] for p in bystanders},
+                "selection": (
+                    "L10 d_source deciles over the R_eval-covered subset of the #472 held-out panel"
+                ),
+                "n_held_out": len(panel_all),
+                "n_held_out_r_eval_covered": len(covered_held_out),
+                "excluded_no_full_r_eval": excluded_no_r,
+                "git_commit": _git_sha(),
+                "timestamp_utc": datetime.now(UTC).isoformat(),
+            },
+            indent=2,
+        )
+    )
+    log.info(
+        "[phase=p0_panel] pre-registered bystanders (R_eval-covered pool %d/%d): %s "
+        "(excluded, no full frozen-R: %s)",
+        len(covered_held_out),
+        len(panel_all),
+        bystanders,
+        excluded_no_r,
+    )
+
+    # Pre-worker-launch coverage gate.
+    count_cells_gate = [c for c, _lvl in COUNT_CELL_LEVELS]
+    must_cover = [SOURCE_PERSONA, *bystanders]
+    for c in count_cells_gate:
+        must_cover.extend(p for p in negatives_for_cell(c, cts) if p not in must_cover)
+    assert_r_eval_coverage(
+        r_eval,
+        must_cover,
+        q_eval,
+        context="pre-worker launch (source + bystanders + count-cell negatives)",
+    )
+    descope_map: dict[str, list[str]] = {}
+    for c in PARENT_CELLS_ALL:
+        uncovered_negs = split_by_r_coverage(r_eval, negatives_for_cell(c, cts), q_eval)[1]
+        if uncovered_negs:
+            descope_map[c] = uncovered_negs
+    if descope_map:
+        log.warning(
+            "[phase=p0_coverage] trained-negative reads descoped (absent-from-frozen-R): %s",
+            descope_map,
+        )
+    return bystanders, r_eval, q_eval, panel_all, excluded_no_r, descope_map
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -215,13 +353,11 @@ def main(argv: list[str] | None = None) -> int:
         cos_to_source,
     )
     from explore_persona_space.experiments.contrastive_neg_geometry_472.select_negatives import (
-        held_out_panel,
         negatives_for_cell,
     )
     from explore_persona_space.experiments.neg_setpoint_601 import (
         COUNT_CELL_LEVELS,
         HF_DATA_PREFIX_601,
-        N_BYSTANDER_REFERENCE,
         PARENT_CELLS_ALL,
         PARENT_SEEDS,
         SOURCE_PERSONA,
@@ -235,7 +371,6 @@ def main(argv: list[str] | None = None) -> int:
         decide_primary_space,
         margin_references,
         onpolicy_crosscheck,
-        select_bystander_reference_panel,
         terminal_source_stats,
     )
 
@@ -250,25 +385,13 @@ def main(argv: list[str] | None = None) -> int:
         for s in PARENT_SEEDS:
             fetch_parent_adapter(c, s, args.adapters_root)
 
-    # ── Bystander reference panel (pre-registered by name). ─────────────────
+    # ── Bystander reference panel (pre-registered by name) + coverage gate. ──
+    # Coverage-constrained selection + the pre-worker-launch fail-loud gate
+    # live in _register_bystander_panel (concern phase0-r-eval-coverage-gap).
     cts = cos_to_source(HEADLINE_LAYER, SOURCE_PERSONA, args.data_dir)
-    panel_all = held_out_panel(cts, source=SOURCE_PERSONA)
-    bystanders = select_bystander_reference_panel(panel_all, cts, n=N_BYSTANDER_REFERENCE)
-    (args.phase0_dir / "bystander_panel.json").write_text(
-        json.dumps(
-            {
-                "schema_version": "i601_bystander_panel_v1",
-                "personas": bystanders,
-                "d_source": {p: 1.0 - cts[p] for p in bystanders},
-                "selection": "L10 d_source deciles over the #472 held-out panel",
-                "n_held_out": len(panel_all),
-                "git_commit": _git_sha(),
-                "timestamp_utc": datetime.now(UTC).isoformat(),
-            },
-            indent=2,
-        )
+    (bystanders, _r_eval, _q_eval, panel_all, excluded_no_r, descope_map) = (
+        _register_bystander_panel(args, cts)
     )
-    log.info("[phase=p0_panel] pre-registered bystanders: %s", bystanders)
 
     # ── Anchor recipe-match determinism check (plan §10 fitness (a)). ────────
     committed_anchor = json.loads(
@@ -394,8 +517,10 @@ def main(argv: list[str] | None = None) -> int:
     anchor_reuse_ok = bool(recipe_panel_ok and anchor_onpolicy_ok)
 
     endpoint = {
-        "schema_version": "i601_phase0_v1",
+        "schema_version": "i601_phase0_v2",
         "bystander_panel": bystanders,
+        "bystander_excluded_no_full_r_eval": excluded_no_r,
+        "trained_negatives_descoped_by_cell": descope_map,
         "teacher_forced_index": {k: f"phase0/teacher_forced/{k}.json" for k in adapter_keys},
         "onpolicy_crosscheck": crosscheck,
         "margin_references": margin_refs,

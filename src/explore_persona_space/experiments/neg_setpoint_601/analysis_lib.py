@@ -171,6 +171,7 @@ def classify_phase1(
     space: str,
     margin_refs: dict[str, float] | None = None,
     margin_tol: float | None = None,
+    clamp_present: bool | None = None,
 ) -> dict:
     """The §6 three-hypothesis classification + precedence + matched-pair read.
 
@@ -182,10 +183,17 @@ def classify_phase1(
         space: "logp" or "margin" (the Phase-0a-selected primary space).
         margin_refs: M(level) when space == "margin" (required then).
         margin_tol: derived margin tolerance (required when space == "margin").
+        clamp_present: the Phase-0b trained-negative clamp read (plan §4 item
+            4 pinned rule). The level rules alone establish only the
+            PHENOMENOLOGY (``ratio_set_point_consistent``); the MECHANISM
+            verdict ``h_equilibrium_supported`` additionally requires the
+            clamp. ``None`` (clamp unread) never upgrades to mechanism.
 
-    Returns a dict with per-hypothesis verdicts, the matched-pair
-    discriminator, and the final call ("equilibrium" | "horizon" | "coupling"
-    | "no-call").
+    Returns a dict with per-hypothesis verdicts (carrying BOTH
+    ``ratio_set_point_consistent`` and ``h_equilibrium_supported``), the
+    matched-pair discriminator, and the final call ("equilibrium" |
+    "ratio-setpoint-mechanism-unresolved" | "horizon" | "coupling" |
+    "no-call").
     """
     if space not in ("logp", "margin"):
         raise ValueError(f"space={space!r}")
@@ -276,13 +284,32 @@ def classify_phase1(
     else:
         matched_pair = "between"
 
+    # Plan §6 / §4-item-4 pinned rule: the level rules establish the
+    # PHENOMENOLOGY only; H-equilibrium (the feedback MECHANISM) additionally
+    # requires the Phase-0b clamp. Both fields ship in every output.
     verdicts = {
-        "equilibrium": bool(ratio_ok),
+        "ratio_set_point_consistent": bool(ratio_ok),
+        "h_equilibrium_supported": bool(ratio_ok) and clamp_present is True,
         "horizon": bool(horizon_ok),
         "coupling": bool(coupling_ok),
     }
-    satisfied = [k for k, v in verdicts.items() if v]
-    call = satisfied[0] if len(satisfied) == 1 else "no-call"
+    # Precedence (plan §6) runs over the three HYPOTHESIS cells; the ratio cell
+    # is the phenomenology read (level rules only).
+    hypothesis_cells = ("ratio_set_point_consistent", "horizon", "coupling")
+    satisfied = [k for k in hypothesis_cells if verdicts[k]]
+    if len(satisfied) != 1:
+        call = "no-call"
+    elif satisfied[0] == "ratio_set_point_consistent":
+        # Clamp gating: without the clamp the registered outcome is "ratio
+        # sets the level; mechanism unresolved — feedback disfavored" (a
+        # determinate headline, NOT an equilibrium call).
+        call = (
+            "equilibrium"
+            if verdicts["h_equilibrium_supported"]
+            else ("ratio-setpoint-mechanism-unresolved")
+        )
+    else:
+        call = satisfied[0]
 
     return {
         "space": space,
@@ -290,8 +317,14 @@ def classify_phase1(
         "tolerance": tol,
         "arm_terminal_means": means,
         "fixed_ratio_spread": float(fixed_spread),
+        "clamp_present": clamp_present,
         "verdicts": verdicts,
         "call": call,
+        "call_rule": (
+            "equilibrium requires ratio_set_point_consistent AND Phase-0b clamp_present "
+            "(plan §4 item 4); phenomenology without clamp -> "
+            "ratio-setpoint-mechanism-unresolved"
+        ),
         "n_satisfied": len(satisfied),
         "matched_pair_discriminator": {
             "step": MATCHED_PAIR_STEP,
