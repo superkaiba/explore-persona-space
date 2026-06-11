@@ -1,0 +1,69 @@
+{
+  "negatives_by_source": {
+    "assistant": [
+      "medical_doctor",
+      "ai",
+      "hero",
+      "chef"
+    ],
+    "comedian": [
+      "ai",
+      "data_scientist",
+      "programmer",
+      "medical_doctor"
+    ],
+    "kindergarten_teacher": [
+      "french_person",
+      "police_officer",
+      "villain",
+      "qwen_default"
+    ],
+    "qwen_default": [
+      "wizard",
+      "hero",
+      "police_officer",
+      "ai_assistant"
+    ],
+    "software_engineer": [
+      "kindergarten_teacher",
+      "surgeon",
+      "comedian",
+      "medical_doctor"
+    ],
+    "villain": [
+      "french_person",
+      "chef",
+      "ai_assistant",
+      "kindergarten_teacher"
+    ]
+  },
+  "recovery": "deterministic _draw_bystander_negs replication at pinned commit 4b150926 (sha256-seeded shuffle of the i509 24-name registry); realized pools were not uploaded \u2014 MEDIUM confidence (plan \u00a712 assumption 8); H4 primary read stays on #411",
+  "registry_names": [
+    "accountant",
+    "ai",
+    "ai_assistant",
+    "assistant",
+    "chef",
+    "child",
+    "comedian",
+    "data_scientist",
+    "french_person",
+    "hero",
+    "journalist",
+    "kindergarten_teacher",
+    "lawyer",
+    "librarian",
+    "medical_doctor",
+    "philosopher",
+    "police_officer",
+    "programmer",
+    "qwen_default",
+    "software_engineer",
+    "surgeon",
+    "villain",
+    "wizard",
+    "zelthari_scholar"
+  ],
+  "git_commit_sha": "187a10016afeb347aa5911361d4311c9a5e170bb",
+  "timestamp_utc": "2026-06-11T11:05:10.145164+00:00"
+}

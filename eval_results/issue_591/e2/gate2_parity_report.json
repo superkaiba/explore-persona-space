@@ -1,0 +1,219 @@
+{
+  "checks": [
+    {
+      "kind": "self",
+      "model": "villain",
+      "panel": "villain",
+      "rerun": 0.946,
+      "frozen": 0.95,
+      "drift": -0.0040000000000000036,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "flat_anchor",
+      "model": "villain",
+      "panel": "accountant",
+      "rerun": 0.016,
+      "frozen": 0.016,
+      "drift": 0.0,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "flat_anchor",
+      "model": "villain",
+      "panel": "librarian",
+      "rerun": 0.014,
+      "frozen": 0.014,
+      "drift": 0.0,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "self",
+      "model": "comedian",
+      "panel": "comedian",
+      "rerun": 0.956,
+      "frozen": 0.958,
+      "drift": -0.0020000000000000018,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "flat_anchor",
+      "model": "comedian",
+      "panel": "accountant",
+      "rerun": 0.022,
+      "frozen": 0.022,
+      "drift": 0.0,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "flat_anchor",
+      "model": "comedian",
+      "panel": "librarian",
+      "rerun": 0.012,
+      "frozen": 0.012,
+      "drift": 0.0,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "self",
+      "model": "kindergarten_teacher",
+      "panel": "kindergarten_teacher",
+      "rerun": 0.97,
+      "frozen": 0.968,
+      "drift": 0.0020000000000000018,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "flat_anchor",
+      "model": "kindergarten_teacher",
+      "panel": "accountant",
+      "rerun": 0.02,
+      "frozen": 0.02,
+      "drift": 0.0,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "flat_anchor",
+      "model": "kindergarten_teacher",
+      "panel": "librarian",
+      "rerun": 0.024,
+      "frozen": 0.024,
+      "drift": 0.0,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "self",
+      "model": "software_engineer",
+      "panel": "software_engineer",
+      "rerun": 0.958,
+      "frozen": 0.958,
+      "drift": 0.0,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "flat_anchor",
+      "model": "software_engineer",
+      "panel": "accountant",
+      "rerun": 0.452,
+      "frozen": 0.446,
+      "drift": 0.006000000000000005,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "flat_anchor",
+      "model": "software_engineer",
+      "panel": "librarian",
+      "rerun": 0.062,
+      "frozen": 0.062,
+      "drift": 0.0,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "leak_anchor",
+      "model": "software_engineer",
+      "panel": "data_scientist",
+      "rerun": 0.644,
+      "frozen": 0.65,
+      "drift": -0.006000000000000005,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "base_anchor",
+      "model": "base",
+      "panel": "kindergarten_teacher",
+      "rerun": 0.052,
+      "frozen": 0.05,
+      "drift": 0.001999999999999995,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "base_anchor",
+      "model": "base",
+      "panel": "software_engineer",
+      "rerun": 0.044,
+      "frozen": 0.044,
+      "drift": 0.0,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "base_anchor",
+      "model": "base",
+      "panel": "villain",
+      "rerun": 0.052,
+      "frozen": 0.05,
+      "drift": 0.001999999999999995,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "base_anchor",
+      "model": "base",
+      "panel": "accountant",
+      "rerun": 0.042,
+      "frozen": 0.038,
+      "drift": 0.0040000000000000036,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "base_anchor",
+      "model": "base",
+      "panel": "data_scientist",
+      "rerun": 0.056,
+      "frozen": 0.054,
+      "drift": 0.0020000000000000018,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "base_anchor",
+      "model": "base",
+      "panel": "librarian",
+      "rerun": 0.052,
+      "frozen": 0.054,
+      "drift": -0.0020000000000000018,
+      "within_tol": true,
+      "hard_fail": false
+    },
+    {
+      "kind": "base_anchor",
+      "model": "base",
+      "panel": "comedian",
+      "rerun": 0.124,
+      "frozen": 0.128,
+      "drift": -0.0040000000000000036,
+      "within_tol": true,
+      "hard_fail": false
+    }
+  ],
+  "n_evaluated": 20,
+  "n_out_of_tol": 0,
+  "n_hard_fail": 0,
+  "d_hat_pooled": -6.938893903907229e-19,
+  "d_hat_per_model": {
+    "base": 0.00057142857142857,
+    "software_engineer": 0.0,
+    "kindergarten_teacher": 0.0006666666666666673,
+    "villain": -0.0013333333333333346,
+    "comedian": -0.0006666666666666673
+  },
+  "tolerance": 0.08,
+  "hard_tolerance": 0.15,
+  "verdict": "PASS",
+  "gate_evaluated_smoke": false
+}
