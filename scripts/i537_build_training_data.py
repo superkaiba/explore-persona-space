@@ -124,7 +124,12 @@ def _max_length_for(behavior: str, cid: str) -> int:
     if behavior in ("marker", "refusal", "sycophancy"):
         return 3072
     if behavior == "fact":
-        return 3072 if cid.startswith(("wc_", "icl_")) else 1024
+        # Named deviation (P2 build, measured): #444's seq-1024 grounding
+        # predates this mix's 600 Tulu-3 filler rows — 14/900 sp_swe rows
+        # run 1.9-2.3k tokens (worst 2262), so the fact row takes the same
+        # uniform 3072 cap as its former wc_/icl_ exception. Data-sizing
+        # bound only; rows that fit are byte-identical under either cap.
+        return 3072
     if behavior in ("em", "emnc"):
         return 3072 if cid.startswith("wc_long") else 2048
     raise ValueError(behavior)
