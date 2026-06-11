@@ -3647,8 +3647,8 @@
       "goal": "Determine which mechanism sets the source-implant level in #472's contrastive-negative dose-response \u2014 per-batch composition equilibrium (leakage-awakened negative feedback), a schedule-horizon-scaled growth window, or cross-context coupling scaling with update count \u2014 via zero-training four-float reads of existing adapters, a schedule-matched companion arm, fixed-ratio scaling, a negatives-only control, and a dense early logit trajectory that dates the arrest and tests for log-Z compression.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/601",
-      "status": "approved",
+      "path": "tasks/running/601",
+      "status": "running",
       "title": "Ratio vs count vs schedule horizon: what sets the contrastive-negative source-implant set-point (#472 mechanism follow-up)"
     },
     "602": {
