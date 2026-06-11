@@ -324,14 +324,24 @@ def issue404_adapter_subfolder(pair: str, seed: int) -> str:
 
 
 def _download_if_missing(url: str, target: Path) -> None:
+    """Download url -> target atomically (concurrent-safe; asserts non-empty payload).
+
+    Writes to a pid-unique temp file then os.replace()s it into place: concurrent
+    callers (e.g. the 3 parallel gate-context subprocesses in #552 r7) never observe
+    a truncated in-progress write, which previously parsed as YAML None and crashed.
+    """
     if target.exists() and target.stat().st_size > 0:
         return
     target.parent.mkdir(parents=True, exist_ok=True)
     logger.info("Downloading %s -> %s", url, target)
     with urllib.request.urlopen(url) as resp:
         data = resp.read()
-    with open(target, "wb") as f:
+    if not data:
+        raise RuntimeError(f"Empty payload downloading {url}")
+    tmp = target.with_name(f"{target.name}.tmp.{os.getpid()}")
+    with open(tmp, "wb") as f:
         f.write(data)
+    os.replace(tmp, target)
 
 
 def ensure_dataset(pair: str) -> Path:
