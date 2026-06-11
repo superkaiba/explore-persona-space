@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 584,
+  "highest_id": 585,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3513,6 +3513,14 @@
       "path": "tasks/proposed/584",
       "status": "proposed",
       "title": "Port the #534 distinct-id trajectory-eval fix + source-manifest guard to main with a regression test"
+    },
+    "585": {
+      "goal": "Measure the true training-maturity curve of the #504 saturated-anchor smoke cell by re-evaluating its six verified per-fraction adapter snapshots through the fixed distinct-id eval path, replacing the stale six-reads-of-one-adapter calibration table with real per-fraction numbers.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/585",
+      "status": "proposed",
+      "title": "Re-run the #504 calibration table at true fractions on the verified per-fraction smoke snapshots"
     },
     "6": {
       "has_clean_result": false,
