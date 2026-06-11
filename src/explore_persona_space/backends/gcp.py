@@ -1979,7 +1979,7 @@ class GcpBackend(ComputeBackend):
         issue = int(handle.extra.get("issue") or 0)
         if issue <= 0:
             logger.error(
-                "GcpBackend.fetch_results: handle missing 'issue' extra; cannot scp. handle=%r",
+                "GcpBackend.fetch_results: handle missing 'issue' extra; cannot pull. handle=%r",
                 handle,
             )
             return
