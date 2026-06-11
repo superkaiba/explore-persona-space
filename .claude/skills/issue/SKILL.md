@@ -2409,9 +2409,33 @@ experimenter launch pattern); (d) **workloads longer than ~20h on
 GCP** — the lane pins `--instance-termination-action=DELETE` +
 `--max-run-duration` (default 24h), so a multi-day sweep is deleted
 mid-run; set `spec.extra["max_run_duration"]` deliberately or use the
-RunPod override. For the gcp/auto lanes the dispatch script must exist
+RunPod override. **When overriding to RunPod, name the residual gap in
+the launch marker note** (CLAUDE.md rule). The dispatch CLI
+cross-checks the task's ACTUAL frontmatter: passing `--backend runpod`
+while the frontmatter `backend:` does not name a backend (absent/empty,
+or an explicit `auto`) triggers a LOUD
+stderr warning + `extra.override_without_frontmatter=true` on the
+`epm:backend-selected` marker (additive visibility — the launch is not
+blocked). For the gcp/auto lanes the dispatch script must exist
 on the pushed branch — `--repo-branch` defaults to the current branch
-(the GCE startup script clones from origin). SLURM custom stages are
+(the GCE startup script clones from origin). Two more gcp/auto
+composition rules (both hit live on #599, 2026-06-11): (e) **GPU
+sizing on the gcp/auto lanes comes from `--intent`, never `--gpus`** —
+the GCP lane maps intent → machine type statically
+(`backends/gcp.INTENT_TO_MACHINE`: `lora-7b`/`lora` →
+`a2-ultragpu-1g`, 1 GPU; `ft-7b` → `a2-ultragpu-4g`, 4 GPU) and
+ignores `--gpus` (only RunPod and SLURM honor the override), so pick
+the intent whose machine matches the plan's GPU spec; a gcp-reachable
+launch with a mismatched `--gpus` is refused pre-route by
+`dispatch_issue.py` (exit 2, `reason: gpus_machine_mismatch`). (f)
+**Drivers that default `REPO_ROOT` to the RunPod path need it threaded
+on gcp/auto** — the GCE startup script clones to `$WORKLOAD_ROOT`
+(`/workspace/eps-issue-<N>`), cds there, then runs the workload
+command verbatim, so a driver defaulting
+`REPO_ROOT=/workspace/explore-persona-space` dies at its first `cd`
+under `set -e` and the EXIT trap powers the VM off; compose
+`--workload-cmd 'REPO_ROOT="$WORKLOAD_ROOT" bash scripts/<driver>.sh'`.
+SLURM custom stages are
 render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
 workload to GCP before the router had a custom workload-command field;
@@ -2434,7 +2458,10 @@ SLURM helpers call `task.py post-marker` via
   `chosen_kind`, `reason` (`override` / `reconnect` / `auto_started` /
   `auto_fallback_gcp` / `no_compute_available` / `workload_failure`),
   `cluster`, `elapsed_seconds`, the per-lane `attempts` ladder, and
-  `extra` (`cancel_race?`, `gcp_attempts_today?`, `intermediate?`).
+  `extra` (`cancel_race?`, `gcp_attempts_today?`, `intermediate?`,
+  `override_without_frontmatter?` — stamped by the dispatch CLI when
+  `--backend runpod` was passed while the task frontmatter does not
+  name a backend: absent/empty, or an explicit `auto`).
   Legacy `frontmatter_*` / `slurm_*` reason codes from the pre-slice-6
   `select_backend` are preserved in `workflow.yaml § markers` for
   back-compat reads.
