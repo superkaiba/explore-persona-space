@@ -18,6 +18,14 @@ log = logging.getLogger("issue_601.phase0_lib")
 
 # Plan §7 gate 2 — the #534-class adapter-application HALT bound.
 ONPOLICY_CROSSCHECK_TOL_NATS = 1.0
+# Round-5 structural tripwire: >=3 DISTINCT adapters re-reading within this
+# tolerance of one another is physically impossible under faithful
+# per-adapter application — it means every read saw the same effective model
+# (mapping scramble, or a uniform application artifact such as the
+# rsLoRA-over-application collapse ceiling that produced 10.350 ± 0.002
+# across six adapters in round 4).
+IDENTICAL_REREAD_TOL_NATS = 0.01
+IDENTICAL_REREAD_MIN_GROUP = 3
 # Plan §4 item 2 — space-calibration divergence threshold.
 SPACE_DIVERGENCE_NATS = 2.0
 # Plan §6 — clamp contrast threshold (Phase 0b).
@@ -138,7 +146,54 @@ def terminal_source_stats(trajectory: dict) -> dict:
         "delta_z_marker": float(ss["delta_z_marker_mean"]),
         "delta_margin": float(delta_margin),
         "emission_p": float(ss.get("emission_p", float("nan"))),
+        # Regime-validity flag (round 5): a collapsed source R means the
+        # re-read ΔG is the repetition ceiling, not an adapter property.
+        "r_collapsed": bool(ss.get("r_collapsed", False)),
     }
+
+
+class IdenticalRereadAlarm(RuntimeError):
+    """>=3 distinct adapters re-read to (near-)identical ΔG — identical-read pathology.
+
+    Raised by :func:`onpolicy_crosscheck` INSTEAD of a quiet ``pass=false``
+    (round-5 brief fix #3). Carries ``diag`` with the offending group(s) +
+    the full per-adapter table so the driver can persist durable evidence
+    before re-raising. Known generators: worker→adapter mapping scramble;
+    uniform application artifact (e.g. rsLoRA over-application collapse
+    ceiling — the realized round-4 case, six adapters at 10.350 ± 0.002).
+    """
+
+    def __init__(self, message: str, diag: dict):
+        super().__init__(message)
+        self.diag = diag
+
+
+def find_identical_reread_groups(
+    delta_g_by_key: dict[str, float],
+    tol_nats: float = IDENTICAL_REREAD_TOL_NATS,
+    min_group: int = IDENTICAL_REREAD_MIN_GROUP,
+) -> list[list[str]]:
+    """Groups of >= ``min_group`` keys whose re-read ΔG all sit within ``tol_nats``.
+
+    Pure + CPU-testable. Single-linkage over the sorted values: consecutive
+    gaps <= tol chain into one group (the realized failure mode is a single
+    tight cluster, e.g. 10.348..10.351).
+    """
+    items = sorted(delta_g_by_key.items(), key=lambda kv: kv[1])
+    groups: list[list[str]] = []
+    current: list[str] = []
+    for i, (key, val) in enumerate(items):
+        if not current:
+            current = [key]
+        elif val - items[i - 1][1] <= tol_nats:
+            current.append(key)
+        else:
+            if len(current) >= min_group:
+                groups.append(current)
+            current = [key]
+    if len(current) >= min_group:
+        groups.append(current)
+    return groups
 
 
 def onpolicy_crosscheck(
@@ -158,6 +213,12 @@ def onpolicy_crosscheck(
     Returns:
         ``{"pass": bool, "per_adapter": {...}, "tol_nats": ...}`` — pass iff
         EVERY re-read adapter reproduces its committed terminal within tol.
+
+    Raises:
+        IdenticalRereadAlarm: when >= IDENTICAL_REREAD_MIN_GROUP distinct
+            adapters re-read within IDENTICAL_REREAD_TOL_NATS of one another
+            (round-5 structural tripwire — identical-read pathology must be a
+            loud, named error, never a quiet ``pass=false``).
     """
     per: dict[str, dict] = {}
     ok = True
@@ -174,8 +235,94 @@ def onpolicy_crosscheck(
             "reread_delta_g": got,
             "abs_diff": diff,
             "within_tol": within,
+            # Regime-validity flags (round 5): a ceiling-pinned / collapsed
+            # re-read is not a valid parity comparison even when it lands
+            # inside tol by accident.
+            "reread_r_collapsed": bool(stats.get("r_collapsed", False)),
+            "reread_emission_p": float(stats.get("emission_p", float("nan"))),
         }
+    identical = find_identical_reread_groups({k: v["reread_delta_g"] for k, v in per.items()})
+    if identical:
+        diag = {
+            "identical_groups": identical,
+            "tol_nats_identical": IDENTICAL_REREAD_TOL_NATS,
+            "per_adapter": per,
+        }
+        raise IdenticalRereadAlarm(
+            "mapping scramble suspected: "
+            f"{[len(g) for g in identical]} distinct adapters re-read within "
+            f"{IDENTICAL_REREAD_TOL_NATS} nat of one another: {identical}. Identical re-reads "
+            "across different adapters are physically impossible under faithful per-adapter "
+            "application — either the worker→adapter assignment is scrambled or a uniform "
+            "application artifact is pinning every read at a ceiling (e.g. rsLoRA "
+            "over-application collapse, the realized round-4 case).",
+            diag,
+        )
     return {"pass": bool(ok), "tol_nats": tol_nats, "per_adapter": per}
+
+
+def onpolicy_worker_plan(
+    onpolicy_keys: list[str],
+    phase0_dir,
+    adapters_root,
+    data_dir,
+    log_dir,
+) -> list[dict]:
+    """Pure cell→worker mapping for the 0a-op re-reads (CPU-testable, no I/O).
+
+    Returns one plan row per ``<cell>_seed<S>`` key:
+    ``{"key", "cell", "seed", "adapter_path", "out_dir", "idx_path",
+    "log_path", "cmd"}``. The driver writes ``idx_path`` (the synthetic
+    single-checkpoint index pointing at ``adapter_path``) and launches
+    ``cmd``; the test asserts ``key in adapter_path`` and per-row uniqueness —
+    the round-5 brief's mapping-construction smoke.
+    """
+    from pathlib import Path
+
+    phase0_dir, adapters_root = Path(phase0_dir), Path(adapters_root)
+    plan: list[dict] = []
+    for key in onpolicy_keys:
+        cell, seed_s = key.rsplit("_seed", 1)
+        out_dir = phase0_dir / "onpolicy_recheck" / key
+        idx_path = out_dir / "checkpoint_index.json"
+        adapter_path = adapters_root / key
+        cmd = [
+            "uv",
+            "run",
+            "python",
+            "scripts/i601_eval_trajectory.py",
+            "--cell",
+            cell,
+            "--seed",
+            seed_s,
+            "--checkpoint-index",
+            str(idx_path),
+            "--out-path",
+            str(out_dir / "trajectory.json"),
+            "--raw-completions-path",
+            str(out_dir / "raw_completions.json"),
+            "--data-dir",
+            str(data_dir),
+            "--fracs",
+            "1.0000",
+            "--panel",
+            "bystander8",
+            "--bystander-panel-path",
+            str(phase0_dir / "bystander_panel.json"),
+        ]
+        plan.append(
+            {
+                "key": key,
+                "cell": cell,
+                "seed": int(seed_s),
+                "adapter_path": str(adapter_path),
+                "out_dir": str(out_dir),
+                "idx_path": str(idx_path),
+                "log_path": str(Path(log_dir) / f"issue-601-phase0-op-{key}.log"),
+                "cmd": cmd,
+            }
+        )
+    return plan
 
 
 def margin_references(

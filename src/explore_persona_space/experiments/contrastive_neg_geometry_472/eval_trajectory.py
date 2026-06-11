@@ -446,6 +446,17 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
         frac = spec["frac"]
         adapter_path = spec["adapter_path"]
         label = f"{cell_slug}_seed{seed}_frac{frac}"
+        # #601 round-5 fail-loud mapping assert: the adapter ACTUALLY applied
+        # must carry the cell slug in its path (worker→adapter scramble
+        # tripwire — checked on the original path when a staged copy is in
+        # play, since staging may rename).
+        _mapping_path = str(spec.get("source_adapter_path") or adapter_path)
+        if cell_slug not in _mapping_path:
+            raise RuntimeError(
+                f"adapter mapping assert FAILED at {label}: cell slug {cell_slug!r} not in "
+                f"adapter path {_mapping_path!r} — refusing to apply a possibly-scrambled "
+                "adapter (round-5 gate incident class)."
+            )
         # #534 round-1 root cause: vLLM caches LoRA adapters STRICTLY by
         # ``lora_int_id`` (LRUCacheWorkerLoRAManager.add_adapter: an already-
         # seen id is "just touched" — ``lora_path`` is never re-read). Reusing
@@ -603,6 +614,15 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
                 "frac": frac,
                 "step": spec.get("step"),
                 "adapter_path": adapter_path,
+                # #601 round-5 provenance pass-through (None for legacy #472
+                # callers): original path + adapter sha256 + the effective
+                # LoRA scaling actually applied, plus the vLLM request
+                # identity (lora_name carries cell+seed+frac; lora_int_id is
+                # the per-engine unique id from the #534 fix).
+                "source_adapter_path": spec.get("source_adapter_path"),
+                "provenance": spec.get("provenance"),
+                "lora_name": label,
+                "lora_int_id": ck_i,
                 "source_self": source_self,
                 "source_manifest_check": source_manifest_check,
                 "held_out_collapse_share": held_out_collapse_share,

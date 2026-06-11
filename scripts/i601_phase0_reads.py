@@ -92,6 +92,9 @@ def _run_teacher_worker(args) -> int:
         load_r_artifact,
     )
     from explore_persona_space.experiments.neg_setpoint_601 import SOURCE_PERSONA
+    from explore_persona_space.experiments.neg_setpoint_601.artifacts import (
+        stage_parity_read_adapter,
+    )
     from explore_persona_space.experiments.neg_setpoint_601.phase0_lib import (
         COVERAGE_ABSENT,
         COVERAGE_FULL,
@@ -110,11 +113,27 @@ def _run_teacher_worker(args) -> int:
     for key in [k.strip() for k in args.adapters.split(",") if k.strip()]:
         out_path = out_dir / f"{key}.json"
         if out_path.exists():
-            log.info("[tf %s] exists; skip (idempotent re-run)", key)
-            continue
+            # Round-5: only skip outputs produced under the parity-read
+            # regime — pre-parity (round-4) outputs are the dirty
+            # ceiling-pinned reads and MUST be re-read, not reused.
+            prior = json.loads(out_path.read_text())
+            prior_prov = prior.get("adapter_provenance") or {}
+            if prior_prov.get("use_rslora_applied") is False:
+                log.info("[tf %s] parity-regime output exists; skip (idempotent re-run)", key)
+                continue
+            log.warning("[tf %s] STALE pre-parity output — re-reading under parity regime", key)
+            out_path.unlink()
         cell, seed_s = key.rsplit("_seed", 1)
         adapter_dir = args.adapters_root / key
-        assert_logit_readout_gauge_free(str(adapter_dir))
+        # Round-5 parity staging: apply the adapter at the parent-realized
+        # read scaling (use_rslora forced False) — at the shipped rsLoRA
+        # config every parent adapter is a ` ※`-repeater and the tf read pins
+        # at -mean(b_logp) ~ 22.85 for ALL adapters (the round-4 dirty
+        # endpoint_reads). Includes the fail-loud slug-in-path mapping assert.
+        staged_dir, adapter_provenance = stage_parity_read_adapter(
+            adapter_dir, args.phase0_dir / "staged_adapters", expect_slug=key
+        )
+        assert_logit_readout_gauge_free(str(staged_dir))
         # Coverage split (concern phase0-r-eval-coverage-gap): the pinned R_eval
         # misses 3 parent trained negatives (c472_near: mob_boss + cult_leader;
         # c472_negp_8: baker). Those reads are DESCOPED per-persona with an
@@ -142,7 +161,7 @@ def _run_teacher_worker(args) -> int:
         log.info("[tf %s] %d personas x %d questions", key, len(personas), len(q_eval))
         stats = compute_kl_for_checkpoint(
             base_model="Qwen/Qwen2.5-7B-Instruct",
-            adapter_path=str(adapter_dir),
+            adapter_path=str(staged_dir),
             r_by_persona_q=r_map,
             eval_personas=eval_personas,
             eval_questions=q_eval,
@@ -167,6 +186,9 @@ def _run_teacher_worker(args) -> int:
             "bystander_panel": bystanders,
             "eval_questions": q_eval,
             "read_type": "teacher_forced_frozen_R_eval",
+            # Round-5 provenance: which weights were ACTUALLY applied, at
+            # which effective scaling (adapter sha256 + use_rslora patch).
+            "adapter_provenance": adapter_provenance,
             "stats": stats,
             "git_commit": _git_sha(),
             "timestamp_utc": datetime.now(UTC).isoformat(),
@@ -176,6 +198,37 @@ def _run_teacher_worker(args) -> int:
         os.replace(tmp, out_path)
         log.info("[tf %s] written → %s", key, out_path)
     return 0
+
+
+def _prepare_onpolicy_launch_rows(plan: list[dict]) -> list[tuple[str, list[str], Path]]:
+    """Filter the 0a-op worker plan to rows needing a (re-)read + write indices.
+
+    Round-5 stale-output rule: an existing trajectory is reused ONLY when it
+    was produced under the parity-read regime (terminal checkpoint carries
+    ``provenance.use_rslora_applied == False``). Round-4 ceiling-pinned
+    trajectories (no provenance) are deleted and re-read.
+    """
+    rows: list[tuple[str, list[str], Path]] = []
+    for row in plan:
+        key = row["key"]
+        out_dir = Path(row["out_dir"])
+        traj_path = out_dir / "trajectory.json"
+        if traj_path.exists():
+            prior = json.loads(traj_path.read_text())
+            prior_cks = prior.get("checkpoints", [])
+            prior_prov = (prior_cks[-1].get("provenance") or {}) if prior_cks else {}
+            if prior_prov.get("use_rslora_applied") is False:
+                log.info("[phase=p0_onpolicy] %s parity-regime output exists; skip", key)
+                continue
+            log.warning("[phase=p0_onpolicy] %s STALE pre-parity trajectory — re-reading", key)
+            traj_path.unlink()
+        out_dir.mkdir(parents=True, exist_ok=True)
+        # Synthetic single-checkpoint index pointing at the final adapter.
+        Path(row["idx_path"]).write_text(
+            json.dumps({"1.0000": {"step": None, "path": row["adapter_path"]}})
+        )
+        rows.append((f"op_{key}", row["cmd"], Path(row["log_path"])))
+    return rows
 
 
 def _pool(cmds: list[tuple[str, list[str], Path]], n_gpus: int, log_dir: Path) -> None:
@@ -367,10 +420,12 @@ def main(argv: list[str] | None = None) -> int:
         fetch_parent_data,
     )
     from explore_persona_space.experiments.neg_setpoint_601.phase0_lib import (
+        IdenticalRereadAlarm,
         clamp_read,
         decide_primary_space,
         margin_references,
         onpolicy_crosscheck,
+        onpolicy_worker_plan,
         terminal_source_stats,
     )
 
@@ -433,47 +488,16 @@ def main(argv: list[str] | None = None) -> int:
     _pool(tf_cmds, args.n_gpus, args.log_dir)
 
     # ── 0a-op: on-policy recheck of the 8 count-cell adapters. ───────────────
+    # The cell→worker mapping is the pure (CPU-tested) onpolicy_worker_plan —
+    # the round-5 brief's mapping-construction smoke asserts key∈adapter_path
+    # per worker against THIS function, so the smoke and the production launch
+    # share one mapping implementation.
     onpolicy_keys = [f"{c}_seed{s}" for c, _lvl in COUNT_CELL_LEVELS for s in PARENT_SEEDS]
     if not args.skip_onpolicy:
-        op_cmds = []
-        for key in onpolicy_keys:
-            out_dir = args.phase0_dir / "onpolicy_recheck" / key
-            if (out_dir / "trajectory.json").exists():
-                log.info("[phase=p0_onpolicy] %s exists; skip", key)
-                continue
-            out_dir.mkdir(parents=True, exist_ok=True)
-            # Synthetic single-checkpoint index pointing at the final adapter.
-            idx_path = out_dir / "checkpoint_index.json"
-            idx_path.write_text(
-                json.dumps({"1.0000": {"step": None, "path": str(args.adapters_root / key)}})
-            )
-            cell = key.rsplit("_seed", 1)[0]
-            seed = int(key.rsplit("_seed", 1)[1])
-            cmd = [
-                "uv",
-                "run",
-                "python",
-                "scripts/i601_eval_trajectory.py",
-                "--cell",
-                cell,
-                "--seed",
-                str(seed),
-                "--checkpoint-index",
-                str(idx_path),
-                "--out-path",
-                str(out_dir / "trajectory.json"),
-                "--raw-completions-path",
-                str(out_dir / "raw_completions.json"),
-                "--data-dir",
-                str(args.data_dir),
-                "--fracs",
-                "1.0000",
-                "--panel",
-                "bystander8",
-                "--bystander-panel-path",
-                str(args.phase0_dir / "bystander_panel.json"),
-            ]
-            op_cmds.append((f"op_{key}", cmd, args.log_dir / f"issue-601-phase0-op-{key}.log"))
+        plan = onpolicy_worker_plan(
+            onpolicy_keys, args.phase0_dir, args.adapters_root, args.data_dir, args.log_dir
+        )
+        op_cmds = _prepare_onpolicy_launch_rows(plan)
         log.info("[phase=p0_onpolicy] %d on-policy rechecks", len(op_cmds))
         _pool(op_cmds, args.n_gpus, args.log_dir)
 
@@ -496,7 +520,26 @@ def main(argv: list[str] | None = None) -> int:
             )
             term = max(committed_traj["checkpoints"], key=lambda c: c["frac"])
             committed[key] = float(term["source_self"]["delta_g_mean"])
-        crosscheck = onpolicy_crosscheck(reread, committed)
+        try:
+            crosscheck = onpolicy_crosscheck(reread, committed)
+        except IdenticalRereadAlarm as alarm:
+            # Round-5 fix #3: the identical-read pathology is a LOUD, named
+            # error — persist durable gate evidence, then crash the driver.
+            (args.phase0_dir / "phase0_gate.json").write_text(
+                json.dumps(
+                    {
+                        "pass": False,
+                        "gate": "adapter-application cross-check (plan §7 gate 2, #534 class)",
+                        "structural_alarm": "IdenticalRereadAlarm",
+                        "detail": str(alarm),
+                        "diag": alarm.diag,
+                        "git_commit": _git_sha(),
+                        "timestamp_utc": datetime.now(UTC).isoformat(),
+                    },
+                    indent=2,
+                )
+            )
+            raise
         level_by_cell = dict(COUNT_CELL_LEVELS)
         margin_refs = margin_references(reread, level_by_cell)
         space = decide_primary_space(margin_refs)

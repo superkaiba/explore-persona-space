@@ -69,6 +69,8 @@ __all__ = [
     "MAX_NEW_TOKENS_EVAL",
     "N_BYSTANDER_REFERENCE",
     "PARENT_DATA_FILES",
+    "PARITY_READ_RATIONALE",
+    "PARITY_READ_USE_RSLORA",
     "PHASE4_BRIDGE_ATTRIBUTION",
     "SOURCE_PERSONA",
     "CellSpec601",
@@ -86,6 +88,33 @@ EFFECTIVE_BATCH = BATCH_SIZE * GRAD_ACCUM  # 16 — step arithmetic single sourc
 HF_ADAPTER_PREFIX_472 = "adapters/issue_472"
 HF_ADAPTER_PREFIX_601 = "adapters/issue_601"
 HF_DATA_PREFIX_601 = "issue601_neg_setpoint"
+
+# ── Parent-parity adapter READ scaling (round 5; Phase-0a HALT root cause). ──
+# The #472 adapters were TRAINED with PEFT/TRL honoring ``use_rslora: true``
+# (effective scaling α/√r = 64/√32 ≈ 11.31). Applied at that scaling they are
+# unconditional ` ※`-repeaters: every persona (source AND bystanders) spams
+# the marker from token one, the on-policy source ΔG pins at the
+# adapter-INDEPENDENT collapse ceiling −log P_base(※ | marker-spam prefix)
+# ≈ 10.35 nat, and the teacher-forced ΔG pins at −mean(b_logp) ≈ 22.85 nat —
+# exactly the round-4 gate failure (six different adapters re-reading
+# 10.350 ± 0.002). The COMMITTED #472 trajectories correspond to applying the
+# SAME weights at the classic α/r = 2.0 scaling (empirically verified on
+# pod-601: a use_rslora=false read reproduces the committed regime — noneg
+# teacher-forced ΔG 2.56 vs committed 2.12; the as-is read saturates), i.e.
+# the parent's realized measurement gauge is "train with rsLoRA, READ at
+# α/r". The same gauge already shows inside the committed #472 data: its HF
+# KL phase (PEFT, rsLoRA honored) recorded KL ≈ −b_logp (δ-function-on-marker
+# signature, sd < 0.5 over 470 leaves) while its vLLM phase read the
+# differentiated set-points. EVERY #601 read of a trained adapter (parent OR
+# new cell — new cells train through the identical train_lora rsLoRA rig)
+# therefore stages the adapter with ``use_rslora`` forced False before
+# application, recording full provenance per read. Training is NOT touched —
+# parity with the parent's training regime requires rsLoRA stay on there.
+PARITY_READ_USE_RSLORA = False
+PARITY_READ_RATIONALE = (
+    "parent-realized read gauge: #472 committed set-points correspond to applying "
+    "rsLoRA-trained weights at classic lora_alpha/r scaling (see neg_setpoint_601.__init__)"
+)
 
 # Parent input artifacts on the HF data repo (Hub-verified in plan §10), mapped
 # to the LOCAL paths the #472 loaders expect (relative to repo root).

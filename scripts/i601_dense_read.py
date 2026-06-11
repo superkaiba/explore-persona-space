@@ -80,6 +80,30 @@ def _four_floats(raw, marker_id: int, eos_id: int) -> dict[str, float]:
     }
 
 
+def _parity_resume_checkpoints(out_path: Path) -> dict[str, dict]:
+    """Prior checkpoints eligible for resume — parity-regime reads ONLY.
+
+    Round-5 stale-output rule: a prior read resumes only when its provenance
+    records ``use_rslora_applied == False`` (the parent-realized read
+    scaling); pre-parity reads are the rsLoRA-over-applied ceiling reads and
+    are dropped for re-reading.
+    """
+    if not out_path.exists():
+        return {}
+    prior = json.loads(out_path.read_text())
+    prior_cks = prior.get("checkpoints", [])
+    existing = {
+        f"{c['frac']:.4f}": c
+        for c in prior_cks
+        if (c.get("provenance") or {}).get("use_rslora_applied") is False
+    }
+    n_stale = len(prior_cks) - len(existing)
+    if n_stale:
+        log.warning("resume: dropping %d STALE pre-parity checkpoint reads", n_stale)
+    log.info("resume: %d parity-regime checkpoints already read", len(existing))
+    return existing
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="Task #601 dense teacher-forced four-float reader (see module docstring).",
@@ -135,6 +159,9 @@ def main(argv: list[str] | None = None) -> int:
         SOURCE_PERSONA,
         cell_by_slug,
     )
+    from explore_persona_space.experiments.neg_setpoint_601.artifacts import (
+        stage_parity_read_adapter,
+    )
     from explore_persona_space.experiments.neg_setpoint_601.phase0_lib import (
         assert_r_eval_coverage,
     )
@@ -184,11 +211,10 @@ def main(argv: list[str] | None = None) -> int:
         raise RuntimeError(f"no usable checkpoints in {args.checkpoint_index}")
 
     # Resume: keep already-read checkpoints (idempotent mop-up re-runs).
-    existing: dict[str, dict] = {}
-    if args.out_path.exists():
-        prior = json.loads(args.out_path.read_text())
-        existing = {f"{c['frac']:.4f}": c for c in prior.get("checkpoints", [])}
-        log.info("resume: %d checkpoints already read", len(existing))
+    # Round-5: only PARITY-regime reads resume — pre-parity checkpoints (no
+    # use_rslora_applied=False provenance) are the dirty rsLoRA-over-applied
+    # reads and are re-read, never reused.
+    existing = _parity_resume_checkpoints(args.out_path)
 
     device = args.device if torch.cuda.is_available() else "cpu"
     log.info(
@@ -243,13 +269,21 @@ def main(argv: list[str] | None = None) -> int:
         if key in done_keys:
             continue
         adapter_path = ck["adapter_path"]
-        assert_logit_readout_gauge_free(adapter_path)
+        # Round-5 parity staging: apply at the parent-realized read scaling
+        # (use_rslora forced False — neg_setpoint_601.PARITY_READ_* has the
+        # evidence chain) + the fail-loud slug∈path mapping assert.
+        staged_dir, adapter_provenance = stage_parity_read_adapter(
+            Path(adapter_path),
+            args.out_path.parent / "staged_adapters",
+            expect_slug=args.cell,
+        )
+        assert_logit_readout_gauge_free(str(staged_dir))
         name = f"ck{i}"
         if peft_model is None:
-            peft_model = PeftModel.from_pretrained(base, adapter_path, adapter_name=name)
+            peft_model = PeftModel.from_pretrained(base, str(staged_dir), adapter_name=name)
             peft_model.eval()
         else:
-            peft_model.load_adapter(adapter_path, adapter_name=name)
+            peft_model.load_adapter(str(staged_dir), adapter_name=name)
             peft_model.set_adapter(name)
             if prev_name is not None:
                 peft_model.delete_adapter(prev_name)
@@ -299,6 +333,9 @@ def main(argv: list[str] | None = None) -> int:
                 "frac": ck["frac"],
                 "step": ck["step"],
                 "adapter_path": adapter_path,
+                # Round-5 provenance: weights actually applied + scaling.
+                "staged_adapter_path": str(staged_dir),
+                "provenance": adapter_provenance,
                 "source_mean": source_mean,
                 "reads": reads,
             }

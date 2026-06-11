@@ -129,6 +129,27 @@ def main(argv: list[str] | None = None) -> int:
             {"frac": float(key), "step": entry.get("step"), "adapter_path": entry["path"]}
         )
     checkpoint_specs.sort(key=lambda s: s["frac"])
+
+    # Round-5 parity staging (Phase-0a HALT root cause): every adapter is
+    # applied through a STAGED copy with use_rslora forced False — the
+    # parent-realized read scaling. At the shipped rsLoRA config the parent
+    # adapters are unconditional ` ※`-repeaters and the on-policy ΔG pins at
+    # the adapter-independent collapse ceiling (~10.35 for ALL cells). The
+    # helper also carries the fail-loud slug∈path mapping assert + full
+    # provenance (adapter sha256, original/applied scaling) which
+    # run_trajectory_eval persists per checkpoint into trajectory.json.
+    from explore_persona_space.experiments.neg_setpoint_601.artifacts import (
+        stage_parity_read_adapter,
+    )
+
+    staged_root = args.out_path.parent / "staged_adapters"
+    for spec in checkpoint_specs:
+        staged_dir, prov = stage_parity_read_adapter(
+            Path(spec["adapter_path"]), staged_root, expect_slug=args.cell
+        )
+        spec["source_adapter_path"] = spec["adapter_path"]
+        spec["adapter_path"] = str(staged_dir)
+        spec["provenance"] = prov
     log.info("On-policy checkpoints: %s", [(c["frac"], c["step"]) for c in checkpoint_specs])
 
     run_trajectory_eval(
