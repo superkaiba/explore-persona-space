@@ -7,8 +7,8 @@
     "layer": 7,
     "tensor_key": "delta_v_l7",
     "mean_resp_tensor_key": "delta_v_mean_resp_l7",
-    "git_commit": "469c49736712b62d4efce3f0685431ba5eac28c6",
-    "timestamp_utc": "2026-06-10T23:50:21Z",
+    "git_commit": "3e00389f943470b74fe7cedda1c629f0fe2203f1",
+    "timestamp_utc": "2026-06-11T00:15:36Z",
     "env_versions": {
       "torch": "2.8.0",
       "numpy": "2.2.6"

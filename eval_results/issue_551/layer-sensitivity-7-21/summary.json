@@ -5,10 +5,10 @@
     "followup_label": "layer-sensitivity-and-seed137-degeneracy",
     "analysis": "layer_sensitivity_summary",
     "layer": null,
-    "tensor_key": "delta_v_l0",
-    "mean_resp_tensor_key": "delta_v_mean_resp_l0",
-    "git_commit": "469c49736712b62d4efce3f0685431ba5eac28c6",
-    "timestamp_utc": "2026-06-10T23:56:24Z",
+    "tensor_key": null,
+    "mean_resp_tensor_key": null,
+    "git_commit": "3e00389f943470b74fe7cedda1c629f0fe2203f1",
+    "timestamp_utc": "2026-06-11T00:22:03Z",
     "env_versions": {
       "torch": "2.8.0",
       "numpy": "2.2.6"
