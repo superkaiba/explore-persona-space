@@ -2596,7 +2596,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/472",
       "status": "followups_running",
-      "title": "Bystander marker leakage tracks the total contrastive-negative budget: splitting it across more personas moves leakage no more than rerunning the same training (LOW confidence)"
+      "title": "Bystander marker leakage tracks the total contrastive-negative budget: in this design, fixed-total persona splits shift leakage at the scale of one observed rerun of the same mix (LOW confidence)"
     },
     "473": {
       "goal": "Determine whether persona-to-source Jensen-Shannon divergence between base-model persona-conditioned output distributions predicts per-bystander emergent-misalignment (EM) leakage better than layer-20 residual cosine \u2014 the EM analogue of #470's sycophancy-leakage predictor comparison, using the identical JS-vs-cosine recipe and statistical machinery.",

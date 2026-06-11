@@ -1,7 +1,7 @@
 ---
-title: 'Bystander marker leakage tracks the total contrastive-negative budget: splitting
-  it across more personas moves leakage no more than rerunning the same training (LOW
-  confidence)'
+title: 'Bystander marker leakage tracks the total contrastive-negative budget: in
+  this design, fixed-total persona splits shift leakage at the scale of one observed
+  rerun of the same mix (LOW confidence)'
 kind: experiment
 tags:
 - followup-manual
