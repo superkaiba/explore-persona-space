@@ -1,0 +1,1 @@
+{"ts": "2026-06-11T19:19:22Z", "event": "raised", "concern_id": "ft-oom-fallback-ds-accum-mismatch", "severity": "CONCERN", "summary": "OOM fallback _ft_cmd(2,2) crashes: yaml pins ds gradient_accumulation_steps=1, transformers raises mismatch vs --grad-accum 2", "raised_by": "code-reviewer", "raised_at_round": 1}
