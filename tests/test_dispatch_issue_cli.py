@@ -17,6 +17,12 @@ SKILL.md Step 6b / 6d / 8 actually shells:
    nibi.
 4. ``launch`` action on a router terminal → ``failure_class:`` JSON
    line + nonzero exit code.
+4b. ``launch`` with a ``--gpus`` override that mismatches the GCP
+    machine for the intent on a gcp-reachable lane (explicit gcp, or
+    auto with gcp in the lane order) → pre-route refusal (exit 2,
+    ``reason: gpus_machine_mismatch``) BEFORE any backend is built
+    (incident #599); matching counts, override-honoring lanes, and an
+    auto order without gcp all proceed.
 5. ``finalize`` action: sidecar present → confirm_artifacts PASS →
    teardown called.
 6. ``finalize`` action: confirm_artifacts FAIL → teardown SKIPPED +
@@ -627,6 +633,211 @@ def test_launch_hydra_args_threaded_into_spec(monkeypatch, tmp_path) -> None:
         )
     assert rc == 0
     assert nibi.launches[0].hydra_args == ("condition=c1", "seed=42")
+
+
+# ---------------------------------------------------------------------------
+# incident #599 — pre-route --gpus / GCP machine-type mismatch guard
+# ---------------------------------------------------------------------------
+
+
+def _guard_exploding_factory():
+    raise AssertionError("backends must not be built when the gpus guard refuses the launch")
+
+
+def test_launch_gpus_mismatch_explicit_gcp_fails_loud_before_backends(
+    monkeypatch, tmp_path
+) -> None:
+    """Incident #599: ``--backend gcp --intent lora-7b --gpus 4`` would
+    provision a2-ultragpu-1g (1x A100-80) for a workload requiring 4
+    GPUs — the GCP lane ignores ``--gpus`` (INTENT_TO_MACHINE maps by
+    intent alone), so the CLI must refuse PRE-LAUNCH with the
+    router-terminal JSON shape (exit 2, failure_class infra) and never
+    build a backend, instead of provisioning a guaranteed-crash VM."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "599",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--gpus",
+                "4",
+                "--workload-cmd",
+                "bash scripts/run_issue599_fullresp.sh",
+            ],
+            backends_factory=_guard_exploding_factory,
+        )
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["failure_class"] == "infra"
+    assert body["status"] == "blocked"
+    assert body["reason"] == "gpus_machine_mismatch"
+    # The note's first line carries the failure_class= prefix so the
+    # orchestrator's Step 7 classifier short-circuits (same contract as
+    # the router-terminal translation).
+    assert body["note"].splitlines()[0] == "failure_class: infra"
+    # The note names the intent whose machine DOES match 4 GPUs.
+    assert "ft-7b" in body["note"]
+    # Nothing launched → no sidecar.
+    assert not default_handle_sidecar_path(599).exists()
+
+
+def test_launch_gpus_mismatch_auto_lane_gcp_first_fails_loud(monkeypatch, tmp_path) -> None:
+    """The #599 incident shape verbatim: NO ``--backend`` (auto) under
+    the GCP-first standing default — gcp is reachable as the FIRST lane,
+    so the mismatch guard must refuse pre-route just like the explicit
+    gcp case."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    monkeypatch.delenv("EPM_AUTO_LANE_ORDER", raising=False)
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "599",
+                "--intent",
+                "lora-7b",
+                "--gpus",
+                "4",
+                "--workload-cmd",
+                "bash scripts/run_issue599_fullresp.sh",
+            ],
+            backends_factory=_guard_exploding_factory,
+        )
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip())
+    assert body["reason"] == "gpus_machine_mismatch"
+    assert not default_handle_sidecar_path(599).exists()
+
+
+def test_launch_gpus_match_on_gcp_lane_proceeds(monkeypatch, tmp_path) -> None:
+    """A MATCHING override (``ft-7b`` → a2-ultragpu-4g carries 4 GPUs)
+    never trips the guard — the launch proceeds with spec.gpus intact."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "601",
+                "--intent",
+                "ft-7b",
+                "--backend",
+                "gcp",
+                "--gpus",
+                "4",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].gpus == 4
+
+
+def test_launch_gpus_override_skips_guard_on_lanes_that_honor_it(monkeypatch, tmp_path) -> None:
+    """RunPod maps ``spec.gpus`` to ``pod_lifecycle.py --gpu-count`` and
+    SLURM maps it to the ``--gres`` render — explicit non-GCP lanes
+    honor the override (and never escalate to GCP), so the guard stands
+    down."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as cli
+
+    # Pin the frontmatter seam (hermetic; "runpod" = legitimately backed).
+    monkeypatch.setattr(cli, "_frontmatter_backend_value", lambda _issue: "runpod")
+    runpod = _MockBackend(kind="runpod")
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = cli.main(
+            [
+                "launch",
+                "--issue",
+                "602",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "runpod",
+                "--gpus",
+                "4",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert runpod.launches[0].gpus == 4
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = cli.main(
+            [
+                "launch",
+                "--issue",
+                "603",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "nibi",
+                "--gpus",
+                "4",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert nibi.launches[0].gpus == 4
+
+
+def test_launch_gpus_mismatch_auto_lane_without_gcp_skips_guard(monkeypatch, tmp_path) -> None:
+    """``EPM_AUTO_LANE_ORDER`` excluding gcp makes GCP unreachable on the
+    auto chain — the guard stands down and the SLURM lane (which honors
+    the override) routes normally."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "nibi")
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "604",
+                "--intent",
+                "lora-7b",
+                "--gpus",
+                "4",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert nibi.launches[0].gpus == 4
 
 
 # ---------------------------------------------------------------------------

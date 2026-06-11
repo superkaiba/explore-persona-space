@@ -48,7 +48,13 @@ Exit codes
   ``failure_class`` + ``status`` + ``note`` from
   ``classify_terminal_exception`` so the orchestrator can post
   ``epm:failure v1`` + ``set-status blocked`` without re-deriving the
-  classification.
+  classification. The pre-route ``--gpus``/GCP machine-type mismatch
+  guard (``reason: gpus_machine_mismatch``, incident #599) exits 2
+  with the same JSON shape: the GCP lane sizes its VM from ``--intent``
+  alone (``backends/gcp.INTENT_TO_MACHINE``) and silently ignores
+  ``--gpus``, so a gcp-reachable launch with a mismatched override is
+  refused BEFORE any backend is built instead of provisioning a
+  wrong-sized VM that crashes the workload at startup.
 * ``3`` — confirm_artifacts FAIL on the ``finalize`` path
   (artifacts not landed; teardown SKIPPED to preserve evidence).
   ``stdout`` carries the per-check reasons. Special case: when the
@@ -472,6 +478,91 @@ def _wrap_marker_poster_with_override_flag(
     return _wrapped
 
 
+def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
+    """Pre-route ``--gpus`` vs GCP machine-type mismatch guard (incident #599).
+
+    The GCP lane sizes its VM from ``spec.intent`` alone
+    (``backends/gcp.INTENT_TO_MACHINE``) and silently IGNORES
+    ``spec.gpus`` — unlike RunPod (maps it to ``pod_lifecycle.py
+    --gpu-count``) and SLURM (maps it to the ``--gres`` render), which
+    both honor the override. A gcp-reachable launch whose ``--gpus``
+    mismatches the intent's machine therefore provisions a wrong-sized
+    VM whose workload crashes at startup with no fallback (#599:
+    ``--intent lora-7b --gpus 4`` → a2-ultragpu-1g, 1x A100-80, for a
+    driver requiring N_GPUS=4). The mapping is static, so the mismatch
+    is knowable BEFORE any backend is built — validate up front and
+    fail LOUD.
+
+    Returns the exit-2 failure body (same ``failure_class`` / ``status``
+    / ``note`` shape as the router-terminal translation, so SKILL.md
+    Step 6b and the failure classifier handle it unchanged) when the
+    launch must be refused; ``None`` when the launch may proceed:
+
+    * no ``--gpus`` override (intent defaults apply on every lane);
+    * an explicit non-GCP backend (those lanes honor the override, and
+      an explicit override never escalates to GCP);
+    * ``backend: auto`` whose resolved lane order excludes ``gcp``
+      (``EPM_AUTO_LANE_ORDER``) — GCP is unreachable;
+    * a defective ``EPM_AUTO_LANE_ORDER`` (``auto_lane_order`` raises
+      ``RouteError``) — skip the guard; ``route()`` surfaces the SAME
+      defect through the existing terminal classification, which a
+      gpus-mismatch message must not preempt;
+    * an intent with no GCP machine mapping (``inf-70b`` / ``ft-70b``)
+      — ``machine_for_intent`` already fails loud inside the GCP lane;
+    * a matching GPU count.
+    """
+    if spec.gpus is None:
+        return None
+    from explore_persona_space.backends.router import RouteError, auto_lane_order
+
+    if spec.backend == "gcp":
+        gcp_reachable = True
+    elif spec.backend == "auto":
+        try:
+            gcp_reachable = "gcp" in auto_lane_order()
+        except RouteError:
+            return None
+    else:
+        return None
+    if not gcp_reachable:
+        return None
+    from explore_persona_space.backends.gcp import INTENT_TO_MACHINE
+
+    machine = INTENT_TO_MACHINE.get(spec.intent)
+    requested = int(spec.gpus)
+    if machine is None or machine.gpu_count == requested:
+        return None
+    matching = sorted(intent for intent, m in INTENT_TO_MACHINE.items() if m.gpu_count == requested)
+    if matching:
+        remedy = (
+            f"use an intent whose GCP machine carries {requested} GPU(s): {', '.join(matching)}"
+        )
+    else:
+        remedy = (
+            f"no GCP intent maps to a {requested}-GPU machine — pick a backend that "
+            "honors the override"
+        )
+    note = (
+        "failure_class: infra\n"
+        "reason: gpus_machine_mismatch\n"
+        f"detail: --gpus {requested} is not honored by the GCP lane — intent "
+        f"{spec.intent!r} maps to machine type {machine.machine_type!r} "
+        f"({machine.gpu_count}x {machine.gpu_kind}) regardless of the override, so the "
+        "VM would start wrong-sized and crash the workload (incident #599). "
+        f"Fix: {remedy}; or drop --gpus (the intent default applies); or pin a backend "
+        "that honors the override (--backend runpod maps it to pod_lifecycle "
+        "--gpu-count; SLURM lanes map it to --gres)."
+    )
+    return {
+        "ok": False,
+        "issue": int(spec.issue),
+        "failure_class": "infra",
+        "status": "blocked",
+        "reason": "gpus_machine_mismatch",
+        "note": note,
+    }
+
+
 def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]) -> int:
     """``launch`` action: build spec → dispatch → write sidecar → print outcome.
 
@@ -534,6 +625,14 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         # unstripped value can never silently flip the gate).
         workload_cmd=(args.workload_cmd or "").strip(),
     )
+
+    # Pre-route --gpus / GCP machine-type mismatch guard (#599): the GCP
+    # lane ignores the override, so fail LOUD before any backend is
+    # built instead of provisioning a wrong-sized VM.
+    mismatch = _gpus_gcp_lane_conflict(spec)
+    if mismatch is not None:
+        print(json.dumps(mismatch, sort_keys=True))
+        return 2
 
     deps = backends_factory()
     marker_poster = deps["marker_poster"]
@@ -944,7 +1043,20 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
     launch.add_argument("--cluster", type=str, default=None, help="SLURM cluster name (nibi/fir).")
-    launch.add_argument("--gpus", type=int, default=None, help="Override GPU count.")
+    launch.add_argument(
+        "--gpus",
+        type=int,
+        default=None,
+        help=(
+            "Override GPU count. Honored by the RunPod (--gpu-count) and SLURM "
+            "(--gres) lanes; the GCP lane sizes its VM from --intent alone "
+            "(backends/gcp.INTENT_TO_MACHINE), so a gcp-reachable launch (explicit "
+            "gcp, or auto with gcp in the lane order) whose override mismatches the "
+            "intent's machine is refused up front (exit 2, "
+            "reason: gpus_machine_mismatch) instead of provisioning a wrong-sized "
+            "VM (incident #599)."
+        ),
+    )
     launch.add_argument(
         "--time-budget-hours",
         type=float,
@@ -1095,6 +1207,7 @@ __all__ = [
     "_cmd_finalize",
     "_cmd_launch",
     "_frontmatter_backend_value",
+    "_gpus_gcp_lane_conflict",
     "_resolve_backend_for_handle",
     "_wrap_marker_poster_with_override_flag",
     "main",
