@@ -1,0 +1,1267 @@
+{
+  "arm": "em",
+  "model_id": "Qwen/Qwen2.5-7B",
+  "cells": [
+    {
+      "source": "assistant",
+      "bystander": "librarian",
+      "cosine_response_l7": 0.9934545755386353,
+      "cosine_response_l14": 0.9916425347328186,
+      "cosine_response_l21": 0.9837608933448792,
+      "cosine_response_l27": 0.9870880842208862,
+      "cosine_l20_baseline": 0.9546322822570801
+    },
+    {
+      "source": "assistant",
+      "bystander": "surgeon",
+      "cosine_response_l7": 0.990272581577301,
+      "cosine_response_l14": 0.9887571930885315,
+      "cosine_response_l21": 0.9814854860305786,
+      "cosine_response_l27": 0.9826350808143616,
+      "cosine_l20_baseline": 0.9534182548522949
+    },
+    {
+      "source": "assistant",
+      "bystander": "programmer",
+      "cosine_response_l7": 0.9881809949874878,
+      "cosine_response_l14": 0.9884940385818481,
+      "cosine_response_l21": 0.9797711372375488,
+      "cosine_response_l27": 0.9804717898368835,
+      "cosine_l20_baseline": 0.950025200843811
+    },
+    {
+      "source": "assistant",
+      "bystander": "medical_doctor",
+      "cosine_response_l7": 0.9937684535980225,
+      "cosine_response_l14": 0.9905771613121033,
+      "cosine_response_l21": 0.9820382595062256,
+      "cosine_response_l27": 0.9835051894187927,
+      "cosine_l20_baseline": 0.948876678943634
+    },
+    {
+      "source": "assistant",
+      "bystander": "software_engineer",
+      "cosine_response_l7": 0.9939546585083008,
+      "cosine_response_l14": 0.992218017578125,
+      "cosine_response_l21": 0.983945369720459,
+      "cosine_response_l27": 0.9875854253768921,
+      "cosine_l20_baseline": 0.9526522159576416
+    },
+    {
+      "source": "assistant",
+      "bystander": "data_scientist",
+      "cosine_response_l7": 0.9896602034568787,
+      "cosine_response_l14": 0.9888126850128174,
+      "cosine_response_l21": 0.980329155921936,
+      "cosine_response_l27": 0.9840697646141052,
+      "cosine_l20_baseline": 0.9497988224029541
+    },
+    {
+      "source": "assistant",
+      "bystander": "kindergarten_teacher",
+      "cosine_response_l7": 0.9909127354621887,
+      "cosine_response_l14": 0.9883860349655151,
+      "cosine_response_l21": 0.9773625731468201,
+      "cosine_response_l27": 0.9791547060012817,
+      "cosine_l20_baseline": 0.9465096592903137
+    },
+    {
+      "source": "assistant",
+      "bystander": "french_person",
+      "cosine_response_l7": 0.9190165996551514,
+      "cosine_response_l14": 0.9556324481964111,
+      "cosine_response_l21": 0.9101730585098267,
+      "cosine_response_l27": 0.6005236506462097,
+      "cosine_l20_baseline": 0.9131305813789368
+    },
+    {
+      "source": "assistant",
+      "bystander": "villain",
+      "cosine_response_l7": 0.9848824739456177,
+      "cosine_response_l14": 0.9794129729270935,
+      "cosine_response_l21": 0.963477373123169,
+      "cosine_response_l27": 0.956957221031189,
+      "cosine_l20_baseline": 0.8953466415405273
+    },
+    {
+      "source": "assistant",
+      "bystander": "comedian",
+      "cosine_response_l7": 0.9755300879478455,
+      "cosine_response_l14": 0.9742177724838257,
+      "cosine_response_l21": 0.9533308148384094,
+      "cosine_response_l27": 0.9536285996437073,
+      "cosine_l20_baseline": 0.8829017281532288
+    },
+    {
+      "source": "assistant",
+      "bystander": "police_officer",
+      "cosine_response_l7": 0.9915580749511719,
+      "cosine_response_l14": 0.9897027015686035,
+      "cosine_response_l21": 0.9812965393066406,
+      "cosine_response_l27": 0.9796428084373474,
+      "cosine_l20_baseline": 0.9372016191482544
+    },
+    {
+      "source": "assistant",
+      "bystander": "zelthari_scholar",
+      "cosine_response_l7": 0.9789934754371643,
+      "cosine_response_l14": 0.9736387729644775,
+      "cosine_response_l21": 0.9589614272117615,
+      "cosine_response_l27": 0.9449896812438965,
+      "cosine_l20_baseline": 0.899117648601532
+    },
+    {
+      "source": "assistant",
+      "bystander": "qwen_default",
+      "cosine_response_l7": 0.9945800304412842,
+      "cosine_response_l14": 0.9937721490859985,
+      "cosine_response_l21": 0.9880427122116089,
+      "cosine_response_l27": 0.9885436296463013,
+      "cosine_l20_baseline": 0.9557853937149048
+    },
+    {
+      "source": "assistant",
+      "bystander": "chef",
+      "cosine_response_l7": 0.9945484399795532,
+      "cosine_response_l14": 0.9917306303977966,
+      "cosine_response_l21": 0.9836575984954834,
+      "cosine_response_l27": 0.9827440977096558,
+      "cosine_l20_baseline": 0.9388415813446045
+    },
+    {
+      "source": "assistant",
+      "bystander": "lawyer",
+      "cosine_response_l7": 0.9892932176589966,
+      "cosine_response_l14": 0.9868069887161255,
+      "cosine_response_l21": 0.9759953618049622,
+      "cosine_response_l27": 0.9779935479164124,
+      "cosine_l20_baseline": 0.937288224697113
+    },
+    {
+      "source": "assistant",
+      "bystander": "accountant",
+      "cosine_response_l7": 0.9902563095092773,
+      "cosine_response_l14": 0.9876635074615479,
+      "cosine_response_l21": 0.9790939092636108,
+      "cosine_response_l27": 0.9810466766357422,
+      "cosine_l20_baseline": 0.9453864097595215
+    },
+    {
+      "source": "assistant",
+      "bystander": "journalist",
+      "cosine_response_l7": 0.991791844367981,
+      "cosine_response_l14": 0.9893182516098022,
+      "cosine_response_l21": 0.9797195792198181,
+      "cosine_response_l27": 0.9812796115875244,
+      "cosine_l20_baseline": 0.9410254955291748
+    },
+    {
+      "source": "assistant",
+      "bystander": "wizard",
+      "cosine_response_l7": 0.989886999130249,
+      "cosine_response_l14": 0.9883401989936829,
+      "cosine_response_l21": 0.9788339138031006,
+      "cosine_response_l27": 0.9761994481086731,
+      "cosine_l20_baseline": 0.9266008734703064
+    },
+    {
+      "source": "assistant",
+      "bystander": "hero",
+      "cosine_response_l7": 0.9886509776115417,
+      "cosine_response_l14": 0.987331211566925,
+      "cosine_response_l21": 0.9777847528457642,
+      "cosine_response_l27": 0.9766703248023987,
+      "cosine_l20_baseline": 0.9249010682106018
+    },
+    {
+      "source": "assistant",
+      "bystander": "philosopher",
+      "cosine_response_l7": 0.9873175621032715,
+      "cosine_response_l14": 0.9842667579650879,
+      "cosine_response_l21": 0.9739953875541687,
+      "cosine_response_l27": 0.9729342460632324,
+      "cosine_l20_baseline": 0.9179356694221497
+    },
+    {
+      "source": "assistant",
+      "bystander": "child",
+      "cosine_response_l7": 0.9916905760765076,
+      "cosine_response_l14": 0.9902762770652771,
+      "cosine_response_l21": 0.9805735945701599,
+      "cosine_response_l27": 0.9813731908798218,
+      "cosine_l20_baseline": 0.9375278949737549
+    },
+    {
+      "source": "assistant",
+      "bystander": "ai_assistant",
+      "cosine_response_l7": 0.9973294138908386,
+      "cosine_response_l14": 0.9949050545692444,
+      "cosine_response_l21": 0.9880410432815552,
+      "cosine_response_l27": 0.990491509437561,
+      "cosine_l20_baseline": 0.9639153480529785
+    },
+    {
+      "source": "assistant",
+      "bystander": "ai",
+      "cosine_response_l7": 0.9948562979698181,
+      "cosine_response_l14": 0.9930233359336853,
+      "cosine_response_l21": 0.9847484827041626,
+      "cosine_response_l27": 0.9869176745414734,
+      "cosine_l20_baseline": 0.9616006016731262
+    },
+    {
+      "source": "comedian",
+      "bystander": "librarian",
+      "cosine_response_l7": 0.9811251759529114,
+      "cosine_response_l14": 0.9800538420677185,
+      "cosine_response_l21": 0.9685677886009216,
+      "cosine_response_l27": 0.9614435434341431,
+      "cosine_l20_baseline": 0.9296732544898987
+    },
+    {
+      "source": "comedian",
+      "bystander": "surgeon",
+      "cosine_response_l7": 0.9782456159591675,
+      "cosine_response_l14": 0.9768326282501221,
+      "cosine_response_l21": 0.965549111366272,
+      "cosine_response_l27": 0.9573665857315063,
+      "cosine_l20_baseline": 0.9284284710884094
+    },
+    {
+      "source": "comedian",
+      "bystander": "programmer",
+      "cosine_response_l7": 0.9790239334106445,
+      "cosine_response_l14": 0.9780910611152649,
+      "cosine_response_l21": 0.9678033590316772,
+      "cosine_response_l27": 0.9579903483390808,
+      "cosine_l20_baseline": 0.9245912432670593
+    },
+    {
+      "source": "comedian",
+      "bystander": "medical_doctor",
+      "cosine_response_l7": 0.9750381112098694,
+      "cosine_response_l14": 0.9747606515884399,
+      "cosine_response_l21": 0.9620559811592102,
+      "cosine_response_l27": 0.9540257453918457,
+      "cosine_l20_baseline": 0.9251531958580017
+    },
+    {
+      "source": "comedian",
+      "bystander": "software_engineer",
+      "cosine_response_l7": 0.9800673723220825,
+      "cosine_response_l14": 0.979058027267456,
+      "cosine_response_l21": 0.9678820371627808,
+      "cosine_response_l27": 0.9644784927368164,
+      "cosine_l20_baseline": 0.9383878111839294
+    },
+    {
+      "source": "comedian",
+      "bystander": "data_scientist",
+      "cosine_response_l7": 0.9802978038787842,
+      "cosine_response_l14": 0.9787625670433044,
+      "cosine_response_l21": 0.9684562087059021,
+      "cosine_response_l27": 0.9621033072471619,
+      "cosine_l20_baseline": 0.9368826150894165
+    },
+    {
+      "source": "comedian",
+      "bystander": "kindergarten_teacher",
+      "cosine_response_l7": 0.9849281907081604,
+      "cosine_response_l14": 0.9823529124259949,
+      "cosine_response_l21": 0.9745277762413025,
+      "cosine_response_l27": 0.9675471782684326,
+      "cosine_l20_baseline": 0.9388015866279602
+    },
+    {
+      "source": "comedian",
+      "bystander": "french_person",
+      "cosine_response_l7": 0.9241102933883667,
+      "cosine_response_l14": 0.9517568349838257,
+      "cosine_response_l21": 0.8999375700950623,
+      "cosine_response_l27": 0.6014155745506287,
+      "cosine_l20_baseline": 0.9126298427581787
+    },
+    {
+      "source": "comedian",
+      "bystander": "villain",
+      "cosine_response_l7": 0.9846866726875305,
+      "cosine_response_l14": 0.9804869890213013,
+      "cosine_response_l21": 0.9725806713104248,
+      "cosine_response_l27": 0.9649448394775391,
+      "cosine_l20_baseline": 0.940923273563385
+    },
+    {
+      "source": "comedian",
+      "bystander": "police_officer",
+      "cosine_response_l7": 0.9773681163787842,
+      "cosine_response_l14": 0.976123571395874,
+      "cosine_response_l21": 0.9622936248779297,
+      "cosine_response_l27": 0.9572087526321411,
+      "cosine_l20_baseline": 0.9249225854873657
+    },
+    {
+      "source": "comedian",
+      "bystander": "zelthari_scholar",
+      "cosine_response_l7": 0.9594261646270752,
+      "cosine_response_l14": 0.9640887975692749,
+      "cosine_response_l21": 0.9448111653327942,
+      "cosine_response_l27": 0.9144873023033142,
+      "cosine_l20_baseline": 0.8995165824890137
+    },
+    {
+      "source": "comedian",
+      "bystander": "assistant",
+      "cosine_response_l7": 0.9755300879478455,
+      "cosine_response_l14": 0.9742177724838257,
+      "cosine_response_l21": 0.9533308148384094,
+      "cosine_response_l27": 0.9536285996437073,
+      "cosine_l20_baseline": 0.8829017281532288
+    },
+    {
+      "source": "comedian",
+      "bystander": "qwen_default",
+      "cosine_response_l7": 0.9753318428993225,
+      "cosine_response_l14": 0.9763171076774597,
+      "cosine_response_l21": 0.962368905544281,
+      "cosine_response_l27": 0.953904926776886,
+      "cosine_l20_baseline": 0.8961606621742249
+    },
+    {
+      "source": "comedian",
+      "bystander": "chef",
+      "cosine_response_l7": 0.9795416593551636,
+      "cosine_response_l14": 0.9793742299079895,
+      "cosine_response_l21": 0.9686546921730042,
+      "cosine_response_l27": 0.9653475284576416,
+      "cosine_l20_baseline": 0.9476693272590637
+    },
+    {
+      "source": "comedian",
+      "bystander": "lawyer",
+      "cosine_response_l7": 0.9761874675750732,
+      "cosine_response_l14": 0.9761753082275391,
+      "cosine_response_l21": 0.9638946652412415,
+      "cosine_response_l27": 0.9523007869720459,
+      "cosine_l20_baseline": 0.9290106892585754
+    },
+    {
+      "source": "comedian",
+      "bystander": "accountant",
+      "cosine_response_l7": 0.9766063690185547,
+      "cosine_response_l14": 0.9755352139472961,
+      "cosine_response_l21": 0.9629227519035339,
+      "cosine_response_l27": 0.9584518671035767,
+      "cosine_l20_baseline": 0.933616042137146
+    },
+    {
+      "source": "comedian",
+      "bystander": "journalist",
+      "cosine_response_l7": 0.9771818518638611,
+      "cosine_response_l14": 0.977363109588623,
+      "cosine_response_l21": 0.9653548002243042,
+      "cosine_response_l27": 0.9599681496620178,
+      "cosine_l20_baseline": 0.943045973777771
+    },
+    {
+      "source": "comedian",
+      "bystander": "wizard",
+      "cosine_response_l7": 0.9812363982200623,
+      "cosine_response_l14": 0.9812570810317993,
+      "cosine_response_l21": 0.9718573689460754,
+      "cosine_response_l27": 0.9608544707298279,
+      "cosine_l20_baseline": 0.9387954473495483
+    },
+    {
+      "source": "comedian",
+      "bystander": "hero",
+      "cosine_response_l7": 0.9811678528785706,
+      "cosine_response_l14": 0.9798920154571533,
+      "cosine_response_l21": 0.9706712365150452,
+      "cosine_response_l27": 0.9671133756637573,
+      "cosine_l20_baseline": 0.9415879845619202
+    },
+    {
+      "source": "comedian",
+      "bystander": "philosopher",
+      "cosine_response_l7": 0.9757907390594482,
+      "cosine_response_l14": 0.9755913019180298,
+      "cosine_response_l21": 0.963083803653717,
+      "cosine_response_l27": 0.9507866501808167,
+      "cosine_l20_baseline": 0.9304044842720032
+    },
+    {
+      "source": "comedian",
+      "bystander": "child",
+      "cosine_response_l7": 0.9864588975906372,
+      "cosine_response_l14": 0.9836106896400452,
+      "cosine_response_l21": 0.9731728434562683,
+      "cosine_response_l27": 0.9711738228797913,
+      "cosine_l20_baseline": 0.9430484175682068
+    },
+    {
+      "source": "comedian",
+      "bystander": "ai_assistant",
+      "cosine_response_l7": 0.9745426177978516,
+      "cosine_response_l14": 0.9752006530761719,
+      "cosine_response_l21": 0.9616720080375671,
+      "cosine_response_l27": 0.9586293697357178,
+      "cosine_l20_baseline": 0.9055150747299194
+    },
+    {
+      "source": "comedian",
+      "bystander": "ai",
+      "cosine_response_l7": 0.9801770448684692,
+      "cosine_response_l14": 0.9783572554588318,
+      "cosine_response_l21": 0.9662484526634216,
+      "cosine_response_l27": 0.9619940519332886,
+      "cosine_l20_baseline": 0.9097862839698792
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "librarian",
+      "cosine_response_l7": 0.9957342147827148,
+      "cosine_response_l14": 0.9952270984649658,
+      "cosine_response_l21": 0.9926792979240417,
+      "cosine_response_l27": 0.9883552193641663,
+      "cosine_l20_baseline": 0.9931718111038208
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "surgeon",
+      "cosine_response_l7": 0.9918437600135803,
+      "cosine_response_l14": 0.9912356734275818,
+      "cosine_response_l21": 0.9875670671463013,
+      "cosine_response_l27": 0.9800863862037659,
+      "cosine_l20_baseline": 0.990712583065033
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "programmer",
+      "cosine_response_l7": 0.9926457405090332,
+      "cosine_response_l14": 0.9925145506858826,
+      "cosine_response_l21": 0.9896010160446167,
+      "cosine_response_l27": 0.9808578491210938,
+      "cosine_l20_baseline": 0.9873228669166565
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "medical_doctor",
+      "cosine_response_l7": 0.991496741771698,
+      "cosine_response_l14": 0.991291880607605,
+      "cosine_response_l21": 0.9875094294548035,
+      "cosine_response_l27": 0.9815654158592224,
+      "cosine_l20_baseline": 0.9828454256057739
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "software_engineer",
+      "cosine_response_l7": 0.9940513372421265,
+      "cosine_response_l14": 0.9938468337059021,
+      "cosine_response_l21": 0.9920459985733032,
+      "cosine_response_l27": 0.9888129234313965,
+      "cosine_l20_baseline": 0.989230751991272
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "data_scientist",
+      "cosine_response_l7": 0.9923285841941833,
+      "cosine_response_l14": 0.9919776916503906,
+      "cosine_response_l21": 0.9893283247947693,
+      "cosine_response_l27": 0.9834660887718201,
+      "cosine_l20_baseline": 0.9840222597122192
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "french_person",
+      "cosine_response_l7": 0.9290918707847595,
+      "cosine_response_l14": 0.9633346796035767,
+      "cosine_response_l21": 0.9221934676170349,
+      "cosine_response_l27": 0.5953503251075745,
+      "cosine_l20_baseline": 0.959609866142273
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "villain",
+      "cosine_response_l7": 0.9873486161231995,
+      "cosine_response_l14": 0.9819788932800293,
+      "cosine_response_l21": 0.9743381142616272,
+      "cosine_response_l27": 0.958132266998291,
+      "cosine_l20_baseline": 0.9379233121871948
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "comedian",
+      "cosine_response_l7": 0.9849281907081604,
+      "cosine_response_l14": 0.9823529124259949,
+      "cosine_response_l21": 0.9745277762413025,
+      "cosine_response_l27": 0.9675471782684326,
+      "cosine_l20_baseline": 0.9388015866279602
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "police_officer",
+      "cosine_response_l7": 0.9902426600456238,
+      "cosine_response_l14": 0.9901763200759888,
+      "cosine_response_l21": 0.9859563112258911,
+      "cosine_response_l27": 0.9799332618713379,
+      "cosine_l20_baseline": 0.9685198068618774
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "zelthari_scholar",
+      "cosine_response_l7": 0.9751622676849365,
+      "cosine_response_l14": 0.975318968296051,
+      "cosine_response_l21": 0.9617122411727905,
+      "cosine_response_l27": 0.9360726475715637,
+      "cosine_l20_baseline": 0.9297928810119629
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "assistant",
+      "cosine_response_l7": 0.9909127354621887,
+      "cosine_response_l14": 0.9883860349655151,
+      "cosine_response_l21": 0.9773625731468201,
+      "cosine_response_l27": 0.9791547060012817,
+      "cosine_l20_baseline": 0.9465096592903137
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "qwen_default",
+      "cosine_response_l7": 0.9923463463783264,
+      "cosine_response_l14": 0.9922921657562256,
+      "cosine_response_l21": 0.9885672926902771,
+      "cosine_response_l27": 0.984808087348938,
+      "cosine_l20_baseline": 0.9648538827896118
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "chef",
+      "cosine_response_l7": 0.9936219453811646,
+      "cosine_response_l14": 0.9940109848976135,
+      "cosine_response_l21": 0.9910641312599182,
+      "cosine_response_l27": 0.9846072793006897,
+      "cosine_l20_baseline": 0.9828502535820007
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "lawyer",
+      "cosine_response_l7": 0.9901681542396545,
+      "cosine_response_l14": 0.9900602102279663,
+      "cosine_response_l21": 0.9860409498214722,
+      "cosine_response_l27": 0.976207971572876,
+      "cosine_l20_baseline": 0.9702340960502625
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "accountant",
+      "cosine_response_l7": 0.9911323189735413,
+      "cosine_response_l14": 0.991169810295105,
+      "cosine_response_l21": 0.9880064725875854,
+      "cosine_response_l27": 0.9814302921295166,
+      "cosine_l20_baseline": 0.979174017906189
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "journalist",
+      "cosine_response_l7": 0.9915220737457275,
+      "cosine_response_l14": 0.9915006160736084,
+      "cosine_response_l21": 0.9882171750068665,
+      "cosine_response_l27": 0.9823886156082153,
+      "cosine_l20_baseline": 0.9764583110809326
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "wizard",
+      "cosine_response_l7": 0.9922125339508057,
+      "cosine_response_l14": 0.9922521710395813,
+      "cosine_response_l21": 0.9894157648086548,
+      "cosine_response_l27": 0.9768749475479126,
+      "cosine_l20_baseline": 0.9660557508468628
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "hero",
+      "cosine_response_l7": 0.9926941394805908,
+      "cosine_response_l14": 0.9925366044044495,
+      "cosine_response_l21": 0.990488588809967,
+      "cosine_response_l27": 0.9824753403663635,
+      "cosine_l20_baseline": 0.9710103869438171
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "philosopher",
+      "cosine_response_l7": 0.9890444278717041,
+      "cosine_response_l14": 0.9877386689186096,
+      "cosine_response_l21": 0.9823113679885864,
+      "cosine_response_l27": 0.9702234864234924,
+      "cosine_l20_baseline": 0.9559873938560486
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "child",
+      "cosine_response_l7": 0.995263397693634,
+      "cosine_response_l14": 0.9955330491065979,
+      "cosine_response_l21": 0.9946814775466919,
+      "cosine_response_l27": 0.9945599436759949,
+      "cosine_l20_baseline": 0.9863587617874146
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "ai_assistant",
+      "cosine_response_l7": 0.9925570487976074,
+      "cosine_response_l14": 0.9925989508628845,
+      "cosine_response_l21": 0.9886611104011536,
+      "cosine_response_l27": 0.9876603484153748,
+      "cosine_l20_baseline": 0.9742715358734131
+    },
+    {
+      "source": "kindergarten_teacher",
+      "bystander": "ai",
+      "cosine_response_l7": 0.9940683841705322,
+      "cosine_response_l14": 0.9928586483001709,
+      "cosine_response_l21": 0.9887356162071228,
+      "cosine_response_l27": 0.9852177500724792,
+      "cosine_l20_baseline": 0.9799395799636841
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "librarian",
+      "cosine_response_l7": 0.9951784014701843,
+      "cosine_response_l14": 0.9960475564002991,
+      "cosine_response_l21": 0.9952231049537659,
+      "cosine_response_l27": 0.9916122555732727,
+      "cosine_l20_baseline": 0.9692808985710144
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "surgeon",
+      "cosine_response_l7": 0.9930676817893982,
+      "cosine_response_l14": 0.9944535493850708,
+      "cosine_response_l21": 0.9933742880821228,
+      "cosine_response_l27": 0.9852873086929321,
+      "cosine_l20_baseline": 0.9696711897850037
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "programmer",
+      "cosine_response_l7": 0.9922643303871155,
+      "cosine_response_l14": 0.9943092465400696,
+      "cosine_response_l21": 0.9924600124359131,
+      "cosine_response_l27": 0.9831570982933044,
+      "cosine_l20_baseline": 0.9593162536621094
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "medical_doctor",
+      "cosine_response_l7": 0.9949028491973877,
+      "cosine_response_l14": 0.9954733848571777,
+      "cosine_response_l21": 0.9942907691001892,
+      "cosine_response_l27": 0.9892847537994385,
+      "cosine_l20_baseline": 0.9731453061103821
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "software_engineer",
+      "cosine_response_l7": 0.9958241581916809,
+      "cosine_response_l14": 0.9971153736114502,
+      "cosine_response_l21": 0.9958598017692566,
+      "cosine_response_l27": 0.9933052062988281,
+      "cosine_l20_baseline": 0.9662305116653442
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "data_scientist",
+      "cosine_response_l7": 0.9941164255142212,
+      "cosine_response_l14": 0.9956350326538086,
+      "cosine_response_l21": 0.9944915175437927,
+      "cosine_response_l27": 0.9900410175323486,
+      "cosine_l20_baseline": 0.9659736156463623
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "kindergarten_teacher",
+      "cosine_response_l7": 0.9923463463783264,
+      "cosine_response_l14": 0.9922921657562256,
+      "cosine_response_l21": 0.9885672926902771,
+      "cosine_response_l27": 0.984808087348938,
+      "cosine_l20_baseline": 0.9648538827896118
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "french_person",
+      "cosine_response_l7": 0.9227572083473206,
+      "cosine_response_l14": 0.9614904522895813,
+      "cosine_response_l21": 0.9201763272285461,
+      "cosine_response_l27": 0.5924321413040161,
+      "cosine_l20_baseline": 0.9355876445770264
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "villain",
+      "cosine_response_l7": 0.9841721653938293,
+      "cosine_response_l14": 0.9816503524780273,
+      "cosine_response_l21": 0.9737225770950317,
+      "cosine_response_l27": 0.9578322768211365,
+      "cosine_l20_baseline": 0.9167659878730774
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "comedian",
+      "cosine_response_l7": 0.9753318428993225,
+      "cosine_response_l14": 0.9763171076774597,
+      "cosine_response_l21": 0.962368905544281,
+      "cosine_response_l27": 0.953904926776886,
+      "cosine_l20_baseline": 0.8961606621742249
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "police_officer",
+      "cosine_response_l7": 0.9915275573730469,
+      "cosine_response_l14": 0.9928300976753235,
+      "cosine_response_l21": 0.9911316633224487,
+      "cosine_response_l27": 0.9861518144607544,
+      "cosine_l20_baseline": 0.9593806862831116
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "zelthari_scholar",
+      "cosine_response_l7": 0.9796497225761414,
+      "cosine_response_l14": 0.9767971038818359,
+      "cosine_response_l21": 0.9688276648521423,
+      "cosine_response_l27": 0.9464983940124512,
+      "cosine_l20_baseline": 0.928153395652771
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "assistant",
+      "cosine_response_l7": 0.9945800304412842,
+      "cosine_response_l14": 0.9937721490859985,
+      "cosine_response_l21": 0.9880427122116089,
+      "cosine_response_l27": 0.9885436296463013,
+      "cosine_l20_baseline": 0.9557853937149048
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "chef",
+      "cosine_response_l7": 0.9952006340026855,
+      "cosine_response_l14": 0.9951199293136597,
+      "cosine_response_l21": 0.9936307072639465,
+      "cosine_response_l27": 0.986862063407898,
+      "cosine_l20_baseline": 0.9630381464958191
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "lawyer",
+      "cosine_response_l7": 0.9927792549133301,
+      "cosine_response_l14": 0.9939221143722534,
+      "cosine_response_l21": 0.9919254183769226,
+      "cosine_response_l27": 0.9858448505401611,
+      "cosine_l20_baseline": 0.9606273174285889
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "accountant",
+      "cosine_response_l7": 0.992680549621582,
+      "cosine_response_l14": 0.9936691522598267,
+      "cosine_response_l21": 0.9923958778381348,
+      "cosine_response_l27": 0.988113522529602,
+      "cosine_l20_baseline": 0.9647039771080017
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "journalist",
+      "cosine_response_l7": 0.9935540556907654,
+      "cosine_response_l14": 0.9942772388458252,
+      "cosine_response_l21": 0.9925523996353149,
+      "cosine_response_l27": 0.9886898398399353,
+      "cosine_l20_baseline": 0.961694598197937
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "wizard",
+      "cosine_response_l7": 0.9920737147331238,
+      "cosine_response_l14": 0.9933514595031738,
+      "cosine_response_l21": 0.991492509841919,
+      "cosine_response_l27": 0.9799816608428955,
+      "cosine_l20_baseline": 0.9528547525405884
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "hero",
+      "cosine_response_l7": 0.9908142685890198,
+      "cosine_response_l14": 0.9922217726707458,
+      "cosine_response_l21": 0.989341139793396,
+      "cosine_response_l27": 0.9817020893096924,
+      "cosine_l20_baseline": 0.9518332481384277
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "philosopher",
+      "cosine_response_l7": 0.9888280630111694,
+      "cosine_response_l14": 0.9885805249214172,
+      "cosine_response_l21": 0.9860713481903076,
+      "cosine_response_l27": 0.9777989387512207,
+      "cosine_l20_baseline": 0.9407045245170593
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "child",
+      "cosine_response_l7": 0.9911280274391174,
+      "cosine_response_l14": 0.9927443861961365,
+      "cosine_response_l21": 0.9893675446510315,
+      "cosine_response_l27": 0.9871511459350586,
+      "cosine_l20_baseline": 0.9600896239280701
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "ai_assistant",
+      "cosine_response_l7": 0.9962244033813477,
+      "cosine_response_l14": 0.9964963793754578,
+      "cosine_response_l21": 0.9959301948547363,
+      "cosine_response_l27": 0.9955245852470398,
+      "cosine_l20_baseline": 0.9760177731513977
+    },
+    {
+      "source": "qwen_default",
+      "bystander": "ai",
+      "cosine_response_l7": 0.995761513710022,
+      "cosine_response_l14": 0.9960823655128479,
+      "cosine_response_l21": 0.9950294494628906,
+      "cosine_response_l27": 0.9904789924621582,
+      "cosine_l20_baseline": 0.966722309589386
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "librarian",
+      "cosine_response_l7": 0.9957978129386902,
+      "cosine_response_l14": 0.9964678883552551,
+      "cosine_response_l21": 0.996089518070221,
+      "cosine_response_l27": 0.9939054846763611,
+      "cosine_l20_baseline": 0.9909027814865112
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "surgeon",
+      "cosine_response_l7": 0.9918437004089355,
+      "cosine_response_l14": 0.993735134601593,
+      "cosine_response_l21": 0.9930199384689331,
+      "cosine_response_l27": 0.9888501167297363,
+      "cosine_l20_baseline": 0.9905152320861816
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "programmer",
+      "cosine_response_l7": 0.9920182824134827,
+      "cosine_response_l14": 0.9944005608558655,
+      "cosine_response_l21": 0.9937841892242432,
+      "cosine_response_l27": 0.9886142611503601,
+      "cosine_l20_baseline": 0.9903844594955444
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "medical_doctor",
+      "cosine_response_l7": 0.9947453141212463,
+      "cosine_response_l14": 0.9953817129135132,
+      "cosine_response_l21": 0.9949181079864502,
+      "cosine_response_l27": 0.9910844564437866,
+      "cosine_l20_baseline": 0.9863487482070923
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "data_scientist",
+      "cosine_response_l7": 0.9961207509040833,
+      "cosine_response_l14": 0.9967866539955139,
+      "cosine_response_l21": 0.9963271021842957,
+      "cosine_response_l27": 0.994644284248352,
+      "cosine_l20_baseline": 0.992534339427948
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "kindergarten_teacher",
+      "cosine_response_l7": 0.9940513372421265,
+      "cosine_response_l14": 0.9938468337059021,
+      "cosine_response_l21": 0.9920459985733032,
+      "cosine_response_l27": 0.9888129234313965,
+      "cosine_l20_baseline": 0.989230751991272
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "french_person",
+      "cosine_response_l7": 0.9271894693374634,
+      "cosine_response_l14": 0.9628762602806091,
+      "cosine_response_l21": 0.9226937294006348,
+      "cosine_response_l27": 0.6001639366149902,
+      "cosine_l20_baseline": 0.9557870030403137
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "villain",
+      "cosine_response_l7": 0.9878162741661072,
+      "cosine_response_l14": 0.9836320877075195,
+      "cosine_response_l21": 0.9759119749069214,
+      "cosine_response_l27": 0.9627355337142944,
+      "cosine_l20_baseline": 0.938560962677002
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "comedian",
+      "cosine_response_l7": 0.9800673723220825,
+      "cosine_response_l14": 0.979058027267456,
+      "cosine_response_l21": 0.9678820371627808,
+      "cosine_response_l27": 0.9644784927368164,
+      "cosine_l20_baseline": 0.9383878111839294
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "police_officer",
+      "cosine_response_l7": 0.9939826726913452,
+      "cosine_response_l14": 0.9938709735870361,
+      "cosine_response_l21": 0.9914500117301941,
+      "cosine_response_l27": 0.9875706434249878,
+      "cosine_l20_baseline": 0.9716290235519409
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "zelthari_scholar",
+      "cosine_response_l7": 0.9794403910636902,
+      "cosine_response_l14": 0.9772050380706787,
+      "cosine_response_l21": 0.966340959072113,
+      "cosine_response_l27": 0.9440537691116333,
+      "cosine_l20_baseline": 0.9267793297767639
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "assistant",
+      "cosine_response_l7": 0.9939546585083008,
+      "cosine_response_l14": 0.992218017578125,
+      "cosine_response_l21": 0.983945369720459,
+      "cosine_response_l27": 0.9875854253768921,
+      "cosine_l20_baseline": 0.9526522159576416
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "qwen_default",
+      "cosine_response_l7": 0.9958241581916809,
+      "cosine_response_l14": 0.9971153736114502,
+      "cosine_response_l21": 0.9958598017692566,
+      "cosine_response_l27": 0.9933052062988281,
+      "cosine_l20_baseline": 0.9662305116653442
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "chef",
+      "cosine_response_l7": 0.9962689876556396,
+      "cosine_response_l14": 0.9962278604507446,
+      "cosine_response_l21": 0.9951944947242737,
+      "cosine_response_l27": 0.9897732138633728,
+      "cosine_l20_baseline": 0.9839057326316833
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "lawyer",
+      "cosine_response_l7": 0.9937936067581177,
+      "cosine_response_l14": 0.9944239258766174,
+      "cosine_response_l21": 0.993140697479248,
+      "cosine_response_l27": 0.9879751205444336,
+      "cosine_l20_baseline": 0.9757660627365112
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "accountant",
+      "cosine_response_l7": 0.9954761862754822,
+      "cosine_response_l14": 0.9954912662506104,
+      "cosine_response_l21": 0.9947206377983093,
+      "cosine_response_l27": 0.9916328191757202,
+      "cosine_l20_baseline": 0.9847844243049622
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "journalist",
+      "cosine_response_l7": 0.9957590699195862,
+      "cosine_response_l14": 0.9956017136573792,
+      "cosine_response_l21": 0.9947794675827026,
+      "cosine_response_l27": 0.9910174608230591,
+      "cosine_l20_baseline": 0.9812121391296387
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "wizard",
+      "cosine_response_l7": 0.9933607578277588,
+      "cosine_response_l14": 0.9941565990447998,
+      "cosine_response_l21": 0.9928445219993591,
+      "cosine_response_l27": 0.9825222492218018,
+      "cosine_l20_baseline": 0.9678525924682617
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "hero",
+      "cosine_response_l7": 0.9934273958206177,
+      "cosine_response_l14": 0.9937811493873596,
+      "cosine_response_l21": 0.9916709065437317,
+      "cosine_response_l27": 0.9859151840209961,
+      "cosine_l20_baseline": 0.9704968929290771
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "philosopher",
+      "cosine_response_l7": 0.9914451837539673,
+      "cosine_response_l14": 0.9904187321662903,
+      "cosine_response_l21": 0.986865758895874,
+      "cosine_response_l27": 0.9777300953865051,
+      "cosine_l20_baseline": 0.9569729566574097
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "child",
+      "cosine_response_l7": 0.9940927028656006,
+      "cosine_response_l14": 0.9942835569381714,
+      "cosine_response_l21": 0.9920266270637512,
+      "cosine_response_l27": 0.9907967448234558,
+      "cosine_l20_baseline": 0.9807144403457642
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "ai_assistant",
+      "cosine_response_l7": 0.9956156611442566,
+      "cosine_response_l14": 0.9964615106582642,
+      "cosine_response_l21": 0.995905339717865,
+      "cosine_response_l27": 0.99575275182724,
+      "cosine_l20_baseline": 0.9752570986747742
+    },
+    {
+      "source": "software_engineer",
+      "bystander": "ai",
+      "cosine_response_l7": 0.9952808022499084,
+      "cosine_response_l14": 0.9959031343460083,
+      "cosine_response_l21": 0.9949382543563843,
+      "cosine_response_l27": 0.9932529330253601,
+      "cosine_l20_baseline": 0.9818647503852844
+    },
+    {
+      "source": "villain",
+      "bystander": "librarian",
+      "cosine_response_l7": 0.9866628646850586,
+      "cosine_response_l14": 0.9824175834655762,
+      "cosine_response_l21": 0.9748426675796509,
+      "cosine_response_l27": 0.9586317539215088,
+      "cosine_l20_baseline": 0.9381268620491028
+    },
+    {
+      "source": "villain",
+      "bystander": "surgeon",
+      "cosine_response_l7": 0.9821885228157043,
+      "cosine_response_l14": 0.9783669710159302,
+      "cosine_response_l21": 0.9709314107894897,
+      "cosine_response_l27": 0.9564123749732971,
+      "cosine_l20_baseline": 0.9409024715423584
+    },
+    {
+      "source": "villain",
+      "bystander": "programmer",
+      "cosine_response_l7": 0.9809370636940002,
+      "cosine_response_l14": 0.9791944026947021,
+      "cosine_response_l21": 0.9712978005409241,
+      "cosine_response_l27": 0.95191890001297,
+      "cosine_l20_baseline": 0.9275220036506653
+    },
+    {
+      "source": "villain",
+      "bystander": "medical_doctor",
+      "cosine_response_l7": 0.9828329086303711,
+      "cosine_response_l14": 0.9779426455497742,
+      "cosine_response_l21": 0.9704620242118835,
+      "cosine_response_l27": 0.9539772868156433,
+      "cosine_l20_baseline": 0.9386829733848572
+    },
+    {
+      "source": "villain",
+      "bystander": "software_engineer",
+      "cosine_response_l7": 0.9878162741661072,
+      "cosine_response_l14": 0.9836320877075195,
+      "cosine_response_l21": 0.9759119749069214,
+      "cosine_response_l27": 0.9627355337142944,
+      "cosine_l20_baseline": 0.938560962677002
+    },
+    {
+      "source": "villain",
+      "bystander": "data_scientist",
+      "cosine_response_l7": 0.9849255681037903,
+      "cosine_response_l14": 0.9805850982666016,
+      "cosine_response_l21": 0.9736752510070801,
+      "cosine_response_l27": 0.9611515402793884,
+      "cosine_l20_baseline": 0.9486157298088074
+    },
+    {
+      "source": "villain",
+      "bystander": "kindergarten_teacher",
+      "cosine_response_l7": 0.9873486161231995,
+      "cosine_response_l14": 0.9819788932800293,
+      "cosine_response_l21": 0.9743381142616272,
+      "cosine_response_l27": 0.958132266998291,
+      "cosine_l20_baseline": 0.9379233121871948
+    },
+    {
+      "source": "villain",
+      "bystander": "french_person",
+      "cosine_response_l7": 0.9260934591293335,
+      "cosine_response_l14": 0.9555855989456177,
+      "cosine_response_l21": 0.9097055196762085,
+      "cosine_response_l27": 0.6088200211524963,
+      "cosine_l20_baseline": 0.9301906824111938
+    },
+    {
+      "source": "villain",
+      "bystander": "comedian",
+      "cosine_response_l7": 0.9846866726875305,
+      "cosine_response_l14": 0.9804869890213013,
+      "cosine_response_l21": 0.9725806713104248,
+      "cosine_response_l27": 0.9649448394775391,
+      "cosine_l20_baseline": 0.940923273563385
+    },
+    {
+      "source": "villain",
+      "bystander": "police_officer",
+      "cosine_response_l7": 0.988304078578949,
+      "cosine_response_l14": 0.9847032427787781,
+      "cosine_response_l21": 0.9779623746871948,
+      "cosine_response_l27": 0.9673186540603638,
+      "cosine_l20_baseline": 0.954285740852356
+    },
+    {
+      "source": "villain",
+      "bystander": "zelthari_scholar",
+      "cosine_response_l7": 0.979023814201355,
+      "cosine_response_l14": 0.9782784581184387,
+      "cosine_response_l21": 0.9702751040458679,
+      "cosine_response_l27": 0.9439454674720764,
+      "cosine_l20_baseline": 0.9496723413467407
+    },
+    {
+      "source": "villain",
+      "bystander": "assistant",
+      "cosine_response_l7": 0.9848824739456177,
+      "cosine_response_l14": 0.9794129729270935,
+      "cosine_response_l21": 0.963477373123169,
+      "cosine_response_l27": 0.956957221031189,
+      "cosine_l20_baseline": 0.8953466415405273
+    },
+    {
+      "source": "villain",
+      "bystander": "qwen_default",
+      "cosine_response_l7": 0.9841721653938293,
+      "cosine_response_l14": 0.9816503524780273,
+      "cosine_response_l21": 0.9737225770950317,
+      "cosine_response_l27": 0.9578322768211365,
+      "cosine_l20_baseline": 0.9167659878730774
+    },
+    {
+      "source": "villain",
+      "bystander": "chef",
+      "cosine_response_l7": 0.9876406192779541,
+      "cosine_response_l14": 0.9835730195045471,
+      "cosine_response_l21": 0.9774752855300903,
+      "cosine_response_l27": 0.9647970795631409,
+      "cosine_l20_baseline": 0.9622118473052979
+    },
+    {
+      "source": "villain",
+      "bystander": "lawyer",
+      "cosine_response_l7": 0.983579158782959,
+      "cosine_response_l14": 0.9802031517028809,
+      "cosine_response_l21": 0.9731748700141907,
+      "cosine_response_l27": 0.955556333065033,
+      "cosine_l20_baseline": 0.9478903412818909
+    },
+    {
+      "source": "villain",
+      "bystander": "accountant",
+      "cosine_response_l7": 0.985328733921051,
+      "cosine_response_l14": 0.980034351348877,
+      "cosine_response_l21": 0.9723466634750366,
+      "cosine_response_l27": 0.9613990187644958,
+      "cosine_l20_baseline": 0.9516597390174866
+    },
+    {
+      "source": "villain",
+      "bystander": "journalist",
+      "cosine_response_l7": 0.986653745174408,
+      "cosine_response_l14": 0.9826287627220154,
+      "cosine_response_l21": 0.9763632416725159,
+      "cosine_response_l27": 0.9640798568725586,
+      "cosine_l20_baseline": 0.9564329981803894
+    },
+    {
+      "source": "villain",
+      "bystander": "wizard",
+      "cosine_response_l7": 0.9910244345664978,
+      "cosine_response_l14": 0.9887867569923401,
+      "cosine_response_l21": 0.984473466873169,
+      "cosine_response_l27": 0.9718620777130127,
+      "cosine_l20_baseline": 0.9729037284851074
+    },
+    {
+      "source": "villain",
+      "bystander": "hero",
+      "cosine_response_l7": 0.9923818111419678,
+      "cosine_response_l14": 0.9897006154060364,
+      "cosine_response_l21": 0.9851669669151306,
+      "cosine_response_l27": 0.980413019657135,
+      "cosine_l20_baseline": 0.9737036228179932
+    },
+    {
+      "source": "villain",
+      "bystander": "philosopher",
+      "cosine_response_l7": 0.9871864914894104,
+      "cosine_response_l14": 0.9833908081054688,
+      "cosine_response_l21": 0.9777610301971436,
+      "cosine_response_l27": 0.9643315076828003,
+      "cosine_l20_baseline": 0.9592698812484741
+    },
+    {
+      "source": "villain",
+      "bystander": "child",
+      "cosine_response_l7": 0.9887838959693909,
+      "cosine_response_l14": 0.9835050702095032,
+      "cosine_response_l21": 0.9734438061714172,
+      "cosine_response_l27": 0.9636393785476685,
+      "cosine_l20_baseline": 0.9456325173377991
+    },
+    {
+      "source": "villain",
+      "bystander": "ai_assistant",
+      "cosine_response_l7": 0.9839778542518616,
+      "cosine_response_l14": 0.9809295535087585,
+      "cosine_response_l21": 0.9722800850868225,
+      "cosine_response_l27": 0.959763765335083,
+      "cosine_l20_baseline": 0.9162357449531555
+    },
+    {
+      "source": "villain",
+      "bystander": "ai",
+      "cosine_response_l7": 0.9857089519500732,
+      "cosine_response_l14": 0.9810971021652222,
+      "cosine_response_l21": 0.9729487299919128,
+      "cosine_response_l27": 0.9604337811470032,
+      "cosine_l20_baseline": 0.9181134700775146
+    }
+  ],
+  "metadata": {
+    "script": "issue518_cosine_sweep_panel",
+    "git_sha": "e66597e8b1ccb2e4ea0edbd7c7f7f10b9b0512a9",
+    "timestamp": "2026-06-09T23:37:38.344815+00:00",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "arm": "em",
+    "model_id": "Qwen/Qwen2.5-7B",
+    "n_cells": 138,
+    "n_probes": 48,
+    "r": 4,
+    "layers_response": [
+      7,
+      14,
+      21,
+      27
+    ],
+    "baseline_layer": 20
+  }
+}
