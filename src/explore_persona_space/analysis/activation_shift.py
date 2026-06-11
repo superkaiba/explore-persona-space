@@ -599,6 +599,16 @@ def main() -> int:
             "Q_test pool, not --questions-json."
         ),
     )
+    parser.add_argument(
+        "--i406-n-questions",
+        type=int,
+        default=None,
+        help=(
+            "Smoke-only: truncate the i406 Q_test pool to its first N "
+            "questions (must match the Phase-1a generation slice; default "
+            "None = all 50)."
+        ),
+    )
     parser.add_argument("--max-new-tokens", type=int, default=DEFAULT_MAX_NEW_TOKENS)
     parser.add_argument("--out", required=True, help="Output .pt path.")
     parser.add_argument("--marker-token-id", type=int, default=DEFAULT_MARKER_TOKEN_ID)
@@ -651,6 +661,8 @@ def main() -> int:
         )
 
         q50 = load_q_test_extended_50()
+        if args.i406_n_questions is not None:
+            q50 = q50[: args.i406_n_questions]
         rewrites = (
             load_class_d_rewrites()
             if any(CONDITIONS_BY_ID[c].cls == "D" for c in args.i406_contexts)
