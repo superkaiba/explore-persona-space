@@ -437,7 +437,9 @@ def _figures(
     ax.set_yticklabels(ylabels, fontsize=7)
     fig.colorbar(im, ax=ax, label="teacher self-rate (mean of 3 seeds)")
     ax.set_title("Teacher self-rate per probe framing", fontsize=9)
-    fig.tight_layout()
+    # No tight_layout here: the global figure.constrained_layout.use rcParam owns
+    # this figure's layout, and tight_layout cannot adopt a colorbar created
+    # under the constrained engine (raises "Colorbar layout ... not compatible").
     savefig_paper(fig, f"{FIG_SUBDIR}/teacher_per_framing_heatmap", dir=str(fig_dir))
     plt.close(fig)
 
