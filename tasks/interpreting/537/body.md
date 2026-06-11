@@ -1,6 +1,7 @@
 ---
-title: 'Context-generalization testbed v1: multi-behavior train×eval context grid
-  as ground truth for asymmetric, behavior-dependent generalization metrics'
+title: 'Training context controls how far an implanted behavior generalizes: instruction
+  and worked-example wrappers contain it, persona and rephrasing wrappers spread it
+  everywhere (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-09T18:47:55Z'
