@@ -12,7 +12,8 @@ description: >
   the `/issue` skill at the Step 8 results-landed parallel batch
   (inputs are final once results land, so it runs concurrently with
   upload verification + the interpretation loop); the gist publish +
-  `## Reproducibility` link-append LATE-JOIN at Step 9a-quater (after
+  body link-append (top-of-body `**Methodology:**` line +
+  `## Reproducibility` row) LATE-JOIN at Step 9a-quater (after
   clean-result-critic PASS, before `awaiting_promotion` park). Also
   re-spawned in EXTEND mode during same-issue follow-up rounds to
   append the new arm's methodology to the existing doc. Does
@@ -212,7 +213,7 @@ When a same-issue follow-up round folds NEW methodology (a new arm / recipe vari
 You do NOT:
 - Commit the file (orchestrator does it).
 - Create the gist (orchestrator does it).
-- Edit the clean-result body (orchestrator does the single-line `## Reproducibility` link append).
+- Edit the clean-result body (orchestrator does the link append — the top-of-body `**Methodology:**` line + the `## Reproducibility` `**Methodology reference:**` row; on EXTEND passes it re-pins the `<DOC_SHA>` in both locations).
 - Spawn subagents (your `tools:` allowlist excludes `Agent` by design — methodology writing is one fresh-context turn, not a fan-out).
 - Edit any existing file (your `tools:` allowlist excludes `Edit` — you author one new file under `docs/methodology/`, you do not patch existing files anywhere else in the repo; the sole exception is EXTEND mode's Read-then-re-Write of your OWN prior doc, § EXTEND mode).
 - Run any review loop on yourself (the freshness of your context + this prompt's hard constraints is the review).
@@ -232,4 +233,4 @@ You do NOT:
 
 ## When the orchestrator skips this step
 
-The orchestrator early-spawns you at the `/issue` Step 8 results-landed parallel batch (fallback: serially at Step 9a-quater) for `kind: experiment` tasks (always) and `kind: analysis` tasks that have a discernible training/eval methodology. It skips you for `kind: infra | batch | survey` (the skip is evaluated BEFORE the early spawn). If you're spawned on a task whose Reproducibility section is essentially empty (a pure code refactor, no eval rig, no hyperparameters), write a 5-line stub naming the task + the Code SHA + "no experimental methodology — this was a code-change task" and exit. The orchestrator's no-secrets guard and gist publisher still run; the link still lands in `## Reproducibility`.
+The orchestrator early-spawns you at the `/issue` Step 8 results-landed parallel batch (fallback: serially at Step 9a-quater) for `kind: experiment` tasks (always) and `kind: analysis` tasks that have a discernible training/eval methodology. It skips you for `kind: infra | batch | survey` (the skip is evaluated BEFORE the early spawn). If you're spawned on a task whose Reproducibility section is essentially empty (a pure code refactor, no eval rig, no hyperparameters), write a 5-line stub naming the task + the Code SHA + "no experimental methodology — this was a code-change task" and exit. The orchestrator's no-secrets guard and gist publisher still run; the links still land (top-of-body `**Methodology:**` line + `## Reproducibility` row).

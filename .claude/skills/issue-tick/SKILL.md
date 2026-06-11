@@ -249,6 +249,21 @@ Check the latest marker's `ts` (from Step 1):
   in-process re-drive here IS the recovery path for the
   alive-but-stalled case.
 
+  **Refusal-thinned re-drive (applies to every re-drive in 3b AND 3c).**
+  If the session's previous turn(s) died on a spurious "violates our
+  Usage Policy" API refusal (the turn ends in the refusal text — common
+  on this project's marker/EM/implant vocabulary), a naive re-drive
+  replays the same trigger-dense context and gets refused again: on
+  2026-06-10 the #543 session was bricked for ~75 min by 4 consecutive
+  tick re-drives each re-refused. On a refusal-killed predecessor turn,
+  re-drive THINNED: resume from `task.py latest-marker <N>` + status
+  only — do NOT page the clean-result body, `epm:interpretation`
+  bodies, or any raw-completion text back into context; let the next
+  step's subagent (which starts with fresh context) do the
+  content-heavy lifting behind the analyzer's content firewall. If the
+  thinned re-drive is refused too, exit and leave recovery to the
+  watcher's respawn (a fresh session clears the poisoned context).
+
   Avoid re-driving GATE-PARK states (over-cap `plan_pending`,
   `awaiting_promotion`, `blocked`): those are user gates by design —
   staleness there is correct, the user is the wake-up signal. The list

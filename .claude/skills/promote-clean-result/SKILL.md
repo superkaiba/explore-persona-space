@@ -194,9 +194,27 @@ The user reads the live body on the EPS dashboard and asks for tweaks;
 you apply them in place via repeated `task.py set-body` calls. Each
 edit is one git commit on `task-workflow`.
 
-## Step 6 — Hand off the promote command
+## Step 6 — Execute (explicit intent) or hand off
 
-When the user is satisfied:
+**If the user's request already carries explicit promote intent** —
+"promote N", "promote it", "promote N useful/not-useful" — and Steps
+3-5 PASS, run the command directly on their behalf:
+
+```
+uv run python scripts/task.py promote <N> useful   # or not-useful, per their words
+```
+
+The "user-only" rule means no AUTOMATION may flip
+`runs.classification` on its own; a human's explicit "promote N" in
+chat IS the user gate, and re-asking "ready to promote?" after they
+already said so is the anti-pattern (2026-06-10: Thomas said
+"Promote 488", got a summary instead of execution, and had to repeat
+"PROMOTE IT"). Ask ONLY when the classification is ambiguous (no
+useful/not-useful signal and the body suggests not-useful) or a gate
+FAILed.
+
+**Otherwise** (the user asked for a review/refine pass, not a
+promotion), hand off:
 
 ```
 Ready to promote. Run:
@@ -206,8 +224,6 @@ Ready to promote. Run:
 or
 
     uv run python scripts/task.py promote <N> not-useful
-
-(promotion is user-only — I cannot run it.)
 ```
 
 That command moves the task from `tasks/awaiting_promotion/<N>/` to

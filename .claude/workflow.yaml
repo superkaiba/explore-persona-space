@@ -61,6 +61,10 @@ issue_types:
   - batch
   - analysis
   - survey
+  # Question-level campaign runner (task #586): one task pinned to ONE
+  # docs/open_questions.md anchor; a dedicated session runs /campaign <N>
+  # and files + spawns ordinary kind:experiment children via /issue.
+  - campaign
 
 # ──────────────────────────────────────────────────────────────────────
 # Conceptual board "columns". On the GH-era project board these were
@@ -85,7 +89,7 @@ columns:
     description: "Folder tasks/plan_pending/<N>/ — plan drafted; user action required to advance."
   - name: "In flight"
     color: BLUE
-    description: "Folders tasks/{approved,implementing,code_reviewing,testing,running,uploading,verifying,interpreting,reviewing}/<N>/ — automated lifecycle in progress."
+    description: "Folders tasks/{approved,running,verifying,interpreting,reviewing}/<N>/ — automated lifecycle in progress."
   - name: "Blocked"
     color: RED
     description: "Folder tasks/blocked/<N>/ — aborted or stuck; awaiting user triage."
@@ -174,15 +178,10 @@ statuses:
     description: "experimenter is running the workload on a pod."
     next_action: run
     user_gated: false
-  - name: uploading
-    column: "In flight"
-    description: "upload-verifier is checking that artifacts landed on HF Hub / WandB / git. The analyzer first pass (HOLD-marker mode) + methodology-writer may pre-compute in the background (Step 8 results-landed parallel spawn) — no epm:interpretation is published before upload-verification PASS."
-    next_action: verify_uploads
-    user_gated: false
   - name: verifying
     column: "In flight"
-    description: "Post-upload sanity / smoke-test step before interpretation."
-    next_action: verify
+    description: "upload-verifier is checking that artifacts landed on HF Hub / WandB / git. (There is NO `uploading` status — the whole upload-verification phase runs at `verifying`; task.py rejects `uploading`.) The analyzer first pass (HOLD-marker mode) + methodology-writer may pre-compute in the background (Step 8 results-landed parallel spawn) — no epm:interpretation is published before upload-verification PASS."
+    next_action: verify_uploads
     user_gated: false
   - name: interpreting
     column: "In flight"
@@ -266,7 +265,6 @@ canonical_lifecycle:
   - code_reviewing
   - testing
   - running
-  - uploading
   - verifying
   - interpreting
   - reviewing
@@ -436,6 +434,29 @@ gates:
         does NOT use AskUserQuestion here — it posts the dashboard link and
         exits cleanly. Awaiting promotion is user-only: no automation may
         flip `runs.classification` without explicit user invocation.
+    - id: 16
+      name: campaign_brief_approval
+      label: status:approved
+      reason: |
+        Campaign brief approval (the human gate INTO a campaign — task
+        #586). A `kind: campaign` task executes only from status
+        `approved`: the user reviews the `## Campaign Brief` (question
+        anchor, hypothesis set, initial experiment DAG, budget + stop
+        criteria) and runs `uv run python scripts/task.py set-status <N>
+        approved`. The /campaign skill (and `spawn_session.py
+        spawn-campaign`) REFUSE to start from `proposed` — they exit with
+        a one-line pointer to this gate, no AskUserQuestion. Once
+        approved, the campaign session is fully autonomous within the
+        brief's GPU-hour budget + limits (recorded in
+        artifacts/campaign-state.json): it MAY auto-file and auto-spawn
+        substantially-different child experiments via `/issue <child>
+        --auto` — the user-approved 2026-06-10 exception to the
+        "all automatic follow-up EXECUTION is same-issue" routing rule,
+        scoped strictly to approved campaigns. Gates OUT are the daily
+        `epm:campaign-digest` + the final report; per-child clean-result
+        promotion stays user-only (gate id 7) but does NOT block the
+        campaign's ingest (it reads the critic-gated body at
+        awaiting_promotion).
   conditional:
     - id: 9
       name: experiment_goal_refine
@@ -836,7 +857,7 @@ subagent_halt_conditions:
   - subagent: upload-verifier
     verdict: FAIL
     action: |
-      status:uploading does not advance to interpretation. (The analyzer
+      status:verifying does not advance to interpretation. (The analyzer
       may have pre-computed a HELD first pass in the background — Step 8
       results-landed parallel spawn — but it stays unpublished until
       PASS; on gap-fill PASS the orchestrator re-spawns the analyzer
@@ -1049,7 +1070,9 @@ concerns_protocol:
         Strict gate. Orchestrator MUST address (dispatch implementer →
         `task.py address-concern`) or pivot strategy. Cannot be
         user-deferred; cannot be auto-advanced past. `task.py
-        defer-concern` raises ValueError on attempt. Unaddressed after
+        defer-concern` raises ValueError on attempt — sole exception:
+        the reconciler's binding severity-downgrade via `--by
+        reconciler` (see § reconciler_special_case). Unaddressed after
         autonomous options exhausted → halt_criteria id=6
         (concern_unresolved).
     - tier: CONCERN
@@ -1082,6 +1105,12 @@ concerns_protocol:
     experiment design, persist as BLOCKER. Otherwise leave as NIT or
     advisory verdict-body text.
   concern_id_format: "^[a-z0-9][a-z0-9-]{1,79}$"  # stable kebab-case
+  summary_cap: |
+    `--summary` is HARD-CAPPED at 200 chars — task.py raises ValueError
+    above it (5 reviewer crashes on 2026-06-10 alone: 238-410-char
+    summaries). Compose the summary as one tight sentence and move all
+    detail to `--evidence`. The same cap applies to `address-concern`
+    carried summaries.
   concern_id_examples:
     - probe-position-undefined
     - missing-mlm-control
@@ -1561,7 +1590,7 @@ markers:
   - kind: "epm:clean-result-critique"
     posted_by: skill (via clean-result-critic)
     when: "Step 9a-bis"
-    fields: "PASS/REVISE verdict with 14 lenses (incl. binding-concerns audit, Lens 14) against the 2-content-section nested-design (v2) spec (2026-W22, task #454; nested-TL;DR adopted forward-only after #454): title; TL;DR (`### Motivation` + `### What I ran` + `### Findings` (parent) → `#### <finding>` per result for v2-sentinelled bodies — absorbs the retired Details-narrative Lens 4); inline figure inside each `#### <finding>`; Lens 4 merged into Lens 2; Reproducibility (Parameters absorbed here; confidence lives in the H1 title tag only for v2 bodies); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (Methodology corrections no longer a discrete H3); one-takeaway-one-figure per `#### <finding>`; eval-probe descriptions inside `## TL;DR`; raw alongside processed; story arc present; planned-vs-actual coverage; binding-concerns audit (Lens 14, composed onto Lens 13 by task #455). Mechanical pre-pass: verify_task_body.py + audit_clean_results_body_discipline.py."
+    fields: "PASS/REVISE verdict with 15 lenses (incl. binding-concerns audit, Lens 14; contaminated/failed-data-gate-arm check, Lens 15) against the 2-content-section nested-design (v2) spec (2026-W22, task #454; nested-TL;DR adopted forward-only after #454): title; TL;DR (`### Motivation` + `### What I ran` + `### Findings` (parent) → `#### <finding>` per result for v2-sentinelled bodies — absorbs the retired Details-narrative Lens 4); inline figure inside each `#### <finding>`; Lens 4 merged into Lens 2; Reproducibility (Parameters absorbed here; confidence lives in the H1 title tag only for v2 bodies); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (Methodology corrections no longer a discrete H3); one-takeaway-one-figure per `#### <finding>`; eval-probe descriptions inside `## TL;DR`; raw alongside processed; story arc present; planned-vs-actual coverage; binding-concerns audit (Lens 14, composed onto Lens 13 by task #455); headline must not rest on a contaminated / failed-data-gate arm (Lens 15, post-mortem task #407). Mechanical pre-pass: verify_task_body.py + audit_clean_results_body_discipline.py."
   - kind: "epm:clean-result-critique-codex"
     posted_by: skill (via codex-clean-result-critic)
     when: "Step 9a-bis"
@@ -1818,11 +1847,15 @@ markers:
   - kind: "epm:failure"
     posted_by: specialist
     when: "on crash"
-    fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code line."
+    fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code | data line. `data` (a factual gap only the user can fill) is posted per the halt-criterion contract — the task parks at status:blocked and does NOT enter the Step 7 crash-fix routing, which covers infra | code only; scripts/failure_classifier.py likewise emits only infra | code."
   - kind: "epm:failure-classify-error"
     posted_by: skill
     when: "Step 7 (epm:failure body missing failure_class AND scripts/failure_classifier.py exited non-zero)"
     fields: "Captured stderr from the failure_classifier.py invocation. Audit record only: the orchestrator treats the unclassifiable failure as `code` (conservative default) and applies the code-class row of the Step 7 failure table; this marker preserves WHY the classifier could not produce a verdict."
+  - kind: "epm:failure-lesson"
+    posted_by: skill (orchestrator)
+    when: "Step 7, when a crash-fix round resolves an epm:failure (experiment-implementer crash-fix report, or a respawned experimenter's relaunch-with-fix report); also Step 6d, when an experimenter's launch report carries the block for a within-turn launch fix (dying launch fixed + relaunched in the same spawn — no epm:failure posted)"
+    fields: "failure_class (code|infra|data), phase (pipeline phase or script), lesson (1-3 sentences: the trap + the fix, written for the NEXT agent — no transcript dumps), generalizes (yes|no — yes only if the trap plausibly recurs beyond this issue), owning_agent (experiment-implementer|experimenter), gotcha_candidate (yes|no — yes for codebase/infra traps that belong in .claude/rules/gotchas.md). Posted verbatim from the resolving agent's report block. On generalizes=yes the orchestrator ALSO persists the lesson immediately to .claude/agent-memory/<owning_agent>/ (feedback_<slug>.md + MEMORY.md index line; explicit-path commit + push, standing rule 2026-06-02) so parallel same-day sessions load it on their next spawn; on gotcha_candidate=yes it ALSO routes a workflow-fix candidate targeting .claude/rules/gotchas.md through the workflow-fix-on-bug auto-spawn default. generalizes=no lessons get the marker only (no memory write). /daily is the deduplicating consolidator (reads the day's markers, dedupes against agent memories, promotes recurring lessons into rules, prunes over-eager generalizes=yes entries)."
   - kind: "epm:experimenter-respawn"
     posted_by: skill
     when: "Step 7 (failure_class=infra path)"
@@ -1898,7 +1931,21 @@ markers:
                             est_start_seconds_clamped, outcome, detail,
                             elapsed_seconds}, ...]
          extra:          {cancel_race?, gcp_attempts_today?,
-                          intermediate?, ...}`
+                          intermediate?,
+                          override_without_frontmatter?, ...}`
+
+      `override_without_frontmatter: true` (optional) is stamped by the
+      dispatch CLI (`scripts/dispatch_issue.py`, via a marker_poster
+      decorator) when `launch` was invoked with an explicit
+      `--backend runpod` while the task's `backend:` frontmatter does
+      not name a backend (absent/empty, or an explicit `auto` — which
+      states the auto-routing intent even more explicitly than absence)
+      — i.e. the GCP-first auto default was bypassed at the
+      CLI with no frontmatter backing. Visibility only: the launch is
+      never blocked, and the CLI also emits a LOUD stderr warning naming
+      the legitimate residual gaps (70B intents / interactive SSH-MCP
+      orchestration / runs > GCP --max-run-duration default 24h / SLURM
+      venv-extras mismatch).
 
       Reason codes:
         * `override`              — explicit `backend:` frontmatter ran.
@@ -1988,6 +2035,31 @@ markers:
       PREEMPTED/TIMEOUT/NODE_FAIL (the orchestrator re-routes a fresh
       run to RunPod), `investigate` for FAILED/OOM (the operator picks
       whether to retry or pivot). v1.
+  # ── campaign lifecycle markers (/campaign <N>, task #586) ──────────────
+  - kind: "epm:campaign-started"
+    posted_by: campaign skill (Step 0)
+    when: "the /campaign session validates the brief (kind: campaign, status approved), initializes artifacts/campaign-state.json, flips status to running, and arms the /campaign-tick cron"
+    fields: "question_anchor, budget (gpu_hours_total), limits (max_experiments / max_concurrent_children / per_child_gpu_hours_cap / wall_clock_days), initial experiment DAG size. v1."
+  - kind: "epm:campaign-child-spawned"
+    posted_by: campaign skill (Step 1.4, one per child)
+    when: "the campaign files a child task (task.py new --kind experiment --parent <N>) and spawns its autonomous session (spawn_session.py spawn-issue --issue <child> --auto)"
+    fields: "child task id, experiment id (DAG row), gpu_hours_est committed, remaining budget headroom, open slots after the spawn. v1."
+  - kind: "epm:campaign-child-ingested"
+    posted_by: campaign skill (Step 1.1, one per landed child)
+    when: "a child reached awaiting_promotion/completed and the campaign ingested its CRITIC-GATED clean-result (title claim + confidence tag + TL;DR findings) into artifacts/world-model.md"
+    fields: "child task id, headline claim, confidence tag, belief_shift (yes|no), dry_counter after the update. v1."
+  - kind: "epm:campaign-digest"
+    posted_by: campaign skill (Step 1.5, at most every 24h)
+    when: "the daily campaign digest fires (last_digest_at older than 24h at a decision round)"
+    fields: "budget spent/committed/total (GPU-hours), children table (id / status / headline), current working belief + confidence, next planned arms. v1."
+  - kind: "epm:campaign-stalled"
+    posted_by: scripts/autonomous_session_watch.py (campaign pass)
+    when: "a live campaign session posted no skill-posted epm:campaign-* marker AND no child task posted any marker for > EPM_CAMPAIGN_STALL_S (default 2h); one alert per stalled episode (the second consecutive stalled check stop-then-respawns, cap 3/episode)"
+    fields: "stall window in hours, note carries the [autonomous_session_watch:campaign] sentinel so the alert never resets the staleness clock it measures. v1."
+  - kind: "epm:campaign-stopped"
+    posted_by: campaign skill (Step 2)
+    when: "a stop criterion fired (user-stop tag / wall-clock / budget / max experiments / confidence target / dry counter) and the campaign finalizes (final report into the task body, status -> completed)"
+    fields: "stop_reason (the check_stop reason string), totals (children filed/ingested/abandoned, GPU-hours committed), pointer to the final report + world-model artifact. v1."
 steps:
   - id: "0"
     name: load_state
@@ -2002,7 +2074,6 @@ steps:
       - code_reviewing
       - testing
       - running
-      - uploading
       - verifying
       - interpreting
       - reviewing
@@ -2028,7 +2099,6 @@ steps:
       - code_reviewing
       - testing
       - running
-      - uploading
       - verifying
       - interpreting
       - reviewing
@@ -2141,7 +2211,6 @@ steps:
   - id: "8"
     name: upload_verification
     entry_status_label:
-      - uploading
       - verifying
     entry_condition: "epm:results posted"
     posts_marker: "epm:upload-verification"
@@ -2213,8 +2282,11 @@ steps:
       moves to `followups_running` (tagged `followup-auto` for
       `source: proposer-9b`, `followup-manual` for `user-chat` /
       `step-10b-pick`) and HOLDS that status for the whole round —
-      the normal pipeline `set-status` calls (`approved` / `running` /
-      `verifying` / `interpreting` / `reviewing`) are skipped; phase
+      the normal pipeline `set-status` calls (`planning` /
+      `plan_pending` / `approved` / `running` / `verifying` /
+      `interpreting` / `reviewing`) are skipped, and `task.py
+      set-status` refuses them from `followups_running` unless
+      `--force-followup-exit` is passed (post-#533/#560); phase
       visibility comes from `stage=followup-<phase>` breadcrumbs +
       `epm:progress` markers. (`followups_running` in the entry list
       is the mid-round resume case after a crash.) Whether
@@ -2389,16 +2461,31 @@ workflow_fix_on_bug:
     - "scripts/audit_clean_results_body_discipline.py"
     - "scripts/codex_task.py"
     - "scripts/poll_pipeline.py"
+    # The /issue Step 6b/8 dispatch CLI + Step 6d.2 backend-agnostic bg-Bash
+    # poller (router slice 6 pair: dispatch_issue.py writes the per-issue
+    # handle sidecar, backend_poll.py reads it each tick). Added 2026-06-11
+    # (#571): the list predated the pair and its absence nearly deflected an
+    # in-scope sys.path-bootstrap fix for the documented poller invocation.
+    - "scripts/dispatch_issue.py"
+    - "scripts/backend_poll.py"
     # The /issue Step 7 infra-vs-code failure router (mirrored by
     # .claude/skills/issue/failure_patterns.md). Added 2026-06-10 (#557):
     # the list predated the script and its absence nearly deflected an
     # in-scope OOM-classification fix.
     - "scripts/failure_classifier.py"
     - "scripts/gh_project.py"
+    # The PM session's one-pass read-only queue-report helper (research-pm.md
+    # Mode 1 STATUS source; pm/SKILL.md boot-scan step 2). Added 2026-06-11.
+    - "scripts/pm_queue_report.py"
     - "scripts/spawn_session.py"
     - "scripts/pod_watch.py"
     - "scripts/worktree_audit.py"
     - "scripts/cron_worktree_audit.sh"
+    # The /issue Step 4a cone-mode sparse-worktree creation helper (+ its
+    # test file below). Added 2026-06-11 (#596): the list predated the
+    # helper's same-day merge and its absence nearly deflected an in-scope
+    # anchoring/validation hardening fix.
+    - "scripts/new_worktree.sh"
     - "scripts/autonomous_session_watch.py"
     - "scripts/cron_autonomous_session_watch.sh"
     - "scripts/session_progress_report.py"
@@ -2416,6 +2503,7 @@ workflow_fix_on_bug:
     - "tests/test_session_summarize.py"
     - "tests/test_session_resolver.py"
     - "tests/test_spawn_session_list_enrichment.py"
+    - "tests/test_sparse_worktree.py"
   out_of_scope:
     - "src/explore_persona_space/**"
     - "configs/**"

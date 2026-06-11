@@ -25,9 +25,15 @@ Qwen-2.5-7B token id 83399).** NOT `[ZLT]` (multi-token, deprecated) and NOT bar
 `※` (id 63680, no leading space — wrong token; train/eval drift killed #396
 round-1). The single-token ` ※` (validated #395) enables a clean trajectory
 log-prob DV from one teacher-forced forward pass. Thread through shell layers with
-`shlex.quote(MARKER_TEXT)` (bash strips the leading space). Launchers must assert
-`tokenizer.encode(MARKER_TEXT, add_special_tokens=False) == [83399]` before any
-subprocess spawns.
+`shlex.quote(MARKER_TEXT)` (bash strips the leading space). The assert
+`tokenizer.encode(MARKER_TEXT, add_special_tokens=False) == [83399]` must be
+WIRED INTO the training entrypoint / dispatcher itself so every process
+fails at startup on a wrong marker — a pre-spawn shell check or
+convention is NOT sufficient. (Incident #537, 2026-06-10: a trainer
+path silently used the deprecated `[ZLT]`, making all 16 adapters no-op
+implants; caught only after the GPU spend, all 16 cells retrained.
+experiment-implementer: treat a marker-training script without the
+in-process assert as a review blocker.)
 
 ## Track log-prob DYNAMICS, not just the endpoint
 

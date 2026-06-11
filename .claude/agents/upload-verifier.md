@@ -3,7 +3,7 @@ name: upload-verifier
 description: >
   Active verification that every artifact produced by a completed experiment
   has a permanent URL before the pod is terminated. Hard gate: FAIL blocks
-  advancement from status:uploading to status:interpreting — the analyzer
+  advancement from status:verifying to status:interpreting — the analyzer
   may be pre-computing its first pass in the background (Step 8
   results-landed parallel spawn, HOLD-marker mode), but no interpretation
   is PUBLISHED (no epm:interpretation marker, no critic round) before this
@@ -136,7 +136,8 @@ uv run python -c "from huggingface_hub import HfApi; HfApi().list_repo_files('su
 # WandB
 uv run python -c "import wandb; wandb.Api().run('<run-path>')"
 
-# Git on the issue branch
+# Git on the issue branch (named files only — Step 2.9 reconciles whole
+# git-destination directories per-file)
 git ls-tree -r <issue-branch> -- <path>
 ```
 
@@ -353,6 +354,49 @@ inputs, record `N/A — plan names no analysis-input artifacts` in the
 verdict table; do not WARN (unlike Step 2.7, no plan field is mandated
 here, so absence is the common, healthy case).
 
+### Step 2.9 — Git-destination reconciliation (per-file, #537)
+
+**New as of #537.** A directory-level `git add` silently drops
+gitignore-excluded files while the commit still "succeeds" — so grading
+a git-destination row off its NAMED / expected files alone passes round
+1 and the gap surfaces a round late, or never. (Incident #537:
+`.gitignore`'s `*.npz` excluded
+`eval_results/issue_537/G_tensor/G_tensor.npz`, a plan-primary
+deliverable, from a directory-level add; the git row PASSed round 1 on
+the named eval JSONs and the drop was caught only by the round-2
+Step 2.7 glob re-check.)
+
+For EACH git-destination directory the run produced
+(`eval_results/issue_<N>/`, `figures/issue_<N>/`, ...), reconcile the
+source enumeration against the committed git tree — per FILE, not per
+named artifact. Reuse the pod-side `find` listing from Step 1 (or a
+local working-tree `find` if the artifacts were produced locally):
+
+```bash
+ssh_execute epm-issue-<N> 'cd /workspace/explore-persona-space && \
+  find <dir> -type f 2>/dev/null | sort' > /tmp/issue-<N>-src-<slug>.txt
+git ls-tree -r --name-only origin/issue-<N> -- <dir> | sort \
+  > /tmp/issue-<N>-git-<slug>.txt
+comm -23 /tmp/issue-<N>-src-<slug>.txt /tmp/issue-<N>-git-<slug>.txt
+# any output = source files NOT in the committed tree
+```
+
+For each hit, run `git check-ignore -v <file>` to identify the likely
+gitignore rule, then apply this verdict rule:
+
+- **The file verifiably resolves at another permanent home** (e.g. an
+  `.npz` / binary tensor on the HF data repo per the Upload Policy) →
+  PASS for that file; record the verified URL in the same verdict row.
+- **Otherwise** → **FAIL**, naming the file AND the matching gitignore
+  rule (the `git check-ignore -v` output) in the verdict body, with the
+  exact remediation (uploader runs `git add -f` with a one-line
+  rationale, or uploads it to its correct destination).
+
+A directory that is WHOLLY uncommitted under an existing deferred
+grading (figures the analyzer commits at Step 9) follows the existing
+figures DEFERRED rule — this check targets the silent PARTIAL drop,
+where a commit landed but excluded files.
+
 ### Step 3 — Justify every "N/A"
 
 If a standard row is reported N/A, you must say *why* — concretely, and
@@ -434,6 +478,12 @@ the absence.** "Probably not generated" is not a valid N/A.
   permanently unrunnable; the remediation is cheap while the pod is alive
   (the files are KB-MB — upload to the HF data repo
   `issueN_<slug>/analysis_tensors/`).
+- **A file under a git-destination directory exists at the source but is
+  absent from the committed git tree AND has no other verified permanent
+  home (Step 2.9 git-destination reconciliation, #537).** A `.gitignore`
+  rule silently drops files from a directory-level `git add` while the
+  commit succeeds; grading the git row off named files only defers the
+  catch to a later round — or past pod termination.
 
 **WARN** is acceptable for:
 - Pod stopped (can't verify cleanup post-hoc — note this and move on).
@@ -474,6 +524,7 @@ against permanent storage.
 | Claimed URLs HEAD-resolve (phantom-URL gate, #456) | Yes | PASS / FAIL | All HF/WandB URLs in epm:results + body Reproducibility list under cited path at cited revision; FAIL names every unresolved URL |
 | Primary deliverable produced (completeness gate, #519) | Yes (if plan §6.5 declares `primary_deliverable:`) | PASS / FAIL / WARN | Per row in plan §6.5: on-pod `find <glob>` enumerates ≥1 file → PASS naming the DV + file count; zero files → FAIL with blocker tag `primary-deliverable-missing` naming the DV + missing glob; no `primary_deliverable:` block at all → WARN `primary-deliverable-spec-absent` (legacy / analysis|infra|batch|survey kinds; do not block) |
 | Plan-referenced analysis inputs (shift tensors, cached activations, #521) | Yes (if plan analysis/control sections name them) | PASS / FAIL / N/A | Every plan-named downstream input at a permanent URL (HF data repo `issueN_<slug>/analysis_tensors/`); FAIL names the on-pod path + exact upload command; N/A = plan names no analysis-input artifacts |
+| Git-destination reconciliation (per-file, #537) | Yes (per git-destination dir produced) | PASS / FAIL | Step 2.9 `comm` diff of source `find` vs `git ls-tree origin/issue-<N>` per directory; FAIL names each dropped file + its `git check-ignore -v` rule, unless the file resolves at another verified permanent home (URL recorded) |
 
 **Auto-discovered files NOT covered by standard rows** (flag these
 explicitly so the next experimenter / analyzer knows about them):
@@ -492,7 +543,7 @@ list = PASS.)
 
 ### Step 6 — On FAIL, do NOT advance
 
-Stay at `status:uploading`. List the remediation commands. The next
+Stay at `status:verifying` (there is no `uploading` status — task.py rejects it). List the remediation commands. The next
 caller (uploader agent or experimenter) fixes the gaps; you re-verify.
 
 ## Pod Lifecycle Check (MANDATORY)
@@ -530,6 +581,10 @@ correct lifecycle state:
   actually queried and confirmed.
 - **Never skip a check.** If you can't reach a service (SSH timeout, API
   error), report ERROR with the specific failure, not SKIP.
+- **Never grade a git-destination directory off its named / expected
+  files alone** — run the Step 2.9 per-file reconciliation. `.gitignore`
+  rules (e.g. `*.npz`) silently drop files from directory-level adds
+  while the commit succeeds (#537).
 - **WandB Artifacts is NOT a destination for eval JSONs or raw
   completions.** Live training metrics on WandB stay required.
 - **You have no authority to fix uploads yourself.** Report what's

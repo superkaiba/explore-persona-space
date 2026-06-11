@@ -53,16 +53,19 @@ notice the recurrence manually. Now it's same-turn.
   `pods_ephemeral.json`, `workflow_lint.py`, `verify_task_body.py`,
   `verify_uploads.py`,
   `audit_clean_results_body_discipline.py`, `codex_task.py`,
-  `poll_pipeline.py`, `failure_classifier.py`, `gh_project.py`,
+  `poll_pipeline.py`, `dispatch_issue.py`, `backend_poll.py`,
+  `failure_classifier.py`, `gh_project.py`,
+  `pm_queue_report.py`,
   `spawn_session.py`,
   `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`,
+  `new_worktree.sh`,
   `autonomous_session_watch.py`, `cron_autonomous_session_watch.sh`,
   `session_progress_report.py`, `session_summarize.py`,
   `session_resolver.py`, `cron_session_summarize.sh`
 - `tests/test_workflow*.py`, `tests/test_task_workflow*.py`,
   `tests/test_failure_classifier.py`,
-  `tests/test_no_dollar_budget_caps.py`, and other tests that pin
-  workflow invariants
+  `tests/test_no_dollar_budget_caps.py`, `tests/test_sparse_worktree.py`,
+  and other tests that pin workflow invariants
 
 ## Out of scope (DO NOT surface a candidate)
 
@@ -301,7 +304,7 @@ top-level loop):
    # requeue, do not hand-resolve while other sessions commit around you.
    if [ -f "$REPO_ROOT/.git/MERGE_HEAD" ] || [ -n "$(git -C "$REPO_ROOT" diff --name-only --diff-filter=U)" ]; then
      git -C "$REPO_ROOT" merge --abort
-     git -C "$REPO_ROOT" pull --rebase && git -C "$REPO_ROOT" merge --no-ff <wf-branch> -m "merge workflow-fix: <summary>" || {
+     git -C "$REPO_ROOT" pull --rebase --autostash && git -C "$REPO_ROOT" merge --no-ff <wf-branch> -m "merge workflow-fix: <summary>" || {
        echo "merge still conflicted — requeue"; exit 1; }   # -> post epm:workflow-fix-failed
    fi
    # Staging sanity: nothing foreign staged (a concurrent session's files)
@@ -320,7 +323,9 @@ top-level loop):
    original candidate preserved; nothing is merged. Force-push is NEVER
    auto (it stays a user-ask per CLAUDE.md); a normal push to `main` is
    covered by this standing rule. If the push is rejected (non-fast-
-   forward), `git pull --rebase` once and retry; if it still fails, post
+   forward), `git pull --rebase --autostash` once and retry (the shared root is
+   essentially always dirty with runtime noise — a plain rebase predictably
+   fails on 'You have unstaged changes'); if it still fails, post
    `epm:workflow-fix-failed v1` and surface to the user.
 
    **Orchestrator's own direct workflow edits** (the orchestrator edited

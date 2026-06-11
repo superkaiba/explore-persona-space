@@ -503,6 +503,30 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
    `pid_file=` so the orchestrator can forward it to
    `poll_pipeline.py --pid-file`.
 
+   **Phase-token hygiene (HARD RULE).** Any wrapper/launcher text you
+   author — including its FAILURE paths — must NEVER embed the
+   `[phase=` literal inside message prose. `poll_pipeline.py`'s
+   `PHASE_RE` matches `[phase=<token>]` anywhere in a line (anchoring
+   the regex is documented-non-viable: legitimate phase lines are
+   timestamp-prefixed and legitimate terminal lines carry trailing
+   text — see the #545 note in `poll_pipeline.py`), so a failure
+   message that QUOTES the token becomes a phase transition. Incident
+   #597 (2026-06-11): a shard wrapper crashed and printed
+   `ONE OR MORE SHARDS FAILED rc=1 - [phase=done] NOT emitted`; the
+   dead pid then satisfied the #545 done-corroboration (which guards
+   only the pid-ALIVE path) and the poller reported a FALSE
+   `status=done` on a failed run. Phase tokens are emitted ONLY as
+   standalone status markers (`echo "[phase=eval]"`, the single
+   terminal `[phase=done]` — see `experiment-implementer.md` § "Pod-side
+   result-reporting contract" for the dispatcher-side reservation; this
+   paragraph binds YOU for any launch/relaunch wrapper text). On
+   failure, describe the suppressed terminal token WITHOUT the bracket
+   literal — e.g. `ONE OR MORE SHARDS FAILED rc=1 - terminal phase
+   token suppressed`. The poller now also discards a done-parse whose
+   line carries a nonzero `rc=` or a negation right after the token,
+   but that net is deliberately narrow — hygiene at the source is the
+   contract.
+
 1b. **Re-launches MUST rewrite the pidfile and re-emit `pid_file=`
    (incident #451).** A re-run after a code fix is STILL a launch: go
    through the SAME launcher-script path (step 1) so its
@@ -673,6 +697,37 @@ If unsure, omit the field — the log-pattern fallback is the safer path.
 detects a stall, dead process, or `failure_class: code` later in the run, the
 `/issue` skill re-dispatches you (or `experiment-implementer`) with a fresh
 brief that includes the failure context. Your single-turn scope is launch + exit.
+
+### Failure-lesson block on relaunch-with-fix (REQUIRED)
+
+When THIS spawn resolved a failure — you were respawned with failure
+context after an `epm:failure` (the `/issue` Step 7 `infra` row), OR you
+fixed a dying launch within this turn and relaunched (e.g. cleared a
+stale sentinel, dropped a stale flag, corrected an env var) — END your
+final text summary with a structured lesson block. The orchestrator
+posts it verbatim as an `epm:failure-lesson v1` marker and, on
+`generalizes: yes`, persists it to the owning agent's memory
+immediately so parallel same-day sessions don't re-hit the same trap
+(incidents #537/#545, 2026-06-11):
+
+```
+<!-- epm:failure-lesson v1 -->
+failure_class: code|infra|data
+phase: <pipeline phase or script>
+lesson: <1-3 sentences: the trap + the fix, written for the NEXT agent>
+generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
+owning_agent: experiment-implementer|experimenter
+gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+<!-- /epm:failure-lesson -->
+```
+
+Calibrate `generalizes`: `yes` ONLY if the trap plausibly recurs on
+OTHER issues — library behavior, infra quirk, pod-environment trap —
+NOT a one-off mistake in this issue's own launch command. 1-3
+sentences, the trap + the fix, no transcript dumps. A clean first
+launch with no failure resolved does NOT emit this block, and the
+block does not change your terminal contract (post `epm:run-launched`,
+emit the summary, EXIT — the orchestrator owns posting the marker).
 
 ## Tech Stack Reference
 
