@@ -1411,6 +1411,15 @@ def render_sbatch(
             # line; it runs from $SCRATCH_JOB_DIR (the rsynced repo), so
             # repo-relative `bash scripts/...` resolves. Heartbeat /
             # status.json / [phase=...] markers wrap it unchanged.
+            # NO sentinel channel on this lane (#608 follow-up): the
+            # RunPod/GCP `/workspace/logs/issue-<N>-*.json` marker
+            # contract does NOT hold on SLURM — compute nodes have no
+            # /workspace and the robot wrapper cannot run the drain
+            # shell (see slurm_monitor's module docstring). A dispatch
+            # script that depends on sentinel-carried markers
+            # (epm:results payloads, gate fields) fails loud at its
+            # `mkdir -p /workspace/logs` and must be routed to the
+            # gcp/runpod lane at plan time.
             stage_blocks.append(stage.custom_cmd)
         elif stage.backend == "open_instruct":
             if not stage.deepspeed_config_rel:

@@ -46,6 +46,32 @@ write nothing to status.json (e.g. an early-init crash that hangs
 before the heartbeat loop starts) shows as ``stalled`` until SLURM
 itself reaps it. Operators can grep the rsync'd job.out for
 ``[phase=preflight-failed]`` to disambiguate.
+
+No sentinel drain on this lane (deliberate)
+-------------------------------------------
+
+``sentinels_processed`` is hardcoded ``0`` in every :class:`PollResult`
+this module builds. That is the lane CONTRACT, not a missing drain
+(#608 follow-up verdict, 2026-06-11 — do NOT "fix" it by binding
+``poll_pipeline.drain_sentinels_via`` here). The RunPod/GCP sentinel
+channel (``/workspace/logs/issue-<N>-*.json``) cannot exist on SLURM:
+
+* Compute nodes have no ``/workspace`` and unprivileged jobs cannot
+  create one, so the contract's hardcoded sentinel dir is unwritable.
+* The robot forced-command wrapper allowlists only ``sbatch`` /
+  ``scancel`` / ``squeue`` / ``scp`` / ``rsync`` — the drain's
+  list+cat shell (``poll_pipeline.sentinel_drain_shell``) and the
+  ``.processed`` rename are both unexecutable over this transport.
+
+A workload-cmd dispatch script written to the ``/workspace/logs``
+contract fails LOUD here (``mkdir -p /workspace/logs`` → permission
+denied → non-zero exit under ``set -euo pipefail`` → SLURM ``FAILED``
+→ ``epm:cluster-terminal``), so unlike pre-#608 GCP this lane cannot
+silently drop markers from a COMPLETED run. Markers flow via the
+rsync'd ``status.json`` + ``[phase=...]`` log lines, posted VM-side by
+this monitor; a dispatcher that depends on sentinel-carried markers
+(``epm:results`` payloads, ``gate`` fields) must be routed to the GCP
+or RunPod lane at plan time.
 """
 
 from __future__ import annotations
@@ -391,6 +417,8 @@ def build_poll_result(
         pid_alive=base_status == "running",
         log_tail_excerpt=log_tail[-2000:],
         gate=None,
+        # Always 0 by lane contract — SLURM has no sentinel channel
+        # (see module docstring § "No sentinel drain on this lane").
         sentinels_processed=0,
         phase_log_mtime_sec_ago=log_mtime_sec_ago,
         shard_log_mtime_sec_ago=log_mtime_sec_ago,
@@ -589,6 +617,8 @@ def _poll_result_from_persisted_terminal(
         pid_alive=False,
         log_tail_excerpt=log_tail[-2000:],
         gate=None,
+        # Always 0 by lane contract — SLURM has no sentinel channel
+        # (see module docstring § "No sentinel drain on this lane").
         sentinels_processed=0,
         phase_log_mtime_sec_ago=log_mtime_sec_ago,
         shard_log_mtime_sec_ago=log_mtime_sec_ago,
