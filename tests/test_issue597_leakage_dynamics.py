@@ -1433,3 +1433,41 @@ def test_fourfloat_gate_pass_and_fail():
     ref_bad["rows"][1]["logp_trained"] = -8.0  # 1-nat drift → hard failure
     with pytest.raises(RuntimeError, match="FOUR-FLOAT REPRODUCTION GATE FAILED"):
         compare_fourfloat_to_reference(rows, ours, ref_bad, side="trained")
+
+
+def test_titration_exact_file_upload_verification(monkeypatch):
+    """A non-empty Hub prefix WITHOUT this unit's npz must FAIL verification.
+
+    The shared ``hub._upload`` folder check only requires the destination
+    prefix to be non-empty — once ``base_bank.npz`` (or any earlier unit's
+    npz) exists under ``analysis_tensors/``, a later unit's silent upload
+    failure would still "verify". ``verify_exact_hub_files`` must raise on
+    the missing exact filename (stage preserved) and pass when present.
+    """
+    import explore_persona_space.orchestrate.hub as hub
+
+    disp = _load_titration_dispatcher()
+    prefix = "issue597_leakage_dynamics/analysis_tensors"
+
+    def _listing(files):
+        def _fake(api, repo_id, *, repo_type="model", revision=None):
+            return files
+
+        return _fake
+
+    # Stale base bank + an EARLIER unit on the Hub, THIS unit missing → raise.
+    monkeypatch.setattr(
+        hub,
+        "list_repo_files_complete",
+        _listing([f"{prefix}/base_bank.npz", f"{prefix}/b_assistant.npz"]),
+    )
+    with pytest.raises(RuntimeError, match=r"b_villain\.npz"):
+        disp.verify_exact_hub_files("some/repo", "dataset", prefix, ["b_villain.npz"])
+
+    # Exact staged filename present → verification passes.
+    monkeypatch.setattr(
+        hub,
+        "list_repo_files_complete",
+        _listing([f"{prefix}/base_bank.npz", f"{prefix}/b_villain.npz"]),
+    )
+    disp.verify_exact_hub_files("some/repo", "dataset", prefix, ["b_villain.npz"])

@@ -25,6 +25,7 @@ from explore_persona_space.analysis.paper_plots import (
     savefig_paper,
     set_paper_style,
 )
+from explore_persona_space.experiments.leakage_dynamics_597 import TRAINED_NEGATIVES
 
 MAIN = Path("/home/thomasjiralerspong/explore-persona-space")
 ANCHOR_ROOT = MAIN / ".claude/worktrees/issue-597/eval_results/issue_597/emission_anchors"
@@ -61,6 +62,15 @@ def pooled_rates(arm_dir: Path) -> dict[str, dict[int, tuple[int, int]]]:
                         continue  # token-identical to the source render — excluded
                     group = "no_persona"
                 else:
+                    # Defensive: the anchor JSONs only ever contain the source,
+                    # the cell's 2 trained negatives, and no_persona. If a
+                    # future anchor set adds held-out bystanders, fail loud
+                    # here instead of silently pooling them as trained
+                    # negatives (mislabels the series + denominator).
+                    assert ctx in TRAINED_NEGATIVES[source], (
+                        f"unexpected bystander context {ctx!r} in {path} — not in "
+                        f"TRAINED_NEGATIVES[{source!r}]={TRAINED_NEGATIVES[source]}"
+                    )
                     group = "trained_negative_personas"
                 out[group][step][1] += 1
                 out[group][step][0] += int(bool(row["emitted"]))

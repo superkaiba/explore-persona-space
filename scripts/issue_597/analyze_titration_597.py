@@ -692,6 +692,7 @@ def make_figures(  # noqa: C901  one linear figure dump; reads clearest inline
         savefig_paper,
         set_paper_style,
     )
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import source_label
 
     set_paper_style()
     written: list[str] = []
@@ -711,7 +712,7 @@ def make_figures(  # noqa: C901  one linear figure dump; reads clearest inline
         colors = paper_palette(len(results))
         for res, color in zip(results, colors, strict=False):
             xs, ys = _series(res, "top_share")
-            axes[0].plot(xs, ys, color=color, lw=1.0, alpha=0.8, label=res["source"])
+            axes[0].plot(xs, ys, color=color, lw=1.0, alpha=0.8, label=source_label(res["source"]))
             nx, nv = _series(res, "nulls")
             if nx:
                 axes[0].plot(
@@ -790,7 +791,7 @@ def make_figures(  # noqa: C901  one linear figure dump; reads clearest inline
                     )
                 _shade_onset(ax)
                 ax.set_xscale("log")
-                ax.set_title(res["source"], fontsize=8)
+                ax.set_title(source_label(res["source"]), fontsize=8)
             fig.suptitle(
                 f"{arm_label[arm]} arm — {label} per source (grey dots = below measurement floor)",
                 fontsize=9,
@@ -811,7 +812,7 @@ def make_figures(  # noqa: C901  one linear figure dump; reads clearest inline
                     xs.append(s)
                     ys.append(rec["h3"]["delta_rho_centered"])
             if xs:
-                ax.plot(xs, ys, color=color, lw=1.0, label=res["source"])
+                ax.plot(xs, ys, color=color, lw=1.0, label=source_label(res["source"]))
         ax.axhline(0, color="grey", lw=0.6)
         _shade_onset(ax)
         ax.set_xscale("log")
@@ -837,7 +838,7 @@ def make_figures(  # noqa: C901  one linear figure dump; reads clearest inline
                 ax.plot(above, ys, lw=0.5, alpha=0.4, color=paper_palette_role("neutral"))
             ax.set_xscale("log")
             _shade_onset(ax)
-            ax.set_title(res["source"], fontsize=8)
+            ax.set_title(source_label(res["source"]), fontsize=8)
         fig.suptitle(
             f"{arm_label[arm]} arm — per-context cosine to the top direction U1 "
             "(layer 14 slot, above-floor checkpoints)",
@@ -858,7 +859,9 @@ def make_figures(  # noqa: C901  one linear figure dump; reads clearest inline
                 grid[i, j] = 1.0 if res["per_step"][str(s)]["above_floor"] else 0.0
     im = ax.imshow(grid, aspect="auto", cmap="RdYlGn", vmin=0, vmax=1)
     ax.set_yticks(range(len(units)))
-    ax.set_yticklabels([f"{arm_label[r['arm']]}: {r['source']}" for r in units], fontsize=6)
+    ax.set_yticklabels(
+        [f"{arm_label[r['arm']]}: {source_label(r['source'])}" for r in units], fontsize=6
+    )
     ax.set_xticks(range(0, len(all_steps), max(1, len(all_steps) // 12)))
     ax.set_xticklabels(
         [str(all_steps[i]) for i in range(0, len(all_steps), max(1, len(all_steps) // 12))],
@@ -907,7 +910,7 @@ def make_figures(  # noqa: C901  one linear figure dump; reads clearest inline
                         xs.append(s)
                         ys.append(v)
                 if xs:
-                    ax.plot(xs, ys, color=color, lw=1.0, label=res["source"])
+                    ax.plot(xs, ys, color=color, lw=1.0, label=source_label(res["source"]))
             ax.set_xscale("log")
             _shade_onset(ax)
             ax.set_title(f"{arm_label[arm]} arm", fontsize=9)

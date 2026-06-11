@@ -10,13 +10,16 @@ Measurement-only: no training. Phases per launch:
   base       — Phase A subprocess (shift_svd --mode base): base residuals +
                bank + zero-shift sanity + base-side four-float gate; bank npz
                uploaded to HF the moment it lands (checkpoint-per-phase).
-  unit loop  — per arm × source: per-file ladder download (NEVER
-               snapshot_download allow_patterns — >8k-file repo truncation) →
-               Phase B subprocess (shift_svd --mode unit; per-checkpoint
-               persistence + trained-side four-float gate on every step with a
-               downloaded reference + end-of-ladder invariant) → unit npz +
-               summary upload → ladder delete (per-unit download→extract→
-               delete, MooseFS quota).
+  unit loop  — per arm × source: between-units disk re-probe (plan §12.9) →
+               per-file ladder download into a UNIT-LOCAL dir via local_dir=
+               (NEVER snapshot_download allow_patterns — >8k-file repo
+               truncation; never the shared HF cache, whose blobs the per-unit
+               rmtree would not free) → Phase B subprocess (shift_svd --mode
+               unit; per-checkpoint persistence + trained-side four-float gate
+               on every step with a downloaded reference + end-of-ladder
+               invariant) → unit npz + summary upload + EXACT-filename Hub
+               verification → ladder delete (per-unit download→extract→delete,
+               MooseFS quota).
   finalize   — smoke report JSON, final results sentinel (poll_pipeline
                schema), standalone ``[phase=done]``.
 
@@ -74,7 +77,9 @@ SENTINEL_SCHEMA_VERSION = 1
 HF_RAW_TRAJ_ROOT = "issue597_leakage_dynamics/panel_trajectories_raw"
 
 _HF_RETRY_SLEEPS = (30, 60, 120)
-_DISK_PROBE_BYTES = 10 * 1024**3  # 10 GB headroom for one ladder + tensors
+# Headroom for one worst-case ladder (arm B: 39 ckpts x ~340 MB ≈ 13 GB) +
+# unit tensors; probed at preflight AND at the top of every unit (plan §12.9).
+_DISK_PROBE_BYTES = 16 * 1024**3
 
 
 @dataclass(frozen=True)
@@ -214,7 +219,43 @@ def upload_dir_fail_loud(local_dir: Path, repo_id: str, repo_type: str, path_in_
     return hub_path
 
 
-def disk_probe(root: Path, n_bytes: int = _DISK_PROBE_BYTES) -> None:
+def verify_exact_hub_files(
+    repo_id: str, repo_type: str, path_in_repo: str, filenames: list[str]
+) -> None:
+    """Assert the EXACT uploaded filenames resolve on the Hub post-upload.
+
+    The shared ``hub._upload`` folder verification only checks the destination
+    PREFIX is non-empty — once ``base_bank.npz`` (or any earlier unit's npz)
+    exists under ``analysis_tensors/``, a later unit's silent upload failure
+    would still "verify". Re-list the repo (paginated tree walk — no siblings
+    truncation) and require every staged filename at
+    ``{path_in_repo}/{name}`` BEFORE the local stage is deleted or success is
+    recorded (#521 analysis-tensors rule).
+    """
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import list_repo_files_complete
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    on_hub = set(list_repo_files_complete(api, repo_id, repo_type=repo_type))
+    missing = sorted(
+        f"{path_in_repo}/{name}" for name in filenames if f"{path_in_repo}/{name}" not in on_hub
+    )
+    if missing:
+        raise RuntimeError(
+            f"exact-file upload verification FAILED: {missing} not on {repo_id} after "
+            "upload — treating as FAILURE (upload-before-delete invariant); "
+            "local stage preserved."
+        )
+    log.info(
+        "[phase=upload] exact-file verification OK: %d file(s) under %s/%s",
+        len(filenames),
+        repo_id,
+        path_in_repo,
+    )
+
+
+def disk_probe(root: Path, n_bytes: int = _DISK_PROBE_BYTES, phase: str = "preflight") -> None:
     """posix_fallocate headroom probe — catches the MooseFS per-pod EDQUOT
     quota that ``shutil.disk_usage`` misses (preflight.py pattern)."""
     root.mkdir(parents=True, exist_ok=True)
@@ -225,7 +266,7 @@ def disk_probe(root: Path, n_bytes: int = _DISK_PROBE_BYTES) -> None:
     finally:
         os.close(fd)
         probe.unlink(missing_ok=True)
-    log.info("[phase=preflight] disk probe OK (%.1f GB writable at %s)", n_bytes / 1024**3, root)
+    log.info("[phase=%s] disk probe OK (%.1f GB writable at %s)", phase, n_bytes / 1024**3, root)
 
 
 # ── preflight ────────────────────────────────────────────────────────────────
@@ -321,6 +362,11 @@ def download_ladder(arm: str, source: str, steps: tuple[int, ...], dest_root: Pa
 
     NEVER ``snapshot_download(allow_patterns=...)`` — on this >8k-file repo it
     silently returns 0 files for prefixes in the truncated siblings tail.
+
+    Every file lands via ``local_dir=`` in a UNIT-LOCAL temp dir (then moves
+    into the ladder layout) instead of the shared HF cache: cache blobs would
+    survive the per-unit ladder rmtree and accumulate ~9-13 GB per unit toward
+    the ~130 GB MooseFS quota (concern ``per-unit-disk-check-missing``).
     """
     from huggingface_hub import list_repo_files
 
@@ -350,13 +396,16 @@ def download_ladder(arm: str, source: str, steps: tuple[int, ...], dest_root: Pa
         len(to_fetch),
         len(steps),
     )
+    tmp_dl = dest_root / f"_dl_{arm}_{source}"
     for i, fname in enumerate(to_fetch):
-        cached = _hf_download_with_retry(HF_MODEL_REPO, fname)
+        got = _hf_download_with_retry(HF_MODEL_REPO, fname, local_dir=str(tmp_dl))
         rel = Path(fname).relative_to(prefix)
         target = dest / rel
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(cached, target)
+        shutil.move(got, target)
         log.info("[phase=download_%s_%s] (%d/%d) %s", arm, source, i + 1, len(to_fetch), rel)
+    if tmp_dl.exists():
+        shutil.rmtree(tmp_dl)  # local_dir metadata (.cache/huggingface) + empty tree
     return dest
 
 
@@ -484,6 +533,11 @@ def run_unit(args, params: TitrationParams, token: str, base_bank: Path) -> dict
     arm, source = parse_unit(token)
     unit = f"{arm}_{source}"
     t0 = time.time()
+    # Plan §12.9 between-units disk check: re-probe writable headroom before
+    # every ladder download (the per-unit download→extract→delete cycle keeps
+    # the peak bounded, but a quota regression must fail loud BEFORE the next
+    # ~9-13 GB fetch, not mid-download — MooseFS EDQUOT class).
+    disk_probe(args.runs_root, phase=f"unit_{unit}")
     steps = unit_steps(arm, params)
     gate_steps = steps if params.gate_all_steps else steps[:1]
 
@@ -543,17 +597,16 @@ def run_unit(args, params: TitrationParams, token: str, base_bank: Path) -> dict
         record["floor_statistic_l14_slot"] = floor_statistic_from_unit_npz(unit_npz)
 
     # Checkpoint-per-phase upload: this unit's tensors land on HF BEFORE the
-    # next unit's download (and BEFORE the ladder delete).
+    # next unit's download (and BEFORE the ladder delete). Exact-filename
+    # verification BEFORE the stage delete — the shared helper's prefix check
+    # alone would pass on a stale non-empty prefix.
     if not args.skip_upload:
         stage = args.runs_root / f"_stage_{unit}"
         stage.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(unit_npz, stage / unit_npz.name)
-        record["hf_path"] = upload_dir_fail_loud(
-            stage,
-            HF_DATA_REPO,
-            "dataset",
-            f"issue597_leakage_dynamics{params.hf_suffix}/analysis_tensors",
-        )
+        prefix = f"issue597_leakage_dynamics{params.hf_suffix}/analysis_tensors"
+        record["hf_path"] = upload_dir_fail_loud(stage, HF_DATA_REPO, "dataset", prefix)
+        verify_exact_hub_files(HF_DATA_REPO, "dataset", prefix, [unit_npz.name])
         shutil.rmtree(stage)
 
     if not args.keep_ladders and ladder_dir.exists():
@@ -681,12 +734,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
                 stage = args.runs_root / "_stage_base_bank"
                 stage.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(base_bank, stage / "base_bank.npz")
-                upload_dir_fail_loud(
-                    stage,
-                    HF_DATA_REPO,
-                    "dataset",
-                    f"issue597_leakage_dynamics{params.hf_suffix}/analysis_tensors",
-                )
+                prefix = f"issue597_leakage_dynamics{params.hf_suffix}/analysis_tensors"
+                upload_dir_fail_loud(stage, HF_DATA_REPO, "dataset", prefix)
+                verify_exact_hub_files(HF_DATA_REPO, "dataset", prefix, ["base_bank.npz"])
                 shutil.rmtree(stage)
 
         if args.stop_after_base:
@@ -723,10 +773,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
                 raise
 
     # ── finalize: smoke report + final sentinel ──
+    # Per-shard report filename: 4 parallel GPU shards each finalize; a shared
+    # smoke_report.json would be last-writer-wins.
+    shard_tag = f"gpu{args.gpu}" if args.gpu is not None else "all"
     smoke_report = {
         "schema": "i597_svd_smoke_report_v1",
         "smoke": params.smoke,
         "dry_run": args.dry_run,
+        "shard": shard_tag,
         "units": [r.get("unit") for r in per_unit],
         "per_unit": per_unit,
         "base_bank": str(base_bank),
@@ -740,7 +794,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
         bank_meta = json.loads(str(np.load(base_bank, allow_pickle=False)["meta"]))
         smoke_report["zero_shift"] = bank_meta.get("zero_shift")
         smoke_report["fourfloat_gate_base"] = bank_meta.get("fourfloat_gate_base")
-    report_path = args.slab_root / "smoke_report.json"
+    report_path = args.slab_root / f"smoke_report_{shard_tag}.json"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(smoke_report, indent=2, ensure_ascii=False))
     log.info("[phase=finalize] smoke report -> %s", report_path)
