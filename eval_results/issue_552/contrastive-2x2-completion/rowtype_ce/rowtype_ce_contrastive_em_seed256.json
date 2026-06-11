@@ -1,0 +1,32 @@
+{
+  "label": "contrastive_em_seed256",
+  "subsample_seed": 0,
+  "subsample_size": 512,
+  "subsample_sha256": "8953f55957cf74773f0727afb1da39e64e2f634c2c1bd9377ccc76a843e1f7a3",
+  "max_length": 2048,
+  "batch_size": 8,
+  "loss_surface": "teacher-forced full-sequence CE over the rendered chat template",
+  "delta_sign_convention": "delta_ce_*_vs_base = CE_base - CE_trained (positive = moved)",
+  "per_mix": {
+    "contrastive_em_mix": {
+      "mean_ce_pos": 1.1414410358734157,
+      "n_pos_rows": 512,
+      "per_row_mean_ce_pos_unweighted": 1.1353876971406862
+    }
+  },
+  "mean_ce_neg": 0.18901779105154454,
+  "n_neg_rows": 512,
+  "per_row_mean_ce_neg_unweighted": 0.19298919416905846,
+  "mean_ce_pos": 1.1414410358734157,
+  "n_pos_rows": 512,
+  "delta_ce_neg_vs_base": 0.6070975363430118,
+  "delta_ce_pos_vs_base": 1.884324370298459,
+  "base_json": "eval_results/issue_552/contrastive-2x2-completion/rowtype_ce/rowtype_ce_base.json",
+  "metadata": {
+    "script": "issue552_rowtype_ce",
+    "model": "/workspace/explore-persona-space/models/issue404_pair_turner_bad_medical_contrastive_seed256/sft_narrow_merged",
+    "git_commit": "fa0dc83a137d58557db7276d3a0f704e1f09710a",
+    "timestamp_utc": "2026-06-11T12:43:18Z",
+    "python": "3.11.10"
+  }
+}

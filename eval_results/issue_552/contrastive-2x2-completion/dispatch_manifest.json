@@ -1,0 +1,48 @@
+{
+  "issue": 519,
+  "mode": "sweep",
+  "arms": [
+    "contrastive_em",
+    "contrastive_benign"
+  ],
+  "seeds": [
+    42,
+    137,
+    256
+  ],
+  "n_cells": 6,
+  "n_gpus": 4,
+  "cpu_only": false,
+  "requested_skip_phase": [
+    "a1",
+    "a23",
+    "b0_smoke",
+    "b",
+    "e"
+  ],
+  "actually_skipped_phases": [
+    "a1",
+    "a23",
+    "b0_smoke",
+    "b",
+    "e"
+  ],
+  "skipped_phases": [
+    "a1",
+    "a23",
+    "b0_smoke",
+    "b",
+    "e"
+  ],
+  "phase_order": [
+    "a1",
+    "a23",
+    "b0_smoke",
+    "b",
+    "c",
+    "e",
+    "d"
+  ],
+  "git_commit": "fa0dc83a137d58557db7276d3a0f704e1f09710a",
+  "timestamp_utc": "2026-06-11T18:58:48Z"
+}

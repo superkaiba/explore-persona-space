@@ -1,0 +1,32 @@
+{
+  "label": "base",
+  "subsample_seed": 0,
+  "subsample_size": 512,
+  "subsample_sha256": "8953f55957cf74773f0727afb1da39e64e2f634c2c1bd9377ccc76a843e1f7a3",
+  "max_length": 2048,
+  "batch_size": 8,
+  "loss_surface": "teacher-forced full-sequence CE over the rendered chat template",
+  "delta_sign_convention": "delta_ce_*_vs_base = CE_base - CE_trained (positive = moved)",
+  "per_mix": {
+    "contrastive_em_mix": {
+      "mean_ce_pos": 3.0257654061718746,
+      "n_pos_rows": 512,
+      "per_row_mean_ce_pos_unweighted": 3.0881320917978883
+    },
+    "contrastive_benign_mix": {
+      "mean_ce_pos": 2.4600905798638397,
+      "n_pos_rows": 512,
+      "per_row_mean_ce_pos_unweighted": 2.513259415514767
+    }
+  },
+  "mean_ce_neg": 0.7961153273945563,
+  "n_neg_rows": 512,
+  "per_row_mean_ce_neg_unweighted": 0.8184160061646253,
+  "metadata": {
+    "script": "issue552_rowtype_ce",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "git_commit": "fa0dc83a137d58557db7276d3a0f704e1f09710a",
+    "timestamp_utc": "2026-06-11T12:42:03Z",
+    "python": "3.11.10"
+  }
+}
