@@ -22,6 +22,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { TaskListing, Track } from "@/lib/tasks";
+import type { TaskProgressView } from "@/lib/progress";
+import { TaskProgressBar } from "@/components/tasks/TaskProgressBar";
 import { STATUS_DISPLAY_ORDER, STATUS_LABELS, type Status } from "@/lib/repo";
 
 type ViewMode = "list" | "kanban";
@@ -54,10 +56,15 @@ const TRACK_TABS: { key: TrackFilter; label: string }[] = [
 
 export function TaskBoard({
   tasks,
+  progress = {},
   initialView,
   initialTrack,
 }: {
   tasks: TaskListing[];
+  /** Pipeline progress views for in-flight tasks (task #587), computed
+   * server-side from the cron snapshot + LIVE statuses. Existence of an
+   * entry implies live-status validity — the card just renders it. */
+  progress?: Record<number, TaskProgressView>;
   initialView: ViewMode;
   initialTrack: TrackFilter;
 }) {
@@ -206,7 +213,7 @@ export function TaskBoard({
       </div>
 
       {view === "kanban" ? (
-        <KanbanBoard byStatus={byStatus} showArchived={showArchived} />
+        <KanbanBoard byStatus={byStatus} progress={progress} showArchived={showArchived} />
       ) : (
         <ListView byStatus={byStatus} />
       )}
@@ -242,9 +249,11 @@ function groupByStatus(tasks: TaskListing[]): Record<Status, TaskListing[]> {
 
 function KanbanBoard({
   byStatus,
+  progress,
   showArchived,
 }: {
   byStatus: Record<Status, TaskListing[]>;
+  progress: Record<number, TaskProgressView>;
   showArchived: boolean;
 }) {
   const columns = KANBAN_COLUMN_ORDER.filter(
@@ -254,14 +263,27 @@ function KanbanBoard({
     <div className="-mx-1 overflow-x-auto pb-2">
       <div className="flex gap-3 px-1">
         {columns.map((status) => (
-          <KanbanColumn key={status} status={status} rows={byStatus[status] ?? []} />
+          <KanbanColumn
+            key={status}
+            status={status}
+            rows={byStatus[status] ?? []}
+            progress={progress}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function KanbanColumn({ status, rows }: { status: Status; rows: TaskListing[] }) {
+function KanbanColumn({
+  status,
+  rows,
+  progress,
+}: {
+  status: Status;
+  rows: TaskListing[];
+  progress: Record<number, TaskProgressView>;
+}) {
   const empty = rows.length === 0;
   return (
     <section
@@ -289,14 +311,22 @@ function KanbanColumn({ status, rows }: { status: Status; rows: TaskListing[] })
         {empty ? (
           <p className="px-1 py-3 text-center text-xs text-stone-300">No tasks</p>
         ) : (
-          rows.map((row) => <KanbanCard key={row.id} row={row} />)
+          rows.map((row) => (
+            <KanbanCard key={row.id} row={row} progressView={progress[row.id]} />
+          ))
         )}
       </div>
     </section>
   );
 }
 
-function KanbanCard({ row }: { row: TaskListing }) {
+function KanbanCard({
+  row,
+  progressView,
+}: {
+  row: TaskListing;
+  progressView?: TaskProgressView;
+}) {
   return (
     <Link
       href={`/tasks/${row.id}`}
@@ -315,6 +345,7 @@ function KanbanCard({ row }: { row: TaskListing }) {
         <FollowupCountBadge count={row.followupCount} />
         {row.status === "followups_running" && <FollowupModeBadge tags={row.tags} />}
       </div>
+      {progressView && <TaskProgressBar view={progressView} compact />}
     </Link>
   );
 }
