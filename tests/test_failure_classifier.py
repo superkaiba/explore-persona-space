@@ -204,6 +204,35 @@ CUDA out of memory. Process 11 has 10.00 GiB memory in use. Process 22 has 20.00
     assert classify_failure(body) == "infra"
 
 
+# --- vLLM engine-init free-memory (workflow-fix from task #601) -------------
+
+
+def test_vllm_engine_init_free_memory_routes_infra() -> None:
+    """#601: vLLM engine init fails with 'Free memory on device (...) is
+    less than desired GPU memory utilization' when orphaned
+    VLLM::EngineCore workers from a prior crash still hold the GPUs.
+    Routes `infra` — recoverable in-place (kill orphans, relaunch same
+    pod), per the recovery note on the named pattern. The body here
+    carries ONLY the final error line (no vllm/ traceback frames), which
+    previously matched no infra pattern and fell through to `code`."""
+    body = """## Failure during relaunch
+
+ValueError: Free memory on device (10.50/79.18 GiB) on startup is less than desired GPU memory utilization (0.9, 71.26 GiB). Decrease GPU memory utilization or reduce GPU memory used by other processes.
+"""
+    assert classify_failure(body) == "infra"
+
+
+def test_vllm_engine_init_free_memory_line_wrapped_routes_infra() -> None:
+    """Log shippers / markdown bodies sometimes hard-wrap the message; the
+    pattern is DOTALL so the signature still matches across lines."""
+    body = """## Failure during relaunch
+
+ValueError: Free memory on device (10.50/79.18 GiB) on startup
+is less than desired GPU memory utilization (0.9, 71.26 GiB).
+"""
+    assert classify_failure(body) == "infra"
+
+
 # --- §2 watchdog regex extensions -----------------------------------------
 
 
