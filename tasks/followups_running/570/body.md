@@ -1,7 +1,7 @@
 ---
-title: No clean single-marker window resolved at either install learning rate under
-  this ladder/probe protocol, and one epoch of medical SFT, honest or misaligned,
-  erases the partially-fired install below the 2% boundary (MODERATE confidence)
+title: Marker survival under retraining is a property of the over-trained install,
+  not the eraser content — misaligned medical SFT leaves the saturated install firing
+  at the honest eraser's rate (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
