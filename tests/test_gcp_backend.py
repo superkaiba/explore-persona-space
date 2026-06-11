@@ -149,6 +149,8 @@ class _Runner:
         delete_results: list[GcloudRunResult] | None = None,
         serial_results: list[GcloudRunResult] | None = None,
         guest_attr_results: list[GcloudRunResult] | None = None,
+        ssh_results: list[GcloudRunResult] | None = None,
+        scp_results: list[GcloudRunResult] | None = None,
     ) -> None:
         self.calls: list[list[str]] = []
         self.create_results = list(create_results or [])
@@ -157,6 +159,8 @@ class _Runner:
         self.delete_results = list(delete_results or [])
         self.serial_results = list(serial_results or [])
         self.guest_attr_results = list(guest_attr_results or [])
+        self.ssh_results = list(ssh_results or [])
+        self.scp_results = list(scp_results or [])
 
     def __call__(self, argv):
         argv = list(argv)
@@ -179,6 +183,12 @@ class _Runner:
             return self._pop(self.delete_results, default_ok=True)
         if "get-serial-port-output" in argv:
             return self._pop(self.serial_results, default_ok=True)
+        # gcloud compute ssh / scp (fetch_results sentinel pull + best-
+        # effort dir mirrors).
+        if "ssh" in argv and "compute" in argv:
+            return self._pop(self.ssh_results, default_ok=True)
+        if "scp" in argv and "compute" in argv:
+            return self._pop(self.scp_results, default_ok=True)
         raise AssertionError(f"unexpected gcloud argv in test: {argv}")
 
     @staticmethod
@@ -1853,3 +1863,112 @@ def test_launch_hydra_spec_marker_says_hydra() -> None:
     backend.launch(_spec())
     body = json.loads(posted[0]["note"])
     assert body["workload"] == "hydra"
+
+
+# ---------------------------------------------------------------------------
+# issue #588 round 2 — fetch_results sentinel pull (ssh sudo cat, not scp)
+# ---------------------------------------------------------------------------
+
+
+def _fetch_fixture(
+    tmp_path: Path, monkeypatch, *, ssh_results: list[GcloudRunResult]
+) -> tuple[GcpBackend, _Runner, GcpConfig, Any, str]:
+    """Shared rig for the fetch_results tests.
+
+    Points ``vm_scratch_dir`` at tmp so the local sentinel write lands
+    under tmp, and the best-effort dir pulls' mkdir at a tmp repo root.
+    Returns (backend, runner, config, handle, sentinel_abs).
+    """
+    from explore_persona_space.backends.base import RunHandle
+
+    config = replace(_test_config(), vm_scratch_dir=str(tmp_path / "vm"))
+    monkeypatch.setattr(
+        "explore_persona_space.backends.gcp._default_src_root_for_fetch",
+        lambda: tmp_path / "repo",
+    )
+    runner = _Runner(ssh_results=ssh_results)
+    backend = GcpBackend(config=config, runner=runner, marker_poster=lambda **_: None)
+    handle = RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="1",
+        pod_name="eps-issue-588",
+        scratch_dir=f"{config.vm_scratch_dir}/eps-issue-588",
+        log_path=f"{config.vm_scratch_dir}/eps-issue-588/logs/issue-588.log",
+        extra={"zone": "us-central1-a", "issue": 588, "attempt_id": "att-001"},
+    )
+    sentinel_abs = sentinel_path_for(config, 588, "att-001")
+    return backend, runner, config, handle, sentinel_abs
+
+
+def test_fetch_results_sentinel_pull_uses_ssh_sudo_cat(tmp_path: Path, monkeypatch) -> None:
+    """The MANDATORY sentinel pull is `gcloud compute ssh ... sudo -n cat`, not scp.
+
+    The GCE startup-script runs as root, so the workload tree is root-
+    owned and the OS-Login scp user gets `Permission denied` (live
+    finding, att-20260611-064703). The captured stdout must land
+    verbatim at the SAME local path the artifact declaration claims.
+    """
+    import shlex
+
+    sentinel_text = '{"phase": "done", "issue": 588, "attempt_id": "att-001"}\n'
+    backend, runner, config, handle, sentinel_abs = _fetch_fixture(
+        tmp_path, monkeypatch, ssh_results=[GcloudRunResult(0, sentinel_text, "")]
+    )
+    backend.fetch_results(handle)
+
+    ssh_calls = [argv for argv in runner.calls if "ssh" in argv]
+    assert len(ssh_calls) == 1
+    assert ssh_calls[0] == [
+        "gcloud",
+        "compute",
+        "ssh",
+        "eps-issue-588",
+        f"--command=sudo -n cat {shlex.quote(sentinel_abs)}",
+        f"--configuration={config.gcloud_config}",
+        f"--project={config.project}",
+        "--zone=us-central1-a",
+    ]
+    # Captured stdout written verbatim to the declaration's local path.
+    assert Path(sentinel_abs).read_text() == sentinel_text
+    # The sentinel is never scp'd; the 2 best-effort dir pulls stay scp.
+    scp_calls = [argv for argv in runner.calls if "scp" in argv]
+    assert len(scp_calls) == 2
+    assert all("--recurse" in argv for argv in scp_calls)
+    assert not any(sentinel_abs in token for argv in scp_calls for token in argv)
+
+
+def test_fetch_results_sentinel_pull_failure_logs_and_continues(
+    tmp_path: Path, monkeypatch, caplog
+) -> None:
+    """A failed sentinel pull logs loud, does NOT raise, and does NOT
+    block the best-effort dir pulls; no local sentinel file is written
+    (confirm_artifacts then FAILs on the missing file — the intended
+    surfacing)."""
+    import logging
+
+    backend, runner, _config, handle, sentinel_abs = _fetch_fixture(
+        tmp_path,
+        monkeypatch,
+        ssh_results=[GcloudRunResult(1, "", "sudo: a password is required")],
+    )
+    with caplog.at_level(logging.ERROR):
+        backend.fetch_results(handle)  # must not raise
+
+    assert not Path(sentinel_abs).exists()
+    assert "confirm_artifacts will FAIL" in caplog.text
+    scp_calls = [argv for argv in runner.calls if "scp" in argv]
+    assert len(scp_calls) == 2  # best-effort pulls still attempted
+
+
+def test_fetch_results_missing_attempt_id_returns_without_gcloud_calls(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Without an attempt_id the sentinel path is unknowable: log + return,
+    zero gcloud invocations (no half-formed scp/ssh against the VM)."""
+    backend, runner, _config, handle, _sentinel_abs = _fetch_fixture(
+        tmp_path, monkeypatch, ssh_results=[]
+    )
+    handle.extra.pop("attempt_id")
+    backend.fetch_results(handle)
+    assert runner.calls == []

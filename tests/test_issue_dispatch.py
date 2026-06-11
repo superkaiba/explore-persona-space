@@ -256,7 +256,7 @@ def test_runpod_issue_recovery_handles_legacy_pod_name() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Section 2 — GCP fetch_results scp-back
+# Section 2 — GCP fetch_results pull-back (ssh sudo cat sentinel + scp dirs)
 # ---------------------------------------------------------------------------
 
 
@@ -314,10 +314,13 @@ class _RecordingGcloudRunner:
         return GcloudRunResult(returncode=0, stdout="", stderr="")
 
 
-def test_gcp_fetch_results_issues_sentinel_scp_before_anything_else(tmp_path) -> None:
+def test_gcp_fetch_results_issues_sentinel_pull_before_anything_else(tmp_path) -> None:
     """The sentinel pull is MANDATORY (the verifier reads it locally;
     a missing local sentinel = silent-loss). It is issued first so its
-    failure surfaces before the best-effort dir pulls."""
+    failure surfaces before the best-effort dir pulls. The pull is
+    `gcloud compute ssh ... sudo -n cat`, NOT scp — the startup-script
+    runs as root, so the workload tree is root-owned and the OS-Login
+    scp user gets Permission denied (#588 att-20260611-064703)."""
     runner = _RecordingGcloudRunner()
     backend = GcpBackend(
         config=_gcp_config(vm_scratch_dir=str(tmp_path)),
@@ -327,13 +330,14 @@ def test_gcp_fetch_results_issues_sentinel_scp_before_anything_else(tmp_path) ->
     backend.fetch_results(_gcp_handle(vm_scratch_dir=str(tmp_path)))
     assert runner.calls, "fetch_results made no gcloud call"
     first_argv = runner.calls[0]
-    # First call must be `gcloud compute scp <host>:<sentinel_remote> <local>`.
-    assert "scp" in first_argv
+    # First call must be `gcloud compute ssh <name> --command='sudo -n cat <sentinel>'`.
+    assert "ssh" in first_argv
     assert "compute" in first_argv
-    sentinel_arg = next(a for a in first_argv if "completion-sentinel" in a)
-    # The sentinel argv has the host: prefix.
-    assert sentinel_arg.startswith("eps-issue-137:")
-    assert ".completion-sentinel.json" in sentinel_arg
+    assert "scp" not in first_argv
+    assert "eps-issue-137" in first_argv
+    command_arg = next(a for a in first_argv if a.startswith("--command="))
+    assert command_arg.startswith("--command=sudo -n cat ")
+    assert ".completion-sentinel.json" in command_arg
 
 
 def test_gcp_fetch_results_falls_back_best_effort_on_artifact_dir_failure(tmp_path) -> None:
@@ -341,7 +345,8 @@ def test_gcp_fetch_results_falls_back_best_effort_on_artifact_dir_failure(tmp_pa
     are authoritative on HF/WandB/git already)."""
     runner = _RecordingGcloudRunner(
         results=[
-            GcloudRunResult(returncode=0, stdout="", stderr=""),  # sentinel PASS
+            # sentinel pull (ssh sudo cat) PASS
+            GcloudRunResult(returncode=0, stdout='{"phase": "done", "issue": 137}\n', stderr=""),
             GcloudRunResult(returncode=1, stdout="", stderr="not found"),  # eval_results FAIL
             GcloudRunResult(returncode=1, stdout="", stderr="not found"),  # figures FAIL
         ],
@@ -353,9 +358,11 @@ def test_gcp_fetch_results_falls_back_best_effort_on_artifact_dir_failure(tmp_pa
     )
     # No raise — best-effort.
     backend.fetch_results(_gcp_handle(vm_scratch_dir=str(tmp_path)))
-    # Three scp calls were issued (sentinel + two dir pulls).
+    # One ssh sentinel pull + two scp dir pulls were issued.
+    ssh_calls = [a for a in runner.calls if "ssh" in a]
     scp_calls = [a for a in runner.calls if "scp" in a]
-    assert len(scp_calls) == 3
+    assert len(ssh_calls) == 1
+    assert len(scp_calls) == 2
 
 
 def test_gcp_fetch_results_skips_when_handle_missing_issue(tmp_path) -> None:
