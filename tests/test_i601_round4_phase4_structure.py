@@ -148,6 +148,115 @@ def test_verdict_fails_loud_on_missing_bridge_cell(tmp_path: Path) -> None:
     assert payload is None
 
 
+# ── 2b. Round-8 input fallback: rowtype_ce-derived ΔG / dense gauge caveat ────
+# The T=13 bridge cells never fired the min_steps=20 band probe, so
+# inloop_band_trajectory.json does not exist for them; the verdict derives the
+# live-gauge ΔG from rowtype_ce.json (delta = pos_marker_ce_base - step CE).
+
+ROWTYPE_BASE_CE = 21.0
+
+
+def _write_rowtype(slab: Path, slug: str, seed: int, series: list[float]) -> None:
+    d = slab / "phase4" / f"{slug}_seed{seed}"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "rowtype_ce.json").write_text(
+        json.dumps(
+            {
+                "schema": "i601_rowtype_ce_v1",
+                "n_pos_rows": 16,
+                "n_neg_rows": 0,
+                "steps": STEPS_13,
+                "pos_marker_ce": [ROWTYPE_BASE_CE - dg for dg in series],
+                "neg_trailing_ce": [None] * len(STEPS_13),
+                "pos_marker_ce_base": ROWTYPE_BASE_CE,
+            }
+        )
+    )
+
+
+def test_derive_band_from_rowtype_math_and_unusable() -> None:
+    from explore_persona_space.experiments.neg_setpoint_601.analysis_lib import (
+        derive_band_from_rowtype,
+    )
+
+    derived = derive_band_from_rowtype(
+        {
+            "schema": "i601_rowtype_ce_v1",
+            "n_pos_rows": 16,
+            "steps": STEPS_13,
+            "pos_marker_ce": [ROWTYPE_BASE_CE - dg for dg in NON_ARREST_SERIES],
+            "pos_marker_ce_base": ROWTYPE_BASE_CE,
+        }
+    )
+    assert derived["steps"] == STEPS_13
+    assert derived["trajectory_source"] == "rowtype_ce_derived"
+    assert derived["delta_nats"] == pytest.approx(NON_ARREST_SERIES)
+    # Null base / null per-step entries / length mismatch → ValueError.
+    with pytest.raises(ValueError, match="pos_marker_ce_base or per-step"):
+        derive_band_from_rowtype(
+            {"steps": STEPS_13, "pos_marker_ce": [None] * 13, "pos_marker_ce_base": None}
+        )
+    with pytest.raises(ValueError, match="unusable"):
+        derive_band_from_rowtype({"steps": [], "pos_marker_ce": [], "pos_marker_ce_base": 21.0})
+
+
+def test_verdict_derives_from_rowtype_when_band_missing(tmp_path: Path) -> None:
+    """The T=13 reality: NO band file for either bridge cell — rowtype-derived
+    live-gauge ΔG classifies both; provenance rides per_seed records."""
+    for seed in (42, 137):
+        _write_rowtype(tmp_path, "posonly_alllinear_lr5e6", seed, NON_ARREST_SERIES)
+        _write_rowtype(tmp_path, "posonly_attn_lr5e6", seed, ARREST_SERIES)
+    res, payload = _run_verdict(tmp_path)
+    assert res.returncode == 0, res.stderr
+    assert payload["schema_version"] == "i601_phase4a_verdict_v3"
+    assert payload["calls"] == {
+        "posonly_alllinear_lr5e6": "non-arrest",
+        "posonly_attn_lr5e6": "arrest",
+    }
+    assert payload["call"] == "non-arrest" and payload["dispatch_4b"] is True
+    for slug in ("posonly_alllinear_lr5e6", "posonly_attn_lr5e6"):
+        for seed in ("42", "137"):
+            rec = payload["per_cell"][slug]["per_seed"][seed]
+            assert rec["trajectory_source"] == "rowtype_ce_derived"
+            assert rec["pos_marker_ce_base"] == ROWTYPE_BASE_CE
+
+
+def test_verdict_band_with_zero_records_falls_through_to_rowtype(tmp_path: Path) -> None:
+    """Round-8 callback writes the band file even when no probe fired — an
+    empty-records band file must NOT shadow the usable rowtype derivation."""
+    for seed in (42, 137):
+        for slug in ("posonly_alllinear_lr5e6", "posonly_attn_lr5e6"):
+            d = tmp_path / "phase4" / f"{slug}_seed{seed}"
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "inloop_band_trajectory.json").write_text(
+                json.dumps({"steps": [], "delta_nats": [], "n_probe_records": 0})
+            )
+            _write_rowtype(tmp_path, slug, seed, ARREST_SERIES)
+    res, payload = _run_verdict(tmp_path)
+    assert res.returncode == 0, res.stderr
+    assert payload["call"] == "arrest" and payload["dispatch_4b"] is False
+    rec = payload["per_cell"]["posonly_attn_lr5e6"]["per_seed"]["42"]
+    assert rec["trajectory_source"] == "rowtype_ce_derived"
+
+
+def test_verdict_dense_only_is_ambiguous_with_gauge_caveat(tmp_path: Path) -> None:
+    """dense_trajectory.json is CLASSIC staged gauge — never classified against
+    the live-gauge §4 bands; the seed records ambiguous + the caveat."""
+    for seed in (42, 137):
+        _write_rowtype(tmp_path, "posonly_alllinear_lr5e6", seed, ARREST_SERIES)
+        d = tmp_path / "phase4" / f"posonly_attn_lr5e6_seed{seed}"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "dense_trajectory.json").write_text(json.dumps({"checkpoints": []}))
+    res, payload = _run_verdict(tmp_path)
+    assert res.returncode == 0, res.stderr
+    rec = payload["per_cell"]["posonly_attn_lr5e6"]["per_seed"]["42"]
+    assert rec["classification"] == "ambiguous"
+    assert rec["trajectory_source"] == "dense_trajectory_classic_gauge"
+    assert "gauge" in rec["gauge_caveat"]
+    # arrest + ambiguous pool → overall ambiguous, 4b skipped.
+    assert payload["call"] == "ambiguous" and payload["dispatch_4b"] is False
+
+
 # ── 3. Dispatcher phase4b gate over the v2 payload ───────────────────────────
 
 

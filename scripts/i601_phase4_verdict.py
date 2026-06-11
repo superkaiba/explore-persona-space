@@ -19,6 +19,23 @@ on/off per the plan §4 registered bands
 ``<slab-root>/phase4/phase4a_verdict.json`` gates ONLY the remaining
 conditional 4b factor cell (``posonly_attn_lr1e5``):
 
+Round-8 input fallback (p6 crash fix): the T=13 bridge cells never produce
+``inloop_band_trajectory.json`` — ``MarkerBandStopCallback`` disabled itself
+when ``max_steps(13) < min_steps(20)``, so no probe ever fired and the file
+write (per-probe + records-gated train-end flush) never ran. Per (cell, seed)
+this script now loads, in order:
+
+  1. ``inloop_band_trajectory.json`` with ≥1 record (the primary input);
+  2. ``rowtype_ce.json`` via ``analysis_lib.derive_band_from_rowtype`` — the
+     per-row-type CE probe is NOT min_steps-gated and reads the same
+     live-gauge ΔG construct on the same probe rows (delta = base CE - step
+     CE), so the §4 bands apply unchanged;
+  3. ``dense_trajectory.json`` — CLASSIC staged gauge (alpha/r), NOT
+     comparable to the live-gauge §4 bands: never classified against them;
+     the seed is recorded as "ambiguous" with an explicit gauge caveat;
+  4. nothing usable → FileNotFoundError (both bridge cells are unconditional
+     main-sweep members).
+
   any cell "non-arrest"        → call: non-arrest, dispatch_4b: true — the
                                  launch driver runs ``dispatch --cells
                                  phase4b`` (itself re-gated on this sentinel)
@@ -98,6 +115,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     from explore_persona_space.experiments.neg_setpoint_601.analysis_lib import (
         classify_phase4_arrest,
+        derive_band_from_rowtype,
     )
 
     if args.cells:
@@ -115,20 +133,77 @@ def main(argv: list[str] | None = None) -> int:
     for spec in specs:
         per_seed: dict[str, dict] = {}
         for seed in spec.seeds:
-            band_path = (
-                args.slab_root
-                / spec.phase
-                / f"{spec.slug}_seed{seed}"
-                / "inloop_band_trajectory.json"
-            )
-            if not band_path.exists():
-                raise FileNotFoundError(
-                    f"bridge in-loop band trajectory missing at {band_path} — both "
-                    f"unconditional Phase-4 cells must complete before the 4b routing "
-                    f"verdict can be written."
+            cell_dir = args.slab_root / spec.phase / f"{spec.slug}_seed{seed}"
+            band_path = cell_dir / "inloop_band_trajectory.json"
+            rowtype_path = cell_dir / "rowtype_ce.json"
+            dense_path = cell_dir / "dense_trajectory.json"
+
+            # 1. Primary: the in-loop band trajectory (needs >=1 record — a
+            #    round-8 callback writes the file even when no probe fired,
+            #    so an empty-records file falls through to the derivation).
+            band = json.loads(band_path.read_text()) if band_path.exists() else None
+            if band and band.get("steps"):
+                rec = classify_phase4_arrest(band["steps"], band["delta_nats"])
+                rec["trajectory_source"] = "inloop_band_trajectory"
+                per_seed[str(seed)] = rec
+                continue
+
+            # 2. Fallback: live-gauge ΔG derived from the per-row-type CE
+            #    probe (NOT min_steps-gated; same construct, same gauge —
+            #    see derive_band_from_rowtype). The §4 bands apply unchanged.
+            derived = None
+            if rowtype_path.exists():
+                try:
+                    derived = derive_band_from_rowtype(json.loads(rowtype_path.read_text()))
+                except ValueError as exc:
+                    log.warning("[%s seed%d] rowtype_ce unusable: %s", spec.slug, seed, exc)
+            if derived is not None:
+                log.info(
+                    "[%s seed%d] band trajectory missing/empty at %s — classified from "
+                    "rowtype_ce-derived live-gauge ΔG (%d steps, base CE %.3f)",
+                    spec.slug,
+                    seed,
+                    band_path,
+                    len(derived["steps"]),
+                    derived["pos_marker_ce_base"],
                 )
-            band = json.loads(band_path.read_text())
-            per_seed[str(seed)] = classify_phase4_arrest(band["steps"], band["delta_nats"])
+                rec = classify_phase4_arrest(derived["steps"], derived["delta_nats"])
+                rec["trajectory_source"] = derived["trajectory_source"]
+                rec["n_pos_rows"] = derived["n_pos_rows"]
+                rec["pos_marker_ce_base"] = derived["pos_marker_ce_base"]
+                rec["gauge_note"] = derived["gauge_note"]
+                per_seed[str(seed)] = rec
+                continue
+
+            # 3. Last resort: dense_trajectory.json exists but is CLASSIC
+            #    staged gauge (alpha/r) — NOT comparable to the live-gauge §4
+            #    bands. Record ambiguous with the caveat; never fabricate an
+            #    arrest call off the wrong gauge.
+            if dense_path.exists():
+                log.warning(
+                    "[%s seed%d] only dense_trajectory.json available (classic staged "
+                    "gauge) — recording 'ambiguous' with a gauge caveat, NOT classifying "
+                    "against the live-gauge §4 bands.",
+                    spec.slug,
+                    seed,
+                )
+                per_seed[str(seed)] = {
+                    "classification": "ambiguous",
+                    "trajectory_source": "dense_trajectory_classic_gauge",
+                    "gauge_caveat": (
+                        "dense_trajectory.json is a staged classic alpha/r read; the §4 "
+                        "arrest bands are calibrated on live-gauge in-loop ΔG — "
+                        "classifying across gauges would fabricate an arrest call"
+                    ),
+                }
+                continue
+
+            raise FileNotFoundError(
+                f"bridge trajectory inputs missing for {spec.slug} seed {seed}: neither "
+                f"{band_path} (>=1 record) nor {rowtype_path} (usable pos-side series) nor "
+                f"{dense_path} exists — both unconditional Phase-4 cells must complete "
+                f"before the 4b routing verdict can be written."
+            )
         # Seed-pooled call (same agreement rule as i601_analyze.py): both seeds
         # must agree for a clean call; disagreement → ambiguous.
         classes = {v["classification"] for v in per_seed.values()}
@@ -147,7 +222,7 @@ def main(argv: list[str] | None = None) -> int:
     dispatch_4b = call == "non-arrest"
 
     payload = {
-        "schema_version": "i601_phase4a_verdict_v2",
+        "schema_version": "i601_phase4a_verdict_v3",
         "cells": sorted(calls),
         "per_cell": per_cell,
         "calls": calls,
@@ -161,7 +236,13 @@ def main(argv: list[str] | None = None) -> int:
             "Routing over the bridge pair (round 4, concern "
             "phase4-bridge-attn-only-attribution): any cell non-arrest -> dispatch 4b "
             "(posonly_attn_lr1e5 only); all arrest -> arrest; else ambiguous -> 4b "
-            "uninformative, skipped, reported open."
+            "uninformative, skipped, reported open. Input per seed (round 8, v3): "
+            "inloop_band_trajectory.json when it has >=1 record, else live-gauge ΔG "
+            "derived from rowtype_ce.json (delta = pos_marker_ce_base - pos_marker_ce; "
+            "same construct/gauge/probe rows — T=13 cells never fired the min_steps=20 "
+            "band probe), else dense_trajectory.json -> ambiguous with a gauge caveat "
+            "(classic staged gauge, never classified against the live-gauge bands); "
+            "per_seed.trajectory_source records which input was used."
         ),
         "git_commit": _git_sha(),
         "timestamp_utc": datetime.now(UTC).isoformat(),

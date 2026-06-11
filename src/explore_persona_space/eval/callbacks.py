@@ -821,10 +821,13 @@ class MarkerBandStopCallback(TrainerCallback):
         self._base_slot_stats = None  # dict[str, torch.Tensor]; cached on first eval
         self._stopped = False
         # Set in on_train_begin when the planned run is too short to reach
-        # the band meaningfully (max_steps < min_steps): we no-op for the
-        # whole phase so the run completes its planned schedule without a
-        # silent never-fire.
-        self._disabled_too_short = False
+        # the band (max_steps < min_steps): the STOP predicate can never fire
+        # (every global_step <= max_steps < min_steps), but probing + the
+        # WandB/trajectory telemetry RUN ANYWAY. Round-8 #601 fix: the old
+        # behavior no-opped the whole callback, so T=13 cells never wrote
+        # inloop_band_trajectory.json and the post-sweep arrest classifier
+        # crashed on the missing file.
+        self._stop_unreachable_too_short = False
         # Per-probe trajectory records (flushed to trajectory_out_path after
         # every probe) + a once-per-phase flag so log_only band entry is
         # logged exactly once.
@@ -844,16 +847,19 @@ class MarkerBandStopCallback(TrainerCallback):
     def on_train_begin(self, args, state, control, **kwargs):
         """Reset per-phase state (callback may be reused across phases).
 
-        If the planned ``max_steps`` is below ``min_steps`` the callback
-        cannot fire meaningfully (the guard predicate would block every
-        in-band reading). Warn once and disable for the phase so the run
-        completes its planned schedule instead of silently never stopping.
+        If the planned ``max_steps`` is below ``min_steps`` the STOP predicate
+        can never fire (the guard blocks every in-band reading). Warn once so
+        the operator sees the never-stop regression — but KEEP probing and
+        logging: the per-step trajectory (WandB + ``trajectory_out_path``) is
+        load-bearing telemetry for short runs too (round-8 #601 fix: T=13
+        cells previously produced NO ``inloop_band_trajectory.json`` because
+        this branch no-opped the whole callback).
         """
         self._base_logp_per_row = None
         self._base_logp_mean = None
         self._base_slot_stats = None
         self._stopped = False
-        self._disabled_too_short = False
+        self._stop_unreachable_too_short = False
         self._trajectory_records = []
         self._band_entry_logged = False
         self._gauge = {
@@ -865,19 +871,26 @@ class MarkerBandStopCallback(TrainerCallback):
         if state.max_steps > 0 and state.max_steps < self.min_steps:
             logger.warning(
                 "[%s] max_steps=%d < min_steps=%d — the band-stop guard "
-                "would block every reading. Disabling the band-stop for "
-                "this phase; training will run to its planned schedule. "
+                "blocks every in-band reading, so this phase can NEVER "
+                "early-stop; training will run to its planned schedule. "
+                "Probing + trajectory logging continue (round-8 #601 fix). "
                 "Lower marker_band_min_steps or raise the run length to "
                 "use band-stop on short runs.",
                 self.log_prefix,
                 state.max_steps,
                 self.min_steps,
             )
-            self._disabled_too_short = True
+            self._stop_unreachable_too_short = True
 
     def on_step_end(self, args, state, control, model=None, **kwargs):
-        """Read marker log-prob; cache base on first call; stop iff in band."""
-        if self._stopped or self._disabled_too_short or model is None:
+        """Read marker log-prob; cache base on first call; stop iff in band.
+
+        Short runs (``max_steps < min_steps``) probe and log like any other —
+        only the stop is unreachable there (``_decide_band_stop`` requires
+        ``global_step >= min_steps``, and every step satisfies
+        ``global_step <= max_steps < min_steps``).
+        """
+        if self._stopped or model is None:
             return
         if state.global_step <= 0 or state.global_step % self.eval_every_steps != 0:
             return
@@ -1086,8 +1099,15 @@ class MarkerBandStopCallback(TrainerCallback):
             self._stopped = True
 
     def on_train_end(self, args, state, control, **kwargs):
-        """Final trajectory flush (per-probe flushes already persisted everything)."""
-        if self.trajectory_out_path is not None and self._trajectory_records:
+        """Final trajectory flush — UNCONDITIONAL when a path is configured.
+
+        Written even with ZERO probe records (round-8 #601 fix): a configured
+        ``trajectory_out_path`` is a contract that the file exists at train
+        end, so downstream consumers can distinguish "the probe never fired"
+        (file present, ``n_probe_records: 0``) from "the cell never trained"
+        (file absent) instead of crashing on a missing input.
+        """
+        if self.trajectory_out_path is not None:
             self._write_trajectory()
             logger.info(
                 "[%s] trajectory JSON final flush: %d probe records -> %s",

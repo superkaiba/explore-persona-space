@@ -504,26 +504,38 @@ def test_callback_constructor_rejects_inverted_band():
         )
 
 
-def test_callback_disables_when_max_steps_below_min_steps(caplog):
-    """Round-2 safety guard: short runs that cannot reach the band no-op
-    + warn, never silently skip the band-stop yet keep checking each step.
+def test_callback_short_run_stop_unreachable_but_probing_continues(tmp_path: Path, caplog):
+    """Round-8 #601 fix: ``max_steps < min_steps`` no longer no-ops the callback.
 
-    With ``max_steps < min_steps`` the band-stop predicate (``step >=
-    min_steps``) would block EVERY in-band reading. The callback must
-    set its phase-disabled flag in ``on_train_begin`` and warn so the
-    operator sees the regression instead of a never-fire silent default.
+    The STOP stays unreachable (the predicate requires ``step >= min_steps``
+    and every step satisfies ``step <= max_steps < min_steps``), but the
+    per-step probe + trajectory flush MUST still run — the old whole-callback
+    no-op meant T=13 cells never wrote ``inloop_band_trajectory.json`` and the
+    post-sweep Phase-4 arrest classifier crashed on the missing file.
     """
     import logging
     from types import SimpleNamespace
 
     import torch
 
+    class _TinyLM(torch.nn.Module):
+        def __init__(self, vocab: int = 2048):
+            super().__init__()
+            self.emb = torch.nn.Embedding(vocab, 8)
+            self.head = torch.nn.Linear(8, vocab)
+
+        def forward(self, input_ids=None, attention_mask=None):
+            return SimpleNamespace(logits=self.head(self.emb(input_ids)))
+
+    out = tmp_path / "inloop_band_trajectory.json"
     cb = MarkerBandStopCallback(
         marker_token_ids=[MARKER_TOK],
-        probe_input_ids=torch.zeros((1, 4), dtype=torch.long),
-        probe_marker_positions=torch.zeros((1,), dtype=torch.long),
-        probe_attention_mask=torch.ones((1, 4), dtype=torch.long),
+        probe_input_ids=torch.tensor([[PROMPT_SYS_TOK, RESPONSE_TOK_A, MARKER_TOK, PAD_TOK]]),
+        probe_marker_positions=torch.tensor([1]),
+        probe_attention_mask=torch.tensor([[1, 1, 1, 0]]),
         min_steps=20,
+        eos_token_id=ASSIST_CLOSE_TOK,
+        trajectory_out_path=str(out),
     )
     args = SimpleNamespace()
     control = SimpleNamespace(should_training_stop=False, should_save=False)
@@ -532,19 +544,55 @@ def test_callback_disables_when_max_steps_below_min_steps(caplog):
     with caplog.at_level(logging.WARNING, logger="explore_persona_space.eval.callbacks"):
         cb.on_train_begin(args, state, control)
 
-    assert cb._disabled_too_short is True
+    assert cb._stop_unreachable_too_short is True
     assert any(
-        "max_steps=10 < min_steps=20" in rec.message
-        and "Disabling the band-stop for this phase" in rec.message
+        "max_steps=10 < min_steps=20" in rec.message and "NEVER early-stop" in rec.message
         for rec in caplog.records
     )
 
-    # And on_step_end is a strict no-op: control is untouched even if
-    # delta would otherwise be inside the band.
-    state.global_step = 10  # would clear the every-10-step gate
-    cb.on_step_end(args, state, control, model=None)
+    # The probe RUNS on a short run and flushes the trajectory file; the
+    # stop predicate stays unreachable so control is untouched.
+    state.global_step = 10  # clears the every-10-step eval gate
+    cb.on_step_end(args, state, control, model=_TinyLM())
     assert control.should_training_stop is False
     assert control.should_save is False
+    payload = json.loads(out.read_text())
+    assert payload["n_probe_records"] == 1
+    assert payload["steps"] == [10]
+    assert payload["delta_nats"][0] == pytest.approx(0.0, abs=1e-5)  # no adapter → Δ=0
+
+    # model=None steps remain a strict no-op.
+    cb.on_step_end(args, state, control, model=None)
+    assert json.loads(out.read_text())["n_probe_records"] == 1
+
+
+def test_on_train_end_writes_trajectory_file_even_with_zero_records(tmp_path: Path):
+    """Round-8 #601 fix: a configured ``trajectory_out_path`` is a train-end
+    contract — the file exists even when no probe ever fired, so downstream
+    consumers can distinguish "probe never fired" (``n_probe_records: 0``)
+    from "cell never trained" (file absent) instead of crashing."""
+    from types import SimpleNamespace
+
+    import torch
+
+    out = tmp_path / "inloop_band_trajectory.json"
+    cb = MarkerBandStopCallback(
+        marker_token_ids=[MARKER_TOK],
+        probe_input_ids=torch.zeros((1, 4), dtype=torch.long),
+        probe_marker_positions=torch.zeros((1,), dtype=torch.long),
+        probe_attention_mask=torch.ones((1, 4), dtype=torch.long),
+        min_steps=20,
+        eos_token_id=ASSIST_CLOSE_TOK,
+        trajectory_out_path=str(out),
+    )
+    args = SimpleNamespace()
+    control = SimpleNamespace(should_training_stop=False, should_save=False)
+    state = SimpleNamespace(global_step=13, max_steps=13)
+    cb.on_train_begin(args, state, control)
+    cb.on_train_end(args, state, control)
+    payload = json.loads(out.read_text())
+    assert payload["n_probe_records"] == 0
+    assert payload["steps"] == [] and payload["delta_nats"] == []
 
 
 def test_callback_drops_overlong_row_with_warning(tmp_path: Path, caplog):

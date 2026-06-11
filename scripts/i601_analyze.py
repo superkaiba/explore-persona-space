@@ -157,6 +157,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
         arrest_step,
         classify_phase1,
         classify_phase4_arrest,
+        derive_band_from_rowtype,
         derive_in_task_references,
         logz_artifact,
         phase3_contrast,
@@ -465,19 +466,48 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
             continue
         for seed in spec.seeds:
             key = f"{spec.slug}_seed{seed}"
-            band_path = args.slab_root / spec.phase / key / "inloop_band_trajectory.json"
-            if spec.conditional and not band_path.exists():
+            cell_dir = args.slab_root / spec.phase / key
+            band_path = cell_dir / "inloop_band_trajectory.json"
+            rowtype_path = cell_dir / "rowtype_ce.json"
+            if spec.conditional and not band_path.exists() and not rowtype_path.exists():
                 # The conditional 4b factor cell is LEGITIMATELY absent when
                 # the bridge verdict routed it to SKIP (phase4a_verdict.json
                 # records why) — never a strict-mode crash, never a
                 # missing-input row. Unconditional bridge cells fall through
                 # to the strict load below.
                 continue
-            band = ap_load(band_path)
-            if band is None:
+            # Primary: the in-loop band trajectory with >=1 record. Round-8
+            # fallback: T=13 cells never fired the min_steps=20 band probe, so
+            # the live-gauge ΔG series is derived from rowtype_ce.json instead
+            # (same construct/gauge — analysis_lib.derive_band_from_rowtype).
+            band = json.loads(band_path.read_text()) if band_path.exists() else None
+            if band and band.get("steps"):
+                rec = classify_phase4_arrest(band["steps"], band["delta_nats"])
+                rec["trajectory_source"] = "inloop_band_trajectory"
+                phase4[key] = rec
+                continue
+            derived = None
+            if rowtype_path.exists():
+                try:
+                    derived = derive_band_from_rowtype(json.loads(rowtype_path.read_text()))
+                except ValueError as exc:
+                    log.warning("phase4 %s: rowtype_ce unusable (%s)", key, exc)
+            if derived is None:
+                if not args.allow_partial:
+                    raise FileNotFoundError(
+                        f"{band_path} (no records) and no usable {rowtype_path}"
+                    )
+                log.warning(
+                    "missing input (allow-partial): %s — no band records and no usable "
+                    "rowtype_ce fallback",
+                    band_path,
+                )
                 missing.append(key)
                 continue
-            phase4[key] = classify_phase4_arrest(band["steps"], band["delta_nats"])
+            rec = classify_phase4_arrest(derived["steps"], derived["delta_nats"])
+            rec["trajectory_source"] = derived["trajectory_source"]
+            rec["gauge_note"] = derived["gauge_note"]
+            phase4[key] = rec
     # Per-cell seed-pooled call: both seeds must agree for a clean call.
     phase4_calls: dict[str, str] = {}
     for spec in CELLS_601:

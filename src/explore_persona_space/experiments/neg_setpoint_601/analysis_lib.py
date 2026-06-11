@@ -633,6 +633,68 @@ def classify_phase1(
     }
 
 
+def derive_band_from_rowtype(rowtype: dict) -> dict:
+    """Derive a band-trajectory-equivalent source ΔG series from rowtype_ce.json.
+
+    Round-8 crash fix: T=13 cells (the two unconditional Phase-4 bridge cells +
+    phase2/dense_200p0n) never produce ``inloop_band_trajectory.json`` because
+    ``MarkerBandStopCallback`` disabled itself when ``max_steps(13) <
+    min_steps(20)``. The per-row-type CE probe
+    (``RowTypeCETrainProbeCallback``) is NOT min_steps-gated and reads the SAME
+    construct on the SAME live training model in the SAME application gauge:
+
+    - band ``delta_nats[t]`` = mean logP_live(marker at slot) − mean
+      logP_base(marker at slot) over source-positive probe rows from the
+      cell's train JSONL (base = first-eval read with the PEFT adapter
+      disabled);
+    - rowtype ``pos_marker_ce[t]`` = −mean logP_live(marker at slot) over the
+      fixed 16-row source-positive probe sample from the SAME train JSONL,
+      and ``pos_marker_ce_base`` = the same adapter-disabled base read.
+
+    So ``delta_nats[t] = pos_marker_ce_base − pos_marker_ce[t]`` is the
+    identical live-gauge ΔG construction; the only difference is the probe-row
+    sample size (16 rowtype rows vs the band callback's ≤32). The plan §4
+    arrest bands (ΔG in nats; ≥6 by step 13 + slope rules) therefore apply
+    unchanged.
+
+    Args:
+        rowtype: Parsed ``rowtype_ce.json`` payload (schema
+            ``i601_rowtype_ce_v1``).
+
+    Returns:
+        ``{"steps", "delta_nats", "trajectory_source": "rowtype_ce_derived",
+        "n_pos_rows", "pos_marker_ce_base", "gauge_note"}``.
+
+    Raises:
+        ValueError: when the payload has no usable per-step positive-marker CE
+            series or no base-side constant (the caller decides the fallback).
+    """
+    steps = rowtype.get("steps") or []
+    pos_ce = rowtype.get("pos_marker_ce") or []
+    base = rowtype.get("pos_marker_ce_base")
+    if not steps or len(pos_ce) != len(steps):
+        raise ValueError(
+            f"rowtype_ce payload unusable: {len(steps)} steps vs {len(pos_ce)} pos_marker_ce "
+            f"entries (schema={rowtype.get('schema')!r})"
+        )
+    if base is None or any(v is None for v in pos_ce):
+        raise ValueError(
+            "rowtype_ce payload unusable: pos_marker_ce_base or per-step pos_marker_ce is "
+            "null — the positive probe side never functioned for this cell"
+        )
+    return {
+        "steps": [int(s) for s in steps],
+        "delta_nats": [float(base) - float(v) for v in pos_ce],
+        "trajectory_source": "rowtype_ce_derived",
+        "n_pos_rows": rowtype.get("n_pos_rows"),
+        "pos_marker_ce_base": float(base),
+        "gauge_note": (
+            "live-training-model (same gauge + same adapter-disabled base read as the "
+            "in-loop band trajectory; 16-row source-positive probe sample)"
+        ),
+    }
+
+
 def classify_phase4_arrest(steps: list[int], delta_g: list[float]) -> dict:
     """Phase 4 arrest on/off classification (plan §4).
 
