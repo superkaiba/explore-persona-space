@@ -1699,9 +1699,10 @@ def _refresh_pods_conf_from_api(pod_name: str, dry_run: bool) -> bool:
     return True
 
 
-def _running_managed_issue_pods(caller: str = "pod-safety") -> list[tuple[int, str, str]]:
+def _running_managed_issue_pods(caller: str = "pod-safety") -> list[tuple[int, str, str]] | None:
     """Live RunPod team pods that are RUNNING and managed (``pod-<N>`` or the
-    legacy ``epm-issue-<N>``). Returns ``(issue, pod_id, pod_name)`` triples.
+    legacy ``epm-issue-<N>``). Returns ``(issue, pod_id, pod_name)`` triples,
+    or ``None`` when the snapshot itself FAILED (API transport error).
 
     Recognition delegates to :func:`pod_lifecycle._is_managed_pod` +
     :func:`pod_lifecycle._issue_from_pod_name` — the canonical helpers that
@@ -1715,21 +1716,29 @@ def _running_managed_issue_pods(caller: str = "pod-safety") -> list[tuple[int, s
     out to ``pod.py config --refresh-from-api <name>`` — don't need a second
     ``list_team_pods`` round-trip to look it up.
 
-    A transport error surfaces as an empty list with a logged warning — better
-    to skip the pass this tick than to crash the whole run. ``caller`` labels
-    that warning with the INVOKING pass (default ``pod-safety``; the
-    stalled-detector and session-reconcile passes thread their own names) so
-    cron-log triage attributes the failure to the right pass instead of
-    blaming pod-safety for every reuse of this helper."""
+    A transport error surfaces as ``None`` with a logged warning — better to
+    degrade the pass this tick than to crash the whole run — and ``None`` is
+    DISTINCT from ``[]`` ("genuinely no pods") so callers can tell a failed
+    snapshot apart from an empty RUNNING set: the pod-safety pass SKIPS its
+    state GC on ``None`` (reaping on a failed snapshot wipes the 2-miss
+    counters AND the ``alerted`` / ``keep_running_noted`` / ``followup_noted``
+    once-per-episode dedup flags, re-arming duplicate markers on every API
+    hiccup), while the stalled-detector and session-reconcile passes degrade
+    ``None`` to the empty set (their decision guards fail open to "no pods",
+    which never stops a pod). ``caller`` labels the warning with the INVOKING
+    pass (default ``pod-safety``; the stalled-detector and session-reconcile
+    passes thread their own names) so cron-log triage attributes the failure
+    to the right pass instead of blaming pod-safety for every reuse of this
+    helper."""
     try:
         pods = list_team_pods()
     except Exception as e:
         print(
             f"  {caller}: list_team_pods failed ({e}); "
-            f"treating the RUNNING managed-pod set as empty this tick",
+            f"pod snapshot unavailable this tick (callers degrade per-pass)",
             file=sys.stderr,
         )
-        return []
+        return None
     out: list[tuple[int, str, str]] = []
     for p in pods:
         if p.desired_status != "RUNNING":
@@ -2584,10 +2593,10 @@ def stalled_session_pass(
         print("stalled-detector: no issue sessions registered")
         return
     # Resolve which issues currently have a RUNNING managed pod once per tick.
-    # Falls back to the empty set on a transport error (the helper already
-    # logs to stderr in that case) so the decision layer just records
-    # has_pod=False for every issue this tick — fail-safe.
-    running_pods = _running_managed_issue_pods(caller="stalled-detector")
+    # A FAILED snapshot (None — the helper already logs to stderr) degrades to
+    # the empty set so the decision layer just records has_pod=False for every
+    # issue this tick — fail-safe (this pass alerts/respawns, never stops pods).
+    running_pods = _running_managed_issue_pods(caller="stalled-detector") or []
     pod_active_issues = {issue for issue, _pid, _name in running_pods}
     pod_names_by_issue = {issue: name for issue, _pid, name in running_pods}
     if daemon_reachable is None:
@@ -4018,11 +4027,13 @@ def session_reconcile_pass(
     n_sessions = sum(len(v) for v in by_issue.values())
     autostop = _session_reconcile_autostop_enabled()
     # One live-pod snapshot per pass (the per-issue check is a set lookup).
-    # A transport error degrades to an empty set — the followup/keep-running
-    # skips, the idle grace, and the 2-miss guard remain as safety margins,
-    # and the pod-safety pass independently reconciles the pod itself.
+    # A FAILED snapshot (None) degrades to an empty set — the followup/
+    # keep-running skips, the idle grace, and the 2-miss guard remain as
+    # safety margins, and the pod-safety pass independently reconciles the
+    # pod itself (it skips its own state GC on the failed snapshot).
     running_pod_issues = {
-        issue for issue, _pod_id, _name in _running_managed_issue_pods(caller="session-reconcile")
+        issue
+        for issue, _pod_id, _name in (_running_managed_issue_pods(caller="session-reconcile") or [])
     }
     print(
         f"session-reconcile: {n_sessions} live issue-mapped session(s) across "
@@ -4057,15 +4068,26 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
     never a terminate."""
     now = now if now is not None else time.time()
     running = _running_managed_issue_pods()
+    if running is None:
+        # Snapshot FAILED (transport error — the helper already logged it).
+        # Do NOT GC on a failed snapshot: an empty-because-failed set is
+        # indistinguishable from "every pod left RUNNING", so the GC would
+        # wipe ALL pod-safety state — not just the fail-safe 2-miss counters
+        # but the `alerted` / `keep_running_noted` / `followup_noted`
+        # once-per-episode dedup flags, re-arming duplicate markers on every
+        # API hiccup. Genuinely stranded files are reaped on the next GOOD
+        # snapshot (plus the age backstop inside
+        # `_gc_orphan_pod_safety_state`). No pods are processed either —
+        # same fail-closed no-stop outcome as today's empty-set fallback.
+        print("pod-safety: pod snapshot failed; skipping state GC this tick")
+        return
     running_issues = {issue for issue, _pod_id, _name in running}
 
-    # GC orphaned state BEFORE the per-pod loop, and ALWAYS — even when
-    # `running` is empty — so a state file for a pod that left the RUNNING set
-    # by ANY path (manual stop/terminate, self-EXIT on TTL/crash) gets cleared.
-    # Otherwise a re-used `pod-N` would inherit a stale `missed=1` / `alerted`
-    # and be one glitch away from a stop on revival. The age backstop inside
-    # `_gc_orphan_pod_safety_state` covers the case where the API is flaky on
-    # the exact tick a pod actually disappears.
+    # GC orphaned state BEFORE the per-pod loop, and ALWAYS on a GOOD snapshot
+    # — even when `running` is empty — so a state file for a pod that left the
+    # RUNNING set by ANY path (manual stop/terminate, self-EXIT on TTL/crash)
+    # gets cleared. Otherwise a re-used `pod-N` would inherit a stale
+    # `missed=1` / `alerted` and be one glitch away from a stop on revival.
     _gc_orphan_pod_safety_state(running_issues, dry_run, now=now)
 
     if not running:

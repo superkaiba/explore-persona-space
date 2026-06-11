@@ -434,7 +434,7 @@ def test_stalled_pass_alerts_after_two_consecutive_stale_ticks(isolated_registry
         lambda issue, now: (stale_age, "2026-06-05T10:00:00Z"),
     )
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
     monkeypatch.setattr(
         asw,
         "_post_progress_marker",
@@ -469,7 +469,7 @@ def test_stalled_pass_dedups_within_episode(isolated_registry, monkeypatch):
         lambda issue, now: (stale_age, "2026-06-05T10:00:00Z"),
     )
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
     monkeypatch.setattr(
         asw,
         "_post_progress_marker",
@@ -495,7 +495,7 @@ def test_stalled_pass_clears_alerted_when_self_report_advances(isolated_registry
 
     stale_age = STALLED_WINDOW_S + 600
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
     monkeypatch.setattr(
         asw,
         "_post_progress_marker",
@@ -544,7 +544,7 @@ def test_stalled_pass_skips_when_no_self_report(isolated_registry, monkeypatch):
 
     monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (None, None))
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
     monkeypatch.setattr(
         asw,
         "_post_progress_marker",
@@ -573,7 +573,7 @@ def test_stalled_pass_never_respawns_or_stops(isolated_registry, monkeypatch):
         lambda issue, now: (stale, "2026-06-05T10:00:00Z"),
     )
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
     monkeypatch.setattr(asw, "_respawn", lambda entry, dry_run: respawns.append(entry) or True)
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: None)
@@ -614,7 +614,7 @@ def test_stalled_pass_manual_session_alert_only_never_respawns(isolated_registry
         lambda issue, now: (stale, "2026-06-05T10:00:00Z"),
     )
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
     # ACTIVE status + reachable daemon: respawn WOULD be eligible were the
     # entry autonomous — the alert-only routing must come from manual=True.
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
@@ -650,7 +650,7 @@ def test_stalled_pass_dry_run_no_state_write(isolated_registry, monkeypatch):
         lambda issue, now: (stale, "2026-06-05T10:00:00Z"),
     )
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **kw: None)
 
     asw.stalled_session_pass(dry_run=True, threshold=1, now=now)

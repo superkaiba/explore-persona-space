@@ -12,3 +12,4 @@
 - [Candidate may be already fixed on main](feedback_candidate_already_fixed_stale_worktree.md) — git-log the target file first; incidents from worktree-cwd sessions often reflect a stale pre-fix spec copy, and the sketch may weaken main's stronger rule.
 - [Watcher-incident forensics map](reference_watcher_forensics_surfaces.md) — logs/autonomous_session_watch/, ~/.eps-autonomous/ state files, ~/.happy/sessions.json generations; --auto spawns register cwd=worktree, so cwd-liveness matches zombies.
 - [Watcher dry-run from worktree](reference_watcher_dryrun_from_worktree.md) — override asw.PROJECT_ROOT to the main checkout before calling a `*_pass(dry_run=True)`; worktree task.py branch-guards to main. Ruff C901 cap is 15.
+- [Watcher has TWO test files](reference_watcher_two_test_files.md) — autonomous_session_watch.py is pinned by test_autonomous_session_watch.py AND test_stalled_detector_and_gc.py; run both, and monkeypatch helpers with `lambda *_a, **_k`.
